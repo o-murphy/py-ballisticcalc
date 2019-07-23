@@ -167,9 +167,9 @@ func (v TrajectoryCalculator) Trajectory(ammunition Ammunition, weapon Weapon, a
 
 	if calculateDrift {
 		if weapon.Twist().Direction() == Twist_Left {
-			twistCoefficient = -1
-		} else {
 			twistCoefficient = 1
+		} else {
+			twistCoefficient = -1
 		}
 	}
 
@@ -222,7 +222,7 @@ func (v TrajectoryCalculator) Trajectory(ammunition Ammunition, weapon Weapon, a
 		velocityAdjusted = velocityVector.Subtract(windVector)
 		velocity = velocityAdjusted.Magnitude()
 		drag = densityFactor * velocity * ammunition.Bullet().BallisticCoefficient().Drag(velocity/mach)
-		velocityVector = velocityVector.Subtract((velocityVector.MultiplyByConst(drag).Subtract(gravityVector)).MultiplyByConst(deltaTime))
+		velocityVector = velocityVector.Subtract((velocityAdjusted.MultiplyByConst(drag).Subtract(gravityVector)).MultiplyByConst(deltaTime))
 		deltaRangeVector = vector.Create(calculationStep, velocityVector.Y*deltaTime, velocityVector.Z*deltaTime)
 		rangeVector = rangeVector.Add(deltaRangeVector)
 		velocity = velocityVector.Magnitude()

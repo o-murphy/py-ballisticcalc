@@ -103,3 +103,29 @@ func TestPathG1JBM1(t *testing.T) {
 	validateOne(t, data[5], 500, 1169.1, 1.047, 509.8, -87.9, -16.8, -19.5, -3.7, 0.857, 67, unit.Angular_MOA)
 	validateOne(t, data[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20, unit.Angular_MOA)
 }
+
+func TestPathG7Jb1(t *testing.T) {
+	bc, _ := go_ballisticcalc.CreateBallisticCoefficient(0.223, go_ballisticcalc.DragTable_G7)
+	projectile := go_ballisticcalc.CreateProjectileWithDimensions(bc, unit.MustCreateDistance(0.308, unit.Distance_Inch),
+		unit.MustCreateDistance(1.282, unit.Distance_Inch), unit.MustCreateWeight(168, unit.Weight_Grain))
+	ammo := go_ballisticcalc.CreateAmmunition(projectile, unit.MustCreateVelocity(2750, unit.Velocity_FPS))
+	zero := go_ballisticcalc.CreateZeroInfo(unit.MustCreateDistance(100, unit.Distance_Yard))
+	twist := go_ballisticcalc.CreateTwist(go_ballisticcalc.Twist_Right, unit.MustCreateDistance(11.24, unit.Distance_Inch))
+	weapon := go_ballisticcalc.CreateWeaponWithTwist(unit.MustCreateDistance(2, unit.Distance_Inch), zero, twist)
+	atmosphere := go_ballisticcalc.CreateDefaultAtmosphere()
+	shotInfo := go_ballisticcalc.CreateShotParameters(unit.MustCreateAngular(0.001228, unit.Angular_Radian),
+		unit.MustCreateDistance(1000, unit.Distance_Yard),
+		unit.MustCreateDistance(100, unit.Distance_Yard))
+	wind := go_ballisticcalc.CreateOnlyWindInfo(unit.MustCreateVelocity(5, unit.Velocity_MPH),
+		unit.MustCreateAngular(-45, unit.Angular_Degree))
+
+	calc := go_ballisticcalc.CreateTrajectoryCalculator()
+	data := calc.Trajectory(ammo, weapon, atmosphere, shotInfo, wind)
+
+	assertEqual(t, float64(len(data)), 11, 0.1, "Length")
+
+	validateOne(t, data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, unit.Angular_Mil)
+	validateOne(t, data[1], 100, 2545.3, 2.280, 2416, 0, 0, -0.35, -0.09, 0.113, 698, unit.Angular_Mil)
+	validateOne(t, data[5], 500, 1812.9, 1.624, 1226, -56.25, -3.18, -9.96, -0.55, 0.673, 252, unit.Angular_Mil)
+	validateOne(t, data[10], 1000, 1088.5, 0.975, 442, -400.01, -11.32, -50.98, -1.44, 1.748, 55, unit.Angular_Mil)
+}
