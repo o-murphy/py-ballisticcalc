@@ -87,6 +87,14 @@ func CreateDistance(value float64, units byte) (Distance, error) {
 	}
 }
 
+func MustCreateDistance(value float64, units byte) Distance {
+	v, err := CreateDistance(value, units)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 //Returns the value of the distance in the specified units.
 //
 //units are measurement unit and may be any value from
@@ -108,7 +116,7 @@ func (v Distance) Convert(units byte) Distance {
 
 //Convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
-func (v Distance) ValueOrZero(units byte) float64 {
+func (v Distance) In(units byte) float64 {
 	x, e := distanceFromDefault(v.value, units)
 	if e != nil {
 		return 0
@@ -162,4 +170,8 @@ func (v Distance) String() string {
 		format = fmt.Sprintf("%%.%df%%s", accuracy)
 		return fmt.Sprintf(format, x, unitName)
 	}
+}
+
+func (v Distance) Units() byte {
+	return v.defaultUnits
 }

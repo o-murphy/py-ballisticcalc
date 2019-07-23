@@ -79,6 +79,14 @@ func CreateAngular(value float64, units byte) (Angular, error) {
 	}
 }
 
+func MustCreateAngular(value float64, units byte) Angular {
+	v, err := CreateAngular(value, units)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 //Returns the value of the angle in the specified units.
 //
 //units are measurement unit and may be any value from
@@ -100,7 +108,7 @@ func (v Angular) Convert(units byte) Angular {
 
 //Convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
-func (v Angular) ValueOrZero(units byte) float64 {
+func (v Angular) In(units byte) float64 {
 	x, e := angularFromDefault(v.value, units)
 	if e != nil {
 		return 0
@@ -152,4 +160,8 @@ func (v Angular) String() string {
 		format = fmt.Sprintf("%%.%df%%s", accuracy)
 		return fmt.Sprintf(format, x, unitName)
 	}
+}
+
+func (v Angular) Units() byte {
+	return v.defaultUnits
 }

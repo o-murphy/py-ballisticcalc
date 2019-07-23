@@ -61,6 +61,14 @@ func CreateVelocity(value float64, units byte) (Velocity, error) {
 	}
 }
 
+func MustCreateVelocity(value float64, units byte) Velocity {
+	v, err := CreateVelocity(value, units)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 //Returns the value of the velocity in the specified units.
 //
 //units are measurement unit and may be any value from
@@ -82,7 +90,7 @@ func (v Velocity) Convert(units byte) Velocity {
 
 //Convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
-func (v Velocity) ValueOrZero(units byte) float64 {
+func (v Velocity) In(units byte) float64 {
 	x, e := velocityFromDefault(v.value, units)
 	if e != nil {
 		return 0
@@ -121,4 +129,8 @@ func (v Velocity) String() string {
 		format = fmt.Sprintf("%%.%df%%s", accuracy)
 		return fmt.Sprintf(format, x, unitName)
 	}
+}
+
+func (v Velocity) Units() byte {
+	return v.defaultUnits
 }

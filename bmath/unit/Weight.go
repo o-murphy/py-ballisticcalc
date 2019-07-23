@@ -68,6 +68,14 @@ func CreateWeight(value float64, units byte) (Weight, error) {
 	}
 }
 
+func MustCreateWeight(value float64, units byte) Weight {
+	v, err := CreateWeight(value, units)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 //Returns the value of the weight in the specified units.
 //
 //units are measurement unit and may be any value from
@@ -89,7 +97,7 @@ func (v Weight) Convert(units byte) Weight {
 
 //Convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
-func (v Weight) ValueOrZero(units byte) float64 {
+func (v Weight) In(units byte) float64 {
 	x, e := weightFromDefault(v.value, units)
 	if e != nil {
 		return 0
@@ -131,4 +139,8 @@ func (v Weight) String() string {
 		format = fmt.Sprintf("%%.%df%%s", accuracy)
 		return fmt.Sprintf(format, x, unitName)
 	}
+}
+
+func (v Weight) Units() byte {
+	return v.defaultUnits
 }

@@ -17,7 +17,7 @@ func angularBackAndForth(t *testing.T, value float64, units byte) {
 		return
 	}
 	v, e2 = u.Value(units)
-	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.ValueOrZero(units)) < 1e-7) {
+	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.In(units)) < 1e-7) {
 		t.Errorf("Read back failed for %d", units)
 		return
 	}
@@ -33,7 +33,7 @@ func distanceBackAndForth(t *testing.T, value float64, units byte) {
 		return
 	}
 	v, e2 = u.Value(units)
-	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.ValueOrZero(units)) < 1e-7) {
+	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.In(units)) < 1e-7) {
 		t.Errorf("Read back failed for %d", units)
 		return
 
@@ -50,7 +50,7 @@ func energyBackAndForth(t *testing.T, value float64, units byte) {
 		return
 	}
 	v, e2 = u.Value(units)
-	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.ValueOrZero(units)) < 1e-7) {
+	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.In(units)) < 1e-7) {
 		t.Errorf("Read back failed for %d", units)
 		return
 
@@ -68,7 +68,7 @@ func pressureBackAndForth(t *testing.T, value float64, units byte) {
 		return
 	}
 	v, e2 = u.Value(units)
-	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.ValueOrZero(units)) < 1e-7) {
+	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.In(units)) < 1e-7) {
 		t.Errorf("Read back failed for %d", units)
 		return
 
@@ -85,7 +85,7 @@ func temperatureBackAndForth(t *testing.T, value float64, units byte) {
 		return
 	}
 	v, e2 = u.Value(units)
-	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.ValueOrZero(units)) < 1e-7) {
+	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.In(units)) < 1e-7) {
 		t.Errorf("Read back failed for %d", units)
 		return
 
@@ -103,7 +103,7 @@ func velocityBackAndForth(t *testing.T, value float64, units byte) {
 		return
 	}
 	v, e2 = u.Value(units)
-	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.ValueOrZero(units)) < 1e-7) {
+	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.In(units)) < 1e-7) {
 		t.Errorf("Read back failed for %d", units)
 		return
 
@@ -121,7 +121,7 @@ func weightBackAndForth(t *testing.T, value float64, units byte) {
 		return
 	}
 	v, e2 = u.Value(units)
-	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.ValueOrZero(units)) < 1e-7) {
+	if !(e2 == nil && math.Abs(v-value) < 1e-7 && math.Abs(v-u.In(units)) < 1e-7) {
 		t.Errorf("Read back failed for %d", units)
 		return
 
@@ -141,7 +141,7 @@ func TestAngular(t *testing.T) {
 
 	var u unit.Angular
 	u, _ = unit.CreateAngular(1, unit.Angular_inchesPer100Yd)
-	if math.Abs(0.954930-u.ValueOrZero(unit.Angular_MOA)) > 1e-5 {
+	if math.Abs(0.954930-u.In(unit.Angular_MOA)) > 1e-5 {
 		t.Errorf("Conversion failed")
 	}
 

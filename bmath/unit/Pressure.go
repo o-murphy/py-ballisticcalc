@@ -63,6 +63,14 @@ func CreatePressure(value float64, units byte) (Pressure, error) {
 	}
 }
 
+func MustCreatePressure(value float64, units byte) Pressure {
+	v, err := CreatePressure(value, units)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 //Returns the value of the pressure in the specified units.
 //
 //units are measurement unit and may be any value from
@@ -84,7 +92,7 @@ func (v Pressure) Convert(units byte) Pressure {
 
 //Convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
-func (v Pressure) ValueOrZero(units byte) float64 {
+func (v Pressure) In(units byte) float64 {
 	x, e := pressureFromDefault(v.value, units)
 	if e != nil {
 		return 0
@@ -123,4 +131,8 @@ func (v Pressure) String() string {
 		format = fmt.Sprintf("%%.%df%%s", accuracy)
 		return fmt.Sprintf(format, x, unitName)
 	}
+}
+
+func (v Pressure) Units() byte {
+	return v.defaultUnits
 }

@@ -57,6 +57,14 @@ func CreateTemperature(value float64, units byte) (Temperature, error) {
 	}
 }
 
+func MustCreateTemperature(value float64, units byte) Temperature {
+	v, err := CreateTemperature(value, units)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 //Returns the value of the temperature in the specified units.
 //
 //units are measurement unit and may be any value from
@@ -78,7 +86,7 @@ func (v Temperature) Convert(units byte) Temperature {
 
 //Convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
-func (v Temperature) ValueOrZero(units byte) float64 {
+func (v Temperature) In(units byte) float64 {
 	x, e := temperatureFromDefault(v.value, units)
 	if e != nil {
 		return 0
@@ -114,4 +122,8 @@ func (v Temperature) String() string {
 		format = fmt.Sprintf("%%.%df%%s", accuracy)
 		return fmt.Sprintf(format, x, unitName)
 	}
+}
+
+func (v Temperature) Units() byte {
+	return v.defaultUnits
 }

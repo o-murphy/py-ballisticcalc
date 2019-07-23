@@ -46,6 +46,14 @@ func CreateEnergy(value float64, units byte) (Energy, error) {
 	}
 }
 
+func MustCreateEnergy(value float64, units byte) Energy {
+	v, err := CreateEnergy(value, units)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 //Returns the value of the energy in the specified units.
 //
 //units are measurement unit and may be any value from
@@ -67,7 +75,7 @@ func (v Energy) Convert(units byte) Energy {
 
 //Convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
-func (v Energy) ValueOrZero(units byte) float64 {
+func (v Energy) In(units byte) float64 {
 	x, e := energyFromDefault(v.value, units)
 	if e != nil {
 		return 0
@@ -97,4 +105,8 @@ func (v Energy) String() string {
 		format = fmt.Sprintf("%%.%df%%s", accuracy)
 		return fmt.Sprintf(format, x, unitName)
 	}
+}
+
+func (v Energy) Units() byte {
+	return v.defaultUnits
 }
