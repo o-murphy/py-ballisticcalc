@@ -133,9 +133,9 @@ func (v TrajectoryCalculator) Trajectory(ammunition Ammunition, weapon Weapon, a
 
 	barrelAzimuth = 0.0
 	barrelElevation = shotInfo.SightAngle().In(unit.Angular_Radian)
-
-	mach = atmosphere.Mach().In(unit.Velocity_FPS)
-	densityFactor = atmosphere.DensityFactor()
+	barrelElevation = barrelElevation + shotInfo.ShotAngle().In(unit.Angular_Radian)
+	var alt0 float64 = atmosphere.Altitude().In(unit.Distance_Foot)
+	densityFactor, mach = atmosphere.getDensityFactorAndMachForAltitude(alt0)
 	var currentWind int = 0
 	var nextWindRange float64 = 1e7
 
@@ -178,6 +178,10 @@ func (v TrajectoryCalculator) Trajectory(ammunition Ammunition, weapon Weapon, a
 		if velocity < cMINIMIM_VELOCITY || rangeVector.Y < cMAXIMUM_DROP {
 			break
 		}
+
+		densityFactor, mach = atmosphere.getDensityFactorAndMachForAltitude(alt0 + rangeVector.Y)
+		//densityFactor = atmosphere.DensityFactor()
+		//mach = atmosphere.Mach().In(unit.Velocity_FPS)
 
 		if rangeVector.X >= nextWindRange {
 			currentWind++

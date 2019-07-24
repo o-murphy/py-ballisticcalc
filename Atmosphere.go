@@ -31,6 +31,7 @@ type Atmosphere struct {
 	humidity    float64
 	density     float64
 	mach        unit.Velocity
+	mach1       float64
 }
 
 //Creates a default atmosphere used in ballistic calculations
@@ -126,11 +127,8 @@ func (a Atmosphere) Mach() unit.Velocity {
 	return a.mach
 }
 
-func (a *Atmosphere) calculate() {
-	var t, p, hc, et, et0 float64
-
-	t = a.temperature.In(unit.Temperature_Fahrenheit)
-	p = a.pressure.In(unit.Pressure_InHg)
+func (a *Atmosphere) calculate0(t, p float64) (float64, float64) {
+	var hc, et, et0, density, mach float64
 
 	if t > 0.0 {
 		et0 = c_A0 + t*(c_A1+t*(c_A2+t*(c_A3+t*c_A4)))
@@ -139,6 +137,43 @@ func (a *Atmosphere) calculate() {
 	} else {
 		hc = 1.0
 	}
-	a.density = cSTANDARD_DENSITY * (cICAO_STANDARD_TEMPERATURE_R / (t + cICAO_FREEZING_POINT_TEMPERATURE_R)) * hc
-	a.mach = unit.MustCreateVelocity(math.Sqrt(t+cICAO_FREEZING_POINT_TEMPERATURE_R)*cSOUND_SPEED, unit.Velocity_FPS)
+	density = cSTANDARD_DENSITY * (cICAO_STANDARD_TEMPERATURE_R / (t + cICAO_FREEZING_POINT_TEMPERATURE_R)) * hc
+	mach = math.Sqrt(t+cICAO_FREEZING_POINT_TEMPERATURE_R) * cSOUND_SPEED
+	return density, mach
+
+}
+
+func (a *Atmosphere) calculate() {
+	var t, p, density, mach float64
+	t = a.temperature.In(unit.Temperature_Fahrenheit)
+	p = a.pressure.In(unit.Pressure_InHg)
+
+	density, mach = a.calculate0(t, p)
+
+	a.density = density
+	a.mach1 = mach
+	a.mach = unit.MustCreateVelocity(mach, unit.Velocity_FPS)
+}
+
+func (a *Atmosphere) getDensityFactorAndMachForAltitude(altitude float64) (float64, float64) {
+	var t, t0, p, ta, tb, orgAltitude, density, mach float64
+
+	orgAltitude = a.altitude.In(unit.Distance_Foot)
+
+	if math.Abs(orgAltitude-altitude) < 30 {
+		density = a.density / cSTANDARD_DENSITY
+		mach = a.mach1
+		return density, mach
+	}
+
+	t0 = a.temperature.In(unit.Temperature_Fahrenheit)
+	p = a.pressure.In(unit.Pressure_InHg)
+
+	ta = cICAO_STANDARD_TEMPERATURE_R + orgAltitude*cTEMPERATURE_GRADIENT - cICAO_FREEZING_POINT_TEMPERATURE_R
+	tb = cICAO_STANDARD_TEMPERATURE_R + altitude*cTEMPERATURE_GRADIENT - cICAO_FREEZING_POINT_TEMPERATURE_R
+	t = t0 + ta - tb
+	p = p * math.Pow(t0/t, cPRESSURE_EXPONENT)
+
+	density, mach = a.calculate0(t, p)
+	return density / cSTANDARD_DENSITY, mach
 }

@@ -2,6 +2,7 @@ package go_ballisticcalc
 
 import (
 	"fmt"
+	"math"
 )
 
 const DragTable_G1 byte = 1
@@ -34,20 +35,7 @@ func dragFunctionFactory(dragTable byte) dragFunction {
 	switch dragTable {
 	case DragTable_G1:
 		return func(mach float64) float64 {
-			switch {
-			case mach > 2.0:
-				return 0.9482590 + mach*(-0.248367+mach*0.0344343)
-			case mach > 1.40:
-				return 0.6796810 + mach*(0.0705311-mach*0.0570628)
-			case mach > 1.10:
-				return -1.471970 + mach*(3.1652900-mach*1.1728200)
-			case mach > 0.85:
-				return -0.647392 + mach*(0.9421060+mach*0.1806040)
-			case mach >= 0.55:
-				return 0.6224890 + mach*(-1.426820+mach*1.2094500)
-			default:
-				return 0.2637320 + mach*(-0.165665+mach*0.0852214)
-			}
+			return calculateByCurve(g1_table, g1_curve, mach)
 		}
 	case DragTable_G2:
 		return func(mach float64) float64 {
@@ -99,18 +87,7 @@ func dragFunctionFactory(dragTable byte) dragFunction {
 		}
 	case DragTable_G7:
 		return func(mach float64) float64 {
-			switch {
-			case mach > 1.9:
-				return 0.439493 + mach*(-0.0793543+mach*0.00448477)
-			case mach > 1.05:
-				return 0.642743 + mach*(-0.2725450+mach*0.049247500)
-			case mach > 0.90:
-				return -1.69655 + mach*2.03557
-			case mach >= 0.60:
-				return 0.353384 + mach*(-0.69240600+mach*0.50946900)
-			default:
-				return 0.119775 + mach*(-0.00231118+mach*0.00286712)
-			}
+			return calculateByCurve(g7_table, g7_curve, mach)
 		}
 	case DragTable_G8:
 		return func(mach float64) float64 {
@@ -176,4 +153,239 @@ func (v BallisticCoefficient) Table() byte {
 
 func (v BallisticCoefficient) Drag(mach float64) float64 {
 	return v.drag(mach) * 2.08551e-04 / v.value
+}
+
+type DataPoint struct {
+	A, B float64
+}
+
+type CurvePoint struct {
+	A, B, C float64
+}
+
+var g1_table []DataPoint = []DataPoint{
+	DataPoint{A: 0.00, B: 0.2629},
+	DataPoint{A: 0.05, B: 0.2558},
+	DataPoint{A: 0.10, B: 0.2487},
+	DataPoint{A: 0.15, B: 0.2413},
+	DataPoint{A: 0.20, B: 0.2344},
+	DataPoint{A: 0.25, B: 0.2278},
+	DataPoint{A: 0.30, B: 0.2214},
+	DataPoint{A: 0.35, B: 0.2155},
+	DataPoint{A: 0.40, B: 0.2104},
+	DataPoint{A: 0.45, B: 0.2061},
+	DataPoint{A: 0.50, B: 0.2032},
+	DataPoint{A: 0.55, B: 0.2020},
+	DataPoint{A: 0.60, B: 0.2034},
+	DataPoint{A: 0.70, B: 0.2165},
+	DataPoint{A: 0.725, B: 0.2230},
+	DataPoint{A: 0.75, B: 0.2313},
+	DataPoint{A: 0.775, B: 0.2417},
+	DataPoint{A: 0.80, B: 0.2546},
+	DataPoint{A: 0.825, B: 0.2706},
+	DataPoint{A: 0.85, B: 0.2901},
+	DataPoint{A: 0.875, B: 0.3136},
+	DataPoint{A: 0.90, B: 0.3415},
+	DataPoint{A: 0.925, B: 0.3734},
+	DataPoint{A: 0.95, B: 0.4084},
+	DataPoint{A: 0.975, B: 0.4448},
+	DataPoint{A: 1.0, B: 0.4805},
+	DataPoint{A: 1.025, B: 0.5136},
+	DataPoint{A: 1.05, B: 0.5427},
+	DataPoint{A: 1.075, B: 0.5677},
+	DataPoint{A: 1.10, B: 0.5883},
+	DataPoint{A: 1.125, B: 0.6053},
+	DataPoint{A: 1.15, B: 0.6191},
+	DataPoint{A: 1.20, B: 0.6393},
+	DataPoint{A: 1.25, B: 0.6518},
+	DataPoint{A: 1.30, B: 0.6589},
+	DataPoint{A: 1.35, B: 0.6621},
+	DataPoint{A: 1.40, B: 0.6625},
+	DataPoint{A: 1.45, B: 0.6607},
+	DataPoint{A: 1.50, B: 0.6573},
+	DataPoint{A: 1.55, B: 0.6528},
+	DataPoint{A: 1.60, B: 0.6474},
+	DataPoint{A: 1.65, B: 0.6413},
+	DataPoint{A: 1.70, B: 0.6347},
+	DataPoint{A: 1.75, B: 0.6280},
+	DataPoint{A: 1.80, B: 0.6210},
+	DataPoint{A: 1.85, B: 0.6141},
+	DataPoint{A: 1.90, B: 0.6072},
+	DataPoint{A: 1.95, B: 0.6003},
+	DataPoint{A: 2.00, B: 0.5934},
+	DataPoint{A: 2.05, B: 0.5867},
+	DataPoint{A: 2.10, B: 0.5804},
+	DataPoint{A: 2.15, B: 0.5743},
+	DataPoint{A: 2.20, B: 0.5685},
+	DataPoint{A: 2.25, B: 0.5630},
+	DataPoint{A: 2.30, B: 0.5577},
+	DataPoint{A: 2.35, B: 0.5527},
+	DataPoint{A: 2.40, B: 0.5481},
+	DataPoint{A: 2.45, B: 0.5438},
+	DataPoint{A: 2.50, B: 0.5397},
+	DataPoint{A: 2.60, B: 0.5325},
+	DataPoint{A: 2.70, B: 0.5264},
+	DataPoint{A: 2.80, B: 0.5211},
+	DataPoint{A: 2.90, B: 0.5168},
+	DataPoint{A: 3.00, B: 0.5133},
+	DataPoint{A: 3.10, B: 0.5105},
+	DataPoint{A: 3.20, B: 0.5084},
+	DataPoint{A: 3.30, B: 0.5067},
+	DataPoint{A: 3.40, B: 0.5054},
+	DataPoint{A: 3.50, B: 0.5040},
+	DataPoint{A: 3.60, B: 0.5030},
+	DataPoint{A: 3.70, B: 0.5022},
+	DataPoint{A: 3.80, B: 0.5016},
+	DataPoint{A: 3.90, B: 0.5010},
+	DataPoint{A: 4.00, B: 0.5006},
+	DataPoint{A: 4.20, B: 0.4998},
+	DataPoint{A: 4.40, B: 0.4995},
+	DataPoint{A: 4.60, B: 0.4992},
+	DataPoint{A: 4.80, B: 0.4990},
+	DataPoint{A: 5.00, B: 0.4988},
+}
+
+var g1_curve []CurvePoint = calculateCurve(g1_table)
+
+var g7_table []DataPoint = []DataPoint{
+	DataPoint{A: 0.00, B: 0.1198},
+	DataPoint{A: 0.05, B: 0.1197},
+	DataPoint{A: 0.10, B: 0.1196},
+	DataPoint{A: 0.15, B: 0.1194},
+	DataPoint{A: 0.20, B: 0.1193},
+	DataPoint{A: 0.25, B: 0.1194},
+	DataPoint{A: 0.30, B: 0.1194},
+	DataPoint{A: 0.35, B: 0.1194},
+	DataPoint{A: 0.40, B: 0.1193},
+	DataPoint{A: 0.45, B: 0.1193},
+	DataPoint{A: 0.50, B: 0.1194},
+	DataPoint{A: 0.55, B: 0.1193},
+	DataPoint{A: 0.60, B: 0.1194},
+	DataPoint{A: 0.65, B: 0.1197},
+	DataPoint{A: 0.70, B: 0.1202},
+	DataPoint{A: 0.725, B: 0.1207},
+	DataPoint{A: 0.75, B: 0.1215},
+	DataPoint{A: 0.775, B: 0.1226},
+	DataPoint{A: 0.80, B: 0.1242},
+	DataPoint{A: 0.825, B: 0.1266},
+	DataPoint{A: 0.85, B: 0.1306},
+	DataPoint{A: 0.875, B: 0.1368},
+	DataPoint{A: 0.90, B: 0.1464},
+	DataPoint{A: 0.925, B: 0.1660},
+	DataPoint{A: 0.95, B: 0.2054},
+	DataPoint{A: 0.975, B: 0.2993},
+	DataPoint{A: 1.0, B: 0.3803},
+	DataPoint{A: 1.025, B: 0.4015},
+	DataPoint{A: 1.05, B: 0.4043},
+	DataPoint{A: 1.075, B: 0.4034},
+	DataPoint{A: 1.10, B: 0.4014},
+	DataPoint{A: 1.125, B: 0.3987},
+	DataPoint{A: 1.15, B: 0.3955},
+	DataPoint{A: 1.20, B: 0.3884},
+	DataPoint{A: 1.25, B: 0.3810},
+	DataPoint{A: 1.30, B: 0.3732},
+	DataPoint{A: 1.35, B: 0.3657},
+	DataPoint{A: 1.40, B: 0.3580},
+	DataPoint{A: 1.50, B: 0.3440},
+	DataPoint{A: 1.55, B: 0.3376},
+	DataPoint{A: 1.60, B: 0.3315},
+	DataPoint{A: 1.65, B: 0.3260},
+	DataPoint{A: 1.70, B: 0.3209},
+	DataPoint{A: 1.75, B: 0.3160},
+	DataPoint{A: 1.80, B: 0.3117},
+	DataPoint{A: 1.85, B: 0.3078},
+	DataPoint{A: 1.90, B: 0.3042},
+	DataPoint{A: 1.95, B: 0.3010},
+	DataPoint{A: 2.00, B: 0.2980},
+	DataPoint{A: 2.05, B: 0.2951},
+	DataPoint{A: 2.10, B: 0.2922},
+	DataPoint{A: 2.15, B: 0.2892},
+	DataPoint{A: 2.20, B: 0.2864},
+	DataPoint{A: 2.25, B: 0.2835},
+	DataPoint{A: 2.30, B: 0.2807},
+	DataPoint{A: 2.35, B: 0.2779},
+	DataPoint{A: 2.40, B: 0.2752},
+	DataPoint{A: 2.45, B: 0.2725},
+	DataPoint{A: 2.50, B: 0.2697},
+	DataPoint{A: 2.55, B: 0.2670},
+	DataPoint{A: 2.60, B: 0.2643},
+	DataPoint{A: 2.65, B: 0.2615},
+	DataPoint{A: 2.70, B: 0.2588},
+	DataPoint{A: 2.75, B: 0.2561},
+	DataPoint{A: 2.80, B: 0.2533},
+	DataPoint{A: 2.85, B: 0.2506},
+	DataPoint{A: 2.90, B: 0.2479},
+	DataPoint{A: 2.95, B: 0.2451},
+	DataPoint{A: 3.00, B: 0.2424},
+	DataPoint{A: 3.10, B: 0.2368},
+	DataPoint{A: 3.20, B: 0.2313},
+	DataPoint{A: 3.30, B: 0.2258},
+	DataPoint{A: 3.40, B: 0.2205},
+	DataPoint{A: 3.50, B: 0.2154},
+	DataPoint{A: 3.60, B: 0.2106},
+	DataPoint{A: 3.70, B: 0.2060},
+	DataPoint{A: 3.80, B: 0.2017},
+	DataPoint{A: 3.90, B: 0.1975},
+	DataPoint{A: 4.00, B: 0.1935},
+	DataPoint{A: 4.20, B: 0.1861},
+	DataPoint{A: 4.40, B: 0.1793},
+	DataPoint{A: 4.60, B: 0.1730},
+	DataPoint{A: 4.80, B: 0.1672},
+	DataPoint{A: 5.00, B: 0.1618},
+}
+
+var g7_curve []CurvePoint = calculateCurve(g7_table)
+
+func calculateCurve(dataPoints []DataPoint) []CurvePoint {
+	var curve []CurvePoint
+	var numPoints int = len(dataPoints)
+	var i int
+	var x1, x2, x3, y1, y2, y3, a, b, c float64
+
+	curve = make([]CurvePoint, numPoints)
+	var rate float64 = (dataPoints[1].B - dataPoints[0].B) / (dataPoints[1].A - dataPoints[0].A)
+	curve[0] = CurvePoint{A: 0, B: rate, C: dataPoints[0].B - dataPoints[0].A*rate}
+
+	// rest as 2nd degree polynomials on three adjacent points
+	for i = 1; i < numPoints-1; i++ {
+		x1 = dataPoints[i-1].A
+		x2 = dataPoints[i].A
+		x3 = dataPoints[i+1].A
+		y1 = dataPoints[i-1].B
+		y2 = dataPoints[i].B
+		y3 = dataPoints[i+1].B
+		a = ((y3-y1)*(x2-x1) - (y2-y1)*(x3-x1)) / ((x3*x3-x1*x1)*(x2-x1) - (x2*x2-x1*x1)*(x3-x1))
+		b = (y2 - y1 - a*(x2*x2-x1*x1)) / (x2 - x1)
+		c = y1 - (a*x1*x1 + b*x1)
+		curve[i] = CurvePoint{A: a, B: b, C: c}
+	}
+	rate = (dataPoints[numPoints-1].B - dataPoints[numPoints-2].B) / (dataPoints[numPoints-1].A - dataPoints[numPoints-2].A)
+	curve[numPoints-1] = CurvePoint{0, rate, dataPoints[numPoints-1].B - dataPoints[numPoints-2].A*rate}
+	return curve
+}
+
+func calculateByCurve(data []DataPoint, curve []CurvePoint, mach float64) float64 {
+	var numPoints, m, mlo, mhi, mid int
+
+	numPoints = len(curve)
+	m = 0
+	mlo = 0
+	mhi = numPoints - 2
+
+	for (mhi - mlo) > 1 {
+		mid = int(math.Floor(float64(mhi+mlo) / 2.0))
+		if data[mid].A < mach {
+			mlo = mid
+		} else {
+			mhi = mid
+		}
+	}
+
+	if (data[mhi].A - mach) > (mach - data[mlo].A) {
+		m = mlo
+	} else {
+		m = mhi
+	}
+
+	return curve[m].C + mach*(curve[m].B+curve[m].A*mach)
 }
