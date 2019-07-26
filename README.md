@@ -6,10 +6,11 @@ applications, including air rifles, bows, firearms, artillery and so on.
 
 3DF model that is used in this calculator is rooted in old C sources of version 2 of the public version of JBM 
 calculator, ported to C#, optimized, fixed and extended with elements described in 
-Litz's "Applied Ballistics" book and then ported to Go. 
+Litz's "Applied Ballistics" book and from the friendly project of Alexandre Trofimov 
+and then ported to Go. 
 
 The code is provided under LGPL license so you CAN use it in any application, however you 
-need to credit JBM, Brian Litz and Gehtsoft USA in your product.
+need to credit JBM, Brian Litz, Alexandre Trofimov and Gehtsoft USA in your product.
 
 C# version of the package is located here: https://github.com/gehtsoft-usa/BallisticCalculator
 
