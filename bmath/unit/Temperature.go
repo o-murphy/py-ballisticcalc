@@ -2,20 +2,27 @@ package unit
 
 import "fmt"
 
-const Temperature_Fahrenheit byte = 50
-const Temperature_Celsius byte = 51
-const Temperature_Kelvin byte = 52
-const Temperature_Rankin byte = 53
+//TemperatureFahrenheit is the value indicating that temperature value is expressed in degrees of Fahrenheit
+const TemperatureFahrenheit byte = 50
+
+//TemperatureCelsius is the value indicating that temperature value is expressed in degrees of Celsius
+const TemperatureCelsius byte = 51
+
+//TemperatureKelvin is the value indicating that temperature value is expressed in degrees of Kelvin
+const TemperatureKelvin byte = 52
+
+//TemperatureRankin is the value indicating that temperature value is expressed in degrees of Rankin
+const TemperatureRankin byte = 53
 
 func temperatureToDefault(value float64, units byte) (float64, error) {
 	switch units {
-	case Temperature_Fahrenheit:
+	case TemperatureFahrenheit:
 		return value, nil
-	case Temperature_Rankin:
+	case TemperatureRankin:
 		return value - 459.67, nil
-	case Temperature_Celsius:
+	case TemperatureCelsius:
 		return value*9/5 + 32, nil
-	case Temperature_Kelvin:
+	case TemperatureKelvin:
 		return (value-273.15)*9/5 + 32, nil
 	default:
 		return 0, fmt.Errorf("Temperature: unit %d is not supported", units)
@@ -25,26 +32,26 @@ func temperatureToDefault(value float64, units byte) (float64, error) {
 
 func temperatureFromDefault(value float64, units byte) (float64, error) {
 	switch units {
-	case Temperature_Fahrenheit:
+	case TemperatureFahrenheit:
 		return value, nil
-	case Temperature_Rankin:
+	case TemperatureRankin:
 		return value + 459.67, nil
-	case Temperature_Celsius:
+	case TemperatureCelsius:
 		return (value - 32) * 5 / 9, nil
-	case Temperature_Kelvin:
+	case TemperatureKelvin:
 		return (value-32)*5/9 + 273.15, nil
 	default:
 		return 0, fmt.Errorf("Temperature: unit %d is not supported", units)
 	}
 }
 
-//The temperature
+//Temperature struct keeps information about the temperature
 type Temperature struct {
 	value        float64
 	defaultUnits byte
 }
 
-//Creates a temperature value.
+//CreateTemperature creates a temperature value.
 //
 //units are measurement unit and may be any value from
 //unit.Temperature_* constants.
@@ -52,11 +59,12 @@ func CreateTemperature(value float64, units byte) (Temperature, error) {
 	v, err := temperatureToDefault(value, units)
 	if err != nil {
 		return Temperature{}, err
-	} else {
-		return Temperature{value: v, defaultUnits: units}, nil
 	}
+	return Temperature{value: v, defaultUnits: units}, nil
+
 }
 
+//MustCreateTemperature creates the temperature value but panics instead of returned a error
 func MustCreateTemperature(value float64, units byte) Temperature {
 	v, err := CreateTemperature(value, units)
 	if err != nil {
@@ -65,7 +73,7 @@ func MustCreateTemperature(value float64, units byte) Temperature {
 	return v
 }
 
-//Returns the value of the temperature in the specified units.
+//Value returns the value of the temperature in the specified units.
 //
 //units are measurement unit and may be any value from
 //unit.Temperature_* constants.
@@ -76,7 +84,7 @@ func (v Temperature) Value(units byte) (float64, error) {
 	return temperatureFromDefault(v.value, units)
 }
 
-//Converts the value into the specified units.
+//Convert converts the value into the specified units.
 //
 //units are measurement unit and may be any value from
 //unit.Temperature_* constants.
@@ -84,46 +92,47 @@ func (v Temperature) Convert(units byte) Temperature {
 	return Temperature{value: v.value, defaultUnits: units}
 }
 
-//Convert the value in the specified units.
+//In convert the value in the specified units.
 //Returns 0 if unit conversion is not possible.
 func (v Temperature) In(units byte) float64 {
 	x, e := temperatureFromDefault(v.value, units)
 	if e != nil {
 		return 0
-	} else {
-		return x
 	}
+	return x
+
 }
 
 func (v Temperature) String() string {
 	x, e := temperatureFromDefault(v.value, v.defaultUnits)
 	if e != nil {
 		return "!error: default units aren't correct"
-	} else {
-		var unitName, format string
-		var accuracy int
-		switch v.defaultUnits {
-		case Temperature_Fahrenheit:
-			unitName = "°F"
-			accuracy = 1
-		case Temperature_Rankin:
-			unitName = "°R"
-			accuracy = 1
-		case Temperature_Celsius:
-			unitName = "°C"
-			accuracy = 1
-		case Temperature_Kelvin:
-			unitName = "°K"
-			accuracy = 1
-		default:
-			unitName = "?"
-			accuracy = 6
-		}
-		format = fmt.Sprintf("%%.%df%%s", accuracy)
-		return fmt.Sprintf(format, x, unitName)
 	}
+	var unitName, format string
+	var accuracy int
+	switch v.defaultUnits {
+	case TemperatureFahrenheit:
+		unitName = "°F"
+		accuracy = 1
+	case TemperatureRankin:
+		unitName = "°R"
+		accuracy = 1
+	case TemperatureCelsius:
+		unitName = "°C"
+		accuracy = 1
+	case TemperatureKelvin:
+		unitName = "°K"
+		accuracy = 1
+	default:
+		unitName = "?"
+		accuracy = 6
+	}
+	format = fmt.Sprintf("%%.%df%%s", accuracy)
+	return fmt.Sprintf(format, x, unitName)
+
 }
 
+//Units return the units in which the value is measured
 func (v Temperature) Units() byte {
 	return v.defaultUnits
 }

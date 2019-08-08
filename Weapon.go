@@ -2,7 +2,7 @@ package go_ballisticcalc
 
 import "github.com/gehtsoft-usa/go_ballisticcalc/bmath/unit"
 
-//The information about zeroing of the weapon
+//ZeroInfo structure keeps the information about zeroing of the weapon
 type ZeroInfo struct {
 	hasAmmunition  bool
 	ammunition     Ammunition
@@ -11,32 +11,32 @@ type ZeroInfo struct {
 	zeroAtmosphere Atmosphere
 }
 
-//Return flag indicating whether other ammo is used to zero
+//HasAmmunition return flag indicating whether other ammo is used to zero
 func (v ZeroInfo) HasAmmunition() bool {
 	return v.hasAmmunition
 }
 
-//Return ammo used to zero
+//Ammunition return ammo used to zero
 func (v ZeroInfo) Ammunition() Ammunition {
 	return v.ammunition
 }
 
-//Returns flag indicating whether weapon is zeroed under different conditions
+//HasAtmosphere returns flag indicating whether weapon is zeroed under different conditions
 func (v ZeroInfo) HasAtmosphere() bool {
 	return v.hasAtmosphere
 }
 
-//Returns conditions at the time of zeroing
+//Atmosphere returns conditions at the time of zeroing
 func (v ZeroInfo) Atmosphere() Atmosphere {
 	return v.zeroAtmosphere
 }
 
-//Returns the distance at which the weapon was zeroed
+//ZeroDistance returns the distance at which the weapon was zeroed
 func (v ZeroInfo) ZeroDistance() unit.Distance {
 	return v.zeroDistance
 }
 
-//Creates zero information using distance only
+//CreateZeroInfo creates zero information using distance only
 func CreateZeroInfo(distance unit.Distance) ZeroInfo {
 	return ZeroInfo{
 		hasAmmunition: false,
@@ -45,7 +45,7 @@ func CreateZeroInfo(distance unit.Distance) ZeroInfo {
 	}
 }
 
-//Creates zero information using distance and conditions
+//CreateZeroInfoWithAtmosphere creates zero information using distance and conditions
 func CreateZeroInfoWithAtmosphere(distance unit.Distance, atmosphere Atmosphere) ZeroInfo {
 	return ZeroInfo{
 		hasAmmunition:  false,
@@ -56,7 +56,7 @@ func CreateZeroInfoWithAtmosphere(distance unit.Distance, atmosphere Atmosphere)
 
 }
 
-//Creates zero information using distance and other ammunition
+//CreateZeroInfoWithAnotherAmmo creates zero information using distance and other ammunition
 func CreateZeroInfoWithAnotherAmmo(distance unit.Distance, ammo Ammunition) ZeroInfo {
 	return ZeroInfo{
 		hasAmmunition: true,
@@ -66,7 +66,7 @@ func CreateZeroInfoWithAnotherAmmo(distance unit.Distance, ammo Ammunition) Zero
 	}
 }
 
-//Creates zero information using distance, other conditions and other ammunition
+//CreateZeroInfoWithAnotherAmmoAndAtmosphere creates zero information using distance, other conditions and other ammunition
 func CreateZeroInfoWithAnotherAmmoAndAtmosphere(distance unit.Distance, ammo Ammunition, atmosphere Atmosphere) ZeroInfo {
 	return ZeroInfo{
 		hasAmmunition:  true,
@@ -77,10 +77,13 @@ func CreateZeroInfoWithAnotherAmmoAndAtmosphere(distance unit.Distance, ammo Amm
 	}
 }
 
-const Twist_Right byte = 1
-const Twist_Left byte = 2
+//TwistRight is the flag indiciating that the barrel is right-hand twisted
+const TwistRight byte = 1
 
-//The rifling twist information
+//TwistLeft is the flag indiciating that the barrel is left-hand twisted
+const TwistLeft byte = 2
+
+//TwistInfo contains the rifling twist information
 //
 //The rifling twist is used to calculate spin drift only
 type TwistInfo struct {
@@ -88,7 +91,7 @@ type TwistInfo struct {
 	riflingTwist   unit.Distance
 }
 
-//Creates twist
+//CreateTwist creates twist information
 //
 //Direction must be either Twist_Right or Twist_Left constant
 func CreateTwist(direction byte, twist unit.Distance) TwistInfo {
@@ -98,15 +101,17 @@ func CreateTwist(direction byte, twist unit.Distance) TwistInfo {
 	}
 }
 
+//Direction returns the twist direction (see TwistRight and TwistLeft)
 func (v TwistInfo) Direction() byte {
 	return v.twistDirection
 }
 
+//Twist returns the twist step (the distance inside the barrel at which the projectile makes one turn)
 func (v TwistInfo) Twist() unit.Distance {
 	return v.riflingTwist
 }
 
-//The weapon direction
+//Weapon struct contains the weapon description
 type Weapon struct {
 	sightHeight  unit.Distance
 	zeroInfo     ZeroInfo
@@ -115,38 +120,44 @@ type Weapon struct {
 	clickValue   unit.Angular
 }
 
+//SightHeight returns the height of the sight centerline over the barrel centerline
 func (v Weapon) SightHeight() unit.Distance {
 	return v.sightHeight
 }
 
+//Zero returns the zeroing information
 func (v Weapon) Zero() ZeroInfo {
 	return v.zeroInfo
 }
 
+//HasTwist returns the flag indicating whether the rifling twist information is set
 func (v Weapon) HasTwist() bool {
 	return v.hasTwistInfo
 }
 
+//Twist returns the rifling twist information
 func (v Weapon) Twist() TwistInfo {
 	return v.twist
 }
 
+//ClickValue returns the value of one click of the scope
 func (v Weapon) ClickValue() unit.Angular {
 	return v.clickValue
 }
 
+//SetClickValue sets the value of one click of the scope
 func (v *Weapon) SetClickValue(click unit.Angular) {
 	v.clickValue = click
 }
 
-//Create weapon with no twist info
+//CreateWeapon creates the weapon definition with no twist info
 //
 //If no twist info is set, spin drift won't be calculated
 func CreateWeapon(sightHeight unit.Distance, zeroInfo ZeroInfo) Weapon {
 	return Weapon{sightHeight: sightHeight, zeroInfo: zeroInfo, hasTwistInfo: false}
 }
 
-//Create weapon with twist info
+//CreateWeaponWithTwist creates weapon description with twist info
 //
 //If twist info AND bullet dimensions are set, spin drift will be calculated
 func CreateWeaponWithTwist(sightHeight unit.Distance, zeroInfo ZeroInfo, twist TwistInfo) Weapon {

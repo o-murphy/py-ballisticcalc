@@ -7,23 +7,23 @@ import (
 	"github.com/gehtsoft-usa/go_ballisticcalc/bmath/unit"
 )
 
-const cICAO_STANDARD_TEMPERATURE_R float64 = 518.67
-const cICAO_FREEZING_POINT_TEMPERATURE_R float64 = 459.67
-const cTEMPERATURE_GRADIENT float64 = -3.56616e-03
-const cICAO_STANDARD_HUMIDITY float64 = 0.0
-const cPRESSURE_EXPONENT float64 = -5.255876
-const cSOUND_SPEED float64 = 49.0223
-const c_A0 float64 = 1.24871
-const c_A1 float64 = 0.0988438
-const c_A2 float64 = 0.00152907
-const c_A3 float64 = -3.07031e-06
-const c_A4 float64 = 4.21329e-07
-const c_A5 float64 = 3.342e-04
-const cSTANDARD_TEMPERATURE float64 = 59.0
-const cSTANDARD_PRESSURE float64 = 29.92
-const cSTANDARD_DENSITY float64 = 0.076474
+const cIcaoStandardTemperatureR float64 = 518.67
+const cIcaoFreezingPointTemperatureR float64 = 459.67
+const cTemperatureGradient float64 = -3.56616e-03
+const cIcaoStandardHumidity float64 = 0.0
+const cPressureExponent float64 = -5.255876
+const cSpeedOfSound float64 = 49.0223
+const cA0 float64 = 1.24871
+const cA1 float64 = 0.0988438
+const cA2 float64 = 0.00152907
+const cA3 float64 = -3.07031e-06
+const cA4 float64 = 4.21329e-07
+const cA5 float64 = 3.342e-04
+const cStandardTemperature float64 = 59.0
+const cStandardPressure float64 = 29.92
+const cStandardDensity float64 = 0.076474
 
-//The type describes the atmosphere conditions
+//Atmosphere describes the atmosphere conditions
 type Atmosphere struct {
 	altitude    unit.Distance
 	pressure    unit.Pressure
@@ -34,17 +34,17 @@ type Atmosphere struct {
 	mach1       float64
 }
 
-//Creates a default atmosphere used in ballistic calculations
+//CreateDefaultAtmosphere creates a default atmosphere used in ballistic calculations
 func CreateDefaultAtmosphere() Atmosphere {
-	a := Atmosphere{altitude: unit.MustCreateDistance(0, unit.Distance_Foot),
-		pressure:    unit.MustCreatePressure(cSTANDARD_PRESSURE, unit.Pressure_InHg),
-		temperature: unit.MustCreateTemperature(cSTANDARD_TEMPERATURE, unit.Temperature_Fahrenheit),
+	a := Atmosphere{altitude: unit.MustCreateDistance(0, unit.DistanceFoot),
+		pressure:    unit.MustCreatePressure(cStandardPressure, unit.PressureInHg),
+		temperature: unit.MustCreateTemperature(cStandardTemperature, unit.TemperatureFahrenheit),
 		humidity:    0.78}
 	a.calculate()
 	return a
 }
 
-//Creates the exact atmosphere
+//CreateAtmosphere creates the atmosphere with the specified parameter
 func CreateAtmosphere(altitude unit.Distance, pressure unit.Pressure, temperature unit.Temperature, humidity float64) (Atmosphere, error) {
 	if humidity < 0 || humidity > 100 {
 		return CreateDefaultAtmosphere(), fmt.Errorf("Atmosphere : humidity must be in 0..1 or 0..100 range")
@@ -64,24 +64,24 @@ func CreateAtmosphere(altitude unit.Distance, pressure unit.Pressure, temperatur
 
 }
 
-//create default ICAO atmosphere for the specified altitude
+//CreateICAOAtmosphere creates default ICAO atmosphere for the specified altitude
 func CreateICAOAtmosphere(altitude unit.Distance) Atmosphere {
 	temperature := unit.MustCreateTemperature(
-		cICAO_STANDARD_TEMPERATURE_R+
-			altitude.In(unit.Distance_Foot)*cTEMPERATURE_GRADIENT-cICAO_FREEZING_POINT_TEMPERATURE_R,
-		unit.Temperature_Fahrenheit)
+		cIcaoStandardTemperatureR+
+			altitude.In(unit.DistanceFoot)*cTemperatureGradient-cIcaoFreezingPointTemperatureR,
+		unit.TemperatureFahrenheit)
 
 	pressure := unit.MustCreatePressure(
-		cSTANDARD_PRESSURE*
-			math.Pow(cICAO_STANDARD_TEMPERATURE_R/(temperature.In(unit.Temperature_Fahrenheit)+
-				cICAO_FREEZING_POINT_TEMPERATURE_R),
-				cPRESSURE_EXPONENT), unit.Pressure_InHg)
+		cStandardPressure*
+			math.Pow(cIcaoStandardTemperatureR/(temperature.In(unit.TemperatureFahrenheit)+
+				cIcaoFreezingPointTemperatureR),
+				cPressureExponent), unit.PressureInHg)
 
 	a := Atmosphere{
 		altitude:    altitude,
 		temperature: temperature,
 		pressure:    pressure,
-		humidity:    cICAO_STANDARD_HUMIDITY,
+		humidity:    cIcaoStandardHumidity,
 	}
 
 	a.calculate()
@@ -90,22 +90,29 @@ func CreateICAOAtmosphere(altitude unit.Distance) Atmosphere {
 
 }
 
+//Altitude returns the ground level altitude over the sea level
 func (a Atmosphere) Altitude() unit.Distance {
 	return a.altitude
 }
 
+//Temperature returns the temperature at the ground level
 func (a Atmosphere) Temperature() unit.Temperature {
 	return a.temperature
 }
 
+//Pressure returns the pressure at the ground level
 func (a Atmosphere) Pressure() unit.Pressure {
 	return a.pressure
 }
 
+//Humidity returns the relative humidity set in 0 to 1 coefficient
+//
+//multiply this value by 100 to get percents
 func (a Atmosphere) Humidity() float64 {
 	return a.humidity
 }
 
+//HumidityInPercents returns relative humidity in percents (0..100)
 func (a Atmosphere) HumidityInPercents() float64 {
 	return a.humidity * 100
 }
@@ -115,14 +122,15 @@ func (a Atmosphere) String() string {
 		a.altitude, a.pressure, a.temperature, a.humidity*100)
 }
 
-func (a Atmosphere) Density() float64 {
+func (a Atmosphere) getDensity() float64 {
 	return a.density
 }
 
-func (a Atmosphere) DensityFactor() float64 {
-	return a.density / cSTANDARD_DENSITY
+func (a Atmosphere) getDensityFactor() float64 {
+	return a.density / cStandardDensity
 }
 
+//Mach returns the speed of sound at the atmosphere with such parameters
 func (a Atmosphere) Mach() unit.Velocity {
 	return a.mach
 }
@@ -131,49 +139,49 @@ func (a *Atmosphere) calculate0(t, p float64) (float64, float64) {
 	var hc, et, et0, density, mach float64
 
 	if t > 0.0 {
-		et0 = c_A0 + t*(c_A1+t*(c_A2+t*(c_A3+t*c_A4)))
-		et = c_A5 * a.humidity * et0
-		hc = (p - 0.3783*et) / cSTANDARD_PRESSURE
+		et0 = cA0 + t*(cA1+t*(cA2+t*(cA3+t*cA4)))
+		et = cA5 * a.humidity * et0
+		hc = (p - 0.3783*et) / cStandardPressure
 	} else {
 		hc = 1.0
 	}
-	density = cSTANDARD_DENSITY * (cICAO_STANDARD_TEMPERATURE_R / (t + cICAO_FREEZING_POINT_TEMPERATURE_R)) * hc
-	mach = math.Sqrt(t+cICAO_FREEZING_POINT_TEMPERATURE_R) * cSOUND_SPEED
+	density = cStandardDensity * (cIcaoStandardTemperatureR / (t + cIcaoFreezingPointTemperatureR)) * hc
+	mach = math.Sqrt(t+cIcaoFreezingPointTemperatureR) * cSpeedOfSound
 	return density, mach
 
 }
 
 func (a *Atmosphere) calculate() {
 	var t, p, density, mach float64
-	t = a.temperature.In(unit.Temperature_Fahrenheit)
-	p = a.pressure.In(unit.Pressure_InHg)
+	t = a.temperature.In(unit.TemperatureFahrenheit)
+	p = a.pressure.In(unit.PressureInHg)
 
 	density, mach = a.calculate0(t, p)
 
 	a.density = density
 	a.mach1 = mach
-	a.mach = unit.MustCreateVelocity(mach, unit.Velocity_FPS)
+	a.mach = unit.MustCreateVelocity(mach, unit.VelocityFPS)
 }
 
 func (a *Atmosphere) getDensityFactorAndMachForAltitude(altitude float64) (float64, float64) {
 	var t, t0, p, ta, tb, orgAltitude, density, mach float64
 
-	orgAltitude = a.altitude.In(unit.Distance_Foot)
+	orgAltitude = a.altitude.In(unit.DistanceFoot)
 
 	if math.Abs(orgAltitude-altitude) < 30 {
-		density = a.density / cSTANDARD_DENSITY
+		density = a.density / cStandardDensity
 		mach = a.mach1
 		return density, mach
 	}
 
-	t0 = a.temperature.In(unit.Temperature_Fahrenheit)
-	p = a.pressure.In(unit.Pressure_InHg)
+	t0 = a.temperature.In(unit.TemperatureFahrenheit)
+	p = a.pressure.In(unit.PressureInHg)
 
-	ta = cICAO_STANDARD_TEMPERATURE_R + orgAltitude*cTEMPERATURE_GRADIENT - cICAO_FREEZING_POINT_TEMPERATURE_R
-	tb = cICAO_STANDARD_TEMPERATURE_R + altitude*cTEMPERATURE_GRADIENT - cICAO_FREEZING_POINT_TEMPERATURE_R
+	ta = cIcaoStandardTemperatureR + orgAltitude*cTemperatureGradient - cIcaoFreezingPointTemperatureR
+	tb = cIcaoStandardTemperatureR + altitude*cTemperatureGradient - cIcaoFreezingPointTemperatureR
 	t = t0 + ta - tb
-	p = p * math.Pow(t0/t, cPRESSURE_EXPONENT)
+	p = p * math.Pow(t0/t, cPressureExponent)
 
 	density, mach = a.calculate0(t, p)
-	return density / cSTANDARD_DENSITY, mach
+	return density / cStandardDensity, mach
 }

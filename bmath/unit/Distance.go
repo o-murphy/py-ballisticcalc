@@ -2,18 +2,37 @@ package unit
 
 import "fmt"
 
-const Distance_Inch byte = 10
-const Distance_Foot byte = 11
-const Distance_Yard byte = 12
-const Distance_Mile byte = 13
-const Distance_NauticalMile byte = 14
-const Distance_Millimeter byte = 15
-const Distance_Centimeter byte = 16
-const Distance_Meter byte = 17
-const Distance_Kilometer byte = 18
-const Distance_Line byte = 19
+//DistanceInch is the value indicating that the distance value is set in inches
+const DistanceInch byte = 10
 
-//The distance
+//DistanceFoot is the value indicating that the distance value is set in feet
+const DistanceFoot byte = 11
+
+//DistanceYard is the value indicating that the distance value is set in yards
+const DistanceYard byte = 12
+
+//DistanceMile is the value indicating that the distance value is set in miles
+const DistanceMile byte = 13
+
+//DistanceNauticalMile is the value indicating that the distance value is set in nautical miles
+const DistanceNauticalMile byte = 14
+
+//DistanceMillimeter is the value indicating that the distance value is set in millimeters
+const DistanceMillimeter byte = 15
+
+//DistanceCentimeter is the value indicating that the distance value is set in centimeters
+const DistanceCentimeter byte = 16
+
+//DistanceMeter is the value indicating that the distance value is set in meters
+const DistanceMeter byte = 17
+
+//DistanceKilometer is the value indicating that the distance value is set in kilometers
+const DistanceKilometer byte = 18
+
+//DistanceLine is the value indicating that the distance value is set in lines (1/10 of inch)
+const DistanceLine byte = 19
+
+//Distance structure keeps the The distance value
 type Distance struct {
 	value        float64
 	defaultUnits byte
@@ -21,25 +40,25 @@ type Distance struct {
 
 func distanceToDefault(value float64, units byte) (float64, error) {
 	switch units {
-	case Distance_Inch:
+	case DistanceInch:
 		return value, nil
-	case Distance_Foot:
+	case DistanceFoot:
 		return value * 12, nil
-	case Distance_Yard:
+	case DistanceYard:
 		return value * 36, nil
-	case Distance_Mile:
+	case DistanceMile:
 		return value * 63360, nil
-	case Distance_NauticalMile:
+	case DistanceNauticalMile:
 		return value * 72913.3858, nil
-	case Distance_Line:
+	case DistanceLine:
 		return value / 10, nil
-	case Distance_Millimeter:
+	case DistanceMillimeter:
 		return value / 25.4, nil
-	case Distance_Centimeter:
+	case DistanceCentimeter:
 		return value / 2.54, nil
-	case Distance_Meter:
+	case DistanceMeter:
 		return value / 25.4 * 1000, nil
-	case Distance_Kilometer:
+	case DistanceKilometer:
 		return value / 25.4 * 1000000, nil
 	default:
 		return 0, fmt.Errorf("Distance: unit %d is not supported", units)
@@ -49,32 +68,32 @@ func distanceToDefault(value float64, units byte) (float64, error) {
 
 func distanceFromDefault(value float64, units byte) (float64, error) {
 	switch units {
-	case Distance_Inch:
+	case DistanceInch:
 		return value, nil
-	case Distance_Foot:
+	case DistanceFoot:
 		return value / 12, nil
-	case Distance_Yard:
+	case DistanceYard:
 		return value / 36, nil
-	case Distance_Mile:
+	case DistanceMile:
 		return value / 63360, nil
-	case Distance_NauticalMile:
+	case DistanceNauticalMile:
 		return value / 72913.3858, nil
-	case Distance_Line:
+	case DistanceLine:
 		return value * 10, nil
-	case Distance_Millimeter:
+	case DistanceMillimeter:
 		return value * 25.4, nil
-	case Distance_Centimeter:
+	case DistanceCentimeter:
 		return value * 2.54, nil
-	case Distance_Meter:
+	case DistanceMeter:
 		return value * 25.4 / 1000, nil
-	case Distance_Kilometer:
+	case DistanceKilometer:
 		return value * 25.4 / 1000000, nil
 	default:
 		return 0, fmt.Errorf("Distance: unit %d is not supported", units)
 	}
 }
 
-//Creates a distance value.
+//CreateDistance creates a distance value.
 //
 //units are measurement unit and may be any value from
 //unit.Distance_* constants.
@@ -82,11 +101,12 @@ func CreateDistance(value float64, units byte) (Distance, error) {
 	v, err := distanceToDefault(value, units)
 	if err != nil {
 		return Distance{}, err
-	} else {
-		return Distance{value: v, defaultUnits: units}, nil
 	}
+	return Distance{value: v, defaultUnits: units}, nil
+
 }
 
+//MustCreateDistance creates the distance value but panics instead of returned a error
 func MustCreateDistance(value float64, units byte) Distance {
 	v, err := CreateDistance(value, units)
 	if err != nil {
@@ -95,7 +115,7 @@ func MustCreateDistance(value float64, units byte) Distance {
 	return v
 }
 
-//Returns the value of the distance in the specified units.
+//Value returns the value of the distance in the specified units.
 //
 //units are measurement unit and may be any value from
 //unit.Distance_* constants.
@@ -106,7 +126,7 @@ func (v Distance) Value(units byte) (float64, error) {
 	return distanceFromDefault(v.value, units)
 }
 
-//Converts the value into the specified units.
+//Convert converts the value into the specified units.
 //
 //units are measurement unit and may be any value from
 //unit.Distance_* constants.
@@ -114,64 +134,64 @@ func (v Distance) Convert(units byte) Distance {
 	return Distance{value: v.value, defaultUnits: units}
 }
 
-//Convert the value in the specified units.
+//In converts the value in the specified units.
 //Returns 0 if unit conversion is not possible.
 func (v Distance) In(units byte) float64 {
 	x, e := distanceFromDefault(v.value, units)
 	if e != nil {
 		return 0
-	} else {
-		return x
 	}
+	return x
 }
 
 func (v Distance) String() string {
 	x, e := distanceFromDefault(v.value, v.defaultUnits)
 	if e != nil {
 		return "!error: default units aren't correct"
-	} else {
-		var unitName, format string
-		var accuracy int
-		switch v.defaultUnits {
-		case Distance_Inch:
-			unitName = "\""
-			accuracy = 1
-		case Distance_Foot:
-			unitName = "'"
-			accuracy = 2
-		case Distance_Yard:
-			unitName = "yd"
-			accuracy = 3
-		case Distance_Mile:
-			unitName = "mi"
-			accuracy = 3
-		case Distance_NauticalMile:
-			unitName = "nm"
-			accuracy = 3
-		case Distance_Line:
-			unitName = "ln"
-			accuracy = 1
-		case Distance_Millimeter:
-			unitName = "mm"
-			accuracy = 0
-		case Distance_Centimeter:
-			unitName = "cm"
-			accuracy = 1
-		case Distance_Meter:
-			unitName = "m"
-			accuracy = 2
-		case Distance_Kilometer:
-			unitName = "km"
-			accuracy = 3
-		default:
-			unitName = "?"
-			accuracy = 6
-		}
-		format = fmt.Sprintf("%%.%df%%s", accuracy)
-		return fmt.Sprintf(format, x, unitName)
 	}
+	var unitName, format string
+	var accuracy int
+	switch v.defaultUnits {
+	case DistanceInch:
+		unitName = "\""
+		accuracy = 1
+	case DistanceFoot:
+		unitName = "'"
+		accuracy = 2
+	case DistanceYard:
+		unitName = "yd"
+		accuracy = 3
+	case DistanceMile:
+		unitName = "mi"
+		accuracy = 3
+	case DistanceNauticalMile:
+		unitName = "nm"
+		accuracy = 3
+	case DistanceLine:
+		unitName = "ln"
+		accuracy = 1
+	case DistanceMillimeter:
+		unitName = "mm"
+		accuracy = 0
+	case DistanceCentimeter:
+		unitName = "cm"
+		accuracy = 1
+	case DistanceMeter:
+		unitName = "m"
+		accuracy = 2
+	case DistanceKilometer:
+		unitName = "km"
+		accuracy = 3
+	default:
+		unitName = "?"
+		accuracy = 6
+	}
+	format = fmt.Sprintf("%%.%df%%s", accuracy)
+	return fmt.Sprintf(format, x, unitName)
+
 }
 
+//Units return the units in which the value is measured
 func (v Distance) Units() byte {
 	return v.defaultUnits
 }

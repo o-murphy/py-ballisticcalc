@@ -2,26 +2,37 @@ package unit
 
 import "fmt"
 
-const Weight_Grain byte = 70
-const Weight_Ounce byte = 71
-const Weight_Gram byte = 72
-const Weight_Pound byte = 73
-const Weight_Kilogram byte = 74
-const Weight_Newton byte = 75
+//WeightGrain is the value indicating that weight value is expressed in grains
+const WeightGrain byte = 70
+
+//WeightOunce is the value indicating that weight value is expressed in ounces
+const WeightOunce byte = 71
+
+//WeightGram is the value indicating that weight value is expressed in grams
+const WeightGram byte = 72
+
+//WeightPound is the value indicating that weight value is expressed in pounds
+const WeightPound byte = 73
+
+//WeightKilogram is the value indicating that weight value is expressed in kilograms
+const WeightKilogram byte = 74
+
+//WeightNewton is the value indicating that weight value is expressed in newtons of power
+const WeightNewton byte = 75
 
 func weightToDefault(value float64, units byte) (float64, error) {
 	switch units {
-	case Weight_Grain:
+	case WeightGrain:
 		return value, nil
-	case Weight_Gram:
+	case WeightGram:
 		return value * 15.4323584, nil
-	case Weight_Kilogram:
+	case WeightKilogram:
 		return value * 15432.3584, nil
-	case Weight_Newton:
+	case WeightNewton:
 		return value * 151339.73750336, nil
-	case Weight_Pound:
+	case WeightPound:
 		return value / 0.000142857143, nil
-	case Weight_Ounce:
+	case WeightOunce:
 		return value * 437.5, nil
 	default:
 		return 0, fmt.Errorf("Weight: unit %d is not supported", units)
@@ -31,17 +42,17 @@ func weightToDefault(value float64, units byte) (float64, error) {
 
 func weightFromDefault(value float64, units byte) (float64, error) {
 	switch units {
-	case Weight_Grain:
+	case WeightGrain:
 		return value, nil
-	case Weight_Gram:
+	case WeightGram:
 		return value / 15.4323584, nil
-	case Weight_Kilogram:
+	case WeightKilogram:
 		return value / 15432.3584, nil
-	case Weight_Newton:
+	case WeightNewton:
 		return value / 151339.73750336, nil
-	case Weight_Pound:
+	case WeightPound:
 		return value * 0.000142857143, nil
-	case Weight_Ounce:
+	case WeightOunce:
 		return value / 437.5, nil
 	default:
 		return 0, fmt.Errorf("Weight: unit %d is not supported", units)
@@ -49,13 +60,13 @@ func weightFromDefault(value float64, units byte) (float64, error) {
 	}
 }
 
-//The weight
+//Weight structure keeps data about weight
 type Weight struct {
 	value        float64
 	defaultUnits byte
 }
 
-//Creates a weight value.
+//CreateWeight creates a weight value.
 //
 //units are measurement unit and may be any value from
 //unit.Weight_* constants.
@@ -63,11 +74,12 @@ func CreateWeight(value float64, units byte) (Weight, error) {
 	v, err := weightToDefault(value, units)
 	if err != nil {
 		return Weight{}, err
-	} else {
-		return Weight{value: v, defaultUnits: units}, nil
 	}
+	return Weight{value: v, defaultUnits: units}, nil
+
 }
 
+//MustCreateWeight creates the weight value but panics instead of return error
 func MustCreateWeight(value float64, units byte) Weight {
 	v, err := CreateWeight(value, units)
 	if err != nil {
@@ -76,7 +88,7 @@ func MustCreateWeight(value float64, units byte) Weight {
 	return v
 }
 
-//Returns the value of the weight in the specified units.
+//Value returns the value of the weight in the specified units.
 //
 //units are measurement unit and may be any value from
 //unit.Weight_* constants.
@@ -87,7 +99,7 @@ func (v Weight) Value(units byte) (float64, error) {
 	return weightFromDefault(v.value, units)
 }
 
-//Converts the value into the specified units.
+//Convert returns the value into the specified units.
 //
 //units are measurement unit and may be any value from
 //unit.Weight_* constants.
@@ -95,52 +107,53 @@ func (v Weight) Convert(units byte) Weight {
 	return Weight{value: v.value, defaultUnits: units}
 }
 
-//Convert the value in the specified units.
+//In converts the value in the specified units.
 //Returns 0 if unit conversion is not possible.
 func (v Weight) In(units byte) float64 {
 	x, e := weightFromDefault(v.value, units)
 	if e != nil {
 		return 0
-	} else {
-		return x
 	}
+	return x
+
 }
 
 func (v Weight) String() string {
 	x, e := weightFromDefault(v.value, v.defaultUnits)
 	if e != nil {
 		return "!error: default units aren't correct"
-	} else {
-		var unitName, format string
-		var accuracy int
-		switch v.defaultUnits {
-		case Weight_Grain:
-			unitName = "gr"
-			accuracy = 0
-		case Weight_Gram:
-			unitName = "g"
-			accuracy = 1
-		case Weight_Kilogram:
-			unitName = "kg"
-			accuracy = 3
-		case Weight_Newton:
-			unitName = "N"
-			accuracy = 3
-		case Weight_Pound:
-			unitName = "lb"
-			accuracy = 3
-		case Weight_Ounce:
-			unitName = "oz"
-			accuracy = 1
-		default:
-			unitName = "?"
-			accuracy = 6
-		}
-		format = fmt.Sprintf("%%.%df%%s", accuracy)
-		return fmt.Sprintf(format, x, unitName)
 	}
+	var unitName, format string
+	var accuracy int
+	switch v.defaultUnits {
+	case WeightGrain:
+		unitName = "gr"
+		accuracy = 0
+	case WeightGram:
+		unitName = "g"
+		accuracy = 1
+	case WeightKilogram:
+		unitName = "kg"
+		accuracy = 3
+	case WeightNewton:
+		unitName = "N"
+		accuracy = 3
+	case WeightPound:
+		unitName = "lb"
+		accuracy = 3
+	case WeightOunce:
+		unitName = "oz"
+		accuracy = 1
+	default:
+		unitName = "?"
+		accuracy = 6
+	}
+	format = fmt.Sprintf("%%.%df%%s", accuracy)
+	return fmt.Sprintf(format, x, unitName)
+
 }
 
+//Units return the units in which the value is measured
 func (v Weight) Units() byte {
 	return v.defaultUnits
 }
