@@ -12,9 +12,11 @@ and then ported to Go.
 The code is provided under LGPL license so you CAN use it in any application, however you 
 need to credit JBM, Brian Litz, Alexandre Trofimov and Gehtsoft USA in your product.
 
+The online version of Go documentation is located here: https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc
+
 C# version of the package is located here: https://github.com/gehtsoft-usa/BallisticCalculator
 
-The online version of C# API documentation is located https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html
+The online version of C# API documentation is located here: https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html
 
 Go documentation can be obtained using godoc tool.
 
