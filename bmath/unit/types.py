@@ -1,4 +1,5 @@
 class UnitsConvertor(object):
+    """ Basic convertor class, needs _units dict """
     unit_type = 'unit'
 
     _units = {}
@@ -21,6 +22,7 @@ class UnitsConvertor(object):
 
 
 class Units(object):
+    """ Basic units class, store units and value """
     convertor = UnitsConvertor
 
     def __init__(self, value: float = None, units: int = None):
