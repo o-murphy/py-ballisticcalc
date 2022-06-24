@@ -2,9 +2,9 @@ from bmath.unit.types import UnitsConvertor, Units
 
 
 class TemperatureConvertor(UnitsConvertor):
-    _unit_type = 'temperature'
+    unit_type = 'temperature'
 
-    # the value indicating that weight value is expressed in some unit
+    # the value indicating that temperature value is expressed in some unit
     TemperatureFahrenheit = 70
     TemperatureCelsius = 71
     TemperatureKelvin = 72
