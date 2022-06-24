@@ -8,10 +8,10 @@ class EnergyConvertor(UnitsConvertor):
     EnergyJoule = 31
 
     _units = {
-        EnergyFootPound: {'name': 'mmHg', 'accuracy': 0,
+        EnergyFootPound: {'name': 'ft*lb', 'accuracy': 0,
                           'to': lambda v: v,
                           'from': lambda v: v},
-        EnergyJoule: {'name': 'mmHg', 'accuracy': 0,
+        EnergyJoule: {'name': 'J', 'accuracy': 0,
                       'to': lambda v: v / 0.737562149277,
                       'from': lambda v: v * 0.737562149277}
     }
