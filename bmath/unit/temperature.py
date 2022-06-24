@@ -32,29 +32,3 @@ class Temperature(Units):
 
     def __init__(self, value: float, units: int):
         super(Temperature, self).__init__(value, units)
-
-    @staticmethod
-    def convert_in(temperature: 'Temperature', units: int) -> [float, Exception]:
-        """
-        Converts the value in the specified units.
-        Returns 0 if unit conversion is not possible.
-        :param temperature: Temperature
-        :param units: TemperatureUnits.consts
-        :return: float
-        """
-        v, err = TemperatureConvertor().from_default(temperature.v, units)
-        if err:
-            return 0
-        return v
-
-    @property
-    def v(self):
-        return self._value
-
-    @property
-    def default_units(self):
-        return self._default_units
-
-
-if __name__ == '__main__':
-    pass

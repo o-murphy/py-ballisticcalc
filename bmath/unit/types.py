@@ -1,5 +1,5 @@
 class UnitsConvertor(object):
-    _unit_type = 'unit'
+    unit_type = 'unit'
     _units = {}
 
     # return the units in which the value is measured
@@ -10,13 +10,13 @@ class UnitsConvertor(object):
         try:
             return self._units[units]['to'](value), None
         except KeyError as error:
-            return 0, f'KeyError: {self._unit_type}: unit {error} is not supported'
+            return 0, f'KeyError: {self.unit_type}: unit {error} is not supported'
 
     def from_default(self, value: float, units: int) -> [float, Exception]:
         try:
             return self._units[units]['from'](value), None
         except KeyError as error:
-            return 0, f'KeyError: {self._unit_type}: unit {error} is not supported'
+            return 0, f'KeyError: {self.unit_type}: unit {error} is not supported'
 
 
 class Units(object):
@@ -40,7 +40,7 @@ class Units(object):
     def __str__(self):
         v, err = self.convertor().from_default(self.v, self.default_units)
         if err:
-            return f'Temperature: unit {self.default_units} is not supported'
+            return f'{self.convertor().unit_type}: unit {self.default_units} is not supported'
         multiplier, name, accuracy = self.convertor()(self.default_units)
         return f'{round(v, accuracy)} {name}'
 
@@ -65,7 +65,7 @@ class Units(object):
         """
         return self.convertor().from_default(value.v, units)
 
-    def convert(self, value: 'Units', units: int) -> 'Temperature':
+    def convert(self, value: 'Units', units: int) -> 'Units':
         """
         Returns the value into the specified units
         :param value: Units
@@ -73,3 +73,24 @@ class Units(object):
         :return: Units object in the specified units
         """
         return self.__class__(value.v, units)
+
+    def convert_in(self, value: 'Units', units: int) -> [float, Exception]:
+        """
+        Converts the value in the specified units.
+        Returns 0 if unit conversion is not possible.
+        :param value: Units
+        :param units: Units consts
+        :return: float
+        """
+        v, err = self.convertor().from_default(value.v, units)
+        if err:
+            return 0
+        return v
+
+    @property
+    def v(self):
+        return self._value
+
+    @property
+    def default_units(self):
+        return self._default_units
