@@ -1,5 +1,7 @@
-class WeightUnits:
+from bmath.unit.types import UnitsConvertor
 
+
+class WeightConvertor(UnitsConvertor):
     _unit_type = 'weight'
 
     # the value indicating that weight value is expressed in some unit
@@ -11,33 +13,25 @@ class WeightUnits:
     WeightNewton = 75
 
     _units = {
-        WeightGrain: {'multiplier': 1, 'name': 'grn', 'accuracy': 0},
-        WeightGram: {'multiplier': 15.4323584, 'name': 'grn', 'accuracy': 1},
-        WeightKilogram: {'multiplier': 15432.3584, 'name': 'grn', 'accuracy': 3},
-        WeightNewton: {'multiplier': 151339.73750336, 'name': 'grn', 'accuracy': 3},
-        WeightPound: {'multiplier': 1 / 0.000142857143, 'name': 'grn', 'accuracy': 3},
-        WeightOunce: {'multiplier': 437.5, 'name': 'grn', 'accuracy': 1},
+        WeightGrain: {'name': 'grn', 'accuracy': 0,
+                      'to': lambda v: v,
+                      'from': lambda v: v},
+        WeightGram: {'name': 'grn', 'accuracy': 1,
+                     'to': lambda v: v * 15.4323584,
+                     'from': lambda v: v / 15.4323584},
+        WeightKilogram: {'name': 'grn', 'accuracy': 3,
+                         'to': lambda v: v * 15432.3584,
+                         'from': lambda v: v / 15432.3584},
+        WeightNewton: {'name': 'grn', 'accuracy': 3,
+                       'to': lambda v: v * 151339.73750336,
+                       'from': lambda v: v / 151339.73750336},
+        WeightPound: {'name': 'grn', 'accuracy': 3,
+                      'to': lambda v: v / 0.000142857143,
+                      'from': lambda v: v * 0.000142857143},
+        WeightOunce: {'name': 'grn', 'accuracy': 1,
+                      'to': lambda v: v * 437.5,
+                      'from': lambda v: v / 437.5},
     }
-
-    # return the units in which the value is measured
-    def __call__(self, units):
-        return self._units[units]
-
-    @staticmethod
-    def to_default(value: float, units: int) -> [float, Exception]:
-        try:
-            multiplier = WeightUnits()(units)['multiplier']
-            return value * multiplier, None
-        except KeyError as error:
-            return 0, f'KeyError: {WeightUnits._unit_type}: unit {error} is not supported'
-
-    @staticmethod
-    def from_default(value: float, units: int) -> [float, Exception]:
-        try:
-            multiplier = WeightUnits()(units)['multiplier']
-            return value / multiplier, None
-        except KeyError as error:
-            return 0, f'KeyError: {WeightUnits._unit_type}: unit {error} is not supported'
 
 
 class Weight(object):
@@ -47,9 +41,9 @@ class Weight(object):
         """
         Creates a weight value
         :param value: weight value
-        :param units: WeightUnits.consts
+        :param units: WeightConvertor.consts
         """
-        v, err = WeightUnits.to_default(value, units)
+        v, err = WeightConvertor().to_default(value, units)
         if err:
             self._value = None
             self._defaultUnits = None
@@ -59,10 +53,10 @@ class Weight(object):
         self.error = err
 
     def __str__(self):
-        v, err = WeightUnits.from_default(self.v, self.default_units)
+        v, err = WeightConvertor().from_default(self.v, self.default_units)
         if err:
             return f'Weight: unit {self.default_units} is not supported'
-        multiplier, name, accuracy = WeightUnits()(self.default_units)
+        multiplier, name, accuracy = WeightConvertor()(self.default_units)
         return f'{round(v, accuracy)} {name}'
 
     @staticmethod
@@ -70,30 +64,30 @@ class Weight(object):
         """
         Returns the weight value but panics instead of return error
         :param value: weight value
-        :param units: WeightUnits.consts
+        :param units: WeightConvertor.consts
         :return: None
         """
-        v, err = WeightUnits.to_default(value, units)
+        v, err = WeightConvertor().to_default(value, units)
         if err:
             raise ValueError(f'Weight: unit {units} is not supported')
         else:
             return v
 
     @staticmethod
-    def value(w: 'Weight', units: int) -> [float, Exception]:
+    def value(weight: 'Weight', units: int) -> [float, Exception]:
         """
-        :param w: Weight
-        :param units: WeightUnits.consts
+        :param weight: Weight
+        :param units: WeightConvertor.consts
         :return: Value of the weight in the specified units
         """
-        return WeightUnits.from_default(w.v, units)
+        return WeightConvertor().from_default(weight.v, units)
 
     @staticmethod
     def convert(weight: 'Weight', units: int) -> 'Weight':
         """
         Returns the value into the specified units
         :param weight: Weight
-        :param units: WeightUnits.consts
+        :param units: WeightConvertor.consts
         :return: Weight object in the specified units
         """
         return Weight(weight.v, units)
@@ -104,10 +98,10 @@ class Weight(object):
         Converts the value in the specified units.
         Returns 0 if unit conversion is not possible.
         :param weight: Weight
-        :param units: WeightUnits.consts
+        :param units: WeightConvertor.consts
         :return: float
         """
-        v, err = WeightUnits.from_default(weight.v, units)
+        v, err = WeightConvertor().from_default(weight.v, units)
         if err:
             return 0
         return v
@@ -122,15 +116,14 @@ class Weight(object):
 
     # not needed yet because of Unit.__call__ method that returns units which the value is measured
     #
-    #     func (v Weight) WeightUnits() byte {
+    #     func (v Weight) WeightConvertor() byte {
     #         return v.defaultUnits
     # }
 
 
 if __name__ == '__main__':
+    w = Weight(90, WeightConvertor.WeightGrain)  # 90 grain
+    print(w.v, w.default_units)
+    print(w)
 
-    weight = Weight(90, WeightUnits.WeightGrain)  # 90 grain
-    print(weight.v, weight.default_units)
-    print(weight)
-
-    weight = Weight(90, 80)  # returns error
+    w = Weight(90, 80)  # returns error

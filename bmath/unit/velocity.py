@@ -1,5 +1,7 @@
-class VelocityUnits:
+from bmath.unit.types import UnitsConvertor
 
+
+class VelocityConvertor(UnitConvertor):
     _unit_type = 'velocity'
 
     # the value indicating that weight value is expressed in some unit
@@ -10,32 +12,22 @@ class VelocityUnits:
     VelocityKT = 74
 
     _units = {
-        VelocityMPS: {'multiplier': 1 / 1, 'name': 'm/s', 'accuracy': 0},
-        VelocityKMH: {'multiplier': 1 / 3.6, 'name': 'km/h', 'accuracy': 1},
-        VelocityFPS: {'multiplier': 1 / 3.2808399, 'name': 'ft/s', 'accuracy': 1},
-        VelocityMPH: {'multiplier': 1 / 2.23693629, 'name': 'mph', 'accuracy': 1},
-        VelocityKT: {'multiplier': 1 / 1.94384449, 'name': 'kt', 'accuracy': 1},
+        VelocityMPS: {'name': 'm/s', 'accuracy': 0,
+                      'to': lambda v: v,
+                      'from': lambda v: v},
+        VelocityKMH: {'name': 'km/h', 'accuracy': 1,
+                      'to': lambda v: v / 3.6,
+                      'from': lambda v: v * 3.6},
+        VelocityFPS: {'name': 'ft/s', 'accuracy': 1,
+                      'to': lambda v: v / 3.2808399,
+                      'from': lambda v: v * 3.2808399},
+        VelocityMPH: {'name': 'mph', 'accuracy': 1,
+                      'to': lambda v: v / 2.23693629,
+                      'from': lambda v: v * 2.23693629},
+        VelocityKT: {'name': 'kt', 'accuracy': 1,
+                     'to': lambda v: v / 1.94384449,
+                     'from': lambda v: v * 1.94384449},
     }
-
-    # return the units in which the value is measured
-    def __call__(self, units):
-        return self._units[units]
-
-    @staticmethod
-    def to_default(value: float, units: int) -> [float, Exception]:
-        try:
-            multiplier = VelocityUnits()(units)['multiplier']
-            return value * multiplier, None
-        except KeyError as error:
-            return 0, f'KeyError: {VelocityUnits._unit_type}: unit {error} is not supported'
-
-    @staticmethod
-    def from_default(value: float, units: int) -> [float, Exception]:
-        try:
-            multiplier = VelocityUnits()(units)['multiplier']
-            return value / multiplier, None
-        except KeyError as error:
-            return 0, f'KeyError: {VelocityUnits()._unit_type}: unit {error} is not supported'
 
 
 class Velocity(object):
@@ -47,7 +39,7 @@ class Velocity(object):
         :param value: velocity value
         :param units: TemperatureUnits.consts
         """
-        v, err = VelocityUnits.to_default(value, units)
+        v, err = VelocityConvertor().to_default(value, units)
         if err:
             self._value = None
             self._defaultUnits = None
@@ -57,10 +49,10 @@ class Velocity(object):
         self.error = err
 
     def __str__(self):
-        v, err = VelocityUnits.from_default(self.v, self.default_units)
+        v, err = VelocityConvertor().from_default(self.v, self.default_units)
         if err:
             return f'Velocity: unit {self.default_units} is not supported'
-        multiplier, name, accuracy = VelocityUnits()(self.default_units)
+        multiplier, name, accuracy = VelocityConvertor()(self.default_units)
         return f'{round(v, accuracy)} {name}'
 
     @staticmethod
@@ -71,7 +63,7 @@ class Velocity(object):
         :param units: TemperatureUnits.consts
         :return: None
         """
-        v, err = VelocityUnits.to_default(value, units)
+        v, err = VelocityConvertor().to_default(value, units)
         if err:
             raise ValueError(f'Velocity: unit {units} is not supported')
         else:
@@ -84,7 +76,7 @@ class Velocity(object):
         :param units: TemperatureUnits.consts
         :return: Value of the velocity in the specified units
         """
-        return VelocityUnits.from_default(velocity.v, units)
+        return VelocityConvertor().from_default(velocity.v, units)
 
     @staticmethod
     def convert(velocity: 'Velocity', units: int) -> 'Velocity':
@@ -105,7 +97,7 @@ class Velocity(object):
         :param units: TemperatureUnits.consts
         :return: float
         """
-        v, err = VelocityUnits.from_default(velocity.v, units)
+        v, err = VelocityConvertor().from_default(velocity.v, units)
         if err:
             return 0
         return v
