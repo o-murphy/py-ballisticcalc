@@ -132,23 +132,20 @@ class Atmosphere(object):
         density, mach = self.calculate0(t, p)
         return density / cStandardDensity, mach
 
-#
-# class ICAOAtmosphere(Atmosphere):
-#     def __init__(self, altitude: unit.Distance):
-#         temperature = unit.Temperature(
-#             cIcaoStandardTemperatureR + altitude.get_in(
-#                 unit.DistanceFoot
-#             ) * cTemperatureGradient - cIcaoFreezingPointTemperatureR, unit.TemperatureFahrenheit
-#         ).must_create()
-#
-#         pressure = unit.Pressure().must_create(
-#             cStandardPressure * (
-#                 (cIcaoStandardTemperatureR / (temperature.get(unit.TemperatureFahrenheit) +
-#                                                                       cIcaoFreezingPointTemperatureR),
-#                                          cPressureExponent)) ** unit.PressureInHg)
-#
-#         super().__init__(altitude, pressure, temperature, humidity)
-#
-#     def CreateICAOAtmosphere(altitude: unit.Distance):
-#         """TODO:"""
-#         return
+
+class ICAOAtmosphere(Atmosphere):
+    def __init__(self, altitude: unit.Distance):
+        temperature = unit.Temperature(
+            cIcaoStandardTemperatureR + altitude.get_in(
+                unit.DistanceFoot
+            ) * cTemperatureGradient - cIcaoFreezingPointTemperatureR, unit.TemperatureFahrenheit
+        ).must_create()
+
+        pressure = unit.Pressure(cStandardPressure * (
+                (cIcaoStandardTemperatureR / (
+                        temperature.get_in(unit.TemperatureFahrenheit) + cIcaoFreezingPointTemperatureR
+                )) ** cPressureExponent),
+            unit.PressureInHg
+        ).must_create()
+
+        super().__init__(altitude, pressure, temperature, cIcaoStandardHumidity)

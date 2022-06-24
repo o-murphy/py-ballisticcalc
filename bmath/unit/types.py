@@ -45,7 +45,6 @@ class Units(object):
         multiplier, name, accuracy = self.convertor()(self.default_units)
         return f'{round(v, accuracy)} {name}'
 
-    # def must_create(self, value: float, units: int) -> 'Units':
     def must_create(self) -> 'Units':
         """
         Returns the temperature value but panics instead of return error
