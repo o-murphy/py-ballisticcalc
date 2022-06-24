@@ -5,7 +5,7 @@ class ShotParameters(object):
     def __init__(self, sight_angle: unit.Angular, maximum_distance: unit.Distance, step: unit.Distance):
         """
         Creates parameters of the shot
-        :param sight_angle: the angle between scope centerline and the barrel centerline
+        :param sight_angle: the angle between scope center line and the barrel center line
         :param maximum_distance:
         :param step:
         """

@@ -13,20 +13,20 @@ class PressureConvertor(UnitsConvertor):
 
     _units = {
         PressureMmHg: {'name': 'mmHg', 'accuracy': 0,
-                          'to': lambda v: v,
-                          'from': lambda v: v},
+                       'to': lambda v: v,
+                       'from': lambda v: v},
         PressureInHg: {'name': 'inHg', 'accuracy': 2,
-                          'to': lambda v: v * 25.4,
-                          'from': lambda v: v / 25.4},
+                       'to': lambda v: v * 25.4,
+                       'from': lambda v: v / 25.4},
         PressureBar: {'name': 'bar', 'accuracy': 2,
-                         'to': lambda v: v * 750.061683,
-                         'from': lambda v: v / 750.061683},
+                      'to': lambda v: v * 750.061683,
+                      'from': lambda v: v / 750.061683},
         PressureHP: {'name': 'hPa', 'accuracy': 4,
-                        'to': lambda v: v * 750.061683 / 1000,
-                        'from': lambda v: v / 750.061683 * 1000},
+                     'to': lambda v: v * 750.061683 / 1000,
+                     'from': lambda v: v / 750.061683 * 1000},
         PressurePSI: {'name': 'psi', 'accuracy': 4,
-                         'to': lambda v: v * 51.714924102396,
-                         'from': lambda v: v / 51.714924102396}
+                      'to': lambda v: v * 51.714924102396,
+                      'from': lambda v: v / 51.714924102396}
     }
 
 

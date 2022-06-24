@@ -50,8 +50,6 @@ class Units(object):
     def must_create(self) -> 'Units':
         """
         Returns the temperature value but panics instead of return error
-        :param value: temperature value
-        :param units: Unit consts
         :return: None
         """
         err = self.error
