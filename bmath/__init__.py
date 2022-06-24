@@ -1,2 +1,2 @@
 from .vector import Vector
-from .unit import Weight
+from .unit import Weight, Velocity, Temperature
