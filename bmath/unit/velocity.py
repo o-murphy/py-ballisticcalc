@@ -1,15 +1,15 @@
 from bmath.unit.types import UnitsConvertor, Units
 
+# the value indicating that velocity value is expressed in some unit
+VelocityMPS = 70
+VelocityKMH = 71
+VelocityFPS = 72
+VelocityMPH = 73
+VelocityKT = 74
+
 
 class VelocityConvertor(UnitsConvertor):
     unit_type = 'velocity'
-
-    # the value indicating that velocity value is expressed in some unit
-    VelocityMPS = 70
-    VelocityKMH = 71
-    VelocityFPS = 72
-    VelocityMPH = 73
-    VelocityKT = 74
 
     _units = {
         VelocityMPS: {'name': 'm/s', 'accuracy': 0,
@@ -33,6 +33,3 @@ class VelocityConvertor(UnitsConvertor):
 class Velocity(Units):
     """ Velocity object keeps velocity or speed values """
     convertor = VelocityConvertor
-
-    def __init__(self, value: float, units: int):
-        super(Velocity, self).__init__(value, units)

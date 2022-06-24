@@ -1,19 +1,20 @@
 from bmath.unit.types import UnitsConvertor, Units
 
+# the value indicating that distance value is expressed in some unit
+DistanceInch = 10
+DistanceFoot = 11
+DistanceYard = 12
+DistanceMile = 13
+DistanceNauticalMile = 14
+DistanceMillimeter = 15
+DistanceCentimeter = 16
+DistanceMeter = 17
+DistanceKilometer = 18
+DistanceLine = 19
+
 
 class DistanceConvertor(UnitsConvertor):
     unit_type = 'distance'
-
-    DistanceInch = 10
-    DistanceFoot = 11
-    DistanceYard = 12
-    DistanceMile = 13
-    DistanceNauticalMile = 14
-    DistanceMillimeter = 15
-    DistanceCentimeter = 16
-    DistanceMeter = 17
-    DistanceKilometer = 18
-    DistanceLine = 19
 
     _units = {
         DistanceInch: {'name': 'in', 'accuracy': 1,
@@ -52,6 +53,3 @@ class DistanceConvertor(UnitsConvertor):
 class Distance(Units):
     """ Distance structure keeps the The distance value """
     convertor = DistanceConvertor
-
-    def __init__(self, value: float, units: int):
-        super(Distance, self).__init__(value, units)

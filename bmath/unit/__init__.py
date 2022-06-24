@@ -1,7 +1,7 @@
-from .weight import Weight, WeightConvertor
-from .velocity import Velocity, VelocityConvertor
-from .temperature import Temperature, TemperatureConvertor
-from .pressure import Pressure, PressureConvertor
-from .energy import Energy, EnergyConvertor
-from .distance import Distance, DistanceConvertor
-from .angular import Angular, AngularConvertor
+from .weight import *
+from .velocity import *
+from .temperature import *
+from .pressure import *
+from .energy import *
+from .distance import *
+from .angular import *

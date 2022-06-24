@@ -1,18 +1,19 @@
 import math
 from bmath.unit.types import UnitsConvertor, Units
 
+# the value indicating that angular value is expressed in some unit
+AngularRadian = 0
+AngularDegree = 1
+AngularMOA = 2
+AngularMil = 3
+AngularMRad = 4
+AngularThousand = 5
+AngularInchesPer100Yd = 6
+AngularCmPer100M = 7
+
 
 class AngularConvertor(UnitsConvertor):
     unit_type = 'angular'
-
-    AngularRadian = 0
-    AngularDegree = 1
-    AngularMOA = 2
-    AngularMil = 3
-    AngularMRad = 4
-    AngularThousand = 5
-    AngularInchesPer100Yd = 6
-    AngularCmPer100M = 7
 
     _units = {
         AngularRadian: {'name': 'rad', 'accuracy': 6,

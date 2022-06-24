@@ -23,7 +23,7 @@ class UnitsConvertor(object):
 class Units(object):
     convertor = UnitsConvertor
 
-    def __init__(self, value: float, units: int):
+    def __init__(self, value: float = None, units: int = None):
         f"""
         Creates a units value
         :param value: units value

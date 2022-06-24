@@ -1,16 +1,16 @@
 from bmath.unit.types import UnitsConvertor, Units
 
+# the value indicating that weight value is expressed in some unit
+WeightGrain = 70
+WeightOunce = 71
+WeightGram = 72
+WeightPound = 73
+WeightKilogram = 74
+WeightNewton = 75
+
 
 class WeightConvertor(UnitsConvertor):
     unit_type = 'weight'
-
-    # the value indicating that weight value is expressed in some unit
-    WeightGrain = 70
-    WeightOunce = 71
-    WeightGram = 72
-    WeightPound = 73
-    WeightKilogram = 74
-    WeightNewton = 75
 
     _units = {
         WeightGrain: {'name': 'grn', 'accuracy': 0,
@@ -37,6 +37,3 @@ class WeightConvertor(UnitsConvertor):
 class Weight(Units):
     """ Weight object keeps data about weight """
     convertor = WeightConvertor
-
-    def __init__(self, value: float, units: int):
-        super(Weight, self).__init__(value, units)

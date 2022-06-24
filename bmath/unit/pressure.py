@@ -1,15 +1,15 @@
 from bmath.unit.types import UnitsConvertor, Units
 
+# the value indicating that pressure value is expressed in some unit
+UniPressureMmHg = 40
+UniPressureInHg = 41
+UniPressureBar = 42
+UniPressureHP = 43
+UniPressurePSI = 44
+
 
 class PressureConvertor(UnitsConvertor):
     unit_type = 'pressure'
-
-    # the value indicating that pressure value is expressed in some unit
-    UniPressureMmHg = 40
-    UniPressureInHg = 41
-    UniPressureBar = 42
-    UniPressureHP = 43
-    UniPressurePSI = 44
 
     _units = {
         UniPressureMmHg: {'name': 'mmHg', 'accuracy': 0,
@@ -33,6 +33,3 @@ class PressureConvertor(UnitsConvertor):
 class Pressure(Units):
     """ Pressure object keeps velocity or speed values """
     convertor = PressureConvertor
-
-    def __init__(self, value: float, units: int):
-        super(Pressure, self).__init__(value, units)

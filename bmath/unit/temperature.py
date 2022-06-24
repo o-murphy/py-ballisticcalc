@@ -1,14 +1,14 @@
 from bmath.unit.types import UnitsConvertor, Units
 
+# the value indicating that temperature value is expressed in some unit
+TemperatureFahrenheit = 70
+TemperatureCelsius = 71
+TemperatureKelvin = 72
+TemperatureRankin = 73
+
 
 class TemperatureConvertor(UnitsConvertor):
     unit_type = 'temperature'
-
-    # the value indicating that temperature value is expressed in some unit
-    TemperatureFahrenheit = 70
-    TemperatureCelsius = 71
-    TemperatureKelvin = 72
-    TemperatureRankin = 73
 
     _units = {
         TemperatureFahrenheit: {'name': 'm/s', 'accuracy': 1,
@@ -29,6 +29,3 @@ class TemperatureConvertor(UnitsConvertor):
 class Temperature(Units):
     """ Temperature object keeps temperature or speed values """
     convertor = TemperatureConvertor
-
-    def __init__(self, value: float, units: int):
-        super(Temperature, self).__init__(value, units)
