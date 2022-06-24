@@ -1,7 +1,7 @@
 from bmath.unit.types import UnitsConvertor
 
 
-class VelocityConvertor(UnitConvertor):
+class VelocityConvertor(UnitsConvertor):
     _unit_type = 'velocity'
 
     # the value indicating that weight value is expressed in some unit
