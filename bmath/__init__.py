@@ -1,2 +1,2 @@
 from .vector import Vector
-from .unit import *
+from .unit import Weight

@@ -42,7 +42,7 @@ class Vector(object):
 
     def magnitude(self) -> float:
         """
-        Retruns a magnitude of the vector
+        Returns a magnitude of the vector
         The magnitude of the vector is the length of a line that starts in point (0,0,0)
         and ends in the point set by the vector coordinates
         :return: magnitude of the vector
@@ -70,7 +70,7 @@ class Vector(object):
         return Vector(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z)
 
     @staticmethod
-    def substract(v1: 'Vector', v2: 'Vector') -> 'Vector':
+    def subtract(v1: 'Vector', v2: 'Vector') -> 'Vector':
         """
         Subtracts one vector from another
         :param v1: Vector(x1, y1, z1)
