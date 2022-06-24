@@ -32,7 +32,7 @@ class Units(object):
         v, err = self.convertor().to_default(value, units)
         if err:
             self._value = None
-            self._defaultUnits = None
+            self._defaultUnits = units
         else:
             self._value = v
             self._default_units = units
@@ -45,18 +45,19 @@ class Units(object):
         multiplier, name, accuracy = self.convertor()(self.default_units)
         return f'{round(v, accuracy)} {name}'
 
-    def must_create(self, value: float, units: int) -> float:
+    # def must_create(self, value: float, units: int) -> 'Units':
+    def must_create(self) -> 'Units':
         """
         Returns the temperature value but panics instead of return error
         :param value: temperature value
         :param units: Unit consts
         :return: None
         """
-        v, err = self.convertor().to_default(value, units)
+        err = self.error
         if err:
-            raise ValueError(f'Temperature: unit {units} is not supported')
+            raise ValueError(f'{self.convertor.unit_type}: unit {self.default_units} is not supported')
         else:
-            return v
+            return self
 
     def value(self, value: 'Units', units: int) -> [float, Exception]:
         """
@@ -75,15 +76,14 @@ class Units(object):
         """
         return self.__class__(value.v, units)
 
-    def convert_in(self, value: 'Units', units: int) -> [float, Exception]:
+    def get_in(self, units: int) -> [float, Exception]:
         """
         Converts the value in the specified units.
         Returns 0 if unit conversion is not possible.
-        :param value: Units
         :param units: Units consts
         :return: float
         """
-        v, err = self.convertor().from_default(value.v, units)
+        v, err = self.convertor().from_default(self.v, units)
         if err:
             return 0
         return v
