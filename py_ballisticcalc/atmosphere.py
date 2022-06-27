@@ -26,17 +26,19 @@ class Atmosphere(object):
     _mach1: float = None
 
     def __init__(self, altitude: unit.Distance, pressure: unit.Pressure,
-                 temperature: unit.Temperature, humidity: float = 78):
+                 temperature: unit.Temperature, humidity: float = 0.78):
         """
         Creates the atmosphere with the specified parameter
         :param altitude: unit.Distance instance
         :param pressure: unit.Pressure instance
         :param temperature: unit.Temperature instance
-        :param humidity: 0 - 100 float
+        :param humidity: 0 - 1 or 1 - 100 float
         """
-        self._humidity = humidity / 100
+        if humidity < 1:
+            self._humidity = humidity / 100
 
-        if not 0 < humidity < 100:
+        if humidity < 0 or humidity > 100:
+            print('def')
             self._altitude = unit.Distance(0.0, unit.DistanceFoot).must_create()
             self._pressure = unit.Pressure(cStandardPressure, unit.PressureInHg).must_create()
             self._temperature = unit.Pressure(cStandardTemperature, unit.TemperatureFahrenheit).must_create()
