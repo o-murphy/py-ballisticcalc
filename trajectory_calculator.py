@@ -112,7 +112,7 @@ class TrajectoryCalculator(object):
                 range_vector = range_vector.Add(delta_range_vector)
                 velocity = velocity_vector.magnitude()
                 time = time + delta_range_vector.magnitude() / velocity
-                if abs(range_vector.x - zero_distance) < 0.5 * calculation_step:
+                if math.fabs(range_vector.x - zero_distance) < 0.5 * calculation_step:
                     zero_finding_error = math.fabs(range_vector.y)
                     barrel_elevation = barrel_elevation - range_vector.y / range_vector.x
                     break

@@ -84,6 +84,6 @@ class Vector(object):
         :return: Vector
         """
         magnitude = self.magnitude()
-        if abs(magnitude) < math.pow(1, -10):
+        if math.fabs(magnitude) < 1e-10:
             return self.__copy__()
         return self.multiply_by_const(1.0 / magnitude)

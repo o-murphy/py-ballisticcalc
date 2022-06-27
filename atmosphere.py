@@ -127,7 +127,7 @@ class Atmosphere(object):
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float) -> tuple[float, float]:
         org_altitude = self.altitude.get_in(unit.DistanceFoot)
-        if abs(org_altitude - altitude) < 30:
+        if math.fabs(org_altitude - altitude) < 30:
             density = self.density / cStandardDensity
             mach = self._mach1
             return density, mach
