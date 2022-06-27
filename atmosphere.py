@@ -30,9 +30,9 @@ class Atmosphere(object):
                  temperature: unit.Temperature, humidity: float = 0.78):
         """
         Creates the atmosphere with the specified parameter
-        :param altitude: unit.Distance
-        :param pressure: unit.Pressure
-        :param temperature: unit.Temperature
+        :param altitude: unit.Distance instance
+        :param pressure: unit.Pressure instance
+        :param temperature: unit.Temperature instance
         :param humidity: 0 - 1 float
         """
         self._humidity = humidity / 100
@@ -49,19 +49,31 @@ class Atmosphere(object):
         self.calculate()
 
     def __str__(self) -> str:
+        """
+        :return: formatted Atmosphere data
+        """
         return f'Altitude: {self.altitude}, Pressure: {self.pressure}, ' \
                f'Temperature: {self.temperature}, Humidity: {self.humidity_in_percent:.2f}'
 
     @property
     def altitude(self) -> unit.Distance:
+        """
+        :return: the ground level altitude over the sea level
+        """
         return self._altitude
 
     @property
     def temperature(self) -> unit.Temperature:
+        """
+        :return: the temperature at the ground level
+        """
         return self._temperature
 
     @property
     def pressure(self) -> unit.Pressure:
+        """
+        :return: the pressure at the ground level
+        """
         return self._pressure
 
     @property

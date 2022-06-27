@@ -715,9 +715,6 @@ class DragFunction(float):
 
 
 class BallisticCoefficient(object):
-    _value: float
-    _table: int
-    _drag: [DragFunction, None]
 
     def __init__(self, value: float, drag_table: int):
         """

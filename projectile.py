@@ -12,8 +12,8 @@ class Projectile(object):
     def __init__(self, ballistic_coefficient: BallisticCoefficient, weight: unit.Weight):
         """
         projectile description with dimensions
-        :param ballistic_coefficient:
-        :param weight:
+        :param ballistic_coefficient: BallisticCoefficient instance
+        :param weight: unit.Weight instance
         """
         self._ballistic_coefficient = ballistic_coefficient
         self._has_dimensions = False
@@ -67,10 +67,10 @@ class ProjectileWithDimensions(Projectile):
                  bullet_length: unit.Distance,
                  weight: unit.Weight):
         """
-        :param ballistic_coefficient: BallisticCoefficient
-        :param bullet_diameter: unit.Distance
-        :param bullet_length: unit.Distance
-        :param weight: unit.Weight
+        :param ballistic_coefficient: BallisticCoefficient instance
+        :param bullet_diameter: unit.Distance instance
+        :param bullet_length: unit.Distance instance
+        :param weight: unit.Weight instance
         """
 
         super(ProjectileWithDimensions, self).__init__(ballistic_coefficient, weight)
@@ -79,14 +79,14 @@ class ProjectileWithDimensions(Projectile):
         self._bullet_length = bullet_length
 
 
-class Amunition(object):
+class Ammunition(object):
     """ Ammunition object keeps the des of ammunition (e.g. projectile loaded into a case shell) """
 
     def __init__(self, bullet: Projectile, muzzle_velocity: unit.Velocity):
         """
         creates the description of the ammunition
-        :param bullet: Projectile
-        :param muzzle_velocity: unit.Velocity
+        :param bullet: Projectile instance
+        :param muzzle_velocity: unit.Velocity instance
         """
         self._projectile = bullet
         self._muzzle_velocity = muzzle_velocity
