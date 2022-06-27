@@ -45,7 +45,7 @@ class Vector(object):
         and ends in the point set by the vector coordinates
         :return: magnitude of the vector
         """
-        return math.sqrt(self.x ** 2 + self.y ** 2 + self.z ** 2)
+        return math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2) + math.pow(self.z, 2))
 
     def multiply_by_const(self, a: float) -> 'Vector':
         """
@@ -84,6 +84,6 @@ class Vector(object):
         :return: Vector
         """
         magnitude = self.magnitude()
-        if abs(magnitude) < 1 ** -10:
+        if abs(magnitude) < math.pow(1, -10):
             return self.__copy__()
         return self.multiply_by_const(1.0 / magnitude)

@@ -1,7 +1,6 @@
 import math
 from bmath import unit
 
-
 cIcaoStandardTemperatureR = 518.67
 cIcaoFreezingPointTemperatureR = 459.67
 cTemperatureGradient = -3.56616e-03
@@ -139,7 +138,7 @@ class Atmosphere(object):
         ta = cIcaoStandardTemperatureR + org_altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
         tb = cIcaoStandardTemperatureR + altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
         t = t0 + ta - tb
-        p = p * ((t0 / t) ** cPressureExponent)
+        p = p * math.pow(t0 / t, cPressureExponent)
 
         density, mach = self.calculate0(t, p)
         return density / cStandardDensity, mach
@@ -152,29 +151,12 @@ class Atmosphere(object):
             ) * cTemperatureGradient - cIcaoFreezingPointTemperatureR, unit.TemperatureFahrenheit
         ).must_create()
 
-        pressure = unit.Pressure(cStandardPressure * (
-                (cIcaoStandardTemperatureR / (
-                        temperature.get_in(unit.TemperatureFahrenheit) + cIcaoFreezingPointTemperatureR
-                )) ** cPressureExponent),
+        pressure = unit.Pressure(
+            cStandardPressure *
+            math.pow(cIcaoStandardTemperatureR / (
+                        temperature.get_in(unit.TemperatureFahrenheit) + cIcaoFreezingPointTemperatureR),
+                     cPressureExponent),
             unit.PressureInHg
         ).must_create()
 
         return Atmosphere(altitude, pressure, temperature, cIcaoStandardHumidity)
-
-
-# class ICAOAtmosphere(Atmosphere):
-#     def __init__(self, altitude: unit.Distance):
-#         temperature = unit.Temperature(
-#             cIcaoStandardTemperatureR + altitude.get_in(
-#                 unit.DistanceFoot
-#             ) * cTemperatureGradient - cIcaoFreezingPointTemperatureR, unit.TemperatureFahrenheit
-#         ).must_create()
-#
-#         pressure = unit.Pressure(cStandardPressure * (
-#                 (cIcaoStandardTemperatureR / (
-#                         temperature.get_in(unit.TemperatureFahrenheit) + cIcaoFreezingPointTemperatureR
-#                 )) ** cPressureExponent),
-#             unit.PressureInHg
-#         ).must_create()
-#
-#         super().__init__(altitude, pressure, temperature, cIcaoStandardHumidity)

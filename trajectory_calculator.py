@@ -120,8 +120,17 @@ class TrajectoryCalculator(object):
                 iterations_count += 1
         return unit.Angular(barrel_elevation, unit.AngularRadian).must_create()
 
-    def Trajectory(self, ammunition: Ammunition, weapon: Weapon, atmosphere: Atmosphere,
+    def trajectory(self, ammunition: Ammunition, weapon: Weapon, atmosphere: Atmosphere,
                    shot_info: ShotParameters, wind_info: list[WindInfo]) -> list[TrajectoryData]:
+        """
+        Calculates the trajectory with the parameters specified
+        :param ammunition: Ammunition instance
+        :param weapon: Weapon instance
+        :param atmosphere: Atmosphere instance
+        :param shot_info: ShotParameters instance
+        :param wind_info: list[WindInfo]
+        :return: trajectory with the parameters specified
+        """
         range_to: float = shot_info.maximum_distance.get_in(unit.DistanceFoot)
         step: float = shot_info.step.get_in(unit.DistanceFoot)
 
@@ -175,7 +184,7 @@ class TrajectoryCalculator(object):
         maximum_range = range_to
         next_range_distance = 0
 
-        twist_coefficient: float
+        twist_coefficient = .0
 
         if calculate_drift:
             if weapon.twist.direction == TwistLeft:
@@ -234,5 +243,48 @@ class TrajectoryCalculator(object):
             delta_range_vector = Vector(
                 calculation_step, velocity_vector.y * delta_time, velocity_vector.z * delta_time
             )
+            range_vector = range_vector.add(delta_range_vector)
+            velocity = velocity_vector.magnitude()
+            time = time + delta_range_vector.magnitude() / velocity
 
-        return
+        return ranges
+
+    @staticmethod
+    def calculate_stability_coefficient(ammunition_info: Ammunition,
+                                        rifle_info: Weapon, atmosphere: Atmosphere) -> float:
+        weight: float = ammunition_info.bullet.bullet_weight.get_in(unit.WeightGrain)
+        diameter: float = ammunition_info.bullet.bullet_diameter.get_in(unit.DistanceInch)
+        twist: float = rifle_info.twist.twist.get_in(unit.DistanceInch) / diameter
+        length: float = ammunition_info.bullet.bullet_length.get_in(unit.DistanceInch) / diameter
+        sd = 30 * weight / (math.pow(twist, 2) * math.pow(diameter, 3) * length * (1 + math.pow(length, 2)))
+        fv = math.pow(ammunition_info.muzzle_velocity.get_in(unit.VelocityFPS) / 2800, 1.0 / 3.0)
+        ft: float = atmosphere.temperature.get_in(unit.TemperatureFahrenheit)
+        pt: float = atmosphere.pressure.get_in(unit.PressureInHg)
+        ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+
+        return sd * fv * ftp
+
+    @staticmethod
+    def wind_to_vector(shot: ShotParameters, wind: WindInfo) -> Vector:
+        sight_cosine = math.cos(shot.sight_angle.get_in(unit.AngularRadian))
+        sight_sine = math.sin(shot.sight_angle.get_in(unit.AngularRadian))
+        cant_cosine = math.cos(shot.cant_angle.get_in(unit.AngularRadian))
+        cant_sine = math.sin(shot.cant_angle.get_in(unit.AngularRadian))
+        range_velocity = wind.velocity.get_in(unit.VelocityFPS) * math.cos(wind.direction.get_in(unit.AngularRadian))
+        cross_component = wind.velocity.get_in(unit.VelocityFPS) * math.sin(wind.direction.get_in(unit.AngularRadian))
+        range_factor = -range_velocity * sight_sine
+        return Vector(range_velocity * sight_cosine,
+                      range_factor * cant_cosine + cross_component * cant_sine,
+                      cross_component * cant_cosine - range_factor * cant_sine)
+
+    @staticmethod
+    def get_correction(distance: float, offset: float) -> float:
+        return math.atan(offset / distance)
+
+    @staticmethod
+    def calculate_energy(bullet_weight: float, velocity: float) -> float:
+        return bullet_weight * math.pow(velocity, 2) / 450400
+
+    @staticmethod
+    def calculate_ogv(bullet_weight: float, velocity: float) -> float:
+        return math.pow(bullet_weight, 2) * math.pow(velocity, 3) * 1.5e-12

@@ -99,7 +99,7 @@ class Ammunition(object):
         return self._projectile
 
     @property
-    def muzzle_velocity(self):
+    def muzzle_velocity(self) -> unit.Velocity:
         """
         :return: the velocity of the projectile at the muzzle
         """
