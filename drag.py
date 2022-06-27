@@ -697,6 +697,19 @@ DRAG_TABLES = {
 }
 
 
+class DataPoint(object):
+    def __init__(self, a: float, b: float):
+        self.a = a
+        self.b = b
+
+
+class CurvePoint(object):
+    def __init__(self, a: float, b: float, c: float):
+        self.a = a
+        self.b = b
+        self.c = c
+
+
 class DragFunction(float):
     pass
 
@@ -725,7 +738,7 @@ class BallisticCoefficient(object):
         self._value = value
         self._table = drag_table
         if not self._error:
-            self._drag = drag_function_factory(drag_table)
+            self._drag = DragCalculate.drag_function_factory(drag_table)
         else:
             self._drag = None
 
@@ -747,86 +760,67 @@ class BallisticCoefficient(object):
         return self._drag(mach)
 
 
-class DataPoint(object):
-    def __init__(self, a: float, b: float):
-        self.a = a
-        self.b = b
+class DragCalculate(object):
+    """ Class with static data calculations methods """
 
-
-class CurvePoint(object):
-    def __init__(self, a: float, b: float, c: float):
-        self.a = a
-        self.b = b
-        self.c = c
-
-
-def make_data_points(drag_table) -> list[DataPoint]:
-    if not isinstance(drag_table, dict):
-        table = dict(drag_table)
-    else:
-        table = drag_table
-
-    return [DataPoint(a, b) for a, b in table.values()]
-
-
-def calculate_curve(data_points: list[DataPoint]) -> list[CurvePoint]:
-    rate = (data_points[1].b - data_points[0].b) / (data_points[1].a - data_points[0].a)
-    curve = [CurvePoint(0, rate, data_points[0].b - data_points[0].a * rate)]
-
-    """ rest as 2nd degree polynomials on three adjacent points """
-    for i, data_point in enumerate(data_points):
-        x1 = data_points[i - 1].a
-        x2 = data_point.a
-        x3 = data_points[i + 1].a
-        y1 = data_points[i - 1].b
-        y2 = data_point.b
-        y3 = data_points[i + 1].b
-        a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
-                    (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
-        b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
-        c = y1 - (a * x1 * x1 + b * x1)
-        curve.append(CurvePoint(a, b, c))
-
-    num_points = len(data_points)
-    rate = (data_points[num_points - 1].b - data_points[num_points - 2].b) / \
-           (data_points[num_points - 1].a - data_points[num_points - 2].a)
-    curve.append(CurvePoint(0, rate, data_points[num_points - 1].b - data_points[num_points - 2].a * rate))
-    return curve
-
-
-def drag_function_factory(drag_table: int) -> [DragFunction, float]:
-    try:
-        table = make_data_points(DRAG_TABLES[drag_table])
-        curve = calculate_curve(table)
-        return lambda mach: calculate_by_curve(table, curve, mach)
-    except KeyError:
-        raise ValueError("Unknown drag table type")
-
-
-def calculate_by_curve(data: list[DataPoint], curve: list[CurvePoint], mach: float) -> float:
-    num_points = len(curve)
-    mlo = 0
-    mhi = num_points - 2
-
-    while mhi - mlo > 1:
-        mid = int(math.floor(mhi + mlo) / 2.0)
-        if data[mid].a < mach:
-            mlo = mid
+    @staticmethod
+    def make_data_points(drag_table) -> list[DataPoint]:
+        if not isinstance(drag_table, dict):
+            table = dict(drag_table)
         else:
-            mhi = mid
+            table = drag_table
 
-    if data[mhi].a - mach > mach - data[mlo].a:
-        m = mlo
-    else:
-        m = mhi
-    return curve[m].c + mach * (curve[m].b + curve[m].a * mach)
+        return [DataPoint(a, b) for a, b in table.values()]
 
+    @staticmethod
+    def calculate_curve(data_points: list[DataPoint]) -> list[CurvePoint]:
+        rate = (data_points[1].b - data_points[0].b) / (data_points[1].a - data_points[0].a)
+        curve = [CurvePoint(0, rate, data_points[0].b - data_points[0].a * rate)]
 
-# g1Curve = calculate_curve(make_data_points(DRAG_TABLES[DragTableG1]))
-# g2Curve = calculate_curve(make_data_points(DRAG_TABLES[DragTableG2]))
-# g5Curve = calculate_curve(make_data_points(DRAG_TABLES[DragTableG5]))
-# g6Curve = calculate_curve(make_data_points(DRAG_TABLES[DragTableG6]))
-# g7Curve = calculate_curve(make_data_points(DRAG_TABLES[DragTableG7]))
-# g8Curve = calculate_curve(make_data_points(DRAG_TABLES[DragTableG8]))
-# gSCurve = calculate_curve(make_data_points(DRAG_TABLES[DragTableGS]))
-# gICurve = calculate_curve(make_data_points(DRAG_TABLES[DragTableGI]))
+        """ rest as 2nd degree polynomials on three adjacent points """
+        for i, data_point in enumerate(data_points):
+            x1 = data_points[i - 1].a
+            x2 = data_point.a
+            x3 = data_points[i + 1].a
+            y1 = data_points[i - 1].b
+            y2 = data_point.b
+            y3 = data_points[i + 1].b
+            a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
+                        (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
+            b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
+            c = y1 - (a * x1 * x1 + b * x1)
+            curve.append(CurvePoint(a, b, c))
+
+        num_points = len(data_points)
+        rate = (data_points[num_points - 1].b - data_points[num_points - 2].b) / \
+               (data_points[num_points - 1].a - data_points[num_points - 2].a)
+        curve.append(CurvePoint(0, rate, data_points[num_points - 1].b - data_points[num_points - 2].a * rate))
+        return curve
+
+    @staticmethod
+    def drag_function_factory(drag_table: int) -> [DragFunction, float]:
+        try:
+            table = DragCalculate.make_data_points(DRAG_TABLES[drag_table])
+            curve = DragCalculate.calculate_curve(table)
+            return lambda mach: DragCalculate.calculate_by_curve(table, curve, mach)
+        except KeyError:
+            raise ValueError("Unknown drag table type")
+
+    @staticmethod
+    def calculate_by_curve(data: list[DataPoint], curve: list[CurvePoint], mach: float) -> float:
+        num_points = len(curve)
+        mlo = 0
+        mhi = num_points - 2
+
+        while mhi - mlo > 1:
+            mid = int(math.floor(mhi + mlo) / 2.0)
+            if data[mid].a < mach:
+                mlo = mid
+            else:
+                mhi = mid
+
+        if data[mhi].a - mach > mach - data[mlo].a:
+            m = mlo
+        else:
+            m = mhi
+        return curve[m].c + mach * (curve[m].b + curve[m].a * mach)
