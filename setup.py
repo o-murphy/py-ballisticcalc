@@ -17,5 +17,6 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
     zip_safe=True,
-    py_modules=['py_ballisticcalc']
+    py_modules=['py_ballisticcalc'],
+    requirements=[]
 )
