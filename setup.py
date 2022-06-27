@@ -4,9 +4,6 @@ import py_ballisticcalc
 
 from setuptools import setup, find_packages
 
-CLASSIFIERS = []
-KEYWORDS = ''
-
 setup(
     name='py_ballisticcalc',
     version=py_ballisticcalc.__version__,
@@ -19,9 +16,6 @@ setup(
     description='LGPL library for small arms ballistic calculations (Python 3)',
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
-    classifiers=CLASSIFIERS,
-    keywords=KEYWORDS,
     zip_safe=True,
-    install_requires=[],
     py_modules=['py_ballisticcalc']
 )
