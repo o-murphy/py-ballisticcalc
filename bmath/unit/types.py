@@ -92,5 +92,5 @@ class Units(object):
         return self._value
 
     @property
-    def default_units(self):
+    def units(self):
         return self._default_units

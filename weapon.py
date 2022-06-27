@@ -157,7 +157,7 @@ class Weapon(object):
         return self._sight_height
 
     @property
-    def zero_info(self) -> ZeroInfo:
+    def zero(self) -> ZeroInfo:
         """
         :return: the zeroing information
         """
