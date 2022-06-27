@@ -1,5 +1,5 @@
 import math
-from bmath.unit.types import UnitsConvertor, Units
+from ..unit.types import UnitsConvertor, Units
 
 # the value indicating that angular value is expressed in some unit
 AngularRadian = 0

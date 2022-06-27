@@ -1,4 +1,4 @@
-from bmath.unit.types import UnitsConvertor, Units
+from ..unit.types import UnitsConvertor, Units
 
 # the value indicating that weight value is expressed in some unit
 WeightGrain = 70

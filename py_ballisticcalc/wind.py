@@ -1,4 +1,4 @@
-from bmath import unit
+from .bmath import unit
 
 
 class WindInfo(object):

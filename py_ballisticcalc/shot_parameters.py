@@ -1,4 +1,4 @@
-from bmath import unit
+from .bmath import unit
 
 
 class ShotParameters(object):

@@ -1,11 +1,11 @@
 import math
-from bmath import unit, Vector
-from projectile import Ammunition
-from weapon import Weapon, TwistLeft
-from atmosphere import Atmosphere
-from shot_parameters import ShotParameters
-from wind import WindInfo
-from trajectory_data import TrajectoryData, Timespan
+from .bmath import unit, Vector
+from .projectile import Ammunition
+from .weapon import Weapon, TwistLeft
+from .atmosphere import Atmosphere
+from .shot_parameters import ShotParameters
+from .wind import WindInfo
+from .trajectory_data import TrajectoryData, Timespan
 
 
 cZeroFindingAccuracy = 0.000005

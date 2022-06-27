@@ -1,6 +1,6 @@
-from bmath import unit
-from atmosphere import Atmosphere
-from projectile import Ammunition
+from .bmath import unit
+from .atmosphere import Atmosphere
+from .projectile import Ammunition
 
 
 class ZeroInfo(object):

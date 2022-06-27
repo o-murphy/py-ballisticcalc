@@ -1,5 +1,5 @@
-from bmath import unit
-from drag import BallisticCoefficient
+from .bmath import unit
+from .drag import BallisticCoefficient
 
 
 class Projectile(object):

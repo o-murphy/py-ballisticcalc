@@ -1,4 +1,4 @@
-from bmath.unit.types import UnitsConvertor, Units
+from ..unit.types import UnitsConvertor, Units
 
 # the value indicating that temperature value is expressed in some unit
 TemperatureFahrenheit = 70
