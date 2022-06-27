@@ -26,17 +26,17 @@ class Atmosphere(object):
     _mach1: float = None
 
     def __init__(self, altitude: unit.Distance, pressure: unit.Pressure,
-                 temperature: unit.Temperature, humidity: float = 0.78):
+                 temperature: unit.Temperature, humidity: float = 78):
         """
         Creates the atmosphere with the specified parameter
         :param altitude: unit.Distance instance
         :param pressure: unit.Pressure instance
         :param temperature: unit.Temperature instance
-        :param humidity: 0 - 1 float
+        :param humidity: 0 - 100 float
         """
         self._humidity = humidity / 100
 
-        if not (0 < humidity < 100):
+        if not 0 < humidity < 100:
             self._altitude = unit.Distance(0.0, unit.DistanceFoot).must_create()
             self._pressure = unit.Pressure(cStandardPressure, unit.PressureInHg).must_create()
             self._temperature = unit.Pressure(cStandardTemperature, unit.TemperatureFahrenheit).must_create()
@@ -51,8 +51,8 @@ class Atmosphere(object):
         """
         :return: formatted Atmosphere data
         """
-        return f'Altitude: {self.altitude}, Pressure: {self.pressure}, ' \
-               f'Temperature: {self.temperature}, Humidity: {self.humidity_in_percent:.2f}'
+        return f'Altitude: {self._altitude}, Pressure: {self._pressure}, ' \
+               f'Temperature: {self._temperature}, Humidity: {self.humidity_in_percent:.2f}'
 
     @property
     def altitude(self) -> unit.Distance:
@@ -108,7 +108,7 @@ class Atmosphere(object):
     def calculate0(self, t, p) -> tuple[float, float]:
         if t > 0:
             et0 = cA0 + t * (cA1 + t * (cA2 + t * (cA3 + t * cA4)))
-            et = cA5 * self.humidity * et0
+            et = cA5 * self._humidity * et0
             hc = (p - 0.3783 * et) / cStandardPressure
         else:
             hc = 1.0
@@ -118,22 +118,22 @@ class Atmosphere(object):
         return density, mach
 
     def calculate(self) -> None:
-        t = self.temperature.get_in(unit.TemperatureFahrenheit)
-        p = self.pressure.get_in(unit.PressureInHg)
+        t = self._temperature.get_in(unit.TemperatureFahrenheit)
+        p = self._pressure.get_in(unit.PressureInHg)
         density, mach = self.calculate0(t, p)
         self._density = density
         self._mach1 = mach
         self._mach = unit.Velocity(mach, unit.VelocityFPS).must_create()
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float) -> tuple[float, float]:
-        org_altitude = self.altitude.get_in(unit.DistanceFoot)
+        org_altitude = self._altitude.get_in(unit.DistanceFoot)
         if math.fabs(org_altitude - altitude) < 30:
-            density = self.density / cStandardDensity
+            density = self._density / cStandardDensity
             mach = self._mach1
             return density, mach
 
-        t0 = self.temperature.get_in(unit.TemperatureFahrenheit)
-        p = self.pressure.get_in(unit.PressureInHg)
+        t0 = self._temperature.get_in(unit.TemperatureFahrenheit)
+        p = self._pressure.get_in(unit.PressureInHg)
 
         ta = cIcaoStandardTemperatureR + org_altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
         tb = cIcaoStandardTemperatureR + altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
