@@ -41,10 +41,10 @@ class Units(object):
         self.error = err
 
     def __str__(self):
-        v, err = self.convertor().from_default(self.v, self.default_units)
+        v, err = self.convertor().from_default(self.v, self._default_units)
         if err:
-            return f'{self.convertor().unit_type}: unit {self.default_units} is not supported'
-        multiplier, name, accuracy = self.convertor()(self.default_units)
+            return f'{self.convertor().unit_type}: unit {self._default_units} is not supported'
+        name, accuracy, f, t = self.convertor()(self._default_units).values()
         return f'{round(v, accuracy)} {name}'
 
     def must_create(self) -> 'Units':
@@ -54,7 +54,7 @@ class Units(object):
         """
         err = self.error
         if err:
-            raise ValueError(f'{self.convertor.unit_type}: unit {self.default_units} is not supported')
+            raise ValueError(f'{self.convertor.unit_type}: unit {self._default_units} is not supported')
         else:
             return self
 

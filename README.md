@@ -1,5 +1,31 @@
 # BallisticCalculator
-LGPL library for small arms ballistic calculations
+LGPL library for small arms ballistic calculations (Python 3)
+
+Installation
+------------
+    pip install py-ballisticcalc
+
+Usage example
+-----
+```python
+from py_ballisticcalc.atmosphere import *
+from py_ballisticcalc.bmath import unit
+
+# setting atmosphere conditions
+atmo = Atmosphere(
+    unit.Distance(100, unit.DistanceMeter),
+    unit.Pressure(760, unit.PressureMmHg),
+    unit.Temperature(15, unit.TemperatureCelsius),
+    humidity=0.5  # 50%
+)
+
+# get speed of sound in mps at the atmosphere with such parameters
+speed_of_sound_in_mps = atmo.mach.get_in(unit.VelocityMPS)
+print(speed_of_sound_in_mps)
+```
+
+Info
+-----
 
 The library provides trajectory calculation for projectiles including for various
 applications, including air rifles, bows, firearms, artillery and so on.
