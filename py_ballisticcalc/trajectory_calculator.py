@@ -7,6 +7,7 @@ from shot_parameters import ShotParameters
 from wind import WindInfo
 from trajectory_data import TrajectoryData, Timespan
 
+
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
 cMaximumDrop = -15000
