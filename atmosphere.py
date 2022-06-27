@@ -144,9 +144,8 @@ class Atmosphere(object):
         density, mach = self.calculate0(t, p)
         return density / cStandardDensity, mach
 
-
-class ICAOAtmosphere(Atmosphere):
-    def __init__(self, altitude: unit.Distance):
+    @staticmethod
+    def create_ICAO(altitude: unit.Distance):
         temperature = unit.Temperature(
             cIcaoStandardTemperatureR + altitude.get_in(
                 unit.DistanceFoot
@@ -160,4 +159,22 @@ class ICAOAtmosphere(Atmosphere):
             unit.PressureInHg
         ).must_create()
 
-        super().__init__(altitude, pressure, temperature, cIcaoStandardHumidity)
+        return Atmosphere(altitude, pressure, temperature, cIcaoStandardHumidity)
+
+
+# class ICAOAtmosphere(Atmosphere):
+#     def __init__(self, altitude: unit.Distance):
+#         temperature = unit.Temperature(
+#             cIcaoStandardTemperatureR + altitude.get_in(
+#                 unit.DistanceFoot
+#             ) * cTemperatureGradient - cIcaoFreezingPointTemperatureR, unit.TemperatureFahrenheit
+#         ).must_create()
+#
+#         pressure = unit.Pressure(cStandardPressure * (
+#                 (cIcaoStandardTemperatureR / (
+#                         temperature.get_in(unit.TemperatureFahrenheit) + cIcaoFreezingPointTemperatureR
+#                 )) ** cPressureExponent),
+#             unit.PressureInHg
+#         ).must_create()
+#
+#         super().__init__(altitude, pressure, temperature, cIcaoStandardHumidity)
