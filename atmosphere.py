@@ -145,7 +145,7 @@ class Atmosphere(object):
         return density / cStandardDensity, mach
 
     @staticmethod
-    def create_ICAO(altitude: unit.Distance):
+    def create_icao(altitude: unit.Distance):
         temperature = unit.Temperature(
             cIcaoStandardTemperatureR + altitude.get_in(
                 unit.DistanceFoot
