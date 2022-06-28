@@ -5,162 +5,137 @@ from py_ballisticcalc.bmath import unit
 
 def test_back_n_forth(test, value, units):
     u = test.unit_class(value, units)
-
     test.assertEqual(u.error, None, f'Creation failed for {units}')
 
     v, err = u.value(units)
-    test.assertEqual(err, None, f'Read back failed for {units}')
-    test.assertLess(math.fabs(v - value), 1e-7, f'Read back failed for {units}')
-    test.assertLess(math.fabs(v - u.get_in(units)), 1e-7, f'Read back failed for {units}')
+    test.assertTrue(
+        err is None
+        and math.fabs(v - value) < 1e-7
+        and math.fabs(v - u.get_in(units) < 1e-7), f'Read back failed for {units}')
 
 
 class TestAngular(unittest.TestCase):
 
     def setUp(self) -> None:
         self.unit_class = unit.Angular
+        self.unit_list = [
+            unit.AngularDegree,
+            unit.AngularMOA,
+            unit.AngularMRad,
+            unit.AngularMil,
+            unit.AngularRadian,
+            unit.AngularThousand
+        ]
 
-    def test_degree(self):
-        test_back_n_forth(self, 3, unit.AngularDegree)
-
-    def test_moa(self):
-        test_back_n_forth(self, 3, unit.AngularMOA)
-
-    def test_mrad(self):
-        test_back_n_forth(self, 3, unit.AngularMRad)
-
-    def test_mil(self):
-        test_back_n_forth(self, 3, unit.AngularMil)
-
-    def test_radian(self):
-        test_back_n_forth(self, 3, unit.AngularRadian)
-
-    def test_thousand(self):
-        test_back_n_forth(self, 3, unit.AngularThousand)
+    def test_angular(self):
+        for u in self.unit_list:
+            with self.subTest(unit=unit):
+                test_back_n_forth(self, 3, u)
 
 
 class TestDistance(unittest.TestCase):
 
     def setUp(self) -> None:
         self.unit_class = unit.Distance
+        self.unit_list = [
+            unit.DistanceCentimeter,
+            unit.DistanceFoot,
+            unit.DistanceInch,
+            unit.DistanceKilometer,
+            unit.DistanceLine,
+            unit.DistanceMeter,
+            unit.DistanceMillimeter,
+            unit.DistanceMile,
+            unit.DistanceNauticalMile,
+            unit.DistanceYard
+        ]
 
-    def test_centimeter(self):
-        test_back_n_forth(self, 3, unit.DistanceCentimeter)
-
-    def test_foot(self):
-        test_back_n_forth(self, 3, unit.DistanceFoot)
-
-    def test_inch(self):
-        test_back_n_forth(self, 3, unit.DistanceInch)
-
-    def test_kilometer(self):
-        test_back_n_forth(self, 3, unit.DistanceKilometer)
-
-    def test_line(self):
-        test_back_n_forth(self, 3, unit.DistanceLine)
-
-    def test_meter(self):
-        test_back_n_forth(self, 3, unit.DistanceMeter)
-
-    def test_miles(self):
-        test_back_n_forth(self, 3, unit.DistanceMile)
-
-    def test_millimeter(self):
-        test_back_n_forth(self, 3, unit.DistanceMillimeter)
-
-    def test_nautical_mile(self):
-        test_back_n_forth(self, 3, unit.DistanceNauticalMile)
-
-    def test_yard(self):
-        test_back_n_forth(self, 3, unit.DistanceYard)
+    def test_distance(self):
+        for u in self.unit_list:
+            with self.subTest(unit=unit):
+                test_back_n_forth(self, 3, u)
 
 
 class TestEnergy(unittest.TestCase):
 
     def setUp(self) -> None:
         self.unit_class = unit.Energy
+        self.unit_list = [
+            unit.EnergyFootPound,
+            unit.EnergyJoule
+        ]
 
-    def test_foot_pounds(self):
-        test_back_n_forth(self, 3, unit.EnergyFootPound)
-
-    def test_joule(self):
-        test_back_n_forth(self, 3, unit.EnergyJoule)
+    def test_energy(self):
+        for u in self.unit_list:
+            with self.subTest(unit=unit):
+                test_back_n_forth(self, 3, u)
 
 
 class TestPressure(unittest.TestCase):
     def setUp(self) -> None:
         self.unit_class = unit.Pressure
+        self.unit_list = [
+            unit.PressureBar,
+            unit.PressureHP,
+            unit.PressureMmHg,
+            unit.PressureInHg
+        ]
 
-    def test_bar(self):
-        test_back_n_forth(self, 3, unit.PressureBar)
-
-    def test_hp(self):
-        test_back_n_forth(self, 3, unit.PressureHP)
-
-    def test_mmhg(self):
-        test_back_n_forth(self, 3, unit.PressureMmHg)
-
-    def test_inhg(self):
-        test_back_n_forth(self, 3, unit.PressureInHg)
+    def test_pressure(self):
+        for u in self.unit_list:
+            with self.subTest(unit=unit):
+                test_back_n_forth(self, 3, u)
 
 
 class TestTemperature(unittest.TestCase):
     def setUp(self) -> None:
         self.unit_class = unit.Temperature
+        self.unit_list = [
+            unit.TemperatureFahrenheit,
+            unit.TemperatureKelvin,
+            unit.TemperatureCelsius,
+            unit.TemperatureRankin
+        ]
 
-    def test_F(self):
-        test_back_n_forth(self, 3, unit.TemperatureFahrenheit)
-
-    def test_C(self):
-        test_back_n_forth(self, 3, unit.TemperatureCelsius)
-
-    def test_K(self):
-        test_back_n_forth(self, 3, unit.TemperatureKelvin)
-
-    def test_R(self):
-        test_back_n_forth(self, 3, unit.TemperatureRankin)
+    def test_temperature(self):
+        for u in self.unit_list:
+            with self.subTest(unit=unit):
+                test_back_n_forth(self, 3, u)
 
 
 class TestVelocity(unittest.TestCase):
     def setUp(self) -> None:
         self.unit_class = unit.Velocity
+        self.unit_list = [
+            unit.VelocityFPS,
+            unit.VelocityKMH,
+            unit.VelocityKT,
+            unit.VelocityMPH,
+            unit.VelocityMPS
+        ]
 
-    def test_fps(self):
-        test_back_n_forth(self, 3, unit.VelocityFPS)
-
-    def test_kmh(self):
-        test_back_n_forth(self, 3, unit.VelocityKMH)
-
-    def test_kt(self):
-        test_back_n_forth(self, 3, unit.VelocityKT)
-
-    def test_mph(self):
-        test_back_n_forth(self, 3, unit.VelocityMPH)
-
-    def test_mps(self):
-        test_back_n_forth(self, 3, unit.VelocityMPS)
+    def test_velocity(self):
+        for u in self.unit_list:
+            with self.subTest(unit=unit):
+                test_back_n_forth(self, 3, u)
 
 
 class TestWeight(unittest.TestCase):
     def setUp(self) -> None:
         self.unit_class = unit.Weight
+        self.unit_list = [
+            unit.WeightGrain,
+            unit.WeightGram,
+            unit.WeightKilogram,
+            unit.WeightNewton,
+            unit.WeightOunce,
+            unit.WeightPound
+        ]
 
-    def test_grain(self):
-        test_back_n_forth(self, 3, unit.WeightGrain)
-
-    def test_gram(self):
-        test_back_n_forth(self, 3, unit.WeightGram)
-
-    def test_kilogram(self):
-        test_back_n_forth(self, 3, unit.WeightKilogram)
-
-    def test_newton(self):
-        test_back_n_forth(self, 3, unit.WeightNewton)
-
-    def test_ounce(self):
-        test_back_n_forth(self, 3, unit.WeightOunce)
-
-    def test_pound(self):
-        test_back_n_forth(self, 3, unit.WeightPound)
+    def test_weight(self):
+        for u in self.unit_list:
+            with self.subTest(unit=unit):
+                test_back_n_forth(self, 3, u)
 
 
 if __name__ == '__main__':
