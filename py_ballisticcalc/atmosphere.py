@@ -172,11 +172,13 @@ class Atmosphere(object):
 if __name__ == '__main__':
 
     atmo = Atmosphere(
-        unit.Distance(100, unit.DistanceMeter),
-        unit.Pressure(760, unit.PressureMmHg),
-        unit.Temperature(15, unit.TemperatureCelsius),
+        unit.Distance(500, unit.DistanceMeter),
+        unit.Pressure(500, unit.PressureMmHg),
+        unit.Temperature(26, unit.TemperatureCelsius),
         humidity=0.5  # 50%
     )
+    print(atmo)
+
     # get speed of sound in mps at the atmosphere with such parameters
     speed_of_sound_in_mps = atmo.mach.get_in(unit.VelocityMPS)
     print(speed_of_sound_in_mps)

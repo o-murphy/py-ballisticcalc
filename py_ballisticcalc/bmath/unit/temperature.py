@@ -4,10 +4,10 @@ except ImportError:
     from py_ballisticcalc.bmath.unit.types import UnitsConvertor, Units
 
 # the value indicating that temperature value is expressed in some unit
-TemperatureFahrenheit = 70
-TemperatureCelsius = 71
-TemperatureKelvin = 72
-TemperatureRankin = 73
+TemperatureFahrenheit = 50
+TemperatureCelsius = 51
+TemperatureKelvin = 52
+TemperatureRankin = 53
 
 
 class TemperatureConvertor(UnitsConvertor):
@@ -22,7 +22,7 @@ class TemperatureConvertor(UnitsConvertor):
                             'from': lambda v: v + 459.67},
         TemperatureCelsius: {'name': '°C', 'accuracy': 1,
                              'to': lambda v: v * 9 / 5 + 32,
-                             'from': lambda v: (v - 32) / 5 / 9},
+                             'from': lambda v: (v - 32) * 5 / 9},
         TemperatureKelvin: {'name': '°K', 'accuracy': 1,
                             'to': lambda v: (v - 273.15) * 9 / 5 + 32,
                             'from': lambda v: (v - 32) * 5 / 9 + 273.15},
