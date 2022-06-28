@@ -1,9 +1,3 @@
-"""
-TODO: TestVectorCreation
-TODO: TestUnary
-TODO: TestBinary
-"""
-
 import math
 import unittest
 from py_ballisticcalc.bmath import Vector
