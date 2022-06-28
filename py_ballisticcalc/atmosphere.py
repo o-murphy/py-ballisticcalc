@@ -1,5 +1,9 @@
 import math
-from .bmath import unit
+try:
+    from .bmath import unit
+except ImportError:
+    from py_ballisticcalc.bmath import unit
+
 
 cIcaoStandardTemperatureR = 518.67
 cIcaoFreezingPointTemperatureR = 459.67
@@ -34,18 +38,19 @@ class Atmosphere(object):
         :param temperature: unit.Temperature instance
         :param humidity: 0 - 1 or 1 - 100 float
         """
-        if humidity < 1:
-            self._humidity = humidity / 100
+        if humidity > 1:
+            humidity = humidity / 100
 
         if humidity < 0 or humidity > 100:
-            print('def')
             self._altitude = unit.Distance(0.0, unit.DistanceFoot).must_create()
             self._pressure = unit.Pressure(cStandardPressure, unit.PressureInHg).must_create()
             self._temperature = unit.Pressure(cStandardTemperature, unit.TemperatureFahrenheit).must_create()
+            self._humidity = 0.78
         else:
             self._altitude = altitude
             self._pressure = pressure
             self._temperature = temperature
+            self._humidity = humidity
 
         self.calculate()
 
@@ -162,3 +167,16 @@ class Atmosphere(object):
         ).must_create()
 
         return Atmosphere(altitude, pressure, temperature, cIcaoStandardHumidity)
+
+
+if __name__ == '__main__':
+
+    atmo = Atmosphere(
+        unit.Distance(100, unit.DistanceMeter),
+        unit.Pressure(760, unit.PressureMmHg),
+        unit.Temperature(15, unit.TemperatureCelsius),
+        humidity=0.5  # 50%
+    )
+    # get speed of sound in mps at the atmosphere with such parameters
+    speed_of_sound_in_mps = atmo.mach.get_in(unit.VelocityMPS)
+    print(speed_of_sound_in_mps)
