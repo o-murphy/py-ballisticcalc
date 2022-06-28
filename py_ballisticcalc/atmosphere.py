@@ -177,8 +177,8 @@ if __name__ == '__main__':
         unit.Temperature(26, unit.TemperatureCelsius),
         humidity=0.5  # 50%
     )
-    print(atmo)
 
     # get speed of sound in mps at the atmosphere with such parameters
-    speed_of_sound_in_mps = atmo.mach.get_in(unit.VelocityMPS)
-    print(speed_of_sound_in_mps)
+    speed_of_sound_in_mps = unit.Velocity(atmo.mach.get_in(unit.VelocityMPS), unit.VelocityMPS)
+    print(atmo, speed_of_sound_in_mps, atmo.density_factor)
+
