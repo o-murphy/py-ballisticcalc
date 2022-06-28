@@ -1,4 +1,7 @@
-from .bmath import unit
+try:
+    from .bmath import unit
+except ImportError:
+    from py_ballisticcalc.bmath import unit
 
 
 class WindInfo(object):
@@ -9,6 +12,12 @@ class WindInfo(object):
         self._until_distance = until_distance
         self._velocity = velocity
         self._direction = direction
+
+    def __str__(self):
+        """
+        :return: formatted Wind data
+        """
+        return f'Until distance: {self._until_distance}, Velocity: {self._velocity}, Direction: {self._direction}'
 
     @property
     def until_distance(self) -> unit.Distance:
@@ -75,3 +84,13 @@ class WindInfo(object):
         :return: list[WindInfo]
         """
         return list(winds)
+
+
+if __name__ == '__main__':
+    wind = WindInfo(
+        unit.Distance(500, unit.DistanceMeter),
+        unit.Velocity(15, unit.VelocityKMH),
+        unit.Angular(10, unit.AngularRadian)
+    )
+
+    print(wind)

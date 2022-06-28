@@ -1,11 +1,11 @@
 from ..unit.types import UnitsConvertor, Units
 
 # the value indicating that velocity value is expressed in some unit
-VelocityMPS = 70
-VelocityKMH = 71
-VelocityFPS = 72
-VelocityMPH = 73
-VelocityKT = 74
+VelocityMPS = 60
+VelocityKMH = 61
+VelocityFPS = 62
+VelocityMPH = 63
+VelocityKT = 64
 
 
 class VelocityConvertor(UnitsConvertor):
