@@ -5,14 +5,12 @@ from py_ballisticcalc.bmath import Vector
 
 class TestVectorCreation(unittest.TestCase):
 
-    def setUp(self) -> None:
-        self.v = Vector(1, 2, 3)
+    def test_create(self):
+        v = Vector(1, 2, 3)
 
-    def test_init(self):
-        self.assertTrue(self.v.x == 1 and self.v.y == 2 and self.v.z == 3, "Create failed")
+        self.assertTrue(v.x == 1 and v.y == 2 and v.z == 3, "Create failed")
 
-    def test_copy(self):
-        c = self.v.__copy__()
+        c = v.__copy__()
         self.assertTrue(c.x == 1 and c.y == 2 and c.z == 3, "Copy failed")
 
 
