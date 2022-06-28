@@ -41,7 +41,7 @@ class Units(object):
         self.error = err
 
     def __str__(self):
-        v, err = self.convertor().from_default(self.v, self._default_units)
+        v, err = self.convertor().from_default(self._value, self._default_units)
         if err:
             return f'{self.convertor().unit_type}: unit {self._default_units} is not supported'
         name, accuracy, f, t = self.convertor()(self._default_units).values()
@@ -58,22 +58,20 @@ class Units(object):
         else:
             return self
 
-    def value(self, value: 'Units', units: int) -> [float, Exception]:
+    def value(self, units: int) -> [float, Exception]:
         """
-        :param value: Units
         :param units: Units consts
         :return: Value of the unit in the specified units
         """
-        return self.convertor().from_default(value.v, units)
+        return self.convertor().from_default(self._value, units)
 
-    def convert(self, value: 'Units', units: int) -> 'Units':
+    def convert(self, units: int) -> 'Units':
         """
         Returns the value into the specified units
-        :param value: Units
         :param units: Units consts
         :return: Units object in the specified units
         """
-        return self.__class__(value.v, units)
+        return self.__class__(self._value, units)
 
     def get_in(self, units: int) -> [float, Exception]:
         """
@@ -82,7 +80,7 @@ class Units(object):
         :param units: Units consts
         :return: float
         """
-        v, err = self.convertor().from_default(self.v, units)
+        v, err = self.convertor().from_default(self._value, units)
         if err:
             return 0
         return v

@@ -13,8 +13,8 @@ class EnergyConvertor(UnitsConvertor):
                           'to': lambda v: v,
                           'from': lambda v: v},
         EnergyJoule: {'name': 'J', 'accuracy': 0,
-                      'to': lambda v: v / 0.737562149277,
-                      'from': lambda v: v * 0.737562149277}
+                      'to': lambda v: v * 0.737562149277,
+                      'from': lambda v: v / 0.737562149277}
     }
 
 
