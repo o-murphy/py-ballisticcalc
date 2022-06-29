@@ -29,8 +29,8 @@ class Atmosphere(object):
     _mach: [unit.Velocity, float] = None
     _mach1: float = None
 
-    def __init__(self, altitude: unit.Distance, pressure: unit.Pressure,
-                 temperature: unit.Temperature, humidity: float = 0.78):
+    def __init__(self, altitude: unit.Distance = None, pressure: unit.Pressure = None,
+                 temperature: unit.Temperature = None, humidity: float = 0.78):
         """
         Creates the atmosphere with the specified parameter
         :param altitude: unit.Distance instance
@@ -42,10 +42,9 @@ class Atmosphere(object):
             humidity = humidity / 100
 
         if humidity < 0 or humidity > 100:
-            self._altitude = unit.Distance(0.0, unit.DistanceFoot).must_create()
-            self._pressure = unit.Pressure(cStandardPressure, unit.PressureInHg).must_create()
-            self._temperature = unit.Pressure(cStandardTemperature, unit.TemperatureFahrenheit).must_create()
-            self._humidity = 0.78
+            self.create_default()
+        elif not altitude or not pressure or not temperature:
+            self.create_default()
         else:
             self._altitude = altitude
             self._pressure = pressure
@@ -60,6 +59,12 @@ class Atmosphere(object):
         """
         return f'Altitude: {self._altitude}, Pressure: {self._pressure}, ' \
                f'Temperature: {self._temperature}, Humidity: {self.humidity_in_percent:.2f}'
+
+    def create_default(self):
+        self._altitude = unit.Distance(0.0, unit.DistanceFoot).must_create()
+        self._pressure = unit.Pressure(cStandardPressure, unit.PressureInHg).must_create()
+        self._temperature = unit.Temperature(cStandardTemperature, unit.TemperatureFahrenheit).must_create()
+        self._humidity = 0.78
 
     @property
     def altitude(self) -> unit.Distance:

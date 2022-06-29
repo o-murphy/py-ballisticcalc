@@ -103,4 +103,4 @@ class Ammunition(object):
         """
         :return: the velocity of the projectile at the muzzle
         """
-        return self.muzzle_velocity
+        return self._muzzle_velocity

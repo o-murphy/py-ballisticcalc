@@ -6,8 +6,9 @@ from .projectile import Ammunition
 class ZeroInfo(object):
     """ ZeroInfo object keeps the information about zeroing of the weapon """
 
-    def __init__(self, has_ammunition: bool,
-                 has_atmosphere: bool, distance: unit.Distance,
+    def __init__(self, distance: unit.Distance,
+                 has_ammunition: bool = False,
+                 has_atmosphere: bool = False,
                  ammunition: Ammunition = None, atmosphere: Atmosphere = None):
         self._has_ammunition = has_ammunition
         self._has_atmosphere = has_atmosphere

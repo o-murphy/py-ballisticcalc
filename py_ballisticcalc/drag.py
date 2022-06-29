@@ -736,6 +736,7 @@ class BallisticCoefficient(object):
 
         self._value = value
         self._table = drag_table
+
         if not self._error:
             self._drag = DragCalculate.drag_function_factory(drag_table)
         else:
@@ -764,12 +765,7 @@ class DragCalculate(object):
 
     @staticmethod
     def make_data_points(drag_table) -> list[DataPoint]:
-        if not isinstance(drag_table, dict):
-            table = dict(drag_table)
-        else:
-            table = drag_table
-
-        return [DataPoint(a, b) for a, b in table.values()]
+        return [DataPoint(*point.values()) for point in drag_table]
 
     @staticmethod
     def calculate_curve(data_points: list[DataPoint]) -> list[CurvePoint]:
@@ -777,12 +773,12 @@ class DragCalculate(object):
         curve = [CurvePoint(0, rate, data_points[0].b - data_points[0].a * rate)]
 
         """ rest as 2nd degree polynomials on three adjacent points """
-        for i, data_point in enumerate(data_points):
+        for i in range(1, len(data_points)-1):
             x1 = data_points[i - 1].a
-            x2 = data_point.a
+            x2 = data_points[i].a
             x3 = data_points[i + 1].a
             y1 = data_points[i - 1].b
-            y2 = data_point.b
+            y2 = data_points[i].b
             y3 = data_points[i + 1].b
             a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
                         (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))

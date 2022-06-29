@@ -34,7 +34,7 @@ class Units(object):
         v, err = self.convertor().to_default(value, units)
         if err:
             self._value = None
-            self._defaultUnits = units
+            self._default_units = units
         else:
             self._value = v
             self._default_units = units
