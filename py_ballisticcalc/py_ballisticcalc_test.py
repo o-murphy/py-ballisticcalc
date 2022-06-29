@@ -1,4 +1,3 @@
-import math
 import unittest
 
 from py_ballisticcalc.projectile import *
@@ -42,7 +41,7 @@ class TestPyBallisticCalc(unittest.TestCase):
                            f'TestZero2 failed {sight_angle.get_in(unit.AngularRadian):.10f}')
 
     def assertEqualCustom(self, a, b, accuracy, name):
-        self.assertTrue(math.fabs(a - b) > accuracy, f'Assertion {name} failed ({a}/{b})')
+        self.assertFalse(math.fabs(a - b) > accuracy, f'Assertion {name} failed ({a}/{b})')
 
     def validate_one(self, data: TrajectoryData, distance: float, velocity: float, mach: float, energy: float,
                      path: float, hold: float, windage: float, wind_adjustment: float, time: float, ogv: float,
@@ -92,7 +91,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         calc = TrajectoryCalculator()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
 
-        self.assertEqualCustom(float(len(data)), 11, 0.1, "Length")
+        self.assertEqualCustom(len(data), 11, 0.1, "Length")
 
         self.validate_one(data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, unit.AngularMOA)
         self.validate_one(data[1], 100, 2351.2, 2.106, 2061, 0, 0, -0.6, -0.6, 0.118, 550, unit.AngularMOA)
@@ -118,7 +117,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         calc = TrajectoryCalculator()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
 
-        self.assertEqualCustom(float(len(data)), 11, 0.1, "Length")
+        self.assertEqualCustom(len(data), 11, 0.1, "Length")
 
         self.validate_one(data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, unit.AngularMil)
         self.validate_one(data[1], 100, 2544.3, 2.279, 2416, 0, 0, -0.35, -0.09, 0.113, 698, unit.AngularMil)

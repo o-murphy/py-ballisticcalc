@@ -7,7 +7,6 @@ from .shot_parameters import ShotParameters
 from .wind import WindInfo
 from .trajectory_data import TrajectoryData, Timespan
 
-
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
 cMaximumDrop = -15000
@@ -150,7 +149,8 @@ class TrajectoryCalculator(object):
             calculate_drift = True
 
         ranges_length = int(math.floor(range_to / step)) + 1
-        ranges = list(range(ranges_length))
+        # ranges = list(range(ranges_length))
+        ranges = []
 
         barrel_azimuth = .0
         barrel_elevation = shot_info.sight_angle.get_in(unit.AngularRadian)
@@ -211,12 +211,13 @@ class TrajectoryCalculator(object):
             if range_vector.x >= next_range_distance:
                 windage: float = range_vector.z
                 if calculate_drift:
-                    windage += (1.25 * (stability_coefficient + 1 / 2) * math.pow(time, 1.83) * twist_coefficient) / 12
+                    windage += (1.25 * (stability_coefficient + 1.2) * math.pow(time, 1.83) * twist_coefficient) / 12
 
                 drop_adjustment = self.get_correction(range_vector.x, range_vector.y)
                 windage_adjustment = self.get_correction(range_vector.x, windage)
 
-                ranges[current_item] = TrajectoryData(
+                # ranges.insert(current_item, TrajectoryData(
+                ranges.append(TrajectoryData(
                     time=Timespan(time),
                     travel_distance=unit.Distance(range_vector.x, unit.DistanceFoot).must_create(),
                     drop=unit.Distance(range_vector.y, unit.DistanceFoot).must_create(),
@@ -225,13 +226,15 @@ class TrajectoryCalculator(object):
                     windage_adjustment=unit.Angular(windage_adjustment, unit.AngularRadian),
                     velocity=unit.Velocity(velocity, unit.VelocityFPS),
                     mach=velocity / mach,
-                    energy=unit.Energy(self.calculate_energy(bullet_weight, velocity), unit.EnergyFootPound),
-                    optimal_game_weight=unit.Weight(self.calculate_ogv(bullet_weight, velocity), unit.WeightPound)
-                )
+                    energy=unit.Energy(self.calculate_energy(bullet_weight, velocity),
+                                       unit.EnergyFootPound),
+                    optimal_game_weight=unit.Weight(self.calculate_ogv(bullet_weight, velocity),
+                                                    unit.WeightPound))
+                              )
 
                 next_range_distance += step
                 current_item += 1
-                if current_item == len(ranges):
+                if current_item == ranges_length:
                     break
 
             delta_time = calculation_step / velocity_vector.x
@@ -279,8 +282,10 @@ class TrajectoryCalculator(object):
                       cross_component * cant_cosine - range_factor * cant_sine)
 
     @staticmethod
-    def get_correction(distance: float, offset: float) -> float:
-        return math.atan(offset / distance)
+    def get_correction(distance: float, offset: float) -> [float, None]:
+        if distance != 0:
+            return math.atan(offset / distance)
+        return
 
     @staticmethod
     def calculate_energy(bullet_weight: float, velocity: float) -> float:
