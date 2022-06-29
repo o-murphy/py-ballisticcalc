@@ -244,7 +244,7 @@ class TrajectoryCalculator(object):
             delta_time = calculation_step / velocity_vector.x
             velocity_adjusted = velocity_vector.subtract(wind_vector)
             velocity = velocity_adjusted.magnitude()
-            
+
             # Todo: drag() wrong value
             drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
             velocity_vector = velocity_vector.subtract(
