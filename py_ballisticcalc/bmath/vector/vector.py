@@ -45,7 +45,7 @@ class Vector(object):
         and ends in the point set by the vector coordinates
         :return: magnitude of the vector
         """
-        return math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2) + math.pow(self.z, 2))
+        return math.sqrt(self.x * self.x + self.y * self.y + self.z*self.z)
 
     def multiply_by_const(self, a: float) -> 'Vector':
         """

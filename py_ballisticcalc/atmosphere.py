@@ -1,4 +1,5 @@
 import math
+
 try:
     from .bmath import unit
 except ImportError:
@@ -186,4 +187,3 @@ if __name__ == '__main__':
     # get speed of sound in mps at the atmosphere with such parameters
     speed_of_sound_in_mps = unit.Velocity(atmo.mach.get_in(unit.VelocityMPS), unit.VelocityMPS)
     print(atmo, speed_of_sound_in_mps, atmo.density_factor)
-
