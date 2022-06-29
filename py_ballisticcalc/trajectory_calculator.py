@@ -220,7 +220,7 @@ class TrajectoryCalculator(object):
                     time=Timespan(time),
                     travel_distance=unit.Distance(range_vector.x, unit.DistanceFoot).must_create(),
                     drop=unit.Distance(range_vector.y, unit.DistanceFoot).must_create(),
-                    drop_adjustment=unit.Angular(drop_adjustment, unit.DistanceFoot).must_create(),
+                    drop_adjustment=unit.Angular(drop_adjustment, unit.AngularRadian).must_create(),
                     windage=unit.Distance(windage, unit.DistanceFoot).must_create(),
                     windage_adjustment=unit.Angular(windage_adjustment, unit.AngularRadian),
                     velocity=unit.Velocity(velocity, unit.VelocityFPS),

@@ -4,5 +4,5 @@ __copyright__ = ("",)
 __credits__ = ["O-Murphy"]
 __version__ = "0.2.3"
 
-__all__ = ['atmosphere', 'bmath', 'drag', 'projectile', 'py_ballistics_test', 'shot_parameters',
+__all__ = ['atmosphere', 'bmath', 'drag', 'projectile', 'py_ballisticcalc_test', 'shot_parameters',
            'trajectory_calculator', 'weapon', 'wind']
