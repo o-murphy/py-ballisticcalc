@@ -61,9 +61,9 @@ class Profile(object):
             self.calculate_trajectory()
         return self._trajectory_data
 
-    # @property
-    # def trajectory_data(self) -> list['TrajectoryData']:
-    #     return self._trajectory_data
+    @property
+    def trajectory_data(self) -> list['TrajectoryData']:
+        return self._trajectory_data
 
     def calculate_trajectory(self):
         """
@@ -74,15 +74,17 @@ class Profile(object):
                                               self._bullet_diameter,
                                               self._bullet_length,
                                               self._bullet_weight)
-        ammo = Ammunition(projectile, self._muzzle_velocity)
+        ammunition = Ammunition(projectile, self._muzzle_velocity)
         atmosphere = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
-        zero = ZeroInfo(self._zero_distance, True, True, ammo, atmosphere)
+        zero = ZeroInfo(self._zero_distance, True, True, ammunition, atmosphere)
         twist = TwistInfo(self._twist_direction, self._twist)
         weapon = Weapon.create_with_twist(self._sight_height, zero, twist)
-        shot_info = ShotParameters(self._sight_angle, self._maximum_distance, self._distance_step)
         wind = WindInfo.create_only_wind_info(self._wind_velocity, self._wind_direction)
         calc = TrajectoryCalculator()
-        data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
+        if not self._sight_angle.v:
+            self._sight_angle = calc.sight_angle(ammunition, weapon, atmosphere)
+        shot_info = ShotParameters(self._sight_angle, self._maximum_distance, self._distance_step)
+        data = calc.trajectory(ammunition, weapon, atmosphere, shot_info, wind)
         self._trajectory_data = data
 
 
@@ -97,7 +99,7 @@ if __name__ == '__main__':
         print(f'Distance: {distance}, Path: {path}')
 
     tested_data = profile.update(temperature=unit.Temperature(26, unit.TemperatureCelsius),
-                                 pressure=unit.Pressure(1000, unit.PressureMmHg))
+                                 pressure=unit.Pressure(780, unit.PressureMmHg))
     distance = tested_data[-1].travelled_distance.convert(unit.DistanceMeter)
     path = tested_data[-1].drop.convert(unit.DistanceCentimeter)
     print(f'\nDistance: {distance}, Path: {path}')
