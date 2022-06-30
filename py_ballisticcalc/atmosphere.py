@@ -1,8 +1,5 @@
 import math
-try:
-    from .bmath import unit
-except ImportError:
-    from py_ballisticcalc.bmath import unit
+from .bmath import unit
 
 
 cIcaoStandardTemperatureR = 518.67

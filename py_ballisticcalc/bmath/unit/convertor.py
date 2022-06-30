@@ -79,7 +79,7 @@ class Convertor(object):
         :param units: Units consts
         :return: Units object in the specified units
         """
-        return self.__class__(self._value, units)
+        return self.__class__(self.get_in(units), units)
 
     def get_in(self, units: int) -> [float, Exception]:
         """

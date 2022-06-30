@@ -1,7 +1,4 @@
-try:
-    from .bmath import unit
-except ImportError:
-    from py_ballisticcalc.bmath import unit
+from .bmath import unit
 
 
 class WindInfo(object):
