@@ -1,12 +1,14 @@
-from ..unit.types import UnitsConvertor, Units
+from ..unit.convertor import Convertor
 
 # the value indicating that energy value is expressed in some unit
 EnergyFootPound = 30
 EnergyJoule = 31
 
 
-class EnergyConvertor(UnitsConvertor):
-    unit_type = 'energy'
+class Energy(Convertor):
+    """ Energy object keeps information about kinetic energy """
+
+    __name__ = 'Energy'
 
     _units = {
         EnergyFootPound: {'name': 'ft*lb', 'accuracy': 0,
@@ -16,8 +18,3 @@ class EnergyConvertor(UnitsConvertor):
                       'to': lambda v: v * 0.737562149277,
                       'from': lambda v: v / 0.737562149277}
     }
-
-
-class Energy(Units):
-    """ Energy object keeps information about kinetic energy """
-    convertor = EnergyConvertor

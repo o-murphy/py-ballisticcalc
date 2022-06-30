@@ -21,7 +21,7 @@ class TrajectoryCalculator(object):
     """
 
     def __init__(self):
-        self._maximum_calculator_step_size = unit.Distance(1, unit.DistanceFoot).must_create()
+        self._maximum_calculator_step_size = unit.Distance(1, unit.DistanceFoot).validate()
 
     @property
     def maximum_calculator_step_size(self) -> unit.Distance:
@@ -45,12 +45,12 @@ class TrajectoryCalculator(object):
 
     def get_calculation_step(self, step: float) -> float:
         step = step / 2  # do it twice for increased accuracy of velocity calculation and 10 times per step
-        maximum_step: float = self.maximum_calculator_step_size.get_in(unit.DistanceFoot)
+        maximum_step: float = self._maximum_calculator_step_size.get_in(unit.DistanceFoot)
 
         if step > maximum_step:
             step_order = int(math.floor(math.log10(step)))
             maximum_order = int(math.floor(math.log10(maximum_step)))
-            step = step / math.pow(10, step_order - maximum_order + 1)
+            step = step / math.pow(10, float(step_order - maximum_order + 1))
 
         return step
 
@@ -65,7 +65,7 @@ class TrajectoryCalculator(object):
         """
 
         calculation_step = self.get_calculation_step(
-            unit.Distance(10, weapon.zero.zero_distance.units).must_create().get_in(unit.DistanceFoot))
+            unit.Distance(10, weapon.zero.zero_distance.units).validate().get_in(unit.DistanceFoot))
 
         mach = atmosphere.mach.get_in(unit.VelocityFPS)
         density_factor = atmosphere.density_factor
@@ -118,10 +118,10 @@ class TrajectoryCalculator(object):
                     break
 
                 iterations_count += 1
-        return unit.Angular(barrel_elevation, unit.AngularRadian).must_create()
+        return unit.Angular(barrel_elevation, unit.AngularRadian).validate()
 
     def trajectory(self, ammunition: Ammunition, weapon: Weapon, atmosphere: Atmosphere,
-                   shot_info: ShotParameters, wind_info: list[WindInfo]):
+                   shot_info: ShotParameters, wind_info: list[WindInfo]) -> list[TrajectoryData]:
         """
         Calculates the trajectory with the parameters specified
         :param ammunition: Ammunition instance
@@ -149,14 +149,16 @@ class TrajectoryCalculator(object):
             calculate_drift = True
 
         ranges_length = int(math.floor(range_to / step)) + 1
-        print(ranges_length)
         ranges = []
 
         barrel_azimuth = .0
         barrel_elevation = shot_info.sight_angle.get_in(unit.AngularRadian)
         barrel_elevation = barrel_elevation + shot_info.shot_angle.get_in(unit.AngularRadian)
         alt0: float = atmosphere.altitude.get_in(unit.DistanceFoot)
-        density_factor, mach = atmosphere.get_density_factor_and_mach_for_altitude(alt0)
+
+        # Never used in upstream, uncomment on need
+        # density_factor, mach = atmosphere.get_density_factor_and_mach_for_altitude(alt0)
+
         current_wind = 0
         next_wind_range = 1e7
 
@@ -193,9 +195,7 @@ class TrajectoryCalculator(object):
             else:
                 twist_coefficient = -1
 
-        while range_vector.x <= (maximum_range + calculation_step):
-
-            print(velocity, cMinimumVelocity, range_vector.y, cMaximumDrop)
+        while range_vector.x <= maximum_range + calculation_step:
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
 
@@ -218,34 +218,30 @@ class TrajectoryCalculator(object):
                 drop_adjustment = self.get_correction(range_vector.x, range_vector.y)
                 windage_adjustment = self.get_correction(range_vector.x, windage)
 
-                trajectory_data = TrajectoryData(
+                ranges.append(TrajectoryData(
                     time=Timespan(time),
-                    travel_distance=unit.Distance(range_vector.x, unit.DistanceFoot).must_create(),
-                    drop=unit.Distance(range_vector.y, unit.DistanceFoot).must_create(),
-                    drop_adjustment=unit.Angular(drop_adjustment, unit.AngularRadian).must_create(),
-                    windage=unit.Distance(windage, unit.DistanceFoot).must_create(),
+                    travel_distance=unit.Distance(range_vector.x, unit.DistanceFoot).validate(),
+                    drop=unit.Distance(range_vector.y, unit.DistanceFoot).validate(),
+                    drop_adjustment=unit.Angular(drop_adjustment, unit.AngularRadian).validate(),
+                    windage=unit.Distance(windage, unit.DistanceFoot).validate(),
                     windage_adjustment=unit.Angular(windage_adjustment, unit.AngularRadian),
                     velocity=unit.Velocity(velocity, unit.VelocityFPS),
                     mach=velocity / mach,
                     energy=unit.Energy(self.calculate_energy(bullet_weight, velocity),
                                        unit.EnergyFootPound),
                     optimal_game_weight=unit.Weight(self.calculate_ogv(bullet_weight, velocity),
-                                                    unit.WeightPound)
-                )
-                ranges.append(trajectory_data)
+                                                    unit.WeightPound))
+                              )
 
                 next_range_distance += step
                 current_item += 1
                 if current_item == ranges_length:
                     break
 
-            print(range_vector.x, next_range_distance, maximum_range + calculation_step)
-
             delta_time = calculation_step / velocity_vector.x
             velocity_adjusted = velocity_vector.subtract(wind_vector)
             velocity = velocity_adjusted.magnitude()
 
-            # Todo: drag() wrong value
             drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
             velocity_vector = velocity_vector.subtract(
                 (velocity_adjusted.multiply_by_const(drag).subtract(gravity_vector)).multiply_by_const(delta_time)

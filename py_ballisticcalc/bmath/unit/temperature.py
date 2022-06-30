@@ -1,7 +1,5 @@
-try:
-    from ..unit.types import UnitsConvertor, Units
-except ImportError:
-    from py_ballisticcalc.bmath.unit.types import UnitsConvertor, Units
+from ..unit.convertor import Convertor
+
 
 # the value indicating that temperature value is expressed in some unit
 TemperatureFahrenheit = 50
@@ -10,8 +8,10 @@ TemperatureKelvin = 52
 TemperatureRankin = 53
 
 
-class TemperatureConvertor(UnitsConvertor):
-    unit_type = 'temperature'
+class Temperature(Convertor):
+    """ Temperature object keeps temperature or speed values """
+
+    __name__ = 'Temperature'
 
     _units = {
         TemperatureFahrenheit: {'name': '°F', 'accuracy': 1,
@@ -27,8 +27,3 @@ class TemperatureConvertor(UnitsConvertor):
                             'to': lambda v: (v - 273.15) * 9 / 5 + 32,
                             'from': lambda v: (v - 32) * 5 / 9 + 273.15},
     }
-
-
-class Temperature(Units):
-    """ Temperature object keeps temperature or speed values """
-    convertor = TemperatureConvertor

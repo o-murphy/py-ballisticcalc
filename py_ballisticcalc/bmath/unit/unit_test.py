@@ -15,7 +15,6 @@ def test_back_n_forth(test, value, units):
 
 
 class TestAngular(unittest.TestCase):
-
     def setUp(self) -> None:
         self.unit_class = unit.Angular
         self.unit_list = [
@@ -34,7 +33,6 @@ class TestAngular(unittest.TestCase):
 
 
 class TestDistance(unittest.TestCase):
-
     def setUp(self) -> None:
         self.unit_class = unit.Distance
         self.unit_list = [
@@ -57,7 +55,6 @@ class TestDistance(unittest.TestCase):
 
 
 class TestEnergy(unittest.TestCase):
-
     def setUp(self) -> None:
         self.unit_class = unit.Energy
         self.unit_list = [

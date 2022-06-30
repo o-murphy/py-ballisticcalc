@@ -757,7 +757,7 @@ class BallisticCoefficient(object):
         return self._table
 
     def drag(self, mach) -> float:
-        return self._drag(mach)
+        return self._drag(mach) * 2.08551e-04 / self._value
 
 
 class DragCalculate(object):

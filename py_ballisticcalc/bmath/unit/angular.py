@@ -1,5 +1,6 @@
 import math
-from ..unit.types import UnitsConvertor, Units
+# from ..unit.convertor import Convertor
+from py_ballisticcalc.bmath.unit.convertor import Convertor
 
 # the value indicating that angular value is expressed in some unit
 AngularRadian = 0
@@ -12,8 +13,10 @@ AngularInchesPer100Yd = 6
 AngularCmPer100M = 7
 
 
-class AngularConvertor(UnitsConvertor):
-    unit_type = 'angular'
+class Angular(Convertor):
+    """ Angular object keeps information about angular units """
+
+    __name__ = 'Angular'
 
     _units = {
         AngularRadian: {'name': 'rad', 'accuracy': 6,
@@ -41,11 +44,3 @@ class AngularConvertor(UnitsConvertor):
                            'to': lambda v: math.atan(v / 10000),
                            'from': lambda v: math.tan(v) * 10000},
     }
-
-
-class Angular(Units):
-    """ Angular object keeps information about angular units """
-    convertor = AngularConvertor
-
-    def __init__(self, value: float, units: int):
-        super(Angular, self).__init__(value, units)

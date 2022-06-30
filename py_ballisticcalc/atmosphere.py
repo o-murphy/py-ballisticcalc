@@ -1,5 +1,4 @@
 import math
-
 try:
     from .bmath import unit
 except ImportError:
@@ -62,9 +61,9 @@ class Atmosphere(object):
                f'Temperature: {self._temperature}, Humidity: {self.humidity_in_percent:.2f}'
 
     def create_default(self):
-        self._altitude = unit.Distance(0.0, unit.DistanceFoot).must_create()
-        self._pressure = unit.Pressure(cStandardPressure, unit.PressureInHg).must_create()
-        self._temperature = unit.Temperature(cStandardTemperature, unit.TemperatureFahrenheit).must_create()
+        self._altitude = unit.Distance(0.0, unit.DistanceFoot).validate()
+        self._pressure = unit.Pressure(cStandardPressure, unit.PressureInHg).validate()
+        self._temperature = unit.Temperature(cStandardTemperature, unit.TemperatureFahrenheit).validate()
         self._humidity = 0.78
 
     @property
@@ -136,7 +135,7 @@ class Atmosphere(object):
         density, mach = self.calculate0(t, p)
         self._density = density
         self._mach1 = mach
-        self._mach = unit.Velocity(mach, unit.VelocityFPS).must_create()
+        self._mach = unit.Velocity(mach, unit.VelocityFPS).validate()
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float) -> tuple[float, float]:
         org_altitude = self._altitude.get_in(unit.DistanceFoot)
@@ -162,7 +161,7 @@ class Atmosphere(object):
             cIcaoStandardTemperatureR + altitude.get_in(
                 unit.DistanceFoot
             ) * cTemperatureGradient - cIcaoFreezingPointTemperatureR, unit.TemperatureFahrenheit
-        ).must_create()
+        ).validate()
 
         pressure = unit.Pressure(
             cStandardPressure *
@@ -170,7 +169,7 @@ class Atmosphere(object):
                         temperature.get_in(unit.TemperatureFahrenheit) + cIcaoFreezingPointTemperatureR),
                      cPressureExponent),
             unit.PressureInHg
-        ).must_create()
+        ).validate()
 
         return Atmosphere(altitude, pressure, temperature, cIcaoStandardHumidity)
 
@@ -186,4 +185,3 @@ if __name__ == '__main__':
 
     # get speed of sound in mps at the atmosphere with such parameters
     speed_of_sound_in_mps = unit.Velocity(atmo.mach.get_in(unit.VelocityMPS), unit.VelocityMPS)
-    print(atmo, speed_of_sound_in_mps, atmo.density_factor)

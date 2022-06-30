@@ -1,4 +1,4 @@
-from ..unit.types import UnitsConvertor, Units
+from ..unit.convertor import Convertor
 
 # the value indicating that pressure value is expressed in some unit
 PressureMmHg = 40
@@ -8,8 +8,10 @@ PressureHP = 43
 PressurePSI = 44
 
 
-class PressureConvertor(UnitsConvertor):
-    unit_type = 'pressure'
+class Pressure(Convertor):
+    """ Pressure object keeps velocity or speed values """
+
+    __name__ = 'Pressure'
 
     _units = {
         PressureMmHg: {'name': 'mmHg', 'accuracy': 0,
@@ -28,8 +30,3 @@ class PressureConvertor(UnitsConvertor):
                       'to': lambda v: v * 51.714924102396,
                       'from': lambda v: v / 51.714924102396}
     }
-
-
-class Pressure(Units):
-    """ Pressure object keeps velocity or speed values """
-    convertor = PressureConvertor

@@ -3,8 +3,10 @@ LGPL library for small arms ballistic calculations (Python 3)
 
 Installation
 ------------
+    # stable release from pypi
     pip install py-ballisticcalc
-    # or
+
+    # latest release, may contain some issues
     pip install git+https://github.com/o-murphy/py_ballisticcalc
 
 Usage example

@@ -10,8 +10,8 @@ class ShotParameters(object):
         :param step:
         """
         self._sight_angle = sight_angle
-        self._shot_angle = unit.Angular(0, unit.AngularRadian).must_create()
-        self._cant_angle = unit.Angular(0, unit.AngularRadian).must_create()
+        self._shot_angle = unit.Angular(0, unit.AngularRadian).validate()
+        self._cant_angle = unit.Angular(0, unit.AngularRadian).validate()
         self._maximum_distance: unit.Distance = maximum_distance
         self._step: unit.Distance = step
 

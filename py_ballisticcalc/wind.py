@@ -92,5 +92,3 @@ if __name__ == '__main__':
         unit.Velocity(15, unit.VelocityKMH),
         unit.Angular(10, unit.AngularRadian)
     )
-
-    print(wind)

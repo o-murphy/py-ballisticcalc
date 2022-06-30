@@ -1,4 +1,4 @@
-from ..unit.types import UnitsConvertor, Units
+from ..unit.convertor import Convertor
 
 # the value indicating that velocity value is expressed in some unit
 VelocityMPS = 60
@@ -8,8 +8,10 @@ VelocityMPH = 63
 VelocityKT = 64
 
 
-class VelocityConvertor(UnitsConvertor):
-    unit_type = 'velocity'
+class Velocity(Convertor):
+    """ Velocity object keeps velocity or speed values """
+
+    __name__ = 'Velocity'
 
     _units = {
         VelocityMPS: {'name': 'm/s', 'accuracy': 0,
@@ -28,8 +30,3 @@ class VelocityConvertor(UnitsConvertor):
                      'to': lambda v: v / 1.94384449,
                      'from': lambda v: v * 1.94384449},
     }
-
-
-class Velocity(Units):
-    """ Velocity object keeps velocity or speed values """
-    convertor = VelocityConvertor

@@ -1,4 +1,4 @@
-from ..unit.types import UnitsConvertor, Units
+from ..unit.convertor import Convertor
 
 # the value indicating that distance value is expressed in some unit
 DistanceInch = 10
@@ -13,8 +13,10 @@ DistanceKilometer = 18
 DistanceLine = 19
 
 
-class DistanceConvertor(UnitsConvertor):
-    unit_type = 'distance'
+class Distance(Convertor):
+    """ Distance structure keeps the The distance value """
+
+    __name__ = 'Distance'
 
     _units = {
         DistanceInch: {'name': 'in', 'accuracy': 1,
@@ -48,8 +50,3 @@ class DistanceConvertor(UnitsConvertor):
                             'to': lambda v: v / 25.4 * 1000000,
                             'from': lambda v: v * 25.4 / 1000000},
     }
-
-
-class Distance(Units):
-    """ Distance structure keeps the The distance value """
-    convertor = DistanceConvertor
