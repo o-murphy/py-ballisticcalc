@@ -4,13 +4,8 @@ from ..bmath import unit
 
 class BallisticCoefficientExtended(BallisticCoefficient):
 
-    def __init__(self, value: float, drag_table: int, weight: unit.Weight, diameter: unit.Distance):
+    def __init__(self, value: float, drag_table: int, diameter: unit.Distance, weight: unit.Weight):
         super(BallisticCoefficientExtended, self).__init__(value, drag_table)
-        # if not self._error:
-        #     self._calculated_cd = DragCalculateExtended.calculated_cd()
-        #     self._standard_cd = DragCalculateExtended.
-        # else:
-        #     self._drag = None
         self._weight = weight
         self._diameter = diameter
         self._form_factor = self.form_factor()
@@ -34,24 +29,20 @@ class BallisticCoefficientExtended(BallisticCoefficient):
     def calculated_cd(self, mach):
         return self._drag(mach) * self._form_factor
 
+    def calculated_drag_function(self):
+        """
+        Calculates the drag_function with the parameters specified
+        :param ammunition: Ammunition instance
+        :return: calculated_drag_function with the parameters specified
+        """
 
-class DragCalculateExtended(DragCalculate):
-    pass
-    # @staticmethod
-    # def drag(self, mach) -> float:
-    #     return self._drag(mach) * 2.08551e-04 / self._value
-    #
-    # @staticmethod
-    # def form_factor(weight: unit.Weight, diameter: unit.Distance, bc_value: float):
-    #     w = weight.get_in(unit.WeightGrain)
-    #     d = diameter.get_in(unit.DistanceInch)
-    #     return w / (d ** 2) / 7000 / bc_value
-    #
-    # @staticmethod
-    # def standard_cd(self, mach):
-    #     return self._drag(mach)
-    #
-    # @staticmethod
-    # def calculated_cd(self, mach, weight: unit.Weight, diameter: unit.Distance, bc_value: float):
-    #     form_factor = DragCalculateExtended.form_factor(weight, diameter, bc_value)
-    #     return self._drag(mach) * form_factor
+        standard_cd_table = DRAG_TABLES[self._table]
+        calculated_cd_table = []
+
+        for point in standard_cd_table:
+            st_mach, st_cd = point.values()
+            # standard_cd_by_curve = ammunition.bullet.ballistic_coefficient.standard_cd(st_mach)
+            cd = self.calculated_cd(st_mach)
+            calculated_cd_table.append({'A': round(st_mach, 4), 'B': cd})
+
+        return calculated_cd_table
