@@ -54,9 +54,8 @@ class TrajectoryCalculatorWithMBC(TrajectoryCalculator):
 
                 # drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
                 mach_mps = unit.Velocity(mach, unit.VelocityFPS)
-                drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag_with_bc(
-                    velocity / mach, mach_mps)
 
+                drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
 
                 velocity_vector = velocity_vector.subtract(
                     (
@@ -198,10 +197,7 @@ class TrajectoryCalculatorWithMBC(TrajectoryCalculator):
             velocity_adjusted = velocity_vector.subtract(wind_vector)
             velocity = velocity_adjusted.magnitude()
 
-            # drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
-            mach_mps = unit.Velocity(mach, unit.VelocityFPS)
-            drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag_with_bc(
-                velocity / mach, mach_mps)
+            drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
 
             velocity_vector = velocity_vector.subtract(
                 (velocity_adjusted.multiply_by_const(drag).subtract(gravity_vector)).multiply_by_const(delta_time)
