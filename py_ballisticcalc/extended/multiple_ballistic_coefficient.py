@@ -124,6 +124,7 @@ class MultipleBallisticCoefficient(object):
 
 
 if __name__ == '__main__':
+    pass
     # mbc = MultipleBallisticCoefficient([[0.275, 800], [0.271, 500], [0.27, 700], ],
     #                                    unit.VelocityMPS,
     #                                    DragTableG7,
