@@ -3,11 +3,14 @@ LGPL library for small arms ballistic calculations (Python 3)
 
 Installation
 ------------
-    # stable release from pypi
-    pip install py-ballisticcalc
-
-    # latest release, may contain some issues
-    pip install git+https://github.com/o-murphy/py_ballisticcalc
+**Stable release from pypi**
+```commandline
+pip install py-ballisticcalc
+```
+**Latest release, may contain some issues**
+```commandline
+pip install git+https://github.com/o-murphy/py_ballisticcalc
+```    
 
 Usage
 -----
@@ -44,7 +47,14 @@ for d in tested_data:
 ```
 
 ### Extended
-#### Using with custom drag table
+
+**An extended class that includes support for custom drag and drop functionality and adds some more methods that not available in standard library classes**
+
+```python
+from py_ballisticcalc.extended import BallisticCoefficientExtended
+```
+
+**Using with custom drag table**
 ```python
 from py_ballisticcalc.extended import ProfileExtended
 
