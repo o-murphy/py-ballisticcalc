@@ -757,6 +757,10 @@ class BallisticCoefficient(object):
         return self._table
 
     def drag(self, mach) -> float:
+        """
+        PIR = -(PI/8)*(RHO0/144) = 2.08551e-04
+        :param mach: current velocity in mach
+        """
         return self._drag(mach) * 2.08551e-04 / self._value
 
 

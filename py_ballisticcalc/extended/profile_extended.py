@@ -1,6 +1,5 @@
 from py_ballisticcalc.extended.drag_extended import BallisticCoefficientExtended
 from py_ballisticcalc.profile import *
-from py_ballisticcalc.extended.trajectory_extended import TrajectoryCalculatorWithMBC
 
 
 class ProfileExtended(Profile):
@@ -20,11 +19,11 @@ class ProfileExtended(Profile):
                  twist_direction: int = 1,
                  sight_height: (float, int) = (90, unit.DistanceMillimeter),
                  sight_angle: (float, int) = (0, unit.AngularMOA),
-                 maximum_distance: (float, int) = (2000, unit.DistanceMeter),
+                 maximum_distance: (float, int) = (1000, unit.DistanceMeter),
                  distance_step: (float, int) = (100, unit.DistanceMeter),
                  wind_velocity: (float, int) = (0, unit.VelocityKMH),
                  wind_direction: (float, int) = (0, unit.AngularDegree),
-                 custom_drag_function: list = None
+                 custom_drag_function: list[dict[str, float]] = None
                  ):
         self._custom_drag_function = custom_drag_function
         self._calculated_drag_function = None
@@ -37,10 +36,9 @@ class ProfileExtended(Profile):
         """
         :return: list[TrajectoryData]
         """
-        # bc = BallisticCoefficientExtended(self._bc_value, self._drag_table, self._bullet_diameter, self._bullet_weight)
+
         bc = BallisticCoefficientExtended(self._bc_value, self._drag_table, self._bullet_diameter, self._bullet_weight,
                                           self._custom_drag_function)
-
         projectile = ProjectileWithDimensions(bc, self._bullet_diameter, self._bullet_length, self._bullet_weight)
         ammunition = Ammunition(projectile, self._muzzle_velocity)
         atmosphere = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
@@ -49,7 +47,7 @@ class ProfileExtended(Profile):
         weapon = Weapon.create_with_twist(self._sight_height, zero, twist)
         wind = WindInfo.create_only_wind_info(self._wind_velocity, self._wind_direction)
 
-        calc = TrajectoryCalculatorWithMBC()
+        calc = TrajectoryCalculator()
 
         if not self._sight_angle.v:
             self._sight_angle = calc.sight_angle(ammunition, weapon, atmosphere)
@@ -84,4 +82,4 @@ if __name__ == '__main__':
         distance = d.travelled_distance.convert(unit.DistanceMeter)
         g7_path = d.drop.convert(unit.DistanceCentimeter)
         custom_path = custom_drag_func_trajectory[i].drop.convert(unit.DistanceCentimeter)
-        print(f'Distance: {distance}, G7: {g7_path}, Custom: {custom_path}')
+        print(f'Distance: {distance}, i7 * G7 BC: {g7_path}, Custom Drag Table: {custom_path}')

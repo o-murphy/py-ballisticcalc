@@ -1,5 +1,6 @@
 from .bmath import unit
 from .drag import BallisticCoefficient
+from typing import Any, Union
 
 
 class Projectile(object):
@@ -62,7 +63,7 @@ class ProjectileWithDimensions(Projectile):
     TwistInfo must be also set in this case.
     """
 
-    def __init__(self, ballistic_coefficient: BallisticCoefficient,
+    def __init__(self, ballistic_coefficient: Union[BallisticCoefficient, Any],
                  bullet_diameter: unit.Distance,
                  bullet_length: unit.Distance,
                  weight: unit.Weight):

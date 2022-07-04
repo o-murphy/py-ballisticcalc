@@ -24,7 +24,7 @@ class Profile(object):
                  twist_direction: int = 1,
                  sight_height: (float, int) = (90, unit.DistanceMillimeter),
                  sight_angle: (float, int) = (0, unit.AngularMOA),
-                 maximum_distance: (float, int) = (1001, unit.DistanceMeter),
+                 maximum_distance: (float, int) = (2001, unit.DistanceMeter),
                  distance_step: (float, int) = (100, unit.DistanceMeter),
                  wind_velocity: (float, int) = (0, unit.VelocityKMH),
                  wind_direction: (float, int) = (0, unit.AngularDegree)
@@ -46,12 +46,13 @@ class Profile(object):
         self._twist_direction: int = twist_direction
         self._sight_height: unit.Distance = unit.Distance(*sight_height).validate()
         self._sight_angle: unit.Angular = unit.Angular(*sight_angle).validate()
+        maximum_distance = [maximum_distance[0] + 1, maximum_distance[1]]
         self._maximum_distance: unit.Distance = unit.Distance(*maximum_distance).validate()
         self._distance_step: unit.Distance = unit.Distance(*distance_step).validate()
         self._wind_velocity: unit.Velocity = unit.Velocity(*wind_velocity).validate()
         self._wind_direction: unit.Angular = unit.Angular(*wind_direction).validate()
 
-        self.calculate_trajectory()
+        # self.calculate_trajectory()
 
     def update(self, **kwargs):
         if kwargs:
@@ -63,6 +64,8 @@ class Profile(object):
 
     @property
     def trajectory_data(self) -> list['TrajectoryData']:
+        if not self._trajectory_data:
+            self.calculate_trajectory()
         return self._trajectory_data
 
     def calculate_trajectory(self):
@@ -91,15 +94,9 @@ class Profile(object):
 # usage example
 if __name__ == '__main__':
     profile = Profile()
-    tested_data = profile.update()
+    tested_data = profile.trajectory_data
 
     for d in tested_data:
         distance = d.travelled_distance.convert(unit.DistanceMeter)
         path = d.drop.convert(unit.DistanceCentimeter)
         print(f'Distance: {distance}, Path: {path}')
-
-    tested_data = profile.update(temperature=unit.Temperature(26, unit.TemperatureCelsius),
-                                 pressure=unit.Pressure(780, unit.PressureMmHg))
-    distance = tested_data[-1].travelled_distance.convert(unit.DistanceMeter)
-    path = tested_data[-1].drop.convert(unit.DistanceCentimeter)
-    print(f'\nDistance: {distance}, Path: {path}')
