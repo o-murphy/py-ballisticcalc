@@ -97,6 +97,6 @@ if __name__ == '__main__':
     tested_data = profile.trajectory_data
 
     for d in tested_data:
-        distance = d.travelled_distance.convert(unit.DistanceMeter)
-        path = d.drop.convert(unit.DistanceCentimeter)
-        print(f'Distance: {distance}, Path: {path}')
+        distance_ = d.travelled_distance.convert(unit.DistanceMeter)
+        path_ = d.drop.convert(unit.DistanceCentimeter)
+        print(f'Distance: {distance_}, Path: {path_}')
