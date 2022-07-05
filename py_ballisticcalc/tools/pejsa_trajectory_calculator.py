@@ -8,10 +8,7 @@ Use standard and extended classes for the best results that we currently have
 """
 
 
-try:
-    from ..profile import Profile
-except ImportError:
-    from py_ballisticcalc.profile import *
+from ..profile import *
 
 
 class PejsaTrajectoryCalculator(object):

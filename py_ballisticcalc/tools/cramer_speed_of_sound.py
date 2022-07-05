@@ -67,11 +67,10 @@ class CramerSpeedOfSound(object):
         c = c1 + c2 - c3
         return c
 
-
-if __name__ == '__main__':
-    speed_of_sound = CramerSpeedOfSound.at_atmosphere(
-        unit.Temperature(15, unit.TemperatureCelsius),
-        unit.Pressure(760, unit.PressureMmHg),
-        50
-    )
-    print(speed_of_sound)
+#
+# if __name__ == '__main__':
+#     speed_of_sound = CramerSpeedOfSound.at_atmosphere(
+#         unit.Temperature(15, unit.TemperatureCelsius),
+#         unit.Pressure(760, unit.PressureMmHg),
+#         50
+#     )
