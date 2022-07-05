@@ -146,6 +146,7 @@ class MultipleBallisticCoefficient(object):
     def create_extended_ballistic_coefficient(self):
       custom_df = self.calculate_custom_drag_func()
       bc = BallisticCoefficientExtended(None, 0, self.diameter, self.weight, custom_df)
+      return bc
 
 
 # usage example
