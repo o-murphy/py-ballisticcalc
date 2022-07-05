@@ -7,6 +7,7 @@ import math
 
 class BCDataPoint(object):
     """ Contains input or calculated bc point data"""
+
     def __init__(self, bc: float, v: float):
         self.bc = bc
         self.v = v
@@ -143,19 +144,8 @@ class MultipleBallisticCoefficient(object):
             else:
                 drag_function.append({'A': point.a, 'B': cd})
         return drag_function
+
     def create_extended_ballistic_coefficient(self):
-      custom_df = self.calculate_custom_drag_func()
-      bc = BallisticCoefficientExtended(None, 0, self.diameter, self.weight, custom_df)
-      return bc
-
-
-# usage example
-if __name__ == '__main__':
-    # mbc = MultipleBallisticCoefficient([[0.275, 800], [0.271, 500], [0.27, 700], ],
-    #                                    unit.VelocityMPS,
-    #                                    DragTableG7,
-    #                                    unit.Distance(0.308, unit.DistanceInch),
-    #                                    unit.Weight(178, unit.WeightGrain))
-    # custom_drag_function = mbc.calculate_custom_drag_func(True)
-    # print('\n'.join([f"{p['B']}\t{p['cdst']}".replace('.', ',') for p in custom_drag_function]))
-    pass
+        custom_df = self.calculate_custom_drag_func()
+        bc = BallisticCoefficientExtended(0, 0, self.diameter, self.weight, custom_df)
+        return bc

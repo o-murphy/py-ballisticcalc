@@ -58,35 +58,35 @@ class ProfileExtended(Profile):
         df = bc.calculated_drag_function()
         self._calculated_drag_function = df
 
-
-if __name__ == '__main__':
-
-    """
-    Example for Lapua .30 10,85 g / 167 gr Scenar OTM GB422 bullet
-    """
-
-    custom_drag_func = [
-        {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, {'A': 0.5, 'B': 0.154},
-        {'A': 0.6, 'B': 0.129}, {'A': 0.7, 'B': 0.131}, {'A': 0.8, 'B': 0.136},
-        {'A': 0.825, 'B': 0.14}, {'A': 0.85, 'B': 0.144}, {'A': 0.875, 'B': 0.153},
-        {'A': 0.9, 'B': 0.177}, {'A': 0.925, 'B': 0.226}, {'A': 0.95, 'B': 0.26},
-        {'A': 0.975, 'B': 0.349}, {'A': 1.0, 'B': 0.427}, {'A': 1.025, 'B': 0.45},
-        {'A': 1.05, 'B': 0.452}, {'A': 1.075, 'B': 0.45}, {'A': 1.1, 'B': 0.447},
-        {'A': 1.15, 'B': 0.437}, {'A': 1.2, 'B': 0.429}, {'A': 1.3, 'B': 0.418},
-        {'A': 1.4, 'B': 0.406}, {'A': 1.5, 'B': 0.394}, {'A': 1.6, 'B': 0.382},
-        {'A': 1.8, 'B': 0.359}, {'A': 2.0, 'B': 0.339}, {'A': 2.2, 'B': 0.321},
-        {'A': 2.4, 'B': 0.301}, {'A': 2.6, 'B': 0.28}, {'A': 3.0, 'B': 0.25},
-        {'A': 4.0, 'B': 0.2}, {'A': 5.0, 'B': 0.18}
-    ]
-
-    profile = ProfileExtended(drag_table=0, custom_drag_function=custom_drag_func)
-    custom_drag_func_trajectory = profile.trajectory_data
-
-    profile1 = ProfileExtended()
-    g7_bc_trajectory = profile1.trajectory_data
-
-    for i, d in enumerate(g7_bc_trajectory):
-        distance = d.travelled_distance.convert(unit.DistanceMeter)
-        g7_path = d.drop.convert(unit.DistanceCentimeter)
-        custom_path = custom_drag_func_trajectory[i].drop.convert(unit.DistanceCentimeter)
-        print(f'Distance: {distance}, i7 * G7 BC: {g7_path}, Custom Drag Table: {custom_path}')
+#
+# if __name__ == '__main__':
+#
+#     """
+#     Example for Lapua .30 10,85 g / 167 gr Scenar OTM GB422 bullet
+#     """
+#
+#     custom_drag_func = [
+#         {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, {'A': 0.5, 'B': 0.154},
+#         {'A': 0.6, 'B': 0.129}, {'A': 0.7, 'B': 0.131}, {'A': 0.8, 'B': 0.136},
+#         {'A': 0.825, 'B': 0.14}, {'A': 0.85, 'B': 0.144}, {'A': 0.875, 'B': 0.153},
+#         {'A': 0.9, 'B': 0.177}, {'A': 0.925, 'B': 0.226}, {'A': 0.95, 'B': 0.26},
+#         {'A': 0.975, 'B': 0.349}, {'A': 1.0, 'B': 0.427}, {'A': 1.025, 'B': 0.45},
+#         {'A': 1.05, 'B': 0.452}, {'A': 1.075, 'B': 0.45}, {'A': 1.1, 'B': 0.447},
+#         {'A': 1.15, 'B': 0.437}, {'A': 1.2, 'B': 0.429}, {'A': 1.3, 'B': 0.418},
+#         {'A': 1.4, 'B': 0.406}, {'A': 1.5, 'B': 0.394}, {'A': 1.6, 'B': 0.382},
+#         {'A': 1.8, 'B': 0.359}, {'A': 2.0, 'B': 0.339}, {'A': 2.2, 'B': 0.321},
+#         {'A': 2.4, 'B': 0.301}, {'A': 2.6, 'B': 0.28}, {'A': 3.0, 'B': 0.25},
+#         {'A': 4.0, 'B': 0.2}, {'A': 5.0, 'B': 0.18}
+#     ]
+#
+#     profile = ProfileExtended(drag_table=0, custom_drag_function=custom_drag_func)
+#     custom_drag_func_trajectory = profile.trajectory_data
+#
+#     profile1 = ProfileExtended()
+#     g7_bc_trajectory = profile1.trajectory_data
+#
+#     for i, d in enumerate(g7_bc_trajectory):
+#         distance = d.travelled_distance.convert(unit.DistanceMeter)
+#         g7_path = d.drop.convert(unit.DistanceCentimeter)
+#         custom_path = custom_drag_func_trajectory[i].drop.convert(unit.DistanceCentimeter)
+#         print(f'Distance: {distance}, i7 * G7 BC: {g7_path}, Custom Drag Table: {custom_path}')
