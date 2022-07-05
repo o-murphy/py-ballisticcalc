@@ -1,5 +1,6 @@
 from ..bmath import unit
 from ..drag import DataPoint, DRAG_TABLES
+from ..extended.drag_extended import BallisticCoefficientExtended
 from ..atmosphere import Atmosphere
 import math
 
@@ -142,6 +143,9 @@ class MultipleBallisticCoefficient(object):
             else:
                 drag_function.append({'A': point.a, 'B': cd})
         return drag_function
+    def create_extended_ballistic_coefficient(self):
+      custom_df = self.calculate_custom_drag_func()
+      bc = BallisticCoefficientExtended(None, 0, self.diameter, self.weight, custom_df)
 
 
 # usage example
