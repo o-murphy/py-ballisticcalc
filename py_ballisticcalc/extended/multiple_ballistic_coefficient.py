@@ -1,13 +1,7 @@
 from ..bmath import unit
 from ..drag import DataPoint, DRAG_TABLES
-from ..tools import CramerSpeedOfSound
 from ..atmosphere import Atmosphere
 import math
-
-# from py_ballisticcalc.bmath import unit
-# from py_ballisticcalc.drag import *
-# from py_ballisticcalc.tools import CramerSpeedOfSound
-# from py_ballisticcalc.atmosphere import Atmosphere
 
 
 class BCDataPoint(object):
@@ -22,6 +16,13 @@ class MultipleBallisticCoefficient(object):
 
     def __init__(self, multiple_bc_table: list[(float, float)], velocity_units_flag: int, drag_table: int,
                  diameter: unit.Distance, weight: unit.Weight):
+        """
+        :param multiple_bc_table: list[(bc: float, velocity: float)]
+        :param velocity_units_flag: flag of velocity units
+        :param drag_table: flag of default drag function
+        :param diameter: bullet diameter
+        :param weight: bullet weight
+        """
 
         self._weight = weight
         self._diameter = diameter
@@ -30,37 +31,54 @@ class MultipleBallisticCoefficient(object):
 
         self.atmosphere = Atmosphere.create_icao(unit.Distance(0, unit.DistanceFoot))
 
-        self._speed_of_sound = CramerSpeedOfSound.at_atmosphere(
-            self.atmosphere.temperature.get_in(unit.TemperatureCelsius),
-            self.atmosphere.pressure.get_in(unit.PressureMmHg),
-            self.atmosphere.humidity * 100
-        )
+        altitude = unit.Distance(0, unit.DistanceMeter).get_in(unit.DistanceFoot)
+        density, self._speed_of_sound = self.atmosphere.get_density_factor_and_mach_for_altitude(altitude)
 
-        self._bc_table = []
-        multiple_bc_table.sort(reverse=True, key=lambda x: x[1])
-        for bc, v in multiple_bc_table:
-            data_point = BCDataPoint(bc, unit.Velocity(v, self._units).get_in(unit.VelocityMPS))
-            self._bc_table.append(data_point)
-
-        self._df_table = []
-        for point in DRAG_TABLES[drag_table]:
-            self._df_table.append(DataPoint(*point.values()))
+        self._df_table = self._create_drag_func_data_points(drag_table)
+        self._bc_table = self._create_bc_table_data_points(multiple_bc_table)
 
     @property
     def bc_table(self) -> list[tuple]:
+        """
+        :return: specified bc table
+        """
         return [(point.bc, point.v) for point in self._bc_table]
 
     @property
     def weight(self) -> unit.Weight:
+        """
+        :return: bullet weight
+        """
         return self._weight
 
     @property
     def diameter(self) -> unit.Distance:
+        """
+        :return: bullet diameter
+        """
         return self._diameter
 
     @property
     def speed_of_sound(self) -> unit.Velocity:
+        """
+        :return: speed of sound with specified atmosphere instance
+        """
         return unit.Velocity(self._speed_of_sound, unit.VelocityMPS)
+
+    @staticmethod
+    def _create_drag_func_data_points(drag_table) -> list[DataPoint]:
+        df_table = []
+        for point in DRAG_TABLES[drag_table]:
+            df_table.append(DataPoint(*point.values()))
+        return df_table
+
+    def _create_bc_table_data_points(self, multiple_bc_table) -> list[BCDataPoint]:
+        multiple_bc_table.sort(reverse=True, key=lambda x: x[1])
+        bc_table = []
+        for bc, v in multiple_bc_table:
+            data_point = BCDataPoint(bc, unit.Velocity(v, self._units).get_in(unit.VelocityMPS))
+            bc_table.append(data_point)
+        return bc_table
 
     def _get_sectional_density(self) -> float:
         """
@@ -86,6 +104,10 @@ class MultipleBallisticCoefficient(object):
         return cdst * form_factor
 
     def _bc_extended(self) -> list[float]:
+        """
+        linear interpolation of bc table
+        :return: interpolated bc table for default drag function length
+        """
         bc_mah = [BCDataPoint(point.bc, point.v / self._speed_of_sound) for point in self._bc_table]
         bc_mah[0].v = self._df_table[-1].a
         bc_mah.insert(len(bc_mah), BCDataPoint(bc_mah[-1].bc, self._df_table[0].a))
@@ -102,33 +124,32 @@ class MultipleBallisticCoefficient(object):
 
         return bc_extended
 
-    def calculate_custom_drag_func(self) -> list[dict[str, float]]:
+    def calculate_custom_drag_func(self, extended_output: bool = False) -> list[dict[str, float]]:
+        """
+        :param extended_output: set this flag True if you want include
+        bc values for each point of default drag function to output
+        :return: custom drag table calculated by multiple bc
+        """
         bc_extended = self._bc_extended()
         drag_function = []
         for i, point in enumerate(self._df_table):
             bc = bc_extended[len(bc_extended) - 1 - i]
             form_factor = self._get_form_factor(bc)
             cd = self._get_counted_cd(form_factor, point.b)
-            drag_function.append({'A': point.a, 'B': cd})
-        return drag_function
-
-    def calculate_with_extended_output(self) -> list[dict[str, float]]:
-        bc_extended = self._bc_extended()
-        drag_function = []
-        for i, point in enumerate(self._df_table):
-            bc = bc_extended[len(bc_extended) - 1 - i]
-            form_factor = self._get_form_factor(bc)
-            cd = self._get_counted_cd(form_factor, point.b)
-            drag_function.append({'A': point.a, 'B': round(cd, 4), 'bc': round(bc, 4), 'cdst': point.b})
+            if extended_output:
+                drag_function.append({'A': point.a, 'B': round(cd, 4), 'bc': round(bc, 4), 'cdst': point.b})
+            else:
+                drag_function.append({'A': point.a, 'B': cd})
         return drag_function
 
 
+# usage example
 if __name__ == '__main__':
-    pass
     # mbc = MultipleBallisticCoefficient([[0.275, 800], [0.271, 500], [0.27, 700], ],
     #                                    unit.VelocityMPS,
     #                                    DragTableG7,
     #                                    unit.Distance(0.308, unit.DistanceInch),
     #                                    unit.Weight(178, unit.WeightGrain))
-    # custom_drag_function = mbc.calculate_with_extended_output()
-    # # print('\n'.join([f"{p['B']}\t{p['cdst']}".replace('.', ',') for p in custom_drag_function]))
+    # custom_drag_function = mbc.calculate_custom_drag_func(True)
+    # print('\n'.join([f"{p['B']}\t{p['cdst']}".replace('.', ',') for p in custom_drag_function]))
+    pass

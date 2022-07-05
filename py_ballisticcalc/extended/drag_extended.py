@@ -26,15 +26,18 @@ class BallisticCoefficientExtended(BallisticCoefficient):
         self._sectional_density = self._get_sectional_density()
         self._custom_drag_table = custom_drag_table
 
+        # check for custom drag table
         if self._table != 0 or not custom_drag_table:
             self._error = f"BallisticCoefficient: Unknown custom drag table {drag_table}"
 
+        # init with custom drag table
         else:
-            self._form_factor = 0.999
+            self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
             self._value = self._get_custom_bc()
             self._drag = DragCalculateExtended.drag_function_factory(drag_table, custom_drag_table)
             self._error = None
 
+        # try to init as standard BallisticCoefficient with standard drag function
         if self._error:
             super(BallisticCoefficientExtended, self).__init__(value, drag_table)
             self._form_factor = self._get_form_factor()
@@ -77,7 +80,6 @@ class BallisticCoefficientExtended(BallisticCoefficient):
     def calculated_drag_function(self) -> list[dict[str, float]]:
         """
         Calculates the drag_function with the parameters specified
-        :param ammunition: Ammunition instance
         :return: calculated_drag_table with the parameters specified
         """
 
