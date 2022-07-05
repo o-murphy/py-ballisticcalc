@@ -32,7 +32,8 @@ class MultipleBallisticCoefficient(object):
         self.atmosphere = Atmosphere.create_icao(unit.Distance(0, unit.DistanceFoot))
 
         altitude = unit.Distance(0, unit.DistanceMeter).get_in(unit.DistanceFoot)
-        density, self._speed_of_sound = self.atmosphere.get_density_factor_and_mach_for_altitude(altitude)
+        density, speed_of_sound = self.atmosphere.get_density_factor_and_mach_for_altitude(altitude)
+        self._speed_of_sound = speed_of_sound.get_in(unit.VelocityMPS)
 
         self._df_table = self._create_drag_func_data_points(drag_table)
         self._bc_table = self._create_bc_table_data_points(multiple_bc_table)
