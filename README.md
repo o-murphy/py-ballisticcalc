@@ -54,22 +54,26 @@ for d in tested_data:
 from py_ballisticcalc.extended import BallisticCoefficientExtended
 ```
 
+**Convert multiple bc to custom drag table**
+```python
+from py_ballisticcalc.extended import MultipleBallisticCoefficient
+from py_ballisticcalc.extended.profile_extended import *
+
+multiple_bc = MultipleBallisticCoefficient([[0.275, 800], [0.26, 700], [0.255, 500], ],
+                                   unit.VelocityMPS,
+                                   DragTableG7,
+                                   unit.Distance(0.308, unit.DistanceInch),
+                                   unit.Weight(178, unit.WeightGrain))
+
+table = multiple_bc.calculate_custom_drag_func()
+```
+
 **Using with custom drag table**
 ```python
 from py_ballisticcalc.extended import ProfileExtended
 
 custom_drag_func = [
-    {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, {'A': 0.5, 'B': 0.154},
-    {'A': 0.6, 'B': 0.129}, {'A': 0.7, 'B': 0.131}, {'A': 0.8, 'B': 0.136},
-    {'A': 0.825, 'B': 0.14}, {'A': 0.85, 'B': 0.144}, {'A': 0.875, 'B': 0.153},
-    {'A': 0.9, 'B': 0.177}, {'A': 0.925, 'B': 0.226}, {'A': 0.95, 'B': 0.26},
-    {'A': 0.975, 'B': 0.349}, {'A': 1.0, 'B': 0.427}, {'A': 1.025, 'B': 0.45},
-    {'A': 1.05, 'B': 0.452}, {'A': 1.075, 'B': 0.45}, {'A': 1.1, 'B': 0.447},
-    {'A': 1.15, 'B': 0.437}, {'A': 1.2, 'B': 0.429}, {'A': 1.3, 'B': 0.418},
-    {'A': 1.4, 'B': 0.406}, {'A': 1.5, 'B': 0.394}, {'A': 1.6, 'B': 0.382},
-    {'A': 1.8, 'B': 0.359}, {'A': 2.0, 'B': 0.339}, {'A': 2.2, 'B': 0.321},
-    {'A': 2.4, 'B': 0.301}, {'A': 2.6, 'B': 0.28}, {'A': 3.0, 'B': 0.25},
-    {'A': 4.0, 'B': 0.2}, {'A': 5.0, 'B': 0.18}
+    {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, ... , {'A': 5.0, 'B': 0.18}
 ]
 
 profile = ProfileExtended(drag_table=0, custom_drag_function=custom_drag_func)
@@ -138,6 +142,9 @@ applications, including air rifles, bows, firearms, artillery and so on.
 calculator, ported to C#, optimized, fixed and extended with elements described in
 Litz's "Applied Ballistics" book and from the friendly project of Alexandre Trofimov
 and then ported to Go.
+
+Now it's also ported to python3 and expanded to support calculation trajectory by 
+multiple ballistics coefficients and using custom drag data (such as Doppler radar data ©Lapua, etc.)
 
 The online version of Go documentation is located here: https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc
 
