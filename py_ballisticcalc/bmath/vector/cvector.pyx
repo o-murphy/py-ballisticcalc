@@ -2,17 +2,20 @@ import cython
 import math
 
 
-@cython.cclass
 class Vector(object):
     """ Vector object keeps data about a 3D vector """
 
-    def __init__(self, x: float, y: float, z: float):
+    def __init__(self, float x, float y, float z):
         """
         Create create a vector from its coordinates
         :param x: X-coordinate
         :param y: Y-coordinate
         :param z: Z-coordinate
         """
+        cdef float self.x
+        cdef float self.y
+        cdef float self.z
+
         self.x = x
         self.y = y
         self.z = z
@@ -31,8 +34,7 @@ class Vector(object):
         """
         return Vector(self.x, self.y, self.z)
 
-    @cython.ccall
-    def multiply_by_vector(self, v2: 'Vector') -> float:
+    def multiply_by_vector(self, v2: 'Vector') -> cython.py_float:
         """
         Returns a product of two vectors
         The product of two vectors is a sum of products of each coordinate
@@ -41,8 +43,7 @@ class Vector(object):
         """
         return self.x * v2.x + self.y * v2.y + self.z * v2.z
 
-    @cython.ccall
-    def magnitude(self) -> float:
+    def magnitude(self) -> cython.py_float:
         """
         Returns a magnitude of the vector
         The magnitude of the vector is the length of a line that starts in point (0,0,0)
@@ -51,8 +52,7 @@ class Vector(object):
         """
         return math.sqrt(math.pow(self.x, 2) + math.pow(self.y, 2) + math.pow(self.z, 2))
 
-    @cython.ccall
-    def multiply_by_const(self, a: float) -> 'Vector':
+    def multiply_by_const(self, a: cython.py_float) -> 'Vector':
         """
         Multiplies the vector by the constant
         :param a: float multiplier
@@ -60,7 +60,6 @@ class Vector(object):
         """
         return Vector(self.x * a, self.y * a, self.z * a)
 
-    @cython.ccall
     def add(self, v2: 'Vector') -> 'Vector':
         """
         Adds two vectors
@@ -69,7 +68,6 @@ class Vector(object):
         """
         return Vector(self.x + v2.x, self.y + v2.y, self.z + v2.z)
 
-    @cython.ccall
     def subtract(self, v2: 'Vector') -> 'Vector':
         """
         Subtracts one vector from another
@@ -78,7 +76,6 @@ class Vector(object):
         """
         return Vector(self.x - v2.x, self.y - v2.y, self.z - v2.z)
 
-    @cython.ccall
     def negate(self) -> 'Vector':
         """
         Returns a vector which is symmetrical to this vector vs (0,0,0) point
@@ -86,12 +83,12 @@ class Vector(object):
         """
         return Vector(-self.x, -self.y, -self.z)
 
-    @cython.ccall
     def normalize(self) -> 'Vector':
         """
         Returns a vector of magnitude one which is collinear to this vector
         :return: Vector
         """
+        magnitude: cython.py_float
         magnitude = self.magnitude()
         if math.fabs(magnitude) < 1e-10:
             return self.__copy__()
