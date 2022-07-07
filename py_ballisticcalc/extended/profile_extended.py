@@ -1,5 +1,4 @@
 from py_ballisticcalc.extended.multiple_ballistic_coefficient import BallisticCoefficientExtended
-from py_ballisticcalc.extended.trajectory_calculator_extended import TrajectoryCalculatorExtended
 from py_ballisticcalc.profile import *
 
 
