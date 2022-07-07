@@ -1,4 +1,5 @@
-from py_ballisticcalc.extended.drag_extended import BallisticCoefficientExtended
+from py_ballisticcalc.extended.multiple_ballistic_coefficient import BallisticCoefficientExtended
+from py_ballisticcalc.extended.trajectory_calculator_extended import TrajectoryCalculatorExtended
 from py_ballisticcalc.profile import *
 
 
@@ -23,10 +24,12 @@ class ProfileExtended(Profile):
                  distance_step: (float, int) = (100, unit.DistanceMeter),
                  wind_velocity: (float, int) = (0, unit.VelocityKMH),
                  wind_direction: (float, int) = (0, unit.AngularDegree),
-                 custom_drag_function: list[dict[str, float]] = None
+                 custom_drag_function: list[dict[str, float]] = None,
+                 maximum_step_size: (float, int) = (1, unit.DistanceFoot)
                  ):
         self._custom_drag_function = custom_drag_function
         self._calculated_drag_function = None
+        self._maximum_step_size = unit.Distance(*maximum_step_size)
         super(ProfileExtended, self).__init__(bc_value, drag_table, bullet_diameter, bullet_length, bullet_weight,
                                               muzzle_velocity, altitude, pressure, temperature, humidity, zero_distance,
                                               twist, twist_direction, sight_height, sight_angle, maximum_distance,
@@ -48,6 +51,7 @@ class ProfileExtended(Profile):
         wind = WindInfo.create_only_wind_info(self._wind_velocity, self._wind_direction)
 
         calc = TrajectoryCalculator()
+        calc.maximum_calculator_step_size = self._maximum_step_size
 
         if not self._sight_angle.v:
             self._sight_angle = calc.sight_angle(ammunition, weapon, atmosphere)

@@ -1,5 +1,7 @@
 from py_ballisticcalc.extended import MultipleBallisticCoefficient
-from py_ballisticcalc.extended.profile_extended import *
+from py_ballisticcalc.extended import ProfileExtended
+from py_ballisticcalc.drag import *
+from py_ballisticcalc.bmath import *
 import unittest
 
 
@@ -32,7 +34,11 @@ class TestMultipleBC(unittest.TestCase):
 class TestProfileExtended(unittest.TestCase):
 
     def test_profile_bc(self):
-        p = ProfileExtended()
+        p = ProfileExtended(
+            # maximum_distance=(2500, unit.DistanceMeter),
+            # distance_step=(1, unit.DistanceMeter),
+            # maximum_step_size=(5, unit.DistanceFoot)
+        )
 
         data = p.trajectory_data
 
