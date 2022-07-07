@@ -1,11 +1,11 @@
 import math
-from ..bmath import unit, Vector
-from ..projectile import Ammunition
-from ..weapon import Weapon, TwistLeft
-from ..atmosphere import Atmosphere
-from ..shot_parameters import ShotParameters
-from ..wind import WindInfo
-from ..trajectory_data import TrajectoryData, Timespan
+from py_ballisticcalc.bmath import unit, Vector
+from py_ballisticcalc.projectile import Ammunition
+from py_ballisticcalc.weapon import Weapon, TwistLeft
+from py_ballisticcalc.atmosphere import Atmosphere
+from py_ballisticcalc.shot_parameters import ShotParameters
+from py_ballisticcalc.wind import WindInfo
+from py_ballisticcalc.trajectory_data import TrajectoryData, Timespan
 
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
@@ -14,7 +14,7 @@ cMaxIterations = 10
 cGravityConstant = -32.17405
 
 
-class TrajectoryCalculator(object):
+class TjCalc(object):
     """
     TrajectoryCalculator table is used to calculate the trajectory
     of a projectile shot with the parameters specified

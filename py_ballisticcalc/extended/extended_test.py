@@ -35,8 +35,8 @@ class TestProfileExtended(unittest.TestCase):
 
     def test_profile_bc(self):
         p = ProfileExtended(
-            # maximum_distance=(2500, unit.DistanceMeter),
-            # distance_step=(1, unit.DistanceMeter),
+            maximum_distance=(2500, unit.DistanceMeter),
+            distance_step=(1, unit.DistanceMeter),
             # maximum_step_size=(5, unit.DistanceFoot)
         )
 
