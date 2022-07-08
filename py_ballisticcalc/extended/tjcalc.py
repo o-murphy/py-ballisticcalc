@@ -23,7 +23,7 @@ class TjCalc(object):
     """
 
     def __init__(self):
-        self._maximum_calculator_step_size = unit.Distance(1, unit.DistanceFoot).validate()
+        self._maximum_calculator_step_size = unit.Distance(1, unit.DistanceFoot)
 
     @property
     def maximum_calculator_step_size(self) -> unit.Distance:
@@ -67,7 +67,7 @@ class TjCalc(object):
         """
 
         calculation_step = self.get_calculation_step(
-            unit.Distance(10, weapon.zero.zero_distance.units).validate().get_in(unit.DistanceFoot))
+            unit.Distance(10, weapon.zero.zero_distance.units).get_in(unit.DistanceFoot))
 
         mach = atmosphere.mach.get_in(unit.VelocityFPS)
         density_factor = atmosphere.density_factor
@@ -247,12 +247,12 @@ class TjCalc(object):
 
                 ranges.append(TrajectoryData(
                     time=Timespan(time),
-                    # travel_distance=unit.Distance(range_vector.x, unit.DistanceFoot).validate(),
-                    travel_distance=unit.Distance(range_vector[0], unit.DistanceFoot).validate(),
-                    # drop=unit.Distance(range_vector.y, unit.DistanceFoot).validate(),
-                    drop=unit.Distance(range_vector[1], unit.DistanceFoot).validate(),
-                    drop_adjustment=unit.Angular(drop_adjustment, unit.AngularRadian).validate(),
-                    windage=unit.Distance(windage, unit.DistanceFoot).validate(),
+                    # travel_distance=unit.Distance(range_vector.x, unit.DistanceFoot),
+                    travel_distance=unit.Distance(range_vector[0], unit.DistanceFoot),
+                    # drop=unit.Distance(range_vector.y, unit.DistanceFoot),
+                    drop=unit.Distance(range_vector[1], unit.DistanceFoot),
+                    drop_adjustment=unit.Angular(drop_adjustment, unit.AngularRadian),
+                    windage=unit.Distance(windage, unit.DistanceFoot),
                     windage_adjustment=unit.Angular(windage_adjustment, unit.AngularRadian),
                     velocity=unit.Velocity(velocity, unit.VelocityFPS),
                     mach=velocity / mach,
