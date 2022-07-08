@@ -3,6 +3,7 @@ from py_ballisticcalc.extended import ProfileExtended
 from py_ballisticcalc.drag import *
 from py_ballisticcalc.bmath import *
 import unittest
+import timeit
 
 
 class TestMultipleBC(unittest.TestCase):
@@ -46,6 +47,26 @@ class TestProfileExtended(unittest.TestCase):
         self.assertLess(math.fabs(-2.4677575464e-05 - data[1].drop.get_in(unit.DistanceFoot)), 1e-8)
         self.assertLess(math.fabs(-6.1696307895 - data[5].drop.get_in(unit.DistanceFoot)), 1e-8)
         self.assertLess(math.fabs(-48.439433788 - data[10].drop.get_in(unit.DistanceFoot)), 1e-8)
+
+    # @unittest.SkipTest
+    def test_time_1(self):
+        p = ProfileExtended()
+        print('test_time_1', timeit.timeit(lambda: p.trajectory_data))
+
+    def test_time_2(self):
+        p = ProfileExtended(
+            maximum_distance=(2500, unit.DistanceMeter),
+            distance_step=(1, unit.DistanceMeter),
+        )
+        print('test_time_2', timeit.timeit(lambda: p.trajectory_data))
+
+    def test_time_3(self):
+        p = ProfileExtended(
+            maximum_distance=(2500, unit.DistanceMeter),
+            distance_step=(1, unit.DistanceMeter),
+            maximum_step_size=(5, unit.DistanceFoot)
+        )
+        print('test_time_3', timeit.timeit(lambda: p.trajectory_data))
 
     def test_profile_custom(self):
         mbc = MultipleBallisticCoefficient([[0.275, 800], [0.255, 500], [0.26, 700], ],

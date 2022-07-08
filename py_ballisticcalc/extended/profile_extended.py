@@ -1,6 +1,6 @@
 from py_ballisticcalc.extended.multiple_ballistic_coefficient import BallisticCoefficientExtended
 from py_ballisticcalc.profile import *
-
+from py_ballisticcalc.extended.tjcalc import TjCalc
 
 class ProfileExtended(Profile):
     def __init__(self,

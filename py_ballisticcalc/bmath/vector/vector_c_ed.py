@@ -2,7 +2,7 @@ import math
 import cvector
 
 
-class Vector(object):
+class VectorCed(object):
     """ VectorCed object keeps data about a 3D vector """
 
     def __init__(self, x: float, y: float, z: float):
@@ -28,7 +28,7 @@ class Vector(object):
         Creates a copy of the vector
         :return: VectorCed
         """
-        return Vector(self.x, self.y, self.z)
+        return VectorCed(self.x, self.y, self.z)
 
     def multiply_by_vector(self, v2: 'VectorCed') -> float:
         """
@@ -37,8 +37,8 @@ class Vector(object):
         :param v2: VectorCed(x2, y2, z2)
         :return: float
         """
-        return self.x * v2.x + self.y * v2.y + self.z * v2.z
-        # return cvector.multiply_by_vector(self.x, self.y, self.z, v2.x, v2.y, v2.z)
+        # return self.x * v2.x + self.y * v2.y + self.z * v2.z
+        return cvector.multiply_by_vector(self.x, self.y, self.z, v2.x, v2.y, v2.z)
 
     def magnitude(self) -> float:
         """
@@ -47,9 +47,8 @@ class Vector(object):
         and ends in the point set by the vector coordinates
         :return: magnitude of the vector
         """
-        return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
-        # return cvector.magnitude(self.x, self.y, self.z)
-
+        # return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+        return cvector.magnitude(self.x, self.y, self.z)
 
     def multiply_by_const(self, a: float) -> 'VectorCed':
         """
@@ -57,7 +56,8 @@ class Vector(object):
         :param a: float multiplier
         :return: VectorCed
         """
-        return Vector(self.x * a, self.y * a, self.z * a)
+        v = cvector.multiply_by_const(self.x, self.y, self.z, a)
+        return VectorCed(*v)
 
     def add(self, v2: 'VectorCed') -> 'VectorCed':
         """
@@ -65,7 +65,7 @@ class Vector(object):
         :param v2: VectorCed(x2, y2, z2)
         :return: sum of two vectors
         """
-        return Vector(self.x + v2.x, self.y + v2.y, self.z + v2.z)
+        return VectorCed(self.x + v2.x, self.y + v2.y, self.z + v2.z)
 
     def subtract(self, v2: 'VectorCed') -> 'VectorCed':
         """
@@ -73,14 +73,14 @@ class Vector(object):
         :param v2: VectorCed(x2, y2, z2)
         :return: VectorCed
         """
-        return Vector(self.x - v2.x, self.y - v2.y, self.z - v2.z)
+        return VectorCed(self.x - v2.x, self.y - v2.y, self.z - v2.z)
 
     def negate(self) -> 'VectorCed':
         """
         Returns a vector which is symmetrical to this vector vs (0,0,0) point
         :return: VectorCed
         """
-        return Vector(-self.x, -self.y, -self.z)
+        return VectorCed(-self.x, -self.y, -self.z)
 
     def normalize(self) -> 'VectorCed':
         """
