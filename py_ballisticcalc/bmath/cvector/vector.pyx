@@ -8,49 +8,58 @@ cdef struct vector:
 
 
 cdef class Vector:
-    cdef float x
-    cdef float y
-    cdef float z
+    cdef float _x
+    cdef float _y
+    cdef float _z
 
     def __init__(self, x: float, y: float, z: float):
-        self.x = x
-        self.y = y
-        self.z = z
+        self._x = x
+        self._y = y
+        self._z = z
 
     def __str__(self):
-        return f'{vector(self.x, self.y, self.z)}'
+        return f'{vector(self._x, self._y, self._z)}'
+
+    cpdef float x(self):
+        return self._x
+
+    cpdef float y(self):
+        return self._y
+
+    cpdef float z(self):
+        return self._z
 
     cdef string(self):
-        cdef v = vector(self.x, self.y, self.z)
+        cdef v = vector(self._x, self._y, self._z)
         return f'{v}'
 
     cpdef Vector copy(self):
-        return Vector(self.x, self.y, self.z)
+        return Vector(self._x, self._y, self._z)
 
     cpdef float magnitude(self):
-        cdef float m = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+        cdef float m = sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
         return m
 
     cpdef Vector multiply_by_const(self, float a):
-        return Vector(self.x * a, self.y * a, self.z * a)
+        return Vector(self._x * a, self._y * a, self._z * a)
 
     cpdef float multiply_by_vector(self, b: Vector):
-        cdef float var = self.x * self.x + self.y * self.y + self.z + self.z
+        cdef float var = self._x * self._x + self._y * self._y + self._z + self._z
         return var
 
     cpdef Vector add(self, b: Vector):
-        return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
+        return Vector(self._x + b._x, self._y + b._y, self._z + b._z)
 
     cpdef Vector subtract(self, b: Vector):
-        return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
+        return Vector(self._x - b._x, self._y - b._y, self._z - b._z)
 
     cpdef Vector negate(self):
-        return Vector(-self.x, -self.y, -self.z)
+        return Vector(-self._x, -self._y, -self._z)
 
     cpdef Vector normalize(self):
         cdef float m = self.magnitude()
         if fabs(m) < 1e-10:
-            return Vector(self.x, self.y, self.z)
+            return Vector(self._x, self._y, self._z)
         return self.multiply_by_const(1.0 / m)
 
 # cython

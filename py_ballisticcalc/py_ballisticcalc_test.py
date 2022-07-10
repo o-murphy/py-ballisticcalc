@@ -136,6 +136,16 @@ class TestPyBallisticCalc(unittest.TestCase):
             with self.subTest():
                 self.validate_one(*d)
 
+    def test_time(self):
+        bc = BallisticCoefficient(0.275, DragTableG7)
+        import timeit
+        from datetime import datetime
+
+        t = timeit.timeit(lambda: bc.drag(2.5), number=25000)
+        t1 = timeit.timeit(lambda: bc.drag(1.3), number=15000)
+        t2 = timeit.timeit(lambda: bc.drag(3.6), number=10000)
+        print(datetime.fromtimestamp(t + t1 + t2).time().strftime('%S.%fs'))
+
 
 if __name__ == '__main__':
     unittest.main()

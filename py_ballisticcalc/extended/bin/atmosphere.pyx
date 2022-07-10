@@ -76,10 +76,10 @@ cdef class Atmosphere:
     cpdef float density_factor(self):
         return self._density / cStandardDensity
 
-    cpdef float mach(self):
+    cpdef mach(self):
         return self._mach
 
-    cpdef (float, float) calculate0(self, t: float, p: float):
+    cdef (float, float) calculate0(self, float t, float p):
         cdef float et0, et, hc, density, mach
 
         if t > 0:
@@ -93,7 +93,7 @@ cdef class Atmosphere:
         mach = sqrt(t + cIcaoFreezingPointTemperatureR) * cSpeedOfSound
         return density, mach
 
-    cpdef calculate(self):
+    cdef calculate(self):
         cdef float density, mach, mach1, t, p
         t = self._temperature.get_in(TemperatureFahrenheit)
         p = self._pressure.get_in(PressureInHg)
@@ -122,7 +122,7 @@ cdef class Atmosphere:
         return density / cStandardDensity, mach
 
 cpdef IcaoAtmosphere(altitude: Distance):
-    cdef float temperature, pressure
+    cdef temperature, pressure
     temperature = Temperature(
         cIcaoStandardTemperatureR + altitude.get_in(DistanceFoot)
         * cTemperatureGradient - cIcaoFreezingPointTemperatureR, TemperatureFahrenheit)

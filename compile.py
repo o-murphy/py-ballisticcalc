@@ -10,6 +10,9 @@ extensions = [
     Extension('distance', ['py_ballisticcalc/bmath/cunit/distance.pyx']),
     Extension('angular', ['py_ballisticcalc/bmath/cunit/angular.pyx']),
     Extension('weight', ['py_ballisticcalc/bmath/cunit/weight.pyx']),
+    # Extension('atmosphere', ['py_ballisticcalc/extended/bin/atmosphere.pyx']),
+    # Extension('shot_parameters', ['py_ballisticcalc/extended/bin/shot_parameters.pyx']),
+    # Extension('drag', ['py_ballisticcalc/extended/bin/drag.pyx']),
 ]
 setup(
     ext_modules=cythonize(

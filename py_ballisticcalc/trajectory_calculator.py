@@ -99,6 +99,8 @@ class TrajectoryCalculator(object):
                 if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                     break
 
+                print(velocity)
+
                 delta_time = calculation_step / velocity_vector.x
                 velocity = velocity_vector.magnitude()
                 drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
@@ -156,6 +158,7 @@ class TrajectoryCalculator(object):
         barrel_elevation = barrel_elevation + shot_info.shot_angle.get_in(unit.AngularRadian)
         alt0: float = atmosphere.altitude.get_in(unit.DistanceFoot)
 
+        print(barrel_elevation)
         # Never used in upstream, uncomment on need
         # density_factor, mach = atmosphere.get_density_factor_and_mach_for_altitude(alt0)
 
@@ -181,7 +184,7 @@ class TrajectoryCalculator(object):
         range_vector = Vector(.0, -weapon.sight_height.get_in(unit.DistanceFoot), 0)
         velocity_vector = Vector(math.cos(barrel_elevation) * math.cos(barrel_azimuth), math.sin(barrel_elevation),
                                  math.cos(barrel_elevation) * math.sin(barrel_azimuth)).multiply_by_const(velocity)
-
+        print(velocity_vector)
         current_item = 0
 
         maximum_range = range_to
@@ -252,6 +255,11 @@ class TrajectoryCalculator(object):
             range_vector = range_vector.add(delta_range_vector)
             velocity = velocity_vector.magnitude()
             time = time + delta_range_vector.magnitude() / velocity
+
+            with open('py.log', 'a') as fp:
+                fp.write(
+                    f'{str(velocity_vector)}\t{str(range_vector)}\n'
+                )
 
         return ranges
 

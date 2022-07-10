@@ -2,11 +2,11 @@ import timeit
 import unittest
 import pyximport
 
-try:
-    import vector
-except ImportError:
-    pyximport.install()
-    from py_ballisticcalc.bmath.cvector import vector
+# try:
+#     import vector
+# except ImportError:
+pyximport.install()
+from py_ballisticcalc.bmath.cvector import vector
 
 
 class TestVector(unittest.TestCase):
@@ -23,6 +23,7 @@ class TestVector(unittest.TestCase):
         neg = v.negate()
         norm = v.normalize()
         # print('\n'.join([str(i) for i in [mag, mc, mv, a, s, neg, norm]]))
+        x = v.x
 
     # @unittest.SkipTest
     def test_time(self):

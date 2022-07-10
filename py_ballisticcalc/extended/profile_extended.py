@@ -53,12 +53,13 @@ class ProfileExtended(Profile):
         weapon = Weapon.create_with_twist(self._sight_height, zero, twist)
         wind = WindInfo.create_only_wind_info(self._wind_velocity, self._wind_direction)
 
-        calc = tjcalc.TjCalc()
-        # calc = TrajectoryCalculator()
+        # calc = tjcalc.TjCalc()
+        calc = TrajectoryCalculator()
         calc.maximum_calculator_step_size = self._maximum_step_size
 
         if not self._sight_angle.v:
             self._sight_angle = calc.sight_angle(ammunition, weapon, atmosphere)
+        print(self._sight_angle)
         shot_info = ShotParameters(self._sight_angle, self._maximum_distance, self._distance_step)
         data = calc.trajectory(ammunition, weapon, atmosphere, shot_info, wind)
         self._trajectory_data = data

@@ -28,7 +28,6 @@ cdef class ShotParameters:
 
 
 cdef class ShotParameterUnlevel(ShotParameters):
-    cdef _sight_angle, _shot_angle, _cant_angle, _maximum_distance, _step
 
     def __init__(self, sight_angle: Angular, maximum_distance: Distance,
                  step: Distance, shot_angle: Angular, cant_angle: Angular):

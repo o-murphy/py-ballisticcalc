@@ -58,7 +58,7 @@ class TestProfileExtended(unittest.TestCase):
     def test_time_2(self):
         p = ProfileExtended(
             maximum_distance=(2500, unit.DistanceMeter),
-            distance_step=(1, unit.DistanceMeter),
+            distance_step=(100, unit.DistanceMeter),
         )
         print('test_time_2', timeit.timeit(lambda: p.trajectory_data))
 
