@@ -116,7 +116,7 @@ class DragCalculateExtended(DragCalculate):
                 table = DragCalculateExtended.make_data_points(custom_drag_table)
             else:
                 table = DragCalculateExtended.make_data_points(DRAG_TABLES[drag_table])
-            curve = DragCalculate.calculate_curve(table)
-            return lambda mach: DragCalculate.calculate_by_curve(table, curve, mach)
+            curve = DragCalculateExtended.calculate_curve(table)
+            return lambda mach: DragCalculateExtended.calculate_by_curve(table, curve, mach)
         except KeyError:
             raise ValueError("Unknown drag table type")

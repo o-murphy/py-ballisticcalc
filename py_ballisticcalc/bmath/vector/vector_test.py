@@ -1,8 +1,8 @@
 import math
 import unittest
 from py_ballisticcalc.bmath import Vector
-from py_ballisticcalc.bmath.vector.vector_c_ed import VectorCed
-import cvector
+# from py_ballisticcalc.bmath.vector.vector_c_ed import VectorCed
+# import cvector
 
 import timeit
 

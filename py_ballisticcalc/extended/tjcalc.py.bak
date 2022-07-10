@@ -1,4 +1,4 @@
-import math
+# import math
 from py_ballisticcalc.bmath import unit, Vector
 from py_ballisticcalc.projectile import Ammunition
 from py_ballisticcalc.weapon import Weapon, TwistLeft
@@ -8,19 +8,17 @@ from py_ballisticcalc.wind import WindInfo
 from py_ballisticcalc.trajectory_data import TrajectoryData, Timespan
 
 import cvector
-
-cZeroFindingAccuracy = 0.000005
-cMinimumVelocity = 50.0
-cMaximumDrop = -15000
-cMaxIterations = 10
-cGravityConstant = -32.17405
+import cython
+from cython.cimports.libc import math
+# from cython.cimports.libc import vector
+cZeroFindingAccuracy: cython.float = 0.000005
+cMinimumVelocity: cython.float = 50.0
+cMaximumDrop: cython.float = -15000
+cMaxIterations: cython.int = 10
+cGravityConstant: cython.float  = -32.17405
 
 
 class TjCalc(object):
-    """
-    TrajectoryCalculator table is used to calculate the trajectory
-    of a projectile shot with the parameters specified
-    """
 
     def __init__(self):
         self._maximum_calculator_step_size = unit.Distance(1, unit.DistanceFoot)
@@ -134,14 +132,14 @@ class TjCalc(object):
         :return: trajectory with the parameters specified
         """
 
-        range_to = shot_info.maximum_distance.get_in(unit.DistanceFoot)
-        step = shot_info.step.get_in(unit.DistanceFoot)
+        range_to: cython.float  = shot_info.maximum_distance.get_in(unit.DistanceFoot)
+        step: cython.float = shot_info.step.get_in(unit.DistanceFoot)
 
-        calculation_step = self.get_calculation_step(step)
+        calculation_step: cython.float = self.get_calculation_step(step)
 
-        bullet_weight = ammunition.bullet.bullet_weight.get_in(unit.WeightGrain)
+        bullet_weight: cython.float = ammunition.bullet.bullet_weight.get_in(unit.WeightGrain)
 
-        stability_coefficient = 1.0
+        stability_coefficient: cython.float = 1.0
 
         calculate_drift: bool = False
 
@@ -151,19 +149,22 @@ class TjCalc(object):
             )
             calculate_drift = True
 
-        ranges_length = int(math.floor(range_to / step)) + 1
+        ranges_length: cython.int = int(math.floor(range_to / step)) + 1
         ranges = []
 
-        barrel_azimuth = .0
-        barrel_elevation = shot_info.sight_angle.get_in(unit.AngularRadian)
-        barrel_elevation = barrel_elevation + shot_info.shot_angle.get_in(unit.AngularRadian)
+        barrel_azimuth: cython.float = .0
+        barrel_elevation: cython.float = shot_info.sight_angle.get_in(unit.AngularRadian)
+        barrel_elevation: cython.float = barrel_elevation + shot_info.shot_angle.get_in(unit.AngularRadian)
         alt0 = atmosphere.altitude.get_in(unit.DistanceFoot)
 
         # Never used in upstream, uncomment on need
         # density_factor, mach = atmosphere.get_density_factor_and_mach_for_altitude(alt0)
 
-        current_wind = 0
-        next_wind_range = 1e7
+        density_faclor: cython.float
+        mach: cython.float
+
+        current_wind: cython.float = 0
+        next_wind_range: cython.float = 1e7
 
         if len(wind_info) < 1:
             # wind_vector = Vector(0, 0, 0)
@@ -176,12 +177,12 @@ class TjCalc(object):
             wind_vector = self.wind_to_vector(shot_info, wind_info[0])
             wind_vector = (wind_vector.x, wind_vector.y, wind_vector.z)
 
-        muzzle_velocity = ammunition.muzzle_velocity.get_in(unit.VelocityFPS)
+        muzzle_velocity: cython.float = ammunition.muzzle_velocity.get_in(unit.VelocityFPS)
         # gravity_vector = Vector(0, cGravityConstant, 0)
         gravity_vector = (0, cGravityConstant, 0)
 
-        velocity = muzzle_velocity
-        time = .0
+        velocity: cython.float = muzzle_velocity
+        time: cython.float = .0
 
         # x - distance towards target,
         # y - drop and
@@ -198,12 +199,12 @@ class TjCalc(object):
              math.cos(barrel_elevation) * math.sin(barrel_azimuth)),
             velocity)
 
-        current_item = 0
+        current_item: cython.int = 0
 
-        maximum_range = range_to
-        next_range_distance = 0
+        maximum_range: cython.float = range_to
+        next_range_distance: cython.float = 0
 
-        twist_coefficient = .0
+        twist_coefficient: cython.int = 0
 
         if calculate_drift:
             if weapon.twist.direction == TwistLeft:
@@ -236,14 +237,14 @@ class TjCalc(object):
             # if range_vector.x >= next_range_distance:
             if range_vector[0] >= next_range_distance:
                 # windage = range_vector.z
-                windage = range_vector[2]
+                windage: cython.float = range_vector[2]
                 if calculate_drift:
                     windage += (1.25 * (stability_coefficient + 1.2) * math.pow(time, 1.83) * twist_coefficient) / 12
 
                 # drop_adjustment = self.get_correction(range_vector.x, range_vector.y)
-                drop_adjustment = self.get_correction(range_vector[0], range_vector[1])
+                drop_adjustment: float = self.get_correction(range_vector[0], range_vector[1])
                 # windage_adjustment = self.get_correction(range_vector.x, windage)
-                windage_adjustment = self.get_correction(range_vector[0], windage)
+                windage_adjustment: float = self.get_correction(range_vector[0], windage)
 
                 ranges.append(TrajectoryData(
                     time=Timespan(time),
@@ -268,13 +269,13 @@ class TjCalc(object):
                     break
 
             # delta_time = calculation_step / velocity_vector.x
-            delta_time = calculation_step / velocity_vector[0]
+            delta_time: cython.float = calculation_step / velocity_vector[0]
             # velocity_adjusted = velocity_vector.subtract(wind_vector)
             velocity_adjusted = cvector.subtract(*velocity_vector, *wind_vector)
             # velocity = velocity_adjusted.magnitude()
             velocity = cvector.magnitude(*velocity_adjusted)
 
-            drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
+            drag: cython.float = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
             # velocity_vector = velocity_vector.subtract(
             #     (velocity_adjusted.multiply_by_const(drag).subtract(gravity_vector)).multiply_by_const(delta_time)
             # )
@@ -347,3 +348,4 @@ class TjCalc(object):
     @staticmethod
     def calculate_ogv(bullet_weight: float, velocity: float) -> float:
         return math.pow(bullet_weight, 2) * math.pow(velocity, 3) * 1.5e-12
+#

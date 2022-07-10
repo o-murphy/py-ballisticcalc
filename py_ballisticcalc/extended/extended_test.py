@@ -34,6 +34,7 @@ class TestMultipleBC(unittest.TestCase):
 
 class TestProfileExtended(unittest.TestCase):
 
+    @unittest.SkipTest
     def test_profile_bc(self):
         p = ProfileExtended(
             # maximum_distance=(2500, unit.DistanceMeter),
@@ -53,6 +54,7 @@ class TestProfileExtended(unittest.TestCase):
         p = ProfileExtended()
         print('test_time_1', timeit.timeit(lambda: p.trajectory_data))
 
+    # @unittest.SkipTest
     def test_time_2(self):
         p = ProfileExtended(
             maximum_distance=(2500, unit.DistanceMeter),
@@ -60,6 +62,7 @@ class TestProfileExtended(unittest.TestCase):
         )
         print('test_time_2', timeit.timeit(lambda: p.trajectory_data))
 
+    # @unittest.SkipTest
     def test_time_3(self):
         p = ProfileExtended(
             maximum_distance=(2500, unit.DistanceMeter),
@@ -68,6 +71,7 @@ class TestProfileExtended(unittest.TestCase):
         )
         print('test_time_3', timeit.timeit(lambda: p.trajectory_data))
 
+    @unittest.SkipTest
     def test_profile_custom(self):
         mbc = MultipleBallisticCoefficient([[0.275, 800], [0.255, 500], [0.26, 700], ],
                                            unit.VelocityMPS,

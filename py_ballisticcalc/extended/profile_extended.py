@@ -1,6 +1,10 @@
 from py_ballisticcalc.extended.multiple_ballistic_coefficient import BallisticCoefficientExtended
 from py_ballisticcalc.profile import *
-from py_ballisticcalc.extended.tjcalc import TjCalc
+# import tjcalc
+# import pyximport
+# pyximport.install()
+# from py_ballisticcalc.extended import tjcalc
+
 
 class ProfileExtended(Profile):
     def __init__(self,
@@ -49,7 +53,8 @@ class ProfileExtended(Profile):
         weapon = Weapon.create_with_twist(self._sight_height, zero, twist)
         wind = WindInfo.create_only_wind_info(self._wind_velocity, self._wind_direction)
 
-        calc = TrajectoryCalculator()
+        calc = tjcalc.TjCalc()
+        # calc = TrajectoryCalculator()
         calc.maximum_calculator_step_size = self._maximum_step_size
 
         if not self._sight_angle.v:

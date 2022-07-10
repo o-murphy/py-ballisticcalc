@@ -1,5 +1,4 @@
 import math
-import cvector
 
 
 class Vector(object):
