@@ -44,7 +44,7 @@ cdef class Vector:
         return Vector(self._x * a, self._y * a, self._z * a)
 
     cpdef float multiply_by_vector(self, b: Vector):
-        cdef float var = self._x * self._x + self._y * self._y + self._z + self._z
+        cdef float var = self._x * b._x + self._y * b._y + self._z * b._z
         return var
 
     cpdef Vector add(self, b: Vector):

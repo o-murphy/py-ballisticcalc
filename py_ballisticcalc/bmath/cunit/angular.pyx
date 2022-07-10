@@ -43,7 +43,7 @@ cdef class Angular:
         if units == AngularRadian:
             return value
         elif units == AngularDegree:
-            return value / 180 * pi
+            return value * 180 / pi
         elif units == AngularMOA:
             return value * 180 / pi * 60
         elif units == AngularMil:

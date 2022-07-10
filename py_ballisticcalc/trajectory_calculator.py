@@ -85,14 +85,16 @@ class TrajectoryCalculator(object):
             # y - drop and
             # z - windage
 
-            range_vector = Vector(0.0, -weapon.sight_height.get_in(unit.DistanceFoot), 0)
+            range_vector = Vector(
+                0.0, -weapon.sight_height.get_in(unit.DistanceFoot), 0
+            )
             velocity_vector = Vector(
                 math.cos(barrel_elevation) * math.cos(barrel_azimuth),
                 math.sin(barrel_elevation),
                 math.cos(barrel_elevation) * math.sin(barrel_azimuth)
             ).multiply_by_const(velocity)
 
-            zero_distance: float = weapon.zero.zero_distance.get_in(unit.DistanceFoot)
+            zero_distance = weapon.zero.zero_distance.get_in(unit.DistanceFoot)
             maximum_range = zero_distance + calculation_step
 
             while range_vector.x <= maximum_range:
@@ -103,13 +105,18 @@ class TrajectoryCalculator(object):
 
                 delta_time = calculation_step / velocity_vector.x
                 velocity = velocity_vector.magnitude()
-                drag = density_factor * velocity * ammunition.bullet.ballistic_coefficient.drag(velocity / mach)
+                drag = density_factor * velocity * ammunition\
+                    .bullet\
+                    .ballistic_coefficient\
+                    .drag(velocity / mach)
                 velocity_vector = velocity_vector.subtract(
                     (
-                        velocity_vector.multiply_by_const(drag).subtract(gravity_vector)
+                        velocity_vector.multiply_by_const(drag).subtract(
+                            gravity_vector)
                     ).multiply_by_const(delta_time)
                 )
-                delta_range_vector = Vector(calculation_step, velocity_vector.y * delta_time,
+                delta_range_vector = Vector(calculation_step,
+                                            velocity_vector.y * delta_time,
                                             velocity_vector.z * delta_time)
                 range_vector = range_vector.add(delta_range_vector)
                 velocity = velocity_vector.magnitude()

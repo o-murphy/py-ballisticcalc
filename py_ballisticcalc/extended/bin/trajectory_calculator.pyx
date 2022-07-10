@@ -39,31 +39,28 @@ cdef class TrajectoryCalculator:
         return step
 
     cpdef sight_angle(self, ammunition: Ammunition, weapon: Weapon, atmosphere: Atmosphere):
-        cdef float calculation_step = self.get_calculation_step(
+        # cdef float calculation_step, mach, density_factor, muzzle_velocity
+        # cdef float barrel_azimuth, barrel_elevation
+        # cdef float velocity, time, zero_distance, maximum_range
+        # cdef float delta_time, drag, zero_finding_error
+        #
+        # cdef int iterations_count
+        #
+        # cdef gravity_vector, range_vector, velocity_vector, delta_range_vector
+
+        calculation_step = self.get_calculation_step(
             Distance(10, weapon.zero().zero_distance().units()).get_in(DistanceFoot))
 
-        cdef float mach = atmosphere.mach().get_in(VelocityFPS)
-        cdef float density_factor = atmosphere.density_factor()
-        cdef float muzzle_velocity = ammunition.muzzle_velocity().get_in(VelocityFPS)
-        cdef float barrel_azimuth = 0.0
-        cdef float barrel_elevation = 0
+        mach = atmosphere.mach().get_in(VelocityFPS)
+        density_factor = atmosphere.density_factor()
+        muzzle_velocity = ammunition.muzzle_velocity().get_in(VelocityFPS)
+        barrel_azimuth = 0.0
+        barrel_elevation = 0.0
 
-        cdef int iterations_count = 0
+        iterations_count = 0
 
-        cdef float zero_finding_error = cZeroFindingAccuracy * 2
-        cdef gravity_vector = Vector(0, cGravityConstant, 0)
-        cdef float velocity
-        cdef float time
-
-        cdef range_vector
-        cdef velocity_vector
-
-        cdef float zero_distance
-        cdef float maximum_range
-        cdef float delta_time
-        cdef float drag
-        cdef delta_range_vector
-
+        zero_finding_error = cZeroFindingAccuracy * 2
+        gravity_vector = Vector(0, cGravityConstant, 0)
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
             velocity = muzzle_velocity
             time = 0.0
@@ -72,14 +69,16 @@ cdef class TrajectoryCalculator:
             # y - drop and
             # z - windage
 
-            range_vector = Vector(0.0, -weapon.sight_height().get_in(DistanceFoot), 0)
+            range_vector = Vector(
+                0.0, -weapon.sight_height().get_in(DistanceFoot), 0.0
+            )
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
                 sin(barrel_elevation),
                 cos(barrel_elevation) * sin(barrel_azimuth)
             ).multiply_by_const(velocity)
 
-            zero_distance: float = weapon.zero().zero_distance().get_in(DistanceFoot)
+            zero_distance = weapon.zero().zero_distance().get_in(DistanceFoot)
             maximum_range = zero_distance + calculation_step
 
             while range_vector.x() <= maximum_range:
@@ -90,20 +89,25 @@ cdef class TrajectoryCalculator:
 
                 delta_time = calculation_step / velocity_vector.x()
                 velocity = velocity_vector.magnitude()
-                drag = density_factor * velocity * ammunition.bullet().ballistic_coefficient().drag(velocity / mach)
+                drag = density_factor * velocity * ammunition\
+                    .bullet()\
+                    .ballistic_coefficient()\
+                    .drag(velocity / mach)
                 velocity_vector = velocity_vector.subtract(
                     (
-                        velocity_vector.multiply_by_const(drag).subtract(gravity_vector)
+                        velocity_vector.multiply_by_const(drag).subtract(
+                            gravity_vector)
                     ).multiply_by_const(delta_time)
                 )
-                delta_range_vector = Vector(calculation_step, velocity_vector.y() * delta_time,
+                delta_range_vector = Vector(calculation_step,
+                                            velocity_vector.y() * delta_time,
                                             velocity_vector.z() * delta_time)
                 range_vector = range_vector.add(delta_range_vector)
                 velocity = velocity_vector.magnitude()
                 time = time + delta_range_vector.magnitude() / velocity
                 if fabs(range_vector.x() - zero_distance) < 0.5 * calculation_step:
                     zero_finding_error = fabs(range_vector.y())
-                    barrel_elevation = barrel_elevation - range_vector.y / range_vector.x
+                    barrel_elevation = barrel_elevation - range_vector.y() / range_vector.x()
                     break
 
                 iterations_count += 1

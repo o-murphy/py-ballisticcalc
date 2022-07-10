@@ -9,86 +9,137 @@ from py_ballisticcalc.bmath.cunit.weight import *
 from py_ballisticcalc.bmath.cunit.angular import *
 from py_ballisticcalc.bmath.cunit.distance import *
 
-
-class TestEnergy(unittest.TestCase):
-
-    def test_create(self):
-        v = Energy(10, EnergyFootPound)
-        v.get_in(EnergyJoule)
-
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=50000)
-        print(t)
+import math
 
 
-class TestTemperature(unittest.TestCase):
-
-    def test_create(self):
-        v = Temperature(15, TemperatureCelsius)
-        v.get_in(TemperatureFahrenheit)
-
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=50000)
-        print(t)
-
-
-class TestPressure(unittest.TestCase):
-
-    def test_create(self):
-        v = Pressure(760, PressureMmHg)
-        v.get_in(PressureBar)
-
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=50000)
-        print(t)
-
-
-class TestVelocity(unittest.TestCase):
-
-    def test_create(self):
-        v = Velocity(800, VelocityMPS)
-        v.get_in(VelocityFPS)
-
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=50000)
-        print(t)
-
-
-class TestWeight(unittest.TestCase):
-
-    def test_create(self):
-        v = Weight(800, WeightGrain)
-        v.get_in(WeightGram)
-
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=50000)
-        print(t)
+def test_back_n_forth(test, value, units):
+    u = test.unit_class(value, units)
+    v = u.value(units)
+    test.assertTrue(
+        math.fabs(v - value) < 1e-4
+        and math.fabs(v - u.get_in(units) < 1e-4), f'Read back failed for {units}')
 
 
 class TestAngular(unittest.TestCase):
+    def setUp(self) -> None:
+        self.unit_class = Angular
+        self.unit_list = [
+            AngularDegree,
+            AngularMOA,
+            AngularMRad,
+            AngularMil,
+            AngularRadian,
+            AngularThousand
+        ]
 
-    def test_create(self):
-        v = Angular(800, AngularMOA)
-        v.get_in(AngularMil)
-
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=50000)
-        print(t)
+    def test_angular(self):
+        for u in self.unit_list:
+            with self.subTest(unit=u):
+                test_back_n_forth(self, 3, u)
 
 
 class TestDistance(unittest.TestCase):
+    def setUp(self) -> None:
+        self.unit_class = Distance
+        self.unit_list = [
+            DistanceCentimeter,
+            DistanceFoot,
+            DistanceInch,
+            DistanceKilometer,
+            DistanceLine,
+            DistanceMeter,
+            DistanceMillimeter,
+            DistanceMile,
+            DistanceNauticalMile,
+            DistanceYard
+        ]
 
-    def test_create(self):
-        v = Distance(800, DistanceMeter)
-        v.get_in(DistanceFoot)
+    def test_distance(self):
+        for u in self.unit_list:
+            with self.subTest(unit=u):
+                test_back_n_forth(self, 3, u)
 
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=50000)
-        print(t)
+
+class TestEnergy(unittest.TestCase):
+    def setUp(self) -> None:
+        self.unit_class = Energy
+        self.unit_list = [
+            EnergyFootPound,
+            EnergyJoule
+        ]
+
+    def test_energy(self):
+        for u in self.unit_list:
+            with self.subTest(unit=u):
+                test_back_n_forth(self, 3, u)
+
+
+class TestPressure(unittest.TestCase):
+    def setUp(self) -> None:
+        self.unit_class = Pressure
+        self.unit_list = [
+            PressureBar,
+            PressureHP,
+            PressureMmHg,
+            PressureInHg
+        ]
+
+    def test_pressure(self):
+        for u in self.unit_list:
+            with self.subTest(unit=u):
+                test_back_n_forth(self, 3, u)
+
+
+class TestTemperature(unittest.TestCase):
+    def setUp(self) -> None:
+        self.unit_class = Temperature
+        self.unit_list = [
+            TemperatureFahrenheit,
+            TemperatureKelvin,
+            TemperatureCelsius,
+            TemperatureRankin
+        ]
+
+    def test_temperature(self):
+        for u in self.unit_list:
+            with self.subTest(unit=u):
+                test_back_n_forth(self, 3, u)
+
+
+class TestVelocity(unittest.TestCase):
+    def setUp(self) -> None:
+        self.unit_class = Velocity
+        self.unit_list = [
+            VelocityFPS,
+            VelocityKMH,
+            VelocityKT,
+            VelocityMPH,
+            VelocityMPS
+        ]
+
+    def test_velocity(self):
+        for u in self.unit_list:
+            with self.subTest(unit=u):
+                test_back_n_forth(self, 3, u)
+
+
+class TestWeight(unittest.TestCase):
+    def setUp(self) -> None:
+        self.unit_class = Weight
+        self.unit_list = [
+            WeightGrain,
+            WeightGram,
+            WeightKilogram,
+            WeightNewton,
+            WeightOunce,
+            WeightPound
+        ]
+
+    def test_weight(self):
+        for u in self.unit_list:
+            with self.subTest(unit=u):
+                test_back_n_forth(self, 3, u)
+
+
+if __name__ == '__main__':
+    unittest.main()
