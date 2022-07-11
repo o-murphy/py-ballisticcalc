@@ -1,4 +1,4 @@
-from libc.math cimport fabs, pow, sin, cos, log10, floor
+from libc.math cimport fabs, pow, sin, cos, log10, floor, atan
 from py_ballisticcalc.lib.bmath.unit import *
 from py_ballisticcalc.lib.bmath.vector import Vector
 from py_ballisticcalc.lib.projectile import Ammunition

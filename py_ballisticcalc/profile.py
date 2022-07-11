@@ -93,10 +93,22 @@ class Profile(object):
 
 # usage example
 if __name__ == '__main__':
-    profile = Profile()
+    profile = Profile(
+        bc_value=0.376,
+        bullet_diameter=(0.375, unit.DistanceInch),
+        bullet_length=(1.78, unit.DistanceInch),
+        bullet_weight=(350, unit.WeightGrain),
+        muzzle_velocity=(1200, unit.VelocityMPS),
+        twist=(10, unit.DistanceInch),
+        sight_height=(110, unit.DistanceMillimeter)
+
+    )
     tested_data = profile.trajectory_data
+    tested_data.pop(0)
 
     for d in tested_data:
-        distance_ = d.travelled_distance.convert(unit.DistanceMeter)
-        path_ = d.drop.convert(unit.DistanceCentimeter)
-        print(f'Distance: {distance_}, Path: {path_}')
+        distance_ = d.travelled_distance.get_in(unit.DistanceMeter)
+        path_ = d.drop.get_in(unit.DistanceCentimeter)
+        a = d.drop_adjustment.get_in(unit.AngularCmPer100M)
+        v = d.velocity.get_in(unit.VelocityMPS)
+        print(f'Distance: {distance_}, {v}, Path: {path_}, {a}')

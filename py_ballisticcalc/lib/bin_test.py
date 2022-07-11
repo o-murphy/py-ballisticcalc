@@ -13,6 +13,7 @@ from py_ballisticcalc.lib.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRi
 from py_ballisticcalc.lib.wind import create_only_wind_info
 from py_ballisticcalc.lib.shot_parameters import ShotParameters, ShotParametersUnlevel
 from py_ballisticcalc.lib.trajectory_calculator import TrajectoryCalculator
+from py_ballisticcalc.lib.trajectory_data import TrajectoryData
 from py_ballisticcalc.lib.bmath import unit as unit
 from py_ballisticcalc.lib.bmath.unit import *
 
