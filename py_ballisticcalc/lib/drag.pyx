@@ -30,7 +30,7 @@ cdef class BallisticCoefficient:
         self._curve_data = calculate_curve(self._table_data)
 
     cpdef float drag(self, mach: float):
-        return calculate_by_curve(self._table_data, self._curve_data, mach)
+        return calculate_by_curve(self._table_data, self._curve_data, mach) * 2.08551e-04 / self._value
 
     cpdef float value(self):
         return self._value

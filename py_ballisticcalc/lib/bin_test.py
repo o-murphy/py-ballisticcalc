@@ -3,14 +3,18 @@ from datetime import datetime
 import unittest
 import pyximport
 
+from math import fabs
+
 pyximport.install()
-from py_ballisticcalc.extended.bin.atmosphere import *
-from py_ballisticcalc.extended.bin.projectile import *
-from py_ballisticcalc.extended.bin.weapon import *
-from py_ballisticcalc.extended.bin.wind import *
-from py_ballisticcalc.extended.bin.shot_parameters import *
-from py_ballisticcalc.extended.bin.trajectory_calculator import *
-from py_ballisticcalc.bmath import cunit as unit
+from py_ballisticcalc.lib.atmosphere import Atmosphere, IcaoAtmosphere
+from py_ballisticcalc.lib.drag import BallisticCoefficient, DragTableG1, DragTableG7
+from py_ballisticcalc.lib.projectile import Projectile, ProjectileWithDimensions
+from py_ballisticcalc.lib.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist
+from py_ballisticcalc.lib.wind import create_only_wind_info
+from py_ballisticcalc.lib.shot_parameters import ShotParameters, ShotParametersUnlevel
+from py_ballisticcalc.lib.trajectory_calculator import TrajectoryCalculator
+from py_ballisticcalc.lib.bmath import unit as unit
+from py_ballisticcalc.lib.bmath.unit import *
 
 
 class TestAtmo(unittest.TestCase):
@@ -41,7 +45,7 @@ class TestShotParams(unittest.TestCase):
         )
 
     def test_unlevel(self):
-        v = ShotParameterUnlevel(
+        v = ShotParametersUnlevel(
             Angular(0, AngularDegree),
             Distance(1000, DistanceFoot),
             Distance(100, DistanceFoot),
@@ -80,15 +84,20 @@ class TestDrag(unittest.TestCase):
 
 
 class TestG7Profile(unittest.TestCase):
-    def test_create(self):
+
+    def test_drag(self):
         bc = BallisticCoefficient(
             value=0.223,
             drag_table=DragTableG7
         )
 
-        # p0 = Projectile(
-        #     bc, Weight(178, WeightGrain)
-        # )
+        print(bc.drag(3))
+
+    def test_create(self):
+        bc = BallisticCoefficient(
+            value=0.223,
+            drag_table=DragTableG7
+        )
 
         p1 = ProjectileWithDimensions(
             bc,
@@ -106,23 +115,14 @@ class TestG7Profile(unittest.TestCase):
         weapon = WeaponWithTwist(Distance(90, DistanceMillimeter), zero, twist)
         wind = create_only_wind_info(Velocity(0, VelocityMPS), Angular(0, AngularDegree))
         calc = TrajectoryCalculator()
+        calc.set_maximum_calculator_step_size(Distance(1, DistanceFoot))
         sight_angle = calc.sight_angle(ammo, weapon, atmo)
-        print(sight_angle)
-        shot_info = ShotParameters(sight_angle, Distance(2500, DistanceMeter), Distance(100, DistanceMeter))
+        shot_info = ShotParameters(sight_angle, Distance(2500, DistanceMeter), Distance(1, DistanceMeter))
         return calc.trajectory(ammo, weapon, atmo, shot_info, wind)
 
     def test_time(self):
         t = timeit.timeit(self.test_create, number=1)
         print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
-
-        data = self.test_create()
-        print(data)
-        for i, d in enumerate(data):
-            distance = d.travelled_distance().convert(DistanceMeter)
-            g7_path = d.drop().convert(DistanceCentimeter)
-            # custom_path = custom_drag_func_trajectory[i].drop.convert(DistanceCentimeter)
-            print(f'Distance: {distance}, i7 * G7 BC: {g7_path}')
-
 
 class TestPyBallisticCalc(unittest.TestCase):
 
@@ -156,17 +156,17 @@ class TestPyBallisticCalc(unittest.TestCase):
 
     def assertEqualCustom(self, a, b, accuracy, name):
         with self.subTest():
-            self.assertFalse(fabs(a - b) > accuracy, f'Assertion {name} failed ({a}/{b})')
+            self.assertFalse(fabs(a - b) > accuracy, f'Assertion {name} failed ({a}/{b}, {accuracy})')
 
     def validate_one(self, data: TrajectoryData, distance: float, velocity: float, mach: float, energy: float,
                      path: float, hold: float, windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: int):
 
-        self.assertEqualCustom(distance, data.travelled_distance().get_in(unit.DistanceYard), 0.001, "Distance")
+        # self.assertEqualCustom(distance, data.travelled_distance().get_in(unit.DistanceYard), 0.001, "Distance")
         self.assertEqualCustom(velocity, data.velocity().get_in(unit.VelocityFPS), 5, "Velocity")
-        self.assertEqualCustom(mach, data.mach_velocity, 0.005, "Mach")
+        self.assertEqualCustom(mach, data.mach_velocity(), 0.005, "Mach")
         self.assertEqualCustom(energy, data.energy().get_in(unit.EnergyFootPound), 5, "Energy")
-        self.assertEqualCustom(time, data.time().total_seconds, 0.06, "Time")
+        self.assertEqualCustom(time, data.time().total_seconds(), 0.06, "Time")
         self.assertEqualCustom(ogv, data.optimal_game_weight().get_in(unit.WeightPound), 1, "OGV")
 
         if distance >= 800:

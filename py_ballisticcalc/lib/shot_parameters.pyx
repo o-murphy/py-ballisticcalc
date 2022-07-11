@@ -1,4 +1,4 @@
-from py_ballisticcalc.bmath.cunit import *
+from py_ballisticcalc.lib.bmath.unit import *
 
 
 cdef class ShotParameters:
@@ -27,11 +27,11 @@ cdef class ShotParameters:
         return self._step
 
 
-cdef class ShotParameterUnlevel(ShotParameters):
+cdef class ShotParametersUnlevel(ShotParameters):
 
     def __init__(self, sight_angle: Angular, maximum_distance: Distance,
                  step: Distance, shot_angle: Angular, cant_angle: Angular):
-        super(ShotParameterUnlevel, self).__init__(sight_angle, maximum_distance, step)
+        super(ShotParametersUnlevel, self).__init__(sight_angle, maximum_distance, step)
         self._sight_angle = sight_angle
         self._shot_angle = shot_angle
         self._cant_angle = cant_angle

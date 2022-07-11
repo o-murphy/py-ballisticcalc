@@ -49,6 +49,15 @@ class TestProfileExtended(unittest.TestCase):
         self.assertLess(math.fabs(-6.1696307895 - data[5].drop.get_in(unit.DistanceFoot)), 1e-8)
         self.assertLess(math.fabs(-48.439433788 - data[10].drop.get_in(unit.DistanceFoot)), 1e-8)
 
+    def test_drag(self):
+        bc = BallisticCoefficient(
+            value=0.223,
+            drag_table=DragTableG7
+        )
+
+        print(bc.drag(3))
+
+
     # @unittest.SkipTest
     def test_time_1(self):
         p = ProfileExtended()

@@ -67,9 +67,9 @@ class ProfileExtended(Profile):
         df = bc.calculated_drag_function()
         self._calculated_drag_function = df
 
-#
-# if __name__ == '__main__':
-#
+
+if __name__ == '__main__':
+
 #     """
 #     Example for Lapua .30 10,85 g / 167 gr Scenar OTM GB422 bullet
 #     """
@@ -90,12 +90,12 @@ class ProfileExtended(Profile):
 #
 #     profile = ProfileExtended(drag_table=0, custom_drag_function=custom_drag_func)
 #     custom_drag_func_trajectory = profile.trajectory_data
-#
-#     profile1 = ProfileExtended()
-#     g7_bc_trajectory = profile1.trajectory_data
-#
-#     for i, d in enumerate(g7_bc_trajectory):
-#         distance = d.travelled_distance.convert(unit.DistanceMeter)
-#         g7_path = d.drop.convert(unit.DistanceCentimeter)
-#         custom_path = custom_drag_func_trajectory[i].drop.convert(unit.DistanceCentimeter)
-#         print(f'Distance: {distance}, i7 * G7 BC: {g7_path}, Custom Drag Table: {custom_path}')
+
+    profile1 = ProfileExtended()
+    g7_bc_trajectory = profile1.trajectory_data
+
+    for i, d in enumerate(g7_bc_trajectory):
+        distance = d.travelled_distance.convert(unit.DistanceMeter)
+        g7_path = d.drop.convert(unit.DistanceCentimeter)
+        # custom_path = custom_drag_func_trajectory[i].drop.convert(unit.DistanceCentimeter)
+        print(f'Distance: {distance}, i7 * G7 BC: {g7_path}')

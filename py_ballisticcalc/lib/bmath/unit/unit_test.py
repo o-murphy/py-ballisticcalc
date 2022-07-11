@@ -1,13 +1,6 @@
-import timeit
 import unittest
 import pyximport; pyximport.install()
-from py_ballisticcalc.bmath.cunit.energy import *
-from py_ballisticcalc.bmath.cunit.temperature import *
-from py_ballisticcalc.bmath.cunit.pressure import *
-from py_ballisticcalc.bmath.cunit.velocity import *
-from py_ballisticcalc.bmath.cunit.weight import *
-from py_ballisticcalc.bmath.cunit.angular import *
-from py_ballisticcalc.bmath.cunit.distance import *
+from py_ballisticcalc.lib.bmath.unit.distance import *
 
 import math
 

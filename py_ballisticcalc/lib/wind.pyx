@@ -1,4 +1,4 @@
-from py_ballisticcalc.bmath.cunit import *
+from py_ballisticcalc.lib.bmath.unit import *
 
 
 cdef class WindInfo:

@@ -1,5 +1,5 @@
-from py_ballisticcalc.bmath.cunit import *
-from py_ballisticcalc.extended.bin.drag import *
+from py_ballisticcalc.lib.bmath.unit import *
+from py_ballisticcalc.lib.drag import *
 
 
 cdef class Projectile:

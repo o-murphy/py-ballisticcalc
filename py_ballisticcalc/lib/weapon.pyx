@@ -1,6 +1,6 @@
-from py_ballisticcalc.bmath.cunit import *
-from py_ballisticcalc.extended.bin.atmosphere import Atmosphere
-from py_ballisticcalc.extended.bin.projectile import Ammunition
+from py_ballisticcalc.lib.bmath.unit import *
+from py_ballisticcalc.lib.atmosphere import Atmosphere
+from py_ballisticcalc.lib.projectile import Ammunition
 
 cdef class ZeroInfo:
     cdef _has_ammunition

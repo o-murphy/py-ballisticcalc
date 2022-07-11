@@ -1,5 +1,5 @@
 from libc.math cimport pow, sqrt, fabs
-from py_ballisticcalc.bmath.cunit import *
+from py_ballisticcalc.lib.bmath.unit import *
 
 
 cIcaoStandardTemperatureR: float = 518.67
@@ -27,6 +27,7 @@ cdef class Atmosphere:
     cdef _temperature
 
     def __init__(self, altitude: Distance, pressure: Pressure, temperature: Temperature, humidity: float):
+
         if humidity > 1:
             humidity = humidity / 100
 
@@ -120,6 +121,7 @@ cdef class Atmosphere:
 
         density, mach = self.calculate0(t, p)
         return density / cStandardDensity, mach
+
 
 cpdef IcaoAtmosphere(altitude: Distance):
     cdef temperature, pressure

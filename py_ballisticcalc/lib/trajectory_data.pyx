@@ -1,5 +1,5 @@
 from libc.math cimport fmod, floor
-from py_ballisticcalc.bmath.cunit import *
+from py_ballisticcalc.lib.bmath.unit import *
 
 
 cdef class Timespan:
@@ -8,7 +8,7 @@ cdef class Timespan:
     def __init__(self, time: float):
         self._time = time
 
-    cpdef total_seconds(self):
+    cpdef float total_seconds(self):
         return self._time
 
     cpdef seconds(self):
@@ -51,7 +51,7 @@ cdef class TrajectoryData:
         self._energy = energy
         self._optimal_game_weight = optimal_game_weight
 
-    cpdef float time(self):
+    cpdef time(self):
         return self._time
 
     cpdef travelled_distance(self):
