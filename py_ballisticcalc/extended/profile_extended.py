@@ -1,9 +1,5 @@
 from py_ballisticcalc.extended.multiple_ballistic_coefficient import BallisticCoefficientExtended
 from py_ballisticcalc.profile import *
-# import tjcalc
-# import pyximport
-# pyximport.install()
-# from py_ballisticcalc.extended import tjcalc
 
 
 class ProfileExtended(Profile):
@@ -57,7 +53,7 @@ class ProfileExtended(Profile):
         calc = TrajectoryCalculator()
         calc.maximum_calculator_step_size = self._maximum_step_size
 
-        if not self._sight_angle.v:
+        if not self._sight_angle.v or self._sight_angle.v == 0:
             self._sight_angle = calc.sight_angle(ammunition, weapon, atmosphere)
         print(self._sight_angle)
         shot_info = ShotParameters(self._sight_angle, self._maximum_distance, self._distance_step)

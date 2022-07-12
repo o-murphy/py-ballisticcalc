@@ -16,6 +16,86 @@ from py_ballisticcalc.lib.trajectory_calculator import TrajectoryCalculator
 from py_ballisticcalc.lib.trajectory_data import TrajectoryData
 from py_ballisticcalc.lib.bmath import unit as unit
 from py_ballisticcalc.lib.bmath.unit import *
+from py_ballisticcalc.lib.profile import Profile as cProfile
+
+
+class TestProfile(unittest.TestCase):
+    """
+    0.22300000488758087
+    -9.000000953674316 0.0
+    -0.00047645941958762705 100.0496826171875
+    -188.0503692626953 500.03924560546875
+    -1475.96826171875 1000.0016479492188
+    1.5700003132224083e-05 def init
+    0.09897580003598705 def init + make
+    0.2844648000318557 max=2500m, step=1m
+    0.04717749997507781 max=2500m, step=1m, max_step=5ft
+    """
+
+    # @unittest.SkipTest
+    def test_profile_bc(self):
+        p = cProfile()
+
+        bc = p.bc_value()
+        print(bc)
+        p.set_bc_value(bc)
+
+        data = p.calculate_trajectory()
+
+        print(data[0].drop().get_in(DistanceCentimeter), data[0].travelled_distance().get_in(DistanceMeter))
+        print(data[1].drop().get_in(DistanceCentimeter), data[1].travelled_distance().get_in(DistanceMeter))
+        print(data[5].drop().get_in(DistanceCentimeter), data[5].travelled_distance().get_in(DistanceMeter))
+        print(data[10].drop().get_in(DistanceCentimeter), data[10].travelled_distance().get_in(DistanceMeter))
+
+        # self.assertLess(fabs(-0.2952755905 - data[0].drop().get_in(DistanceFoot)), 1e-8)
+        # self.assertLess(fabs(-2.4677575464e-05 - data[1].drop().get_in(DistanceFoot)), 1e-8)
+        # self.assertLess(fabs(-6.1696307895 - data[5].drop().get_in(DistanceFoot)), 1e-8)
+        # self.assertLess(fabs(-48.439433788 - data[10].drop().get_in(DistanceFoot)), 1e-8)
+
+    def test_custom_df(self):
+        custom_drag_func = [
+                {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, {'A': 0.5, 'B': 0.154},
+                {'A': 0.6, 'B': 0.129}, {'A': 0.7, 'B': 0.131}, {'A': 0.8, 'B': 0.136},
+                {'A': 0.825, 'B': 0.14}, {'A': 0.85, 'B': 0.144}, {'A': 0.875, 'B': 0.153},
+                {'A': 0.9, 'B': 0.177}, {'A': 0.925, 'B': 0.226}, {'A': 0.95, 'B': 0.26},
+                {'A': 0.975, 'B': 0.349}, {'A': 1.0, 'B': 0.427}, {'A': 1.025, 'B': 0.45},
+                {'A': 1.05, 'B': 0.452}, {'A': 1.075, 'B': 0.45}, {'A': 1.1, 'B': 0.447},
+                {'A': 1.15, 'B': 0.437}, {'A': 1.2, 'B': 0.429}, {'A': 1.3, 'B': 0.418},
+                {'A': 1.4, 'B': 0.406}, {'A': 1.5, 'B': 0.394}, {'A': 1.6, 'B': 0.382},
+                {'A': 1.8, 'B': 0.359}, {'A': 2.0, 'B': 0.339}, {'A': 2.2, 'B': 0.321},
+                {'A': 2.4, 'B': 0.301}, {'A': 2.6, 'B': 0.28}, {'A': 3.0, 'B': 0.25},
+                {'A': 4.0, 'B': 0.2}, {'A': 5.0, 'B': 0.18}
+            ]
+
+        p = cProfile(drag_table=0, custom_drag_function=custom_drag_func)
+        data = p.calculate_trajectory()
+
+    def test_time(self):
+
+        with self.subTest('def init') as st:
+            print(timeit.timeit(lambda: cProfile(), number=1), 'def init')
+
+        with self.subTest('def init + make'):
+            p = cProfile()
+            print(timeit.timeit(lambda: p.calculate_trajectory(), number=1), 'def init + make', )
+
+        with self.subTest('max=2500m, step=1m'):
+            p = cProfile(
+                maximum_distance=(2500, unit.DistanceMeter),
+                distance_step=(1, unit.DistanceMeter),
+            )
+            print(timeit.timeit(lambda: p.calculate_trajectory(), number=1), 'max=2500m, step=1m')
+
+        with self.subTest('max=2500m, step=1m, max_step=5ft'):
+            p = cProfile(
+                maximum_distance=(2500, unit.DistanceMeter),
+                distance_step=(1, unit.DistanceMeter),
+                maximum_step_size=(5, unit.DistanceFoot)
+            )
+            print(timeit.timeit(lambda: p.calculate_trajectory(), number=1), 'max=2500m, step=1m, max_step=5ft')
+
+        with self.subTest('custom_df'):
+            print(timeit.timeit(self.test_custom_df, number=1), 'max=2500m, step=1m, max_step=5ft, custom_df')
 
 
 class TestAtmo(unittest.TestCase):

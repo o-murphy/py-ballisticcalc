@@ -1,4 +1,6 @@
-from libc.math cimport floor
+from libc.math cimport floor, pow
+from py_ballisticcalc.lib.bmath.unit import *
+
 
 DragTableG1: int = 1
 DragTableG2: int = 2
@@ -12,31 +14,83 @@ DragTableGI: int = 8
 cdef class BallisticCoefficient:
     cdef float _value
     cdef int _table
-    cdef _drag
     cdef list _table_data
     cdef list _curve_data
+    cdef _weight, _diameter
+    cdef float _sectional_density, _form_factor
+    cdef list _custom_drag_table
 
-    def __init__(self, value: float, drag_table: int):
 
-        if drag_table < DragTableG1  or DragTableG1 > DragTableGI:
-            raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
-
-        if value <= 0:
-            raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
+    def __init__(self, value: float, drag_table: int, weight: Weight, diameter: Distance, custom_drag_table: list):
 
         self._value = value
         self._table = drag_table
-        self._table_data = load_drag_table(self._table)
-        self._curve_data = calculate_curve(self._table_data)
 
-    cpdef float drag(self, mach: float):
-        return calculate_by_curve(self._table_data, self._curve_data, mach) * 2.08551e-04 / self._value
+        self._weight = weight
+        self._diameter = diameter
+        self._sectional_density = self._get_sectional_density()
+        self._custom_drag_table = custom_drag_table
+
+        if self._table == 0 and len(custom_drag_table) > 0:
+            self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
+            self._value = self._get_custom_bc()
+            self._table_data = make_data_points(self._custom_drag_table)
+            self._curve_data = calculate_curve(self._table_data)
+
+        elif drag_table < DragTableG1 or DragTableG1 > DragTableGI:
+            raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
+        elif value <= 0:
+            raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
+        elif self._table == 0 and len(custom_drag_table) == 0:
+            raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')
+        else:
+            self._table_data = load_drag_table(self._table)
+            self._curve_data = calculate_curve(self._table_data)
+
+    cpdef float drag(self, float mach):
+        cdef float cd
+        cd = calculate_by_curve(self._table_data, self._curve_data, mach)
+        return cd * 2.08551e-04 / self._value
 
     cpdef float value(self):
         return self._value
 
     cpdef int table(self):
         return self._table
+
+    cdef float _get_custom_bc(self):
+        return self._sectional_density / self._form_factor
+
+    cdef float _get_form_factor(self):
+        return self._sectional_density / self._value
+
+    cdef float _get_sectional_density(self):
+        cdef float w, d
+        w = self._weight.get_in(WeightGrain)
+        d = self._diameter.get_in(DistanceInch)
+        return w / pow(d, 2) / 7000
+
+    cpdef float standard_cd(self, float mach):
+        return self.drag(mach)
+
+    cpdef float calculated_cd(self, float mach):
+        return self.drag(mach) * self._form_factor
+
+    cpdef list calculated_drag_function(self):
+        cdef standard_cd_table
+        cdef list calculated_cd_table
+        cdef float st_mach, st_cd
+
+        # if self._table != 0 and self._value > 0:
+        calculated_cd_table = []
+
+        for point in self._table_data:
+            st_mach, st_cd = point.values()
+            cd = self.calculated_cd(st_mach)
+            calculated_cd_table.append({'A': round(st_mach, 4), 'B': cd})
+
+            return calculated_cd_table
+
 
 class DataPoint(object):
     def __init__(self, a: float, b: float):
@@ -131,6 +185,7 @@ cpdef float calculate_by_curve(data: list, curve: list, mach: float):
     else:
         m = mhi
     return curve[m].c + mach * (curve[m].b + curve[m].a * mach)
+
 
 TableG1 = [
     {'A': 0.00, 'B': 0.2629},

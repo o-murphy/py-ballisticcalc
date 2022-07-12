@@ -34,7 +34,19 @@ class TestMultipleBC(unittest.TestCase):
 
 class TestProfileExtended(unittest.TestCase):
 
-    @unittest.SkipTest
+    """
+    0.2750000059604645
+    -9.000000953674316 0.0
+    -0.00026867224369198084 100.0496826171875
+    -171.12020874023438 500.03924560546875
+    -1205.591064453125 1000.0016479492188
+    1.4899997040629387e-05 def init
+    0.22445530002005398 def init + make
+    0.29004989995155483 max=2500m, step=1m
+    0.04735820001224056 max=2500m, step=1m, max_step=5ft
+    """
+
+    # @unittest.SkipTest
     def test_profile_bc(self):
         p = ProfileExtended(
             # maximum_distance=(2500, unit.DistanceMeter),
@@ -43,6 +55,11 @@ class TestProfileExtended(unittest.TestCase):
         )
 
         data = p.trajectory_data
+
+        print(data[0].drop.get_in(DistanceCentimeter), data[0].travelled_distance.get_in(DistanceMeter))
+        print(data[1].drop.get_in(DistanceCentimeter), data[1].travelled_distance.get_in(DistanceMeter))
+        print(data[5].drop.get_in(DistanceCentimeter), data[5].travelled_distance.get_in(DistanceMeter))
+        print(data[10].drop.get_in(DistanceCentimeter), data[10].travelled_distance.get_in(DistanceMeter))
 
         self.assertLess(math.fabs(-0.2952755905 - data[0].drop.get_in(unit.DistanceFoot)), 1e-8)
         self.assertLess(math.fabs(-2.4677575464e-05 - data[1].drop.get_in(unit.DistanceFoot)), 1e-8)
