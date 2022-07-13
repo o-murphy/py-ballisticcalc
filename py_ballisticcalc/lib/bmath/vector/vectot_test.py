@@ -44,7 +44,7 @@ class TestUnary(unittest.TestCase):
     def test_unary(self):
         v1 = Vector(1, 2, 3)
 
-        self.assertFalse(math.fabs(v1.magnitude() - 3.74165738677) > 1e-5, "Magnitude failed")
+        self.assertFalse(math.fabs(v1.magnitude() - 3.74165738677) > 1e-7, "Magnitude failed")
 
         v2 = v1.negate()
         self.assertTrue(v2.x() == -1.0 and v2.y() == -2.0 and v2.z() == -3.0, "Negate failed")

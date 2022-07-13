@@ -2,31 +2,31 @@ from libc.math cimport pow, sqrt, fabs
 from py_ballisticcalc.lib.bmath.unit import *
 
 
-cIcaoStandardTemperatureR: float = 518.67
-cIcaoFreezingPointTemperatureR: float = 459.67
-cTemperatureGradient: float = -3.56616e-03
-cIcaoStandardHumidity: float = 0.0
-cPressureExponent: float = -5.255876
-cSpeedOfSound: float = 49.0223
-cA0: float = 1.24871
-cA1: float = 0.0988438
-cA2: float = 0.00152907
-cA3: float = -3.07031e-06
-cA4: float = 4.21329e-07
-cA5: float = 3.342e-04
-cStandardTemperature: float = 59.0
-cStandardPressure: float = 29.92
-cStandardDensity: float = 0.076474
+cIcaoStandardTemperatureR: double = 518.67
+cIcaoFreezingPointTemperatureR: double = 459.67
+cTemperatureGradient: double = -3.56616e-03
+cIcaoStandardHumidity: double = 0.0
+cPressureExponent: double = -5.255876
+cSpeedOfSound: double = 49.0223
+cA0: double = 1.24871
+cA1: double = 0.0988438
+cA2: double = 0.00152907
+cA3: double = -3.07031e-06
+cA4: double = 4.21329e-07
+cA5: double = 3.342e-04
+cStandardTemperature: double = 59.0
+cStandardPressure: double = 29.92
+cStandardDensity: double = 0.076474
 
 
 cdef class Atmosphere:
-    cdef float _density, _humidity, _mach1
+    cdef double _density, _humidity, _mach1
     cdef _mach
     cdef _altitude
     cdef _pressure
     cdef _temperature
 
-    def __init__(self, altitude: Distance, pressure: Pressure, temperature: Temperature, humidity: float):
+    def __init__(self, altitude: Distance, pressure: Pressure, temperature: Temperature, humidity: double):
 
         if humidity > 1:
             humidity = humidity / 100
@@ -65,23 +65,23 @@ cdef class Atmosphere:
     cpdef pressure(self):
         return self._pressure
 
-    cpdef float humidity(self):
+    cpdef double humidity(self):
         return self._humidity
 
-    cpdef float humidity_in_percent(self):
+    cpdef double humidity_in_percent(self):
         return self._humidity * 100
 
-    cpdef float density(self):
+    cpdef double density(self):
         return self._density
 
-    cpdef float density_factor(self):
+    cpdef double density_factor(self):
         return self._density / cStandardDensity
 
     cpdef mach(self):
         return self._mach
 
-    cdef (float, float) calculate0(self, float t, float p):
-        cdef float et0, et, hc, density, mach
+    cdef (double, double) calculate0(self, double t, double p):
+        cdef double et0, et, hc, density, mach
 
         if t > 0:
             et0 = cA0 + t * (cA1 + t * (cA2 + t * (cA3 + t * cA4)))
@@ -95,7 +95,7 @@ cdef class Atmosphere:
         return density, mach
 
     cdef calculate(self):
-        cdef float density, mach, mach1, t, p
+        cdef double density, mach, mach1, t, p
         t = self._temperature.get_in(TemperatureFahrenheit)
         p = self._pressure.get_in(PressureInHg)
         density, mach = self.calculate0(t, p)
@@ -103,8 +103,8 @@ cdef class Atmosphere:
         self._mach1 = mach
         self._mach = Velocity(mach, VelocityFPS)
 
-    cpdef (float, float) get_density_factor_and_mach_for_altitude(self, altitude: float):
-        cdef float density, mach, t0, p, ta, tb, t, org_altitude
+    cpdef (double, double) get_density_factor_and_mach_for_altitude(self, altitude: double):
+        cdef double density, mach, t0, p, ta, tb, t, org_altitude
         org_altitude = self._altitude.get_in(DistanceFoot)
         if fabs(org_altitude - altitude) < 30:
             density = self._density / cStandardDensity

@@ -2,17 +2,17 @@ import cython
 from libc.math cimport sqrt, fabs
 
 cdef struct vector:
-    float x
-    float y
-    float z
+    double x
+    double y
+    double z
 
 
 cdef class Vector:
-    cdef float _x
-    cdef float _y
-    cdef float _z
+    cdef double _x
+    cdef double _y
+    cdef double _z
 
-    def __init__(self, x: float, y: float, z: float):
+    def __init__(self, x: double, y: double, z: double):
         self._x = x
         self._y = y
         self._z = z
@@ -20,13 +20,13 @@ cdef class Vector:
     def __str__(self):
         return f'{vector(self._x, self._y, self._z)}'
 
-    cpdef float x(self):
+    cpdef double x(self):
         return self._x
 
-    cpdef float y(self):
+    cpdef double y(self):
         return self._y
 
-    cpdef float z(self):
+    cpdef double z(self):
         return self._z
 
     cdef string(self):
@@ -36,15 +36,15 @@ cdef class Vector:
     cpdef Vector copy(self):
         return Vector(self._x, self._y, self._z)
 
-    cpdef float magnitude(self):
-        cdef float m = sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
+    cpdef double magnitude(self):
+        cdef double m = sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
         return m
 
     cpdef Vector multiply_by_const(self, float a):
         return Vector(self._x * a, self._y * a, self._z * a)
 
-    cpdef float multiply_by_vector(self, b: Vector):
-        cdef float var = self._x * b._x + self._y * b._y + self._z * b._z
+    cpdef double multiply_by_vector(self, b: Vector):
+        cdef double var = self._x * b._x + self._y * b._y + self._z * b._z
         return var
 
     cpdef Vector add(self, b: Vector):
@@ -57,7 +57,7 @@ cdef class Vector:
         return Vector(-self._x, -self._y, -self._z)
 
     cpdef Vector normalize(self):
-        cdef float m = self.magnitude()
+        cdef double m = self.magnitude()
         if fabs(m) < 1e-10:
             return Vector(self._x, self._y, self._z)
         return self.multiply_by_const(1.0 / m)

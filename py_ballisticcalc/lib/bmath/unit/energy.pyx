@@ -3,16 +3,16 @@ EnergyJoule: int = 31
 
 
 cdef class Energy:
-    cdef float _value
+    cdef double _value
     cdef int _default_units
     cdef __name__
 
-    def __init__(self, value: float, units: int):
+    def __init__(self, value: double, units: int):
         self.__name__ = 'Energy'
         self._value = self.to_default(value, units)
         self._default_units = units
 
-    cdef float to_default(self, value: float, units: int):
+    cdef double to_default(self, value: double, units: int):
         if units == EnergyFootPound:
             return value
         elif units == EnergyJoule:
@@ -20,7 +20,7 @@ cdef class Energy:
         else:
             raise KeyError(f'{self.__name__}: unit {units} is not supported')
 
-    cdef float from_default(self, value: float, units: int):
+    cdef double from_default(self, value: double, units: int):
         if units == EnergyFootPound:
             return value
         elif units == EnergyJoule:
@@ -28,14 +28,14 @@ cdef class Energy:
         else:
             raise KeyError(f'KeyError: {self.__name__}: unit {units} is not supported')
 
-    cpdef float value(self, units: int):
+    cpdef double value(self, units: int):
         return self.from_default(self._value, units)
 
     cpdef Energy convert(self, units: int):
-        cdef float value = self.get_in(units)
+        cdef double value = self.get_in(units)
         return Energy(value, units)
 
-    cpdef float get_in(self, units: int):
+    cpdef double get_in(self, units: int):
         return self.from_default(self._value, units)
 
     def __str__(self):
@@ -45,7 +45,7 @@ cdef class Energy:
         cdef name
         cdef int accuracy
         cdef int default = self._default_units
-        cdef float v = self.from_default(self._value, default)
+        cdef double v = self.from_default(self._value, default)
         if default == EnergyFootPound:
             name = "ft·lb"
             accuracy = 0

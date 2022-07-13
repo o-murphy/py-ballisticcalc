@@ -3,12 +3,12 @@ from py_ballisticcalc.lib.bmath.unit import *
 
 
 cdef class Timespan:
-    cdef float _time
+    cdef double _time
 
-    def __init__(self, time: float):
+    def __init__(self, time: double):
         self._time = time
 
-    cpdef float total_seconds(self):
+    cpdef double total_seconds(self):
         return self._time
 
     cpdef seconds(self):
@@ -22,7 +22,7 @@ cdef class TrajectoryData:
     cdef _time
     cdef _travel_distance
     cdef _velocity
-    cdef float _mach
+    cdef double _mach
     cdef _drop
     cdef _drop_adjustment
     cdef _windage
@@ -33,7 +33,7 @@ cdef class TrajectoryData:
     def __init__(self, time: Timespan,
                  travel_distance: Distance,
                  velocity: Velocity,
-                 mach: float,
+                 mach: double,
                  drop: Distance,
                  drop_adjustment: [Angular, None],
                  windage: Distance,
@@ -60,7 +60,7 @@ cdef class TrajectoryData:
     cpdef velocity(self):
         return self._velocity
 
-    cpdef float mach_velocity(self):
+    cpdef double mach_velocity(self):
         return self._mach
 
     cpdef drop(self):

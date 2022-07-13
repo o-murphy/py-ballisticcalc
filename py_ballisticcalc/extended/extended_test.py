@@ -1,5 +1,6 @@
 from py_ballisticcalc.extended import MultipleBallisticCoefficient
 from py_ballisticcalc.extended import ProfileExtended
+from py_ballisticcalc.extended.drag_extended import BallisticCoefficientExtended
 from py_ballisticcalc.drag import *
 from py_ballisticcalc.bmath import *
 import unittest
@@ -33,7 +34,6 @@ class TestMultipleBC(unittest.TestCase):
 
 
 class TestProfileExtended(unittest.TestCase):
-
     """
     0.2750000059604645
     -9.000000953674316 0.0
@@ -74,6 +74,16 @@ class TestProfileExtended(unittest.TestCase):
 
         print(bc.drag(3))
 
+        bc = BallisticCoefficientExtended(
+            value=0.223,
+            drag_table=DragTableG7,
+            diameter=Distance(0.308, DistanceInch),
+            weight=Weight(167, WeightGrain)
+        )
+
+        print(bc.drag(3) * bc._form_factor)
+        ret = bc.calculated_drag_function()
+        print(ret)
 
     # @unittest.SkipTest
     def test_time_1(self):

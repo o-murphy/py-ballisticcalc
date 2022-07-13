@@ -75,6 +75,7 @@ class BallisticCoefficientExtended(BallisticCoefficient):
         :param mach:
         :return: calculated drag function with form factor specified
         """
+        print(mach, self.drag(mach), self._form_factor, self._drag(mach) * self._form_factor)
         return self._drag(mach) * self._form_factor
 
     def calculated_drag_function(self) -> list[dict[str, float]]:
@@ -93,6 +94,7 @@ class BallisticCoefficientExtended(BallisticCoefficient):
         for point in standard_cd_table:
             st_mach, st_cd = point.values()
             cd = self.calculated_cd(st_mach)
+            # print(st_mach, cd)
             calculated_cd_table.append({'A': round(st_mach, 4), 'B': cd})
 
         return calculated_cd_table

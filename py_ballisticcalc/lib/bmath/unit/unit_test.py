@@ -1,6 +1,7 @@
 import unittest
-import pyximport; pyximport.install()
-from py_ballisticcalc.lib.bmath.unit.distance import *
+import pyximport
+pyximport.install()
+from py_ballisticcalc.lib.bmath.unit import *
 
 import math
 
@@ -9,8 +10,8 @@ def test_back_n_forth(test, value, units):
     u = test.unit_class(value, units)
     v = u.value(units)
     test.assertTrue(
-        math.fabs(v - value) < 1e-4
-        and math.fabs(v - u.get_in(units) < 1e-4), f'Read back failed for {units}')
+        math.fabs(v - value) < 1e-7
+        and math.fabs(v - u.get_in(units) < 1e-7), f'Read back failed for {units}')
 
 
 class TestAngular(unittest.TestCase):

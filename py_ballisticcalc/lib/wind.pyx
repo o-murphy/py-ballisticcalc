@@ -32,6 +32,7 @@ cpdef create_no_wind():
     return [w]
 
 cpdef create_only_wind_info(wind_velocity: Velocity, direction: Angular):
+    cdef until_distance, w
     until_distance = Distance(9999, DistanceKilometer)
     w = [WindInfo(until_distance, wind_velocity, direction)]
     return w

@@ -9,7 +9,7 @@ pyximport.install()
 from py_ballisticcalc.lib.atmosphere import Atmosphere, IcaoAtmosphere
 from py_ballisticcalc.lib.drag import BallisticCoefficient, DragTableG1, DragTableG7
 from py_ballisticcalc.lib.projectile import Projectile, ProjectileWithDimensions
-from py_ballisticcalc.lib.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist
+from py_ballisticcalc.lib.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist, Weapon
 from py_ballisticcalc.lib.wind import create_only_wind_info
 from py_ballisticcalc.lib.shot_parameters import ShotParameters, ShotParametersUnlevel
 from py_ballisticcalc.lib.trajectory_calculator import TrajectoryCalculator
@@ -34,11 +34,8 @@ class TestProfile(unittest.TestCase):
 
     # @unittest.SkipTest
     def test_profile_bc(self):
-        p = cProfile()
 
-        bc = p.bc_value()
-        print(bc)
-        p.set_bc_value(bc)
+        p = cProfile()
 
         data = p.calculate_trajectory()
 
@@ -47,31 +44,29 @@ class TestProfile(unittest.TestCase):
         print(data[5].drop().get_in(DistanceCentimeter), data[5].travelled_distance().get_in(DistanceMeter))
         print(data[10].drop().get_in(DistanceCentimeter), data[10].travelled_distance().get_in(DistanceMeter))
 
-        # self.assertLess(fabs(-0.2952755905 - data[0].drop().get_in(DistanceFoot)), 1e-8)
-        # self.assertLess(fabs(-2.4677575464e-05 - data[1].drop().get_in(DistanceFoot)), 1e-8)
-        # self.assertLess(fabs(-6.1696307895 - data[5].drop().get_in(DistanceFoot)), 1e-8)
-        # self.assertLess(fabs(-48.439433788 - data[10].drop().get_in(DistanceFoot)), 1e-8)
+
+        p.calculate_drag_table()
+        print(p.dict())
 
     def test_custom_df(self):
         custom_drag_func = [
-                {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, {'A': 0.5, 'B': 0.154},
-                {'A': 0.6, 'B': 0.129}, {'A': 0.7, 'B': 0.131}, {'A': 0.8, 'B': 0.136},
-                {'A': 0.825, 'B': 0.14}, {'A': 0.85, 'B': 0.144}, {'A': 0.875, 'B': 0.153},
-                {'A': 0.9, 'B': 0.177}, {'A': 0.925, 'B': 0.226}, {'A': 0.95, 'B': 0.26},
-                {'A': 0.975, 'B': 0.349}, {'A': 1.0, 'B': 0.427}, {'A': 1.025, 'B': 0.45},
-                {'A': 1.05, 'B': 0.452}, {'A': 1.075, 'B': 0.45}, {'A': 1.1, 'B': 0.447},
-                {'A': 1.15, 'B': 0.437}, {'A': 1.2, 'B': 0.429}, {'A': 1.3, 'B': 0.418},
-                {'A': 1.4, 'B': 0.406}, {'A': 1.5, 'B': 0.394}, {'A': 1.6, 'B': 0.382},
-                {'A': 1.8, 'B': 0.359}, {'A': 2.0, 'B': 0.339}, {'A': 2.2, 'B': 0.321},
-                {'A': 2.4, 'B': 0.301}, {'A': 2.6, 'B': 0.28}, {'A': 3.0, 'B': 0.25},
-                {'A': 4.0, 'B': 0.2}, {'A': 5.0, 'B': 0.18}
-            ]
+            {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, {'A': 0.5, 'B': 0.154},
+            {'A': 0.6, 'B': 0.129}, {'A': 0.7, 'B': 0.131}, {'A': 0.8, 'B': 0.136},
+            {'A': 0.825, 'B': 0.14}, {'A': 0.85, 'B': 0.144}, {'A': 0.875, 'B': 0.153},
+            {'A': 0.9, 'B': 0.177}, {'A': 0.925, 'B': 0.226}, {'A': 0.95, 'B': 0.26},
+            {'A': 0.975, 'B': 0.349}, {'A': 1.0, 'B': 0.427}, {'A': 1.025, 'B': 0.45},
+            {'A': 1.05, 'B': 0.452}, {'A': 1.075, 'B': 0.45}, {'A': 1.1, 'B': 0.447},
+            {'A': 1.15, 'B': 0.437}, {'A': 1.2, 'B': 0.429}, {'A': 1.3, 'B': 0.418},
+            {'A': 1.4, 'B': 0.406}, {'A': 1.5, 'B': 0.394}, {'A': 1.6, 'B': 0.382},
+            {'A': 1.8, 'B': 0.359}, {'A': 2.0, 'B': 0.339}, {'A': 2.2, 'B': 0.321},
+            {'A': 2.4, 'B': 0.301}, {'A': 2.6, 'B': 0.28}, {'A': 3.0, 'B': 0.25},
+            {'A': 4.0, 'B': 0.2}, {'A': 5.0, 'B': 0.18}
+        ]
 
         p = cProfile(drag_table=0, custom_drag_function=custom_drag_func)
         data = p.calculate_trajectory()
 
     def test_time(self):
-
         with self.subTest('def init') as st:
             print(timeit.timeit(lambda: cProfile(), number=1), 'def init')
 
@@ -150,7 +145,10 @@ class TestDrag(unittest.TestCase):
     def test_create(self):
         bc = BallisticCoefficient(
             value=0.275,
-            drag_table=DragTableG7
+            drag_table=DragTableG7,
+            weight=Weight(178, WeightGrain),
+            diameter=Distance(0.308, DistanceInch),
+            custom_drag_table=[]
         )
         return bc
 
@@ -169,15 +167,24 @@ class TestG7Profile(unittest.TestCase):
     def test_drag(self):
         bc = BallisticCoefficient(
             value=0.223,
-            drag_table=DragTableG7
+            drag_table=DragTableG7,
+            weight=Weight(167, WeightGrain),
+            diameter=Distance(0.308, DistanceInch),
+            custom_drag_table=[]
         )
 
+        print(bc.form_factor())
         print(bc.drag(3))
+
+        ret = bc.calculated_drag_function()
 
     def test_create(self):
         bc = BallisticCoefficient(
             value=0.223,
-            drag_table=DragTableG7
+            drag_table=DragTableG7,
+            weight=Weight(167, WeightGrain),
+            diameter=Distance(0.308, DistanceInch),
+            custom_drag_table=[]
         )
 
         p1 = ProjectileWithDimensions(
@@ -204,6 +211,7 @@ class TestG7Profile(unittest.TestCase):
     def test_time(self):
         t = timeit.timeit(self.test_create, number=1)
         print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
+
 
 class TestPyBallisticCalc(unittest.TestCase):
 
@@ -243,7 +251,7 @@ class TestPyBallisticCalc(unittest.TestCase):
                      path: float, hold: float, windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: int):
 
-        # self.assertEqualCustom(distance, data.travelled_distance().get_in(unit.DistanceYard), 0.001, "Distance")
+        self.assertEqualCustom(distance, data.travelled_distance().get_in(unit.DistanceYard), 0.001, "Distance")
         self.assertEqualCustom(velocity, data.velocity().get_in(unit.VelocityFPS), 5, "Velocity")
         self.assertEqualCustom(mach, data.mach_velocity(), 0.005, "Mach")
         self.assertEqualCustom(energy, data.energy().get_in(unit.EnergyFootPound), 5, "Energy")
@@ -299,7 +307,10 @@ class TestPyBallisticCalc(unittest.TestCase):
                 self.validate_one(*d)
 
     def test_path_g7(self):
-        bc = BallisticCoefficient(0.223, DragTableG7)
+        bc = BallisticCoefficient(0.223, DragTableG7,
+                                  weight=Weight(167, WeightGrain),
+                                  diameter=Distance(0.308, DistanceInch),
+                                  custom_drag_table=[])
         projectile = ProjectileWithDimensions(bc, unit.Distance(0.308, unit.DistanceInch),
                                               unit.Distance(1.282, unit.DistanceInch),
                                               unit.Weight(168, unit.WeightGrain))
