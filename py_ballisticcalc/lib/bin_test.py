@@ -177,6 +177,7 @@ class TestG7Profile(unittest.TestCase):
         print(bc.drag(3))
 
         ret = bc.calculated_drag_function()
+        print(ret)
 
     def test_create(self):
         bc = BallisticCoefficient(

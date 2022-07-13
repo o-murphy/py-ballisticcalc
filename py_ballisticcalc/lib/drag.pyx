@@ -71,11 +71,10 @@ cdef class BallisticCoefficient:
         return w / pow(d, 2) / 7000
 
     cpdef double standard_cd(self, double mach):
-        return self.drag(mach)
+        return calculate_by_curve(self._table_data, self._curve_data, mach)
 
     cpdef double calculated_cd(self, double mach):
-        print(mach, self.drag(mach), self._form_factor, mach * self.drag(mach))
-        return self.drag(mach) * self._form_factor
+        return self.standard_cd(mach) * self._form_factor
 
     cpdef list calculated_drag_function(self):
         cdef standard_cd_table
@@ -88,7 +87,6 @@ cdef class BallisticCoefficient:
             st_mach = point.a()
             st_cd = point.b()
             cd = self.calculated_cd(st_mach)
-            # print(st_mach, cd)
             calculated_cd_table.append({'A': st_mach, 'B': cd})
 
         return calculated_cd_table
@@ -96,7 +94,7 @@ cdef class BallisticCoefficient:
     cpdef form_factor(self):
         return self._form_factor
 
-cdef class DataPoint(object):
+cdef class DataPoint:
     cdef double _a, _b
 
     def __init__(self, a: double, b: double):
@@ -109,7 +107,7 @@ cdef class DataPoint(object):
     cpdef double b(self):
         return self._b
 
-cdef class CurvePoint(object):
+cdef class CurvePoint:
     cdef double _a, _b, _c
 
     def __init__(self, a: double, b: double, c: double):
