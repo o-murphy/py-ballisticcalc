@@ -1,4 +1,4 @@
-from py_ballisticcalc.lib.drag import BallisticCoefficient, load_drag_table
+from py_ballisticcalc.lib.drag import load_drag_table
 from py_ballisticcalc.lib.bmath.unit import *
 from py_ballisticcalc.lib.atmosphere import IcaoAtmosphere
 from libc.math cimport pow
