@@ -17,6 +17,7 @@ from py_ballisticcalc.lib.trajectory_data import TrajectoryData
 from py_ballisticcalc.lib.bmath import unit as unit
 from py_ballisticcalc.lib.bmath.unit import *
 from py_ballisticcalc.lib.profile import Profile as cProfile
+from py_ballisticcalc.lib.tools import MultipleBallisticCoefficient
 
 
 class TestProfile(unittest.TestCase):
@@ -177,6 +178,18 @@ class TestG7Profile(unittest.TestCase):
         print(bc.drag(3))
 
         ret = bc.calculated_drag_function()
+        print(ret)
+
+    def test_mbc(self):
+        bc = MultipleBallisticCoefficient(
+            drag_table=DragTableG7,
+            weight=Weight(178, WeightGrain),
+            diameter=Distance(0.308, DistanceInch),
+            multiple_bc_table=[[0.275, 800], [0.255, 500], [0.26, 700], ],
+            velocity_units_flag=VelocityMPS
+        )
+
+        ret = bc.custom_drag_func()
         print(ret)
 
     def test_create(self):
