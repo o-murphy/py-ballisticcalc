@@ -18,5 +18,6 @@ setup(
     long_description_content_type="text/markdown",
     zip_safe=True,
     py_modules=['py_ballisticcalc'],
-    requirements=[]
+    requirements=[],
+    include_package_data=True,
 )

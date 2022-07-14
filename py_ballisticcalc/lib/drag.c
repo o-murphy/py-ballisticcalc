@@ -2081,7 +2081,6 @@ static const char __pyx_k_DragTableGS[] = "DragTableGS";
 static const char __pyx_k_PickleError[] = "PickleError";
 static const char __pyx_k_WeightGrain[] = "WeightGrain";
 static const char __pyx_k_data_points[] = "data_points";
-static const char __pyx_k_drag_tables[] = "drag_tables";
 static const char __pyx_k_form_factor[] = "form_factor";
 static const char __pyx_k_standard_cd[] = "standard_cd";
 static const char __pyx_k_CurvePoint_a[] = "CurvePoint.a";
@@ -2130,6 +2129,7 @@ static const char __pyx_k_BallisticCoefficient_standard_cd[] = "BallisticCoeffic
 static const char __pyx_k_Incompatible_checksums_s_vs_0x47[] = "Incompatible checksums (%s vs 0x473020b = (_curve_data, _custom_drag_table, _diameter, _form_factor, _sectional_density, _table, _table_data, _value, _weight))";
 static const char __pyx_k_Incompatible_checksums_s_vs_0x65[] = "Incompatible checksums (%s vs 0x6548750 = (_a, _b, _c))";
 static const char __pyx_k_Incompatible_checksums_s_vs_0xfa[] = "Incompatible checksums (%s vs 0xfa5e559 = (_a, _b))";
+static const char __pyx_k_py_ballisticcalc_lib_drag_tables[] = "py_ballisticcalc.lib.drag_tables";
 static const char __pyx_k_BallisticCoefficient_calculated_2[] = "BallisticCoefficient.calculated_drag_function";
 #if !CYTHON_USE_MODULE_STATE
 static PyObject *__pyx_n_u_A;
@@ -2207,7 +2207,6 @@ static PyObject *__pyx_kp_u_disable;
 static PyObject *__pyx_n_s_double;
 static PyObject *__pyx_n_s_drag;
 static PyObject *__pyx_n_s_drag_table;
-static PyObject *__pyx_n_s_drag_tables;
 static PyObject *__pyx_kp_u_enable;
 static PyObject *__pyx_n_s_form_factor;
 static PyObject *__pyx_kp_u_gc;
@@ -2227,6 +2226,7 @@ static PyObject *__pyx_n_s_new;
 static PyObject *__pyx_n_s_pickle;
 static PyObject *__pyx_n_s_py_ballisticcalc_lib_bmath_unit;
 static PyObject *__pyx_kp_s_py_ballisticcalc_lib_drag_pyx;
+static PyObject *__pyx_n_s_py_ballisticcalc_lib_drag_tables;
 static PyObject *__pyx_n_s_pyx_PickleError;
 static PyObject *__pyx_n_s_pyx_checksum;
 static PyObject *__pyx_n_s_pyx_result;
@@ -2434,7 +2434,6 @@ typedef struct {
   PyObject *__pyx_n_s_double;
   PyObject *__pyx_n_s_drag;
   PyObject *__pyx_n_s_drag_table;
-  PyObject *__pyx_n_s_drag_tables;
   PyObject *__pyx_kp_u_enable;
   PyObject *__pyx_n_s_form_factor;
   PyObject *__pyx_kp_u_gc;
@@ -2454,6 +2453,7 @@ typedef struct {
   PyObject *__pyx_n_s_pickle;
   PyObject *__pyx_n_s_py_ballisticcalc_lib_bmath_unit;
   PyObject *__pyx_kp_s_py_ballisticcalc_lib_drag_pyx;
+  PyObject *__pyx_n_s_py_ballisticcalc_lib_drag_tables;
   PyObject *__pyx_n_s_pyx_PickleError;
   PyObject *__pyx_n_s_pyx_checksum;
   PyObject *__pyx_n_s_pyx_result;
@@ -2641,7 +2641,6 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_double);
   Py_CLEAR(clear_module_state->__pyx_n_s_drag);
   Py_CLEAR(clear_module_state->__pyx_n_s_drag_table);
-  Py_CLEAR(clear_module_state->__pyx_n_s_drag_tables);
   Py_CLEAR(clear_module_state->__pyx_kp_u_enable);
   Py_CLEAR(clear_module_state->__pyx_n_s_form_factor);
   Py_CLEAR(clear_module_state->__pyx_kp_u_gc);
@@ -2661,6 +2660,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_pickle);
   Py_CLEAR(clear_module_state->__pyx_n_s_py_ballisticcalc_lib_bmath_unit);
   Py_CLEAR(clear_module_state->__pyx_kp_s_py_ballisticcalc_lib_drag_pyx);
+  Py_CLEAR(clear_module_state->__pyx_n_s_py_ballisticcalc_lib_drag_tables);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_PickleError);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_checksum);
   Py_CLEAR(clear_module_state->__pyx_n_s_pyx_result);
@@ -2835,7 +2835,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_double);
   Py_VISIT(traverse_module_state->__pyx_n_s_drag);
   Py_VISIT(traverse_module_state->__pyx_n_s_drag_table);
-  Py_VISIT(traverse_module_state->__pyx_n_s_drag_tables);
   Py_VISIT(traverse_module_state->__pyx_kp_u_enable);
   Py_VISIT(traverse_module_state->__pyx_n_s_form_factor);
   Py_VISIT(traverse_module_state->__pyx_kp_u_gc);
@@ -2855,6 +2854,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_pickle);
   Py_VISIT(traverse_module_state->__pyx_n_s_py_ballisticcalc_lib_bmath_unit);
   Py_VISIT(traverse_module_state->__pyx_kp_s_py_ballisticcalc_lib_drag_pyx);
+  Py_VISIT(traverse_module_state->__pyx_n_s_py_ballisticcalc_lib_drag_tables);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_PickleError);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_checksum);
   Py_VISIT(traverse_module_state->__pyx_n_s_pyx_result);
@@ -3026,7 +3026,6 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_double __pyx_mstate_global->__pyx_n_s_double
 #define __pyx_n_s_drag __pyx_mstate_global->__pyx_n_s_drag
 #define __pyx_n_s_drag_table __pyx_mstate_global->__pyx_n_s_drag_table
-#define __pyx_n_s_drag_tables __pyx_mstate_global->__pyx_n_s_drag_tables
 #define __pyx_kp_u_enable __pyx_mstate_global->__pyx_kp_u_enable
 #define __pyx_n_s_form_factor __pyx_mstate_global->__pyx_n_s_form_factor
 #define __pyx_kp_u_gc __pyx_mstate_global->__pyx_kp_u_gc
@@ -3046,6 +3045,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_pickle __pyx_mstate_global->__pyx_n_s_pickle
 #define __pyx_n_s_py_ballisticcalc_lib_bmath_unit __pyx_mstate_global->__pyx_n_s_py_ballisticcalc_lib_bmath_unit
 #define __pyx_kp_s_py_ballisticcalc_lib_drag_pyx __pyx_mstate_global->__pyx_kp_s_py_ballisticcalc_lib_drag_pyx
+#define __pyx_n_s_py_ballisticcalc_lib_drag_tables __pyx_mstate_global->__pyx_n_s_py_ballisticcalc_lib_drag_tables
 #define __pyx_n_s_pyx_PickleError __pyx_mstate_global->__pyx_n_s_pyx_PickleError
 #define __pyx_n_s_pyx_checksum __pyx_mstate_global->__pyx_n_s_pyx_checksum
 #define __pyx_n_s_pyx_result __pyx_mstate_global->__pyx_n_s_pyx_result
@@ -12240,7 +12240,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, __pyx_k_double, sizeof(__pyx_k_double), 0, 0, 1, 1},
   {0, __pyx_k_drag, sizeof(__pyx_k_drag), 0, 0, 1, 1},
   {0, __pyx_k_drag_table, sizeof(__pyx_k_drag_table), 0, 0, 1, 1},
-  {0, __pyx_k_drag_tables, sizeof(__pyx_k_drag_tables), 0, 0, 1, 1},
   {0, __pyx_k_enable, sizeof(__pyx_k_enable), 0, 1, 0, 0},
   {0, __pyx_k_form_factor, sizeof(__pyx_k_form_factor), 0, 0, 1, 1},
   {0, __pyx_k_gc, sizeof(__pyx_k_gc), 0, 1, 0, 0},
@@ -12260,6 +12259,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
   {0, __pyx_k_py_ballisticcalc_lib_bmath_unit, sizeof(__pyx_k_py_ballisticcalc_lib_bmath_unit), 0, 0, 1, 1},
   {0, __pyx_k_py_ballisticcalc_lib_drag_pyx, sizeof(__pyx_k_py_ballisticcalc_lib_drag_pyx), 0, 0, 1, 0},
+  {0, __pyx_k_py_ballisticcalc_lib_drag_tables, sizeof(__pyx_k_py_ballisticcalc_lib_drag_tables), 0, 0, 1, 1},
   {0, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
   {0, __pyx_k_pyx_checksum, sizeof(__pyx_k_pyx_checksum), 0, 0, 1, 1},
   {0, __pyx_k_pyx_result, sizeof(__pyx_k_pyx_result), 0, 0, 1, 1},
@@ -12361,7 +12361,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_double, __pyx_k_double, sizeof(__pyx_k_double), 0, 0, 1, 1},
   {&__pyx_n_s_drag, __pyx_k_drag, sizeof(__pyx_k_drag), 0, 0, 1, 1},
   {&__pyx_n_s_drag_table, __pyx_k_drag_table, sizeof(__pyx_k_drag_table), 0, 0, 1, 1},
-  {&__pyx_n_s_drag_tables, __pyx_k_drag_tables, sizeof(__pyx_k_drag_tables), 0, 0, 1, 1},
   {&__pyx_kp_u_enable, __pyx_k_enable, sizeof(__pyx_k_enable), 0, 1, 0, 0},
   {&__pyx_n_s_form_factor, __pyx_k_form_factor, sizeof(__pyx_k_form_factor), 0, 0, 1, 1},
   {&__pyx_kp_u_gc, __pyx_k_gc, sizeof(__pyx_k_gc), 0, 1, 0, 0},
@@ -12381,6 +12380,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
   {&__pyx_n_s_py_ballisticcalc_lib_bmath_unit, __pyx_k_py_ballisticcalc_lib_bmath_unit, sizeof(__pyx_k_py_ballisticcalc_lib_bmath_unit), 0, 0, 1, 1},
   {&__pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_k_py_ballisticcalc_lib_drag_pyx, sizeof(__pyx_k_py_ballisticcalc_lib_drag_pyx), 0, 0, 1, 0},
+  {&__pyx_n_s_py_ballisticcalc_lib_drag_tables, __pyx_k_py_ballisticcalc_lib_drag_tables, sizeof(__pyx_k_py_ballisticcalc_lib_drag_tables), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_PickleError, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_checksum, __pyx_k_pyx_checksum, sizeof(__pyx_k_pyx_checksum), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_result, __pyx_k_pyx_result, sizeof(__pyx_k_pyx_result), 0, 0, 1, 1},
@@ -12762,26 +12762,26 @@ static CYTHON_SMALL_CODE int __Pyx_InitConstants(void) {
   if (__Pyx_InitString(__pyx_string_tab[72], &__pyx_n_s_double) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[73], &__pyx_n_s_drag) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[74], &__pyx_n_s_drag_table) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[75], &__pyx_n_s_drag_tables) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[76], &__pyx_kp_u_enable) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[77], &__pyx_n_s_form_factor) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[78], &__pyx_kp_u_gc) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[79], &__pyx_n_s_get_in) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[80], &__pyx_n_s_getstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[81], &__pyx_n_s_import) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[82], &__pyx_n_s_int) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[83], &__pyx_n_s_is_coroutine) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[84], &__pyx_kp_u_isenabled) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[85], &__pyx_n_s_list) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[86], &__pyx_n_s_load_drag_table) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[87], &__pyx_n_s_mach) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[88], &__pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[89], &__pyx_n_s_make_data_points) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[90], &__pyx_n_s_name) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[91], &__pyx_n_s_new) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[92], &__pyx_n_s_pickle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[93], &__pyx_n_s_py_ballisticcalc_lib_bmath_unit) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[94], &__pyx_kp_s_py_ballisticcalc_lib_drag_pyx) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[75], &__pyx_kp_u_enable) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[76], &__pyx_n_s_form_factor) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[77], &__pyx_kp_u_gc) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[78], &__pyx_n_s_get_in) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[79], &__pyx_n_s_getstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[80], &__pyx_n_s_import) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[81], &__pyx_n_s_int) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[82], &__pyx_n_s_is_coroutine) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[83], &__pyx_kp_u_isenabled) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[84], &__pyx_n_s_list) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[85], &__pyx_n_s_load_drag_table) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[86], &__pyx_n_s_mach) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[87], &__pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[88], &__pyx_n_s_make_data_points) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[89], &__pyx_n_s_name) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[90], &__pyx_n_s_new) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[91], &__pyx_n_s_pickle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[92], &__pyx_n_s_py_ballisticcalc_lib_bmath_unit) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[93], &__pyx_kp_s_py_ballisticcalc_lib_drag_pyx) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[94], &__pyx_n_s_py_ballisticcalc_lib_drag_tables) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[95], &__pyx_n_s_pyx_PickleError) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[96], &__pyx_n_s_pyx_checksum) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[97], &__pyx_n_s_pyx_result) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
@@ -13283,7 +13283,7 @@ if (!__Pyx_RefNanny) {
   /* "drag.pyx":2
  * from libc.math cimport floor, pow
  * from py_ballisticcalc.lib.bmath.unit import *             # <<<<<<<<<<<<<<
- * from drag_tables import *
+ * from py_ballisticcalc.lib.drag_tables import *
  * 
  */
   __pyx_t_2 = PyList_New(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2, __pyx_L1_error)
@@ -13300,7 +13300,7 @@ if (!__Pyx_RefNanny) {
   /* "drag.pyx":3
  * from libc.math cimport floor, pow
  * from py_ballisticcalc.lib.bmath.unit import *
- * from drag_tables import *             # <<<<<<<<<<<<<<
+ * from py_ballisticcalc.lib.drag_tables import *             # <<<<<<<<<<<<<<
  * 
  * DragTableG1: int = 1
  */
@@ -13309,14 +13309,14 @@ if (!__Pyx_RefNanny) {
   __Pyx_INCREF(__pyx_n_s__5);
   __Pyx_GIVEREF(__pyx_n_s__5);
   PyList_SET_ITEM(__pyx_t_3, 0, __pyx_n_s__5);
-  __pyx_t_2 = __Pyx_Import(__pyx_n_s_drag_tables, __pyx_t_3, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 3, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Import(__pyx_n_s_py_ballisticcalc_lib_drag_tables, __pyx_t_3, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 3, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (__pyx_import_star(__pyx_t_2) < 0) __PYX_ERR(0, 3, __pyx_L1_error);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "drag.pyx":5
- * from drag_tables import *
+ * from py_ballisticcalc.lib.drag_tables import *
  * 
  * DragTableG1: int = 1             # <<<<<<<<<<<<<<
  * DragTableG2: int = 2
@@ -13712,7 +13712,7 @@ if (!__Pyx_RefNanny) {
   /* "drag.pyx":1
  * from libc.math cimport floor, pow             # <<<<<<<<<<<<<<
  * from py_ballisticcalc.lib.bmath.unit import *
- * from drag_tables import *
+ * from py_ballisticcalc.lib.drag_tables import *
  */
   __pyx_t_3 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
