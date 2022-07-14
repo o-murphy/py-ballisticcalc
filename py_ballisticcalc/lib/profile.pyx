@@ -3,9 +3,10 @@ from py_ballisticcalc.lib.drag import BallisticCoefficient, DragTableG7
 from py_ballisticcalc.lib.projectile import ProjectileWithDimensions
 from py_ballisticcalc.lib.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist
 from py_ballisticcalc.lib.wind import create_only_wind_info
-from py_ballisticcalc.lib.shot_parameters import ShotParameters
+from py_ballisticcalc.lib.shot_parameters import ShotParametersUnlevel
 from py_ballisticcalc.lib.trajectory_calculator import TrajectoryCalculator
 from py_ballisticcalc.lib.bmath.unit import *
+from py_ballisticcalc.lib.tools import MultipleBallisticCoefficient
 
 cdef class Profile(object):
     cdef int _drag_table, _twist_direction
@@ -40,9 +41,16 @@ cdef class Profile(object):
                  distance_step: (double, int) = (100, DistanceMeter),
                  wind_velocity: (double, int) = (0, VelocityKMH),
                  wind_direction: (double, int) = (0, AngularDegree),
-                 custom_drag_function: list[dict[str, double]] = [],
-                 maximum_step_size: (double, int) = (1, DistanceFoot)
+                 maximum_step_size: (double, int) = (1, DistanceFoot),
+                 shot_angle: (double, int) = (0, AngularRadian),
+                 cant_angle: (double, int) = (0, AngularRadian),
+                 custom_drag_function=None,
+                 multiple_bc_table=None
                  ):
+        if custom_drag_function is None:
+            custom_drag_function = []
+        if multiple_bc_table is None:
+            multiple_bc_table = []
         self._bc_value = bc_value
         self._drag_table = drag_table
         self._bullet_diameter = Distance(*bullet_diameter)
@@ -63,13 +71,11 @@ cdef class Profile(object):
         self._wind_velocity = Velocity(*wind_velocity)
         self._wind_direction = Angular(*wind_direction)
         self._maximum_step_size = Distance(*maximum_step_size)
-
+        self._shot_angle = Angular(*shot_angle)
+        self._cant_angle = Angular(*cant_angle)
+        self._multiple_bc_table = multiple_bc_table
         self._trajectory_data = []
-
-        if not custom_drag_function:
-            custom_drag_function = []
         self._custom_drag_function = custom_drag_function
-
         self._calculated_drag_function = []
 
     def dict(self):
@@ -78,7 +84,6 @@ cdef class Profile(object):
             'twist_direction': self._twist_direction,
             'custom_drag_function': self._custom_drag_function,
             'calculated_drag_function': self._calculated_drag_function,
-            # 'trajectory_data': self._trajectory_data,
             'humidity': self._humidity,
             'bc_value': self._bc_value,
             'bullet_diameter': self._bullet_diameter,
@@ -96,7 +101,10 @@ cdef class Profile(object):
             'sight_angle': self._sight_angle,
             'wind_velocity': self._wind_velocity,
             'wind_direction': self._wind_direction,
-            'maximum_step_size': self._maximum_step_size
+            'maximum_step_size': self._maximum_step_size,
+            'shot_angle': self._shot_angle,
+            'cant_angle': self._cant_angle,
+            'multiple_bc_table': self._multiple_bc_table,
         }
         return profile
 
@@ -109,6 +117,17 @@ cdef class Profile(object):
         return self._calculated_drag_function
 
     cdef make_bc(self):
+
+        if len(self._multiple_bc_table) > 0 >= self._bc_value:
+            mbc = MultipleBallisticCoefficient(
+                self._drag_table,
+                self._bullet_diameter,
+                self._bullet_weight,
+                self._multiple_bc_table,
+                self._muzzle_velocity.units()
+            )
+            self._custom_drag_function = mbc.custom_drag_func()
+
         return BallisticCoefficient(self._bc_value, self._drag_table,
                                     self._bullet_weight, self._bullet_diameter,
                                     self._custom_drag_function)
@@ -131,7 +150,8 @@ cdef class Profile(object):
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(self._maximum_step_size)
         angle = calc.sight_angle(ammo, weapon, atmo)
-        shot = ShotParameters(angle, self._maximum_distance, self._distance_step)
+        shot = ShotParametersUnlevel(angle, self._maximum_distance, self._distance_step,
+                                     self._shot_angle, self._cant_angle)
         data = calc.trajectory(ammo, weapon, atmo, shot, wind)
         self._trajectory_data = data
 
