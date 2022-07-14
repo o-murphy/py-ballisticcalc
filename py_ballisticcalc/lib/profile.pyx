@@ -13,13 +13,14 @@ cdef class Profile(object):
     cdef list _custom_drag_function
     cdef list _calculated_drag_function
     cdef list _trajectory_data
+    cdef list _multiple_bc_table
     cdef double _humidity
     cdef _bc_value, _bullet_diameter, _bullet_length, _bullet_weight
     cdef _muzzle_velocity, _zero_distance, _maximum_distance, _distance_step
     cdef _altitude, _pressure, _temperature
     cdef _twist, _sight_height, _sight_angle
     cdef _wind_velocity, _wind_direction
-    cdef _maximum_step_size
+    cdef _maximum_step_size, _shot_angle, _cant_angle
 
     def __init__(self,
                  bc_value: double = 0.223,
