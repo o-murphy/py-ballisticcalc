@@ -1204,7 +1204,7 @@ struct __pyx_obj_4drag_BallisticCoefficient {
 };
 
 
-/* "drag.pyx":97
+/* "drag.pyx":100
  *         return self._form_factor
  * 
  * cdef class DataPoint:             # <<<<<<<<<<<<<<
@@ -1219,7 +1219,7 @@ struct __pyx_obj_4drag_DataPoint {
 };
 
 
-/* "drag.pyx":110
+/* "drag.pyx":113
  *         return self._b
  * 
  * cdef class CurvePoint:             # <<<<<<<<<<<<<<
@@ -1259,7 +1259,7 @@ struct __pyx_vtabstruct_4drag_BallisticCoefficient {
 static struct __pyx_vtabstruct_4drag_BallisticCoefficient *__pyx_vtabptr_4drag_BallisticCoefficient;
 
 
-/* "drag.pyx":97
+/* "drag.pyx":100
  *         return self._form_factor
  * 
  * cdef class DataPoint:             # <<<<<<<<<<<<<<
@@ -1274,7 +1274,7 @@ struct __pyx_vtabstruct_4drag_DataPoint {
 static struct __pyx_vtabstruct_4drag_DataPoint *__pyx_vtabptr_4drag_DataPoint;
 
 
-/* "drag.pyx":110
+/* "drag.pyx":113
  *         return self._b
  * 
  * cdef class CurvePoint:             # <<<<<<<<<<<<<<
@@ -1483,6 +1483,48 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues
         __Pyx__ArgTypeTest(obj, type, name, exact))
 static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
 
+/* PyObjectCall.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
+#else
+#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
+#endif
+
+/* PyFunctionFastCall.proto */
+#if CYTHON_FAST_PYCALL
+#if !CYTHON_VECTORCALL
+#define __Pyx_PyFunction_FastCall(func, args, nargs)\
+    __Pyx_PyFunction_FastCallDict((func), (args), (nargs), NULL)
+static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs);
+#endif
+#define __Pyx_BUILD_ASSERT_EXPR(cond)\
+    (sizeof(char [1 - 2*!(cond)]) - 1)
+#ifndef Py_MEMBER_SIZE
+#define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
+#endif
+#if !CYTHON_VECTORCALL
+  static size_t __pyx_pyframe_localsplus_offset = 0;
+  #include "frameobject.h"
+  #define __Pxy_PyFrame_Initialize_Offsets()\
+    ((void)__Pyx_BUILD_ASSERT_EXPR(sizeof(PyFrameObject) == offsetof(PyFrameObject, f_localsplus) + Py_MEMBER_SIZE(PyFrameObject, f_localsplus)),\
+     (void)(__pyx_pyframe_localsplus_offset = ((size_t)PyFrame_Type.tp_basicsize) - Py_MEMBER_SIZE(PyFrameObject, f_localsplus)))
+  #define __Pyx_PyFrame_GetLocalsplus(frame)\
+    (assert(__pyx_pyframe_localsplus_offset), (PyObject **)(((char *)(frame)) + __pyx_pyframe_localsplus_offset))
+#endif // !CYTHON_VECTORCALL
+#endif
+
+/* PyObjectCallMethO.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
+#endif
+
+/* PyObjectFastCall.proto */
+#define __Pyx_PyObject_FastCall(func, args, nargs)  __Pyx_PyObject_FastCallDict(func, args, (size_t)(nargs), NULL)
+static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject **args, size_t nargs, PyObject *kwargs);
+
+/* PyObjectCallOneArg.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
+
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 #define __PYX_DICT_VERSION_INIT  ((PY_UINT64_T) -1)
@@ -1551,48 +1593,6 @@ static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
         likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
         PyObject_Format(s, f))
 #endif
-
-/* PyFunctionFastCall.proto */
-#if CYTHON_FAST_PYCALL
-#if !CYTHON_VECTORCALL
-#define __Pyx_PyFunction_FastCall(func, args, nargs)\
-    __Pyx_PyFunction_FastCallDict((func), (args), (nargs), NULL)
-static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, Py_ssize_t nargs, PyObject *kwargs);
-#endif
-#define __Pyx_BUILD_ASSERT_EXPR(cond)\
-    (sizeof(char [1 - 2*!(cond)]) - 1)
-#ifndef Py_MEMBER_SIZE
-#define Py_MEMBER_SIZE(type, member) sizeof(((type *)0)->member)
-#endif
-#if !CYTHON_VECTORCALL
-  static size_t __pyx_pyframe_localsplus_offset = 0;
-  #include "frameobject.h"
-  #define __Pxy_PyFrame_Initialize_Offsets()\
-    ((void)__Pyx_BUILD_ASSERT_EXPR(sizeof(PyFrameObject) == offsetof(PyFrameObject, f_localsplus) + Py_MEMBER_SIZE(PyFrameObject, f_localsplus)),\
-     (void)(__pyx_pyframe_localsplus_offset = ((size_t)PyFrame_Type.tp_basicsize) - Py_MEMBER_SIZE(PyFrameObject, f_localsplus)))
-  #define __Pyx_PyFrame_GetLocalsplus(frame)\
-    (assert(__pyx_pyframe_localsplus_offset), (PyObject **)(((char *)(frame)) + __pyx_pyframe_localsplus_offset))
-#endif // !CYTHON_VECTORCALL
-#endif
-
-/* PyObjectCall.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
-#else
-#define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
-#endif
-
-/* PyObjectCallMethO.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg);
-#endif
-
-/* PyObjectFastCall.proto */
-#define __Pyx_PyObject_FastCall(func, args, nargs)  __Pyx_PyObject_FastCallDict(func, args, (size_t)(nargs), NULL)
-static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject **args, size_t nargs, PyObject *kwargs);
-
-/* PyObjectCallOneArg.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
 /* RaiseException.proto */
 static void __Pyx_Raise(PyObject *type, PyObject *value, PyObject *tb, PyObject *cause);
@@ -2008,6 +2008,7 @@ int __pyx_module_is_main_drag = 0;
 
 /* Implementation of "drag" */
 /* #### Code section: global_var ### */
+static PyObject *__pyx_builtin_print;
 static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_range;
 /* #### Code section: string_decls ### */
@@ -2032,6 +2033,7 @@ static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_self[] = "self";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_curve[] = "curve";
+static const char __pyx_k_print[] = "print";
 static const char __pyx_k_range[] = "range";
 static const char __pyx_k_state[] = "state";
 static const char __pyx_k_table[] = "table";
@@ -2224,6 +2226,7 @@ static PyObject *__pyx_n_s_make_data_points;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_s_new;
 static PyObject *__pyx_n_s_pickle;
+static PyObject *__pyx_n_s_print;
 static PyObject *__pyx_n_s_py_ballisticcalc_lib_bmath_unit;
 static PyObject *__pyx_kp_s_py_ballisticcalc_lib_drag_pyx;
 static PyObject *__pyx_n_s_py_ballisticcalc_lib_drag_tables;
@@ -2451,6 +2454,7 @@ typedef struct {
   PyObject *__pyx_n_s_name;
   PyObject *__pyx_n_s_new;
   PyObject *__pyx_n_s_pickle;
+  PyObject *__pyx_n_s_print;
   PyObject *__pyx_n_s_py_ballisticcalc_lib_bmath_unit;
   PyObject *__pyx_kp_s_py_ballisticcalc_lib_drag_pyx;
   PyObject *__pyx_n_s_py_ballisticcalc_lib_drag_tables;
@@ -2658,6 +2662,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_name);
   Py_CLEAR(clear_module_state->__pyx_n_s_new);
   Py_CLEAR(clear_module_state->__pyx_n_s_pickle);
+  Py_CLEAR(clear_module_state->__pyx_n_s_print);
   Py_CLEAR(clear_module_state->__pyx_n_s_py_ballisticcalc_lib_bmath_unit);
   Py_CLEAR(clear_module_state->__pyx_kp_s_py_ballisticcalc_lib_drag_pyx);
   Py_CLEAR(clear_module_state->__pyx_n_s_py_ballisticcalc_lib_drag_tables);
@@ -2852,6 +2857,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_name);
   Py_VISIT(traverse_module_state->__pyx_n_s_new);
   Py_VISIT(traverse_module_state->__pyx_n_s_pickle);
+  Py_VISIT(traverse_module_state->__pyx_n_s_print);
   Py_VISIT(traverse_module_state->__pyx_n_s_py_ballisticcalc_lib_bmath_unit);
   Py_VISIT(traverse_module_state->__pyx_kp_s_py_ballisticcalc_lib_drag_pyx);
   Py_VISIT(traverse_module_state->__pyx_n_s_py_ballisticcalc_lib_drag_tables);
@@ -3043,6 +3049,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_name __pyx_mstate_global->__pyx_n_s_name
 #define __pyx_n_s_new __pyx_mstate_global->__pyx_n_s_new
 #define __pyx_n_s_pickle __pyx_mstate_global->__pyx_n_s_pickle
+#define __pyx_n_s_print __pyx_mstate_global->__pyx_n_s_print
 #define __pyx_n_s_py_ballisticcalc_lib_bmath_unit __pyx_mstate_global->__pyx_n_s_py_ballisticcalc_lib_bmath_unit
 #define __pyx_kp_s_py_ballisticcalc_lib_drag_pyx __pyx_mstate_global->__pyx_kp_s_py_ballisticcalc_lib_drag_pyx
 #define __pyx_n_s_py_ballisticcalc_lib_drag_tables __pyx_mstate_global->__pyx_n_s_py_ballisticcalc_lib_drag_tables
@@ -3247,12 +3254,12 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
-  int __pyx_t_2;
-  int __pyx_t_3;
-  Py_ssize_t __pyx_t_4;
+  PyObject *__pyx_t_2 = NULL;
+  Py_ssize_t __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
   PyObject *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
-  PyObject *__pyx_t_7 = NULL;
+  int __pyx_t_6;
+  int __pyx_t_7;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -3308,7 +3315,7 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  *         self._sectional_density = self._get_sectional_density()
  *         self._custom_drag_table = custom_drag_table             # <<<<<<<<<<<<<<
  * 
- *         if self._table == 0 and len(custom_drag_table) > 0:
+ *         print(len(self._custom_drag_table), self._table)
  */
   __Pyx_INCREF(__pyx_v_custom_drag_table);
   __Pyx_GIVEREF(__pyx_v_custom_drag_table);
@@ -3319,37 +3326,107 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
   /* "drag.pyx":32
  *         self._custom_drag_table = custom_drag_table
  * 
- *         if self._table == 0 and len(custom_drag_table) > 0:             # <<<<<<<<<<<<<<
- *             self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
- *             self._value = self._get_custom_bc()
+ *         print(len(self._custom_drag_table), self._table)             # <<<<<<<<<<<<<<
+ *         print(self._table == 0 and len(self._custom_drag_table) > 0)
+ * 
  */
-  __pyx_t_3 = ((__pyx_v_self->_table == 0) != 0);
-  if (__pyx_t_3) {
-  } else {
-    __pyx_t_2 = __pyx_t_3;
-    goto __pyx_L4_bool_binop_done;
-  }
-  if (unlikely(__pyx_v_custom_drag_table == Py_None)) {
+  __pyx_t_2 = __pyx_v_self->_custom_drag_table;
+  __Pyx_INCREF(__pyx_t_2);
+  if (unlikely(__pyx_t_2 == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
     __PYX_ERR(0, 32, __pyx_L1_error)
   }
-  __pyx_t_4 = PyList_GET_SIZE(__pyx_v_custom_drag_table); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 32, __pyx_L1_error)
-  __pyx_t_3 = ((__pyx_t_4 > 0) != 0);
-  __pyx_t_2 = __pyx_t_3;
-  __pyx_L4_bool_binop_done:;
-  if (__pyx_t_2) {
+  __pyx_t_3 = PyList_GET_SIZE(__pyx_t_2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->_table); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_GIVEREF(__pyx_t_2);
+  PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_4);
+  PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
+  __pyx_t_2 = 0;
+  __pyx_t_4 = 0;
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "drag.pyx":33
+  /* "drag.pyx":33
  * 
- *         if self._table == 0 and len(custom_drag_table) > 0:
+ *         print(len(self._custom_drag_table), self._table)
+ *         print(self._table == 0 and len(self._custom_drag_table) > 0)             # <<<<<<<<<<<<<<
+ * 
+ *         if self._table == 0 and len(self._custom_drag_table) > 0:
+ */
+  __pyx_t_6 = (__pyx_v_self->_table == 0);
+  if (__pyx_t_6) {
+  } else {
+    __pyx_t_5 = __Pyx_PyBool_FromLong(__pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_4 = __pyx_t_5;
+    __pyx_t_5 = 0;
+    goto __pyx_L3_bool_binop_done;
+  }
+  __pyx_t_5 = __pyx_v_self->_custom_drag_table;
+  __Pyx_INCREF(__pyx_t_5);
+  if (unlikely(__pyx_t_5 == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+    __PYX_ERR(0, 33, __pyx_L1_error)
+  }
+  __pyx_t_3 = PyList_GET_SIZE(__pyx_t_5); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 33, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_6 = (__pyx_t_3 > 0);
+  __pyx_t_5 = __Pyx_PyBool_FromLong(__pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_4 = __pyx_t_5;
+  __pyx_t_5 = 0;
+  __pyx_L3_bool_binop_done:;
+  __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 33, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+  /* "drag.pyx":35
+ *         print(self._table == 0 and len(self._custom_drag_table) > 0)
+ * 
+ *         if self._table == 0 and len(self._custom_drag_table) > 0:             # <<<<<<<<<<<<<<
+ *             self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
+ *             self._value = self._get_custom_bc()
+ */
+  __pyx_t_7 = ((__pyx_v_self->_table == 0) != 0);
+  if (__pyx_t_7) {
+  } else {
+    __pyx_t_6 = __pyx_t_7;
+    goto __pyx_L6_bool_binop_done;
+  }
+  __pyx_t_5 = __pyx_v_self->_custom_drag_table;
+  __Pyx_INCREF(__pyx_t_5);
+  if (unlikely(__pyx_t_5 == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+    __PYX_ERR(0, 35, __pyx_L1_error)
+  }
+  __pyx_t_3 = PyList_GET_SIZE(__pyx_t_5); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 35, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_7 = ((__pyx_t_3 > 0) != 0);
+  __pyx_t_6 = __pyx_t_7;
+  __pyx_L6_bool_binop_done:;
+  if (__pyx_t_6) {
+
+    /* "drag.pyx":36
+ * 
+ *         if self._table == 0 and len(self._custom_drag_table) > 0:
  *             self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data             # <<<<<<<<<<<<<<
  *             self._value = self._get_custom_bc()
  *             self._table_data = make_data_points(self._custom_drag_table)
  */
     __pyx_v_self->_form_factor = 0.999;
 
-    /* "drag.pyx":34
- *         if self._table == 0 and len(custom_drag_table) > 0:
+    /* "drag.pyx":37
+ *         if self._table == 0 and len(self._custom_drag_table) > 0:
  *             self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
  *             self._value = self._get_custom_bc()             # <<<<<<<<<<<<<<
  *             self._table_data = make_data_points(self._custom_drag_table)
@@ -3357,7 +3434,7 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  */
     __pyx_v_self->_value = ((struct __pyx_vtabstruct_4drag_BallisticCoefficient *)__pyx_v_self->__pyx_vtab)->_get_custom_bc(__pyx_v_self);
 
-    /* "drag.pyx":35
+    /* "drag.pyx":38
  *             self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
  *             self._value = self._get_custom_bc()
  *             self._table_data = make_data_points(self._custom_drag_table)             # <<<<<<<<<<<<<<
@@ -3366,94 +3443,94 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  */
     __pyx_t_5 = __pyx_v_self->_custom_drag_table;
     __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_6 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_5), 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 35, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
+    __pyx_t_4 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_5), 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 38, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GIVEREF(__pyx_t_6);
+    __Pyx_GIVEREF(__pyx_t_4);
     __Pyx_GOTREF(__pyx_v_self->_table_data);
     __Pyx_DECREF(__pyx_v_self->_table_data);
-    __pyx_v_self->_table_data = ((PyObject*)__pyx_t_6);
-    __pyx_t_6 = 0;
+    __pyx_v_self->_table_data = ((PyObject*)__pyx_t_4);
+    __pyx_t_4 = 0;
 
-    /* "drag.pyx":36
+    /* "drag.pyx":39
  *             self._value = self._get_custom_bc()
  *             self._table_data = make_data_points(self._custom_drag_table)
  *             self._curve_data = calculate_curve(self._table_data)             # <<<<<<<<<<<<<<
  * 
  *         elif drag_table < DragTableG1 or DragTableG1 > DragTableGI:
  */
-    __pyx_t_6 = __pyx_v_self->_table_data;
-    __Pyx_INCREF(__pyx_t_6);
-    __pyx_t_5 = __pyx_f_4drag_calculate_curve(((PyObject*)__pyx_t_6), 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 36, __pyx_L1_error)
+    __pyx_t_4 = __pyx_v_self->_table_data;
+    __Pyx_INCREF(__pyx_t_4);
+    __pyx_t_5 = __pyx_f_4drag_calculate_curve(((PyObject*)__pyx_t_4), 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 39, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GIVEREF(__pyx_t_5);
     __Pyx_GOTREF(__pyx_v_self->_curve_data);
     __Pyx_DECREF(__pyx_v_self->_curve_data);
     __pyx_v_self->_curve_data = ((PyObject*)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "drag.pyx":32
- *         self._custom_drag_table = custom_drag_table
+    /* "drag.pyx":35
+ *         print(self._table == 0 and len(self._custom_drag_table) > 0)
  * 
- *         if self._table == 0 and len(custom_drag_table) > 0:             # <<<<<<<<<<<<<<
+ *         if self._table == 0 and len(self._custom_drag_table) > 0:             # <<<<<<<<<<<<<<
  *             self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
  *             self._value = self._get_custom_bc()
  */
-    goto __pyx_L3;
+    goto __pyx_L5;
   }
 
-  /* "drag.pyx":38
+  /* "drag.pyx":41
  *             self._curve_data = calculate_curve(self._table_data)
  * 
  *         elif drag_table < DragTableG1 or DragTableG1 > DragTableGI:             # <<<<<<<<<<<<<<
  *             raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
  *         elif value <= 0:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_DragTableG1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_DragTableG1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_5, Py_LT); __Pyx_XGOTREF(__pyx_t_6); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __pyx_t_4 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_5, Py_LT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_6); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  if (!__pyx_t_3) {
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (!__pyx_t_7) {
   } else {
-    __pyx_t_2 = __pyx_t_3;
-    goto __pyx_L6_bool_binop_done;
+    __pyx_t_6 = __pyx_t_7;
+    goto __pyx_L8_bool_binop_done;
   }
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_n_s_DragTableG1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_DragTableGI); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 38, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_DragTableG1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_DragTableGI); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_7 = PyObject_RichCompare(__pyx_t_6, __pyx_t_5, Py_GT); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __pyx_t_2 = PyObject_RichCompare(__pyx_t_4, __pyx_t_5, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 38, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_2 = __pyx_t_3;
-  __pyx_L6_bool_binop_done:;
-  if (unlikely(__pyx_t_2)) {
+  __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 41, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_6 = __pyx_t_7;
+  __pyx_L8_bool_binop_done:;
+  if (unlikely(__pyx_t_6)) {
 
-    /* "drag.pyx":39
+    /* "drag.pyx":42
  * 
  *         elif drag_table < DragTableG1 or DragTableG1 > DragTableGI:
  *             raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")             # <<<<<<<<<<<<<<
  *         elif value <= 0:
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
  */
-    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_v_drag_table, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 39, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_kp_u_BallisticCoefficient_Unknown_dra, __pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 39, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_FormatSimple(__pyx_v_drag_table, __pyx_empty_unicode); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_5 = __Pyx_PyUnicode_Concat(__pyx_kp_u_BallisticCoefficient_Unknown_dra, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 42, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 39, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_Raise(__pyx_t_7, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __PYX_ERR(0, 39, __pyx_L1_error)
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 42, __pyx_L1_error)
 
-    /* "drag.pyx":38
+    /* "drag.pyx":41
  *             self._curve_data = calculate_curve(self._table_data)
  * 
  *         elif drag_table < DragTableG1 or DragTableG1 > DragTableGI:             # <<<<<<<<<<<<<<
@@ -3462,30 +3539,30 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  */
   }
 
-  /* "drag.pyx":40
+  /* "drag.pyx":43
  *         elif drag_table < DragTableG1 or DragTableG1 > DragTableGI:
  *             raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
  *         elif value <= 0:             # <<<<<<<<<<<<<<
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
  *         elif self._table == 0 and len(custom_drag_table) == 0:
  */
-  __pyx_t_2 = ((__pyx_v_value <= 0.0) != 0);
-  if (unlikely(__pyx_t_2)) {
+  __pyx_t_6 = ((__pyx_v_value <= 0.0) != 0);
+  if (unlikely(__pyx_t_6)) {
 
-    /* "drag.pyx":41
+    /* "drag.pyx":44
  *             raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
  *         elif value <= 0:
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')             # <<<<<<<<<<<<<<
  *         elif self._table == 0 and len(custom_drag_table) == 0:
  *             raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')
  */
-    __pyx_t_7 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 41, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
-    __Pyx_Raise(__pyx_t_7, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __PYX_ERR(0, 41, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 44, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 44, __pyx_L1_error)
 
-    /* "drag.pyx":40
+    /* "drag.pyx":43
  *         elif drag_table < DragTableG1 or DragTableG1 > DragTableGI:
  *             raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
  *         elif value <= 0:             # <<<<<<<<<<<<<<
@@ -3494,43 +3571,43 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  */
   }
 
-  /* "drag.pyx":42
+  /* "drag.pyx":45
  *         elif value <= 0:
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
  *         elif self._table == 0 and len(custom_drag_table) == 0:             # <<<<<<<<<<<<<<
  *             raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')
  *         else:
  */
-  __pyx_t_3 = ((__pyx_v_self->_table == 0) != 0);
-  if (__pyx_t_3) {
+  __pyx_t_7 = ((__pyx_v_self->_table == 0) != 0);
+  if (__pyx_t_7) {
   } else {
-    __pyx_t_2 = __pyx_t_3;
-    goto __pyx_L8_bool_binop_done;
+    __pyx_t_6 = __pyx_t_7;
+    goto __pyx_L10_bool_binop_done;
   }
   if (unlikely(__pyx_v_custom_drag_table == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 42, __pyx_L1_error)
+    __PYX_ERR(0, 45, __pyx_L1_error)
   }
-  __pyx_t_4 = PyList_GET_SIZE(__pyx_v_custom_drag_table); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 42, __pyx_L1_error)
-  __pyx_t_3 = ((__pyx_t_4 == 0) != 0);
-  __pyx_t_2 = __pyx_t_3;
-  __pyx_L8_bool_binop_done:;
-  if (unlikely(__pyx_t_2)) {
+  __pyx_t_3 = PyList_GET_SIZE(__pyx_v_custom_drag_table); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_7 = ((__pyx_t_3 == 0) != 0);
+  __pyx_t_6 = __pyx_t_7;
+  __pyx_L10_bool_binop_done:;
+  if (unlikely(__pyx_t_6)) {
 
-    /* "drag.pyx":43
+    /* "drag.pyx":46
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
  *         elif self._table == 0 and len(custom_drag_table) == 0:
  *             raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')             # <<<<<<<<<<<<<<
  *         else:
  *             self._value = value
  */
-    __pyx_t_7 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 43, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
-    __Pyx_Raise(__pyx_t_7, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __PYX_ERR(0, 43, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_Raise(__pyx_t_2, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __PYX_ERR(0, 46, __pyx_L1_error)
 
-    /* "drag.pyx":42
+    /* "drag.pyx":45
  *         elif value <= 0:
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
  *         elif self._table == 0 and len(custom_drag_table) == 0:             # <<<<<<<<<<<<<<
@@ -3539,7 +3616,7 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  */
   }
 
-  /* "drag.pyx":45
+  /* "drag.pyx":48
  *             raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')
  *         else:
  *             self._value = value             # <<<<<<<<<<<<<<
@@ -3549,7 +3626,7 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
   /*else*/ {
     __pyx_v_self->_value = __pyx_v_value;
 
-    /* "drag.pyx":46
+    /* "drag.pyx":49
  *         else:
  *             self._value = value
  *             self._form_factor = self._get_form_factor()             # <<<<<<<<<<<<<<
@@ -3558,25 +3635,25 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  */
     __pyx_v_self->_form_factor = ((struct __pyx_vtabstruct_4drag_BallisticCoefficient *)__pyx_v_self->__pyx_vtab)->_get_form_factor(__pyx_v_self);
 
-    /* "drag.pyx":47
+    /* "drag.pyx":50
  *             self._value = value
  *             self._form_factor = self._get_form_factor()
  *             self._table_data = load_drag_table(self._table)             # <<<<<<<<<<<<<<
  *             self._curve_data = calculate_curve(self._table_data)
  * 
  */
-    __pyx_t_7 = __Pyx_PyInt_From_int(__pyx_v_self->_table); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 47, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_5 = __pyx_f_4drag_load_drag_table(__pyx_t_7, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 47, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_self->_table); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_5 = __pyx_f_4drag_load_drag_table(__pyx_t_2, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 50, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_GIVEREF(__pyx_t_5);
     __Pyx_GOTREF(__pyx_v_self->_table_data);
     __Pyx_DECREF(__pyx_v_self->_table_data);
     __pyx_v_self->_table_data = ((PyObject*)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "drag.pyx":48
+    /* "drag.pyx":51
  *             self._form_factor = self._get_form_factor()
  *             self._table_data = load_drag_table(self._table)
  *             self._curve_data = calculate_curve(self._table_data)             # <<<<<<<<<<<<<<
@@ -3585,16 +3662,16 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
  */
     __pyx_t_5 = __pyx_v_self->_table_data;
     __Pyx_INCREF(__pyx_t_5);
-    __pyx_t_7 = __pyx_f_4drag_calculate_curve(((PyObject*)__pyx_t_5), 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 48, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
+    __pyx_t_2 = __pyx_f_4drag_calculate_curve(((PyObject*)__pyx_t_5), 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 51, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_GIVEREF(__pyx_t_7);
+    __Pyx_GIVEREF(__pyx_t_2);
     __Pyx_GOTREF(__pyx_v_self->_curve_data);
     __Pyx_DECREF(__pyx_v_self->_curve_data);
-    __pyx_v_self->_curve_data = ((PyObject*)__pyx_t_7);
-    __pyx_t_7 = 0;
+    __pyx_v_self->_curve_data = ((PyObject*)__pyx_t_2);
+    __pyx_t_2 = 0;
   }
-  __pyx_L3:;
+  __pyx_L5:;
 
   /* "drag.pyx":23
  *     cdef list _custom_drag_table
@@ -3608,9 +3685,9 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
   __pyx_r = 0;
   goto __pyx_L0;
   __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_6);
-  __Pyx_XDECREF(__pyx_t_7);
   __Pyx_AddTraceback("drag.BallisticCoefficient.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = -1;
   __pyx_L0:;
@@ -3618,7 +3695,7 @@ static int __pyx_pf_4drag_20BallisticCoefficient___init__(struct __pyx_obj_4drag
   return __pyx_r;
 }
 
-/* "drag.pyx":50
+/* "drag.pyx":53
  *             self._curve_data = calculate_curve(self._table_data)
  * 
  *     cpdef double drag(self, double mach):             # <<<<<<<<<<<<<<
@@ -3657,7 +3734,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_drag(struct __pyx_obj_4drag_B
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_drag); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 50, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_drag); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -3665,7 +3742,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_drag(struct __pyx_obj_4drag_B
       if (!PyCFunction_Check(__pyx_t_1)
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_4drag_20BallisticCoefficient_3drag)) {
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 53, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -3685,11 +3762,11 @@ static double __pyx_f_4drag_20BallisticCoefficient_drag(struct __pyx_obj_4drag_B
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
-        __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 50, __pyx_L1_error)
+        __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_7;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -3708,7 +3785,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_drag(struct __pyx_obj_4drag_B
     #endif
   }
 
-  /* "drag.pyx":52
+  /* "drag.pyx":55
  *     cpdef double drag(self, double mach):
  *         cdef double cd
  *         cd = calculate_by_curve(self._table_data, self._curve_data, mach)             # <<<<<<<<<<<<<<
@@ -3723,7 +3800,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_drag(struct __pyx_obj_4drag_B
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "drag.pyx":53
+  /* "drag.pyx":56
  *         cdef double cd
  *         cd = calculate_by_curve(self._table_data, self._curve_data, mach)
  *         return cd * 2.08551e-04 / self._value             # <<<<<<<<<<<<<<
@@ -3733,12 +3810,12 @@ static double __pyx_f_4drag_20BallisticCoefficient_drag(struct __pyx_obj_4drag_B
   __pyx_t_7 = (__pyx_v_cd * 2.08551e-04);
   if (unlikely(__pyx_v_self->_value == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 53, __pyx_L1_error)
+    __PYX_ERR(0, 56, __pyx_L1_error)
   }
   __pyx_r = (__pyx_t_7 / __pyx_v_self->_value);
   goto __pyx_L0;
 
-  /* "drag.pyx":50
+  /* "drag.pyx":53
  *             self._curve_data = calculate_curve(self._table_data)
  * 
  *     cpdef double drag(self, double mach):             # <<<<<<<<<<<<<<
@@ -3806,23 +3883,23 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_mach)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 50, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "drag") < 0)) __PYX_ERR(0, 50, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "drag") < 0)) __PYX_ERR(0, 53, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
     }
-    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 50, __pyx_L3_error)
+    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("drag", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 50, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("drag", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 53, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.BallisticCoefficient.drag", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -3844,7 +3921,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_2drag(struct __pyx_obj_4d
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("drag", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_drag(__pyx_v_self, __pyx_v_mach, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_drag(__pyx_v_self, __pyx_v_mach, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3861,7 +3938,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_2drag(struct __pyx_obj_4d
   return __pyx_r;
 }
 
-/* "drag.pyx":55
+/* "drag.pyx":58
  *         return cd * 2.08551e-04 / self._value
  * 
  *     cpdef double value(self):             # <<<<<<<<<<<<<<
@@ -3898,7 +3975,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_value(struct __pyx_obj_4drag_
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -3923,11 +4000,11 @@ static double __pyx_f_4drag_20BallisticCoefficient_value(struct __pyx_obj_4drag_
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 55, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 58, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -3946,7 +4023,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_value(struct __pyx_obj_4drag_
     #endif
   }
 
-  /* "drag.pyx":56
+  /* "drag.pyx":59
  * 
  *     cpdef double value(self):
  *         return self._value             # <<<<<<<<<<<<<<
@@ -3956,7 +4033,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_value(struct __pyx_obj_4drag_
   __pyx_r = __pyx_v_self->_value;
   goto __pyx_L0;
 
-  /* "drag.pyx":55
+  /* "drag.pyx":58
  *         return cd * 2.08551e-04 / self._value
  * 
  *     cpdef double value(self):             # <<<<<<<<<<<<<<
@@ -4019,7 +4096,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_4value(struct __pyx_obj_4
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("value", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_value(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_value(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4036,7 +4113,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_4value(struct __pyx_obj_4
   return __pyx_r;
 }
 
-/* "drag.pyx":58
+/* "drag.pyx":61
  *         return self._value
  * 
  *     cpdef int table(self):             # <<<<<<<<<<<<<<
@@ -4072,7 +4149,7 @@ static int __pyx_f_4drag_20BallisticCoefficient_table(struct __pyx_obj_4drag_Bal
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_table); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_table); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -4097,11 +4174,11 @@ static int __pyx_f_4drag_20BallisticCoefficient_table(struct __pyx_obj_4drag_Bal
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 58, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 61, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_5;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4120,7 +4197,7 @@ static int __pyx_f_4drag_20BallisticCoefficient_table(struct __pyx_obj_4drag_Bal
     #endif
   }
 
-  /* "drag.pyx":59
+  /* "drag.pyx":62
  * 
  *     cpdef int table(self):
  *         return self._table             # <<<<<<<<<<<<<<
@@ -4130,7 +4207,7 @@ static int __pyx_f_4drag_20BallisticCoefficient_table(struct __pyx_obj_4drag_Bal
   __pyx_r = __pyx_v_self->_table;
   goto __pyx_L0;
 
-  /* "drag.pyx":58
+  /* "drag.pyx":61
  *         return self._value
  * 
  *     cpdef int table(self):             # <<<<<<<<<<<<<<
@@ -4193,7 +4270,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_6table(struct __pyx_obj_4
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("table", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_4drag_20BallisticCoefficient_table(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_4drag_20BallisticCoefficient_table(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4210,7 +4287,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_6table(struct __pyx_obj_4
   return __pyx_r;
 }
 
-/* "drag.pyx":61
+/* "drag.pyx":64
  *         return self._table
  * 
  *     cdef double _get_custom_bc(self):             # <<<<<<<<<<<<<<
@@ -4226,7 +4303,7 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_custom_bc(struct __pyx_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_get_custom_bc", 0);
 
-  /* "drag.pyx":62
+  /* "drag.pyx":65
  * 
  *     cdef double _get_custom_bc(self):
  *         return self._sectional_density / self._form_factor             # <<<<<<<<<<<<<<
@@ -4235,12 +4312,12 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_custom_bc(struct __pyx_o
  */
   if (unlikely(__pyx_v_self->_form_factor == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 62, __pyx_L1_error)
+    __PYX_ERR(0, 65, __pyx_L1_error)
   }
   __pyx_r = (__pyx_v_self->_sectional_density / __pyx_v_self->_form_factor);
   goto __pyx_L0;
 
-  /* "drag.pyx":61
+  /* "drag.pyx":64
  *         return self._table
  * 
  *     cdef double _get_custom_bc(self):             # <<<<<<<<<<<<<<
@@ -4257,7 +4334,7 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_custom_bc(struct __pyx_o
   return __pyx_r;
 }
 
-/* "drag.pyx":64
+/* "drag.pyx":67
  *         return self._sectional_density / self._form_factor
  * 
  *     cdef double _get_form_factor(self):             # <<<<<<<<<<<<<<
@@ -4273,7 +4350,7 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_form_factor(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_get_form_factor", 0);
 
-  /* "drag.pyx":65
+  /* "drag.pyx":68
  * 
  *     cdef double _get_form_factor(self):
  *         return self._sectional_density / self._value             # <<<<<<<<<<<<<<
@@ -4282,12 +4359,12 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_form_factor(struct __pyx
  */
   if (unlikely(__pyx_v_self->_value == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 65, __pyx_L1_error)
+    __PYX_ERR(0, 68, __pyx_L1_error)
   }
   __pyx_r = (__pyx_v_self->_sectional_density / __pyx_v_self->_value);
   goto __pyx_L0;
 
-  /* "drag.pyx":64
+  /* "drag.pyx":67
  *         return self._sectional_density / self._form_factor
  * 
  *     cdef double _get_form_factor(self):             # <<<<<<<<<<<<<<
@@ -4304,7 +4381,7 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_form_factor(struct __pyx
   return __pyx_r;
 }
 
-/* "drag.pyx":67
+/* "drag.pyx":70
  *         return self._sectional_density / self._value
  * 
  *     cdef double _get_sectional_density(self):             # <<<<<<<<<<<<<<
@@ -4328,16 +4405,16 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_sectional_density(struct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_get_sectional_density", 0);
 
-  /* "drag.pyx":69
+  /* "drag.pyx":72
  *     cdef double _get_sectional_density(self):
  *         cdef double w, d
  *         w = self._weight.get_in(WeightGrain)             # <<<<<<<<<<<<<<
  *         d = self._diameter.get_in(DistanceInch)
  *         return w / pow(d, 2) / 7000
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_weight, __pyx_n_s_get_in); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_weight, __pyx_n_s_get_in); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_WeightGrain); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 69, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_WeightGrain); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
@@ -4356,24 +4433,24 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_sectional_density(struct
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 69, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 72, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 69, __pyx_L1_error)
+  __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 72, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_w = __pyx_t_6;
 
-  /* "drag.pyx":70
+  /* "drag.pyx":73
  *         cdef double w, d
  *         w = self._weight.get_in(WeightGrain)
  *         d = self._diameter.get_in(DistanceInch)             # <<<<<<<<<<<<<<
  *         return w / pow(d, 2) / 7000
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_diameter, __pyx_n_s_get_in); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_diameter, __pyx_n_s_get_in); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_DistanceInch); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_DistanceInch); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = NULL;
   __pyx_t_5 = 0;
@@ -4392,15 +4469,15 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_sectional_density(struct
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 70, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 73, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 70, __pyx_L1_error)
+  __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_d = __pyx_t_6;
 
-  /* "drag.pyx":71
+  /* "drag.pyx":74
  *         w = self._weight.get_in(WeightGrain)
  *         d = self._diameter.get_in(DistanceInch)
  *         return w / pow(d, 2) / 7000             # <<<<<<<<<<<<<<
@@ -4410,12 +4487,12 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_sectional_density(struct
   __pyx_t_6 = pow(__pyx_v_d, 2.0);
   if (unlikely(__pyx_t_6 == 0)) {
     PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-    __PYX_ERR(0, 71, __pyx_L1_error)
+    __PYX_ERR(0, 74, __pyx_L1_error)
   }
   __pyx_r = ((__pyx_v_w / __pyx_t_6) / 7000.0);
   goto __pyx_L0;
 
-  /* "drag.pyx":67
+  /* "drag.pyx":70
  *         return self._sectional_density / self._value
  * 
  *     cdef double _get_sectional_density(self):             # <<<<<<<<<<<<<<
@@ -4436,7 +4513,7 @@ static double __pyx_f_4drag_20BallisticCoefficient__get_sectional_density(struct
   return __pyx_r;
 }
 
-/* "drag.pyx":73
+/* "drag.pyx":76
  *         return w / pow(d, 2) / 7000
  * 
  *     cpdef double standard_cd(self, double mach):             # <<<<<<<<<<<<<<
@@ -4474,7 +4551,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_standard_cd(struct __pyx_obj_
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_standard_cd); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 73, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_standard_cd); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -4482,7 +4559,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_standard_cd(struct __pyx_obj_
       if (!PyCFunction_Check(__pyx_t_1)
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_4drag_20BallisticCoefficient_9standard_cd)) {
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 73, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 76, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -4502,11 +4579,11 @@ static double __pyx_f_4drag_20BallisticCoefficient_standard_cd(struct __pyx_obj_
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 73, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 76, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
-        __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 73, __pyx_L1_error)
+        __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_7;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4525,7 +4602,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_standard_cd(struct __pyx_obj_
     #endif
   }
 
-  /* "drag.pyx":74
+  /* "drag.pyx":77
  * 
  *     cpdef double standard_cd(self, double mach):
  *         return calculate_by_curve(self._table_data, self._curve_data, mach)             # <<<<<<<<<<<<<<
@@ -4541,7 +4618,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_standard_cd(struct __pyx_obj_
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "drag.pyx":73
+  /* "drag.pyx":76
  *         return w / pow(d, 2) / 7000
  * 
  *     cpdef double standard_cd(self, double mach):             # <<<<<<<<<<<<<<
@@ -4609,23 +4686,23 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_mach)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 73, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "standard_cd") < 0)) __PYX_ERR(0, 73, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "standard_cd") < 0)) __PYX_ERR(0, 76, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
     }
-    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 73, __pyx_L3_error)
+    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("standard_cd", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 73, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("standard_cd", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 76, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.BallisticCoefficient.standard_cd", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4647,7 +4724,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_8standard_cd(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("standard_cd", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_standard_cd(__pyx_v_self, __pyx_v_mach, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_standard_cd(__pyx_v_self, __pyx_v_mach, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4664,7 +4741,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_8standard_cd(struct __pyx
   return __pyx_r;
 }
 
-/* "drag.pyx":76
+/* "drag.pyx":79
  *         return calculate_by_curve(self._table_data, self._curve_data, mach)
  * 
  *     cpdef double calculated_cd(self, double mach):             # <<<<<<<<<<<<<<
@@ -4702,7 +4779,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_calculated_cd(struct __pyx_ob
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_calculated_cd); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_calculated_cd); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -4710,7 +4787,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_calculated_cd(struct __pyx_ob
       if (!PyCFunction_Check(__pyx_t_1)
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_4drag_20BallisticCoefficient_11calculated_cd)) {
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 76, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 79, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -4730,11 +4807,11 @@ static double __pyx_f_4drag_20BallisticCoefficient_calculated_cd(struct __pyx_ob
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 76, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 79, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
-        __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L1_error)
+        __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 79, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_7;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4753,7 +4830,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_calculated_cd(struct __pyx_ob
     #endif
   }
 
-  /* "drag.pyx":77
+  /* "drag.pyx":80
  * 
  *     cpdef double calculated_cd(self, double mach):
  *         return self.standard_cd(mach) * self._form_factor             # <<<<<<<<<<<<<<
@@ -4763,7 +4840,7 @@ static double __pyx_f_4drag_20BallisticCoefficient_calculated_cd(struct __pyx_ob
   __pyx_r = (((struct __pyx_vtabstruct_4drag_BallisticCoefficient *)__pyx_v_self->__pyx_vtab)->standard_cd(__pyx_v_self, __pyx_v_mach, 0) * __pyx_v_self->_form_factor);
   goto __pyx_L0;
 
-  /* "drag.pyx":76
+  /* "drag.pyx":79
  *         return calculate_by_curve(self._table_data, self._curve_data, mach)
  * 
  *     cpdef double calculated_cd(self, double mach):             # <<<<<<<<<<<<<<
@@ -4831,23 +4908,23 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_mach)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 79, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "calculated_cd") < 0)) __PYX_ERR(0, 76, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "calculated_cd") < 0)) __PYX_ERR(0, 79, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
     }
-    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
+    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 79, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("calculated_cd", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 76, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("calculated_cd", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 79, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.BallisticCoefficient.calculated_cd", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -4869,7 +4946,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_10calculated_cd(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("calculated_cd", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_calculated_cd(__pyx_v_self, __pyx_v_mach, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_20BallisticCoefficient_calculated_cd(__pyx_v_self, __pyx_v_mach, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -4886,7 +4963,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_10calculated_cd(struct __
   return __pyx_r;
 }
 
-/* "drag.pyx":79
+/* "drag.pyx":82
  *         return self.standard_cd(mach) * self._form_factor
  * 
  *     cpdef list calculated_drag_function(self):             # <<<<<<<<<<<<<<
@@ -4930,7 +5007,7 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_calculated_drag_function); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_calculated_drag_function); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 82, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -4956,11 +5033,11 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 79, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 82, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 79, __pyx_L1_error)
+        if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 82, __pyx_L1_error)
         __pyx_r = ((PyObject*)__pyx_t_2);
         __pyx_t_2 = 0;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -4979,19 +5056,19 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
     #endif
   }
 
-  /* "drag.pyx":84
+  /* "drag.pyx":87
  *         cdef double st_mach, st_cd, cd
  * 
  *         calculated_cd_table = []             # <<<<<<<<<<<<<<
  * 
  *         for point in self._table_data:
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 87, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_calculated_cd_table = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "drag.pyx":86
+  /* "drag.pyx":89
  *         calculated_cd_table = []
  * 
  *         for point in self._table_data:             # <<<<<<<<<<<<<<
@@ -5000,28 +5077,28 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
  */
   if (unlikely(__pyx_v_self->_table_data == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 86, __pyx_L1_error)
+    __PYX_ERR(0, 89, __pyx_L1_error)
   }
   __pyx_t_1 = __pyx_v_self->_table_data; __Pyx_INCREF(__pyx_t_1); __pyx_t_6 = 0;
   for (;;) {
     if (__pyx_t_6 >= PyList_GET_SIZE(__pyx_t_1)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_6); __Pyx_INCREF(__pyx_t_2); __pyx_t_6++; if (unlikely((0 < 0))) __PYX_ERR(0, 86, __pyx_L1_error)
+    __pyx_t_2 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_6); __Pyx_INCREF(__pyx_t_2); __pyx_t_6++; if (unlikely((0 < 0))) __PYX_ERR(0, 89, __pyx_L1_error)
     #else
-    __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 86, __pyx_L1_error)
+    __pyx_t_2 = PySequence_ITEM(__pyx_t_1, __pyx_t_6); __pyx_t_6++; if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     #endif
     __Pyx_XDECREF_SET(__pyx_v_point, __pyx_t_2);
     __pyx_t_2 = 0;
 
-    /* "drag.pyx":87
+    /* "drag.pyx":90
  * 
  *         for point in self._table_data:
  *             st_mach = point.a()             # <<<<<<<<<<<<<<
  *             st_cd = point.b()
  *             cd = self.calculated_cd(st_mach)
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_point, __pyx_n_s_a); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 87, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_point, __pyx_n_s_a); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_4 = NULL;
     __pyx_t_5 = 0;
@@ -5039,22 +5116,22 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
       PyObject *__pyx_callargs[1] = {__pyx_t_4, };
       __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 90, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 87, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 90, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_st_mach = __pyx_t_7;
 
-    /* "drag.pyx":88
+    /* "drag.pyx":91
  *         for point in self._table_data:
  *             st_mach = point.a()
  *             st_cd = point.b()             # <<<<<<<<<<<<<<
  *             cd = self.calculated_cd(st_mach)
  *             calculated_cd_table.append({'A': st_mach, 'B': cd})
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_point, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_point, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 91, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_4 = NULL;
     __pyx_t_5 = 0;
@@ -5072,15 +5149,15 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
       PyObject *__pyx_callargs[1] = {__pyx_t_4, };
       __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L1_error)
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 91, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 88, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 91, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_st_cd = __pyx_t_7;
 
-    /* "drag.pyx":89
+    /* "drag.pyx":92
  *             st_mach = point.a()
  *             st_cd = point.b()
  *             cd = self.calculated_cd(st_mach)             # <<<<<<<<<<<<<<
@@ -5089,27 +5166,27 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
  */
     __pyx_v_cd = ((struct __pyx_vtabstruct_4drag_BallisticCoefficient *)__pyx_v_self->__pyx_vtab)->calculated_cd(__pyx_v_self, __pyx_v_st_mach, 0);
 
-    /* "drag.pyx":90
+    /* "drag.pyx":93
  *             st_cd = point.b()
  *             cd = self.calculated_cd(st_mach)
  *             calculated_cd_table.append({'A': st_mach, 'B': cd})             # <<<<<<<<<<<<<<
  * 
  *         return calculated_cd_table
  */
-    __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_st_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_st_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_A, __pyx_t_3) < 0) __PYX_ERR(0, 90, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_A, __pyx_t_3) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_cd); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_cd); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_B, __pyx_t_3) < 0) __PYX_ERR(0, 90, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_B, __pyx_t_3) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_calculated_cd_table, __pyx_t_2); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 90, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyList_Append(__pyx_v_calculated_cd_table, __pyx_t_2); if (unlikely(__pyx_t_8 == ((int)-1))) __PYX_ERR(0, 93, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "drag.pyx":86
+    /* "drag.pyx":89
  *         calculated_cd_table = []
  * 
  *         for point in self._table_data:             # <<<<<<<<<<<<<<
@@ -5119,7 +5196,7 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "drag.pyx":92
+  /* "drag.pyx":95
  *             calculated_cd_table.append({'A': st_mach, 'B': cd})
  * 
  *         return calculated_cd_table             # <<<<<<<<<<<<<<
@@ -5131,7 +5208,7 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(s
   __pyx_r = __pyx_v_calculated_cd_table;
   goto __pyx_L0;
 
-  /* "drag.pyx":79
+  /* "drag.pyx":82
  *         return self.standard_cd(mach) * self._form_factor
  * 
  *     cpdef list calculated_drag_function(self):             # <<<<<<<<<<<<<<
@@ -5197,7 +5274,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_12calculated_drag_functio
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("calculated_drag_function", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_4drag_20BallisticCoefficient_calculated_drag_function(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 82, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5214,7 +5291,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_12calculated_drag_functio
   return __pyx_r;
 }
 
-/* "drag.pyx":94
+/* "drag.pyx":97
  *         return calculated_cd_table
  * 
  *     cpdef form_factor(self):             # <<<<<<<<<<<<<<
@@ -5250,7 +5327,7 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_form_factor(struct __pyx_o
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_form_factor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_form_factor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -5276,7 +5353,7 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_form_factor(struct __pyx_o
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -5298,7 +5375,7 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_form_factor(struct __pyx_o
     #endif
   }
 
-  /* "drag.pyx":95
+  /* "drag.pyx":98
  * 
  *     cpdef form_factor(self):
  *         return self._form_factor             # <<<<<<<<<<<<<<
@@ -5306,13 +5383,13 @@ static PyObject *__pyx_f_4drag_20BallisticCoefficient_form_factor(struct __pyx_o
  * cdef class DataPoint:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->_form_factor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 95, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->_form_factor); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "drag.pyx":94
+  /* "drag.pyx":97
  *         return calculated_cd_table
  * 
  *     cpdef form_factor(self):             # <<<<<<<<<<<<<<
@@ -5376,7 +5453,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_14form_factor(struct __py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("form_factor", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_4drag_20BallisticCoefficient_form_factor(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_4drag_20BallisticCoefficient_form_factor(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -5836,7 +5913,7 @@ static PyObject *__pyx_pf_4drag_20BallisticCoefficient_18__setstate_cython__(str
   return __pyx_r;
 }
 
-/* "drag.pyx":100
+/* "drag.pyx":103
  *     cdef double _a, _b
  * 
  *     def __init__(self, a: double, b: double):             # <<<<<<<<<<<<<<
@@ -5878,19 +5955,19 @@ static int __pyx_pw_4drag_9DataPoint_1__init__(PyObject *__pyx_v_self, PyObject 
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_a)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 103, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_b)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 103, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 100, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 103, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 100, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 103, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -5898,12 +5975,12 @@ static int __pyx_pw_4drag_9DataPoint_1__init__(PyObject *__pyx_v_self, PyObject 
       values[0] = __Pyx_Arg_VARARGS(__pyx_args, 0);
       values[1] = __Pyx_Arg_VARARGS(__pyx_args, 1);
     }
-    __pyx_v_a = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_a == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_b == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_a == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 103, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_b == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 103, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 100, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 103, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.DataPoint.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -5921,7 +5998,7 @@ static int __pyx_pf_4drag_9DataPoint___init__(struct __pyx_obj_4drag_DataPoint *
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "drag.pyx":101
+  /* "drag.pyx":104
  * 
  *     def __init__(self, a: double, b: double):
  *         self._a = a             # <<<<<<<<<<<<<<
@@ -5930,7 +6007,7 @@ static int __pyx_pf_4drag_9DataPoint___init__(struct __pyx_obj_4drag_DataPoint *
  */
   __pyx_v_self->_a = __pyx_v_a;
 
-  /* "drag.pyx":102
+  /* "drag.pyx":105
  *     def __init__(self, a: double, b: double):
  *         self._a = a
  *         self._b = b             # <<<<<<<<<<<<<<
@@ -5939,7 +6016,7 @@ static int __pyx_pf_4drag_9DataPoint___init__(struct __pyx_obj_4drag_DataPoint *
  */
   __pyx_v_self->_b = __pyx_v_b;
 
-  /* "drag.pyx":100
+  /* "drag.pyx":103
  *     cdef double _a, _b
  * 
  *     def __init__(self, a: double, b: double):             # <<<<<<<<<<<<<<
@@ -5953,7 +6030,7 @@ static int __pyx_pf_4drag_9DataPoint___init__(struct __pyx_obj_4drag_DataPoint *
   return __pyx_r;
 }
 
-/* "drag.pyx":104
+/* "drag.pyx":107
  *         self._b = b
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
@@ -5990,7 +6067,7 @@ static double __pyx_f_4drag_9DataPoint_a(struct __pyx_obj_4drag_DataPoint *__pyx
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 104, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -6015,11 +6092,11 @@ static double __pyx_f_4drag_9DataPoint_a(struct __pyx_obj_4drag_DataPoint *__pyx
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 107, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 104, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6038,7 +6115,7 @@ static double __pyx_f_4drag_9DataPoint_a(struct __pyx_obj_4drag_DataPoint *__pyx
     #endif
   }
 
-  /* "drag.pyx":105
+  /* "drag.pyx":108
  * 
  *     cpdef double a(self):
  *         return self._a             # <<<<<<<<<<<<<<
@@ -6048,7 +6125,7 @@ static double __pyx_f_4drag_9DataPoint_a(struct __pyx_obj_4drag_DataPoint *__pyx
   __pyx_r = __pyx_v_self->_a;
   goto __pyx_L0;
 
-  /* "drag.pyx":104
+  /* "drag.pyx":107
  *         self._b = b
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
@@ -6111,7 +6188,7 @@ static PyObject *__pyx_pf_4drag_9DataPoint_2a(struct __pyx_obj_4drag_DataPoint *
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("a", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_9DataPoint_a(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_9DataPoint_a(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6128,7 +6205,7 @@ static PyObject *__pyx_pf_4drag_9DataPoint_2a(struct __pyx_obj_4drag_DataPoint *
   return __pyx_r;
 }
 
-/* "drag.pyx":107
+/* "drag.pyx":110
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
@@ -6165,7 +6242,7 @@ static double __pyx_f_4drag_9DataPoint_b(struct __pyx_obj_4drag_DataPoint *__pyx
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_b); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_b); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -6190,11 +6267,11 @@ static double __pyx_f_4drag_9DataPoint_b(struct __pyx_obj_4drag_DataPoint *__pyx
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 107, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 110, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6213,7 +6290,7 @@ static double __pyx_f_4drag_9DataPoint_b(struct __pyx_obj_4drag_DataPoint *__pyx
     #endif
   }
 
-  /* "drag.pyx":108
+  /* "drag.pyx":111
  * 
  *     cpdef double b(self):
  *         return self._b             # <<<<<<<<<<<<<<
@@ -6223,7 +6300,7 @@ static double __pyx_f_4drag_9DataPoint_b(struct __pyx_obj_4drag_DataPoint *__pyx
   __pyx_r = __pyx_v_self->_b;
   goto __pyx_L0;
 
-  /* "drag.pyx":107
+  /* "drag.pyx":110
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
@@ -6286,7 +6363,7 @@ static PyObject *__pyx_pf_4drag_9DataPoint_4b(struct __pyx_obj_4drag_DataPoint *
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("b", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_9DataPoint_b(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_9DataPoint_b(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6684,7 +6761,7 @@ static PyObject *__pyx_pf_4drag_9DataPoint_8__setstate_cython__(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "drag.pyx":113
+/* "drag.pyx":116
  *     cdef double _a, _b, _c
  * 
  *     def __init__(self, a: double, b: double, c: double):             # <<<<<<<<<<<<<<
@@ -6729,26 +6806,26 @@ static int __pyx_pw_4drag_10CurvePoint_1__init__(PyObject *__pyx_v_self, PyObjec
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_a)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 116, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_b)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 116, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, 1); __PYX_ERR(0, 113, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, 1); __PYX_ERR(0, 116, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_GetKwValue_VARARGS(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_c)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 116, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, 2); __PYX_ERR(0, 113, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, 2); __PYX_ERR(0, 116, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 113, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "__init__") < 0)) __PYX_ERR(0, 116, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 3)) {
       goto __pyx_L5_argtuple_error;
@@ -6757,13 +6834,13 @@ static int __pyx_pw_4drag_10CurvePoint_1__init__(PyObject *__pyx_v_self, PyObjec
       values[1] = __Pyx_Arg_VARARGS(__pyx_args, 1);
       values[2] = __Pyx_Arg_VARARGS(__pyx_args, 2);
     }
-    __pyx_v_a = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_a == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
-    __pyx_v_b = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_b == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
-    __pyx_v_c = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_c == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L3_error)
+    __pyx_v_a = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_a == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 116, __pyx_L3_error)
+    __pyx_v_b = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_b == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 116, __pyx_L3_error)
+    __pyx_v_c = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_c == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 116, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 113, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 116, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.CurvePoint.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6781,7 +6858,7 @@ static int __pyx_pf_4drag_10CurvePoint___init__(struct __pyx_obj_4drag_CurvePoin
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "drag.pyx":114
+  /* "drag.pyx":117
  * 
  *     def __init__(self, a: double, b: double, c: double):
  *         self._a = a             # <<<<<<<<<<<<<<
@@ -6790,7 +6867,7 @@ static int __pyx_pf_4drag_10CurvePoint___init__(struct __pyx_obj_4drag_CurvePoin
  */
   __pyx_v_self->_a = __pyx_v_a;
 
-  /* "drag.pyx":115
+  /* "drag.pyx":118
  *     def __init__(self, a: double, b: double, c: double):
  *         self._a = a
  *         self._b = b             # <<<<<<<<<<<<<<
@@ -6799,7 +6876,7 @@ static int __pyx_pf_4drag_10CurvePoint___init__(struct __pyx_obj_4drag_CurvePoin
  */
   __pyx_v_self->_b = __pyx_v_b;
 
-  /* "drag.pyx":116
+  /* "drag.pyx":119
  *         self._a = a
  *         self._b = b
  *         self._c = c             # <<<<<<<<<<<<<<
@@ -6808,7 +6885,7 @@ static int __pyx_pf_4drag_10CurvePoint___init__(struct __pyx_obj_4drag_CurvePoin
  */
   __pyx_v_self->_c = __pyx_v_c;
 
-  /* "drag.pyx":113
+  /* "drag.pyx":116
  *     cdef double _a, _b, _c
  * 
  *     def __init__(self, a: double, b: double, c: double):             # <<<<<<<<<<<<<<
@@ -6822,7 +6899,7 @@ static int __pyx_pf_4drag_10CurvePoint___init__(struct __pyx_obj_4drag_CurvePoin
   return __pyx_r;
 }
 
-/* "drag.pyx":118
+/* "drag.pyx":121
  *         self._c = c
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
@@ -6859,7 +6936,7 @@ static double __pyx_f_4drag_10CurvePoint_a(struct __pyx_obj_4drag_CurvePoint *__
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -6884,11 +6961,11 @@ static double __pyx_f_4drag_10CurvePoint_a(struct __pyx_obj_4drag_CurvePoint *__
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 118, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 121, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6907,7 +6984,7 @@ static double __pyx_f_4drag_10CurvePoint_a(struct __pyx_obj_4drag_CurvePoint *__
     #endif
   }
 
-  /* "drag.pyx":119
+  /* "drag.pyx":122
  * 
  *     cpdef double a(self):
  *         return self._a             # <<<<<<<<<<<<<<
@@ -6917,7 +6994,7 @@ static double __pyx_f_4drag_10CurvePoint_a(struct __pyx_obj_4drag_CurvePoint *__
   __pyx_r = __pyx_v_self->_a;
   goto __pyx_L0;
 
-  /* "drag.pyx":118
+  /* "drag.pyx":121
  *         self._c = c
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
@@ -6980,7 +7057,7 @@ static PyObject *__pyx_pf_4drag_10CurvePoint_2a(struct __pyx_obj_4drag_CurvePoin
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("a", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_10CurvePoint_a(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_10CurvePoint_a(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6997,7 +7074,7 @@ static PyObject *__pyx_pf_4drag_10CurvePoint_2a(struct __pyx_obj_4drag_CurvePoin
   return __pyx_r;
 }
 
-/* "drag.pyx":121
+/* "drag.pyx":124
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
@@ -7034,7 +7111,7 @@ static double __pyx_f_4drag_10CurvePoint_b(struct __pyx_obj_4drag_CurvePoint *__
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_b); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_b); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -7059,11 +7136,11 @@ static double __pyx_f_4drag_10CurvePoint_b(struct __pyx_obj_4drag_CurvePoint *__
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 121, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 124, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7082,7 +7159,7 @@ static double __pyx_f_4drag_10CurvePoint_b(struct __pyx_obj_4drag_CurvePoint *__
     #endif
   }
 
-  /* "drag.pyx":122
+  /* "drag.pyx":125
  * 
  *     cpdef double b(self):
  *         return self._b             # <<<<<<<<<<<<<<
@@ -7092,7 +7169,7 @@ static double __pyx_f_4drag_10CurvePoint_b(struct __pyx_obj_4drag_CurvePoint *__
   __pyx_r = __pyx_v_self->_b;
   goto __pyx_L0;
 
-  /* "drag.pyx":121
+  /* "drag.pyx":124
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
@@ -7155,7 +7232,7 @@ static PyObject *__pyx_pf_4drag_10CurvePoint_4b(struct __pyx_obj_4drag_CurvePoin
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("b", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_10CurvePoint_b(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_10CurvePoint_b(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7172,7 +7249,7 @@ static PyObject *__pyx_pf_4drag_10CurvePoint_4b(struct __pyx_obj_4drag_CurvePoin
   return __pyx_r;
 }
 
-/* "drag.pyx":124
+/* "drag.pyx":127
  *         return self._b
  * 
  *     cpdef double c(self):             # <<<<<<<<<<<<<<
@@ -7209,7 +7286,7 @@ static double __pyx_f_4drag_10CurvePoint_c(struct __pyx_obj_4drag_CurvePoint *__
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_c); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_c); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -7234,11 +7311,11 @@ static double __pyx_f_4drag_10CurvePoint_c(struct __pyx_obj_4drag_CurvePoint *__
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 124, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7257,7 +7334,7 @@ static double __pyx_f_4drag_10CurvePoint_c(struct __pyx_obj_4drag_CurvePoint *__
     #endif
   }
 
-  /* "drag.pyx":125
+  /* "drag.pyx":128
  * 
  *     cpdef double c(self):
  *         return self._c             # <<<<<<<<<<<<<<
@@ -7267,7 +7344,7 @@ static double __pyx_f_4drag_10CurvePoint_c(struct __pyx_obj_4drag_CurvePoint *__
   __pyx_r = __pyx_v_self->_c;
   goto __pyx_L0;
 
-  /* "drag.pyx":124
+  /* "drag.pyx":127
  *         return self._b
  * 
  *     cpdef double c(self):             # <<<<<<<<<<<<<<
@@ -7330,7 +7407,7 @@ static PyObject *__pyx_pf_4drag_10CurvePoint_6c(struct __pyx_obj_4drag_CurvePoin
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("c", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_10CurvePoint_c(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_10CurvePoint_c(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7735,7 +7812,7 @@ static PyObject *__pyx_pf_4drag_10CurvePoint_10__setstate_cython__(struct __pyx_
   return __pyx_r;
 }
 
-/* "drag.pyx":127
+/* "drag.pyx":130
  *         return self._c
  * 
  * cpdef list make_data_points(drag_table: list):             # <<<<<<<<<<<<<<
@@ -7767,19 +7844,19 @@ static PyObject *__pyx_f_4drag_make_data_points(PyObject *__pyx_v_drag_table, CY
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("make_data_points", 0);
 
-  /* "drag.pyx":128
+  /* "drag.pyx":131
  * 
  * cpdef list make_data_points(drag_table: list):
  *     table: list = []             # <<<<<<<<<<<<<<
  *     cdef data_point
  *     for point in drag_table:
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_table = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "drag.pyx":130
+  /* "drag.pyx":133
  *     table: list = []
  *     cdef data_point
  *     for point in drag_table:             # <<<<<<<<<<<<<<
@@ -7788,32 +7865,32 @@ static PyObject *__pyx_f_4drag_make_data_points(PyObject *__pyx_v_drag_table, CY
  */
   if (unlikely(__pyx_v_drag_table == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not iterable");
-    __PYX_ERR(0, 130, __pyx_L1_error)
+    __PYX_ERR(0, 133, __pyx_L1_error)
   }
   __pyx_t_1 = __pyx_v_drag_table; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
   for (;;) {
     if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
     #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_3); __pyx_t_2++; if (unlikely((0 < 0))) __PYX_ERR(0, 130, __pyx_L1_error)
+    __pyx_t_3 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_3); __pyx_t_2++; if (unlikely((0 < 0))) __PYX_ERR(0, 133, __pyx_L1_error)
     #else
-    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
+    __pyx_t_3 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 133, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     #endif
     __Pyx_XDECREF_SET(__pyx_v_point, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "drag.pyx":131
+    /* "drag.pyx":134
  *     cdef data_point
  *     for point in drag_table:
  *         data_point = DataPoint(point['A'], point['B'])             # <<<<<<<<<<<<<<
  *         table.append(data_point)
  *     return table
  */
-    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_point, __pyx_n_u_A); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Dict_GetItem(__pyx_v_point, __pyx_n_u_A); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_point, __pyx_n_u_B); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Dict_GetItem(__pyx_v_point, __pyx_n_u_B); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_GIVEREF(__pyx_t_3);
     PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3);
@@ -7821,22 +7898,22 @@ static PyObject *__pyx_f_4drag_make_data_points(PyObject *__pyx_v_drag_table, CY
     PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
     __pyx_t_3 = 0;
     __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_DataPoint), __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_DataPoint), __pyx_t_5, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_XDECREF_SET(__pyx_v_data_point, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "drag.pyx":132
+    /* "drag.pyx":135
  *     for point in drag_table:
  *         data_point = DataPoint(point['A'], point['B'])
  *         table.append(data_point)             # <<<<<<<<<<<<<<
  *     return table
  * 
  */
-    __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_table, __pyx_v_data_point); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 132, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyList_Append(__pyx_v_table, __pyx_v_data_point); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 135, __pyx_L1_error)
 
-    /* "drag.pyx":130
+    /* "drag.pyx":133
  *     table: list = []
  *     cdef data_point
  *     for point in drag_table:             # <<<<<<<<<<<<<<
@@ -7846,7 +7923,7 @@ static PyObject *__pyx_f_4drag_make_data_points(PyObject *__pyx_v_drag_table, CY
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "drag.pyx":133
+  /* "drag.pyx":136
  *         data_point = DataPoint(point['A'], point['B'])
  *         table.append(data_point)
  *     return table             # <<<<<<<<<<<<<<
@@ -7858,7 +7935,7 @@ static PyObject *__pyx_f_4drag_make_data_points(PyObject *__pyx_v_drag_table, CY
   __pyx_r = __pyx_v_table;
   goto __pyx_L0;
 
-  /* "drag.pyx":127
+  /* "drag.pyx":130
  *         return self._c
  * 
  * cpdef list make_data_points(drag_table: list):             # <<<<<<<<<<<<<<
@@ -7929,12 +8006,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_drag_table)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 127, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 130, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "make_data_points") < 0)) __PYX_ERR(0, 127, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "make_data_points") < 0)) __PYX_ERR(0, 130, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -7945,13 +8022,13 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("make_data_points", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 127, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("make_data_points", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 130, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.make_data_points", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_drag_table), (&PyList_Type), 1, "drag_table", 1))) __PYX_ERR(0, 127, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_drag_table), (&PyList_Type), 1, "drag_table", 1))) __PYX_ERR(0, 130, __pyx_L1_error)
   __pyx_r = __pyx_pf_4drag_make_data_points(__pyx_self, __pyx_v_drag_table);
 
   /* function exit code */
@@ -7972,7 +8049,7 @@ static PyObject *__pyx_pf_4drag_make_data_points(CYTHON_UNUSED PyObject *__pyx_s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("make_data_points", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_4drag_make_data_points(__pyx_v_drag_table, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_4drag_make_data_points(__pyx_v_drag_table, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7989,7 +8066,7 @@ static PyObject *__pyx_pf_4drag_make_data_points(CYTHON_UNUSED PyObject *__pyx_s
   return __pyx_r;
 }
 
-/* "drag.pyx":135
+/* "drag.pyx":138
  *     return table
  * 
  * cpdef list calculate_curve(list data_points):             # <<<<<<<<<<<<<<
@@ -8040,19 +8117,19 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("calculate_curve", 0);
 
-  /* "drag.pyx":137
+  /* "drag.pyx":140
  * cpdef list calculate_curve(list data_points):
  *     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
  *     cdef curve = []             # <<<<<<<<<<<<<<
  *     cdef curve_point
  *     cdef int num_points, len_data_points, len_data_range
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 140, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_curve = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "drag.pyx":141
+  /* "drag.pyx":144
  *     cdef int num_points, len_data_points, len_data_range
  * 
  *     rate = (data_points[1].b() - data_points[0].b()) / (data_points[1].a() - data_points[0].a())             # <<<<<<<<<<<<<<
@@ -8061,11 +8138,11 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 141, __pyx_L1_error)
+    __PYX_ERR(0, 144, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, 1, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, 1, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -8084,17 +8161,17 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_2, };
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 141, __pyx_L1_error)
+    __PYX_ERR(0, 144, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -8113,21 +8190,21 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_2, };
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
-  __pyx_t_5 = PyNumber_Subtract(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Subtract(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 141, __pyx_L1_error)
+    __PYX_ERR(0, 144, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, 1, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, 1, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -8146,17 +8223,17 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_1, };
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 141, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 144, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 141, __pyx_L1_error)
+    __PYX_ERR(0, 144, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -8175,38 +8252,38 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_1, };
     __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
-  __pyx_t_6 = PyNumber_Subtract(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_6 = PyNumber_Subtract(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_5, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_rate = __pyx_t_7;
 
-  /* "drag.pyx":142
+  /* "drag.pyx":145
  * 
  *     rate = (data_points[1].b() - data_points[0].b()) / (data_points[1].a() - data_points[0].a())
  *     curve = [CurvePoint(0, rate, data_points[0].b() - data_points[0].a() * rate)]             # <<<<<<<<<<<<<<
  *     len_data_points = int(len(data_points))
  *     len_data_range = len_data_points - 1
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 142, __pyx_L1_error)
+    __PYX_ERR(0, 145, __pyx_L1_error)
   }
-  __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -8225,17 +8302,17 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_5, };
     __pyx_t_6 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 142, __pyx_L1_error)
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 142, __pyx_L1_error)
+    __PYX_ERR(0, 145, __pyx_L1_error)
   }
-  __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_data_points, 0, long, 1, __Pyx_PyInt_From_long, 1, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -8254,21 +8331,21 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_5, };
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 142, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_Subtract(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_1 = PyNumber_Subtract(__pyx_t_6, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_INCREF(__pyx_int_0);
   __Pyx_GIVEREF(__pyx_int_0);
@@ -8279,10 +8356,10 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
   PyTuple_SET_ITEM(__pyx_t_5, 2, __pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_CurvePoint), __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_CurvePoint), __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyList_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 142, __pyx_L1_error)
+  __pyx_t_5 = PyList_New(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyList_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
@@ -8290,7 +8367,7 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
   __Pyx_DECREF_SET(__pyx_v_curve, __pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "drag.pyx":143
+  /* "drag.pyx":146
  *     rate = (data_points[1].b() - data_points[0].b()) / (data_points[1].a() - data_points[0].a())
  *     curve = [CurvePoint(0, rate, data_points[0].b() - data_points[0].a() * rate)]
  *     len_data_points = int(len(data_points))             # <<<<<<<<<<<<<<
@@ -8299,12 +8376,12 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 143, __pyx_L1_error)
+    __PYX_ERR(0, 146, __pyx_L1_error)
   }
-  __pyx_t_8 = PyList_GET_SIZE(__pyx_v_data_points); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_8 = PyList_GET_SIZE(__pyx_v_data_points); if (unlikely(__pyx_t_8 == ((Py_ssize_t)-1))) __PYX_ERR(0, 146, __pyx_L1_error)
   __pyx_v_len_data_points = ((int)__pyx_t_8);
 
-  /* "drag.pyx":144
+  /* "drag.pyx":147
  *     curve = [CurvePoint(0, rate, data_points[0].b() - data_points[0].a() * rate)]
  *     len_data_points = int(len(data_points))
  *     len_data_range = len_data_points - 1             # <<<<<<<<<<<<<<
@@ -8313,16 +8390,16 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
   __pyx_v_len_data_range = (__pyx_v_len_data_points - 1);
 
-  /* "drag.pyx":146
+  /* "drag.pyx":149
  *     len_data_range = len_data_points - 1
  * 
  *     for i in range(1, len_data_range):             # <<<<<<<<<<<<<<
  *         x1 = data_points[i - 1].a()
  *         x2 = data_points[i].a()
  */
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_len_data_range); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_len_data_range); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 149, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_int_1);
   __Pyx_GIVEREF(__pyx_int_1);
@@ -8330,16 +8407,16 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_1, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_1, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 149, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (likely(PyList_CheckExact(__pyx_t_5)) || PyTuple_CheckExact(__pyx_t_5)) {
     __pyx_t_1 = __pyx_t_5; __Pyx_INCREF(__pyx_t_1); __pyx_t_8 = 0;
     __pyx_t_9 = NULL;
   } else {
-    __pyx_t_8 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
+    __pyx_t_8 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_9 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 146, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_GetIterNextFunc(__pyx_t_1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 149, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   for (;;) {
@@ -8347,17 +8424,17 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely((0 < 0))) __PYX_ERR(0, 146, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely((0 < 0))) __PYX_ERR(0, 149, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 149, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       } else {
         if (__pyx_t_8 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely((0 < 0))) __PYX_ERR(0, 146, __pyx_L1_error)
+        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely((0 < 0))) __PYX_ERR(0, 149, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 149, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       }
@@ -8367,7 +8444,7 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 146, __pyx_L1_error)
+          else __PYX_ERR(0, 149, __pyx_L1_error)
         }
         break;
       }
@@ -8376,7 +8453,7 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "drag.pyx":147
+    /* "drag.pyx":150
  * 
  *     for i in range(1, len_data_range):
  *         x1 = data_points[i - 1].a()             # <<<<<<<<<<<<<<
@@ -8385,14 +8462,14 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     if (unlikely(__pyx_v_data_points == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 147, __pyx_L1_error)
+      __PYX_ERR(0, 150, __pyx_L1_error)
     }
-    __pyx_t_2 = __Pyx_PyInt_SubtractObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyInt_SubtractObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 150, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_a); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_a); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_6 = NULL;
@@ -8411,15 +8488,15 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
       PyObject *__pyx_callargs[1] = {__pyx_t_6, };
       __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 147, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 150, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_x1 = __pyx_t_7;
 
-    /* "drag.pyx":148
+    /* "drag.pyx":151
  *     for i in range(1, len_data_range):
  *         x1 = data_points[i - 1].a()
  *         x2 = data_points[i].a()             # <<<<<<<<<<<<<<
@@ -8428,11 +8505,11 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     if (unlikely(__pyx_v_data_points == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 148, __pyx_L1_error)
+      __PYX_ERR(0, 151, __pyx_L1_error)
     }
-    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 148, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_v_i); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 148, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = NULL;
@@ -8451,15 +8528,15 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
       PyObject *__pyx_callargs[1] = {__pyx_t_2, };
       __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_x2 = __pyx_t_7;
 
-    /* "drag.pyx":149
+    /* "drag.pyx":152
  *         x1 = data_points[i - 1].a()
  *         x2 = data_points[i].a()
  *         x3 = data_points[i + 1].a()             # <<<<<<<<<<<<<<
@@ -8468,14 +8545,14 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     if (unlikely(__pyx_v_data_points == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 149, __pyx_L1_error)
+      __PYX_ERR(0, 152, __pyx_L1_error)
     }
-    __pyx_t_6 = __Pyx_PyInt_AddObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyInt_AddObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 152, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 152, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = NULL;
@@ -8494,15 +8571,15 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
       PyObject *__pyx_callargs[1] = {__pyx_t_2, };
       __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 149, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 152, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_x3 = __pyx_t_7;
 
-    /* "drag.pyx":150
+    /* "drag.pyx":153
  *         x2 = data_points[i].a()
  *         x3 = data_points[i + 1].a()
  *         y1 = data_points[i - 1].b()             # <<<<<<<<<<<<<<
@@ -8511,14 +8588,14 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     if (unlikely(__pyx_v_data_points == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 150, __pyx_L1_error)
+      __PYX_ERR(0, 153, __pyx_L1_error)
     }
-    __pyx_t_6 = __Pyx_PyInt_SubtractObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 150, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyInt_SubtractObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 153, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 153, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 150, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 153, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = NULL;
@@ -8537,15 +8614,15 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
       PyObject *__pyx_callargs[1] = {__pyx_t_2, };
       __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 153, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 150, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 153, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_y1 = __pyx_t_7;
 
-    /* "drag.pyx":151
+    /* "drag.pyx":154
  *         x3 = data_points[i + 1].a()
  *         y1 = data_points[i - 1].b()
  *         y2 = data_points[i].b()             # <<<<<<<<<<<<<<
@@ -8554,11 +8631,11 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     if (unlikely(__pyx_v_data_points == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 151, __pyx_L1_error)
+      __PYX_ERR(0, 154, __pyx_L1_error)
     }
-    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_v_i); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 154, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_6 = NULL;
@@ -8577,15 +8654,15 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
       PyObject *__pyx_callargs[1] = {__pyx_t_6, };
       __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 154, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 154, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_y2 = __pyx_t_7;
 
-    /* "drag.pyx":152
+    /* "drag.pyx":155
  *         y1 = data_points[i - 1].b()
  *         y2 = data_points[i].b()
  *         y3 = data_points[i + 1].b()             # <<<<<<<<<<<<<<
@@ -8594,14 +8671,14 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     if (unlikely(__pyx_v_data_points == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 152, __pyx_L1_error)
+      __PYX_ERR(0, 155, __pyx_L1_error)
     }
-    __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyInt_AddObjC(__pyx_v_i, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetItem(__pyx_v_data_points, __pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_6 = NULL;
@@ -8620,15 +8697,15 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
       PyObject *__pyx_callargs[1] = {__pyx_t_6, };
       __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L1_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 155, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     }
-    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 152, __pyx_L1_error)
+    __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_y3 = __pyx_t_7;
 
-    /* "drag.pyx":153
+    /* "drag.pyx":156
  *         y2 = data_points[i].b()
  *         y3 = data_points[i + 1].b()
  *         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (             # <<<<<<<<<<<<<<
@@ -8637,7 +8714,7 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     __pyx_t_7 = (((__pyx_v_y3 - __pyx_v_y1) * (__pyx_v_x2 - __pyx_v_x1)) - ((__pyx_v_y2 - __pyx_v_y1) * (__pyx_v_x3 - __pyx_v_x1)));
 
-    /* "drag.pyx":154
+    /* "drag.pyx":157
  *         y3 = data_points[i + 1].b()
  *         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
  *                     (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))             # <<<<<<<<<<<<<<
@@ -8646,7 +8723,7 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     __pyx_t_10 = ((((__pyx_v_x3 * __pyx_v_x3) - (__pyx_v_x1 * __pyx_v_x1)) * (__pyx_v_x2 - __pyx_v_x1)) - (((__pyx_v_x2 * __pyx_v_x2) - (__pyx_v_x1 * __pyx_v_x1)) * (__pyx_v_x3 - __pyx_v_x1)));
 
-    /* "drag.pyx":153
+    /* "drag.pyx":156
  *         y2 = data_points[i].b()
  *         y3 = data_points[i + 1].b()
  *         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (             # <<<<<<<<<<<<<<
@@ -8655,11 +8732,11 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     if (unlikely(__pyx_t_10 == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 153, __pyx_L1_error)
+      __PYX_ERR(0, 156, __pyx_L1_error)
     }
     __pyx_v_a = (__pyx_t_7 / __pyx_t_10);
 
-    /* "drag.pyx":155
+    /* "drag.pyx":158
  *         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
  *                     (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
  *         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)             # <<<<<<<<<<<<<<
@@ -8670,11 +8747,11 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     __pyx_t_7 = (__pyx_v_x2 - __pyx_v_x1);
     if (unlikely(__pyx_t_7 == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 155, __pyx_L1_error)
+      __PYX_ERR(0, 158, __pyx_L1_error)
     }
     __pyx_v_b = (__pyx_t_10 / __pyx_t_7);
 
-    /* "drag.pyx":156
+    /* "drag.pyx":159
  *                     (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
  *         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
  *         c = y1 - (a * x1 * x1 + b * x1)             # <<<<<<<<<<<<<<
@@ -8683,20 +8760,20 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
     __pyx_v_c = (__pyx_v_y1 - (((__pyx_v_a * __pyx_v_x1) * __pyx_v_x1) + (__pyx_v_b * __pyx_v_x1)));
 
-    /* "drag.pyx":157
+    /* "drag.pyx":160
  *         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
  *         c = y1 - (a * x1 * x1 + b * x1)
  *         curve_point = CurvePoint(a, b, c)             # <<<<<<<<<<<<<<
  *         curve.append(curve_point)
  * 
  */
-    __pyx_t_5 = PyFloat_FromDouble(__pyx_v_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 157, __pyx_L1_error)
+    __pyx_t_5 = PyFloat_FromDouble(__pyx_v_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 157, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_c); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 157, __pyx_L1_error)
+    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_c); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 157, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GIVEREF(__pyx_t_5);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_5);
@@ -8707,22 +8784,22 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     __pyx_t_5 = 0;
     __pyx_t_2 = 0;
     __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_CurvePoint), __pyx_t_3, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 157, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_CurvePoint), __pyx_t_3, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_XDECREF_SET(__pyx_v_curve_point, __pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "drag.pyx":158
+    /* "drag.pyx":161
  *         c = y1 - (a * x1 * x1 + b * x1)
  *         curve_point = CurvePoint(a, b, c)
  *         curve.append(curve_point)             # <<<<<<<<<<<<<<
  * 
  *     num_points = len_data_points
  */
-    __pyx_t_11 = __Pyx_PyObject_Append(__pyx_v_curve, __pyx_v_curve_point); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 158, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_Append(__pyx_v_curve, __pyx_v_curve_point); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 161, __pyx_L1_error)
 
-    /* "drag.pyx":146
+    /* "drag.pyx":149
  *     len_data_range = len_data_points - 1
  * 
  *     for i in range(1, len_data_range):             # <<<<<<<<<<<<<<
@@ -8732,7 +8809,7 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "drag.pyx":160
+  /* "drag.pyx":163
  *         curve.append(curve_point)
  * 
  *     num_points = len_data_points             # <<<<<<<<<<<<<<
@@ -8741,7 +8818,7 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
   __pyx_v_num_points = __pyx_v_len_data_points;
 
-  /* "drag.pyx":161
+  /* "drag.pyx":164
  * 
  *     num_points = len_data_points
  *     rate = (data_points[num_points - 1].b() - data_points[num_points - 2].b()) / \             # <<<<<<<<<<<<<<
@@ -8750,12 +8827,12 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 161, __pyx_L1_error)
+    __PYX_ERR(0, 164, __pyx_L1_error)
   }
   __pyx_t_12 = (__pyx_v_num_points - 1);
-  __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_6 = NULL;
@@ -8774,18 +8851,18 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_6, };
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 161, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 164, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 161, __pyx_L1_error)
+    __PYX_ERR(0, 164, __pyx_L1_error)
   }
   __pyx_t_12 = (__pyx_v_num_points - 2);
-  __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_n_s_b); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_6 = NULL;
@@ -8804,16 +8881,16 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_6, };
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 161, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 164, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  __pyx_t_2 = PyNumber_Subtract(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Subtract(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "drag.pyx":162
+  /* "drag.pyx":165
  *     num_points = len_data_points
  *     rate = (data_points[num_points - 1].b() - data_points[num_points - 2].b()) / \
  *            (data_points[num_points - 1].a() - data_points[num_points - 2].a())             # <<<<<<<<<<<<<<
@@ -8822,12 +8899,12 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  */
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 162, __pyx_L1_error)
+    __PYX_ERR(0, 165, __pyx_L1_error)
   }
   __pyx_t_12 = (__pyx_v_num_points - 1);
-  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -8846,18 +8923,18 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_1, };
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_6, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 162, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   }
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 162, __pyx_L1_error)
+    __PYX_ERR(0, 165, __pyx_L1_error)
   }
   __pyx_t_12 = (__pyx_v_num_points - 2);
-  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_1 = NULL;
@@ -8876,47 +8953,47 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_1, };
     __pyx_t_6 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 162, __pyx_L1_error)
+    if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 165, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
-  __pyx_t_5 = PyNumber_Subtract(__pyx_t_3, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Subtract(__pyx_t_3, __pyx_t_6); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "drag.pyx":161
+  /* "drag.pyx":164
  * 
  *     num_points = len_data_points
  *     rate = (data_points[num_points - 1].b() - data_points[num_points - 2].b()) / \             # <<<<<<<<<<<<<<
  *            (data_points[num_points - 1].a() - data_points[num_points - 2].a())
  *     curve_point = CurvePoint(0, rate, data_points[num_points - 1].b() - data_points[num_points - 2].a() * rate)
  */
-  __pyx_t_6 = __Pyx_PyNumber_Divide(__pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyNumber_Divide(__pyx_t_2, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 161, __pyx_L1_error)
+  __pyx_t_7 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_7 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_v_rate = __pyx_t_7;
 
-  /* "drag.pyx":163
+  /* "drag.pyx":166
  *     rate = (data_points[num_points - 1].b() - data_points[num_points - 2].b()) / \
  *            (data_points[num_points - 1].a() - data_points[num_points - 2].a())
  *     curve_point = CurvePoint(0, rate, data_points[num_points - 1].b() - data_points[num_points - 2].a() * rate)             # <<<<<<<<<<<<<<
  *     curve.append(curve_point)
  *     return curve
  */
-  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 163, __pyx_L1_error)
+    __PYX_ERR(0, 166, __pyx_L1_error)
   }
   __pyx_t_12 = (__pyx_v_num_points - 1);
-  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_b); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -8935,18 +9012,18 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_2, };
     __pyx_t_5 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 163, __pyx_L1_error)
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 166, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
   if (unlikely(__pyx_v_data_points == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 163, __pyx_L1_error)
+    __PYX_ERR(0, 166, __pyx_L1_error)
   }
   __pyx_t_12 = (__pyx_v_num_points - 2);
-  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_data_points, __pyx_t_12, long, 1, __Pyx_PyInt_From_long, 1, 1, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_a); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_2 = NULL;
@@ -8965,21 +9042,21 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
     PyObject *__pyx_callargs[1] = {__pyx_t_2, };
     __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 163, __pyx_L1_error)
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 166, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   }
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_rate); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_2 = PyNumber_Multiply(__pyx_t_3, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyNumber_Subtract(__pyx_t_5, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_1 = PyNumber_Subtract(__pyx_t_5, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_int_0);
   __Pyx_GIVEREF(__pyx_int_0);
@@ -8990,22 +9067,22 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
   PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_t_1);
   __pyx_t_6 = 0;
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_CurvePoint), __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_4drag_CurvePoint), __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_XDECREF_SET(__pyx_v_curve_point, __pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "drag.pyx":164
+  /* "drag.pyx":167
  *            (data_points[num_points - 1].a() - data_points[num_points - 2].a())
  *     curve_point = CurvePoint(0, rate, data_points[num_points - 1].b() - data_points[num_points - 2].a() * rate)
  *     curve.append(curve_point)             # <<<<<<<<<<<<<<
  *     return curve
  * 
  */
-  __pyx_t_11 = __Pyx_PyObject_Append(__pyx_v_curve, __pyx_v_curve_point); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 164, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_Append(__pyx_v_curve, __pyx_v_curve_point); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 167, __pyx_L1_error)
 
-  /* "drag.pyx":165
+  /* "drag.pyx":168
  *     curve_point = CurvePoint(0, rate, data_points[num_points - 1].b() - data_points[num_points - 2].a() * rate)
  *     curve.append(curve_point)
  *     return curve             # <<<<<<<<<<<<<<
@@ -9013,12 +9090,12 @@ static PyObject *__pyx_f_4drag_calculate_curve(PyObject *__pyx_v_data_points, CY
  * cpdef list load_drag_table(drag_table: int):
  */
   __Pyx_XDECREF(__pyx_r);
-  if (!(likely(PyList_CheckExact(__pyx_v_curve)) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_curve))) __PYX_ERR(0, 165, __pyx_L1_error)
+  if (!(likely(PyList_CheckExact(__pyx_v_curve)) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_curve))) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_INCREF(__pyx_v_curve);
   __pyx_r = ((PyObject*)__pyx_v_curve);
   goto __pyx_L0;
 
-  /* "drag.pyx":135
+  /* "drag.pyx":138
  *     return table
  * 
  * cpdef list calculate_curve(list data_points):             # <<<<<<<<<<<<<<
@@ -9090,12 +9167,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_data_points)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 135, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 138, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "calculate_curve") < 0)) __PYX_ERR(0, 135, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "calculate_curve") < 0)) __PYX_ERR(0, 138, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -9106,13 +9183,13 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("calculate_curve", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 135, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("calculate_curve", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 138, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.calculate_curve", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data_points), (&PyList_Type), 1, "data_points", 1))) __PYX_ERR(0, 135, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data_points), (&PyList_Type), 1, "data_points", 1))) __PYX_ERR(0, 138, __pyx_L1_error)
   __pyx_r = __pyx_pf_4drag_2calculate_curve(__pyx_self, __pyx_v_data_points);
 
   /* function exit code */
@@ -9133,7 +9210,7 @@ static PyObject *__pyx_pf_4drag_2calculate_curve(CYTHON_UNUSED PyObject *__pyx_s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("calculate_curve", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_4drag_calculate_curve(__pyx_v_data_points, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_4drag_calculate_curve(__pyx_v_data_points, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9150,7 +9227,7 @@ static PyObject *__pyx_pf_4drag_2calculate_curve(CYTHON_UNUSED PyObject *__pyx_s
   return __pyx_r;
 }
 
-/* "drag.pyx":167
+/* "drag.pyx":170
  *     return curve
  * 
  * cpdef list load_drag_table(drag_table: int):             # <<<<<<<<<<<<<<
@@ -9177,38 +9254,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("load_drag_table", 0);
 
-  /* "drag.pyx":170
+  /* "drag.pyx":173
  *     cdef table
  * 
  *     if drag_table == DragTableG1:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableG1)
  *     elif drag_table == DragTableG2:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 173, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "drag.pyx":171
+    /* "drag.pyx":174
  * 
  *     if drag_table == DragTableG1:
  *         table = make_data_points(TableG1)             # <<<<<<<<<<<<<<
  *     elif drag_table == DragTableG2:
  *         table = make_data_points(TableG2)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 171, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 174, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":170
+    /* "drag.pyx":173
  *     cdef table
  * 
  *     if drag_table == DragTableG1:             # <<<<<<<<<<<<<<
@@ -9218,38 +9295,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":172
+  /* "drag.pyx":175
  *     if drag_table == DragTableG1:
  *         table = make_data_points(TableG1)
  *     elif drag_table == DragTableG2:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableG2)
  *     elif drag_table == DragTableG5:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 172, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 172, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 172, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 175, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "drag.pyx":173
+    /* "drag.pyx":176
  *         table = make_data_points(TableG1)
  *     elif drag_table == DragTableG2:
  *         table = make_data_points(TableG2)             # <<<<<<<<<<<<<<
  *     elif drag_table == DragTableG5:
  *         table = make_data_points(TableG5)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 173, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 173, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 173, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 176, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":172
+    /* "drag.pyx":175
  *     if drag_table == DragTableG1:
  *         table = make_data_points(TableG1)
  *     elif drag_table == DragTableG2:             # <<<<<<<<<<<<<<
@@ -9259,38 +9336,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":174
+  /* "drag.pyx":177
  *     elif drag_table == DragTableG2:
  *         table = make_data_points(TableG2)
  *     elif drag_table == DragTableG5:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableG5)
  *     elif drag_table == DragTableG6:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "drag.pyx":175
+    /* "drag.pyx":178
  *         table = make_data_points(TableG2)
  *     elif drag_table == DragTableG5:
  *         table = make_data_points(TableG5)             # <<<<<<<<<<<<<<
  *     elif drag_table == DragTableG6:
  *         table = make_data_points(TableG6)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 175, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 178, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":174
+    /* "drag.pyx":177
  *     elif drag_table == DragTableG2:
  *         table = make_data_points(TableG2)
  *     elif drag_table == DragTableG5:             # <<<<<<<<<<<<<<
@@ -9300,38 +9377,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":176
+  /* "drag.pyx":179
  *     elif drag_table == DragTableG5:
  *         table = make_data_points(TableG5)
  *     elif drag_table == DragTableG6:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableG6)
  *     elif drag_table == DragTableG7:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 179, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 176, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 179, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "drag.pyx":177
+    /* "drag.pyx":180
  *         table = make_data_points(TableG5)
  *     elif drag_table == DragTableG6:
  *         table = make_data_points(TableG6)             # <<<<<<<<<<<<<<
  *     elif drag_table == DragTableG7:
  *         table = make_data_points(TableG7)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 177, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG6); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 177, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 180, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":176
+    /* "drag.pyx":179
  *     elif drag_table == DragTableG5:
  *         table = make_data_points(TableG5)
  *     elif drag_table == DragTableG6:             # <<<<<<<<<<<<<<
@@ -9341,38 +9418,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":178
+  /* "drag.pyx":181
  *     elif drag_table == DragTableG6:
  *         table = make_data_points(TableG6)
  *     elif drag_table == DragTableG7:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableG7)
  *     elif drag_table == DragTableG8:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 178, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "drag.pyx":179
+    /* "drag.pyx":182
  *         table = make_data_points(TableG6)
  *     elif drag_table == DragTableG7:
  *         table = make_data_points(TableG7)             # <<<<<<<<<<<<<<
  *     elif drag_table == DragTableG8:
  *         table = make_data_points(TableG8)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 179, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG7); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 179, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 179, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 182, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":178
+    /* "drag.pyx":181
  *     elif drag_table == DragTableG6:
  *         table = make_data_points(TableG6)
  *     elif drag_table == DragTableG7:             # <<<<<<<<<<<<<<
@@ -9382,38 +9459,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":180
+  /* "drag.pyx":183
  *     elif drag_table == DragTableG7:
  *         table = make_data_points(TableG7)
  *     elif drag_table == DragTableG8:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableG8)
  *     elif drag_table == DragTableGI:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableG8); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "drag.pyx":181
+    /* "drag.pyx":184
  *         table = make_data_points(TableG7)
  *     elif drag_table == DragTableG8:
  *         table = make_data_points(TableG8)             # <<<<<<<<<<<<<<
  *     elif drag_table == DragTableGI:
  *         table = make_data_points(TableGI)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableG8); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 181, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 184, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":180
+    /* "drag.pyx":183
  *     elif drag_table == DragTableG7:
  *         table = make_data_points(TableG7)
  *     elif drag_table == DragTableG8:             # <<<<<<<<<<<<<<
@@ -9423,38 +9500,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":182
+  /* "drag.pyx":185
  *     elif drag_table == DragTableG8:
  *         table = make_data_points(TableG8)
  *     elif drag_table == DragTableGI:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableGI)
  *     elif drag_table == DragTableGS:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableGI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableGI); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 182, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 185, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (__pyx_t_3) {
 
-    /* "drag.pyx":183
+    /* "drag.pyx":186
  *         table = make_data_points(TableG8)
  *     elif drag_table == DragTableGI:
  *         table = make_data_points(TableGI)             # <<<<<<<<<<<<<<
  *     elif drag_table == DragTableGS:
  *         table = make_data_points(TableGS)
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableGI); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableGI); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 183, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 186, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":182
+    /* "drag.pyx":185
  *     elif drag_table == DragTableG8:
  *         table = make_data_points(TableG8)
  *     elif drag_table == DragTableGI:             # <<<<<<<<<<<<<<
@@ -9464,38 +9541,38 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":184
+  /* "drag.pyx":187
  *     elif drag_table == DragTableGI:
  *         table = make_data_points(TableGI)
  *     elif drag_table == DragTableGS:             # <<<<<<<<<<<<<<
  *         table = make_data_points(TableGS)
  *     else:
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableGS); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_DragTableGS); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_t_2 = PyObject_RichCompare(__pyx_v_drag_table, __pyx_t_1, Py_EQ); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 187, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (likely(__pyx_t_3)) {
 
-    /* "drag.pyx":185
+    /* "drag.pyx":188
  *         table = make_data_points(TableGI)
  *     elif drag_table == DragTableGS:
  *         table = make_data_points(TableGS)             # <<<<<<<<<<<<<<
  *     else:
  *         raise ValueError("Unknown drag table type")
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableGS); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 185, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TableGS); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 188, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 185, __pyx_L1_error)
-    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 188, __pyx_L1_error)
+    __pyx_t_1 = __pyx_f_4drag_make_data_points(((PyObject*)__pyx_t_2), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_table = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "drag.pyx":184
+    /* "drag.pyx":187
  *     elif drag_table == DragTableGI:
  *         table = make_data_points(TableGI)
  *     elif drag_table == DragTableGS:             # <<<<<<<<<<<<<<
@@ -9505,7 +9582,7 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
     goto __pyx_L3;
   }
 
-  /* "drag.pyx":187
+  /* "drag.pyx":190
  *         table = make_data_points(TableGS)
  *     else:
  *         raise ValueError("Unknown drag table type")             # <<<<<<<<<<<<<<
@@ -9513,15 +9590,15 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
  * 
  */
   /*else*/ {
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 187, __pyx_L1_error)
+    __PYX_ERR(0, 190, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "drag.pyx":188
+  /* "drag.pyx":191
  *     else:
  *         raise ValueError("Unknown drag table type")
  *     return table             # <<<<<<<<<<<<<<
@@ -9529,12 +9606,12 @@ static PyObject *__pyx_f_4drag_load_drag_table(PyObject *__pyx_v_drag_table, CYT
  * cpdef double calculate_by_curve(data: list, curve: list, mach: double):
  */
   __Pyx_XDECREF(__pyx_r);
-  if (!(likely(PyList_CheckExact(__pyx_v_table))||((__pyx_v_table) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_table))) __PYX_ERR(0, 188, __pyx_L1_error)
+  if (!(likely(PyList_CheckExact(__pyx_v_table))||((__pyx_v_table) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_table))) __PYX_ERR(0, 191, __pyx_L1_error)
   __Pyx_INCREF(__pyx_v_table);
   __pyx_r = ((PyObject*)__pyx_v_table);
   goto __pyx_L0;
 
-  /* "drag.pyx":167
+  /* "drag.pyx":170
  *     return curve
  * 
  * cpdef list load_drag_table(drag_table: int):             # <<<<<<<<<<<<<<
@@ -9601,12 +9678,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_drag_table)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 167, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 170, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "load_drag_table") < 0)) __PYX_ERR(0, 167, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "load_drag_table") < 0)) __PYX_ERR(0, 170, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -9617,7 +9694,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("load_drag_table", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 167, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("load_drag_table", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 170, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.load_drag_table", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -9639,7 +9716,7 @@ static PyObject *__pyx_pf_4drag_4load_drag_table(CYTHON_UNUSED PyObject *__pyx_s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("load_drag_table", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_4drag_load_drag_table(__pyx_v_drag_table, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_4drag_load_drag_table(__pyx_v_drag_table, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9656,7 +9733,7 @@ static PyObject *__pyx_pf_4drag_4load_drag_table(CYTHON_UNUSED PyObject *__pyx_s
   return __pyx_r;
 }
 
-/* "drag.pyx":190
+/* "drag.pyx":193
  *     return table
  * 
  * cpdef double calculate_by_curve(data: list, curve: list, mach: double):             # <<<<<<<<<<<<<<
@@ -9694,7 +9771,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("calculate_by_curve", 0);
 
-  /* "drag.pyx":193
+  /* "drag.pyx":196
  *     cdef int num_points, mlo, mhi, mid
  * 
  *     num_points = int(len(curve))             # <<<<<<<<<<<<<<
@@ -9703,12 +9780,12 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
   if (unlikely(__pyx_v_curve == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 193, __pyx_L1_error)
+    __PYX_ERR(0, 196, __pyx_L1_error)
   }
-  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_curve); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_1 = PyList_GET_SIZE(__pyx_v_curve); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 196, __pyx_L1_error)
   __pyx_v_num_points = ((int)__pyx_t_1);
 
-  /* "drag.pyx":194
+  /* "drag.pyx":197
  * 
  *     num_points = int(len(curve))
  *     mlo = 0             # <<<<<<<<<<<<<<
@@ -9717,7 +9794,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
   __pyx_v_mlo = 0;
 
-  /* "drag.pyx":195
+  /* "drag.pyx":198
  *     num_points = int(len(curve))
  *     mlo = 0
  *     mhi = num_points - 2             # <<<<<<<<<<<<<<
@@ -9726,7 +9803,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
   __pyx_v_mhi = (__pyx_v_num_points - 2);
 
-  /* "drag.pyx":197
+  /* "drag.pyx":200
  *     mhi = num_points - 2
  * 
  *     while mhi - mlo > 1:             # <<<<<<<<<<<<<<
@@ -9737,7 +9814,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     __pyx_t_2 = (((__pyx_v_mhi - __pyx_v_mlo) > 1) != 0);
     if (!__pyx_t_2) break;
 
-    /* "drag.pyx":198
+    /* "drag.pyx":201
  * 
  *     while mhi - mlo > 1:
  *         mid = int(floor(mhi + mlo) / 2.0)             # <<<<<<<<<<<<<<
@@ -9746,7 +9823,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
     __pyx_v_mid = ((int)(floor((__pyx_v_mhi + __pyx_v_mlo)) / 2.0));
 
-    /* "drag.pyx":199
+    /* "drag.pyx":202
  *     while mhi - mlo > 1:
  *         mid = int(floor(mhi + mlo) / 2.0)
  *         if data[mid].a() < mach:             # <<<<<<<<<<<<<<
@@ -9755,11 +9832,11 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
     if (unlikely(__pyx_v_data == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 199, __pyx_L1_error)
+      __PYX_ERR(0, 202, __pyx_L1_error)
     }
-    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_data, __pyx_v_mid, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 199, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetItemInt_List(__pyx_v_data, __pyx_v_mid, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 199, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_a); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_4 = NULL;
@@ -9778,20 +9855,20 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
       PyObject *__pyx_callargs[1] = {__pyx_t_4, };
       __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_6, 0+__pyx_t_6);
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 199, __pyx_L1_error)
+      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 202, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
-    __pyx_t_5 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 199, __pyx_L1_error)
+    __pyx_t_5 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_4 = PyObject_RichCompare(__pyx_t_3, __pyx_t_5, Py_LT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 199, __pyx_L1_error)
+    __pyx_t_4 = PyObject_RichCompare(__pyx_t_3, __pyx_t_5, Py_LT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 199, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_2) {
 
-      /* "drag.pyx":200
+      /* "drag.pyx":203
  *         mid = int(floor(mhi + mlo) / 2.0)
  *         if data[mid].a() < mach:
  *             mlo = mid             # <<<<<<<<<<<<<<
@@ -9800,7 +9877,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
       __pyx_v_mlo = __pyx_v_mid;
 
-      /* "drag.pyx":199
+      /* "drag.pyx":202
  *     while mhi - mlo > 1:
  *         mid = int(floor(mhi + mlo) / 2.0)
  *         if data[mid].a() < mach:             # <<<<<<<<<<<<<<
@@ -9810,7 +9887,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
       goto __pyx_L5;
     }
 
-    /* "drag.pyx":202
+    /* "drag.pyx":205
  *             mlo = mid
  *         else:
  *             mhi = mid             # <<<<<<<<<<<<<<
@@ -9823,7 +9900,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     __pyx_L5:;
   }
 
-  /* "drag.pyx":204
+  /* "drag.pyx":207
  *             mhi = mid
  * 
  *     if data[mhi].a() - mach > mach - data[mlo].a():             # <<<<<<<<<<<<<<
@@ -9832,11 +9909,11 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
   if (unlikely(__pyx_v_data == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 204, __pyx_L1_error)
+    __PYX_ERR(0, 207, __pyx_L1_error)
   }
-  __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_data, __pyx_v_mhi, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_data, __pyx_v_mhi, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_a); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_a); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -9855,25 +9932,25 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     PyObject *__pyx_callargs[1] = {__pyx_t_5, };
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_6, 0+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 204, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   }
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = PyNumber_Subtract(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_5 = PyNumber_Subtract(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   if (unlikely(__pyx_v_data == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 204, __pyx_L1_error)
+    __PYX_ERR(0, 207, __pyx_L1_error)
   }
-  __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_v_data, __pyx_v_mlo, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_GetItemInt_List(__pyx_v_data, __pyx_v_mlo, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_a); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_a); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_7 = NULL;
@@ -9892,22 +9969,22 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     PyObject *__pyx_callargs[1] = {__pyx_t_7, };
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_8, __pyx_callargs+1-__pyx_t_6, 0+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 204, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   }
-  __pyx_t_8 = PyNumber_Subtract(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_8 = PyNumber_Subtract(__pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = PyObject_RichCompare(__pyx_t_5, __pyx_t_8, Py_GT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_4 = PyObject_RichCompare(__pyx_t_5, __pyx_t_8, Py_GT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   if (__pyx_t_2) {
 
-    /* "drag.pyx":205
+    /* "drag.pyx":208
  * 
  *     if data[mhi].a() - mach > mach - data[mlo].a():
  *         m = mlo             # <<<<<<<<<<<<<<
@@ -9916,7 +9993,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
  */
     __pyx_v_m = __pyx_v_mlo;
 
-    /* "drag.pyx":204
+    /* "drag.pyx":207
  *             mhi = mid
  * 
  *     if data[mhi].a() - mach > mach - data[mlo].a():             # <<<<<<<<<<<<<<
@@ -9926,7 +10003,7 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     goto __pyx_L6;
   }
 
-  /* "drag.pyx":207
+  /* "drag.pyx":210
  *         m = mlo
  *     else:
  *         m = mhi             # <<<<<<<<<<<<<<
@@ -9937,18 +10014,18 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
   }
   __pyx_L6:;
 
-  /* "drag.pyx":208
+  /* "drag.pyx":211
  *     else:
  *         m = mhi
  *     return curve[m].c() + mach * (curve[m].b() + curve[m].a() * mach)             # <<<<<<<<<<<<<<
  */
   if (unlikely(__pyx_v_curve == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 208, __pyx_L1_error)
+    __PYX_ERR(0, 211, __pyx_L1_error)
   }
-  __pyx_t_8 = __Pyx_GetItemInt_List(__pyx_v_curve, __pyx_v_m, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_GetItemInt_List(__pyx_v_curve, __pyx_v_m, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_c); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_n_s_c); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __pyx_t_8 = NULL;
@@ -9967,19 +10044,19 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     PyObject *__pyx_callargs[1] = {__pyx_t_8, };
     __pyx_t_4 = __Pyx_PyObject_FastCall(__pyx_t_5, __pyx_callargs+1-__pyx_t_6, 0+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 208, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 211, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   if (unlikely(__pyx_v_curve == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 208, __pyx_L1_error)
+    __PYX_ERR(0, 211, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_curve, __pyx_v_m, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_curve, __pyx_v_m, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_b); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_b); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -9998,17 +10075,17 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     PyObject *__pyx_callargs[1] = {__pyx_t_3, };
     __pyx_t_8 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+1-__pyx_t_6, 0+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 208, __pyx_L1_error)
+    if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 211, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   }
   if (unlikely(__pyx_v_curve == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 208, __pyx_L1_error)
+    __PYX_ERR(0, 211, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_curve, __pyx_v_m, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_GetItemInt_List(__pyx_v_curve, __pyx_v_m, int, 1, __Pyx_PyInt_From_int, 1, 1, 1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_a); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_a); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_3 = NULL;
@@ -10027,34 +10104,34 @@ static double __pyx_f_4drag_calculate_by_curve(PyObject *__pyx_v_data, PyObject 
     PyObject *__pyx_callargs[1] = {__pyx_t_3, };
     __pyx_t_7 = __Pyx_PyObject_FastCall(__pyx_t_9, __pyx_callargs+1-__pyx_t_6, 0+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 208, __pyx_L1_error)
+    if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 211, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
   }
-  __pyx_t_9 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_9 = PyFloat_FromDouble(__pyx_v_mach); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_7, __pyx_t_9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Multiply(__pyx_t_7, __pyx_t_9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_9 = PyNumber_Add(__pyx_t_8, __pyx_t_3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_9 = PyNumber_Add(__pyx_t_8, __pyx_t_3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_3 = PyNumber_Multiply(__pyx_t_5, __pyx_t_9); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_9 = PyNumber_Add(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_9 = PyNumber_Add(__pyx_t_4, __pyx_t_3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_9); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_9); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
   __pyx_r = __pyx_t_10;
   goto __pyx_L0;
 
-  /* "drag.pyx":190
+  /* "drag.pyx":193
  *     return table
  * 
  * cpdef double calculate_by_curve(data: list, curve: list, mach: double):             # <<<<<<<<<<<<<<
@@ -10129,26 +10206,26 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_data)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 193, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_curve)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 193, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("calculate_by_curve", 1, 3, 3, 1); __PYX_ERR(0, 190, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("calculate_by_curve", 1, 3, 3, 1); __PYX_ERR(0, 193, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_mach)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 193, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("calculate_by_curve", 1, 3, 3, 2); __PYX_ERR(0, 190, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("calculate_by_curve", 1, 3, 3, 2); __PYX_ERR(0, 193, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "calculate_by_curve") < 0)) __PYX_ERR(0, 190, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "calculate_by_curve") < 0)) __PYX_ERR(0, 193, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 3)) {
       goto __pyx_L5_argtuple_error;
@@ -10159,18 +10236,18 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
     }
     __pyx_v_data = ((PyObject*)values[0]);
     __pyx_v_curve = ((PyObject*)values[1]);
-    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 190, __pyx_L3_error)
+    __pyx_v_mach = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_mach == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 193, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("calculate_by_curve", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 190, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("calculate_by_curve", 1, 3, 3, __pyx_nargs); __PYX_ERR(0, 193, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("drag.calculate_by_curve", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), (&PyList_Type), 1, "data", 1))) __PYX_ERR(0, 190, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_curve), (&PyList_Type), 1, "curve", 1))) __PYX_ERR(0, 190, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_data), (&PyList_Type), 1, "data", 1))) __PYX_ERR(0, 193, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_curve), (&PyList_Type), 1, "curve", 1))) __PYX_ERR(0, 193, __pyx_L1_error)
   __pyx_r = __pyx_pf_4drag_6calculate_by_curve(__pyx_self, __pyx_v_data, __pyx_v_curve, __pyx_v_mach);
 
   /* function exit code */
@@ -10191,7 +10268,7 @@ static PyObject *__pyx_pf_4drag_6calculate_by_curve(CYTHON_UNUSED PyObject *__py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("calculate_by_curve", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_calculate_by_curve(__pyx_v_data, __pyx_v_curve, __pyx_v_mach, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_4drag_calculate_by_curve(__pyx_v_data, __pyx_v_curve, __pyx_v_mach, 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -12018,6 +12095,8 @@ static int __pyx_import_star_set(PyObject *o, PyObject* py_name, char *name) {
     "CurvePoint",
     "DataPoint",
     "__pyx_ctuple_Py_ssize_t",
+    "__pyx_ctuple_Py_ssize_t__and_int",
+    "__pyx_ctuple_Py_ssize_t__and_int_struct",
     "__pyx_ctuple_Py_ssize_t_struct",
     "__pyx_ctuple_double",
     "__pyx_ctuple_double__and_double",
@@ -12025,6 +12104,8 @@ static int __pyx_import_star_set(PyObject *o, PyObject* py_name, char *name) {
     "__pyx_ctuple_double__and_double__and_double_struct",
     "__pyx_ctuple_double__and_double_struct",
     "__pyx_ctuple_double_struct",
+    "__pyx_ctuple_int",
+    "__pyx_ctuple_int_struct",
     "__pyx_ctuple_long__and_int",
     "__pyx_ctuple_long__and_int_struct",
     0
@@ -12257,6 +12338,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {0, __pyx_k_new, sizeof(__pyx_k_new), 0, 0, 1, 1},
   {0, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
+  {0, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
   {0, __pyx_k_py_ballisticcalc_lib_bmath_unit, sizeof(__pyx_k_py_ballisticcalc_lib_bmath_unit), 0, 0, 1, 1},
   {0, __pyx_k_py_ballisticcalc_lib_drag_pyx, sizeof(__pyx_k_py_ballisticcalc_lib_drag_pyx), 0, 0, 1, 0},
   {0, __pyx_k_py_ballisticcalc_lib_drag_tables, sizeof(__pyx_k_py_ballisticcalc_lib_drag_tables), 0, 0, 1, 1},
@@ -12378,6 +12460,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_n_s_new, __pyx_k_new, sizeof(__pyx_k_new), 0, 0, 1, 1},
   {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
+  {&__pyx_n_s_print, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
   {&__pyx_n_s_py_ballisticcalc_lib_bmath_unit, __pyx_k_py_ballisticcalc_lib_bmath_unit, sizeof(__pyx_k_py_ballisticcalc_lib_bmath_unit), 0, 0, 1, 1},
   {&__pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_k_py_ballisticcalc_lib_drag_pyx, sizeof(__pyx_k_py_ballisticcalc_lib_drag_pyx), 0, 0, 1, 0},
   {&__pyx_n_s_py_ballisticcalc_lib_drag_tables, __pyx_k_py_ballisticcalc_lib_drag_tables, sizeof(__pyx_k_py_ballisticcalc_lib_drag_tables), 0, 0, 1, 1},
@@ -12411,8 +12494,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 39, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 149, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -12423,107 +12507,107 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "drag.pyx":41
+  /* "drag.pyx":44
  *             raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
  *         elif value <= 0:
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')             # <<<<<<<<<<<<<<
  *         elif self._table == 0 and len(custom_drag_table) == 0:
  *             raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_u_BallisticCoefficient_Drag_coeffi); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 41, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_u_BallisticCoefficient_Drag_coeffi); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "drag.pyx":43
+  /* "drag.pyx":46
  *             raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
  *         elif self._table == 0 and len(custom_drag_table) == 0:
  *             raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')             # <<<<<<<<<<<<<<
  *         else:
  *             self._value = value
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_BallisticCoefficient_Custom_drag); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_BallisticCoefficient_Custom_drag); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 46, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "drag.pyx":187
+  /* "drag.pyx":190
  *         table = make_data_points(TableGS)
  *     else:
  *         raise ValueError("Unknown drag table type")             # <<<<<<<<<<<<<<
  *     return table
  * 
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_Unknown_drag_table_type); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_Unknown_drag_table_type); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 190, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
-  /* "drag.pyx":50
+  /* "drag.pyx":53
  *             self._curve_data = calculate_curve(self._table_data)
  * 
  *     cpdef double drag(self, double mach):             # <<<<<<<<<<<<<<
  *         cdef double cd
  *         cd = calculate_by_curve(self._table_data, self._curve_data, mach)
  */
-  __pyx_tuple__6 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_mach); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_tuple__6 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_mach); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__6);
   __Pyx_GIVEREF(__pyx_tuple__6);
-  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_drag, 50, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_drag, 53, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 53, __pyx_L1_error)
 
-  /* "drag.pyx":55
+  /* "drag.pyx":58
  *         return cd * 2.08551e-04 / self._value
  * 
  *     cpdef double value(self):             # <<<<<<<<<<<<<<
  *         return self._value
  * 
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
-  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_value, 55, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_value, 58, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 58, __pyx_L1_error)
 
-  /* "drag.pyx":58
+  /* "drag.pyx":61
  *         return self._value
  * 
  *     cpdef int table(self):             # <<<<<<<<<<<<<<
  *         return self._table
  * 
  */
-  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_table, 58, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_table, 61, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) __PYX_ERR(0, 61, __pyx_L1_error)
 
-  /* "drag.pyx":73
+  /* "drag.pyx":76
  *         return w / pow(d, 2) / 7000
  * 
  *     cpdef double standard_cd(self, double mach):             # <<<<<<<<<<<<<<
  *         return calculate_by_curve(self._table_data, self._curve_data, mach)
  * 
  */
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_standard_cd, 73, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_standard_cd, 76, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 76, __pyx_L1_error)
 
-  /* "drag.pyx":76
+  /* "drag.pyx":79
  *         return calculate_by_curve(self._table_data, self._curve_data, mach)
  * 
  *     cpdef double calculated_cd(self, double mach):             # <<<<<<<<<<<<<<
  *         return self.standard_cd(mach) * self._form_factor
  * 
  */
-  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculated_cd, 76, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculated_cd, 79, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) __PYX_ERR(0, 79, __pyx_L1_error)
 
-  /* "drag.pyx":79
+  /* "drag.pyx":82
  *         return self.standard_cd(mach) * self._form_factor
  * 
  *     cpdef list calculated_drag_function(self):             # <<<<<<<<<<<<<<
  *         cdef standard_cd_table
  *         cdef list calculated_cd_table
  */
-  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculated_drag_function, 79, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculated_drag_function, 82, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(0, 82, __pyx_L1_error)
 
-  /* "drag.pyx":94
+  /* "drag.pyx":97
  *         return calculated_cd_table
  * 
  *     cpdef form_factor(self):             # <<<<<<<<<<<<<<
  *         return self._form_factor
  * 
  */
-  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_form_factor, 94, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_codeobj__14 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_form_factor, 97, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__14)) __PYX_ERR(0, 97, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -12546,23 +12630,23 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__17);
   __pyx_codeobj__18 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__18)) __PYX_ERR(1, 16, __pyx_L1_error)
 
-  /* "drag.pyx":104
+  /* "drag.pyx":107
  *         self._b = b
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
  *         return self._a
  * 
  */
-  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_a, 104, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_codeobj__19 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_a, 107, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__19)) __PYX_ERR(0, 107, __pyx_L1_error)
 
-  /* "drag.pyx":107
+  /* "drag.pyx":110
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
  *         return self._b
  * 
  */
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_b, 107, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 107, __pyx_L1_error)
+  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_b, 110, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 110, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -12579,32 +12663,32 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  */
   __pyx_codeobj__22 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__22)) __PYX_ERR(1, 16, __pyx_L1_error)
 
-  /* "drag.pyx":118
+  /* "drag.pyx":121
  *         self._c = c
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
  *         return self._a
  * 
  */
-  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_a, 118, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_a, 121, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 121, __pyx_L1_error)
 
-  /* "drag.pyx":121
+  /* "drag.pyx":124
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
  *         return self._b
  * 
  */
-  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_b, 121, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_codeobj__24 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_b, 124, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__24)) __PYX_ERR(0, 124, __pyx_L1_error)
 
-  /* "drag.pyx":124
+  /* "drag.pyx":127
  *         return self._b
  * 
  *     cpdef double c(self):             # <<<<<<<<<<<<<<
  *         return self._c
  * 
  */
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_c, 124, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 124, __pyx_L1_error)
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_c, 127, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 127, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -12621,50 +12705,50 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  */
   __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__17, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_setstate_cython, 16, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(1, 16, __pyx_L1_error)
 
-  /* "drag.pyx":127
+  /* "drag.pyx":130
  *         return self._c
  * 
  * cpdef list make_data_points(drag_table: list):             # <<<<<<<<<<<<<<
  *     table: list = []
  *     cdef data_point
  */
-  __pyx_tuple__28 = PyTuple_Pack(1, __pyx_n_s_drag_table); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(1, __pyx_n_s_drag_table); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__28);
   __Pyx_GIVEREF(__pyx_tuple__28);
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_make_data_points, 127, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_make_data_points, 130, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 130, __pyx_L1_error)
 
-  /* "drag.pyx":135
+  /* "drag.pyx":138
  *     return table
  * 
  * cpdef list calculate_curve(list data_points):             # <<<<<<<<<<<<<<
  *     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
  *     cdef curve = []
  */
-  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_n_s_data_points); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_tuple__30 = PyTuple_Pack(1, __pyx_n_s_data_points); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__30);
   __Pyx_GIVEREF(__pyx_tuple__30);
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculate_curve, 135, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculate_curve, 138, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 138, __pyx_L1_error)
 
-  /* "drag.pyx":167
+  /* "drag.pyx":170
  *     return curve
  * 
  * cpdef list load_drag_table(drag_table: int):             # <<<<<<<<<<<<<<
  *     cdef table
  * 
  */
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_load_drag_table, 167, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_load_drag_table, 170, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 170, __pyx_L1_error)
 
-  /* "drag.pyx":190
+  /* "drag.pyx":193
  *     return table
  * 
  * cpdef double calculate_by_curve(data: list, curve: list, mach: double):             # <<<<<<<<<<<<<<
  *     cdef int num_points, mlo, mhi, mid
  * 
  */
-  __pyx_tuple__33 = PyTuple_Pack(3, __pyx_n_s_data, __pyx_n_s_curve, __pyx_n_s_mach); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_tuple__33 = PyTuple_Pack(3, __pyx_n_s_data, __pyx_n_s_curve, __pyx_n_s_mach); if (unlikely(!__pyx_tuple__33)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__33);
   __Pyx_GIVEREF(__pyx_tuple__33);
-  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculate_by_curve, 190, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__33, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_drag_pyx, __pyx_n_s_calculate_by_curve, 193, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 193, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_BallisticCoefficient(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
@@ -12779,34 +12863,35 @@ static CYTHON_SMALL_CODE int __Pyx_InitConstants(void) {
   if (__Pyx_InitString(__pyx_string_tab[89], &__pyx_n_s_name) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[90], &__pyx_n_s_new) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[91], &__pyx_n_s_pickle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[92], &__pyx_n_s_py_ballisticcalc_lib_bmath_unit) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[93], &__pyx_kp_s_py_ballisticcalc_lib_drag_pyx) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[94], &__pyx_n_s_py_ballisticcalc_lib_drag_tables) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[95], &__pyx_n_s_pyx_PickleError) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[96], &__pyx_n_s_pyx_checksum) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[97], &__pyx_n_s_pyx_result) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[98], &__pyx_n_s_pyx_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[99], &__pyx_n_s_pyx_type) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[100], &__pyx_n_s_pyx_unpickle_BallisticCoeffici) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[101], &__pyx_n_s_pyx_unpickle_CurvePoint) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[102], &__pyx_n_s_pyx_unpickle_DataPoint) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[103], &__pyx_n_s_pyx_vtable) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[104], &__pyx_n_s_range) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[105], &__pyx_n_s_reduce) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[106], &__pyx_n_s_reduce_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[107], &__pyx_n_s_reduce_ex) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[108], &__pyx_n_s_self) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[109], &__pyx_n_s_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[110], &__pyx_n_s_setstate_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[111], &__pyx_n_s_standard_cd) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[112], &__pyx_n_s_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[113], &__pyx_kp_s_stringsource) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[114], &__pyx_n_s_table) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[115], &__pyx_n_s_test) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[116], &__pyx_n_s_update) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[117], &__pyx_n_s_use_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[118], &__pyx_n_s_value) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[119], &__pyx_n_s_weight) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[92], &__pyx_n_s_print) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[93], &__pyx_n_s_py_ballisticcalc_lib_bmath_unit) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[94], &__pyx_kp_s_py_ballisticcalc_lib_drag_pyx) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[95], &__pyx_n_s_py_ballisticcalc_lib_drag_tables) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[96], &__pyx_n_s_pyx_PickleError) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[97], &__pyx_n_s_pyx_checksum) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[98], &__pyx_n_s_pyx_result) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[99], &__pyx_n_s_pyx_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[100], &__pyx_n_s_pyx_type) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[101], &__pyx_n_s_pyx_unpickle_BallisticCoeffici) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[102], &__pyx_n_s_pyx_unpickle_CurvePoint) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[103], &__pyx_n_s_pyx_unpickle_DataPoint) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[104], &__pyx_n_s_pyx_vtable) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[105], &__pyx_n_s_range) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[106], &__pyx_n_s_reduce) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[107], &__pyx_n_s_reduce_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[108], &__pyx_n_s_reduce_ex) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[109], &__pyx_n_s_self) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[110], &__pyx_n_s_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[111], &__pyx_n_s_setstate_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[112], &__pyx_n_s_standard_cd) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[113], &__pyx_n_s_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[114], &__pyx_kp_s_stringsource) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[115], &__pyx_n_s_table) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[116], &__pyx_n_s_test) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[117], &__pyx_n_s_update) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[118], &__pyx_n_s_use_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[119], &__pyx_n_s_value) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[120], &__pyx_n_s_weight) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   #endif
   #if !CYTHON_USE_MODULE_STATE
   if (__Pyx_InitStrings(__pyx_string_tab) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
@@ -12915,15 +13000,15 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtable_4drag_DataPoint.a = (double (*)(struct __pyx_obj_4drag_DataPoint *, int __pyx_skip_dispatch))__pyx_f_4drag_9DataPoint_a;
   __pyx_vtable_4drag_DataPoint.b = (double (*)(struct __pyx_obj_4drag_DataPoint *, int __pyx_skip_dispatch))__pyx_f_4drag_9DataPoint_b;
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_ptype_4drag_DataPoint = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_4drag_DataPoint_spec, NULL); if (unlikely(!__pyx_ptype_4drag_DataPoint)) __PYX_ERR(0, 97, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_4drag_DataPoint_spec, __pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_ptype_4drag_DataPoint = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_4drag_DataPoint_spec, NULL); if (unlikely(!__pyx_ptype_4drag_DataPoint)) __PYX_ERR(0, 100, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_4drag_DataPoint_spec, __pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
   #else
   __pyx_ptype_4drag_DataPoint = &__pyx_type_4drag_DataPoint;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
   __pyx_ptype_4drag_DataPoint->tp_print = 0;
@@ -12933,28 +13018,28 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_ptype_4drag_DataPoint->tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_ptype_4drag_DataPoint, __pyx_vtabptr_4drag_DataPoint) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_ptype_4drag_DataPoint, __pyx_vtabptr_4drag_DataPoint) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_MergeVtables(__pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (__Pyx_MergeVtables(__pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_DataPoint, (PyObject *) __pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_DataPoint, (PyObject *) __pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_4drag_DataPoint) < 0) __PYX_ERR(0, 100, __pyx_L1_error)
   #endif
   __pyx_vtabptr_4drag_CurvePoint = &__pyx_vtable_4drag_CurvePoint;
   __pyx_vtable_4drag_CurvePoint.a = (double (*)(struct __pyx_obj_4drag_CurvePoint *, int __pyx_skip_dispatch))__pyx_f_4drag_10CurvePoint_a;
   __pyx_vtable_4drag_CurvePoint.b = (double (*)(struct __pyx_obj_4drag_CurvePoint *, int __pyx_skip_dispatch))__pyx_f_4drag_10CurvePoint_b;
   __pyx_vtable_4drag_CurvePoint.c = (double (*)(struct __pyx_obj_4drag_CurvePoint *, int __pyx_skip_dispatch))__pyx_f_4drag_10CurvePoint_c;
   #if CYTHON_USE_TYPE_SPECS
-  __pyx_ptype_4drag_CurvePoint = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_4drag_CurvePoint_spec, NULL); if (unlikely(!__pyx_ptype_4drag_CurvePoint)) __PYX_ERR(0, 110, __pyx_L1_error)
-  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_4drag_CurvePoint_spec, __pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_ptype_4drag_CurvePoint = (PyTypeObject *) __Pyx_PyType_FromModuleAndSpec(__pyx_m, &__pyx_type_4drag_CurvePoint_spec, NULL); if (unlikely(!__pyx_ptype_4drag_CurvePoint)) __PYX_ERR(0, 113, __pyx_L1_error)
+  if (__Pyx_fix_up_extension_type_from_spec(&__pyx_type_4drag_CurvePoint_spec, __pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
   #else
   __pyx_ptype_4drag_CurvePoint = &__pyx_type_4drag_CurvePoint;
   #endif
   #if !CYTHON_COMPILING_IN_LIMITED_API
   #endif
   #if !CYTHON_USE_TYPE_SPECS
-  if (__Pyx_PyType_Ready(__pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (__Pyx_PyType_Ready(__pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
   #endif
   #if PY_MAJOR_VERSION < 3
   __pyx_ptype_4drag_CurvePoint->tp_print = 0;
@@ -12964,13 +13049,13 @@ static int __Pyx_modinit_type_init_code(void) {
     __pyx_ptype_4drag_CurvePoint->tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_ptype_4drag_CurvePoint, __pyx_vtabptr_4drag_CurvePoint) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_ptype_4drag_CurvePoint, __pyx_vtabptr_4drag_CurvePoint) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_MergeVtables(__pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (__Pyx_MergeVtables(__pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_CurvePoint, (PyObject *) __pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_CurvePoint, (PyObject *) __pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
   #if !CYTHON_COMPILING_IN_LIMITED_API
-  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject *) __pyx_ptype_4drag_CurvePoint) < 0) __PYX_ERR(0, 113, __pyx_L1_error)
   #endif
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -13387,94 +13472,94 @@ if (!__Pyx_RefNanny) {
  */
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_DragTableGI, __pyx_int_8) < 0) __PYX_ERR(0, 12, __pyx_L1_error)
 
-  /* "drag.pyx":50
+  /* "drag.pyx":53
  *             self._curve_data = calculate_curve(self._table_data)
  * 
  *     cpdef double drag(self, double mach):             # <<<<<<<<<<<<<<
  *         cdef double cd
  *         cd = calculate_by_curve(self._table_data, self._curve_data, mach)
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_3drag, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_drag, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_3drag, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_drag, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__7)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_drag, __pyx_t_2) < 0) __PYX_ERR(0, 50, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_drag, __pyx_t_2) < 0) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
-  /* "drag.pyx":55
+  /* "drag.pyx":58
  *         return cd * 2.08551e-04 / self._value
  * 
  *     cpdef double value(self):             # <<<<<<<<<<<<<<
  *         return self._value
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_5value, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_value, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_5value, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_value, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__9)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_value, __pyx_t_2) < 0) __PYX_ERR(0, 55, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_value, __pyx_t_2) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
-  /* "drag.pyx":58
+  /* "drag.pyx":61
  *         return self._value
  * 
  *     cpdef int table(self):             # <<<<<<<<<<<<<<
  *         return self._table
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_7table, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_table, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 58, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_7table, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_table, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_table, __pyx_t_2) < 0) __PYX_ERR(0, 58, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_table, __pyx_t_2) < 0) __PYX_ERR(0, 61, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
-  /* "drag.pyx":73
+  /* "drag.pyx":76
  *         return w / pow(d, 2) / 7000
  * 
  *     cpdef double standard_cd(self, double mach):             # <<<<<<<<<<<<<<
  *         return calculate_by_curve(self._table_data, self._curve_data, mach)
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_9standard_cd, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_standard_cd, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_9standard_cd, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_standard_cd, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__11)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_standard_cd, __pyx_t_2) < 0) __PYX_ERR(0, 73, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_standard_cd, __pyx_t_2) < 0) __PYX_ERR(0, 76, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
-  /* "drag.pyx":76
+  /* "drag.pyx":79
  *         return calculate_by_curve(self._table_data, self._curve_data, mach)
  * 
  *     cpdef double calculated_cd(self, double mach):             # <<<<<<<<<<<<<<
  *         return self.standard_cd(mach) * self._form_factor
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_11calculated_cd, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_calculated, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_11calculated_cd, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_calculated, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__12)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_calculated_cd, __pyx_t_2) < 0) __PYX_ERR(0, 76, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_calculated_cd, __pyx_t_2) < 0) __PYX_ERR(0, 79, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
-  /* "drag.pyx":79
+  /* "drag.pyx":82
  *         return self.standard_cd(mach) * self._form_factor
  * 
  *     cpdef list calculated_drag_function(self):             # <<<<<<<<<<<<<<
  *         cdef standard_cd_table
  *         cdef list calculated_cd_table
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_13calculated_drag_function, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_calculated_2, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 79, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_13calculated_drag_function, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_calculated_2, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__13)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 82, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_calculated_drag_function, __pyx_t_2) < 0) __PYX_ERR(0, 79, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_calculated_drag_function, __pyx_t_2) < 0) __PYX_ERR(0, 82, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
-  /* "drag.pyx":94
+  /* "drag.pyx":97
  *         return calculated_cd_table
  * 
  *     cpdef form_factor(self):             # <<<<<<<<<<<<<<
  *         return self._form_factor
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_15form_factor, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_form_factor, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_20BallisticCoefficient_15form_factor, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BallisticCoefficient_form_factor, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__14)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_form_factor, __pyx_t_2) < 0) __PYX_ERR(0, 94, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_BallisticCoefficient->tp_dict, __pyx_n_s_form_factor, __pyx_t_2) < 0) __PYX_ERR(0, 97, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
@@ -13501,29 +13586,29 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_BallisticCoefficient);
 
-  /* "drag.pyx":104
+  /* "drag.pyx":107
  *         self._b = b
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
  *         return self._a
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_9DataPoint_3a, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_DataPoint_a, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_9DataPoint_3a, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_DataPoint_a, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__19)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_DataPoint->tp_dict, __pyx_n_s_a, __pyx_t_2) < 0) __PYX_ERR(0, 104, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_DataPoint->tp_dict, __pyx_n_s_a, __pyx_t_2) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_DataPoint);
 
-  /* "drag.pyx":107
+  /* "drag.pyx":110
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
  *         return self._b
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_9DataPoint_5b, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_DataPoint_b, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 107, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_9DataPoint_5b, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_DataPoint_b, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__20)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_DataPoint->tp_dict, __pyx_n_s_b, __pyx_t_2) < 0) __PYX_ERR(0, 107, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_DataPoint->tp_dict, __pyx_n_s_b, __pyx_t_2) < 0) __PYX_ERR(0, 110, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_DataPoint);
 
@@ -13550,42 +13635,42 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_DataPoint);
 
-  /* "drag.pyx":118
+  /* "drag.pyx":121
  *         self._c = c
  * 
  *     cpdef double a(self):             # <<<<<<<<<<<<<<
  *         return self._a
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_10CurvePoint_3a, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_CurvePoint_a, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 118, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_10CurvePoint_3a, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_CurvePoint_a, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__23)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_CurvePoint->tp_dict, __pyx_n_s_a, __pyx_t_2) < 0) __PYX_ERR(0, 118, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_CurvePoint->tp_dict, __pyx_n_s_a, __pyx_t_2) < 0) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_CurvePoint);
 
-  /* "drag.pyx":121
+  /* "drag.pyx":124
  *         return self._a
  * 
  *     cpdef double b(self):             # <<<<<<<<<<<<<<
  *         return self._b
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_10CurvePoint_5b, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_CurvePoint_b, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_10CurvePoint_5b, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_CurvePoint_b, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__24)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_CurvePoint->tp_dict, __pyx_n_s_b, __pyx_t_2) < 0) __PYX_ERR(0, 121, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_CurvePoint->tp_dict, __pyx_n_s_b, __pyx_t_2) < 0) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_CurvePoint);
 
-  /* "drag.pyx":124
+  /* "drag.pyx":127
  *         return self._b
  * 
  *     cpdef double c(self):             # <<<<<<<<<<<<<<
  *         return self._c
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_10CurvePoint_7c, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_CurvePoint_c, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_10CurvePoint_7c, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_CurvePoint_c, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_CurvePoint->tp_dict, __pyx_n_s_c, __pyx_t_2) < 0) __PYX_ERR(0, 124, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_4drag_CurvePoint->tp_dict, __pyx_n_s_c, __pyx_t_2) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_CurvePoint);
 
@@ -13612,69 +13697,69 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_4drag_CurvePoint);
 
-  /* "drag.pyx":127
+  /* "drag.pyx":130
  *         return self._c
  * 
  * cpdef list make_data_points(drag_table: list):             # <<<<<<<<<<<<<<
  *     table: list = []
  *     cdef data_point
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_drag_table, __pyx_n_s_list) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_1make_data_points, 0, __pyx_n_s_make_data_points, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 127, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_drag_table, __pyx_n_s_list) < 0) __PYX_ERR(0, 130, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_1make_data_points, 0, __pyx_n_s_make_data_points, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_make_data_points, __pyx_t_3) < 0) __PYX_ERR(0, 127, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_make_data_points, __pyx_t_3) < 0) __PYX_ERR(0, 130, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "drag.pyx":135
+  /* "drag.pyx":138
  *     return table
  * 
  * cpdef list calculate_curve(list data_points):             # <<<<<<<<<<<<<<
  *     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
  *     cdef curve = []
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_3calculate_curve, 0, __pyx_n_s_calculate_curve, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_3calculate_curve, 0, __pyx_n_s_calculate_curve, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_calculate_curve, __pyx_t_3) < 0) __PYX_ERR(0, 135, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_calculate_curve, __pyx_t_3) < 0) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "drag.pyx":167
+  /* "drag.pyx":170
  *     return curve
  * 
  * cpdef list load_drag_table(drag_table: int):             # <<<<<<<<<<<<<<
  *     cdef table
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_drag_table, __pyx_n_s_int) < 0) __PYX_ERR(0, 167, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_5load_drag_table, 0, __pyx_n_s_load_drag_table, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 167, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_drag_table, __pyx_n_s_int) < 0) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_5load_drag_table, 0, __pyx_n_s_load_drag_table, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__32)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_load_drag_table, __pyx_t_2) < 0) __PYX_ERR(0, 167, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_load_drag_table, __pyx_t_2) < 0) __PYX_ERR(0, 170, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "drag.pyx":190
+  /* "drag.pyx":193
  *     return table
  * 
  * cpdef double calculate_by_curve(data: list, curve: list, mach: double):             # <<<<<<<<<<<<<<
  *     cdef int num_points, mlo, mhi, mid
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 190, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_data, __pyx_n_s_list) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_curve, __pyx_n_s_list) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_mach, __pyx_n_s_double) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_7calculate_by_curve, 0, __pyx_n_s_calculate_by_curve, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 190, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_data, __pyx_n_s_list) < 0) __PYX_ERR(0, 193, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_curve, __pyx_n_s_list) < 0) __PYX_ERR(0, 193, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_mach, __pyx_n_s_double) < 0) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_4drag_7calculate_by_curve, 0, __pyx_n_s_calculate_by_curve, NULL, __pyx_n_s_drag, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_calculate_by_curve, __pyx_t_3) < 0) __PYX_ERR(0, 190, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_calculate_by_curve, __pyx_t_3) < 0) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
   /* "(tree fragment)":1
@@ -14269,74 +14354,25 @@ static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *nam
     return 0;
 }
 
-/* PyDictVersioning */
-#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
-}
-static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
-    PyObject **dictptr = NULL;
-    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
-    if (offset) {
+/* PyObjectCall */
 #if CYTHON_COMPILING_IN_CPYTHON
-        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
-#else
-        dictptr = _PyObject_GetDictPtr(obj);
-#endif
-    }
-    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
-}
-static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
-    PyObject *dict = Py_TYPE(obj)->tp_dict;
-    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
-        return 0;
-    return obj_dict_version == __Pyx_get_object_dict_version(obj);
-}
-#endif
-
-/* GetModuleGlobalName */
-#if CYTHON_USE_DICT_VERSIONS
-static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
-#else
-static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
-#endif
-{
+static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
     PyObject *result;
-#if !CYTHON_AVOID_BORROWED_REFS
-#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030500A1
-    result = _PyDict_GetItem_KnownHash(__pyx_d, name, ((PyASCIIObject *) name)->hash);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    } else if (unlikely(PyErr_Occurred())) {
+    ternaryfunc call = Py_TYPE(func)->tp_call;
+    if (unlikely(!call))
+        return PyObject_Call(func, arg, kw);
+    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
         return NULL;
+    result = (*call)(func, arg, kw);
+    Py_LeaveRecursiveCall();
+    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
+        PyErr_SetString(
+            PyExc_SystemError,
+            "NULL result without error in PyObject_Call");
     }
-#elif CYTHON_COMPILING_IN_LIMITED_API
-    if (unlikely(!__pyx_m)) {
-        return NULL;
-    }
-    result = PyObject_GetAttr(__pyx_m, name);
-    if (likely(result)) {
-        return result;
-    }
-#else
-    result = PyDict_GetItem(__pyx_d, name);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    }
-#endif
-#else
-    result = PyObject_GetItem(__pyx_d, name);
-    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
-    if (likely(result)) {
-        return __Pyx_NewRef(result);
-    }
-    PyErr_Clear();
-#endif
-    return __Pyx_GetBuiltinName(name);
+    return result;
 }
+#endif
 
 /* PyFunctionFastCall */
 #if CYTHON_FAST_PYCALL && !CYTHON_VECTORCALL
@@ -14455,26 +14491,6 @@ done:
 }
 #endif
 
-/* PyObjectCall */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
-    PyObject *result;
-    ternaryfunc call = Py_TYPE(func)->tp_call;
-    if (unlikely(!call))
-        return PyObject_Call(func, arg, kw);
-    if (unlikely(Py_EnterRecursiveCall((char*)" while calling a Python object")))
-        return NULL;
-    result = (*call)(func, arg, kw);
-    Py_LeaveRecursiveCall();
-    if (unlikely(!result) && unlikely(!PyErr_Occurred())) {
-        PyErr_SetString(
-            PyExc_SystemError,
-            "NULL result without error in PyObject_Call");
-    }
-    return result;
-}
-#endif
-
 /* PyObjectCallMethO */
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject *arg) {
@@ -14576,6 +14592,75 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObj
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
     PyObject *args[2] = {NULL, arg};
     return __Pyx_PyObject_FastCall(func, args+1, 1 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
+}
+
+/* PyDictVersioning */
+#if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    return likely(dict) ? __PYX_GET_DICT_VERSION(dict) : 0;
+}
+static CYTHON_INLINE PY_UINT64_T __Pyx_get_object_dict_version(PyObject *obj) {
+    PyObject **dictptr = NULL;
+    Py_ssize_t offset = Py_TYPE(obj)->tp_dictoffset;
+    if (offset) {
+#if CYTHON_COMPILING_IN_CPYTHON
+        dictptr = (likely(offset > 0)) ? (PyObject **) ((char *)obj + offset) : _PyObject_GetDictPtr(obj);
+#else
+        dictptr = _PyObject_GetDictPtr(obj);
+#endif
+    }
+    return (dictptr && *dictptr) ? __PYX_GET_DICT_VERSION(*dictptr) : 0;
+}
+static CYTHON_INLINE int __Pyx_object_dict_version_matches(PyObject* obj, PY_UINT64_T tp_dict_version, PY_UINT64_T obj_dict_version) {
+    PyObject *dict = Py_TYPE(obj)->tp_dict;
+    if (unlikely(!dict) || unlikely(tp_dict_version != __PYX_GET_DICT_VERSION(dict)))
+        return 0;
+    return obj_dict_version == __Pyx_get_object_dict_version(obj);
+}
+#endif
+
+/* GetModuleGlobalName */
+#if CYTHON_USE_DICT_VERSIONS
+static PyObject *__Pyx__GetModuleGlobalName(PyObject *name, PY_UINT64_T *dict_version, PyObject **dict_cached_value)
+#else
+static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name)
+#endif
+{
+    PyObject *result;
+#if !CYTHON_AVOID_BORROWED_REFS
+#if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030500A1
+    result = _PyDict_GetItem_KnownHash(__pyx_d, name, ((PyASCIIObject *) name)->hash);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    } else if (unlikely(PyErr_Occurred())) {
+        return NULL;
+    }
+#elif CYTHON_COMPILING_IN_LIMITED_API
+    if (unlikely(!__pyx_m)) {
+        return NULL;
+    }
+    result = PyObject_GetAttr(__pyx_m, name);
+    if (likely(result)) {
+        return result;
+    }
+#else
+    result = PyDict_GetItem(__pyx_d, name);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    }
+#endif
+#else
+    result = PyObject_GetItem(__pyx_d, name);
+    __PYX_UPDATE_DICT_CACHE(__pyx_d, result, *dict_cached_value, *dict_version)
+    if (likely(result)) {
+        return __Pyx_NewRef(result);
+    }
+    PyErr_Clear();
+#endif
+    return __Pyx_GetBuiltinName(name);
 }
 
 /* RaiseException */

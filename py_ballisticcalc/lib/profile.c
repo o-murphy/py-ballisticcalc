@@ -1357,61 +1357,6 @@ static struct __pyx_vtabstruct_7profile_Profile *__pyx_vtabptr_7profile_Profile;
 #define __Pyx_CLEAR(r)    do { PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);} while(0)
 #define __Pyx_XCLEAR(r)   do { if((r) != NULL) {PyObject* tmp = ((PyObject*)(r)); r = NULL; __Pyx_DECREF(tmp);}} while(0)
 
-/* TupleAndListFromArray.proto */
-#if CYTHON_COMPILING_IN_CPYTHON
-static CYTHON_INLINE PyObject* __Pyx_PyList_FromArray(PyObject *const *src, Py_ssize_t n);
-static CYTHON_INLINE PyObject* __Pyx_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n);
-#endif
-
-/* IncludeStringH.proto */
-#include <string.h>
-
-/* BytesEquals.proto */
-static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals);
-
-/* UnicodeEquals.proto */
-static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals);
-
-/* fastcall.proto */
-#define __Pyx_Arg_VARARGS(args, i) PyTuple_GET_ITEM(args, i)
-#define __Pyx_NumKwargs_VARARGS(kwds) PyDict_Size(kwds)
-#define __Pyx_KwValues_VARARGS(args, nargs) NULL
-#define __Pyx_GetKwValue_VARARGS(kw, kwvalues, s) __Pyx_PyDict_GetItemStrWithError(kw, s)
-#define __Pyx_KwargsAsDict_VARARGS(kw, kwvalues) PyDict_Copy(kw)
-#if CYTHON_METH_FASTCALL
-    #define __Pyx_Arg_FASTCALL(args, i) args[i]
-    #define __Pyx_NumKwargs_FASTCALL(kwds) PyTuple_GET_SIZE(kwds)
-    #define __Pyx_KwValues_FASTCALL(args, nargs) (&args[nargs])
-    static CYTHON_INLINE PyObject * __Pyx_GetKwValue_FASTCALL(PyObject *kwnames, PyObject *const *kwvalues, PyObject *s);
-    #define __Pyx_KwargsAsDict_FASTCALL(kw, kwvalues) _PyStack_AsDict(kwvalues, kw)
-#else
-    #define __Pyx_Arg_FASTCALL __Pyx_Arg_VARARGS
-    #define __Pyx_NumKwargs_FASTCALL __Pyx_NumKwargs_VARARGS
-    #define __Pyx_KwValues_FASTCALL __Pyx_KwValues_VARARGS
-    #define __Pyx_GetKwValue_FASTCALL __Pyx_GetKwValue_VARARGS
-    #define __Pyx_KwargsAsDict_FASTCALL __Pyx_KwargsAsDict_VARARGS
-#endif
-#if CYTHON_COMPILING_IN_CPYTHON
-#define __Pyx_ArgsSlice_VARARGS(args, start, stop) __Pyx_PyTuple_FromArray(&__Pyx_Arg_VARARGS(args, start), stop - start)
-#define __Pyx_ArgsSlice_FASTCALL(args, start, stop) __Pyx_PyTuple_FromArray(&__Pyx_Arg_FASTCALL(args, start), stop - start)
-#else
-#define __Pyx_ArgsSlice_VARARGS(args, start, stop) PyTuple_GetSlice(args, start, stop)
-#define __Pyx_ArgsSlice_FASTCALL(args, start, stop) PyTuple_GetSlice(args, start, stop)
-#endif
-
-/* RaiseDoubleKeywords.proto */
-static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
-
-/* ParseKeywords.proto */
-static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues,
-    PyObject **argnames[],
-    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,
-    const char* function_name);
-
-/* RaiseArgTupleInvalid.proto */
-static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
-    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
-
 /* PyErrExceptionMatches.proto */
 #if CYTHON_FAST_THREAD_STATE
 #define __Pyx_PyErr_ExceptionMatches(err) __Pyx_PyErr_ExceptionMatchesInState(__pyx_tstate, err)
@@ -1468,6 +1413,61 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStrNoError(PyObject* obj, P
 
 /* GetBuiltinName.proto */
 static PyObject *__Pyx_GetBuiltinName(PyObject *name);
+
+/* TupleAndListFromArray.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyList_FromArray(PyObject *const *src, Py_ssize_t n);
+static CYTHON_INLINE PyObject* __Pyx_PyTuple_FromArray(PyObject *const *src, Py_ssize_t n);
+#endif
+
+/* IncludeStringH.proto */
+#include <string.h>
+
+/* BytesEquals.proto */
+static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals);
+
+/* UnicodeEquals.proto */
+static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals);
+
+/* fastcall.proto */
+#define __Pyx_Arg_VARARGS(args, i) PyTuple_GET_ITEM(args, i)
+#define __Pyx_NumKwargs_VARARGS(kwds) PyDict_Size(kwds)
+#define __Pyx_KwValues_VARARGS(args, nargs) NULL
+#define __Pyx_GetKwValue_VARARGS(kw, kwvalues, s) __Pyx_PyDict_GetItemStrWithError(kw, s)
+#define __Pyx_KwargsAsDict_VARARGS(kw, kwvalues) PyDict_Copy(kw)
+#if CYTHON_METH_FASTCALL
+    #define __Pyx_Arg_FASTCALL(args, i) args[i]
+    #define __Pyx_NumKwargs_FASTCALL(kwds) PyTuple_GET_SIZE(kwds)
+    #define __Pyx_KwValues_FASTCALL(args, nargs) (&args[nargs])
+    static CYTHON_INLINE PyObject * __Pyx_GetKwValue_FASTCALL(PyObject *kwnames, PyObject *const *kwvalues, PyObject *s);
+    #define __Pyx_KwargsAsDict_FASTCALL(kw, kwvalues) _PyStack_AsDict(kwvalues, kw)
+#else
+    #define __Pyx_Arg_FASTCALL __Pyx_Arg_VARARGS
+    #define __Pyx_NumKwargs_FASTCALL __Pyx_NumKwargs_VARARGS
+    #define __Pyx_KwValues_FASTCALL __Pyx_KwValues_VARARGS
+    #define __Pyx_GetKwValue_FASTCALL __Pyx_GetKwValue_VARARGS
+    #define __Pyx_KwargsAsDict_FASTCALL __Pyx_KwargsAsDict_VARARGS
+#endif
+#if CYTHON_COMPILING_IN_CPYTHON
+#define __Pyx_ArgsSlice_VARARGS(args, start, stop) __Pyx_PyTuple_FromArray(&__Pyx_Arg_VARARGS(args, start), stop - start)
+#define __Pyx_ArgsSlice_FASTCALL(args, start, stop) __Pyx_PyTuple_FromArray(&__Pyx_Arg_FASTCALL(args, start), stop - start)
+#else
+#define __Pyx_ArgsSlice_VARARGS(args, start, stop) PyTuple_GetSlice(args, start, stop)
+#define __Pyx_ArgsSlice_FASTCALL(args, start, stop) PyTuple_GetSlice(args, start, stop)
+#endif
+
+/* RaiseDoubleKeywords.proto */
+static void __Pyx_RaiseDoubleKeywordsError(const char* func_name, PyObject* kw_name);
+
+/* ParseKeywords.proto */
+static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject *const *kwvalues,
+    PyObject **argnames[],
+    PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,
+    const char* function_name);
+
+/* RaiseArgTupleInvalid.proto */
+static void __Pyx_RaiseArgtupleInvalid(const char* func_name, int exact,
+    Py_ssize_t num_min, Py_ssize_t num_max, Py_ssize_t num_found);
 
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
@@ -1561,6 +1561,9 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject
 #define __Pyx_PyObject_FastCall(func, args, nargs)  __Pyx_PyObject_FastCallDict(func, args, (size_t)(nargs), NULL)
 static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObject **args, size_t nargs, PyObject *kwargs);
 
+/* PyObjectCallOneArg.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
+
 /* WriteUnraisableException.proto */
 static void __Pyx_WriteUnraisable(const char *name, int clineno,
                                   int lineno, const char *filename,
@@ -1616,9 +1619,6 @@ static int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject
 
 /* PyObjectCallNoArg.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
-
-/* PyObjectCallOneArg.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
 /* PyObjectGetMethod.proto */
 static int __Pyx_PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method);
@@ -1936,6 +1936,7 @@ int __pyx_module_is_main_profile = 0;
 
 /* Implementation of "profile" */
 /* #### Code section: global_var ### */
+static PyObject *__pyx_builtin_print;
 /* #### Code section: string_decls ### */
 static const char __pyx_k_gc[] = "gc";
 static const char __pyx_k__21[] = ".";
@@ -1949,6 +1950,7 @@ static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
 static const char __pyx_k_self[] = "self";
 static const char __pyx_k_test[] = "__test__";
+static const char __pyx_k_print[] = "print";
 static const char __pyx_k_state[] = "state";
 static const char __pyx_k_twist[] = "twist";
 static const char __pyx_k_units[] = "units";
@@ -2265,6 +2267,7 @@ static PyObject *__pyx_n_s_new;
 static PyObject *__pyx_n_s_pickle;
 static PyObject *__pyx_n_s_pressure;
 static PyObject *__pyx_n_u_pressure;
+static PyObject *__pyx_n_s_print;
 static PyObject *__pyx_n_s_profile;
 static PyObject *__pyx_n_s_py_ballisticcalc_lib_atmosphere;
 static PyObject *__pyx_n_s_py_ballisticcalc_lib_bmath_unit;
@@ -2631,6 +2634,7 @@ typedef struct {
   PyObject *__pyx_n_s_pickle;
   PyObject *__pyx_n_s_pressure;
   PyObject *__pyx_n_u_pressure;
+  PyObject *__pyx_n_s_print;
   PyObject *__pyx_n_s_profile;
   PyObject *__pyx_n_s_py_ballisticcalc_lib_atmosphere;
   PyObject *__pyx_n_s_py_ballisticcalc_lib_bmath_unit;
@@ -2958,6 +2962,7 @@ static int __pyx_m_clear(PyObject *m) {
   Py_CLEAR(clear_module_state->__pyx_n_s_pickle);
   Py_CLEAR(clear_module_state->__pyx_n_s_pressure);
   Py_CLEAR(clear_module_state->__pyx_n_u_pressure);
+  Py_CLEAR(clear_module_state->__pyx_n_s_print);
   Py_CLEAR(clear_module_state->__pyx_n_s_profile);
   Py_CLEAR(clear_module_state->__pyx_n_s_py_ballisticcalc_lib_atmosphere);
   Py_CLEAR(clear_module_state->__pyx_n_s_py_ballisticcalc_lib_bmath_unit);
@@ -3272,6 +3277,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
   Py_VISIT(traverse_module_state->__pyx_n_s_pickle);
   Py_VISIT(traverse_module_state->__pyx_n_s_pressure);
   Py_VISIT(traverse_module_state->__pyx_n_u_pressure);
+  Py_VISIT(traverse_module_state->__pyx_n_s_print);
   Py_VISIT(traverse_module_state->__pyx_n_s_profile);
   Py_VISIT(traverse_module_state->__pyx_n_s_py_ballisticcalc_lib_atmosphere);
   Py_VISIT(traverse_module_state->__pyx_n_s_py_ballisticcalc_lib_bmath_unit);
@@ -3583,6 +3589,7 @@ static int __pyx_m_traverse(PyObject *m, visitproc visit, void *arg) {
 #define __pyx_n_s_pickle __pyx_mstate_global->__pyx_n_s_pickle
 #define __pyx_n_s_pressure __pyx_mstate_global->__pyx_n_s_pressure
 #define __pyx_n_u_pressure __pyx_mstate_global->__pyx_n_u_pressure
+#define __pyx_n_s_print __pyx_mstate_global->__pyx_n_s_print
 #define __pyx_n_s_profile __pyx_mstate_global->__pyx_n_s_profile
 #define __pyx_n_s_py_ballisticcalc_lib_atmosphere __pyx_mstate_global->__pyx_n_s_py_ballisticcalc_lib_atmosphere
 #define __pyx_n_s_py_ballisticcalc_lib_bmath_unit __pyx_mstate_global->__pyx_n_s_py_ballisticcalc_lib_bmath_unit
@@ -5371,235 +5378,293 @@ static PyObject *__pyx_pf_7profile_7Profile_6calculate_drag_table(struct __pyx_o
  *         return self._calculated_drag_function
  * 
  *     cdef make_bc(self):             # <<<<<<<<<<<<<<
+ *         drag_table = self._drag_table
  * 
- *         if len(self._multiple_bc_table) > 0 >= self._bc_value:
  */
 
 static PyObject *__pyx_f_7profile_7Profile_make_bc(struct __pyx_obj_7profile_Profile *__pyx_v_self) {
+  long __pyx_v_drag_table;
   PyObject *__pyx_v_mbc = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
-  PyObject *__pyx_t_1 = NULL;
-  Py_ssize_t __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
-  int __pyx_t_4;
-  PyObject *__pyx_t_5 = NULL;
+  int __pyx_t_1;
+  PyObject *__pyx_t_2 = NULL;
+  Py_ssize_t __pyx_t_3;
+  PyObject *__pyx_t_4 = NULL;
+  int __pyx_t_5;
   PyObject *__pyx_t_6 = NULL;
   PyObject *__pyx_t_7 = NULL;
   PyObject *__pyx_t_8 = NULL;
-  int __pyx_t_9;
+  PyObject *__pyx_t_9 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("make_bc", 0);
 
-  /* "profile.pyx":122
+  /* "profile.pyx":121
+ * 
  *     cdef make_bc(self):
+ *         drag_table = self._drag_table             # <<<<<<<<<<<<<<
+ * 
+ *         if len(self._multiple_bc_table) > 0 >= self._bc_value:
+ */
+  __pyx_t_1 = __pyx_v_self->_drag_table;
+  __pyx_v_drag_table = __pyx_t_1;
+
+  /* "profile.pyx":123
+ *         drag_table = self._drag_table
  * 
  *         if len(self._multiple_bc_table) > 0 >= self._bc_value:             # <<<<<<<<<<<<<<
+ *             print(self._drag_table)
+ *             mbc = MultipleBallisticCoefficient(
+ */
+  __pyx_t_2 = __pyx_v_self->_multiple_bc_table;
+  __Pyx_INCREF(__pyx_t_2);
+  if (unlikely(__pyx_t_2 == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
+    __PYX_ERR(0, 123, __pyx_L1_error)
+  }
+  __pyx_t_3 = PyList_GET_SIZE(__pyx_t_2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 123, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = PyObject_RichCompare(__pyx_t_2, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
+  if (__Pyx_PyObject_IsTrue(__pyx_t_4)) {
+    __Pyx_DECREF(__pyx_t_4);
+    __pyx_t_4 = PyObject_RichCompare(__pyx_int_0, __pyx_v_self->_bc_value, Py_GE); __Pyx_XGOTREF(__pyx_t_4); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 123, __pyx_L1_error)
+  }
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 123, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (__pyx_t_5) {
+
+    /* "profile.pyx":124
+ * 
+ *         if len(self._multiple_bc_table) > 0 >= self._bc_value:
+ *             print(self._drag_table)             # <<<<<<<<<<<<<<
  *             mbc = MultipleBallisticCoefficient(
  *                 self._drag_table,
  */
-  __pyx_t_1 = __pyx_v_self->_multiple_bc_table;
-  __Pyx_INCREF(__pyx_t_1);
-  if (unlikely(__pyx_t_1 == Py_None)) {
-    PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 122, __pyx_L1_error)
-  }
-  __pyx_t_2 = PyList_GET_SIZE(__pyx_t_1); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 122, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyInt_FromSsize_t(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 122, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyObject_RichCompare(__pyx_t_1, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
-  if (__Pyx_PyObject_IsTrue(__pyx_t_3)) {
-    __Pyx_DECREF(__pyx_t_3);
-    __pyx_t_3 = PyObject_RichCompare(__pyx_int_0, __pyx_v_self->_bc_value, Py_GE); __Pyx_XGOTREF(__pyx_t_3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 122, __pyx_L1_error)
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_4 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely((__pyx_t_4 < 0))) __PYX_ERR(0, 122, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (__pyx_t_4) {
+    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->_drag_table); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 124, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 124, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "profile.pyx":123
- * 
+    /* "profile.pyx":125
  *         if len(self._multiple_bc_table) > 0 >= self._bc_value:
+ *             print(self._drag_table)
  *             mbc = MultipleBallisticCoefficient(             # <<<<<<<<<<<<<<
  *                 self._drag_table,
  *                 self._bullet_diameter,
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_MultipleBallisticCoefficient); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 123, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_MultipleBallisticCoefficient); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 125, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
 
-    /* "profile.pyx":124
- *         if len(self._multiple_bc_table) > 0 >= self._bc_value:
+    /* "profile.pyx":126
+ *             print(self._drag_table)
  *             mbc = MultipleBallisticCoefficient(
  *                 self._drag_table,             # <<<<<<<<<<<<<<
  *                 self._bullet_diameter,
  *                 self._bullet_weight,
  */
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_v_self->_drag_table); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 124, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_self->_drag_table); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 126, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
 
-    /* "profile.pyx":128
+    /* "profile.pyx":130
  *                 self._bullet_weight,
  *                 self._multiple_bc_table,
  *                 self._muzzle_velocity.units()             # <<<<<<<<<<<<<<
  *             )
  *             self._custom_drag_function = mbc.custom_drag_func()
  */
-    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_muzzle_velocity, __pyx_n_s_units); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 128, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_7);
+    __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_self->_muzzle_velocity, __pyx_n_s_units); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 130, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_9 = NULL;
+    __pyx_t_1 = 0;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_8))) {
+      __pyx_t_9 = PyMethod_GET_SELF(__pyx_t_8);
+      if (likely(__pyx_t_9)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+        __Pyx_INCREF(__pyx_t_9);
+        __Pyx_INCREF(function);
+        __Pyx_DECREF_SET(__pyx_t_8, function);
+        __pyx_t_1 = 1;
+      }
+    }
+    {
+      PyObject *__pyx_callargs[1] = {__pyx_t_9, };
+      __pyx_t_7 = __Pyx_PyObject_FastCall(__pyx_t_8, __pyx_callargs+1-__pyx_t_1, 0+__pyx_t_1);
+      __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
+      if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 130, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_7);
+      __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+    }
     __pyx_t_8 = NULL;
-    __pyx_t_9 = 0;
-    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_7))) {
-      __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_7);
+    __pyx_t_1 = 0;
+    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
+      __pyx_t_8 = PyMethod_GET_SELF(__pyx_t_4);
       if (likely(__pyx_t_8)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_7);
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
         __Pyx_INCREF(__pyx_t_8);
         __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_7, function);
-        __pyx_t_9 = 1;
+        __Pyx_DECREF_SET(__pyx_t_4, function);
+        __pyx_t_1 = 1;
       }
     }
     {
-      PyObject *__pyx_callargs[1] = {__pyx_t_8, };
-      __pyx_t_6 = __Pyx_PyObject_FastCall(__pyx_t_7, __pyx_callargs+1-__pyx_t_9, 0+__pyx_t_9);
+      PyObject *__pyx_callargs[6] = {__pyx_t_8, __pyx_t_6, __pyx_v_self->_bullet_diameter, __pyx_v_self->_bullet_weight, __pyx_v_self->_multiple_bc_table, __pyx_t_7};
+      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_1, 5+__pyx_t_1);
       __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 128, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    }
-    __pyx_t_7 = NULL;
-    __pyx_t_9 = 0;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-      __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_1);
-      if (likely(__pyx_t_7)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-        __Pyx_INCREF(__pyx_t_7);
-        __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_1, function);
-        __pyx_t_9 = 1;
-      }
-    }
-    {
-      PyObject *__pyx_callargs[6] = {__pyx_t_7, __pyx_t_5, __pyx_v_self->_bullet_diameter, __pyx_v_self->_bullet_weight, __pyx_v_self->_multiple_bc_table, __pyx_t_6};
-      __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_9, 5+__pyx_t_9);
-      __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 123, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 125, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
-    __pyx_v_mbc = __pyx_t_3;
-    __pyx_t_3 = 0;
+    __pyx_v_mbc = __pyx_t_2;
+    __pyx_t_2 = 0;
 
-    /* "profile.pyx":130
+    /* "profile.pyx":132
  *                 self._muzzle_velocity.units()
  *             )
  *             self._custom_drag_function = mbc.custom_drag_func()             # <<<<<<<<<<<<<<
- * 
- *         return BallisticCoefficient(self._bc_value, self._drag_table,
+ *             print(self._custom_drag_function)
+ *             self._bc_value = 0
  */
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_mbc, __pyx_n_s_custom_drag_func); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = NULL;
-    __pyx_t_9 = 0;
-    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
-      __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_1);
-      if (likely(__pyx_t_6)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-        __Pyx_INCREF(__pyx_t_6);
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_mbc, __pyx_n_s_custom_drag_func); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 132, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __pyx_t_7 = NULL;
+    __pyx_t_1 = 0;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
+      __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_4);
+      if (likely(__pyx_t_7)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
+        __Pyx_INCREF(__pyx_t_7);
         __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_1, function);
-        __pyx_t_9 = 1;
+        __Pyx_DECREF_SET(__pyx_t_4, function);
+        __pyx_t_1 = 1;
       }
     }
     {
-      PyObject *__pyx_callargs[1] = {__pyx_t_6, };
-      __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_9, 0+__pyx_t_9);
-      __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-      if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 130, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_3);
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+      PyObject *__pyx_callargs[1] = {__pyx_t_7, };
+      __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_1, 0+__pyx_t_1);
+      __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 132, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_2);
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
-    if (!(likely(PyList_CheckExact(__pyx_t_3))||((__pyx_t_3) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_3))) __PYX_ERR(0, 130, __pyx_L1_error)
-    __Pyx_GIVEREF(__pyx_t_3);
+    if (!(likely(PyList_CheckExact(__pyx_t_2))||((__pyx_t_2) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_2))) __PYX_ERR(0, 132, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_t_2);
     __Pyx_GOTREF(__pyx_v_self->_custom_drag_function);
     __Pyx_DECREF(__pyx_v_self->_custom_drag_function);
-    __pyx_v_self->_custom_drag_function = ((PyObject*)__pyx_t_3);
-    __pyx_t_3 = 0;
+    __pyx_v_self->_custom_drag_function = ((PyObject*)__pyx_t_2);
+    __pyx_t_2 = 0;
 
-    /* "profile.pyx":122
- *     cdef make_bc(self):
+    /* "profile.pyx":133
+ *             )
+ *             self._custom_drag_function = mbc.custom_drag_func()
+ *             print(self._custom_drag_function)             # <<<<<<<<<<<<<<
+ *             self._bc_value = 0
+ * 
+ */
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_print, __pyx_v_self->_custom_drag_function); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 133, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "profile.pyx":134
+ *             self._custom_drag_function = mbc.custom_drag_func()
+ *             print(self._custom_drag_function)
+ *             self._bc_value = 0             # <<<<<<<<<<<<<<
+ * 
+ *             drag_table = 0
+ */
+    __Pyx_INCREF(__pyx_int_0);
+    __Pyx_GIVEREF(__pyx_int_0);
+    __Pyx_GOTREF(__pyx_v_self->_bc_value);
+    __Pyx_DECREF(__pyx_v_self->_bc_value);
+    __pyx_v_self->_bc_value = __pyx_int_0;
+
+    /* "profile.pyx":136
+ *             self._bc_value = 0
+ * 
+ *             drag_table = 0             # <<<<<<<<<<<<<<
+ * 
+ *         return BallisticCoefficient(self._bc_value, drag_table,
+ */
+    __pyx_v_drag_table = 0;
+
+    /* "profile.pyx":123
+ *         drag_table = self._drag_table
  * 
  *         if len(self._multiple_bc_table) > 0 >= self._bc_value:             # <<<<<<<<<<<<<<
+ *             print(self._drag_table)
  *             mbc = MultipleBallisticCoefficient(
- *                 self._drag_table,
  */
   }
 
-  /* "profile.pyx":132
- *             self._custom_drag_function = mbc.custom_drag_func()
+  /* "profile.pyx":138
+ *             drag_table = 0
  * 
- *         return BallisticCoefficient(self._bc_value, self._drag_table,             # <<<<<<<<<<<<<<
+ *         return BallisticCoefficient(self._bc_value, drag_table,             # <<<<<<<<<<<<<<
  *                                     self._bullet_weight, self._bullet_diameter,
  *                                     self._custom_drag_function)
  */
   __Pyx_XDECREF(__pyx_r);
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_BallisticCoefficient); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 132, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyInt_From_int(__pyx_v_self->_drag_table); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 132, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_BallisticCoefficient); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_t_7 = __Pyx_PyInt_From_long(__pyx_v_drag_table); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
 
-  /* "profile.pyx":134
- *         return BallisticCoefficient(self._bc_value, self._drag_table,
+  /* "profile.pyx":140
+ *         return BallisticCoefficient(self._bc_value, drag_table,
  *                                     self._bullet_weight, self._bullet_diameter,
  *                                     self._custom_drag_function)             # <<<<<<<<<<<<<<
  * 
  *     cdef make_drag_table(self):
  */
-  __pyx_t_5 = NULL;
-  __pyx_t_9 = 0;
-  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
-    if (likely(__pyx_t_5)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_1);
-      __Pyx_INCREF(__pyx_t_5);
+  __pyx_t_6 = NULL;
+  __pyx_t_1 = 0;
+  if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
+    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_4);
+    if (likely(__pyx_t_6)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
+      __Pyx_INCREF(__pyx_t_6);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_1, function);
-      __pyx_t_9 = 1;
+      __Pyx_DECREF_SET(__pyx_t_4, function);
+      __pyx_t_1 = 1;
     }
   }
   {
-    PyObject *__pyx_callargs[6] = {__pyx_t_5, __pyx_v_self->_bc_value, __pyx_t_6, __pyx_v_self->_bullet_weight, __pyx_v_self->_bullet_diameter, __pyx_v_self->_custom_drag_function};
-    __pyx_t_3 = __Pyx_PyObject_FastCall(__pyx_t_1, __pyx_callargs+1-__pyx_t_9, 5+__pyx_t_9);
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 132, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    PyObject *__pyx_callargs[6] = {__pyx_t_6, __pyx_v_self->_bc_value, __pyx_t_7, __pyx_v_self->_bullet_weight, __pyx_v_self->_bullet_diameter, __pyx_v_self->_custom_drag_function};
+    __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_1, 5+__pyx_t_1);
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   }
-  __pyx_r = __pyx_t_3;
-  __pyx_t_3 = 0;
+  __pyx_r = __pyx_t_2;
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
   /* "profile.pyx":120
  *         return self._calculated_drag_function
  * 
  *     cdef make_bc(self):             # <<<<<<<<<<<<<<
+ *         drag_table = self._drag_table
  * 
- *         if len(self._multiple_bc_table) > 0 >= self._bc_value:
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_2);
+  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
   __Pyx_AddTraceback("profile.Profile.make_bc", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
@@ -5609,7 +5674,7 @@ static PyObject *__pyx_f_7profile_7Profile_make_bc(struct __pyx_obj_7profile_Pro
   return __pyx_r;
 }
 
-/* "profile.pyx":136
+/* "profile.pyx":142
  *                                     self._custom_drag_function)
  * 
  *     cdef make_drag_table(self):             # <<<<<<<<<<<<<<
@@ -5630,26 +5695,26 @@ static PyObject *__pyx_f_7profile_7Profile_make_drag_table(struct __pyx_obj_7pro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("make_drag_table", 0);
 
-  /* "profile.pyx":138
+  /* "profile.pyx":144
  *     cdef make_drag_table(self):
  *         cdef bc
  *         bc = self.make_bc()             # <<<<<<<<<<<<<<
  *         self._calculated_drag_function = bc.calculated_drag_function()
  * 
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_7profile_Profile *)__pyx_v_self->__pyx_vtab)->make_bc(__pyx_v_self); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 138, __pyx_L1_error)
+  __pyx_t_1 = ((struct __pyx_vtabstruct_7profile_Profile *)__pyx_v_self->__pyx_vtab)->make_bc(__pyx_v_self); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_bc = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":139
+  /* "profile.pyx":145
  *         cdef bc
  *         bc = self.make_bc()
  *         self._calculated_drag_function = bc.calculated_drag_function()             # <<<<<<<<<<<<<<
  * 
  *     cdef make_calculator(self):
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bc, __pyx_n_s_calculated_drag_function); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_bc, __pyx_n_s_calculated_drag_function); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -5667,18 +5732,18 @@ static PyObject *__pyx_f_7profile_7Profile_make_drag_table(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[1] = {__pyx_t_3, };
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 139, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
-  if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_1))) __PYX_ERR(0, 139, __pyx_L1_error)
+  if (!(likely(PyList_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_t_1))) __PYX_ERR(0, 145, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->_calculated_drag_function);
   __Pyx_DECREF(__pyx_v_self->_calculated_drag_function);
   __pyx_v_self->_calculated_drag_function = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":136
+  /* "profile.pyx":142
  *                                     self._custom_drag_function)
  * 
  *     cdef make_drag_table(self):             # <<<<<<<<<<<<<<
@@ -5702,7 +5767,7 @@ static PyObject *__pyx_f_7profile_7Profile_make_drag_table(struct __pyx_obj_7pro
   return __pyx_r;
 }
 
-/* "profile.pyx":141
+/* "profile.pyx":147
  *         self._calculated_drag_function = bc.calculated_drag_function()
  * 
  *     cdef make_calculator(self):             # <<<<<<<<<<<<<<
@@ -5735,26 +5800,26 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("make_calculator", 0);
 
-  /* "profile.pyx":143
+  /* "profile.pyx":149
  *     cdef make_calculator(self):
  *         cdef bc, projectile, ammo, atmo, zero, twist, weapon, wind, calc, angle, shot, data
  *         bc = self.make_bc()             # <<<<<<<<<<<<<<
  *         projectile = ProjectileWithDimensions(bc, self._bullet_diameter, self._bullet_length, self._bullet_weight)
  *         ammo = Ammunition(projectile, self._muzzle_velocity)
  */
-  __pyx_t_1 = ((struct __pyx_vtabstruct_7profile_Profile *)__pyx_v_self->__pyx_vtab)->make_bc(__pyx_v_self); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L1_error)
+  __pyx_t_1 = ((struct __pyx_vtabstruct_7profile_Profile *)__pyx_v_self->__pyx_vtab)->make_bc(__pyx_v_self); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_bc = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":144
+  /* "profile.pyx":150
  *         cdef bc, projectile, ammo, atmo, zero, twist, weapon, wind, calc, angle, shot, data
  *         bc = self.make_bc()
  *         projectile = ProjectileWithDimensions(bc, self._bullet_diameter, self._bullet_length, self._bullet_weight)             # <<<<<<<<<<<<<<
  *         ammo = Ammunition(projectile, self._muzzle_velocity)
  *         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ProjectileWithDimensions); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ProjectileWithDimensions); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -5772,21 +5837,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[5] = {__pyx_t_3, __pyx_v_bc, __pyx_v_self->_bullet_diameter, __pyx_v_self->_bullet_length, __pyx_v_self->_bullet_weight};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 4+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 144, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_projectile = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":145
+  /* "profile.pyx":151
  *         bc = self.make_bc()
  *         projectile = ProjectileWithDimensions(bc, self._bullet_diameter, self._bullet_length, self._bullet_weight)
  *         ammo = Ammunition(projectile, self._muzzle_velocity)             # <<<<<<<<<<<<<<
  *         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
  *         zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Ammunition); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Ammunition); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -5804,23 +5869,23 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[3] = {__pyx_t_3, __pyx_v_projectile, __pyx_v_self->_muzzle_velocity};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_ammo = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":146
+  /* "profile.pyx":152
  *         projectile = ProjectileWithDimensions(bc, self._bullet_diameter, self._bullet_length, self._bullet_weight)
  *         ammo = Ammunition(projectile, self._muzzle_velocity)
  *         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)             # <<<<<<<<<<<<<<
  *         zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)
  *         twist = TwistInfo(self._twist_direction, self._twist)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Atmosphere); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Atmosphere); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->_humidity); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->_humidity); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 152, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_5 = NULL;
   __pyx_t_4 = 0;
@@ -5839,21 +5904,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 4+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_atmo = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":147
+  /* "profile.pyx":153
  *         ammo = Ammunition(projectile, self._muzzle_velocity)
  *         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
  *         zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)             # <<<<<<<<<<<<<<
  *         twist = TwistInfo(self._twist_direction, self._twist)
  *         weapon = WeaponWithTwist(self._sight_height, zero, twist)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ZeroInfo); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 147, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ZeroInfo); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 153, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -5871,23 +5936,23 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[6] = {__pyx_t_3, __pyx_v_self->_zero_distance, Py_True, Py_True, __pyx_v_ammo, __pyx_v_atmo};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 5+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 147, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_zero = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":148
+  /* "profile.pyx":154
  *         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
  *         zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)
  *         twist = TwistInfo(self._twist_direction, self._twist)             # <<<<<<<<<<<<<<
  *         weapon = WeaponWithTwist(self._sight_height, zero, twist)
  *         wind = create_only_wind_info(self._wind_velocity, self._wind_direction)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TwistInfo); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TwistInfo); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->_twist_direction); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_self->_twist_direction); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_5 = NULL;
   __pyx_t_4 = 0;
@@ -5906,21 +5971,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 148, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_twist = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":149
+  /* "profile.pyx":155
  *         zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)
  *         twist = TwistInfo(self._twist_direction, self._twist)
  *         weapon = WeaponWithTwist(self._sight_height, zero, twist)             # <<<<<<<<<<<<<<
  *         wind = create_only_wind_info(self._wind_velocity, self._wind_direction)
  *         calc = TrajectoryCalculator()
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_WeaponWithTwist); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_WeaponWithTwist); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 155, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -5938,21 +6003,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[4] = {__pyx_t_3, __pyx_v_self->_sight_height, __pyx_v_zero, __pyx_v_twist};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 3+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_weapon = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":150
+  /* "profile.pyx":156
  *         twist = TwistInfo(self._twist_direction, self._twist)
  *         weapon = WeaponWithTwist(self._sight_height, zero, twist)
  *         wind = create_only_wind_info(self._wind_velocity, self._wind_direction)             # <<<<<<<<<<<<<<
  *         calc = TrajectoryCalculator()
  *         calc.set_maximum_calculator_step_size(self._maximum_step_size)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_create_only_wind_info); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_create_only_wind_info); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 156, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -5970,21 +6035,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[3] = {__pyx_t_3, __pyx_v_self->_wind_velocity, __pyx_v_self->_wind_direction};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 2+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_wind = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":151
+  /* "profile.pyx":157
  *         weapon = WeaponWithTwist(self._sight_height, zero, twist)
  *         wind = create_only_wind_info(self._wind_velocity, self._wind_direction)
  *         calc = TrajectoryCalculator()             # <<<<<<<<<<<<<<
  *         calc.set_maximum_calculator_step_size(self._maximum_step_size)
  *         angle = calc.sight_angle(ammo, weapon, atmo)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TrajectoryCalculator); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 151, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_TrajectoryCalculator); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 157, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -6002,21 +6067,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[1] = {__pyx_t_3, };
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 0+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_calc = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":152
+  /* "profile.pyx":158
  *         wind = create_only_wind_info(self._wind_velocity, self._wind_direction)
  *         calc = TrajectoryCalculator()
  *         calc.set_maximum_calculator_step_size(self._maximum_step_size)             # <<<<<<<<<<<<<<
  *         angle = calc.sight_angle(ammo, weapon, atmo)
  *         shot = ShotParametersUnlevel(angle, self._maximum_distance, self._distance_step,
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_calc, __pyx_n_s_set_maximum_calculator_step_size); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 152, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_calc, __pyx_n_s_set_maximum_calculator_step_size); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -6034,20 +6099,20 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_v_self->_maximum_step_size};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 1+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 158, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "profile.pyx":153
+  /* "profile.pyx":159
  *         calc = TrajectoryCalculator()
  *         calc.set_maximum_calculator_step_size(self._maximum_step_size)
  *         angle = calc.sight_angle(ammo, weapon, atmo)             # <<<<<<<<<<<<<<
  *         shot = ShotParametersUnlevel(angle, self._maximum_distance, self._distance_step,
  *                                      self._shot_angle, self._cant_angle)
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_calc, __pyx_n_s_sight_angle); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 153, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_calc, __pyx_n_s_sight_angle); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -6065,24 +6130,24 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[4] = {__pyx_t_3, __pyx_v_ammo, __pyx_v_weapon, __pyx_v_atmo};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 3+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_angle = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":154
+  /* "profile.pyx":160
  *         calc.set_maximum_calculator_step_size(self._maximum_step_size)
  *         angle = calc.sight_angle(ammo, weapon, atmo)
  *         shot = ShotParametersUnlevel(angle, self._maximum_distance, self._distance_step,             # <<<<<<<<<<<<<<
  *                                      self._shot_angle, self._cant_angle)
  *         data = calc.trajectory(ammo, weapon, atmo, shot, wind)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ShotParametersUnlevel); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_ShotParametersUnlevel); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 160, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "profile.pyx":155
+  /* "profile.pyx":161
  *         angle = calc.sight_angle(ammo, weapon, atmo)
  *         shot = ShotParametersUnlevel(angle, self._maximum_distance, self._distance_step,
  *                                      self._shot_angle, self._cant_angle)             # <<<<<<<<<<<<<<
@@ -6105,21 +6170,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[6] = {__pyx_t_3, __pyx_v_angle, __pyx_v_self->_maximum_distance, __pyx_v_self->_distance_step, __pyx_v_self->_shot_angle, __pyx_v_self->_cant_angle};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 5+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_shot = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":156
+  /* "profile.pyx":162
  *         shot = ShotParametersUnlevel(angle, self._maximum_distance, self._distance_step,
  *                                      self._shot_angle, self._cant_angle)
  *         data = calc.trajectory(ammo, weapon, atmo, shot, wind)             # <<<<<<<<<<<<<<
  *         self._trajectory_data = data
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_calc, __pyx_n_s_trajectory); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 156, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_calc, __pyx_n_s_trajectory); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -6137,21 +6202,21 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
     PyObject *__pyx_callargs[6] = {__pyx_t_3, __pyx_v_ammo, __pyx_v_weapon, __pyx_v_atmo, __pyx_v_shot, __pyx_v_wind};
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_4, 5+__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 162, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
   __pyx_v_data = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":157
+  /* "profile.pyx":163
  *                                      self._shot_angle, self._cant_angle)
  *         data = calc.trajectory(ammo, weapon, atmo, shot, wind)
  *         self._trajectory_data = data             # <<<<<<<<<<<<<<
  * 
  *     cpdef double bc_value(self):
  */
-  if (!(likely(PyList_CheckExact(__pyx_v_data))||((__pyx_v_data) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_data))) __PYX_ERR(0, 157, __pyx_L1_error)
+  if (!(likely(PyList_CheckExact(__pyx_v_data))||((__pyx_v_data) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_data))) __PYX_ERR(0, 163, __pyx_L1_error)
   __pyx_t_1 = __pyx_v_data;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -6160,7 +6225,7 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
   __pyx_v_self->_trajectory_data = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":141
+  /* "profile.pyx":147
  *         self._calculated_drag_function = bc.calculated_drag_function()
  * 
  *     cdef make_calculator(self):             # <<<<<<<<<<<<<<
@@ -6196,7 +6261,7 @@ static PyObject *__pyx_f_7profile_7Profile_make_calculator(struct __pyx_obj_7pro
   return __pyx_r;
 }
 
-/* "profile.pyx":159
+/* "profile.pyx":165
  *         self._trajectory_data = data
  * 
  *     cpdef double bc_value(self):             # <<<<<<<<<<<<<<
@@ -6233,7 +6298,7 @@ static double __pyx_f_7profile_7Profile_bc_value(struct __pyx_obj_7profile_Profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bc_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bc_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -6258,11 +6323,11 @@ static double __pyx_f_7profile_7Profile_bc_value(struct __pyx_obj_7profile_Profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 159, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 165, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6281,18 +6346,18 @@ static double __pyx_f_7profile_7Profile_bc_value(struct __pyx_obj_7profile_Profi
     #endif
   }
 
-  /* "profile.pyx":160
+  /* "profile.pyx":166
  * 
  *     cpdef double bc_value(self):
  *         return self._bc_value             # <<<<<<<<<<<<<<
  * 
  *     cpdef set_bc_value(self, value: double):
  */
-  __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_v_self->_bc_value); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 160, __pyx_L1_error)
+  __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_v_self->_bc_value); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 166, __pyx_L1_error)
   __pyx_r = __pyx_t_6;
   goto __pyx_L0;
 
-  /* "profile.pyx":159
+  /* "profile.pyx":165
  *         self._trajectory_data = data
  * 
  *     cpdef double bc_value(self):             # <<<<<<<<<<<<<<
@@ -6355,7 +6420,7 @@ static PyObject *__pyx_pf_7profile_7Profile_8bc_value(struct __pyx_obj_7profile_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("bc_value", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_7profile_7Profile_bc_value(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_7profile_7Profile_bc_value(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6372,7 +6437,7 @@ static PyObject *__pyx_pf_7profile_7Profile_8bc_value(struct __pyx_obj_7profile_
   return __pyx_r;
 }
 
-/* "profile.pyx":162
+/* "profile.pyx":168
  *         return self._bc_value
  * 
  *     cpdef set_bc_value(self, value: double):             # <<<<<<<<<<<<<<
@@ -6409,7 +6474,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bc_value(struct __pyx_obj_7profil
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bc_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 162, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bc_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -6418,7 +6483,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bc_value(struct __pyx_obj_7profil
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_11set_bc_value)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 162, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -6438,7 +6503,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bc_value(struct __pyx_obj_7profil
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 162, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -6460,14 +6525,14 @@ static PyObject *__pyx_f_7profile_7Profile_set_bc_value(struct __pyx_obj_7profil
     #endif
   }
 
-  /* "profile.pyx":163
+  /* "profile.pyx":169
  * 
  *     cpdef set_bc_value(self, value: double):
  *         self._bc_value = value             # <<<<<<<<<<<<<<
  * 
  *     cpdef int drag_table(self):
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->_bc_value);
@@ -6475,7 +6540,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bc_value(struct __pyx_obj_7profil
   __pyx_v_self->_bc_value = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":162
+  /* "profile.pyx":168
  *         return self._bc_value
  * 
  *     cpdef set_bc_value(self, value: double):             # <<<<<<<<<<<<<<
@@ -6546,23 +6611,23 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 168, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bc_value") < 0)) __PYX_ERR(0, 162, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bc_value") < 0)) __PYX_ERR(0, 168, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 162, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 168, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_bc_value", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 162, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_bc_value", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 168, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_bc_value", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6584,7 +6649,7 @@ static PyObject *__pyx_pf_7profile_7Profile_10set_bc_value(struct __pyx_obj_7pro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_bc_value", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bc_value(__pyx_v_self, __pyx_v_value, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bc_value(__pyx_v_self, __pyx_v_value, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6601,7 +6666,7 @@ static PyObject *__pyx_pf_7profile_7Profile_10set_bc_value(struct __pyx_obj_7pro
   return __pyx_r;
 }
 
-/* "profile.pyx":165
+/* "profile.pyx":171
  *         self._bc_value = value
  * 
  *     cpdef int drag_table(self):             # <<<<<<<<<<<<<<
@@ -6637,7 +6702,7 @@ static int __pyx_f_7profile_7Profile_drag_table(struct __pyx_obj_7profile_Profil
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_drag_table); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_drag_table); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -6662,11 +6727,11 @@ static int __pyx_f_7profile_7Profile_drag_table(struct __pyx_obj_7profile_Profil
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 165, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_5;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -6685,7 +6750,7 @@ static int __pyx_f_7profile_7Profile_drag_table(struct __pyx_obj_7profile_Profil
     #endif
   }
 
-  /* "profile.pyx":166
+  /* "profile.pyx":172
  * 
  *     cpdef int drag_table(self):
  *         return self._drag_table             # <<<<<<<<<<<<<<
@@ -6695,7 +6760,7 @@ static int __pyx_f_7profile_7Profile_drag_table(struct __pyx_obj_7profile_Profil
   __pyx_r = __pyx_v_self->_drag_table;
   goto __pyx_L0;
 
-  /* "profile.pyx":165
+  /* "profile.pyx":171
  *         self._bc_value = value
  * 
  *     cpdef int drag_table(self):             # <<<<<<<<<<<<<<
@@ -6758,7 +6823,7 @@ static PyObject *__pyx_pf_7profile_7Profile_12drag_table(struct __pyx_obj_7profi
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("drag_table", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_7profile_7Profile_drag_table(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_7profile_7Profile_drag_table(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6775,7 +6840,7 @@ static PyObject *__pyx_pf_7profile_7Profile_12drag_table(struct __pyx_obj_7profi
   return __pyx_r;
 }
 
-/* "profile.pyx":168
+/* "profile.pyx":174
  *         return self._drag_table
  * 
  *     cpdef set_drag_table(self, drag_table: int):             # <<<<<<<<<<<<<<
@@ -6811,7 +6876,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_drag_table(struct __pyx_obj_7prof
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_drag_table); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_drag_table); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -6837,7 +6902,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_drag_table(struct __pyx_obj_7prof
           PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_drag_table};
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -6859,17 +6924,17 @@ static PyObject *__pyx_f_7profile_7Profile_set_drag_table(struct __pyx_obj_7prof
     #endif
   }
 
-  /* "profile.pyx":169
+  /* "profile.pyx":175
  * 
  *     cpdef set_drag_table(self, drag_table: int):
  *         self._drag_table = drag_table             # <<<<<<<<<<<<<<
  * 
  *     cpdef bullet_diameter(self):
  */
-  __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_v_drag_table); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_v_drag_table); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 175, __pyx_L1_error)
   __pyx_v_self->_drag_table = __pyx_t_5;
 
-  /* "profile.pyx":168
+  /* "profile.pyx":174
  *         return self._drag_table
  * 
  *     cpdef set_drag_table(self, drag_table: int):             # <<<<<<<<<<<<<<
@@ -6939,12 +7004,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_drag_table)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 168, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_drag_table") < 0)) __PYX_ERR(0, 168, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_drag_table") < 0)) __PYX_ERR(0, 174, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -6955,7 +7020,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_drag_table", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 168, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_drag_table", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 174, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_drag_table", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6977,7 +7042,7 @@ static PyObject *__pyx_pf_7profile_7Profile_14set_drag_table(struct __pyx_obj_7p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_drag_table", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_drag_table(__pyx_v_self, __pyx_v_drag_table, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_drag_table(__pyx_v_self, __pyx_v_drag_table, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -6994,7 +7059,7 @@ static PyObject *__pyx_pf_7profile_7Profile_14set_drag_table(struct __pyx_obj_7p
   return __pyx_r;
 }
 
-/* "profile.pyx":171
+/* "profile.pyx":177
  *         self._drag_table = drag_table
  * 
  *     cpdef bullet_diameter(self):             # <<<<<<<<<<<<<<
@@ -7030,7 +7095,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_diameter(struct __pyx_obj_7pro
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bullet_diameter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bullet_diameter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -7056,7 +7121,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_diameter(struct __pyx_obj_7pro
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 177, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -7078,7 +7143,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_diameter(struct __pyx_obj_7pro
     #endif
   }
 
-  /* "profile.pyx":172
+  /* "profile.pyx":178
  * 
  *     cpdef bullet_diameter(self):
  *         return self._bullet_diameter             # <<<<<<<<<<<<<<
@@ -7090,7 +7155,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_diameter(struct __pyx_obj_7pro
   __pyx_r = __pyx_v_self->_bullet_diameter;
   goto __pyx_L0;
 
-  /* "profile.pyx":171
+  /* "profile.pyx":177
  *         self._drag_table = drag_table
  * 
  *     cpdef bullet_diameter(self):             # <<<<<<<<<<<<<<
@@ -7154,7 +7219,7 @@ static PyObject *__pyx_pf_7profile_7Profile_16bullet_diameter(struct __pyx_obj_7
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("bullet_diameter", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_bullet_diameter(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_bullet_diameter(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7171,7 +7236,7 @@ static PyObject *__pyx_pf_7profile_7Profile_16bullet_diameter(struct __pyx_obj_7
   return __pyx_r;
 }
 
-/* "profile.pyx":174
+/* "profile.pyx":180
  *         return self._bullet_diameter
  * 
  *     cpdef set_bullet_diameter(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -7208,7 +7273,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_diameter(struct __pyx_obj_
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bullet_diameter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bullet_diameter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -7217,7 +7282,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_diameter(struct __pyx_obj_
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_19set_bullet_diameter)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -7237,7 +7302,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_diameter(struct __pyx_obj_
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -7259,16 +7324,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_diameter(struct __pyx_obj_
     #endif
   }
 
-  /* "profile.pyx":175
+  /* "profile.pyx":181
  * 
  *     cpdef set_bullet_diameter(self, value: double, units: int):
  *         self._bullet_diameter = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef bullet_length(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 175, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -7287,7 +7352,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_diameter(struct __pyx_obj_
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -7297,7 +7362,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_diameter(struct __pyx_obj_
   __pyx_v_self->_bullet_diameter = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":174
+  /* "profile.pyx":180
  *         return self._bullet_diameter
  * 
  *     cpdef set_bullet_diameter(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -7371,19 +7436,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 180, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 180, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_bullet_diameter", 1, 2, 2, 1); __PYX_ERR(0, 174, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_bullet_diameter", 1, 2, 2, 1); __PYX_ERR(0, 180, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bullet_diameter") < 0)) __PYX_ERR(0, 174, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bullet_diameter") < 0)) __PYX_ERR(0, 180, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -7391,12 +7456,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 174, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 180, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_bullet_diameter", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 174, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_bullet_diameter", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 180, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_bullet_diameter", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7418,7 +7483,7 @@ static PyObject *__pyx_pf_7profile_7Profile_18set_bullet_diameter(struct __pyx_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_bullet_diameter", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bullet_diameter(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bullet_diameter(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7435,7 +7500,7 @@ static PyObject *__pyx_pf_7profile_7Profile_18set_bullet_diameter(struct __pyx_o
   return __pyx_r;
 }
 
-/* "profile.pyx":177
+/* "profile.pyx":183
  *         self._bullet_diameter = Distance(value, units)
  * 
  *     cpdef bullet_length(self):             # <<<<<<<<<<<<<<
@@ -7471,7 +7536,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_length(struct __pyx_obj_7profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bullet_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bullet_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -7497,7 +7562,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_length(struct __pyx_obj_7profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 177, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -7519,7 +7584,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_length(struct __pyx_obj_7profi
     #endif
   }
 
-  /* "profile.pyx":178
+  /* "profile.pyx":184
  * 
  *     cpdef bullet_length(self):
  *         return self._bullet_length             # <<<<<<<<<<<<<<
@@ -7531,7 +7596,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_length(struct __pyx_obj_7profi
   __pyx_r = __pyx_v_self->_bullet_length;
   goto __pyx_L0;
 
-  /* "profile.pyx":177
+  /* "profile.pyx":183
  *         self._bullet_diameter = Distance(value, units)
  * 
  *     cpdef bullet_length(self):             # <<<<<<<<<<<<<<
@@ -7595,7 +7660,7 @@ static PyObject *__pyx_pf_7profile_7Profile_20bullet_length(struct __pyx_obj_7pr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("bullet_length", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_bullet_length(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_bullet_length(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7612,7 +7677,7 @@ static PyObject *__pyx_pf_7profile_7Profile_20bullet_length(struct __pyx_obj_7pr
   return __pyx_r;
 }
 
-/* "profile.pyx":180
+/* "profile.pyx":186
  *         return self._bullet_length
  * 
  *     cpdef set_bullet_length(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -7649,7 +7714,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_length(struct __pyx_obj_7p
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bullet_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bullet_length); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -7658,7 +7723,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_length(struct __pyx_obj_7p
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_23set_bullet_length)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -7678,7 +7743,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_length(struct __pyx_obj_7p
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -7700,16 +7765,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_length(struct __pyx_obj_7p
     #endif
   }
 
-  /* "profile.pyx":181
+  /* "profile.pyx":187
  * 
  *     cpdef set_bullet_length(self, value: double, units: int):
  *         self._bullet_length = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef bullet_weight(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 187, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -7728,7 +7793,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_length(struct __pyx_obj_7p
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 181, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -7738,7 +7803,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_length(struct __pyx_obj_7p
   __pyx_v_self->_bullet_length = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":180
+  /* "profile.pyx":186
  *         return self._bullet_length
  * 
  *     cpdef set_bullet_length(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -7812,19 +7877,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 180, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 180, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_bullet_length", 1, 2, 2, 1); __PYX_ERR(0, 180, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_bullet_length", 1, 2, 2, 1); __PYX_ERR(0, 186, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bullet_length") < 0)) __PYX_ERR(0, 180, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bullet_length") < 0)) __PYX_ERR(0, 186, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -7832,12 +7897,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 180, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_bullet_length", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 180, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_bullet_length", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 186, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_bullet_length", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7859,7 +7924,7 @@ static PyObject *__pyx_pf_7profile_7Profile_22set_bullet_length(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_bullet_length", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bullet_length(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bullet_length(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -7876,7 +7941,7 @@ static PyObject *__pyx_pf_7profile_7Profile_22set_bullet_length(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "profile.pyx":183
+/* "profile.pyx":189
  *         self._bullet_length = Distance(value, units)
  * 
  *     cpdef bullet_weight(self):             # <<<<<<<<<<<<<<
@@ -7912,7 +7977,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_weight(struct __pyx_obj_7profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bullet_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_bullet_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -7938,7 +8003,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_weight(struct __pyx_obj_7profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -7960,7 +8025,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_weight(struct __pyx_obj_7profi
     #endif
   }
 
-  /* "profile.pyx":184
+  /* "profile.pyx":190
  * 
  *     cpdef bullet_weight(self):
  *         return self._bullet_weight             # <<<<<<<<<<<<<<
@@ -7972,7 +8037,7 @@ static PyObject *__pyx_f_7profile_7Profile_bullet_weight(struct __pyx_obj_7profi
   __pyx_r = __pyx_v_self->_bullet_weight;
   goto __pyx_L0;
 
-  /* "profile.pyx":183
+  /* "profile.pyx":189
  *         self._bullet_length = Distance(value, units)
  * 
  *     cpdef bullet_weight(self):             # <<<<<<<<<<<<<<
@@ -8036,7 +8101,7 @@ static PyObject *__pyx_pf_7profile_7Profile_24bullet_weight(struct __pyx_obj_7pr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("bullet_weight", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_bullet_weight(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_bullet_weight(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8053,7 +8118,7 @@ static PyObject *__pyx_pf_7profile_7Profile_24bullet_weight(struct __pyx_obj_7pr
   return __pyx_r;
 }
 
-/* "profile.pyx":186
+/* "profile.pyx":192
  *         return self._bullet_weight
  * 
  *     cpdef set_bullet_weight(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -8090,7 +8155,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_weight(struct __pyx_obj_7p
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bullet_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_bullet_weight); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -8099,7 +8164,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_weight(struct __pyx_obj_7p
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_27set_bullet_weight)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -8119,7 +8184,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_weight(struct __pyx_obj_7p
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -8141,16 +8206,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_weight(struct __pyx_obj_7p
     #endif
   }
 
-  /* "profile.pyx":187
+  /* "profile.pyx":193
  * 
  *     cpdef set_bullet_weight(self, value: double, units: int):
  *         self._bullet_weight = Weight(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef muzzle_velocity(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Weight); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Weight); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 187, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -8169,7 +8234,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_weight(struct __pyx_obj_7p
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -8179,7 +8244,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_bullet_weight(struct __pyx_obj_7p
   __pyx_v_self->_bullet_weight = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":186
+  /* "profile.pyx":192
  *         return self._bullet_weight
  * 
  *     cpdef set_bullet_weight(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -8253,19 +8318,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 192, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 192, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_bullet_weight", 1, 2, 2, 1); __PYX_ERR(0, 186, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_bullet_weight", 1, 2, 2, 1); __PYX_ERR(0, 192, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bullet_weight") < 0)) __PYX_ERR(0, 186, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_bullet_weight") < 0)) __PYX_ERR(0, 192, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -8273,12 +8338,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 186, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 192, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_bullet_weight", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 186, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_bullet_weight", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 192, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_bullet_weight", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8300,7 +8365,7 @@ static PyObject *__pyx_pf_7profile_7Profile_26set_bullet_weight(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_bullet_weight", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bullet_weight(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_bullet_weight(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8317,7 +8382,7 @@ static PyObject *__pyx_pf_7profile_7Profile_26set_bullet_weight(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "profile.pyx":189
+/* "profile.pyx":195
  *         self._bullet_weight = Weight(value, units)
  * 
  *     cpdef muzzle_velocity(self):             # <<<<<<<<<<<<<<
@@ -8353,7 +8418,7 @@ static PyObject *__pyx_f_7profile_7Profile_muzzle_velocity(struct __pyx_obj_7pro
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_muzzle_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_muzzle_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -8379,7 +8444,7 @@ static PyObject *__pyx_f_7profile_7Profile_muzzle_velocity(struct __pyx_obj_7pro
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -8401,7 +8466,7 @@ static PyObject *__pyx_f_7profile_7Profile_muzzle_velocity(struct __pyx_obj_7pro
     #endif
   }
 
-  /* "profile.pyx":190
+  /* "profile.pyx":196
  * 
  *     cpdef muzzle_velocity(self):
  *         return self._muzzle_velocity             # <<<<<<<<<<<<<<
@@ -8413,7 +8478,7 @@ static PyObject *__pyx_f_7profile_7Profile_muzzle_velocity(struct __pyx_obj_7pro
   __pyx_r = __pyx_v_self->_muzzle_velocity;
   goto __pyx_L0;
 
-  /* "profile.pyx":189
+  /* "profile.pyx":195
  *         self._bullet_weight = Weight(value, units)
  * 
  *     cpdef muzzle_velocity(self):             # <<<<<<<<<<<<<<
@@ -8477,7 +8542,7 @@ static PyObject *__pyx_pf_7profile_7Profile_28muzzle_velocity(struct __pyx_obj_7
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("muzzle_velocity", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_muzzle_velocity(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_muzzle_velocity(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8494,7 +8559,7 @@ static PyObject *__pyx_pf_7profile_7Profile_28muzzle_velocity(struct __pyx_obj_7
   return __pyx_r;
 }
 
-/* "profile.pyx":192
+/* "profile.pyx":198
  *         return self._muzzle_velocity
  * 
  *     cpdef set_muzzle_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -8531,7 +8596,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_muzzle_velocity(struct __pyx_obj_
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_muzzle_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_muzzle_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 198, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -8540,7 +8605,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_muzzle_velocity(struct __pyx_obj_
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_31set_muzzle_velocity)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -8560,7 +8625,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_muzzle_velocity(struct __pyx_obj_
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -8582,16 +8647,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_muzzle_velocity(struct __pyx_obj_
     #endif
   }
 
-  /* "profile.pyx":193
+  /* "profile.pyx":199
  * 
  *     cpdef set_muzzle_velocity(self, value: double, units: int):
  *         self._muzzle_velocity = Velocity(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef altitude(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Velocity); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Velocity); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 199, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 193, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 199, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -8610,7 +8675,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_muzzle_velocity(struct __pyx_obj_
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 199, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -8620,7 +8685,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_muzzle_velocity(struct __pyx_obj_
   __pyx_v_self->_muzzle_velocity = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":192
+  /* "profile.pyx":198
  *         return self._muzzle_velocity
  * 
  *     cpdef set_muzzle_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -8694,19 +8759,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 192, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 198, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 192, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 198, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_muzzle_velocity", 1, 2, 2, 1); __PYX_ERR(0, 192, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_muzzle_velocity", 1, 2, 2, 1); __PYX_ERR(0, 198, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_muzzle_velocity") < 0)) __PYX_ERR(0, 192, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_muzzle_velocity") < 0)) __PYX_ERR(0, 198, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -8714,12 +8779,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 192, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 198, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_muzzle_velocity", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 192, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_muzzle_velocity", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 198, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_muzzle_velocity", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8741,7 +8806,7 @@ static PyObject *__pyx_pf_7profile_7Profile_30set_muzzle_velocity(struct __pyx_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_muzzle_velocity", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_muzzle_velocity(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_muzzle_velocity(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8758,7 +8823,7 @@ static PyObject *__pyx_pf_7profile_7Profile_30set_muzzle_velocity(struct __pyx_o
   return __pyx_r;
 }
 
-/* "profile.pyx":195
+/* "profile.pyx":201
  *         self._muzzle_velocity = Velocity(value, units)
  * 
  *     cpdef altitude(self):             # <<<<<<<<<<<<<<
@@ -8794,7 +8859,7 @@ static PyObject *__pyx_f_7profile_7Profile_altitude(struct __pyx_obj_7profile_Pr
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_altitude); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_altitude); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -8820,7 +8885,7 @@ static PyObject *__pyx_f_7profile_7Profile_altitude(struct __pyx_obj_7profile_Pr
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -8842,7 +8907,7 @@ static PyObject *__pyx_f_7profile_7Profile_altitude(struct __pyx_obj_7profile_Pr
     #endif
   }
 
-  /* "profile.pyx":196
+  /* "profile.pyx":202
  * 
  *     cpdef altitude(self):
  *         return self._altitude             # <<<<<<<<<<<<<<
@@ -8854,7 +8919,7 @@ static PyObject *__pyx_f_7profile_7Profile_altitude(struct __pyx_obj_7profile_Pr
   __pyx_r = __pyx_v_self->_altitude;
   goto __pyx_L0;
 
-  /* "profile.pyx":195
+  /* "profile.pyx":201
  *         self._muzzle_velocity = Velocity(value, units)
  * 
  *     cpdef altitude(self):             # <<<<<<<<<<<<<<
@@ -8918,7 +8983,7 @@ static PyObject *__pyx_pf_7profile_7Profile_32altitude(struct __pyx_obj_7profile
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("altitude", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_altitude(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_altitude(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -8935,7 +9000,7 @@ static PyObject *__pyx_pf_7profile_7Profile_32altitude(struct __pyx_obj_7profile
   return __pyx_r;
 }
 
-/* "profile.pyx":198
+/* "profile.pyx":204
  *         return self._altitude
  * 
  *     cpdef set_altitude(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -8972,7 +9037,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_altitude(struct __pyx_obj_7profil
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_altitude); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 198, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_altitude); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -8981,7 +9046,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_altitude(struct __pyx_obj_7profil
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_35set_altitude)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -9001,7 +9066,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_altitude(struct __pyx_obj_7profil
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -9023,16 +9088,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_altitude(struct __pyx_obj_7profil
     #endif
   }
 
-  /* "profile.pyx":199
+  /* "profile.pyx":205
  * 
  *     cpdef set_altitude(self, value: double, units: int):
  *         self._altitude = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef pressure(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 199, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 199, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 205, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -9051,7 +9116,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_altitude(struct __pyx_obj_7profil
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 199, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -9061,7 +9126,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_altitude(struct __pyx_obj_7profil
   __pyx_v_self->_altitude = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":198
+  /* "profile.pyx":204
  *         return self._altitude
  * 
  *     cpdef set_altitude(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -9135,19 +9200,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 198, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 204, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 198, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 204, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_altitude", 1, 2, 2, 1); __PYX_ERR(0, 198, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_altitude", 1, 2, 2, 1); __PYX_ERR(0, 204, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_altitude") < 0)) __PYX_ERR(0, 198, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_altitude") < 0)) __PYX_ERR(0, 204, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -9155,12 +9220,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 198, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 204, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_altitude", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 198, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_altitude", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 204, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_altitude", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -9182,7 +9247,7 @@ static PyObject *__pyx_pf_7profile_7Profile_34set_altitude(struct __pyx_obj_7pro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_altitude", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_altitude(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_altitude(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9199,7 +9264,7 @@ static PyObject *__pyx_pf_7profile_7Profile_34set_altitude(struct __pyx_obj_7pro
   return __pyx_r;
 }
 
-/* "profile.pyx":201
+/* "profile.pyx":207
  *         self._altitude = Distance(value, units)
  * 
  *     cpdef pressure(self):             # <<<<<<<<<<<<<<
@@ -9235,7 +9300,7 @@ static PyObject *__pyx_f_7profile_7Profile_pressure(struct __pyx_obj_7profile_Pr
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_pressure); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_pressure); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -9261,7 +9326,7 @@ static PyObject *__pyx_f_7profile_7Profile_pressure(struct __pyx_obj_7profile_Pr
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -9283,7 +9348,7 @@ static PyObject *__pyx_f_7profile_7Profile_pressure(struct __pyx_obj_7profile_Pr
     #endif
   }
 
-  /* "profile.pyx":202
+  /* "profile.pyx":208
  * 
  *     cpdef pressure(self):
  *         return self._pressure             # <<<<<<<<<<<<<<
@@ -9295,7 +9360,7 @@ static PyObject *__pyx_f_7profile_7Profile_pressure(struct __pyx_obj_7profile_Pr
   __pyx_r = __pyx_v_self->_pressure;
   goto __pyx_L0;
 
-  /* "profile.pyx":201
+  /* "profile.pyx":207
  *         self._altitude = Distance(value, units)
  * 
  *     cpdef pressure(self):             # <<<<<<<<<<<<<<
@@ -9359,7 +9424,7 @@ static PyObject *__pyx_pf_7profile_7Profile_36pressure(struct __pyx_obj_7profile
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("pressure", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_pressure(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_pressure(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9376,7 +9441,7 @@ static PyObject *__pyx_pf_7profile_7Profile_36pressure(struct __pyx_obj_7profile
   return __pyx_r;
 }
 
-/* "profile.pyx":204
+/* "profile.pyx":210
  *         return self._pressure
  * 
  *     cpdef set_pressure(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -9413,7 +9478,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_pressure(struct __pyx_obj_7profil
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_pressure); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_pressure); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -9422,7 +9487,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_pressure(struct __pyx_obj_7profil
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_39set_pressure)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -9442,7 +9507,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_pressure(struct __pyx_obj_7profil
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -9464,16 +9529,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_pressure(struct __pyx_obj_7profil
     #endif
   }
 
-  /* "profile.pyx":205
+  /* "profile.pyx":211
  * 
  *     cpdef set_pressure(self, value: double, units: int):
  *         self._pressure = Pressure(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef temperature(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Pressure); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Pressure); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 205, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 211, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -9492,7 +9557,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_pressure(struct __pyx_obj_7profil
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 205, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -9502,7 +9567,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_pressure(struct __pyx_obj_7profil
   __pyx_v_self->_pressure = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":204
+  /* "profile.pyx":210
  *         return self._pressure
  * 
  *     cpdef set_pressure(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -9576,19 +9641,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 204, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 210, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 204, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 210, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_pressure", 1, 2, 2, 1); __PYX_ERR(0, 204, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_pressure", 1, 2, 2, 1); __PYX_ERR(0, 210, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_pressure") < 0)) __PYX_ERR(0, 204, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_pressure") < 0)) __PYX_ERR(0, 210, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -9596,12 +9661,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 204, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 210, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_pressure", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 204, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_pressure", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 210, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_pressure", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -9623,7 +9688,7 @@ static PyObject *__pyx_pf_7profile_7Profile_38set_pressure(struct __pyx_obj_7pro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_pressure", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_pressure(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_pressure(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9640,7 +9705,7 @@ static PyObject *__pyx_pf_7profile_7Profile_38set_pressure(struct __pyx_obj_7pro
   return __pyx_r;
 }
 
-/* "profile.pyx":207
+/* "profile.pyx":213
  *         self._pressure = Pressure(value, units)
  * 
  *     cpdef temperature(self):             # <<<<<<<<<<<<<<
@@ -9676,7 +9741,7 @@ static PyObject *__pyx_f_7profile_7Profile_temperature(struct __pyx_obj_7profile
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_temperature); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_temperature); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -9702,7 +9767,7 @@ static PyObject *__pyx_f_7profile_7Profile_temperature(struct __pyx_obj_7profile
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -9724,7 +9789,7 @@ static PyObject *__pyx_f_7profile_7Profile_temperature(struct __pyx_obj_7profile
     #endif
   }
 
-  /* "profile.pyx":208
+  /* "profile.pyx":214
  * 
  *     cpdef temperature(self):
  *         return self._temperature             # <<<<<<<<<<<<<<
@@ -9736,7 +9801,7 @@ static PyObject *__pyx_f_7profile_7Profile_temperature(struct __pyx_obj_7profile
   __pyx_r = __pyx_v_self->_temperature;
   goto __pyx_L0;
 
-  /* "profile.pyx":207
+  /* "profile.pyx":213
  *         self._pressure = Pressure(value, units)
  * 
  *     cpdef temperature(self):             # <<<<<<<<<<<<<<
@@ -9800,7 +9865,7 @@ static PyObject *__pyx_pf_7profile_7Profile_40temperature(struct __pyx_obj_7prof
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("temperature", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_temperature(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 207, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_temperature(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -9817,7 +9882,7 @@ static PyObject *__pyx_pf_7profile_7Profile_40temperature(struct __pyx_obj_7prof
   return __pyx_r;
 }
 
-/* "profile.pyx":210
+/* "profile.pyx":216
  *         return self._temperature
  * 
  *     cpdef set_temperature(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -9854,7 +9919,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_temperature(struct __pyx_obj_7pro
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_temperature); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_temperature); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -9863,7 +9928,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_temperature(struct __pyx_obj_7pro
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_43set_temperature)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -9883,7 +9948,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_temperature(struct __pyx_obj_7pro
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 216, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -9905,16 +9970,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_temperature(struct __pyx_obj_7pro
     #endif
   }
 
-  /* "profile.pyx":211
+  /* "profile.pyx":217
  * 
  *     cpdef set_temperature(self, value: double, units: int):
  *         self._temperature = Temperature(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef double humidity(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Temperature); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 211, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Temperature); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 211, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 217, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -9933,7 +9998,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_temperature(struct __pyx_obj_7pro
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -9943,7 +10008,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_temperature(struct __pyx_obj_7pro
   __pyx_v_self->_temperature = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":210
+  /* "profile.pyx":216
  *         return self._temperature
  * 
  *     cpdef set_temperature(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -10017,19 +10082,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 210, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 216, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 210, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 216, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_temperature", 1, 2, 2, 1); __PYX_ERR(0, 210, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_temperature", 1, 2, 2, 1); __PYX_ERR(0, 216, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_temperature") < 0)) __PYX_ERR(0, 210, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_temperature") < 0)) __PYX_ERR(0, 216, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -10037,12 +10102,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 210, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 216, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_temperature", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 210, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_temperature", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 216, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_temperature", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10064,7 +10129,7 @@ static PyObject *__pyx_pf_7profile_7Profile_42set_temperature(struct __pyx_obj_7
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_temperature", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_temperature(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_temperature(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10081,7 +10146,7 @@ static PyObject *__pyx_pf_7profile_7Profile_42set_temperature(struct __pyx_obj_7
   return __pyx_r;
 }
 
-/* "profile.pyx":213
+/* "profile.pyx":219
  *         self._temperature = Temperature(value, units)
  * 
  *     cpdef double humidity(self):             # <<<<<<<<<<<<<<
@@ -10118,7 +10183,7 @@ static double __pyx_f_7profile_7Profile_humidity(struct __pyx_obj_7profile_Profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_humidity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_humidity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -10143,11 +10208,11 @@ static double __pyx_f_7profile_7Profile_humidity(struct __pyx_obj_7profile_Profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 219, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 213, __pyx_L1_error)
+        __pyx_t_6 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_6 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 219, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_6;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -10166,7 +10231,7 @@ static double __pyx_f_7profile_7Profile_humidity(struct __pyx_obj_7profile_Profi
     #endif
   }
 
-  /* "profile.pyx":214
+  /* "profile.pyx":220
  * 
  *     cpdef double humidity(self):
  *         return self._humidity             # <<<<<<<<<<<<<<
@@ -10176,7 +10241,7 @@ static double __pyx_f_7profile_7Profile_humidity(struct __pyx_obj_7profile_Profi
   __pyx_r = __pyx_v_self->_humidity;
   goto __pyx_L0;
 
-  /* "profile.pyx":213
+  /* "profile.pyx":219
  *         self._temperature = Temperature(value, units)
  * 
  *     cpdef double humidity(self):             # <<<<<<<<<<<<<<
@@ -10239,7 +10304,7 @@ static PyObject *__pyx_pf_7profile_7Profile_44humidity(struct __pyx_obj_7profile
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("humidity", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_7profile_7Profile_humidity(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_7profile_7Profile_humidity(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10256,7 +10321,7 @@ static PyObject *__pyx_pf_7profile_7Profile_44humidity(struct __pyx_obj_7profile
   return __pyx_r;
 }
 
-/* "profile.pyx":216
+/* "profile.pyx":222
  *         return self._humidity
  * 
  *     cpdef set_humidity(self, value: double):             # <<<<<<<<<<<<<<
@@ -10293,7 +10358,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_humidity(struct __pyx_obj_7profil
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_humidity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_humidity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -10302,7 +10367,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_humidity(struct __pyx_obj_7profil
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_47set_humidity)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 222, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -10322,7 +10387,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_humidity(struct __pyx_obj_7profil
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 1+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 216, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -10344,7 +10409,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_humidity(struct __pyx_obj_7profil
     #endif
   }
 
-  /* "profile.pyx":217
+  /* "profile.pyx":223
  * 
  *     cpdef set_humidity(self, value: double):
  *         self._humidity = value             # <<<<<<<<<<<<<<
@@ -10353,7 +10418,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_humidity(struct __pyx_obj_7profil
  */
   __pyx_v_self->_humidity = __pyx_v_value;
 
-  /* "profile.pyx":216
+  /* "profile.pyx":222
  *         return self._humidity
  * 
  *     cpdef set_humidity(self, value: double):             # <<<<<<<<<<<<<<
@@ -10424,23 +10489,23 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 216, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 222, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_humidity") < 0)) __PYX_ERR(0, 216, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_humidity") < 0)) __PYX_ERR(0, 222, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 216, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 222, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_humidity", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 216, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_humidity", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 222, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_humidity", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10462,7 +10527,7 @@ static PyObject *__pyx_pf_7profile_7Profile_46set_humidity(struct __pyx_obj_7pro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_humidity", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_humidity(__pyx_v_self, __pyx_v_value, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 216, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_humidity(__pyx_v_self, __pyx_v_value, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10479,7 +10544,7 @@ static PyObject *__pyx_pf_7profile_7Profile_46set_humidity(struct __pyx_obj_7pro
   return __pyx_r;
 }
 
-/* "profile.pyx":219
+/* "profile.pyx":225
  *         self._humidity = value
  * 
  *     cpdef zero_distance(self):             # <<<<<<<<<<<<<<
@@ -10515,7 +10580,7 @@ static PyObject *__pyx_f_7profile_7Profile_zero_distance(struct __pyx_obj_7profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_zero_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_zero_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -10541,7 +10606,7 @@ static PyObject *__pyx_f_7profile_7Profile_zero_distance(struct __pyx_obj_7profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 219, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 225, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -10563,7 +10628,7 @@ static PyObject *__pyx_f_7profile_7Profile_zero_distance(struct __pyx_obj_7profi
     #endif
   }
 
-  /* "profile.pyx":220
+  /* "profile.pyx":226
  * 
  *     cpdef zero_distance(self):
  *         return self._zero_distance             # <<<<<<<<<<<<<<
@@ -10575,7 +10640,7 @@ static PyObject *__pyx_f_7profile_7Profile_zero_distance(struct __pyx_obj_7profi
   __pyx_r = __pyx_v_self->_zero_distance;
   goto __pyx_L0;
 
-  /* "profile.pyx":219
+  /* "profile.pyx":225
  *         self._humidity = value
  * 
  *     cpdef zero_distance(self):             # <<<<<<<<<<<<<<
@@ -10639,7 +10704,7 @@ static PyObject *__pyx_pf_7profile_7Profile_48zero_distance(struct __pyx_obj_7pr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("zero_distance", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_zero_distance(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_zero_distance(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10656,7 +10721,7 @@ static PyObject *__pyx_pf_7profile_7Profile_48zero_distance(struct __pyx_obj_7pr
   return __pyx_r;
 }
 
-/* "profile.pyx":222
+/* "profile.pyx":228
  *         return self._zero_distance
  * 
  *     cpdef set_zero_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -10693,7 +10758,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_zero_distance(struct __pyx_obj_7p
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_zero_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_zero_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -10702,7 +10767,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_zero_distance(struct __pyx_obj_7p
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_51set_zero_distance)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 222, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -10722,7 +10787,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_zero_distance(struct __pyx_obj_7p
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -10744,16 +10809,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_zero_distance(struct __pyx_obj_7p
     #endif
   }
 
-  /* "profile.pyx":223
+  /* "profile.pyx":229
  * 
  *     cpdef set_zero_distance(self, value: double, units: int):
  *         self._zero_distance = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef twist(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 223, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 229, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 223, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -10772,7 +10837,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_zero_distance(struct __pyx_obj_7p
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 223, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 229, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -10782,7 +10847,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_zero_distance(struct __pyx_obj_7p
   __pyx_v_self->_zero_distance = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":222
+  /* "profile.pyx":228
  *         return self._zero_distance
  * 
  *     cpdef set_zero_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -10856,19 +10921,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 222, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 222, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_zero_distance", 1, 2, 2, 1); __PYX_ERR(0, 222, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_zero_distance", 1, 2, 2, 1); __PYX_ERR(0, 228, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_zero_distance") < 0)) __PYX_ERR(0, 222, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_zero_distance") < 0)) __PYX_ERR(0, 228, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -10876,12 +10941,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 222, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_zero_distance", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 222, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_zero_distance", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 228, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_zero_distance", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10903,7 +10968,7 @@ static PyObject *__pyx_pf_7profile_7Profile_50set_zero_distance(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_zero_distance", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_zero_distance(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 222, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_zero_distance(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -10920,7 +10985,7 @@ static PyObject *__pyx_pf_7profile_7Profile_50set_zero_distance(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "profile.pyx":225
+/* "profile.pyx":231
  *         self._zero_distance = Distance(value, units)
  * 
  *     cpdef twist(self):             # <<<<<<<<<<<<<<
@@ -10956,7 +11021,7 @@ static PyObject *__pyx_f_7profile_7Profile_twist(struct __pyx_obj_7profile_Profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_twist); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_twist); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -10982,7 +11047,7 @@ static PyObject *__pyx_f_7profile_7Profile_twist(struct __pyx_obj_7profile_Profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 225, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 231, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -11004,7 +11069,7 @@ static PyObject *__pyx_f_7profile_7Profile_twist(struct __pyx_obj_7profile_Profi
     #endif
   }
 
-  /* "profile.pyx":226
+  /* "profile.pyx":232
  * 
  *     cpdef twist(self):
  *         return self._twist             # <<<<<<<<<<<<<<
@@ -11016,7 +11081,7 @@ static PyObject *__pyx_f_7profile_7Profile_twist(struct __pyx_obj_7profile_Profi
   __pyx_r = __pyx_v_self->_twist;
   goto __pyx_L0;
 
-  /* "profile.pyx":225
+  /* "profile.pyx":231
  *         self._zero_distance = Distance(value, units)
  * 
  *     cpdef twist(self):             # <<<<<<<<<<<<<<
@@ -11080,7 +11145,7 @@ static PyObject *__pyx_pf_7profile_7Profile_52twist(struct __pyx_obj_7profile_Pr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("twist", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_twist(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_twist(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -11097,7 +11162,7 @@ static PyObject *__pyx_pf_7profile_7Profile_52twist(struct __pyx_obj_7profile_Pr
   return __pyx_r;
 }
 
-/* "profile.pyx":228
+/* "profile.pyx":234
  *         return self._twist
  * 
  *     cpdef set_twist(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -11134,7 +11199,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist(struct __pyx_obj_7profile_P
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_twist); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_twist); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -11143,7 +11208,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist(struct __pyx_obj_7profile_P
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_55set_twist)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 234, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -11163,7 +11228,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist(struct __pyx_obj_7profile_P
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -11185,16 +11250,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist(struct __pyx_obj_7profile_P
     #endif
   }
 
-  /* "profile.pyx":229
+  /* "profile.pyx":235
  * 
  *     cpdef set_twist(self, value: double, units: int):
  *         self._twist = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef int twist_direction(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 235, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 229, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 235, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -11213,7 +11278,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist(struct __pyx_obj_7profile_P
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 229, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 235, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -11223,7 +11288,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist(struct __pyx_obj_7profile_P
   __pyx_v_self->_twist = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":228
+  /* "profile.pyx":234
  *         return self._twist
  * 
  *     cpdef set_twist(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -11297,19 +11362,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 234, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 234, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_twist", 1, 2, 2, 1); __PYX_ERR(0, 228, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_twist", 1, 2, 2, 1); __PYX_ERR(0, 234, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_twist") < 0)) __PYX_ERR(0, 228, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_twist") < 0)) __PYX_ERR(0, 234, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -11317,12 +11382,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 228, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 234, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_twist", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 228, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_twist", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 234, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_twist", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -11344,7 +11409,7 @@ static PyObject *__pyx_pf_7profile_7Profile_54set_twist(struct __pyx_obj_7profil
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_twist", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_twist(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_twist(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -11361,7 +11426,7 @@ static PyObject *__pyx_pf_7profile_7Profile_54set_twist(struct __pyx_obj_7profil
   return __pyx_r;
 }
 
-/* "profile.pyx":231
+/* "profile.pyx":237
  *         self._twist = Distance(value, units)
  * 
  *     cpdef int twist_direction(self):             # <<<<<<<<<<<<<<
@@ -11397,7 +11462,7 @@ static int __pyx_f_7profile_7Profile_twist_direction(struct __pyx_obj_7profile_P
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_twist_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_twist_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -11422,11 +11487,11 @@ static int __pyx_f_7profile_7Profile_twist_direction(struct __pyx_obj_7profile_P
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 231, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
-        __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 231, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_2); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 237, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         __pyx_r = __pyx_t_5;
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -11445,7 +11510,7 @@ static int __pyx_f_7profile_7Profile_twist_direction(struct __pyx_obj_7profile_P
     #endif
   }
 
-  /* "profile.pyx":232
+  /* "profile.pyx":238
  * 
  *     cpdef int twist_direction(self):
  *         return self._twist_direction             # <<<<<<<<<<<<<<
@@ -11455,7 +11520,7 @@ static int __pyx_f_7profile_7Profile_twist_direction(struct __pyx_obj_7profile_P
   __pyx_r = __pyx_v_self->_twist_direction;
   goto __pyx_L0;
 
-  /* "profile.pyx":231
+  /* "profile.pyx":237
  *         self._twist = Distance(value, units)
  * 
  *     cpdef int twist_direction(self):             # <<<<<<<<<<<<<<
@@ -11518,7 +11583,7 @@ static PyObject *__pyx_pf_7profile_7Profile_56twist_direction(struct __pyx_obj_7
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("twist_direction", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_7profile_7Profile_twist_direction(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_f_7profile_7Profile_twist_direction(__pyx_v_self, 1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -11535,7 +11600,7 @@ static PyObject *__pyx_pf_7profile_7Profile_56twist_direction(struct __pyx_obj_7
   return __pyx_r;
 }
 
-/* "profile.pyx":234
+/* "profile.pyx":240
  *         return self._twist_direction
  * 
  *     cpdef set_twist_direction(self, direction: int):             # <<<<<<<<<<<<<<
@@ -11571,7 +11636,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist_direction(struct __pyx_obj_
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_twist_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_twist_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 240, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -11597,7 +11662,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist_direction(struct __pyx_obj_
           PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_direction};
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -11619,17 +11684,17 @@ static PyObject *__pyx_f_7profile_7Profile_set_twist_direction(struct __pyx_obj_
     #endif
   }
 
-  /* "profile.pyx":235
+  /* "profile.pyx":241
  * 
  *     cpdef set_twist_direction(self, direction: int):
  *         self._twist_direction = direction             # <<<<<<<<<<<<<<
  * 
  *     cpdef sight_height(self):
  */
-  __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_v_direction); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 235, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_v_direction); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 241, __pyx_L1_error)
   __pyx_v_self->_twist_direction = __pyx_t_5;
 
-  /* "profile.pyx":234
+  /* "profile.pyx":240
  *         return self._twist_direction
  * 
  *     cpdef set_twist_direction(self, direction: int):             # <<<<<<<<<<<<<<
@@ -11699,12 +11764,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_direction)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 234, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 240, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_twist_direction") < 0)) __PYX_ERR(0, 234, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_twist_direction") < 0)) __PYX_ERR(0, 240, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -11715,7 +11780,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_twist_direction", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 234, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_twist_direction", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 240, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_twist_direction", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -11737,7 +11802,7 @@ static PyObject *__pyx_pf_7profile_7Profile_58set_twist_direction(struct __pyx_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_twist_direction", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_twist_direction(__pyx_v_self, __pyx_v_direction, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_twist_direction(__pyx_v_self, __pyx_v_direction, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 240, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -11754,7 +11819,7 @@ static PyObject *__pyx_pf_7profile_7Profile_58set_twist_direction(struct __pyx_o
   return __pyx_r;
 }
 
-/* "profile.pyx":237
+/* "profile.pyx":243
  *         self._twist_direction = direction
  * 
  *     cpdef sight_height(self):             # <<<<<<<<<<<<<<
@@ -11790,7 +11855,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_height(struct __pyx_obj_7profil
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sight_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sight_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -11816,7 +11881,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_height(struct __pyx_obj_7profil
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -11838,7 +11903,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_height(struct __pyx_obj_7profil
     #endif
   }
 
-  /* "profile.pyx":238
+  /* "profile.pyx":244
  * 
  *     cpdef sight_height(self):
  *         return self._sight_height             # <<<<<<<<<<<<<<
@@ -11850,7 +11915,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_height(struct __pyx_obj_7profil
   __pyx_r = __pyx_v_self->_sight_height;
   goto __pyx_L0;
 
-  /* "profile.pyx":237
+  /* "profile.pyx":243
  *         self._twist_direction = direction
  * 
  *     cpdef sight_height(self):             # <<<<<<<<<<<<<<
@@ -11914,7 +11979,7 @@ static PyObject *__pyx_pf_7profile_7Profile_60sight_height(struct __pyx_obj_7pro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("sight_height", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_sight_height(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_sight_height(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -11931,7 +11996,7 @@ static PyObject *__pyx_pf_7profile_7Profile_60sight_height(struct __pyx_obj_7pro
   return __pyx_r;
 }
 
-/* "profile.pyx":240
+/* "profile.pyx":246
  *         return self._sight_height
  * 
  *     cpdef set_sight_height(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -11968,7 +12033,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_height(struct __pyx_obj_7pr
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_sight_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 240, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_sight_height); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 246, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -11977,7 +12042,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_height(struct __pyx_obj_7pr
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_63set_sight_height)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 240, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 246, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -11997,7 +12062,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_height(struct __pyx_obj_7pr
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 246, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -12019,16 +12084,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_height(struct __pyx_obj_7pr
     #endif
   }
 
-  /* "profile.pyx":241
+  /* "profile.pyx":247
  * 
  *     cpdef set_sight_height(self, value: double, units: int):
  *         self._sight_height = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef sight_angle(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 241, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 241, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 247, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -12047,7 +12112,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_height(struct __pyx_obj_7pr
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 241, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -12057,7 +12122,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_height(struct __pyx_obj_7pr
   __pyx_v_self->_sight_height = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":240
+  /* "profile.pyx":246
  *         return self._sight_height
  * 
  *     cpdef set_sight_height(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -12131,19 +12196,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 240, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 246, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 240, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 246, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_sight_height", 1, 2, 2, 1); __PYX_ERR(0, 240, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_sight_height", 1, 2, 2, 1); __PYX_ERR(0, 246, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_sight_height") < 0)) __PYX_ERR(0, 240, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_sight_height") < 0)) __PYX_ERR(0, 246, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -12151,12 +12216,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 240, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 246, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_sight_height", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 240, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_sight_height", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 246, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_sight_height", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -12178,7 +12243,7 @@ static PyObject *__pyx_pf_7profile_7Profile_62set_sight_height(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_sight_height", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_sight_height(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_sight_height(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 246, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -12195,7 +12260,7 @@ static PyObject *__pyx_pf_7profile_7Profile_62set_sight_height(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "profile.pyx":243
+/* "profile.pyx":249
  *         self._sight_height = Distance(value, units)
  * 
  *     cpdef sight_angle(self):             # <<<<<<<<<<<<<<
@@ -12231,7 +12296,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_angle(struct __pyx_obj_7profile
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sight_angle); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_sight_angle); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -12257,7 +12322,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_angle(struct __pyx_obj_7profile
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -12279,7 +12344,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_angle(struct __pyx_obj_7profile
     #endif
   }
 
-  /* "profile.pyx":244
+  /* "profile.pyx":250
  * 
  *     cpdef sight_angle(self):
  *         return self._sight_angle             # <<<<<<<<<<<<<<
@@ -12291,7 +12356,7 @@ static PyObject *__pyx_f_7profile_7Profile_sight_angle(struct __pyx_obj_7profile
   __pyx_r = __pyx_v_self->_sight_angle;
   goto __pyx_L0;
 
-  /* "profile.pyx":243
+  /* "profile.pyx":249
  *         self._sight_height = Distance(value, units)
  * 
  *     cpdef sight_angle(self):             # <<<<<<<<<<<<<<
@@ -12355,7 +12420,7 @@ static PyObject *__pyx_pf_7profile_7Profile_64sight_angle(struct __pyx_obj_7prof
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("sight_angle", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_sight_angle(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_sight_angle(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -12372,7 +12437,7 @@ static PyObject *__pyx_pf_7profile_7Profile_64sight_angle(struct __pyx_obj_7prof
   return __pyx_r;
 }
 
-/* "profile.pyx":246
+/* "profile.pyx":252
  *         return self._sight_angle
  * 
  *     cpdef set_sight_angle(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -12409,7 +12474,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_angle(struct __pyx_obj_7pro
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_sight_angle); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 246, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_sight_angle); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -12418,7 +12483,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_angle(struct __pyx_obj_7pro
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_67set_sight_angle)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 246, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -12438,7 +12503,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_angle(struct __pyx_obj_7pro
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 246, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -12460,16 +12525,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_angle(struct __pyx_obj_7pro
     #endif
   }
 
-  /* "profile.pyx":247
+  /* "profile.pyx":253
  * 
  *     cpdef set_sight_angle(self, value: double, units: int):
  *         self._sight_angle = Angular(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef maximum_distance(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Angular); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Angular); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 247, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 253, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -12488,7 +12553,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_angle(struct __pyx_obj_7pro
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 247, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -12498,7 +12563,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_sight_angle(struct __pyx_obj_7pro
   __pyx_v_self->_sight_angle = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":246
+  /* "profile.pyx":252
  *         return self._sight_angle
  * 
  *     cpdef set_sight_angle(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -12572,19 +12637,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 246, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 246, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_sight_angle", 1, 2, 2, 1); __PYX_ERR(0, 246, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_sight_angle", 1, 2, 2, 1); __PYX_ERR(0, 252, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_sight_angle") < 0)) __PYX_ERR(0, 246, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_sight_angle") < 0)) __PYX_ERR(0, 252, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -12592,12 +12657,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 246, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_sight_angle", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 246, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_sight_angle", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 252, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_sight_angle", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -12619,7 +12684,7 @@ static PyObject *__pyx_pf_7profile_7Profile_66set_sight_angle(struct __pyx_obj_7
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_sight_angle", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_sight_angle(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 246, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_sight_angle(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -12636,7 +12701,7 @@ static PyObject *__pyx_pf_7profile_7Profile_66set_sight_angle(struct __pyx_obj_7
   return __pyx_r;
 }
 
-/* "profile.pyx":249
+/* "profile.pyx":255
  *         self._sight_angle = Angular(value, units)
  * 
  *     cpdef maximum_distance(self):             # <<<<<<<<<<<<<<
@@ -12672,7 +12737,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_distance(struct __pyx_obj_7pr
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_maximum_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_maximum_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -12698,7 +12763,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_distance(struct __pyx_obj_7pr
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -12720,7 +12785,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_distance(struct __pyx_obj_7pr
     #endif
   }
 
-  /* "profile.pyx":250
+  /* "profile.pyx":256
  * 
  *     cpdef maximum_distance(self):
  *         return self._maximum_distance             # <<<<<<<<<<<<<<
@@ -12732,7 +12797,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_distance(struct __pyx_obj_7pr
   __pyx_r = __pyx_v_self->_maximum_distance;
   goto __pyx_L0;
 
-  /* "profile.pyx":249
+  /* "profile.pyx":255
  *         self._sight_angle = Angular(value, units)
  * 
  *     cpdef maximum_distance(self):             # <<<<<<<<<<<<<<
@@ -12796,7 +12861,7 @@ static PyObject *__pyx_pf_7profile_7Profile_68maximum_distance(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("maximum_distance", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_maximum_distance(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_maximum_distance(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -12813,7 +12878,7 @@ static PyObject *__pyx_pf_7profile_7Profile_68maximum_distance(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "profile.pyx":252
+/* "profile.pyx":258
  *         return self._maximum_distance
  * 
  *     cpdef set_maximum_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -12850,7 +12915,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_distance(struct __pyx_obj
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_maximum_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_maximum_distance); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -12859,7 +12924,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_distance(struct __pyx_obj
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_71set_maximum_distance)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -12879,7 +12944,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_distance(struct __pyx_obj
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -12901,16 +12966,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_distance(struct __pyx_obj
     #endif
   }
 
-  /* "profile.pyx":253
+  /* "profile.pyx":259
  * 
  *     cpdef set_maximum_distance(self, value: double, units: int):
  *         self._maximum_distance = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef distance_step(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 259, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 253, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 259, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -12929,7 +12994,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_distance(struct __pyx_obj
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 253, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 259, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -12939,7 +13004,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_distance(struct __pyx_obj
   __pyx_v_self->_maximum_distance = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":252
+  /* "profile.pyx":258
  *         return self._maximum_distance
  * 
  *     cpdef set_maximum_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -13013,19 +13078,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 258, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 258, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_maximum_distance", 1, 2, 2, 1); __PYX_ERR(0, 252, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_maximum_distance", 1, 2, 2, 1); __PYX_ERR(0, 258, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_maximum_distance") < 0)) __PYX_ERR(0, 252, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_maximum_distance") < 0)) __PYX_ERR(0, 258, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -13033,12 +13098,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 252, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 258, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_maximum_distance", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 252, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_maximum_distance", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 258, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_maximum_distance", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -13060,7 +13125,7 @@ static PyObject *__pyx_pf_7profile_7Profile_70set_maximum_distance(struct __pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_maximum_distance", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_maximum_distance(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_maximum_distance(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -13077,7 +13142,7 @@ static PyObject *__pyx_pf_7profile_7Profile_70set_maximum_distance(struct __pyx_
   return __pyx_r;
 }
 
-/* "profile.pyx":255
+/* "profile.pyx":261
  *         self._maximum_distance = Distance(value, units)
  * 
  *     cpdef distance_step(self):             # <<<<<<<<<<<<<<
@@ -13113,7 +13178,7 @@ static PyObject *__pyx_f_7profile_7Profile_distance_step(struct __pyx_obj_7profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_distance_step); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_distance_step); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -13139,7 +13204,7 @@ static PyObject *__pyx_f_7profile_7Profile_distance_step(struct __pyx_obj_7profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -13161,7 +13226,7 @@ static PyObject *__pyx_f_7profile_7Profile_distance_step(struct __pyx_obj_7profi
     #endif
   }
 
-  /* "profile.pyx":256
+  /* "profile.pyx":262
  * 
  *     cpdef distance_step(self):
  *         return self._distance_step             # <<<<<<<<<<<<<<
@@ -13173,7 +13238,7 @@ static PyObject *__pyx_f_7profile_7Profile_distance_step(struct __pyx_obj_7profi
   __pyx_r = __pyx_v_self->_distance_step;
   goto __pyx_L0;
 
-  /* "profile.pyx":255
+  /* "profile.pyx":261
  *         self._maximum_distance = Distance(value, units)
  * 
  *     cpdef distance_step(self):             # <<<<<<<<<<<<<<
@@ -13237,7 +13302,7 @@ static PyObject *__pyx_pf_7profile_7Profile_72distance_step(struct __pyx_obj_7pr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("distance_step", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_distance_step(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_distance_step(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -13254,7 +13319,7 @@ static PyObject *__pyx_pf_7profile_7Profile_72distance_step(struct __pyx_obj_7pr
   return __pyx_r;
 }
 
-/* "profile.pyx":258
+/* "profile.pyx":264
  *         return self._distance_step
  * 
  *     cpdef set_distance_step(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -13291,7 +13356,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_distance_step(struct __pyx_obj_7p
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_distance_step); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_distance_step); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -13300,7 +13365,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_distance_step(struct __pyx_obj_7p
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_75set_distance_step)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -13320,7 +13385,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_distance_step(struct __pyx_obj_7p
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 264, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -13342,16 +13407,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_distance_step(struct __pyx_obj_7p
     #endif
   }
 
-  /* "profile.pyx":259
+  /* "profile.pyx":265
  * 
  *     cpdef set_distance_step(self, value: double, units: int):
  *         self._distance_step = Distance(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef wind_velocity(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 265, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 259, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 265, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -13370,7 +13435,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_distance_step(struct __pyx_obj_7p
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 259, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -13380,7 +13445,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_distance_step(struct __pyx_obj_7p
   __pyx_v_self->_distance_step = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":258
+  /* "profile.pyx":264
  *         return self._distance_step
  * 
  *     cpdef set_distance_step(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -13454,19 +13519,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 258, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 264, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 258, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 264, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_distance_step", 1, 2, 2, 1); __PYX_ERR(0, 258, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_distance_step", 1, 2, 2, 1); __PYX_ERR(0, 264, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_distance_step") < 0)) __PYX_ERR(0, 258, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_distance_step") < 0)) __PYX_ERR(0, 264, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -13474,12 +13539,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 258, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 264, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_distance_step", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 258, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_distance_step", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 264, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_distance_step", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -13501,7 +13566,7 @@ static PyObject *__pyx_pf_7profile_7Profile_74set_distance_step(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_distance_step", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_distance_step(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_distance_step(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -13518,7 +13583,7 @@ static PyObject *__pyx_pf_7profile_7Profile_74set_distance_step(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "profile.pyx":261
+/* "profile.pyx":267
  *         self._distance_step = Distance(value, units)
  * 
  *     cpdef wind_velocity(self):             # <<<<<<<<<<<<<<
@@ -13554,7 +13619,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_velocity(struct __pyx_obj_7profi
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_wind_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_wind_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -13580,7 +13645,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_velocity(struct __pyx_obj_7profi
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -13602,7 +13667,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_velocity(struct __pyx_obj_7profi
     #endif
   }
 
-  /* "profile.pyx":262
+  /* "profile.pyx":268
  * 
  *     cpdef wind_velocity(self):
  *         return self._wind_velocity             # <<<<<<<<<<<<<<
@@ -13614,7 +13679,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_velocity(struct __pyx_obj_7profi
   __pyx_r = __pyx_v_self->_wind_velocity;
   goto __pyx_L0;
 
-  /* "profile.pyx":261
+  /* "profile.pyx":267
  *         self._distance_step = Distance(value, units)
  * 
  *     cpdef wind_velocity(self):             # <<<<<<<<<<<<<<
@@ -13678,7 +13743,7 @@ static PyObject *__pyx_pf_7profile_7Profile_76wind_velocity(struct __pyx_obj_7pr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("wind_velocity", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_wind_velocity(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 261, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_wind_velocity(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -13695,7 +13760,7 @@ static PyObject *__pyx_pf_7profile_7Profile_76wind_velocity(struct __pyx_obj_7pr
   return __pyx_r;
 }
 
-/* "profile.pyx":264
+/* "profile.pyx":270
  *         return self._wind_velocity
  * 
  *     cpdef set_wind_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -13732,7 +13797,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_velocity(struct __pyx_obj_7p
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_wind_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_wind_velocity); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -13741,7 +13806,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_velocity(struct __pyx_obj_7p
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_79set_wind_velocity)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 270, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -13761,7 +13826,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_velocity(struct __pyx_obj_7p
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 264, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -13783,16 +13848,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_velocity(struct __pyx_obj_7p
     #endif
   }
 
-  /* "profile.pyx":265
+  /* "profile.pyx":271
  * 
  *     cpdef set_wind_velocity(self, value: double, units: int):
  *         self._wind_velocity = Velocity(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef wind_direction(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Velocity); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Velocity); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 271, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 265, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -13811,7 +13876,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_velocity(struct __pyx_obj_7p
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 265, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 271, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -13821,7 +13886,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_velocity(struct __pyx_obj_7p
   __pyx_v_self->_wind_velocity = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":264
+  /* "profile.pyx":270
  *         return self._wind_velocity
  * 
  *     cpdef set_wind_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -13895,19 +13960,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 264, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 270, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 264, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 270, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_wind_velocity", 1, 2, 2, 1); __PYX_ERR(0, 264, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_wind_velocity", 1, 2, 2, 1); __PYX_ERR(0, 270, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_wind_velocity") < 0)) __PYX_ERR(0, 264, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_wind_velocity") < 0)) __PYX_ERR(0, 270, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -13915,12 +13980,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 264, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 270, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_wind_velocity", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 264, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_wind_velocity", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 270, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_wind_velocity", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -13942,7 +14007,7 @@ static PyObject *__pyx_pf_7profile_7Profile_78set_wind_velocity(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_wind_velocity", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_wind_velocity(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 264, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_wind_velocity(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -13959,7 +14024,7 @@ static PyObject *__pyx_pf_7profile_7Profile_78set_wind_velocity(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "profile.pyx":267
+/* "profile.pyx":273
  *         self._wind_velocity = Velocity(value, units)
  * 
  *     cpdef wind_direction(self):             # <<<<<<<<<<<<<<
@@ -13995,7 +14060,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_direction(struct __pyx_obj_7prof
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_wind_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_wind_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -14021,7 +14086,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_direction(struct __pyx_obj_7prof
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -14043,7 +14108,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_direction(struct __pyx_obj_7prof
     #endif
   }
 
-  /* "profile.pyx":268
+  /* "profile.pyx":274
  * 
  *     cpdef wind_direction(self):
  *         return self._wind_direction             # <<<<<<<<<<<<<<
@@ -14055,7 +14120,7 @@ static PyObject *__pyx_f_7profile_7Profile_wind_direction(struct __pyx_obj_7prof
   __pyx_r = __pyx_v_self->_wind_direction;
   goto __pyx_L0;
 
-  /* "profile.pyx":267
+  /* "profile.pyx":273
  *         self._wind_velocity = Velocity(value, units)
  * 
  *     cpdef wind_direction(self):             # <<<<<<<<<<<<<<
@@ -14119,7 +14184,7 @@ static PyObject *__pyx_pf_7profile_7Profile_80wind_direction(struct __pyx_obj_7p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("wind_direction", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_wind_direction(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_wind_direction(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -14136,7 +14201,7 @@ static PyObject *__pyx_pf_7profile_7Profile_80wind_direction(struct __pyx_obj_7p
   return __pyx_r;
 }
 
-/* "profile.pyx":270
+/* "profile.pyx":276
  *         return self._wind_direction
  * 
  *     cpdef set_wind_direction(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -14173,7 +14238,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_direction(struct __pyx_obj_7
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_wind_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_wind_direction); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -14182,7 +14247,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_direction(struct __pyx_obj_7
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_83set_wind_direction)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 270, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 276, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -14202,7 +14267,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_direction(struct __pyx_obj_7
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -14224,16 +14289,16 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_direction(struct __pyx_obj_7
     #endif
   }
 
-  /* "profile.pyx":271
+  /* "profile.pyx":277
  * 
  *     cpdef set_wind_direction(self, value: double, units: int):
  *         self._wind_direction = Angular(value, units)             # <<<<<<<<<<<<<<
  * 
  *     cpdef custom_drag_function(self):
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Angular); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 271, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Angular); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 271, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -14252,7 +14317,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_direction(struct __pyx_obj_7
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 271, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 277, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -14262,7 +14327,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_wind_direction(struct __pyx_obj_7
   __pyx_v_self->_wind_direction = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":270
+  /* "profile.pyx":276
  *         return self._wind_direction
  * 
  *     cpdef set_wind_direction(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -14336,19 +14401,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 270, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 276, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 270, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 276, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_wind_direction", 1, 2, 2, 1); __PYX_ERR(0, 270, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_wind_direction", 1, 2, 2, 1); __PYX_ERR(0, 276, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_wind_direction") < 0)) __PYX_ERR(0, 270, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_wind_direction") < 0)) __PYX_ERR(0, 276, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -14356,12 +14421,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 270, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 276, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_wind_direction", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 270, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_wind_direction", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 276, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_wind_direction", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -14383,7 +14448,7 @@ static PyObject *__pyx_pf_7profile_7Profile_82set_wind_direction(struct __pyx_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_wind_direction", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_wind_direction(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_wind_direction(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -14400,7 +14465,7 @@ static PyObject *__pyx_pf_7profile_7Profile_82set_wind_direction(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "profile.pyx":273
+/* "profile.pyx":279
  *         self._wind_direction = Angular(value, units)
  * 
  *     cpdef custom_drag_function(self):             # <<<<<<<<<<<<<<
@@ -14436,7 +14501,7 @@ static PyObject *__pyx_f_7profile_7Profile_custom_drag_function(struct __pyx_obj
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_custom_drag_function); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_custom_drag_function); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -14462,7 +14527,7 @@ static PyObject *__pyx_f_7profile_7Profile_custom_drag_function(struct __pyx_obj
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 279, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -14484,7 +14549,7 @@ static PyObject *__pyx_f_7profile_7Profile_custom_drag_function(struct __pyx_obj
     #endif
   }
 
-  /* "profile.pyx":274
+  /* "profile.pyx":280
  * 
  *     cpdef custom_drag_function(self):
  *         return self._custom_drag_function             # <<<<<<<<<<<<<<
@@ -14496,7 +14561,7 @@ static PyObject *__pyx_f_7profile_7Profile_custom_drag_function(struct __pyx_obj
   __pyx_r = __pyx_v_self->_custom_drag_function;
   goto __pyx_L0;
 
-  /* "profile.pyx":273
+  /* "profile.pyx":279
  *         self._wind_direction = Angular(value, units)
  * 
  *     cpdef custom_drag_function(self):             # <<<<<<<<<<<<<<
@@ -14560,7 +14625,7 @@ static PyObject *__pyx_pf_7profile_7Profile_84custom_drag_function(struct __pyx_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("custom_drag_function", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_custom_drag_function(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_custom_drag_function(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -14577,7 +14642,7 @@ static PyObject *__pyx_pf_7profile_7Profile_84custom_drag_function(struct __pyx_
   return __pyx_r;
 }
 
-/* "profile.pyx":276
+/* "profile.pyx":282
  *         return self._custom_drag_function
  * 
  *     cpdef set_custom_drag_function(self, data: list[dict[str, double]]):             # <<<<<<<<<<<<<<
@@ -14613,7 +14678,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_custom_drag_function(struct __pyx
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_custom_drag_function); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_custom_drag_function); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -14639,7 +14704,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_custom_drag_function(struct __pyx
           PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_v_data};
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 1+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -14661,14 +14726,14 @@ static PyObject *__pyx_f_7profile_7Profile_set_custom_drag_function(struct __pyx
     #endif
   }
 
-  /* "profile.pyx":277
+  /* "profile.pyx":283
  * 
  *     cpdef set_custom_drag_function(self, data: list[dict[str, double]]):
  *         self._custom_drag_function = data             # <<<<<<<<<<<<<<
  *         self._drag_table = 0
  *         self._bc_value = 0
  */
-  if (!(likely(PyList_CheckExact(__pyx_v_data))||((__pyx_v_data) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_data))) __PYX_ERR(0, 277, __pyx_L1_error)
+  if (!(likely(PyList_CheckExact(__pyx_v_data))||((__pyx_v_data) == Py_None) || __Pyx_RaiseUnexpectedTypeError("list", __pyx_v_data))) __PYX_ERR(0, 283, __pyx_L1_error)
   __pyx_t_1 = __pyx_v_data;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -14677,7 +14742,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_custom_drag_function(struct __pyx
   __pyx_v_self->_custom_drag_function = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":278
+  /* "profile.pyx":284
  *     cpdef set_custom_drag_function(self, data: list[dict[str, double]]):
  *         self._custom_drag_function = data
  *         self._drag_table = 0             # <<<<<<<<<<<<<<
@@ -14686,7 +14751,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_custom_drag_function(struct __pyx
  */
   __pyx_v_self->_drag_table = 0;
 
-  /* "profile.pyx":279
+  /* "profile.pyx":285
  *         self._custom_drag_function = data
  *         self._drag_table = 0
  *         self._bc_value = 0             # <<<<<<<<<<<<<<
@@ -14699,7 +14764,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_custom_drag_function(struct __pyx
   __Pyx_DECREF(__pyx_v_self->_bc_value);
   __pyx_v_self->_bc_value = __pyx_int_0;
 
-  /* "profile.pyx":276
+  /* "profile.pyx":282
  *         return self._custom_drag_function
  * 
  *     cpdef set_custom_drag_function(self, data: list[dict[str, double]]):             # <<<<<<<<<<<<<<
@@ -14769,12 +14834,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_data)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 276, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 282, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_custom_drag_function") < 0)) __PYX_ERR(0, 276, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_custom_drag_function") < 0)) __PYX_ERR(0, 282, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
@@ -14785,7 +14850,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_custom_drag_function", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 276, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_custom_drag_function", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 282, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_custom_drag_function", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -14807,7 +14872,7 @@ static PyObject *__pyx_pf_7profile_7Profile_86set_custom_drag_function(struct __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_custom_drag_function", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_custom_drag_function(__pyx_v_self, __pyx_v_data, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_custom_drag_function(__pyx_v_self, __pyx_v_data, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -14824,7 +14889,7 @@ static PyObject *__pyx_pf_7profile_7Profile_86set_custom_drag_function(struct __
   return __pyx_r;
 }
 
-/* "profile.pyx":281
+/* "profile.pyx":287
  *         self._bc_value = 0
  * 
  *     cpdef maximum_step_size(self):             # <<<<<<<<<<<<<<
@@ -14860,7 +14925,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_step_size(struct __pyx_obj_7p
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_maximum_step_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 281, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_maximum_step_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 287, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -14886,7 +14951,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_step_size(struct __pyx_obj_7p
           PyObject *__pyx_callargs[1] = {__pyx_t_4, };
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_3, __pyx_callargs+1-__pyx_t_5, 0+__pyx_t_5);
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 281, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 287, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         }
@@ -14908,7 +14973,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_step_size(struct __pyx_obj_7p
     #endif
   }
 
-  /* "profile.pyx":282
+  /* "profile.pyx":288
  * 
  *     cpdef maximum_step_size(self):
  *         return self._maximum_step_size             # <<<<<<<<<<<<<<
@@ -14920,7 +14985,7 @@ static PyObject *__pyx_f_7profile_7Profile_maximum_step_size(struct __pyx_obj_7p
   __pyx_r = __pyx_v_self->_maximum_step_size;
   goto __pyx_L0;
 
-  /* "profile.pyx":281
+  /* "profile.pyx":287
  *         self._bc_value = 0
  * 
  *     cpdef maximum_step_size(self):             # <<<<<<<<<<<<<<
@@ -14984,7 +15049,7 @@ static PyObject *__pyx_pf_7profile_7Profile_88maximum_step_size(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("maximum_step_size", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_maximum_step_size(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_maximum_step_size(__pyx_v_self, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 287, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -15001,7 +15066,7 @@ static PyObject *__pyx_pf_7profile_7Profile_88maximum_step_size(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "profile.pyx":284
+/* "profile.pyx":290
  *         return self._maximum_step_size
  * 
  *     cpdef set_maximum_step_size(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -15037,7 +15102,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_step_size(struct __pyx_ob
     if (unlikely(!__Pyx_object_dict_version_matches(((PyObject *)__pyx_v_self), __pyx_tp_dict_version, __pyx_obj_dict_version))) {
       PY_UINT64_T __pyx_typedict_guard = __Pyx_get_tp_dict_version(((PyObject *)__pyx_v_self));
       #endif
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_maximum_step_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 284, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_maximum_step_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 290, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       #ifdef __Pyx_CyFunction_USED
       if (!__Pyx_IsCyOrPyCFunction(__pyx_t_1)
@@ -15046,7 +15111,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_step_size(struct __pyx_ob
       #endif
               || (PyCFunction_GET_FUNCTION(__pyx_t_1) != (PyCFunction)(void*)__pyx_pw_7profile_7Profile_91set_maximum_step_size)) {
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 284, __pyx_L1_error)
+        __pyx_t_3 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 290, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_INCREF(__pyx_t_1);
         __pyx_t_4 = __pyx_t_1; __pyx_t_5 = NULL;
@@ -15066,7 +15131,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_step_size(struct __pyx_ob
           __pyx_t_2 = __Pyx_PyObject_FastCall(__pyx_t_4, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 284, __pyx_L1_error)
+          if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 290, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -15088,14 +15153,14 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_step_size(struct __pyx_ob
     #endif
   }
 
-  /* "profile.pyx":285
+  /* "profile.pyx":291
  * 
  *     cpdef set_maximum_step_size(self, value: double, units: int):
  *         self._maximum_step_size = Distance(value, units)             # <<<<<<<<<<<<<<
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_n_s_Distance); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 291, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 285, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_value); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 291, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = NULL;
   __pyx_t_6 = 0;
@@ -15114,7 +15179,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_step_size(struct __pyx_ob
     __pyx_t_1 = __Pyx_PyObject_FastCall(__pyx_t_2, __pyx_callargs+1-__pyx_t_6, 2+__pyx_t_6);
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 285, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 291, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -15124,7 +15189,7 @@ static PyObject *__pyx_f_7profile_7Profile_set_maximum_step_size(struct __pyx_ob
   __pyx_v_self->_maximum_step_size = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "profile.pyx":284
+  /* "profile.pyx":290
  *         return self._maximum_step_size
  * 
  *     cpdef set_maximum_step_size(self, value: double, units: int):             # <<<<<<<<<<<<<<
@@ -15197,19 +15262,19 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       switch (__pyx_nargs) {
         case  0:
         if (likely((values[0] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_value)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 284, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 290, __pyx_L3_error)
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
         if (likely((values[1] = __Pyx_GetKwValue_FASTCALL(__pyx_kwds, __pyx_kwvalues, __pyx_n_s_units)) != 0)) kw_args--;
-        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 284, __pyx_L3_error)
+        else if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 290, __pyx_L3_error)
         else {
-          __Pyx_RaiseArgtupleInvalid("set_maximum_step_size", 1, 2, 2, 1); __PYX_ERR(0, 284, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("set_maximum_step_size", 1, 2, 2, 1); __PYX_ERR(0, 290, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t kwd_pos_args = __pyx_nargs;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_maximum_step_size") < 0)) __PYX_ERR(0, 284, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values + 0, kwd_pos_args, "set_maximum_step_size") < 0)) __PYX_ERR(0, 290, __pyx_L3_error)
       }
     } else if (unlikely(__pyx_nargs != 2)) {
       goto __pyx_L5_argtuple_error;
@@ -15217,12 +15282,12 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
       values[0] = __Pyx_Arg_FASTCALL(__pyx_args, 0);
       values[1] = __Pyx_Arg_FASTCALL(__pyx_args, 1);
     }
-    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 284, __pyx_L3_error)
+    __pyx_v_value = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_value == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 290, __pyx_L3_error)
     __pyx_v_units = values[1];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_maximum_step_size", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 284, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_maximum_step_size", 1, 2, 2, __pyx_nargs); __PYX_ERR(0, 290, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("profile.Profile.set_maximum_step_size", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -15244,7 +15309,7 @@ static PyObject *__pyx_pf_7profile_7Profile_90set_maximum_step_size(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("set_maximum_step_size", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __pyx_f_7profile_7Profile_set_maximum_step_size(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 284, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_7profile_7Profile_set_maximum_step_size(__pyx_v_self, __pyx_v_value, __pyx_v_units, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 290, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -16910,6 +16975,8 @@ static int __pyx_import_star_set(PyObject *o, PyObject* py_name, char *name) {
     "__pyx_ctuple_double__and_int",
     "__pyx_ctuple_double__and_int_struct",
     "__pyx_ctuple_double_struct",
+    "__pyx_ctuple_int",
+    "__pyx_ctuple_int_struct",
     0
   };
   const char** type_name = internal_type_names;
@@ -17188,6 +17255,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
   {0, __pyx_k_pressure, sizeof(__pyx_k_pressure), 0, 0, 1, 1},
   {0, __pyx_k_pressure, sizeof(__pyx_k_pressure), 0, 1, 0, 1},
+  {0, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
   {0, __pyx_k_profile, sizeof(__pyx_k_profile), 0, 0, 1, 1},
   {0, __pyx_k_py_ballisticcalc_lib_atmosphere, sizeof(__pyx_k_py_ballisticcalc_lib_atmosphere), 0, 0, 1, 1},
   {0, __pyx_k_py_ballisticcalc_lib_bmath_unit, sizeof(__pyx_k_py_ballisticcalc_lib_bmath_unit), 0, 0, 1, 1},
@@ -17401,6 +17469,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
   {&__pyx_n_s_pressure, __pyx_k_pressure, sizeof(__pyx_k_pressure), 0, 0, 1, 1},
   {&__pyx_n_u_pressure, __pyx_k_pressure, sizeof(__pyx_k_pressure), 0, 1, 0, 1},
+  {&__pyx_n_s_print, __pyx_k_print, sizeof(__pyx_k_print), 0, 0, 1, 1},
   {&__pyx_n_s_profile, __pyx_k_profile, sizeof(__pyx_k_profile), 0, 0, 1, 1},
   {&__pyx_n_s_py_ballisticcalc_lib_atmosphere, __pyx_k_py_ballisticcalc_lib_atmosphere, sizeof(__pyx_k_py_ballisticcalc_lib_atmosphere), 0, 0, 1, 1},
   {&__pyx_n_s_py_ballisticcalc_lib_bmath_unit, __pyx_k_py_ballisticcalc_lib_bmath_unit, sizeof(__pyx_k_py_ballisticcalc_lib_bmath_unit), 0, 0, 1, 1},
@@ -17478,7 +17547,10 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 /* #### Code section: cached_builtins ### */
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
+  __pyx_builtin_print = __Pyx_GetBuiltinName(__pyx_n_s_print); if (!__pyx_builtin_print) __PYX_ERR(0, 124, __pyx_L1_error)
   return 0;
+  __pyx_L1_error:;
+  return -1;
 }
 /* #### Code section: cached_constants ### */
 
@@ -17519,397 +17591,397 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  */
   __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_calculate_drag_table, 116, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 116, __pyx_L1_error)
 
-  /* "profile.pyx":159
+  /* "profile.pyx":165
  *         self._trajectory_data = data
  * 
  *     cpdef double bc_value(self):             # <<<<<<<<<<<<<<
  *         return self._bc_value
  * 
  */
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bc_value, 159, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 159, __pyx_L1_error)
+  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bc_value, 165, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 165, __pyx_L1_error)
 
-  /* "profile.pyx":162
+  /* "profile.pyx":168
  *         return self._bc_value
  * 
  *     cpdef set_bc_value(self, value: double):             # <<<<<<<<<<<<<<
  *         self._bc_value = value
  * 
  */
-  __pyx_tuple__29 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_value); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_tuple__29 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_value); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__29);
   __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bc_value, 162, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bc_value, 168, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 168, __pyx_L1_error)
 
-  /* "profile.pyx":165
+  /* "profile.pyx":171
  *         self._bc_value = value
  * 
  *     cpdef int drag_table(self):             # <<<<<<<<<<<<<<
  *         return self._drag_table
  * 
  */
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_drag_table, 165, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_drag_table, 171, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 171, __pyx_L1_error)
 
-  /* "profile.pyx":168
+  /* "profile.pyx":174
  *         return self._drag_table
  * 
  *     cpdef set_drag_table(self, drag_table: int):             # <<<<<<<<<<<<<<
  *         self._drag_table = drag_table
  * 
  */
-  __pyx_tuple__32 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_drag_table); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_drag_table); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__32);
   __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_drag_table, 168, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_drag_table, 174, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 174, __pyx_L1_error)
 
-  /* "profile.pyx":171
+  /* "profile.pyx":177
  *         self._drag_table = drag_table
  * 
  *     cpdef bullet_diameter(self):             # <<<<<<<<<<<<<<
  *         return self._bullet_diameter
  * 
  */
-  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bullet_diameter, 171, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_codeobj__34 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bullet_diameter, 177, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__34)) __PYX_ERR(0, 177, __pyx_L1_error)
 
-  /* "profile.pyx":174
+  /* "profile.pyx":180
  *         return self._bullet_diameter
  * 
  *     cpdef set_bullet_diameter(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._bullet_diameter = Distance(value, units)
  * 
  */
-  __pyx_tuple__35 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_value, __pyx_n_s_units); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_tuple__35 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_value, __pyx_n_s_units); if (unlikely(!__pyx_tuple__35)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__35);
   __Pyx_GIVEREF(__pyx_tuple__35);
-  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bullet_diameter, 174, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_codeobj__36 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bullet_diameter, 180, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__36)) __PYX_ERR(0, 180, __pyx_L1_error)
 
-  /* "profile.pyx":177
+  /* "profile.pyx":183
  *         self._bullet_diameter = Distance(value, units)
  * 
  *     cpdef bullet_length(self):             # <<<<<<<<<<<<<<
  *         return self._bullet_length
  * 
  */
-  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bullet_length, 177, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bullet_length, 183, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 183, __pyx_L1_error)
 
-  /* "profile.pyx":180
+  /* "profile.pyx":186
  *         return self._bullet_length
  * 
  *     cpdef set_bullet_length(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._bullet_length = Distance(value, units)
  * 
  */
-  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bullet_length, 180, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_codeobj__38 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bullet_length, 186, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__38)) __PYX_ERR(0, 186, __pyx_L1_error)
 
-  /* "profile.pyx":183
+  /* "profile.pyx":189
  *         self._bullet_length = Distance(value, units)
  * 
  *     cpdef bullet_weight(self):             # <<<<<<<<<<<<<<
  *         return self._bullet_weight
  * 
  */
-  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bullet_weight, 183, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_bullet_weight, 189, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 189, __pyx_L1_error)
 
-  /* "profile.pyx":186
+  /* "profile.pyx":192
  *         return self._bullet_weight
  * 
  *     cpdef set_bullet_weight(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._bullet_weight = Weight(value, units)
  * 
  */
-  __pyx_codeobj__40 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bullet_weight, 186, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__40)) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_codeobj__40 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_bullet_weight, 192, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__40)) __PYX_ERR(0, 192, __pyx_L1_error)
 
-  /* "profile.pyx":189
+  /* "profile.pyx":195
  *         self._bullet_weight = Weight(value, units)
  * 
  *     cpdef muzzle_velocity(self):             # <<<<<<<<<<<<<<
  *         return self._muzzle_velocity
  * 
  */
-  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_muzzle_velocity, 189, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_codeobj__41 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_muzzle_velocity, 195, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__41)) __PYX_ERR(0, 195, __pyx_L1_error)
 
-  /* "profile.pyx":192
+  /* "profile.pyx":198
  *         return self._muzzle_velocity
  * 
  *     cpdef set_muzzle_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._muzzle_velocity = Velocity(value, units)
  * 
  */
-  __pyx_codeobj__42 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_muzzle_velocity, 192, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__42)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_codeobj__42 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_muzzle_velocity, 198, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__42)) __PYX_ERR(0, 198, __pyx_L1_error)
 
-  /* "profile.pyx":195
+  /* "profile.pyx":201
  *         self._muzzle_velocity = Velocity(value, units)
  * 
  *     cpdef altitude(self):             # <<<<<<<<<<<<<<
  *         return self._altitude
  * 
  */
-  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_altitude, 195, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_codeobj__43 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_altitude, 201, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__43)) __PYX_ERR(0, 201, __pyx_L1_error)
 
-  /* "profile.pyx":198
+  /* "profile.pyx":204
  *         return self._altitude
  * 
  *     cpdef set_altitude(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._altitude = Distance(value, units)
  * 
  */
-  __pyx_codeobj__44 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_altitude, 198, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__44)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_codeobj__44 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_altitude, 204, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__44)) __PYX_ERR(0, 204, __pyx_L1_error)
 
-  /* "profile.pyx":201
+  /* "profile.pyx":207
  *         self._altitude = Distance(value, units)
  * 
  *     cpdef pressure(self):             # <<<<<<<<<<<<<<
  *         return self._pressure
  * 
  */
-  __pyx_codeobj__45 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_pressure, 201, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__45)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_codeobj__45 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_pressure, 207, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__45)) __PYX_ERR(0, 207, __pyx_L1_error)
 
-  /* "profile.pyx":204
+  /* "profile.pyx":210
  *         return self._pressure
  * 
  *     cpdef set_pressure(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._pressure = Pressure(value, units)
  * 
  */
-  __pyx_codeobj__46 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_pressure, 204, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__46)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_codeobj__46 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_pressure, 210, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__46)) __PYX_ERR(0, 210, __pyx_L1_error)
 
-  /* "profile.pyx":207
+  /* "profile.pyx":213
  *         self._pressure = Pressure(value, units)
  * 
  *     cpdef temperature(self):             # <<<<<<<<<<<<<<
  *         return self._temperature
  * 
  */
-  __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_temperature, 207, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 207, __pyx_L1_error)
+  __pyx_codeobj__47 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_temperature, 213, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__47)) __PYX_ERR(0, 213, __pyx_L1_error)
 
-  /* "profile.pyx":210
+  /* "profile.pyx":216
  *         return self._temperature
  * 
  *     cpdef set_temperature(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._temperature = Temperature(value, units)
  * 
  */
-  __pyx_codeobj__48 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_temperature, 210, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__48)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_codeobj__48 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_temperature, 216, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__48)) __PYX_ERR(0, 216, __pyx_L1_error)
 
-  /* "profile.pyx":213
+  /* "profile.pyx":219
  *         self._temperature = Temperature(value, units)
  * 
  *     cpdef double humidity(self):             # <<<<<<<<<<<<<<
  *         return self._humidity
  * 
  */
-  __pyx_codeobj__49 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_humidity, 213, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__49)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_codeobj__49 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_humidity, 219, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__49)) __PYX_ERR(0, 219, __pyx_L1_error)
 
-  /* "profile.pyx":216
+  /* "profile.pyx":222
  *         return self._humidity
  * 
  *     cpdef set_humidity(self, value: double):             # <<<<<<<<<<<<<<
  *         self._humidity = value
  * 
  */
-  __pyx_codeobj__50 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_humidity, 216, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__50)) __PYX_ERR(0, 216, __pyx_L1_error)
+  __pyx_codeobj__50 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_humidity, 222, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__50)) __PYX_ERR(0, 222, __pyx_L1_error)
 
-  /* "profile.pyx":219
+  /* "profile.pyx":225
  *         self._humidity = value
  * 
  *     cpdef zero_distance(self):             # <<<<<<<<<<<<<<
  *         return self._zero_distance
  * 
  */
-  __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_zero_distance, 219, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(0, 219, __pyx_L1_error)
+  __pyx_codeobj__51 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_zero_distance, 225, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__51)) __PYX_ERR(0, 225, __pyx_L1_error)
 
-  /* "profile.pyx":222
+  /* "profile.pyx":228
  *         return self._zero_distance
  * 
  *     cpdef set_zero_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._zero_distance = Distance(value, units)
  * 
  */
-  __pyx_codeobj__52 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_zero_distance, 222, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__52)) __PYX_ERR(0, 222, __pyx_L1_error)
+  __pyx_codeobj__52 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_zero_distance, 228, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__52)) __PYX_ERR(0, 228, __pyx_L1_error)
 
-  /* "profile.pyx":225
+  /* "profile.pyx":231
  *         self._zero_distance = Distance(value, units)
  * 
  *     cpdef twist(self):             # <<<<<<<<<<<<<<
  *         return self._twist
  * 
  */
-  __pyx_codeobj__53 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_twist, 225, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__53)) __PYX_ERR(0, 225, __pyx_L1_error)
+  __pyx_codeobj__53 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_twist, 231, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__53)) __PYX_ERR(0, 231, __pyx_L1_error)
 
-  /* "profile.pyx":228
+  /* "profile.pyx":234
  *         return self._twist
  * 
  *     cpdef set_twist(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._twist = Distance(value, units)
  * 
  */
-  __pyx_codeobj__54 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_twist, 228, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__54)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_codeobj__54 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_twist, 234, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__54)) __PYX_ERR(0, 234, __pyx_L1_error)
 
-  /* "profile.pyx":231
+  /* "profile.pyx":237
  *         self._twist = Distance(value, units)
  * 
  *     cpdef int twist_direction(self):             # <<<<<<<<<<<<<<
  *         return self._twist_direction
  * 
  */
-  __pyx_codeobj__55 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_twist_direction, 231, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__55)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_codeobj__55 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_twist_direction, 237, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__55)) __PYX_ERR(0, 237, __pyx_L1_error)
 
-  /* "profile.pyx":234
+  /* "profile.pyx":240
  *         return self._twist_direction
  * 
  *     cpdef set_twist_direction(self, direction: int):             # <<<<<<<<<<<<<<
  *         self._twist_direction = direction
  * 
  */
-  __pyx_tuple__56 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_direction); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_tuple__56 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_direction); if (unlikely(!__pyx_tuple__56)) __PYX_ERR(0, 240, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__56);
   __Pyx_GIVEREF(__pyx_tuple__56);
-  __pyx_codeobj__57 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_twist_direction, 234, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__57)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_codeobj__57 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__56, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_twist_direction, 240, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__57)) __PYX_ERR(0, 240, __pyx_L1_error)
 
-  /* "profile.pyx":237
+  /* "profile.pyx":243
  *         self._twist_direction = direction
  * 
  *     cpdef sight_height(self):             # <<<<<<<<<<<<<<
  *         return self._sight_height
  * 
  */
-  __pyx_codeobj__58 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_sight_height, 237, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__58)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_codeobj__58 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_sight_height, 243, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__58)) __PYX_ERR(0, 243, __pyx_L1_error)
 
-  /* "profile.pyx":240
+  /* "profile.pyx":246
  *         return self._sight_height
  * 
  *     cpdef set_sight_height(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._sight_height = Distance(value, units)
  * 
  */
-  __pyx_codeobj__59 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_sight_height, 240, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__59)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_codeobj__59 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_sight_height, 246, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__59)) __PYX_ERR(0, 246, __pyx_L1_error)
 
-  /* "profile.pyx":243
+  /* "profile.pyx":249
  *         self._sight_height = Distance(value, units)
  * 
  *     cpdef sight_angle(self):             # <<<<<<<<<<<<<<
  *         return self._sight_angle
  * 
  */
-  __pyx_codeobj__60 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_sight_angle, 243, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__60)) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_codeobj__60 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_sight_angle, 249, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__60)) __PYX_ERR(0, 249, __pyx_L1_error)
 
-  /* "profile.pyx":246
+  /* "profile.pyx":252
  *         return self._sight_angle
  * 
  *     cpdef set_sight_angle(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._sight_angle = Angular(value, units)
  * 
  */
-  __pyx_codeobj__61 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_sight_angle, 246, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__61)) __PYX_ERR(0, 246, __pyx_L1_error)
+  __pyx_codeobj__61 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_sight_angle, 252, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__61)) __PYX_ERR(0, 252, __pyx_L1_error)
 
-  /* "profile.pyx":249
+  /* "profile.pyx":255
  *         self._sight_angle = Angular(value, units)
  * 
  *     cpdef maximum_distance(self):             # <<<<<<<<<<<<<<
  *         return self._maximum_distance
  * 
  */
-  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_maximum_distance, 249, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __pyx_codeobj__62 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_maximum_distance, 255, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__62)) __PYX_ERR(0, 255, __pyx_L1_error)
 
-  /* "profile.pyx":252
+  /* "profile.pyx":258
  *         return self._maximum_distance
  * 
  *     cpdef set_maximum_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._maximum_distance = Distance(value, units)
  * 
  */
-  __pyx_codeobj__63 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_maximum_distance, 252, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__63)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_codeobj__63 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_maximum_distance, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__63)) __PYX_ERR(0, 258, __pyx_L1_error)
 
-  /* "profile.pyx":255
+  /* "profile.pyx":261
  *         self._maximum_distance = Distance(value, units)
  * 
  *     cpdef distance_step(self):             # <<<<<<<<<<<<<<
  *         return self._distance_step
  * 
  */
-  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_distance_step, 255, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_codeobj__64 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_distance_step, 261, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__64)) __PYX_ERR(0, 261, __pyx_L1_error)
 
-  /* "profile.pyx":258
+  /* "profile.pyx":264
  *         return self._distance_step
  * 
  *     cpdef set_distance_step(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._distance_step = Distance(value, units)
  * 
  */
-  __pyx_codeobj__65 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_distance_step, 258, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__65)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_codeobj__65 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_distance_step, 264, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__65)) __PYX_ERR(0, 264, __pyx_L1_error)
 
-  /* "profile.pyx":261
+  /* "profile.pyx":267
  *         self._distance_step = Distance(value, units)
  * 
  *     cpdef wind_velocity(self):             # <<<<<<<<<<<<<<
  *         return self._wind_velocity
  * 
  */
-  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_wind_velocity, 261, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 261, __pyx_L1_error)
+  __pyx_codeobj__66 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_wind_velocity, 267, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__66)) __PYX_ERR(0, 267, __pyx_L1_error)
 
-  /* "profile.pyx":264
+  /* "profile.pyx":270
  *         return self._wind_velocity
  * 
  *     cpdef set_wind_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._wind_velocity = Velocity(value, units)
  * 
  */
-  __pyx_codeobj__67 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_wind_velocity, 264, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__67)) __PYX_ERR(0, 264, __pyx_L1_error)
+  __pyx_codeobj__67 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_wind_velocity, 270, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__67)) __PYX_ERR(0, 270, __pyx_L1_error)
 
-  /* "profile.pyx":267
+  /* "profile.pyx":273
  *         self._wind_velocity = Velocity(value, units)
  * 
  *     cpdef wind_direction(self):             # <<<<<<<<<<<<<<
  *         return self._wind_direction
  * 
  */
-  __pyx_codeobj__68 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_wind_direction, 267, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__68)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_codeobj__68 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_wind_direction, 273, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__68)) __PYX_ERR(0, 273, __pyx_L1_error)
 
-  /* "profile.pyx":270
+  /* "profile.pyx":276
  *         return self._wind_direction
  * 
  *     cpdef set_wind_direction(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._wind_direction = Angular(value, units)
  * 
  */
-  __pyx_codeobj__69 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_wind_direction, 270, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__69)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_codeobj__69 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_wind_direction, 276, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__69)) __PYX_ERR(0, 276, __pyx_L1_error)
 
-  /* "profile.pyx":273
+  /* "profile.pyx":279
  *         self._wind_direction = Angular(value, units)
  * 
  *     cpdef custom_drag_function(self):             # <<<<<<<<<<<<<<
  *         return self._custom_drag_function
  * 
  */
-  __pyx_codeobj__70 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_custom_drag_function, 273, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__70)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_codeobj__70 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_custom_drag_function, 279, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__70)) __PYX_ERR(0, 279, __pyx_L1_error)
 
-  /* "profile.pyx":276
+  /* "profile.pyx":282
  *         return self._custom_drag_function
  * 
  *     cpdef set_custom_drag_function(self, data: list[dict[str, double]]):             # <<<<<<<<<<<<<<
  *         self._custom_drag_function = data
  *         self._drag_table = 0
  */
-  __pyx_tuple__71 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_data); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_tuple__71 = PyTuple_Pack(2, __pyx_n_s_self, __pyx_n_s_data); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__71);
   __Pyx_GIVEREF(__pyx_tuple__71);
-  __pyx_codeobj__72 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__71, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_custom_drag_function, 276, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__72)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_codeobj__72 = (PyObject*)__Pyx_PyCode_New(2, 0, 0, 2, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__71, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_custom_drag_function, 282, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__72)) __PYX_ERR(0, 282, __pyx_L1_error)
 
-  /* "profile.pyx":281
+  /* "profile.pyx":287
  *         self._bc_value = 0
  * 
  *     cpdef maximum_step_size(self):             # <<<<<<<<<<<<<<
  *         return self._maximum_step_size
  * 
  */
-  __pyx_codeobj__73 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_maximum_step_size, 281, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__73)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_codeobj__73 = (PyObject*)__Pyx_PyCode_New(1, 0, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__25, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_maximum_step_size, 287, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__73)) __PYX_ERR(0, 287, __pyx_L1_error)
 
-  /* "profile.pyx":284
+  /* "profile.pyx":290
  *         return self._maximum_step_size
  * 
  *     cpdef set_maximum_step_size(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._maximum_step_size = Distance(value, units)
  */
-  __pyx_codeobj__74 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_maximum_step_size, 284, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__74)) __PYX_ERR(0, 284, __pyx_L1_error)
+  __pyx_codeobj__74 = (PyObject*)__Pyx_PyCode_New(3, 0, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__35, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_py_ballisticcalc_lib_profile_pyx, __pyx_n_s_set_maximum_step_size, 290, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__74)) __PYX_ERR(0, 290, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __reduce_cython__(self):             # <<<<<<<<<<<<<<
@@ -18091,78 +18163,79 @@ static CYTHON_SMALL_CODE int __Pyx_InitConstants(void) {
   if (__Pyx_InitString(__pyx_string_tab[137], &__pyx_n_s_pickle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[138], &__pyx_n_s_pressure) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   if (__Pyx_InitString(__pyx_string_tab[139], &__pyx_n_u_pressure) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[140], &__pyx_n_s_profile) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[141], &__pyx_n_s_py_ballisticcalc_lib_atmosphere) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[142], &__pyx_n_s_py_ballisticcalc_lib_bmath_unit) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[143], &__pyx_n_s_py_ballisticcalc_lib_drag) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[144], &__pyx_kp_s_py_ballisticcalc_lib_profile_pyx) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[145], &__pyx_n_s_py_ballisticcalc_lib_projectile) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[146], &__pyx_n_s_py_ballisticcalc_lib_shot_parame) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[147], &__pyx_n_s_py_ballisticcalc_lib_tools) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[148], &__pyx_n_s_py_ballisticcalc_lib_trajectory) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[149], &__pyx_n_s_py_ballisticcalc_lib_weapon) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[150], &__pyx_n_s_py_ballisticcalc_lib_wind) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[151], &__pyx_n_s_pyx_PickleError) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[152], &__pyx_n_s_pyx_checksum) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[153], &__pyx_n_s_pyx_result) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[154], &__pyx_n_s_pyx_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[155], &__pyx_n_s_pyx_type) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[156], &__pyx_n_s_pyx_unpickle_Profile) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[157], &__pyx_n_s_pyx_vtable) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[158], &__pyx_n_s_reduce) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[159], &__pyx_n_s_reduce_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[160], &__pyx_n_s_reduce_ex) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[161], &__pyx_n_s_self) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[162], &__pyx_n_s_set_altitude) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[163], &__pyx_n_s_set_bc_value) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[164], &__pyx_n_s_set_bullet_diameter) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[165], &__pyx_n_s_set_bullet_length) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[166], &__pyx_n_s_set_bullet_weight) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[167], &__pyx_n_s_set_custom_drag_function) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[168], &__pyx_n_s_set_distance_step) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[169], &__pyx_n_s_set_drag_table) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[170], &__pyx_n_s_set_humidity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[171], &__pyx_n_s_set_maximum_calculator_step_size) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[172], &__pyx_n_s_set_maximum_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[173], &__pyx_n_s_set_maximum_step_size) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[174], &__pyx_n_s_set_muzzle_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[175], &__pyx_n_s_set_pressure) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[176], &__pyx_n_s_set_sight_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[177], &__pyx_n_s_set_sight_height) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[178], &__pyx_n_s_set_temperature) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[179], &__pyx_n_s_set_twist) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[180], &__pyx_n_s_set_twist_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[181], &__pyx_n_s_set_wind_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[182], &__pyx_n_s_set_wind_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[183], &__pyx_n_s_set_zero_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[184], &__pyx_n_s_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[185], &__pyx_n_s_setstate_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[186], &__pyx_n_s_shot_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[187], &__pyx_n_u_shot_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[188], &__pyx_n_s_sight_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[189], &__pyx_n_u_sight_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[190], &__pyx_n_s_sight_height) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[191], &__pyx_n_u_sight_height) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[192], &__pyx_n_s_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[193], &__pyx_kp_s_stringsource) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[194], &__pyx_n_s_temperature) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[195], &__pyx_n_u_temperature) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[196], &__pyx_n_s_test) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[197], &__pyx_n_s_trajectory) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[198], &__pyx_n_s_twist) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[199], &__pyx_n_u_twist) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[200], &__pyx_n_s_twist_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[201], &__pyx_n_u_twist_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[202], &__pyx_n_s_units) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[203], &__pyx_n_s_update) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[204], &__pyx_n_s_use_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[205], &__pyx_n_s_value) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[206], &__pyx_n_s_wind_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[207], &__pyx_n_u_wind_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[208], &__pyx_n_s_wind_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[209], &__pyx_n_u_wind_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[210], &__pyx_n_s_zero_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
-  if (__Pyx_InitString(__pyx_string_tab[211], &__pyx_n_u_zero_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[140], &__pyx_n_s_print) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[141], &__pyx_n_s_profile) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[142], &__pyx_n_s_py_ballisticcalc_lib_atmosphere) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[143], &__pyx_n_s_py_ballisticcalc_lib_bmath_unit) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[144], &__pyx_n_s_py_ballisticcalc_lib_drag) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[145], &__pyx_kp_s_py_ballisticcalc_lib_profile_pyx) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[146], &__pyx_n_s_py_ballisticcalc_lib_projectile) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[147], &__pyx_n_s_py_ballisticcalc_lib_shot_parame) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[148], &__pyx_n_s_py_ballisticcalc_lib_tools) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[149], &__pyx_n_s_py_ballisticcalc_lib_trajectory) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[150], &__pyx_n_s_py_ballisticcalc_lib_weapon) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[151], &__pyx_n_s_py_ballisticcalc_lib_wind) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[152], &__pyx_n_s_pyx_PickleError) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[153], &__pyx_n_s_pyx_checksum) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[154], &__pyx_n_s_pyx_result) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[155], &__pyx_n_s_pyx_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[156], &__pyx_n_s_pyx_type) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[157], &__pyx_n_s_pyx_unpickle_Profile) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[158], &__pyx_n_s_pyx_vtable) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[159], &__pyx_n_s_reduce) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[160], &__pyx_n_s_reduce_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[161], &__pyx_n_s_reduce_ex) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[162], &__pyx_n_s_self) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[163], &__pyx_n_s_set_altitude) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[164], &__pyx_n_s_set_bc_value) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[165], &__pyx_n_s_set_bullet_diameter) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[166], &__pyx_n_s_set_bullet_length) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[167], &__pyx_n_s_set_bullet_weight) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[168], &__pyx_n_s_set_custom_drag_function) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[169], &__pyx_n_s_set_distance_step) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[170], &__pyx_n_s_set_drag_table) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[171], &__pyx_n_s_set_humidity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[172], &__pyx_n_s_set_maximum_calculator_step_size) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[173], &__pyx_n_s_set_maximum_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[174], &__pyx_n_s_set_maximum_step_size) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[175], &__pyx_n_s_set_muzzle_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[176], &__pyx_n_s_set_pressure) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[177], &__pyx_n_s_set_sight_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[178], &__pyx_n_s_set_sight_height) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[179], &__pyx_n_s_set_temperature) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[180], &__pyx_n_s_set_twist) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[181], &__pyx_n_s_set_twist_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[182], &__pyx_n_s_set_wind_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[183], &__pyx_n_s_set_wind_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[184], &__pyx_n_s_set_zero_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[185], &__pyx_n_s_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[186], &__pyx_n_s_setstate_cython) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[187], &__pyx_n_s_shot_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[188], &__pyx_n_u_shot_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[189], &__pyx_n_s_sight_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[190], &__pyx_n_u_sight_angle) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[191], &__pyx_n_s_sight_height) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[192], &__pyx_n_u_sight_height) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[193], &__pyx_n_s_state) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[194], &__pyx_kp_s_stringsource) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[195], &__pyx_n_s_temperature) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[196], &__pyx_n_u_temperature) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[197], &__pyx_n_s_test) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[198], &__pyx_n_s_trajectory) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[199], &__pyx_n_s_twist) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[200], &__pyx_n_u_twist) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[201], &__pyx_n_s_twist_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[202], &__pyx_n_u_twist_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[203], &__pyx_n_s_units) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[204], &__pyx_n_s_update) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[205], &__pyx_n_s_use_setstate) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[206], &__pyx_n_s_value) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[207], &__pyx_n_s_wind_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[208], &__pyx_n_u_wind_direction) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[209], &__pyx_n_s_wind_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[210], &__pyx_n_u_wind_velocity) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[211], &__pyx_n_s_zero_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
+  if (__Pyx_InitString(__pyx_string_tab[212], &__pyx_n_u_zero_distance) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
   #endif
   #if !CYTHON_USE_MODULE_STATE
   if (__Pyx_InitStrings(__pyx_string_tab) < 0) __PYX_ERR(0, 1, __pyx_L1_error);
@@ -19155,669 +19228,669 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":159
+  /* "profile.pyx":165
  *         self._trajectory_data = data
  * 
  *     cpdef double bc_value(self):             # <<<<<<<<<<<<<<
  *         return self._bc_value
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_9bc_value, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bc_value, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 159, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_9bc_value, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bc_value, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__28)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bc_value, __pyx_t_3) < 0) __PYX_ERR(0, 159, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bc_value, __pyx_t_3) < 0) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":162
+  /* "profile.pyx":168
  *         return self._bc_value
  * 
  *     cpdef set_bc_value(self, value: double):             # <<<<<<<<<<<<<<
  *         self._bc_value = value
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 162, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_11set_bc_value, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bc_value, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 162, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 168, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_11set_bc_value, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bc_value, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__30)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bc_value, __pyx_t_2) < 0) __PYX_ERR(0, 162, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bc_value, __pyx_t_2) < 0) __PYX_ERR(0, 168, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":165
+  /* "profile.pyx":171
  *         self._bc_value = value
  * 
  *     cpdef int drag_table(self):             # <<<<<<<<<<<<<<
  *         return self._drag_table
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_13drag_table, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_drag_table, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_13drag_table, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_drag_table, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__31)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_drag_table, __pyx_t_2) < 0) __PYX_ERR(0, 165, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_drag_table, __pyx_t_2) < 0) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":168
+  /* "profile.pyx":174
  *         return self._drag_table
  * 
  *     cpdef set_drag_table(self, drag_table: int):             # <<<<<<<<<<<<<<
  *         self._drag_table = drag_table
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 168, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_drag_table, __pyx_n_s_int) < 0) __PYX_ERR(0, 168, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_15set_drag_table, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_drag_table, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 168, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_drag_table, __pyx_n_s_int) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_15set_drag_table, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_drag_table, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__33)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_drag_table, __pyx_t_3) < 0) __PYX_ERR(0, 168, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_drag_table, __pyx_t_3) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":171
+  /* "profile.pyx":177
  *         self._drag_table = drag_table
  * 
  *     cpdef bullet_diameter(self):             # <<<<<<<<<<<<<<
  *         return self._bullet_diameter
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_17bullet_diameter, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bullet_diameter, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 171, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_17bullet_diameter, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bullet_diameter, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__34)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bullet_diameter, __pyx_t_3) < 0) __PYX_ERR(0, 171, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bullet_diameter, __pyx_t_3) < 0) __PYX_ERR(0, 177, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":174
+  /* "profile.pyx":180
  *         return self._bullet_diameter
  * 
  *     cpdef set_bullet_diameter(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._bullet_diameter = Distance(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 174, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_19set_bullet_diameter, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bullet_diameter, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 174, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_19set_bullet_diameter, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bullet_diameter, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__36)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bullet_diameter, __pyx_t_2) < 0) __PYX_ERR(0, 174, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bullet_diameter, __pyx_t_2) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":177
+  /* "profile.pyx":183
  *         self._bullet_diameter = Distance(value, units)
  * 
  *     cpdef bullet_length(self):             # <<<<<<<<<<<<<<
  *         return self._bullet_length
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_21bullet_length, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bullet_length, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 177, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_21bullet_length, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bullet_length, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bullet_length, __pyx_t_2) < 0) __PYX_ERR(0, 177, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bullet_length, __pyx_t_2) < 0) __PYX_ERR(0, 183, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":180
+  /* "profile.pyx":186
  *         return self._bullet_length
  * 
  *     cpdef set_bullet_length(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._bullet_length = Distance(value, units)
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_23set_bullet_length, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bullet_length, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_23set_bullet_length, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bullet_length, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__38)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bullet_length, __pyx_t_3) < 0) __PYX_ERR(0, 180, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bullet_length, __pyx_t_3) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":183
+  /* "profile.pyx":189
  *         self._bullet_length = Distance(value, units)
  * 
  *     cpdef bullet_weight(self):             # <<<<<<<<<<<<<<
  *         return self._bullet_weight
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_25bullet_weight, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bullet_weight, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 183, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_25bullet_weight, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_bullet_weight, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bullet_weight, __pyx_t_3) < 0) __PYX_ERR(0, 183, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_bullet_weight, __pyx_t_3) < 0) __PYX_ERR(0, 189, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":186
+  /* "profile.pyx":192
  *         return self._bullet_weight
  * 
  *     cpdef set_bullet_weight(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._bullet_weight = Weight(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_27set_bullet_weight, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bullet_weight, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__40)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 186, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_27set_bullet_weight, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_bullet_weight, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__40)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bullet_weight, __pyx_t_2) < 0) __PYX_ERR(0, 186, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_bullet_weight, __pyx_t_2) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":189
+  /* "profile.pyx":195
  *         self._bullet_weight = Weight(value, units)
  * 
  *     cpdef muzzle_velocity(self):             # <<<<<<<<<<<<<<
  *         return self._muzzle_velocity
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_29muzzle_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_muzzle_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__41)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 189, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_29muzzle_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_muzzle_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__41)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_muzzle_velocity, __pyx_t_2) < 0) __PYX_ERR(0, 189, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_muzzle_velocity, __pyx_t_2) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":192
+  /* "profile.pyx":198
  *         return self._muzzle_velocity
  * 
  *     cpdef set_muzzle_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._muzzle_velocity = Velocity(value, units)
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 192, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_31set_muzzle_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_muzzle_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__42)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_31set_muzzle_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_muzzle_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__42)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_muzzle_velocity, __pyx_t_3) < 0) __PYX_ERR(0, 192, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_muzzle_velocity, __pyx_t_3) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":195
+  /* "profile.pyx":201
  *         self._muzzle_velocity = Velocity(value, units)
  * 
  *     cpdef altitude(self):             # <<<<<<<<<<<<<<
  *         return self._altitude
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_33altitude, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_altitude, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__43)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_33altitude, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_altitude, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__43)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_altitude, __pyx_t_3) < 0) __PYX_ERR(0, 195, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_altitude, __pyx_t_3) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":198
+  /* "profile.pyx":204
  *         return self._altitude
  * 
  *     cpdef set_altitude(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._altitude = Distance(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 198, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_35set_altitude, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_altitude, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__44)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 198, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_35set_altitude, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_altitude, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__44)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_altitude, __pyx_t_2) < 0) __PYX_ERR(0, 198, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_altitude, __pyx_t_2) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":201
+  /* "profile.pyx":207
  *         self._altitude = Distance(value, units)
  * 
  *     cpdef pressure(self):             # <<<<<<<<<<<<<<
  *         return self._pressure
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_37pressure, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_pressure, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__45)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 201, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_37pressure, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_pressure, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__45)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_pressure, __pyx_t_2) < 0) __PYX_ERR(0, 201, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_pressure, __pyx_t_2) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":204
+  /* "profile.pyx":210
  *         return self._pressure
  * 
  *     cpdef set_pressure(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._pressure = Pressure(value, units)
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_39set_pressure, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_pressure, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__46)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 204, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 210, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_39set_pressure, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_pressure, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__46)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_pressure, __pyx_t_3) < 0) __PYX_ERR(0, 204, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_pressure, __pyx_t_3) < 0) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":207
+  /* "profile.pyx":213
  *         self._pressure = Pressure(value, units)
  * 
  *     cpdef temperature(self):             # <<<<<<<<<<<<<<
  *         return self._temperature
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_41temperature, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_temperature, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__47)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 207, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_41temperature, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_temperature, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__47)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_temperature, __pyx_t_3) < 0) __PYX_ERR(0, 207, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_temperature, __pyx_t_3) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":210
+  /* "profile.pyx":216
  *         return self._temperature
  * 
  *     cpdef set_temperature(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._temperature = Temperature(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 210, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 210, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 210, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_43set_temperature, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_temperature, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__48)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 216, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 216, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_43set_temperature, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_temperature, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__48)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_temperature, __pyx_t_2) < 0) __PYX_ERR(0, 210, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_temperature, __pyx_t_2) < 0) __PYX_ERR(0, 216, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":213
+  /* "profile.pyx":219
  *         self._temperature = Temperature(value, units)
  * 
  *     cpdef double humidity(self):             # <<<<<<<<<<<<<<
  *         return self._humidity
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_45humidity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_humidity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__49)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 213, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_45humidity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_humidity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__49)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 219, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_humidity, __pyx_t_2) < 0) __PYX_ERR(0, 213, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_humidity, __pyx_t_2) < 0) __PYX_ERR(0, 219, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":216
+  /* "profile.pyx":222
  *         return self._humidity
  * 
  *     cpdef set_humidity(self, value: double):             # <<<<<<<<<<<<<<
  *         self._humidity = value
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 216, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 216, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_47set_humidity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_humidity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__50)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 216, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 222, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_47set_humidity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_humidity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__50)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_humidity, __pyx_t_3) < 0) __PYX_ERR(0, 216, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_humidity, __pyx_t_3) < 0) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":219
+  /* "profile.pyx":225
  *         self._humidity = value
  * 
  *     cpdef zero_distance(self):             # <<<<<<<<<<<<<<
  *         return self._zero_distance
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_49zero_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_zero_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__51)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 219, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_49zero_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_zero_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__51)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 225, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_zero_distance, __pyx_t_3) < 0) __PYX_ERR(0, 219, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_zero_distance, __pyx_t_3) < 0) __PYX_ERR(0, 225, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":222
+  /* "profile.pyx":228
  *         return self._zero_distance
  * 
  *     cpdef set_zero_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._zero_distance = Distance(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 222, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 222, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 222, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_51set_zero_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_zero_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__52)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_51set_zero_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_zero_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__52)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_zero_distance, __pyx_t_2) < 0) __PYX_ERR(0, 222, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_zero_distance, __pyx_t_2) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":225
+  /* "profile.pyx":231
  *         self._zero_distance = Distance(value, units)
  * 
  *     cpdef twist(self):             # <<<<<<<<<<<<<<
  *         return self._twist
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_53twist, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_twist, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__53)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 225, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_53twist, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_twist, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__53)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 231, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_twist, __pyx_t_2) < 0) __PYX_ERR(0, 225, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_twist, __pyx_t_2) < 0) __PYX_ERR(0, 231, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":228
+  /* "profile.pyx":234
  *         return self._twist
  * 
  *     cpdef set_twist(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._twist = Distance(value, units)
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 228, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_55set_twist, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_twist, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__54)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 228, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 234, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_55set_twist, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_twist, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__54)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 234, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_twist, __pyx_t_3) < 0) __PYX_ERR(0, 228, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_twist, __pyx_t_3) < 0) __PYX_ERR(0, 234, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":231
+  /* "profile.pyx":237
  *         self._twist = Distance(value, units)
  * 
  *     cpdef int twist_direction(self):             # <<<<<<<<<<<<<<
  *         return self._twist_direction
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_57twist_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_twist_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__55)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 231, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_57twist_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_twist_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__55)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_twist_direction, __pyx_t_3) < 0) __PYX_ERR(0, 231, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_twist_direction, __pyx_t_3) < 0) __PYX_ERR(0, 237, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":234
+  /* "profile.pyx":240
  *         return self._twist_direction
  * 
  *     cpdef set_twist_direction(self, direction: int):             # <<<<<<<<<<<<<<
  *         self._twist_direction = direction
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 234, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 240, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_direction, __pyx_n_s_int) < 0) __PYX_ERR(0, 234, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_59set_twist_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_twist_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__57)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_direction, __pyx_n_s_int) < 0) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_59set_twist_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_twist_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__57)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_twist_direction, __pyx_t_2) < 0) __PYX_ERR(0, 234, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_twist_direction, __pyx_t_2) < 0) __PYX_ERR(0, 240, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":237
+  /* "profile.pyx":243
  *         self._twist_direction = direction
  * 
  *     cpdef sight_height(self):             # <<<<<<<<<<<<<<
  *         return self._sight_height
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_61sight_height, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_sight_height, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__58)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 237, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_61sight_height, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_sight_height, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__58)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_sight_height, __pyx_t_2) < 0) __PYX_ERR(0, 237, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_sight_height, __pyx_t_2) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":240
+  /* "profile.pyx":246
  *         return self._sight_height
  * 
  *     cpdef set_sight_height(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._sight_height = Distance(value, units)
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 246, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 240, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 240, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_63set_sight_height, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_sight_height, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__59)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 240, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_63set_sight_height, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_sight_height, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__59)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 246, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_sight_height, __pyx_t_3) < 0) __PYX_ERR(0, 240, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_sight_height, __pyx_t_3) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":243
+  /* "profile.pyx":249
  *         self._sight_height = Distance(value, units)
  * 
  *     cpdef sight_angle(self):             # <<<<<<<<<<<<<<
  *         return self._sight_angle
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_65sight_angle, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_sight_angle, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__60)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 243, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_65sight_angle, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_sight_angle, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__60)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 249, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_sight_angle, __pyx_t_3) < 0) __PYX_ERR(0, 243, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_sight_angle, __pyx_t_3) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":246
+  /* "profile.pyx":252
  *         return self._sight_angle
  * 
  *     cpdef set_sight_angle(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._sight_angle = Angular(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 246, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_67set_sight_angle, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_sight_angle, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__61)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 246, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_67set_sight_angle, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_sight_angle, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__61)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_sight_angle, __pyx_t_2) < 0) __PYX_ERR(0, 246, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_sight_angle, __pyx_t_2) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":249
+  /* "profile.pyx":255
  *         self._sight_angle = Angular(value, units)
  * 
  *     cpdef maximum_distance(self):             # <<<<<<<<<<<<<<
  *         return self._maximum_distance
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_69maximum_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_maximum_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__62)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 249, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_69maximum_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_maximum_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__62)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_maximum_distance, __pyx_t_2) < 0) __PYX_ERR(0, 249, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_maximum_distance, __pyx_t_2) < 0) __PYX_ERR(0, 255, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":252
+  /* "profile.pyx":258
  *         return self._maximum_distance
  * 
  *     cpdef set_maximum_distance(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._maximum_distance = Distance(value, units)
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 252, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_71set_maximum_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_maximum_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__63)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 252, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_71set_maximum_distance, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_maximum_distance, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__63)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_maximum_distance, __pyx_t_3) < 0) __PYX_ERR(0, 252, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_maximum_distance, __pyx_t_3) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":255
+  /* "profile.pyx":261
  *         self._maximum_distance = Distance(value, units)
  * 
  *     cpdef distance_step(self):             # <<<<<<<<<<<<<<
  *         return self._distance_step
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_73distance_step, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_distance_step, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__64)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 255, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_73distance_step, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_distance_step, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__64)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_distance_step, __pyx_t_3) < 0) __PYX_ERR(0, 255, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_distance_step, __pyx_t_3) < 0) __PYX_ERR(0, 261, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":258
+  /* "profile.pyx":264
  *         return self._distance_step
  * 
  *     cpdef set_distance_step(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._distance_step = Distance(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 258, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_75set_distance_step, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_distance_step, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__65)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 258, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_75set_distance_step, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_distance_step, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__65)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 264, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_distance_step, __pyx_t_2) < 0) __PYX_ERR(0, 258, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_distance_step, __pyx_t_2) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":261
+  /* "profile.pyx":267
  *         self._distance_step = Distance(value, units)
  * 
  *     cpdef wind_velocity(self):             # <<<<<<<<<<<<<<
  *         return self._wind_velocity
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_77wind_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_wind_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 261, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_77wind_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_wind_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__66)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_wind_velocity, __pyx_t_2) < 0) __PYX_ERR(0, 261, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_wind_velocity, __pyx_t_2) < 0) __PYX_ERR(0, 267, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":264
+  /* "profile.pyx":270
  *         return self._wind_velocity
  * 
  *     cpdef set_wind_velocity(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._wind_velocity = Velocity(value, units)
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 264, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_79set_wind_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_wind_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__67)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 264, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_79set_wind_velocity, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_wind_velocity, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__67)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 270, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_wind_velocity, __pyx_t_3) < 0) __PYX_ERR(0, 264, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_wind_velocity, __pyx_t_3) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":267
+  /* "profile.pyx":273
  *         self._wind_velocity = Velocity(value, units)
  * 
  *     cpdef wind_direction(self):             # <<<<<<<<<<<<<<
  *         return self._wind_direction
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_81wind_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_wind_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__68)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 267, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_81wind_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_wind_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__68)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_wind_direction, __pyx_t_3) < 0) __PYX_ERR(0, 267, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_wind_direction, __pyx_t_3) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":270
+  /* "profile.pyx":276
  *         return self._wind_direction
  * 
  *     cpdef set_wind_direction(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._wind_direction = Angular(value, units)
  * 
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 270, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_83set_wind_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_wind_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__69)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 270, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_83set_wind_direction, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_wind_direction, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__69)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_wind_direction, __pyx_t_2) < 0) __PYX_ERR(0, 270, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_wind_direction, __pyx_t_2) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":273
+  /* "profile.pyx":279
  *         self._wind_direction = Angular(value, units)
  * 
  *     cpdef custom_drag_function(self):             # <<<<<<<<<<<<<<
  *         return self._custom_drag_function
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_85custom_drag_function, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_custom_drag_function, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__70)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 273, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_85custom_drag_function, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_custom_drag_function, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__70)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_custom_drag_function, __pyx_t_2) < 0) __PYX_ERR(0, 273, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_custom_drag_function, __pyx_t_2) < 0) __PYX_ERR(0, 279, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":276
+  /* "profile.pyx":282
  *         return self._custom_drag_function
  * 
  *     cpdef set_custom_drag_function(self, data: list[dict[str, double]]):             # <<<<<<<<<<<<<<
  *         self._custom_drag_function = data
  *         self._drag_table = 0
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 276, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_data, __pyx_kp_s_list_dict_str_double) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_87set_custom_drag_function, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_custom_drag_function, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__72)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_data, __pyx_kp_s_list_dict_str_double) < 0) __PYX_ERR(0, 282, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_87set_custom_drag_function, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_custom_drag_function, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__72)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_3, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_custom_drag_function, __pyx_t_3) < 0) __PYX_ERR(0, 276, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_custom_drag_function, __pyx_t_3) < 0) __PYX_ERR(0, 282, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":281
+  /* "profile.pyx":287
  *         self._bc_value = 0
  * 
  *     cpdef maximum_step_size(self):             # <<<<<<<<<<<<<<
  *         return self._maximum_step_size
  * 
  */
-  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_89maximum_step_size, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_maximum_step_size, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__73)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 281, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_89maximum_step_size, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_maximum_step_size, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__73)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 287, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_maximum_step_size, __pyx_t_3) < 0) __PYX_ERR(0, 281, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_maximum_step_size, __pyx_t_3) < 0) __PYX_ERR(0, 287, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
-  /* "profile.pyx":284
+  /* "profile.pyx":290
  *         return self._maximum_step_size
  * 
  *     cpdef set_maximum_step_size(self, value: double, units: int):             # <<<<<<<<<<<<<<
  *         self._maximum_step_size = Distance(value, units)
  */
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 284, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 290, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 284, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 284, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_91set_maximum_step_size, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_maximum_step_size, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__74)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 284, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_value, __pyx_n_s_double) < 0) __PYX_ERR(0, 290, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_units, __pyx_n_s_int) < 0) __PYX_ERR(0, 290, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7profile_7Profile_91set_maximum_step_size, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_Profile_set_maximum_step_size, NULL, __pyx_n_s_profile, __pyx_d, ((PyObject *)__pyx_codeobj__74)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 290, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_3);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_maximum_step_size, __pyx_t_2) < 0) __PYX_ERR(0, 284, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_7profile_Profile->tp_dict, __pyx_n_s_set_maximum_step_size, __pyx_t_2) < 0) __PYX_ERR(0, 290, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_7profile_Profile);
 
@@ -19924,6 +19997,105 @@ end:
     return (__Pyx_RefNannyAPIStruct *)r;
 }
 #endif
+
+/* PyErrExceptionMatches */
+#if CYTHON_FAST_THREAD_STATE
+static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
+    Py_ssize_t i, n;
+    n = PyTuple_GET_SIZE(tuple);
+#if PY_MAJOR_VERSION >= 3
+    for (i=0; i<n; i++) {
+        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
+    }
+#endif
+    for (i=0; i<n; i++) {
+        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
+    }
+    return 0;
+}
+static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
+    PyObject *exc_type = tstate->curexc_type;
+    if (exc_type == err) return 1;
+    if (unlikely(!exc_type)) return 0;
+    if (unlikely(PyTuple_Check(err)))
+        return __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
+    return __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
+}
+#endif
+
+/* PyErrFetchRestore */
+#if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    tmp_type = tstate->curexc_type;
+    tmp_value = tstate->curexc_value;
+    tmp_tb = tstate->curexc_traceback;
+    tstate->curexc_type = type;
+    tstate->curexc_value = value;
+    tstate->curexc_traceback = tb;
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+}
+static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+    *type = tstate->curexc_type;
+    *value = tstate->curexc_value;
+    *tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
+}
+#endif
+
+/* PyObjectGetAttrStr */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (likely(tp->tp_getattro))
+        return tp->tp_getattro(obj, attr_name);
+#if PY_MAJOR_VERSION < 3
+    if (likely(tp->tp_getattr))
+        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
+#endif
+    return PyObject_GetAttr(obj, attr_name);
+}
+#endif
+
+/* PyObjectGetAttrStrNoError */
+static void __Pyx_PyObject_GetAttrStr_ClearAttributeError(void) {
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    if (likely(__Pyx_PyErr_ExceptionMatches(PyExc_AttributeError)))
+        __Pyx_PyErr_Clear();
+}
+static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStrNoError(PyObject* obj, PyObject* attr_name) {
+    PyObject *result;
+#if CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_TYPE_SLOTS && PY_VERSION_HEX >= 0x030700B1
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (likely(tp->tp_getattro == PyObject_GenericGetAttr)) {
+        return _PyObject_GenericGetAttrWithDict(obj, attr_name, NULL, 1);
+    }
+#endif
+    result = __Pyx_PyObject_GetAttrStr(obj, attr_name);
+    if (unlikely(!result)) {
+        __Pyx_PyObject_GetAttrStr_ClearAttributeError();
+    }
+    return result;
+}
+
+/* GetBuiltinName */
+static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
+    PyObject* result = __Pyx_PyObject_GetAttrStrNoError(__pyx_b, name);
+    if (unlikely(!result) && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_NameError,
+#if PY_MAJOR_VERSION >= 3
+            "name '%U' is not defined", name);
+#else
+            "name '%.200s' is not defined", PyString_AS_STRING(name));
+#endif
+    }
+    return result;
+}
 
 /* TupleAndListFromArray */
 #if CYTHON_COMPILING_IN_CPYTHON
@@ -20286,105 +20458,6 @@ static void __Pyx_RaiseArgtupleInvalid(
                  "%.200s() takes %.8s %" CYTHON_FORMAT_SSIZE_T "d positional argument%.1s (%" CYTHON_FORMAT_SSIZE_T "d given)",
                  func_name, more_or_less, num_expected,
                  (num_expected == 1) ? "" : "s", num_found);
-}
-
-/* PyErrExceptionMatches */
-#if CYTHON_FAST_THREAD_STATE
-static int __Pyx_PyErr_ExceptionMatchesTuple(PyObject *exc_type, PyObject *tuple) {
-    Py_ssize_t i, n;
-    n = PyTuple_GET_SIZE(tuple);
-#if PY_MAJOR_VERSION >= 3
-    for (i=0; i<n; i++) {
-        if (exc_type == PyTuple_GET_ITEM(tuple, i)) return 1;
-    }
-#endif
-    for (i=0; i<n; i++) {
-        if (__Pyx_PyErr_GivenExceptionMatches(exc_type, PyTuple_GET_ITEM(tuple, i))) return 1;
-    }
-    return 0;
-}
-static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tstate, PyObject* err) {
-    PyObject *exc_type = tstate->curexc_type;
-    if (exc_type == err) return 1;
-    if (unlikely(!exc_type)) return 0;
-    if (unlikely(PyTuple_Check(err)))
-        return __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
-    return __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
-}
-#endif
-
-/* PyErrFetchRestore */
-#if CYTHON_FAST_THREAD_STATE
-static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    tmp_type = tstate->curexc_type;
-    tmp_value = tstate->curexc_value;
-    tmp_tb = tstate->curexc_traceback;
-    tstate->curexc_type = type;
-    tstate->curexc_value = value;
-    tstate->curexc_traceback = tb;
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-}
-static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
-    *type = tstate->curexc_type;
-    *value = tstate->curexc_value;
-    *tb = tstate->curexc_traceback;
-    tstate->curexc_type = 0;
-    tstate->curexc_value = 0;
-    tstate->curexc_traceback = 0;
-}
-#endif
-
-/* PyObjectGetAttrStr */
-#if CYTHON_USE_TYPE_SLOTS
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStr(PyObject* obj, PyObject* attr_name) {
-    PyTypeObject* tp = Py_TYPE(obj);
-    if (likely(tp->tp_getattro))
-        return tp->tp_getattro(obj, attr_name);
-#if PY_MAJOR_VERSION < 3
-    if (likely(tp->tp_getattr))
-        return tp->tp_getattr(obj, PyString_AS_STRING(attr_name));
-#endif
-    return PyObject_GetAttr(obj, attr_name);
-}
-#endif
-
-/* PyObjectGetAttrStrNoError */
-static void __Pyx_PyObject_GetAttrStr_ClearAttributeError(void) {
-    __Pyx_PyThreadState_declare
-    __Pyx_PyThreadState_assign
-    if (likely(__Pyx_PyErr_ExceptionMatches(PyExc_AttributeError)))
-        __Pyx_PyErr_Clear();
-}
-static CYTHON_INLINE PyObject* __Pyx_PyObject_GetAttrStrNoError(PyObject* obj, PyObject* attr_name) {
-    PyObject *result;
-#if CYTHON_COMPILING_IN_CPYTHON && CYTHON_USE_TYPE_SLOTS && PY_VERSION_HEX >= 0x030700B1
-    PyTypeObject* tp = Py_TYPE(obj);
-    if (likely(tp->tp_getattro == PyObject_GenericGetAttr)) {
-        return _PyObject_GenericGetAttrWithDict(obj, attr_name, NULL, 1);
-    }
-#endif
-    result = __Pyx_PyObject_GetAttrStr(obj, attr_name);
-    if (unlikely(!result)) {
-        __Pyx_PyObject_GetAttrStr_ClearAttributeError();
-    }
-    return result;
-}
-
-/* GetBuiltinName */
-static PyObject *__Pyx_GetBuiltinName(PyObject *name) {
-    PyObject* result = __Pyx_PyObject_GetAttrStrNoError(__pyx_b, name);
-    if (unlikely(!result) && !PyErr_Occurred()) {
-        PyErr_Format(PyExc_NameError,
-#if PY_MAJOR_VERSION >= 3
-            "name '%U' is not defined", name);
-#else
-            "name '%.200s' is not defined", PyString_AS_STRING(name));
-#endif
-    }
-    return result;
 }
 
 /* PyDictVersioning */
@@ -20756,6 +20829,12 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_FastCallDict(PyObject *func, PyObj
         return __Pyx_PyObject_Call(func, __pyx_empty_tuple, kwargs);
     }
     return __Pyx_PyObject_FastCall_fallback(func, args, (size_t)nargs, kwargs);
+}
+
+/* PyObjectCallOneArg */
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
+    PyObject *args[2] = {NULL, arg};
+    return __Pyx_PyObject_FastCall(func, args+1, 1 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
 }
 
 /* WriteUnraisableException */
@@ -21302,12 +21381,6 @@ static int __Pyx_fix_up_extension_type_from_spec(PyType_Spec *spec, PyTypeObject
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
     PyObject *arg = NULL;
     return __Pyx_PyObject_FastCall(func, (&arg)+1, 0 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
-}
-
-/* PyObjectCallOneArg */
-static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg) {
-    PyObject *args[2] = {NULL, arg};
-    return __Pyx_PyObject_FastCall(func, args+1, 1 | __Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET);
 }
 
 /* PyObjectGetMethod */
