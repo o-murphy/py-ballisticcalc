@@ -111,9 +111,9 @@ class MultipleBallisticCoefficient(object):
         linear interpolation of bc table
         :return: interpolated bc table for default drag function length
         """
-        bc_mah = [BCDataPoint(point.bc, point.v / self._speed_of_sound) for point in self._bc_table]
-        bc_mah[0].v = self._df_table[-1].a
+        bc_mah = [BCDataPoint(point.bc, point.v / self.speed_of_sound.get_in(unit.VelocityMPS)) for point in self._bc_table]
         bc_mah.insert(len(bc_mah), BCDataPoint(bc_mah[-1].bc, self._df_table[0].a))
+        bc_mah.insert(0, BCDataPoint(bc_mah[0].bc, self._df_table[-1].a))
         bc_extended = [bc_mah[0].bc, ]
 
         for i in range(1, len(bc_mah)):
@@ -133,6 +133,7 @@ class MultipleBallisticCoefficient(object):
         bc values for each point of default drag function to output
         :return: custom drag table calculated by multiple bc
         """
+
         bc_extended = self._bc_extended()
         drag_function = []
         for i, point in enumerate(self._df_table):

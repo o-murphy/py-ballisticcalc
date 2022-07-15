@@ -66,8 +66,8 @@ cdef class MultipleBallisticCoefficient:
         cdef double bc_delta
 
         bc_mah = [BCDataPoint(point.bc(), point.v() / self._speed_of_sound) for point in self._bc_table]
-        bc_mah[0].set_v(self._table_data[-1].a())
         bc_mah.insert(len(bc_mah), BCDataPoint(bc_mah[-1].bc(), self._table_data[0].a()))
+        bc_mah.insert(0, BCDataPoint(bc_mah[0].bc(), self._table_data[-1].a()))
         bc_extended = [bc_mah[0].bc(), ]
 
         for i in range(1, len(bc_mah)):
