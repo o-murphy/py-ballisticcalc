@@ -218,6 +218,7 @@ class TestG7Profile(unittest.TestCase):
         wind = create_only_wind_info(Velocity(0, VelocityMPS), Angular(0, AngularDegree))
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(Distance(1, DistanceFoot))
+        print(timeit.timeit(lambda: calc.sight_angle(ammo, weapon, atmo), number=1))
         sight_angle = calc.sight_angle(ammo, weapon, atmo)
         shot_info = ShotParameters(sight_angle, Distance(2500, DistanceMeter), Distance(1, DistanceMeter))
         return calc.trajectory(ammo, weapon, atmo, shot_info, wind)

@@ -87,9 +87,9 @@ cdef class TrajectoryCalculator:
 
                 delta_time = calculation_step / velocity_vector.x()
                 velocity = velocity_vector.magnitude()
-                drag = density_factor * velocity * ammunition\
-                    .bullet()\
-                    .ballistic_coefficient()\
+                drag = density_factor * velocity * ammunition \
+                    .bullet() \
+                    .ballistic_coefficient() \
                     .drag(velocity / mach)
 
                 velocity_vector = velocity_vector.subtract(
@@ -175,7 +175,7 @@ cdef class TrajectoryCalculator:
 
         range_vector = Vector(.0, -weapon.sight_height().get_in(DistanceFoot), 0)
         velocity_vector = Vector(cos(barrel_elevation) * cos(barrel_azimuth), sin(barrel_elevation),
-                                      cos(barrel_elevation) * sin(barrel_azimuth)).multiply_by_const(velocity)
+                                 cos(barrel_elevation) * sin(barrel_azimuth)).multiply_by_const(velocity)
         current_item = 0
 
         maximum_range = range_to
@@ -237,18 +237,26 @@ cdef class TrajectoryCalculator:
             velocity_adjusted = velocity_vector.subtract(wind_vector)
             velocity = velocity_adjusted.magnitude()
 
-            drag = density_factor * velocity * ammunition.bullet().ballistic_coefficient().drag(velocity / mach)
+            drag = density_factor * velocity * ammunition \
+                .bullet() \
+                .ballistic_coefficient() \
+                .drag(velocity / mach)
+
             velocity_vector = velocity_vector.subtract(
-                (velocity_adjusted.multiply_by_const(drag).subtract(gravity_vector)).multiply_by_const(delta_time)
+                (
+                    velocity_adjusted.multiply_by_const(drag).subtract(
+                        gravity_vector)
+                ).multiply_by_const(delta_time)
             )
-            delta_range_vector = Vector(
-                calculation_step, velocity_vector.y() * delta_time, velocity_vector.z() * delta_time
-            )
+            delta_range_vector = Vector(calculation_step,
+                                        velocity_vector.y() * delta_time,
+                                        velocity_vector.z() * delta_time)
             range_vector = range_vector.add(delta_range_vector)
             velocity = velocity_vector.magnitude()
             time = time + delta_range_vector.magnitude() / velocity
 
         return ranges
+
 
 cdef double calculate_stability_coefficient(ammunition_info, rifle_info, atmosphere):
     cdef double weight = ammunition_info.bullet().bullet_weight().get_in(WeightGrain)
