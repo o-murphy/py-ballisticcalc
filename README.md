@@ -4,13 +4,21 @@ LGPL library for small arms ballistic calculations (Python 3)
 Installation
 ------------
 **Stable release from pypi**
+(Contains c-extensions which offer higher performance)
 ```commandline
 pip install py-ballisticcalc
 ```
-**Latest release, may contain some issues**
+**Latest (only pure python) release, may contain some issues**
 ```commandline
 pip install git+https://github.com/o-murphy/py_ballisticcalc
 ```    
+
+**Also use `git clone` to build your own package**
+(Contains cython files to build your own c-extensions)
+```commandline
+git clone https://github.com/o-murphy/py_ballisticcalc
+```   
+
 
 Usage
 -----

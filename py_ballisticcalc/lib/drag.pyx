@@ -29,9 +29,6 @@ cdef class BallisticCoefficient:
         self._sectional_density = self._get_sectional_density()
         self._custom_drag_table = custom_drag_table
 
-        print(len(self._custom_drag_table), self._table)
-        print(self._table == 0 and len(self._custom_drag_table) > 0)
-
         if self._table == 0 and len(self._custom_drag_table) > 0:
             self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
             self._value = self._get_custom_bc()

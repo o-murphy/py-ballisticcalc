@@ -121,7 +121,6 @@ cdef class Profile(object):
         drag_table = self._drag_table
 
         if len(self._multiple_bc_table) > 0 >= self._bc_value:
-            print(self._drag_table)
             mbc = MultipleBallisticCoefficient(
                 self._drag_table,
                 self._bullet_diameter,
@@ -130,7 +129,6 @@ cdef class Profile(object):
                 self._muzzle_velocity.units()
             )
             self._custom_drag_function = mbc.custom_drag_func()
-            print(self._custom_drag_function)
             self._bc_value = 0
 
             drag_table = 0

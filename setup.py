@@ -20,4 +20,5 @@ setup(
     py_modules=['py_ballisticcalc'],
     requirements=[],
     include_package_data=True,
+    package_data={'profile': ['py_ballisticcalc/lib/profile.cp39-win_amd64.pyd']}
 )
