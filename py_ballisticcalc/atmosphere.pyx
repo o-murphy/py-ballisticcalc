@@ -1,5 +1,5 @@
 from libc.math cimport pow, sqrt, fabs
-from py_ballisticcalc.lib.bmath.unit import *
+from .bmath.unit import *
 
 
 cIcaoStandardTemperatureR: double = 518.67

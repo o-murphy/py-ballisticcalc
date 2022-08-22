@@ -1,5 +1,5 @@
 from libc.math cimport fmod, floor
-from py_ballisticcalc.lib.bmath.unit import *
+from .bmath.unit import *
 
 
 cdef class Timespan:

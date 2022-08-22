@@ -1,2 +1,2 @@
-from .vector import Vector
+from .vector import *
 from .unit import *

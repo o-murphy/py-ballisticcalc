@@ -1,4 +1,4 @@
-from py_ballisticcalc.lib.bmath.unit import *
+from .bmath.unit import *
 
 
 cdef class ShotParameters:

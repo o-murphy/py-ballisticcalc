@@ -1,6 +1,6 @@
 from libc.math cimport floor, pow
-from py_ballisticcalc.lib.bmath.unit import *
-from py_ballisticcalc.lib.drag_tables import *
+from .bmath.unit import *
+from .drag_tables import *
 
 DragTableG1: int = 1
 DragTableG2: int = 2

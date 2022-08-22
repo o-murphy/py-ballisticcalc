@@ -6,18 +6,18 @@ import pyximport
 from math import fabs
 
 pyximport.install()
-from py_ballisticcalc.lib.atmosphere import Atmosphere, IcaoAtmosphere
-from py_ballisticcalc.lib.drag import BallisticCoefficient, DragTableG1, DragTableG7
-from py_ballisticcalc.lib.projectile import Projectile, ProjectileWithDimensions
-from py_ballisticcalc.lib.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist, Weapon
-from py_ballisticcalc.lib.wind import create_only_wind_info
-from py_ballisticcalc.lib.shot_parameters import ShotParameters, ShotParametersUnlevel
-from py_ballisticcalc.lib.trajectory_calculator import TrajectoryCalculator
-from py_ballisticcalc.lib.trajectory_data import TrajectoryData
-from py_ballisticcalc.lib.bmath import unit as unit
-from py_ballisticcalc.lib.bmath.unit import *
-from py_ballisticcalc.lib.profile import Profile as cProfile
-from py_ballisticcalc.lib.tools import MultipleBallisticCoefficient
+from py_ballisticcalc.atmosphere import Atmosphere, IcaoAtmosphere
+from py_ballisticcalc.drag import BallisticCoefficient, DragTableG1, DragTableG7
+from py_ballisticcalc.projectile import Projectile, ProjectileWithDimensions
+from py_ballisticcalc.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist, Weapon
+from py_ballisticcalc.wind import create_only_wind_info
+from py_ballisticcalc.shot_parameters import ShotParameters, ShotParametersUnlevel
+from py_ballisticcalc.trajectory_calculator import TrajectoryCalculator
+from py_ballisticcalc.trajectory_data import TrajectoryData
+from py_ballisticcalc.bmath import unit as unit
+from py_ballisticcalc.bmath.unit import *
+from py_ballisticcalc.profile import Profile as cProfile
+from py_ballisticcalc.multiple_bc import MultipleBallisticCoefficient
 
 
 class TestProfile(unittest.TestCase):

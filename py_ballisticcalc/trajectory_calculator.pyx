@@ -1,12 +1,12 @@
 from libc.math cimport fabs, pow, sin, cos, log10, floor, atan
-from py_ballisticcalc.lib.bmath.unit import *
-from py_ballisticcalc.lib.bmath.vector import Vector
-from py_ballisticcalc.lib.projectile import Ammunition
-from py_ballisticcalc.lib.weapon import Weapon, TwistLeft
-from py_ballisticcalc.lib.atmosphere import Atmosphere
-from py_ballisticcalc.lib.shot_parameters import ShotParameters
-from py_ballisticcalc.lib.wind import WindInfo
-from py_ballisticcalc.lib.trajectory_data import TrajectoryData, Timespan
+from .bmath.unit import *
+from .bmath.vector import Vector
+from .projectile import Ammunition
+from .weapon import Weapon, TwistLeft
+from .atmosphere import Atmosphere
+from .shot_parameters import ShotParameters
+from .wind import WindInfo
+from .trajectory_data import TrajectoryData, Timespan
 
 cdef double cZeroFindingAccuracy = 0.000005
 cdef double cMinimumVelocity = 50.0

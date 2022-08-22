@@ -8,25 +8,25 @@ import py_ballisticcalc
 from setuptools import setup, find_packages
 
 extensions = [
-    Extension('py_ballisticcalc.lib.bmath.vector.vector', ['py_ballisticcalc/lib/bmath/vector/vector.pyx']),
-    Extension('py_ballisticcalc.lib.bmath.unit.energy', ['py_ballisticcalc/lib/bmath/unit/energy.pyx']),
-    Extension('py_ballisticcalc.lib.bmath.unit.temperature', ['py_ballisticcalc/lib/bmath/unit/temperature.pyx']),
-    Extension('py_ballisticcalc.lib.bmath.unit.pressure', ['py_ballisticcalc/lib/bmath/unit/pressure.pyx']),
-    Extension('py_ballisticcalc.lib.bmath.unit.velocity', ['py_ballisticcalc/lib/bmath/unit/velocity.pyx']),
-    Extension('py_ballisticcalc.lib.bmath.unit.distance', ['py_ballisticcalc/lib/bmath/unit/distance.pyx']),
-    Extension('py_ballisticcalc.lib.bmath.unit.angular', ['py_ballisticcalc/lib/bmath/unit/angular.pyx']),
-    Extension('py_ballisticcalc.lib.bmath.unit.weight', ['py_ballisticcalc/lib/bmath/unit/weight.pyx']),
-    Extension('py_ballisticcalc.lib.atmosphere', ['py_ballisticcalc/lib/atmosphere.pyx']),
-    Extension('py_ballisticcalc.lib.shot_parameters', ['py_ballisticcalc/lib/shot_parameters.pyx']),
-    Extension('py_ballisticcalc.lib.drag', ['py_ballisticcalc/lib/drag.pyx']),
-    Extension('py_ballisticcalc.lib.projectile', ['py_ballisticcalc/lib/projectile.pyx']),
-    Extension('py_ballisticcalc.lib.trajectory_calculator', ['py_ballisticcalc/lib/trajectory_calculator.pyx']),
-    Extension('py_ballisticcalc.lib.trajectory_data', ['py_ballisticcalc/lib/trajectory_data.pyx']),
-    Extension('py_ballisticcalc.lib.weapon', ['py_ballisticcalc/lib/weapon.pyx']),
-    Extension('py_ballisticcalc.lib.wind', ['py_ballisticcalc/lib/wind.pyx']),
-    Extension('py_ballisticcalc.lib.tools.multiple_bc', ['py_ballisticcalc/lib/tools/multiple_bc.pyx']),
-    Extension('py_ballisticcalc.lib.profile', ['py_ballisticcalc/lib/profile.pyx']),
-    Extension('py_ballisticcalc.lib.drag_tables', ['py_ballisticcalc/lib/drag_tables.pyx']),
+    Extension('py_ballisticcalc.bmath.vector.vector', ['py_ballisticcalc/bmath/vector/vector.pyx']),
+    Extension('py_ballisticcalc.bmath.unit.energy', ['py_ballisticcalc/bmath/unit/energy.pyx']),
+    Extension('py_ballisticcalc.bmath.unit.temperature', ['py_ballisticcalc/bmath/unit/temperature.pyx']),
+    Extension('py_ballisticcalc.bmath.unit.pressure', ['py_ballisticcalc/bmath/unit/pressure.pyx']),
+    Extension('py_ballisticcalc.bmath.unit.velocity', ['py_ballisticcalc/bmath/unit/velocity.pyx']),
+    Extension('py_ballisticcalc.bmath.unit.distance', ['py_ballisticcalc/bmath/unit/distance.pyx']),
+    Extension('py_ballisticcalc.bmath.unit.angular', ['py_ballisticcalc/bmath/unit/angular.pyx']),
+    Extension('py_ballisticcalc.bmath.unit.weight', ['py_ballisticcalc/bmath/unit/weight.pyx']),
+    Extension('py_ballisticcalc.atmosphere', ['py_ballisticcalc/atmosphere.pyx']),
+    Extension('py_ballisticcalc.shot_parameters', ['py_ballisticcalc/shot_parameters.pyx']),
+    Extension('py_ballisticcalc.drag', ['py_ballisticcalc/drag.pyx']),
+    Extension('py_ballisticcalc.projectile', ['py_ballisticcalc/projectile.pyx']),
+    Extension('py_ballisticcalc.trajectory_calculator', ['py_ballisticcalc/trajectory_calculator.pyx']),
+    Extension('py_ballisticcalc.trajectory_data', ['py_ballisticcalc/trajectory_data.pyx']),
+    Extension('py_ballisticcalc.weapon', ['py_ballisticcalc/weapon.pyx']),
+    Extension('py_ballisticcalc.wind', ['py_ballisticcalc/wind.pyx']),
+    Extension('py_ballisticcalc.multiple_bc', ['py_ballisticcalc/multiple_bc.pyx']),
+    Extension('py_ballisticcalc.profile', ['py_ballisticcalc/profile.pyx']),
+    Extension('py_ballisticcalc.drag_tables', ['py_ballisticcalc/drag_tables.pyx']),
 ]
 
 # setup(
@@ -39,8 +39,10 @@ extensions = [
 setup(
     ext_modules=cythonize(
         extensions, language_level=3,
+        force=True
         # annotate=True,
     ),
+
     name='py_ballisticcalc',
     version=py_ballisticcalc.__version__,
     packages=find_packages(),

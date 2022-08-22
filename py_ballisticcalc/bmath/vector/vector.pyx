@@ -1,4 +1,3 @@
-import cython
 from libc.math cimport sqrt, fabs
 
 cdef struct vector:

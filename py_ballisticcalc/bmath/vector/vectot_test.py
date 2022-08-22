@@ -3,7 +3,7 @@ import unittest
 import pyximport
 import math
 pyximport.install()
-from py_ballisticcalc.lib.bmath.vector.vector import Vector
+from py_ballisticcalc.bmath.vector import Vector
 
 
 class TestVector(unittest.TestCase):

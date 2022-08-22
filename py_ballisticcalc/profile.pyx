@@ -1,12 +1,12 @@
-from py_ballisticcalc.lib.atmosphere import Atmosphere
-from py_ballisticcalc.lib.drag import BallisticCoefficient, DragTableG7
-from py_ballisticcalc.lib.projectile import ProjectileWithDimensions
-from py_ballisticcalc.lib.weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist
-from py_ballisticcalc.lib.wind import create_only_wind_info
-from py_ballisticcalc.lib.shot_parameters import ShotParametersUnlevel
-from py_ballisticcalc.lib.trajectory_calculator import TrajectoryCalculator
-from py_ballisticcalc.lib.bmath.unit import *
-from py_ballisticcalc.lib.tools import MultipleBallisticCoefficient
+from .atmosphere import Atmosphere
+from .drag import BallisticCoefficient, DragTableG7
+from .projectile import ProjectileWithDimensions
+from .weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist
+from .wind import create_only_wind_info
+from .shot_parameters import ShotParametersUnlevel
+from .trajectory_calculator import TrajectoryCalculator
+from .bmath.unit import *
+from .multiple_bc import MultipleBallisticCoefficient
 
 cdef class Profile(object):
     cdef int _drag_table, _twist_direction
