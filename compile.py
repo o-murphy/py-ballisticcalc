@@ -27,6 +27,8 @@ extensions = [
     Extension('py_ballisticcalc.multiple_bc', ['py_ballisticcalc/multiple_bc.pyx']),
     Extension('py_ballisticcalc.profile', ['py_ballisticcalc/profile.pyx']),
     Extension('py_ballisticcalc.drag_tables', ['py_ballisticcalc/drag_tables.pyx']),
+
+    # Extension('py_ballisticcalc.__init__', ['py_ballisticcalc/__init__.py']),
 ]
 
 # setup(
@@ -39,13 +41,14 @@ extensions = [
 setup(
     ext_modules=cythonize(
         extensions, language_level=3,
-        force=True
+        # force=True,
         # annotate=True,
     ),
 
     name='py_ballisticcalc',
     version=py_ballisticcalc.__version__,
     packages=find_packages(),
+    # packages=['py_ballisticcalc'],
     url='https://github.com/o-murphy/py_ballisticcalc',
     download_url='http://pypi.python.org/pypi/py_ballisticcalc/',
     license='LGPL-3.0',

@@ -1,6 +1,4 @@
 
-# from .bmath import *
-
 __author__ = "o-murphy"
 __copyright__ = ("",)
 
