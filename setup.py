@@ -1,10 +1,23 @@
 #!/usr/bin/env python
-import sys
+from setuptools import setup, find_packages, Extension
+from Cython.Build import cythonize
 import py_ballisticcalc
 
-from setuptools import setup, find_packages
+extensions = [
+    Extension('*', ['py_ballisticcalc/*.pyx']),
+    Extension('*', ['py_ballisticcalc/bmath/unit/*.pyx']),
+    Extension('*', ['py_ballisticcalc/bmath/vector/*.pyx']),
+    # Extension('*', ['py_ballisticcalc/__init__.py']),
+    # Extension('*', ['py_ballisticcalc/bmath/unit/__init__.py']),
+    # Extension('*', ['py_ballisticcalc/bmath/vector/__init__.py']),
+]
 
 setup(
+    ext_modules=cythonize(
+        extensions,
+        language_level=3,
+        # annotate=True,
+    ),
     name='py_ballisticcalc',
     version=py_ballisticcalc.__version__,
     packages=find_packages(),

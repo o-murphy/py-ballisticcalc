@@ -1,1 +1,1 @@
-recursive-include py_ballistic_calc/lib *.pyd
+recursive-include py_ballisticcalc *.pyd
