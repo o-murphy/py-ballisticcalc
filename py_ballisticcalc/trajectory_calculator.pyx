@@ -76,7 +76,7 @@ cdef class TrajectoryCalculator:
                 cos(barrel_elevation) * cos(barrel_azimuth),
                 sin(barrel_elevation),
                 cos(barrel_elevation) * sin(barrel_azimuth)
-            ).multiply_by_const(velocity)
+            ) * velocity
 
             zero_distance = weapon.zero().zero_distance().get_in(DistanceFoot)
             maximum_range = zero_distance + calculation_step
@@ -92,17 +92,12 @@ cdef class TrajectoryCalculator:
                     .ballistic_coefficient() \
                     .drag(velocity / mach)
 
-                velocity_vector = velocity_vector.subtract(
-                    (
-                        velocity_vector.multiply_by_const(drag).subtract(
-                            gravity_vector)
-                    ).multiply_by_const(delta_time)
-                )
+                velocity_vector = velocity_vector - (velocity_vector * drag - gravity_vector) * delta_time
 
                 delta_range_vector = Vector(calculation_step,
                                             velocity_vector.y() * delta_time,
                                             velocity_vector.z() * delta_time)
-                range_vector = range_vector.add(delta_range_vector)
+                range_vector = range_vector + delta_range_vector
                 velocity = velocity_vector.magnitude()
                 time = time + delta_range_vector.magnitude() / velocity
                 if fabs(range_vector.x() - zero_distance) < 0.5 * calculation_step:
@@ -175,7 +170,7 @@ cdef class TrajectoryCalculator:
 
         range_vector = Vector(.0, -weapon.sight_height().get_in(DistanceFoot), 0)
         velocity_vector = Vector(cos(barrel_elevation) * cos(barrel_azimuth), sin(barrel_elevation),
-                                 cos(barrel_elevation) * sin(barrel_azimuth)).multiply_by_const(velocity)
+                                 cos(barrel_elevation) * sin(barrel_azimuth)) * velocity
         current_item = 0
 
         maximum_range = range_to
@@ -234,7 +229,7 @@ cdef class TrajectoryCalculator:
                     break
 
             delta_time = calculation_step / velocity_vector.x()
-            velocity_adjusted = velocity_vector.subtract(wind_vector)
+            velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()
 
             drag = density_factor * velocity * ammunition \
@@ -242,16 +237,11 @@ cdef class TrajectoryCalculator:
                 .ballistic_coefficient() \
                 .drag(velocity / mach)
 
-            velocity_vector = velocity_vector.subtract(
-                (
-                    velocity_adjusted.multiply_by_const(drag).subtract(
-                        gravity_vector)
-                ).multiply_by_const(delta_time)
-            )
+            velocity_vector = velocity_vector - (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calculation_step,
                                         velocity_vector.y() * delta_time,
                                         velocity_vector.z() * delta_time)
-            range_vector = range_vector.add(delta_range_vector)
+            range_vector = range_vector + delta_range_vector
             velocity = velocity_vector.magnitude()
             time = time + delta_range_vector.magnitude() / velocity
 

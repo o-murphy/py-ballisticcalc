@@ -1,4 +1,6 @@
 from libc.math cimport sqrt, fabs
+from typing import Any
+
 
 cdef struct vector:
     double x
@@ -61,12 +63,42 @@ cdef class Vector:
             return Vector(self._x, self._y, self._z)
         return self.multiply_by_const(1.0 / m)
 
-# cython
-# test_time_1 0.5331406999999999
-# test_time_2 1.0104932999999998
-# test_time_3 0.4101440999999997
+    def __add__(self, other: Vector):
+        return self.add(other)
 
-# pure python
-# test_time_1 0.6663539999999999
-# test_time_2 1.3299572
-# test_time_3 0.48653330000000006
+    def __radd__(self, other: Vector):
+        return self.__add__(other)
+
+    def __iadd__(self, other: Vector):
+        return self.__add__(other)
+
+    def __sub__(self, other: Vector):
+        return self.subtract(other)
+
+    def __rsub__(self, other: Vector):
+        return other.subtract(self)
+
+    def __isub__(self, other: Vector):
+        return self.subtract(other)
+
+    def __mul__(self, other: [Vector, float, int]):
+        if isinstance(other, int) or isinstance(other, float):
+            return self.multiply_by_const(other)
+        elif isinstance(other, Vector):
+            return self.multiply_by_vector(other)
+        else:
+            raise TypeError(other)
+
+    def __rmul__(self, other: [Vector, float, int]):
+        return self.__mul__(other)
+
+    def __imul__(self, other: [Vector, float, int]):
+        return self.__mul__(other)
+
+    def __neg__(self):
+        return self.negate()
+
+    def __iter__(self):
+        yield self.x()
+        yield self.y()
+        yield self.z()
