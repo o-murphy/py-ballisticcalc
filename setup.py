@@ -3,10 +3,12 @@ import io
 import os
 import re
 from pathlib import Path
+
 from setuptools import setup, find_packages, Extension
 
 try:
     from Cython.Build import cythonize
+
     USE_CYTHON = True
 except ImportError:
     USE_CYTHON = False
@@ -76,7 +78,6 @@ extensions = []
 for path in extensions_paths:
     extensions += iter_extensions(path)
 
-
 # CYTHONIZE = bool(int(os.getenv("CYTHONIZE", 0))) and use_cython is not None
 
 # if CYTHONIZE:
@@ -111,6 +112,12 @@ setup(
     version=find_version('py_ballisticcalc', '__init__.py'),
     url='https://github.com/o-murphy/py_ballisticcalc',
     download_url='https://pypi.python.org/pypi/py_ballisticcalc/',
+    project_urls={
+        "Homepage": 'https://github.com/o-murphy/py_ballisticcalc',
+        "Code": 'https://github.com/o-murphy/py_ballisticcalc',
+        "Documentation": 'https://github.com/o-murphy/py_ballisticcalc',
+        "Bug Tracker": 'https://github.com/o-murphy/py_ballisticcalc/issues'
+    },
     license='LGPL-3.0',
     author="o-murphy",
     author_email='thehelixpg@gmail.com',

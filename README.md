@@ -3,12 +3,14 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
 Installation
 ------------
 **Stable release from pypi, installing from binaries**
+
 (Contains c-extensions which offer higher performance)
 ```commandline
 pip install py-ballisticcalc
 ```
 
 **Build wheel package for your interpreter version by pypi sdist**
+
 Download and install MSVC or GCC depending on target platform
 ```commandline
 pip install Cython>=3.0.0a10 
@@ -16,6 +18,7 @@ pip install py-ballisticcalc --no-binary :all:
 ```
 
 **Also use `git clone` to build your own package**
+
 (Contains cython files to build your own c-extensions)
 ```commandline
 git clone https://github.com/o-murphy/py_ballisticcalc
@@ -27,7 +30,7 @@ Usage
 
 ### Simple start
 ```python
-from py_ballisticcalc.profile import Profile
+from py_ballisticcalc.profile import *
 from py_ballisticcalc.bmath import unit
 
 
@@ -54,40 +57,6 @@ for d in tested_data:
         f'Path: {path}, '
         f'Windage: {windage}'
     )
-```
-
-### Extended
-
-**An extended class that includes support for custom drag and drop functionality and adds some more methods that not available in standard library classes**
-
-```python
-from py_ballisticcalc.extended import BallisticCoefficientExtended
-```
-
-**Convert multiple bc to custom drag table**
-```python
-from py_ballisticcalc.extended import MultipleBallisticCoefficient
-from py_ballisticcalc.extended.profile_extended import *
-
-multiple_bc = MultipleBallisticCoefficient([[0.275, 800], [0.26, 700], [0.255, 500], ],
-                                   unit.VelocityMPS,
-                                   DragTableG7,
-                                   unit.Distance(0.308, unit.DistanceInch),
-                                   unit.Weight(178, unit.WeightGrain))
-
-table = multiple_bc.calculate_custom_drag_func()
-```
-
-**Using with custom drag table**
-```python
-from py_ballisticcalc.extended import ProfileExtended
-
-custom_drag_func = [
-    {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, ... , {'A': 5.0, 'B': 0.18}
-]
-
-profile = ProfileExtended(drag_table=0, custom_drag_function=custom_drag_func)
-custom_drag_func_trajectory = profile.trajectory_data
 ```
 
 ### Use any modules directly if needed 
