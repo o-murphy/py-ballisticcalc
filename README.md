@@ -35,19 +35,16 @@ from py_ballisticcalc.bmath import unit
 
 
 profile = Profile()
-tested_data = profile.trajectory_data
+tested_data = profile.calculate_trajectory()
 
 for d in tested_data:
-    distance = d.travelled_distance.convert(unit.DistanceMeter)
-    velocity = d.velocity.convert(unit.VelocityMPS)
-    mach = round(d.mach_velocity, 4)
-    energy = d.energy
-    time = round(d.time.total_seconds, 4)
-    ogv = d.optimal_game_weight.get_in(unit.WeightPound)
-    path = d.drop.convert(unit.DistanceCentimeter)
-    hold = d.drop_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
-    windage = d.windage.convert(unit.DistanceCentimeter)
-    wind_adjustment = d.windage_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
+    distance = d.travelled_distance().convert(unit.DistanceMeter)
+    velocity = d.velocity().convert(unit.VelocityMPS)
+    mach = d.mach_velocity()
+    energy = d.energy()
+    time = round(d.time().total_seconds(), 4)
+    path = d.drop().convert(unit.DistanceCentimeter)
+    windage = d.windage().convert(unit.DistanceCentimeter)
     print(
         f'Distance: {distance}, '
         f'Velocity: {velocity}, '
@@ -61,44 +58,45 @@ for d in tested_data:
 
 ### Use any modules directly if needed 
 ```python
+from py_ballisticcalc.profile import *
 from py_ballisticcalc.projectile import *
 from py_ballisticcalc.drag import *
 from py_ballisticcalc.weapon import *
 from py_ballisticcalc.trajectory_calculator import *
 from py_ballisticcalc.atmosphere import *
+from py_ballisticcalc.wind import *
 from py_ballisticcalc.shot_parameters import *
 from py_ballisticcalc.bmath import unit
 
-bc = BallisticCoefficient(0.223, DragTableG7)
-projectile = ProjectileWithDimensions(bc, unit.Distance(0.308, unit.DistanceInch).validate(),
-                                      unit.Distance(1.282, unit.DistanceInch).validate(),
-                                      unit.Weight(168, unit.WeightGrain).validate())
-ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS).validate())
-zero = ZeroInfo(unit.Distance(100, unit.DistanceMeter).validate())
-twist = TwistInfo(TwistRight, unit.Distance(11.24, unit.DistanceInch).validate())
-weapon = Weapon.create_with_twist(unit.Distance(2, unit.DistanceInch).validate(), zero, twist)
-atmosphere = Atmosphere()
-shot_info = ShotParameters(unit.Angular(4.221, unit.AngularMOA).validate(),
-                           unit.Distance(1001, unit.DistanceMeter).validate(),
-                           unit.Distance(100, unit.DistanceMeter).validate())
-wind = WindInfo.create_only_wind_info(unit.Velocity(5, unit.VelocityMPH).validate(),
-                                      unit.Angular(-45, unit.AngularDegree).validate())
+bc = BallisticCoefficient(0.223, DragTableG7, unit.Weight(168, unit.WeightGrain), unit.Distance(0.308, unit.DistanceInch), TableG7)
+projectile = ProjectileWithDimensions(bc, unit.Distance(0.308, unit.DistanceInch),
+                                      unit.Distance(1.282, unit.DistanceInch),
+                                      unit.Weight(168, unit.WeightGrain))
+ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
+zero = ZeroInfo(unit.Distance(100, unit.DistanceMeter))
+twist = TwistInfo(TwistRight, unit.Distance(11.24, unit.DistanceInch))
+weapon = WeaponWithTwist(unit.Distance(2, unit.DistanceInch), zero, twist)
+atmosphere = Atmosphere(unit.Distance(10, unit.DistanceMeter), Pressure(760, PressureMmHg), Temperature(15, TemperatureCelsius), 0.5)
+shot_info = ShotParameters(unit.Angular(4.221, unit.AngularMOA),
+                           unit.Distance(1001, unit.DistanceMeter),
+                           unit.Distance(100, unit.DistanceMeter))
+wind = create_only_wind_info(unit.Velocity(5, unit.VelocityMPH),
+                                      unit.Angular(-45, unit.AngularDegree))
 
 calc = TrajectoryCalculator()
 data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
 
 for d in data:
-    distance = d.travelled_distance
+    distance = d.travelled_distance()
     meters = distance.convert(unit.DistanceMeter)
-    velocity = d.velocity.convert(unit.VelocityMPS)
-    mach = round(d.mach_velocity, 4)
-    energy = d.energy
-    time = round(d.time.total_seconds, 4)
-    ogv = d.optimal_game_weight.get_in(unit.WeightPound)
-    path = d.drop.convert(unit.DistanceCentimeter)
-    hold = d.drop_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
-    windage = d.windage.convert(unit.DistanceCentimeter)
-    wind_adjustment = d.windage_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
+    velocity = d.velocity().convert(unit.VelocityMPS)
+    mach = round(d.mach_velocity(), 4)
+    energy = d.energy()
+    time = round(d.time().total_seconds(), 4)
+    path = d.drop().convert(unit.DistanceCentimeter)
+    hold = d.drop_adjustment().get_in(unit.AngularMOA) if distance.get_in(unit.DistanceMeter) > 1 else None
+    windage = d.windage().convert(unit.DistanceCentimeter)
+    wind_adjustment = d.windage_adjustment().get_in(unit.AngularMOA) if distance.get_in(unit.DistanceMeter) > 1 else None
     print(
         f'Distance: {meters}, '
         f'Velocity: {velocity}, '
@@ -123,7 +121,7 @@ Litz's "Applied Ballistics" book and from the friendly project of Alexandre Trof
 and then ported to Go.
 
 Now it's also ported to python3 and expanded to support calculation trajectory by 
-multiple ballistics coefficients and using custom drag data (such as Doppler radar data ©Lapua, etc.)
+multiple ballistics coefficients and using custom drag data (such as Doppler radar data, etc.)
 
 The online version of Go documentation is located here: https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc
 
@@ -132,11 +130,3 @@ C# version of the package is located here: https://github.com/gehtsoft-usa/Balli
 The online version of C# API documentation is located here: https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html
 
 Go documentation can be obtained using godoc tool.
-
-The current status of the project is ALPHA version.
-
-RISK NOTICE
-
-The library performs very limited simulation of a complex physical process and so it performs a lot of approximations. Therefore the calculation results MUST NOT be considered as completely and reliably reflecting actual behavior or characteristics of projectiles. While these results may be used for educational purpose, they must NOT be considered as reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human life at risk.
-
-THE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
