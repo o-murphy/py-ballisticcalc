@@ -180,9 +180,9 @@ cdef class TrajectoryCalculator:
 
         if calculate_drift:
             if weapon.twist().direction() == TwistLeft:
-                twist_coefficient = 1
-            else:
                 twist_coefficient = -1
+            else:
+                twist_coefficient = 1
 
         while range_vector.x() <= maximum_range + calculation_step:
 
