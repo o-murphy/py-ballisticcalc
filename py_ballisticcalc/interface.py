@@ -12,7 +12,6 @@ from .shot_parameters import *
 from .atmosphere import *
 from .drag import *
 from .projectile import *
-from .weapon import *
 from .wind import *
 from .bmath import unit
 
@@ -84,10 +83,10 @@ class Bullet:
 @dataclass
 class Gun:
     sightHeight: float = 0
-    heightUnits: unit.Distance = unit.DistanceInch
+    heightUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
     # "Twist" is #/twistUnits in barrel length for rifling to complete one full circle
     barrelTwist: float = 0  # Positive is right-hand, negative is left-hand
-    twistUnits: unit.Distance = unit.DistanceInch
+    twistUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
         
 
 @dataclass
@@ -111,15 +110,14 @@ class Calculator:
     air: Air = Air()
     elevation: float = 0    # Barrel angle to sight line
     zeroDistance: float = 0
-    distanceUnits: unit.Distance = unit.DistanceYard
-    heightUnits: unit.Distance = unit.DistanceInch
-    angleUnits: unit.Angular = unit.AngularMOA
+    distanceUnits: int = unit.DistanceYard #unit.Distance = unit.DistanceYard
+    heightUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
+    angleUnits: int = unit.AngularMOA #unit.Angular = unit.AngularMOA
 
     _bc: BallisticCoefficient = field(init=False, repr=False, compare=False)
     _ammo: Ammunition = field(init=False, repr=False, compare=False)
     _atmosphere: Atmosphere = field(init=False, repr=False, compare=False)
     _projectile: ProjectileWithDimensions = field(init=False, repr=False, compare=False)
-    _weapon: Weapon = field(init=False, repr=False, compare=False)
     _wind: list[WindInfo] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -141,13 +139,6 @@ class Calculator:
                                       self.air.humidity)
         self._wind = create_only_wind_info(unit.Velocity(self.air.windSpeed, self.air.windUnits),
                                            unit.Angular(self.air.windDirection, unit.AngularDegree))
-        twist = None
-        if self.gun.barrelTwist != 0:
-            twist = TwistInfo(TwistRight if self.gun.barrelTwist > 0 else TwistLeft,
-                              unit.Distance(self.gun.barrelTwist, self.gun.twistUnits))
-        self._weapon = Weapon(unit.Distance(self.gun.sightHeight, self.gun.heightUnits),
-                                       ZeroInfo(unit.Distance(self.zeroDistance, self.distanceUnits)),
-                                       twist is not None, twist)
 
     def elevationForZeroDistance(self, distance: float = None) -> float:
         """Calculates barrel elevation to hit zero at given distance"""
@@ -157,7 +148,9 @@ class Calculator:
             self.zeroDistance = distance
             self._updateObjects()
 
-        self.elevation = calc.sight_angle(self._ammo, self._weapon, self._atmosphere).get_in(self.angleUnits)
+        self.elevation = calc.sight_angle(Distance(self.zeroDistance, self.distanceUnits),
+                                          Distance(self.gun.sightHeight, self.gun.heightUnits),
+                                          self._ammo, self._atmosphere).get_in(self.angleUnits)
         return self.elevation
     
     def zeroGivenElevation(self, elevation: float = None, targetHeight: float = None) -> TrajectoryData:
@@ -167,7 +160,10 @@ class Calculator:
         calc = TrajectoryCalculator()
         shot = ShotParameters(unit.Angular(elevation, self.angleUnits),
                               unit.Distance(1e5, DistanceMile), unit.Distance(1e5, DistanceMile))
-        data = calc.trajectory(self._ammo, self._weapon, self._atmosphere, shot, self._wind, stopAtZero=True)
+        data = calc.trajectory(self._ammo, self._atmosphere, shot, self._wind,
+                               Distance(self.gun.barrelTwist, self.gun.twistUnits),
+                               Distance(self.gun.sightHeight, self.gun.heightUnits),
+                               stopAtZero=True)
         if len(data) > 1:
             return data[1]
         else:
@@ -188,7 +184,9 @@ class Calculator:
         shot = ShotParameters(unit.Angular(elevation, self.angleUnits),
                               unit.Distance(range, self.distanceUnits),
                               unit.Distance(step, self.distanceUnits))
-        data = calc.trajectory(self._ammo, self._weapon, self._atmosphere, shot, self._wind,
+        data = calc.trajectory(self._ammo, self._atmosphere, shot, self._wind,
+                               Distance(self.gun.barrelTwist, self.gun.twistUnits),
+                               Distance(self.gun.sightHeight, self.gun.heightUnits),                               
                                stopAtZero=stopAtZero, stopAtMach1=stopAtMach1)
         return self.trajectoryRowsToDataFrame(data)
 
