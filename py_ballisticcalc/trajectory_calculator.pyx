@@ -153,7 +153,7 @@ cdef class TrajectoryCalculator:
         previousY = 0  # Used to find zero-crossing
         previousMach = 0  # Used to find sound-barrier crossing
 
-        twist_coefficient = .0
+        twist_coefficient = 0
         if calculate_drift:
             if weapon.twist().direction() == TwistLeft:
                 twist_coefficient = -1
@@ -176,20 +176,23 @@ cdef class TrajectoryCalculator:
                     next_wind_range = wind_info[current_wind].until_distance().get_in(DistanceFoot)
 
             if (range_vector.y() < 0) and (previousY > 0):  # Zero-crossing
-                ranges.append(calculate_trajectory_row(ZERO, range_vector, stability_coefficient, time, twist_coefficient,
-                        velocity, velocity_vector, mach, bullet_weight, calculate_drift))
-                next_range_distance += step
+                ranges.append(calculate_trajectory_row(ZERO,
+                                time, range_vector, velocity_vector, velocity, mach,
+                                bullet_weight, stability_coefficient, twist_coefficient))
+                next_range_distance += calculation_step
                 if stopAtZero:
                     break
             elif (velocity / mach < 1) and (previousMach > 1):  # Sound-crossing
-                ranges.append(calculate_trajectory_row(MACH1, range_vector, stability_coefficient, time, twist_coefficient,
-                        velocity, velocity_vector, mach, bullet_weight, calculate_drift))
-                next_range_distance += step
+                ranges.append(calculate_trajectory_row(MACH1,
+                                time, range_vector, velocity_vector, velocity, mach,
+                                bullet_weight, stability_coefficient, twist_coefficient))
+                next_range_distance += calculation_step
                 if stopAtMach1:
                     break
             elif range_vector.x() >= next_range_distance:
-                ranges.append(calculate_trajectory_row(TRAJECTORY, range_vector, stability_coefficient, time, twist_coefficient,
-                        velocity, velocity_vector, mach, bullet_weight, calculate_drift))
+                ranges.append(calculate_trajectory_row(TRAJECTORY,
+                                time, range_vector, velocity_vector, velocity, mach,
+                                bullet_weight, stability_coefficient, twist_coefficient))
                 next_range_distance += step
                 current_item += 1
                 if current_item == ranges_length:
@@ -213,10 +216,10 @@ cdef class TrajectoryCalculator:
         return ranges
 
 
-cpdef calculate_trajectory_row(row_type, range_vector, stability_coefficient, time, twist_coefficient,
-                               velocity, velocity_vector, mach, bullet_weight, calculate_drift):
+cpdef calculate_trajectory_row(row_type, time, range_vector, velocity_vector, velocity, mach,
+                               bullet_weight, stability_coefficient, twist_coefficient):
     windage = range_vector.z()
-    if calculate_drift:
+    if twist_coefficient != 0:
         windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
     windage_adjustment = get_correction(range_vector.x(), windage)
     drop_adjustment = get_correction(range_vector.x(), range_vector.y())
