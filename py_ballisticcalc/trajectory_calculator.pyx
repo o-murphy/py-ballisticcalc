@@ -1,11 +1,3 @@
-# Modifications by David Bookstaber:
-#  Fixed sign on twist direction for spin drift
-#  Added travel angle to TrajectoryData
-#  Added row_type to TrajectoryData indicating:
-#   TRAJECTORY_ROW – row output based on the requested range and step distance
-#   ZERO_ROW – point at which trajectory crosses down through zero
-#   MACH1_ROW – point at which bullet slows through sound barrier
-
 from libc.math cimport fabs, pow, sin, cos, log10, floor, atan
 from .bmath.unit import *
 from .bmath.vector import Vector
@@ -121,7 +113,7 @@ cdef class TrajectoryCalculator:
 
         stability_coefficient = 1.0
         calculate_drift = False
-        if weapon.has_twist and ammunition.bullet().has_dimensions():
+        if weapon.has_twist() and ammunition.bullet().has_dimensions():
             stability_coefficient = calculate_stability_coefficient(ammunition, weapon, atmosphere)
             calculate_drift = True
 
@@ -231,9 +223,9 @@ cpdef calculate_trajectory_row(row_type, range_vector, stability_coefficient, ti
     return TrajectoryData(time=Timespan(time),
             travel_distance=Distance(range_vector.x(), DistanceFoot),
             drop=Distance(range_vector.y(), DistanceFoot),
-            drop_adjustment=Angular(drop_adjustment, AngularRadian) if drop_adjustment else None,
+            drop_adjustment=Angular(drop_adjustment, AngularRadian),
             windage=Distance(windage, DistanceFoot),
-            windage_adjustment=Angular(windage_adjustment, AngularRadian) if windage_adjustment else None,
+            windage_adjustment=Angular(windage_adjustment, AngularRadian),
             velocity=Velocity(velocity, VelocityFPS),
             angle=Angular(atan(velocity_vector.y()/velocity_vector.x()), AngularRadian),
             mach=velocity / mach,
@@ -270,7 +262,7 @@ cdef wind_to_vector(shot, wind):
 cdef get_correction(double distance, double offset):
     if distance != 0:
         return atan(offset / distance)
-    return None
+    return 0
 
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400

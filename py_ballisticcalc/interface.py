@@ -83,9 +83,12 @@ class Bullet:
 
 @dataclass
 class Gun:
-    barrelTwist: float = 12 # Twist rate
     sightHeight: float = 0
     heightUnits: unit.Distance = unit.DistanceInch
+    # "Twist" is #/twistUnits in barrel length for rifling to complete one full circle
+    barrelTwist: float = 0  # Positive is right-hand, negative is left-hand
+    twistUnits: unit.Distance = unit.DistanceInch
+        
 
 @dataclass
 class Air:
@@ -138,9 +141,13 @@ class Calculator:
                                       self.air.humidity)
         self._wind = create_only_wind_info(unit.Velocity(self.air.windSpeed, self.air.windUnits),
                                            unit.Angular(self.air.windDirection, unit.AngularDegree))
-        self._weapon = WeaponWithTwist(unit.Distance(self.gun.sightHeight, self.gun.heightUnits),
+        twist = None
+        if self.gun.barrelTwist != 0:
+            twist = TwistInfo(TwistRight if self.gun.barrelTwist > 0 else TwistLeft,
+                              unit.Distance(self.gun.barrelTwist, self.gun.twistUnits))
+        self._weapon = Weapon(unit.Distance(self.gun.sightHeight, self.gun.heightUnits),
                                        ZeroInfo(unit.Distance(self.zeroDistance, self.distanceUnits)),
-                                       TwistInfo(TwistRight, unit.Distance(self.gun.barrelTwist, unit.DistanceInch)))
+                                       twist is not None, twist)
 
     def elevationForZeroDistance(self, distance: float = None) -> float:
         """Calculates barrel elevation to hit zero at given distance"""
@@ -206,9 +213,9 @@ class Calculator:
             mach = d.mach_velocity()
             time = d.time().total_seconds()
             drop = d.drop().get_in(self.heightUnits)
-            dropMOA = d.drop_adjustment().get_in(self.angleUnits) if distance > 0 else 0
+            dropMOA = d.drop_adjustment().get_in(self.angleUnits)
             wind = d.windage().get_in(self.heightUnits)
-            windMOA = d.windage_adjustment().get_in(self.angleUnits) if distance > 0 else 0
+            windMOA = d.windage_adjustment().get_in(self.angleUnits)
             note = ''
             if d.row_type() == ROW_TYPE.MACH1.value: note = 'Mach1'
             elif d.row_type() == ROW_TYPE.ZERO.value: note = 'Zero'

@@ -1,10 +1,3 @@
-# Modifications by David Bookstaber:
-#  Added travel angle to TrajectoryData
-#  Added ROW_TYPE to TrajectoryData indicating:
-#   TRAJECTORY – row output based on the requested range and step distance
-#   ZERO – point at which trajectory crosses down through zero
-#   MACH1 – point at which bullet slows through sound barrier
-
 from libc.math cimport fmod, floor
 from .bmath.unit import *
 
@@ -53,7 +46,7 @@ cdef class TrajectoryData:
                  windage_adjustment: [Angular, None],
                  energy: Energy,
                  optimal_game_weight: Weight,
-                 row_type: int = TRAJECTORY  #ROW_TYPE = ROW_TYPE.TRAJECTORY #
+                 row_type: int = TRAJECTORY  #ROW_TYPE = ROW_TYPE.TRAJECTORY
                  ):
         self._time = time
         self._travel_distance = travel_distance
