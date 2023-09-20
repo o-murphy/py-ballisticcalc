@@ -87,7 +87,6 @@ class Gun:
     # "Twist" is #/twistUnits in barrel length for rifling to complete one full circle
     barrelTwist: float = 0  # Positive is right-hand, negative is left-hand
     twistUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
-        
 
 @dataclass
 class Air:
@@ -108,8 +107,6 @@ class Calculator:
     bullet: Bullet
     gun: Gun = Gun()
     air: Air = Air()
-    elevation: float = 0    # Barrel angle to sight line
-    zeroDistance: float = 0
     distanceUnits: int = unit.DistanceYard #unit.Distance = unit.DistanceYard
     heightUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
     angleUnits: int = unit.AngularMOA #unit.Angular = unit.AngularMOA
@@ -140,26 +137,18 @@ class Calculator:
         self._wind = create_only_wind_info(unit.Velocity(self.air.windSpeed, self.air.windUnits),
                                            unit.Angular(self.air.windDirection, unit.AngularDegree))
 
-    def elevationForZeroDistance(self, distance: float = None) -> float:
+    def elevationForZeroDistance(self, distance: Distance) -> float:
         """Calculates barrel elevation to hit zero at given distance"""
         calc = TrajectoryCalculator()
-
-        if (distance is not None) and (distance != self.zeroDistance):
-            self.zeroDistance = distance
-            self._updateObjects()
-
-        self.elevation = calc.sight_angle(Distance(self.zeroDistance, self.distanceUnits),
-                                          Distance(self.gun.sightHeight, self.gun.heightUnits),
-                                          self._ammo, self._atmosphere).get_in(self.angleUnits)
-        return self.elevation
+        return calc.sight_angle(distance, Distance(self.gun.sightHeight, self.gun.heightUnits),
+                                self._ammo, self._atmosphere).get_in(self.angleUnits)
     
-    def zeroGivenElevation(self, elevation: float = None, targetHeight: float = None) -> TrajectoryData:
+    def zeroGivenElevation(self, elevation: float = None) -> TrajectoryData:
         """Find the zero distance for a given barrel elevation"""
-        if elevation is None:
-            elevation = self.elevationForZeroDistance()
         calc = TrajectoryCalculator()
         shot = ShotParameters(unit.Angular(elevation, self.angleUnits),
                               unit.Distance(1e5, DistanceMile), unit.Distance(1e5, DistanceMile))
+        # NOTE: We could speed this up by checking whether first observed negative angle 
         data = calc.trajectory(self._ammo, self._atmosphere, shot, self._wind,
                                Distance(self.gun.barrelTwist, self.gun.twistUnits),
                                Distance(self.gun.sightHeight, self.gun.heightUnits),
@@ -168,6 +157,8 @@ class Calculator:
             return data[1]
         else:
             return data[0]  # No downrange zero found, so just return starting row
+            # We could speed up detecting this by checking whether the first row with negative angle
+            #   also has negative drop, because it's not going to go positive after that!
 
     def dangerSpace(self, trajectory: TrajectoryData, targetHeight: float) -> float:
         """Given a TrajectoryData row, we have the angle of travel of bullet at that point in its trajectory, which is at distance *d*.
@@ -176,10 +167,14 @@ class Calculator:
             before or after *d* across which the bullet would still hit somewhere on the target.  (This ignores windage; vertical only.)"""
         return -unit.Distance(targetHeight / math.tan(trajectory.angle().get_in(AngularRadian)), self.heightUnits).get_in(self.distanceUnits)
 
-    def trajectory(self, range: float, step: float, elevation: float = None,
+    def trajectory(self, range: float, step: float, elevation: float = None, zeroDistance: float = None,
                    stopAtZero: bool = False, stopAtMach1: bool = False) -> pd.DataFrame:
-        if elevation is None:
-            elevation = self.elevationForZeroDistance()
+        """We use zeroDistance if given.  Otherwise elevation if given.  Otherwise elevation = 0."""
+        if zeroDistance is None:
+            if elevation is None:
+                elevation = 0  # If we have 
+        else:
+            elevation = self.elevationForZeroDistance(Distance(zeroDistance, self.distanceUnits))
         calc = TrajectoryCalculator()
         shot = ShotParameters(unit.Angular(elevation, self.angleUnits),
                               unit.Distance(range, self.distanceUnits),

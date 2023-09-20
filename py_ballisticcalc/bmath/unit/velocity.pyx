@@ -11,7 +11,7 @@ cdef class Velocity:
     cdef __name__
 
     def __init__(self, value: double, units: int):
-        self.__name__ = 'Energy'
+        self.__name__ = 'Velocity'
         self._value = self.to_default(value, units)
         self._default_units = units
 

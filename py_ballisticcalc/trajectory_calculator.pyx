@@ -175,16 +175,18 @@ cdef class TrajectoryCalculator:
                 ranges.append(calculate_trajectory_row(ZERO,
                                 time, range_vector, velocity_vector, velocity, mach,
                                 bullet_weight, stability_coefficient, twist_coefficient))
-                next_range_distance += calculation_step
                 if stopAtZero:
                     break
+                elif range_vector.x() + calculation_step >= next_range_distance:
+                    next_range_distance += step
             elif (velocity / mach < 1) and (previousMach > 1):  # Sound-crossing
                 ranges.append(calculate_trajectory_row(MACH1,
                                 time, range_vector, velocity_vector, velocity, mach,
                                 bullet_weight, stability_coefficient, twist_coefficient))
-                next_range_distance += calculation_step
                 if stopAtMach1:
                     break
+                elif range_vector.x() + calculation_step >= next_range_distance:
+                    next_range_distance += step
             elif range_vector.x() >= next_range_distance:
                 ranges.append(calculate_trajectory_row(TRAJECTORY,
                                 time, range_vector, velocity_vector, velocity, mach,
