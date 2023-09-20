@@ -48,15 +48,15 @@ cdef class Weight:
         else:
             raise KeyError(f'KeyError: {self.__name__}: unit {units} is not supported')
 
-    cpdef double value(self, units: int):
+    cpdef double get_value(self):
+        return self.from_default(self._value, self._default_units)
+
+    cpdef double get_in(self, units: int):
         return self.from_default(self._value, units)
 
     cpdef Weight convert(self, units: int):
         cdef double value = self.get_in(units)
         return Weight(value, units)
-
-    cpdef double get_in(self, units: int):
-        return self.from_default(self._value, units)
 
     def __str__(self):
         return self.string()

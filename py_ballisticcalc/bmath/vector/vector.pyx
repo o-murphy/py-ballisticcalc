@@ -1,6 +1,9 @@
 from libc.math cimport sqrt, fabs
 from typing import Any
 
+# x - down-range distance towards target
+# y - vertical drop
+# z - windage
 
 cdef struct vector:
     double x
