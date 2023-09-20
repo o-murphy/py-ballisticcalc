@@ -67,16 +67,15 @@ cdef class Distance:
         else:
             raise KeyError(f'KeyError: {self.__name__}: unit {units} is not supported')
 
-    cpdef double value(self, units: int = 0):
-        if units == 0: units = self._default_units
+    cpdef double get_value(self):
+        return self.from_default(self._value, self._default_units)
+
+    cpdef double get_in(self, units: int):
         return self.from_default(self._value, units)
 
     cpdef Distance convert(self, units: int):
         cdef double value = self.get_in(units)
         return Distance(value, units)
-
-    cpdef double get_in(self, units: int):
-        return self.from_default(self._value, units)
 
     def __str__(self):
         return self.string()

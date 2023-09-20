@@ -39,16 +39,18 @@ UNIT_DISPLAY = {
     unit.VelocityMPS : Display('m/s', 1),
     unit.VelocityKMH : Display('km/h', 0),
     unit.VelocityKT  : Display('kt', 0),
-    unit.DistanceInch : Display('in.', 1),
-    unit.DistanceFoot : Display('ft', 2),
-    unit.DistanceYard : Display('yd', 0),
-    unit.DistanceMile : Display('mi', 3),
+    unit.DistanceInch         : Display('in.', 1),
+    unit.DistanceFoot         : Display('ft', 2),
+    unit.DistanceYard         : Display('yd', 0),
+    unit.DistanceMile         : Display('mi', 3),
     unit.DistanceNauticalMile : Display('nm', 3),
-    unit.DistanceMillimeter : Display('mm', 0),
-    unit.DistanceCentimeter : Display('cm', 1),
-    unit.DistanceMeter      : Display('m', 2),
-    unit.DistanceKilometer  : Display('km', 3),
-    unit.DistanceLine       : Display('ln', 1),  # No idea what this is
+    unit.DistanceMillimeter   : Display('mm', 0),
+    unit.DistanceCentimeter   : Display('cm', 1),
+    unit.DistanceMeter        : Display('m', 2),
+    unit.DistanceKilometer    : Display('km', 3),
+    unit.DistanceLine         : Display('ln', 1),  # No idea what this is
+    unit.EnergyFootPound : Display('ft·lb', 0),
+    unit.EnergyJoule     : Display('J', 0),
     unit.PressureMmHg : Display('mmHg', 2),
     unit.PressureInHg : Display('inHg', 2),
     unit.PressureBar  : Display('bar', 2),
@@ -110,6 +112,7 @@ class Calculator:
     distanceUnits: int = unit.DistanceYard #unit.Distance = unit.DistanceYard
     heightUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
     angleUnits: int = unit.AngularMOA #unit.Angular = unit.AngularMOA
+    energyUnits: int = unit.EnergyFootPound
 
     _bc: BallisticCoefficient = field(init=False, repr=False, compare=False)
     _ammo: Ammunition = field(init=False, repr=False, compare=False)
@@ -195,7 +198,8 @@ class Calculator:
                                       UNIT_DISPLAY[self.heightUnits].asDictEntry('Drop'),
                                       UNIT_DISPLAY[self.angleUnits].asDictEntry('DropAngle'),
                                       UNIT_DISPLAY[self.heightUnits].asDictEntry('Windage'),
-                                      UNIT_DISPLAY[self.angleUnits].asDictEntry('WindageAngle')
+                                      UNIT_DISPLAY[self.angleUnits].asDictEntry('WindageAngle'),
+                                      UNIT_DISPLAY[self.energyUnits].asDictEntry('Energy')
                                     ])
 
         r = []  # List of trajectory table rows
@@ -209,10 +213,11 @@ class Calculator:
             dropMOA = d.drop_adjustment().get_in(self.angleUnits)
             wind = d.windage().get_in(self.heightUnits)
             windMOA = d.windage_adjustment().get_in(self.angleUnits)
+            energy = d.energy().get_in(self.energyUnits)
             note = ''
             if d.row_type() == ROW_TYPE.MACH1.value: note = 'Mach1'
             elif d.row_type() == ROW_TYPE.ZERO.value: note = 'Zero'
-            r.append([distance, velocity, angle, mach, time, drop, dropMOA, wind, windMOA, note])
+            r.append([distance, velocity, angle, mach, time, drop, dropMOA, wind, windMOA, energy, note])
     
         colNames = list(zip(*self.tableCols.values()))[0] + ('Note',)
         self.trajectoryTable = pd.DataFrame(r, columns=colNames)

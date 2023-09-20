@@ -8,7 +8,7 @@ import math
 
 def test_back_n_forth(test, value, units):
     u = test.unit_class(value, units)
-    v = u.value(units)
+    v = u.get_in(units)
     test.assertTrue(
         math.fabs(v - value) < 1e-7
         and math.fabs(v - u.get_in(units) < 1e-7), f'Read back failed for {units}')

@@ -113,9 +113,9 @@ cdef class TrajectoryCalculator:
 
         stability_coefficient = 1.0
         twist_coefficient = 0
-        if twist.value() != 0 and ammunition.bullet().has_dimensions():
+        if twist.get_value() != 0 and ammunition.bullet().has_dimensions():
             stability_coefficient = calculate_stability_coefficient(ammunition, twist, atmosphere)
-            if twist.value() < 0:
+            if twist.get_value() < 0:
                 twist_coefficient = -1
             else:
                 twist_coefficient = 1
