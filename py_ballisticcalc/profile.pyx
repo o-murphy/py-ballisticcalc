@@ -147,7 +147,7 @@ cdef class Profile(object):
         projectile = Projectile(bc, self._bullet_weight, self._bullet_diameter, self._bullet_length)
         ammo = Ammunition(projectile, self._muzzle_velocity)
         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
-        zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)
+        zero = ZeroInfo(self._zero_distance, ammo, atmo)
         # twist = TwistInfo(self._twist_direction, self._twist)
         weapon = Weapon(self._sight_height, zero, self._twist)
         wind = [WindInfo(velocity=self._wind_velocity, direction=self._wind_direction)]

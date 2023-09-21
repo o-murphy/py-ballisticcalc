@@ -171,7 +171,6 @@ class TestG7Profile(unittest.TestCase):
         )
 
         ret = bc.custom_drag_func()
-        # print(ret)
 
     def test_create(self):
         bc = BallisticCoefficient(
@@ -193,13 +192,10 @@ class TestG7Profile(unittest.TestCase):
         atmo = Atmosphere(Distance(0, DistanceMeter), Pressure(760, PressureMmHg),
                           Temperature(15, TemperatureCelsius), 0.5)
 
-        zero = ZeroInfo(Distance(100, DistanceMeter), True, True, ammo, atmo)
+        zero = ZeroInfo(Distance(100, DistanceMeter), ammo, atmo)
         twist = Distance(11, DistanceInch)
         weapon = Weapon(Distance(90, DistanceMillimeter), zero, twist)
-        wind = [
-            WindInfo(velocity=Velocity(0, VelocityMPS),
-                     direction=Angular(0, AngularDegree))
-        ]
+        wind = [WindInfo()]
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(Distance(1, DistanceFoot))
         print(timeit.timeit(lambda: calc.sight_angle(ammo, weapon, atmo), number=1))

@@ -14,6 +14,7 @@ class WindInfo:
         direction (Angular): default 0
     """
 
-    until_distance: Distance = Distance(9999, DistanceKilometer)
     velocity: Velocity = Velocity(0, VelocityFPS)
     direction: Angular = Angular(0, AngularDegree)
+    until_distance: Distance = Distance(9999, DistanceKilometer)
+

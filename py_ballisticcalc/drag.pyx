@@ -87,7 +87,7 @@ cdef class BallisticCoefficient:
             st_mach = point.a()
             st_cd = point.b()
             cd = self.calculated_cd(st_mach)
-            calculated_cd_table.append({'A': st_mach, 'B': cd})
+            calculated_cd_table.append({'Mach': st_mach, 'CD': cd})
 
         return calculated_cd_table
 
@@ -128,7 +128,7 @@ cpdef list make_data_points(drag_table: list):
     table: list = []
     cdef data_point
     for point in drag_table:
-        data_point = DataPoint(point['A'], point['B'])
+        data_point = DataPoint(point['Mach'], point['CD'])
         table.append(data_point)
     return table
 

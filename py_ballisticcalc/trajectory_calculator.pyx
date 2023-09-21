@@ -52,8 +52,8 @@ cdef class TrajectoryCalculator:
             Distance(10, weapon.zero_info.distance.units()).get_in(DistanceFoot))
 
         mach = atmosphere.mach.get_in(VelocityFPS)
-        density_factor = atmosphere.density_factor
-        muzzle_velocity = ammunition.muzzle_velocity().get_in(VelocityFPS)
+        density_factor = atmosphere.density_factor()
+        muzzle_velocity = ammunition.muzzle_velocity.get_in(VelocityFPS)
         barrel_azimuth = 0.0
         barrel_elevation = 0.0
 
