@@ -1,7 +1,7 @@
 from .atmosphere import Atmosphere
 from .drag import BallisticCoefficient, DragTableG7
 from .projectile import ProjectileWithDimensions
-from .weapon import Ammunition, ZeroInfo, TwistInfo, TwistRight, WeaponWithTwist
+from .weapon import Ammunition, ZeroInfo, Weapon
 from .wind import WindInfo
 from .shot_parameters import ShotParameters
 from .trajectory_calculator import TrajectoryCalculator
@@ -35,7 +35,6 @@ cdef class Profile(object):
                  humidity: double = 0.5,
                  zero_distance: (double, int) = (100, DistanceMeter),
                  twist: (double, int) = (11, DistanceInch),
-                 twist_direction: int = TwistRight,
                  sight_height: (double, int) = (90, DistanceMillimeter),
                  sight_angle: (double, int) = (0, AngularMOA),
                  maximum_distance: (double, int) = (1001, DistanceMeter),
@@ -64,7 +63,6 @@ cdef class Profile(object):
         self._humidity = humidity
         self._zero_distance = Distance(*zero_distance)
         self._twist = Distance(*twist)
-        self._twist_direction = twist_direction
         self._sight_height = Distance(*sight_height)
         self._sight_angle = Angular(*sight_angle)
         self._maximum_distance = Distance(*maximum_distance)
@@ -149,8 +147,8 @@ cdef class Profile(object):
         ammo = Ammunition(projectile, self._muzzle_velocity)
         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
         zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)
-        twist = TwistInfo(self._twist_direction, self._twist)
-        weapon = WeaponWithTwist(self._sight_height, zero, twist)
+        # twist = TwistInfo(self._twist_direction, self._twist)
+        weapon = Weapon(self._sight_height, zero, self._twist)
         wind = [WindInfo(velocity=self._wind_velocity, direction=self._wind_direction)]
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(self._maximum_step_size)

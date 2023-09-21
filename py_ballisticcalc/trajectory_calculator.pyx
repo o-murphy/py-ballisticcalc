@@ -2,7 +2,7 @@ from libc.math cimport fabs, pow, sin, cos, log10, floor, atan
 from .bmath.unit import *
 from .bmath.vector import Vector
 from .projectile import Ammunition
-from .weapon import Weapon, TwistLeft
+from .weapon import Weapon
 from .atmosphere import Atmosphere
 from .shot_parameters import ShotParameters
 from .wind import WindInfo
@@ -70,7 +70,7 @@ cdef class TrajectoryCalculator:
             # z - windage
 
             range_vector = Vector(
-                0.0, -weapon.sight_height().get_in(DistanceFoot), 0.0
+                0.0, -weapon.sight_height.get_in(DistanceFoot), 0.0
             )
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
@@ -128,14 +128,6 @@ cdef class TrajectoryCalculator:
 
         stability_coefficient = 1.0
 
-        calculate_drift = False
-
-        if weapon.has_twist and ammunition.bullet().has_dimensions():
-            stability_coefficient = calculate_stability_coefficient(
-                ammunition, weapon, atmosphere
-            )
-            calculate_drift = True
-
         ranges_length = int(floor(range_to / step)) + 1
         ranges = []
 
@@ -168,7 +160,7 @@ cdef class TrajectoryCalculator:
         # y - drop and
         # z - windage
 
-        range_vector = Vector(.0, -weapon.sight_height().get_in(DistanceFoot), 0)
+        range_vector = Vector(.0, -weapon.sight_height.get_in(DistanceFoot), 0)
         velocity_vector = Vector(cos(barrel_elevation) * cos(barrel_azimuth), sin(barrel_elevation),
                                  cos(barrel_elevation) * sin(barrel_azimuth)) * velocity
         current_item = 0
@@ -178,11 +170,14 @@ cdef class TrajectoryCalculator:
 
         twist_coefficient = .0
 
-        if calculate_drift:
-            if weapon.twist().direction() == TwistLeft:
-                twist_coefficient = 1
-            else:
-                twist_coefficient = -1
+        calculate_drift = False
+
+        if weapon.twist.value() != 0 and ammunition.bullet().has_dimensions():
+            stability_coefficient = calculate_stability_coefficient(
+                ammunition, weapon, atmosphere
+            )
+            calculate_drift = True
+            twist_coefficient = -1 if weapon.twist.value() > 0 else 1
 
         while range_vector.x() <= maximum_range + calculation_step:
 
@@ -249,7 +244,7 @@ cdef class TrajectoryCalculator:
 cdef double calculate_stability_coefficient(ammunition_info, rifle_info, atmosphere):
     cdef double weight = ammunition_info.bullet().bullet_weight().get_in(WeightGrain)
     cdef double diameter = ammunition_info.bullet().bullet_diameter().get_in(DistanceInch)
-    cdef double twist = rifle_info.twist().twist().get_in(DistanceInch) / diameter
+    cdef double twist = fabs(rifle_info.twist.get_in(DistanceInch)) / diameter
     cdef double length = ammunition_info.bullet().bullet_length().get_in(DistanceInch) / diameter
     cdef double sd = 30 * weight / (pow(twist, 2) * pow(diameter, 3) * length * (1 + pow(length, 2)))
     cdef double mv = ammunition_info.muzzle_velocity().get_in(VelocityFPS)

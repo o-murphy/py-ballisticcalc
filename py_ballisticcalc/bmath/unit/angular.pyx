@@ -59,8 +59,8 @@ cdef class Angular:
         else:
             raise KeyError(f'KeyError: {self.__name__}: unit {units} is not supported')
 
-    cpdef double value(self, units: int):
-        return self.from_default(self._value, units)
+    cpdef double value(self):
+        return self._value
 
     cpdef Angular convert(self, units: int):
         cdef double value = self.get_in(units)

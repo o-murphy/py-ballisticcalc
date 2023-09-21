@@ -194,8 +194,8 @@ class TestG7Profile(unittest.TestCase):
                           Temperature(15, TemperatureCelsius), 0.5)
 
         zero = ZeroInfo(Distance(100, DistanceMeter), True, True, ammo, atmo)
-        twist = TwistInfo(TwistRight, Distance(11, DistanceInch))
-        weapon = WeaponWithTwist(Distance(90, DistanceMillimeter), zero, twist)
+        twist = Distance(11, DistanceInch)
+        weapon = Weapon(Distance(90, DistanceMillimeter), zero, twist)
         wind = [
             WindInfo(velocity=Velocity(0, VelocityMPS),
                      direction=Angular(0, AngularDegree))
@@ -318,8 +318,8 @@ class TestPyBallisticCalc(unittest.TestCase):
                                               unit.Weight(168, unit.WeightGrain))
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
         zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
-        twist = TwistInfo(TwistRight, unit.Distance(11.24, unit.DistanceInch))
-        weapon = WeaponWithTwist(unit.Distance(2, unit.DistanceInch), zero, twist)
+        twist = unit.Distance(11.24, unit.DistanceInch)
+        weapon = Weapon(unit.Distance(2, unit.DistanceInch), zero, twist)
         atmosphere = IcaoAtmosphere(Distance(0, DistanceMeter))
         shot_info = ShotParameters(unit.Angular(4.221, unit.AngularMOA),
                                    unit.Distance(1000, unit.DistanceYard),
