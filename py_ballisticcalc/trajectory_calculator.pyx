@@ -49,10 +49,10 @@ cdef class TrajectoryCalculator:
         cdef gravity_vector, range_vector, velocity_vector, delta_range_vector
 
         calculation_step = self.get_calculation_step(
-            Distance(10, weapon.zero().zero_distance().units()).get_in(DistanceFoot))
+            Distance(10, weapon.zero_info.distance.units()).get_in(DistanceFoot))
 
-        mach = atmosphere.mach().get_in(VelocityFPS)
-        density_factor = atmosphere.density_factor()
+        mach = atmosphere.mach.get_in(VelocityFPS)
+        density_factor = atmosphere.density_factor
         muzzle_velocity = ammunition.muzzle_velocity().get_in(VelocityFPS)
         barrel_azimuth = 0.0
         barrel_elevation = 0.0
@@ -78,7 +78,7 @@ cdef class TrajectoryCalculator:
                 cos(barrel_elevation) * sin(barrel_azimuth)
             ) * velocity
 
-            zero_distance = weapon.zero().zero_distance().get_in(DistanceFoot)
+            zero_distance = weapon.zero_info.distance.get_in(DistanceFoot)
             maximum_range = zero_distance + calculation_step
 
             while range_vector.x() <= maximum_range:
@@ -87,10 +87,7 @@ cdef class TrajectoryCalculator:
 
                 delta_time = calculation_step / velocity_vector.x()
                 velocity = velocity_vector.magnitude()
-                drag = density_factor * velocity * ammunition \
-                    .bullet() \
-                    .ballistic_coefficient() \
-                    .drag(velocity / mach)
+                drag = density_factor * velocity * ammunition.projectile.bc.drag(velocity / mach)
 
                 velocity_vector = velocity_vector - (velocity_vector * drag - gravity_vector) * delta_time
 
@@ -124,7 +121,7 @@ cdef class TrajectoryCalculator:
 
         calculation_step = self.get_calculation_step(step)
 
-        bullet_weight = ammunition.bullet().bullet_weight().get_in(WeightGrain)
+        bullet_weight = ammunition.projectile.weight.get_in(WeightGrain)
 
         stability_coefficient = 1.0
 
@@ -134,7 +131,7 @@ cdef class TrajectoryCalculator:
         barrel_azimuth = .0
         barrel_elevation = shot_info.sight_angle.get_in(AngularRadian)
         barrel_elevation = barrel_elevation + shot_info.shot_angle.get_in(AngularRadian)
-        alt0 = atmosphere.altitude().get_in(DistanceFoot)
+        alt0 = atmosphere.altitude.get_in(DistanceFoot)
 
         # Never used in upstream, uncomment on need
         # density_factor, mach = atmosphere.get_density_factor_and_mach_for_altitude(alt0)
@@ -151,7 +148,7 @@ cdef class TrajectoryCalculator:
                 next_wind_range = wind_info[0].until_distance().get_in(DistanceFoot)
             wind_vector = wind_to_vector(shot_info, wind_info[0])
 
-        muzzle_velocity = ammunition.muzzle_velocity().get_in(VelocityFPS)
+        muzzle_velocity = ammunition.muzzle_velocity.get_in(VelocityFPS)
         gravity_vector = Vector(0, cGravityConstant, 0)
         velocity = muzzle_velocity
         time = .0
@@ -172,7 +169,7 @@ cdef class TrajectoryCalculator:
 
         calculate_drift = False
 
-        if weapon.twist.value() != 0 and ammunition.bullet().has_dimensions():
+        if weapon.twist.value() != 0 and ammunition.projectile.length and ammunition.projectile.diameter:
             stability_coefficient = calculate_stability_coefficient(
                 ammunition, weapon, atmosphere
             )
@@ -225,10 +222,7 @@ cdef class TrajectoryCalculator:
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()
 
-            drag = density_factor * velocity * ammunition \
-                .bullet() \
-                .ballistic_coefficient() \
-                .drag(velocity / mach)
+            drag = density_factor * velocity * ammunition.projectile.bc.drag(velocity / mach)
 
             velocity_vector = velocity_vector - (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calculation_step,
@@ -242,15 +236,15 @@ cdef class TrajectoryCalculator:
 
 
 cdef double calculate_stability_coefficient(ammunition_info, rifle_info, atmosphere):
-    cdef double weight = ammunition_info.bullet().bullet_weight().get_in(WeightGrain)
-    cdef double diameter = ammunition_info.bullet().bullet_diameter().get_in(DistanceInch)
+    cdef double weight = ammunition_info.projectile.weight.get_in(WeightGrain)
+    cdef double diameter = ammunition_info.projectile.diameter.get_in(DistanceInch)
     cdef double twist = fabs(rifle_info.twist.get_in(DistanceInch)) / diameter
-    cdef double length = ammunition_info.bullet().bullet_length().get_in(DistanceInch) / diameter
+    cdef double length = ammunition_info.projectile.length.get_in(DistanceInch) / diameter
     cdef double sd = 30 * weight / (pow(twist, 2) * pow(diameter, 3) * length * (1 + pow(length, 2)))
-    cdef double mv = ammunition_info.muzzle_velocity().get_in(VelocityFPS)
+    cdef double mv = ammunition_info.muzzle_velocity.get_in(VelocityFPS)
     cdef double fv = pow(mv / 2800, 1.0 / 3.0)
-    cdef double ft = atmosphere.temperature().get_in(TemperatureFahrenheit)
-    cdef double pt = atmosphere.pressure().get_in(PressureInHg)
+    cdef double ft = atmosphere.temperature.get_in(TemperatureFahrenheit)
+    cdef double pt = atmosphere.pressure.get_in(PressureInHg)
     cdef double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
 
     return sd * fv * ftp

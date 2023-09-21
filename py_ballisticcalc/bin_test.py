@@ -9,7 +9,7 @@ pyximport.install(language_level=3)
 
 from py_ballisticcalc.profile import *
 from py_ballisticcalc.bmath import unit
-from py_ballisticcalc.atmosphere import IcaoAtmosphere
+from py_ballisticcalc.atmosphere import Atmosphere
 from py_ballisticcalc.drag import DragTableG1
 from py_ballisticcalc.projectile import Projectile
 from py_ballisticcalc.shot_parameters import ShotParameters
@@ -96,7 +96,7 @@ class TestAtmo(unittest.TestCase):
             humidity=0.5
         )
 
-        icao = IcaoAtmosphere(Distance(0, DistanceMeter))
+        icao = Atmosphere.ICAO()
 
     # @unittest.SkipTest
     def test_time(self):
@@ -182,11 +182,11 @@ class TestG7Profile(unittest.TestCase):
             custom_drag_table=[]
         )
 
-        p1 = ProjectileWithDimensions(
+        p1 = Projectile(
             bc,
+            Weight(167, WeightGrain),
             Distance(0.308, DistanceInch),
             Distance(1.2, DistanceInch),
-            Weight(167, WeightGrain),
         )
 
         ammo = Ammunition(p1, Velocity(800, VelocityMPS))
@@ -221,7 +221,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammunition(projectile, unit.Velocity(2600, unit.VelocityFPS))
         zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
         weapon = Weapon(unit.Distance(3.2, unit.DistanceInch), zero)
-        atmosphere = IcaoAtmosphere(Distance(0, DistanceMeter))
+        atmosphere = Atmosphere.ICAO()
         calc = TrajectoryCalculator()
 
         sight_angle = calc.sight_angle(ammo, weapon, atmosphere)
@@ -236,7 +236,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
         zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
         weapon = Weapon(unit.Distance(2, unit.DistanceInch), zero)
-        atmosphere = IcaoAtmosphere(Distance(0, DistanceMeter))
+        atmosphere = Atmosphere.ICAO()
         calc = TrajectoryCalculator()
 
         sight_angle = calc.sight_angle(ammo, weapon, atmosphere)
@@ -286,7 +286,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
         zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
         weapon = Weapon(unit.Distance(2, unit.DistanceInch), zero)
-        atmosphere = IcaoAtmosphere(Distance(0, DistanceMeter))
+        atmosphere = Atmosphere.ICAO()
         shot_info = ShotParameters(unit.Angular(0.001228, unit.AngularRadian),
                                    unit.Distance(1000, unit.DistanceYard),
                                    unit.Distance(100, unit.DistanceYard))
@@ -313,14 +313,14 @@ class TestPyBallisticCalc(unittest.TestCase):
                                   weight=Weight(167, WeightGrain),
                                   diameter=Distance(0.308, DistanceInch),
                                   custom_drag_table=[])
-        projectile = ProjectileWithDimensions(bc, unit.Distance(0.308, unit.DistanceInch),
-                                              unit.Distance(1.282, unit.DistanceInch),
-                                              unit.Weight(168, unit.WeightGrain))
+        projectile = Projectile(bc, unit.Weight(168, unit.WeightGrain),
+                                unit.Distance(0.308, unit.DistanceInch),
+                                unit.Distance(1.282, unit.DistanceInch), )
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
         zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
         twist = unit.Distance(11.24, unit.DistanceInch)
         weapon = Weapon(unit.Distance(2, unit.DistanceInch), zero, twist)
-        atmosphere = IcaoAtmosphere(Distance(0, DistanceMeter))
+        atmosphere = Atmosphere.ICAO()
         shot_info = ShotParameters(unit.Angular(4.221, unit.AngularMOA),
                                    unit.Distance(1000, unit.DistanceYard),
                                    unit.Distance(100, unit.DistanceYard))

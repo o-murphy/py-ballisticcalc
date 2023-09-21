@@ -1,12 +1,13 @@
 from .atmosphere import Atmosphere
 from .drag import BallisticCoefficient, DragTableG7
-from .projectile import ProjectileWithDimensions
+from .projectile import Projectile
 from .weapon import Ammunition, ZeroInfo, Weapon
 from .wind import WindInfo
 from .shot_parameters import ShotParameters
 from .trajectory_calculator import TrajectoryCalculator
 from .bmath.unit import *
 from .multiple_bc import MultipleBallisticCoefficient
+
 
 cdef class Profile(object):
     cdef int _drag_table, _twist_direction
@@ -85,9 +86,9 @@ cdef class Profile(object):
             'calculated_drag_function': self._calculated_drag_function,
             'humidity': self._humidity,
             'bc_value': self._bc_value,
-            'bullet_diameter': self._bullet_diameter,
-            'bullet_length': self._bullet_length,
-            'bullet_weight': self._bullet_weight,
+            'diameter': self._bullet_diameter,
+            'length': self._bullet_length,
+            'weight': self._bullet_weight,
             'muzzle_velocity': self._muzzle_velocity,
             'zero_distance': self._zero_distance,
             'maximum_distance': self._maximum_distance,
@@ -143,7 +144,7 @@ cdef class Profile(object):
     cdef make_calculator(self):
         cdef bc, projectile, ammo, atmo, zero, twist, weapon, wind, calc, angle, shot, data
         bc = self.make_bc()
-        projectile = ProjectileWithDimensions(bc, self._bullet_diameter, self._bullet_length, self._bullet_weight)
+        projectile = Projectile(bc, self._bullet_weight, self._bullet_diameter, self._bullet_length)
         ammo = Ammunition(projectile, self._muzzle_velocity)
         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
         zero = ZeroInfo(self._zero_distance, True, True, ammo, atmo)

@@ -2,7 +2,7 @@ from libc.math cimport pow
 
 from .drag import load_drag_table
 from .bmath.unit import *
-from .atmosphere import IcaoAtmosphere
+from .atmosphere import Atmosphere
 
 cdef class BCDataPoint:
     cdef double _bc
@@ -41,7 +41,7 @@ cdef class MultipleBallisticCoefficient:
         self._units = velocity_units_flag
         self._sectional_density = self._get_sectional_density()
 
-        _atmosphere = IcaoAtmosphere(Distance(0, DistanceFoot))
+        _atmosphere = Atmosphere.ICAO()
 
         altitude = Distance(0, DistanceMeter).get_in(DistanceFoot)
         density, mach = _atmosphere.get_density_factor_and_mach_for_altitude(altitude)
