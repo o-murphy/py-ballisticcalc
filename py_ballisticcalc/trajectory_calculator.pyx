@@ -6,7 +6,7 @@ from .weapon import Weapon, TwistLeft
 from .atmosphere import Atmosphere
 from .shot_parameters import ShotParameters
 from .wind import WindInfo
-from .trajectory_data import TrajectoryData, Timespan
+from .trajectory_data import TrajectoryData
 
 cdef double cZeroFindingAccuracy = 0.000005
 cdef double cMinimumVelocity = 50.0
@@ -119,8 +119,8 @@ cdef class TrajectoryCalculator:
         cdef windage_adjustment, velocity_adjusted, delta_range_vector
         cdef gravity_vector, drop_adjustment, range_vector, velocity_vector
 
-        range_to = shot_info.maximum_distance().get_in(DistanceFoot)
-        step = shot_info.step().get_in(DistanceFoot)
+        range_to = shot_info.range.get_in(DistanceFoot)
+        step = shot_info.step.get_in(DistanceFoot)
 
         calculation_step = self.get_calculation_step(step)
 
@@ -140,8 +140,8 @@ cdef class TrajectoryCalculator:
         ranges = []
 
         barrel_azimuth = .0
-        barrel_elevation = shot_info.sight_angle().get_in(AngularRadian)
-        barrel_elevation = barrel_elevation + shot_info.shot_angle().get_in(AngularRadian)
+        barrel_elevation = shot_info.sight_angle.get_in(AngularRadian)
+        barrel_elevation = barrel_elevation + shot_info.shot_angle.get_in(AngularRadian)
         alt0 = atmosphere.altitude().get_in(DistanceFoot)
 
         # Never used in upstream, uncomment on need
@@ -209,18 +209,16 @@ cdef class TrajectoryCalculator:
                 windage_adjustment = get_correction(range_vector.x(), windage)
 
                 ranges.append(TrajectoryData(
-                    time=Timespan(time),
-                    travel_distance=Distance(range_vector.x(), DistanceFoot),
+                    time=time,
+                    distance=Distance(range_vector.x(), DistanceFoot),
                     drop=Distance(range_vector.y(), DistanceFoot),
                     drop_adjustment=Angular(drop_adjustment, AngularRadian) if drop_adjustment else None,
                     windage=Distance(windage, DistanceFoot),
                     windage_adjustment=Angular(windage_adjustment, AngularRadian) if windage_adjustment else None,
                     velocity=Velocity(velocity, VelocityFPS),
                     mach=velocity / mach,
-                    energy=Energy(calculate_energy(bullet_weight, velocity),
-                                  EnergyFootPound),
-                    optimal_game_weight=Weight(calculate_ogv(bullet_weight, velocity),
-                                               WeightPound))
+                    energy=Energy(calculate_energy(bullet_weight, velocity), EnergyFootPound),
+                    ogw=Weight(calculate_ogv(bullet_weight, velocity), WeightPound))
                 )
 
                 next_range_distance += step
@@ -263,12 +261,12 @@ cdef double calculate_stability_coefficient(ammunition_info, rifle_info, atmosph
     return sd * fv * ftp
 
 cdef wind_to_vector(shot, wind):
-    cdef double sight_cosine = cos(shot.sight_angle().get_in(AngularRadian))
-    cdef double sight_sine = sin(shot.sight_angle().get_in(AngularRadian))
-    cdef double cant_cosine = cos(shot.cant_angle().get_in(AngularRadian))
-    cdef double cant_sine = sin(shot.cant_angle().get_in(AngularRadian))
-    cdef double range_velocity = wind.velocity().get_in(VelocityFPS) * cos(wind.direction().get_in(AngularRadian))
-    cdef double cross_component = wind.velocity().get_in(VelocityFPS) * sin(wind.direction().get_in(AngularRadian))
+    cdef double sight_cosine = cos(shot.sight_angle.get_in(AngularRadian))
+    cdef double sight_sine = sin(shot.sight_angle.get_in(AngularRadian))
+    cdef double cant_cosine = cos(shot.cant_angle.get_in(AngularRadian))
+    cdef double cant_sine = sin(shot.cant_angle.get_in(AngularRadian))
+    cdef double range_velocity = wind.velocity.get_in(VelocityFPS) * cos(wind.direction.get_in(AngularRadian))
+    cdef double cross_component = wind.velocity.get_in(VelocityFPS) * sin(wind.direction.get_in(AngularRadian))
     cdef double range_factor = -range_velocity * sight_sine
     return Vector(range_velocity * sight_cosine,
                   range_factor * cant_cosine + cross_component * cant_sine,

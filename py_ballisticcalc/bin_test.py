@@ -1,10 +1,11 @@
 import timeit
-from datetime import datetime
 import unittest
+from datetime import datetime
+from math import fabs
+
 import pyximport
 
-from math import fabs
-pyximport.install()
+pyximport.install(language_level=3)
 
 from py_ballisticcalc.profile import *
 from py_ballisticcalc.bmath import unit
@@ -31,7 +32,6 @@ class TestProfile(unittest.TestCase):
 
     @unittest.skip
     def test_profile_bc(self):
-
         p = Profile()
         data = p.calculate_trajectory()
         print(data[0].drop().get_in(DistanceCentimeter), data[0].travelled_distance().get_in(DistanceMeter))
@@ -113,20 +113,9 @@ class TestShotParams(unittest.TestCase):
             Distance(100, DistanceFoot)
         )
 
-    def test_unlevel(self):
-        v = ShotParametersUnlevel(
-            Angular(0, AngularDegree),
-            Distance(1000, DistanceFoot),
-            Distance(100, DistanceFoot),
-            Angular(0, AngularDegree),
-            Angular(0, AngularDegree)
-        )
-
     # @unittest.SkipTest
     def test_time(self):
         t = timeit.timeit(self.test_create, number=1)
-        print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
-        t = timeit.timeit(self.test_unlevel, number=1)
         print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
 
 
@@ -207,7 +196,10 @@ class TestG7Profile(unittest.TestCase):
         zero = ZeroInfo(Distance(100, DistanceMeter), True, True, ammo, atmo)
         twist = TwistInfo(TwistRight, Distance(11, DistanceInch))
         weapon = WeaponWithTwist(Distance(90, DistanceMillimeter), zero, twist)
-        wind = create_only_wind_info(Velocity(0, VelocityMPS), Angular(0, AngularDegree))
+        wind = [
+            WindInfo(velocity=Velocity(0, VelocityMPS),
+                     direction=Angular(0, AngularDegree))
+        ]
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(Distance(1, DistanceFoot))
         print(timeit.timeit(lambda: calc.sight_angle(ammo, weapon, atmo), number=1))
@@ -260,32 +252,32 @@ class TestPyBallisticCalc(unittest.TestCase):
                      path: float, hold: float, windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: int):
 
-        self.assertEqualCustom(distance, data.travelled_distance().get_in(unit.DistanceYard), 0.001, "Distance")
-        self.assertEqualCustom(velocity, data.velocity().get_in(unit.VelocityFPS), 5, "Velocity")
-        self.assertEqualCustom(mach, data.mach_velocity(), 0.005, "Mach")
-        self.assertEqualCustom(energy, data.energy().get_in(unit.EnergyFootPound), 5, "Energy")
-        self.assertEqualCustom(time, data.time().total_seconds(), 0.06, "Time")
-        self.assertEqualCustom(ogv, data.optimal_game_weight().get_in(unit.WeightPound), 1, "OGV")
+        self.assertEqualCustom(distance, data.distance.get_in(unit.DistanceYard), 0.001, "Distance")
+        self.assertEqualCustom(velocity, data.velocity.get_in(unit.VelocityFPS), 5, "Velocity")
+        self.assertEqualCustom(mach, data.mach, 0.005, "Mach")
+        self.assertEqualCustom(energy, data.energy.get_in(unit.EnergyFootPound), 5, "Energy")
+        self.assertEqualCustom(time, data.time, 0.06, "Time")
+        self.assertEqualCustom(ogv, data.ogw.get_in(unit.WeightPound), 1, "OGV")
 
         if distance >= 800:
-            self.assertEqualCustom(path, data.drop().get_in(unit.DistanceInch), 4, 'Drop')
+            self.assertEqualCustom(path, data.drop.get_in(unit.DistanceInch), 4, 'Drop')
         elif distance >= 500:
-            self.assertEqualCustom(path, data.drop().get_in(unit.DistanceInch), 1, 'Drop')
+            self.assertEqualCustom(path, data.drop.get_in(unit.DistanceInch), 1, 'Drop')
         else:
-            self.assertEqualCustom(path, data.drop().get_in(unit.DistanceInch), 0.5, 'Drop')
+            self.assertEqualCustom(path, data.drop.get_in(unit.DistanceInch), 0.5, 'Drop')
 
         if distance > 1:
-            self.assertEqualCustom(hold, data.drop_adjustment().get_in(adjustment_unit), 0.5, 'Hold')
+            self.assertEqualCustom(hold, data.drop_adjustment.get_in(adjustment_unit), 0.5, 'Hold')
 
         if distance >= 800:
-            self.assertEqualCustom(windage, data.windage().get_in(unit.DistanceInch), 1.5, "Windage")
+            self.assertEqualCustom(windage, data.windage.get_in(unit.DistanceInch), 1.5, "Windage")
         elif distance >= 500:
-            self.assertEqualCustom(windage, data.windage().get_in(unit.DistanceInch), 1, "Windage")
+            self.assertEqualCustom(windage, data.windage.get_in(unit.DistanceInch), 1, "Windage")
         else:
-            self.assertEqualCustom(windage, data.windage().get_in(unit.DistanceInch), 0.5, "Windage")
+            self.assertEqualCustom(windage, data.windage.get_in(unit.DistanceInch), 0.5, "Windage")
 
         if distance > 1:
-            self.assertEqualCustom(wind_adjustment, data.windage_adjustment().get_in(adjustment_unit), 0.5, "WAdj")
+            self.assertEqualCustom(wind_adjustment, data.windage_adjustment.get_in(adjustment_unit), 0.5, "WAdj")
 
     @unittest.skip
     def test_path_g1(self):
@@ -298,8 +290,8 @@ class TestPyBallisticCalc(unittest.TestCase):
         shot_info = ShotParameters(unit.Angular(0.001228, unit.AngularRadian),
                                    unit.Distance(1000, unit.DistanceYard),
                                    unit.Distance(100, unit.DistanceYard))
-        wind = create_only_wind_info(unit.Velocity(5, unit.VelocityMPH),
-                                     unit.Angular(-45, unit.AngularDegree))
+        wind = [WindInfo(velocity=unit.Velocity(5, unit.VelocityMPH),
+                         direction=unit.Angular(-45, unit.AngularDegree))]
         calc = TrajectoryCalculator()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
 
@@ -332,8 +324,8 @@ class TestPyBallisticCalc(unittest.TestCase):
         shot_info = ShotParameters(unit.Angular(4.221, unit.AngularMOA),
                                    unit.Distance(1000, unit.DistanceYard),
                                    unit.Distance(100, unit.DistanceYard))
-        wind = create_only_wind_info(unit.Velocity(5, unit.VelocityMPH),
-                                     unit.Angular(-45, unit.AngularDegree))
+        wind = [WindInfo(velocity=unit.Velocity(5, unit.VelocityMPH),
+                         direction=unit.Angular(-45, unit.AngularDegree))]
 
         calc = TrajectoryCalculator()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
