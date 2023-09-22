@@ -1,5 +1,7 @@
 from .unit import *
 
+__all__ = ('TrajectoryData', )
+
 
 class TrajectoryData(NamedTuple):
     """
@@ -11,9 +13,9 @@ class TrajectoryData(NamedTuple):
         velocity (Velocity): velocity in current trajectory point
         mach (float): velocity in current trajectory point in "Mach" number
         drop (Distance):
-        drop_adjustment (Angular | None):
+        drop_adj (Angular | None):
         windage (Distance):
-        windage_adjustment (Angular | None):
+        windage_adj (Angular | None):
         energy (Energy):
         ogw (Weight): optimal game weight
     """
@@ -23,8 +25,8 @@ class TrajectoryData(NamedTuple):
     velocity: Velocity
     mach: float
     drop: Distance
-    drop_adjustment: Angular | None
+    drop_adj: Angular | None  # drop_adjustment
     windage: Distance
-    windage_adjustment: Angular | None
+    windage_adj: Angular | None  # windage_adjustment
     energy: Energy
     ogw: Weight

@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from .unit import *
 
+__all__ = ('Weapon',)
+
 
 @dataclass
 class Weapon:

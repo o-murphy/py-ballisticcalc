@@ -2,8 +2,8 @@ from typing import NamedTuple
 
 
 class DragDataPoint(NamedTuple):
-    coeff: float
-    velocity: float
+    coeff: float  # BC or CD
+    velocity: float  # muzzle velocity or Mach
 
 
 TableG1 = [
@@ -672,3 +672,5 @@ TableGS = [
     {'Mach': 3.95, 'CD': 0.9295},
     {'Mach': 4.00, 'CD': 0.9280},
 ]
+
+TableNamesSet = [value for key, value in globals().items() if key.startswith("Table")]

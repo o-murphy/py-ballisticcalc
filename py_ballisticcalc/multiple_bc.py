@@ -1,12 +1,12 @@
 from math import pow
-from .drag import load_drag_table
+from .drag import make_data_points
 from .unit import *
-from .atmosphere import Atmosphere
+from .environment import Atmosphere
 from drag_tables import DragDataPoint
 
 
 class MultipleBallisticCoefficient:
-    def __init__(self, drag_table: int, diameter: Distance, weight: Weight,
+    def __init__(self, drag_table: list, diameter: Distance, weight: Weight,
                  multiple_bc_table: list[DragDataPoint], velocity_units_flag: Unit):
 
         self.multiple_bc_table = multiple_bc_table
@@ -22,7 +22,7 @@ class MultipleBallisticCoefficient:
         density, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
         self.speed_of_sound = Velocity(mach, Velocity.FPS) >> Velocity.MPS
 
-        self.table_data = load_drag_table(self.table)
+        self.table_data = make_data_points(self.table)
         self.bc_table = self._create_bc_table_data_points()
         self.custom_drag_table = []
 

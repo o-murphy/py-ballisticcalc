@@ -1,7 +1,14 @@
 # BallisticCalculator
 LGPL library for small arms ballistic calculations (Python 3.9+)
-Installation
-------------
+
+### Table of contents
+* [Instalation](#installation)
+* [Usage](#usage)
+  * [Units of measure](#unit-manipulation-syntax)
+  * [Simple usage examle](#example-of-library-usage)
+* [About project](#about-project)
+
+### Installation
 **Stable release from pypi, installing from binaries**
 
 (Contains c-extensions which offer higher performance)
@@ -25,93 +32,107 @@ git clone https://github.com/o-murphy/py_ballisticcalc
 ```   
 
 
-Usage
------
+### Usage
 
-### Simple start
+#### Unit manipulation syntax:
 ```python
-from py_ballisticcalc.profile import *
-from py_ballisticcalc.bmath import unit
+from py_ballisticcalc.unit import *
 
+# define var
+unit_in_meter = Distance(100, Distance.Meter)
+# >>> <Distance>: 100.0 m (3937.0078740157483)
 
-profile = Profile()
-tested_data = profile.trajectory_data
+# convert unit
+unit_in_yards = unit_in_meter << Distance.Yard  # <<= operator also supports
+# >>> <Distance>: 109.36132983377078 yd (3937.0078740157483)
 
-for d in tested_data:
-    distance = d.travelled_distance.convert(unit.DistanceMeter)
-    velocity = d.velocity.convert(unit.VelocityMPS)
-    mach = round(d.mach_velocity, 4)
-    energy = d.energy
-    time = round(d.time.total_seconds, 4)
-    ogv = d.optimal_game_weight.get_in(unit.WeightPound)
-    path = d.drop.convert(unit.DistanceCentimeter)
-    hold = d.drop_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
-    windage = d.windage.convert(unit.DistanceCentimeter)
-    wind_adjustment = d.windage_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
-    print(
-        f'Distance: {distance}, '
-        f'Velocity: {velocity}, '
-        f'Mach: {mach}, '
-        f'Energy: {energy}, '
-        f'Time: {time}s, '
-        f'Path: {path}, '
-        f'Windage: {windage}'
-    )
+# get value in specified units
+value_in_km = unit_in_yards >> Distance.Kilometer  # >>= operator also supports
+# >>> 0.1
 ```
 
-### Use any modules directly if needed 
+#### Example of library usage
 ```python
+import pyximport
+
+pyximport.install(language_level=3)
+
+from py_ballisticcalc.environment import *
 from py_ballisticcalc.projectile import *
-from py_ballisticcalc.drag import *
 from py_ballisticcalc.weapon import *
-from py_ballisticcalc.trajectory_calculator import *
-from py_ballisticcalc.atmosphere import *
-from py_ballisticcalc.shot_parameters import *
-from py_ballisticcalc.bmath import unit
+from py_ballisticcalc.unit import *
+from py_ballisticcalc.shot import ShotParameters
+from py_ballisticcalc.trajectory_calculator import TrajectoryCalculator
+from py_ballisticcalc.drag import DragModel
+from py_ballisticcalc.drag_tables import TableG7
+from py_ballisticcalc.trajectory_data import TrajectoryData
 
-bc = BallisticCoefficient(0.223, DragTableG7)
-projectile = ProjectileWithDimensions(bc, unit.Distance(0.308, unit.DistanceInch).validate(),
-                                      unit.Distance(1.282, unit.DistanceInch).validate(),
-                                      unit.Weight(168, unit.WeightGrain).validate())
-ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS).validate())
-zero = ZeroInfo(unit.Distance(100, unit.DistanceMeter).validate())
-twist = TwistInfo(TwistRight, unit.Distance(11.24, unit.DistanceInch).validate())
-weapon = Weapon.create_with_twist(unit.Distance(2, unit.DistanceInch).validate(), zero, twist)
-atmosphere = Atmosphere()
-shot_info = ShotParameters(unit.Angular(4.221, unit.AngularMOA).validate(),
-                           unit.Distance(1001, unit.DistanceMeter).validate(),
-                           unit.Distance(100, unit.DistanceMeter).validate())
-wind = WindInfo.create_only_wind_info(unit.Velocity(5, unit.VelocityMPH).validate(),
-                                      unit.Angular(-45, unit.AngularDegree).validate())
 
+# defining calculator instance
 calc = TrajectoryCalculator()
-data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
+# calc.set_maximum_calculator_step_size(maximum_step_size)  # optional
 
-for d in data:
-    distance = d.travelled_distance
-    meters = distance.convert(unit.DistanceMeter)
-    velocity = d.velocity.convert(unit.VelocityMPS)
-    mach = round(d.mach_velocity, 4)
-    energy = d.energy
-    time = round(d.time.total_seconds, 4)
-    ogv = d.optimal_game_weight.get_in(unit.WeightPound)
-    path = d.drop.convert(unit.DistanceCentimeter)
-    hold = d.drop_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
-    windage = d.windage.convert(unit.DistanceCentimeter)
-    wind_adjustment = d.windage_adjustment.get_in(unit.AngularMOA) if distance.v > 1 else None
+# bullet
+bullet_weight = Weight(0.250, Weight.Grain)
+bullet_diameter = Distance(0.308, Distance.Inch)
+bullet_length = Distance(1.555, Distance.Inch)
+dm = DragModel(0.314, TableG7, bullet_weight, bullet_diameter)
+
+# ammo
+muzzle_velocity = Velocity(800, Velocity.MPS)
+
+# weapon and ammo
+sight_height = Distance(90, Distance.Millimeter)
+twist = Distance(9, Distance.Inch)
+
+# conditions
+winds = [Wind()]
+zero_atmo = Atmosphere.ICAO()
+
+# summary
+projectile = Projectile(dm, bullet_weight, bullet_diameter, bullet_length)
+weapon = Weapon(sight_height, twist=twist)
+ammo = Ammo(projectile, muzzle_velocity)
+
+# shot parameters
+sight_angle = calc.sight_angle(ammo, weapon, zero_atmo)
+max_range = Distance(2000, Distance.Meter)
+calc_step = Distance(50, Distance.Meter)
+shot_atmo = Atmosphere(
+    altitude=Distance(100, Distance.Meter),
+    temperature=Temperature(20, Temperature.Celsius),
+    pressure=Pressure(760, Pressure.MmHg),
+    humidity=50
+)
+shot = ShotParameters(sight_angle, max_range, calc_step)
+
+data = calc.trajectory(ammo, weapon, shot_atmo, shot, winds)
+header = list(TrajectoryData._fields)
+
+
+# format output
+def fmt(v: AbstractUnit, u: Unit):
+    return f"{v >> u:.{u.accuracy}f} {u.symbol}"
+
+
+# print output data
+for p in data:
     print(
-        f'Distance: {meters}, '
-        f'Velocity: {velocity}, '
-        f'Mach: {mach}, '
-        f'Energy: {energy}, '
-        f'Time: {time}s, '
-        f'Path: {path}, '
-        f'Windage: {windage}'
+        [
+            f'{p.time:.2f} s',
+            fmt(p.distance, Distance.Meter),
+            fmt(p.velocity, Velocity.MPS),
+            f'{p.mach:.2f} mach',
+            fmt(p.drop, Distance.Centimeter),
+            fmt(p.drop_adj, Angular.Mil),
+            fmt(p.windage, Distance.Centimeter),
+            fmt(p.windage_adj, Angular.Mil),
+            fmt(p.energy, Energy.Joule)
+        ]
     )
 ```
 
-
-Info
+About project
 -----
 
 The library provides trajectory calculation for projectiles including for various

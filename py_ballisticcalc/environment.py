@@ -3,6 +3,8 @@ from math import pow, sqrt, fabs
 
 from .unit import *
 
+__all__ = ('Atmosphere', 'Wind')
+
 cIcaoStandardTemperatureR: float = 518.67
 cIcaoFreezingPointTemperatureR: float = 459.67
 cTemperatureGradient: float = -3.56616e-03
@@ -54,7 +56,7 @@ class Atmosphere:
         pressure = Pressure(
             cStandardPressure *
             pow(cIcaoStandardTemperatureR / (
-                (temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
+                    (temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
                 cPressureExponent),
             Pressure.InHg)
 
@@ -108,3 +110,19 @@ class Atmosphere:
 
         density, mach = self.calculate0(t, p)
         return density / cStandardDensity, mach
+
+
+@dataclass
+class Wind:
+    """
+    Represents wind info valid to desired distance
+
+    Attributes:
+        until_distance (Distance): default 9999 - represents inf
+        velocity (Velocity): default 0
+        direction (Angular): default 0
+    """
+
+    velocity: Velocity = Velocity(0, Velocity.FPS)
+    direction: Angular = Angular(0, Angular.Degree)
+    until_distance: Distance = Distance(9999, Distance.Kilometer)
