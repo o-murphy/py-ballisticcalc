@@ -2,42 +2,38 @@ from libc.math cimport floor, pow
 from .unit import *
 from drag_tables import DragDataPoint, TableNamesSet
 
-
-cdef class BallisticCoefficient:
+cdef class DragModel:
     cdef double _value
     cdef list _table
     cdef list _table_data
     cdef list _curve_data
     cdef _weight, _diameter
     cdef double _sectional_density, _form_factor
-    cdef list _custom_drag_table
 
-    def __init__(self, value: double, drag_table: list, weight: Weight, diameter: Distance, custom_drag_table: list):
+    def __init__(self, value: double, drag_table: list, weight: Weight, diameter: Distance):
 
         self._table = drag_table
 
         self._weight = weight
         self._diameter = diameter
         self._sectional_density = self._get_sectional_density()
-        self._custom_drag_table = custom_drag_table
 
-        if self._table == 0 and len(self._custom_drag_table) > 0:
-            self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
-            self._value = self._get_custom_bc()
-            self._table_data = make_data_points(self._custom_drag_table)
-            self._curve_data = calculate_curve(self._table_data)
-
-        elif drag_table not in TableNamesSet:
-            raise ValueError(f"BallisticCoefficient: Unknown drag table {drag_table}")
-        elif value <= 0:
-            raise ValueError('BallisticCoefficient: Drag coefficient must be greater than zero')
-        elif self._table == 0 and len(custom_drag_table) == 0:
-            raise ValueError('BallisticCoefficient: Custom drag table must be longer than 0')
-        else:
+        if drag_table in TableNamesSet:
             self._value = value
             self._form_factor = self._get_form_factor()
             self._table_data = make_data_points(self._table)
             self._curve_data = calculate_curve(self._table_data)
+        elif len(self._table) == 0:
+            raise ValueError('Custom drag table must be longer than 0')
+        elif len(self._table) > 0:  # TODO: temporary
+            self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
+            self._value = self._get_custom_bc()
+            self._table_data = make_data_points(self._table)
+            self._curve_data = calculate_curve(self._table_data)
+        elif value <= 0:
+            raise ValueError('Drag coefficient must be greater than zero')
+        else:
+            raise ValueError('Wrong drag data')
 
     cpdef double drag(self, double mach):
         cdef double cd
@@ -143,7 +139,7 @@ cpdef list calculate_curve(list data_points):
         y2 = data_points[i].coeff
         y3 = data_points[i + 1].coeff
         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
-                    (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
+                (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
         c = y1 - (a * x1 * x1 + b * x1)
         curve_point = CurvePoint(a, b, c)

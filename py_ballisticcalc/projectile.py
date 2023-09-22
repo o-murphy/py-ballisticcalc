@@ -3,16 +3,18 @@ from dataclasses import dataclass
 from .drag import *
 from .unit import *
 
+__all__ = ('Ammo', 'Projectile')
+
 
 @dataclass
 class Projectile:
-    bc: BallisticCoefficient
+    dm: DragModel
     weight: Weight
     diameter: Distance = None
     length: Distance = None
 
 
 @dataclass
-class Ammunition:
+class Ammo:
     projectile: Projectile
     muzzle_velocity: Velocity

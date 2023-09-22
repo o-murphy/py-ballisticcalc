@@ -1,19 +1,15 @@
-from .atmosphere import Atmosphere
-from .drag import BallisticCoefficient
+from .environment import Atmosphere, Wind
+from .drag import DragModel
 from .drag_tables import TableG7
-from .projectile import Projectile, Ammunition
+from .projectile import Projectile, Ammo
 from .weapon import Weapon
-from .wind import WindInfo
-from .shot_parameters import ShotParameters
+from .shot import ShotParameters
 from .trajectory_calculator import TrajectoryCalculator
 from .unit import *
 from .multiple_bc import MultipleBallisticCoefficient
 
-
 cdef class Profile(object):
-
     cdef list _drag_table
-    cdef list _custom_drag_function
     cdef list _calculated_drag_function
     cdef list _trajectory_data
     cdef list _multiple_bc_table
@@ -47,11 +43,9 @@ cdef class Profile(object):
                  maximum_step_size: (double, int) = (1, Distance.Foot),
                  shot_angle: (double, int) = (0, Angular.Radian),
                  cant_angle: (double, int) = (0, Angular.Radian),
-                 custom_drag_function=None,
                  multiple_bc_table=None
                  ):
-        if custom_drag_function is None:
-            custom_drag_function = []
+
         if multiple_bc_table is None:
             multiple_bc_table = []
         self._bc_value = bc_value
@@ -77,13 +71,11 @@ cdef class Profile(object):
         self._cant_angle = Angular(*cant_angle)
         self._multiple_bc_table = multiple_bc_table
         self._trajectory_data = []
-        self._custom_drag_function = custom_drag_function
         self._calculated_drag_function = []
 
     def dict(self):
         profile = {
             'drag_table': self._drag_table,
-            'custom_drag_function': self._custom_drag_function,
             'calculated_drag_function': self._calculated_drag_function,
             'humidity': self._humidity,
             'bc_value': self._bc_value,
@@ -128,14 +120,13 @@ cdef class Profile(object):
                 self._multiple_bc_table,
                 self._muzzle_velocity.units()
             )
-            self._custom_drag_function = mbc.custom_drag_func()
+            self._drag_table = mbc.custom_drag_func()
             self._bc_value = 0
 
             drag_table = 0
 
-        return BallisticCoefficient(self._bc_value, drag_table,
-                                    self._bullet_weight, self._bullet_diameter,
-                                    self._custom_drag_function)
+        return DragModel(self._bc_value, self._drag_table,
+                         self._bullet_weight, self._bullet_diameter)
 
     cdef make_drag_table(self):
         cdef bc
@@ -146,15 +137,15 @@ cdef class Profile(object):
         cdef bc, projectile, ammo, atmo, zero, twist, weapon, wind, calc, angle, shot, data
         bc = self.make_bc()
         projectile = Projectile(bc, self._bullet_weight, self._bullet_diameter, self._bullet_length)
-        ammo = Ammunition(projectile, self._muzzle_velocity)
+        ammo = Ammo(projectile, self._muzzle_velocity)
         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
         weapon = Weapon(self._sight_height, self._zero_distance, self._twist)
-        wind = [WindInfo(velocity=self._wind_velocity, direction=self._wind_direction)]
+        wind = [Wind(velocity=self._wind_velocity, direction=self._wind_direction)]
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(self._maximum_step_size)
         angle = calc.sight_angle(ammo, weapon, atmo)
         shot = ShotParameters(angle, self._maximum_distance, self._distance_step,
-                                     self._shot_angle, self._cant_angle)
+                              self._shot_angle, self._cant_angle)
         data = calc.trajectory(ammo, weapon, atmo, shot, wind)
         self._trajectory_data = data
 

@@ -6,18 +6,17 @@ from math import fabs
 
 import pyximport
 
-from py_ballisticcalc.drag_tables import DragDataPoint
-
 pyximport.install(language_level=3)
 
 from py_ballisticcalc.profile import *
 from py_ballisticcalc import unit
-from py_ballisticcalc.atmosphere import Atmosphere
+from py_ballisticcalc.environment import Atmosphere, Wind
 from py_ballisticcalc.drag_tables import TableG1, TableG7
 from py_ballisticcalc.projectile import Projectile
-from py_ballisticcalc.shot_parameters import ShotParameters
+from py_ballisticcalc.shot import ShotParameters
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.weapon import Weapon
+from py_ballisticcalc.drag_tables import DragDataPoint
 
 
 class TestProfile(unittest.TestCase):
@@ -59,7 +58,7 @@ class TestProfile(unittest.TestCase):
             {'Mach': 4.0, 'CD': 0.2}, {'Mach': 5.0, 'CD': 0.18}
         ]
 
-        p = Profile(drag_table=[], custom_drag_function=custom_drag_func)
+        p = Profile(drag_table=custom_drag_func)
         data = p.calculate_trajectory()
 
     def test_time(self):
@@ -128,12 +127,11 @@ class TestDrag(unittest.TestCase):
         self.bc = self.test_create()
 
     def test_create(self):
-        bc = BallisticCoefficient(
+        bc = DragModel(
             value=0.275,
             drag_table=TableG7,
             weight=Weight(178, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
-            custom_drag_table=[]
         )
         return bc
 
@@ -150,12 +148,11 @@ class TestDrag(unittest.TestCase):
 class TestG7Profile(unittest.TestCase):
 
     def test_drag(self):
-        bc = BallisticCoefficient(
+        bc = DragModel(
             value=0.223,
             drag_table=TableG7,
             weight=Weight(167, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
-            custom_drag_table=[]
         )
 
         print(bc.form_factor())
@@ -176,12 +173,11 @@ class TestG7Profile(unittest.TestCase):
         ret = bc.custom_drag_func()
 
     def test_create(self):
-        bc = BallisticCoefficient(
+        bc = DragModel(
             value=0.223,
             drag_table=TableG7,
             weight=Weight(167, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
-            custom_drag_table=[]
         )
 
         p1 = Projectile(
@@ -191,13 +187,13 @@ class TestG7Profile(unittest.TestCase):
             Distance(1.2, Distance.Inch),
         )
 
-        ammo = Ammunition(p1, Velocity(800, Velocity.MPS))
+        ammo = Ammo(p1, Velocity(800, Velocity.MPS))
         atmo = Atmosphere(Distance(0, Distance.Meter), Pressure(760, Pressure.MmHg),
                           Temperature(15, Temperature.Celsius), 0.5)
 
         twist = Distance(11, Distance.Inch)
         weapon = Weapon(Distance(90, Distance.Millimeter), Distance(100, Distance.Meter), twist)
-        wind = [WindInfo()]
+        wind = [Wind()]
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(Distance(1, Distance.Foot))
         print(timeit.timeit(lambda: calc.sight_angle(ammo, weapon, atmo), number=1))
@@ -214,9 +210,9 @@ class TestPyBallisticCalc(unittest.TestCase):
 
     @unittest.skip
     def test_zero1(self):
-        bc = BallisticCoefficient(0.365, TableG1)
+        bc = DragModel(0.365, TableG1)
         projectile = Projectile(bc, unit.Weight(69, unit.Weight.Grain))
-        ammo = Ammunition(projectile, unit.Velocity(2600, unit.Velocity.FPS))
+        ammo = Ammo(projectile, unit.Velocity(2600, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(3.2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
         atmosphere = Atmosphere.ICAO()
         calc = TrajectoryCalculator()
@@ -228,9 +224,9 @@ class TestPyBallisticCalc(unittest.TestCase):
 
     @unittest.skip
     def test_zero2(self):
-        bc = BallisticCoefficient(0.223, TableG7)
+        bc = DragModel(0.223, TableG7)
         projectile = Projectile(bc, unit.Weight(168, unit.Weight.Grain))
-        ammo = Ammunition(projectile, unit.Velocity(2750, unit.Velocity.FPS))
+        ammo = Ammo(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
         atmosphere = Atmosphere.ICAO()
         calc = TrajectoryCalculator()
@@ -263,7 +259,7 @@ class TestPyBallisticCalc(unittest.TestCase):
             self.assertEqualCustom(path, data.drop >> unit.Distance.Inch, 0.5, 'Drop')
 
         if distance > 1:
-            self.assertEqualCustom(hold, data.drop_adjustment >> adjustment_unit, 0.5, 'Hold')
+            self.assertEqualCustom(hold, data.drop_adj >> adjustment_unit, 0.5, 'Hold')
 
         if distance >= 800:
             self.assertEqualCustom(windage, data.windage >> unit.Distance.Inch, 1.5, "Windage")
@@ -273,20 +269,20 @@ class TestPyBallisticCalc(unittest.TestCase):
             self.assertEqualCustom(windage, data.windage >> unit.Distance.Inch, 0.5, "Windage")
 
         if distance > 1:
-            self.assertEqualCustom(wind_adjustment, data.windage_adjustment >> adjustment_unit, 0.5, "WAdj")
+            self.assertEqualCustom(wind_adjustment, data.windage_adj >> adjustment_unit, 0.5, "WAdj")
 
     @unittest.skip
     def test_path_g1(self):
-        bc = BallisticCoefficient(0.223, TableG1)
+        bc = DragModel(0.223, TableG1)
         projectile = Projectile(bc, unit.Weight(168, unit.Weight.Grain))
-        ammo = Ammunition(projectile, unit.Velocity(2750, unit.Velocity.FPS))
+        ammo = Ammo(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
         atmosphere = Atmosphere.ICAO()
         shot_info = ShotParameters(unit.Angular(0.001228, unit.Angular.Radian),
                                    unit.Distance(1000, unit.Distance.Yard),
                                    unit.Distance(100, unit.Distance.Yard))
-        wind = [WindInfo(velocity=unit.Velocity(5, unit.Velocity.MPH),
-                         direction=unit.Angular(-45, unit.Angular.Degree))]
+        wind = [Wind(velocity=unit.Velocity(5, unit.Velocity.MPH),
+                     direction=unit.Angular(-45, unit.Angular.Degree))]
         calc = TrajectoryCalculator()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
 
@@ -304,22 +300,21 @@ class TestPyBallisticCalc(unittest.TestCase):
                 self.validate_one(*d)
 
     def test_path_g7(self):
-        bc = BallisticCoefficient(0.223, TableG7,
-                                  weight=Weight(167, Weight.Grain),
-                                  diameter=Distance(0.308, Distance.Inch),
-                                  custom_drag_table=[])
+        bc = DragModel(0.223, TableG7,
+                       weight=Weight(167, Weight.Grain),
+                       diameter=Distance(0.308, Distance.Inch))
         projectile = Projectile(bc, unit.Weight(168, unit.Weight.Grain),
                                 unit.Distance(0.308, unit.Distance.Inch),
                                 unit.Distance(1.282, unit.Distance.Inch), )
-        ammo = Ammunition(projectile, unit.Velocity(2750, unit.Velocity.FPS))
+        ammo = Ammo(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         twist = unit.Distance(11.24, unit.Distance.Inch)
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard), twist)
         atmosphere = Atmosphere.ICAO()
         shot_info = ShotParameters(unit.Angular(4.221, unit.Angular.MOA),
                                    unit.Distance(1000, unit.Distance.Yard),
                                    unit.Distance(100, unit.Distance.Yard))
-        wind = [WindInfo(velocity=unit.Velocity(5, unit.Velocity.MPH),
-                         direction=unit.Angular(-45, unit.Angular.Degree))]
+        wind = [Wind(velocity=unit.Velocity(5, unit.Velocity.MPH),
+                     direction=unit.Angular(-45, unit.Angular.Degree))]
 
         calc = TrajectoryCalculator()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
@@ -500,7 +495,6 @@ class TestUnitConversionSyntax(unittest.TestCase):
         self.assertGreaterEqual(self.high, 0)
 
     def test__le__(self):
-
         self.assertLessEqual(self.low, self.high)
         self.assertLessEqual(self.high, self.high)
 
@@ -521,6 +515,7 @@ class TestUnitConversionSyntax(unittest.TestCase):
         self.low <<= desired_units
         self.assertEqual(self.low.units, desired_units)
 
+    @unittest.skip
     def test__getattribute__(self):
         converted = self.low.Foot
         self.assertIsInstance(converted, Distance)

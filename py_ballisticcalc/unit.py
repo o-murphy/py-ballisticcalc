@@ -55,10 +55,6 @@ class Unit(IntEnum):
     Kilogram = 74
     Newton = 75
 
-    def __call__(self, unit_type: 'AbstractUnit' = 0):
-        print(locals())
-        return unit_type.get_in(self)
-
     @property
     def name(self):
         return UnitPropsDict[self].name
@@ -90,9 +86,9 @@ UnitPropsDict = {
     Unit.Thousand: UnitProps('thousand', 2, 'ths'),
     Unit.InchesPer100Yd: UnitProps('inches/100yd', 2, 'in/100yd'),
     Unit.CmPer100M: UnitProps('cm/100m', 2, 'cm/100m'),
-    
+
     Unit.Inch: UnitProps("inch", 1, "inch"),
-    Unit.Foot: UnitProps("foot", 2,  "ft"),
+    Unit.Foot: UnitProps("foot", 2, "ft"),
     Unit.Yard: UnitProps("yard", 3, "yd"),
     Unit.Mile: UnitProps("mile", 3, "mi"),
     Unit.NauticalMile: UnitProps("nautical mile", 3, "nm"),
@@ -131,6 +127,11 @@ UnitPropsDict = {
 }
 
 
+class MetaUnit:
+    def __call__(self, *args, **kwargs):
+        print(args, kwargs)
+
+
 class AbstractUnit(ABC):
 
     def __init__(self, value: float, units: Unit):
@@ -146,19 +147,11 @@ class AbstractUnit(ABC):
     def __repr__(self):
         return f'<{self.__class__.__name__}>: {self >> self.units} {self.units.symbol} ({self._value})'
 
-    def __format__(self, format_spec: str):
+    def __format__(self, format_spec: str = "{v:.{a}f} {s}"):
         """
         :param format_spec: (str) - TODO: currently not implemented
         """
         raise NotImplemented
-
-    # def __getitem__(self, units: [Unit, str]):
-    #     return self.get_in(units)
-
-    # def __getattribute__(self, item):
-    #     if item in Unit.__members__:
-    #         return self.convert(Unit[item])
-    #     return super(AbstractUnit, self).__getattribute__(item)
 
     def __float__(self):
         return float(self._value)
@@ -188,9 +181,15 @@ class AbstractUnit(ABC):
         return self.convert(other)
 
     def to_raw(self, value: float, units: Unit):
+        if not isinstance(units, Unit):
+            error_message = f"Type expected: {Unit}, {type(Unit).__name__} found: {type(units).__name__}"
+            raise TypeError(error_message)
         raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
 
     def from_raw(self, value: float, units: Unit):
+        if not isinstance(units, Unit):
+            error_message = f"Type expected: {Unit}, {type(Unit).__name__} found: {type(units).__name__}"
+            raise TypeError(error_message)
         raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
 
     def convert(self, units: Unit):
@@ -461,25 +460,22 @@ class Velocity(AbstractUnit):
 
 class Energy(AbstractUnit):
 
-    def to_raw(self, value: float, units: int):
+    def to_raw(self, value: float, units: Unit):
         if units == Energy.FootPound:
             return value
         elif units == Energy.Joule:
             return value * 0.737562149277
-        else:
-            raise KeyError(f'{self.__name__}: unit {units} is not supported')
+        super(Energy, self).to_raw(value, units)
 
-    def from_raw(self, value: float, units: int):
+    def from_raw(self, value: float, units: Unit):
         if units == Energy.FootPound:
             return value
         elif units == Energy.Joule:
             return value / 0.737562149277
-        else:
-            raise KeyError(f'KeyError: {self.__name__}: unit {units} is not supported')
+        super(Energy, self).from_raw(value, units)
 
     FootPound = Unit.FootPound
     Joule = Unit.Joule
-
 
 # class Convertor:
 #     def __init__(self, measure=None, unit: int = 0, default_unit: int = 0):

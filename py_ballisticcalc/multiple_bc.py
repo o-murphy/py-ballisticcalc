@@ -1,7 +1,7 @@
 from math import pow
 from .drag import make_data_points
 from .unit import *
-from .atmosphere import Atmosphere
+from .environment import Atmosphere
 from drag_tables import DragDataPoint
 
 

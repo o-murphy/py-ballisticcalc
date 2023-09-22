@@ -673,5 +673,4 @@ TableGS = [
     {'Mach': 4.00, 'CD': 0.9280},
 ]
 
-
 TableNamesSet = [value for key, value in globals().items() if key.startswith("Table")]
