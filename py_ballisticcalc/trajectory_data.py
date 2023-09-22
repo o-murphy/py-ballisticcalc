@@ -1,27 +1,4 @@
-from dataclasses import dataclass
-from math import fmod, floor
-from typing import NamedTuple
-
-from .bmath.unit import *
-
-
-# @dataclass
-# class Timespan:
-#     __slots__ = ('time', )
-#
-#     time: float
-#
-#     @property
-#     def total_seconds(self) -> float:
-#         return self.time
-#
-#     @property
-#     def seconds(self) -> float:
-#         return fmod(floor(self.time), 60)
-#
-#     @property
-#     def minutes(self) -> float:
-#         return fmod(floor(self.time / 60), 60)
+from .unit import *
 
 
 class TrajectoryData(NamedTuple):

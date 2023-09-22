@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from .drag import *
-from .bmath.unit import *
+from .unit import *
 
 
 @dataclass

@@ -1,5 +1,5 @@
 from libc.math cimport floor, pow
-from .bmath.unit import *
+from .unit import *
 from .drag_tables import *
 
 DragTableG1: int = 1
@@ -66,8 +66,8 @@ cdef class BallisticCoefficient:
 
     cdef double _get_sectional_density(self):
         cdef double w, d
-        w = self._weight.get_in(WeightGrain)
-        d = self._diameter.get_in(DistanceInch)
+        w = self._weight.get_in(Weight.Grain)
+        d = self._diameter.get_in(Distance.Inch)
         return w / pow(d, 2) / 7000
 
     cpdef double standard_cd(self, double mach):

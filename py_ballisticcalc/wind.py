@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .bmath.unit import *
+from .unit import *
 
 
 @dataclass
@@ -14,7 +14,7 @@ class WindInfo:
         direction (Angular): default 0
     """
 
-    velocity: Velocity = Velocity(0, VelocityFPS)
-    direction: Angular = Angular(0, AngularDegree)
-    until_distance: Distance = Distance(9999, DistanceKilometer)
+    velocity: Velocity = Velocity(0, Velocity.FPS)
+    direction: Angular = Angular(0, Angular.Degree)
+    until_distance: Distance = Distance(9999, Distance.Kilometer)
 
