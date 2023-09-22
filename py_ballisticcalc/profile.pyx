@@ -1,7 +1,7 @@
 from .atmosphere import Atmosphere
 from .drag import BallisticCoefficient, DragTableG7
-from .projectile import Projectile
-from .weapon import Ammunition, ZeroInfo, Weapon
+from .projectile import Projectile, Ammunition
+from .weapon import Weapon
 from .wind import WindInfo
 from .shot_parameters import ShotParameters
 from .trajectory_calculator import TrajectoryCalculator
@@ -147,9 +147,7 @@ cdef class Profile(object):
         projectile = Projectile(bc, self._bullet_weight, self._bullet_diameter, self._bullet_length)
         ammo = Ammunition(projectile, self._muzzle_velocity)
         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
-        zero = ZeroInfo(self._zero_distance, ammo, atmo)
-        # twist = TwistInfo(self._twist_direction, self._twist)
-        weapon = Weapon(self._sight_height, zero, self._twist)
+        weapon = Weapon(self._sight_height, self._zero_distance, self._twist)
         wind = [WindInfo(velocity=self._wind_velocity, direction=self._wind_direction)]
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(self._maximum_step_size)

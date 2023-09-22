@@ -14,7 +14,7 @@ class MultipleBallisticCoefficient:
         self.weight = weight
         self.diameter = diameter
         self.velocity_units = velocity_units_flag
-        self.sectional_density = self.get_sectional_density()
+        self.sectional_density = self._get_sectional_density()
 
         atmosphere = Atmosphere.ICAO()
 
@@ -23,27 +23,34 @@ class MultipleBallisticCoefficient:
         self.speed_of_sound = Velocity(mach, VelocityFPS).get_in(VelocityMPS)
 
         self.table_data = load_drag_table(self.table)
-        self.bc_table = self.create_bc_table_data_points()
+        self.bc_table = self._create_bc_table_data_points()
         self.custom_drag_table = []
 
-    def get_sectional_density(self):
+    def custom_drag_func(self):
+        self._calculate_custom_drag_func()
+        return self.custom_drag_table
+
+    def _get_sectional_density(self):
         w = self.weight.get_in(WeightGrain)
         d = self.diameter.get_in(DistanceInch)
         return w / pow(d, 2) / 7000
 
-    def get_form_factor(self, bc):
+    def _get_form_factor(self, bc):
         return self.sectional_density / bc
 
-    def bc_extended(self):
+    def _interpolate_bc_table(self):
+        """
+        Extends input bc table by creating bc value for each point of standard Drag Model
+        """
         bc_mah = [DragDataPoint(point.coeff, point.velocity / self.speed_of_sound) for point in self.bc_table]
-        bc_mah.insert(len(bc_mah), DragDataPoint(bc_mah[-1].coeff, self.table_data[0].a()))
-        bc_mah.insert(0, DragDataPoint(bc_mah[0].coeff, self.table_data[-1].a()))
+        bc_mah.insert(len(bc_mah), DragDataPoint(bc_mah[-1].coeff, self.table_data[0].velocity))
+        bc_mah.insert(0, DragDataPoint(bc_mah[0].coeff, self.table_data[-1].velocity))
         bc_extended = [bc_mah[0].coeff, ]
 
         for i in range(1, len(bc_mah)):
             bc_max = bc_mah[i - 1]
             bc_min = bc_mah[i]
-            df_part = list(filter(lambda point: bc_max.velocity > point.a() >= bc_min.velocity, self.table_data))
+            df_part = list(filter(lambda point: bc_max.velocity > point.velocity >= bc_min.velocity, self.table_data))
             ddf = len(df_part)
             bc_delta = (bc_max.coeff - bc_min.coeff) / ddf
             for j in range(ddf):
@@ -51,10 +58,10 @@ class MultipleBallisticCoefficient:
 
         return bc_extended
 
-    def get_counted_cd(self, form_factor, cdst):
+    def _get_counted_cd(self, form_factor, cdst):
         return cdst * form_factor
 
-    def create_bc_table_data_points(self):
+    def _create_bc_table_data_points(self):
         self.multiple_bc_table.sort(reverse=True, key=lambda x: x[1])
         bc_table = []
         for bc, v in self.multiple_bc_table:
@@ -62,17 +69,13 @@ class MultipleBallisticCoefficient:
             bc_table.append(data_point)
         return bc_table
 
-    def calculate_custom_drag_func(self):
+    def _calculate_custom_drag_func(self):
 
-        bc_extended = self.bc_extended()
+        bc_extended = self._interpolate_bc_table()
         drag_function = []
         for i, point in enumerate(self.table_data):
             bc = bc_extended[len(bc_extended) - 1 - i]
-            form_factor = self.get_form_factor(bc)
-            cd = form_factor * point.b()
-            drag_function.append({'Mach': point.a(), 'CD': cd})
+            form_factor = self._get_form_factor(bc)
+            cd = form_factor * point.coeff
+            drag_function.append({'Mach': point.velocity, 'CD': cd})
         self.custom_drag_table = drag_function
-
-    def custom_drag_func(self):
-        self.calculate_custom_drag_func()
-        return self.custom_drag_table

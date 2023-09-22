@@ -43,17 +43,17 @@ class TestProfile(unittest.TestCase):
 
     def test_custom_df(self):
         custom_drag_func = [
-            {'A': 0.0, 'B': 0.18}, {'A': 0.4, 'B': 0.178}, {'A': 0.5, 'B': 0.154},
-            {'A': 0.6, 'B': 0.129}, {'A': 0.7, 'B': 0.131}, {'A': 0.8, 'B': 0.136},
-            {'A': 0.825, 'B': 0.14}, {'A': 0.85, 'B': 0.144}, {'A': 0.875, 'B': 0.153},
-            {'A': 0.9, 'B': 0.177}, {'A': 0.925, 'B': 0.226}, {'A': 0.95, 'B': 0.26},
-            {'A': 0.975, 'B': 0.349}, {'A': 1.0, 'B': 0.427}, {'A': 1.025, 'B': 0.45},
-            {'A': 1.05, 'B': 0.452}, {'A': 1.075, 'B': 0.45}, {'A': 1.1, 'B': 0.447},
-            {'A': 1.15, 'B': 0.437}, {'A': 1.2, 'B': 0.429}, {'A': 1.3, 'B': 0.418},
-            {'A': 1.4, 'B': 0.406}, {'A': 1.5, 'B': 0.394}, {'A': 1.6, 'B': 0.382},
-            {'A': 1.8, 'B': 0.359}, {'A': 2.0, 'B': 0.339}, {'A': 2.2, 'B': 0.321},
-            {'A': 2.4, 'B': 0.301}, {'A': 2.6, 'B': 0.28}, {'A': 3.0, 'B': 0.25},
-            {'A': 4.0, 'B': 0.2}, {'A': 5.0, 'B': 0.18}
+            {'Mach': 0.0, 'CD': 0.18}, {'Mach': 0.4, 'CD': 0.178}, {'Mach': 0.5, 'CD': 0.154},
+            {'Mach': 0.6, 'CD': 0.129}, {'Mach': 0.7, 'CD': 0.131}, {'Mach': 0.8, 'CD': 0.136},
+            {'Mach': 0.825, 'CD': 0.14}, {'Mach': 0.85, 'CD': 0.144}, {'Mach': 0.875, 'CD': 0.153},
+            {'Mach': 0.9, 'CD': 0.177}, {'Mach': 0.925, 'CD': 0.226}, {'Mach': 0.95, 'CD': 0.26},
+            {'Mach': 0.975, 'CD': 0.349}, {'Mach': 1.0, 'CD': 0.427}, {'Mach': 1.025, 'CD': 0.45},
+            {'Mach': 1.05, 'CD': 0.452}, {'Mach': 1.075, 'CD': 0.45}, {'Mach': 1.1, 'CD': 0.447},
+            {'Mach': 1.15, 'CD': 0.437}, {'Mach': 1.2, 'CD': 0.429}, {'Mach': 1.3, 'CD': 0.418},
+            {'Mach': 1.4, 'CD': 0.406}, {'Mach': 1.5, 'CD': 0.394}, {'Mach': 1.6, 'CD': 0.382},
+            {'Mach': 1.8, 'CD': 0.359}, {'Mach': 2.0, 'CD': 0.339}, {'Mach': 2.2, 'CD': 0.321},
+            {'Mach': 2.4, 'CD': 0.301}, {'Mach': 2.6, 'CD': 0.28}, {'Mach': 3.0, 'CD': 0.25},
+            {'Mach': 4.0, 'CD': 0.2}, {'Mach': 5.0, 'CD': 0.18}
         ]
 
         p = Profile(drag_table=0, custom_drag_function=custom_drag_func)
@@ -192,9 +192,8 @@ class TestG7Profile(unittest.TestCase):
         atmo = Atmosphere(Distance(0, DistanceMeter), Pressure(760, PressureMmHg),
                           Temperature(15, TemperatureCelsius), 0.5)
 
-        zero = ZeroInfo(Distance(100, DistanceMeter), ammo, atmo)
         twist = Distance(11, DistanceInch)
-        weapon = Weapon(Distance(90, DistanceMillimeter), zero, twist)
+        weapon = Weapon(Distance(90, DistanceMillimeter), Distance(100, DistanceMeter), twist)
         wind = [WindInfo()]
         calc = TrajectoryCalculator()
         calc.set_maximum_calculator_step_size(Distance(1, DistanceFoot))
@@ -215,8 +214,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         bc = BallisticCoefficient(0.365, DragTableG1)
         projectile = Projectile(bc, unit.Weight(69, unit.WeightGrain))
         ammo = Ammunition(projectile, unit.Velocity(2600, unit.VelocityFPS))
-        zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
-        weapon = Weapon(unit.Distance(3.2, unit.DistanceInch), zero)
+        weapon = Weapon(unit.Distance(3.2, unit.DistanceInch), unit.Distance(100, unit.DistanceYard))
         atmosphere = Atmosphere.ICAO()
         calc = TrajectoryCalculator()
 
@@ -230,8 +228,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         bc = BallisticCoefficient(0.223, DragTableG7)
         projectile = Projectile(bc, unit.Weight(168, unit.WeightGrain))
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
-        zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
-        weapon = Weapon(unit.Distance(2, unit.DistanceInch), zero)
+        weapon = Weapon(unit.Distance(2, unit.DistanceInch), unit.Distance(100, unit.DistanceYard))
         atmosphere = Atmosphere.ICAO()
         calc = TrajectoryCalculator()
 
@@ -280,8 +277,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         bc = BallisticCoefficient(0.223, DragTableG1)
         projectile = Projectile(bc, unit.Weight(168, unit.WeightGrain))
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
-        zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
-        weapon = Weapon(unit.Distance(2, unit.DistanceInch), zero)
+        weapon = Weapon(unit.Distance(2, unit.DistanceInch), unit.Distance(100, unit.DistanceYard))
         atmosphere = Atmosphere.ICAO()
         shot_info = ShotParameters(unit.Angular(0.001228, unit.AngularRadian),
                                    unit.Distance(1000, unit.DistanceYard),
@@ -313,9 +309,8 @@ class TestPyBallisticCalc(unittest.TestCase):
                                 unit.Distance(0.308, unit.DistanceInch),
                                 unit.Distance(1.282, unit.DistanceInch), )
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.VelocityFPS))
-        zero = ZeroInfo(unit.Distance(100, unit.DistanceYard))
         twist = unit.Distance(11.24, unit.DistanceInch)
-        weapon = Weapon(unit.Distance(2, unit.DistanceInch), zero, twist)
+        weapon = Weapon(unit.Distance(2, unit.DistanceInch), unit.Distance(100, unit.DistanceYard), twist)
         atmosphere = Atmosphere.ICAO()
         shot_info = ShotParameters(unit.Angular(4.221, unit.AngularMOA),
                                    unit.Distance(1000, unit.DistanceYard),

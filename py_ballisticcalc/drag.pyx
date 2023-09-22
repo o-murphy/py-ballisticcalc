@@ -84,8 +84,8 @@ cdef class BallisticCoefficient:
         calculated_cd_table = []
 
         for point in self._table_data:
-            st_mach = point.a()
-            st_cd = point.b()
+            st_mach = point.velocity
+            st_cd = point.coeff
             cd = self.calculated_cd(st_mach)
             calculated_cd_table.append({'Mach': st_mach, 'CD': cd})
 
@@ -94,18 +94,18 @@ cdef class BallisticCoefficient:
     cpdef form_factor(self):
         return self._form_factor
 
-cdef class DataPoint:
-    cdef double _a, _b
-
-    def __init__(self, a: double, b: double):
-        self._a = a
-        self._b = b
-
-    cpdef double a(self):
-        return self._a
-
-    cpdef double b(self):
-        return self._b
+# cdef class DataPoint:
+#     cdef double _a, _b
+#
+#     def __init__(self, a: double, b: double):
+#         self._a = a
+#         self._b = b
+#
+#     cpdef double a(self):
+#         return self._a
+#
+#     cpdef double b(self):
+#         return self._b
 
 cdef class CurvePoint:
     cdef double _a, _b, _c
@@ -128,7 +128,7 @@ cpdef list make_data_points(drag_table: list):
     table: list = []
     cdef data_point
     for point in drag_table:
-        data_point = DataPoint(point['Mach'], point['CD'])
+        data_point = DragDataPoint(point['CD'], point['Mach'])
         table.append(data_point)
     return table
 
@@ -138,18 +138,18 @@ cpdef list calculate_curve(list data_points):
     cdef curve_point
     cdef int num_points, len_data_points, len_data_range
 
-    rate = (data_points[1].b() - data_points[0].b()) / (data_points[1].a() - data_points[0].a())
-    curve = [CurvePoint(0, rate, data_points[0].b() - data_points[0].a() * rate)]
+    rate = (data_points[1].coeff - data_points[0].coeff) / (data_points[1].velocity - data_points[0].velocity)
+    curve = [CurvePoint(0, rate, data_points[0].coeff - data_points[0].velocity * rate)]
     len_data_points = int(len(data_points))
     len_data_range = len_data_points - 1
 
     for i in range(1, len_data_range):
-        x1 = data_points[i - 1].a()
-        x2 = data_points[i].a()
-        x3 = data_points[i + 1].a()
-        y1 = data_points[i - 1].b()
-        y2 = data_points[i].b()
-        y3 = data_points[i + 1].b()
+        x1 = data_points[i - 1].velocity
+        x2 = data_points[i].velocity
+        x3 = data_points[i + 1].velocity
+        y1 = data_points[i - 1].coeff
+        y2 = data_points[i].coeff
+        y3 = data_points[i + 1].coeff
         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
                     (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
@@ -158,9 +158,9 @@ cpdef list calculate_curve(list data_points):
         curve.append(curve_point)
 
     num_points = len_data_points
-    rate = (data_points[num_points - 1].b() - data_points[num_points - 2].b()) / \
-           (data_points[num_points - 1].a() - data_points[num_points - 2].a())
-    curve_point = CurvePoint(0, rate, data_points[num_points - 1].b() - data_points[num_points - 2].a() * rate)
+    rate = (data_points[num_points - 1].coeff - data_points[num_points - 2].coeff) / \
+           (data_points[num_points - 1].velocity - data_points[num_points - 2].velocity)
+    curve_point = CurvePoint(0, rate, data_points[num_points - 1].coeff - data_points[num_points - 2].velocity * rate)
     curve.append(curve_point)
     return curve
 
@@ -196,12 +196,12 @@ cpdef double calculate_by_curve(data: list, curve: list, mach: double):
 
     while mhi - mlo > 1:
         mid = int(floor(mhi + mlo) / 2.0)
-        if data[mid].a() < mach:
+        if data[mid].velocity < mach:
             mlo = mid
         else:
             mhi = mid
 
-    if data[mhi].a() - mach > mach - data[mlo].a():
+    if data[mhi].velocity - mach > mach - data[mlo].velocity:
         m = mlo
     else:
         m = mhi
