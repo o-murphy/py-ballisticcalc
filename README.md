@@ -52,6 +52,7 @@ value_in_km = unit_in_yards >> Distance.Kilometer  # >>= operator also supports
 ```
 
 #### Example of library usage
+
 ```python
 import pyximport
 
@@ -61,16 +62,14 @@ from py_ballisticcalc.environment import *
 from py_ballisticcalc.projectile import *
 from py_ballisticcalc.weapon import *
 from py_ballisticcalc.unit import *
-from py_ballisticcalc.shot import ShotParameters
-from py_ballisticcalc.trajectory_calculator import TrajectoryCalculator
+from py_ballisticcalc.shot import Shot
+from py_ballisticcalc.trajectory_calc import TrajectoryCalc
 from py_ballisticcalc.drag import DragModel
 from py_ballisticcalc.drag_tables import TableG7
 from py_ballisticcalc.trajectory_data import TrajectoryData
 
-
 # defining calculator instance
-calc = TrajectoryCalculator()
-# calc.set_maximum_calculator_step_size(maximum_step_size)  # optional
+calc = TrajectoryCalc()
 
 # bullet
 bullet_weight = Weight(0.250, Weight.Grain)
@@ -99,12 +98,12 @@ sight_angle = calc.sight_angle(ammo, weapon, zero_atmo)
 max_range = Distance(2000, Distance.Meter)
 calc_step = Distance(50, Distance.Meter)
 shot_atmo = Atmosphere(
-    altitude=Distance(100, Distance.Meter),
-    temperature=Temperature(20, Temperature.Celsius),
-    pressure=Pressure(760, Pressure.MmHg),
-    humidity=50
+  altitude=Distance(100, Distance.Meter),
+  temperature=Temperature(20, Temperature.Celsius),
+  pressure=Pressure(760, Pressure.MmHg),
+  humidity=50
 )
-shot = ShotParameters(sight_angle, max_range, calc_step)
+shot = Shot(sight_angle, max_range, calc_step)
 
 data = calc.trajectory(ammo, weapon, shot_atmo, shot, winds)
 header = list(TrajectoryData._fields)
@@ -112,24 +111,24 @@ header = list(TrajectoryData._fields)
 
 # format output
 def fmt(v: AbstractUnit, u: Unit):
-    return f"{v >> u:.{u.accuracy}f} {u.symbol}"
+  return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 
 
 # print output data
 for p in data:
-    print(
-        [
-            f'{p.time:.2f} s',
-            fmt(p.distance, Distance.Meter),
-            fmt(p.velocity, Velocity.MPS),
-            f'{p.mach:.2f} mach',
-            fmt(p.drop, Distance.Centimeter),
-            fmt(p.drop_adj, Angular.Mil),
-            fmt(p.windage, Distance.Centimeter),
-            fmt(p.windage_adj, Angular.Mil),
-            fmt(p.energy, Energy.Joule)
-        ]
-    )
+  print(
+    [
+      f'{p.time:.2f} s',
+      fmt(p.distance, Distance.Meter),
+      fmt(p.velocity, Velocity.MPS),
+      f'{p.mach:.2f} mach',
+      fmt(p.drop, Distance.Centimeter),
+      fmt(p.drop_adj, Angular.Mil),
+      fmt(p.windage, Distance.Centimeter),
+      fmt(p.windage_adj, Angular.Mil),
+      fmt(p.energy, Energy.Joule)
+    ]
+  )
 ```
 
 About project

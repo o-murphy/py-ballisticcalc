@@ -1,12 +1,12 @@
 from .environment import Atmosphere, Wind
-from .drag import DragModel
+from .drag_model import DragModel
 from .drag_tables import TableG7
 from .projectile import Projectile, Ammo
 from .weapon import Weapon
-from .shot import ShotParameters
-from .trajectory_calculator import TrajectoryCalculator
+from .shot import Shot
+from .trajectory_calc import TrajectoryCalc
 from .unit import *
-from .multiple_bc import MultipleBallisticCoefficient
+from .multiple_bc import MultiBC
 
 cdef class Profile(object):
     cdef list _drag_table
@@ -113,7 +113,7 @@ cdef class Profile(object):
         drag_table = self._drag_table
 
         if len(self._multiple_bc_table) > 0 >= self._bc_value:
-            mbc = MultipleBallisticCoefficient(
+            mbc = MultiBC(
                 self._drag_table,
                 self._bullet_diameter,
                 self._bullet_weight,
@@ -140,12 +140,12 @@ cdef class Profile(object):
         ammo = Ammo(projectile, self._muzzle_velocity)
         atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
         weapon = Weapon(self._sight_height, self._zero_distance, self._twist)
-        wind = [Wind(velocity=self._wind_velocity, direction=self._wind_direction)]
-        calc = TrajectoryCalculator()
-        calc.set_maximum_calculator_step_size(self._maximum_step_size)
+        wind = [Wind(self._wind_velocity, self._wind_direction)]
+        calc = TrajectoryCalc()
+        calc.set_max_calc_step_size(self._maximum_step_size)
         angle = calc.sight_angle(ammo, weapon, atmo)
-        shot = ShotParameters(angle, self._maximum_distance, self._distance_step,
-                              self._shot_angle, self._cant_angle)
+        shot = Shot(angle, self._maximum_distance, self._distance_step,
+                    self._shot_angle, self._cant_angle)
         data = calc.trajectory(ammo, weapon, atmo, shot, wind)
         self._trajectory_data = data
 

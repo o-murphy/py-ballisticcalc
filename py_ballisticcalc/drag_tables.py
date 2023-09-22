@@ -1,11 +1,3 @@
-from typing import NamedTuple
-
-
-class DragDataPoint(NamedTuple):
-    coeff: float  # BC or CD
-    velocity: float  # muzzle velocity or Mach
-
-
 TableG1 = [
     {'Mach': 0.00, 'CD': 0.2629},
     {'Mach': 0.05, 'CD': 0.2558},

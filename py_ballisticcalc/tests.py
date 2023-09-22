@@ -13,10 +13,10 @@ from py_ballisticcalc import unit
 from py_ballisticcalc.environment import Atmosphere, Wind
 from py_ballisticcalc.drag_tables import TableG1, TableG7
 from py_ballisticcalc.projectile import Projectile
-from py_ballisticcalc.shot import ShotParameters
+from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.weapon import Weapon
-from py_ballisticcalc.drag_tables import DragDataPoint
+from py_ballisticcalc.drag_model import DragDataPoint
 
 
 class TestProfile(unittest.TestCase):
@@ -109,7 +109,7 @@ class TestAtmo(unittest.TestCase):
 class TestShotParams(unittest.TestCase):
 
     def test_create(self):
-        v = ShotParameters(
+        v = Shot(
             Angular(0, Angular.Degree),
             Distance(1000, Distance.Foot),
             Distance(100, Distance.Foot)
@@ -155,14 +155,10 @@ class TestG7Profile(unittest.TestCase):
             diameter=Distance(0.308, Distance.Inch),
         )
 
-        print(bc.form_factor())
-        print(bc.drag(3))
-
         ret = bc.calculated_drag_function()
-        # print(ret)
 
     def test_mbc(self):
-        bc = MultipleBallisticCoefficient(
+        bc = MultiBC(
             drag_table=TableG7,
             weight=Weight(178, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
@@ -194,11 +190,10 @@ class TestG7Profile(unittest.TestCase):
         twist = Distance(11, Distance.Inch)
         weapon = Weapon(Distance(90, Distance.Millimeter), Distance(100, Distance.Meter), twist)
         wind = [Wind()]
-        calc = TrajectoryCalculator()
-        calc.set_maximum_calculator_step_size(Distance(1, Distance.Foot))
-        print(timeit.timeit(lambda: calc.sight_angle(ammo, weapon, atmo), number=1))
+        calc = TrajectoryCalc()
+        calc.set_max_calc_step_size(Distance(1, Distance.Foot))
         sight_angle = calc.sight_angle(ammo, weapon, atmo)
-        shot_info = ShotParameters(sight_angle, Distance(2500, Distance.Meter), Distance(1, Distance.Meter))
+        shot_info = Shot(sight_angle, Distance(2500, Distance.Meter), Distance(1, Distance.Meter))
         return calc.trajectory(ammo, weapon, atmo, shot_info, wind)
 
     def test_time(self):
@@ -215,7 +210,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammo(projectile, unit.Velocity(2600, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(3.2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
         atmosphere = Atmosphere.ICAO()
-        calc = TrajectoryCalculator()
+        calc = TrajectoryCalc()
 
         sight_angle = calc.sight_angle(ammo, weapon, atmosphere)
 
@@ -229,7 +224,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammo(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
         atmosphere = Atmosphere.ICAO()
-        calc = TrajectoryCalculator()
+        calc = TrajectoryCalc()
 
         sight_angle = calc.sight_angle(ammo, weapon, atmosphere)
 
@@ -278,12 +273,12 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammo(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
         atmosphere = Atmosphere.ICAO()
-        shot_info = ShotParameters(unit.Angular(0.001228, unit.Angular.Radian),
-                                   unit.Distance(1000, unit.Distance.Yard),
-                                   unit.Distance(100, unit.Distance.Yard))
+        shot_info = Shot(unit.Angular(0.001228, unit.Angular.Radian),
+                         unit.Distance(1000, unit.Distance.Yard),
+                         unit.Distance(100, unit.Distance.Yard))
         wind = [Wind(velocity=unit.Velocity(5, unit.Velocity.MPH),
                      direction=unit.Angular(-45, unit.Angular.Degree))]
-        calc = TrajectoryCalculator()
+        calc = TrajectoryCalc()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
 
         self.assertEqualCustom(len(data), 11, 0.1, "Length")
@@ -310,13 +305,13 @@ class TestPyBallisticCalc(unittest.TestCase):
         twist = unit.Distance(11.24, unit.Distance.Inch)
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard), twist)
         atmosphere = Atmosphere.ICAO()
-        shot_info = ShotParameters(unit.Angular(4.221, unit.Angular.MOA),
-                                   unit.Distance(1000, unit.Distance.Yard),
-                                   unit.Distance(100, unit.Distance.Yard))
+        shot_info = Shot(unit.Angular(4.221, unit.Angular.MOA),
+                         unit.Distance(1000, unit.Distance.Yard),
+                         unit.Distance(100, unit.Distance.Yard))
         wind = [Wind(velocity=unit.Velocity(5, unit.Velocity.MPH),
                      direction=unit.Angular(-45, unit.Angular.Degree))]
 
-        calc = TrajectoryCalculator()
+        calc = TrajectoryCalc()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
 
         self.assertEqualCustom(len(data), 11, 0.1, "Length")

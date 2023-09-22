@@ -1,12 +1,12 @@
 from math import pow
-from .drag import make_data_points
+from .drag_model import make_data_points
 from .unit import *
 from .environment import Atmosphere
-from drag_tables import DragDataPoint
+from .drag_model import DragDataPoint
 
 
-class MultipleBallisticCoefficient:
-    def __init__(self, drag_table: list, diameter: Distance, weight: Weight,
+class MultiBC:
+    def __init__(self, drag_table: list[DragDataPoint], diameter: Distance, weight: Weight,
                  multiple_bc_table: list[DragDataPoint], velocity_units_flag: Unit):
 
         self.multiple_bc_table = multiple_bc_table

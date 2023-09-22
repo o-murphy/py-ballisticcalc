@@ -2,11 +2,11 @@ from dataclasses import dataclass
 
 from .unit import *
 
-__all__ = ('ShotParameters', )
+__all__ = ('Shot',)
 
 
 @dataclass
-class ShotParameters:
+class Shot:
 
     sight_angle: Angular
     max_range: Distance

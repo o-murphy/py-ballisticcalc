@@ -9,15 +9,14 @@ from py_ballisticcalc.environment import *
 from py_ballisticcalc.projectile import *
 from py_ballisticcalc.weapon import *
 from py_ballisticcalc.unit import *
-from py_ballisticcalc.shot import ShotParameters
-from py_ballisticcalc.trajectory_calculator import TrajectoryCalculator
-from py_ballisticcalc.drag import DragModel
+from py_ballisticcalc.shot import Shot
+from py_ballisticcalc.trajectory_calc import TrajectoryCalc
+from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.drag_tables import TableG7
 from py_ballisticcalc.trajectory_data import TrajectoryData
 
 # defining calculator instance
-calc = TrajectoryCalculator()
-# calc.set_maximum_calculator_step_size(maximum_step_size)  # optional
+calc = TrajectoryCalc()
 
 # bullet
 bullet_weight = Weight(0.250, Weight.Grain)
@@ -33,7 +32,7 @@ sight_height = Distance(90, Distance.Millimeter)
 twist = Distance(9, Distance.Inch)
 
 # conditions
-winds = [Wind()]
+winds = [Wind(Velocity(2, Velocity.MPS), Angular(90, Angular.Degree))]  # wind from 3 o'clock
 zero_atmo = Atmosphere.ICAO()
 
 # summary
@@ -43,7 +42,7 @@ ammo = Ammo(projectile, muzzle_velocity)
 
 # shot parameters
 sight_angle = calc.sight_angle(ammo, weapon, zero_atmo)
-max_range = Distance(2000, Distance.Meter)
+max_range = Distance(1000, Distance.Meter)
 calc_step = Distance(50, Distance.Meter)
 shot_atmo = Atmosphere(
     altitude=Distance(100, Distance.Meter),
@@ -51,7 +50,7 @@ shot_atmo = Atmosphere(
     pressure=Pressure(760, Pressure.MmHg),
     humidity=50
 )
-shot = ShotParameters(sight_angle, max_range, calc_step)
+shot = Shot(sight_angle, max_range, calc_step)
 
 data = calc.trajectory(ammo, weapon, shot_atmo, shot, winds)
 

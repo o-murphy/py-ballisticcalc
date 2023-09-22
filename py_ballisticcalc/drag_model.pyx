@@ -1,6 +1,13 @@
 from libc.math cimport floor, pow
 from .unit import *
-from drag_tables import DragDataPoint, TableNamesSet
+from drag_tables import TableNamesSet
+from typing import NamedTuple
+
+
+class DragDataPoint(NamedTuple):
+    coeff: float  # BC or CD
+    velocity: float  # muzzle velocity or Mach
+
 
 cdef class DragModel:
     cdef double _value
@@ -25,9 +32,14 @@ cdef class DragModel:
             self._curve_data = calculate_curve(self._table_data)
         elif len(self._table) == 0:
             raise ValueError('Custom drag table must be longer than 0')
-        elif len(self._table) > 0:  # TODO: temporary
-            self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
-            self._value = self._get_custom_bc()
+        elif len(self._table) > 0:
+            # TODO: strange but both calculations working same, but need to find way use form-factor instead of bc in drag()
+
+            # self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
+            # self._value = self._get_custom_bc()
+            self._value = 1  # or 0.999
+            self._form_factor = self._get_form_factor()
+
             self._table_data = make_data_points(self._table)
             self._curve_data = calculate_curve(self._table_data)
         elif value <= 0:
@@ -81,19 +93,6 @@ cdef class DragModel:
 
     cpdef form_factor(self):
         return self._form_factor
-
-# cdef class DataPoint:
-#     cdef double _a, _b
-#
-#     def __init__(self, a: double, b: double):
-#         self._a = a
-#         self._b = b
-#
-#     cpdef double a(self):
-#         return self._a
-#
-#     cpdef double b(self):
-#         return self._b
 
 cdef class CurvePoint:
     cdef double _a, _b, _c
@@ -152,28 +151,6 @@ cpdef list calculate_curve(list data_points):
     curve.append(curve_point)
     return curve
 
-# cpdef list load_drag_table(drag_table: int):
-#     cdef table
-#
-#     if drag_table == DragTableG1:
-#         table = make_data_points(TableG1)
-#     elif drag_table == DragTableG2:
-#         table = make_data_points(TableG2)
-#     elif drag_table == DragTableG5:
-#         table = make_data_points(TableG5)
-#     elif drag_table == DragTableG6:
-#         table = make_data_points(TableG6)
-#     elif drag_table == DragTableG7:
-#         table = make_data_points(TableG7)
-#     elif drag_table == DragTableG8:
-#         table = make_data_points(TableG8)
-#     elif drag_table == DragTableGI:
-#         table = make_data_points(TableGI)
-#     elif drag_table == DragTableGS:
-#         table = make_data_points(TableGS)
-#     else:
-#         raise ValueError("Unknown drag table type")
-#     return table
 
 cpdef double calculate_by_curve(data: list, curve: list, mach: double):
     cdef int num_points, mlo, mhi, mid

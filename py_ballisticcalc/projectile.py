@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from .drag import *
+from .drag_model import *
 from .unit import *
 
 __all__ = ('Ammo', 'Projectile')

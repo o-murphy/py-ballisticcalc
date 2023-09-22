@@ -3,7 +3,7 @@ from .unit import *
 from .projectile import Ammo
 from .weapon import Weapon
 from .environment import Atmosphere, Wind
-from .shot import ShotParameters
+from .shot import Shot
 from .trajectory_data import TrajectoryData
 
 cdef double cZeroFindingAccuracy = 0.000005
@@ -112,22 +112,22 @@ cdef class Vector:
         yield self.y()
         yield self.z()
 
-cdef class TrajectoryCalculator:
-    cdef _maximum_calculator_step_size
+cdef class TrajectoryCalc:
+    cdef _max_calc_step_size
 
-    def __init__(self):
-        self._maximum_calculator_step_size = Distance(1, Distance.Foot)
+    def __init__(self, _max_calc_step_size: Distance = Distance(1, Distance.Foot)):
+        self._max_calc_step_size = _max_calc_step_size
 
-    cpdef maximum_calculator_step_size(self):
-        return self._maximum_calculator_step_size
+    cpdef max_calc_step_size(self):
+        return self._max_calc_step_size
 
-    cpdef set_maximum_calculator_step_size(self, value: Distance):
-        self._maximum_calculator_step_size = value
+    cpdef set_max_calc_step_size(self, value: Distance):
+        self._max_calc_step_size = value
 
     cdef double get_calculation_step(self, double step):
         cdef step_order, maximum_order
         step = step / 2
-        cdef double maximum_step = self._maximum_calculator_step_size >> Distance.Foot
+        cdef double maximum_step = self._max_calc_step_size >> Distance.Foot
 
         if step > maximum_step:
             step_order = int(floor(log10(step)))
@@ -204,7 +204,7 @@ cdef class TrajectoryCalculator:
         return Angular(barrel_elevation, Angular.Radian)
 
     cpdef trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmosphere,
-                     shot_info: ShotParameters, winds: list[Wind]):
+                     shot_info: Shot, winds: list[Wind]):
         cdef double range_to, step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
         cdef double next_wind_range, time, muzzle_velocity, velocity, windage, delta_time, drag
