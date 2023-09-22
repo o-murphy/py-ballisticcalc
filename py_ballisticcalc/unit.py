@@ -155,6 +155,11 @@ class AbstractUnit(ABC):
     # def __getitem__(self, units: [Unit, str]):
     #     return self.get_in(units)
 
+    # def __getattribute__(self, item):
+    #     if item in Unit.__members__:
+    #         return self.convert(Unit[item])
+    #     return super(AbstractUnit, self).__getattribute__(item)
+
     def __float__(self):
         return float(self._value)
 
@@ -181,11 +186,6 @@ class AbstractUnit(ABC):
 
     def __rlshift__(self, other: Unit):
         return self.convert(other)
-
-    def __getattribute__(self, item):
-        if item in Unit.__members__:
-            return self.convert(Unit[item])
-        return super(AbstractUnit, self).__getattribute__(item)
 
     def to_raw(self, value: float, units: Unit):
         raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')

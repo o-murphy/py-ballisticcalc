@@ -13,7 +13,7 @@ pyximport.install(language_level=3)
 from py_ballisticcalc.profile import *
 from py_ballisticcalc import unit
 from py_ballisticcalc.atmosphere import Atmosphere
-from py_ballisticcalc.drag import DragTableG1
+from py_ballisticcalc.drag_tables import TableG1, TableG7
 from py_ballisticcalc.projectile import Projectile
 from py_ballisticcalc.shot_parameters import ShotParameters
 from py_ballisticcalc.trajectory_data import TrajectoryData
@@ -59,7 +59,7 @@ class TestProfile(unittest.TestCase):
             {'Mach': 4.0, 'CD': 0.2}, {'Mach': 5.0, 'CD': 0.18}
         ]
 
-        p = Profile(drag_table=0, custom_drag_function=custom_drag_func)
+        p = Profile(drag_table=[], custom_drag_function=custom_drag_func)
         data = p.calculate_trajectory()
 
     def test_time(self):
@@ -130,7 +130,7 @@ class TestDrag(unittest.TestCase):
     def test_create(self):
         bc = BallisticCoefficient(
             value=0.275,
-            drag_table=DragTableG7,
+            drag_table=TableG7,
             weight=Weight(178, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
             custom_drag_table=[]
@@ -152,7 +152,7 @@ class TestG7Profile(unittest.TestCase):
     def test_drag(self):
         bc = BallisticCoefficient(
             value=0.223,
-            drag_table=DragTableG7,
+            drag_table=TableG7,
             weight=Weight(167, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
             custom_drag_table=[]
@@ -166,7 +166,7 @@ class TestG7Profile(unittest.TestCase):
 
     def test_mbc(self):
         bc = MultipleBallisticCoefficient(
-            drag_table=DragTableG7,
+            drag_table=TableG7,
             weight=Weight(178, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
             multiple_bc_table=[DragDataPoint(*p) for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
@@ -178,7 +178,7 @@ class TestG7Profile(unittest.TestCase):
     def test_create(self):
         bc = BallisticCoefficient(
             value=0.223,
-            drag_table=DragTableG7,
+            drag_table=TableG7,
             weight=Weight(167, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
             custom_drag_table=[]
@@ -214,7 +214,7 @@ class TestPyBallisticCalc(unittest.TestCase):
 
     @unittest.skip
     def test_zero1(self):
-        bc = BallisticCoefficient(0.365, DragTableG1)
+        bc = BallisticCoefficient(0.365, TableG1)
         projectile = Projectile(bc, unit.Weight(69, unit.Weight.Grain))
         ammo = Ammunition(projectile, unit.Velocity(2600, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(3.2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
@@ -228,7 +228,7 @@ class TestPyBallisticCalc(unittest.TestCase):
 
     @unittest.skip
     def test_zero2(self):
-        bc = BallisticCoefficient(0.223, DragTableG7)
+        bc = BallisticCoefficient(0.223, TableG7)
         projectile = Projectile(bc, unit.Weight(168, unit.Weight.Grain))
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
@@ -277,7 +277,7 @@ class TestPyBallisticCalc(unittest.TestCase):
 
     @unittest.skip
     def test_path_g1(self):
-        bc = BallisticCoefficient(0.223, DragTableG1)
+        bc = BallisticCoefficient(0.223, TableG1)
         projectile = Projectile(bc, unit.Weight(168, unit.Weight.Grain))
         ammo = Ammunition(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard))
@@ -304,7 +304,7 @@ class TestPyBallisticCalc(unittest.TestCase):
                 self.validate_one(*d)
 
     def test_path_g7(self):
-        bc = BallisticCoefficient(0.223, DragTableG7,
+        bc = BallisticCoefficient(0.223, TableG7,
                                   weight=Weight(167, Weight.Grain),
                                   diameter=Distance(0.308, Distance.Inch),
                                   custom_drag_table=[])

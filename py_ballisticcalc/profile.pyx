@@ -1,5 +1,6 @@
 from .atmosphere import Atmosphere
-from .drag import BallisticCoefficient, DragTableG7
+from .drag import BallisticCoefficient
+from .drag_tables import TableG7
 from .projectile import Projectile, Ammunition
 from .weapon import Weapon
 from .wind import WindInfo
@@ -10,7 +11,8 @@ from .multiple_bc import MultipleBallisticCoefficient
 
 
 cdef class Profile(object):
-    cdef int _drag_table, _twist_direction
+
+    cdef list _drag_table
     cdef list _custom_drag_function
     cdef list _calculated_drag_function
     cdef list _trajectory_data
@@ -25,7 +27,7 @@ cdef class Profile(object):
 
     def __init__(self,
                  bc_value: double = 0.223,
-                 drag_table: int = DragTableG7,
+                 drag_table: list = TableG7,
                  bullet_diameter: (double, int) = (0.308, Distance.Inch),
                  bullet_length: (double, int) = (1.2, Distance.Inch),
                  bullet_weight: (double, int) = (167, Weight.Grain),
@@ -81,7 +83,6 @@ cdef class Profile(object):
     def dict(self):
         profile = {
             'drag_table': self._drag_table,
-            'twist_direction': self._twist_direction,
             'custom_drag_function': self._custom_drag_function,
             'calculated_drag_function': self._calculated_drag_function,
             'humidity': self._humidity,
@@ -228,12 +229,6 @@ cdef class Profile(object):
 
     cpdef set_twist(self, value: double, units: Unit):
         self._twist = Distance(value, units)
-
-    cpdef int twist_direction(self):
-        return self._twist_direction
-
-    cpdef set_twist_direction(self, direction: int):
-        self._twist_direction = direction
 
     cpdef sight_height(self):
         return self._sight_height
