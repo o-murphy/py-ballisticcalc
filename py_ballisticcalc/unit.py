@@ -55,8 +55,21 @@ class Unit(IntEnum):
     Kilogram = 74
     Newton = 75
 
-    def __call__(self, unit_type: 'AbstractUnit'):
+    def __call__(self, unit_type: 'AbstractUnit' = 0):
+        print(locals())
         return unit_type.get_in(self)
+
+    @property
+    def name(self):
+        return UnitPropsDict[self].name
+
+    @property
+    def accuracy(self):
+        return UnitPropsDict[self].accuracy
+
+    @property
+    def symbol(self):
+        return UnitPropsDict[self].symbol
 
 
 class UnitProps(NamedTuple):
@@ -121,8 +134,8 @@ UnitPropsDict = {
 class AbstractUnit(ABC):
 
     def __init__(self, value: float, units: Unit):
-        self._value = self.to_raw(value, units)
-        self._defined_units = units
+        self._value: float = self.to_raw(value, units)
+        self._defined_units: Unit = units
 
     def __str__(self):
         units = self._defined_units
@@ -131,13 +144,48 @@ class AbstractUnit(ABC):
         return f'{round(v, props.accuracy)} {props.symbol}'
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}>'
+        return f'<{self.__class__.__name__}>: {self >> self.units} {self.units.symbol} ({self._value})'
 
     def __format__(self, format_spec: str):
         """
-        :param format_spec: (str) - currently not implemented
+        :param format_spec: (str) - TODO: currently not implemented
         """
         raise NotImplemented
+
+    # def __getitem__(self, units: [Unit, str]):
+    #     return self.get_in(units)
+
+    def __float__(self):
+        return float(self._value)
+
+    def __eq__(self, other):
+        return float(self) == other
+
+    def __lt__(self, other):
+        return float(self) < other
+
+    def __gt__(self, other):
+        return float(self) > other
+
+    def __le__(self, other):
+        return float(self) <= other
+
+    def __ge__(self, other):
+        return float(self) >= other
+
+    def __lshift__(self, other: Unit):
+        return self.convert(other)
+
+    def __rshift__(self, other: Unit):
+        return self.get_in(other)
+
+    def __rlshift__(self, other: Unit):
+        return self.convert(other)
+
+    def __getattribute__(self, item):
+        if item in Unit.__members__:
+            return self.convert(Unit[item])
+        return super(AbstractUnit, self).__getattribute__(item)
 
     def to_raw(self, value: float, units: Unit):
         raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
@@ -152,9 +200,11 @@ class AbstractUnit(ABC):
     def get_in(self, units: Unit):
         return self.from_raw(self._value, units)
 
+    @property
     def units(self):
         return self._defined_units
 
+    @property
     def raw_value(self):
         return self._value
 

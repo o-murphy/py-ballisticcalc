@@ -48,13 +48,13 @@ class Atmosphere:
     def ICAO(altitude: Distance = Distance(0, Distance.Foot)):
 
         temperature = Temperature(
-            cIcaoStandardTemperatureR + altitude.get_in(Distance.Foot)
+            cIcaoStandardTemperatureR + (altitude >> Distance.Foot)
             * cTemperatureGradient - cIcaoFreezingPointTemperatureR, Temperature.Fahrenheit)
 
         pressure = Pressure(
             cStandardPressure *
             pow(cIcaoStandardTemperatureR / (
-                    temperature.get_in(Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
+                (temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
                 cPressureExponent),
             Pressure.InHg)
 
@@ -83,8 +83,8 @@ class Atmosphere:
         return density, mach
 
     def calculate(self):
-        t = self.temperature.get_in(Temperature.Fahrenheit)
-        p = self.pressure.get_in(Pressure.InHg)
+        t = self.temperature >> Temperature.Fahrenheit
+        p = self.pressure >> Pressure.InHg
         density, mach = self.calculate0(t, p)
         self.density = density
         self.mach1 = mach
@@ -92,14 +92,14 @@ class Atmosphere:
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float):
 
-        org_altitude = self.altitude.get_in(Distance.Foot)
+        org_altitude = self.altitude >> Distance.Foot
         if fabs(org_altitude - altitude) < 30:
             density = self.density / cStandardDensity
             mach = self.mach1
             return density, mach
 
-        t0 = self.temperature.get_in(Temperature.Fahrenheit)
-        p = self.pressure.get_in(Pressure.InHg)
+        t0 = self.temperature >> Temperature.Fahrenheit
+        p = self.pressure >> Pressure.InHg
 
         ta = cIcaoStandardTemperatureR + org_altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
         tb = cIcaoStandardTemperatureR + altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR

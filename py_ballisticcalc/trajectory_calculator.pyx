@@ -131,7 +131,7 @@ cdef class TrajectoryCalculator:
     cdef double get_calculation_step(self, double step):
         cdef step_order, maximum_order
         step = step / 2
-        cdef double maximum_step = self._maximum_calculator_step_size.get_in(Distance.Foot)
+        cdef double maximum_step = self._maximum_calculator_step_size >> Distance.Foot
 
         if step > maximum_step:
             step_order = int(floor(log10(step)))
@@ -140,7 +140,7 @@ cdef class TrajectoryCalculator:
 
         return step
 
-    cpdef sight_angle(self, ammunition: Ammunition, weapon: Weapon, atmosphere: Atmosphere):
+    cpdef sight_angle(self, ammo: Ammunition, weapon: Weapon, atmo: Atmosphere):
         cdef double calculation_step, mach, density_factor, muzzle_velocity
         cdef double barrel_azimuth, barrel_elevation
         cdef double velocity, time, zero_distance, maximum_range
@@ -151,11 +151,11 @@ cdef class TrajectoryCalculator:
         cdef gravity_vector, range_vector, velocity_vector, delta_range_vector
 
         calculation_step = self.get_calculation_step(
-            Distance(10, weapon.zero_distance.units()).get_in(Distance.Foot))
+            Distance(10, weapon.zero_distance.units) >> Distance.Foot)
 
-        mach = atmosphere.mach.get_in(Velocity.FPS)
-        density_factor = atmosphere.density_factor()
-        muzzle_velocity = ammunition.muzzle_velocity.get_in(Velocity.FPS)
+        mach = atmo.mach >> Velocity.FPS
+        density_factor = atmo.density_factor()
+        muzzle_velocity = ammo.muzzle_velocity >> Velocity.FPS
         barrel_azimuth = 0.0
         barrel_elevation = 0.0
 
@@ -172,7 +172,7 @@ cdef class TrajectoryCalculator:
             # z - windage
 
             range_vector = Vector(
-                0.0, -weapon.sight_height.get_in(Distance.Foot), 0.0
+                0.0, -(weapon.sight_height >> Distance.Foot), 0.0
             )
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
@@ -180,7 +180,7 @@ cdef class TrajectoryCalculator:
                 cos(barrel_elevation) * sin(barrel_azimuth)
             ) * velocity
 
-            zero_distance = weapon.zero_distance.get_in(Distance.Foot)
+            zero_distance = weapon.zero_distance >> Distance.Foot
             maximum_range = zero_distance + calculation_step
 
             while range_vector.x() <= maximum_range:
@@ -189,7 +189,7 @@ cdef class TrajectoryCalculator:
 
                 delta_time = calculation_step / velocity_vector.x()
                 velocity = velocity_vector.magnitude()
-                drag = density_factor * velocity * ammunition.projectile.bc.drag(velocity / mach)
+                drag = density_factor * velocity * ammo.projectile.bc.drag(velocity / mach)
 
                 velocity_vector = velocity_vector - (velocity_vector * drag - gravity_vector) * delta_time
 
@@ -207,7 +207,7 @@ cdef class TrajectoryCalculator:
                 iterations_count += 1
         return Angular(barrel_elevation, Angular.Radian)
 
-    cpdef trajectory(self, ammunition: Ammunition, weapon: Weapon, atmosphere: Atmosphere,
+    cpdef trajectory(self, ammo: Ammunition, weapon: Weapon, atmo: Atmosphere,
                      shot_info: ShotParameters, wind_info: list[WindInfo]):
         cdef double range_to, step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
@@ -218,12 +218,12 @@ cdef class TrajectoryCalculator:
         cdef windage_adjustment, velocity_adjusted, delta_range_vector
         cdef gravity_vector, drop_adjustment, range_vector, velocity_vector
 
-        range_to = shot_info.range.get_in(Distance.Foot)
-        step = shot_info.step.get_in(Distance.Foot)
+        range_to = shot_info.range >> Distance.Foot
+        step = shot_info.step >> Distance.Foot
 
         calculation_step = self.get_calculation_step(step)
 
-        bullet_weight = ammunition.projectile.weight.get_in(Weight.Grain)
+        bullet_weight = ammo.projectile.weight >> Weight.Grain
 
         stability_coefficient = 1.0
 
@@ -231,12 +231,12 @@ cdef class TrajectoryCalculator:
         ranges = []
 
         barrel_azimuth = .0
-        barrel_elevation = shot_info.sight_angle.get_in(Angular.Radian)
-        barrel_elevation = barrel_elevation + shot_info.shot_angle.get_in(Angular.Radian)
-        alt0 = atmosphere.altitude.get_in(Distance.Foot)
+        barrel_elevation = shot_info.sight_angle >> Angular.Radian
+        barrel_elevation = barrel_elevation + (shot_info.shot_angle >> Angular.Radian)
+        alt0 = atmo.altitude >> Distance.Foot
 
         # Never used in upstream, uncomment on need
-        # density_factor, mach = atmosphere.get_density_factor_and_mach_for_altitude(alt0)
+        # density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(alt0)
 
         current_wind = 0
         next_wind_range = 1e7
@@ -247,10 +247,10 @@ cdef class TrajectoryCalculator:
             wind_vector = Vector(0, 0, 0)
         else:
             if len(wind_info) > 1:
-                next_wind_range = wind_info[0].until_distance().get_in(Distance.Foot)
+                next_wind_range = wind_info[0].until_distance() >> Distance.Foot
             wind_vector = wind_to_vector(shot_info, wind_info[0])
 
-        muzzle_velocity = ammunition.muzzle_velocity.get_in(Velocity.FPS)
+        muzzle_velocity = ammo.muzzle_velocity >> Velocity.FPS
         gravity_vector = Vector(0, cGravityConstant, 0)
         velocity = muzzle_velocity
         time = .0
@@ -259,7 +259,7 @@ cdef class TrajectoryCalculator:
         # y - drop and
         # z - windage
 
-        range_vector = Vector(.0, -weapon.sight_height.get_in(Distance.Foot), 0)
+        range_vector = Vector(.0, -(weapon.sight_height >> Distance.Foot), 0)
         velocity_vector = Vector(cos(barrel_elevation) * cos(barrel_azimuth), sin(barrel_elevation),
                                  cos(barrel_elevation) * sin(barrel_azimuth)) * velocity
         current_item = 0
@@ -271,19 +271,19 @@ cdef class TrajectoryCalculator:
 
         calculate_drift = False
 
-        if weapon.twist.raw_value() != 0 and ammunition.projectile.length and ammunition.projectile.diameter:
+        if weapon.twist != 0 and ammo.projectile.length and ammo.projectile.diameter:
             stability_coefficient = calculate_stability_coefficient(
-                ammunition, weapon, atmosphere
+                ammo, weapon, atmo
             )
             calculate_drift = True
-            twist_coefficient = -1 if weapon.twist.raw_value() > 0 else 1
+            twist_coefficient = -1 if weapon.twist > 0 else 1
 
         while range_vector.x() <= maximum_range + calculation_step:
 
             if velocity < cMinimumVelocity or range_vector.y() < cMaximumDrop:
                 break
 
-            density_factor, mach = atmosphere.get_density_factor_and_mach_for_altitude(alt0 + range_vector.y())
+            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(alt0 + range_vector.y())
 
             if range_vector.x() >= next_wind_range:
                 current_wind += 1
@@ -292,7 +292,7 @@ cdef class TrajectoryCalculator:
                 if current_wind == len_wind_info - 1:
                     next_wind_range = 1e7
                 else:
-                    next_wind_range = wind_info[current_wind].until_distance().get_in(Distance.Foot)
+                    next_wind_range = wind_info[current_wind].until_distance() >> Distance.Foot
 
             if range_vector.x() >= next_range_distance:
                 windage = range_vector.z()
@@ -324,7 +324,7 @@ cdef class TrajectoryCalculator:
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()
 
-            drag = density_factor * velocity * ammunition.projectile.bc.drag(velocity / mach)
+            drag = density_factor * velocity * ammo.projectile.bc.drag(velocity / mach)
 
             velocity_vector = velocity_vector - (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calculation_step,
@@ -337,27 +337,27 @@ cdef class TrajectoryCalculator:
         return ranges
 
 
-cdef double calculate_stability_coefficient(ammunition_info, rifle_info, atmosphere):
-    cdef double weight = ammunition_info.projectile.weight.get_in(Weight.Grain)
-    cdef double diameter = ammunition_info.projectile.diameter.get_in(Distance.Inch)
-    cdef double twist = fabs(rifle_info.twist.get_in(Distance.Inch)) / diameter
-    cdef double length = ammunition_info.projectile.length.get_in(Distance.Inch) / diameter
+cdef double calculate_stability_coefficient(ammo, rifle, atmo):
+    cdef double weight = ammo.projectile.weight >> Weight.Grain
+    cdef double diameter = ammo.projectile.diameter >> Distance.Inch
+    cdef double twist = fabs(rifle.twist >> Distance.Inch) / diameter
+    cdef double length = (ammo.projectile.length >> Distance.Inch) / diameter
     cdef double sd = 30 * weight / (pow(twist, 2) * pow(diameter, 3) * length * (1 + pow(length, 2)))
-    cdef double mv = ammunition_info.muzzle_velocity.get_in(Velocity.FPS)
+    cdef double mv = ammo.muzzle_velocity >> Velocity.FPS
     cdef double fv = pow(mv / 2800, 1.0 / 3.0)
-    cdef double ft = atmosphere.temperature.get_in(Temperature.Fahrenheit)
-    cdef double pt = atmosphere.pressure.get_in(Pressure.InHg)
+    cdef double ft = atmo.temperature >> Temperature.Fahrenheit
+    cdef double pt = atmo.pressure >> Pressure.InHg
     cdef double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
 
     return sd * fv * ftp
 
 cdef wind_to_vector(shot, wind):
-    cdef double sight_cosine = cos(shot.sight_angle.get_in(Angular.Radian))
-    cdef double sight_sine = sin(shot.sight_angle.get_in(Angular.Radian))
-    cdef double cant_cosine = cos(shot.cant_angle.get_in(Angular.Radian))
-    cdef double cant_sine = sin(shot.cant_angle.get_in(Angular.Radian))
-    cdef double range_velocity = wind.velocity.get_in(Velocity.FPS) * cos(wind.direction.get_in(Angular.Radian))
-    cdef double cross_component = wind.velocity.get_in(Velocity.FPS) * sin(wind.direction.get_in(Angular.Radian))
+    cdef double sight_cosine = cos(shot.sight_angle >> Angular.Radian)
+    cdef double sight_sine = sin(shot.sight_angle >> Angular.Radian)
+    cdef double cant_cosine = cos(shot.cant_angle >> Angular.Radian)
+    cdef double cant_sine = sin(shot.cant_angle >> Angular.Radian)
+    cdef double range_velocity = (wind.velocity >> Velocity.FPS) * cos(wind.direction >> Angular.Radian)
+    cdef double cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction >> Angular.Radian)
     cdef double range_factor = -range_velocity * sight_sine
     return Vector(range_velocity * sight_cosine,
                   range_factor * cant_cosine + cross_component * cant_sine,

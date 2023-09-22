@@ -18,9 +18,9 @@ class MultipleBallisticCoefficient:
 
         atmosphere = Atmosphere.ICAO()
 
-        altitude = Distance(0, Distance.Meter).get_in(Distance.Foot)
+        altitude = Distance(0, Distance.Meter) >> Distance.Foot
         density, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
-        self.speed_of_sound = Velocity(mach, Velocity.FPS).get_in(Velocity.MPS)
+        self.speed_of_sound = Velocity(mach, Velocity.FPS) >> Velocity.MPS
 
         self.table_data = load_drag_table(self.table)
         self.bc_table = self._create_bc_table_data_points()
@@ -31,8 +31,8 @@ class MultipleBallisticCoefficient:
         return self.custom_drag_table
 
     def _get_sectional_density(self):
-        w = self.weight.get_in(Weight.Grain)
-        d = self.diameter.get_in(Distance.Inch)
+        w = self.weight >> Weight.Grain
+        d = self.diameter >> Distance.Inch
         return w / pow(d, 2) / 7000
 
     def _get_form_factor(self, bc):
@@ -65,7 +65,7 @@ class MultipleBallisticCoefficient:
         self.multiple_bc_table.sort(reverse=True, key=lambda x: x[1])
         bc_table = []
         for bc, v in self.multiple_bc_table:
-            data_point = DragDataPoint(bc, Velocity(v, self.velocity_units).get_in(Velocity.MPS))
+            data_point = DragDataPoint(bc, Velocity(v, self.velocity_units) >> Velocity.MPS)
             bc_table.append(data_point)
         return bc_table
 
