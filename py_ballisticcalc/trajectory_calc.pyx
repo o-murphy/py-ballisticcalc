@@ -249,7 +249,6 @@ cdef class TrajectoryCalc:
                 next_wind_range = winds[0].until_distance() >> Distance.Foot
             wind_vector = wind_to_vector(shot_info, winds[0])
 
-        print(Settings.USE_POWDER_SENSITIVITY)
         if Settings.USE_POWDER_SENSITIVITY:
             muzzle_velocity = ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
         else:

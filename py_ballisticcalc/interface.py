@@ -13,11 +13,13 @@ from .unit import *
 from .drag_model import *
 from .drag_tables import *
 from .settings import Settings
+from .multiple_bc import MultiBC
 
 
 assert Settings
 assert DragModel
 assert TableG1
+assert MultiBC
 
 
 @dataclass

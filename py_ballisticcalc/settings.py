@@ -8,6 +8,8 @@ __all__ = ('Settings',)
 
 @dataclass
 class Settings:
+
+    @dataclass
     class Units:
         sight_height: Unit = Unit.Inch
         twist: Unit = Unit.Inch
