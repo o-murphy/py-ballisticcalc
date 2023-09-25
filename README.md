@@ -6,6 +6,7 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
 * [Usage](#usage)
   * [Units of measure](#unit-manipulation-syntax)
   * [Simple usage examle](#example-of-library-usage)
+  * [Output example](#example-of-the-formatted-output)
 * [About project](#about-project)
 
 ### Installation
@@ -55,80 +56,54 @@ value_in_km = unit_in_yards >> Distance.Kilometer  # >>= operator also supports
 
 ```python
 import pyximport
-
 pyximport.install(language_level=3)
 
-from py_ballisticcalc.environment import *
-from py_ballisticcalc.projectile import *
-from py_ballisticcalc.weapon import *
-from py_ballisticcalc.unit import *
-from py_ballisticcalc.shot import Shot
-from py_ballisticcalc.trajectory_calc import TrajectoryCalc
-from py_ballisticcalc.drag import DragModel
-from py_ballisticcalc.drag_tables import TableG7
-from py_ballisticcalc.trajectory_data import TrajectoryData
+from py_ballisticcalc.settings import *
+from py_ballisticcalc.interface import *
+from py_ballisticcalc.drag_tables import *
+
+# set global library settings
+DefaultUnits.velocity = Velocity.MPS
+DefaultUnits.distance = Distance.Meter
+MIN_CALC_STEP_SIZE = Distance(2, Distance.Meter)
+
+# define params with default units
+weight, diameter = 175, 0.308
+# or define with specified units
+length = Distance(1.2, Distance.Inch)
+
+weapon = Weapon(90, 100, 9)
+dm = DragModel(0.275, TableG7, weight, diameter)
+bullet = Projectile(dm, length)
+ammo = Ammo(bullet, 800)
+zero_atmo = Atmo.ICAO()
 
 # defining calculator instance
-calc = TrajectoryCalc()
+calc = Calculator(weapon, ammo, zero_atmo)
+calc.update_elevation()
 
-# bullet
-bullet_weight = Weight(0.250, Weight.Grain)
-bullet_diameter = Distance(0.308, Distance.Inch)
-bullet_length = Distance(1.555, Distance.Inch)
-dm = DragModel(0.314, TableG7, bullet_weight, bullet_diameter)
+shot = Shot(1500, 100)
+current_atmo = Atmo(100, 1000, 20, 72)
+winds = [Wind(2, 90)]
 
-# ammo
-muzzle_velocity = Velocity(800, Velocity.MPS)
+data = calc.trajectory(shot, current_atmo, winds)
 
-# weapon and ammo
-sight_height = Distance(90, Distance.Millimeter)
-twist = Distance(9, Distance.Inch)
-
-# conditions
-winds = [Wind()]
-zero_atmo = Atmosphere.ICAO()
-
-# summary
-projectile = Projectile(dm, bullet_weight, bullet_diameter, bullet_length)
-weapon = Weapon(sight_height, twist=twist)
-ammo = Ammo(projectile, muzzle_velocity)
-
-# shot parameters
-sight_angle = calc.sight_angle(ammo, weapon, zero_atmo)
-max_range = Distance(2000, Distance.Meter)
-calc_step = Distance(50, Distance.Meter)
-shot_atmo = Atmosphere(
-  altitude=Distance(100, Distance.Meter),
-  temperature=Temperature(20, Temperature.Celsius),
-  pressure=Pressure(760, Pressure.MmHg),
-  humidity=50
-)
-shot = Shot(sight_angle, max_range, calc_step)
-
-data = calc.trajectory(ammo, weapon, shot_atmo, shot, winds)
-header = list(TrajectoryData._fields)
-
-
-# format output
-def fmt(v: AbstractUnit, u: Unit):
-  return f"{v >> u:.{u.accuracy}f} {u.symbol}"
-
-
-# print output data
 for p in data:
-  print(
-    [
-      f'{p.time:.2f} s',
-      fmt(p.distance, Distance.Meter),
-      fmt(p.velocity, Velocity.MPS),
-      f'{p.mach:.2f} mach',
-      fmt(p.drop, Distance.Centimeter),
-      fmt(p.drop_adj, Angular.Mil),
-      fmt(p.windage, Distance.Centimeter),
-      fmt(p.windage_adj, Angular.Mil),
-      fmt(p.energy, Energy.Joule)
-    ]
-  )
+    print(p.formatted())
+```
+#### Example of the formatted output:
+```
+['0.00 s', '0.000 m', '800 m/s', '2.33 mach', '-90.000 cm', '0.00 mil', '0.000 cm', '0.00 mil', '3629 J']
+['0.13 s', '100.000 m', '747 m/s', '2.18 mach', '0.009 cm', '0.00 mil', '0.527 cm', '0.05 mil', '3165 J']
+['0.27 s', '200.050 m', '696 m/s', '2.03 mach', '72.444 cm', '3.69 mil', '2.300 cm', '0.12 mil', '2749 J']
+['0.42 s', '300.050 m', '647 m/s', '1.89 mach', '124.565 cm', '4.23 mil', '5.466 cm', '0.19 mil', '2377 J']
+['0.58 s', '400.000 m', '601 m/s', '1.75 mach', '153.234 cm', '3.90 mil', '10.150 cm', '0.26 mil', '2047 J']
+['0.75 s', '500.000 m', '556 m/s', '1.62 mach', '154.685 cm', '3.15 mil', '16.493 cm', '0.34 mil', '1751 J']
+['0.94 s', '600.000 m', '512 m/s', '1.49 mach', '124.303 cm', '2.11 mil', '24.651 cm', '0.42 mil', '1489 J']
+['1.14 s', '700.000 m', '470 m/s', '1.37 mach', '56.452 cm', '0.82 mil', '34.803 cm', '0.51 mil', '1255 J']
+['1.36 s', '800.000 m', '430 m/s', '1.25 mach', '-55.854 cm', '-0.71 mil', '47.152 cm', '0.60 mil', '1049 J']
+['1.61 s', '900.000 m', '392 m/s', '1.14 mach', '-221.359 cm', '-2.51 mil', '61.906 cm', '0.70 mil', '870 J']
+['1.88 s', '1000.000 m', '355 m/s', '1.04 mach', '-451.055 cm', '-4.59 mil', '79.257 cm', '0.81 mil', '717 J']
 ```
 
 About project
