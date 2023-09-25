@@ -67,9 +67,10 @@ class Ammo:
         return self.powder_sens
 
     def _get_velocity_for_temp(self, t):
-        powder_temp = (self.powder_temp >> Temperature.Celsius) / 100
+        powder_temp = (self.powder_temp >> Temperature.Celsius)
+        powder_sens = self.powder_sens / 100
         mv = self.muzzle_velocity >> Velocity.MPS
         temp_difference = powder_temp - t
-        current_velocity = mv - self.powder_sens / (15 * mv * temp_difference)
+        current_velocity = mv - powder_sens / (15 * mv * temp_difference)
         return current_velocity
 

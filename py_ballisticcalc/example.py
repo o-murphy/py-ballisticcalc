@@ -26,7 +26,6 @@ ammo = Ammo(bullet, 800)
 
 c = ammo._calc_powder_sens(792, 0)
 print(c)
-print(ammo._get_velocity_for_temp(15))
 print(ammo._get_velocity_for_temp(0))
 
 zero_atmo = Atmo.ICAO()
