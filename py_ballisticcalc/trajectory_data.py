@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-from .settings import DefaultUnits
+from .settings import Settings as Set
 from .unit import *
 
 __all__ = ('TrajectoryData',)
@@ -41,25 +41,25 @@ class TrajectoryData(NamedTuple):
 
         return [
             f'{self.time:.2f} s',
-            _fmt(self.distance, DefaultUnits.distance),
-            _fmt(self.velocity, DefaultUnits.velocity),
+            _fmt(self.distance, Set.Units.distance),
+            _fmt(self.velocity, Set.Units.velocity),
             f'{self.mach:.2f} mach',
-            _fmt(self.drop, DefaultUnits.drop),
-            _fmt(self.drop_adj, DefaultUnits.adjustment),
-            _fmt(self.windage, DefaultUnits.drop),
-            _fmt(self.windage_adj, DefaultUnits.adjustment),
-            _fmt(self.energy, DefaultUnits.energy)
+            _fmt(self.drop, Set.Units.drop),
+            _fmt(self.drop_adj, Set.Units.adjustment),
+            _fmt(self.windage, Set.Units.drop),
+            _fmt(self.windage_adj, Set.Units.adjustment),
+            _fmt(self.energy, Set.Units.energy)
         ]
 
     def in_def_units(self):
         return (
             self.time,
-            self.distance >> DefaultUnits.distance,
-            self.velocity >> DefaultUnits.velocity,
+            self.distance >> Set.Units.distance,
+            self.velocity >> Set.Units.velocity,
             self.mach,
-            self.drop >> DefaultUnits.drop,
-            self.drop_adj >> DefaultUnits.adjustment,
-            self.windage >> DefaultUnits.drop,
-            self.windage_adj >> DefaultUnits.adjustment,
-            self.energy >> DefaultUnits.energy
+            self.drop >> Set.Units.drop,
+            self.drop_adj >> Set.Units.adjustment,
+            self.windage >> Set.Units.drop,
+            self.windage_adj >> Set.Units.adjustment,
+            self.energy >> Set.Units.energy
         )

@@ -1,4 +1,6 @@
-from .settings import DefaultUnits
+import math
+
+from .settings import Settings as Set
 from .drag_model import *
 from .unit import *
 
@@ -6,7 +8,6 @@ __all__ = ('Weapon', 'Ammo', 'Projectile')
 
 
 class Weapon:
-
     __slots__ = (
         'sight_height',
         'zero_distance',
@@ -20,10 +21,10 @@ class Weapon:
                  twist: [float, Distance] = Distance(0, Distance.Inch),
                  # click_value: [float, Angular] = Angular(0.25, Angular.Mil)
                  ):
-        self.sight_height = sight_height if is_unit(sight_height) else Distance(sight_height, DefaultUnits.sight_height)
-        self.zero_distance = zero_distance if is_unit(zero_distance) else Distance(zero_distance, DefaultUnits.distance)
-        self.twist = twist if is_unit(twist) else Distance(twist, DefaultUnits.twist)
-        # self.click_value = click_value if is_unit(click_value) else Angular(click_value, DefaultUnits.adjustment)
+        self.sight_height = sight_height if is_unit(sight_height) else Distance(sight_height, Set.Units.sight_height)
+        self.zero_distance = zero_distance if is_unit(zero_distance) else Distance(zero_distance, Set.Units.distance)
+        self.twist = twist if is_unit(twist) else Distance(twist, Set.Units.twist)
+        # self.click_value = click_value if is_unit(click_value) else Angular(click_value, Set.Units.adjustment)
 
 
 class Projectile:
@@ -39,38 +40,56 @@ class Projectile:
         self.dm: DragModel = dm
         self.weight = self.dm.weight()
         self.diameter = self.dm.diameter()
-        # self.weight: Weight = weight if is_unit(weight) else Weight(weight, DefaultUnits.weight)
+        # self.weight: Weight = weight if is_unit(weight) else Weight(weight, Set.Units.weight)
         # self.diameter: Distance = diameter if is_unit(diameter) else Distance(
-        #     diameter, DefaultUnits.diameter) if diameter else None
+        #     diameter, Set.Units.diameter) if diameter else None
         self.length: Distance = length if is_unit(length) else Distance(
-            length, DefaultUnits.length) if length else None
+            length, Set.Units.length) if length else None
 
 
 class Ammo:
-    __slots__ = ('projectile', 'muzzle_velocity', 'powder_sens', 'powder_temp')
+    __slots__ = ('projectile', 'muzzle_velocity', 'temp_modifier', 'powder_temp')
 
     def __init__(self, projectile: Projectile, muzzle_velocity: [float, Velocity],
-                 powder_sens: float = 1, powder_temp: [float, Temperature] = Temperature(15, Temperature.Celsius)):
+                 powder_temp: [float, Temperature] = Temperature(15, Temperature.Celsius),
+                 temp_modifier: float = 0):
         self.projectile: Projectile = projectile
-        self.muzzle_velocity: Velocity = muzzle_velocity if is_unit(muzzle_velocity) else Velocity(
-            muzzle_velocity, DefaultUnits.velocity)
-        self.powder_sens: float = powder_sens
-        self.powder_temp: [float, Temperature] = powder_temp
+        self.muzzle_velocity: [float, Velocity] = muzzle_velocity if is_unit(muzzle_velocity) else Velocity(
+            muzzle_velocity, Set.Units.velocity)
+        self.temp_modifier: float = temp_modifier
+        self.powder_temp: [float, Temperature] = powder_temp if is_unit(powder_temp) else Temperature(
+            powder_temp, Set.Units.temperature
+        )
 
-    def _calc_powder_sens(self, v1, t1):
+    def calc_powder_sens(self, other_velocity: float | Velocity, other_temperature: [float, Temperature]):
+        # (800-792) / (15 - 0) * (15/792) * 100 = 1.01
+        # creates temperature modifire in percent at each 15C
         v0 = self.muzzle_velocity >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
-        temp_difference = t0 - t1
-        speed_difference = v0 - v1
-        temp_modifier = (speed_difference / temp_difference) * (15 / v0) * 100
-        self.powder_sens = temp_modifier
-        return self.powder_sens
+        v1 = (other_velocity if is_unit(other_velocity) else Velocity(
+            other_velocity, Set.Units.velocity)) >> Velocity.MPS
+        t1 = (other_temperature if is_unit(other_temperature) else Temperature(
+            other_temperature, Set.Units.temperature)) >> Temperature.Celsius
 
-    def _get_velocity_for_temp(self, t):
-        powder_temp = (self.powder_temp >> Temperature.Celsius)
-        powder_sens = self.powder_sens / 100
-        mv = self.muzzle_velocity >> Velocity.MPS
-        temp_difference = powder_temp - t
-        current_velocity = mv - powder_sens / (15 * mv * temp_difference)
-        return current_velocity
+        v_delta = math.fabs(v0 - v1)
+        t_delta = math.fabs(t0 - t1)
+        v_lower = v1 if v1 < v0 else v0
 
+        if v_delta == 0 or t_delta == 0:
+            raise ValueError("Temperature modifier error, other velocity and temperature can't be same as default")
+
+        self.temp_modifier = v_delta / t_delta * (15 / v_lower)  # * 100
+
+        return self.temp_modifier
+
+    def get_velocity_for_temp(self, current_temp):
+        temp_modifier = self.temp_modifier
+        v0 = self.muzzle_velocity >> Velocity.MPS
+        t0 = self.powder_temp >> Temperature.Celsius
+        t1 = (current_temp if is_unit(current_temp) else Temperature(
+            current_temp, Set.Units.temperature)) >> Temperature.Celsius
+
+        t_delta = t1 - t0
+        muzzle_velocity = temp_modifier / (15 / v0) * t_delta + v0
+
+        return Velocity(muzzle_velocity, Velocity.MPS)

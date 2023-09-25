@@ -12,10 +12,10 @@ from .munition import *
 from .unit import *
 from .drag_model import *
 from .drag_tables import *
-from .settings import *
+from .settings import Settings
 
 
-assert DefaultUnits
+assert Settings
 assert DragModel
 assert TableG1
 
@@ -38,7 +38,7 @@ class Calculator:
     def trajectory(self, shot: Shot, atmo: Atmo, winds: list[Wind], as_pandas: bool = False):
         if not self._elevation:
             self.update_elevation()
-        Shot.sight_angle = self._elevation
+        shot.sight_angle = self._elevation
         data = self._calc.trajectory(self.ammo, self.weapon, atmo, shot, winds)
         if as_pandas:
             return self._to_dataframe(data)

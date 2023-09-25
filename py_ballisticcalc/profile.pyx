@@ -38,7 +38,6 @@ cdef class Profile(object):
                  distance_step: (double, int) = (100, Distance.Meter),
                  wind_velocity: (double, int) = (0, Velocity.KMH),
                  wind_direction: (double, int) = (0, Angular.Degree),
-                 maximum_step_size: (double, int) = (1, Distance.Foot),
                  shot_angle: (double, int) = (0, Angular.Radian),
                  cant_angle: (double, int) = (0, Angular.Radian),
                  multiple_bc_table=None
@@ -64,7 +63,6 @@ cdef class Profile(object):
         self._distance_step = Distance(*distance_step)
         self._wind_velocity = Velocity(*wind_velocity)
         self._wind_direction = Angular(*wind_direction)
-        self._maximum_step_size = Distance(*maximum_step_size)
         self._shot_angle = Angular(*shot_angle)
         self._cant_angle = Angular(*cant_angle)
         self._multiple_bc_table = multiple_bc_table
@@ -92,7 +90,6 @@ cdef class Profile(object):
             'sight_angle': self._sight_angle,
             'wind_velocity': self._wind_velocity,
             'wind_direction': self._wind_direction,
-            'maximum_step_size': self._maximum_step_size,
             'shot_angle': self._shot_angle,
             'cant_angle': self._cant_angle,
             'multiple_bc_table': self._multiple_bc_table,
@@ -140,7 +137,6 @@ cdef class Profile(object):
         weapon = Weapon(self._sight_height, self._zero_distance, self._twist)
         wind = [Wind(self._wind_velocity, self._wind_direction)]
         calc = TrajectoryCalc()
-        calc.set_max_calc_step_size(self._maximum_step_size)
         angle = calc.sight_angle(ammo, weapon, atmo)
         shot = Shot(self._maximum_distance, self._distance_step,
                     self._shot_angle, self._cant_angle, angle)

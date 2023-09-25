@@ -1,6 +1,6 @@
 from libc.math cimport floor, pow
 
-from .settings import DefaultUnits
+from .settings import Settings as Set
 from .unit import *
 from .drag_tables import DragTablesSet
 from typing import NamedTuple
@@ -29,8 +29,8 @@ cdef class DragModel:
 
         self._table = drag_table
 
-        self._weight = weight if is_unit(weight) else Weight(weight, DefaultUnits.weight)
-        self._diameter = Distance(diameter, DefaultUnits.diameter)
+        self._weight = weight if is_unit(weight) else Weight(weight, Set.Units.weight)
+        self._diameter = Distance(diameter, Set.Units.diameter)
         self._sectional_density = self._get_sectional_density()
 
         if drag_table in DragTablesSet:

@@ -1,6 +1,6 @@
 from math import pow, sqrt, fabs
 
-from .settings import DefaultUnits
+from .settings import Settings as Set
 from .unit import *
 
 __all__ = ('Atmo', 'Wind', 'Shot')
@@ -38,10 +38,10 @@ class Atmo:
             self.create_default()
             # TODO: maby have to raise ValueError instead of create_default
         else:
-            self.altitude: Distance = altitude if is_unit(altitude) else Distance(altitude, DefaultUnits.distance)
-            self.pressure: Pressure = pressure if is_unit(pressure) else Pressure(pressure, DefaultUnits.pressure)
+            self.altitude: Distance = altitude if is_unit(altitude) else Distance(altitude, Set.Units.distance)
+            self.pressure: Pressure = pressure if is_unit(pressure) else Pressure(pressure, Set.Units.pressure)
             self.temperature: Temperature = temperature if is_unit(temperature) else Temperature(
-                temperature, DefaultUnits.temperature
+                temperature, Set.Units.temperature
             )
             self.humidity: float = humidity
 
@@ -51,7 +51,7 @@ class Atmo:
 
     @staticmethod
     def ICAO(altitude: [float, Distance] = 0):
-        altitude = altitude if is_unit(altitude) else Distance(altitude, DefaultUnits.distance)
+        altitude = altitude if is_unit(altitude) else Distance(altitude, Set.Units.distance)
         temperature = Temperature(
             cIcaoStandardTemperatureR + (altitude >> Distance.Foot)
             * cTemperatureGradient - cIcaoFreezingPointTemperatureR, Temperature.Fahrenheit)
@@ -64,9 +64,9 @@ class Atmo:
             Pressure.InHg)
 
         return Atmo(
-            altitude >> DefaultUnits.distance,
-            pressure >> DefaultUnits.pressure,
-            temperature >> DefaultUnits.temperature,
+            altitude >> Set.Units.distance,
+            pressure >> Set.Units.pressure,
+            temperature >> Set.Units.temperature,
             cIcaoStandardHumidity
         )
 
@@ -135,10 +135,10 @@ class Wind:
     def __init__(self, velocity: [float, Velocity] = Velocity(0, Velocity.FPS),
                  direction: [float, Angular] = Angular(0, Angular.Degree),
                  until_distance: [float, Distance] = Distance(9999, Distance.Kilometer)):
-        self.velocity: Velocity = velocity if is_unit(velocity) else Velocity(velocity, DefaultUnits.velocity)
-        self.direction: Angular = direction if is_unit(direction) else Angular(direction, DefaultUnits.angular)
+        self.velocity: Velocity = velocity if is_unit(velocity) else Velocity(velocity, Set.Units.velocity)
+        self.direction: Angular = direction if is_unit(direction) else Angular(direction, Set.Units.angular)
         self.until_distance: Distance = until_distance if is_unit(until_distance) else Distance(
-            until_distance, DefaultUnits.distance)
+            until_distance, Set.Units.distance)
 
 
 class Shot:
@@ -149,10 +149,10 @@ class Shot:
                  step: [float, Distance],
                  shot_angle: [float, Angular] = 0,
                  cant_angle: [float, Angular] = 0,
-                 sight_angle: [float, Angular] = 0,
+                 sight_angle: [float, Angular] = 0
                  ):
-        self.sight_angle: Angular = sight_angle if is_unit(sight_angle) else Angular(sight_angle, DefaultUnits.angular)
-        self.max_range: Distance = max_range if is_unit(max_range) else Distance(max_range, DefaultUnits.distance)
-        self.step: Distance = step if is_unit(step) else Distance(step, DefaultUnits.distance)
-        self.shot_angle: Angular = shot_angle if is_unit(shot_angle) else Angular(shot_angle, DefaultUnits.angular)
-        self.cant_angle: Angular = cant_angle if is_unit(cant_angle) else Angular(cant_angle, DefaultUnits.angular)
+        self.sight_angle: Angular = sight_angle if is_unit(sight_angle) else Angular(sight_angle, Set.Units.angular)
+        self.max_range: Distance = max_range if is_unit(max_range) else Distance(max_range, Set.Units.distance)
+        self.step: Distance = step if is_unit(step) else Distance(step, Set.Units.distance)
+        self.shot_angle: Angular = shot_angle if is_unit(shot_angle) else Angular(shot_angle, Set.Units.angular)
+        self.cant_angle: Angular = cant_angle if is_unit(cant_angle) else Angular(cant_angle, Set.Units.angular)

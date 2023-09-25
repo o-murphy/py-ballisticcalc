@@ -13,14 +13,14 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
 **Stable release from pypi, installing from binaries**
 
 (Contains c-extensions which offer higher performance)
-```commandline
+```shell
 pip install py-ballisticcalc
 ```
 
 **Build wheel package for your interpreter version by pypi sdist**
 
 Download and install MSVC or GCC depending on target platform
-```commandline
+```shell
 pip install Cython>=3.0.0a10 
 pip install py-ballisticcalc --no-binary :all:
 ```
@@ -28,7 +28,7 @@ pip install py-ballisticcalc --no-binary :all:
 **Also use `git clone` to build your own package**
 
 (Contains cython files to build your own c-extensions)
-```commandline
+```shell
 git clone https://github.com/o-murphy/py_ballisticcalc
 ```   
 
@@ -56,24 +56,33 @@ value_in_km = unit_in_yards >> Distance.Kilometer  # >>= operator also supports
 
 ```python
 import pyximport
+
 pyximport.install(language_level=3)
 
 from py_ballisticcalc.interface import *
+from py_ballisticcalc.settings import Settings as Set
 
 # set global library settings
-DefaultUnits.velocity = Velocity.MPS
-DefaultUnits.distance = Distance.Meter
-MIN_CALC_STEP_SIZE = Distance(2, Distance.Meter)
+Set.Units.velocity = Velocity.FPS
+Set.Units.temperature = Temperature.Celsius
+Set.Units.distance = Distance.Meter
+Set.Units.sight_height = Distance.Centimeter
+
+Set.MIN_CALC_STEP_SIZE = Distance(1, Distance.Foot)
+Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
 
 # define params with default units
-weight, diameter = 175, 0.308
+weight, diameter = 168, 0.308
 # or define with specified units
-length = Distance(1.2, Distance.Inch)
+length = Distance(1.282, Distance.Inch)
 
-weapon = Weapon(90, 100, 9)
-dm = DragModel(0.275, TableG7, weight, diameter)
+weapon = Weapon(9, 100, 2)
+dm = DragModel(0.223, TableG7, weight, diameter)
+
 bullet = Projectile(dm, length)
-ammo = Ammo(bullet, 800)
+ammo = Ammo(bullet, 2750, 15)
+ammo.calc_powder_sens(2723, 0)
+
 zero_atmo = Atmo.ICAO()
 
 # defining calculator instance
@@ -81,7 +90,8 @@ calc = Calculator(weapon, ammo, zero_atmo)
 calc.update_elevation()
 
 shot = Shot(1500, 100)
-current_atmo = Atmo(100, 1000, 20, 72)
+
+current_atmo = Atmo(100, 1000, 15, 72)
 winds = [Wind(2, 90)]
 
 data = calc.trajectory(shot, current_atmo, winds)
@@ -91,17 +101,13 @@ for p in data:
 ```
 #### Example of the formatted output:
 ```
-['0.00 s', '0.000 m', '800 m/s', '2.33 mach', '-90.000 cm', '0.00 mil', '0.000 cm', '0.00 mil', '3629 J']
-['0.13 s', '100.000 m', '747 m/s', '2.18 mach', '0.009 cm', '0.00 mil', '0.527 cm', '0.05 mil', '3165 J']
-['0.27 s', '200.050 m', '696 m/s', '2.03 mach', '72.444 cm', '3.69 mil', '2.300 cm', '0.12 mil', '2749 J']
-['0.42 s', '300.050 m', '647 m/s', '1.89 mach', '124.565 cm', '4.23 mil', '5.466 cm', '0.19 mil', '2377 J']
-['0.58 s', '400.000 m', '601 m/s', '1.75 mach', '153.234 cm', '3.90 mil', '10.150 cm', '0.26 mil', '2047 J']
-['0.75 s', '500.000 m', '556 m/s', '1.62 mach', '154.685 cm', '3.15 mil', '16.493 cm', '0.34 mil', '1751 J']
-['0.94 s', '600.000 m', '512 m/s', '1.49 mach', '124.303 cm', '2.11 mil', '24.651 cm', '0.42 mil', '1489 J']
-['1.14 s', '700.000 m', '470 m/s', '1.37 mach', '56.452 cm', '0.82 mil', '34.803 cm', '0.51 mil', '1255 J']
-['1.36 s', '800.000 m', '430 m/s', '1.25 mach', '-55.854 cm', '-0.71 mil', '47.152 cm', '0.60 mil', '1049 J']
-['1.61 s', '900.000 m', '392 m/s', '1.14 mach', '-221.359 cm', '-2.51 mil', '61.906 cm', '0.70 mil', '870 J']
-['1.88 s', '1000.000 m', '355 m/s', '1.04 mach', '-451.055 cm', '-4.59 mil', '79.257 cm', '0.81 mil', '717 J']
+['0.00 s', '0.000 m', '2750.0 ft/s', '2.46 mach', '-9.000 cm', '0.00 mil', '0.000 cm', '0.00 mil', '3825 J']
+['0.12 s', '100.000 m', '2528.6 ft/s', '2.26 mach', '0.005 cm', '0.00 mil', '-3.556 cm', '-0.36 mil', '3233 J']
+['0.26 s', '200.050 m', '2317.2 ft/s', '2.08 mach', '-7.558 cm', '-0.38 mil', '-13.602 cm', '-0.69 mil', '2715 J']
+['0.41 s', '300.050 m', '2116.6 ft/s', '1.90 mach', '-34.843 cm', '-1.18 mil', '-30.956 cm', '-1.05 mil', '2266 J']
+['0.57 s', '400.000 m', '1926.5 ft/s', '1.73 mach', '-85.739 cm', '-2.18 mil', '-57.098 cm', '-1.45 mil', '1877 J']
+['0.75 s', '500.000 m', '1745.0 ft/s', '1.56 mach', '-165.209 cm', '-3.37 mil', '-94.112 cm', '-1.92 mil', '1540 J']
+['0.95 s', '600.000 m', '1571.4 ft/s', '1.41 mach', '-279.503 cm', '-4.74 mil', '-144.759 cm', '-2.46 mil', '1249 J']
 ```
 
 About project

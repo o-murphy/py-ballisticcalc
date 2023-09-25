@@ -10,7 +10,6 @@ pyximport.install(language_level=3)
 
 from py_ballisticcalc.profile import *
 from py_ballisticcalc import unit
-from py_ballisticcalc.drag_tables import TableG1, TableG7
 from py_ballisticcalc.interface import *
 
 
@@ -75,7 +74,6 @@ class TestProfile(unittest.TestCase):
             p = Profile(
                 maximum_distance=(2500, unit.Distance.Meter),
                 distance_step=(1, unit.Distance.Meter),
-                maximum_step_size=(5, unit.Distance.Foot)
             )
             print(timeit.timeit(lambda: p.calculate_trajectory(), number=1), 'max=2500m, step=1m, max_step=5ft')
 
@@ -181,7 +179,6 @@ class TestG7Profile(unittest.TestCase):
         weapon = Weapon(Distance(90, Distance.Millimeter), Distance(100, Distance.Meter), twist)
         wind = [Wind()]
         calc = TrajectoryCalc()
-        calc.set_max_calc_step_size(Distance(1, Distance.Foot))
         sight_angle = calc.sight_angle(ammo, weapon, atmo)
         shot_info = Shot(Distance(2500, Distance.Meter), Distance(1, Distance.Meter), sight_angle)
         return calc.trajectory(ammo, weapon, atmo, shot_info, wind)
@@ -295,7 +292,8 @@ class TestPyBallisticCalc(unittest.TestCase):
         atmosphere = Atmo.ICAO()
         shot_info = Shot(unit.Distance(1000, unit.Distance.Yard),
                          unit.Distance(100, unit.Distance.Yard),
-                         sight_angle=unit.Angular(4.221, unit.Angular.MOA),)
+                         sight_angle=unit.Angular(4.221, unit.Angular.MOA)
+                         )
         wind = [Wind(unit.Velocity(5, unit.Velocity.MPH), -45)]
 
         calc = TrajectoryCalc()
@@ -309,6 +307,9 @@ class TestPyBallisticCalc(unittest.TestCase):
             [data[5], 500, 1810.7, 1.622, 1226, -56.3, -3.18, -9.96, -0.55, 0.673, 252, unit.Angular.Mil],
             [data[10], 1000, 1081.3, 0.968, 442, -401.6, -11.32, -50.98, -1.44, 1.748, 55, unit.Angular.Mil]
         ]
+
+        for p in data:
+            print(p.formatted())
 
         for d in test_data:
             with self.subTest():

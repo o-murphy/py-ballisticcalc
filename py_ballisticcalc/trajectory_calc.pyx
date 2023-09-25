@@ -1,4 +1,6 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
+
+from .settings import Settings
 from .unit import *
 from .munition import *
 from .conditions import *
@@ -111,21 +113,24 @@ cdef class Vector:
         yield self.z()
 
 cdef class TrajectoryCalc:
-    cdef _max_calc_step_size
+    # cdef _max_calc_step_size
 
-    def __init__(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
-        self.set_max_calc_step_size(max_calc_step_size)
+    def __init__(self):
+        ...
+    # def __init__(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
+        # self.set_max_calc_step_size(max_calc_step_size)
 
-    cpdef max_calc_step_size(self):
-        return self._max_calc_step_size
+    # cpdef max_calc_step_size(self):
+    #     return self._max_calc_step_size
 
-    cpdef set_max_calc_step_size(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
-        self._max_calc_step_size = max_calc_step_size
+    # cpdef set_max_calc_step_size(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
+    #     self._max_calc_step_size = max_calc_step_size
 
     cdef double get_calculation_step(self, double step):
         cdef step_order, maximum_order
         step = step / 2
-        cdef double maximum_step = self._max_calc_step_size >> Distance.Foot
+        cdef double maximum_step = Settings.MIN_CALC_STEP_SIZE >> Distance.Foot
+        # cdef double maximum_step = self._max_calc_step_size >> Distance.Foot
 
         if step > maximum_step:
             step_order = int(floor(log10(step)))
@@ -244,7 +249,12 @@ cdef class TrajectoryCalc:
                 next_wind_range = winds[0].until_distance() >> Distance.Foot
             wind_vector = wind_to_vector(shot_info, winds[0])
 
-        muzzle_velocity = ammo.muzzle_velocity >> Velocity.FPS
+        print(Settings.USE_POWDER_SENSITIVITY)
+        if Settings.USE_POWDER_SENSITIVITY:
+            muzzle_velocity = ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
+        else:
+            muzzle_velocity = ammo.muzzle_velocity >> Velocity.FPS
+
         gravity_vector = Vector(0, cGravityConstant, 0)
         velocity = muzzle_velocity
         time = .0
