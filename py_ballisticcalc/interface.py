@@ -11,11 +11,13 @@ from .conditions import *
 from .munition import *
 from .unit import *
 from .drag_model import *
-from . import drag_tables, settings
+from .drag_tables import *
+from .settings import *
 
-assert settings
+
+assert DefaultUnits
 assert DragModel
-assert drag_tables
+assert TableG1
 
 
 @dataclass

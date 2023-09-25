@@ -4,14 +4,7 @@ Example of library usage
 import pyximport
 pyximport.install(language_level=3)
 
-
-from py_ballisticcalc.settings import *
 from py_ballisticcalc.interface import *
-from py_ballisticcalc.drag_tables import *
-
-
-# from py_ballisticcalc._globals import *
-# from py_ballisticcalc.interface import *
 
 
 # set global library settings
@@ -20,14 +13,15 @@ DefaultUnits.distance = Distance.Meter
 MIN_CALC_STEP_SIZE = Distance(2, Distance.Meter)
 
 
-#
-weight = 175
-diameter = 0.308
+# define params with default units
+weight, diameter = 175, 0.308
+# or define with specified units
+length = Distance(1.2, Distance.Inch)
 
 
 weapon = Weapon(90, 100, 9)
 dm = DragModel(0.275, TableG7, weight, diameter)
-bullet = Projectile(dm, 1.2)
+bullet = Projectile(dm, length)
 ammo = Ammo(bullet, 800)
 zero_atmo = Atmo.ICAO()
 

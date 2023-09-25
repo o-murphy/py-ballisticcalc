@@ -58,9 +58,7 @@ value_in_km = unit_in_yards >> Distance.Kilometer  # >>= operator also supports
 import pyximport
 pyximport.install(language_level=3)
 
-from py_ballisticcalc.settings import *
 from py_ballisticcalc.interface import *
-from py_ballisticcalc.drag_tables import *
 
 # set global library settings
 DefaultUnits.velocity = Velocity.MPS
