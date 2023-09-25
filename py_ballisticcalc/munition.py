@@ -47,9 +47,29 @@ class Projectile:
 
 
 class Ammo:
-    __slots__ = ('projectile', 'muzzle_velocity')
+    __slots__ = ('projectile', 'muzzle_velocity', 'powder_sens', 'powder_temp')
 
-    def __init__(self, projectile: Projectile, muzzle_velocity: [float, Velocity]):
+    def __init__(self, projectile: Projectile, muzzle_velocity: [float, Velocity],
+                 powder_sens: float = 1, powder_temp: [float, Temperature] = Temperature(15, Temperature.Celsius)):
         self.projectile: Projectile = projectile
         self.muzzle_velocity: Velocity = muzzle_velocity if is_unit(muzzle_velocity) else Velocity(
             muzzle_velocity, DefaultUnits.velocity)
+        self.powder_sens: float = powder_sens
+        self.powder_temp: [float, Temperature] = powder_temp
+
+    def _calc_powder_sens(self, v1, t1):
+        v0 = self.muzzle_velocity >> Velocity.MPS
+        t0 = self.powder_temp >> Temperature.Celsius
+        temp_difference = t0 - t1
+        speed_difference = v0 - v1
+        temp_modifier = (speed_difference / temp_difference) * (15 / v0) * 100
+        self.powder_sens = temp_modifier
+        return self.powder_sens
+
+    def _get_velocity_for_temp(self, t):
+        powder_temp = (self.powder_temp >> Temperature.Celsius) / 100
+        mv = self.muzzle_velocity >> Velocity.MPS
+        temp_difference = powder_temp - t
+        current_velocity = mv - self.powder_sens / (15 * mv * temp_difference)
+        return current_velocity
+
