@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from math import pow, sqrt, fabs
 
+from .settings import DefaultUnits
 from .unit import *
 
 __all__ = ('Atmo', 'Wind', 'Shot')
@@ -22,15 +22,10 @@ cStandardPressure: float = 29.92
 cStandardDensity: float = 0.076474
 
 
-@dataclass
 class Atmo:
-    altitude: Distance
-    pressure: Pressure
-    temperature: Temperature
-    humidity: float
-    density: float = None
-    mach: Velocity = None
-    mach1: float = None
+    __slots__ = ('altitude', 'pressure',
+                 'temperature', 'humidity',
+                 'density', 'mach', '_mach1')
 
     def __init__(self, altitude: [float, Distance],
                  pressure: [float, Pressure],
@@ -43,12 +38,14 @@ class Atmo:
             self.create_default()
             # TODO: maby have to raise ValueError instead of create_default
         else:
-            self.altitude = altitude if is_unit(altitude) else Distance(altitude, DefaultUnits.distance)
-            self.pressure = pressure if is_unit(pressure) else Pressure(pressure, DefaultUnits.pressure)
-            self.temperature = temperature if is_unit(temperature) else Temperature(
+            self.altitude: Distance = altitude if is_unit(altitude) else Distance(altitude, DefaultUnits.distance)
+            self.pressure: Pressure = pressure if is_unit(pressure) else Pressure(pressure, DefaultUnits.pressure)
+            self.temperature: Temperature = temperature if is_unit(temperature) else Temperature(
                 temperature, DefaultUnits.temperature
             )
-            self.humidity = humidity
+            self.humidity: float = humidity
+
+        self.density, self.mach, self._mach1, = None, None, None
 
         self.calculate()
 
@@ -100,7 +97,7 @@ class Atmo:
         p = self.pressure >> Pressure.InHg
         density, mach = self.calculate0(t, p)
         self.density = density
-        self.mach1 = mach
+        self._mach1 = mach
         self.mach = Velocity(mach, Velocity.FPS)
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float):
@@ -108,7 +105,7 @@ class Atmo:
         org_altitude = self.altitude >> Distance.Foot
         if fabs(org_altitude - altitude) < 30:
             density = self.density / cStandardDensity
-            mach = self.mach1
+            mach = self._mach1
             return density, mach
 
         t0 = self.temperature >> Temperature.Fahrenheit
@@ -123,7 +120,6 @@ class Atmo:
         return density / cStandardDensity, mach
 
 
-@dataclass
 class Wind:
     """
     Represents wind info valid to desired distance
@@ -134,34 +130,29 @@ class Wind:
         direction (Angular): default 0
     """
 
-    velocity: Velocity = Velocity(0, Velocity.FPS)
-    direction: Angular = Angular(0, Angular.Degree)
-    until_distance: Distance = Distance(9999, Distance.Kilometer)
+    __slots__ = ('velocity', 'direction', 'until_distance')
 
-    def __init__(self, velocity: [float, Velocity] = 0,
-                 direction: [float, Angular] = 0,
-                 until_distance: [float, Distance] = 9999):
-        self.velocity = velocity if is_unit(velocity) else Velocity(velocity, DefaultUnits.velocity)
-        self.direction = direction if is_unit(direction) else Angular(direction, DefaultUnits.angular)
-        self.until_distance = until_distance if is_unit(until_distance) else Distance(until_distance, DefaultUnits.distance)
+    def __init__(self, velocity: [float, Velocity] = Velocity(0, Velocity.FPS),
+                 direction: [float, Angular] = Angular(0, Angular.Degree),
+                 until_distance: [float, Distance] = Distance(9999, Distance.Kilometer)):
+        self.velocity: Velocity = velocity if is_unit(velocity) else Velocity(velocity, DefaultUnits.velocity)
+        self.direction: Angular = direction if is_unit(direction) else Angular(direction, DefaultUnits.angular)
+        self.until_distance: Distance = until_distance if is_unit(until_distance) else Distance(
+            until_distance, DefaultUnits.distance)
 
 
-@dataclass
 class Shot:
-    sight_angle: Angular
-    max_range: Distance
-    step: Distance
-    shot_angle: Angular = Angular(0, Angular.Radian)
-    cant_angle: Angular = Angular(0, Angular.Radian)
+    __slots__ = ('sight_angle', 'max_range', 'step', 'shot_angle', 'cant_angle')
 
-    def __init__(self, sight_angle: [float, Angular],
-                 max_range: [float, Distance] = 100,
-                 step: [float, Distance] = 0,
+    def __init__(self,
+                 max_range: [float, Distance],
+                 step: [float, Distance],
                  shot_angle: [float, Angular] = 0,
-                 cant_angle: [float, Angular] = 0):
-
-        self.sight_angle = sight_angle if is_unit(sight_angle) else Angular(sight_angle, DefaultUnits.angular)
-        self.max_range = max_range if is_unit(max_range) else Distance(max_range, DefaultUnits.distance)
-        self.step = step if is_unit(step) else Distance(step, DefaultUnits.distance)
-        self.shot_angle = shot_angle if is_unit(shot_angle) else Angular(shot_angle, DefaultUnits.angular)
-        self.cant_angle = cant_angle if is_unit(cant_angle) else Angular(cant_angle, DefaultUnits.angular)
+                 cant_angle: [float, Angular] = 0,
+                 sight_angle: [float, Angular] = 0,
+                 ):
+        self.sight_angle: Angular = sight_angle if is_unit(sight_angle) else Angular(sight_angle, DefaultUnits.angular)
+        self.max_range: Distance = max_range if is_unit(max_range) else Distance(max_range, DefaultUnits.distance)
+        self.step: Distance = step if is_unit(step) else Distance(step, DefaultUnits.distance)
+        self.shot_angle: Angular = shot_angle if is_unit(shot_angle) else Angular(shot_angle, DefaultUnits.angular)
+        self.cant_angle: Angular = cant_angle if is_unit(cant_angle) else Angular(cant_angle, DefaultUnits.angular)

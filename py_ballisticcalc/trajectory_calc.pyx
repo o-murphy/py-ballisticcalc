@@ -1,7 +1,6 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 from .unit import *
-from .projectile import Ammo
-from .weapon import Weapon
+from .munition import *
 from .conditions import *
 from .trajectory_data import TrajectoryData
 

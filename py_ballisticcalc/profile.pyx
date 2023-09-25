@@ -1,8 +1,7 @@
 from .conditions import *
 from .drag_model import DragModel
 from .drag_tables import TableG7
-from .projectile import Projectile, Ammo
-from .weapon import Weapon
+from .munition import *
 from .trajectory_calc import TrajectoryCalc
 from .unit import *
 from .multiple_bc import MultiBC
@@ -135,7 +134,7 @@ cdef class Profile(object):
     cdef make_calculator(self):
         cdef bc, projectile, ammo, atmo, zero, twist, weapon, wind, calc, angle, shot, data
         bc = self.make_bc()
-        projectile = Projectile(bc, self._bullet_weight, self._bullet_diameter, self._bullet_length)
+        projectile = Projectile(bc, self._bullet_length)
         ammo = Ammo(projectile, self._muzzle_velocity)
         atmo = Atmo(self._altitude, self._pressure, self._temperature, self._humidity)
         weapon = Weapon(self._sight_height, self._zero_distance, self._twist)
@@ -143,8 +142,8 @@ cdef class Profile(object):
         calc = TrajectoryCalc()
         calc.set_max_calc_step_size(self._maximum_step_size)
         angle = calc.sight_angle(ammo, weapon, atmo)
-        shot = Shot(angle, self._maximum_distance, self._distance_step,
-                    self._shot_angle, self._cant_angle)
+        shot = Shot(self._maximum_distance, self._distance_step,
+                    self._shot_angle, self._cant_angle, angle)
         data = calc.trajectory(ammo, weapon, atmo, shot, wind)
         self._trajectory_data = data
 

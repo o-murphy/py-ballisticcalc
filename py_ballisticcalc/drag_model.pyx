@@ -1,8 +1,12 @@
 from libc.math cimport floor, pow
 
+from .settings import DefaultUnits
 from .unit import *
-from drag_tables import TableNamesSet
+from .drag_tables import DragTablesSet
 from typing import NamedTuple
+
+
+__all__ = ('DragDataPoint', 'DragModel', 'calculate_by_curve')
 
 
 class DragDataPoint(NamedTuple):
@@ -29,7 +33,7 @@ cdef class DragModel:
         self._diameter = Distance(diameter, DefaultUnits.diameter)
         self._sectional_density = self._get_sectional_density()
 
-        if drag_table in TableNamesSet:
+        if drag_table in DragTablesSet:
             self._value = value
             self._form_factor = self._get_form_factor()
             self._table_data = make_data_points(self._table)
@@ -59,8 +63,14 @@ cdef class DragModel:
     cpdef double value(self):
         return self._value
 
-    cpdef int table(self):
+    cpdef list table(self):
         return self._table
+
+    cpdef weight(self):
+        return self._weight
+
+    cpdef diameter(self):
+        return self._diameter
 
     cdef double _get_custom_bc(self):
         return self._sectional_density / self._form_factor

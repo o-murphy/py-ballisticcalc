@@ -10,12 +10,8 @@ pyximport.install(language_level=3)
 
 from py_ballisticcalc.profile import *
 from py_ballisticcalc import unit
-from py_ballisticcalc.conditions import *
 from py_ballisticcalc.drag_tables import TableG1, TableG7
-from py_ballisticcalc.projectile import Projectile
-from py_ballisticcalc.trajectory_data import TrajectoryData
-from py_ballisticcalc.weapon import Weapon
-from py_ballisticcalc.drag_model import DragDataPoint
+from py_ballisticcalc.interface import *
 
 
 class TestProfile(unittest.TestCase):
@@ -175,12 +171,7 @@ class TestG7Profile(unittest.TestCase):
             diameter=Distance(0.308, Distance.Inch),
         )
 
-        p1 = Projectile(
-            bc,
-            Weight(167, Weight.Grain),
-            Distance(0.308, Distance.Inch),
-            Distance(1.2, Distance.Inch),
-        )
+        p1 = Projectile(bc, 167)
 
         ammo = Ammo(p1, Velocity(800, Velocity.MPS))
         atmo = Atmo(Distance(0, Distance.Meter), Pressure(760, Pressure.MmHg),
@@ -192,7 +183,7 @@ class TestG7Profile(unittest.TestCase):
         calc = TrajectoryCalc()
         calc.set_max_calc_step_size(Distance(1, Distance.Foot))
         sight_angle = calc.sight_angle(ammo, weapon, atmo)
-        shot_info = Shot(sight_angle, Distance(2500, Distance.Meter), Distance(1, Distance.Meter))
+        shot_info = Shot(Distance(2500, Distance.Meter), Distance(1, Distance.Meter), sight_angle)
         return calc.trajectory(ammo, weapon, atmo, shot_info, wind)
 
     def test_time(self):
@@ -295,20 +286,17 @@ class TestPyBallisticCalc(unittest.TestCase):
 
     def test_path_g7(self):
         bc = DragModel(0.223, TableG7,
-                       weight=Weight(167, Weight.Grain),
+                       weight=Weight(168, Weight.Grain),
                        diameter=Distance(0.308, Distance.Inch))
-        projectile = Projectile(bc, unit.Weight(168, unit.Weight.Grain),
-                                unit.Distance(0.308, unit.Distance.Inch),
-                                unit.Distance(1.282, unit.Distance.Inch), )
+        projectile = Projectile(bc, 1.282)
         ammo = Ammo(projectile, unit.Velocity(2750, unit.Velocity.FPS))
         twist = unit.Distance(11.24, unit.Distance.Inch)
         weapon = Weapon(unit.Distance(2, unit.Distance.Inch), unit.Distance(100, unit.Distance.Yard), twist)
         atmosphere = Atmo.ICAO()
-        shot_info = Shot(unit.Angular(4.221, unit.Angular.MOA),
-                         unit.Distance(1000, unit.Distance.Yard),
-                         unit.Distance(100, unit.Distance.Yard))
-        wind = [Wind(velocity=unit.Velocity(5, unit.Velocity.MPH),
-                     direction=unit.Angular(-45, unit.Angular.Degree))]
+        shot_info = Shot(unit.Distance(1000, unit.Distance.Yard),
+                         unit.Distance(100, unit.Distance.Yard),
+                         sight_angle=unit.Angular(4.221, unit.Angular.MOA),)
+        wind = [Wind(unit.Velocity(5, unit.Velocity.MPH), -45)]
 
         calc = TrajectoryCalc()
         data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)

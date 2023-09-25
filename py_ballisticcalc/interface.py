@@ -1,31 +1,57 @@
+from dataclasses import dataclass, field
 
 import pyximport
 
-from py_ballisticcalc.conditions import *
-from py_ballisticcalc.projectile import Ammo
-from py_ballisticcalc.weapon import Weapon
 
 pyximport.install(language_level=3)
 
-from py_ballisticcalc.trajectory_calc import TrajectoryCalc
-from py_ballisticcalc.unit import *
+from .trajectory_data import TrajectoryData
+from .trajectory_calc import TrajectoryCalc
+from .conditions import *
+from .munition import *
+from .unit import *
+from .drag_model import *
+from . import drag_tables, settings
+
+assert settings
+assert DragModel
+assert drag_tables
 
 
+@dataclass
+class Calculator:
+    weapon: Weapon
+    ammo: Ammo
+    zero_atmo: Atmo
 
+    _elevation: Angular = field(init=False, repr=True, compare=False)
+    _calc: TrajectoryCalc = field(init=False, repr=True, compare=False)
 
-
-
-
-
-class BalCalc:
-    def __init__(self):
-        self.sight_angle = None
+    def __post_init__(self):
         self._calc = TrajectoryCalc()
 
-    def set_zero(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
-        self.sight_angle = self._calc.sight_angle(ammo, weapon, atmo)
+    def update_elevation(self):
+        self._elevation = self._calc.sight_angle(self.ammo, self.weapon, self.zero_atmo)
 
-    def calculate(self, ammo: Ammo, weapon: Weapon, atmo: Atmo, shot: Shot, winds: list[Wind]):
-        if not self.sight_angle:
-            self.set_zero(ammo, weapon, atmo)
-        return self._calc.trajectory(ammo, weapon, atmo, shot, winds)
+    def trajectory(self, shot: Shot, atmo: Atmo, winds: list[Wind], as_pandas: bool = False):
+        if not self._elevation:
+            self.update_elevation()
+        Shot.sight_angle = self._elevation
+        data = self._calc.trajectory(self.ammo, self.weapon, atmo, shot, winds)
+        if as_pandas:
+            return self._to_dataframe(data)
+        return data
+
+    @staticmethod
+    def _to_dataframe(data: list[TrajectoryData]):
+        """
+        Imorting pd localy
+        Note: reimplement this method if needed
+        """
+
+        try:
+            import pandas as pd
+        except ImportError as error:
+            raise ImportError(f"{error}, use trajectory with as_pandas=False or install 'pandas' library")
+
+        table = [p.in_def_units() for p in data]
