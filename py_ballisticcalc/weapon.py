@@ -1,6 +1,6 @@
 from dataclasses import dataclass
+
 from py_ballisticcalc.unit import *
-from py_ballisticcalc.config import get_config
 
 __all__ = ('Weapon',)
 
@@ -8,13 +8,17 @@ __all__ = ('Weapon',)
 @dataclass
 class Weapon:
     sight_height: Distance
-    zero_distance: Distance = Distance(100, Distance.Yard)
-    twist: Distance = Distance(0, Distance.Inch)
-    click_value: Angular = Angular(0.25, Angular.MOA)
+    zero_distance: Distance
+    twist: Distance
+    click_value: Angular
 
-    def __init__(self, sight_height=90, zero_distance=100, twist=0, click_value=0.25):
-        cfg = get_config()
-        self.sight_height = Distance(sight_height, cfg.sight_height_unit)
-        self.zero_distance = Distance(sight_height, cfg.distance_unit)
-        self.twist = Distance(sight_height, cfg.twist_unit)
-        self.click_value = Distance(click_value, cfg.)
+    def __init__(self,
+                 sight_height: [float, Distance],
+                 zero_distance: [float, Distance] = Distance(100, Distance.Yard),
+                 twist: [float, Distance] = Distance(0, Distance.Inch),
+                 click_value: [float, Angular] = Angular(0.25, Angular.Mil)):
+
+        self.sight_height = sight_height if is_unit(sight_height) else Distance(sight_height, DefaultUnits.sight_height)
+        self.zero_distance = zero_distance if is_unit(zero_distance) else Distance(zero_distance, DefaultUnits.distance)
+        self.twist = twist if is_unit(twist) else Distance(twist, DefaultUnits.twist)
+        self.click_value = click_value if is_unit(click_value) else Angular(click_value, DefaultUnits.adjustment)

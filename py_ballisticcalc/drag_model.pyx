@@ -1,4 +1,5 @@
 from libc.math cimport floor, pow
+
 from .unit import *
 from drag_tables import TableNamesSet
 from typing import NamedTuple
@@ -17,12 +18,15 @@ cdef class DragModel:
     cdef _weight, _diameter
     cdef double _sectional_density, _form_factor
 
-    def __init__(self, value: double, drag_table: list, weight: Weight, diameter: Distance):
+    def __init__(self, value: double,
+                 drag_table: list,
+                 weight: [float, Weight],
+                 diameter: [float, Distance]):
 
         self._table = drag_table
 
-        self._weight = weight
-        self._diameter = diameter
+        self._weight = weight if is_unit(weight) else Weight(weight, DefaultUnits.weight)
+        self._diameter = Distance(diameter, DefaultUnits.diameter)
         self._sectional_density = self._get_sectional_density()
 
         if drag_table in TableNamesSet:

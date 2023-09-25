@@ -1,7 +1,7 @@
 from math import pow
 from .drag_model import make_data_points
 from .unit import *
-from .environment import Atmosphere
+from .conditions import Atmo
 from .drag_model import DragDataPoint
 
 
@@ -16,7 +16,7 @@ class MultiBC:
         self.velocity_units = velocity_units_flag
         self.sectional_density = self._get_sectional_density()
 
-        atmosphere = Atmosphere.ICAO()
+        atmosphere = Atmo.ICAO()
 
         altitude = Distance(0, Distance.Meter) >> Distance.Foot
         density, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)

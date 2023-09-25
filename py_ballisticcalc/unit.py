@@ -1,4 +1,5 @@
 from abc import ABC
+from dataclasses import dataclass
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple
@@ -476,6 +477,34 @@ class Energy(AbstractUnit):
 
     FootPound = Unit.FootPound
     Joule = Unit.Joule
+
+
+def is_unit(obj: [AbstractUnit, float, int]):
+    if isinstance(obj, AbstractUnit):
+        return True
+    elif isinstance(obj, (float, int)):
+        return False
+    elif obj is None:
+        return None
+    raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
+
+
+@dataclass
+class DefaultUnits:
+    sight_height: Unit = Unit.Centimeter
+    twist: Unit = Unit.Inch
+    velocity: Unit = Unit.MPS
+    distance: Unit = Unit.Meter
+    temperature: Unit = Unit.Celsius
+    weight: Unit = Unit.Grain
+    length: Unit = Unit.Inch
+    diameter: Unit = Unit.Inch
+    pressure: Unit = Unit.HP
+    drop: Unit = Unit.Centimeter
+    angular: Unit = Unit.Degree
+    adjustment: Unit = Unit.Mil
+    energy: Unit = Unit.Joule
+
 
 # class Convertor:
 #     def __init__(self, measure=None, unit: int = 0, default_unit: int = 0):

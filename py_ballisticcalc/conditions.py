@@ -3,7 +3,7 @@ from math import pow, sqrt, fabs
 
 from .unit import *
 
-__all__ = ('Atmosphere', 'Wind')
+__all__ = ('Atmo', 'Wind', 'Shot')
 
 cIcaoStandardTemperatureR: float = 518.67
 cIcaoFreezingPointTemperatureR: float = 459.67
@@ -23,7 +23,7 @@ cStandardDensity: float = 0.076474
 
 
 @dataclass
-class Atmosphere:
+class Atmo:
     altitude: Distance
     pressure: Pressure
     temperature: Temperature
@@ -32,23 +32,29 @@ class Atmosphere:
     mach: Velocity = None
     mach1: float = None
 
-    def __init__(self, altitude: Distance, pressure: Pressure, temperature: Temperature, humidity: float):
+    def __init__(self, altitude: [float, Distance],
+                 pressure: [float, Pressure],
+                 temperature: [float, Temperature],
+                 humidity: float):
+
         if humidity > 1:
             humidity = humidity / 100
         if not (0 <= humidity <= 1) or not (altitude and pressure and temperature):
             self.create_default()
             # TODO: maby have to raise ValueError instead of create_default
         else:
-            self.altitude = altitude
-            self.pressure = pressure
-            self.temperature = temperature
+            self.altitude = altitude if is_unit(altitude) else Distance(altitude, DefaultUnits.distance)
+            self.pressure = pressure if is_unit(pressure) else Pressure(pressure, DefaultUnits.pressure)
+            self.temperature = temperature if is_unit(temperature) else Temperature(
+                temperature, DefaultUnits.temperature
+            )
             self.humidity = humidity
 
         self.calculate()
 
     @staticmethod
-    def ICAO(altitude: Distance = Distance(0, Distance.Foot)):
-
+    def ICAO(altitude: [float, Distance] = 0):
+        altitude = altitude if is_unit(altitude) else Distance(altitude, DefaultUnits.distance)
         temperature = Temperature(
             cIcaoStandardTemperatureR + (altitude >> Distance.Foot)
             * cTemperatureGradient - cIcaoFreezingPointTemperatureR, Temperature.Fahrenheit)
@@ -60,7 +66,12 @@ class Atmosphere:
                 cPressureExponent),
             Pressure.InHg)
 
-        return Atmosphere(altitude, pressure, temperature, cIcaoStandardHumidity)
+        return Atmo(
+            altitude >> DefaultUnits.distance,
+            pressure >> DefaultUnits.pressure,
+            temperature >> DefaultUnits.temperature,
+            cIcaoStandardHumidity
+        )
 
     def create_default(self):
         self.altitude = Distance(0.0, Distance.Foot)
@@ -126,3 +137,31 @@ class Wind:
     velocity: Velocity = Velocity(0, Velocity.FPS)
     direction: Angular = Angular(0, Angular.Degree)
     until_distance: Distance = Distance(9999, Distance.Kilometer)
+
+    def __init__(self, velocity: [float, Velocity] = 0,
+                 direction: [float, Angular] = 0,
+                 until_distance: [float, Distance] = 9999):
+        self.velocity = velocity if is_unit(velocity) else Velocity(velocity, DefaultUnits.velocity)
+        self.direction = direction if is_unit(direction) else Angular(direction, DefaultUnits.angular)
+        self.until_distance = until_distance if is_unit(until_distance) else Distance(until_distance, DefaultUnits.distance)
+
+
+@dataclass
+class Shot:
+    sight_angle: Angular
+    max_range: Distance
+    step: Distance
+    shot_angle: Angular = Angular(0, Angular.Radian)
+    cant_angle: Angular = Angular(0, Angular.Radian)
+
+    def __init__(self, sight_angle: [float, Angular],
+                 max_range: [float, Distance] = 100,
+                 step: [float, Distance] = 0,
+                 shot_angle: [float, Angular] = 0,
+                 cant_angle: [float, Angular] = 0):
+
+        self.sight_angle = sight_angle if is_unit(sight_angle) else Angular(sight_angle, DefaultUnits.angular)
+        self.max_range = max_range if is_unit(max_range) else Distance(max_range, DefaultUnits.distance)
+        self.step = step if is_unit(step) else Distance(step, DefaultUnits.distance)
+        self.shot_angle = shot_angle if is_unit(shot_angle) else Angular(shot_angle, DefaultUnits.angular)
+        self.cant_angle = cant_angle if is_unit(cant_angle) else Angular(cant_angle, DefaultUnits.angular)

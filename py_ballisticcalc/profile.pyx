@@ -1,9 +1,8 @@
-from .environment import Atmosphere, Wind
+from .conditions import *
 from .drag_model import DragModel
 from .drag_tables import TableG7
 from .projectile import Projectile, Ammo
 from .weapon import Weapon
-from .shot import Shot
 from .trajectory_calc import TrajectoryCalc
 from .unit import *
 from .multiple_bc import MultiBC
@@ -138,7 +137,7 @@ cdef class Profile(object):
         bc = self.make_bc()
         projectile = Projectile(bc, self._bullet_weight, self._bullet_diameter, self._bullet_length)
         ammo = Ammo(projectile, self._muzzle_velocity)
-        atmo = Atmosphere(self._altitude, self._pressure, self._temperature, self._humidity)
+        atmo = Atmo(self._altitude, self._pressure, self._temperature, self._humidity)
         weapon = Weapon(self._sight_height, self._zero_distance, self._twist)
         wind = [Wind(self._wind_velocity, self._wind_direction)]
         calc = TrajectoryCalc()

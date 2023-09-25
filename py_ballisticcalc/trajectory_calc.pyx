@@ -2,8 +2,7 @@ from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 from .unit import *
 from .projectile import Ammo
 from .weapon import Weapon
-from .environment import Atmosphere, Wind
-from .shot import Shot
+from .conditions import *
 from .trajectory_data import TrajectoryData
 
 cdef double cZeroFindingAccuracy = 0.000005
@@ -115,14 +114,14 @@ cdef class Vector:
 cdef class TrajectoryCalc:
     cdef _max_calc_step_size
 
-    def __init__(self, _max_calc_step_size: Distance = Distance(1, Distance.Foot)):
-        self._max_calc_step_size = _max_calc_step_size
+    def __init__(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
+        self.set_max_calc_step_size(max_calc_step_size)
 
     cpdef max_calc_step_size(self):
         return self._max_calc_step_size
 
-    cpdef set_max_calc_step_size(self, value: Distance):
-        self._max_calc_step_size = value
+    cpdef set_max_calc_step_size(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
+        self._max_calc_step_size = max_calc_step_size
 
     cdef double get_calculation_step(self, double step):
         cdef step_order, maximum_order
@@ -136,7 +135,7 @@ cdef class TrajectoryCalc:
 
         return step
 
-    cpdef sight_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmosphere):
+    cpdef sight_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
         cdef double calculation_step, mach, density_factor, muzzle_velocity
         cdef double barrel_azimuth, barrel_elevation
         cdef double velocity, time, zero_distance, maximum_range
@@ -203,7 +202,7 @@ cdef class TrajectoryCalc:
                 iterations_count += 1
         return Angular(barrel_elevation, Angular.Radian)
 
-    cpdef trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmosphere,
+    cpdef trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
                      shot_info: Shot, winds: list[Wind]):
         cdef double range_to, step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
