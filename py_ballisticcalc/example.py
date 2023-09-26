@@ -2,6 +2,8 @@
 Example of library usage
 """
 
+# import pyximport; pyximport.install(language_level=3)
+
 from py_ballisticcalc.interface import *
 from py_ballisticcalc.interface import Settings as Set
 
@@ -62,7 +64,3 @@ Example of the formatted output:
 ['3.14 s', '1400.000 m', '294 m/s', '0.86 mach', '-2258.848 cm', '-16.43 mil', '160.496 cm', '1.17 mil', '491 J']
 ['3.49 s', '1500.000 m', '285 m/s', '0.83 mach', '-2977.146 cm', '-20.21 mil', '179.875 cm', '1.22 mil', '462 J']
 """
-
-# from py_ballisticcalc.drag_model import DragDataPoint
-
-# print(DragDataPoint)

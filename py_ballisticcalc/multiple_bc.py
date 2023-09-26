@@ -1,4 +1,6 @@
+import typing
 from math import pow
+
 from .unit import *
 from .conditions import Atmo
 from .drag_model import make_data_points, DragDataPoint
@@ -8,8 +10,8 @@ __all__ = ('MultiBC', )
 
 
 class MultiBC:
-    def __init__(self, drag_table: list[DragDataPoint], diameter: Distance, weight: Weight,
-                 multiple_bc_table: list[DragDataPoint], velocity_units_flag: Unit):
+    def __init__(self, drag_table: typing.Iterable, diameter: Distance, weight: Weight,
+                 multiple_bc_table: typing.Iterable, velocity_units_flag: Unit):
 
         self.multiple_bc_table = multiple_bc_table
         self.table = drag_table
@@ -39,7 +41,8 @@ class MultiBC:
         return standard_cd * form_factor
 
     def _create_bc_table_data_points(self):
-        for bc, v in sorted(self.multiple_bc_table, reverse=True, key=lambda x: x[1]):
+        # for bc, v in sorted(self.multiple_bc_table, reverse=True, key=lambda x: x[1]):
+        for bc, v in sorted(self.multiple_bc_table, reverse=True, key=lambda x: x.velocity):
             yield DragDataPoint(bc, self.velocity_units(v) >> Velocity.MPS)
 
     def _interpolate_bc_table(self):

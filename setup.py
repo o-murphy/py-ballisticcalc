@@ -76,9 +76,7 @@ extensions = []
 for path in extensions_paths:
     extensions += iter_extensions(path)
 
-# CYTHONIZE = bool(int(os.getenv("CYTHONIZE", 0))) and use_cython is not None
 
-# if CYTHONIZE:
 if USE_CYTHON:
     compiler_directives = {"language_level": 3, "embedsignature": True}
     extensions = cythonize(extensions, compiler_directives=compiler_directives)
@@ -88,9 +86,6 @@ else:
 with open("requirements.txt") as fp:
     install_requires = fp.read().strip().split("\n")
     print(install_requires)
-
-with open("requirements-dev.txt") as fp:
-    dev_requires = fp.read().strip().split("\n")
 
 setup(
 
@@ -103,7 +98,6 @@ setup(
     ],
 
     extras_require={
-        "dev": dev_requires,
         "docs": ["sphinx", "sphinx-rtd-theme"]
     },
 
@@ -124,7 +118,7 @@ setup(
     long_description_content_type="text/markdown",
     zip_safe=True,
     packages=find_packages(),
-    py_modules=['py_ballisticcalc']
+    py_modules=['py_ballisticcalc'],
     # package_dir={
     #     "": ".",
     # },

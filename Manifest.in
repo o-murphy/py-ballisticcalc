@@ -1,2 +1,4 @@
 recursive-include py_ballisticcalc *.pyx
+recursive-include py_ballisticcalc *.pyi
 include requirements*.txt
+include py.typed

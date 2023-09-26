@@ -3,25 +3,25 @@ from libc.math cimport floor, pow
 from .settings import Settings as Set
 from .unit import *
 from .drag_tables import DragTablesSet
-from typing import NamedTuple
 
 
-__all__ = ('DragDataPoint', 'DragModel', 'calculate_by_curve', 'make_data_points')
-# __all__ = ('DragModel', 'calculate_by_curve', 'make_data_points')
-# __all__ = ('DragModel', 'calculate_by_curve')
+__all__ = ('DragDataPoint', 'DragModel', 'make_data_points')
 
 
-class DragDataPoint(NamedTuple):
-    coeff: float  # BC or CD
-    velocity: float  # muzzle velocity or Mach
+cdef class DragDataPoint:
+    cdef readonly double coeff  # BC or CD
+    cdef readonly double velocity  # muzzle velocity or Mach
 
-# cdef public struct DragDataPoint:
-#     double coeff
-#     double velocity
+    def __cinit__(self, coeff: float, velocity: float):
+        self.coeff = coeff
+        self.velocity = velocity
 
-# cdef class DragDataPoint:
-#     cdef public double coeff  # BC or CD
-#     cdef public double velocity  # muzzle velocity or Mach
+    def __iter__(self):
+        yield self.coeff
+        yield self.velocity
+
+    def __repr__(self):
+        return f"DragDataPoint(coeff={self.coeff}, velocity={self.velocity})"
 
 
 cdef struct CurvePoint:
@@ -30,25 +30,24 @@ cdef struct CurvePoint:
 
 cdef class DragModel:
     cdef list _table_data, _curve_data
-    cdef public list table
-    cdef public object weight, diameter
-    cdef public double value, sectional_density
-    cdef double _form_factor
+    cdef readonly list table
+    cdef readonly object weight, diameter
+    cdef public double value
+    cdef readonly double form_factor, sectional_density
 
-    def __init__(self, value: double,
+    def __init__(self, value: float,
                  drag_table: list,
                  weight: [float, Weight],
                  diameter: [float, Distance]):
 
         self.table = drag_table
-
         self.weight = weight if is_unit(weight) else Set.Units.weight(weight)
         self.diameter = Set.Units.diameter(diameter)
         self.sectional_density = self._get_sectional_density()
 
         if drag_table in DragTablesSet:
             self.value = value
-            self._form_factor = self._get_form_factor(self.value)
+            self.form_factor = self._get_form_factor(self.value)
             self._table_data = make_data_points(self.table)
             self._curve_data = calculate_curve(self._table_data)
         elif len(self.table) == 0:
@@ -59,7 +58,7 @@ cdef class DragModel:
             # self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
             # self.value = self._get_custom_bc()
             self.value = 1  # or 0.999
-            self._form_factor = self._get_form_factor(self.value)
+            self.form_factor = self._get_form_factor(self.value)
 
             self._table_data = make_data_points(self.table)
             self._curve_data = calculate_curve(self._table_data)
@@ -74,9 +73,9 @@ cdef class DragModel:
         return cd * 2.08551e-04 / self.value
 
     cdef double _get_custom_bc(self):
-        return self.sectional_density / self._form_factor
+        return self.sectional_density / self.form_factor
 
-    def _get_form_factor(self, bc):
+    cdef _get_form_factor(self, bc):
         return self.sectional_density / bc
 
     cdef double _get_sectional_density(self):
@@ -85,11 +84,11 @@ cdef class DragModel:
         d = self.diameter >> Distance.Inch
         return w / pow(d, 2) / 7000
 
-    cpdef double standard_cd(self, double mach):
+    cdef double standard_cd(self, double mach):
         return calculate_by_curve(self._table_data, self._curve_data, mach)
 
     cpdef double calculated_cd(self, double mach):
-        return self.standard_cd(mach) * self._form_factor
+        return self.standard_cd(mach) * self.form_factor
 
     cpdef list calculated_drag_function(self):
         cdef standard_cd_table
@@ -106,14 +105,11 @@ cdef class DragModel:
 
         return calculated_cd_table
 
-    cpdef form_factor(self):
-        return self._form_factor
-
 cpdef list make_data_points(drag_table: list):
     return [DragDataPoint(point['CD'], point['Mach']) for point in drag_table]
 
 cdef list calculate_curve(list data_points):
-
+    print(data_points[1].coeff)
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
     cdef curve = []
     cdef curve_point
@@ -146,7 +142,7 @@ cdef list calculate_curve(list data_points):
     return curve
 
 
-cpdef double calculate_by_curve(data: list, curve: list, mach: double):
+cdef double calculate_by_curve(data: list, curve: list, mach: float):
     cdef int num_points, mlo, mhi, mid
     cdef CurvePoint curve_m
 
