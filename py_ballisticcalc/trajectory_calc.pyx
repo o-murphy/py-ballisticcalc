@@ -18,16 +18,13 @@ cdef class Vector:
     cdef public double y
     cdef public double z
 
-    def __init__(self, x: double, y: double, z: double):
+    def __cinit__(self, x: double, y: double, z: double):
         self.x = x
         self.y = y
         self.z = z
 
     def __str__(self):
         return f'Vector(x={self.x}, y={self.y}, z={self.z})'
-
-    # cdef Vector copy(self):
-    #     return Vector(self.x, self.y, self.z)
 
     cpdef double magnitude(self):
         cdef double m = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
@@ -115,6 +112,7 @@ cdef class TrajectoryCalc:
         cdef double barrel_azimuth, barrel_elevation
         cdef double velocity, time, zero_distance, maximum_range
         cdef double delta_time, drag, zero_finding_error
+        cdef double sight_height
 
         cdef int iterations_count
 
@@ -122,6 +120,10 @@ cdef class TrajectoryCalc:
 
         calculation_step = self.get_calculation_step(
             Distance(10, weapon.zero_distance.units) >> Distance.Foot)
+        zero_distance = weapon.zero_distance >> Distance.Foot
+        maximum_range = zero_distance + calculation_step
+
+        sight_height = weapon.sight_height >> Distance.Foot
 
         mach = atmo.mach >> Velocity.FPS
         density_factor = atmo.density_factor()
@@ -141,17 +143,12 @@ cdef class TrajectoryCalc:
             # y - drop and
             # z - windage
 
-            range_vector = Vector(
-                0.0, -(weapon.sight_height >> Distance.Foot), 0.0
-            )
+            range_vector = Vector(0.0, -(sight_height), 0.0)
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
                 sin(barrel_elevation),
                 cos(barrel_elevation) * sin(barrel_azimuth)
             ) * velocity
-
-            zero_distance = weapon.zero_distance >> Distance.Foot
-            maximum_range = zero_distance + calculation_step
 
             while range_vector.x <= maximum_range:
                 if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
