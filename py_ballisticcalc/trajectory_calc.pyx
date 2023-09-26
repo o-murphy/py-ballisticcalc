@@ -14,9 +14,9 @@ cdef double cGravityConstant = -32.17405
 
 
 cdef class Vector:
-    cdef public double x
-    cdef public double y
-    cdef public double z
+    cdef double x
+    cdef double y
+    cdef double z
 
     def __cinit__(self, x: double, y: double, z: double):
         self.x = x
@@ -116,7 +116,7 @@ cdef class TrajectoryCalc:
 
         cdef int iterations_count
 
-        cdef gravity_vector, range_vector, velocity_vector, delta_range_vector
+        cdef Vector gravity_vector, range_vector, velocity_vector, delta_range_vector
 
         calculation_step = self.get_calculation_step(
             Distance(10, weapon.zero_distance.units) >> Distance.Foot)
@@ -182,8 +182,8 @@ cdef class TrajectoryCalc:
         cdef double maximum_range, next_range_distance, twist_coefficient
         cdef int current_item, ranges_length, current_wind, len_winds
         cdef calculate_drift, ranges, wind_vector
-        cdef windage_adjustment, velocity_adjusted, delta_range_vector
-        cdef gravity_vector, drop_adjustment, range_vector, velocity_vector
+        cdef windage_adjustment, velocity_adjusted, delta_range_vector, drop_adjustment
+        cdef Vector gravity_vector,  range_vector, velocity_vector
 
         range_to = (shot_info.max_range >> Distance.Foot) + 1  # + 1 needs to include last point to output
         step = shot_info.step >> Distance.Foot

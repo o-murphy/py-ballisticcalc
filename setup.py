@@ -79,7 +79,7 @@ for path in extensions_paths:
 
 if USE_CYTHON:
     compiler_directives = {"language_level": 3, "embedsignature": True}
-    extensions = cythonize(extensions, compiler_directives=compiler_directives)
+    extensions = cythonize(extensions, compiler_directives=compiler_directives, annotate=True)
 else:
     extensions = no_cythonize(extensions)
 
