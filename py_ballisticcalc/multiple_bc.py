@@ -1,8 +1,10 @@
 from math import pow
-from .drag_model import make_data_points
 from .unit import *
 from .conditions import Atmo
-from .drag_model import DragDataPoint
+from .drag_model import make_data_points, DragDataPoint
+
+
+__all__ = ('MultiBC', )
 
 
 class MultiBC:
@@ -22,13 +24,8 @@ class MultiBC:
         density, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
         self.speed_of_sound = Velocity.FPS(mach) >> Velocity.MPS
 
-        self.table_data = make_data_points(self.table)
-        self.bc_table = self._create_bc_table_data_points()
-        self.custom_drag_table = []
-
-    def custom_drag_func(self):
-        self._calculate_custom_drag_func()
-        return self.custom_drag_table
+        self._table_data = make_data_points(self.table)
+        self._bc_table = self._create_bc_table_data_points()
 
     def _get_sectional_density(self):
         w = self.weight >> Weight.Grain
@@ -38,44 +35,34 @@ class MultiBC:
     def _get_form_factor(self, bc):
         return self.sectional_density / bc
 
+    def _get_counted_cd(self, form_factor, standard_cd):
+        return standard_cd * form_factor
+
+    def _create_bc_table_data_points(self):
+        for bc, v in sorted(self.multiple_bc_table, reverse=True, key=lambda x: x[1]):
+            yield DragDataPoint(bc, self.velocity_units(v) >> Velocity.MPS)
+
     def _interpolate_bc_table(self):
         """
         Extends input bc table by creating bc value for each point of standard Drag Model
         """
-        bc_mah = [DragDataPoint(point.coeff, point.velocity / self.speed_of_sound) for point in self.bc_table]
-        bc_mah.insert(len(bc_mah), DragDataPoint(bc_mah[-1].coeff, self.table_data[0].velocity))
-        bc_mah.insert(0, DragDataPoint(bc_mah[0].coeff, self.table_data[-1].velocity))
-        bc_extended = [bc_mah[0].coeff, ]
+        bc_mah = [DragDataPoint(point.coeff, point.velocity / self.speed_of_sound) for point in self._bc_table]
+        bc_mah.append(DragDataPoint(bc_mah[-1].coeff, self._table_data[0].velocity))
+        bc_mah.insert(0, DragDataPoint(bc_mah[0].coeff, self._table_data[-1].velocity))
 
-        for i in range(1, len(bc_mah)):
-            bc_max = bc_mah[i - 1]
-            bc_min = bc_mah[i]
-            df_part = list(filter(lambda point: bc_max.velocity > point.velocity >= bc_min.velocity, self.table_data))
+        yield bc_mah[0].coeff
+
+        for bc_max, bc_min in zip(bc_mah, bc_mah[1:]):
+            df_part = [point for point in self._table_data if bc_max.velocity > point.velocity >= bc_min.velocity]
             ddf = len(df_part)
             bc_delta = (bc_max.coeff - bc_min.coeff) / ddf
             for j in range(ddf):
-                bc_extended.append(bc_max.coeff - bc_delta * j)
+                yield bc_max.coeff - bc_delta * j
 
-        return bc_extended
+    def cdm_generator(self):
+        bc_extended = reversed(list(self._interpolate_bc_table()))
+        form_factors = [self._get_form_factor(bc) for bc in bc_extended]
 
-    def _get_counted_cd(self, form_factor, cdst):
-        return cdst * form_factor
-
-    def _create_bc_table_data_points(self):
-        self.multiple_bc_table.sort(reverse=True, key=lambda x: x[1])
-        bc_table = []
-        for bc, v in self.multiple_bc_table:
-            data_point = DragDataPoint(bc, self.velocity_units(v) >> Velocity.MPS)
-            bc_table.append(data_point)
-        return bc_table
-
-    def _calculate_custom_drag_func(self):
-
-        bc_extended = self._interpolate_bc_table()
-        drag_function = []
-        for i, point in enumerate(self.table_data):
-            bc = bc_extended[len(bc_extended) - 1 - i]
-            form_factor = self._get_form_factor(bc)
-            cd = form_factor * point.coeff
-            drag_function.append({'Mach': point.velocity, 'CD': cd})
-        self.custom_drag_table = drag_function
+        for i, point in enumerate(self._table_data):
+            cd = form_factors[i] * point.coeff
+            yield {'Mach': point.velocity, 'CD': cd}

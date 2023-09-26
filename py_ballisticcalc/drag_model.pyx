@@ -6,49 +6,62 @@ from .drag_tables import DragTablesSet
 from typing import NamedTuple
 
 
-__all__ = ('DragDataPoint', 'DragModel', 'calculate_by_curve')
+# __all__ = ('DragDataPoint', 'DragModel', 'calculate_by_curve', 'make_data_points')
+# __all__ = ('DragModel', 'calculate_by_curve', 'make_data_points')
+# __all__ = ('DragModel', 'calculate_by_curve')
 
 
 class DragDataPoint(NamedTuple):
     coeff: float  # BC or CD
     velocity: float  # muzzle velocity or Mach
 
+# cdef public struct DragDataPoint:
+#     double coeff
+#     double velocity
+
+# cdef class DragDataPoint:
+#     cdef public double coeff  # BC or CD
+#     cdef public double velocity  # muzzle velocity or Mach
+
+
+cdef struct CurvePoint:
+    double a, b, c
+
 
 cdef class DragModel:
-    cdef double _value
-    cdef list _table
-    cdef list _table_data
-    cdef list _curve_data
-    cdef _weight, _diameter
-    cdef double _sectional_density, _form_factor
+    cdef list _table_data, _curve_data
+    cdef public list table
+    cdef public object weight, diameter
+    cdef public double value, sectional_density
+    cdef double _form_factor
 
     def __init__(self, value: double,
                  drag_table: list,
                  weight: [float, Weight],
                  diameter: [float, Distance]):
 
-        self._table = drag_table
+        self.table = drag_table
 
-        self._weight = weight if is_unit(weight) else Set.Units.weight(weight)
-        self._diameter = Set.Units.diameter(diameter)
-        self._sectional_density = self._get_sectional_density()
+        self.weight = weight if is_unit(weight) else Set.Units.weight(weight)
+        self.diameter = Set.Units.diameter(diameter)
+        self.sectional_density = self._get_sectional_density()
 
         if drag_table in DragTablesSet:
-            self._value = value
-            self._form_factor = self._get_form_factor()
-            self._table_data = make_data_points(self._table)
+            self.value = value
+            self._form_factor = self._get_form_factor(self.value)
+            self._table_data = make_data_points(self.table)
             self._curve_data = calculate_curve(self._table_data)
-        elif len(self._table) == 0:
+        elif len(self.table) == 0:
             raise ValueError('Custom drag table must be longer than 0')
-        elif len(self._table) > 0:
-            # TODO: strange but both calculations working same, but need to find way use form-factor instead of bc in drag()
-
+        elif len(self.table) > 0:
+            # TODO: strange, both calculations get same results,
+            #       but need to find way use form-factor instead of bc in drag()
             # self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
-            # self._value = self._get_custom_bc()
-            self._value = 1  # or 0.999
-            self._form_factor = self._get_form_factor()
+            # self.value = self._get_custom_bc()
+            self.value = 1  # or 0.999
+            self._form_factor = self._get_form_factor(self.value)
 
-            self._table_data = make_data_points(self._table)
+            self._table_data = make_data_points(self.table)
             self._curve_data = calculate_curve(self._table_data)
         elif value <= 0:
             raise ValueError('Drag coefficient must be greater than zero')
@@ -58,30 +71,18 @@ cdef class DragModel:
     cpdef double drag(self, double mach):
         cdef double cd
         cd = calculate_by_curve(self._table_data, self._curve_data, mach)
-        return cd * 2.08551e-04 / self._value
-
-    cpdef double value(self):
-        return self._value
-
-    cpdef list table(self):
-        return self._table
-
-    cpdef weight(self):
-        return self._weight
-
-    cpdef diameter(self):
-        return self._diameter
+        return cd * 2.08551e-04 / self.value
 
     cdef double _get_custom_bc(self):
-        return self._sectional_density / self._form_factor
+        return self.sectional_density / self._form_factor
 
-    cdef double _get_form_factor(self):
-        return self._sectional_density / self._value
+    def _get_form_factor(self, bc):
+        return self.sectional_density / bc
 
     cdef double _get_sectional_density(self):
         cdef double w, d
-        w = self._weight >> Weight.Grain
-        d = self._diameter >> Distance.Inch
+        w = self.weight >> Weight.Grain
+        d = self.diameter >> Distance.Inch
         return w / pow(d, 2) / 7000
 
     cpdef double standard_cd(self, double mach):
@@ -108,32 +109,11 @@ cdef class DragModel:
     cpdef form_factor(self):
         return self._form_factor
 
-cdef class CurvePoint:
-    cdef double _a, _b, _c
-
-    def __init__(self, a: double, b: double, c: double):
-        self._a = a
-        self._b = b
-        self._c = c
-
-    cpdef double a(self):
-        return self._a
-
-    cpdef double b(self):
-        return self._b
-
-    cpdef double c(self):
-        return self._c
-
 cpdef list make_data_points(drag_table: list):
-    table: list = []
-    cdef data_point
-    for point in drag_table:
-        data_point = DragDataPoint(point['CD'], point['Mach'])
-        table.append(data_point)
-    return table
+    return [DragDataPoint(point['CD'], point['Mach']) for point in drag_table]
 
-cpdef list calculate_curve(list data_points):
+cdef list calculate_curve(list data_points):
+
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
     cdef curve = []
     cdef curve_point
@@ -168,6 +148,7 @@ cpdef list calculate_curve(list data_points):
 
 cpdef double calculate_by_curve(data: list, curve: list, mach: double):
     cdef int num_points, mlo, mhi, mid
+    cdef CurvePoint curve_m
 
     num_points = int(len(curve))
     mlo = 0
@@ -184,4 +165,34 @@ cpdef double calculate_by_curve(data: list, curve: list, mach: double):
         m = mlo
     else:
         m = mhi
-    return curve[m].c() + mach * (curve[m].b() + curve[m].a() * mach)
+    curve_m = curve[m]
+    return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
+
+# def calculate_by_curve(data, curve, mach):
+#     num_points = len(curve)
+#     mlo = 0
+#     mhi = num_points - 2
+#
+#     while mhi - mlo > 1:
+#         mid = (mhi + mlo) // 2
+#         mid_velocity = data[mid].velocity
+#
+#         if mid_velocity < mach:
+#             mlo = mid
+#         else:
+#             mhi = mid
+#
+#     mlo_velocity = data[mlo].velocity
+#     mhi_velocity = data[mhi].velocity
+#
+#     if mhi_velocity - mach > mach - mlo_velocity:
+#         m = mlo
+#     else:
+#         m = mhi
+#
+#     curve_m = curve[m]
+#     a = curve_m.a
+#     b = curve_m.b
+#     c = curve_m.c
+#
+#     return c + mach * (b + a * mach)

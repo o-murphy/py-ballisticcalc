@@ -36,8 +36,8 @@ class Projectile:
     def __init__(self, dm: DragModel,
                  length: [float, Distance] = None):
         self.dm: DragModel = dm
-        self.weight = self.dm.weight()
-        self.diameter = self.dm.diameter()
+        self.weight = self.dm.weight
+        self.diameter = self.dm.diameter
         self.length: Distance = length if is_unit(length) else Set.Units.length(length) if length else None
 
 

@@ -12,64 +12,47 @@ cdef double cMaximumDrop = -15000
 cdef int cMaxIterations = 10
 cdef double cGravityConstant = -32.17405
 
-cdef struct vector:
-    double x
-    double y
-    double z
 
 cdef class Vector:
-    cdef double _x
-    cdef double _y
-    cdef double _z
+    cdef public double x
+    cdef public double y
+    cdef public double z
 
     def __init__(self, x: double, y: double, z: double):
-        self._x = x
-        self._y = y
-        self._z = z
+        self.x = x
+        self.y = y
+        self.z = z
 
     def __str__(self):
-        return f'{vector(self._x, self._y, self._z)}'
+        return f'Vector(x={self.x}, y={self.y}, z={self.z})'
 
-    cpdef double x(self):
-        return self._x
-
-    cpdef double y(self):
-        return self._y
-
-    cpdef double z(self):
-        return self._z
-
-    cdef string(self):
-        cdef v = vector(self._x, self._y, self._z)
-        return f'{v}'
-
-    cpdef Vector copy(self):
-        return Vector(self._x, self._y, self._z)
+    # cdef Vector copy(self):
+    #     return Vector(self.x, self.y, self.z)
 
     cpdef double magnitude(self):
-        cdef double m = sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
+        cdef double m = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
         return m
 
-    cpdef Vector multiply_by_const(self, double a):
-        return Vector(self._x * a, self._y * a, self._z * a)
+    cdef Vector multiply_by_const(self, double a):
+        return Vector(self.x * a, self.y * a, self.z * a)
 
-    cpdef double multiply_by_vector(self, b: Vector):
-        cdef double var = self._x * b._x + self._y * b._y + self._z * b._z
+    cdef double multiply_by_vector(self, b: Vector):
+        cdef double var = self.x * b.x + self.y * b.y + self.z * b.z
         return var
 
-    cpdef Vector add(self, b: Vector):
-        return Vector(self._x + b._x, self._y + b._y, self._z + b._z)
+    cdef Vector add(self, b: Vector):
+        return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
 
-    cpdef Vector subtract(self, b: Vector):
-        return Vector(self._x - b._x, self._y - b._y, self._z - b._z)
+    cdef Vector subtract(self, b: Vector):
+        return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
 
-    cpdef Vector negate(self):
-        return Vector(-self._x, -self._y, -self._z)
+    cdef Vector negate(self):
+        return Vector(-self.x, -self.y, -self.z)
 
-    cpdef Vector normalize(self):
+    cdef Vector normalize(self):
         cdef double m = self.magnitude()
         if fabs(m) < 1e-10:
-            return Vector(self._x, self._y, self._z)
+            return Vector(self.x, self.y, self.z)
         return self.multiply_by_const(1.0 / m)
 
     def __add__(self, other: Vector):
@@ -108,9 +91,10 @@ cdef class Vector:
         return self.negate()
 
     def __iter__(self):
-        yield self.x()
-        yield self.y()
-        yield self.z()
+        yield self.x
+        yield self.y
+        yield self.z
+
 
 cdef class TrajectoryCalc:
 
@@ -169,25 +153,25 @@ cdef class TrajectoryCalc:
             zero_distance = weapon.zero_distance >> Distance.Foot
             maximum_range = zero_distance + calculation_step
 
-            while range_vector.x() <= maximum_range:
-                if velocity < cMinimumVelocity or range_vector.y() < cMaximumDrop:
+            while range_vector.x <= maximum_range:
+                if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                     break
 
-                delta_time = calculation_step / velocity_vector.x()
+                delta_time = calculation_step / velocity_vector.x
                 velocity = velocity_vector.magnitude()
                 drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
 
                 velocity_vector = velocity_vector - (velocity_vector * drag - gravity_vector) * delta_time
 
                 delta_range_vector = Vector(calculation_step,
-                                            velocity_vector.y() * delta_time,
-                                            velocity_vector.z() * delta_time)
+                                            velocity_vector.y * delta_time,
+                                            velocity_vector.z * delta_time)
                 range_vector = range_vector + delta_range_vector
                 velocity = velocity_vector.magnitude()
                 time = time + delta_range_vector.magnitude() / velocity
-                if fabs(range_vector.x() - zero_distance) < 0.5 * calculation_step:
-                    zero_finding_error = fabs(range_vector.y())
-                    barrel_elevation = barrel_elevation - range_vector.y() / range_vector.x()
+                if fabs(range_vector.x - zero_distance) < 0.5 * calculation_step:
+                    zero_finding_error = fabs(range_vector.y)
+                    barrel_elevation = barrel_elevation - range_vector.y / range_vector.x
                     break
 
                 iterations_count += 1
@@ -268,14 +252,14 @@ cdef class TrajectoryCalc:
             calculate_drift = True
             twist_coefficient = -1 if weapon.twist > 0 else 1
 
-        while range_vector.x() <= maximum_range + calculation_step:
+        while range_vector.x <= maximum_range + calculation_step:
 
-            if velocity < cMinimumVelocity or range_vector.y() < cMaximumDrop:
+            if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
 
-            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(alt0 + range_vector.y())
+            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(alt0 + range_vector.y)
 
-            if range_vector.x() >= next_wind_range:
+            if range_vector.x >= next_wind_range:
                 current_wind += 1
                 wind_vector = wind_to_vector(shot_info, winds[current_wind])
 
@@ -284,18 +268,18 @@ cdef class TrajectoryCalc:
                 else:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
-            if range_vector.x() >= next_range_distance:
-                windage = range_vector.z()
+            if range_vector.x >= next_range_distance:
+                windage = range_vector.z
                 if calculate_drift:
                     windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
 
-                drop_adjustment = get_correction(range_vector.x(), range_vector.y())
-                windage_adjustment = get_correction(range_vector.x(), windage)
+                drop_adjustment = get_correction(range_vector.x, range_vector.y)
+                windage_adjustment = get_correction(range_vector.x, windage)
 
                 ranges.append(TrajectoryData(
                     time=time,
-                    distance=Distance.Foot(range_vector.x()),
-                    drop=Distance.Foot(range_vector.y()),
+                    distance=Distance.Foot(range_vector.x),
+                    drop=Distance.Foot(range_vector.y),
                     drop_adj=Angular.Radian(drop_adjustment if drop_adjustment else 0),
                     windage=Distance.Foot(windage),
                     windage_adj=Angular.Radian(windage_adjustment if windage_adjustment else 0),
@@ -310,7 +294,7 @@ cdef class TrajectoryCalc:
                 if current_item == ranges_length:
                     break
 
-            delta_time = calculation_step / velocity_vector.x()
+            delta_time = calculation_step / velocity_vector.x
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()
 
@@ -318,8 +302,8 @@ cdef class TrajectoryCalc:
 
             velocity_vector = velocity_vector - (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calculation_step,
-                                        velocity_vector.y() * delta_time,
-                                        velocity_vector.z() * delta_time)
+                                        velocity_vector.y * delta_time,
+                                        velocity_vector.z * delta_time)
             range_vector = range_vector + delta_range_vector
             velocity = velocity_vector.magnitude()
             time = time + delta_range_vector.magnitude() / velocity

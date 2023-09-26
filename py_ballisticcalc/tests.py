@@ -88,7 +88,11 @@ class TestG7Profile(unittest.TestCase):
             velocity_units_flag=Velocity.MPS
         )
 
-        ret = bc.custom_drag_func()
+        ret = bc.cdm_generator()
+        self.assertIsNot(ret, None)
+        ret = list(ret)
+        self.assertEqual(ret[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
+        self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.1577125859466895})
 
     def test_create(self):
         bc = DragModel(
