@@ -18,7 +18,7 @@ cdef class Vector:
     cdef double y
     cdef double z
 
-    def __cinit__(self, x: double, y: double, z: double):
+    def __cinit__(self, double x, double y, double z):
         self.x = x
         self.y = y
         self.z = z
@@ -33,14 +33,14 @@ cdef class Vector:
     cdef Vector multiply_by_const(self, double a):
         return Vector(self.x * a, self.y * a, self.z * a)
 
-    cdef double multiply_by_vector(self, b: Vector):
+    cdef double multiply_by_vector(self, Vector b):
         cdef double var = self.x * b.x + self.y * b.y + self.z * b.z
         return var
 
-    cdef Vector add(self, b: Vector):
+    cdef Vector add(self, Vector b):
         return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
 
-    cdef Vector subtract(self, b: Vector):
+    cdef Vector subtract(self, Vector b):
         return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
 
     cdef Vector negate(self):
@@ -107,7 +107,7 @@ cdef class TrajectoryCalc:
 
         return step
 
-    cpdef sight_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
+    cpdef sight_angle(self, object ammo, object weapon, object atmo):
         cdef double calculation_step, mach, density_factor, muzzle_velocity
         cdef double barrel_azimuth, barrel_elevation
         cdef double velocity, time, zero_distance, maximum_range
@@ -173,8 +173,8 @@ cdef class TrajectoryCalc:
                 iterations_count += 1
         return Angular.Radian(barrel_elevation)
 
-    cpdef trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
-                     shot_info: Shot, winds: list[Wind]):
+    cpdef trajectory(self, object ammo, object weapon, object atmo,
+                     object shot_info, list[object] winds):
         cdef double range_to, step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
         cdef double next_wind_range, time, muzzle_velocity, velocity, windage, delta_time, drag
@@ -278,9 +278,9 @@ cdef class TrajectoryCalc:
                     time=time,
                     distance=Distance.Foot(range_vector.x),
                     drop=Distance.Foot(range_vector.y),
-                    drop_adj=Angular.Radian(drop_adjustment if drop_adjustment else 0),
+                    drop_adj=Angular.Radian(drop_adjustment),
                     windage=Distance.Foot(windage),
-                    windage_adj=Angular.Radian(windage_adjustment if windage_adjustment else 0),
+                    windage_adj=Angular.Radian(windage_adjustment),
                     velocity=Velocity.FPS(velocity),
                     mach=velocity / mach,
                     energy=Energy.FootPound(calculate_energy(bullet_weight, velocity)),
@@ -322,7 +322,7 @@ cdef double calculate_stability_coefficient(ammo, rifle, atmo):
 
     return sd * fv * ftp
 
-cdef wind_to_vector(shot, wind):
+cdef Vector wind_to_vector(object shot, object wind):
     cdef double sight_cosine = cos(shot.sight_angle >> Angular.Radian)
     cdef double sight_sine = sin(shot.sight_angle >> Angular.Radian)
     cdef double cant_cosine = cos(shot.cant_angle >> Angular.Radian)
@@ -334,10 +334,10 @@ cdef wind_to_vector(shot, wind):
                   range_factor * cant_cosine + cross_component * cant_sine,
                   cross_component * cant_cosine - range_factor * cant_sine)
 
-cdef get_correction(double distance, double offset):
+cdef double get_correction(double distance, double offset):
     if distance != 0:
         return atan(offset / distance)
-    return None
+    return 0  # better None
 
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400
