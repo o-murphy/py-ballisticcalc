@@ -26,7 +26,7 @@ cdef class Vector:
     def __str__(self):
         return f'Vector(x={self.x}, y={self.y}, z={self.z})'
 
-    cpdef double magnitude(self):
+    cdef double magnitude(self):
         cdef double m = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
         return m
 
@@ -143,7 +143,7 @@ cdef class TrajectoryCalc:
             # y - drop and
             # z - windage
 
-            range_vector = Vector(0.0, -(sight_height), 0.0)
+            range_vector = Vector(0.0, -sight_height, 0.0)
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
                 sin(barrel_elevation),
@@ -179,11 +179,12 @@ cdef class TrajectoryCalc:
         cdef double range_to, step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
         cdef double next_wind_range, time, muzzle_velocity, velocity, windage, delta_time, drag
-        cdef double maximum_range, next_range_distance, twist_coefficient
+        cdef double maximum_range, next_range_distance, twist_coefficient, sight_height
         cdef int current_item, ranges_length, current_wind, len_winds
-        cdef calculate_drift, ranges, wind_vector
-        cdef windage_adjustment, velocity_adjusted, delta_range_vector, drop_adjustment
-        cdef Vector gravity_vector,  range_vector, velocity_vector
+        cdef calculate_drift, ranges
+        cdef windage_adjustment, drop_adjustment
+        cdef Vector gravity_vector,  range_vector, velocity_vector, velocity_adjusted, delta_range_vector
+        cdef Vector wind_vector
 
         range_to = (shot_info.max_range >> Distance.Foot) + 1  # + 1 needs to include last point to output
         step = shot_info.step >> Distance.Foot
@@ -230,7 +231,8 @@ cdef class TrajectoryCalc:
         # y - drop and
         # z - windage
 
-        range_vector = Vector(.0, -(weapon.sight_height >> Distance.Foot), 0)
+        sight_height = weapon.sight_height >> Distance.Foot
+        range_vector = Vector(.0, -sight_height, 0)
         velocity_vector = Vector(cos(barrel_elevation) * cos(barrel_azimuth), sin(barrel_elevation),
                                  cos(barrel_elevation) * sin(barrel_azimuth)) * velocity
         current_item = 0
