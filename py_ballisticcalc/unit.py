@@ -1,8 +1,7 @@
 from abc import ABC
-from enum import IntEnum
+from enum import Enum, IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple
-
+from typing import NamedTuple, Callable
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
@@ -29,7 +28,7 @@ class Unit(IntEnum):
     NauticalMile = 14
     Millimeter = 15
     Centimeter = 16
-    Meter = 17
+    Meter: Callable = 17
     Kilometer = 18
     Line = 19
 
@@ -71,6 +70,23 @@ class Unit(IntEnum):
     @property
     def symbol(self):
         return UnitPropsDict[self].symbol
+
+    def __call__(self: 'Unit', value: float):
+
+        if 0 <= self < 10:
+            return Angular(value, self)
+        elif 10 <= self < 20:
+            return Distance(value, self)
+        elif 30 <= self < 40:
+            return Energy(value, self)
+        elif 40 <= self < 50:
+            return Pressure(value, self)
+        elif 50 <= self < 60:
+            return Temperature(value, self)
+        elif 60 <= self < 70:
+            return Velocity(value, self)
+        elif 70 <= self < 80:
+            return Weight(value, self)
 
 
 class UnitProps(NamedTuple):
@@ -211,6 +227,8 @@ class AbstractUnit(ABC):
 
 
 class Distance(AbstractUnit):
+    def __init__(self, value: [float, int], units: Unit):
+        super(Distance, self).__init__(value, units)
 
     def to_raw(self, value: float, units: Unit):
         if units == Distance.Inch:
@@ -515,3 +533,10 @@ def is_unit(obj: [AbstractUnit, float, int]):
 # for k, v in u.__dict__.items():
 #     if k in Unit.__members__:
 #         print(f"Unit.{k}: UnitProps('{k.lower()}', {u.accuracy(v)}, '{u.name(v)}'),")
+
+# Unit.Centimeter.meta = 1
+#
+# m = MetaUnit(17, MeasureType.Distance)
+# print(m, m.measure_type)
+#
+# print(Unit.Meter.measure_type)

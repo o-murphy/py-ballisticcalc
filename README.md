@@ -2,10 +2,10 @@
 LGPL library for small arms ballistic calculations (Python 3.9+)
 
 ### Table of contents
-* [Instalation](#installation)
+* [Installation](#installation)
 * [Usage](#usage)
   * [Units of measure](#unit-manipulation-syntax)
-  * [Simple usage examle](#example-of-library-usage)
+  * [An example of calculations](#an-example-of-calculations)
   * [Output example](#example-of-the-formatted-output)
 * [About project](#about-project)
 
@@ -35,32 +35,50 @@ git clone https://github.com/o-murphy/py_ballisticcalc
 
 ### Usage
 
+The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
 #### Unit manipulation syntax:
 ```python
 from py_ballisticcalc.unit import *
 
-# define var
+# ways to define value in units
+# 1. old syntax
 unit_in_meter = Distance(100, Distance.Meter)
+# 2. short syntax by Unit type class
+unit_in_meter = Distance.Meter(100)
+# 3. by Unit enum class
+unit_in_meter = Unit.Meter(100)
+
 # >>> <Distance>: 100.0 m (3937.0078740157483)
 
 # convert unit
-unit_in_yards = unit_in_meter << Distance.Yard  # <<= operator also supports
+# 1. by method
+unit_in_yard = unit_in_meter.convert(Distance.Yard)
+# 2. using shift syntax
+unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
 # >>> <Distance>: 109.36132983377078 yd (3937.0078740157483)
 
 # get value in specified units
-value_in_km = unit_in_yards >> Distance.Kilometer  # >>= operator also supports
+# 1. by method
+value_in_km = unit_in_yards.get_in(Distance.Kilometer)
+# 2. by shift syntax
+value_in_km = unit_in_yards >> Distance.Kilometer  # '>>=' operator also supports
 # >>> 0.1
+
+# getting unit raw value:
+rvalue = Distance.Meter(10).raw_value
+rvalue = float(Distance.Meter(10))
+
+# units comparison:
+# supports operators like < > <= >= == !=
+Distance.Meter(100) == Distance.Centimeter(100)  # >>> False, compare two units by raw value
+Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
 ```
 
-#### Example of library usage
+#### An example of calculations
 
 ```python
-import pyximport
-
-pyximport.install(language_level=3)
-
 from py_ballisticcalc.interface import *
-from py_ballisticcalc.settings import Settings as Set
+from py_ballisticcalc.interface import Settings as Set
 
 # set global library settings
 Set.Units.velocity = Velocity.FPS
@@ -68,13 +86,15 @@ Set.Units.temperature = Temperature.Celsius
 Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
-Set.MIN_CALC_STEP_SIZE = Distance(1, Distance.Foot)
-Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
+# set maximum inner Calculator step size, larger is faster, but accuracy is going down 
+Set.MIN_CALC_STEP_SIZE = Distance.Foot(1)  # same as default
+# enable muzzle velocity correction by powder temperature
+Set.USE_POWDER_SENSITIVITY = True  # default False
 
 # define params with default units
 weight, diameter = 168, 0.308
 # or define with specified units
-length = Distance(1.282, Distance.Inch)
+length = Distance.Inch(1.282)  # length = Distance(1.282, Distance.Inch)
 
 weapon = Weapon(9, 100, 2)
 dm = DragModel(0.223, TableG7, weight, diameter)
@@ -110,8 +130,7 @@ for p in data:
 ['0.95 s', '600.000 m', '1571.4 ft/s', '1.41 mach', '-279.503 cm', '-4.74 mil', '-144.759 cm', '-2.46 mil', '1249 J']
 ```
 
-About project
------
+### About project
 
 The library provides trajectory calculation for projectiles including for various
 applications, including air rifles, bows, firearms, artillery and so on.
@@ -134,8 +153,8 @@ Go documentation can be obtained using godoc tool.
 
 The current status of the project is ALPHA version.
 
-RISK NOTICE
+#### RISK NOTICE
 
-The library performs very limited simulation of a complex physical process and so it performs a lot of approximations. Therefore the calculation results MUST NOT be considered as completely and reliably reflecting actual behavior or characteristics of projectiles. While these results may be used for educational purpose, they must NOT be considered as reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human life at risk.
+The library performs very limited simulation of a complex physical process and so it performs a lot of approximations. Therefore, the calculation results MUST NOT be considered as completely and reliably reflecting actual behavior or characteristics of projectiles. While these results may be used for educational purpose, they must NOT be considered as reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human life at risk.
 
 THE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.

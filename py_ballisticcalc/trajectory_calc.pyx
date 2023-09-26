@@ -50,7 +50,7 @@ cdef class Vector:
         cdef double m = sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
         return m
 
-    cpdef Vector multiply_by_const(self, float a):
+    cpdef Vector multiply_by_const(self, double a):
         return Vector(self._x * a, self._y * a, self._z * a)
 
     cpdef double multiply_by_vector(self, b: Vector):
@@ -113,24 +113,11 @@ cdef class Vector:
         yield self.z()
 
 cdef class TrajectoryCalc:
-    # cdef _max_calc_step_size
-
-    def __init__(self):
-        ...
-    # def __init__(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
-        # self.set_max_calc_step_size(max_calc_step_size)
-
-    # cpdef max_calc_step_size(self):
-    #     return self._max_calc_step_size
-
-    # cpdef set_max_calc_step_size(self, max_calc_step_size: [float, Distance] = Distance(1, Distance.Foot)):
-    #     self._max_calc_step_size = max_calc_step_size
 
     cdef double get_calculation_step(self, double step):
         cdef step_order, maximum_order
         step = step / 2
         cdef double maximum_step = Settings.MIN_CALC_STEP_SIZE >> Distance.Foot
-        # cdef double maximum_step = self._max_calc_step_size >> Distance.Foot
 
         if step > maximum_step:
             step_order = int(floor(log10(step)))
@@ -204,7 +191,7 @@ cdef class TrajectoryCalc:
                     break
 
                 iterations_count += 1
-        return Angular(barrel_elevation, Angular.Radian)
+        return Angular.Radian(barrel_elevation)
 
     cpdef trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
                      shot_info: Shot, winds: list[Wind]):
@@ -307,16 +294,16 @@ cdef class TrajectoryCalc:
 
                 ranges.append(TrajectoryData(
                     time=time,
-                    distance=Distance(range_vector.x(), Distance.Foot),
-                    drop=Distance(range_vector.y(), Distance.Foot),
-                    drop_adj=Angular(drop_adjustment if drop_adjustment else 0, Angular.Radian),
-                    windage=Distance(windage, Distance.Foot),
-                    windage_adj=Angular(windage_adjustment if windage_adjustment else 0, Angular.Radian),
-                    velocity=Velocity(velocity, Velocity.FPS),
+                    distance=Distance.Foot(range_vector.x()),
+                    drop=Distance.Foot(range_vector.y()),
+                    drop_adj=Angular.Radian(drop_adjustment if drop_adjustment else 0),
+                    windage=Distance.Foot(windage),
+                    windage_adj=Angular.Radian(windage_adjustment if windage_adjustment else 0),
+                    velocity=Velocity.FPS(velocity),
                     mach=velocity / mach,
-                    energy=Energy(calculate_energy(bullet_weight, velocity), Energy.FootPound),
-                    ogw=Weight(calculate_ogv(bullet_weight, velocity), Weight.Pound))
-                )
+                    energy=Energy.FootPound(calculate_energy(bullet_weight, velocity)),
+                    ogw=Weight.Pound(calculate_ogv(bullet_weight, velocity))
+                ))
 
                 next_range_distance += step
                 current_item += 1

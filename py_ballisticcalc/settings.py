@@ -25,5 +25,5 @@ class Settings:
         adjustment: Unit = Unit.Mil
         energy: Unit = Unit.Joule
 
-    MIN_CALC_STEP_SIZE: Distance = Distance(1, Distance.Foot)
+    MIN_CALC_STEP_SIZE: Distance = Distance.Foot(1)
     USE_POWDER_SENSITIVITY: bool = False

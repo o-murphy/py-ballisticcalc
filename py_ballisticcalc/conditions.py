@@ -38,11 +38,9 @@ class Atmo:
             self.create_default()
             # TODO: maby have to raise ValueError instead of create_default
         else:
-            self.altitude: Distance = altitude if is_unit(altitude) else Distance(altitude, Set.Units.distance)
-            self.pressure: Pressure = pressure if is_unit(pressure) else Pressure(pressure, Set.Units.pressure)
-            self.temperature: Temperature = temperature if is_unit(temperature) else Temperature(
-                temperature, Set.Units.temperature
-            )
+            self.altitude: Distance = altitude if is_unit(altitude) else Set.Units.distance(altitude)
+            self.pressure: Pressure = pressure if is_unit(pressure) else Set.Units.pressure(pressure)
+            self.temperature: Temperature = temperature if is_unit(temperature) else Set.Units.temperature(temperature)
             self.humidity: float = humidity
 
         self.density, self.mach, self._mach1, = None, None, None
@@ -52,16 +50,17 @@ class Atmo:
     @staticmethod
     def ICAO(altitude: [float, Distance] = 0):
         altitude = altitude if is_unit(altitude) else Distance(altitude, Set.Units.distance)
-        temperature = Temperature(
+        temperature = Temperature.Fahrenheit(
             cIcaoStandardTemperatureR + (altitude >> Distance.Foot)
-            * cTemperatureGradient - cIcaoFreezingPointTemperatureR, Temperature.Fahrenheit)
+            * cTemperatureGradient - cIcaoFreezingPointTemperatureR
+        )
 
-        pressure = Pressure(
-            cStandardPressure *
-            pow(cIcaoStandardTemperatureR / (
+        pressure = Pressure.InHg(
+            cStandardPressure * pow(cIcaoStandardTemperatureR / (
                     (temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
-                cPressureExponent),
-            Pressure.InHg)
+                                    cPressureExponent
+                                    )
+        )
 
         return Atmo(
             altitude >> Set.Units.distance,
@@ -71,9 +70,9 @@ class Atmo:
         )
 
     def create_default(self):
-        self.altitude = Distance(0.0, Distance.Foot)
-        self.pressure = Pressure(cStandardPressure, Pressure.InHg)
-        self.temperature = Temperature(cStandardTemperature, Temperature.Fahrenheit)
+        self.altitude = Distance.Foot(0)
+        self.pressure = Pressure.InHg(cStandardPressure)
+        self.temperature = Temperature.Fahrenheit(cStandardTemperature)
         self.humidity = 0.78
 
     def density_factor(self):
@@ -132,13 +131,13 @@ class Wind:
 
     __slots__ = ('velocity', 'direction', 'until_distance')
 
-    def __init__(self, velocity: [float, Velocity] = Velocity(0, Velocity.FPS),
-                 direction: [float, Angular] = Angular(0, Angular.Degree),
-                 until_distance: [float, Distance] = Distance(9999, Distance.Kilometer)):
-        self.velocity: Velocity = velocity if is_unit(velocity) else Velocity(velocity, Set.Units.velocity)
-        self.direction: Angular = direction if is_unit(direction) else Angular(direction, Set.Units.angular)
-        self.until_distance: Distance = until_distance if is_unit(until_distance) else Distance(
-            until_distance, Set.Units.distance)
+    def __init__(self, velocity: [float, Velocity] = Velocity.FPS(0),
+                 direction: [float, Angular] = Angular.Degree(0),
+                 until_distance: [float, Distance] = Distance.Kilometer(9999)):
+        self.velocity: Velocity = velocity if is_unit(velocity) else Set.Units.velocity(velocity)
+        self.direction: Angular = direction if is_unit(direction) else Set.Units.angular(direction)
+        self.until_distance: Distance = until_distance \
+            if is_unit(until_distance) else Set.Units.distance(until_distance)
 
 
 class Shot:
@@ -151,8 +150,8 @@ class Shot:
                  cant_angle: [float, Angular] = 0,
                  sight_angle: [float, Angular] = 0
                  ):
-        self.sight_angle: Angular = sight_angle if is_unit(sight_angle) else Angular(sight_angle, Set.Units.angular)
-        self.max_range: Distance = max_range if is_unit(max_range) else Distance(max_range, Set.Units.distance)
-        self.step: Distance = step if is_unit(step) else Distance(step, Set.Units.distance)
-        self.shot_angle: Angular = shot_angle if is_unit(shot_angle) else Angular(shot_angle, Set.Units.angular)
-        self.cant_angle: Angular = cant_angle if is_unit(cant_angle) else Angular(cant_angle, Set.Units.angular)
+        self.sight_angle: Angular = sight_angle if is_unit(sight_angle) else Set.Units.angular(sight_angle)
+        self.max_range: Distance = max_range if is_unit(max_range) else Set.Units.distance(max_range)
+        self.step: Distance = step if is_unit(step) else Set.Units.distance(step)
+        self.shot_angle: Angular = shot_angle if is_unit(shot_angle) else Set.Units.angular(shot_angle)
+        self.cant_angle: Angular = cant_angle if is_unit(cant_angle) else Set.Units.angular(cant_angle)

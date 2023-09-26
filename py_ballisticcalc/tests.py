@@ -210,9 +210,9 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammo(projectile, 2750)
         weapon = Weapon(2, 100, 11.24)
         atmosphere = Atmo.ICAO()
-        shot_info = Shot(Distance(1000, Distance.Yard),
-                         Distance(100, Distance.Yard),
-                         sight_angle=Angular(4.221, Angular.MOA)
+        shot_info = Shot(Distance.Yard(1000),
+                         Distance.Yard(100),
+                         sight_angle=Angular.MOA(4.221)
                          )
         wind = [Wind(Velocity(5, Velocity.MPH), -45)]
 
@@ -365,17 +365,17 @@ class TestWeight(unittest.TestCase):
 class TestUnitConversionSyntax(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.low = Distance(10, Distance.Yard)
-        self.high = Distance(100, Distance.Yard)
+        self.low = Distance.Yard(10)
+        self.high = Distance.Yard(100)
 
     def test__eq__(self):
         self.assertEqual(self.low, 360)
         self.assertEqual(360, self.low)
         self.assertEqual(self.low, self.low)
-        self.assertEqual(self.low, Distance(30, Distance.Foot))
+        self.assertEqual(self.low, Distance.Foot(30))
 
     def test__ne__(self):
-        self.assertNotEqual(Distance(100, Distance.Yard), Distance(90, Distance.Yard))
+        self.assertNotEqual(Distance.Yard(100), Distance.Yard(90))
 
     def test__lt__(self):
         self.assertLess(self.low, self.high)

@@ -29,8 +29,8 @@ cdef class DragModel:
 
         self._table = drag_table
 
-        self._weight = weight if is_unit(weight) else Weight(weight, Set.Units.weight)
-        self._diameter = Distance(diameter, Set.Units.diameter)
+        self._weight = weight if is_unit(weight) else Set.Units.weight(weight)
+        self._diameter = Set.Units.diameter(diameter)
         self._sectional_density = self._get_sectional_density()
 
         if drag_table in DragTablesSet:
@@ -80,8 +80,8 @@ cdef class DragModel:
 
     cdef double _get_sectional_density(self):
         cdef double w, d
-        w = self._weight.get_in(Weight.Grain)
-        d = self._diameter.get_in(Distance.Inch)
+        w = self._weight >> Weight.Grain
+        d = self._diameter >> Distance.Inch
         return w / pow(d, 2) / 7000
 
     cpdef double standard_cd(self, double mach):

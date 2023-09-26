@@ -18,9 +18,9 @@ class MultiBC:
 
         atmosphere = Atmo.ICAO()
 
-        altitude = Distance(0, Distance.Meter) >> Distance.Foot
+        altitude = Distance.Meter(0) >> Distance.Foot
         density, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
-        self.speed_of_sound = Velocity(mach, Velocity.FPS) >> Velocity.MPS
+        self.speed_of_sound = Velocity.FPS(mach) >> Velocity.MPS
 
         self.table_data = make_data_points(self.table)
         self.bc_table = self._create_bc_table_data_points()
@@ -65,7 +65,7 @@ class MultiBC:
         self.multiple_bc_table.sort(reverse=True, key=lambda x: x[1])
         bc_table = []
         for bc, v in self.multiple_bc_table:
-            data_point = DragDataPoint(bc, Velocity(v, self.velocity_units) >> Velocity.MPS)
+            data_point = DragDataPoint(bc, self.velocity_units(v) >> Velocity.MPS)
             bc_table.append(data_point)
         return bc_table
 

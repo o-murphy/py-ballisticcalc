@@ -6,7 +6,7 @@ import pyximport
 pyximport.install(language_level=3)
 
 from py_ballisticcalc.interface import *
-from py_ballisticcalc.settings import Settings as Set
+from py_ballisticcalc.interface import Settings as Set
 
 # set global library settings
 Set.Units.velocity = Velocity.FPS
@@ -14,13 +14,13 @@ Set.Units.temperature = Temperature.Celsius
 Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
-Set.MIN_CALC_STEP_SIZE = Distance(1, Distance.Foot)
+Set.MIN_CALC_STEP_SIZE = Distance.Foot(1)
 Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
 
 # define params with default units
 weight, diameter = 168, 0.308
 # or define with specified units
-length = Distance(1.282, Distance.Inch)
+length = Distance.Inch(1.282)  # length = Distance(1.282, Distance.Inch)
 
 weapon = Weapon(9, 100, 2)
 dm = DragModel(0.223, TableG7, weight, diameter)
@@ -29,7 +29,7 @@ bullet = Projectile(dm, length)
 ammo = Ammo(bullet, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
 
-zero_atmo = Atmo.ICAO()
+zero_atmo = Atmo.ICAO(100)
 
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)
@@ -37,7 +37,7 @@ calc.update_elevation()
 
 shot = Shot(1500, 100)
 
-current_atmo = Atmo(100, 1000, 15, 72)
+current_atmo = Atmo(110, 1000, 15, 72)
 winds = [Wind(2, 90)]
 
 data = calc.trajectory(shot, current_atmo, winds)
