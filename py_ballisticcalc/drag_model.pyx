@@ -109,7 +109,7 @@ cpdef list make_data_points(drag_table: list):
     return [DragDataPoint(point['CD'], point['Mach']) for point in drag_table]
 
 cdef list calculate_curve(list data_points):
-    print(data_points[1].coeff)
+
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
     cdef curve = []
     cdef curve_point
