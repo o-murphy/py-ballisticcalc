@@ -107,7 +107,14 @@ cdef class TrajectoryCalc:
 
         return step
 
-    cpdef sight_angle(self, object ammo, object weapon, object atmo):
+    def sight_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
+        return self._sight_angle(ammo, weapon, atmo)
+
+    def trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
+                   shot_info: Shot, winds: list[Wind]):
+        return self._trajectory(ammo, weapon, atmo, shot_info, winds)
+
+    cdef _sight_angle(self, object ammo, object weapon, object atmo):
         cdef double calculation_step, mach, density_factor, muzzle_velocity
         cdef double barrel_azimuth, barrel_elevation
         cdef double velocity, time, zero_distance, maximum_range
@@ -173,7 +180,7 @@ cdef class TrajectoryCalc:
                 iterations_count += 1
         return Angular.Radian(barrel_elevation)
 
-    cpdef trajectory(self, object ammo, object weapon, object atmo,
+    cdef _trajectory(self, object ammo, object weapon, object atmo,
                      object shot_info, list[object] winds):
         cdef double range_to, step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
