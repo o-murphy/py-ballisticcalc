@@ -70,8 +70,6 @@ def no_cythonize(extensions, **_ignore):
 
 extensions_paths = [
     'py_ballisticcalc/*.pyx',
-    'py_ballisticcalc/bmath/unit/*.pyx',
-    'py_ballisticcalc/bmath/vector/*.pyx',
 ]
 
 extensions = []
@@ -125,10 +123,16 @@ setup(
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
     zip_safe=True,
-    py_modules=find_packages() + [
-        'py_ballisticcalc.drag_tables',
-        'py_ballisticcalc.bin_test',
-        'py_ballisticcalc.bmath.unit.unit_test',
-        'py_ballisticcalc.bmath.vector.vector_test',
-    ],
+    packages=find_packages(),
+    py_modules=['py_ballisticcalc']
+    # package_dir={
+    #     "": ".",
+    # },
+    # py_modules=find_packages() + [
+    #     'py_ballisticcalc.interface'
+    #     # 'py_ballisticcalc.drag_tables',
+    #     # 'py_ballisticcalc.bin_test',
+    #     # 'py_ballisticcalc.bmath.unit.unit_test',
+    #     # 'py_ballisticcalc.bmath.vector.vector_test',
+    # ],
 )

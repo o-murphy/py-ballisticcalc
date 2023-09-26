@@ -1,10 +1,5 @@
 from dataclasses import dataclass, field
 
-import pyximport
-
-
-pyximport.install(language_level=3)
-
 from .trajectory_data import TrajectoryData
 from .trajectory_calc import TrajectoryCalc
 from .conditions import *

@@ -1,3 +1,2 @@
 recursive-include py_ballisticcalc *.pyx
 include requirements*.txt
-include LICENSE
