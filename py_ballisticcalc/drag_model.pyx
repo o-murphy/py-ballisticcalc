@@ -6,7 +6,7 @@ from .drag_tables import DragTablesSet
 from typing import NamedTuple
 
 
-# __all__ = ('DragDataPoint', 'DragModel', 'calculate_by_curve', 'make_data_points')
+__all__ = ('DragDataPoint', 'DragModel', 'calculate_by_curve', 'make_data_points')
 # __all__ = ('DragModel', 'calculate_by_curve', 'make_data_points')
 # __all__ = ('DragModel', 'calculate_by_curve')
 
