@@ -159,7 +159,6 @@ cdef class TrajectoryCalc:
                 drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
 
                 velocity_vector = velocity_vector - (velocity_vector * drag - gravity_vector) * delta_time
-
                 delta_range_vector = Vector(calculation_step,
                                             velocity_vector.y * delta_time,
                                             velocity_vector.z * delta_time)
@@ -293,10 +292,10 @@ cdef class TrajectoryCalc:
                 if current_item == ranges_length:
                     break
 
-            delta_time = calculation_step / velocity_vector.x
             velocity_adjusted = velocity_vector - wind_vector
-            velocity = velocity_adjusted.magnitude()
 
+            delta_time = calculation_step / velocity_vector.x
+            velocity = velocity_adjusted.magnitude()
             drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
 
             velocity_vector = velocity_vector - (velocity_adjusted * drag - gravity_vector) * delta_time
