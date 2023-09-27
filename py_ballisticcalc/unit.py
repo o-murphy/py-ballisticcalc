@@ -540,3 +540,13 @@ def is_unit(obj: [AbstractUnit, float, int]):
 # print(m, m.measure_type)
 #
 # print(Unit.Meter.measure_type)
+
+
+# Default units
+# Angular.Radian
+# Distance.Inch
+# Energy.FootPound
+# Weight.Grain
+# Velocity.MPS
+# Temperature.Fahrenheit
+# Pressure.MmHg

@@ -310,26 +310,38 @@ cdef class TrajectoryCalc:
 
 # @cython.cdivision(True)
 cdef double calculate_stability_coefficient(object ammo, object rifle, object atmo):
-    cdef double weight = ammo.projectile.weight >> Weight.Grain
-    cdef double diameter = ammo.projectile.diameter >> Distance.Inch
-    cdef double twist = fabs(rifle.twist >> Distance.Inch) / diameter
-    cdef double length = (ammo.projectile.length >> Distance.Inch) / diameter
-    cdef double sd = 30 * weight / (pow(twist, 2) * pow(diameter, 3) * length * (1 + pow(length, 2)))
+    # cdef double weight = ammo.projectile.weight >> Weight.Grain
+    # cdef double diameter = ammo.projectile.diameter >> Distance.Inch
+    # cdef double twist = fabs(rifle.twist >> Distance.Inch) / diameter
+    # cdef double length = (ammo.projectile.length >> Distance.Inch) / diameter
+    # cdef double ft = atmo.temperature >> Temperature.Fahrenheit
+
+    cdef double weight = ammo.projectile.weight
+    cdef double diameter = ammo.projectile.diameter
+    cdef double twist = fabs(rifle.twist) / diameter
+    cdef double length = float(ammo.projectile.length) / diameter
     cdef double mv = ammo.muzzle_velocity >> Velocity.FPS
-    cdef double fv = pow(mv / 2800, 1.0 / 3.0)
-    cdef double ft = atmo.temperature >> Temperature.Fahrenheit
+    cdef double ft = atmo.temperature
     cdef double pt = atmo.pressure >> Pressure.InHg
+    cdef double sd = 30 * weight / (pow(twist, 2) * pow(diameter, 3) * length * (1 + pow(length, 2)))
+    cdef double fv = pow(mv / 2800, 1.0 / 3.0)
     cdef double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
 
     return sd * fv * ftp
 
 cdef Vector wind_to_vector(object shot, object wind):
-    cdef double sight_cosine = cos(shot.sight_angle >> Angular.Radian)
-    cdef double sight_sine = sin(shot.sight_angle >> Angular.Radian)
-    cdef double cant_cosine = cos(shot.cant_angle >> Angular.Radian)
-    cdef double cant_sine = sin(shot.cant_angle >> Angular.Radian)
-    cdef double range_velocity = (wind.velocity >> Velocity.FPS) * cos(wind.direction >> Angular.Radian)
-    cdef double cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction >> Angular.Radian)
+    # cdef double sight_cosine = cos(shot.sight_angle >> Angular.Radian)
+    # cdef double sight_sine = sin(shot.sight_angle >> Angular.Radian)
+    # cdef double cant_cosine = cos(shot.cant_angle >> Angular.Radian)
+    # cdef double cant_sine = sin(shot.cant_angle >> Angular.Radian)
+    # cdef double range_velocity = (wind.velocity >> Velocity.FPS) * cos(wind.direction >> Angular.Radian)
+    # cdef double cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction >> Angular.Radian)
+    cdef double sight_cosine = cos(shot.sight_angle)
+    cdef double sight_sine = sin(float(shot.sight_angle))
+    cdef double cant_cosine = cos(float(shot.cant_angle))
+    cdef double cant_sine = sin(float(shot.cant_angle))
+    cdef double range_velocity = (wind.velocity >> Velocity.FPS) * cos(float(wind.direction))
+    cdef double cross_component = (wind.velocity >> Velocity.FPS) * sin(float(wind.direction))
     cdef double range_factor = -range_velocity * sight_sine
     return Vector(range_velocity * sight_cosine,
                   range_factor * cant_cosine + cross_component * cant_sine,
