@@ -1,4 +1,5 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
+cimport cython
 
 from .conditions import *
 from .munition import *
@@ -108,8 +109,7 @@ cdef class TrajectoryCalc:
         cdef double calculation_step, mach, density_factor, muzzle_velocity
         cdef double barrel_azimuth, barrel_elevation
         cdef double velocity, time, zero_distance, maximum_range
-        cdef double delta_time, drag, zero_finding_error
-        cdef double sight_height
+        cdef double delta_time, drag, zero_finding_error, sight_height
 
         cdef int iterations_count
 
@@ -176,13 +176,16 @@ cdef class TrajectoryCalc:
         cdef double step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
         cdef double next_wind_range, time, muzzle_velocity, velocity, windage, delta_time, drag
-        cdef double maximum_range, next_range_distance, twist_coefficient, sight_height
-        cdef int current_item, ranges_length, current_wind, len_winds
-        cdef int calculate_drift  # bool
+        cdef double maximum_range, next_range_distance, sight_height
+        cdef int current_item, ranges_length, current_wind, len_winds, twist_coefficient
         cdef ranges
         cdef double windage_adjustment, drop_adjustment
         cdef Vector gravity_vector, range_vector, velocity_vector, velocity_adjusted, delta_range_vector
         cdef Vector wind_vector
+
+        cdef double twist = float(weapon.twist)
+        cdef double proj_length = float(ammo.projectile.length)
+        cdef double proj_diameter = float(ammo.projectile.diameter)
 
         maximum_range = (shot_info.max_range >> Distance.Foot) + 1
         step = shot_info.step >> Distance.Foot
@@ -235,19 +238,16 @@ cdef class TrajectoryCalc:
                                  cos(barrel_elevation) * sin(barrel_azimuth)) * velocity
         current_item = 0
 
-        # maximum_range = range_to
         next_range_distance = .0
 
-        twist_coefficient = .0
+        twist_coefficient = 0
 
-        calculate_drift = False
-
-        if weapon.twist != 0 and ammo.projectile.length and ammo.projectile.diameter:
+        if twist != 0 and proj_length and proj_diameter:
             stability_coefficient = calculate_stability_coefficient(
                 ammo, weapon, atmo
             )
-            calculate_drift = True
-            twist_coefficient = -1 if weapon.twist > 0 else 1
+
+            twist_coefficient = -1 if twist > 0 else 1
 
         while range_vector.x <= maximum_range + calculation_step:
 
@@ -267,7 +267,8 @@ cdef class TrajectoryCalc:
 
             if range_vector.x >= next_range_distance:
                 windage = range_vector.z
-                if calculate_drift:
+
+                if twist != 0:
                     windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
 
                 drop_adjustment = get_correction(range_vector.x, range_vector.y)
@@ -307,6 +308,7 @@ cdef class TrajectoryCalc:
 
         return ranges
 
+# @cython.cdivision(True)
 cdef double calculate_stability_coefficient(object ammo, object rifle, object atmo):
     cdef double weight = ammo.projectile.weight >> Weight.Grain
     cdef double diameter = ammo.projectile.diameter >> Distance.Inch
@@ -333,6 +335,7 @@ cdef Vector wind_to_vector(object shot, object wind):
                   range_factor * cant_cosine + cross_component * cant_sine,
                   cross_component * cant_cosine - range_factor * cant_sine)
 
+# @cython.cdivision(True)
 cdef double get_correction(double distance, double offset):
     if distance != 0:
         return atan(offset / distance)

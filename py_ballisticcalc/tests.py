@@ -237,6 +237,40 @@ class TestPyBallisticCalc(unittest.TestCase):
                 self.validate_one(*d)
 
 
+class TestPerformance(unittest.TestCase):
+    def setUp(self) -> None:
+        bc = DragModel(0.223, TableG7, 168, 0.308)
+        projectile = Projectile(bc, 1.282)
+        self.ammo = Ammo(projectile, 2750)
+        self.weapon = Weapon(2, 100, 11.24)
+        self.atmo = Atmo.ICAO()
+        self.shot = Shot(Distance.Yard(1000),
+                         Distance.Yard(100),
+                         sight_angle=Angular.MOA(4.221)
+                         )
+        self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
+
+        self.calc = TrajectoryCalc()
+
+    def test__init__(self):
+        bc = DragModel(0.223, TableG7, 168, 0.308)
+        projectile = Projectile(bc, 1.282)
+        self.ammo = Ammo(projectile, 2750)
+        self.weapon = Weapon(2, 100, 11.24)
+        self.atmo = Atmo.ICAO()
+        self.shot = Shot(Distance.Yard(1000),
+                         Distance.Yard(100),
+                         sight_angle=Angular.MOA(4.221)
+                         )
+        self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
+
+        self.calc = TrajectoryCalc()
+
+    def test_path_performance(self):
+        sh = self.calc.sight_angle(self.ammo, self.weapon, self.atmo)
+        data = self.calc.trajectory(self.ammo, self.weapon, self.atmo, self.shot, self.wind)
+
+
 def test_back_n_forth(test, value, units):
     u = test.unit_class(value, units)
     v = u >> units
