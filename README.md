@@ -87,7 +87,7 @@ Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
 # set maximum inner Calculator step size, larger is faster, but accuracy is going down 
-Set.MIN_CALC_STEP_SIZE = Distance.Foot(1)  # same as default
+Set.set_max_calc_step_size(Distance.Foot(1))  # same as default
 # enable muzzle velocity correction by powder temperature
 Set.USE_POWDER_SENSITIVITY = True  # default False
 

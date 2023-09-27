@@ -87,15 +87,14 @@ cdef class TrajectoryCalc:
     cdef double get_calculation_step(self, double step):
         cdef:
             int step_order, maximum_order
-            double step
-            double maximum_step = Settings._MIN_CALC_STEP_SIZE
+            double maximum_step = Settings._MAX_CALC_STEP_SIZE
 
-        step = step / 2
+        step /=  2
 
         if step > maximum_step:
             step_order = int(floor(log10(step)))
             maximum_order = int(floor(log10(maximum_step)))
-            step = step / pow(10, step_order - maximum_order + 1)
+            step /= pow(10, step_order - maximum_order + 1)
 
         return step
 
