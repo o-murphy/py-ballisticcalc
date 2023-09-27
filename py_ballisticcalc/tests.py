@@ -69,15 +69,17 @@ class TestDrag(unittest.TestCase):
 
 class TestG7Profile(unittest.TestCase):
 
-    def test_drag(self):
-        bc = DragModel(
+    def setUp(self) -> None:
+        self.bc = DragModel(
             value=0.223,
             drag_table=TableG7,
             weight=Weight(167, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
         )
 
-        ret = bc.calculated_drag_function()
+    def test_drag(self):
+        ret = self.bc.calculated_drag_function()
+        self.assertIsInstance(ret[0], dict)
 
     def test_mbc(self):
         bc = MultiBC(
@@ -95,14 +97,7 @@ class TestG7Profile(unittest.TestCase):
         self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.1577125859466895})
 
     def test_create(self):
-        bc = DragModel(
-            value=0.223,
-            drag_table=TableG7,
-            weight=Weight(167, Weight.Grain),
-            diameter=Distance(0.308, Distance.Inch),
-        )
-
-        p1 = Projectile(bc, 167)
+        p1 = Projectile(self.bc, 167)
 
         ammo = Ammo(p1, Velocity(800, Velocity.MPS))
         atmo = Atmo(Distance(0, Distance.Meter), Pressure(760, Pressure.MmHg),
@@ -115,6 +110,10 @@ class TestG7Profile(unittest.TestCase):
         sight_angle = calc.sight_angle(ammo, weapon, atmo)
         shot_info = Shot(Distance(2500, Distance.Meter), Distance(1, Distance.Meter), sight_angle)
         return calc.trajectory(ammo, weapon, atmo, shot_info, wind)
+
+    def test_calc_by_curve(self):
+        for i in range(50000):
+            self.bc.drag(Velocity(800 / 340 + i/10, Velocity.MPS) >> Velocity.FPS)
 
     def test_time(self):
         t = timeit.timeit(self.test_create, number=1)

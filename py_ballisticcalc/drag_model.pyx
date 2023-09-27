@@ -1,4 +1,5 @@
 from libc.math cimport floor, pow
+from libc.stdlib cimport malloc, free
 
 from .settings import Settings as Set
 from .unit import *
@@ -28,85 +29,97 @@ cdef struct CurvePoint:
     double a, b, c
 
 
-cdef class DragModel:
-    cdef list _table_data, _curve_data
-    cdef readonly list table
-    cdef readonly object weight, diameter
-    cdef public double value
-    cdef readonly double form_factor, sectional_density
+cdef struct DragTableRow:
+    double CD
+    double Mach
 
-    def __init__(self, value: float,
+
+cdef struct DDP:
+    double coeff  # BC or CD
+    double velocity  # muzzle velocity or Mach
+
+
+cdef class DragModel:
+    cdef:
+        readonly object weight, diameter
+        list _table_data, _curve_data
+        double value
+        double form_factor, sectional_density
+
+    def __init__(self, double value,
                  drag_table: list,
                  weight: [float, Weight],
                  diameter: [float, Distance]):
+        self.__post__init__(value, drag_table, weight, diameter)
 
-        self.table = drag_table
-        self.weight = weight if is_unit(weight) else Set.Units.weight(weight)
-        self.diameter = Set.Units.diameter(diameter)
-        self.sectional_density = self._get_sectional_density()
+    cdef __post__init__(DragModel self, double value, list drag_table, double weight, double diameter):
+        cdef:
+            double table_len = len(drag_table)
+            str error = ''
+
+        if table_len <= 0:
+            error = 'Custom drag table must be longer than 0'
+        elif value <= 0:
+            error = 'Drag coefficient must be greater than zero'
+
+        if error:
+            raise ValueError(error)
 
         if drag_table in DragTablesSet:
             self.value = value
-            self.form_factor = self._get_form_factor(self.value)
-            self._table_data = make_data_points(self.table)
-            self._curve_data = calculate_curve(self._table_data)
-        elif len(self.table) == 0:
-            raise ValueError('Custom drag table must be longer than 0')
-        elif len(self.table) > 0:
-            # TODO: strange, both calculations get same results,
-            #       but need to find way use form-factor instead of bc in drag()
-            # self._form_factor = 0.999  # defined as form factor in lapua-like custom CD data
-            # self.value = self._get_custom_bc()
+        elif table_len > 0:
             self.value = 1  # or 0.999
-            self.form_factor = self._get_form_factor(self.value)
-
-            self._table_data = make_data_points(self.table)
-            self._curve_data = calculate_curve(self._table_data)
-        elif value <= 0:
-            raise ValueError('Drag coefficient must be greater than zero')
         else:
             raise ValueError('Wrong drag data')
 
-    cpdef double drag(self, double mach):
+        self.weight = weight if is_unit(weight) else Set.Units.weight(weight)
+        self.diameter = Set.Units.diameter(diameter)
+        self.sectional_density = self._get_sectional_density()
+        self.form_factor = self._get_form_factor(self.value)
+        self._table_data = make_data_points(drag_table)
+        self._curve_data = calculate_curve(self._table_data)
+
+    cpdef double drag(DragModel self, double mach):
         cdef double cd
         cd = calculate_by_curve(self._table_data, self._curve_data, mach)
         return cd * 2.08551e-04 / self.value
 
-    cdef double _get_custom_bc(self):
-        return self.sectional_density / self.form_factor
-
-    cdef _get_form_factor(self, bc):
+    cdef double _get_form_factor(self, double bc):
         return self.sectional_density / bc
 
     cdef double _get_sectional_density(self):
         cdef double w, d
         w = self.weight >> Weight.Grain
         d = self.diameter >> Distance.Inch
-        return w / pow(d, 2) / 7000
+        return sectional_density(w, d)
 
-    cdef double standard_cd(self, double mach):
+    cdef double _standard_cd(self, double mach):
         return calculate_by_curve(self._table_data, self._curve_data, mach)
 
-    cpdef double calculated_cd(self, double mach):
-        return self.standard_cd(mach) * self.form_factor
+    cdef double _calculated_cd(self, double mach):
+        return self._standard_cd(mach) * self.form_factor
 
     cpdef list calculated_drag_function(self):
-        cdef standard_cd_table
-        cdef list calculated_cd_table
-        cdef double st_mach, st_cd, cd
-
-        calculated_cd_table = []
+        """
+        Returns custom drag function based on input bc value
+        """
+        cdef:
+            double cd, st_mach
+            DragDataPoint point
+            list calculated_cd_table = []
 
         for point in self._table_data:
             st_mach = point.velocity
-            st_cd = point.coeff
-            cd = self.calculated_cd(st_mach)
-            calculated_cd_table.append({'Mach': st_mach, 'CD': cd})
+            cd = self._calculated_cd(st_mach)
+            calculated_cd_table.append(DragTableRow(cd, st_mach))
 
         return calculated_cd_table
 
 cpdef list make_data_points(drag_table: list):
     return [DragDataPoint(point['CD'], point['Mach']) for point in drag_table]
+
+cdef double sectional_density(double weight, double diameter):
+    return weight / pow(diameter, 2) / 7000
 
 cdef list calculate_curve(list data_points):
 
