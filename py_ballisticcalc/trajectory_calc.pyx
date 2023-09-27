@@ -1,10 +1,10 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 
-from .settings import Settings
-from .unit import *
-from .munition import *
 from .conditions import *
+from .munition import *
+from .settings import Settings
 from .trajectory_data import TrajectoryData
+from .unit import *
 
 cdef double cZeroFindingAccuracy = 0.000005
 cdef double cMinimumVelocity = 50.0
@@ -12,85 +12,75 @@ cdef double cMaximumDrop = -15000
 cdef int cMaxIterations = 10
 cdef double cGravityConstant = -32.17405
 
-
 cdef class Vector:
     cdef double x
     cdef double y
     cdef double z
 
-    def __cinit__(self, double x, double y, double z):
+    def __cinit__(Vector self, double x, double y, double z):
         self.x = x
         self.y = y
         self.z = z
 
-    def __str__(self):
-        return f'Vector(x={self.x}, y={self.y}, z={self.z})'
-
-    cdef double magnitude(self):
+    cdef double magnitude(Vector self):
         cdef double m = sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
         return m
 
-    cdef Vector multiply_by_const(self, double a):
+    cdef Vector mul_by_const(Vector self, double a):
         return Vector(self.x * a, self.y * a, self.z * a)
 
-    cdef double multiply_by_vector(self, Vector b):
+    cdef double mul_by_vector(Vector self, Vector b):
         cdef double var = self.x * b.x + self.y * b.y + self.z * b.z
         return var
 
-    cdef Vector add(self, Vector b):
+    cdef Vector add(Vector self, Vector b):
         return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
 
-    cdef Vector subtract(self, Vector b):
+    cdef Vector subtract(Vector self, Vector b):
         return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
 
-    cdef Vector negate(self):
+    cdef Vector negate(Vector self):
         return Vector(-self.x, -self.y, -self.z)
 
-    cdef Vector normalize(self):
+    cdef Vector normalize(Vector self):
         cdef double m = self.magnitude()
         if fabs(m) < 1e-10:
             return Vector(self.x, self.y, self.z)
-        return self.multiply_by_const(1.0 / m)
+        return self.mul_by_const(1.0 / m)
 
-    def __add__(self, other: Vector):
+    def __add__(Vector self, Vector other):
         return self.add(other)
 
-    def __radd__(self, other: Vector):
-        return self.__add__(other)
+    def __radd__(Vector self, Vector other):
+        return self.add(other)
 
-    def __iadd__(self, other: Vector):
-        return self.__add__(other)
+    def __iadd__(Vector self, Vector other):
+        return self.add(other)
 
-    def __sub__(self, other: Vector):
+    def __sub__(Vector self, Vector other):
         return self.subtract(other)
 
-    def __rsub__(self, other: Vector):
-        return other.subtract(self)
-
-    def __isub__(self, other: Vector):
+    def __rsub__(Vector self, Vector other):
         return self.subtract(other)
 
-    def __mul__(self, other: [Vector, float, int]):
-        if isinstance(other, int) or isinstance(other, float):
-            return self.multiply_by_const(other)
+    def __isub__(Vector self, Vector other):
+        return self.subtract(other)
+
+    def __mul__(Vector self, object other):
+        if isinstance(other, (int, float)):
+            return self.mul_by_const(other)
         elif isinstance(other, Vector):
-            return self.multiply_by_vector(other)
-        else:
-            raise TypeError(other)
+            return self.mul_by_vector(other)
+        raise TypeError(other)
 
-    def __rmul__(self, other: [Vector, float, int]):
+    def __rmul__(Vector self, object other):
         return self.__mul__(other)
 
-    def __imul__(self, other: [Vector, float, int]):
+    def __imul__(Vector self, object other):
         return self.__mul__(other)
 
-    def __neg__(self):
+    def __neg__(Vector self):
         return self.negate()
-
-    def __iter__(self):
-        yield self.x
-        yield self.y
-        yield self.z
 
 
 cdef class TrajectoryCalc:
@@ -114,7 +104,7 @@ cdef class TrajectoryCalc:
                    shot_info: Shot, winds: list[Wind]):
         return self._trajectory(ammo, weapon, atmo, shot_info, winds)
 
-    cdef _sight_angle(self, object ammo, object weapon, object atmo):
+    cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef double calculation_step, mach, density_factor, muzzle_velocity
         cdef double barrel_azimuth, barrel_elevation
         cdef double velocity, time, zero_distance, maximum_range
@@ -141,7 +131,7 @@ cdef class TrajectoryCalc:
         iterations_count = 0
 
         zero_finding_error = cZeroFindingAccuracy * 2
-        gravity_vector = Vector(0, cGravityConstant, 0)
+        gravity_vector = Vector(.0, cGravityConstant, .0)
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
             velocity = muzzle_velocity
             time = 0.0
@@ -150,7 +140,7 @@ cdef class TrajectoryCalc:
             # y - drop and
             # z - windage
 
-            range_vector = Vector(0.0, -sight_height, 0.0)
+            range_vector = Vector(.0, -sight_height, .0)
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
                 sin(barrel_elevation),
@@ -180,19 +170,21 @@ cdef class TrajectoryCalc:
                 iterations_count += 1
         return Angular.Radian(barrel_elevation)
 
-    cdef _trajectory(self, object ammo, object weapon, object atmo,
+    cdef _trajectory(TrajectoryCalc self, object ammo, object weapon, object atmo,
                      object shot_info, list[object] winds):
-        cdef double range_to, step, calculation_step, bullet_weight, stability_coefficient
+
+        cdef double step, calculation_step, bullet_weight, stability_coefficient
         cdef double barrel_azimuth, barrel_elevation, alt0, density_factor, mach
         cdef double next_wind_range, time, muzzle_velocity, velocity, windage, delta_time, drag
         cdef double maximum_range, next_range_distance, twist_coefficient, sight_height
         cdef int current_item, ranges_length, current_wind, len_winds
-        cdef calculate_drift, ranges
-        cdef windage_adjustment, drop_adjustment
-        cdef Vector gravity_vector,  range_vector, velocity_vector, velocity_adjusted, delta_range_vector
+        cdef int calculate_drift  # bool
+        cdef ranges
+        cdef double windage_adjustment, drop_adjustment
+        cdef Vector gravity_vector, range_vector, velocity_vector, velocity_adjusted, delta_range_vector
         cdef Vector wind_vector
 
-        range_to = (shot_info.max_range >> Distance.Foot) + 1  # + 1 needs to include last point to output
+        maximum_range = (shot_info.max_range >> Distance.Foot) + 1
         step = shot_info.step >> Distance.Foot
 
         calculation_step = self.get_calculation_step(step)
@@ -201,7 +193,7 @@ cdef class TrajectoryCalc:
 
         stability_coefficient = 1.0
 
-        ranges_length = int(floor(range_to / step)) + 1
+        ranges_length = int(floor(maximum_range / step)) + 1
         ranges = []
 
         barrel_azimuth = .0
@@ -218,7 +210,7 @@ cdef class TrajectoryCalc:
         len_winds = int(len(winds))
 
         if len_winds < 1:
-            wind_vector = Vector(0, 0, 0)
+            wind_vector = Vector(.0, .0, .0)
         else:
             if len(winds) > 1:
                 next_wind_range = winds[0].until_distance() >> Distance.Foot
@@ -229,7 +221,7 @@ cdef class TrajectoryCalc:
         else:
             muzzle_velocity = ammo.muzzle_velocity >> Velocity.FPS
 
-        gravity_vector = Vector(0, cGravityConstant, 0)
+        gravity_vector = Vector(.0, cGravityConstant, .0)
         velocity = muzzle_velocity
         time = .0
 
@@ -238,13 +230,13 @@ cdef class TrajectoryCalc:
         # z - windage
 
         sight_height = weapon.sight_height >> Distance.Foot
-        range_vector = Vector(.0, -sight_height, 0)
+        range_vector = Vector(.0, -sight_height, .0)
         velocity_vector = Vector(cos(barrel_elevation) * cos(barrel_azimuth), sin(barrel_elevation),
                                  cos(barrel_elevation) * sin(barrel_azimuth)) * velocity
         current_item = 0
 
-        maximum_range = range_to
-        next_range_distance = 0
+        # maximum_range = range_to
+        next_range_distance = .0
 
         twist_coefficient = .0
 
@@ -315,7 +307,7 @@ cdef class TrajectoryCalc:
 
         return ranges
 
-cdef double calculate_stability_coefficient(ammo, rifle, atmo):
+cdef double calculate_stability_coefficient(object ammo, object rifle, object atmo):
     cdef double weight = ammo.projectile.weight >> Weight.Grain
     cdef double diameter = ammo.projectile.diameter >> Distance.Inch
     cdef double twist = fabs(rifle.twist >> Distance.Inch) / diameter
