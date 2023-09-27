@@ -71,7 +71,7 @@ class Unit(IntEnum):
     def symbol(self):
         return UnitPropsDict[self].symbol
 
-    def __call__(self: 'Unit', value: float):
+    def __call__(self: 'Unit', value: [int, float]) -> 'AbstractUnit':
 
         if 0 <= self < 10:
             return Angular(value, self)
@@ -87,6 +87,7 @@ class Unit(IntEnum):
             return Velocity(value, self)
         elif 70 <= self < 80:
             return Weight(value, self)
+        raise TypeError(f"{self} Unit is not supports")
 
 
 class UnitProps(NamedTuple):
@@ -227,8 +228,6 @@ class AbstractUnit(ABC):
 
 
 class Distance(AbstractUnit):
-    def __init__(self, value: [float, int], units: Unit):
-        super(Distance, self).__init__(value, units)
 
     def to_raw(self, value: float, units: Unit):
         if units == Distance.Inch:

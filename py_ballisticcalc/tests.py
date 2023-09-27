@@ -8,7 +8,7 @@ import pyximport
 
 pyximport.install(language_level=3)
 
-from py_ballisticcalc.interface import *
+from py_ballisticcalc import *
 
 
 class TestAtmo(unittest.TestCase):
@@ -86,7 +86,7 @@ class TestG7Profile(unittest.TestCase):
             drag_table=TableG7,
             weight=Weight(178, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
-            multiple_bc_table=[DragDataPoint(*p) for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
+            multiple_bc_table=[MultiBCRow(*p) for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
             velocity_units_flag=Velocity.MPS
         )
 

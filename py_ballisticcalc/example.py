@@ -4,8 +4,8 @@ Example of library usage
 
 import pyximport; pyximport.install(language_level=3)
 
-from py_ballisticcalc.interface import *
-from py_ballisticcalc.interface import Settings as Set
+from py_ballisticcalc import *
+from py_ballisticcalc import Settings as Set
 
 # set global library settings
 Set.Units.velocity = Velocity.FPS

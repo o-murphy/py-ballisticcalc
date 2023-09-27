@@ -28,4 +28,5 @@ class Settings:
     def set_max_calc_step_size(cls, value: [float, Distance]):
         if not isinstance(value, (Distance, float, int)):
             raise ValueError("MIN_CALC_STEP_SIZE have to be a type of 'Distance'")
-        cls._MAX_CALC_STEP_SIZE = (value if is_unit(value) else cls.Units.distance(value)).raw_value >> Distance.Foot
+        print((value if is_unit(value) else cls.Units.distance(value).raw_value) >> Distance.Foot)
+        cls._MAX_CALC_STEP_SIZE = (value if is_unit(value) else cls.Units.distance(value).raw_value) >> Distance.Foot

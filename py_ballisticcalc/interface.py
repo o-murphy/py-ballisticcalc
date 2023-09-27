@@ -1,20 +1,12 @@
 from dataclasses import dataclass, field
 
-from .trajectory_data import TrajectoryData
-from .trajectory_calc import TrajectoryCalc
+from .trajectory_data import *
+from .trajectory_calc import *
 from .conditions import *
 from .munition import *
 from .unit import *
-from .drag_model import *
-from .drag_tables import *
-from .settings import Settings
-from .multiple_bc import MultiBC
 
-
-assert Settings
-assert DragModel
-assert TableG1
-assert MultiBC
+__all__ = ('Calculator',)
 
 
 @dataclass

@@ -7,6 +7,10 @@ from .settings import Settings
 from .trajectory_data import TrajectoryData
 from .unit import *
 
+
+__all__ = ('TrajectoryCalc', )
+
+
 cdef double cZeroFindingAccuracy = 0.000005
 cdef double cMinimumVelocity = 50.0
 cdef double cMaximumDrop = -15000

@@ -81,7 +81,7 @@ from py_ballisticcalc.interface import *
 from py_ballisticcalc.interface import Settings as Set
 
 # set global library settings
-Set.Units.velocity = Velocity.FPS
+Set.Units.Mach = Velocity.FPS
 Set.Units.temperature = Temperature.Celsius
 Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
@@ -117,7 +117,7 @@ winds = [Wind(2, 90)]
 data = calc.trajectory(shot, current_atmo, winds)
 
 for p in data:
-    print(p.formatted())
+  print(p.formatted())
 ```
 #### Example of the formatted output:
 ```
