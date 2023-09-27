@@ -265,8 +265,10 @@ class TestPerformance(unittest.TestCase):
 
         self.calc = TrajectoryCalc()
 
-    def test_path_performance(self):
+    def test_elevation_performance(self):
         sh = self.calc.sight_angle(self.ammo, self.weapon, self.atmo)
+
+    def test_path_performance(self):
         data = self.calc.trajectory(self.ammo, self.weapon, self.atmo, self.shot, self.wind)
 
 

@@ -107,38 +107,25 @@ cdef class TrajectoryCalc:
 
     cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef:
-            double calc_step, mach, density_factor, muzzle_velocity
-            double barrel_azimuth, barrel_elevation
-            double velocity, time, zero_distance, maximum_range
-            double delta_time, drag, zero_finding_error, sight_height
-            int iterations_count
-            Vector gravity_vector, range_vector, velocity_vector, delta_range_vector
+            double calc_step = self.get_calc_step(weapon.zero_distance.units(10) >> Distance.Foot)
+            double zero_distance = weapon.zero_distance >> Distance.Foot
+            double maximum_range = zero_distance + calc_step
+            double sight_height = weapon.sight_height >> Distance.Foot
+            double mach = atmo.mach >> Velocity.FPS
+            double density_factor = atmo.density_factor()
+            double muzzle_velocity = ammo.muzzle_velocity >> Velocity.FPS
+            double barrel_azimuth = 0.0
+            double barrel_elevation = 0.0
+            int iterations_count = 0
+            double zero_finding_error = cZeroFindingAccuracy * 2
+            Vector gravity_vector = Vector(.0, cGravityConstant, .0)
+            double velocity, time, delta_time, drag
+            Vector range_vector, velocity_vector, delta_range_vector
 
-        calc_step = self.get_calc_step(
-            Distance(10, weapon.zero_distance.units) >> Distance.Foot)
-        zero_distance = weapon.zero_distance >> Distance.Foot
-        maximum_range = zero_distance + calc_step
-
-        sight_height = weapon.sight_height >> Distance.Foot
-
-        mach = atmo.mach >> Velocity.FPS
-        density_factor = atmo.density_factor()
-        muzzle_velocity = ammo.muzzle_velocity >> Velocity.FPS
-        barrel_azimuth = 0.0
-        barrel_elevation = 0.0
-
-        iterations_count = 0
-
-        zero_finding_error = cZeroFindingAccuracy * 2
-        gravity_vector = Vector(.0, cGravityConstant, .0)
+        # x - distance towards target, y - drop and z - windage
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
             velocity = muzzle_velocity
             time = 0.0
-
-            # x - distance towards target,
-            # y - drop and
-            # z - windage
-
             range_vector = Vector(.0, -sight_height, .0)
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
@@ -151,22 +138,22 @@ cdef class TrajectoryCalc:
                     break
 
                 delta_time = calc_step / velocity_vector.x
-                velocity = velocity_vector.magnitude()
                 drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
 
                 velocity_vector -= (velocity_vector * drag - gravity_vector) * delta_time
-                delta_range_vector = Vector(calc_step,
-                                            velocity_vector.y * delta_time,
-                                            velocity_vector.z * delta_time)
+                delta_range_vector = Vector(calc_step, velocity_vector.y * delta_time,
+                                                        velocity_vector.z * delta_time)
                 range_vector += delta_range_vector
                 velocity = velocity_vector.magnitude()
                 time += delta_range_vector.magnitude() / velocity
+
                 if fabs(range_vector.x - zero_distance) < 0.5 * calc_step:
                     zero_finding_error = fabs(range_vector.y)
                     barrel_elevation -= range_vector.y / range_vector.x
                     break
 
                 iterations_count += 1
+
         return Angular.Radian(barrel_elevation)
 
     cdef _trajectory(TrajectoryCalc self, object ammo, object weapon, object atmo,
@@ -243,14 +230,10 @@ cdef class TrajectoryCalc:
         twist_coefficient = 0
 
         if twist != 0 and proj_length and proj_diameter:
-            stability_coefficient = calculate_stability_coefficient(
-                ammo, weapon, atmo
-            )
-
+            stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
             twist_coefficient = -1 if twist > 0 else 1
 
         while range_vector.x <= maximum_range + calc_step:
-
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
 
