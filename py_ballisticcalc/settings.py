@@ -21,5 +21,11 @@ class Settings:
         adjustment: Unit = Unit.Mil
         energy: Unit = Unit.Joule
 
-    MIN_CALC_STEP_SIZE: Distance = Distance.Foot(1)
+    _MIN_CALC_STEP_SIZE: float
     USE_POWDER_SENSITIVITY: bool = False
+
+    @classmethod
+    def set_calc_step_size(cls, value: [float, Distance]):
+        if not isinstance(value, (Distance, float, int)):
+            raise ValueError("MIN_CALC_STEP_SIZE have to be a type of 'Distance'")
+        cls._MIN_CALC_STEP_SIZE = (value if is_unit(value) else cls.Units.distance(value)).raw_value >> Distance.Foot

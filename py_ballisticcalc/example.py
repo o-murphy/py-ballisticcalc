@@ -2,7 +2,7 @@
 Example of library usage
 """
 
-# import pyximport; pyximport.install(language_level=3)
+import pyximport; pyximport.install(language_level=3)
 
 from py_ballisticcalc.interface import *
 from py_ballisticcalc.interface import Settings as Set
@@ -13,7 +13,7 @@ Set.Units.temperature = Temperature.Celsius
 Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
-Set.MIN_CALC_STEP_SIZE = Distance.Foot(1)
+Set.set_calc_step_size(1)
 Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
 
 # define params with default units
