@@ -19,16 +19,16 @@ class Calculator:
     _calc: TrajectoryCalc = field(init=False, repr=True, compare=False)
 
     def __post_init__(self):
-        self._calc = TrajectoryCalc()
+        self._calc = TrajectoryCalc(self.ammo)
 
     def update_elevation(self):
-        self._elevation = self._calc.sight_angle(self.ammo, self.weapon, self.zero_atmo)
+        self._elevation = self._calc.sight_angle(self.weapon, self.zero_atmo)
 
     def trajectory(self, shot: Shot, atmo: Atmo, winds: list[Wind], as_pandas: bool = False):
         if not self._elevation:
             self.update_elevation()
         shot.sight_angle = self._elevation
-        data = self._calc.trajectory(self.ammo, self.weapon, atmo, shot, winds)
+        data = self._calc.trajectory(self.weapon, atmo, shot, winds)
         if as_pandas:
             return self._to_dataframe(data)
         return data
