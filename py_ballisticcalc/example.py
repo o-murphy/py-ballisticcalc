@@ -1,8 +1,13 @@
 """
 Example of library usage
 """
+import logging
 
-import pyximport; pyximport.install(language_level=3)
+try:
+    import pyximport; pyximport.install(language_level=3)
+except ImportError as err:
+    logging.error(err)
+    logging.warning("Install Cython to use pyximport")
 
 from py_ballisticcalc import *
 from py_ballisticcalc import Settings as Set

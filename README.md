@@ -77,8 +77,8 @@ Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
 #### An example of calculations
 
 ```python
-from py_ballisticcalc.interface import *
-from py_ballisticcalc.interface import Settings as Set
+from py_ballisticcalc import *
+from py_ballisticcalc import Settings as Set
 
 # set global library settings
 Set.Units.Mach = Velocity.FPS
@@ -120,6 +120,10 @@ for p in data:
   print(p.formatted())
 ```
 #### Example of the formatted output:
+```shell
+python -m py_ballisticcalc.example
+```
+
 ```
 ['0.00 s', '0.000 m', '2750.0 ft/s', '2.46 mach', '-9.000 cm', '0.00 mil', '0.000 cm', '0.00 mil', '3825 J']
 ['0.12 s', '100.000 m', '2528.6 ft/s', '2.26 mach', '0.005 cm', '0.00 mil', '-3.556 cm', '-0.36 mil', '3233 J']
