@@ -29,12 +29,12 @@ class Ammo(TypedUnits):
     projectile: Projectile
     muzzle_velocity: Set.Units.velocity
     temp_modifier: float = 0
-    powder_temp: Set.Units.temperature = field(default=Temperature.Celsius(15))
+    powder_temp: Set.Units.temperature = field(default_factory=lambda: Temperature.Celsius(15))
 
     def __post_init__(self):
         self.muzzle_velocity = self.muzzle_velocity
 
-    def calc_powder_sens(self, other_velocity: float | Velocity,
+    def calc_powder_sens(self, other_velocity: [float, Velocity],
                          other_temperature: [float, Temperature]):
         # (800-792) / (15 - 0) * (15/792) * 100 = 1.01
         # creates temperature modifier in percent at each 15C
