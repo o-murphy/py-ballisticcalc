@@ -1,4 +1,4 @@
-from .unit import *
+from .unit import Unit, Distance, is_unit
 
 
 __all__ = ('Settings',)

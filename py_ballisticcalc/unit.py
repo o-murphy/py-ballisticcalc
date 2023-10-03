@@ -1,4 +1,3 @@
-from abc import ABC
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Callable, get_type_hints
@@ -149,7 +148,7 @@ UnitPropsDict = {
 }
 
 
-class AbstractUnit(ABC):
+class AbstractUnit:
 
     __slots__ = ('_value', '_defined_units')
 
@@ -497,7 +496,7 @@ class Energy(AbstractUnit):
     Joule = Unit.JOULE
 
 
-class TypedUnits(ABC):
+class TypedUnits:
     def __setattr__(self, key, value):
         if hasattr(self, key):
             if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):

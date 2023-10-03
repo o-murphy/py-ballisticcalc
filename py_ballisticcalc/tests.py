@@ -1,46 +1,19 @@
+import logging
 import math
 import timeit
 import unittest
 from datetime import datetime
 from math import fabs
 
-import pyximport
-
-pyximport.install(language_level=3)
+try:
+    import pyximport
+    pyximport.install(language_level=3)
+except ImportError as err:
+    pyximport = None
+    logging.error(err)
+    logging.warning("Install Cython to use pyximport")
 
 from py_ballisticcalc import *
-
-
-class TestAtmo(unittest.TestCase):
-
-    def test_create(self):
-        v = Atmo(
-            altitude=Distance(0, Distance.Meter),
-            pressure=Pressure(760, Pressure.MmHg),
-            temperature=Temperature(15, Temperature.Celsius),
-            humidity=0.5
-        )
-
-        icao = Atmo.ICAO()
-
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=1)
-        print(t)
-
-
-class TestShotParams(unittest.TestCase):
-
-    def test_create(self):
-        v = Shot(
-            Angular(0, Angular.Degree),
-            Distance(1000, Distance.Foot),
-            Distance(100, Distance.Foot)
-        )
-
-    # @unittest.SkipTest
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=1)
-        print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
 
 
 class TestDrag(unittest.TestCase):
@@ -221,9 +194,9 @@ class TestPyBallisticCalc(unittest.TestCase):
 
 class TestPerformance(unittest.TestCase):
     def setUp(self) -> None:
-        bc = DragModel(0.223, TableG7, 168, 0.308)
-        projectile = Projectile(bc, 1.282)
-        self.ammo = Ammo(projectile, 2750)
+        self.bc = DragModel(0.223, TableG7, 168, 0.308)
+        self.projectile = Projectile(self.bc, 1.282)
+        self.ammo = Ammo(self.projectile, 2750)
         self.weapon = Weapon(2, 100, 11.24)
         self.atmo = Atmo.ICAO()
         self.shot = Shot(Distance.Yard(1000),
@@ -235,24 +208,13 @@ class TestPerformance(unittest.TestCase):
         self.calc = TrajectoryCalc(self.ammo)
 
     def test__init__(self):
-        bc = DragModel(0.223, TableG7, 168, 0.308)
-        projectile = Projectile(bc, 1.282)
-        self.ammo = Ammo(projectile, 2750)
-        self.weapon = Weapon(2, 100, 11.24)
-        self.atmo = Atmo.ICAO()
-        self.shot = Shot(Distance.Yard(1000),
-                         Distance.Yard(100),
-                         sight_angle=Angular.MOA(4.221)
-                         )
-        self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
-
-        self.calc = TrajectoryCalc(self.ammo)
+        self.assertTrue(self.calc)
 
     def test_elevation_performance(self):
-        sh = self.calc.sight_angle(self.weapon, self.atmo)
+        self.calc.sight_angle(self.weapon, self.atmo)
 
     def test_path_performance(self):
-        data = self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
+        self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
 
 
 def test_back_n_forth(test, value, units):

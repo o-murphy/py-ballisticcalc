@@ -1,10 +1,9 @@
 from dataclasses import dataclass, field
 
-from .trajectory_data import *
-from .trajectory_calc import *
-from .conditions import *
-from .munition import *
-from .unit import *
+from .trajectory_calc import TrajectoryCalc
+from .conditions import Atmo, Wind, Shot
+from .munition import Weapon, Ammo
+from .unit import Angular
 
 __all__ = ('Calculator',)
 
@@ -24,25 +23,27 @@ class Calculator:
     def update_elevation(self):
         self._elevation = self._calc.sight_angle(self.weapon, self.zero_atmo)
 
-    def trajectory(self, shot: Shot, atmo: Atmo, winds: list[Wind], as_pandas: bool = False):
+    def trajectory(self, shot: Shot, atmo: Atmo, winds: list[Wind],
+                   # as_pandas: bool = False
+                   ):
         if not self._elevation:
             self.update_elevation()
         shot.sight_angle = self._elevation
         data = self._calc.trajectory(self.weapon, atmo, shot, winds)
-        if as_pandas:
-            return self._to_dataframe(data)
+        # if as_pandas:
+        #     return self._to_dataframe(data)
         return data
 
-    @staticmethod
-    def _to_dataframe(data: list[TrajectoryData]):
-        """
-        Imorting pd localy
-        Note: reimplement this method if needed
-        """
-
-        try:
-            import pandas as pd
-        except ImportError as error:
-            raise ImportError(f"{error}, use trajectory with as_pandas=False or install 'pandas' library")
-
-        table = [p.in_def_units() for p in data]
+    # @staticmethod
+    # def _to_dataframe(data: list[TrajectoryData]):
+    #     """
+    #     Importing pd locally
+    #     Note: reimplement this method if needed
+    #     """
+    #
+    #     try:
+    #         import pandas as pd
+    #     except ImportError as error:
+    #         raise ImportError(f"{error}, use trajectory with as_pandas=False or install 'pandas' library")
+    #
+    #     table = [p.in_def_units() for p in data]

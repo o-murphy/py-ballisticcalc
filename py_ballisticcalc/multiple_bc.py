@@ -1,7 +1,7 @@
 from typing import NamedTuple, Iterable
 from math import pow
 
-from .unit import *
+from .unit import Distance, Weight, Velocity, Unit
 from .conditions import Atmo
 from .drag_model import make_data_points
 
@@ -52,7 +52,8 @@ class MultiBC:
     def _get_form_factor(self, bc):
         return self.sectional_density / bc
 
-    def _get_counted_cd(self, form_factor, standard_cd):
+    @staticmethod
+    def _get_counted_cd(form_factor, standard_cd):
         return standard_cd * form_factor
 
     def _create_bc_table_data_points(self):

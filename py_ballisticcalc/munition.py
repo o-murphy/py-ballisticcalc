@@ -1,9 +1,9 @@
 import math
 from dataclasses import dataclass, field
 
-from .drag_model import *
+from .drag_model import DragModel
 from .settings import Settings as Set
-from .unit import *
+from .unit import TypedUnits, Velocity, Temperature, is_unit
 
 __all__ = ('Weapon', 'Ammo', 'Projectile')
 
@@ -37,7 +37,7 @@ class Ammo(TypedUnits):
     def calc_powder_sens(self, other_velocity: float | Velocity,
                          other_temperature: [float, Temperature]):
         # (800-792) / (15 - 0) * (15/792) * 100 = 1.01
-        # creates temperature modifire in percent at each 15C
+        # creates temperature modifier in percent at each 15C
         v0 = self.muzzle_velocity >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
         v1 = (other_velocity if is_unit(other_velocity)

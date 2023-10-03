@@ -4,12 +4,17 @@ Example of library usage
 import logging
 
 try:
-    import pyximport; pyximport.install(language_level=3)
+    import pyximport
+    pyximport.install(language_level=3)
 except ImportError as err:
+    pyximport = None
     logging.error(err)
     logging.warning("Install Cython to use pyximport")
 
-from py_ballisticcalc import *
+from py_ballisticcalc import Velocity, Temperature, Distance
+from py_ballisticcalc import Projectile, DragModel, TableG7
+from py_ballisticcalc import Ammo, Atmo, Wind
+from py_ballisticcalc import Weapon, Shot, Calculator
 from py_ballisticcalc import Settings as Set
 
 # set global library settings

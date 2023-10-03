@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from math import pow, sqrt, fabs
 
 from .settings import Settings as Set
-from .unit import *
+from .unit import Distance, Velocity, Temperature, Pressure, is_unit, TypedUnits
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
