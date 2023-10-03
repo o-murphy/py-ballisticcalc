@@ -1,18 +1,12 @@
-import logging
 import math
 import timeit
 import unittest
 from datetime import datetime
 from math import fabs
 
-try:
-    import pyximport
-    pyximport.install(language_level=3)
-except ImportError as err:
-    pyximport = None
-    logging.error(err)
-    logging.warning("Install Cython to use pyximport")
+import pyximport
 
+pyximport.install(language_level=3)
 from py_ballisticcalc import *
 
 
