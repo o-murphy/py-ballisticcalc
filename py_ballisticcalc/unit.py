@@ -506,11 +506,15 @@ class TypedUnits(ABC):
 
 
 def is_unit(obj: [AbstractUnit, float, int]):
+    """
+    Check if obj is inherited by AbstractUnit
+    :return: False - if float or int
+    """
     if isinstance(obj, AbstractUnit):
         return True
-    elif isinstance(obj, (float, int)):
+    if isinstance(obj, (float, int)):
         return False
-    elif obj is None:
+    if obj is None:
         return None
     raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
 
