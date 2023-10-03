@@ -1,5 +1,6 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 cimport cython
+from cpython cimport array
 
 from .conditions import *
 from .munition import *
@@ -16,6 +17,11 @@ cdef double cMinimumVelocity = 50.0
 cdef double cMaximumDrop = -15000
 cdef int cMaxIterations = 10
 cdef double cGravityConstant = -32.17405
+
+
+cdef struct CurvePoint:
+    double a, b, c
+
 
 cdef class Vector:
     cdef double x
@@ -88,6 +94,17 @@ cdef class Vector:
 
 cdef class TrajectoryCalc:
 
+    cdef object ammo
+    cdef list _curve
+    cdef list _table_data
+    cdef double _bc
+
+    def __init__(self, ammo: Ammo):
+        self.ammo = ammo
+        self._bc = self.ammo.projectile.dm.value
+        self._table_data = ammo.projectile.dm.drag_table
+        self._curve = calculate_curve(self._table_data)
+
     cdef double get_calc_step(self, double step):
         cdef:
             int step_order, maximum_order
@@ -102,12 +119,12 @@ cdef class TrajectoryCalc:
 
         return step
 
-    def sight_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
-        return self._sight_angle(ammo, weapon, atmo)
+    def sight_angle(self, weapon: Weapon, atmo: Atmo):
+        return self._sight_angle(self.ammo, weapon, atmo)
 
-    def trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
+    def trajectory(self, weapon: Weapon, atmo: Atmo,
                    shot_info: Shot, winds: list[Wind]):
-        return self._trajectory(ammo, weapon, atmo, shot_info, winds)
+        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds)
 
     cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef:
@@ -142,7 +159,10 @@ cdef class TrajectoryCalc:
                     break
 
                 delta_time = calc_step / velocity_vector.x
-                drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
+                # drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
+                drag = density_factor * velocity * self.drag_by_match(
+                    velocity / mach,
+                )
 
                 velocity_vector -= (velocity_vector * drag - gravity_vector) * delta_time
                 delta_range_vector = Vector(calc_step, velocity_vector.y * delta_time,
@@ -283,7 +303,10 @@ cdef class TrajectoryCalc:
 
             delta_time = calc_step / velocity_vector.x
             velocity = velocity_adjusted.magnitude()
-            drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
+            # drag = density_factor * velocity * ammo.projectile.dm.drag(velocity / mach)
+            drag = density_factor * velocity * self.drag_by_match(
+                velocity / mach,
+            )
 
             velocity_vector -= (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calc_step,
@@ -294,6 +317,10 @@ cdef class TrajectoryCalc:
             time += delta_range_vector.magnitude() / velocity
 
         return ranges
+
+    cdef double drag_by_match(self, double mach):
+        cdef double cd = calculate_by_curve(self._table_data, self._curve, mach)
+        return cd * 2.08551e-04 / self._bc
 
 
 cdef double calculate_stability_coefficient(object ammo, object rifle, object atmo):
@@ -334,3 +361,60 @@ cdef double calculate_energy(double bullet_weight, double velocity):
 
 cdef double calculate_ogv(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
+
+
+cdef list calculate_curve(list data_points):
+
+    cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
+    cdef list curve = []
+    cdef CurvePoint curve_point
+    cdef int num_points, len_data_points, len_data_range
+
+    rate = (data_points[1]['CD'] - data_points[0]['CD']) / (data_points[1]['Mach'] - data_points[0]['Mach'])
+    curve = [CurvePoint(0, rate, data_points[0]['CD'] - data_points[0]['Mach'] * rate)]
+    len_data_points = int(len(data_points))
+    len_data_range = len_data_points - 1
+
+    for i in range(1, len_data_range):
+        x1 = data_points[i - 1]['Mach']
+        x2 = data_points[i]['Mach']
+        x3 = data_points[i + 1]['Mach']
+        y1 = data_points[i - 1]['CD']
+        y2 = data_points[i]['CD']
+        y3 = data_points[i + 1]['CD']
+        a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
+                (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
+        b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
+        c = y1 - (a * x1 * x1 + b * x1)
+        curve_point = CurvePoint(a, b, c)
+        curve.append(curve_point)
+
+    num_points = len_data_points
+    rate = (data_points[num_points - 1]['CD'] - data_points[num_points - 2]['CD']) / \
+           (data_points[num_points - 1]['Mach'] - data_points[num_points - 2]['Mach'])
+    curve_point = CurvePoint(0, rate, data_points[num_points - 1]['CD'] - data_points[num_points - 2]['Mach'] * rate)
+    curve.append(curve_point)
+    return curve
+
+
+cdef double calculate_by_curve(data: list, curve: list, mach: float):
+    cdef int num_points, mlo, mhi, mid
+    cdef CurvePoint curve_m
+
+    num_points = int(len(curve))
+    mlo = 0
+    mhi = num_points - 2
+
+    while mhi - mlo > 1:
+        mid = int(floor(mhi + mlo) / 2.0)
+        if data[mid]['Mach'] < mach:
+            mlo = mid
+        else:
+            mhi = mid
+
+    if data[mhi]['Mach'] - mach > mach - data[mlo]['Mach']:
+        m = mlo
+    else:
+        m = mhi
+    curve_m = curve[m]
+    return curve_m.c + mach * (curve_m.b + curve_m.a * mach)

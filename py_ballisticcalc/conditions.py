@@ -21,11 +21,13 @@ cStandardTemperature: float = 59.0
 cStandardPressure: float = 29.92
 cStandardDensity: float = 0.076474
 
+cIcaoTemperatureDeltaR: float = cIcaoStandardTemperatureR - cIcaoFreezingPointTemperatureR
+
 
 class Atmo:
     __slots__ = ('altitude', 'pressure',
                  'temperature', 'humidity',
-                 'density', 'mach', '_mach1')
+                 'density', 'mach', '_mach1', '_a0', '_t0', '_p0', '_ta')
 
     def __init__(self, altitude: [float, Distance],
                  pressure: [float, Pressure],
@@ -42,8 +44,6 @@ class Atmo:
             self.pressure: Pressure = pressure if is_unit(pressure) else Set.Units.pressure(pressure)
             self.temperature: Temperature = temperature if is_unit(temperature) else Set.Units.temperature(temperature)
             self.humidity: float = humidity
-
-        self.density, self.mach, self._mach1, = None, None, None
 
         self.calculate()
 
@@ -92,28 +92,26 @@ class Atmo:
         return density, mach
 
     def calculate(self):
-        t = self.temperature >> Temperature.Fahrenheit
-        p = self.pressure >> Pressure.InHg
-        density, mach = self.calculate0(t, p)
-        self.density = density
-        self._mach1 = mach
-        self.mach = Velocity(mach, Velocity.FPS)
+        self._t0 = self.temperature >> Temperature.Fahrenheit
+        self._p0 = self.pressure >> Pressure.InHg
+        self._a0 = self.altitude >> Distance.Foot
+        self._ta = self._a0 * cTemperatureGradient + cIcaoTemperatureDeltaR
+
+        self.density, self._mach1 = self.calculate0(self._t0, self._p0)
+        self.mach = Velocity(self._mach1, Velocity.FPS)
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float):
 
-        org_altitude = self.altitude >> Distance.Foot
-        if fabs(org_altitude - altitude) < 30:
+        if fabs(self._a0 - altitude) < 30:
             density = self.density / cStandardDensity
             mach = self._mach1
             return density, mach
 
-        t0 = self.temperature >> Temperature.Fahrenheit
-        p = self.pressure >> Pressure.InHg
-
-        ta = cIcaoStandardTemperatureR + org_altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
-        tb = cIcaoStandardTemperatureR + altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
-        t = t0 + ta - tb
-        p = p * pow(t0 / t, cPressureExponent)
+        # ta = cIcaoStandardTemperatureR + self._a0 * cTemperatureGradient - cIcaoFreezingPointTemperatureR
+        # tb = cIcaoStandardTemperatureR + altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
+        tb = altitude * cTemperatureGradient + cIcaoTemperatureDeltaR
+        t = self._t0 + self._ta - tb
+        p = self._p0 * pow(self._t0 / t, cPressureExponent)
 
         density, mach = self.calculate0(t, p)
         return density / cStandardDensity, mach

@@ -57,15 +57,6 @@ class TestDrag(unittest.TestCase):
         )
         return bc
 
-    def test_drag(self):
-        return self.bc.drag(3)
-
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=1)
-        print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
-        t = timeit.timeit(self.test_drag, number=50000)
-        print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
-
 
 class TestG7Profile(unittest.TestCase):
 
@@ -76,10 +67,6 @@ class TestG7Profile(unittest.TestCase):
             weight=Weight(167, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
         )
-
-    def test_drag(self):
-        ret = self.bc.calculated_drag_function()
-        self.assertIsInstance(ret[0], dict)
 
     def test_mbc(self):
         bc = MultiBC(
@@ -106,14 +93,10 @@ class TestG7Profile(unittest.TestCase):
         twist = Distance(11, Distance.Inch)
         weapon = Weapon(Distance(90, Distance.Millimeter), Distance(100, Distance.Meter), twist)
         wind = [Wind()]
-        calc = TrajectoryCalc()
-        sight_angle = calc.sight_angle(ammo, weapon, atmo)
+        calc = TrajectoryCalc(ammo)
+        sight_angle = calc.sight_angle(weapon, atmo)
         shot_info = Shot(Distance(2500, Distance.Meter), Distance(1, Distance.Meter), sight_angle)
-        return calc.trajectory(ammo, weapon, atmo, shot_info, wind)
-
-    def test_calc_by_curve(self):
-        for i in range(50000):
-            self.bc.drag(Velocity(800 / 340 + i/10, Velocity.MPS) >> Velocity.FPS)
+        return calc.trajectory(weapon, atmo, shot_info, wind)
 
     def test_time(self):
         t = timeit.timeit(self.test_create, number=1)
@@ -128,9 +111,9 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammo(projectile, 2600)
         weapon = Weapon(Distance(3.2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.ICAO()
-        calc = TrajectoryCalc()
+        calc = TrajectoryCalc(ammo)
 
-        sight_angle = calc.sight_angle(ammo, weapon, atmosphere)
+        sight_angle = calc.sight_angle(weapon, atmosphere)
 
         self.assertLess(fabs((sight_angle >> Angular.Radian) - 0.001651), 1e-6,
                         f'TestZero1 failed {sight_angle >> Angular.Radian:.10f}')
@@ -141,9 +124,9 @@ class TestPyBallisticCalc(unittest.TestCase):
         ammo = Ammo(projectile, 2750)
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.ICAO()
-        calc = TrajectoryCalc()
+        calc = TrajectoryCalc(ammo)
 
-        sight_angle = calc.sight_angle(ammo, weapon, atmosphere)
+        sight_angle = calc.sight_angle(weapon, atmosphere)
 
         self.assertLess(fabs((sight_angle >> Angular.Radian) - 0.001228), 1e-6,
                         f'TestZero2 failed {sight_angle >> Angular.Radian:.10f}')
@@ -191,8 +174,8 @@ class TestPyBallisticCalc(unittest.TestCase):
         atmosphere = Atmo.ICAO()
         shot_info = Shot(1000, 100, sight_angle=Angular(0.001228, Angular.Radian))
         wind = [Wind(Velocity(5, Velocity.MPH), Angular(-45, Angular.Degree))]
-        calc = TrajectoryCalc()
-        data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
+        calc = TrajectoryCalc(ammo)
+        data = calc.trajectory(weapon, atmosphere, shot_info, wind)
 
         self.assertEqualCustom(len(data), 11, 0.1, "Length")
 
@@ -219,8 +202,8 @@ class TestPyBallisticCalc(unittest.TestCase):
                          )
         wind = [Wind(Velocity(5, Velocity.MPH), -45)]
 
-        calc = TrajectoryCalc()
-        data = calc.trajectory(ammo, weapon, atmosphere, shot_info, wind)
+        calc = TrajectoryCalc(ammo)
+        data = calc.trajectory(weapon, atmosphere, shot_info, wind)
 
         self.assertEqualCustom(len(data), 11, 0.1, "Length")
 
@@ -249,7 +232,7 @@ class TestPerformance(unittest.TestCase):
                          )
         self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
 
-        self.calc = TrajectoryCalc()
+        self.calc = TrajectoryCalc(self.ammo)
 
     def test__init__(self):
         bc = DragModel(0.223, TableG7, 168, 0.308)
@@ -263,13 +246,13 @@ class TestPerformance(unittest.TestCase):
                          )
         self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
 
-        self.calc = TrajectoryCalc()
+        self.calc = TrajectoryCalc(self.ammo)
 
     def test_elevation_performance(self):
-        sh = self.calc.sight_angle(self.ammo, self.weapon, self.atmo)
+        sh = self.calc.sight_angle(self.weapon, self.atmo)
 
     def test_path_performance(self):
-        data = self.calc.trajectory(self.ammo, self.weapon, self.atmo, self.shot, self.wind)
+        data = self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
 
 
 def test_back_n_forth(test, value, units):

@@ -2,7 +2,7 @@ __author__ = "o-murphy"
 __copyright__ = ("",)
 
 __credits__ = ["O-Murphy"]
-__version__ = "1.1.0b1"
+__version__ = "1.1.0b2"
 
 from .drag_model import *
 from .drag_tables import *
