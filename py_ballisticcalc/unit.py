@@ -250,7 +250,7 @@ class Distance(AbstractUnit):
             return value / 25.4 * 1000
         elif units == Distance.Kilometer:
             return value / 25.4 * 1000000
-        super(Distance, self).to_raw(value, units)
+        super().to_raw(value, units)
 
     def from_raw(self, value: float, units: Unit):
         if units == Distance.Inch:
@@ -273,7 +273,7 @@ class Distance(AbstractUnit):
             return value * 25.4 / 1000
         elif units == Distance.Kilometer:
             return value * 25.4 / 1000000
-        super(Distance, self).from_raw(value, units)
+        super().from_raw(value, units)
 
     Inch = Unit.Inch
     Foot = Unit.Foot
@@ -300,7 +300,7 @@ class Pressure(AbstractUnit):
             return value * 750.061683 / 1000
         elif units == Pressure.PSI:
             return value * 51.714924102396
-        super(Pressure, self).to_raw(value, units)
+        super().to_raw(value, units)
 
     def from_raw(self, value: float, units: Unit):
         if units == Pressure.MmHg:
@@ -313,7 +313,7 @@ class Pressure(AbstractUnit):
             return value / 750.061683 * 1000
         elif units == Pressure.PSI:
             return value / 51.714924102396
-        super(Pressure, self).from_raw(value, units)
+        super().from_raw(value, units)
 
     MmHg = Unit.MmHg
     InHg = Unit.InHg
@@ -337,7 +337,7 @@ class Weight(AbstractUnit):
             return value / 0.000142857143
         elif units == Weight.Ounce:
             return value * 437.5
-        super(Weight, self).to_raw(value, units)
+        super().to_raw(value, units)
 
     def from_raw(self, value: float, units: Unit):
         if units == Weight.Grain:
@@ -352,7 +352,7 @@ class Weight(AbstractUnit):
             return value * 0.000142857143
         elif units == Weight.Ounce:
             return value / 437.5
-        super(Weight, self).from_raw(value, units)
+        super().from_raw(value, units)
 
     Grain = Unit.Grain
     Ounce = Unit.Ounce
@@ -373,7 +373,7 @@ class Temperature(AbstractUnit):
             return value * 9 / 5 + 32
         elif units == Temperature.Kelvin:
             return (value - 273.15) * 9 / 5 + 32
-        super(Temperature, self).to_raw(value, units)
+        super().to_raw(value, units)
 
     def from_raw(self, value: float, units: Unit):
         if units == Temperature.Fahrenheit:
@@ -384,7 +384,7 @@ class Temperature(AbstractUnit):
             return (value - 32) * 5 / 9
         elif units == Temperature.Kelvin:
             return (value - 32) * 5 / 9 + 273.15
-        super(Temperature, self).from_raw(value, units)
+        super().from_raw(value, units)
 
     Fahrenheit = Unit.Fahrenheit
     Celsius = Unit.Celsius
@@ -411,7 +411,7 @@ class Angular(AbstractUnit):
             return atan(value / 3600)
         elif units == Angular.CmPer100M:
             return atan(value / 10000)
-        super(Angular, self).to_raw(value, units)
+        super().to_raw(value, units)
 
     def from_raw(self, value: float, units: Unit):
         if units == Angular.Radian:
@@ -430,7 +430,7 @@ class Angular(AbstractUnit):
             return tan(value) * 3600
         elif units == Angular.CmPer100M:
             return tan(value) * 10000
-        super(Angular, self).from_raw(value, units)
+        super().from_raw(value, units)
 
     Radian = Unit.Radian
     Degree = Unit.Degree
@@ -455,7 +455,7 @@ class Velocity(AbstractUnit):
             return value / 2.23693629
         elif units == Velocity.KT:
             return value / 1.94384449
-        super(Velocity, self).to_raw(value, units)
+        super().to_raw(value, units)
 
     def from_raw(self, value: float, units: Unit):
         if units == Velocity.MPS:
@@ -468,7 +468,7 @@ class Velocity(AbstractUnit):
             return value * 2.23693629
         elif units == Velocity.KT:
             return value * 1.94384449
-        super(Velocity, self).from_raw(value, units)
+        super().from_raw(value, units)
 
     MPS = Unit.MPS
     KMH = Unit.KMH
@@ -484,14 +484,14 @@ class Energy(AbstractUnit):
             return value
         elif units == Energy.Joule:
             return value * 0.737562149277
-        super(Energy, self).to_raw(value, units)
+        super().to_raw(value, units)
 
     def from_raw(self, value: float, units: Unit):
         if units == Energy.FootPound:
             return value
         elif units == Energy.Joule:
             return value / 0.737562149277
-        super(Energy, self).from_raw(value, units)
+        super().from_raw(value, units)
 
     FootPound = Unit.FootPound
     Joule = Unit.Joule
@@ -502,7 +502,7 @@ class TypedUnits(ABC):
         if hasattr(self, key):
             if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):
                 value = get_type_hints(self)[key](value)
-        super(TypedUnits, self).__setattr__(key, value)
+        super().__setattr__(key, value)
 
 
 def is_unit(obj: [AbstractUnit, float, int]):
