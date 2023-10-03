@@ -1,4 +1,4 @@
-from py_ballisticcalc.unit import *
+from .unit import *
 
 
 __all__ = ('Settings',)
@@ -7,19 +7,19 @@ __all__ = ('Settings',)
 class Settings:
 
     class Units:
-        sight_height: Unit = Unit.Inch
-        twist: Unit = Unit.Inch
+        sight_height: Unit = Unit.INCH
+        twist: Unit = Unit.INCH
         velocity: Unit = Unit.FPS
-        distance: Unit = Unit.Yard
-        temperature: Unit = Unit.Celsius
-        weight: Unit = Unit.Grain
-        length: Unit = Unit.Inch
-        diameter: Unit = Unit.Inch
+        distance: Unit = Unit.YARD
+        temperature: Unit = Unit.CELSIUS
+        weight: Unit = Unit.GRAIN
+        length: Unit = Unit.INCH
+        diameter: Unit = Unit.INCH
         pressure: Unit = Unit.HP
-        drop: Unit = Unit.Centimeter
-        angular: Unit = Unit.Degree
-        adjustment: Unit = Unit.Mil
-        energy: Unit = Unit.Joule
+        drop: Unit = Unit.CENTIMETER
+        angular: Unit = Unit.DEGREE
+        adjustment: Unit = Unit.MIL
+        energy: Unit = Unit.JOULE
 
     _MAX_CALC_STEP_SIZE: float = 1
     USE_POWDER_SENSITIVITY: bool = False
