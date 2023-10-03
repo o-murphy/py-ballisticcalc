@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass, field
 
 from .drag_model import *
 from .settings import Settings as Set
@@ -7,52 +8,31 @@ from .unit import *
 __all__ = ('Weapon', 'Ammo', 'Projectile')
 
 
-class Weapon:
-    __slots__ = (
-        'sight_height',
-        'zero_distance',
-        'twist',
-        # 'click_value'
-    )
+@dataclass
+class Weapon(TypedUnits):
+    sight_height: Set.Units.sight_height
+    zero_distance: Set.Units.distance = field(default=100)
+    twist: Set.Units.sight_height = field(default=0)
 
-    def __init__(self,
-                 sight_height: [float, Distance],
-                 zero_distance: [float, Distance] = Distance.Yard(100),
-                 twist: [float, Distance] = Distance.Inch(0),
-                 # click_value: [float, Angular] = Angular(0.25, Angular.Mil)
-                 ):
-        self.sight_height = sight_height if is_unit(sight_height) else Set.Units.sight_height(sight_height)
-        self.zero_distance = zero_distance if is_unit(zero_distance) else Set.Units.distance(zero_distance)
-        self.twist = twist if is_unit(twist) else Set.Units.twist(twist)
-        # self.click_value = click_value if is_unit(click_value) else Angular(click_value, Set.Units.adjustment)
+    def __post_init__(self):
+        self.sight_height = self.sight_height
 
 
-class Projectile:
-    __slots__ = ('dm',
-                 'weight',
-                 'diameter',
-                 'length')
-
-    def __init__(self, dm: DragModel,
-                 length: [float, Distance] = None):
-        self.dm: DragModel = dm
-        self.weight = self.dm.weight
-        self.diameter = self.dm.diameter
-        self.length: Distance = length if is_unit(length) else Set.Units.length(length) if length else None
+@dataclass
+class Projectile(TypedUnits):
+    dm: DragModel
+    length: Set.Units.length = field(default=None)
 
 
-class Ammo:
-    __slots__ = ('projectile', 'muzzle_velocity', 'temp_modifier', 'powder_temp')
+@dataclass
+class Ammo(TypedUnits):
+    projectile: Projectile
+    muzzle_velocity: Set.Units.velocity
+    temp_modifier: float = 0
+    powder_temp: Set.Units.temperature = field(default=Temperature.Celsius(15))
 
-    def __init__(self, projectile: Projectile, muzzle_velocity: [float, Velocity],
-                 powder_temp: [float, Temperature] = Temperature.Celsius(15),
-                 temp_modifier: float = 0):
-        self.projectile: Projectile = projectile
-        self.muzzle_velocity: [float, Velocity] = muzzle_velocity \
-            if is_unit(muzzle_velocity) else Set.Units.velocity(muzzle_velocity)
-        self.temp_modifier: float = temp_modifier
-        self.powder_temp: [float, Temperature] = powder_temp \
-            if is_unit(powder_temp) else Set.Units.temperature(powder_temp)
+    def __post_init__(self):
+        self.muzzle_velocity = self.muzzle_velocity
 
     def calc_powder_sens(self, other_velocity: float | Velocity, other_temperature: [float, Temperature]):
         # (800-792) / (15 - 0) * (15/792) * 100 = 1.01

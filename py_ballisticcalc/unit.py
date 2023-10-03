@@ -1,11 +1,11 @@
 from abc import ABC
-from enum import Enum, IntEnum
+from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple, Callable
+from typing import NamedTuple, Callable, get_type_hints
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'is_unit')
+           'Energy', 'Weight', 'is_unit', 'TypedUnits')
 
 
 class Unit(IntEnum):
@@ -164,7 +164,7 @@ class AbstractUnit(ABC):
         return f'{round(v, props.accuracy)} {props.symbol}'
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}>: {self >> self.units} {self.units.symbol} ({self._value})'
+        return f'<{self.__class__.__name__}: {self >> self.units} {self.units.symbol} ({self._value})>'
 
     def __format__(self, format_spec: str = "{v:.{a}f} {s}"):
         """
@@ -495,6 +495,14 @@ class Energy(AbstractUnit):
 
     FootPound = Unit.FootPound
     Joule = Unit.Joule
+
+
+class TypedUnits(ABC):
+    def __setattr__(self, key, value):
+        if hasattr(self, key):
+            if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):
+                value = get_type_hints(self)[key](value)
+        super(TypedUnits, self).__setattr__(key, value)
 
 
 def is_unit(obj: [AbstractUnit, float, int]):

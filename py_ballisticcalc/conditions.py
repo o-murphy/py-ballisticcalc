@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 from math import pow, sqrt, fabs
 
 from .settings import Settings as Set
@@ -117,39 +118,21 @@ class Atmo:
         return density / cStandardDensity, mach
 
 
-class Wind:
-    """
-    Represents wind info valid to desired distance
-
-    Attributes:
-        until_distance (Distance): default 9999 - represents inf
-        velocity (Velocity): default 0
-        direction (Angular): default 0
-    """
-
-    __slots__ = ('velocity', 'direction', 'until_distance')
-
-    def __init__(self, velocity: [float, Velocity] = Velocity.FPS(0),
-                 direction: [float, Angular] = Angular.Degree(0),
-                 until_distance: [float, Distance] = Distance.Kilometer(9999)):
-        self.velocity: Velocity = velocity if is_unit(velocity) else Set.Units.velocity(velocity)
-        self.direction: Angular = direction if is_unit(direction) else Set.Units.angular(direction)
-        self.until_distance: Distance = until_distance \
-            if is_unit(until_distance) else Set.Units.distance(until_distance)
+@dataclass
+class Wind(TypedUnits):
+    velocity: Set.Units.velocity = field(default=0)
+    direction: Set.Units.angular = field(default=0)
+    until_distance: Set.Units.distance = field(default=9999)
 
 
-class Shot:
-    __slots__ = ('sight_angle', 'max_range', 'step', 'shot_angle', 'cant_angle')
+@dataclass
+class Shot(TypedUnits):
+    max_range: Set.Units.distance
+    step: Set.Units.distance
+    shot_angle: Set.Units.angular = field(default=0)
+    cant_angle: Set.Units.angular = field(default=0)
+    sight_angle: Set.Units.angular = field(default=0)
 
-    def __init__(self,
-                 max_range: [float, Distance],
-                 step: [float, Distance],
-                 shot_angle: [float, Angular] = 0,
-                 cant_angle: [float, Angular] = 0,
-                 sight_angle: [float, Angular] = 0
-                 ):
-        self.sight_angle: Angular = sight_angle if is_unit(sight_angle) else Set.Units.angular(sight_angle)
-        self.max_range: Distance = max_range if is_unit(max_range) else Set.Units.distance(max_range)
-        self.step: Distance = step if is_unit(step) else Set.Units.distance(step)
-        self.shot_angle: Angular = shot_angle if is_unit(shot_angle) else Set.Units.angular(shot_angle)
-        self.cant_angle: Angular = cant_angle if is_unit(cant_angle) else Set.Units.angular(cant_angle)
+    def __post_init__(self):
+        self.max_range = self.max_range
+        self.step = self.step
