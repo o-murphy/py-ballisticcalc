@@ -1,3 +1,7 @@
+"""
+Use-full types for units of measurement conversion for ballistics calculations
+"""
+
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Callable, get_type_hints
@@ -497,7 +501,13 @@ class Energy(AbstractUnit):
 
 
 class TypedUnits:
+    """
+    Abstract class to apply auto-conversion values to specified units by type-hints in inherited dataclasses
+    """
     def __setattr__(self, key, value):
+        """
+        converts value to specified units by type-hints in inherited dataclass
+        """
         if hasattr(self, key):
             if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):
                 value = get_type_hints(self)[key](value)
