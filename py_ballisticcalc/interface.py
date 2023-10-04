@@ -31,12 +31,9 @@ class Calculator:
     def cdm(self):
         return self._calc.cdm
 
-    def __post_init__(self):
-        """Creates calculator instance with specified ammo"""
-        self._calc = TrajectoryCalc(self.ammo)
-
     def update_elevation(self):
         """Recalculates barrel elevation for weapon and zero atmo"""
+        self._calc = TrajectoryCalc(self.ammo)
         self._elevation = self._calc.sight_angle(self.weapon, self.zero_atmo)
 
     def trajectory(self, shot: Shot, current_atmo: Atmo, winds: list[Wind]) -> list:
@@ -46,6 +43,7 @@ class Calculator:
         :param winds: current winds list
         :return: trajectory table
         """
+        self._calc = TrajectoryCalc(self.ammo)
         if not self._elevation and not shot.sight_angle:
             self.update_elevation()
             shot.sight_angle = self._elevation
@@ -55,7 +53,7 @@ class Calculator:
     def zero_given_elevation(self, elevation: [float, Angular],
                              winds: list[Wind] = None) -> TrajectoryData:
         """Find the zero distance for a given barrel elevation"""
-
+        self._calc = TrajectoryCalc(self.ammo)
         if not winds:
             winds = [Wind()]
 
