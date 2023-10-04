@@ -1,6 +1,5 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 cimport cython
-from cpython cimport array
 
 from .conditions import *
 from .munition import *

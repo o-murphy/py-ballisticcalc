@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
-from math import pow, sqrt, fabs
+import math
 
 from .settings import Settings as Set
-from .unit import *
+from .unit import Distance, Velocity, Temperature, Pressure, is_unit, TypedUnits
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
@@ -39,17 +39,20 @@ class Atmo:
             humidity = humidity / 100
         if not (0 <= humidity <= 1) or not (altitude and pressure and temperature):
             self.create_default()
-            # TODO: maby have to raise ValueError instead of create_default
         else:
-            self.altitude: Distance = altitude if is_unit(altitude) else Set.Units.distance(altitude)
-            self.pressure: Pressure = pressure if is_unit(pressure) else Set.Units.pressure(pressure)
-            self.temperature: Temperature = temperature if is_unit(temperature) else Set.Units.temperature(temperature)
+            self.altitude: Distance = altitude if is_unit(altitude) \
+                else Set.Units.distance(altitude)
+            self.pressure: Pressure = pressure if is_unit(pressure) \
+                else Set.Units.pressure(pressure)
+            self.temperature: Temperature = temperature if is_unit(temperature) \
+                else Set.Units.temperature(temperature)
             self.humidity: float = humidity
 
         self.calculate()
 
     @staticmethod
-    def ICAO(altitude: [float, Distance] = 0):
+    def icao(altitude: [float, Distance] = 0):
+        """Creates Atmosphere with ICAO values"""
         altitude = altitude if is_unit(altitude) else Distance(altitude, Set.Units.distance)
         temperature = Temperature.Fahrenheit(
             cIcaoStandardTemperatureR + (altitude >> Distance.Foot)
@@ -57,7 +60,7 @@ class Atmo:
         )
 
         pressure = Pressure.InHg(
-            cStandardPressure * pow(cIcaoStandardTemperatureR / (
+            cStandardPressure * math.pow(cIcaoStandardTemperatureR / (
                     (temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
                                     cPressureExponent
                                     )
@@ -88,8 +91,10 @@ class Atmo:
         else:
             hc = 1.0
 
-        density = cStandardDensity * (cIcaoStandardTemperatureR / (t + cIcaoFreezingPointTemperatureR)) * hc
-        mach = sqrt(t + cIcaoFreezingPointTemperatureR) * cSpeedOfSound
+        density = cStandardDensity * (
+                cIcaoStandardTemperatureR / (t + cIcaoFreezingPointTemperatureR)
+        ) * hc
+        mach = math.sqrt(t + cIcaoFreezingPointTemperatureR) * cSpeedOfSound
         return density, mach
 
     def calculate(self):
@@ -103,16 +108,14 @@ class Atmo:
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float):
 
-        if fabs(self._a0 - altitude) < 30:
+        if math.fabs(self._a0 - altitude) < 30:
             density = self.density / cStandardDensity
             mach = self._mach1
             return density, mach
 
-        # ta = cIcaoStandardTemperatureR + self._a0 * cTemperatureGradient - cIcaoFreezingPointTemperatureR
-        # tb = cIcaoStandardTemperatureR + altitude * cTemperatureGradient - cIcaoFreezingPointTemperatureR
         tb = altitude * cTemperatureGradient + cIcaoTemperatureDeltaR
         t = self._t0 + self._ta - tb
-        p = self._p0 * pow(self._t0 / t, cPressureExponent)
+        p = self._p0 * math.pow(self._t0 / t, cPressureExponent)
 
         density, mach = self.calculate0(t, p)
         return density / cStandardDensity, mach

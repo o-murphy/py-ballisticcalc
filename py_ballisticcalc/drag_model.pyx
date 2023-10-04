@@ -1,16 +1,12 @@
-from libc.math cimport floor, pow
-from libc.stdlib cimport malloc, free
+import typing
+
+from libc.math cimport pow
 
 from .settings import Settings as Set
-from .unit import *
+from .unit import Weight, Distance, is_unit
 from .drag_tables import DragTablesSet
 
-
-__all__ = (
-    'DragModel',
-    # 'make_data_points'
-)
-
+__all__ = ('DragModel', )
 
 cdef class DragDataPoint:
     cdef readonly double CD  # BC or CD
@@ -27,15 +23,12 @@ cdef class DragDataPoint:
     def __repr__(self):
         return f"DragDataPoint(CD={self.CD}, Mach={self.Mach})"
 
-
 cdef struct CurvePoint:
     double a, b, c
-
 
 cdef struct DragTableRow:
     double CD
     double Mach
-
 
 cdef class DragModel:
     cdef:
@@ -45,12 +38,12 @@ cdef class DragModel:
         double form_factor, sectional_density
 
     def __init__(self, double value,
-                 drag_table: list,
+                 drag_table: typing.Iterable,
                  weight: [float, Weight],
                  diameter: [float, Distance]):
         self.__post__init__(value, drag_table, weight, diameter)
 
-    cdef __post__init__(DragModel self, double value, list drag_table, double weight, double diameter):
+    cdef __post__init__(DragModel self, double value, object drag_table, double weight, double diameter):
         cdef:
             double table_len = len(drag_table)
             str error = ''
@@ -107,7 +100,7 @@ cdef class DragModel:
     #
     #     return calculated_cd_table
 
-cpdef list make_data_points(drag_table: list):
+cpdef list make_data_points(drag_table: typing.Iterable):
     return [DragDataPoint(point['CD'], point['Mach']) for point in drag_table]
 
 cdef double sectional_density(double weight, double diameter):

@@ -1,7 +1,9 @@
+"""Implements a point of trajectory class in applicable data types"""
+
 from typing import NamedTuple
 
 from .settings import Settings as Set
-from .unit import *
+from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit
 
 __all__ = ('TrajectoryData',)
 
@@ -28,18 +30,21 @@ class TrajectoryData(NamedTuple):
     velocity: Velocity
     mach: float
     drop: Distance
-    drop_adj: Angular | None  # drop_adjustment
+    drop_adj: Angular  # drop_adjustment
     windage: Distance
-    windage_adj: Angular | None  # windage_adjustment
+    windage_adj: Angular  # windage_adjustment
     energy: Energy
     ogw: Weight
 
-    def formatted(self):
-
+    def formatted(self) -> tuple:
+        """
+        :return: matrix of formatted strings for each value of trajectory in default units
+        """
         def _fmt(v: AbstractUnit, u: Unit):
+            """simple formatter"""
             return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 
-        return [
+        return (
             f'{self.time:.2f} s',
             _fmt(self.distance, Set.Units.distance),
             _fmt(self.velocity, Set.Units.velocity),
@@ -49,9 +54,12 @@ class TrajectoryData(NamedTuple):
             _fmt(self.windage, Set.Units.drop),
             _fmt(self.windage_adj, Set.Units.adjustment),
             _fmt(self.energy, Set.Units.energy)
-        ]
+        )
 
-    def in_def_units(self):
+    def in_def_units(self) -> tuple:
+        """
+        :return: matrix of floats of the trajectory in default units
+        """
         return (
             self.time,
             self.distance >> Set.Units.distance,

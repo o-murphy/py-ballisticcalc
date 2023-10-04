@@ -37,6 +37,7 @@ git clone https://github.com/o-murphy/py_ballisticcalc
 
 The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
 #### Unit manipulation syntax:
+
 ```python
 from py_ballisticcalc.unit import *
 
@@ -46,7 +47,7 @@ unit_in_meter = Distance(100, Distance.Meter)
 # 2. short syntax by Unit type class
 unit_in_meter = Distance.Meter(100)
 # 3. by Unit enum class
-unit_in_meter = Unit.Meter(100)
+unit_in_meter = Unit.METER(100)
 
 # >>> <Distance>: 100.0 m (3937.0078740157483)
 
@@ -103,7 +104,7 @@ bullet = Projectile(dm, length)
 ammo = Ammo(bullet, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
 
-zero_atmo = Atmo.ICAO()
+zero_atmo = Atmo.icao()
 
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)
