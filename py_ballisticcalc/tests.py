@@ -35,23 +35,28 @@ class TestMBC(unittest.TestCase):
 class TestInterface(unittest.TestCase):
 
     def setUp(self) -> None:
-        dm = DragModel(0.223, TableG7, 168, 0.308)
-        ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
-        weapon = Weapon(2, Distance.Yard(100), 11.24)
+        dm = DragModel(0.22, TableG7, 168, 0.308)
+        ammo = Ammo(dm, 1.22, Velocity(2600, Velocity.FPS))
+        weapon = Weapon(9, Distance.Yard(100), 11.24)
         self.atmosphere = Atmo.icao()
         self.calc = Calculator(weapon, ammo, self.atmosphere)
 
     def test_zero_given_elevation(self):
-        zero_given = self.calc.zero_given_elevation(self.calc._elevation)
+        self.calc.update_elevation()
+        zero_given = self.calc.zero_given_elevation(self.calc.elevation)
         zero_distance = zero_given.distance >> Distance.Yard
-        self.assertFalse(fabs(zero_distance - 100) > 1e-7)
+        reference_distance = self.calc.weapon.zero_distance >> Distance.Yard
+        print(zero_distance, reference_distance)
+        self.assertLessEqual(fabs(zero_distance - reference_distance), 1e-7)
 
     def test_danger_space(self):
         winds = [Wind()]
         self.calc.update_elevation()
+        print('aim', self.calc.elevation >> Angular.MOA)
         data = self.calc.zero_given_elevation(self.calc.elevation, winds)
-        print(self.calc.danger_space(data, Distance.Meter(1.7)) >> Distance.Meter)
-        print(self.calc.danger_space(data, Distance.Meter(1.6)) >> Distance.Meter)
+        print(self.calc.danger_space(data, Distance.Meter(1.7)) << Distance.Meter)
+        print(self.calc.danger_space(data, Distance.Meter(1.6)) << Distance.Meter)
+        print(self.calc.danger_space(data, 10) << Distance.Yard)
 
 
 class TestTrajectory(unittest.TestCase):
@@ -137,8 +142,8 @@ class TestTrajectory(unittest.TestCase):
             [data[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20, Angular.MOA]
         ]
 
-        for d in test_data:
-            with self.subTest():
+        for i, d in enumerate(test_data):
+            with self.subTest(f"validate one {i}"):
                 self.validate_one(*d)
 
     def test_path_g7(self):
@@ -164,8 +169,8 @@ class TestTrajectory(unittest.TestCase):
             [data[10], 1000, 1081.3, 0.968, 442, -401.6, -11.32, -50.98, -1.44, 1.748, 55, Angular.Mil]
         ]
 
-        for d in test_data:
-            with self.subTest():
+        for i, d in enumerate(test_data):
+            with self.subTest(f"validate one {i}"):
                 self.validate_one(*d)
 
 

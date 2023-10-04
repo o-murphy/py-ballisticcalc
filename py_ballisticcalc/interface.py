@@ -59,10 +59,10 @@ class Calculator:
             winds = [Wind()]
 
         elevation = elevation if is_unit(elevation) else Set.Units.angular
-        shot = Shot(1000, 100, sight_angle=elevation)
-        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds)
+        shot = Shot(1000, 900, sight_angle=elevation)
+        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds, stop_at_zero=True)
         # No downrange zero found, so just return starting row
-        return data[1] if len(data) > 1 else data[0]
+        return data[-1]
 
     @staticmethod
     def danger_space(trajectory: TrajectoryData, target_height: [float, Distance]) -> Distance:
@@ -82,5 +82,4 @@ class Calculator:
 
         target_height = (target_height if is_unit(target_height) else Set.Units.target_height(target_height)) >> Distance.Yard
         traj_angle_tan = math.tan(trajectory.angle >> Angular.Radian)
-        print(traj_angle_tan, target_height)
         return Distance.Yard(-(target_height / traj_angle_tan))

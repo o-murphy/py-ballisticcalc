@@ -1,15 +1,14 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 cimport cython
 
+
 from .conditions import *
 from .munition import *
 from .settings import Settings
 from .trajectory_data import TrajectoryData
 from .unit import *
 
-
-__all__ = ('TrajectoryCalc', )
-
+__all__ = ('TrajectoryCalc',)
 
 cdef double cZeroFindingAccuracy = 0.000005
 cdef double cMinimumVelocity = 50.0
@@ -17,10 +16,8 @@ cdef double cMaximumDrop = -15000
 cdef int cMaxIterations = 10
 cdef double cGravityConstant = -32.17405
 
-
 cdef struct CurvePoint:
     double a, b, c
-
 
 cdef class Vector:
     cdef double x
@@ -90,9 +87,7 @@ cdef class Vector:
     def __neg__(Vector self):
         return self.negate()
 
-
 cdef class TrajectoryCalc:
-
     cdef object ammo
     cdef list _curve
     cdef list _table_data
@@ -109,7 +104,7 @@ cdef class TrajectoryCalc:
             int step_order, maximum_order
             double maximum_step = Settings._MAX_CALC_STEP_SIZE
 
-        step /=  2
+        step /= 2
 
         if step > maximum_step:
             step_order = int(floor(log10(step)))
@@ -122,8 +117,8 @@ cdef class TrajectoryCalc:
         return self._sight_angle(self.ammo, weapon, atmo)
 
     def trajectory(self, weapon: Weapon, atmo: Atmo,
-                   shot_info: Shot, winds: list[Wind]):
-        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds)
+                   shot_info: Shot, winds: list[Wind], stop_at_zero: bool = False):
+        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, stop_at_zero)
 
     cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef:
@@ -163,7 +158,7 @@ cdef class TrajectoryCalc:
 
                 velocity_vector -= (velocity_vector * drag - gravity_vector) * delta_time
                 delta_range_vector = Vector(calc_step, velocity_vector.y * delta_time,
-                                                        velocity_vector.z * delta_time)
+                                            velocity_vector.z * delta_time)
                 range_vector += delta_range_vector
                 velocity = velocity_vector.magnitude()
                 time += delta_range_vector.magnitude() / velocity
@@ -178,7 +173,7 @@ cdef class TrajectoryCalc:
         return Angular.Radian(barrel_elevation)
 
     cdef _trajectory(TrajectoryCalc self, object ammo, object weapon, object atmo,
-                     object shot_info, list[object] winds):
+                     object shot_info, list[object] winds, int stop_at_zero = False):
         cdef:
             double density_factor, mach
             double time, velocity, windage, delta_time, drag
@@ -200,7 +195,8 @@ cdef class TrajectoryCalc:
             double stability_coefficient = 1.0
             double next_wind_range = 1e7
 
-            double barrel_elevation = (shot_info.sight_angle >> Angular.Radian) + (shot_info.shot_angle >> Angular.Radian)
+            double barrel_elevation = (shot_info.sight_angle >> Angular.Radian) + (
+                    shot_info.shot_angle >> Angular.Radian)
             double alt0 = atmo.altitude >> Distance.Foot
             double sight_height = weapon.sight_height >> Distance.Foot
 
@@ -233,6 +229,8 @@ cdef class TrajectoryCalc:
             stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
             twist_coefficient = -1 if twist > 0 else 1
 
+        cdef double previous_y = 0
+
         while range_vector.x <= maximum_range + calc_step:
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
@@ -248,37 +246,41 @@ cdef class TrajectoryCalc:
                 else:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
-            if range_vector.x >= next_range_distance:
+            if range_vector.y < 0 and previous_y > 0:
+                windage = range_vector.z
+                if twist != 0:
+                    windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
+
+                ranges.append(
+                    create_trajectory_row(time, range_vector, velocity_vector,
+                                          velocity, mach, windage, weight)
+                )
+                if stop_at_zero:
+                    break
+
+                next_range_distance += step
+                current_item += 1
+
+            elif range_vector.x >= next_range_distance:
                 windage = range_vector.z
 
                 if twist != 0:
                     windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
 
-                drop_adjustment = get_correction(range_vector.x, range_vector.y)
-                windage_adjustment = get_correction(range_vector.x, windage)
-                trajectory_angle = atan(velocity_vector.y / velocity_vector.x)
-
-                ranges.append(TrajectoryData(
-                    time=time,
-                    distance=Distance.Foot(range_vector.x),
-                    drop=Distance.Foot(range_vector.y),
-                    drop_adj=Angular.Radian(drop_adjustment),
-                    windage=Distance.Foot(windage),
-                    windage_adj=Angular.Radian(windage_adjustment),
-                    velocity=Velocity.FPS(velocity),
-                    mach=velocity / mach,
-                    energy=Energy.FootPound(calculate_energy(weight, velocity)),
-                    angle = Angular.Radian(trajectory_angle),
-                    ogw=Weight.Pound(calculate_ogv(weight, velocity))
-                ))
+                ranges.append(
+                    create_trajectory_row(time, range_vector, velocity_vector,
+                                          velocity, mach, windage, weight)
+                )
 
                 next_range_distance += step
                 current_item += 1
-                if current_item == ranges_length:
-                    break
+
+            if current_item == ranges_length:
+                break
 
             velocity_adjusted = velocity_vector - wind_vector
 
+            previous_y = range_vector.y
             delta_time = calc_step / velocity_vector.x
             velocity = velocity_adjusted.magnitude()
 
@@ -321,7 +323,6 @@ cdef class TrajectoryCalc:
 
         return cdm
 
-
 cdef double calculate_stability_coefficient(object ammo, object rifle, object atmo):
     cdef:
         double weight = ammo.dm.weight >> Weight.Grain
@@ -336,7 +337,6 @@ cdef double calculate_stability_coefficient(object ammo, object rifle, object at
         double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
     return sd * fv * ftp
 
-
 cdef Vector wind_to_vector(object shot, object wind):
     cdef:
         double sight_cosine = cos(shot.sight_angle >> Angular.Radian)
@@ -350,6 +350,26 @@ cdef Vector wind_to_vector(object shot, object wind):
                   range_factor * cant_cosine + cross_component * cant_sine,
                   cross_component * cant_cosine - range_factor * cant_sine)
 
+cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
+                           double velocity, double mach, double windage, double weight):
+    cdef:
+        double drop_adjustment = get_correction(range_vector.x, range_vector.y)
+        double windage_adjustment = get_correction(range_vector.x, windage)
+        double trajectory_angle = atan(velocity_vector.y / velocity_vector.x)
+
+    return TrajectoryData(
+        time=time,
+        distance=Distance.Foot(range_vector.x),
+        drop=Distance.Foot(range_vector.y),
+        drop_adj=Angular.Radian(drop_adjustment),
+        windage=Distance.Foot(windage),
+        windage_adj=Angular.Radian(windage_adjustment),
+        velocity=Velocity.FPS(velocity),
+        mach=velocity / mach,
+        energy=Energy.FootPound(calculate_energy(weight, velocity)),
+        angle=Angular.Radian(trajectory_angle),
+        ogw=Weight.Pound(calculate_ogv(weight, velocity))
+    )
 
 @cython.cdivision(True)
 cdef double get_correction(double distance, double offset):
@@ -357,17 +377,13 @@ cdef double get_correction(double distance, double offset):
         return atan(offset / distance)
     return 0  # better None
 
-
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400
-
 
 cdef double calculate_ogv(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
 
-
 cdef list calculate_curve(list data_points):
-
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
     cdef list curve = []
     cdef CurvePoint curve_point
@@ -399,8 +415,7 @@ cdef list calculate_curve(list data_points):
     curve.append(curve_point)
     return curve
 
-
-cdef double calculate_by_curve(data: list, curve: list, mach: float):
+cdef double calculate_by_curve(list data, list curve, double mach):
     cdef int num_points, mlo, mhi, mid
     cdef CurvePoint curve_m
 
