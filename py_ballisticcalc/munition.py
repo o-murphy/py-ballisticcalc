@@ -12,7 +12,7 @@ __all__ = ('Weapon', 'Ammo')
 class Weapon(TypedUnits):
     sight_height: Set.Units.sight_height
     zero_distance: Set.Units.distance = field(default=100)
-    twist: Set.Units.sight_height = field(default=0)
+    twist: Set.Units.twist = field(default=0)
 
     def __post_init__(self):
         self.sight_height = self.sight_height

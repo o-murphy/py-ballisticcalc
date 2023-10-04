@@ -25,28 +25,26 @@ cStandardDensity: float = 0.076474
 cIcaoTemperatureDeltaR: float = cIcaoStandardTemperatureR - cIcaoFreezingPointTemperatureR
 
 
-class Atmo:
-    __slots__ = ('altitude', 'pressure',
-                 'temperature', 'humidity',
-                 'density', 'mach', '_mach1', '_a0', '_t0', '_p0', '_ta')
+@dataclass
+class Atmo(TypedUnits):
 
-    def __init__(self, altitude: [float, Distance],
-                 pressure: [float, Pressure],
-                 temperature: [float, Temperature],
-                 humidity: float):
+    altitude: Set.Units.distance = field(default=None)
+    pressure: Set.Units.pressure = field(default=None)
+    temperature: Set.Units.temperature = field(default_factory=lambda: Temperature.Fahrenheit(cStandardTemperature))
+    humidity: float = 0.78
+    mach: Velocity = field(init=False)
+    _mach1: Velocity = field(init=False)
+    _a0: float = field(init=False)
+    _t0: float = field(init=False)
+    _p0: float = field(init=False)
+    _ta: float = field(init=False)
 
-        if humidity > 1:
-            humidity = humidity / 100
-        if not (0 <= humidity <= 1) or not (altitude and pressure and temperature):
+    def __post_init__(self):
+
+        if self.humidity > 1:
+            self.humidity = self.humidity / 100
+        if not (0 <= self.humidity <= 1) or not (self.altitude and self.pressure and self.temperature):
             self.create_default()
-        else:
-            self.altitude: Distance = altitude if is_unit(altitude) \
-                else Set.Units.distance(altitude)
-            self.pressure: Pressure = pressure if is_unit(pressure) \
-                else Set.Units.pressure(pressure)
-            self.temperature: Temperature = temperature if is_unit(temperature) \
-                else Set.Units.temperature(temperature)
-            self.humidity: float = humidity
 
         self.calculate()
 
