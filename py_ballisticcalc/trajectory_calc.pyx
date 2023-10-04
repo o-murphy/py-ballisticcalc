@@ -246,7 +246,7 @@ cdef class TrajectoryCalc:
                 else:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
-            if range_vector.y < 0 and previous_y > 0:
+            if stop_at_zero and range_vector.y < 0 and previous_y > 0:
                 windage = range_vector.z
                 if twist != 0:
                     windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
@@ -255,11 +255,7 @@ cdef class TrajectoryCalc:
                     create_trajectory_row(time, range_vector, velocity_vector,
                                           velocity, mach, windage, weight)
                 )
-                if stop_at_zero:
-                    break
-
-                next_range_distance += step
-                current_item += 1
+                break
 
             elif range_vector.x >= next_range_distance:
                 windage = range_vector.z
@@ -275,8 +271,8 @@ cdef class TrajectoryCalc:
                 next_range_distance += step
                 current_item += 1
 
-            if current_item == ranges_length:
-                break
+                if current_item == ranges_length:
+                    break
 
             velocity_adjusted = velocity_vector - wind_vector
 
