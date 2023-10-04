@@ -7,7 +7,7 @@ from math import fabs
 import pyximport
 
 pyximport.install(language_level=3)
-from py_ballisticcalc import Distance, Weight, Velocity, Angular
+from py_ballisticcalc import Distance, Weight, Velocity, Angular, Calculator
 from py_ballisticcalc import Temperature, Pressure, Energy, Unit
 from py_ballisticcalc import DragModel, Ammo, Weapon, Wind, Shot, Atmo
 from py_ballisticcalc import TableG7, TableG1, MultiBC
@@ -32,7 +32,29 @@ class TestMBC(unittest.TestCase):
         self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.15771258594668947})
 
 
-class TestPyBallisticCalc(unittest.TestCase):
+class TestInterface(unittest.TestCase):
+
+    def setUp(self) -> None:
+        dm = DragModel(0.223, TableG7, 168, 0.308)
+        ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
+        weapon = Weapon(2, Distance.Yard(100), 11.24)
+        self.atmosphere = Atmo.icao()
+        self.calc = Calculator(weapon, ammo, self.atmosphere)
+
+    def test_zero_given_elevation(self):
+        zero_given = self.calc.zero_given_elevation(self.calc._elevation)
+        zero_distance = zero_given.distance >> Distance.Yard
+        self.assertFalse(fabs(zero_distance - 100) > 1e-7)
+
+    def test_danger_space(self):
+        winds = [Wind()]
+        self.calc.update_elevation()
+        data = self.calc.zero_given_elevation(self.calc._elevation, winds)
+        print(self.calc.danger_space(data, Distance.Meter(1.7)) << Distance.Meter)
+        print(self.calc.danger_space(data, Distance.Meter(1.6)) << Distance.Meter)
+
+
+class TestTrajectory(unittest.TestCase):
 
     def test_zero1(self):
         dm = DragModel(0.365, TableG1, 69, 0.223)

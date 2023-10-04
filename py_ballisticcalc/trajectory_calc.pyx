@@ -180,9 +180,9 @@ cdef class TrajectoryCalc:
     cdef _trajectory(TrajectoryCalc self, object ammo, object weapon, object atmo,
                      object shot_info, list[object] winds):
         cdef:
-            double barrel_azimuth, density_factor, mach
+            double density_factor, mach
             double time, velocity, windage, delta_time, drag
-            double windage_adjustment, drop_adjustment
+            double windage_adjustment, drop_adjustment, trajectory_angle
 
             double twist = weapon.twist >> Distance.Inch
             double length = ammo.length >> Distance.Inch
@@ -205,6 +205,7 @@ cdef class TrajectoryCalc:
             double sight_height = weapon.sight_height >> Distance.Foot
 
             double next_range_distance = .0
+            double barrel_azimuth = .0
 
             Vector gravity_vector = Vector(.0, cGravityConstant, .0)
             Vector range_vector = Vector(.0, -sight_height, .0)
@@ -255,6 +256,7 @@ cdef class TrajectoryCalc:
 
                 drop_adjustment = get_correction(range_vector.x, range_vector.y)
                 windage_adjustment = get_correction(range_vector.x, windage)
+                trajectory_angle = atan(velocity_vector.y / velocity_vector.x)
 
                 ranges.append(TrajectoryData(
                     time=time,
@@ -266,6 +268,7 @@ cdef class TrajectoryCalc:
                     velocity=Velocity.FPS(velocity),
                     mach=velocity / mach,
                     energy=Energy.FootPound(calculate_energy(weight, velocity)),
+                    angle = Angular.Radian(trajectory_angle),
                     ogw=Weight.Pound(calculate_ogv(weight, velocity))
                 ))
 

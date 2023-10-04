@@ -18,9 +18,11 @@ class TrajectoryData(NamedTuple):
         velocity (Velocity): velocity in current trajectory point
         mach (float): velocity in current trajectory point in "Mach" number
         drop (Distance):
-        drop_adj (Angular | None):
+        drop_adj (Angular):
         windage (Distance):
-        windage_adj (Angular | None):
+        windage_adj (Angular):
+        angle (Angular)
+        mach float
         energy (Energy):
         ogw (Weight): optimal game weight
     """
@@ -28,11 +30,12 @@ class TrajectoryData(NamedTuple):
     time: float
     distance: Distance
     velocity: Velocity
-    mach: float
+    mach: float  # velocity in Mach
     drop: Distance
     drop_adj: Angular  # drop_adjustment
     windage: Distance
     windage_adj: Angular  # windage_adjustment
+    angle: Angular  # Trajectory angle
     energy: Energy
     ogw: Weight
 
@@ -53,7 +56,9 @@ class TrajectoryData(NamedTuple):
             _fmt(self.drop_adj, Set.Units.adjustment),
             _fmt(self.windage, Set.Units.drop),
             _fmt(self.windage_adj, Set.Units.adjustment),
-            _fmt(self.energy, Set.Units.energy)
+            _fmt(self.angle, Set.Units.angular),
+            _fmt(self.energy, Set.Units.energy),
+            _fmt(self.ogw, Set.Units.ogw)
         )
 
     def in_def_units(self) -> tuple:
@@ -69,5 +74,7 @@ class TrajectoryData(NamedTuple):
             self.drop_adj >> Set.Units.adjustment,
             self.windage >> Set.Units.drop,
             self.windage_adj >> Set.Units.adjustment,
-            self.energy >> Set.Units.energy
+            self.angle >> Set.Units.angular,
+            self.energy >> Set.Units.energy,
+            self.ogw >> Set.Units.ogw
         )

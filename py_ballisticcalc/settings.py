@@ -24,6 +24,8 @@ class Settings:
         angular: Unit = Unit.DEGREE
         adjustment: Unit = Unit.MIL
         energy: Unit = Unit.JOULE
+        ogw: Unit = Unit.KILOGRAM
+        target_height: Unit = Unit.INCH
 
     _MAX_CALC_STEP_SIZE: float = 1
     USE_POWDER_SENSITIVITY: bool = False

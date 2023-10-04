@@ -134,7 +134,7 @@ class Shot(TypedUnits):
     step: Set.Units.distance
     shot_angle: Set.Units.angular = field(default=0)
     cant_angle: Set.Units.angular = field(default=0)
-    sight_angle: Set.Units.angular = field(default=0)
+    sight_angle: Set.Units.angular = field(default=None)
 
     def __post_init__(self):
         self.max_range = self.max_range
