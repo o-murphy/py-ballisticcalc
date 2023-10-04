@@ -1,7 +1,7 @@
 """
 Use-full types for units of measurement conversion for ballistics calculations
 """
-
+import typing
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Callable, get_type_hints
@@ -599,9 +599,20 @@ class TypedUnits:
         """
         converts value to specified units by type-hints in inherited dataclass
         """
-        if hasattr(self, key):
-            if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):
-                value = get_type_hints(self)[key](value)
+        # if hasattr(self, key):
+        #     if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):
+        #         value = get_type_hints(self)[key](value)
+        # super().__setattr__(key, value)
+
+        fields = self.__dataclass_fields__
+        if key in fields and not isinstance(value, AbstractUnit):
+            default_factory = fields[key].default_factory
+            if isinstance(default_factory, typing.Callable):
+                if isinstance(value, Unit):
+                    value = None
+                else:
+                    value = default_factory()(value)
+
         super().__setattr__(key, value)
 
 

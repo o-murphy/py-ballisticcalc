@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from .drag_model import DragModel
 from .settings import Settings as Set
-from .unit import TypedUnits, Velocity, Temperature, is_unit
+from .unit import TypedUnits, Velocity, Temperature, is_unit, Distance
 
 __all__ = ('Weapon', 'Ammo')
 
@@ -13,12 +13,13 @@ __all__ = ('Weapon', 'Ammo')
 @dataclass
 class Weapon(TypedUnits):
     """Creates Weapon properties"""
-    sight_height: Set.Units.sight_height
-    zero_distance: Set.Units.distance = field(default=100)
-    twist: Set.Units.twist = field(default=0)
+    sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
+    zero_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
+    twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
 
     def __post_init__(self):
-        self.sight_height = self.sight_height
+        if not self.twist:
+            self.twist = 0
 
 
 @dataclass
@@ -26,13 +27,13 @@ class Ammo(TypedUnits):
     """Creates Ammo and Projectile properties"""
 
     dm: DragModel
-    length: Set.Units.length = field(default=None)
-    mv: Set.Units.velocity = field(default_factory=lambda: Velocity.MPS(800))
+    length: [float, Distance] = field(default_factory=lambda: Set.Units.length)
+    mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
     temp_modifier: float = 0
-    powder_temp: Set.Units.temperature = field(default_factory=lambda: Temperature.Celsius(15))
+    powder_temp: [float, Temperature] = field(default_factory=lambda: Temperature.Celsius(15))
 
-    def __post_init__(self):
-        self.mv = self.mv
+    # def __post_init__(self):
+    #     self.mv = self.mv
 
     def calc_powder_sens(self, other_velocity: [float, Velocity],
                          other_temperature: [float, Temperature]) -> float:
