@@ -11,7 +11,7 @@ except ImportError as err:
     logging.warning("Install Cython to use pyximport")
 
 from py_ballisticcalc import Velocity, Temperature, Distance
-from py_ballisticcalc import Projectile, DragModel, TableG7
+from py_ballisticcalc import DragModel, TableG7
 from py_ballisticcalc import Ammo, Atmo, Wind
 from py_ballisticcalc import Weapon, Shot, Calculator
 from py_ballisticcalc import Settings as Set
@@ -33,8 +33,7 @@ length = Distance.Inch(1.282)  # length = Distance(1.282, Distance.Inch)
 weapon = Weapon(9, 100, 2)
 dm = DragModel(0.223, TableG7, weight, diameter)
 
-bullet = Projectile(dm, length)
-ammo = Ammo(bullet, 2750, 15)
+ammo = Ammo(dm, length, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
 
 zero_atmo = Atmo.icao(100)

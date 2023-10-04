@@ -124,7 +124,7 @@ class Atmo:
 @dataclass
 class Wind(TypedUnits):
     velocity: Set.Units.velocity = field(default=0)
-    direction: Set.Units.angular = field(default=0)
+    direction_from: Set.Units.angular = field(default=0)
     until_distance: Set.Units.distance = field(default=9999)
 
 

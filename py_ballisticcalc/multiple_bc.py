@@ -88,4 +88,4 @@ class MultiBC:
 
         for i, point in enumerate(self._table_data):
             cd = form_factors[i] * point.CD
-            yield dict(CD=cd, Mach=point.Mach)
+            yield {'CD': cd, 'Mach': point.Mach}

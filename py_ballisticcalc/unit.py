@@ -23,6 +23,7 @@ class Unit(IntEnum):
     THOUSAND = 5
     INCHES_PER_100YD = 6
     CM_PER_100M = 7
+    O_CLOCK = 8
 
     INCH = 10
     FOOT = 11
@@ -491,6 +492,8 @@ class Angular(AbstractUnit):
             result = atan(value / 3600)
         elif units == Angular.CmPer100M:
             result = atan(value / 10000)
+        elif units == Angular.OClock:
+            result = value / 6 * pi
         else:
             return super().to_raw(value, units)
         return result
@@ -512,6 +515,8 @@ class Angular(AbstractUnit):
             result = tan(value) * 3600
         elif units == Angular.CmPer100M:
             result = tan(value) * 10000
+        elif units == Angular.OClock:
+            result = value * 6 / pi
         else:
             return super().from_raw(value, units)
         return result
@@ -524,6 +529,7 @@ class Angular(AbstractUnit):
     Thousand = Unit.THOUSAND
     InchesPer100Yd = Unit.INCHES_PER_100YD
     CmPer100M = Unit.CM_PER_100M
+    OClock = Unit.O_CLOCK
 
 
 class Velocity(AbstractUnit):
