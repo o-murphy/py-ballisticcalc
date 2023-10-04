@@ -29,11 +29,8 @@ class Ammo(TypedUnits):
     dm: DragModel
     length: [float, Distance] = field(default_factory=lambda: Set.Units.length)
     mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
-    temp_modifier: float = 0
+    temp_modifier: float = field(default=0)
     powder_temp: [float, Temperature] = field(default_factory=lambda: Temperature.Celsius(15))
-
-    # def __post_init__(self):
-    #     self.mv = self.mv
 
     def calc_powder_sens(self, other_velocity: [float, Velocity],
                          other_temperature: [float, Temperature]) -> float:

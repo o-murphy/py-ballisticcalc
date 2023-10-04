@@ -41,13 +41,22 @@ class TestInterface(unittest.TestCase):
         self.atmosphere = Atmo.icao()
         self.calc = Calculator(weapon, ammo, self.atmosphere)
 
-    def test_zero_given_elevation(self):
+    def test_zero_given(self):
         self.calc.update_elevation()
         zero_given = self.calc.zero_given_elevation(self.calc.elevation)
-        zero_distance = zero_given.distance >> Distance.Yard
+        zero_range = zero_given.distance >> Distance.Yard
         reference_distance = self.calc.weapon.zero_distance >> Distance.Yard
-        print(zero_distance, reference_distance)
-        self.assertLessEqual(fabs(zero_distance - reference_distance), 1e-7)
+        with self.subTest():
+            self.assertLessEqual(fabs(zero_range - reference_distance), 1e-7)
+
+        for reference_distance in range(100, 500, 100):
+
+            with self.subTest():
+                self.calc.weapon.zero_distance = Distance.Yard(zero_range)
+                self.calc.update_elevation()
+                zero_given = self.calc.zero_given_elevation(self.calc.elevation)
+                zero_range = zero_given.distance >> Distance.Yard
+                self.assertLessEqual(fabs(zero_range - reference_distance), 1e-7)
 
     def test_danger_space(self):
         winds = [Wind()]

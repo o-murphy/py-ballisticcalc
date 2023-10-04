@@ -37,6 +37,5 @@ class Settings:
         """
         if not isinstance(value, (Distance, float, int)):
             raise ValueError("MIN_CALC_STEP_SIZE have to be a type of 'Distance'")
-        print((value if is_unit(value) else cls.Units.distance(value).raw_value) >> Distance.Foot)
         cls._MAX_CALC_STEP_SIZE = (value if is_unit(value)
                                    else cls.Units.distance(value).raw_value) >> Distance.Foot

@@ -21,7 +21,7 @@ from py_ballisticcalc import Settings as Set
 # set global library settings
 Set.Units.velocity = Velocity.FPS
 Set.Units.temperature = Temperature.Celsius
-Set.Units.distance = Distance.Meter
+# Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
 Set.set_max_calc_step_size(Distance.Foot(1))

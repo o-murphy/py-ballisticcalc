@@ -59,7 +59,7 @@ class Calculator:
             winds = [Wind()]
 
         elevation = elevation if is_unit(elevation) else Set.Units.angular
-        shot = Shot(1000, 900, sight_angle=elevation)
+        shot = Shot(1000, 1, sight_angle=elevation)
         data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds, stop_at_zero=True)
         # No downrange zero found, so just return starting row
         return data[-1]

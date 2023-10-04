@@ -599,12 +599,12 @@ class TypedUnits:
         """
         converts value to specified units by type-hints in inherited dataclass
         """
-        # if hasattr(self, key):
-        #     if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):
-        #         value = get_type_hints(self)[key](value)
-        # super().__setattr__(key, value)
 
         fields = self.__dataclass_fields__
+
+        if self.__class__.__name__ == "Weapon":
+            print(key, fields[key].default_factory(), value)
+
         if key in fields and not isinstance(value, AbstractUnit):
             default_factory = fields[key].default_factory
             if isinstance(default_factory, typing.Callable):
