@@ -1,1 +1,1 @@
-py-ballisticcalc-stubs>=1.0.10
+
