@@ -46,6 +46,8 @@ class Atmo(TypedUnits):
         if not (0 <= self.humidity <= 1) or not (self.altitude and self.pressure and self.temperature):
             self.create_default()
 
+        self.temperature = self.temperature
+
         self.calculate()
 
     @staticmethod
@@ -123,7 +125,7 @@ class Atmo(TypedUnits):
 class Wind(TypedUnits):
     velocity: Set.Units.velocity = field(default=0)
     direction_from: Set.Units.angular = field(default=0)
-    until_distance: Set.Units.distance = field(default=9999)
+    until_distance: Set.Units.distance = field(default_factory=lambda: Distance.Meter(9999))
 
 
 @dataclass

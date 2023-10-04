@@ -10,34 +10,26 @@ pyximport.install(language_level=3)
 from py_ballisticcalc import Distance, Weight, Velocity, Angular
 from py_ballisticcalc import Temperature, Pressure, Energy, Unit
 from py_ballisticcalc import DragModel, Ammo, Weapon, Wind, Shot, Atmo
-from py_ballisticcalc import TableG7, TableG1, MultiBCRow, MultiBC
+from py_ballisticcalc import TableG7, TableG1, MultiBC
 from py_ballisticcalc import TrajectoryData, TrajectoryCalc
 
 
 class TestMBC(unittest.TestCase):
 
-    def setUp(self) -> None:
-        self.bc = DragModel(
-            value=0.223,
-            drag_table=TableG7,
-            weight=Weight(167, Weight.Grain),
-            diameter=Distance(0.308, Distance.Inch),
-        )
-
     def test_mbc(self):
-        bc = MultiBC(
+        mbc = MultiBC(
             drag_table=TableG7,
             weight=Weight(178, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
-            multiple_bc_table=[MultiBCRow(*p) for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
-            velocity_units_flag=Velocity.MPS
+            mbc_table=[{'BC': p[0], 'V': p[1]} for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
         )
-
-        ret = bc.cdm_generator()
-        self.assertIsNot(ret, None)
-        ret = list(ret)
+        dm = DragModel.from_mbc(mbc)
+        ammo = Ammo(dm, 1, 800)
+        cdm = TrajectoryCalc(ammo=ammo).cdm
+        self.assertIsNot(cdm, None)
+        ret = list(cdm)
         self.assertEqual(ret[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
-        self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.1577125859466895})
+        self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.15771258594668947})
 
 
 class TestPyBallisticCalc(unittest.TestCase):

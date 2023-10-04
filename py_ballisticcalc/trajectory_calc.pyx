@@ -295,6 +295,29 @@ cdef class TrajectoryCalc:
         cdef double cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
+    @property
+    def cdm(self):
+        return self._cdm()
+
+    cdef _cdm(self):
+        """
+        Returns custom drag function based on input data
+        """
+        cdef:
+            # double ff = self.ammo.dm.form_factor
+            list drag_table = self.ammo.dm.drag_table
+            list cdm = []
+            double bc = self.ammo.dm.value
+
+        for point in drag_table:
+            st_mach = point['Mach']
+            st_cd = calculate_by_curve(drag_table, self._curve, st_mach)
+            # cd = st_cd * ff
+            cd = st_cd * bc
+            cdm.append({'CD': cd, 'Mach': st_mach})
+
+        return cdm
+
 
 cdef double calculate_stability_coefficient(object ammo, object rifle, object atmo):
     cdef:
@@ -310,6 +333,7 @@ cdef double calculate_stability_coefficient(object ammo, object rifle, object at
         double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
     return sd * fv * ftp
 
+
 cdef Vector wind_to_vector(object shot, object wind):
     cdef:
         double sight_cosine = cos(shot.sight_angle >> Angular.Radian)
@@ -323,14 +347,17 @@ cdef Vector wind_to_vector(object shot, object wind):
                   range_factor * cant_cosine + cross_component * cant_sine,
                   cross_component * cant_cosine - range_factor * cant_sine)
 
+
 @cython.cdivision(True)
 cdef double get_correction(double distance, double offset):
     if distance != 0:
         return atan(offset / distance)
     return 0  # better None
 
+
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400
+
 
 cdef double calculate_ogv(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12

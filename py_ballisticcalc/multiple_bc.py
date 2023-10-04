@@ -1,38 +1,41 @@
-from typing import NamedTuple, Iterable
 from math import pow as math_pow
+from typing import NamedTuple, Iterable
 
-from .unit import Distance, Weight, Velocity, Unit
 from .conditions import Atmo
 from .drag_model import make_data_points
+from .settings import Settings as Set
+from .unit import Distance, Weight, Velocity, is_unit
 
-
-__all__ = ('MultiBC', 'DragTableRow', 'MultiBCRow')
-
-
-class DragTableRow(NamedTuple):
-    CD: float
-    Mach: float
+__all__ = ('MultiBC', 'MultiBCRow')
 
 
 class MultiBCRow(NamedTuple):
     BC: float
-    Velocity: float
+    V: Set.Units.velocity
+
+
+class DragTableRow(NamedTuple):
+    """for internal usage"""
+    CD: float
+    Mach: float
 
 
 class BCMachRow(NamedTuple):
+    """for internal usage"""
     BC: float
     Mach: float
 
 
 class MultiBC:
-    def __init__(self, drag_table: Iterable, diameter: Distance, weight: Weight,
-                 multiple_bc_table: Iterable[MultiBCRow], velocity_units_flag: Unit):
+    """Creates instance to calculate custom drag tabel based on input multi-bc table"""
 
-        self.multiple_bc_table = multiple_bc_table
+    def __init__(self, drag_table: Iterable[dict], diameter: Distance, weight: Weight,
+                 mbc_table: Iterable[dict]):
+
+        self.mbc_table = mbc_table
         self.table = drag_table
         self.weight = weight
         self.diameter = diameter
-        self.velocity_units = velocity_units_flag
         self.sectional_density = self._get_sectional_density()
 
         atmosphere = Atmo.icao()
@@ -42,7 +45,15 @@ class MultiBC:
         self.speed_of_sound = Velocity.FPS(mach) >> Velocity.MPS
 
         self._table_data = make_data_points(self.table)
-        self._bc_table = self._create_bc_table_data_points()
+        self._bc_table = self._parse_mbc(mbc_table)
+
+    def _parse_mbc(self, mbc_table):
+        table = []
+        for p in mbc_table:
+            v = (p['V'] if is_unit(p['V']) else Set.Units.velocity(p['V'])) >> Velocity.MPS
+            mbc = MultiBCRow(p['BC'], v)
+            table.append(mbc)
+        return sorted(table, reverse=True)
 
     def _get_sectional_density(self):
         w = self.weight >> Weight.Grain
@@ -56,10 +67,6 @@ class MultiBC:
     def _get_counted_cd(form_factor, standard_cd):
         return standard_cd * form_factor
 
-    def _create_bc_table_data_points(self):
-        for bc, v in sorted(self.multiple_bc_table, reverse=True, key=lambda x: x.Velocity):
-            yield MultiBCRow(bc, self.velocity_units(v) >> Velocity.MPS)
-
     def _interpolate_bc_table(self):
         """
         Extends input bc table by creating bc value for each point of standard Drag Model
@@ -67,7 +74,7 @@ class MultiBC:
         bc_table = tuple(self._bc_table)
         bc_mah = [BCMachRow(bc_table[0].BC, self._table_data[-1].Mach)]
         bc_mah.extend(
-            [BCMachRow(point.BC, point.Velocity / self.speed_of_sound) for point in bc_table]
+            [BCMachRow(point.BC, point.V / self.speed_of_sound) for point in bc_table]
         )
         bc_mah.append(BCMachRow(bc_mah[-1].BC, self._table_data[0].Mach))
 
@@ -82,10 +89,14 @@ class MultiBC:
             for j in range(ddf):
                 yield bc_max.BC - bc_delta * j
 
-    def cdm_generator(self):
+    def _cdm_generator(self):
         bc_extended = reversed(list(self._interpolate_bc_table()))
         form_factors = [self._get_form_factor(bc) for bc in bc_extended]
 
         for i, point in enumerate(self._table_data):
             cd = form_factors[i] * point.CD
             yield {'CD': cd, 'Mach': point.Mach}
+
+    @property
+    def cdm(self):
+        return list(self._cdm_generator())

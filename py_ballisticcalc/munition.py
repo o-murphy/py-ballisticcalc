@@ -1,3 +1,5 @@
+"""Module for Weapon and Ammo properties definitions"""
+
 import math
 from dataclasses import dataclass, field
 
@@ -10,6 +12,7 @@ __all__ = ('Weapon', 'Ammo')
 
 @dataclass
 class Weapon(TypedUnits):
+    """Creates Weapon properties"""
     sight_height: Set.Units.sight_height
     zero_distance: Set.Units.distance = field(default=100)
     twist: Set.Units.twist = field(default=0)
@@ -20,6 +23,7 @@ class Weapon(TypedUnits):
 
 @dataclass
 class Ammo(TypedUnits):
+    """Creates Ammo and Projectile properties"""
 
     dm: DragModel
     length: Set.Units.length = field(default=None)
@@ -31,7 +35,12 @@ class Ammo(TypedUnits):
         self.mv = self.mv
 
     def calc_powder_sens(self, other_velocity: [float, Velocity],
-                         other_temperature: [float, Temperature]):
+                         other_temperature: [float, Temperature]) -> float:
+        """Calculates velocity correction by temperature change
+        :param other_velocity: other velocity
+        :param other_temperature: other temperature
+        :return: temperature modifier
+        """
         # (800-792) / (15 - 0) * (15/792) * 100 = 1.01
         # creates temperature modifier in percent at each 15C
         v0 = self.mv >> Velocity.MPS
@@ -55,7 +64,11 @@ class Ammo(TypedUnits):
 
         return self.temp_modifier
 
-    def get_velocity_for_temp(self, current_temp):
+    def get_velocity_for_temp(self, current_temp: [float, Temperature]) -> Velocity:
+        """Calculates current velocity by temperature correction
+        :param current_temp: temperature on current atmosphere
+        :return: velocity corrected for temperature specified
+        """
         temp_modifier = self.temp_modifier
         v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
