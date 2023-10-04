@@ -11,7 +11,7 @@ authors = [
 ]
 description = "LGPL library for small arms ballistic calculations (Python 3)"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 keywords = ["ballistics", "Cython", "ballistic calculator", "python", "python3"]
 license = {file = "LICENSE"}
 classifiers = [
@@ -21,7 +21,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",

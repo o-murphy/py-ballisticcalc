@@ -1,5 +1,5 @@
 # BallisticCalculator
-LGPL library for small arms ballistic calculations (Python 3.8+)
+LGPL library for small arms ballistic calculations (Python 3.9+)
 
 ### Table of contents
 * [Installation](#installation)
