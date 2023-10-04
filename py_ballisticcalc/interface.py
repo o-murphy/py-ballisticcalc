@@ -20,7 +20,8 @@ class Calculator:
     ammo: Ammo
     zero_atmo: Atmo
 
-    _elevation: Angular = field(init=False, repr=True, compare=False, default=None)
+    _elevation: Angular = field(init=False, repr=True, compare=False,
+                                default_factory=lambda: Angular.Degree(0))
     _calc: TrajectoryCalc = field(init=False, repr=True, compare=False, default=None)
 
     @property
@@ -50,7 +51,7 @@ class Calculator:
         data = self._calc.trajectory(self.weapon, current_atmo, shot, winds)
         return data
 
-    def zero_given_elevation(self, elevation: [float, Angular],
+    def zero_given_elevation(self, elevation: [float, Angular] = 0,
                              winds: list[Wind] = None) -> TrajectoryData:
         """Find the zero distance for a given barrel elevation"""
         self._calc = TrajectoryCalc(self.ammo)
@@ -78,7 +79,8 @@ class Calculator:
         :param target_height: error range for the target
         :return: danger space for target_height specified
         """
-        target_height = (target_height if is_unit(target_height)
-                         else Set.Units.target_height(target_height)) >> Distance.Yard
+
+        target_height = (target_height if is_unit(target_height) else Set.Units.target_height(target_height)) >> Distance.Yard
         traj_angle_tan = math.tan(trajectory.angle >> Angular.Radian)
+        print(traj_angle_tan, target_height)
         return Distance.Yard(-(target_height / traj_angle_tan))

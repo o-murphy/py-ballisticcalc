@@ -49,9 +49,9 @@ class TestInterface(unittest.TestCase):
     def test_danger_space(self):
         winds = [Wind()]
         self.calc.update_elevation()
-        data = self.calc.zero_given_elevation(self.calc._elevation, winds)
-        print(self.calc.danger_space(data, Distance.Meter(1.7)) << Distance.Meter)
-        print(self.calc.danger_space(data, Distance.Meter(1.6)) << Distance.Meter)
+        data = self.calc.zero_given_elevation(self.calc.elevation, winds)
+        print(self.calc.danger_space(data, Distance.Meter(1.7)) >> Distance.Meter)
+        print(self.calc.danger_space(data, Distance.Meter(1.6)) >> Distance.Meter)
 
 
 class TestTrajectory(unittest.TestCase):

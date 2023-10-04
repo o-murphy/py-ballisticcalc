@@ -24,7 +24,7 @@ class Settings:
         angular: Unit = Unit.DEGREE
         adjustment: Unit = Unit.MIL
         energy: Unit = Unit.JOULE
-        ogw: Unit = Unit.KILOGRAM
+        ogw: Unit = Unit.POUND
         target_height: Unit = Unit.INCH
 
     _MAX_CALC_STEP_SIZE: float = 1
