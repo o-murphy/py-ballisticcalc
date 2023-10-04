@@ -1,5 +1,5 @@
 # BallisticCalculator
-LGPL library for small arms ballistic calculations (Python 3.9+)
+LGPL library for small arms ballistic calculations (Python 3.8+)
 
 ### Table of contents
 * [Installation](#installation)
@@ -104,7 +104,7 @@ bullet = Projectile(dm, length)
 ammo = Ammo(bullet, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
 
-zero_atmo = Atmo.ICAO()
+zero_atmo = Atmo.icao()
 
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)

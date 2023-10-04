@@ -1,3 +1,5 @@
+"""LGPL library for small arms ballistic calculations (Python 3.8+)"""
+
 __author__ = "o-murphy"
 __copyright__ = ("",)
 

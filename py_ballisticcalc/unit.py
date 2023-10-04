@@ -21,25 +21,25 @@ class Unit(IntEnum):
     MIL = 3
     MRAD = 4
     THOUSAND = 5
-    InchesPer100Yd = 6
-    CmPer100M = 7
+    INCHES_PER_100YD = 6
+    CM_PER_100M = 7
 
     INCH = 10
     FOOT = 11
     YARD = 12
     MILE = 13
-    NauticalMile = 14
+    NAUTICAL_MILE = 14
     MILLIMETER = 15
     CENTIMETER = 16
     METER: Callable = 17
     KILOMETER = 18
     LINE = 19
 
-    FootPound = 30
+    FOOT_POUND = 30
     JOULE = 31
 
-    MmHg = 40
-    InHg = 41
+    MM_HG = 40
+    IN_HG = 41
     BAR = 42
     HP = 43
     PSI = 44
@@ -63,40 +63,56 @@ class Unit(IntEnum):
     NEWTON = 75
 
     @property
-    def key(self):
+    def key(self) -> str:
+        """
+        :rtype: str
+        :return: readable name of the unit of measure
+        """
         return UnitPropsDict[self].name
 
     @property
-    def accuracy(self):
+    def accuracy(self) -> int:
+        """
+        :rtype: int
+        :return: default accuracy of the unit of measure
+        """
         return UnitPropsDict[self].accuracy
 
     @property
     def symbol(self):
+        """
+        :rtype: str
+        :return: short symbol of the unit of measure in CI
+        """
         return UnitPropsDict[self].symbol
 
     def __call__(self: 'Unit', value: [int, float]) -> 'AbstractUnit':
-
+        """Creates new unit instance by dot syntax
+        :param self: unit as Unit enum
+        :param value: numeric value of the unit
+        :return: AbstractUnit instance
+        """
         if 0 <= self < 10:
-            return Angular(value, self)
-        if 10 <= self < 20:
-            return Distance(value, self)
-        if 30 <= self < 40:
-            return Energy(value, self)
-        if 40 <= self < 50:
-            return Pressure(value, self)
-        if 50 <= self < 60:
-            return Temperature(value, self)
-        if 60 <= self < 70:
-            return Velocity(value, self)
-        if 70 <= self < 80:
-            return Weight(value, self)
-        raise TypeError(f"{self} Unit is not supports")
+            obj = Angular(value, self)
+        elif 10 <= self < 20:
+            obj = Distance(value, self)
+        elif 30 <= self < 40:
+            obj = Energy(value, self)
+        elif 40 <= self < 50:
+            obj = Pressure(value, self)
+        elif 50 <= self < 60:
+            obj = Temperature(value, self)
+        elif 60 <= self < 70:
+            obj = Velocity(value, self)
+        elif 70 <= self < 80:
+            obj = Weight(value, self)
+        else:
+            raise TypeError(f"{self} Unit is not supports")
+        return obj
 
 
 class UnitProps(NamedTuple):
-    """
-    Properties of unit measure
-    """
+    """Properties of unit measure"""
     name: str
     accuracy: int
     symbol: str
@@ -109,25 +125,25 @@ UnitPropsDict = {
     Unit.MIL: UnitProps('mil', 2, 'mil'),
     Unit.MRAD: UnitProps('mrad', 2, 'mrad'),
     Unit.THOUSAND: UnitProps('thousand', 2, 'ths'),
-    Unit.InchesPer100Yd: UnitProps('inches/100yd', 2, 'in/100yd'),
-    Unit.CmPer100M: UnitProps('cm/100m', 2, 'cm/100m'),
+    Unit.INCHES_PER_100YD: UnitProps('inches/100yd', 2, 'in/100yd'),
+    Unit.CM_PER_100M: UnitProps('cm/100m', 2, 'cm/100m'),
 
     Unit.INCH: UnitProps("inch", 1, "inch"),
     Unit.FOOT: UnitProps("foot", 2, "ft"),
     Unit.YARD: UnitProps("yard", 3, "yd"),
     Unit.MILE: UnitProps("mile", 3, "mi"),
-    Unit.NauticalMile: UnitProps("nautical mile", 3, "nm"),
+    Unit.NAUTICAL_MILE: UnitProps("nautical mile", 3, "nm"),
     Unit.MILLIMETER: UnitProps("millimeter", 3, "mm"),
     Unit.CENTIMETER: UnitProps("centimeter", 3, "cm"),
     Unit.METER: UnitProps("meter", 3, "m"),
     Unit.KILOMETER: UnitProps("kilometer", 3, "km"),
     Unit.LINE: UnitProps("line", 3, "ln"),
 
-    Unit.FootPound: UnitProps('foot * pound', 0, 'ft·lb'),
+    Unit.FOOT_POUND: UnitProps('foot * pound', 0, 'ft·lb'),
     Unit.JOULE: UnitProps('joule', 0, 'J'),
 
-    Unit.MmHg: UnitProps('mmhg', 0, 'mmHg'),
-    Unit.InHg: UnitProps('inhg', 6, '?'),
+    Unit.MM_HG: UnitProps('mmhg', 0, 'mmHg'),
+    Unit.IN_HG: UnitProps('inhg', 6, '?'),
     Unit.BAR: UnitProps('bar', 2, 'bar'),
     Unit.HP: UnitProps('hp', 4, 'hPa'),
     Unit.PSI: UnitProps('psi', 4, 'psi'),
@@ -153,27 +169,41 @@ UnitPropsDict = {
 
 
 class AbstractUnit:
-
+    """Abstract class for unit of measure instance definition
+    Stores defined unit and value, applies conversions to other units
+    """
     __slots__ = ('_value', '_defined_units')
 
     def __init__(self, value: [float, int], units: Unit):
+        """
+        :param units: unit as Unit enum
+        :param value: numeric value of the unit
+        """
         self._value: float = self.to_raw(value, units)
         self._defined_units: Unit = units
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Returns readable unit value
+        :return: readable unit value
+        """
         units = self._defined_units
         props = UnitPropsDict[units]
         v = self.from_raw(self._value, units)
         return f'{round(v, props.accuracy)} {props.symbol}'
 
     def __repr__(self):
-        return f'<{self.__class__.__name__}: {self >> self.units} {self.units.symbol} ({self._value})>'
+        """Returns instance as readable view
+        :return: instance as readable view
+        """
+        return f'<{self.__class__.__name__}: {self >> self.units} ' \
+               f'{self.units.symbol} ({self._value})>'
 
     # def __format__(self, format_spec: str = "{v:.{a}f} {s}"):
     #     """
-    #     :param format_spec: (str) - # TODO: currently not implemented
+    #     :param format_spec: (str)
     #     """
-    #     return format_spec.format(v=self._value, a=self._defined_units.key, s=self._defined_units.symbol)
+    #     return format_spec.format(v=self._value, a=self._defined_units.key, \
+    #     s=self._defined_units.symbol)
 
     def __float__(self):
         return float(self._value)
@@ -202,87 +232,118 @@ class AbstractUnit:
     def __rlshift__(self, other: Unit):
         return self.convert(other)
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: float, units: Unit) -> float:
+        """Converts value with specified units to raw value
+        :param value: value of the unit
+        :param units: Unit enum type
+        :return: value in specified units
+        """
         if not isinstance(units, Unit):
-            error_message = f"Type expected: {Unit}, {type(Unit).__name__} found: {type(units).__name__} ({value})"
-            raise TypeError(error_message)
+            err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
+                      f"found: {type(units).__name__} ({value})"
+            raise TypeError(err_msg)
         raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: float, units: Unit) -> float:
+        """Converts raw value to specified units
+        :param value: raw value of the unit
+        :param units: Unit enum type
+        :return: value in specified units
+        """
         if not isinstance(units, Unit):
-            error_message = f"Type expected: {Unit}, {type(Unit).__name__} found: {type(units).__name__} ({value})"
-            raise TypeError(error_message)
+            err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
+                      f"found: {type(units).__name__} ({value})"
+            raise TypeError(err_msg)
         raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
 
-    def convert(self, units: Unit):
+    def convert(self, units: Unit) -> 'AbstractUnit':
+        """Returns new unit instance in specified units
+        :param units: Unit enum type
+        :return: new unit instance in specified units
+        """
         value = self.get_in(units)
         return self.__class__(value, units)
 
-    def get_in(self, units: Unit):
+    def get_in(self, units: Unit) -> float:
+        """Returns value in specified units
+        :param units: Unit enum type
+        :return: value in specified units
+        """
         return self.from_raw(self._value, units)
 
     @property
-    def units(self):
+    def units(self) -> Unit:
+        """Returns defined units
+        :return: defined units
+        """
         return self._defined_units
 
     @property
-    def raw_value(self):
+    def raw_value(self) -> float:
+        """Raw unit value getter
+        :return: raw unit value
+        """
         return self._value
 
 
 class Distance(AbstractUnit):
+    """Distance unit"""
 
     def to_raw(self, value: float, units: Unit):
         if units == Distance.Inch:
             return value
         if units == Distance.Foot:
-            return value * 12
-        if units == Distance.Yard:
-            return value * 36
-        if units == Distance.Mile:
-            return value * 63360
-        if units == Distance.NauticalMile:
-            return value * 72913.3858
-        if units == Distance.Line:
-            return value / 10
-        if units == Distance.Millimeter:
-            return value / 25.4
-        if units == Distance.Centimeter:
-            return value / 2.54
-        if units == Distance.Meter:
-            return value / 25.4 * 1000
-        if units == Distance.Kilometer:
-            return value / 25.4 * 1000000
-        return super().to_raw(value, units)
+            result = value * 12
+        elif units == Distance.Yard:
+            result = value * 36
+        elif units == Distance.Mile:
+            result = value * 63360
+        elif units == Distance.NauticalMile:
+            result = value * 72913.3858
+        elif units == Distance.Line:
+            result = value / 10
+        elif units == Distance.Millimeter:
+            result = value / 25.4
+        elif units == Distance.Centimeter:
+            result = value / 2.54
+        elif units == Distance.Meter:
+            result = value / 25.4 * 1000
+        elif units == Distance.Kilometer:
+            result = value / 25.4 * 1000000
+        else:
+            return super().to_raw(value, units)
+        return result
 
     def from_raw(self, value: float, units: Unit):
         if units == Distance.Inch:
             return value
         if units == Distance.Foot:
-            return value / 12
-        if units == Distance.Yard:
-            return value / 36
-        if units == Distance.Mile:
-            return value / 63360
-        if units == Distance.NauticalMile:
-            return value / 72913.3858
-        if units == Distance.Line:
-            return value * 10
-        if units == Distance.Millimeter:
-            return value * 25.4
-        if units == Distance.Centimeter:
-            return value * 2.54
-        if units == Distance.Meter:
-            return value * 25.4 / 1000
-        if units == Distance.Kilometer:
-            return value * 25.4 / 1000000
-        return super().from_raw(value, units)
+            result = value / 12
+        elif units == Distance.Yard:
+            result = value / 36
+        elif units == Distance.Mile:
+            result = value / 63360
+        elif units == Distance.NauticalMile:
+            result = value / 72913.3858
+        elif units == Distance.Line:
+            result = value * 10
+        elif units == Distance.Millimeter:
+            result = value * 25.4
+        elif units == Distance.Centimeter:
+            result = value * 2.54
+        elif units == Distance.Meter:
+            result = value * 25.4 / 1000
+        elif units == Distance.Kilometer:
+            result = value * 25.4 / 1000000
+        else:
+            return super().from_raw(value, units)
+        return result
 
     Inch = Unit.INCH
     Foot = Unit.FOOT
     Yard = Unit.YARD
     Mile = Unit.MILE
-    NauticalMile = Unit.NauticalMile
+    NauticalMile = Unit.NAUTICAL_MILE
     Millimeter = Unit.MILLIMETER
     Centimeter = Unit.CENTIMETER
     Meter = Unit.METER
@@ -291,71 +352,81 @@ class Distance(AbstractUnit):
 
 
 class Pressure(AbstractUnit):
+    """Pressure unit"""
 
     def to_raw(self, value: float, units: Unit):
         if units == Pressure.MmHg:
             return value
         if units == Pressure.InHg:
-            return value * 25.4
-        if units == Pressure.Bar:
-            return value * 750.061683
-        if units == Pressure.HP:
-            return value * 750.061683 / 1000
-        if units == Pressure.PSI:
-            return value * 51.714924102396
-        return super().to_raw(value, units)
+            result = value * 25.4
+        elif units == Pressure.Bar:
+            result = value * 750.061683
+        elif units == Pressure.HP:
+            result = value * 750.061683 / 1000
+        elif units == Pressure.PSI:
+            result = value * 51.714924102396
+        else:
+            return super().to_raw(value, units)
+        return result
 
     def from_raw(self, value: float, units: Unit):
         if units == Pressure.MmHg:
             return value
         if units == Pressure.InHg:
-            return value / 25.4
-        if units == Pressure.Bar:
-            return value / 750.061683
-        if units == Pressure.HP:
-            return value / 750.061683 * 1000
-        if units == Pressure.PSI:
-            return value / 51.714924102396
-        return super().from_raw(value, units)
+            result = value / 25.4
+        elif units == Pressure.Bar:
+            result = value / 750.061683
+        elif units == Pressure.HP:
+            result = value / 750.061683 * 1000
+        elif units == Pressure.PSI:
+            result = value / 51.714924102396
+        else:
+            return super().from_raw(value, units)
+        return result
 
-    MmHg = Unit.MmHg
-    InHg = Unit.InHg
+    MmHg = Unit.MM_HG
+    InHg = Unit.IN_HG
     Bar = Unit.BAR
     HP = Unit.HP
     PSI = Unit.PSI
 
 
 class Weight(AbstractUnit):
+    """Weight unit"""
 
     def to_raw(self, value: float, units: Unit):
         if units == Weight.Grain:
             return value
         if units == Weight.Gram:
-            return value * 15.4323584
-        if units == Weight.Kilogram:
-            return value * 15432.3584
-        if units == Weight.Newton:
-            return value * 151339.73750336
-        if units == Weight.Pound:
-            return value / 0.000142857143
-        if units == Weight.Ounce:
-            return value * 437.5
-        return super().to_raw(value, units)
+            result = value * 15.4323584
+        elif units == Weight.Kilogram:
+            result = value * 15432.3584
+        elif units == Weight.Newton:
+            result = value * 151339.73750336
+        elif units == Weight.Pound:
+            result = value / 0.000142857143
+        elif units == Weight.Ounce:
+            result = value * 437.5
+        else:
+            return super().to_raw(value, units)
+        return result
 
     def from_raw(self, value: float, units: Unit):
         if units == Weight.Grain:
             return value
         if units == Weight.Gram:
-            return value / 15.4323584
-        if units == Weight.Kilogram:
-            return value / 15432.3584
-        if units == Weight.Newton:
-            return value / 151339.73750336
-        if units == Weight.Pound:
-            return value * 0.000142857143
-        if units == Weight.Ounce:
-            return value / 437.5
-        return super().from_raw(value, units)
+            result = value / 15.4323584
+        elif units == Weight.Kilogram:
+            result = value / 15432.3584
+        elif units == Weight.Newton:
+            result = value / 151339.73750336
+        elif units == Weight.Pound:
+            result = value * 0.000142857143
+        elif units == Weight.Ounce:
+            result = value / 437.5
+        else:
+            return super().from_raw(value, units)
+        return result
 
     Grain = Unit.GRAIN
     Ounce = Unit.OUNCE
@@ -366,28 +437,33 @@ class Weight(AbstractUnit):
 
 
 class Temperature(AbstractUnit):
+    """Temperature unit"""
 
     def to_raw(self, value: float, units: Unit):
         if units == Temperature.Fahrenheit:
             return value
         if units == Temperature.Rankin:
-            return value - 459.67
-        if units == Temperature.Celsius:
-            return value * 9 / 5 + 32
-        if units == Temperature.Kelvin:
-            return (value - 273.15) * 9 / 5 + 32
-        return super().to_raw(value, units)
+            result = value - 459.67
+        elif units == Temperature.Celsius:
+            result = value * 9 / 5 + 32
+        elif units == Temperature.Kelvin:
+            result = (value - 273.15) * 9 / 5 + 32
+        else:
+            return super().to_raw(value, units)
+        return result
 
     def from_raw(self, value: float, units: Unit):
         if units == Temperature.Fahrenheit:
             return value
         if units == Temperature.Rankin:
-            return value + 459.67
-        if units == Temperature.Celsius:
-            return (value - 32) * 5 / 9
-        if units == Temperature.Kelvin:
-            return (value - 32) * 5 / 9 + 273.15
-        return super().from_raw(value, units)
+            result = value + 459.67
+        elif units == Temperature.Celsius:
+            result = (value - 32) * 5 / 9
+        elif units == Temperature.Kelvin:
+            result = (value - 32) * 5 / 9 + 273.15
+        else:
+            return super().from_raw(value, units)
+        return result
 
     Fahrenheit = Unit.FAHRENHEIT
     Celsius = Unit.CELSIUS
@@ -396,44 +472,49 @@ class Temperature(AbstractUnit):
 
 
 class Angular(AbstractUnit):
+    """Angular unit"""
 
     def to_raw(self, value: float, units: Unit):
         if units == Angular.Radian:
             return value
         if units == Angular.Degree:
-            return value / 180 * pi
-        if units == Angular.MOA:
-            return value / 180 * pi / 60
-        if units == Angular.Mil:
-            return value / 3200 * pi
-        if units == Angular.MRad:
-            return value / 1000
-        if units == Angular.Thousand:
-            return value / 3000 * pi
-        if units == Angular.InchesPer100Yd:
-            return atan(value / 3600)
-        if units == Angular.CmPer100M:
-            return atan(value / 10000)
-        return super().to_raw(value, units)
+            result = value / 180 * pi
+        elif units == Angular.MOA:
+            result = value / 180 * pi / 60
+        elif units == Angular.Mil:
+            result = value / 3200 * pi
+        elif units == Angular.MRad:
+            result = value / 1000
+        elif units == Angular.Thousand:
+            result = value / 3000 * pi
+        elif units == Angular.InchesPer100Yd:
+            result = atan(value / 3600)
+        elif units == Angular.CmPer100M:
+            result = atan(value / 10000)
+        else:
+            return super().to_raw(value, units)
+        return result
 
     def from_raw(self, value: float, units: Unit):
         if units == Angular.Radian:
             return value
         if units == Angular.Degree:
-            return value * 180 / pi
-        if units == Angular.MOA:
-            return value * 180 / pi * 60
-        if units == Angular.Mil:
-            return value * 3200 / pi
-        if units == Angular.MRad:
-            return value * 1000
-        if units == Angular.Thousand:
-            return value * 3000 / pi
-        if units == Angular.InchesPer100Yd:
-            return tan(value) * 3600
-        if units == Angular.CmPer100M:
-            return tan(value) * 10000
-        return super().from_raw(value, units)
+            result = value * 180 / pi
+        elif units == Angular.MOA:
+            result = value * 180 / pi * 60
+        elif units == Angular.Mil:
+            result = value * 3200 / pi
+        elif units == Angular.MRad:
+            result = value * 1000
+        elif units == Angular.Thousand:
+            result = value * 3000 / pi
+        elif units == Angular.InchesPer100Yd:
+            result = tan(value) * 3600
+        elif units == Angular.CmPer100M:
+            result = tan(value) * 10000
+        else:
+            return super().from_raw(value, units)
+        return result
 
     Radian = Unit.RAD
     Degree = Unit.DEGREE
@@ -441,11 +522,12 @@ class Angular(AbstractUnit):
     Mil = Unit.MIL
     MRad = Unit.MRAD
     Thousand = Unit.THOUSAND
-    InchesPer100Yd = Unit.InchesPer100Yd
-    CmPer100M = Unit.CmPer100M
+    InchesPer100Yd = Unit.INCHES_PER_100YD
+    CmPer100M = Unit.CM_PER_100M
 
 
 class Velocity(AbstractUnit):
+    """Velocity unit"""
 
     def to_raw(self, value: float, units: Unit):
         if units == Velocity.MPS:
@@ -481,6 +563,7 @@ class Velocity(AbstractUnit):
 
 
 class Energy(AbstractUnit):
+    """Energy unit"""
 
     def to_raw(self, value: float, units: Unit):
         if units == Energy.FootPound:
@@ -496,14 +579,16 @@ class Energy(AbstractUnit):
             return value / 0.737562149277
         return super().from_raw(value, units)
 
-    FootPound = Unit.FootPound
+    FootPound = Unit.FOOT_POUND
     Joule = Unit.JOULE
 
 
 class TypedUnits:
     """
-    Abstract class to apply auto-conversion values to specified units by type-hints in inherited dataclasses
+    Abstract class to apply auto-conversion values to
+    specified units by type-hints in inherited dataclasses
     """
+
     def __setattr__(self, key, value):
         """
         converts value to specified units by type-hints in inherited dataclass
@@ -526,7 +611,6 @@ def is_unit(obj: [AbstractUnit, float, int]):
     if obj is None:
         return None
     raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
-
 
 # class Convertor:
 #     def __init__(self, measure=None, unit: int = 0, default_unit: int = 0):

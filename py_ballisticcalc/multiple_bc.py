@@ -1,5 +1,5 @@
 from typing import NamedTuple, Iterable
-from math import pow
+from math import pow as math_pow
 
 from .unit import Distance, Weight, Velocity, Unit
 from .conditions import Atmo
@@ -35,7 +35,7 @@ class MultiBC:
         self.velocity_units = velocity_units_flag
         self.sectional_density = self._get_sectional_density()
 
-        atmosphere = Atmo.ICAO()
+        atmosphere = Atmo.icao()
 
         altitude = Distance.Meter(0) >> Distance.Foot
         density, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
@@ -47,7 +47,7 @@ class MultiBC:
     def _get_sectional_density(self):
         w = self.weight >> Weight.Grain
         d = self.diameter >> Distance.Inch
-        return w / pow(d, 2) / 7000
+        return w / math_pow(d, 2) / 7000
 
     def _get_form_factor(self, bc):
         return self.sectional_density / bc
@@ -66,13 +66,17 @@ class MultiBC:
         """
         bc_table = tuple(self._bc_table)
         bc_mah = [BCMachRow(bc_table[0].BC, self._table_data[-1].Mach)]
-        bc_mah.extend([BCMachRow(point.BC, point.Velocity / self.speed_of_sound) for point in bc_table])
+        bc_mah.extend(
+            [BCMachRow(point.BC, point.Velocity / self.speed_of_sound) for point in bc_table]
+        )
         bc_mah.append(BCMachRow(bc_mah[-1].BC, self._table_data[0].Mach))
 
         yield bc_mah[0].BC
 
         for bc_max, bc_min in zip(bc_mah, bc_mah[1:]):
-            df_part = [point for point in self._table_data if bc_max.Mach > point.Mach >= bc_min.Mach]
+            df_part = [
+                point for point in self._table_data if bc_max.Mach > point.Mach >= bc_min.Mach
+            ]
             ddf = len(df_part)
             bc_delta = (bc_max.BC - bc_min.BC) / ddf
             for j in range(ddf):

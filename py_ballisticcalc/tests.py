@@ -1,3 +1,5 @@
+"""Unittests for the py_ballisticcalc library"""
+
 import math
 import timeit
 import unittest
@@ -7,10 +9,15 @@ from math import fabs
 import pyximport
 
 pyximport.install(language_level=3)
-from py_ballisticcalc import *
+from py_ballisticcalc import Distance, Weight, Velocity, Angular
+from py_ballisticcalc import Temperature, Pressure, Energy, Unit
+from py_ballisticcalc import DragModel, Projectile, Ammo, Weapon, Wind, Shot, Atmo
+from py_ballisticcalc import TableG7, TableG1, MultiBCRow, MultiBC
+from py_ballisticcalc import TrajectoryData, TrajectoryCalc
 
 
 class TestDrag(unittest.TestCase):
+    """Test DragModel creation"""
 
     def setUp(self) -> None:
         self.bc = self.test_create()
@@ -77,7 +84,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         projectile = Projectile(bc, 0.9)
         ammo = Ammo(projectile, 2600)
         weapon = Weapon(Distance(3.2, Distance.Inch), Distance(100, Distance.Yard))
-        atmosphere = Atmo.ICAO()
+        atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
         sight_angle = calc.sight_angle(weapon, atmosphere)
@@ -90,7 +97,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         projectile = Projectile(bc, 0.9)
         ammo = Ammo(projectile, 2750)
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
-        atmosphere = Atmo.ICAO()
+        atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
         sight_angle = calc.sight_angle(weapon, atmosphere)
@@ -98,53 +105,56 @@ class TestPyBallisticCalc(unittest.TestCase):
         self.assertLess(fabs((sight_angle >> Angular.Radian) - 0.001228), 1e-6,
                         f'TestZero2 failed {sight_angle >> Angular.Radian:.10f}')
 
-    def assertEqualCustom(self, a, b, accuracy, name):
+    def custom_assert_equal(self, a, b, accuracy, name):
         with self.subTest():
-            self.assertFalse(fabs(a - b) > accuracy, f'Assertion {name} failed ({a}/{b}, {accuracy})')
+            self.assertFalse(fabs(a - b) > accuracy,
+                             f'Assertion {name} failed ({a}/{b}, {accuracy})')
 
-    def validate_one(self, data: TrajectoryData, distance: float, velocity: float, mach: float, energy: float,
-                     path: float, hold: float, windage: float, wind_adjustment: float, time: float, ogv: float,
+    def validate_one(self, data: TrajectoryData, distance: float, velocity: float,
+                     mach: float, energy: float, path: float, hold: float,
+                     windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: Unit):
 
-        self.assertEqualCustom(distance, data.distance >> Distance.Yard, 0.001, "Distance")
-        self.assertEqualCustom(velocity, data.velocity >> Velocity.FPS, 5, "Velocity")
-        self.assertEqualCustom(mach, data.mach, 0.005, "Mach")
-        self.assertEqualCustom(energy, data.energy >> Energy.FootPound, 5, "Energy")
-        self.assertEqualCustom(time, data.time, 0.06, "Time")
-        self.assertEqualCustom(ogv, data.ogw >> Weight.Pound, 1, "OGV")
+        self.custom_assert_equal(distance, data.distance >> Distance.Yard, 0.001, "Distance")
+        self.custom_assert_equal(velocity, data.velocity >> Velocity.FPS, 5, "Velocity")
+        self.custom_assert_equal(mach, data.mach, 0.005, "Mach")
+        self.custom_assert_equal(energy, data.energy >> Energy.FootPound, 5, "Energy")
+        self.custom_assert_equal(time, data.time, 0.06, "Time")
+        self.custom_assert_equal(ogv, data.ogw >> Weight.Pound, 1, "OGV")
 
         if distance >= 800:
-            self.assertEqualCustom(path, data.drop >> Distance.Inch, 4, 'Drop')
+            self.custom_assert_equal(path, data.drop >> Distance.Inch, 4, 'Drop')
         elif distance >= 500:
-            self.assertEqualCustom(path, data.drop >> Distance.Inch, 1, 'Drop')
+            self.custom_assert_equal(path, data.drop >> Distance.Inch, 1, 'Drop')
         else:
-            self.assertEqualCustom(path, data.drop >> Distance.Inch, 0.5, 'Drop')
+            self.custom_assert_equal(path, data.drop >> Distance.Inch, 0.5, 'Drop')
 
         if distance > 1:
-            self.assertEqualCustom(hold, data.drop_adj >> adjustment_unit, 0.5, 'Hold')
+            self.custom_assert_equal(hold, data.drop_adj >> adjustment_unit, 0.5, 'Hold')
 
         if distance >= 800:
-            self.assertEqualCustom(windage, data.windage >> Distance.Inch, 1.5, "Windage")
+            self.custom_assert_equal(windage, data.windage >> Distance.Inch, 1.5, "Windage")
         elif distance >= 500:
-            self.assertEqualCustom(windage, data.windage >> Distance.Inch, 1, "Windage")
+            self.custom_assert_equal(windage, data.windage >> Distance.Inch, 1, "Windage")
         else:
-            self.assertEqualCustom(windage, data.windage >> Distance.Inch, 0.5, "Windage")
+            self.custom_assert_equal(windage, data.windage >> Distance.Inch, 0.5, "Windage")
 
         if distance > 1:
-            self.assertEqualCustom(wind_adjustment, data.windage_adj >> adjustment_unit, 0.5, "WAdj")
+            self.custom_assert_equal(wind_adjustment,
+                                     data.windage_adj >> adjustment_unit, 0.5, "WAdj")
 
     def test_path_g1(self):
         bc = DragModel(0.223, TableG1, 168, 0.308)
         projectile = Projectile(bc, 1.282)
         ammo = Ammo(projectile, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
-        atmosphere = Atmo.ICAO()
+        atmosphere = Atmo.icao()
         shot_info = Shot(1000, 100, sight_angle=Angular(0.001228, Angular.Radian))
         wind = [Wind(Velocity(5, Velocity.MPH), Angular(-45, Angular.Degree))]
         calc = TrajectoryCalc(ammo)
         data = calc.trajectory(weapon, atmosphere, shot_info, wind)
 
-        self.assertEqualCustom(len(data), 11, 0.1, "Length")
+        self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
         test_data = [
             [data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.MOA],
@@ -162,7 +172,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         projectile = Projectile(bc, 1.282)
         ammo = Ammo(projectile, 2750)
         weapon = Weapon(2, 100, 11.24)
-        atmosphere = Atmo.ICAO()
+        atmosphere = Atmo.icao()
         shot_info = Shot(Distance.Yard(1000),
                          Distance.Yard(100),
                          sight_angle=Angular.MOA(4.221)
@@ -172,7 +182,7 @@ class TestPyBallisticCalc(unittest.TestCase):
         calc = TrajectoryCalc(ammo)
         data = calc.trajectory(weapon, atmosphere, shot_info, wind)
 
-        self.assertEqualCustom(len(data), 11, 0.1, "Length")
+        self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
         test_data = [
             [data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.Mil],
@@ -192,7 +202,7 @@ class TestPerformance(unittest.TestCase):
         self.projectile = Projectile(self.bc, 1.282)
         self.ammo = Ammo(self.projectile, 2750)
         self.weapon = Weapon(2, 100, 11.24)
-        self.atmo = Atmo.ICAO()
+        self.atmo = Atmo.icao()
         self.shot = Shot(Distance.Yard(1000),
                          Distance.Yard(100),
                          sight_angle=Angular.MOA(4.221)

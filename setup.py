@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+
+"""setup.py script for py_ballisticcalc library"""
+
 import os
 from pathlib import Path
 
@@ -13,7 +16,12 @@ except ImportError:
     cythonize = False
 
 
-def iter_extensions(path):
+def iter_extensions(path) -> list:
+    """
+    iterate extensions in project directory
+    :rtype: list
+    :return: list of extensions paths
+    """
     founded_extensions = []
     extensions_dir = Path(path).parent
     for ext_path in Path.iterdir(extensions_dir):
@@ -25,6 +33,7 @@ def iter_extensions(path):
 
 
 def no_cythonize(exts, **_ignore):
+    """grep extensions sources without cythonization"""
     for extension in exts:
         sources = []
         for src_file in extension.sources:

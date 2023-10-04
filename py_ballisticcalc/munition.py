@@ -51,7 +51,8 @@ class Ammo(TypedUnits):
 
         if v_delta == 0 or t_delta == 0:
             raise ValueError(
-                "Temperature modifier error, other velocity and temperature can't be same as default"
+                "Temperature modifier error, other velocity "
+                "and temperature can't be same as default"
             )
 
         self.temp_modifier = v_delta / t_delta * (15 / v_lower)  # * 100
