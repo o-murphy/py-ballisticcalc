@@ -102,7 +102,7 @@ class Air:
     humidity: float = 0         # Relative Humidity
     windSpeed: float = 0
     windUnits: unit.Velocity = unit.VelocityMPH
-    windDirection: float = 0    # Degrees; head-on = 0 degrees
+    windDirection: float = 0    # Degrees; wind blowing from behind shooter = 0 degrees; blowing to shooter's right = 90 degrees
 
 @dataclass
 class Calculator:
@@ -141,17 +141,23 @@ class Calculator:
                                            unit.Angular(self.air.windDirection, unit.AngularDegree))
 
     def elevationForZeroDistance(self, distance: Distance) -> float:
-        """Calculates barrel elevation to hit zero at given distance"""
+        """
+        Calculates barrel elevation to hit zero at given distance.
+        This is not always the second zero; depending on parameters
+            it might return the first (climbing) zero of the trajectory.
+        """
         calc = TrajectoryCalculator()
         return calc.sight_angle(distance, Distance(self.gun.sightHeight, self.gun.heightUnits),
                                 self._ammo, self._atmosphere).get_in(self.angleUnits)
     
     def zeroGivenElevation(self, elevation: float = None) -> TrajectoryData:
-        """Find the zero distance for a given barrel elevation"""
+        """
+        Find the zero distance for a given barrel elevation.
+        This will always return the second (descending) zero.
+        """
         calc = TrajectoryCalculator()
         shot = ShotParameters(unit.Angular(elevation, self.angleUnits),
                               unit.Distance(1e5, DistanceMile), unit.Distance(1e5, DistanceMile))
-        # NOTE: We could speed this up by checking whether first observed negative angle 
         data = calc.trajectory(self._ammo, self._atmosphere, shot, self._wind,
                                Distance(self.gun.barrelTwist, self.gun.twistUnits),
                                Distance(self.gun.sightHeight, self.gun.heightUnits),
@@ -160,7 +166,7 @@ class Calculator:
             return data[1]
         else:
             return data[0]  # No downrange zero found, so just return starting row
-            # We could speed up detecting this by checking whether the first row with negative angle
+            # NOTE: We could speed up detecting this by checking whether the first row with negative angle
             #   also has negative drop, because it's not going to go positive after that!
 
     def dangerSpace(self, trajectory: TrajectoryData, targetHeight: float) -> float:
@@ -168,6 +174,9 @@ class Calculator:
             "Danger Space" is defined for *d* and for a target of height `targetHeight` as the error range for the target, meaning
             if the trajectory hits the center of the target when the target is exactly at *d*, then "Danger Space" is the distance
             before or after *d* across which the bullet would still hit somewhere on the target.  (This ignores windage; vertical only.)"""
+        # NOTE: Presently this is a coarse estimate based on point that is only good for small danger spaces – i.e., longer distances
+        #   where trajectory is steeper.  To get exact danger space instead run detailed trajectory to see exact distances where 
+        #   trajectory height crosses 1/2 targetHeight before and after *d*.
         return -unit.Distance(targetHeight / math.tan(trajectory.angle().get_in(AngularRadian)), self.heightUnits).get_in(self.distanceUnits)
 
     def trajectory(self, range: float, step: float, elevation: float = None, zeroDistance: float = None,
