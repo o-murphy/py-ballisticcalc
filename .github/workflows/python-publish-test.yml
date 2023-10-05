@@ -4,11 +4,11 @@ on:
 #  release:
 #    types: [created, draft, edited]
   workflow_dispatch:
-#    inputs:
-#      logLevel:
-#        description: 'Log level'
-#        required: true
-#        default: 'warning'
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: true
+        default: 'warning'
 #      tags:
 #        description: 'Test scenario tags'
 
