@@ -100,8 +100,7 @@ length = Distance.Inch(1.282)  # length = Distance(1.282, Distance.Inch)
 weapon = Weapon(9, 100, 2)
 dm = DragModel(0.223, TableG7, weight, diameter)
 
-bullet = Projectile(dm, length)
-ammo = Ammo(bullet, 2750, 15)
+ammo = Ammo(dm, length, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
 
 zero_atmo = Atmo.icao()
@@ -113,7 +112,7 @@ calc.update_elevation()
 shot = Shot(1500, 100)
 
 current_atmo = Atmo(100, 1000, 15, 72)
-winds = [Wind(2, 90)]
+winds = [Wind(2, Angular.OClock(3))]
 
 data = calc.trajectory(shot, current_atmo, winds)
 

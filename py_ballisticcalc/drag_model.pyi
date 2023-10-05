@@ -28,10 +28,14 @@ class DragModel:
                  diameter: [float, Distance]):
         pass
 
-    def drag(self, mach: float):
+    def drag(self, mach: float) -> float:
         pass
 
-    def calculated_drag_function(self):
+    def cdm(self) -> list[dict]:
+        pass
+
+    @staticmethod
+    def from_mbc(mbc: 'MultiBC') -> DragModel:
         pass
 
 

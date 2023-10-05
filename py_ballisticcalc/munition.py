@@ -1,44 +1,47 @@
+"""Module for Weapon and Ammo properties definitions"""
+
 import math
 from dataclasses import dataclass, field
 
-from .drag_model import DragModel
+from .drag_model import DragModel  # pylint: disable=import-error
 from .settings import Settings as Set
-from .unit import TypedUnits, Velocity, Temperature, is_unit
+from .unit import TypedUnits, Velocity, Temperature, is_unit, Distance
 
-__all__ = ('Weapon', 'Ammo', 'Projectile')
+__all__ = ('Weapon', 'Ammo')
 
 
 @dataclass
 class Weapon(TypedUnits):
-    sight_height: Set.Units.sight_height
-    zero_distance: Set.Units.distance = field(default=100)
-    twist: Set.Units.sight_height = field(default=0)
+    """Creates Weapon properties"""
+    sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
+    zero_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
+    twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
 
     def __post_init__(self):
-        self.sight_height = self.sight_height
-
-
-@dataclass
-class Projectile(TypedUnits):
-    dm: DragModel
-    length: Set.Units.length = field(default=None)
+        if not self.twist:
+            self.twist = 0
 
 
 @dataclass
 class Ammo(TypedUnits):
-    projectile: Projectile
-    muzzle_velocity: Set.Units.velocity
-    temp_modifier: float = 0
-    powder_temp: Set.Units.temperature = field(default_factory=lambda: Temperature.Celsius(15))
+    """Creates Ammo and Projectile properties"""
 
-    def __post_init__(self):
-        self.muzzle_velocity = self.muzzle_velocity
+    dm: DragModel
+    length: [float, Distance] = field(default_factory=lambda: Set.Units.length)
+    mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
+    temp_modifier: float = field(default=0)
+    powder_temp: [float, Temperature] = field(default_factory=lambda: Temperature.Celsius(15))
 
     def calc_powder_sens(self, other_velocity: [float, Velocity],
-                         other_temperature: [float, Temperature]):
+                         other_temperature: [float, Temperature]) -> float:
+        """Calculates velocity correction by temperature change
+        :param other_velocity: other velocity
+        :param other_temperature: other temperature
+        :return: temperature modifier
+        """
         # (800-792) / (15 - 0) * (15/792) * 100 = 1.01
         # creates temperature modifier in percent at each 15C
-        v0 = self.muzzle_velocity >> Velocity.MPS
+        v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
         v1 = (other_velocity if is_unit(other_velocity)
               else Set.Units.velocity(other_velocity)) >> Velocity.MPS
@@ -59,9 +62,13 @@ class Ammo(TypedUnits):
 
         return self.temp_modifier
 
-    def get_velocity_for_temp(self, current_temp):
+    def get_velocity_for_temp(self, current_temp: [float, Temperature]) -> Velocity:
+        """Calculates current velocity by temperature correction
+        :param current_temp: temperature on current atmosphere
+        :return: velocity corrected for temperature specified
+        """
         temp_modifier = self.temp_modifier
-        v0 = self.muzzle_velocity >> Velocity.MPS
+        v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
         t1 = (current_temp if is_unit(current_temp)
               else Set.Units.temperature(current_temp)) >> Temperature.Celsius

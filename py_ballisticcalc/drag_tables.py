@@ -1,3 +1,5 @@
+"""Templates of the common used drag tables"""
+
 TableG1 = [
     {'Mach': 0.00, 'CD': 0.2629},
     {'Mach': 0.05, 'CD': 0.2558},
