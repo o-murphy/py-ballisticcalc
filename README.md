@@ -3,6 +3,9 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
 
 ### Table of contents
 * [Installation](#installation)
+  * [Latest stable](#latest-stable-release-from-pypi)
+  * [From sources](#installing-from-sources)
+  * [Clone and build](#clone-and-build)
 * [Usage](#usage)
   * [Units of measure](#unit-manipulation-syntax)
   * [An example of calculations](#an-example-of-calculations)
@@ -10,28 +13,35 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
 * [About project](#about-project)
 
 ### Installation
-**Stable release from pypi, installing from binaries**
-
-(Contains c-extensions which offer higher performance)
+#### Latest stable release from pypi**
 ```shell
 pip install py-ballisticcalc
 ```
-
-**Build wheel package for your interpreter version by pypi sdist**
-
-Download and install MSVC or GCC depending on target platform
+#### Installing from sources
+**MSVC** or **GCC** required
+* Download and install **MSVC** or **GCC** depending on target platform
+* Use one of the references you need:
 ```shell
-pip install Cython>=3.0.0a10 
+# no binary from PyPi
 pip install py-ballisticcalc --no-binary :all:
+
+# master brunch
+pip install git+https://github.com/o-murphy/py_ballisticcalc
+
+# specific branch
+pip install git+https://github.com/o-murphy/py_ballisticcalc.git@<target_branch_name>
 ```
 
-**Also use `git clone` to build your own package**
-
-(Contains cython files to build your own c-extensions)
+#### Clone and build
+**MSVC** or **GCC** required
 ```shell
 git clone https://github.com/o-murphy/py_ballisticcalc
+cd py_ballisticcalc
+python -m venv venv
+. venv/bin/activate
+pip install cython
+python setup.py build_ext --inplace
 ```   
-
 
 ### Usage
 
@@ -101,13 +111,13 @@ weapon = Weapon(9, 100, 2)
 dm = DragModel(0.223, TableG7, weight, diameter)
 
 ammo = Ammo(dm, length, 2750, 15)
-ammo.calc_powder_sens(2723, 0)
+ammo.calc_powder_sens(2723, 0)  # optional, uses if USE_POWDER_SENSITIVITY flag enabled
 
 zero_atmo = Atmo.icao()
 
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)
-calc.update_elevation()
+calc.update_elevation()  # calculates zero barrel elevation
 
 shot = Shot(1500, 100)
 
