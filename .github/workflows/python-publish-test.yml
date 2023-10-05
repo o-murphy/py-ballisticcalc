@@ -2,7 +2,10 @@ name: Upload Python Package to Test PyPI
 
 on:
   release:
-    types: [created, edited]
+    types:
+      - created
+      - draft
+      - edited
 
 permissions:
   contents: read
