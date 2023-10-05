@@ -5,10 +5,10 @@ from .unit import Unit, Distance, is_unit
 __all__ = ('Settings',)
 
 
-class Settings:
+class Settings:  # pylint: disable=too-few-public-methods
     """Global settings class of the py_ballisticcalc library"""
 
-    class Units:
+    class Units:  # pylint: disable=too-few-public-methods
         """Default units for specified measures"""
 
         sight_height: Unit = Unit.INCH

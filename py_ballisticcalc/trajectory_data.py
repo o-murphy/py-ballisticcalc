@@ -1,11 +1,20 @@
 """Implements a point of trajectory class in applicable data types"""
-
+from enum import Flag, auto
 from typing import NamedTuple
 
 from .settings import Settings as Set
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit
 
-__all__ = ('TrajectoryData',)
+__all__ = ('TrajectoryData', 'TrajFlag')
+
+
+class TrajFlag(Flag):
+    """Flags for marking trajectory row if Zero or Mach crossing
+    Also uses to set a brake points of trajectory calculation loop
+    """
+    NONE = auto()
+    ZERO = auto()
+    MACH = auto()
 
 
 class TrajectoryData(NamedTuple):
@@ -25,6 +34,7 @@ class TrajectoryData(NamedTuple):
         mach float
         energy (Energy):
         ogw (Weight): optimal game weight
+        rtype (int): row type
     """
 
     time: float
@@ -38,6 +48,7 @@ class TrajectoryData(NamedTuple):
     angle: Angular  # Trajectory angle
     energy: Energy
     ogw: Weight
+    flag: TrajFlag = TrajFlag.NONE
 
     def formatted(self) -> tuple:
         """

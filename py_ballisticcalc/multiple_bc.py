@@ -1,39 +1,41 @@
+"""Module to create custom drag function based on Multiple ballistic coefficients"""
+import typing
 from math import pow as math_pow
 from typing import NamedTuple, Iterable
 
 from .conditions import Atmo
-from .drag_model import make_data_points
+from .drag_model import make_data_points  # pylint: disable=import-error
 from .settings import Settings as Set
 from .unit import Distance, Weight, Velocity, is_unit
 
-__all__ = ('MultiBC', 'MultiBCRow')
+__all__ = ('MultiBC', )
 
 
 class MultiBCRow(NamedTuple):
+    """Multi-BC point, for internal usage"""
     BC: float
     V: Set.Units.velocity
 
 
 class DragTableRow(NamedTuple):
-    """for internal usage"""
+    """CDM point, for internal usage"""
     CD: float
     Mach: float
 
 
 class BCMachRow(NamedTuple):
-    """for internal usage"""
+    """BC-Mach point, for internal usage"""
     BC: float
     Mach: float
 
 
-class MultiBC:
+class MultiBC:  # pylint: disable=too-few-public-methods
     """Creates instance to calculate custom drag tabel based on input multi-bc table"""
 
     def __init__(self, drag_table: Iterable[dict], diameter: Distance, weight: Weight,
                  mbc_table: Iterable[dict]):
 
         self.mbc_table = mbc_table
-        self.table = drag_table
         self.weight = weight
         self.diameter = diameter
         self.sectional_density = self._get_sectional_density()
@@ -41,10 +43,10 @@ class MultiBC:
         atmosphere = Atmo.icao()
 
         altitude = Distance.Meter(0) >> Distance.Foot
-        density, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
+        _, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
         self.speed_of_sound = Velocity.FPS(mach) >> Velocity.MPS
 
-        self._table_data = make_data_points(self.table)
+        self._table_data = make_data_points(drag_table)
         self._bc_table = self._parse_mbc(mbc_table)
 
     def _parse_mbc(self, mbc_table):
@@ -55,19 +57,19 @@ class MultiBC:
             table.append(mbc)
         return sorted(table, reverse=True)
 
-    def _get_sectional_density(self):
+    def _get_sectional_density(self) -> float:
         w = self.weight >> Weight.Grain
         d = self.diameter >> Distance.Inch
         return w / math_pow(d, 2) / 7000
 
-    def _get_form_factor(self, bc):
+    def _get_form_factor(self, bc) -> float:
         return self.sectional_density / bc
 
     @staticmethod
     def _get_counted_cd(form_factor, standard_cd):
         return standard_cd * form_factor
 
-    def _interpolate_bc_table(self):
+    def _interpolate_bc_table(self) -> typing.Generator:
         """
         Extends input bc table by creating bc value for each point of standard Drag Model
         """
@@ -89,7 +91,7 @@ class MultiBC:
             for j in range(ddf):
                 yield bc_max.BC - bc_delta * j
 
-    def _cdm_generator(self):
+    def _cdm_generator(self) -> typing.Generator:
         bc_extended = reversed(list(self._interpolate_bc_table()))
         form_factors = [self._get_form_factor(bc) for bc in bc_extended]
 
@@ -98,5 +100,8 @@ class MultiBC:
             yield {'CD': cd, 'Mach': point.Mach}
 
     @property
-    def cdm(self):
+    def cdm(self) -> list[dict]:
+        """
+        :return: custom drag function based on input multiple ballistic coefficients
+        """
         return list(self._cdm_generator())

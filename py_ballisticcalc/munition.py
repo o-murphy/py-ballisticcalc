@@ -3,7 +3,7 @@
 import math
 from dataclasses import dataclass, field
 
-from .drag_model import DragModel
+from .drag_model import DragModel  # pylint: disable=import-error
 from .settings import Settings as Set
 from .unit import TypedUnits, Velocity, Temperature, is_unit, Distance
 

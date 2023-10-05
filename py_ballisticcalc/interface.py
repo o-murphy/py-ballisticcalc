@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from .conditions import Atmo, Wind, Shot
 from .munition import Weapon, Ammo
 from .settings import Settings as Set
-from .trajectory_calc import TrajectoryCalc
-from .trajectory_data import TrajectoryData
+from .trajectory_calc import TrajectoryCalc  # pylint: disable=import-error
+from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import Angular, Distance, is_unit
 
 __all__ = ('Calculator',)
@@ -26,10 +26,12 @@ class Calculator:
 
     @property
     def elevation(self):
+        """get current barrel elevation"""
         return self._elevation
 
     @property
     def cdm(self):
+        """returns custom drag function based on input data"""
         return self._calc.cdm
 
     def update_elevation(self):
@@ -59,8 +61,9 @@ class Calculator:
             winds = [Wind()]
 
         elevation = elevation if is_unit(elevation) else Set.Units.angular
-        shot = Shot(1000, 1, sight_angle=elevation)
-        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds, stop_at_zero=True)
+        shot = Shot(1000, Distance.Foot(100), sight_angle=elevation)
+        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds,
+                                     brake_flags=TrajFlag.ZERO)
         # No downrange zero found, so just return starting row
         return data[-1]
 
@@ -80,6 +83,7 @@ class Calculator:
         :return: danger space for target_height specified
         """
 
-        target_height = (target_height if is_unit(target_height) else Set.Units.target_height(target_height)) >> Distance.Yard
+        target_height = (target_height if is_unit(target_height)
+                         else Set.Units.target_height(target_height)) >> Distance.Yard
         traj_angle_tan = math.tan(trajectory.angle >> Angular.Radian)
         return Distance.Yard(-(target_height / traj_angle_tan))

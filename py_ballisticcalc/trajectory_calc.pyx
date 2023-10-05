@@ -5,7 +5,7 @@ cimport cython
 from .conditions import *
 from .munition import *
 from .settings import Settings
-from .trajectory_data import TrajectoryData
+from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import *
 
 __all__ = ('TrajectoryCalc',)
@@ -117,8 +117,9 @@ cdef class TrajectoryCalc:
         return self._sight_angle(self.ammo, weapon, atmo)
 
     def trajectory(self, weapon: Weapon, atmo: Atmo,
-                   shot_info: Shot, winds: list[Wind], stop_at_zero: bool = False):
-        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, stop_at_zero)
+                   shot_info: Shot, winds: list[Wind],
+                   brake_flags: TrajFlag = TrajFlag.NONE):
+        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, brake_flags)
 
     cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef:
@@ -173,7 +174,7 @@ cdef class TrajectoryCalc:
         return Angular.Radian(barrel_elevation)
 
     cdef _trajectory(TrajectoryCalc self, object ammo, object weapon, object atmo,
-                     object shot_info, list[object] winds, int stop_at_zero = False):
+                     object shot_info, list[object] winds, object brake_flags):
         cdef:
             double density_factor, mach
             double time, velocity, windage, delta_time, drag
@@ -209,6 +210,10 @@ cdef class TrajectoryCalc:
 
             list ranges = []
 
+            double previous_y = 0
+            double previous_mach = 0
+            object _flag
+
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)
         else:
@@ -229,8 +234,6 @@ cdef class TrajectoryCalc:
             stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
             twist_coefficient = -1 if twist > 0 else 1
 
-        cdef double previous_y = 0
-
         while range_vector.x <= maximum_range + calc_step:
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
@@ -246,27 +249,29 @@ cdef class TrajectoryCalc:
                 else:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
-            if stop_at_zero and range_vector.y < 0 and previous_y > 0:
-                windage = range_vector.z
-                if twist != 0:
-                    windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
+            if range_vector.x >= next_range_distance:
+                _flag = TrajFlag.NONE
 
-                ranges.append(
-                    create_trajectory_row(time, range_vector, velocity_vector,
-                                          velocity, mach, windage, weight)
-                )
-                break
-
-            elif range_vector.x >= next_range_distance:
                 windage = range_vector.z
 
                 if twist != 0:
                     windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
 
+                # Zero-crossing check
+                if range_vector.y + sight_height < 0 < previous_y + sight_height:
+                    _flag |= TrajFlag.ZERO
+
+                # Mach crossing check
+                if (velocity / mach < 1) and (previous_mach > 1):
+                    _flag |= TrajFlag.MACH
+
                 ranges.append(
                     create_trajectory_row(time, range_vector, velocity_vector,
-                                          velocity, mach, windage, weight)
+                                          velocity, mach, windage, weight, _flag)
                 )
+
+                if _flag & brake_flags & (TrajFlag.ZERO | TrajFlag.MACH):
+                    break
 
                 next_range_distance += step
                 current_item += 1
@@ -274,9 +279,11 @@ cdef class TrajectoryCalc:
                 if current_item == ranges_length:
                     break
 
+                previous_y = range_vector.y
+                previous_mach = velocity / mach
+
             velocity_adjusted = velocity_vector - wind_vector
 
-            previous_y = range_vector.y
             delta_time = calc_step / velocity_vector.x
             velocity = velocity_adjusted.magnitude()
 
@@ -347,7 +354,7 @@ cdef Vector wind_to_vector(object shot, object wind):
                   cross_component * cant_cosine - range_factor * cant_sine)
 
 cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
-                           double velocity, double mach, double windage, double weight):
+                           double velocity, double mach, double windage, double weight, object flag):
     cdef:
         double drop_adjustment = get_correction(range_vector.x, range_vector.y)
         double windage_adjustment = get_correction(range_vector.x, windage)
@@ -364,7 +371,8 @@ cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vec
         mach=velocity / mach,
         energy=Energy.FootPound(calculate_energy(weight, velocity)),
         angle=Angular.Radian(trajectory_angle),
-        ogw=Weight.Pound(calculate_ogv(weight, velocity))
+        ogw=Weight.Pound(calculate_ogv(weight, velocity)),
+        flag=flag
     )
 
 @cython.cdivision(True)

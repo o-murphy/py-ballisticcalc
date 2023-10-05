@@ -1,10 +1,11 @@
 """
 Use-full types for units of measurement conversion for ballistics calculations
 """
+
 import typing
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple, Callable, get_type_hints
+from typing import NamedTuple, Callable
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
@@ -233,8 +234,8 @@ class AbstractUnit:
     def __rlshift__(self, other: Unit):
         return self.convert(other)
 
-    def to_raw(self, value: float, units: Unit) -> float:
-        """Converts value with specified units to raw value
+    def _unit_support_error(self, value: float, units: Unit):
+        """Validates the units
         :param value: value of the unit
         :param units: Unit enum type
         :return: value in specified units
@@ -243,7 +244,17 @@ class AbstractUnit:
             err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
                       f"found: {type(units).__name__} ({value})"
             raise TypeError(err_msg)
-        raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
+        if units not in self.__dict__.values():
+            raise ValueError(f'{self.__class__.__name__}: unit {units} is not supported')
+        return 0
+
+    def to_raw(self, value: float, units: Unit) -> float:
+        """Converts value with specified units to raw value
+        :param value: value of the unit
+        :param units: Unit enum type
+        :return: value in specified units
+        """
+        return self._unit_support_error(value, units)
 
     def from_raw(self, value: float, units: Unit) -> float:
         """Converts raw value to specified units
@@ -251,11 +262,7 @@ class AbstractUnit:
         :param units: Unit enum type
         :return: value in specified units
         """
-        if not isinstance(units, Unit):
-            err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
-                      f"found: {type(units).__name__} ({value})"
-            raise TypeError(err_msg)
-        raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
+        return self._unit_support_error(value, units)
 
     def convert(self, units: Unit) -> 'AbstractUnit':
         """Returns new unit instance in specified units
@@ -589,7 +596,7 @@ class Energy(AbstractUnit):
     Joule = Unit.JOULE
 
 
-class TypedUnits:
+class TypedUnits:  # pylint: disable=too-few-public-methods
     """
     Abstract class to apply auto-conversion values to
     specified units by type-hints in inherited dataclasses
@@ -600,10 +607,7 @@ class TypedUnits:
         converts value to specified units by type-hints in inherited dataclass
         """
 
-        fields = self.__dataclass_fields__
-
-        if self.__class__.__name__ == "Weapon":
-            print(key, fields[key].default_factory(), value)
+        fields = self.__getattribute__('__dataclass_fields__')
 
         if key in fields and not isinstance(value, AbstractUnit):
             default_factory = fields[key].default_factory

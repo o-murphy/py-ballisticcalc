@@ -1,3 +1,5 @@
+"""Classes to define zeroing or current environment conditions"""
+
 import math
 from dataclasses import dataclass, field
 
@@ -26,12 +28,14 @@ cIcaoTemperatureDeltaR: float = cIcaoStandardTemperatureR - cIcaoFreezingPointTe
 
 
 @dataclass
-class Atmo(TypedUnits):
+class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
+    """Stores atmosphere data for the trajectory calculation"""
 
     altitude: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
     temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
     humidity: float = 0.78
+    density: float = field(init=False)
     mach: Velocity = field(init=False)
     _mach1: Velocity = field(init=False)
     _a0: float = field(init=False)
@@ -43,7 +47,7 @@ class Atmo(TypedUnits):
 
         if self.humidity > 1:
             self.humidity = self.humidity / 100
-        if not (0 <= self.humidity <= 1):
+        if not 0 <= self.humidity <= 1:
             self.humidity = 0.78
         if not self.altitude:
             self.altitude = Distance.Foot(0)
@@ -78,10 +82,11 @@ class Atmo(TypedUnits):
         )
 
     def density_factor(self):
+        """:return: projectile density_factor"""
         return self.density / cStandardDensity
 
-    def calculate0(self, t, p):
-
+    def calculate0(self, t, p) -> (float, float):
+        """:return: density and mach with specified atmosphere"""
         if t > 0:
             et0 = cA0 + t * (cA1 + t * (cA2 + t * (cA3 + t * cA4)))
             et = cA5 * self.humidity * et0
@@ -95,7 +100,8 @@ class Atmo(TypedUnits):
         mach = math.sqrt(t + cIcaoFreezingPointTemperatureR) * cSpeedOfSound
         return density, mach
 
-    def calculate(self):
+    def calculate(self) -> None:
+        """prepare the data for the calculation"""
         self._t0 = self.temperature >> Temperature.Fahrenheit
         self._p0 = self.pressure >> Pressure.InHg
         self._a0 = self.altitude >> Distance.Foot
@@ -105,7 +111,7 @@ class Atmo(TypedUnits):
         self.mach = Velocity(self._mach1, Velocity.FPS)
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float):
-
+        """:return: density factor for the specified altitude"""
         if math.fabs(self._a0 - altitude) < 30:
             density = self.density / cStandardDensity
             mach = self._mach1
@@ -121,6 +127,7 @@ class Atmo(TypedUnits):
 
 @dataclass
 class Wind(TypedUnits):
+    """Stores wind data at the desired distance"""
     velocity: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
     direction_from: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     until_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
@@ -135,6 +142,7 @@ class Wind(TypedUnits):
 
 @dataclass
 class Shot(TypedUnits):
+    """Stores shot parameters for the trajectory calculation"""
     max_range: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     step: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     shot_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
