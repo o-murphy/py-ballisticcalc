@@ -6,7 +6,6 @@ __copyright__ = ("",)
 __credits__ = ["O-Murphy"]
 __version__ = "1.1.0b5"
 
-
 from .drag_model import *  # pylint: disable=import-error
 from .drag_tables import *
 from .settings import *
