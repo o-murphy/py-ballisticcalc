@@ -2,9 +2,10 @@
 Use-full types for units of measurement conversion for ballistics calculations
 """
 
+import typing
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple, Callable, get_type_hints
+from typing import NamedTuple, Callable
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
@@ -23,6 +24,7 @@ class Unit(IntEnum):
     THOUSAND = 5
     INCHES_PER_100YD = 6
     CM_PER_100M = 7
+    O_CLOCK = 8
 
     INCH = 10
     FOOT = 11
@@ -232,8 +234,8 @@ class AbstractUnit:
     def __rlshift__(self, other: Unit):
         return self.convert(other)
 
-    def to_raw(self, value: float, units: Unit) -> float:
-        """Converts value with specified units to raw value
+    def _unit_support_error(self, value: float, units: Unit):
+        """Validates the units
         :param value: value of the unit
         :param units: Unit enum type
         :return: value in specified units
@@ -242,7 +244,17 @@ class AbstractUnit:
             err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
                       f"found: {type(units).__name__} ({value})"
             raise TypeError(err_msg)
-        raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
+        if units not in self.__dict__.values():
+            raise ValueError(f'{self.__class__.__name__}: unit {units} is not supported')
+        return 0
+
+    def to_raw(self, value: float, units: Unit) -> float:
+        """Converts value with specified units to raw value
+        :param value: value of the unit
+        :param units: Unit enum type
+        :return: value in specified units
+        """
+        return self._unit_support_error(value, units)
 
     def from_raw(self, value: float, units: Unit) -> float:
         """Converts raw value to specified units
@@ -250,11 +262,7 @@ class AbstractUnit:
         :param units: Unit enum type
         :return: value in specified units
         """
-        if not isinstance(units, Unit):
-            err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
-                      f"found: {type(units).__name__} ({value})"
-            raise TypeError(err_msg)
-        raise KeyError(f'{self.__class__.__name__}: unit {units} is not supported')
+        return self._unit_support_error(value, units)
 
     def convert(self, units: Unit) -> 'AbstractUnit':
         """Returns new unit instance in specified units
@@ -491,6 +499,8 @@ class Angular(AbstractUnit):
             result = atan(value / 3600)
         elif units == Angular.CmPer100M:
             result = atan(value / 10000)
+        elif units == Angular.OClock:
+            result = value / 6 * pi
         else:
             return super().to_raw(value, units)
         return result
@@ -512,6 +522,8 @@ class Angular(AbstractUnit):
             result = tan(value) * 3600
         elif units == Angular.CmPer100M:
             result = tan(value) * 10000
+        elif units == Angular.OClock:
+            result = value * 6 / pi
         else:
             return super().from_raw(value, units)
         return result
@@ -524,6 +536,7 @@ class Angular(AbstractUnit):
     Thousand = Unit.THOUSAND
     InchesPer100Yd = Unit.INCHES_PER_100YD
     CmPer100M = Unit.CM_PER_100M
+    OClock = Unit.O_CLOCK
 
 
 class Velocity(AbstractUnit):
@@ -583,7 +596,7 @@ class Energy(AbstractUnit):
     Joule = Unit.JOULE
 
 
-class TypedUnits:
+class TypedUnits:  # pylint: disable=too-few-public-methods
     """
     Abstract class to apply auto-conversion values to
     specified units by type-hints in inherited dataclasses
@@ -593,9 +606,17 @@ class TypedUnits:
         """
         converts value to specified units by type-hints in inherited dataclass
         """
-        if hasattr(self, key):
-            if not isinstance(value, AbstractUnit) and isinstance(get_type_hints(self)[key], Unit):
-                value = get_type_hints(self)[key](value)
+
+        fields = self.__getattribute__('__dataclass_fields__')
+
+        if key in fields and not isinstance(value, AbstractUnit):
+            default_factory = fields[key].default_factory
+            if isinstance(default_factory, typing.Callable):
+                if isinstance(value, Unit):
+                    value = None
+                else:
+                    value = default_factory()(value)
+
         super().__setattr__(key, value)
 
 

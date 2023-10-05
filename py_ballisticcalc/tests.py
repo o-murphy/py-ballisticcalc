@@ -1,114 +1,102 @@
 """Unittests for the py_ballisticcalc library"""
 
-import math
-import timeit
 import unittest
-from datetime import datetime
 from math import fabs
 
 import pyximport
 
 pyximport.install(language_level=3)
-from py_ballisticcalc import Distance, Weight, Velocity, Angular
+from py_ballisticcalc import Distance, Weight, Velocity, Angular, Calculator
 from py_ballisticcalc import Temperature, Pressure, Energy, Unit
-from py_ballisticcalc import DragModel, Projectile, Ammo, Weapon, Wind, Shot, Atmo
-from py_ballisticcalc import TableG7, TableG1, MultiBCRow, MultiBC
+from py_ballisticcalc import DragModel, Ammo, Weapon, Wind, Shot, Atmo
+from py_ballisticcalc import TableG7, TableG1, MultiBC
 from py_ballisticcalc import TrajectoryData, TrajectoryCalc
 
 
-class TestDrag(unittest.TestCase):
-    """Test DragModel creation"""
-
-    def setUp(self) -> None:
-        self.bc = self.test_create()
-
-    def test_create(self):
-        bc = DragModel(
-            value=0.275,
-            drag_table=TableG7,
-            weight=Weight(178, Weight.Grain),
-            diameter=Distance(0.308, Distance.Inch),
-        )
-        return bc
-
-
-class TestG7Profile(unittest.TestCase):
-
-    def setUp(self) -> None:
-        self.bc = DragModel(
-            value=0.223,
-            drag_table=TableG7,
-            weight=Weight(167, Weight.Grain),
-            diameter=Distance(0.308, Distance.Inch),
-        )
+class TestMBC(unittest.TestCase):
 
     def test_mbc(self):
-        bc = MultiBC(
+        mbc = MultiBC(
             drag_table=TableG7,
             weight=Weight(178, Weight.Grain),
             diameter=Distance(0.308, Distance.Inch),
-            multiple_bc_table=[MultiBCRow(*p) for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
-            velocity_units_flag=Velocity.MPS
+            mbc_table=[{'BC': p[0], 'V': p[1]} for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
         )
-
-        ret = bc.cdm_generator()
-        self.assertIsNot(ret, None)
-        ret = list(ret)
+        dm = DragModel.from_mbc(mbc)
+        ammo = Ammo(dm, 1, 800)
+        cdm = TrajectoryCalc(ammo=ammo).cdm
+        self.assertIsNot(cdm, None)
+        ret = list(cdm)
         self.assertEqual(ret[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
-        self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.1577125859466895})
-
-    def test_create(self):
-        p1 = Projectile(self.bc, 167)
-
-        ammo = Ammo(p1, Velocity(800, Velocity.MPS))
-        atmo = Atmo(Distance(0, Distance.Meter), Pressure(760, Pressure.MmHg),
-                    Temperature(15, Temperature.Celsius), 0.5)
-
-        twist = Distance(11, Distance.Inch)
-        weapon = Weapon(Distance(90, Distance.Millimeter), Distance(100, Distance.Meter), twist)
-        wind = [Wind()]
-        calc = TrajectoryCalc(ammo)
-        sight_angle = calc.sight_angle(weapon, atmo)
-        shot_info = Shot(Distance(2500, Distance.Meter), Distance(1, Distance.Meter), sight_angle)
-        return calc.trajectory(weapon, atmo, shot_info, wind)
-
-    def test_time(self):
-        t = timeit.timeit(self.test_create, number=1)
-        print(datetime.fromtimestamp(t).time().strftime('%S.%fs'))
+        self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.15771258594668947})
 
 
-class TestPyBallisticCalc(unittest.TestCase):
+class TestInterface(unittest.TestCase):
+
+    def setUp(self) -> None:
+        dm = DragModel(0.22, TableG7, 168, 0.308)
+        self.ammo = Ammo(dm, 1.22, Velocity(2600, Velocity.FPS))
+        self.atmosphere = Atmo.icao()
+
+    @unittest.skip(reason="Fixme: zero_given_elevation")
+    def test_zero_given(self):
+
+        for sh in [0, 2, 3]:
+
+            for reference_distance in range(100, 600, 200):
+                with self.subTest(zero_range=reference_distance, sight_height=sh):
+                    weapon = Weapon(Distance.Inch(sh), Distance.Yard(reference_distance), 11.24)
+                    calc = Calculator(weapon, self.ammo, self.atmosphere)
+                    calc.update_elevation()
+                    # print('\nelevation', calc.elevation << Angular.MOA)
+                    calc.weapon.sight_height = Distance.Inch(sh)
+                    zero_given = calc.zero_given_elevation(calc.elevation)
+                    zero_range = zero_given.distance >> Distance.Yard
+                    self.assertAlmostEqual(zero_range, reference_distance, 7)
+
+    @unittest.skip(reason="Fixme: danger_space")
+    def test_danger_space(self):
+        winds = [Wind()]
+        weapon = Weapon(Distance.Inch(0), Distance.Yard(400), 11.24)
+        calc = Calculator(weapon, self.ammo, self.atmosphere)
+        calc.update_elevation()
+        print('aim', calc.elevation << Angular.MOA)
+        zero_given = calc.zero_given_elevation(calc.elevation, winds)
+        print(zero_given.distance << Distance.Yard)
+        print(calc.test_danger_space(zero_given, Distance.Meter(1.7)) << Distance.Meter)
+        print(calc.danger_space(zero_given, Distance.Meter(1.5)) << Distance.Meter)
+        print(calc.danger_space(zero_given, Distance.Inch(10)) << Distance.Yard)
+
+
+class TestTrajectory(unittest.TestCase):
 
     def test_zero1(self):
-        bc = DragModel(0.365, TableG1, 69, 0.223)
-        projectile = Projectile(bc, 0.9)
-        ammo = Ammo(projectile, 2600)
+        dm = DragModel(0.365, TableG1, 69, 0.223)
+        ammo = Ammo(dm, 0.9, 2600)
         weapon = Weapon(Distance(3.2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
         sight_angle = calc.sight_angle(weapon, atmosphere)
 
-        self.assertLess(fabs((sight_angle >> Angular.Radian) - 0.001651), 1e-6,
-                        f'TestZero1 failed {sight_angle >> Angular.Radian:.10f}')
+        self.assertAlmostEqual(sight_angle >> Angular.Radian, 0.001651, 6,
+                               f'TestZero1 failed {sight_angle >> Angular.Radian:.10f}')
 
     def test_zero2(self):
-        bc = DragModel(0.223, TableG7, 69, 0.223)
-        projectile = Projectile(bc, 0.9)
-        ammo = Ammo(projectile, 2750)
+        dm = DragModel(0.223, TableG7, 69, 0.223)
+        ammo = Ammo(dm, 0.9, 2750)
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
         sight_angle = calc.sight_angle(weapon, atmosphere)
 
-        self.assertLess(fabs((sight_angle >> Angular.Radian) - 0.001228), 1e-6,
-                        f'TestZero2 failed {sight_angle >> Angular.Radian:.10f}')
+        self.assertAlmostEqual(sight_angle >> Angular.Radian, 0.001228, 6,
+                               f'TestZero2 failed {sight_angle >> Angular.Radian:.10f}')
 
     def custom_assert_equal(self, a, b, accuracy, name):
         with self.subTest():
-            self.assertFalse(fabs(a - b) > accuracy,
-                             f'Assertion {name} failed ({a}/{b}, {accuracy})')
+            self.assertLess(fabs(a - b), accuracy, f'Assertion {name} failed ({a}/{b}, {accuracy})')
 
     def validate_one(self, data: TrajectoryData, distance: float, velocity: float,
                      mach: float, energy: float, path: float, hold: float,
@@ -144,13 +132,12 @@ class TestPyBallisticCalc(unittest.TestCase):
                                      data.windage_adj >> adjustment_unit, 0.5, "WAdj")
 
     def test_path_g1(self):
-        bc = DragModel(0.223, TableG1, 168, 0.308)
-        projectile = Projectile(bc, 1.282)
-        ammo = Ammo(projectile, Velocity(2750, Velocity.FPS))
+        dm = DragModel(0.223, TableG1, 168, 0.308)
+        ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.icao()
         shot_info = Shot(1000, 100, sight_angle=Angular(0.001228, Angular.Radian))
-        wind = [Wind(Velocity(5, Velocity.MPH), Angular(-45, Angular.Degree))]
+        wind = [Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))]
         calc = TrajectoryCalc(ammo)
         data = calc.trajectory(weapon, atmosphere, shot_info, wind)
 
@@ -163,14 +150,13 @@ class TestPyBallisticCalc(unittest.TestCase):
             [data[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20, Angular.MOA]
         ]
 
-        for d in test_data:
-            with self.subTest():
+        for i, d in enumerate(test_data):
+            with self.subTest(f"validate one {i}"):
                 self.validate_one(*d)
 
     def test_path_g7(self):
-        bc = DragModel(0.223, TableG7, 168, 0.308)
-        projectile = Projectile(bc, 1.282)
-        ammo = Ammo(projectile, 2750)
+        dm = DragModel(0.223, TableG7, 168, 0.308)
+        ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
         weapon = Weapon(2, 100, 11.24)
         atmosphere = Atmo.icao()
         shot_info = Shot(Distance.Yard(1000),
@@ -191,16 +177,15 @@ class TestPyBallisticCalc(unittest.TestCase):
             [data[10], 1000, 1081.3, 0.968, 442, -401.6, -11.32, -50.98, -1.44, 1.748, 55, Angular.Mil]
         ]
 
-        for d in test_data:
-            with self.subTest():
+        for i, d in enumerate(test_data):
+            with self.subTest(f"validate one {i}"):
                 self.validate_one(*d)
 
 
 class TestPerformance(unittest.TestCase):
     def setUp(self) -> None:
-        self.bc = DragModel(0.223, TableG7, 168, 0.308)
-        self.projectile = Projectile(self.bc, 1.282)
-        self.ammo = Ammo(self.projectile, 2750)
+        self.dm = DragModel(0.223, TableG7, 168, 0.308)
+        self.ammo = Ammo(self.dm, 1.282, 2750)
         self.weapon = Weapon(2, 100, 11.24)
         self.atmo = Atmo.icao()
         self.shot = Shot(Distance.Yard(1000),
@@ -224,9 +209,7 @@ class TestPerformance(unittest.TestCase):
 def test_back_n_forth(test, value, units):
     u = test.unit_class(value, units)
     v = u >> units
-    test.assertTrue(
-        math.fabs(v - value) < 1e-7
-        and math.fabs(v - (u >> units) < 1e-7), f'Read back failed for {units}')
+    test.assertAlmostEqual(v, value, 7, f'Read back failed for {units}')
 
 
 class TestAngular(unittest.TestCase):

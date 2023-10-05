@@ -5,10 +5,10 @@ from .unit import Unit, Distance, is_unit
 __all__ = ('Settings',)
 
 
-class Settings:
+class Settings:  # pylint: disable=too-few-public-methods
     """Global settings class of the py_ballisticcalc library"""
 
-    class Units:
+    class Units:  # pylint: disable=too-few-public-methods
         """Default units for specified measures"""
 
         sight_height: Unit = Unit.INCH
@@ -24,6 +24,8 @@ class Settings:
         angular: Unit = Unit.DEGREE
         adjustment: Unit = Unit.MIL
         energy: Unit = Unit.JOULE
+        ogw: Unit = Unit.POUND
+        target_height: Unit = Unit.INCH
 
     _MAX_CALC_STEP_SIZE: float = 1
     USE_POWDER_SENSITIVITY: bool = False
@@ -35,6 +37,5 @@ class Settings:
         """
         if not isinstance(value, (Distance, float, int)):
             raise ValueError("MIN_CALC_STEP_SIZE have to be a type of 'Distance'")
-        print((value if is_unit(value) else cls.Units.distance(value).raw_value) >> Distance.Foot)
         cls._MAX_CALC_STEP_SIZE = (value if is_unit(value)
                                    else cls.Units.distance(value).raw_value) >> Distance.Foot

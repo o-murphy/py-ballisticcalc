@@ -34,8 +34,8 @@ cdef class DragModel:
     cdef:
         readonly object weight, diameter
         readonly list drag_table
-        readonly double value
-        double form_factor, sectional_density
+        readonly double value, form_factor
+        double sectional_density
 
     def __init__(self, double value,
                  drag_table: typing.Iterable,
@@ -78,30 +78,14 @@ cdef class DragModel:
         d = self.diameter >> Distance.Inch
         return sectional_density(w, d)
 
-    # cdef double _standard_cd(self, double mach):
-    #     return calculate_by_curve(self.drag_table, self._curve_data, mach)
-    #
-    # cdef double _calculated_cd(self, double mach):
-    #     return self._standard_cd(mach) * self.form_factor
-    #
-    # cpdef list calculated_drag_function(self):
-    #     """
-    #     Returns custom drag function based on input bc value
-    #     """
-    #     cdef:
-    #         double cd, st_mach
-    #         DragDataPoint point
-    #         list calculated_cd_table = []
-    #
-    #     for point in self.drag_table:
-    #         st_mach = point.Mach
-    #         cd = self._calculated_cd(st_mach)
-    #         calculated_cd_table.append(DragTableRow(cd, st_mach))
-    #
-    #     return calculated_cd_table
+    @staticmethod
+    def from_mbc(mbc: 'MultiBC'):
+        return DragModel(1, mbc.cdm, mbc.weight, mbc.diameter)
+
 
 cpdef list make_data_points(drag_table: typing.Iterable):
     return [DragDataPoint(point['CD'], point['Mach']) for point in drag_table]
+
 
 cdef double sectional_density(double weight, double diameter):
     return weight / pow(diameter, 2) / 7000
