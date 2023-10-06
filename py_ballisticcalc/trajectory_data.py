@@ -10,9 +10,10 @@ __all__ = ('TrajectoryData', 'TrajFlag')
 
 class TrajFlag(Flag):
     """Flags for marking trajectory row if Zero or Mach crossing
-    Also uses to set a brake points of trajectory calculation loop
+    Also uses to set a filters for a trajectory calculation loop
     """
     NONE = auto()
+    RANGE = auto()
     ZERO = auto()
     MACH = auto()
 

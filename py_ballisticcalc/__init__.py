@@ -4,7 +4,7 @@ __author__ = "o-murphy"
 __copyright__ = ("",)
 
 __credits__ = ["O-Murphy"]
-__version__ = "1.1.0b5"
+__version__ = "1.1.0b6"
 
 
 from .drag_model import *  # pylint: disable=import-error

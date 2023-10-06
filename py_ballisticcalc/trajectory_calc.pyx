@@ -118,8 +118,8 @@ cdef class TrajectoryCalc:
 
     def trajectory(self, weapon: Weapon, atmo: Atmo,
                    shot_info: Shot, winds: list[Wind],
-                   brake_flags: TrajFlag = TrajFlag.NONE):
-        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, brake_flags)
+                   filter_flags: TrajFlag = TrajFlag.RANGE):
+        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, filter_flags)
 
     cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef:
@@ -174,7 +174,7 @@ cdef class TrajectoryCalc:
         return Angular.Radian(barrel_elevation)
 
     cdef _trajectory(TrajectoryCalc self, object ammo, object weapon, object atmo,
-                     object shot_info, list[object] winds, object brake_flags):
+                     object shot_info, list[object] winds, object filter_flags):
         cdef:
             double density_factor, mach
             double time, velocity, windage, delta_time, drag
@@ -235,6 +235,8 @@ cdef class TrajectoryCalc:
             twist_coefficient = -1 if twist > 0 else 1
 
         while range_vector.x <= maximum_range + calc_step:
+            _flag = TrajFlag.NONE
+
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
 
@@ -249,38 +251,36 @@ cdef class TrajectoryCalc:
                 else:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
-            if range_vector.x >= next_range_distance:
-                _flag = TrajFlag.NONE
+            # Zero-crossing check
+            if range_vector.y < 0 < previous_y:
+                _flag |= TrajFlag.ZERO
 
+            # Mach crossing check
+            if (velocity / mach < 1) and (previous_mach > 1):
+                _flag |= TrajFlag.MACH
+
+            # Next range check
+            if range_vector.x >= next_range_distance:
+                _flag |= TrajFlag.RANGE
+                next_range_distance += step
+                current_item += 1
+
+            if _flag & filter_flags:
                 windage = range_vector.z
 
                 if twist != 0:
                     windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
-
-                # Zero-crossing check
-                if range_vector.y + sight_height < 0 < previous_y + sight_height:
-                    _flag |= TrajFlag.ZERO
-
-                # Mach crossing check
-                if (velocity / mach < 1) and (previous_mach > 1):
-                    _flag |= TrajFlag.MACH
 
                 ranges.append(
                     create_trajectory_row(time, range_vector, velocity_vector,
                                           velocity, mach, windage, weight, _flag)
                 )
 
-                if _flag & brake_flags & (TrajFlag.ZERO | TrajFlag.MACH):
-                    break
-
-                next_range_distance += step
-                current_item += 1
-
                 if current_item == ranges_length:
                     break
 
-                previous_y = range_vector.y
-                previous_mach = velocity / mach
+            previous_y = range_vector.y
+            previous_mach = velocity / mach
 
             velocity_adjusted = velocity_vector - wind_vector
 

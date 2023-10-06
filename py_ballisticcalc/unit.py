@@ -197,8 +197,7 @@ class AbstractUnit:
         """Returns instance as readable view
         :return: instance as readable view
         """
-        return f'<{self.__class__.__name__}: {self >> self.units} ' \
-               f'{self.units.symbol} ({self._value})>'
+        return f'<{self.__class__.__name__}: {self << self.units} ({round(self._value, 4)})>'
 
     # def __format__(self, format_spec: str = "{v:.{a}f} {s}"):
     #     """
