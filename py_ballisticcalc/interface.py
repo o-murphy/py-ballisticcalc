@@ -61,22 +61,21 @@ class Calculator:
             winds = [Wind()]
 
         elevation = elevation if is_unit(elevation) else Set.Units.angular
-        shot = Shot(1000, Distance.Foot(0.2), sight_angle=elevation)
+        shot = Shot(Distance.Yard(1000), Distance.Foot(0.5), sight_angle=elevation)
         data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds,
                                      filter_flags=TrajFlag.ZERO)
         # No downrange zero found, so just return starting row
 
         if len(data) < 1:
             raise ArithmeticError("Can't found zero crossing point")
-
         print(
             "step: {}\tscope: {}\texpected: {}\tgot: {}\tdiff: {}".format(  # pylint: disable=consider-using-f-string
                 shot.step,
                 self.weapon.sight_height,
                 self.weapon.zero_distance,
-                [p.distance << Distance.Yard for p in data][0],
+                [p.distance << Distance.Yard for p in data][-1],
                 round((self.weapon.zero_distance >> Distance.Yard) -
-                      [(p.distance >> Distance.Yard) for p in data][0], 3)
+                      [(p.distance >> Distance.Yard) for p in data][-1], 3)
             )
         )
 

@@ -6,7 +6,6 @@ import typing
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Callable
-from warnings import warn
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
@@ -171,10 +170,6 @@ UnitPropsDict = {
 }
 
 
-class UnitsComparisonWarning(UserWarning):
-    pass
-
-
 class AbstractUnit(float):
     """Abstract class for unit of measure instance definition
     Stores defined unit and value, applies conversions to other units
@@ -199,9 +194,56 @@ class AbstractUnit(float):
     def __rsub__(self, other: [object, float]) -> 'AbstractUnit':
         return self.__arithmetical(super().__rsub__, other)
 
-    def __arithmetical(self, func, other):
+    def __mul__(self, other: [object, float]) -> 'AbstractUnit':
+        return self.__arithmetical(super().__mul__, other)
+
+    def __rmul__(self, other: [object, float]) -> 'AbstractUnit':
+        return self.__arithmetical(super().__rmul__, other)
+
+    def __mod__(self, other: [object, float]) -> 'AbstractUnit':
+        return self.__arithmetical(super().__mod__, other)
+
+    def __rmod__(self, other: [object, float]) -> 'AbstractUnit':
+        return self.__arithmetical(super().__rmod__, other)
+
+    def __divmod__(self, other: [object, float]) -> ('AbstractUnit', 'AbstractUnit'):
+        self.__validate_arithmetical(super().__divmod__, other)
+        quotient, remainder = super().__divmod__(other)
+        return self.__class__(quotient, self.units), self.__class__(remainder, self.units)
+
+    def __rdivmod__(self, other: [object, float]) -> ('AbstractUnit', 'AbstractUnit'):
+        self.__validate_arithmetical(super().__rdivmod__, other)
+        quotient, remainder = super().__rdivmod__(other)
+        return self.__class__(quotient, self.units), self.__class__(remainder, self.units)
+
+    def __pow__(self, other, modulo=None):
+        # self.__validate_arithmetical(super().__pow__, other)
+        # return self.__class__(super().__pow__(other, modulo), self.units)
+        return self.__arithmetical(super().__pow__, other, modulo)
+
+    def __rpow__(self, other, modulo=None):
+        # self.__validate_arithmetical(super().__rpow__, other)
+        # return self.__class__(super().__rpow__(other, modulo), self.units)
+        return self.__arithmetical(super().__rpow__, other, modulo)
+
+    def __neg__(self):
+        return self.__class__(super().__neg__(), self.units)
+
+    def __pos__(self):
+        return self.__class__(super().__pos__(), self.units)
+
+    def __abs__(self):
+        return self.__class__(super().__abs__(), self.units)
+
+    def __floordiv__(self, other):
+        return self.__arithmetical(super().__floordiv__, other)
+
+    def __rfloordiv__(self, other):
+        return self.__arithmetical(super().__rfloordiv__, other)
+
+    def __arithmetical(self, func, other, *args):
         self.__validate_arithmetical(func, other)
-        return self.__class__(func(other), self.units)
+        return self.__class__(func(other, *args), self.units)
 
     def __validate_arithmetical(self, func, other):
         print(type(other))
@@ -209,9 +251,14 @@ class AbstractUnit(float):
             return True
         if not isinstance(other, AbstractUnit) and isinstance(other, (float, int)):
             return True
-        raise TypeError(
+        # raise TypeError(
+        #     f"Operation {func.__name__} between "
+        #     f"<{self.__class__.__name__}> and <{other.__class__.__name__}> isn't support")
+        raise NotImplementedError(
             f"Operation {func.__name__} between "
-            f"<{self.__class__.__name__}> and <{other.__class__.__name__}> isn't support")
+            f"<{self.__class__.__name__}> and <{other.__class__.__name__}> "
+            f"not supports"
+        )
 
     # def __init__(self, value: [float, int], units: Unit):
     #     """
@@ -243,26 +290,30 @@ class AbstractUnit(float):
     #     return format_spec.format(v=self._value, a=self._defined_units.key, \
     #     s=self._defined_units.symbol)
 
-    # def __float__(self):
-    #     return self
-
     def __comparing(self, func, other):
-        print(f'ok <{self.__class__.__name__}> and <{other.__class__.__name__}>')
-
-        if self.__validate_comparing(other):
+        if self.__validate_comparing(func, other):
             return func(other)
         return False
 
-    def __validate_comparing(self, other):
+    def __validate_comparing(self, func, other):
         if isinstance(other, self.__class__):
             return True
         if not isinstance(other, AbstractUnit) and isinstance(other, (float, int)):
             return True
-        warn(f"\nDo not recommended"
-             f"\nto compare different types of measure units,"
-             f"\na.g. <{self.__class__.__name__}> and <{other.__class__.__name__}>",
-             UnitsComparisonWarning)
-        return False
+        # warn(f"\nDo not recommended"
+        #      f"\nto compare different types of measure units,"
+        #      f"\na.g. <{self.__class__.__name__}> and <{other.__class__.__name__}>",
+        #      UnitsComparisonWarning)
+        # raise TypeError(
+        #     f"Operation {func.__name__} between "
+        #     f"<{self.__class__.__name__}> and <{other.__class__.__name__}> isn't support")
+        # return False
+
+        raise NotImplementedError(
+            f"Operation {func.__name__} between "
+            f"<{self.__class__.__name__}> and <{other.__class__.__name__}> "
+            f"not supports"
+        )
 
     def __eq__(self, other):
         return self.__comparing(super().__eq__, other)
@@ -270,18 +321,17 @@ class AbstractUnit(float):
     def __ne__(self, other):
         return self.__comparing(super().__ne__, other)
 
-    #
-    # def __lt__(self, other):
-    #     return float(self) < other
-    #
-    # def __gt__(self, other):
-    #     return float(self) > other
-    #
-    # def __le__(self, other):
-    #     return float(self) <= other
-    #
-    # def __ge__(self, other):
-    #     return float(self) >= other
+    def __lt__(self, other):
+        return self.__comparing(super().__lt__, other)
+
+    def __gt__(self, other):
+        return self.__comparing(super().__gt__, other)
+
+    def __le__(self, other):
+        return self.__comparing(super().__le__, other)
+
+    def __ge__(self, other):
+        return self.__comparing(super().__ge__, other)
 
     def __lshift__(self, other: Unit):
         return self.convert(other)
@@ -292,6 +342,7 @@ class AbstractUnit(float):
     def __rlshift__(self, other: Unit):
         return self.convert(other)
 
+    # pylint: disable: useless-return
     def _unit_support_error(self, value: float, units: Unit) -> [float | None]:
         """Validates the units
         :param value: value of the unit
@@ -733,5 +784,3 @@ def is_unit(obj: [AbstractUnit, float, int]):
 # Velocity.MPS
 # Temperature.Fahrenheit
 # Pressure.MmHg
-
-# print(Distance.Inch(10) == Velocity.MPS(10))
