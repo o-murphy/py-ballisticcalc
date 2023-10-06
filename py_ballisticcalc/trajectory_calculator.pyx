@@ -87,8 +87,9 @@ cdef class TrajectoryCalculator:
                     barrel_elevation = barrel_elevation - range_vector.y() / range_vector.x()
                     break
 
-                iterations_count += 1
-        return Angular(atan(barrel_elevation), AngularRadian)
+            iterations_count += 1
+            
+        return Angular(barrel_elevation, AngularRadian)
 
     cpdef trajectory(self, ammunition: Ammunition, atmosphere: Atmosphere,
                      shot_info: ShotParameters, wind_info: list[WindInfo],
