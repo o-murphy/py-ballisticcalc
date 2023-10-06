@@ -70,7 +70,7 @@ class Calculator:
             raise ArithmeticError("Can't found zero crossing point")
 
         print(
-            "step: {}\tscope: {}\texpected: {}\tgot: {}\tdiff: {}".format(
+            "step: {}\tscope: {}\texpected: {}\tgot: {}\tdiff: {}".format(  # pylint: disable=consider-using-f-string
                 shot.step,
                 self.weapon.sight_height,
                 self.weapon.zero_distance,
