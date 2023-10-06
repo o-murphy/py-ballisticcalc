@@ -334,11 +334,20 @@ class TestWeight(unittest.TestCase):
                 test_back_n_forth(self, 3, u)
 
 
-class TestUnitConversionSyntax(unittest.TestCase):
+class TestAbstractUnit(unittest.TestCase):
 
     def setUp(self) -> None:
         self.low = Distance.Yard(10)
         self.high = Distance.Yard(100)
+
+    def test__add__(self):
+        self.assertEqual(Distance.Inch(1) + Distance.Foot(1) + 2, 15)
+        try:
+            Distance.Inch(1) + 2 + Velocity.MPS(9)
+            raise ArithmeticError
+        except TypeError as expected:
+            print(expected)
+            return
 
     def test__eq__(self):
         self.assertEqual(self.low, 360)
@@ -348,6 +357,7 @@ class TestUnitConversionSyntax(unittest.TestCase):
 
     def test__ne__(self):
         self.assertNotEqual(Distance.Yard(100), Distance.Yard(90))
+        self.assertNotEqual(Velocity.MPS(10), Distance.Inch(10))
 
     def test__lt__(self):
         self.assertLess(self.low, self.high)
