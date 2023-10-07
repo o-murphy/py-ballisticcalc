@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "Cython"]
+requires = ["setuptools", "wheel", "cython"]
 build-backend = "setuptools.build_meta"
 
 
@@ -30,7 +30,6 @@ classifiers = [
 dependencies = []
 dynamic = ["version"]
 
-
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
 "Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
@@ -49,4 +48,5 @@ version = {attr = "py_ballisticcalc.__version__"}
 
 
 [project.optional-dependencies]
-dev = ["cython>=3.0.0a10"]
+dev = ['Cython', 'setuptools']
+lint = ['pylint', 'flake8']

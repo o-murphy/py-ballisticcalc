@@ -1,15 +1,16 @@
 # BallisticCalculator
-LGPL library for small arms ballistic calculations (Python 3.9+)
+#### LGPL library for small arms ballistic calculations (Python 3.9+)
 
-### Table of contents
+## Table of contents
 * [Installation](#installation)
 * [Usage](#usage)
   * [Units of measure](#unit-manipulation-syntax)
   * [An example of calculations](#an-example-of-calculations)
   * [Output example](#example-of-the-formatted-output)
+* [Contributors](#contributors)
 * [About project](#about-project)
 
-### Installation
+## Installation
 **Stable release from pypi, installing from binaries**
 
 (Contains c-extensions which offer higher performance)
@@ -33,7 +34,7 @@ git clone https://github.com/o-murphy/py_ballisticcalc
 ```   
 
 
-### Usage
+## Usage
 
 The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
 #### Unit manipulation syntax:
@@ -134,7 +135,15 @@ python -m py_ballisticcalc.example
 ['0.95 s', '600.000 m', '1571.4 ft/s', '1.41 mach', '-279.503 cm', '-4.74 mil', '-144.759 cm', '-2.46 mil', '1249 J']
 ```
 
-### About project
+## Contributors
+### This project exists thanks to all the people who contribute.
+#### Special thanks to:
+- **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert, Financial Engineer \
+*For the help in understanding and improvement of some calculation methods*
+- **[Nikolay Gekht](https://github.com/nikolaygekht)** \
+*For the sources code on C# and GO-lang from which this project firstly was forked from*
+
+## About project
 
 The library provides trajectory calculation for projectiles including for various
 applications, including air rifles, bows, firearms, artillery and so on.
