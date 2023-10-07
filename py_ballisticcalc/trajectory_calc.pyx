@@ -1,11 +1,10 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 cimport cython
 
-
 from .conditions import *
 from .munition import *
 from .settings import Settings
-from .trajectory_data import TrajectoryData, TrajFlag
+from .trajectory_data import TrajectoryData
 from .unit import *
 
 __all__ = ('TrajectoryCalc',)
@@ -18,6 +17,13 @@ cdef double cGravityConstant = -32.17405
 
 cdef struct CurvePoint:
     double a, b, c
+
+cdef enum CTrajFlag:
+    NONE = 0
+    ZERO_UP = 1
+    ZERO_DOWN = 2
+    MACH = 4
+    RANGE = 8
 
 cdef class Vector:
     cdef double x
@@ -118,7 +124,7 @@ cdef class TrajectoryCalc:
 
     def trajectory(self, weapon: Weapon, atmo: Atmo,
                    shot_info: Shot, winds: list[Wind],
-                   filter_flags: TrajFlag = TrajFlag.RANGE):
+                   filter_flags: int = CTrajFlag.RANGE):
         return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, filter_flags)
 
     cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
@@ -174,7 +180,7 @@ cdef class TrajectoryCalc:
         return Angular.Radian(barrel_elevation)
 
     cdef _trajectory(TrajectoryCalc self, object ammo, object weapon, object atmo,
-                     object shot_info, list[object] winds, object filter_flags):
+                     object shot_info, list[object] winds, CTrajFlag filter_flags):
         cdef:
             double density_factor, mach
             double time, velocity, windage, delta_time, drag
@@ -235,7 +241,7 @@ cdef class TrajectoryCalc:
             twist_coefficient = -1 if twist > 0 else 1
 
         while range_vector.x <= maximum_range + calc_step:
-            _flag = TrajFlag.NONE
+            _flag = CTrajFlag.NONE
 
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
@@ -252,29 +258,34 @@ cdef class TrajectoryCalc:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
             # Zero-crossing check
-            if range_vector.y < 0 < previous_y:
-                _flag |= TrajFlag.ZERO
+            if range_vector.x > 0:  # skipping zero point when "sight_height == 0"
+                if range_vector.y < 0 <= previous_y:
+                    _flag |= CTrajFlag.ZERO_DOWN
+                elif range_vector.y >= 0 > previous_y:
+                    _flag |= CTrajFlag.ZERO_UP
 
             # Mach crossing check
             if (velocity / mach < 1) and (previous_mach > 1):
-                _flag |= TrajFlag.MACH
+                _flag |= CTrajFlag.MACH
 
             # Next range check
             if range_vector.x >= next_range_distance:
-                _flag |= TrajFlag.RANGE
+                _flag |= CTrajFlag.RANGE
                 next_range_distance += step
                 current_item += 1
 
             if _flag & filter_flags:
+
                 windage = range_vector.z
 
                 if twist != 0:
-                    windage += (1.25 * (stability_coefficient + 1.2) * pow(time, 1.83) * twist_coefficient) / 12
+                    windage += (1.25 * (stability_coefficient + 1.2)
+                                * pow(time, 1.83) * twist_coefficient) / 12
 
-                ranges.append(
-                    create_trajectory_row(time, range_vector, velocity_vector,
-                                          velocity, mach, windage, weight, _flag)
-                )
+                ranges.append(create_trajectory_row(
+                    time, range_vector, velocity_vector,
+                    velocity, mach, windage, weight, _flag
+                ))
 
                 if current_item == ranges_length:
                     break

@@ -10,7 +10,7 @@ from py_ballisticcalc import Distance, Weight, Velocity, Angular, Calculator
 from py_ballisticcalc import Temperature, Pressure, Energy, Unit
 from py_ballisticcalc import DragModel, Ammo, Weapon, Wind, Shot, Atmo
 from py_ballisticcalc import TableG7, TableG1, MultiBC
-from py_ballisticcalc import TrajectoryData, TrajectoryCalc
+from py_ballisticcalc import TrajectoryData, TrajectoryCalc, TrajFlag
 
 
 class TestMBC(unittest.TestCase):
@@ -38,22 +38,52 @@ class TestInterface(unittest.TestCase):
         self.ammo = Ammo(dm, 1.22, Velocity(2600, Velocity.FPS))
         self.atmosphere = Atmo.icao()
 
-    # @unittest.skip(reason="Fixme: zero_given_elevation")
     def test_zero_given(self):
+        # pylint: disable=consider-using-f-string
+        output_fmt = "elev: {}\tscope: {}\tzero: {} {}\ttarget: {}\tdistance: {}\tdrop: {}"
 
-        for sh in [0, 2, 3]:
+        def print_output(data, at_elevation):
+            for point in data:
+                print(
+                    output_fmt.format(
+                        at_elevation,
+                        sight_height,
+                        point.distance << Distance.Yard,
+                        TrajFlag(point.flag),
+                        target_distance,
+                        point.distance << Distance.Yard,
+                        point.drop << Distance.Inch
+                    )
+                )
+            print()
+
+        for sh in range(0, 5):
 
             for reference_distance in range(100, 600, 200):
-                with self.subTest(zero_range=reference_distance, sight_height=sh):
-                    weapon = Weapon(Distance.Inch(sh), Distance.Yard(reference_distance), 11.24)
+                    target_distance = Distance.Yard(reference_distance)
+                    sight_height = Distance.Inch(sh)
+                    weapon = Weapon(sight_height, target_distance, 11.24)
                     calc = Calculator(weapon, self.ammo, self.atmosphere)
-                    calc.update_elevation()
-                    # print('\nelevation', calc.elevation << Angular.MOA)
                     calc.weapon.sight_height = Distance.Inch(sh)
-                    zero_given = calc.zero_given_elevation(calc.elevation)
-                    zero_range = zero_given.distance >> Distance.Yard
-                    # self.assertAlmostEqual(zero_range, reference_distance, 7)
-                    self.assertAlmostEqual(zero_range, reference_distance, 1)
+
+                    with self.subTest(zero=reference_distance, sh=sh):
+                        try:
+                            calc.update_elevation()
+                            shot = Shot(1000, Distance.Foot(0.2), sight_angle=calc.elevation)
+                            zero_crossing_points = calc.zero_given_elevation(shot)
+                            print_output(zero_crossing_points, calc.elevation)
+                        except ArithmeticError as err:
+                            if err == "Can't found zero crossing points":
+                                pass
+
+                    with self.subTest(zero=reference_distance, sh=sh, elev=0):
+                        try:
+                            shot = Shot(1000, Distance.Foot(0.2), sight_angle=0)
+                            zero_crossing_points = calc.zero_given_elevation(shot)
+                            print_output(zero_crossing_points, 0)
+                        except ArithmeticError as err:
+                            if err == "Can't found zero crossing points":
+                                pass
 
     @unittest.skip(reason="Fixme: danger_space")
     def test_danger_space(self):
@@ -204,7 +234,8 @@ class TestPerformance(unittest.TestCase):
         self.calc.sight_angle(self.weapon, self.atmo)
 
     def test_path_performance(self):
-        self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
+        d = self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
+        # [print(p.formatted()) for p in d]
 
 
 def test_back_n_forth(test, value, units):

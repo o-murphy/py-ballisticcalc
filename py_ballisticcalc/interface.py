@@ -53,34 +53,19 @@ class Calculator:
         data = self._calc.trajectory(self.weapon, current_atmo, shot, winds)
         return data
 
-    def zero_given_elevation(self, elevation: [float, Angular] = 0,
+    def zero_given_elevation(self, shot: Shot,
                              winds: list[Wind] = None) -> TrajectoryData:
         """Find the zero distance for a given barrel elevation"""
         self._calc = TrajectoryCalc(self.ammo)
         if not winds:
             winds = [Wind()]
 
-        elevation = elevation if is_unit(elevation) else Set.Units.angular
-        shot = Shot(1000, Distance.Foot(0.2), sight_angle=elevation)
-        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds,
-                                     filter_flags=TrajFlag.ZERO)
-        # No downrange zero found, so just return starting row
-
+        data = self._calc.trajectory(
+            self.weapon, self.zero_atmo, shot, winds,
+            filter_flags=(TrajFlag.ZERO_UP | TrajFlag.ZERO_DOWN).value)
         if len(data) < 1:
-            raise ArithmeticError("Can't found zero crossing point")
-
-        print(
-            "step: {}\tscope: {}\texpected: {}\tgot: {}\tdiff: {}".format(  # pylint: disable=consider-using-f-string
-                shot.step,
-                self.weapon.sight_height,
-                self.weapon.zero_distance,
-                [p.distance << Distance.Yard for p in data][0],
-                round((self.weapon.zero_distance >> Distance.Yard) -
-                      [(p.distance >> Distance.Yard) for p in data][0], 3)
-            )
-        )
-
-        return data[-1]
+            raise ArithmeticError("Can't found zero crossing points")
+        return data
 
     @staticmethod
     def danger_space(trajectory: TrajectoryData, target_height: [float, Distance]) -> Distance:

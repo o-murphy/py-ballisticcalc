@@ -1,5 +1,5 @@
 """Implements a point of trajectory class in applicable data types"""
-from enum import Flag, auto
+from enum import Flag
 from typing import NamedTuple
 
 from .settings import Settings as Set
@@ -12,10 +12,11 @@ class TrajFlag(Flag):
     """Flags for marking trajectory row if Zero or Mach crossing
     Also uses to set a filters for a trajectory calculation loop
     """
-    NONE = auto()
-    RANGE = auto()
-    ZERO = auto()
-    MACH = auto()
+    NONE = 0
+    ZERO_UP = 1
+    ZERO_DOWN = 2
+    MACH = 4
+    RANGE = 8
 
 
 class TrajectoryData(NamedTuple):
@@ -49,7 +50,7 @@ class TrajectoryData(NamedTuple):
     angle: Angular  # Trajectory angle
     energy: Energy
     ogw: Weight
-    flag: TrajFlag = TrajFlag.NONE
+    flag: TrajFlag
 
     def formatted(self) -> tuple:
         """
@@ -70,7 +71,9 @@ class TrajectoryData(NamedTuple):
             _fmt(self.windage_adj, Set.Units.adjustment),
             _fmt(self.angle, Set.Units.angular),
             _fmt(self.energy, Set.Units.energy),
-            _fmt(self.ogw, Set.Units.ogw)
+            _fmt(self.ogw, Set.Units.ogw),
+
+            self.flag
         )
 
     def in_def_units(self) -> tuple:
@@ -88,5 +91,7 @@ class TrajectoryData(NamedTuple):
             self.windage_adj >> Set.Units.adjustment,
             self.angle >> Set.Units.angular,
             self.energy >> Set.Units.energy,
-            self.ogw >> Set.Units.ogw
+            self.ogw >> Set.Units.ogw,
+
+            self.flag
         )
