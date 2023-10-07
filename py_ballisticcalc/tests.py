@@ -3,9 +3,9 @@
 import unittest
 from math import fabs
 
-import pyximport
-
-pyximport.install(language_level=3)
+# import pyximport
+#
+# pyximport.install(language_level=3)
 from py_ballisticcalc import Distance, Weight, Velocity, Angular, Calculator
 from py_ballisticcalc import Temperature, Pressure, Energy, Unit
 from py_ballisticcalc import DragModel, Ammo, Weapon, Wind, Shot, Atmo
@@ -238,7 +238,7 @@ class TestPerformance(unittest.TestCase):
         # [print(p.formatted()) for p in d]
 
 
-def test_back_n_forth(test, value, units):
+def back_n_forth(test, value, units):
     u = test.unit_class(value, units)
     v = u >> units
     test.assertAlmostEqual(v, value, 7, f'Read back failed for {units}')
@@ -259,7 +259,7 @@ class TestAngular(unittest.TestCase):
     def test_angular(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
-                test_back_n_forth(self, 3, u)
+                back_n_forth(self, 3, u)
 
 
 class TestDistance(unittest.TestCase):
@@ -281,7 +281,7 @@ class TestDistance(unittest.TestCase):
     def test_distance(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
-                test_back_n_forth(self, 3, u)
+                back_n_forth(self, 3, u)
 
 
 class TestEnergy(unittest.TestCase):
@@ -295,7 +295,7 @@ class TestEnergy(unittest.TestCase):
     def test_energy(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
-                test_back_n_forth(self, 3, u)
+                back_n_forth(self, 3, u)
 
 
 class TestPressure(unittest.TestCase):
@@ -311,7 +311,7 @@ class TestPressure(unittest.TestCase):
     def test_pressure(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
-                test_back_n_forth(self, 3, u)
+                back_n_forth(self, 3, u)
 
 
 class TestTemperature(unittest.TestCase):
@@ -327,7 +327,7 @@ class TestTemperature(unittest.TestCase):
     def test_temperature(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
-                test_back_n_forth(self, 3, u)
+                back_n_forth(self, 3, u)
 
 
 class TestVelocity(unittest.TestCase):
@@ -344,7 +344,7 @@ class TestVelocity(unittest.TestCase):
     def test_velocity(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
-                test_back_n_forth(self, 3, u)
+                back_n_forth(self, 3, u)
 
 
 class TestWeight(unittest.TestCase):
@@ -362,7 +362,7 @@ class TestWeight(unittest.TestCase):
     def test_weight(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
-                test_back_n_forth(self, 3, u)
+                back_n_forth(self, 3, u)
 
 
 class TestUnitConversionSyntax(unittest.TestCase):
