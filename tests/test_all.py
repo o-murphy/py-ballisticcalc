@@ -3,9 +3,9 @@
 import unittest
 from math import fabs
 
-# import pyximport
-#
-# pyximport.install(language_level=3)
+import pyximport
+
+pyximport.install(language_level=3)
 from py_ballisticcalc import Distance, Weight, Velocity, Angular, Calculator
 from py_ballisticcalc import Temperature, Pressure, Energy, Unit
 from py_ballisticcalc import DragModel, Ammo, Weapon, Wind, Shot, Atmo
