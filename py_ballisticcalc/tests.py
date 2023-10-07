@@ -126,7 +126,7 @@ class TestTrajectory(unittest.TestCase):
                                f'TestZero2 failed {sight_angle >> Angular.Radian:.10f}')
 
     def custom_assert_equal(self, a, b, accuracy, name):
-        with self.subTest():
+        with self.subTest(name=name):
             self.assertLess(fabs(a - b), accuracy, f'Assertion {name} failed ({a}/{b}, {accuracy})')
 
     def validate_one(self, data: TrajectoryData, distance: float, velocity: float,
@@ -173,7 +173,7 @@ class TestTrajectory(unittest.TestCase):
         data = calc.trajectory(weapon, atmosphere, shot_info, wind)
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
-        print(data[-1].distance << Distance.Yard)
+
         test_data = [
             [data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.MOA],
             [data[1], 100, 2351.2, 2.106, 2061, 0, 0, -0.6, -0.6, 0.118, 550, Angular.MOA],

@@ -192,10 +192,11 @@ cdef class TrajectoryCalc:
             double weight = ammo.dm.weight >> Weight.Grain
 
             double step = shot_info.step >> Distance.Foot
-            double maximum_range = (shot_info.max_range >> Distance.Foot) + step
             double calc_step = self.get_calc_step(step)
 
-            int ranges_length = int(floor(maximum_range / step)) + 1
+            double maximum_range = (shot_info.max_range >> Distance.Foot) + step
+
+            int ranges_length = int(maximum_range / step) + 1
             int len_winds = len(winds)
             int current_item, current_wind, twist_coefficient
 
