@@ -5,7 +5,8 @@ from dataclasses import dataclass, field
 from .conditions import Atmo, Wind, Shot
 from .munition import Weapon, Ammo
 from .settings import Settings as Set
-from .trajectory_calc import TrajectoryCalc  # pylint: disable=import-error
+# pylint: disable=import-error,no-name-in-module
+from .trajectory_calc import TrajectoryCalc
 from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import Angular, Distance, is_unit
 
