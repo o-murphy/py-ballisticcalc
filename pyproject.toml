@@ -50,3 +50,4 @@ version = {attr = "py_ballisticcalc.__version__"}
 [project.optional-dependencies]
 dev = ['Cython', 'setuptools']
 lint = ['pylint', 'flake8']
+plot = ['matplotlib', 'pandas']
