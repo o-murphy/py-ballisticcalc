@@ -17,6 +17,8 @@ class TrajFlag(Flag):
     ZERO_DOWN = 2
     MACH = 4
     RANGE = 8
+    ZERO = ZERO_UP | ZERO_DOWN
+    ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH
 
 
 class TrajectoryData(NamedTuple):

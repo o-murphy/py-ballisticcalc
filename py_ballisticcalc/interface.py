@@ -102,21 +102,23 @@ class Calculator:
         matplotlib.use('TkAgg')
         self._calc = TrajectoryCalc(self.ammo)
         # self.update_elevation()
-        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds)  # Step in 10-yard increments to produce smoother curves
+        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds,
+                                     TrajFlag.ALL.value)  # Step in 10-yard increments to produce smoother curves
         df = self.to_dataframe(data)
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
 
         # zero_d = self.weapon.zero_distance >> Set.Units.distance
         # zero = ax.plot([zero_d, zero_d], [df['drop'].min(), df['drop'].max()], linestyle='--')
 
-        try:
-            zero_g = self.zero_given_elevation(shot, winds)
+        for p in data:
 
-            for p in zero_g:
+            if TrajFlag(p.flag) & TrajFlag.ZERO:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
                         [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-        except ArithmeticError:
-            pass
+            if TrajFlag(p.flag) & TrajFlag.MACH:
+                ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
+                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--', label='mach')
+                ax.text(p.distance >> Set.Units.distance, df['drop'].min(), " Mach")
 
         sh = self.weapon.sight_height >> Set.Units.drop
 
@@ -125,6 +127,7 @@ class Calculator:
         # y_values = [sh, sh - df.distance.max() * math.tan(self.elevation >> Angular.Degree)]  # Adjust these as needed
         y_values = [0, 0]  # Adjust these as needed
         ax.plot(x_values, y_values, linestyle='--', label='scope line')
+        ax.text(df.distance.max() - 100, -100, "Scope")
 
         # # # barrel line
         # elevation = self.elevation >> Angular.Degree

@@ -266,7 +266,7 @@ cdef class TrajectoryCalc:
                     _flag |= CTrajFlag.ZERO_UP
 
             # Mach crossing check
-            if (velocity / mach < 1) and (previous_mach > 1):
+            if (velocity / mach <= 1) and (previous_mach > 1):
                 _flag |= CTrajFlag.MACH
 
             # Next range check
