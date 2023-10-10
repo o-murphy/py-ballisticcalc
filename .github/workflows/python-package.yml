@@ -37,6 +37,7 @@ jobs:
         if pytest tests --no-header --no-summary -v; then
           echo "Pytest succeeded."
         else
-          echo "Pytest failed, running additional commands here."
+          echo "Pytest failed, running without capture"
           # Add your additional commands here
+          pytest tests --no-header --no-summary -v -s
         fi
