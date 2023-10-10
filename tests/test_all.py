@@ -85,18 +85,23 @@ class TestInterface(unittest.TestCase):
                             if err == "Can't found zero crossing points":
                                 pass
 
-    @unittest.skip(reason="Fixme: danger_space")
+    # @unittest.skip(reason="Fixme: danger_space")
     def test_danger_space(self):
-        winds = [Wind()]
-        weapon = Weapon(Distance.Inch(0), Distance.Yard(400), 11.24)
+        zero_distance = Distance.Yard(100)
+        weapon = Weapon(Distance.Inch(4), zero_distance, 11.24)
         calc = Calculator(weapon, self.ammo, self.atmosphere)
         calc.update_elevation()
-        print('aim', calc.elevation << Angular.MOA)
-        zero_given = calc.zero_given_elevation(calc.elevation, winds)
-        print(zero_given.distance << Distance.Yard)
-        print(calc.danger_space(zero_given, Distance.Meter(1.7)) << Distance.Meter)
-        print(calc.danger_space(zero_given, Distance.Meter(1.5)) << Distance.Meter)
-        print(calc.danger_space(zero_given, Distance.Inch(10)) << Distance.Yard)
+        shot = Shot(1000, Distance.Foot(0.2), sight_angle=calc.elevation)
+        zero_given_elevation = calc.zero_given_elevation(shot)
+        if len(zero_given_elevation) > 0:
+            zero = [p for p in zero_given_elevation if abs(
+                (p.distance >> Distance.Yard) - (zero_distance >> Distance.Yard)
+            ) <= 1e7][0]
+        else:
+            raise ArithmeticError
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.7)) << Distance.Meter)
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.5)) << Distance.Meter)
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Inch(10)) << Distance.Yard)
 
 
 class TestTrajectory(unittest.TestCase):
