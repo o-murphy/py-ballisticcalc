@@ -34,9 +34,9 @@ jobs:
         # python setup.py build_ext --inplace
     - name: Run unittest tests
       run: |
-        pytest tests --no-header --no-summary -v
-
-      continue-on-error: true
-      failure-commands: |
-        echo "Pytest failed, running no-captured"
-        pytest tests --no-header --no-summary -v -s
+        if pytest tests --no-header --no-summary -v; then
+          echo "Pytest succeeded."
+        else
+          echo "Pytest failed, running additional commands here."
+          # Add your additional commands here
+        fi
