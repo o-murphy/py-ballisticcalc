@@ -197,15 +197,7 @@ class AbstractUnit:
         """Returns instance as readable view
         :return: instance as readable view
         """
-        return f'<{self.__class__.__name__}: {self >> self.units} ' \
-               f'{self.units.symbol} ({self._value})>'
-
-    # def __format__(self, format_spec: str = "{v:.{a}f} {s}"):
-    #     """
-    #     :param format_spec: (str)
-    #     """
-    #     return format_spec.format(v=self._value, a=self._defined_units.key, \
-    #     s=self._defined_units.symbol)
+        return f'<{self.__class__.__name__}: {self << self.units} ({round(self._value, 4)})>'
 
     def __float__(self):
         return float(self._value)
@@ -632,39 +624,6 @@ def is_unit(obj: [AbstractUnit, float, int]):
     if obj is None:
         return None
     raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
-
-# class Convertor:
-#     def __init__(self, measure=None, unit: int = 0, default_unit: int = 0):
-#         self.measure = measure
-#         self.unit = unit
-#         self.default_unit = default_unit
-#
-#     def fromRaw(self, value):
-#         return self.measure(value, self.default_unit).get_in(self.unit)
-#
-#     def toRaw(self, value):
-#         return self.measure(value, self.unit).get_in(self.default_unit)
-#
-#     @property
-#     def accuracy(self):
-#         return self.measure.accuracy(self.unit)
-#
-#     @property
-#     def unit_name(self):
-#         return self.measure.name(self.unit)
-
-
-# u = Weight
-# for k, v in u.__dict__.items():
-#     if k in Unit.__members__:
-#         print(f"Unit.{k}: UnitProps('{k.lower()}', {u.accuracy(v)}, '{u.name(v)}'),")
-
-# Unit.Centimeter.meta = 1
-#
-# m = MetaUnit(17, MeasureType.Distance)
-# print(m, m.measure_type)
-#
-# print(Unit.Meter.measure_type)
 
 
 # Default units

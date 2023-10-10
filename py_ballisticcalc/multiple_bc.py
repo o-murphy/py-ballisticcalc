@@ -4,7 +4,8 @@ from math import pow as math_pow
 from typing import NamedTuple, Iterable
 
 from .conditions import Atmo
-from .drag_model import make_data_points  # pylint: disable=import-error
+# pylint: disable=import-error,no-name-in-module
+from .drag_model import make_data_points
 from .settings import Settings as Set
 from .unit import Distance, Weight, Velocity, is_unit
 

@@ -1,49 +1,40 @@
 # BallisticCalculator
-LGPL library for small arms ballistic calculations (Python 3.9+)
+#### LGPL library for small arms ballistic calculations (Python 3.9+)
 
-### Table of contents
+## Table of contents
 * [Installation](#installation)
-  * [Latest stable](#latest-stable-release-from-pypi)
-  * [From sources](#installing-from-sources)
-  * [Clone and build](#clone-and-build)
 * [Usage](#usage)
   * [Units of measure](#unit-manipulation-syntax)
   * [An example of calculations](#an-example-of-calculations)
   * [Output example](#example-of-the-formatted-output)
+* [Contributors](#contributors)
 * [About project](#about-project)
 
-### Installation
-#### Latest stable release from pypi**
+## Installation
+**Stable release from pypi, installing from binaries**
+
+(Contains c-extensions which offer higher performance)
 ```shell
 pip install py-ballisticcalc
 ```
-#### Installing from sources
-**MSVC** or **GCC** required
-* Download and install **MSVC** or **GCC** depending on target platform
-* Use one of the references you need:
+
+**Build wheel package for your interpreter version by pypi sdist**
+
+Download and install MSVC or GCC depending on target platform
 ```shell
-# no binary from PyPi
+pip install Cython>=3.0.0a10 
 pip install py-ballisticcalc --no-binary :all:
-
-# master brunch
-pip install git+https://github.com/o-murphy/py_ballisticcalc
-
-# specific branch
-pip install git+https://github.com/o-murphy/py_ballisticcalc.git@<target_branch_name>
 ```
 
-#### Clone and build
-**MSVC** or **GCC** required
+**Also use `git clone` to build your own package**
+
+(Contains cython files to build your own c-extensions)
 ```shell
 git clone https://github.com/o-murphy/py_ballisticcalc
-cd py_ballisticcalc
-python -m venv venv
-. venv/bin/activate
-pip install cython
-python setup.py build_ext --inplace
 ```   
 
-### Usage
+
+## Usage
 
 The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
 #### Unit manipulation syntax:
@@ -111,13 +102,13 @@ weapon = Weapon(9, 100, 2)
 dm = DragModel(0.223, TableG7, weight, diameter)
 
 ammo = Ammo(dm, length, 2750, 15)
-ammo.calc_powder_sens(2723, 0)  # optional, uses if USE_POWDER_SENSITIVITY flag enabled
+ammo.calc_powder_sens(2723, 0)
 
 zero_atmo = Atmo.icao()
 
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)
-calc.update_elevation()  # calculates zero barrel elevation
+calc.update_elevation()
 
 shot = Shot(1500, 100)
 
@@ -144,7 +135,15 @@ python -m py_ballisticcalc.example
 ['0.95 s', '600.000 m', '1571.4 ft/s', '1.41 mach', '-279.503 cm', '-4.74 mil', '-144.759 cm', '-2.46 mil', '1249 J']
 ```
 
-### About project
+## Contributors
+### This project exists thanks to all the people who contribute.
+#### Special thanks to:
+- **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert, Financial Engineer \
+*For the help in understanding and improvement of some calculation methods*
+- **[Nikolay Gekht](https://github.com/nikolaygekht)** \
+*For the sources code on C# and GO-lang from which this project firstly was forked from*
+
+## About project
 
 The library provides trajectory calculation for projectiles including for various
 applications, including air rifles, bows, firearms, artillery and so on.
