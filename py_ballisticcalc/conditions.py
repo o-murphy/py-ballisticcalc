@@ -142,17 +142,26 @@ class Wind(TypedUnits):
 
 @dataclass
 class Shot(TypedUnits):
-    """Stores shot parameters for the trajectory calculation"""
+    """
+    Stores shot parameters for the trajectory calculation
+    
+    :param max_range: Downrange distance to stop computing trajectory
+    :param step: Distance between each TrajectoryData row to record
+    :param zero_angle: The angle between the barrel and horizontal when zeroed
+    :param relative_angle: Elevation adjustment added to zero_angle for a particular shot
+    :param cant_angle: Rotation of gun around barrel axis, relative to position when zeroed.
+        (Only relevant when Weapon.sight_height != 0)
+    """
     max_range: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     step: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
-    shot_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
+    zero_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
+    relative_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
-    sight_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
     def __post_init__(self):
-        if not self.shot_angle:
-            self.shot_angle = 0
+        if not self.relative_angle:
+            self.relative_angle = 0
         if not self.cant_angle:
             self.cant_angle = 0
-        if not self.sight_angle:
-            self.sight_angle = 0
+        if not self.zero_angle:
+            self.zero_angle = 0

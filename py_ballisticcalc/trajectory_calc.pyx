@@ -119,15 +119,15 @@ cdef class TrajectoryCalc:
 
         return step
 
-    def sight_angle(self, weapon: Weapon, atmo: Atmo):
-        return self._sight_angle(self.ammo, weapon, atmo)
+    def zero_angle(self, weapon: Weapon, atmo: Atmo):
+        return self._zero_angle(self.ammo, weapon, atmo)
 
     def trajectory(self, weapon: Weapon, atmo: Atmo,
                    shot_info: Shot, winds: list[Wind],
                    filter_flags: int = CTrajFlag.RANGE):
         return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, filter_flags)
 
-    cdef _sight_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
+    cdef _zero_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef:
             double calc_step = self.get_calc_step(weapon.zero_distance.units(10) >> Distance.Foot)
             double zero_distance = weapon.zero_distance >> Distance.Foot
@@ -194,7 +194,7 @@ cdef class TrajectoryCalc:
             double step = shot_info.step >> Distance.Foot
             double calc_step = self.get_calc_step(step)
 
-            double maximum_range = (shot_info.max_range >> Distance.Foot) + step
+            double maximum_range = (shot_info.max_range >> Distance.Foot) + 1
 
             int ranges_length = int(maximum_range / step) + 1
             int len_winds = len(winds)
@@ -203,8 +203,8 @@ cdef class TrajectoryCalc:
             double stability_coefficient = 1.0
             double next_wind_range = 1e7
 
-            double barrel_elevation = (shot_info.sight_angle >> Angular.Radian) + (
-                    shot_info.shot_angle >> Angular.Radian)
+            double barrel_elevation = (shot_info.zero_angle >> Angular.Radian) + (
+                    shot_info.relative_angle >> Angular.Radian)
             double alt0 = atmo.altitude >> Distance.Foot
             double sight_height = weapon.sight_height >> Distance.Foot
 
@@ -354,8 +354,8 @@ cdef double calculate_stability_coefficient(object ammo, object rifle, object at
 
 cdef Vector wind_to_vector(object shot, object wind):
     cdef:
-        double sight_cosine = cos(shot.sight_angle >> Angular.Radian)
-        double sight_sine = sin(shot.sight_angle >> Angular.Radian)
+        double sight_cosine = cos(shot.zero_angle >> Angular.Radian)
+        double sight_sine = sin(shot.zero_angle >> Angular.Radian)
         double cant_cosine = cos(shot.cant_angle >> Angular.Radian)
         double cant_sine = sin(shot.cant_angle >> Angular.Radian)
         double range_velocity = (wind.velocity >> Velocity.FPS) * cos(wind.direction_from >> Angular.Radian)
