@@ -30,6 +30,30 @@ class TestMBC(unittest.TestCase):
         self.assertEqual(ret[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
         self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.15771258594668947})
 
+    def test_mbc_valid(self):
+        # Litz's multi-bc table comversion to CDM, 338LM 285GR HORNADY ELD-M
+        mbc = MultiBC(
+            drag_table=TableG7,
+            weight=Weight.Grain(285),
+            diameter=Distance.Inch(0.338),
+            mbc_table=[{'BC': p[0], 'V': Velocity.MPS(p[1])} for p in ((0.417, 745), (0.409, 662), (0.4, 580))],
+        )
+        cdm = mbc.cdm
+        cds = [p['CD'] for p in cdm]
+        machs = [p['Mach'] for p in cdm]
+
+        reference = (
+            (1, 0.3384895315),
+            (2, 0.2573873416),
+            (3, 0.2069547831),
+            (4, 0.1652052415),
+            (5, 0.1381406102),
+        )
+
+        for mach, cd in reference:
+            idx = machs.index(mach)
+            self.assertAlmostEqual(cds[idx], cd, 3)
+
 
 class TestInterface(unittest.TestCase):
 
@@ -60,30 +84,30 @@ class TestInterface(unittest.TestCase):
         for sh in range(0, 5):
 
             for reference_distance in range(100, 600, 200):
-                    target_distance = Distance.Yard(reference_distance)
-                    sight_height = Distance.Inch(sh)
-                    weapon = Weapon(sight_height, target_distance, 11.24)
-                    calc = Calculator(weapon, self.ammo, self.atmosphere)
-                    calc.weapon.sight_height = Distance.Inch(sh)
+                target_distance = Distance.Yard(reference_distance)
+                sight_height = Distance.Inch(sh)
+                weapon = Weapon(sight_height, target_distance, 11.24)
+                calc = Calculator(weapon, self.ammo, self.atmosphere)
+                calc.weapon.sight_height = Distance.Inch(sh)
 
-                    with self.subTest(zero=reference_distance, sh=sh):
-                        try:
-                            calc.update_elevation()
-                            shot = Shot(1000, Distance.Foot(0.2), sight_angle=calc.elevation)
-                            zero_crossing_points = calc.zero_given_elevation(shot)
-                            print_output(zero_crossing_points, calc.elevation)
-                        except ArithmeticError as err:
-                            if err == "Can't found zero crossing points":
-                                pass
+                with self.subTest(zero=reference_distance, sh=sh):
+                    try:
+                        calc.update_elevation()
+                        shot = Shot(1000, Distance.Foot(0.2), sight_angle=calc.elevation)
+                        zero_crossing_points = calc.zero_given_elevation(shot)
+                        print_output(zero_crossing_points, calc.elevation)
+                    except ArithmeticError as err:
+                        if err == "Can't found zero crossing points":
+                            pass
 
-                    with self.subTest(zero=reference_distance, sh=sh, elev=0):
-                        try:
-                            shot = Shot(1000, Distance.Foot(0.2), sight_angle=0)
-                            zero_crossing_points = calc.zero_given_elevation(shot)
-                            print_output(zero_crossing_points, 0)
-                        except ArithmeticError as err:
-                            if err == "Can't found zero crossing points":
-                                pass
+                with self.subTest(zero=reference_distance, sh=sh, elev=0):
+                    try:
+                        shot = Shot(1000, Distance.Foot(0.2), sight_angle=0)
+                        zero_crossing_points = calc.zero_given_elevation(shot)
+                        print_output(zero_crossing_points, 0)
+                    except ArithmeticError as err:
+                        if err == "Can't found zero crossing points":
+                            pass
 
     # @unittest.skip(reason="Fixme: danger_space")
     def test_danger_space(self):
