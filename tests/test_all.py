@@ -52,7 +52,8 @@ class TestMBC(unittest.TestCase):
 
         for mach, cd in reference:
             idx = machs.index(mach)
-            self.assertAlmostEqual(cds[idx], cd, 3)
+            with self.subTest(mach=mach):
+                self.assertAlmostEqual(cds[idx], cd, 3)
 
 
 class TestInterface(unittest.TestCase):
