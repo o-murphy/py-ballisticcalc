@@ -6,21 +6,35 @@ from dataclasses import dataclass, field
 # pylint: disable=import-error,no-name-in-module
 from .drag_model import DragModel
 from .settings import Settings as Set
-from .unit import TypedUnits, Velocity, Temperature, is_unit, Distance
+from .unit import TypedUnits, Velocity, Temperature, is_unit, Distance, Angular
 
 __all__ = ('Weapon', 'Ammo')
 
 
 @dataclass
 class Weapon(TypedUnits):
-    """Creates Weapon properties"""
+    """
+    :param zero_distance: Sight-line distance to "zero," which is point we want to hit.
+        This is the distance that a rangefinder would return with no ballistic adjustment.
+        NB: Some rangefinders offer an adjusted distance based on inclinometer measurement.
+            However, without a complete ballistic model these can only approximate the effects
+            on ballistic trajectory of shooting uphill or downhill.  Therefore:
+            For maximum accuracy, use the raw sight distance and look angle as inputs here.
+    :param zero_look_angle: If = 0 then the target zero is horizontal with the gun at zero_distance.
+        If zero_look_angle != 0 then the target zero is at a different height than the gun, and
+            the horizontal distance to target = cos(look_angle) * zero_distance, and
+            the vertical distance to target from horizontal = sin(look_angle) * zero_distance.
+    """
     sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
     zero_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
+    zero_look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
 
     def __post_init__(self):
         if not self.twist:
             self.twist = 0
+        if not self.zero_look_angle:
+            self.zero_look_angle = 0
 
 
 @dataclass

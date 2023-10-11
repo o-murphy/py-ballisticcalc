@@ -130,14 +130,15 @@ cdef class TrajectoryCalc:
     cdef _zero_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):
         cdef:
             double calc_step = self.get_calc_step(weapon.zero_distance.units(10) >> Distance.Foot)
-            double zero_distance = weapon.zero_distance >> Distance.Foot
+            double zero_distance = cos(weapon.zero_look_angle >> Angular.Radian) * (weapon.zero_distance >> Distance.Foot)
+            double height_at_zero = sin(weapon.zero_look_angle >> Angular.Radian) * (weapon.zero_distance >> Distance.Foot)
             double maximum_range = zero_distance + calc_step
             double sight_height = weapon.sight_height >> Distance.Foot
             double mach = atmo.mach >> Velocity.FPS
             double density_factor = atmo.density_factor()
             double muzzle_velocity = ammo.mv >> Velocity.FPS
             double barrel_azimuth = 0.0
-            double barrel_elevation = 0.0
+            double barrel_elevation = atan(height_at_zero / zero_distance)
             int iterations_count = 0
             double zero_finding_error = cZeroFindingAccuracy * 2
             Vector gravity_vector = Vector(.0, cGravityConstant, .0)
@@ -171,8 +172,8 @@ cdef class TrajectoryCalc:
                 time += delta_range_vector.magnitude() / velocity
 
                 if fabs(range_vector.x - zero_distance) < 0.5 * calc_step:
-                    zero_finding_error = fabs(range_vector.y)
-                    barrel_elevation -= range_vector.y / range_vector.x
+                    zero_finding_error = fabs(range_vector.y - height_at_zero)
+                    barrel_elevation -= (range_vector.y - height_at_zero) / range_vector.x
                     break
 
                 iterations_count += 1
@@ -184,7 +185,6 @@ cdef class TrajectoryCalc:
         cdef:
             double density_factor, mach
             double time, velocity, windage, delta_time, drag
-            double windage_adjustment, drop_adjustment, trajectory_angle
 
             double twist = weapon.twist >> Distance.Inch
             double length = ammo.length >> Distance.Inch
