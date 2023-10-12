@@ -1,38 +1,92 @@
 # BallisticCalculator
-#### LGPL library for small arms ballistic calculations (Python 3.9+)
+LGPL library for small arms ballistic calculations (Python 3.9+)
 
-## Table of contents
-* [Installation](#installation)
-* [Usage](#usage)
+### Table of contents
+* **[Installation](#installation)**
+  * [Latest stable](#latest-stable-release-from-pypi)
+  * [From sources](#installing-from-sources)
+  * [Clone and build](#clone-and-build)
+* **[Usage](#usage)**
   * [Units of measure](#unit-manipulation-syntax)
   * [An example of calculations](#an-example-of-calculations)
   * [Output example](#example-of-the-formatted-output)
-* [Contributors](#contributors)
-* [About project](#about-project)
+* **[Older versions]()**
+  * [v1.0.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.0.12)
+* **[Contributors](#contributors)**
+* **[About project](#about-project)**
 
-## Installation
-**Stable release from pypi, installing from binaries**
-
-(Contains c-extensions which offer higher performance)
+### Installation
+#### Latest stable release from pypi**
 ```shell
 pip install py-ballisticcalc
 ```
-
-**Build wheel package for your interpreter version by pypi sdist**
-
-Download and install MSVC or GCC depending on target platform
+#### Installing from sources
+**MSVC** or **GCC** required
+* Download and install **MSVC** or **GCC** depending on target platform
+* Use one of the references you need:
 ```shell
-pip install Cython>=3.0.0a10 
+# no binary from PyPi
 pip install py-ballisticcalc --no-binary :all:
+
+# master brunch
+pip install git+https://github.com/o-murphy/py_ballisticcalc
+
+# specific branch
+pip install git+https://github.com/o-murphy/py_ballisticcalc.git@<target_branch_name>
 ```
 
-**Also use `git clone` to build your own package**
-
-(Contains cython files to build your own c-extensions)
+#### Clone and build
+**MSVC** or **GCC** required
 ```shell
 git clone https://github.com/o-murphy/py_ballisticcalc
+cd py_ballisticcalc
+python -m venv venv
+. venv/bin/activate
+pip install cython
+python setup.py build_ext --inplace
 ```   
 
+### Usage
+
+The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
+#### Unit manipulation syntax:
+
+```python
+from py_ballisticcalc.unit import *
+
+# ways to define value in units
+# 1. old syntax
+unit_in_meter = Distance(100, Distance.Meter)
+# 2. short syntax by Unit type class
+unit_in_meter = Distance.Meter(100)
+# 3. by Unit enum class
+unit_in_meter = Unit.METER(100)
+
+# >>> <Distance>: 100.0 m (3937.0078740157483)
+
+# convert unit
+# 1. by method
+unit_in_yard = unit_in_meter.convert(Distance.Yard)
+# 2. using shift syntax
+unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
+# >>> <Distance>: 109.36132983377078 yd (3937.0078740157483)
+
+# get value in specified units
+# 1. by method
+value_in_km = unit_in_yards.get_in(Distance.Kilometer)
+# 2. by shift syntax
+value_in_km = unit_in_yards >> Distance.Kilometer  # '>>=' operator also supports
+# >>> 0.1
+
+# getting unit raw value:
+rvalue = Distance.Meter(10).raw_value
+rvalue = float(Distance.Meter(10))
+
+# units comparison:
+# supports operators like < > <= >= == !=
+Distance.Meter(100) == Distance.Centimeter(100)  # >>> False, compare two units by raw value
+Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
+```
 
 ## Usage
 
@@ -115,7 +169,7 @@ current_atmo = Atmo(110, 1000, 15, 72)
 current_winds = [Wind(2, 90)]
 shot = Shot(1500, atmo=current_atmo, winds=current_winds)
 
-shot_result = calc.fire(shot, Distance.Yard(100))
+shot_result = calc.fire(shot, trajectory_step=Distance.Yard(100))
 
 for p in shot_result:
     print(p.formatted())
