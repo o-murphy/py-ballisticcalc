@@ -1,12 +1,13 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
 
-from .conditions import Atmo, Wind, Shot
+from .conditions import Atmo, Shot
 from .munition import Weapon, Ammo
 # pylint: disable=import-error,no-name-in-module
 from .trajectory_calc import TrajectoryCalc
-from .trajectory_data import HitResult
-from .unit import Angular
+from .trajectory_data import HitResult, TrajFlag
+from .unit import Angular, Distance
+from .settings import Settings
 
 __all__ = ('Calculator',)
 
@@ -18,7 +19,6 @@ class Calculator:
     weapon: Weapon
     ammo: Ammo
     zero_atmo: Atmo = field(default_factory=Atmo.icao)
-
     _elevation: Angular = field(init=False, repr=True, compare=False,
                                 default_factory=lambda: Angular.Degree(0))
     _calc: TrajectoryCalc = field(init=False, repr=True, compare=False, default=None)
@@ -41,19 +41,22 @@ class Calculator:
         self._calc = TrajectoryCalc(self.ammo)
         self._elevation = self._calc.zero_angle(self.weapon, self.zero_atmo)
 
-    def fire(self, shot: Shot) -> HitResult:
+    def fire(self, shot: Shot, trajectory_step: [float, Distance],
+             filter_flags: TrajFlag = TrajFlag.RANGE) -> HitResult:
         """Calculates trajectory with current conditions
         :param shot: shot parameters
-        :param current_atmo: current atmosphere conditions
-        :param current_winds: current winds list
+        :param trajectory_step: step between trajectory points
+        :param filter_flags: filter trajectory points
         :return: trajectory table
         """
-
+        step = Settings.Units.distance(trajectory_step)
+        if filter_flags & (TrajFlag.ZERO | TrajFlag.MACH):
+            step = Distance.Foot(0.2)
         self._calc = TrajectoryCalc(self.ammo)
         if not shot.zero_angle:
             shot.zero_angle = self._elevation
-        data = self._calc.trajectory(self.weapon, shot)
-        return HitResult(data, self)
+        data = self._calc.trajectory(self.weapon, shot, step, filter_flags.value)
+        return HitResult(data)
 
     # @staticmethod
     # def danger_space(trajectory: TrajectoryData, target_height: [float, Distance]) -> Distance:

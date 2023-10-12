@@ -10,7 +10,7 @@ from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Uni
 try:
     import pandas as pd
 except ImportError as error:
-    logging.warning("Install pandas to convert trajectory as dataframe")
+    logging.warning("Install pandas to convert trajectory to dataframe")
     pd = None
 
 try:
@@ -119,7 +119,6 @@ class TrajectoryData(NamedTuple):
 class HitResult:
     """Results of the shot"""
     _trajectory: list[TrajectoryData]
-    _calc: 'Calculator'
 
     def __iter__(self):
         for row in self._trajectory:
@@ -146,17 +145,14 @@ def trajectory_dataframe(shot_result: 'HitResult') -> 'DataFrame':
     return pd.DataFrame(trajectory, columns=col_names)
 
 
-def trajectory_plot(calc: 'Calculator', shot: 'Shot',
-                    current_atmo: 'Atmo' = None,
-                    current_winds: list['Wind'] = None) -> 'plot':
+def trajectory_plot(calc: 'Calculator', shot: 'Shot') -> 'plot':
     """:return: the graph of the trajectory"""
 
     if matplotlib is None:
         raise ImportError("Install matplotlib to get results as a plot")
 
     matplotlib.use('TkAgg')
-    shot.step = Distance.Foot(0.2)
-    shot_result = calc.fire(shot, current_atmo, current_winds)
+    shot_result = calc.fire(shot, Distance.Foot(0.2), TrajFlag.ALL)
     df = trajectory_dataframe(shot_result)
     ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
 

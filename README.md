@@ -111,11 +111,11 @@ zero_atmo = Atmo.icao(100)
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)
 
-shot = Shot(1500, 100)
 current_atmo = Atmo(110, 1000, 15, 72)
 current_winds = [Wind(2, 90)]
+shot = Shot(1500, atmo=current_atmo, winds=current_winds)
 
-shot_result = calc.fire(shot, current_atmo, current_winds)
+shot_result = calc.fire(shot, Distance.Yard(100))
 
 for p in shot_result:
     print(p.formatted())
