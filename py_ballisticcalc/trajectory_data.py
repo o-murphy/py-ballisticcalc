@@ -20,7 +20,8 @@ except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
 
-__all__ = ('TrajectoryData', 'ShotTrajectory', 'TrajFlag')
+__all__ = ('TrajectoryData', 'ShotTrajectory', 'TrajFlag',
+           'trajectory_plot', 'trajectory_dataframe')
 
 
 class TrajFlag(Flag):
@@ -126,53 +127,56 @@ class ShotTrajectory:
     def __getitem__(self, item):
         return self._trajectory[item]
 
-    @staticmethod
-    def to_dataframe(shot_result: 'ShotTrajectory') -> 'DataFrame':
-        """:return: the trajectory table as a DataFrame"""
-        if pd is None:
-            raise ImportError("Install pandas to convert trajectory as dataframe")
-
-        col_names = TrajectoryData._fields
-        trajectory = [p.in_def_units() for p in shot_result]
-        return pd.DataFrame(trajectory, columns=col_names)
-
-    @staticmethod
-    def plot(shot_result: 'ShotTrajectory') -> 'plot':
-        """:return: the graph of the trajectory"""
-
-        if matplotlib is None:
-            raise ImportError("Install matplotlib to get results as a plot")
-
-        matplotlib.use('TkAgg')
-        df = ShotTrajectory.to_dataframe(shot_result)
-        ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
-
-        for p in shot_result:
-
-            if TrajFlag(p.flag) & TrajFlag.ZERO:
-                ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-            if TrajFlag(p.flag) & TrajFlag.MACH:
-                ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--', label='mach')
-                ax.text(p.distance >> Set.Units.distance, df['drop'].min(), " Mach")
-
-        # # scope line
-        x_values = [0, df.distance.max()]  # Adjust these as needed
-        y_values = [0, 0]  # Adjust these as needed
-        ax.plot(x_values, y_values, linestyle='--', label='scope line')
-        ax.text(df.distance.max() - 100, -100, "Scope")
-
-        df.plot(x='distance', xlabel=Set.Units.distance.symbol,
-                y=['velocity'], ylabel=Set.Units.velocity.symbol,
-                secondary_y=True,
-                ylim=[0, df['velocity'].max()], ax=ax)
-
-        return plt
-
     def zero_given_elevation(self) -> list[TrajectoryData]:
         """Find the zero distance for a given barrel elevation"""
         data = [row for row in self._trajectory if row.flag & TrajFlag.ZERO.value]
         if len(data) < 1:
             raise ArithmeticError("Can't found zero crossing points")
         return data
+
+
+def trajectory_dataframe(shot_result: 'ShotTrajectory') -> 'DataFrame':
+    """:return: the trajectory table as a DataFrame"""
+    if pd is None:
+        raise ImportError("Install pandas to convert trajectory as dataframe")
+
+    col_names = TrajectoryData._fields
+    trajectory = [p.in_def_units() for p in shot_result]
+    return pd.DataFrame(trajectory, columns=col_names)
+
+
+def trajectory_plot(calc: 'Calculator', shot: 'Shot',
+                    current_atmo: 'Atmo' = None,
+                    current_winds: list['Wind'] = None) -> 'plot':
+    """:return: the graph of the trajectory"""
+
+    if matplotlib is None:
+        raise ImportError("Install matplotlib to get results as a plot")
+
+    matplotlib.use('TkAgg')
+    shot_result = calc.fire(shot, current_atmo, current_winds)
+    df = trajectory_dataframe(shot_result)
+    ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
+
+    for p in shot_result:
+
+        if TrajFlag(p.flag) & TrajFlag.ZERO:
+            ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
+                    [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
+        if TrajFlag(p.flag) & TrajFlag.MACH:
+            ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
+                    [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--', label='mach')
+            ax.text(p.distance >> Set.Units.distance, df['drop'].min(), " Mach")
+
+    # # scope line
+    x_values = [0, df.distance.max()]  # Adjust these as needed
+    y_values = [0, 0]  # Adjust these as needed
+    ax.plot(x_values, y_values, linestyle='--', label='scope line')
+    ax.text(df.distance.max() - 100, -100, "Scope")
+
+    df.plot(x='distance', xlabel=Set.Units.distance.symbol,
+            y=['velocity'], ylabel=Set.Units.velocity.symbol,
+            secondary_y=True,
+            ylim=[0, df['velocity'].max()], ax=ax)
+
+    return plt

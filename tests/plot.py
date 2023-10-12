@@ -12,4 +12,5 @@ calc.calculate_elevation()
 
 shot = Shot(1200, Distance.Foot(0.2), zero_angle=calc.elevation, relative_angle=Angular.Mil(0))
 shot_results = calc.fire(shot)
-shot_results.plot(shot_results).show()
+trajectory_plot(calc, shot).show()
+

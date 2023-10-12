@@ -176,7 +176,7 @@ cdef class TrajectoryCalc:
                     barrel_elevation -= (range_vector.y - height_at_zero) / range_vector.x
                     break
 
-                iterations_count += 1
+            iterations_count += 1
 
         return Angular.Radian(barrel_elevation)
 
