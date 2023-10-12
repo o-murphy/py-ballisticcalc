@@ -158,10 +158,19 @@ class Shot(TypedUnits):
     relative_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
+    atmo: Atmo = field(default=None)
+    winds: list[Wind] = field(default=None)
+
     def __post_init__(self):
+
         if not self.relative_angle:
             self.relative_angle = 0
         if not self.cant_angle:
             self.cant_angle = 0
         if not self.zero_angle:
             self.zero_angle = 0
+
+        if not self.atmo:
+            self.atmo = Atmo.icao()
+        if not self.winds:
+            self.winds = [Wind()]

@@ -20,7 +20,7 @@ except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
 
-__all__ = ('TrajectoryData', 'ShotTrajectory', 'TrajFlag',
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag',
            'trajectory_plot', 'trajectory_dataframe')
 
 
@@ -116,9 +116,10 @@ class TrajectoryData(NamedTuple):
 
 
 @dataclass
-class ShotTrajectory:
+class HitResult:
     """Results of the shot"""
     _trajectory: list[TrajectoryData]
+    _calc: 'Calculator'
 
     def __iter__(self):
         for row in self._trajectory:
@@ -135,7 +136,7 @@ class ShotTrajectory:
         return data
 
 
-def trajectory_dataframe(shot_result: 'ShotTrajectory') -> 'DataFrame':
+def trajectory_dataframe(shot_result: 'HitResult') -> 'DataFrame':
     """:return: the trajectory table as a DataFrame"""
     if pd is None:
         raise ImportError("Install pandas to convert trajectory as dataframe")

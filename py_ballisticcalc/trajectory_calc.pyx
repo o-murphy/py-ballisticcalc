@@ -122,9 +122,12 @@ cdef class TrajectoryCalc:
     def zero_angle(self, weapon: Weapon, atmo: Atmo):
         return self._zero_angle(self.ammo, weapon, atmo)
 
-    def trajectory(self, weapon: Weapon, atmo: Atmo,
-                   shot_info: Shot, winds: list[Wind],
+    def trajectory(self, weapon: Weapon, shot_info: Shot,
                    filter_flags: int = CTrajFlag.RANGE):
+        print(shot_info)
+        cdef:
+            object atmo = shot_info.atmo
+            list winds = shot_info.winds
         return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, filter_flags)
 
     cdef _zero_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):

@@ -129,6 +129,7 @@ UnitPropsDict = {
     Unit.THOUSAND: UnitProps('thousand', 2, 'ths'),
     Unit.INCHES_PER_100YD: UnitProps('inches/100yd', 2, 'in/100yd'),
     Unit.CM_PER_100M: UnitProps('cm/100m', 2, 'cm/100m'),
+    Unit.O_CLOCK: UnitProps('h', 2, 'h'),
 
     Unit.INCH: UnitProps("inch", 1, "inch"),
     Unit.FOOT: UnitProps("foot", 2, "ft"),

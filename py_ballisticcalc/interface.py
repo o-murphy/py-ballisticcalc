@@ -5,7 +5,7 @@ from .conditions import Atmo, Wind, Shot
 from .munition import Weapon, Ammo
 # pylint: disable=import-error,no-name-in-module
 from .trajectory_calc import TrajectoryCalc
-from .trajectory_data import ShotTrajectory
+from .trajectory_data import HitResult
 from .unit import Angular
 
 __all__ = ('Calculator',)
@@ -41,25 +41,19 @@ class Calculator:
         self._calc = TrajectoryCalc(self.ammo)
         self._elevation = self._calc.zero_angle(self.weapon, self.zero_atmo)
 
-    def fire(self, shot: Shot, current_atmo: Atmo = None,
-             current_winds: list[Wind] = None) -> ShotTrajectory:
+    def fire(self, shot: Shot) -> HitResult:
         """Calculates trajectory with current conditions
         :param shot: shot parameters
         :param current_atmo: current atmosphere conditions
         :param current_winds: current winds list
         :return: trajectory table
         """
-        if current_atmo is None:
-            current_atmo = self.zero_atmo
-
-        if current_winds is None:
-            current_winds = [Wind()]
 
         self._calc = TrajectoryCalc(self.ammo)
         if not shot.zero_angle:
             shot.zero_angle = self._elevation
-        data = self._calc.trajectory(self.weapon, current_atmo, shot, current_winds)
-        return ShotTrajectory(data)
+        data = self._calc.trajectory(self.weapon, shot)
+        return HitResult(data, self)
 
     # @staticmethod
     # def danger_space(trajectory: TrajectoryData, target_height: [float, Distance]) -> Distance:

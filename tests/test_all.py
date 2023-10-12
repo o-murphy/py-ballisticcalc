@@ -201,10 +201,12 @@ class TestTrajectory(unittest.TestCase):
         ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.icao()
-        shot_info = Shot(1000, 100, zero_angle=Angular(0.001228, Angular.Radian))
-        wind = [Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))]
+        shot_info = Shot(1000, 100,
+                         zero_angle=Angular(0.001228, Angular.Radian),
+                         atmo=atmosphere,
+                         winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, atmosphere, shot_info, wind, TrajFlag.RANGE.value)
+        data = calc.trajectory(weapon, shot_info, TrajFlag.RANGE.value)
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
@@ -223,15 +225,13 @@ class TestTrajectory(unittest.TestCase):
         dm = DragModel(0.223, TableG7, 168, 0.308)
         ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
         weapon = Weapon(2, 100, 11.24)
-        atmosphere = Atmo.icao()
         shot_info = Shot(Distance.Yard(1000),
                          Distance.Yard(100),
-                         zero_angle=Angular.MOA(4.221)
-                         )
-        wind = [Wind(Velocity(5, Velocity.MPH), -45)]
+                         zero_angle=Angular.MOA(4.221),
+                         winds=[Wind(Velocity(5, Velocity.MPH), -45)])
 
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, atmosphere, shot_info, wind, TrajFlag.RANGE.value)
+        data = calc.trajectory(weapon, shot_info, TrajFlag.RANGE.value)
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
@@ -253,11 +253,12 @@ class TestPerformance(unittest.TestCase):
         self.ammo = Ammo(self.dm, 1.282, 2750)
         self.weapon = Weapon(2, 100, 11.24)
         self.atmo = Atmo.icao()
-        self.shot = Shot(Distance.Yard(1000),
-                         Distance.Yard(100),
-                         zero_angle=Angular.MOA(4.221)
-                         )
-        self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
+        self.shot = Shot(
+            Distance.Yard(1000),
+            Distance.Yard(100),
+            zero_angle=Angular.MOA(4.221),
+            winds=[Wind(Velocity(5, Velocity.MPH), -45)]
+        )
 
         self.calc = TrajectoryCalc(self.ammo)
 
@@ -268,7 +269,7 @@ class TestPerformance(unittest.TestCase):
         self.calc.zero_angle(self.weapon, self.atmo)
 
     def test_path_performance(self):
-        d = self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
+        d = self.calc.trajectory(self.weapon, self.shot)
         # [print(p.formatted()) for p in d]
 
 
