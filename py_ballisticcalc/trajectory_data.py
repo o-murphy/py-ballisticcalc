@@ -154,6 +154,7 @@ def trajectory_plot(calc: 'Calculator', shot: 'Shot',
         raise ImportError("Install matplotlib to get results as a plot")
 
     matplotlib.use('TkAgg')
+    shot.step = Distance.Foot(0.2)
     shot_result = calc.fire(shot, current_atmo, current_winds)
     df = trajectory_dataframe(shot_result)
     ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
