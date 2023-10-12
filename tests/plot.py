@@ -11,6 +11,5 @@ calc = Calculator(weapon, ammo)
 calc.calculate_elevation()
 
 shot = Shot(1200, zero_angle=calc.elevation, relative_angle=Angular.Mil(0))
-shot_results = calc.fire(shot, Distance.Foot(0.2), TrajFlag.ALL)
-trajectory_plot(calc, shot).show()
+calc.fire(shot, 0, extra_data=True).plot.show()
 
