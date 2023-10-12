@@ -38,7 +38,7 @@ class Calculator:
     def update_elevation(self):
         """Recalculates barrel elevation for weapon and zero atmo"""
         self._calc = TrajectoryCalc(self.ammo)
-        self._elevation = self._calc.sight_angle(self.weapon, self.zero_atmo)
+        self._elevation = self._calc.zero_angle(self.weapon, self.zero_atmo)
 
     def trajectory(self, shot: Shot, current_atmo: Atmo, winds: list[Wind]) -> list:
         """Calculates trajectory with current conditions
@@ -48,9 +48,9 @@ class Calculator:
         :return: trajectory table
         """
         self._calc = TrajectoryCalc(self.ammo)
-        if not self._elevation and not shot.sight_angle:
+        if not self._elevation and not shot.zero_angle:
             self.update_elevation()
-            shot.sight_angle = self._elevation
+            shot.zero_angle = self._elevation
         data = self._calc.trajectory(self.weapon, current_atmo, shot, winds)
         return data
 
@@ -120,7 +120,7 @@ class Calculator:
                         [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--', label='mach')
                 ax.text(p.distance >> Set.Units.distance, df['drop'].min(), " Mach")
 
-        sh = self.weapon.sight_height >> Set.Units.drop
+        #sh = self.weapon.sight_height >> Set.Units.drop
 
         # # scope line
         x_values = [0, df.distance.max()]  # Adjust these as needed

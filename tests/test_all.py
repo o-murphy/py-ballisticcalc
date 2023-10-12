@@ -94,7 +94,7 @@ class TestInterface(unittest.TestCase):
                 with self.subTest(zero=reference_distance, sh=sh):
                     try:
                         calc.update_elevation()
-                        shot = Shot(1000, Distance.Foot(0.2), sight_angle=calc.elevation)
+                        shot = Shot(1000, Distance.Foot(0.2), zero_angle=calc.elevation)
                         zero_crossing_points = calc.zero_given_elevation(shot)
                         print_output(zero_crossing_points, calc.elevation)
                     except ArithmeticError as err:
@@ -103,7 +103,7 @@ class TestInterface(unittest.TestCase):
 
                 with self.subTest(zero=reference_distance, sh=sh, elev=0):
                     try:
-                        shot = Shot(1000, Distance.Foot(0.2), sight_angle=0)
+                        shot = Shot(1000, Distance.Foot(0.2), zero_angle=0)
                         zero_crossing_points = calc.zero_given_elevation(shot)
                         print_output(zero_crossing_points, 0)
                     except ArithmeticError as err:
@@ -116,7 +116,7 @@ class TestInterface(unittest.TestCase):
         weapon = Weapon(Distance.Inch(4), zero_distance, 11.24)
         calc = Calculator(weapon, self.ammo, self.atmosphere)
         calc.update_elevation()
-        shot = Shot(1000, Distance.Foot(0.2), sight_angle=calc.elevation)
+        shot = Shot(1000, Distance.Foot(0.2), zero_angle=calc.elevation)
         zero_given_elevation = calc.zero_given_elevation(shot)
         if len(zero_given_elevation) > 0:
             zero = [p for p in zero_given_elevation if abs(
@@ -138,10 +138,10 @@ class TestTrajectory(unittest.TestCase):
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
-        sight_angle = calc.sight_angle(weapon, atmosphere)
+        zero_angle = calc.zero_angle(weapon, atmosphere)
 
-        self.assertAlmostEqual(sight_angle >> Angular.Radian, 0.001651, 6,
-                               f'TestZero1 failed {sight_angle >> Angular.Radian:.10f}')
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001651, 6,
+                               f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
 
     def test_zero2(self):
         dm = DragModel(0.223, TableG7, 69, 0.223)
@@ -150,10 +150,10 @@ class TestTrajectory(unittest.TestCase):
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
-        sight_angle = calc.sight_angle(weapon, atmosphere)
+        zero_angle = calc.zero_angle(weapon, atmosphere)
 
-        self.assertAlmostEqual(sight_angle >> Angular.Radian, 0.001228, 6,
-                               f'TestZero2 failed {sight_angle >> Angular.Radian:.10f}')
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001228, 6,
+                               f'TestZero2 failed {zero_angle >> Angular.Radian:.10f}')
 
     def custom_assert_equal(self, a, b, accuracy, name):
         with self.subTest(name=name):
@@ -197,10 +197,10 @@ class TestTrajectory(unittest.TestCase):
         ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.icao()
-        shot_info = Shot(1000, 100, sight_angle=Angular(0.001228, Angular.Radian))
+        shot_info = Shot(1000, 100, zero_angle=Angular(0.001228, Angular.Radian))
         wind = [Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))]
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, atmosphere, shot_info, wind)
+        data = calc.trajectory(weapon, atmosphere, shot_info, wind, TrajFlag.RANGE.value)
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
@@ -222,12 +222,12 @@ class TestTrajectory(unittest.TestCase):
         atmosphere = Atmo.icao()
         shot_info = Shot(Distance.Yard(1000),
                          Distance.Yard(100),
-                         sight_angle=Angular.MOA(4.221)
+                         zero_angle=Angular.MOA(4.221)
                          )
         wind = [Wind(Velocity(5, Velocity.MPH), -45)]
 
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, atmosphere, shot_info, wind)
+        data = calc.trajectory(weapon, atmosphere, shot_info, wind, TrajFlag.RANGE.value)
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
@@ -251,7 +251,7 @@ class TestPerformance(unittest.TestCase):
         self.atmo = Atmo.icao()
         self.shot = Shot(Distance.Yard(1000),
                          Distance.Yard(100),
-                         sight_angle=Angular.MOA(4.221)
+                         zero_angle=Angular.MOA(4.221)
                          )
         self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
 
@@ -261,7 +261,7 @@ class TestPerformance(unittest.TestCase):
         self.assertTrue(self.calc)
 
     def test_elevation_performance(self):
-        self.calc.sight_angle(self.weapon, self.atmo)
+        self.calc.zero_angle(self.weapon, self.atmo)
 
     def test_path_performance(self):
         d = self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
