@@ -96,19 +96,16 @@ class Calculator:
         trajectory = [p.in_def_units() for p in trajectory]
         return pd.DataFrame(trajectory, columns=col_names)
 
-    def show_plot(self, shot, winds):
+    def show_plot(self, shot, current_atmo, winds):
         import matplotlib
         import matplotlib.pyplot as plt
+
         matplotlib.use('TkAgg')
         self._calc = TrajectoryCalc(self.ammo)
-        # self.update_elevation()
-        data = self._calc.trajectory(self.weapon, self.zero_atmo, shot, winds,
+        data = self._calc.trajectory(self.weapon, current_atmo, shot, winds,
                                      TrajFlag.ALL.value)  # Step in 10-yard increments to produce smoother curves
         df = self.to_dataframe(data)
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
-
-        # zero_d = self.weapon.zero_distance >> Set.Units.distance
-        # zero = ax.plot([zero_d, zero_d], [df['drop'].min(), df['drop'].max()], linestyle='--')
 
         for p in data:
 
@@ -120,11 +117,8 @@ class Calculator:
                         [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--', label='mach')
                 ax.text(p.distance >> Set.Units.distance, df['drop'].min(), " Mach")
 
-        #sh = self.weapon.sight_height >> Set.Units.drop
-
         # # scope line
         x_values = [0, df.distance.max()]  # Adjust these as needed
-        # y_values = [sh, sh - df.distance.max() * math.tan(self.elevation >> Angular.Degree)]  # Adjust these as needed
         y_values = [0, 0]  # Adjust these as needed
         ax.plot(x_values, y_values, linestyle='--', label='scope line')
         ax.text(df.distance.max() - 100, -100, "Scope")

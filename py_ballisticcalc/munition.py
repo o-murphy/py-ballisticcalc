@@ -27,8 +27,8 @@ class Weapon(TypedUnits):
     """
     sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
     zero_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
-    zero_look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
+    zero_look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
     def __post_init__(self):
         if not self.twist:

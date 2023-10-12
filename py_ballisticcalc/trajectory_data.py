@@ -94,6 +94,5 @@ class TrajectoryData(NamedTuple):
             self.angle >> Set.Units.angular,
             self.energy >> Set.Units.energy,
             self.ogw >> Set.Units.ogw,
-
-            self.flag
+            TrajFlag(self.flag)
         )
