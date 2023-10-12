@@ -44,48 +44,6 @@ python -m venv venv
 . venv/bin/activate
 pip install cython
 python setup.py build_ext --inplace
-```   
-
-### Usage
-
-The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
-#### Unit manipulation syntax:
-
-```python
-from py_ballisticcalc.unit import *
-
-# ways to define value in units
-# 1. old syntax
-unit_in_meter = Distance(100, Distance.Meter)
-# 2. short syntax by Unit type class
-unit_in_meter = Distance.Meter(100)
-# 3. by Unit enum class
-unit_in_meter = Unit.METER(100)
-
-# >>> <Distance>: 100.0 m (3937.0078740157483)
-
-# convert unit
-# 1. by method
-unit_in_yard = unit_in_meter.convert(Distance.Yard)
-# 2. using shift syntax
-unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
-# >>> <Distance>: 109.36132983377078 yd (3937.0078740157483)
-
-# get value in specified units
-# 1. by method
-value_in_km = unit_in_yards.get_in(Distance.Kilometer)
-# 2. by shift syntax
-value_in_km = unit_in_yards >> Distance.Kilometer  # '>>=' operator also supports
-# >>> 0.1
-
-# getting unit raw value:
-rvalue = Distance.Meter(10).raw_value
-rvalue = float(Distance.Meter(10))
-
-# units comparison:
-# supports operators like < > <= >= == !=
-Distance.Meter(100) == Distance.Centimeter(100)  # >>> False, compare two units by raw value
-Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
 ```
 
 ## Usage
