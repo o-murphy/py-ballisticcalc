@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 # pylint: disable=import-error,no-name-in-module
 from .drag_model import DragModel
 from .settings import Settings as Set
-from .unit import TypedUnits, Velocity, Temperature, is_unit, Distance, Angular
+from .unit import TypedUnits, Velocity, Temperature, Distance, Angular
 
 __all__ = ('Weapon', 'Ammo')
 
@@ -58,10 +58,8 @@ class Ammo(TypedUnits):
         # creates temperature modifier in percent at each 15C
         v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
-        v1 = (other_velocity if is_unit(other_velocity)
-              else Set.Units.velocity(other_velocity)) >> Velocity.MPS
-        t1 = (other_temperature if is_unit(other_temperature)
-              else Set.Units.temperature(other_temperature)) >> Temperature.Celsius
+        v1 = Set.Units.velocity(other_velocity) >> Velocity.MPS
+        t1 = Set.Units.temperature(other_temperature) >> Temperature.Celsius
 
         v_delta = math.fabs(v0 - v1)
         t_delta = math.fabs(t0 - t1)
@@ -85,8 +83,7 @@ class Ammo(TypedUnits):
         temp_modifier = self.temp_modifier
         v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
-        t1 = (current_temp if is_unit(current_temp)
-              else Set.Units.temperature(current_temp)) >> Temperature.Celsius
+        t1 = Set.Units.temperature(current_temp) >> Temperature.Celsius
 
         t_delta = t1 - t0
         muzzle_velocity = temp_modifier / (15 / v0) * t_delta + v0

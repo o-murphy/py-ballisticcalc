@@ -3,7 +3,7 @@ import typing
 from libc.math cimport pow
 
 from .settings import Settings as Set
-from .unit import Weight, Distance, is_unit
+from .unit import Weight, Distance
 from .drag_tables import DragTablesSet
 
 __all__ = ('DragModel', )
@@ -63,7 +63,7 @@ cdef class DragModel:
         else:
             raise ValueError('Wrong drag data')
 
-        self.weight = weight if is_unit(weight) else Set.Units.weight(weight)
+        self.weight = Set.Units.weight(weight)
         self.diameter = Set.Units.diameter(diameter)
         self.sectional_density = self._get_sectional_density()
         self.form_factor = self._get_form_factor(self.value)

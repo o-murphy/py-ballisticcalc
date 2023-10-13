@@ -42,17 +42,12 @@ zero_atmo = Atmo.icao(100)
 
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)
-calc.update_elevation()
-
-shot = Shot(1500, 100)
-print(shot.max_range)
-print(zero_atmo.temperature)
 
 current_atmo = Atmo(110, 1000, 15, 72)
-winds = [Wind(2, 90)]
-print(weapon.sight_height)
+current_winds = [Wind(2, 90)]
+shot = Shot(1500, atmo=current_atmo, winds=current_winds)
 
-data = calc.trajectory(shot, current_atmo, winds)
+shot_result = calc.fire(shot, Distance.Yard(100))
 
-for p in data:
+for p in shot_result:
     print(p.formatted())

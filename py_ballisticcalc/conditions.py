@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass, field
 
 from .settings import Settings as Set
-from .unit import Distance, Velocity, Temperature, Pressure, is_unit, TypedUnits, Angular
+from .unit import Distance, Velocity, Temperature, Pressure, TypedUnits, Angular
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
@@ -61,7 +61,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def icao(altitude: [float, Distance] = 0):
         """Creates Atmosphere with ICAO values"""
-        altitude = altitude if is_unit(altitude) else Distance(altitude, Set.Units.distance)
+        altitude = Set.Units.distance(altitude)
         temperature = Temperature.Fahrenheit(
             cIcaoStandardTemperatureR + (altitude >> Distance.Foot)
             * cTemperatureGradient - cIcaoFreezingPointTemperatureR
@@ -153,15 +153,23 @@ class Shot(TypedUnits):
         (Only relevant when Weapon.sight_height != 0)
     """
     max_range: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
-    step: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     zero_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     relative_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
+    atmo: Atmo = field(default=None)
+    winds: list[Wind] = field(default=None)
+
     def __post_init__(self):
+
         if not self.relative_angle:
             self.relative_angle = 0
         if not self.cant_angle:
             self.cant_angle = 0
         if not self.zero_angle:
             self.zero_angle = 0
+
+        if not self.atmo:
+            self.atmo = Atmo.icao()
+        if not self.winds:
+            self.winds = [Wind()]
