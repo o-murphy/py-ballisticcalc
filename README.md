@@ -26,7 +26,7 @@ pip install py-ballisticcalc
 * Use one of the references you need:
 ```shell
 # no binary from PyPi
-pip install py-ballisticcalc --no-binary :all:
+pip install py-ballisticcalc==<version> --no-binary py-ballisticcalc
 
 # master brunch
 pip install git+https://github.com/o-murphy/py_ballisticcalc
