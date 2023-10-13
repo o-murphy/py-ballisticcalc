@@ -4,7 +4,7 @@ cimport cython
 from .conditions import *
 from .munition import *
 from .settings import Settings
-from .trajectory_data import TrajectoryData
+from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import *
 
 __all__ = ('TrajectoryCalc',)
@@ -24,6 +24,9 @@ cdef enum CTrajFlag:
     ZERO_DOWN = 2
     MACH = 4
     RANGE = 8
+    DANGER = 16
+    ZERO = ZERO_UP | ZERO_DOWN
+    ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
 
 cdef class Vector:
     cdef double x
@@ -125,11 +128,17 @@ cdef class TrajectoryCalc:
         return self._zero_angle(self.ammo, weapon, atmo)
 
     def trajectory(self, weapon: Weapon, shot_info: Shot, step: [float, Distance],
-                   filter_flags: int = CTrajFlag.RANGE):
+                   extra_data: bool = False):
         cdef:
             object dist_step = Settings.Units.distance(step)
             object atmo = shot_info.atmo
             list winds = shot_info.winds
+            CTrajFlag filter_flags = CTrajFlag.RANGE
+
+        if extra_data:
+            print('ext', extra_data)
+            dist_step = Distance.Foot(0.2)
+            filter_flags = CTrajFlag.ALL
         return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, dist_step, filter_flags)
 
     cdef _zero_angle(TrajectoryCalc self, object ammo, object weapon, object atmo):

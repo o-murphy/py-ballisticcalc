@@ -63,6 +63,7 @@ class TestInterface(unittest.TestCase):
         self.ammo = Ammo(dm, 1.22, Velocity(2600, Velocity.FPS))
         self.atmosphere = Atmo.icao()
 
+    @unittest.skip(reason="Deprecated: zero_given_elevation")
     def test_zero_given(self):
         # pylint: disable=consider-using-f-string
         output_fmt = "elev: {}\tscope: {}\tzero: {} {}\ttarget: {}\tdistance: {}\tdrop: {}"
@@ -113,24 +114,24 @@ class TestInterface(unittest.TestCase):
                         if err == "Can't found zero crossing points":
                             pass
 
-    # # @unittest.skip(reason="Not implemented: danger_space")
-    # def test_danger_space(self):
-    #     zero_distance = Distance.Yard(100)
-    #     weapon = Weapon(Distance.Inch(4), zero_distance, 11.24)
-    #     calc = Calculator(weapon, self.ammo, self.atmosphere)
-    #     calc.calculate_elevation()
-    #     shot = Shot(1000, Distance.Foot(0.2), zero_angle=calc.elevation)
-    #     shot_result = calc.fire(shot)
-    #     zero_given_elevation = shot_result.zero_given_elevation()
-    #     if len(zero_given_elevation) > 0:
-    #         zero = [p for p in zero_given_elevation if abs(
-    #             (p.distance >> Distance.Yard) - (zero_distance >> Distance.Yard)
-    #         ) <= 1e7][0]
-    #     else:
-    #         raise ArithmeticError
-    #     print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.7)) << Distance.Meter)
-    #     print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.5)) << Distance.Meter)
-    #     print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Inch(10)) << Distance.Yard)
+    @unittest.skip(reason="Not implemented: danger_space")
+    def test_danger_space(self):
+        zero_distance = Distance.Yard(100)
+        weapon = Weapon(Distance.Inch(4), zero_distance, 11.24)
+        calc = Calculator(weapon, self.ammo, self.atmosphere)
+        calc.calculate_elevation()
+        shot = Shot(1000, Distance.Foot(0.2), zero_angle=calc.elevation)
+        shot_result = calc.fire(shot)
+        zero_given_elevation = shot_result.zero_given_elevation()
+        if len(zero_given_elevation) > 0:
+            zero = [p for p in zero_given_elevation if abs(
+                (p.distance >> Distance.Yard) - (zero_distance >> Distance.Yard)
+            ) <= 1e7][0]
+        else:
+            raise ArithmeticError
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.7)) << Distance.Meter)
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.5)) << Distance.Meter)
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Inch(10)) << Distance.Yard)
 
 
 class TestTrajectory(unittest.TestCase):
@@ -206,7 +207,7 @@ class TestTrajectory(unittest.TestCase):
                          atmo=atmosphere,
                          winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, shot_info, Distance.Yard(100), TrajFlag.RANGE.value)
+        data = calc.trajectory(weapon, shot_info, Distance.Yard(100))
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
@@ -230,7 +231,7 @@ class TestTrajectory(unittest.TestCase):
                          winds=[Wind(Velocity(5, Velocity.MPH), -45)])
 
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, shot_info, Distance.Yard(100), TrajFlag.RANGE.value)
+        data = calc.trajectory(weapon, shot_info, Distance.Yard(100))
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
