@@ -146,7 +146,6 @@ class Shot(TypedUnits):
     Stores shot parameters for the trajectory calculation
     
     :param max_range: Downrange distance to stop computing trajectory
-    :param step: Distance between each TrajectoryData row to record
     :param zero_angle: The angle between the barrel and horizontal when zeroed
     :param relative_angle: Elevation adjustment added to zero_angle for a particular shot
     :param cant_angle: Rotation of gun around barrel axis, relative to position when zeroed.
@@ -161,14 +160,10 @@ class Shot(TypedUnits):
     winds: list[Wind] = field(default=None)
 
     def __post_init__(self):
-
         if not self.relative_angle:
             self.relative_angle = 0
         if not self.cant_angle:
             self.cant_angle = 0
-        if not self.zero_angle:
-            self.zero_angle = 0
-
         if not self.atmo:
             self.atmo = Atmo.icao()
         if not self.winds:

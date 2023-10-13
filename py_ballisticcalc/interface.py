@@ -43,11 +43,11 @@ class Calculator:
 
     def fire(self, shot: Shot, trajectory_step: [float, Distance],
              extra_data: bool = False) -> HitResult:
-        """Calculates trajectory with current conditions
+        """Calculates trajectory
         :param shot: shot parameters
         :param trajectory_step: step between trajectory points
-        :param filter_flags: filter trajectory points
-        :return: trajectory table
+        :param extra_data: True => store TrajectoryData for every step;
+            False => store TrajectoryData only for each trajectory_step
         """
         step = Settings.Units.distance(trajectory_step)
         self._calc = TrajectoryCalc(self.ammo)
@@ -57,21 +57,16 @@ class Calculator:
         return HitResult(data, extra_data)
 
     # @staticmethod
-    # def danger_space(trajectory: TrajectoryData, target_height: [float, Distance]) -> Distance:
-    #     """Given a TrajectoryData row, we have the angle of travel
-    #     of bullet at that point in its trajectory, which is at distance *d*.
-    #     "Danger Space" is defined for *d* and for a target of height
-    #     `targetHeight` as the error range for the target, meaning
-    #     if the trajectory hits the center of the target when
-    #     the target is exactly at *d*, then "Danger Space" is the distance
-    #     before or after *d* across which the bullet would still hit somewhere on the target.
+    # def danger_space(trajectory: HitResult, target_height: [float, Distance]):
+    #     """For a given target height, danger-space is the change in distance
+    #     to target across which a shot that hits center at the indicated distance
+    #     would still hit somewhere on the target.
     #     (This ignores windage; vertical only.)
-    #
-    #     :param trajectory: single point from trajectory table
-    #     :param target_height: error range for the target
-    #     :return: danger space for target_height specified
+    
+    #     :param trajectory: TrajectoryData
+    #     :param target_height: 
     #     """
-    #
+    
     #     target_height = (target_height if is_unit(target_height)
     #                      else Set.Units.target_height(target_height)) >> Distance.Yard
     #     traj_angle_tan = math.tan(trajectory.angle >> Angular.Radian)
