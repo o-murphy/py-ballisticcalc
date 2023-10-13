@@ -57,7 +57,7 @@ class Calculator:
         return HitResult(data, extra_data)
 
     # @staticmethod
-    # def danger_space(trajectory: HitResult, target_height: [float, Distance], look_angle: [float, Angular]):
+    # def danger_space(trajectory: HitResult, target_height: [float, Distance]):
     #     """For a given target height, danger-space is the change in distance
     #     to target across which a shot that hits center at the indicated distance
     #     would still hit somewhere on the target.
@@ -65,5 +65,9 @@ class Calculator:
     
     #     :param trajectory: TrajectoryData
     #     :param target_height: 
-    #     :param look_angle:
     #     """
+    
+    #     target_height = (target_height if is_unit(target_height)
+    #                      else Set.Units.target_height(target_height)) >> Distance.Yard
+    #     traj_angle_tan = math.tan(trajectory.angle >> Angular.Radian)
+    #     return Distance.Yard(-(target_height / traj_angle_tan))
