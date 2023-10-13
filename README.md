@@ -1,38 +1,50 @@
 # BallisticCalculator
-#### LGPL library for small arms ballistic calculations (Python 3.9+)
+LGPL library for small arms ballistic calculations (Python 3.9+)
 
-## Table of contents
-* [Installation](#installation)
-* [Usage](#usage)
+### Table of contents
+* **[Installation](#installation)**
+  * [Latest stable](#latest-stable-release-from-pypi)
+  * [From sources](#installing-from-sources)
+  * [Clone and build](#clone-and-build)
+* **[Usage](#usage)**
   * [Units of measure](#unit-manipulation-syntax)
   * [An example of calculations](#an-example-of-calculations)
   * [Output example](#example-of-the-formatted-output)
-* [Contributors](#contributors)
-* [About project](#about-project)
+* **[Older versions]()**
+  * [v1.0.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.0.12)
+* **[Contributors](#contributors)**
+* **[About project](#about-project)**
 
-## Installation
-**Stable release from pypi, installing from binaries**
-
-(Contains c-extensions which offer higher performance)
+### Installation
+#### Latest stable release from pypi**
 ```shell
 pip install py-ballisticcalc
 ```
-
-**Build wheel package for your interpreter version by pypi sdist**
-
-Download and install MSVC or GCC depending on target platform
+#### Installing from sources
+**MSVC** or **GCC** required
+* Download and install **MSVC** or **GCC** depending on target platform
+* Use one of the references you need:
 ```shell
-pip install Cython>=3.0.0a10 
+# no binary from PyPi
 pip install py-ballisticcalc --no-binary :all:
+
+# master brunch
+pip install git+https://github.com/o-murphy/py_ballisticcalc
+
+# specific branch
+pip install git+https://github.com/o-murphy/py_ballisticcalc.git@<target_branch_name>
 ```
 
-**Also use `git clone` to build your own package**
-
-(Contains cython files to build your own c-extensions)
+#### Clone and build
+**MSVC** or **GCC** required
 ```shell
 git clone https://github.com/o-murphy/py_ballisticcalc
-```   
-
+cd py_ballisticcalc
+python -m venv venv
+. venv/bin/activate
+pip install cython
+python setup.py build_ext --inplace
+```
 
 ## Usage
 
@@ -79,19 +91,21 @@ Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
 #### An example of calculations
 
 ```python
-from py_ballisticcalc import *
+from py_ballisticcalc import Velocity, Temperature, Distance
+from py_ballisticcalc import DragModel, TableG7
+from py_ballisticcalc import Ammo, Atmo, Wind
+from py_ballisticcalc import Weapon, Shot, Calculator
 from py_ballisticcalc import Settings as Set
 
+
 # set global library settings
-Set.Units.Mach = Velocity.FPS
+Set.Units.velocity = Velocity.FPS
 Set.Units.temperature = Temperature.Celsius
-Set.Units.distance = Distance.Meter
+# Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
-# set maximum inner Calculator step size, larger is faster, but accuracy is going down 
-Set.set_max_calc_step_size(Distance.Foot(1))  # same as default
-# enable muzzle velocity correction by powder temperature
-Set.USE_POWDER_SENSITIVITY = True  # default False
+Set.set_max_calc_step_size(Distance.Foot(1))
+Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
 
 # define params with default units
 weight, diameter = 168, 0.308
@@ -104,21 +118,19 @@ dm = DragModel(0.223, TableG7, weight, diameter)
 ammo = Ammo(dm, length, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
 
-zero_atmo = Atmo.icao()
+zero_atmo = Atmo.icao(100)
 
 # defining calculator instance
 calc = Calculator(weapon, ammo, zero_atmo)
-calc.update_elevation()
 
-shot = Shot(1500, 100)
+current_atmo = Atmo(110, 1000, 15, 72)
+current_winds = [Wind(2, 90)]
+shot = Shot(1500, atmo=current_atmo, winds=current_winds)
 
-current_atmo = Atmo(100, 1000, 15, 72)
-winds = [Wind(2, Angular.OClock(3))]
+shot_result = calc.fire(shot, trajectory_step=Distance.Yard(100))
 
-data = calc.trajectory(shot, current_atmo, winds)
-
-for p in data:
-  print(p.formatted())
+for p in shot_result:
+    print(p.formatted())
 ```
 #### Example of the formatted output:
 ```shell

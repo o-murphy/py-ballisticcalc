@@ -5,11 +5,14 @@ Use-full types for units of measurement conversion for ballistics calculations
 import typing
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple, Callable
+from typing import NamedTuple
+from dataclasses import dataclass
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'is_unit', 'TypedUnits')
+           'Energy', 'Weight',
+           # 'is_unit',
+           'TypedUnits')
 
 
 class Unit(IntEnum):
@@ -33,7 +36,7 @@ class Unit(IntEnum):
     NAUTICAL_MILE = 14
     MILLIMETER = 15
     CENTIMETER = 16
-    METER: Callable = 17
+    METER = 17
     KILOMETER = 18
     LINE = 19
 
@@ -88,12 +91,14 @@ class Unit(IntEnum):
         """
         return UnitPropsDict[self].symbol
 
-    def __call__(self: 'Unit', value: [int, float]) -> 'AbstractUnit':
+    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit']) -> 'AbstractUnit':
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
+        if isinstance(value, AbstractUnit):
+            return value << self
         if 0 <= self < 10:
             obj = Angular(value, self)
         elif 10 <= self < 20:
@@ -129,6 +134,7 @@ UnitPropsDict = {
     Unit.THOUSAND: UnitProps('thousand', 2, 'ths'),
     Unit.INCHES_PER_100YD: UnitProps('inches/100yd', 2, 'in/100yd'),
     Unit.CM_PER_100M: UnitProps('cm/100m', 2, 'cm/100m'),
+    Unit.O_CLOCK: UnitProps('h', 2, 'h'),
 
     Unit.INCH: UnitProps("inch", 1, "inch"),
     Unit.FOOT: UnitProps("foot", 2, "ft"),
@@ -588,6 +594,7 @@ class Energy(AbstractUnit):
     Joule = Unit.JOULE
 
 
+@dataclass
 class TypedUnits:  # pylint: disable=too-few-public-methods
     """
     Abstract class to apply auto-conversion values to
@@ -599,10 +606,10 @@ class TypedUnits:  # pylint: disable=too-few-public-methods
         converts value to specified units by type-hints in inherited dataclass
         """
 
-        fields = self.__getattribute__('__dataclass_fields__')
-
-        if key in fields and not isinstance(value, AbstractUnit):
-            default_factory = fields[key].default_factory
+        _fields = self.__getattribute__('__dataclass_fields__')
+        # fields(self.__class__)[0].name
+        if key in _fields and not isinstance(value, AbstractUnit):
+            default_factory = _fields[key].default_factory
             if isinstance(default_factory, typing.Callable):
                 if isinstance(value, Unit):
                     value = None
@@ -612,18 +619,18 @@ class TypedUnits:  # pylint: disable=too-few-public-methods
         super().__setattr__(key, value)
 
 
-def is_unit(obj: [AbstractUnit, float, int]):
-    """
-    Check if obj is inherited by AbstractUnit
-    :return: False - if float or int
-    """
-    if isinstance(obj, AbstractUnit):
-        return True
-    if isinstance(obj, (float, int)):
-        return False
-    if obj is None:
-        return None
-    raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
+# def is_unit(obj: [AbstractUnit, float, int]):
+#     """
+#     Check if obj is inherited by AbstractUnit
+#     :return: False - if float or int
+#     """
+#     if isinstance(obj, AbstractUnit):
+#         return True
+#     if isinstance(obj, (float, int)):
+#         return False
+#     if obj is None:
+#         return None
+#     raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
 
 
 # Default units

@@ -34,5 +34,10 @@ jobs:
         # python setup.py build_ext --inplace
     - name: Run unittest tests
       run: |
-        # python -m unittest discover -s . -p "tests*.py"
-        pytest tests --no-header --no-summary -v
+        if pytest tests --no-header --no-summary -v; then
+          echo "Pytest succeeded."
+        else
+          echo "Pytest failed, running without capture"
+          # Add your additional commands here
+          pytest tests --no-header --no-summary -v -s
+        fi

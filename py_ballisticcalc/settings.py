@@ -1,6 +1,7 @@
 """Global settings of the py_ballisticcalc library"""
+import logging
 
-from .unit import Unit, Distance, is_unit
+from .unit import Unit, Distance
 
 __all__ = ('Settings',)
 
@@ -35,7 +36,9 @@ class Settings:  # pylint: disable=too-few-public-methods
         """_MAX_CALC_STEP_SIZE setter
         :param value: [float, Distance] maximum calculation step (used internally)
         """
+        logging.warning("Settings._MAX_CALC_STEP_SIZE: change this property "
+                        "only if you know what you are doing "
+                        "to big step can corrupt calculation accuracy")
         if not isinstance(value, (Distance, float, int)):
             raise ValueError("MIN_CALC_STEP_SIZE have to be a type of 'Distance'")
-        cls._MAX_CALC_STEP_SIZE = (value if is_unit(value)
-                                   else cls.Units.distance(value).raw_value) >> Distance.Foot
+        cls._MAX_CALC_STEP_SIZE = cls.Units.distance(value) >> Distance.Foot

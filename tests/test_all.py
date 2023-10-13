@@ -30,6 +30,31 @@ class TestMBC(unittest.TestCase):
         self.assertEqual(ret[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
         self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.15771258594668947})
 
+    def test_mbc_valid(self):
+        # Litz's multi-bc table comversion to CDM, 338LM 285GR HORNADY ELD-M
+        mbc = MultiBC(
+            drag_table=TableG7,
+            weight=Weight.Grain(285),
+            diameter=Distance.Inch(0.338),
+            mbc_table=[{'BC': p[0], 'V': Velocity.MPS(p[1])} for p in ((0.417, 745), (0.409, 662), (0.4, 580))],
+        )
+        cdm = mbc.cdm
+        cds = [p['CD'] for p in cdm]
+        machs = [p['Mach'] for p in cdm]
+
+        reference = (
+            (1, 0.3384895315),
+            (2, 0.2573873416),
+            (3, 0.2069547831),
+            (4, 0.1652052415),
+            (5, 0.1381406102),
+        )
+
+        for mach, cd in reference:
+            idx = machs.index(mach)
+            with self.subTest(mach=mach):
+                self.assertAlmostEqual(cds[idx], cd, 3)
+
 
 class TestInterface(unittest.TestCase):
 
@@ -38,6 +63,7 @@ class TestInterface(unittest.TestCase):
         self.ammo = Ammo(dm, 1.22, Velocity(2600, Velocity.FPS))
         self.atmosphere = Atmo.icao()
 
+    @unittest.skip(reason="Deprecated: zero_given_elevation")
     def test_zero_given(self):
         # pylint: disable=consider-using-f-string
         output_fmt = "elev: {}\tscope: {}\tzero: {} {}\ttarget: {}\tdistance: {}\tdrop: {}"
@@ -60,43 +86,52 @@ class TestInterface(unittest.TestCase):
         for sh in range(0, 5):
 
             for reference_distance in range(100, 600, 200):
-                    target_distance = Distance.Yard(reference_distance)
-                    sight_height = Distance.Inch(sh)
-                    weapon = Weapon(sight_height, target_distance, 11.24)
-                    calc = Calculator(weapon, self.ammo, self.atmosphere)
-                    calc.weapon.sight_height = Distance.Inch(sh)
+                target_distance = Distance.Yard(reference_distance)
+                sight_height = Distance.Inch(sh)
+                weapon = Weapon(sight_height, target_distance, 11.24)
+                calc = Calculator(weapon, self.ammo, self.atmosphere)
+                calc.weapon.sight_height = Distance.Inch(sh)
 
-                    with self.subTest(zero=reference_distance, sh=sh):
-                        try:
-                            calc.update_elevation()
-                            shot = Shot(1000, Distance.Foot(0.2), sight_angle=calc.elevation)
-                            zero_crossing_points = calc.zero_given_elevation(shot)
-                            print_output(zero_crossing_points, calc.elevation)
-                        except ArithmeticError as err:
-                            if err == "Can't found zero crossing points":
-                                pass
+                with self.subTest(zero=reference_distance, sh=sh):
+                    try:
+                        calc.calculate_elevation()
+                        shot = Shot(1000, zero_angle=calc.elevation)
+                        shot_result = calc.fire(shot, Distance.Foot(0.2))
+                        zero_crossing_points = shot_result.zero_given_elevation()
+                        print_output(zero_crossing_points, calc.elevation)
+                    except ArithmeticError as err:
+                        if err == "Can't found zero crossing points":
+                            pass
 
-                    with self.subTest(zero=reference_distance, sh=sh, elev=0):
-                        try:
-                            shot = Shot(1000, Distance.Foot(0.2), sight_angle=0)
-                            zero_crossing_points = calc.zero_given_elevation(shot)
-                            print_output(zero_crossing_points, 0)
-                        except ArithmeticError as err:
-                            if err == "Can't found zero crossing points":
-                                pass
+                with self.subTest(zero=reference_distance, sh=sh, elev=0):
+                    try:
+                        calc.calculate_elevation()
+                        shot = Shot(1000, zero_angle=0)
+                        shot_result = calc.fire(shot, Distance.Foot(0.2))
+                        zero_crossing_points = shot_result.zero_given_elevation()
+                        print_output(zero_crossing_points, 0)
+                    except ArithmeticError as err:
+                        if err == "Can't found zero crossing points":
+                            pass
 
-    @unittest.skip(reason="Fixme: danger_space")
+    @unittest.skip(reason="Not implemented: danger_space")
     def test_danger_space(self):
-        winds = [Wind()]
-        weapon = Weapon(Distance.Inch(0), Distance.Yard(400), 11.24)
+        zero_distance = Distance.Yard(100)
+        weapon = Weapon(Distance.Inch(4), zero_distance, 11.24)
         calc = Calculator(weapon, self.ammo, self.atmosphere)
-        calc.update_elevation()
-        print('aim', calc.elevation << Angular.MOA)
-        zero_given = calc.zero_given_elevation(calc.elevation, winds)
-        print(zero_given.distance << Distance.Yard)
-        print(calc.danger_space(zero_given, Distance.Meter(1.7)) << Distance.Meter)
-        print(calc.danger_space(zero_given, Distance.Meter(1.5)) << Distance.Meter)
-        print(calc.danger_space(zero_given, Distance.Inch(10)) << Distance.Yard)
+        calc.calculate_elevation()
+        shot = Shot(1000, Distance.Foot(0.2), zero_angle=calc.elevation)
+        shot_result = calc.fire(shot)
+        zero_given_elevation = shot_result.zero_given_elevation()
+        if len(zero_given_elevation) > 0:
+            zero = [p for p in zero_given_elevation if abs(
+                (p.distance >> Distance.Yard) - (zero_distance >> Distance.Yard)
+            ) <= 1e7][0]
+        else:
+            raise ArithmeticError
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.7)) << Distance.Meter)
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Meter(1.5)) << Distance.Meter)
+        print(zero.distance << Distance.Yard, calc.danger_space(zero, Distance.Inch(10)) << Distance.Yard)
 
 
 class TestTrajectory(unittest.TestCase):
@@ -108,10 +143,10 @@ class TestTrajectory(unittest.TestCase):
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
-        sight_angle = calc.sight_angle(weapon, atmosphere)
+        zero_angle = calc.zero_angle(weapon, atmosphere)
 
-        self.assertAlmostEqual(sight_angle >> Angular.Radian, 0.001651, 6,
-                               f'TestZero1 failed {sight_angle >> Angular.Radian:.10f}')
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001651, 6,
+                               f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
 
     def test_zero2(self):
         dm = DragModel(0.223, TableG7, 69, 0.223)
@@ -120,10 +155,10 @@ class TestTrajectory(unittest.TestCase):
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
-        sight_angle = calc.sight_angle(weapon, atmosphere)
+        zero_angle = calc.zero_angle(weapon, atmosphere)
 
-        self.assertAlmostEqual(sight_angle >> Angular.Radian, 0.001228, 6,
-                               f'TestZero2 failed {sight_angle >> Angular.Radian:.10f}')
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001228, 6,
+                               f'TestZero2 failed {zero_angle >> Angular.Radian:.10f}')
 
     def custom_assert_equal(self, a, b, accuracy, name):
         with self.subTest(name=name):
@@ -167,10 +202,12 @@ class TestTrajectory(unittest.TestCase):
         ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), Distance(100, Distance.Yard))
         atmosphere = Atmo.icao()
-        shot_info = Shot(1000, 100, sight_angle=Angular(0.001228, Angular.Radian))
-        wind = [Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))]
+        shot_info = Shot(1000,
+                         zero_angle=Angular(0.001228, Angular.Radian),
+                         atmo=atmosphere,
+                         winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, atmosphere, shot_info, wind)
+        data = calc.trajectory(weapon, shot_info, Distance.Yard(100))
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
@@ -189,15 +226,12 @@ class TestTrajectory(unittest.TestCase):
         dm = DragModel(0.223, TableG7, 168, 0.308)
         ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
         weapon = Weapon(2, 100, 11.24)
-        atmosphere = Atmo.icao()
         shot_info = Shot(Distance.Yard(1000),
-                         Distance.Yard(100),
-                         sight_angle=Angular.MOA(4.221)
-                         )
-        wind = [Wind(Velocity(5, Velocity.MPH), -45)]
+                         zero_angle=Angular.MOA(4.221),
+                         winds=[Wind(Velocity(5, Velocity.MPH), -45)])
 
         calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(weapon, atmosphere, shot_info, wind)
+        data = calc.trajectory(weapon, shot_info, Distance.Yard(100))
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
@@ -219,11 +253,11 @@ class TestPerformance(unittest.TestCase):
         self.ammo = Ammo(self.dm, 1.282, 2750)
         self.weapon = Weapon(2, 100, 11.24)
         self.atmo = Atmo.icao()
-        self.shot = Shot(Distance.Yard(1000),
-                         Distance.Yard(100),
-                         sight_angle=Angular.MOA(4.221)
-                         )
-        self.wind = [Wind(Velocity(5, Velocity.MPH), -45)]
+        self.shot = Shot(
+            Distance.Yard(1000),
+            zero_angle=Angular.MOA(4.221),
+            winds=[Wind(Velocity(5, Velocity.MPH), -45)]
+        )
 
         self.calc = TrajectoryCalc(self.ammo)
 
@@ -231,10 +265,10 @@ class TestPerformance(unittest.TestCase):
         self.assertTrue(self.calc)
 
     def test_elevation_performance(self):
-        self.calc.sight_angle(self.weapon, self.atmo)
+        self.calc.zero_angle(self.weapon, self.atmo)
 
     def test_path_performance(self):
-        d = self.calc.trajectory(self.weapon, self.atmo, self.shot, self.wind)
+        d = self.calc.trajectory(self.weapon, self.shot, Distance.Foot(0.2))
         # [print(p.formatted()) for p in d]
 
 

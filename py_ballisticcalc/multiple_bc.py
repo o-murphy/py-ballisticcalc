@@ -7,7 +7,7 @@ from .conditions import Atmo
 # pylint: disable=import-error,no-name-in-module
 from .drag_model import make_data_points
 from .settings import Settings as Set
-from .unit import Distance, Weight, Velocity, is_unit
+from .unit import Distance, Weight, Velocity
 
 __all__ = ('MultiBC', )
 
@@ -53,7 +53,9 @@ class MultiBC:  # pylint: disable=too-few-public-methods
     def _parse_mbc(self, mbc_table):
         table = []
         for p in mbc_table:
-            v = (p['V'] if is_unit(p['V']) else Set.Units.velocity(p['V'])) >> Velocity.MPS
+            print(p['V'], Set.Units.velocity)
+            print(Set.Units.velocity(p['V']))
+            v = Set.Units.velocity(p['V']) >> Velocity.MPS
             mbc = MultiBCRow(p['BC'], v)
             table.append(mbc)
         return sorted(table, reverse=True)
