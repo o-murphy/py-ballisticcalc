@@ -12,7 +12,7 @@ __all__ = ('TrajectoryCalc',)
 cdef double cZeroFindingAccuracy = 0.000005
 cdef double cMinimumVelocity = 50.0
 cdef double cMaximumDrop = -15000
-cdef int cMaxIterations = 10
+cdef int cMaxIterations = 20
 cdef double cGravityConstant = -32.17405
 
 cdef struct CurvePoint:
@@ -187,7 +187,8 @@ cdef class TrajectoryCalc:
 
                 if fabs(range_vector.x - zero_distance) < 0.5 * calc_step:
                     zero_finding_error = fabs(range_vector.y - height_at_zero)
-                    barrel_elevation -= (range_vector.y - height_at_zero) / range_vector.x
+                    if zero_finding_error > cZeroFindingAccuracy:
+                        barrel_elevation -= (range_vector.y - height_at_zero) / range_vector.x
                     break
 
             iterations_count += 1

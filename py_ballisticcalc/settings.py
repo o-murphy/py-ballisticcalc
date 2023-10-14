@@ -37,8 +37,8 @@ class Settings:  # pylint: disable=too-few-public-methods
         :param value: [float, Distance] maximum calculation step (used internally)
         """
         logging.warning("Settings._MAX_CALC_STEP_SIZE: change this property "
-                        "only if you know what you are doing "
-                        "to big step can corrupt calculation accuracy")
+                        "only if you know what you are doing; "
+                        "too big step can corrupt calculation accuracy")
         if not isinstance(value, (Distance, float, int)):
             raise ValueError("MIN_CALC_STEP_SIZE have to be a type of 'Distance'")
         cls._MAX_CALC_STEP_SIZE = cls.Units.distance(value) >> Distance.Foot
