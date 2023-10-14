@@ -268,7 +268,7 @@ class TestPerformance(unittest.TestCase):
         self.calc.zero_angle(self.weapon, self.atmo)
 
     def test_path_performance(self):
-        d = self.calc.trajectory(self.weapon, self.shot, Distance.Foot(0.2))
+        d = self.calc.trajectory(self.weapon, self.shot, Distance.Yard(100))
         # [print(p.formatted()) for p in d]
 
 
