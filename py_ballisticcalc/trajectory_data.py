@@ -1,5 +1,6 @@
 """Implements a point of trajectory class in applicable data types"""
 import logging
+import math
 from dataclasses import dataclass, field
 from enum import Flag
 from typing import NamedTuple
@@ -117,6 +118,12 @@ class TrajectoryData(NamedTuple):
         )
 
 
+class DangerSpace(NamedTuple):
+    at_range: Distance
+    begin: Distance
+    end: Distance
+
+
 @dataclass(frozen=True)
 class HitResult:
     """Results of the shot"""
@@ -145,6 +152,60 @@ class HitResult:
             raise ArithmeticError("Can't found zero crossing points")
         return data
 
+    def danger_space(self, at_range: Distance, target_height: Distance, look_angle: Angular = Angular(0, Angular.Degree)) -> DangerSpace:
+        """
+        Assume that the trajectory hits the center of a target at any distance.  Now we want to know
+           how much ranging error we can tolerate if the critical region of the target has height *h*.
+           I.e., we want to know how far forward and backward along the line of sight we can move a target
+           such that the trajectory is still within *h*/2 of the original drop.
+
+        :param at_range: Danger space is calculated for a target centered at this distance
+        :param target_height: Target height (*h*) determines danger space
+        :param look_angle: Ranging errors occur along the look angle to the target
+        """
+        self.__check_extra__()
+        # Get index of first trajectory point with distance >= at_range
+        i = next((i for i in range(len(self.trajectory)) if self.trajectory[i].distance >= at_range), -1)
+        if i < 0:
+            raise ArithmeticError(f"Calculated trajectory doesn't reach requested distance {at_range}")
+
+        target_height_half = target_height.raw_value / 2.0
+        tan_look_angle = math.tan(look_angle >> Angular.Radian)
+        # Target_center height shifts along look_angle as:
+        #   target_center' = target_center + (.distance' - .distance) * tan(look_angle)
+
+        def findBeginDanger(rownum: int) -> Distance:
+            """
+            Beginning of danger space is last .distance' < .distance where 
+                |target_center - .drop'| >= target_height/2
+            :param rownum: Index of the trajectory point for which we are calculating danger space
+            :return: Distance marking beginning of danger space
+            """
+            center_row = self.trajectory[rownum]
+            for i in range(rownum-1, 0, -1):
+                prime_row = self.trajectory[i]
+                target_center = center_row.drop.raw_value + tan_look_angle * (prime_row.distance.raw_value - center_row.distance.raw_value)
+                if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
+                    return prime_row.distance
+            return Distance.Yard(0)
+
+        def findEndDanger(rownum: int) -> Distance:
+            """
+            End of danger space is first .distance' > .distance where 
+                |target_center - .drop'| >= target_height/2
+            :param rownum: Index of the trajectory point for which we are calculating danger space
+            :return: Distance marking end of danger space
+            """
+            center_row = self.trajectory[rownum]
+            for i in range(rownum+1, len(self.trajectory)):
+                prime_row = self.trajectory[i]
+                target_center = center_row.drop.raw_value + tan_look_angle * (prime_row.distance.raw_value - center_row.distance.raw_value)
+                if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
+                    return prime_row.distance
+            return None
+
+        return DangerSpace(self.trajectory[i].distance, findBeginDanger(i), findEndDanger(i))
+    
     @property
     def dataframe(self):
         """:return: the trajectory table as a DataFrame"""
