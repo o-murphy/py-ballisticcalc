@@ -29,15 +29,15 @@ class TestDangerSpace(unittest.TestCase):
         )
 
         self.assertAlmostEqual(
-            round(danger_space.begin >> Distance.Yard, Distance.Yard.accuracy), 392.833, 2)
+            round(danger_space.begin.distance >> Distance.Yard, Distance.Yard.accuracy), 392.833, 2)
         self.assertAlmostEqual(
-            round(danger_space.end >> Distance.Yard, Distance.Yard.accuracy), 579.499, 2)
+            round(danger_space.end.distance >> Distance.Yard, Distance.Yard.accuracy), 579.499, 2)
 
         danger_space = self.shot_result.danger_space(
             Distance.Yard(500), Distance.Inch(10), self.look_angle
         )
 
         self.assertAlmostEqual(
-            round(danger_space.begin >> Distance.Yard, Distance.Yard.accuracy), 484.367, 2)
+            round(danger_space.begin.distance >> Distance.Yard, Distance.Yard.accuracy), 484.367, 2)
         self.assertAlmostEqual(
-            round(danger_space.end >> Distance.Yard, Distance.Yard.accuracy), 514.967, 2)
+            round(danger_space.end.distance >> Distance.Yard, Distance.Yard.accuracy), 514.967, 2)
