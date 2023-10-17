@@ -1,6 +1,7 @@
 """Implements a point of trajectory class in applicable data types"""
 import logging
 import math
+import typing
 from dataclasses import dataclass, field
 from enum import Flag
 from typing import NamedTuple
@@ -73,7 +74,7 @@ class TrajectoryData(NamedTuple):
     angle: Angular  # Trajectory angle
     energy: Energy
     ogw: Weight
-    flag: [TrajFlag, int]
+    flag: typing.Union[TrajFlag, int]
 
     def formatted(self) -> tuple:
         """
