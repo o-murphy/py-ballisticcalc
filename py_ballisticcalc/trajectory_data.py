@@ -3,7 +3,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from enum import Flag
-from typing import NamedTuple, Callable
+from typing import NamedTuple
 
 from .settings import Settings as Set
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit
@@ -23,6 +23,10 @@ except ImportError as error:
 __all__ = ('TrajectoryData', 'HitResult', 'TrajFlag',
            # 'trajectory_plot', 'trajectory_dataframe'
            )
+
+
+PLOT_FONT_HEIGHT = 72
+PLOT_FONT_SIZE = 552 / PLOT_FONT_HEIGHT
 
 
 class TrajFlag(Flag):
@@ -124,19 +128,32 @@ class DangerSpace(NamedTuple):
     begin: TrajectoryData
     end: TrajectoryData
 
-    def overlay(self, df):
+    def overlay(self, ax: 'Axes'):
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
-        else:
-            begin = self.begin.distance >> Set.Units.distance
-            begin_drop = self.begin.drop >> Set.Units.drop
-            end = self.end.distance >> Set.Units.distance
-            end_drop = self.end.drop >> Set.Units.drop
-            h = (self.target_height >> Set.Units.drop) / 2
-            df.plot([begin, begin], [begin_drop+h, begin_drop-h])
-            df.plot([end, end], [end_drop+h, end_drop-h])
+        from matplotlib import patches
 
+        begin_dist = self.begin.distance >> Set.Units.distance
+        begin_drop = self.begin.drop >> Set.Units.drop
+        end_dist = self.end.distance >> Set.Units.distance
+        end_drop = self.end.drop >> Set.Units.drop
+        range_dist = self.at_range.distance >> Set.Units.distance
+        range_drop = self.at_range.drop >> Set.Units.drop
+        h = (self.target_height >> Set.Units.drop)
 
+        ax.plot((range_dist, range_dist), (range_drop + h / 2, range_drop - h / 2),
+                color='r', linestyle=':')
+        vertices = (
+            (begin_dist, begin_drop), (end_dist, end_drop + h),
+            (end_dist, end_drop), (begin_dist, begin_drop - h)
+        )
+
+        polygon = patches.Polygon(vertices, closed=True,
+                                  edgecolor='none', facecolor='r', alpha=0.5)
+        ax.add_patch(polygon)
+        ax.text(begin_dist, end_drop - 2 * PLOT_FONT_HEIGHT,
+                f"Danger space\nat {self.at_range.distance << Set.Units.distance}",
+                fontsize=PLOT_FONT_SIZE)
 
 
 @dataclass(frozen=True)
@@ -252,7 +269,7 @@ class HitResult:
         trajectory = [p.in_def_units() for p in self]
         return pd.DataFrame(trajectory, columns=col_names)
 
-    def plot(self):
+    def plot(self) -> 'Axes':
         """:return: the graph of the trajectory"""
 
         if matplotlib is None:
@@ -260,7 +277,7 @@ class HitResult:
         if not self.extra:
             logging.warning("HitResult.plot: To show extended data"
                             "Use Calculator.fire(..., extra_data=True)")
-
+        font_size = 552 / 72.0
         df = self.dataframe
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
 
@@ -269,16 +286,31 @@ class HitResult:
             if TrajFlag(p.flag) & TrajFlag.ZERO:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
                         [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
+                ax.text((p.distance >> Set.Units.distance) + 10, df['drop'].min() + 10,
+                        f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
+                        fontsize=PLOT_FONT_SIZE, rotation=90)
             if TrajFlag(p.flag) & TrajFlag.MACH:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--', label='mach')
-                ax.text(p.distance >> Set.Units.distance, df['drop'].min(), " Mach")
+                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--')
+                ax.text((p.distance >> Set.Units.distance) + 10, df['drop'].min() + 10, "Mach",
+                        fontsize=PLOT_FONT_SIZE, rotation=90)
 
         # # scope line
         x_values = [0, df.distance.max()]  # Adjust these as needed
         y_values = [0, 0]  # Adjust these as needed
-        ax.plot(x_values, y_values, linestyle='--', label='scope line')
-        ax.text(df.distance.max() - 100, -100, "Scope")
+        ax.plot(x_values, y_values, linestyle='--', color='purple')
+        ax.text(df.distance.min() + 20, - PLOT_FONT_HEIGHT,
+                "Scope adjustment line", fontsize=font_size, color='purple')
+
+        # TODO: get the angles of zero_look, barel elevation etc on plot
+        # ax.plot([0, df.distance.max() * math.cos(Angular.Mil(2) >> Angular.Degree)],
+        #         [0, df.distance.max() * math.sin(Angular.Mil(2) >> Angular.Degree)],
+        #         linestyle=':', color='g')
+        # ax.text(df.distance.min() + 20, + PLOT_FONT_HEIGHT, "Scope zeroing line",
+        #         fontsize=font_size, color='g',
+        #         rotation=(Angular.Mil(2) >> Angular.Degree) * 10)
+        #
+        # print('rot', Angular.Mil(2) << Angular.Degree)
 
         df.plot(x='distance', xlabel=Set.Units.distance.symbol,
                 y=['velocity'], ylabel=Set.Units.velocity.symbol,
