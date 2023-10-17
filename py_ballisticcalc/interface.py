@@ -55,15 +55,3 @@ class Calculator:
             shot.zero_angle = self._elevation
         data = self._calc.trajectory(self.weapon, shot, step, extra_data)
         return HitResult(data, extra_data)
-
-    # @staticmethod
-    # def danger_space(trajectory: HitResult, target_height: [float, Distance], look_angle: [float, Angular]):
-    #     """For a given target height, danger-space is the change in distance
-    #     to target across which a shot that hits center at the indicated distance
-    #     would still hit somewhere on the target.
-    #     (This ignores windage; vertical only.)
-    
-    #     :param trajectory: TrajectoryData
-    #     :param target_height: 
-    #     :param look_angle:
-    #     """
