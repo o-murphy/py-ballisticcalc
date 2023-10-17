@@ -137,7 +137,7 @@ class DangerSpace(NamedTuple):
         end_drop = self.end.drop >> Set.Units.drop
         range_dist = self.at_range.distance >> Set.Units.distance
         range_drop = self.at_range.drop >> Set.Units.drop
-        h = (self.target_height >> Set.Units.drop)
+        h = self.target_height >> Set.Units.drop
 
         ax.plot((range_dist, range_dist), (range_drop + h / 2, range_drop - h / 2),
                 color='r', linestyle=':')

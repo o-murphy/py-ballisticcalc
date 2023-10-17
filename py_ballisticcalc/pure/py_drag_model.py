@@ -1,7 +1,7 @@
 import typing
 from dataclasses import dataclass
 
-from math import pow
+import math
 
 from ..settings import Settings as Set
 from ..unit import Weight, Distance
@@ -75,4 +75,4 @@ def make_data_points(drag_table: typing.Iterable) -> list:
 
 
 def sectional_density(weight: float, diameter: float):
-    return weight / pow(diameter, 2) / 7000
+    return weight / math.pow(diameter, 2) / 7000

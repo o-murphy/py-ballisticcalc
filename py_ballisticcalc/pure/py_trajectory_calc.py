@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from math import sqrt, fabs, pow, sin, cos, log10, floor, atan
+import math
 from typing import NamedTuple
 
-from ..conditions import *
-from ..munition import *
+from ..conditions import Atmo, Shot, Wind
+from ..munition import Ammo, Weapon
 from ..settings import Settings
 from ..trajectory_data import TrajectoryData, TrajFlag
-from ..unit import *
+from ..unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
 
-__all__ = ('TrajectoryCalc',)
+__all__ = ('TrajectoryCalc', )
 
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
@@ -30,7 +30,7 @@ class Vector:
     z: float
 
     def magnitude(self):
-        return sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+        return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 
     def mul_by_const(self, a: float):
         return Vector(self.x * a, self.y * a, self.z * a)
@@ -49,7 +49,7 @@ class Vector:
 
     def normalize(self):
         m = self.magnitude()
-        if fabs(m) < 1e-10:
+        if math.fabs(m) < 1e-10:
             return Vector(self.x, self.y, self.z)
         return self.mul_by_const(1.0 / m)
 
@@ -102,9 +102,9 @@ class TrajectoryCalc:
         step /= 2
 
         if step > maximum_step:
-            step_order = int(floor(log10(step)))
-            maximum_order = int(floor(log10(maximum_step)))
-            step /= pow(10, step_order - maximum_order + 1)
+            step_order = int(math.floor(math.log10(step)))
+            maximum_order = int(math.floor(math.log10(maximum_step)))
+            step /= math.pow(10, step_order - maximum_order + 1)
 
         return step
 
@@ -127,15 +127,19 @@ class TrajectoryCalc:
 
     def _zero_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
         calc_step = self.get_calc_step(weapon.zero_distance.units(10) >> Distance.Foot)
-        zero_distance = cos(weapon.zero_look_angle >> Angular.Radian) * (weapon.zero_distance >> Distance.Foot)
-        height_at_zero = sin(weapon.zero_look_angle >> Angular.Radian) * (weapon.zero_distance >> Distance.Foot)
+        zero_distance = math.cos(
+            weapon.zero_look_angle >> Angular.Radian
+        ) * (weapon.zero_distance >> Distance.Foot)
+        height_at_zero = math.sin(
+            weapon.zero_look_angle >> Angular.Radian
+        ) * (weapon.zero_distance >> Distance.Foot)
         maximum_range = zero_distance + calc_step
         sight_height = weapon.sight_height >> Distance.Foot
         mach = atmo.mach >> Velocity.FPS
         density_factor = atmo.density_factor()
         muzzle_velocity = ammo.mv >> Velocity.FPS
         barrel_azimuth = 0.0
-        barrel_elevation = atan(height_at_zero / zero_distance)
+        barrel_elevation = math.atan(height_at_zero / zero_distance)
         iterations_count = 0
         zero_finding_error = cZeroFindingAccuracy * 2
         gravity_vector = Vector(.0, cGravityConstant, .0)
@@ -146,9 +150,9 @@ class TrajectoryCalc:
             time = 0.0
             range_vector = Vector(.0, -sight_height, .0)
             velocity_vector = Vector(
-                cos(barrel_elevation) * cos(barrel_azimuth),
-                sin(barrel_elevation),
-                cos(barrel_elevation) * sin(barrel_azimuth)
+                math.cos(barrel_elevation) * math.cos(barrel_azimuth),
+                math.sin(barrel_elevation),
+                math.cos(barrel_elevation) * math.sin(barrel_azimuth)
             ) * velocity
 
             while range_vector.x <= maximum_range:
@@ -166,8 +170,8 @@ class TrajectoryCalc:
                 velocity = velocity_vector.magnitude()
                 time += delta_range_vector.magnitude() / velocity
 
-                if fabs(range_vector.x - zero_distance) < 0.5 * calc_step:
-                    zero_finding_error = fabs(range_vector.y - height_at_zero)
+                if math.fabs(range_vector.x - zero_distance) < 0.5 * calc_step:
+                    zero_finding_error = math.fabs(range_vector.y - height_at_zero)
                     if zero_finding_error > cZeroFindingAccuracy:
                         barrel_elevation -= (range_vector.y - height_at_zero) / range_vector.x
                     break
@@ -177,7 +181,8 @@ class TrajectoryCalc:
         return Angular.Radian(barrel_elevation)
 
     def _trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
-                     shot_info: Shot, winds: list[Wind], dist_step: Distance, filter_flags: TrajFlag):
+                    shot_info: Shot, winds: list[Wind],
+                    dist_step: Distance, filter_flags: TrajFlag):
 
         time = 0
 
@@ -229,8 +234,9 @@ class TrajectoryCalc:
             velocity = ammo.mv >> Velocity.FPS
 
         # x - distance towards target, y - drop and z - windage
-        velocity_vector = Vector(cos(barrel_elevation) * cos(barrel_azimuth), sin(barrel_elevation),
-                                 cos(barrel_elevation) * sin(barrel_azimuth)) * velocity
+        velocity_vector = Vector(math.cos(barrel_elevation) * math.cos(barrel_azimuth),
+                                 math.sin(barrel_elevation),
+                                 math.cos(barrel_elevation) * math.sin(barrel_azimuth)) * velocity
 
         if twist != 0 and length and diameter:
             stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
@@ -242,7 +248,8 @@ class TrajectoryCalc:
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
 
-            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(alt0 + range_vector.y)
+            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(
+                alt0 + range_vector.y)
 
             if range_vector.x >= next_wind_range:
                 current_wind += 1
@@ -276,7 +283,7 @@ class TrajectoryCalc:
 
                 if twist != 0:
                     windage += (1.25 * (stability_coefficient + 1.2)
-                                * pow(time, 1.83) * twist_coefficient) / 12
+                                * math.pow(time, 1.83) * twist_coefficient) / 12
 
                 ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,
@@ -334,24 +341,28 @@ class TrajectoryCalc:
 def calculate_stability_coefficient(ammo: Ammo, rifle: Weapon, atmo: Atmo):
     weight = ammo.dm.weight >> Weight.Grain
     diameter = ammo.dm.diameter >> Distance.Inch
-    twist = fabs(rifle.twist >> Distance.Inch) / diameter
+    twist = math.fabs(rifle.twist >> Distance.Inch) / diameter
     length = (ammo.length >> Distance.Inch) / diameter
     ft = atmo.temperature >> Temperature.Fahrenheit
     mv = ammo.mv >> Velocity.FPS
     pt = atmo.pressure >> Pressure.InHg
-    sd = 30 * weight / (pow(twist, 2) * pow(diameter, 3) * length * (1 + pow(length, 2)))
-    fv = pow(mv / 2800, 1.0 / 3.0)
+    sd = 30 * weight / (
+            math.pow(twist, 2) * math.pow(diameter, 3) * length * (1 + math.pow(length, 2))
+    )
+    fv = math.pow(mv / 2800, 1.0 / 3.0)
     ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
     return sd * fv * ftp
 
 
 def wind_to_vector(shot: Shot, wind: Wind):
-    sight_cosine = cos(shot.zero_angle >> Angular.Radian)
-    sight_sine = sin(shot.zero_angle >> Angular.Radian)
-    cant_cosine = cos(shot.cant_angle >> Angular.Radian)
-    cant_sine = sin(shot.cant_angle >> Angular.Radian)
-    range_velocity = (wind.velocity >> Velocity.FPS) * cos(wind.direction_from >> Angular.Radian)
-    cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction_from >> Angular.Radian)
+    sight_cosine = math.cos(shot.zero_angle >> Angular.Radian)
+    sight_sine = math.sin(shot.zero_angle >> Angular.Radian)
+    cant_cosine = math.cos(shot.cant_angle >> Angular.Radian)
+    cant_sine = math.sin(shot.cant_angle >> Angular.Radian)
+    range_velocity = (wind.velocity >> Velocity.FPS) * math.cos(
+        wind.direction_from >> Angular.Radian)
+    cross_component = (wind.velocity >> Velocity.FPS) * math.sin(
+        wind.direction_from >> Angular.Radian)
     range_factor = -range_velocity * sight_sine
     return Vector(range_velocity * sight_cosine,
                   range_factor * cant_cosine + cross_component * cant_sine,
@@ -362,7 +373,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
                           velocity: float, mach: float, windage: float, weight: float, flag: int):
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
-    trajectory_angle = atan(velocity_vector.y / velocity_vector.x)
+    trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
 
 
     return TrajectoryData(
@@ -383,14 +394,17 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
 
 def get_correction(distance: float, offset: float):
     if distance != 0:
-        return atan(offset / distance)
+        return math.atan(offset / distance)
     return 0  # better None
 
+
 def calculate_energy(bullet_weight: float, velocity: float):
-    return bullet_weight * pow(velocity, 2) / 450400
+    return bullet_weight * math.pow(velocity, 2) / 450400
+
 
 def calculate_ogv(bullet_weight: float, velocity: float):
-    return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
+    return math.pow(bullet_weight, 2) * math.pow(velocity, 3) * 1.5e-12
+
 
 def calculate_curve(data_points):
     # rate, x1, x2, x3, y1, y2, y3, a, b, c
@@ -398,7 +412,8 @@ def calculate_curve(data_points):
     # curve_point
     # num_points, len_data_points, len_data_range
 
-    rate = (data_points[1]['CD'] - data_points[0]['CD']) / (data_points[1]['Mach'] - data_points[0]['Mach'])
+    rate = (data_points[1]['CD'] - data_points[0]['CD']) \
+           / (data_points[1]['Mach'] - data_points[0]['Mach'])
     curve = [CurvePoint(0, rate, data_points[0]['CD'] - data_points[0]['Mach'] * rate)]
     len_data_points = int(len(data_points))
     len_data_range = len_data_points - 1
@@ -420,7 +435,9 @@ def calculate_curve(data_points):
     num_points = len_data_points
     rate = (data_points[num_points - 1]['CD'] - data_points[num_points - 2]['CD']) / \
            (data_points[num_points - 1]['Mach'] - data_points[num_points - 2]['Mach'])
-    curve_point = CurvePoint(0, rate, data_points[num_points - 1]['CD'] - data_points[num_points - 2]['Mach'] * rate)
+    curve_point = CurvePoint(
+        0, rate, data_points[num_points - 1]['CD'] - data_points[num_points - 2]['Mach'] * rate
+    )
     curve.append(curve_point)
     return curve
 
@@ -433,7 +450,7 @@ def calculate_by_curve(data: list, curve: list, mach: float):
     mhi = num_points - 2
 
     while mhi - mlo > 1:
-        mid = int(floor(mhi + mlo) / 2.0)
+        mid = int(math.floor(mhi + mlo) / 2.0)
         if data[mid]['Mach'] < mach:
             mlo = mid
         else:
