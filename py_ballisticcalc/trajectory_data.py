@@ -20,9 +20,7 @@ except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
 
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag',
-           # 'trajectory_plot', 'trajectory_dataframe'
-           )
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag')
 
 
 PLOT_FONT_HEIGHT = 72
@@ -74,7 +72,7 @@ class TrajectoryData(NamedTuple):
     angle: Angular  # Trajectory angle
     energy: Energy
     ogw: Weight
-    flag: TrajFlag
+    flag: [TrajFlag, int]
 
     def formatted(self) -> tuple:
         """
