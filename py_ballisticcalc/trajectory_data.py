@@ -3,7 +3,7 @@ import logging
 import math
 from dataclasses import dataclass, field
 from enum import Flag
-from typing import NamedTuple
+from typing import NamedTuple, Callable
 
 from .settings import Settings as Set
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit
@@ -16,7 +16,6 @@ except ImportError as error:
 
 try:
     import matplotlib
-    from matplotlib import pyplot as plt
 except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
@@ -119,9 +118,25 @@ class TrajectoryData(NamedTuple):
 
 
 class DangerSpace(NamedTuple):
-    at_range: Distance
-    begin: Distance
-    end: Distance
+    """Stores the danger space data for distance specified"""
+    at_range: TrajectoryData
+    target_height: Distance
+    begin: TrajectoryData
+    end: TrajectoryData
+
+    def overlay(self, df):
+        if matplotlib is None:
+            raise ImportError("Install matplotlib to get results as a plot")
+        else:
+            begin = self.begin.distance >> Set.Units.distance
+            begin_drop = self.begin.drop >> Set.Units.drop
+            end = self.end.distance >> Set.Units.distance
+            end_drop = self.end.drop >> Set.Units.drop
+            h = (self.target_height >> Set.Units.drop) / 2
+            df.plot([begin, begin], [begin_drop+h, begin_drop-h])
+            df.plot([end, end], [end_drop+h, end_drop-h])
+
+
 
 
 @dataclass(frozen=True)
@@ -152,60 +167,81 @@ class HitResult:
             raise ArithmeticError("Can't found zero crossing points")
         return data
 
-    def danger_space(self, at_range: Distance, target_height: Distance, look_angle: Angular = Angular(0, Angular.Degree)) -> DangerSpace:
+    def danger_space(self,
+                     at_range: [float, Distance],
+                     target_height: [float, Distance],
+                     look_angle: [float, Angular] = Angular(0, Angular.Degree)
+                     ) -> DangerSpace:
         """
-        Assume that the trajectory hits the center of a target at any distance.  Now we want to know
-           how much ranging error we can tolerate if the critical region of the target has height *h*.
-           I.e., we want to know how far forward and backward along the line of sight we can move a target
-           such that the trajectory is still within *h*/2 of the original drop.
+        Assume that the trajectory hits the center of a target at any distance.
+        Now we want to know
+        how much ranging error we can tolerate if the critical region of the target has height *h*.
+        I.e., we want to know how far forward and backward along the line of sight we can
+        move a target
+        such that the trajectory is still within *h*/2 of the original drop.
 
         :param at_range: Danger space is calculated for a target centered at this distance
         :param target_height: Target height (*h*) determines danger space
         :param look_angle: Ranging errors occur along the look angle to the target
         """
         self.__check_extra__()
+
+        at_range = Set.Units.distance(at_range)
+        target_height = Set.Units.distance(target_height)
+        look_angle = Set.Units.angular(look_angle)
+
         # Get index of first trajectory point with distance >= at_range
-        i = next((i for i in range(len(self.trajectory)) if self.trajectory[i].distance >= at_range), -1)
+        i = next((i for i in range(len(self.trajectory))
+                  if self.trajectory[i].distance >= at_range), -1)
         if i < 0:
-            raise ArithmeticError(f"Calculated trajectory doesn't reach requested distance {at_range}")
+            raise ArithmeticError(
+                f"Calculated trajectory doesn't reach requested distance {at_range}"
+            )
 
         target_height_half = target_height.raw_value / 2.0
         tan_look_angle = math.tan(look_angle >> Angular.Radian)
+
         # Target_center height shifts along look_angle as:
         #   target_center' = target_center + (.distance' - .distance) * tan(look_angle)
 
-        def findBeginDanger(rownum: int) -> Distance:
+        def find_begin_danger(row_num: int) -> TrajectoryData:
             """
             Beginning of danger space is last .distance' < .distance where 
                 |target_center - .drop'| >= target_height/2
-            :param rownum: Index of the trajectory point for which we are calculating danger space
+            :param row_num: Index of the trajectory point for which we are calculating danger space
             :return: Distance marking beginning of danger space
             """
-            center_row = self.trajectory[rownum]
-            for i in range(rownum-1, 0, -1):
+            center_row = self.trajectory[row_num]
+            for i in range(row_num - 1, 0, -1):
                 prime_row = self.trajectory[i]
-                target_center = center_row.drop.raw_value + tan_look_angle * (prime_row.distance.raw_value - center_row.distance.raw_value)
+                target_center = center_row.drop.raw_value + tan_look_angle * (
+                        prime_row.distance.raw_value - center_row.distance.raw_value
+                )
                 if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
-                    return prime_row.distance
+                    return self.trajectory[i]
             return Distance.Yard(0)
 
-        def findEndDanger(rownum: int) -> Distance:
+        def find_end_danger(row_num: int) -> [TrajectoryData, None]:
             """
             End of danger space is first .distance' > .distance where 
                 |target_center - .drop'| >= target_height/2
-            :param rownum: Index of the trajectory point for which we are calculating danger space
+            :param row_num: Index of the trajectory point for which we are calculating danger space
             :return: Distance marking end of danger space
             """
-            center_row = self.trajectory[rownum]
-            for i in range(rownum+1, len(self.trajectory)):
+            center_row = self.trajectory[row_num]
+            for i in range(row_num + 1, len(self.trajectory)):
                 prime_row = self.trajectory[i]
-                target_center = center_row.drop.raw_value + tan_look_angle * (prime_row.distance.raw_value - center_row.distance.raw_value)
+                target_center = center_row.drop.raw_value + tan_look_angle * (
+                        prime_row.distance.raw_value - center_row.distance.raw_value)
                 if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
-                    return prime_row.distance
+                    return prime_row
             return None
 
-        return DangerSpace(self.trajectory[i].distance, findBeginDanger(i), findEndDanger(i))
-    
+        return DangerSpace(self.trajectory[i],
+                           target_height,
+                           find_begin_danger(i),
+                           find_end_danger(i))
+
     @property
     def dataframe(self):
         """:return: the trajectory table as a DataFrame"""
@@ -216,7 +252,6 @@ class HitResult:
         trajectory = [p.in_def_units() for p in self]
         return pd.DataFrame(trajectory, columns=col_names)
 
-    @property
     def plot(self):
         """:return: the graph of the trajectory"""
 
@@ -225,7 +260,6 @@ class HitResult:
         if not self.extra:
             logging.warning("HitResult.plot: To show extended data"
                             "Use Calculator.fire(..., extra_data=True)")
-        matplotlib.use('TkAgg')
 
         df = self.dataframe
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
@@ -250,50 +284,4 @@ class HitResult:
                 y=['velocity'], ylabel=Set.Units.velocity.symbol,
                 secondary_y=True,
                 ylim=[0, df['velocity'].max()], ax=ax)
-
-        return plt
-
-
-# def trajectory_dataframe(shot_result: 'HitResult') -> 'DataFrame':
-#     """:return: the trajectory table as a DataFrame"""
-#     if pd is None:
-#         raise ImportError("Install pandas to convert trajectory as dataframe")
-#
-#     col_names = TrajectoryData._fields
-#     trajectory = [p.in_def_units() for p in shot_result]
-#     return pd.DataFrame(trajectory, columns=col_names)
-
-
-# def trajectory_plot(calc: 'Calculator', shot: 'Shot') -> 'plot':
-#     """:return: the graph of the trajectory"""
-#
-#     if matplotlib is None:
-#         raise ImportError("Install matplotlib to get results as a plot")
-#
-#     matplotlib.use('TkAgg')
-#     shot_result = calc.fire(shot, Distance.Foot(0.2), True)
-#     df = trajectory_dataframe(shot_result)
-#     ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
-#
-#     for p in shot_result:
-#
-#         if TrajFlag(p.flag) & TrajFlag.ZERO:
-#             ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-#                     [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-#         if TrajFlag(p.flag) & TrajFlag.MACH:
-#             ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-#                     [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--', label='mach')
-#             ax.text(p.distance >> Set.Units.distance, df['drop'].min(), " Mach")
-#
-#     # # scope line
-#     x_values = [0, df.distance.max()]  # Adjust these as needed
-#     y_values = [0, 0]  # Adjust these as needed
-#     ax.plot(x_values, y_values, linestyle='--', label='scope line')
-#     ax.text(df.distance.max() - 100, -100, "Scope")
-#
-#     df.plot(x='distance', xlabel=Set.Units.distance.symbol,
-#             y=['velocity'], ylabel=Set.Units.velocity.symbol,
-#             secondary_y=True,
-#             ylim=[0, df['velocity'].max()], ax=ax)
-#
-#     return plt
+        return ax
