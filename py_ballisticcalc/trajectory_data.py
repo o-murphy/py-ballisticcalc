@@ -16,6 +16,7 @@ except ImportError as error:
 
 try:
     import matplotlib
+    from matplotlib import patches
 except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
@@ -129,7 +130,6 @@ class DangerSpace(NamedTuple):
     def overlay(self, ax: 'Axes'):
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
-        from matplotlib import patches
 
         begin_dist = self.begin.distance >> Set.Units.distance
         begin_drop = self.begin.drop >> Set.Units.drop
