@@ -1,15 +1,5 @@
 """Example of library usage"""
 
-import logging
-
-try:
-    import pyximport
-    pyximport.install(language_level=3)
-except ImportError as err:
-    pyximport = None
-    logging.error(err)
-    logging.warning("Install Cython to use pyximport")
-
 
 from py_ballisticcalc import Velocity, Temperature, Distance
 from py_ballisticcalc import DragModel, TableG7

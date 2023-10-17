@@ -4,7 +4,10 @@ import math
 from dataclasses import dataclass, field
 
 # pylint: disable=import-error,no-name-in-module
-from .drag_model import DragModel
+try:
+    from .drag_model import DragModel
+except ImportError:
+    from .pure.py_drag_model import DragModel
 from .settings import Settings as Set
 from .unit import TypedUnits, Velocity, Temperature, Distance, Angular
 

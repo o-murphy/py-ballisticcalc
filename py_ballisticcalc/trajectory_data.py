@@ -1,6 +1,7 @@
 """Implements a point of trajectory class in applicable data types"""
 import logging
 import math
+import typing
 from dataclasses import dataclass, field
 from enum import Flag
 from typing import NamedTuple
@@ -16,13 +17,12 @@ except ImportError as error:
 
 try:
     import matplotlib
+    from matplotlib import patches
 except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
 
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag',
-           # 'trajectory_plot', 'trajectory_dataframe'
-           )
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag')
 
 
 PLOT_FONT_HEIGHT = 72
@@ -74,7 +74,7 @@ class TrajectoryData(NamedTuple):
     angle: Angular  # Trajectory angle
     energy: Energy
     ogw: Weight
-    flag: TrajFlag
+    flag: typing.Union[TrajFlag, int]
 
     def formatted(self) -> tuple:
         """
@@ -131,7 +131,6 @@ class DangerSpace(NamedTuple):
     def overlay(self, ax: 'Axes'):
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
-        from matplotlib import patches
 
         begin_dist = self.begin.distance >> Set.Units.distance
         begin_drop = self.begin.drop >> Set.Units.drop
@@ -139,7 +138,7 @@ class DangerSpace(NamedTuple):
         end_drop = self.end.drop >> Set.Units.drop
         range_dist = self.at_range.distance >> Set.Units.distance
         range_drop = self.at_range.drop >> Set.Units.drop
-        h = (self.target_height >> Set.Units.drop)
+        h = self.target_height >> Set.Units.drop
 
         ax.plot((range_dist, range_dist), (range_drop + h / 2, range_drop - h / 2),
                 color='r', linestyle=':')
