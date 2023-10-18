@@ -1,3 +1,5 @@
+"""definitions for a bullet's drag model calculation"""
+
 import typing
 from dataclasses import dataclass
 

@@ -1,3 +1,5 @@
+"""pure python trajectory calculation backend"""
+
 from dataclasses import dataclass
 import math
 from typing import NamedTuple
@@ -441,7 +443,10 @@ def calculate_curve(data_points):
     curve.append(curve_point)
     return curve
 
+
 def calculate_by_curve(data: list, curve: list, mach: float):
+    """returning the calculated drag for a
+    specified mach based on previously calculated data"""
     # num_points, mlo, mhi, mid
     # cdef CurvePoint curve_m
 

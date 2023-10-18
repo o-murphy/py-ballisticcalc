@@ -1,3 +1,5 @@
+"""Default logger for py_ballisticcalc library"""
+
 import logging
 
 __all__ = ('logger',)

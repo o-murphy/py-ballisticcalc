@@ -46,6 +46,7 @@ jobs:
         python -m pip install cython
         cd py_ballisticcalc_exts
         python setup.py build_ext --inplace
+        cd ..
 
     - name: Run unittest tests in binary mode
       run: |
