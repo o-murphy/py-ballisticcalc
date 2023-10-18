@@ -38,6 +38,9 @@ dynamic = ["version"]
 #"Say Thanks!" = ""
 "Source" = "https://github.com/o-murphy/py_ballisticcalc"
 
+[tool.setuptools]
+py-modules = ["py_ballisticcalc_exts"]
+
 
 [tool.setuptools.packages.find]
 where = ["."]
