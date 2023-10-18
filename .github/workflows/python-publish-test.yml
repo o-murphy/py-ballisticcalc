@@ -37,7 +37,6 @@ jobs:
     - name: Publish package to Test PyPI
       run: |
         python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
-        python -m twine upload --repository-url https://test.pypi.org/legacy/ py_ballisticcalc_exts/dist/* --skip-existing --verbose --non-interactive
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
