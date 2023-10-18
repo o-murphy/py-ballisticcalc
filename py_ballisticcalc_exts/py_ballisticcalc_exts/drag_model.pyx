@@ -6,7 +6,7 @@ from py_ballisticcalc.settings import Settings as Set
 from py_ballisticcalc.unit import Weight, Distance
 from py_ballisticcalc.drag_tables import DragTablesSet
 
-__all__ = ('DragModel', )
+__all__ = ('DragModel', 'make_data_points')
 
 cdef class DragDataPoint:
     cdef readonly double CD  # BC or CD

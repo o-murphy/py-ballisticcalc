@@ -8,6 +8,7 @@ try:
 
     logger.info("Binary modules found, running in binary mode")
 except ImportError as error:
+    logger.exception(error)
     from .drag_model import *
     from .trajectory_calc import *
 

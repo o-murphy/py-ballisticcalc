@@ -2,7 +2,6 @@
 import math
 from dataclasses import dataclass, field
 
-from .backend import DragModel
 from .settings import Settings as Set
 from .unit import TypedUnits, Velocity, Temperature, Distance, Angular
 
@@ -39,7 +38,7 @@ class Weapon(TypedUnits):
 class Ammo(TypedUnits):
     """Creates Ammo and Projectile properties"""
 
-    dm: DragModel
+    dm: 'DragModel'
     length: [float, Distance] = field(default_factory=lambda: Set.Units.length)
     mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
     temp_modifier: float = field(default=0)
