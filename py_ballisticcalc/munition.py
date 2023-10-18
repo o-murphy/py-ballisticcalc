@@ -2,10 +2,7 @@
 import math
 from dataclasses import dataclass, field
 
-try:
-    from py_ballisticcalc_exts import DragModel
-except ImportError as error:
-    from .drag_model import DragModel
+from .backend import DragModel
 from .settings import Settings as Set
 from .unit import TypedUnits, Velocity, Temperature, Distance, Angular
 

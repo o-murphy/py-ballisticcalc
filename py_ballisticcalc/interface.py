@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from .conditions import Atmo, Shot
 from .munition import Weapon, Ammo
 # pylint: disable=import-error,no-name-in-module
-from .trajectory_calc import *
+from .backend import *
 from .trajectory_data import HitResult
 from .unit import Angular, Distance
 from .settings import Settings
