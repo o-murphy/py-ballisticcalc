@@ -1,9 +1,4 @@
 import unittest
-
-import pyximport
-
-pyximport.install(language_level=3)
-
 from py_ballisticcalc.unit import *
 
 

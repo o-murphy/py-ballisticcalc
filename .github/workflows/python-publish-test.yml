@@ -1,8 +1,6 @@
 name: Upload Python Package to Test PyPI
 
 on:
-#  release:
-#    types: [created, draft, edited]
   workflow_dispatch:
 
 permissions:
@@ -30,21 +28,18 @@ jobs:
     - name: Build package
       run: python -m build
 
+    - name: Build extensions package
+      run: |
+        cd py_ballisticcalc_exts
+        python -m build --outdir ../dist
+        cd ..
+
     - name: Publish package to Test PyPI
       run: |
         python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
-
-#    - name: Publish package to Test PyPI
-#      uses: pypa/gh-action-pypi-publish@release/v1
-#      with:
-#        repository-url: https://test.pypi.org/legacy/
-#        user: __token__
-#        password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-#        skip-existing: true
-#        verbose: true
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3

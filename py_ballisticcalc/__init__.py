@@ -4,16 +4,10 @@ __author__ = "o-murphy"
 __copyright__ = ("",)
 
 __credits__ = ["o-murphy"]
-__version__ = "1.1.0b9"
+__version__ = "1.1.0"
 
-import logging
-try:
-    from .drag_model import *  # pylint: disable=import-error
-    from .trajectory_calc import *  # pylint: disable=import-error
-except ImportError:
-    logging.warning("Package installed in --no-binary (pure python) mode, "
-                    "use .whl packages to get better performance")
-    from .pure import *
+
+from .backend import *
 from .drag_tables import *
 from .settings import *
 from .multiple_bc import *

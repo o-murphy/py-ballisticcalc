@@ -1,11 +1,11 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, log10, floor, atan
 cimport cython
 
-from .conditions import *
-from .munition import *
-from .settings import Settings
-from .trajectory_data import TrajectoryData, TrajFlag
-from .unit import *
+from py_ballisticcalc.conditions import Atmo, Shot
+from py_ballisticcalc.munition import Ammo, Weapon
+from py_ballisticcalc.settings import Settings
+from py_ballisticcalc.trajectory_data import TrajectoryData
+from py_ballisticcalc.unit import *
 
 __all__ = ('TrajectoryCalc',)
 

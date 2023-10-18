@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools", "wheel", 'cython']
 build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "py_ballisticcalc"
+name = "py_ballisticcalc.exts"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -38,21 +38,14 @@ dynamic = ["version"]
 #"Say Thanks!" = ""
 "Source" = "https://github.com/o-murphy/py_ballisticcalc"
 
-
 [tool.setuptools]
-py-modules = ["py_ballisticcalc"]
+py-modules = ["py_ballisticcalc_exts"]
+
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["py_ballisticcalc*"]  # alternatively: `exclude = ["additional*"]`
-exclude = ["py_ballisticcalc_exts*"]
+include = ["py_ballisticcalc_exts*"]  # alternatively: `exclude = ["additional*"]`
 
 
 [tool.setuptools.dynamic]
-version = {attr = "py_ballisticcalc.__version__"}
-
-
-[project.optional-dependencies]
-exts = ['py_ballisticcalc.exts']
-lint = ['pylint', 'flake8']
-graph = ['matplotlib', 'pandas']
+version = {attr = "py_ballisticcalc_exts.__version__"}

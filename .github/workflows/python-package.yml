@@ -20,19 +20,32 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install build-essential -y
         
         python -m pip install --upgrade pip
-        # python -m pip install flake8
-        python -m pip install cython
-        python -m pip install pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        python -m pip install setuptools pytest cython
 
-        # python setup.py build_ext --inplace
-    - name: Run unittest tests
+    - name: Run unittest tests in pure python mode
+      run: |
+        if pytest tests --no-header --no-summary -v; then
+          echo "Pytest succeeded."
+        else
+          echo "Pytest failed, running without capture"
+          # Add your additional commands here
+          pytest tests --no-header --no-summary -v -s
+        fi
+
+    - name: Build cython modules
+      run: |
+        cd py_ballisticcalc_exts
+        python setup.py build_ext --inplace
+        cd ..
+
+    - name: Run unittest tests in binary mode
       run: |
         if pytest tests --no-header --no-summary -v; then
           echo "Pytest succeeded."

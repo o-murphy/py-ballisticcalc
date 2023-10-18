@@ -5,10 +5,7 @@ from typing import NamedTuple, Iterable
 
 from .conditions import Atmo
 # pylint: disable=import-error,no-name-in-module
-try:
-    from .drag_model import make_data_points
-except ImportError:
-    from .pure.py_drag_model import make_data_points
+from .backend import make_data_points
 from .settings import Settings as Set
 from .unit import Distance, Weight, Velocity
 

@@ -10,9 +10,7 @@ from dataclasses import dataclass
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight',
-           # 'is_unit',
-           'TypedUnits')
+           'Energy', 'Weight', 'TypedUnits')
 
 
 class Unit(IntEnum):

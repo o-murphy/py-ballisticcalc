@@ -39,6 +39,12 @@ jobs:
     - name: Build package
       run: python -m build
 
+    - name: Build extensions package
+      run: |
+        cd py_ballisticcalc_exts
+        python -m build --outdir ../dist
+        cd ..
+
     - name: Publish package to PyPI
       run: |
         python -m twine upload dist/* --skip-existing --verbose --non-interactive
