@@ -9,7 +9,7 @@ from .settings import Settings as Set
 from .unit import Weight, Distance
 from .drag_tables import DragTablesSet
 
-__all__ = ('DragModel', )
+__all__ = ('DragModel', 'make_data_points')
 
 
 @dataclass

@@ -1,10 +1,7 @@
 """Example of library usage"""
 
 
-from py_ballisticcalc import Velocity, Temperature, Distance
-from py_ballisticcalc import DragModel, TableG7
-from py_ballisticcalc import Ammo, Atmo, Wind
-from py_ballisticcalc import Weapon, Shot, Calculator
+from py_ballisticcalc import *
 from py_ballisticcalc import Settings as Set
 
 
