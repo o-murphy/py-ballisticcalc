@@ -1,4 +1,5 @@
 """Module to create custom drag function based on Multiple ballistic coefficients"""
+import logging
 import typing
 from math import pow as math_pow
 from typing import NamedTuple, Iterable
@@ -6,9 +7,9 @@ from typing import NamedTuple, Iterable
 from .conditions import Atmo
 # pylint: disable=import-error,no-name-in-module
 try:
+    from py_ballisticcalc_exts import make_data_points
+except ImportError as error:
     from .drag_model import make_data_points
-except ImportError:
-    from .pure.py_drag_model import make_data_points
 from .settings import Settings as Set
 from .unit import Distance, Weight, Velocity
 

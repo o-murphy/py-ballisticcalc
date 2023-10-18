@@ -2,9 +2,9 @@ import typing
 
 from libc.math cimport pow
 
-from .settings import Settings as Set
-from .unit import Weight, Distance
-from .drag_tables import DragTablesSet
+from py_ballisticcalc.settings import Settings as Set
+from py_ballisticcalc.unit import Weight, Distance
+from py_ballisticcalc.drag_tables import DragTablesSet
 
 __all__ = ('DragModel', )
 

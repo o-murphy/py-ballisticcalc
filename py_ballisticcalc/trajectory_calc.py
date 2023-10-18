@@ -2,11 +2,11 @@ from dataclasses import dataclass
 import math
 from typing import NamedTuple
 
-from ..conditions import Atmo, Shot, Wind
-from ..munition import Ammo, Weapon
-from ..settings import Settings
-from ..trajectory_data import TrajectoryData, TrajFlag
-from ..unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
+from .conditions import Atmo, Shot, Wind
+from .munition import Ammo, Weapon
+from .settings import Settings
+from .trajectory_data import TrajectoryData, TrajFlag
+from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
 
 __all__ = ('TrajectoryCalc', )
 

@@ -1,13 +1,11 @@
 """Module for Weapon and Ammo properties definitions"""
-
 import math
 from dataclasses import dataclass, field
 
-# pylint: disable=import-error,no-name-in-module
 try:
+    from py_ballisticcalc_exts import make_data_points
+except ImportError as error:
     from .drag_model import DragModel
-except ImportError:
-    from .pure.py_drag_model import DragModel
 from .settings import Settings as Set
 from .unit import TypedUnits, Velocity, Temperature, Distance, Angular
 

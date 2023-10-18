@@ -2,10 +2,6 @@
 
 import unittest
 from math import fabs
-
-import pyximport
-
-pyximport.install(language_level=3)
 from py_ballisticcalc import *
 
 
