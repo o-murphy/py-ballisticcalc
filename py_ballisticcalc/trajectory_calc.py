@@ -110,13 +110,11 @@ class TrajectoryCalc:
 
         return step
 
-    def zero_angle(self, weapon: Weapon, atmo: Atmo):
-        return self._zero_angle(self.ammo, weapon, atmo)
+    def zero_angle(self, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
+        return self._zero_angle(self.ammo, weapon, atmo, distance, look_angle)
 
-    def trajectory(self, weapon: Weapon, shot_info: Shot, step: [float, Distance],
+    def trajectory(self, weapon: Weapon, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
-
-        dist_step = Settings.Units.distance(step)
         atmo = shot_info.atmo
         winds = shot_info.winds
         filter_flags = TrajFlag.RANGE
@@ -125,16 +123,12 @@ class TrajectoryCalc:
             print('ext', extra_data)
             dist_step = Distance.Foot(0.2)
             filter_flags = TrajFlag.ALL
-        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, dist_step, filter_flags)
+        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, max_range, dist_step, filter_flags)
 
-    def _zero_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
-        calc_step = self.get_calc_step(weapon.zero_distance.units(10) >> Distance.Foot)
-        zero_distance = math.cos(
-            weapon.zero_look_angle >> Angular.Radian
-        ) * (weapon.zero_distance >> Distance.Foot)
-        height_at_zero = math.sin(
-            weapon.zero_look_angle >> Angular.Radian
-        ) * (weapon.zero_distance >> Distance.Foot)
+    def _zero_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
+        calc_step = self.get_calc_step(distance.units(10) >> Distance.Foot)
+        zero_distance = math.cos(look_angle >> Angular.Radian) * (distance >> Distance.Foot)
+        height_at_zero = math.sin(look_angle >> Angular.Radian) * (distance >> Distance.Foot)
         maximum_range = zero_distance + calc_step
         sight_height = weapon.sight_height >> Distance.Foot
         mach = atmo.mach >> Velocity.FPS
@@ -184,10 +178,10 @@ class TrajectoryCalc:
 
     def _trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
                     shot_info: Shot, winds: list[Wind],
-                    dist_step: Distance, filter_flags: TrajFlag):
+                    max_range: Distance, dist_step: Distance, filter_flags: TrajFlag):
 
         time = 0
-        look_angle = weapon.zero_look_angle >> Angular.Radian
+        look_angle = shot_info.look_angle >> Angular.Radian
         twist = weapon.twist >> Distance.Inch
         length = ammo.length >> Distance.Inch
         diameter = ammo.dm.diameter >> Distance.Inch
@@ -197,7 +191,7 @@ class TrajectoryCalc:
         step = dist_step >> Distance.Foot
         calc_step = self.get_calc_step(step)
 
-        maximum_range = (shot_info.max_range >> Distance.Foot) + 1
+        maximum_range = (max_range >> Distance.Foot) + 1
 
         ranges_length = int(maximum_range / step) + 1
         len_winds = len(winds)
@@ -207,13 +201,12 @@ class TrajectoryCalc:
         stability_coefficient = 1.0
         next_wind_range = 1e7
 
-        barrel_elevation = (shot_info.zero_angle >> Angular.Radian) + (
-                shot_info.relative_angle >> Angular.Radian)
+        barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
         alt0 = atmo.altitude >> Distance.Foot
         sight_height = weapon.sight_height >> Distance.Foot
 
         next_range_distance = .0
-        barrel_azimuth = .0
+        barrel_azimuth = .0  # TODO use from shot_info
         previous_mach = .0
 
         gravity_vector = Vector(.0, cGravityConstant, .0)
@@ -369,8 +362,25 @@ def calculate_stability_coefficient(ammo: Ammo, rifle: Weapon, atmo: Atmo):
 
 
 def wind_to_vector(shot: Shot, wind: Wind):
-    sight_cosine = math.cos(shot.zero_angle >> Angular.Radian)
-    sight_sine = math.sin(shot.zero_angle >> Angular.Radian)
+    """
+    Wind angle of zero is blowing from behind shooter
+    90-degree is blowing towards shooter's right
+
+    Looks like we only start with data on wind direction in the x-z plane, not any vertical components.
+    Therefore, given wind velocity v with angle d:
+        The downrange "range" component as v*cos(d)
+        The orthogonal "cross" component is v*sin(d)
+    When the bullet has a vertical velocity component, meaning velocity angle to horizon a > 0
+        the sin(a) range component acts to lift it in the y axis, and only cos(a) acts in the x axis
+        ... of course this is reduced by any amount of the velocity that points in the z axis
+        which we determine using  the cant_angle
+    TODO: Right now this takes the initial (launch) elevation and cant_angle components.
+        This is an OK "flat-fire" approximation but we actually have the angle of travel at every instant
+        so we should use that instead.
+    TODO: Correct terms now that Shot class factors cant out of barrel elevation
+    """
+    sight_cosine = math.cos(shot.barrel_elevation >> Angular.Radian)
+    sight_sine = math.sin(shot.barrel_elevation >> Angular.Radian)
     cant_cosine = math.cos(shot.cant_angle >> Angular.Radian)
     cant_sine = math.sin(shot.cant_angle >> Angular.Radian)
     range_velocity = (wind.velocity >> Velocity.FPS) * math.cos(
@@ -388,7 +398,6 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
     trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
-
 
     return TrajectoryData(
         time=time,
@@ -409,7 +418,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
 def get_correction(distance: float, offset: float):
     if distance != 0:
         return math.atan(offset / distance)
-    return 0  # better None
+    return 0  # None
 
 
 def calculate_energy(bullet_weight: float, velocity: float):

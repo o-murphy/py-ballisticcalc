@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 
 from .settings import Settings as Set
 from .unit import Distance, Velocity, Temperature, Pressure, TypedUnits, Angular
+from .munition import Weapon
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
@@ -46,7 +47,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     def __post_init__(self):
 
         if self.humidity > 1:
-            self.humidity = self.humidity / 100
+            self.humidity = self.humidity / 100.0
         if not 0 <= self.humidity <= 1:
             self.humidity = 0.78
         if not self.altitude:
@@ -134,7 +135,7 @@ class Wind(TypedUnits):
 
     def __post_init__(self):
         if not self.until_distance:
-            self.until_distance = Distance.Meter(9999)
+            self.until_distance = Distance.Meter(9999)  # TODO: Set to a fundamental max value
         if not self.direction_from or not self.velocity:
             self.direction_from = 0
             self.velocity = 0
@@ -143,23 +144,43 @@ class Wind(TypedUnits):
 @dataclass
 class Shot(TypedUnits):
     """
-    Stores shot parameters for the trajectory calculation
+    Stores shot parameters for the trajectory calculation.
     
-    :param max_range: Downrange distance to stop computing trajectory
-    :param zero_angle: The angle between the barrel and horizontal when zeroed
-    :param relative_angle: Elevation adjustment added to zero_angle for a particular shot
-    :param cant_angle: Rotation of gun around barrel axis, relative to position when zeroed.
-        (Only relevant when Weapon.sight_height != 0)
-    """
-    max_range: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
-    zero_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
+    :param look_angle: Angle of sight line relative to horizontal.
+        If look_angle != 0 then any target in sight crosshairs will be at a different altitude:
+            With target_distance = sight distance to a target (i.e., as through a rangefinder):
+                * Horizontal distance X to target = cos(look_angle) * target_distance
+                * Vertical distance Y to target = sin(look_angle) * target_distance
+    :param relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
+    :param cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
+        from the vertical plane into the horizontal plane by sine(cant_angle)
+    """    
+    look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     relative_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
+    weapon: Weapon = field(default=None)
     atmo: Atmo = field(default=None)
     winds: list[Wind] = field(default=None)
 
+    @property
+    def barrel_elevation(self) -> Angular:
+        """Barrel elevation in vertical plane from horizontal"""
+        return Angular.Radian((self.look_angle >> Angular.Radian)
+                              + math.cos(self.cant_angle >> Angular.Radian)
+                              * ((self.weapon.zero_elevation >> Angular.Radian)
+                               + (self.relative_angle >> Angular.Radian)))
+
+    @property
+    def barrel_azimuth(self) -> Angular:
+        """Horizontal angle of barrel relative to sight line"""
+        return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
+                              * ((self.weapon.zero_elevation >> Angular.Radian)
+                               + (self.relative_angle >> Angular.Radian)))
+
     def __post_init__(self):
+        if not self.look_angle:
+            self.look_angle = 0
         if not self.relative_angle:
             self.relative_angle = 0
         if not self.cant_angle:

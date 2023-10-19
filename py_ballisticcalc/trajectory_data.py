@@ -169,7 +169,6 @@ class DangerSpace(NamedTuple):
 @dataclass(frozen=True)
 class HitResult:
     """Results of the shot"""
-    weapon: Weapon
     shot: Shot
     trajectory: list[TrajectoryData] = field(repr=False)
     extra: bool = False
@@ -284,7 +283,7 @@ class HitResult:
     def plot(self, look_angle: Angular = None) -> 'Axes':
         """:return: graph of the trajectory"""
         if look_angle is None:
-            look_angle = self.weapon.zero_look_angle
+            look_angle = self.shot.look_angle
 
         if matplotlib is None:
             raise ImportError("Install matplotlib to plot results")
@@ -319,9 +318,9 @@ class HitResult:
 
         # Barrel pointing line
         x_values = [0, df.distance.max()]
-        y_values = [-(self.weapon.sight_height >> Set.Units.drop),
+        y_values = [-(self.shot.weapon.sight_height >> Set.Units.drop),
                     max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
-                    -(self.weapon.sight_height >> Set.Units.drop)]
+                    -(self.shot.weapon.sight_height >> Set.Units.drop)]
         ax.plot(x_values, y_values, linestyle=':', color='k', alpha=0.3)
         ax.text(df.distance.max() - 20, - PLOT_FONT_HEIGHT,
                 "Barrel pointing", fontsize=font_size, color='k')

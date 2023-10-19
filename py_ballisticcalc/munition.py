@@ -11,27 +11,19 @@ __all__ = ('Weapon', 'Ammo')
 @dataclass
 class Weapon(TypedUnits):
     """
-    :param zero_distance: Sight-line distance to "zero," which is point we want to hit.
-        This is the distance that a rangefinder would return with no ballistic adjustment.
-        NB: Some rangefinders offer an adjusted distance based on inclinometer measurement.
-            However, without a complete ballistic model these can only approximate the effects
-            on ballistic trajectory of shooting uphill or downhill.  Therefore:
-            For maximum accuracy, use the raw sight distance and look angle as inputs here.
-    :param zero_look_angle: If = 0 then the target zero is horizontal with the gun at zero_distance.
-        If zero_look_angle != 0 then the target zero is at a different height than the gun, and
-            the horizontal distance to target = cos(look_angle) * zero_distance, and
-            the vertical distance to target from horizontal = sin(look_angle) * zero_distance.
+    :param sight_height: Vertical distance from center of bore line to center of sight line.
+    :param twist: Distance for barrel rifling to complete one complete turn.
+        Positive value => right-hand twist, negative value => left-hand twist.
+    :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
+        Typically computed by ballistic Calculator.
     """
     sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
-    zero_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
-    zero_look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
+    zero_elevation: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
     def __post_init__(self):
         if not self.twist:
             self.twist = 0
-        if not self.zero_look_angle:
-            self.zero_look_angle = 0
 
 
 @dataclass
