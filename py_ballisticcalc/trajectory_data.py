@@ -136,7 +136,7 @@ class DangerSpace(NamedTuple):
              + f'for {self.target_height << Set.Units.drop} tall target '\
              + f'ranges from {self.begin.distance << Set.Units.distance} '\
              + f'to {self.end.distance << Set.Units.distance}'
-    
+
     def overlay(self, ax: 'Axes'):
         """Highlights danger-space region on plot"""
         if matplotlib is None:
@@ -320,7 +320,8 @@ class HitResult:
         # Barrel pointing line
         x_values = [0, df.distance.max()]
         y_values = [-(self.weapon.sight_height >> Set.Units.drop),
-                    max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian) - (self.weapon.sight_height >> Set.Units.drop)]
+                    max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
+                    -(self.weapon.sight_height >> Set.Units.drop)]
         ax.plot(x_values, y_values, linestyle=':', color='k', alpha=0.3)
         ax.text(df.distance.max() - 20, - PLOT_FONT_HEIGHT,
                 "Barrel pointing", fontsize=font_size, color='k')

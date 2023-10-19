@@ -1,7 +1,7 @@
 """pure python trajectory calculation backend"""
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from typing import NamedTuple
 
 from .conditions import Atmo, Shot, Wind
@@ -76,7 +76,7 @@ class Vector:
     def __mul__(self, other: [int, float, 'Vector']):
         if isinstance(other, (int, float)):
             return self.mul_by_const(other)
-        elif isinstance(other, Vector):
+        if isinstance(other, Vector):
             return self.mul_by_vector(other)
         raise TypeError(other)
 
@@ -214,11 +214,12 @@ class TrajectoryCalc:
 
         next_range_distance = .0
         barrel_azimuth = .0
-        ranges = []
-        previous_mach = 0
+        previous_mach = .0
 
         gravity_vector = Vector(.0, cGravityConstant, .0)
         range_vector = Vector(.0, -sight_height, .0)
+
+        ranges = []
 
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)
@@ -242,11 +243,11 @@ class TrajectoryCalc:
             twist_coefficient = -1 if twist > 0 else 1
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        seenZero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
+        seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
         if range_vector.y >= 0:
-            seenZero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
+            seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
         elif range_vector.y < 0 and barrel_elevation < look_angle:
-            seenZero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
+            seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
 
         while range_vector.x <= maximum_range + calc_step:
             _flag = TrajFlag.NONE
@@ -271,15 +272,15 @@ class TrajectoryCalc:
                 # Zero reference line is the sight line defined by look_angle
                 reference_height = range_vector.x * math.tan(look_angle)
                 # If we haven't seen ZERO_UP, we look for that first
-                if not (seenZero & TrajFlag.ZERO_UP):
+                if not seen_zero & TrajFlag.ZERO_UP:
                     if range_vector.y >= reference_height:
                         _flag |= TrajFlag.ZERO_UP
-                        seenZero |= TrajFlag.ZERO_UP
+                        seen_zero |= TrajFlag.ZERO_UP
                 # We've crossed above sight line; now look for crossing back through it
-                elif not (seenZero & TrajFlag.ZERO_DOWN):
+                elif not seen_zero & TrajFlag.ZERO_DOWN:
                     if range_vector.y < reference_height:
                         _flag |= TrajFlag.ZERO_DOWN
-                        seenZero |= TrajFlag.ZERO_DOWN
+                        seen_zero |= TrajFlag.ZERO_DOWN
 
             # Mach crossing check
             if (velocity / mach <= 1) and (previous_mach > 1):

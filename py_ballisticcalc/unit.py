@@ -195,7 +195,7 @@ class AbstractUnit:
         units = self._defined_units
         props = UnitPropsDict[units]
         v = self.from_raw(self._value, units)
-        return f'{round(v, props.accuracy)} {props.symbol}'
+        return f'{round(v, props.accuracy)}{props.symbol}'
 
     def __repr__(self):
         """Returns instance as readable view
