@@ -54,4 +54,4 @@ class Calculator:
         if not shot.zero_angle:
             shot.zero_angle = self._elevation
         data = self._calc.trajectory(self.weapon, shot, step, extra_data)
-        return HitResult(data, extra_data)
+        return HitResult(self.weapon, shot, data, extra_data)
