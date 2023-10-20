@@ -161,9 +161,9 @@ class DangerSpace(NamedTuple):
         polygon = patches.Polygon(vertices, closed=True,
                                   edgecolor='none', facecolor='r', alpha=0.5)
         ax.add_patch(polygon)
-        ax.text(begin_dist, end_drop - 2 * PLOT_FONT_HEIGHT,
+        ax.text(begin_dist + (end_dist-begin_dist)/2, end_drop,
                 f"Danger space\nat {self.at_range.distance << Set.Units.distance}",
-                fontsize=PLOT_FONT_SIZE)
+                linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
 
 
 @dataclass(frozen=True)
@@ -294,40 +294,52 @@ class HitResult:
         font_size = 552 / 72.0
         df = self.dataframe
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
+        max_range = self.trajectory[-1].distance >> Set.Units.distance
 
         for p in self.trajectory:
-
             if TrajFlag(p.flag) & TrajFlag.ZERO:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
                         [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-                ax.text((p.distance >> Set.Units.distance) + 10, df['drop'].min() + 10,
+                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(),
                         f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
-                        fontsize=PLOT_FONT_SIZE, rotation=90)
+                        fontsize=font_size, rotation=90)
             if TrajFlag(p.flag) & TrajFlag.MACH:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--')
-                ax.text((p.distance >> Set.Units.distance) + 10, df['drop'].min() + 10, "Mach",
-                        fontsize=PLOT_FONT_SIZE, rotation=90)
+                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
+                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(), "Mach 1",
+                        fontsize=font_size, rotation=90)
 
         max_range_in_drop_units = self.trajectory[-1].distance >> Set.Units.drop
         # Sight line
-        x_values = [0, df.distance.max()]
-        y_values = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
-        ax.plot(x_values, y_values, linestyle='--', color='purple')
-        ax.text(df.distance.min() + 20, - PLOT_FONT_HEIGHT,
-                "Sight line", fontsize=font_size, color='purple')
-
+        x_sight = [0, df.distance.max()]
+        y_sight = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
+        ax.plot(x_sight, y_sight, linestyle='--', color=[.3,0,.3,.5])
         # Barrel pointing line
-        x_values = [0, df.distance.max()]
-        y_values = [-(self.weapon.sight_height >> Set.Units.drop),
+        x_bbl = [0, df.distance.max()]
+        y_bbl = [-(self.weapon.sight_height >> Set.Units.drop),
                     max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
                     -(self.weapon.sight_height >> Set.Units.drop)]
-        ax.plot(x_values, y_values, linestyle=':', color='k', alpha=0.3)
-        ax.text(df.distance.max() - 20, - PLOT_FONT_HEIGHT,
-                "Barrel pointing", fontsize=font_size, color='k')
+        ax.plot(x_bbl, y_bbl, linestyle=':', color=[0,0,0,.5])
+        # Line labels
+        sight_above_bbl = True if y_sight[1] > y_bbl[1] else False
+        angle = math.degrees(math.atan((y_sight[1]-y_sight[0])/(x_sight[1]-x_sight[0])))
+        ax.text(x_sight[1], y_sight[1], "Sight line", linespacing=1.2,
+                 rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
+                 fontsize=font_size, color=[.3,0,.3,1], ha='right',
+                 va='bottom' if sight_above_bbl else 'top')
+        angle = math.degrees(math.atan((y_bbl[1]-y_bbl[0])/(x_bbl[1]-x_bbl[0])))
+        ax.text(x_bbl[1], y_bbl[1], "Barrel pointing", linespacing=1.2,
+                 rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
+                 fontsize=font_size, color='k', ha='right',
+                 va='top' if sight_above_bbl else 'bottom')
 
         df.plot(x='distance', xlabel=Set.Units.distance.symbol,
                 y=['velocity'], ylabel=Set.Units.velocity.symbol,
-                secondary_y=True,
+                secondary_y=True, color=[0,.3,0,.5],
                 ylim=[0, df['velocity'].max()], ax=ax)
+
+        # Let secondary shine through
+        ax.set_zorder(1)
+        ax.set_facecolor([0,0,0,0])
+
         return ax

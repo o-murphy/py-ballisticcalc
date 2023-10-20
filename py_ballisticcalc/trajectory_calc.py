@@ -1,3 +1,4 @@
+# pylint: disable=missing-class-docstring,missing-function-docstring
 """pure python trajectory calculation backend"""
 
 import math
