@@ -1,3 +1,4 @@
+# pylint: disable=missing-class-docstring,missing-function-docstring
 """pure python trajectory calculation backend"""
 
 import math
@@ -113,7 +114,7 @@ class TrajectoryCalc:
     def zero_angle(self, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
         return self._zero_angle(self.ammo, weapon, atmo, distance, look_angle)
 
-    def trajectory(self, weapon: Weapon, shot_info: Shot, max_range: Distance, dist_step: Distance,
+    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
         atmo = shot_info.atmo
         winds = shot_info.winds
@@ -123,7 +124,7 @@ class TrajectoryCalc:
             print('ext', extra_data)
             dist_step = Distance.Foot(0.2)
             filter_flags = TrajFlag.ALL
-        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, max_range, dist_step, filter_flags)
+        return self._trajectory(self.ammo, atmo, shot_info, winds, max_range, dist_step, filter_flags)
 
     def _zero_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
         calc_step = self.get_calc_step(distance.units(10) >> Distance.Foot)
@@ -176,13 +177,13 @@ class TrajectoryCalc:
 
         return Angular.Radian(barrel_elevation)
 
-    def _trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
+    def _trajectory(self, ammo: Ammo, atmo: Atmo,
                     shot_info: Shot, winds: list[Wind],
                     max_range: Distance, dist_step: Distance, filter_flags: TrajFlag):
 
         time = 0
         look_angle = shot_info.look_angle >> Angular.Radian
-        twist = weapon.twist >> Distance.Inch
+        twist = shot_info.weapon.twist >> Distance.Inch
         length = ammo.length >> Distance.Inch
         diameter = ammo.dm.diameter >> Distance.Inch
         weight = ammo.dm.weight >> Weight.Grain
@@ -203,7 +204,7 @@ class TrajectoryCalc:
 
         barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
         alt0 = atmo.altitude >> Distance.Foot
-        sight_height = weapon.sight_height >> Distance.Foot
+        sight_height = shot_info.weapon.sight_height >> Distance.Foot
 
         next_range_distance = .0
         barrel_azimuth = .0  # TODO use from shot_info
@@ -232,7 +233,7 @@ class TrajectoryCalc:
                                  math.cos(barrel_elevation) * math.sin(barrel_azimuth)) * velocity
 
         if twist != 0 and length and diameter:
-            stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
+            stability_coefficient = calculate_stability_coefficient(shot_info.weapon.twist, ammo, atmo)
             twist_coefficient = -1 if twist > 0 else 1
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
@@ -345,10 +346,10 @@ class TrajectoryCalc:
         return cdm
 
 
-def calculate_stability_coefficient(ammo: Ammo, rifle: Weapon, atmo: Atmo):
+def calculate_stability_coefficient(twist_rate: Distance, ammo: Ammo, atmo: Atmo):
     weight = ammo.dm.weight >> Weight.Grain
     diameter = ammo.dm.diameter >> Distance.Inch
-    twist = math.fabs(rifle.twist >> Distance.Inch) / diameter
+    twist = math.fabs(twist_rate >> Distance.Inch) / diameter
     length = (ammo.length >> Distance.Inch) / diameter
     ft = atmo.temperature >> Temperature.Fahrenheit
     mv = ammo.mv >> Velocity.FPS

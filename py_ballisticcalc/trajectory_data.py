@@ -8,7 +8,6 @@ from typing import NamedTuple
 
 from .settings import Settings as Set
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit
-from .munition import Weapon
 from .conditions import Shot
 
 try:
@@ -290,7 +289,7 @@ class HitResult:
         if not self.extra:
             logging.warning("HitResult.plot: To show extended data"
                             "Use Calculator.fire(..., extra_data=True)")
-        font_size = 552 / 72.0
+        font_size = PLOT_FONT_SIZE
         df = self.dataframe
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
 
@@ -322,8 +321,8 @@ class HitResult:
                     max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
                     -(self.shot.weapon.sight_height >> Set.Units.drop)]
         ax.plot(x_values, y_values, linestyle=':', color='k', alpha=0.3)
-        ax.text(df.distance.max() - 20, - PLOT_FONT_HEIGHT,
-                "Barrel pointing", fontsize=font_size, color='k')
+        ax.text(df.distance.max(), PLOT_FONT_HEIGHT,
+                "Barrel pointing", fontsize=font_size, color='k', ha='right')
 
         df.plot(x='distance', xlabel=Set.Units.distance.symbol,
                 y=['velocity'], ylabel=Set.Units.velocity.symbol,

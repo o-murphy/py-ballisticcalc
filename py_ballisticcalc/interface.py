@@ -46,7 +46,7 @@ class Calculator:
                                                      - (zero_look_angle >> Angular.Radian))
         return self.weapon.zero_elevation
 
-    def fire(self, shot: Shot, range: [float, Distance],
+    def fire(self, shot: Shot, trajectory_range: [float, Distance],
              trajectory_step: [float, Distance] = 0,
              extra_data: bool = False) -> HitResult:
         """Calculates trajectory
@@ -56,8 +56,8 @@ class Calculator:
         :param extra_data: True => store TrajectoryData for every calculation step;
             False => store TrajectoryData only for each trajectory_step
         """
-        range = Settings.Units.distance(range)
+        trajectory_range = Settings.Units.distance(trajectory_range)
         step = Settings.Units.distance(trajectory_step)
         self._calc = TrajectoryCalc(self.ammo)
-        data = self._calc.trajectory(self.weapon, shot, range, step, extra_data)
+        data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
         return HitResult(shot, data, extra_data)

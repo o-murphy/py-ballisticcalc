@@ -154,7 +154,7 @@ class Shot(TypedUnits):
     :param relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
     :param cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
         from the vertical plane into the horizontal plane by sine(cant_angle)
-    """    
+    """
     look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     relative_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)

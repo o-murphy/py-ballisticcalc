@@ -8,7 +8,7 @@ class TestDangerSpace(unittest.TestCase):
         self.look_angle = Angular.Degree(0)
         weight, diameter = 168, 0.308
         length = Distance.Inch(1.282)
-        weapon = Weapon(0, Distance.Foot(300), zero_look_angle=self.look_angle)
+        weapon = Weapon(0)
         dm = DragModel(0.223, TableG7, weight, diameter)
         ammo = Ammo(dm, length, Velocity.FPS(2750), Temperature.Celsius(15))
         ammo.calc_powder_sens(2723, 0)
@@ -16,8 +16,9 @@ class TestDangerSpace(unittest.TestCase):
         calc = Calculator(weapon, ammo, zero_atmo)
         current_atmo = Atmo(110, 1000, 15, 72)
         current_winds = [Wind(2, 90)]
-        shot = Shot(3000, atmo=current_atmo, winds=current_winds)
-        self.shot_result = calc.fire(shot, Distance.Yard(100), extra_data=True)
+        shot = Shot(weapon=weapon, atmo=current_atmo, winds=current_winds)
+        calc.set_weapon_zero(Distance.Foot(300))
+        self.shot_result = calc.fire(shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(100), extra_data=True)
 
     def test_danger_space(self):
         danger_space = self.shot_result.danger_space(
