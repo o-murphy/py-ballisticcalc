@@ -100,15 +100,12 @@ class TrajectoryCalc:
         self._curve = calculate_curve(self._table_data)
 
     def get_calc_step(self, step: float):
-
         maximum_step = Settings._MAX_CALC_STEP_SIZE
         step /= 2
-
         if step > maximum_step:
             step_order = int(math.floor(math.log10(step)))
             maximum_order = int(math.floor(math.log10(maximum_step)))
             step /= math.pow(10, step_order - maximum_order + 1)
-
         return step
 
     def zero_angle(self, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
@@ -121,7 +118,7 @@ class TrajectoryCalc:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            print('ext', extra_data)
+            #print('ext', extra_data)
             dist_step = Distance.Foot(0.2)
             filter_flags = TrajFlag.ALL
         return self._trajectory(self.ammo, atmo, shot_info, winds, max_range, dist_step, filter_flags)

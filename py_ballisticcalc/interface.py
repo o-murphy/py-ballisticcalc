@@ -40,6 +40,7 @@ class Calculator:
         :param zero_look_angle: Angle between sight line and horizontal when sighting zero target.
         """
         self._calc = TrajectoryCalc(self.ammo)
+        zero_distance = Settings.Units.distance(zero_distance)
         zero_total_elevation = self._calc.zero_angle(self.weapon, self.zero_atmo,
                                                     zero_distance, zero_look_angle)
         self.weapon.zero_elevation = Angular.Radian((zero_total_elevation >> Angular.Radian)
