@@ -1,3 +1,4 @@
 prune py_ballisticcalc_exts
 prune tests
 include py.typed
+include Example.ipynb

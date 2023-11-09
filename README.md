@@ -7,12 +7,14 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
   * [From sources](#installing-from-sources)
   * [Clone and build](#clone-and-build)
 * **[Usage](#usage)**
+  * **[Jupyter notebook](#jupyter-notebook)**
   * [Units of measure](#unit-manipulation-syntax)
   * [An example of calculations](#an-example-of-calculations)
   * [Output example](#example-of-the-formatted-output)
 * **[Older versions]()**
   * [v1.0.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.0.12)
 * **[Contributors](#contributors)**
+* **[Sister projects](#sister-projects)**
 * **[About project](#about-project)**
 
 ### Installation
@@ -47,6 +49,105 @@ python setup.py build_ext --inplace
 ```
 
 ## Usage
+
+#### Jupyter notebook
+
+```python
+# Uncomment pyximport to compile instead of running pure python
+#import pyximport; pyximport.install(language_level=3)
+
+from matplotlib import pyplot as plt
+from py_ballisticcalc import Velocity, Distance, Angular
+from py_ballisticcalc import DragModel, TableG7
+from py_ballisticcalc import Ammo
+from py_ballisticcalc import Weapon, Shot, Calculator
+from py_ballisticcalc import Settings as Set
+```
+
+```python
+# Define standard .308
+dm = DragModel(0.22, TableG7, 168, 0.308)
+ammo = Ammo(dm, 1.22, Velocity(2600, Velocity.FPS))
+
+# Establish 100-yard zero
+weapon = Weapon(4, 100, 12, Angular.Mil(0))
+calc = Calculator(weapon, ammo)
+zero_elevation = calc.elevation
+print(f'Barrel elevation for zero: {zero_elevation << Angular.MOA}')
+```
+
+    Barrel elevation for zero: 6.41MOA
+    
+
+
+```python
+# Plot trajectory out to 500 yards
+shot = Shot(500, zero_angle=calc.elevation, relative_angle=Angular.Mil(0))
+shot_result = calc.fire(shot, 0, extra_data=True)
+ax = shot_result.plot()
+# Find danger space for a half-meter tall target at 300 yards
+danger_space = shot_result.danger_space(
+    Distance.Yard(300), Distance.Meter(.5), Angular.Mil(0)
+)
+print(danger_space)
+# Highlight danger space on the plot
+danger_space.overlay(ax)
+plt.show()
+```
+
+    ext True
+    Danger space at 300.0yd for 50.0cm tall target ranges from 187.533yd to 361.7yd
+    
+
+
+    
+![png](doc/output_2_1.png)
+    
+
+
+
+```python
+# Now find the elevation needed to hit a target at 200 yards with 10-degree look angle
+weapon = Weapon(4, 200, 12, Angular.Degree(10))
+calc = Calculator(weapon, ammo)
+zero_elevation = calc.elevation
+print(f'To hit target at {weapon.zero_distance << Set.Units.distance} sighted at a ' 
+      f'{weapon.zero_look_angle << Angular.Degree} look angle, Barrel elevation={zero_elevation << Angular.Degree}')
+```
+
+    To hit target at 200.0yd sighted at a 10.0° look angle, Barrel elevation=10.1224°
+    
+
+
+```python
+shot = Shot(900, zero_angle=calc.elevation)
+shot_result = calc.fire(shot, 0, extra_data=True)
+ax = shot_result.plot()
+# Find danger space for a target at 500 yards
+danger_space = shot_result.danger_space(
+    Distance.Yard(300), Distance.Meter(.5), calc.weapon.zero_look_angle
+)
+print(danger_space)
+# Highlight danger space on the plot
+danger_space.overlay(ax)
+plt.show()
+```
+
+    ext True
+    Danger space at 300.0yd for 50.0cm tall target ranges from 164.667yd to 362.433yd
+    
+
+
+    
+![png](doc/output_4_1.png)
+    
+
+
+
+```python
+shot_result.dataframe.to_clipboard()
+```
+
 
 The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
 #### Unit manipulation syntax:
@@ -149,11 +250,23 @@ python -m py_ballisticcalc.example
 
 ## Contributors
 ### This project exists thanks to all the people who contribute.
+<a href="https://github.com/o-murphy/py_ballisticcalc/graphs/contributors"><img height=32 src="https://contrib.rocks/image?repo=o-murphy/py_ballisticcalc" /></a>
 #### Special thanks to:
 - **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert, Financial Engineer \
 *For the help in understanding and improvement of some calculation methods*
 - **[Nikolay Gekht](https://github.com/nikolaygekht)** \
 *For the sources code on C# and GO-lang from which this project firstly was forked from*
+
+## Sister projects
+
+### <img align="center" height=40 src="https://github.com/o-murphy/py-balcalc/blob/main/py_balcalc/resources/app_icon.png?raw=true" />[Py-BalCalc](https://github.com/o-murphy/py-balcalc) and [eBallistica](https://github.com/o-murphy/py-balcalc)
+* **Py-BalCalc** - GUI App for [py_ballisticcalc](https://github.com/o-murphy/py_ballisticcalc) solver library and profiles editor
+* **eBallistica** - Kivy based mobile App for ballistic calculations
+
+### <img align="center" height=32 src="https://github.com/JAremko/ArcherBC2/blob/main/resources/skins/sol-dark/icons/icon-frame.png?raw=true" /> [ArcherBC2](https://github.com/JAremko/ArcherBC2) and [ArcherBC2 mobile](https://github.com/ApodemusSylvaticus/archerBC2_mobile)
+* **ArcherBC2** and **ArcherBC2 mobile** - Ballistic profiles editors
+  - *Also, checkout [a7p_transfer_example](https://github.com/JAremko/a7p_transfer_example) or [a7p](https://github.com/o-murphy/a7p) repo to get info about ballistic profiles format*
+
 
 ## About project
 
@@ -168,11 +281,11 @@ and then ported to Go.
 Now it's also ported to python3 and expanded to support calculation trajectory by 
 multiple ballistics coefficients and using custom drag data (such as Doppler radar data ©Lapua, etc.)
 
-The online version of Go documentation is located here: https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc
+**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)**
 
-C# version of the package is located here: https://github.com/gehtsoft-usa/BallisticCalculator1
+**[C# version of the package is located here](https://github.com/gehtsoft-usa/BallisticCalculator1)**
 
-The online version of C# API documentation is located here: https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html
+**[The online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)**
 
 Go documentation can be obtained using godoc tool.
 
