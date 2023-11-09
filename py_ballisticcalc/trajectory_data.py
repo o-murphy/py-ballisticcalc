@@ -8,6 +8,8 @@ from typing import NamedTuple
 
 from .settings import Settings as Set
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit
+from .munition import Weapon
+from .conditions import Shot
 
 try:
     import pandas as pd
@@ -127,8 +129,16 @@ class DangerSpace(NamedTuple):
     target_height: Distance
     begin: TrajectoryData
     end: TrajectoryData
+    look_angle: Angular
+
+    def __str__(self) -> str:
+        return f'Danger space at {self.at_range.distance << Set.Units.distance} '\
+             + f'for {self.target_height << Set.Units.drop} tall target '\
+             + f'ranges from {self.begin.distance << Set.Units.distance} '\
+             + f'to {self.end.distance << Set.Units.distance}'
 
     def overlay(self, ax: 'Axes'):
+        """Highlights danger-space region on plot"""
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
 
@@ -140,24 +150,27 @@ class DangerSpace(NamedTuple):
         range_drop = self.at_range.drop >> Set.Units.drop
         h = self.target_height >> Set.Units.drop
 
+        # Target position and height:
         ax.plot((range_dist, range_dist), (range_drop + h / 2, range_drop - h / 2),
                 color='r', linestyle=':')
+        # Shaded danger-space region:
         vertices = (
-            (begin_dist, begin_drop), (end_dist, end_drop + h),
-            (end_dist, end_drop), (begin_dist, begin_drop - h)
+            (begin_dist, begin_drop), (end_dist, begin_drop),
+            (end_dist, end_drop), (begin_dist, end_drop)
         )
-
         polygon = patches.Polygon(vertices, closed=True,
                                   edgecolor='none', facecolor='r', alpha=0.5)
         ax.add_patch(polygon)
-        ax.text(begin_dist, end_drop - 2 * PLOT_FONT_HEIGHT,
+        ax.text(begin_dist + (end_dist-begin_dist)/2, end_drop,
                 f"Danger space\nat {self.at_range.distance << Set.Units.distance}",
-                fontsize=PLOT_FONT_SIZE)
+                linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
 
 
 @dataclass(frozen=True)
 class HitResult:
     """Results of the shot"""
+    weapon: Weapon
+    shot: Shot
     trajectory: list[TrajectoryData] = field(repr=False)
     extra: bool = False
 
@@ -180,7 +193,7 @@ class HitResult:
         self.__check_extra__()
         data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO.value]
         if len(data) < 1:
-            raise ArithmeticError("Can't found zero crossing points")
+            raise ArithmeticError("Can't find zero crossing points")
         return data
 
     def danger_space(self,
@@ -190,11 +203,10 @@ class HitResult:
                      ) -> DangerSpace:
         """
         Assume that the trajectory hits the center of a target at any distance.
-        Now we want to know
-        how much ranging error we can tolerate if the critical region of the target has height *h*.
-        I.e., we want to know how far forward and backward along the line of sight we can
-        move a target
-        such that the trajectory is still within *h*/2 of the original drop.
+        Now we want to know how much ranging error we can tolerate if the critical region 
+        of the target has height *h*.  I.e., we want to know how far forward and backward
+        along the line of sight we can move a target such that the trajectory is still 
+        within *h*/2 of the original drop.
 
         :param at_range: Danger space is calculated for a target centered at this distance
         :param target_height: Target height (*h*) determines danger space
@@ -235,9 +247,9 @@ class HitResult:
                 )
                 if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
                     return self.trajectory[i]
-            return Distance.Yard(0)
+            return self.trajectory[0]
 
-        def find_end_danger(row_num: int) -> [TrajectoryData, None]:
+        def find_end_danger(row_num: int) -> TrajectoryData:
             """
             End of danger space is first .distance' > .distance where 
                 |target_center - .drop'| >= target_height/2
@@ -251,68 +263,83 @@ class HitResult:
                         prime_row.distance.raw_value - center_row.distance.raw_value)
                 if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
                     return prime_row
-            return None
+            return self.trajectory[-1]
 
         return DangerSpace(self.trajectory[i],
                            target_height,
                            find_begin_danger(i),
-                           find_end_danger(i))
+                           find_end_danger(i),
+                           look_angle)
 
     @property
     def dataframe(self):
         """:return: the trajectory table as a DataFrame"""
         if pd is None:
-            raise ImportError("Install pandas to convert trajectory as dataframe")
+            raise ImportError("Install pandas to get trajectory as dataframe")
         self.__check_extra__()
         col_names = list(TrajectoryData._fields)
         trajectory = [p.in_def_units() for p in self]
         return pd.DataFrame(trajectory, columns=col_names)
 
-    def plot(self) -> 'Axes':
-        """:return: the graph of the trajectory"""
+    def plot(self, look_angle: Angular = None) -> 'Axes':
+        """:return: graph of the trajectory"""
+        if look_angle is None:
+            look_angle = self.weapon.zero_look_angle
 
         if matplotlib is None:
-            raise ImportError("Install matplotlib to get results as a plot")
+            raise ImportError("Install matplotlib to plot results")
         if not self.extra:
             logging.warning("HitResult.plot: To show extended data"
                             "Use Calculator.fire(..., extra_data=True)")
         font_size = 552 / 72.0
         df = self.dataframe
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
+        max_range = self.trajectory[-1].distance >> Set.Units.distance
 
-        for p in self:
-
+        for p in self.trajectory:
             if TrajFlag(p.flag) & TrajFlag.ZERO:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
                         [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-                ax.text((p.distance >> Set.Units.distance) + 10, df['drop'].min() + 10,
+                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(),
                         f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
-                        fontsize=PLOT_FONT_SIZE, rotation=90)
+                        fontsize=font_size, rotation=90)
             if TrajFlag(p.flag) & TrajFlag.MACH:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle='--')
-                ax.text((p.distance >> Set.Units.distance) + 10, df['drop'].min() + 10, "Mach",
-                        fontsize=PLOT_FONT_SIZE, rotation=90)
+                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
+                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(), "Mach 1",
+                        fontsize=font_size, rotation=90)
 
-        # # scope line
-        x_values = [0, df.distance.max()]  # Adjust these as needed
-        y_values = [0, 0]  # Adjust these as needed
-        ax.plot(x_values, y_values, linestyle='--', color='purple')
-        ax.text(df.distance.min() + 20, - PLOT_FONT_HEIGHT,
-                "Scope adjustment line", fontsize=font_size, color='purple')
-
-        # TODO: get the angles of zero_look, barel elevation etc on plot
-        # ax.plot([0, df.distance.max() * math.cos(Angular.Mil(2) >> Angular.Degree)],
-        #         [0, df.distance.max() * math.sin(Angular.Mil(2) >> Angular.Degree)],
-        #         linestyle=':', color='g')
-        # ax.text(df.distance.min() + 20, + PLOT_FONT_HEIGHT, "Scope zeroing line",
-        #         fontsize=font_size, color='g',
-        #         rotation=(Angular.Mil(2) >> Angular.Degree) * 10)
-        #
-        # print('rot', Angular.Mil(2) << Angular.Degree)
+        max_range_in_drop_units = self.trajectory[-1].distance >> Set.Units.drop
+        # Sight line
+        x_sight = [0, df.distance.max()]
+        y_sight = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
+        ax.plot(x_sight, y_sight, linestyle='--', color=[.3,0,.3,.5])
+        # Barrel pointing line
+        x_bbl = [0, df.distance.max()]
+        y_bbl = [-(self.weapon.sight_height >> Set.Units.drop),
+                    max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
+                    -(self.weapon.sight_height >> Set.Units.drop)]
+        ax.plot(x_bbl, y_bbl, linestyle=':', color=[0,0,0,.5])
+        # Line labels
+        sight_above_bbl = True if y_sight[1] > y_bbl[1] else False
+        angle = math.degrees(math.atan((y_sight[1]-y_sight[0])/(x_sight[1]-x_sight[0])))
+        ax.text(x_sight[1], y_sight[1], "Sight line", linespacing=1.2,
+                 rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
+                 fontsize=font_size, color=[.3,0,.3,1], ha='right',
+                 va='bottom' if sight_above_bbl else 'top')
+        angle = math.degrees(math.atan((y_bbl[1]-y_bbl[0])/(x_bbl[1]-x_bbl[0])))
+        ax.text(x_bbl[1], y_bbl[1], "Barrel pointing", linespacing=1.2,
+                 rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
+                 fontsize=font_size, color='k', ha='right',
+                 va='top' if sight_above_bbl else 'bottom')
 
         df.plot(x='distance', xlabel=Set.Units.distance.symbol,
                 y=['velocity'], ylabel=Set.Units.velocity.symbol,
-                secondary_y=True,
+                secondary_y=True, color=[0,.3,0,.5],
                 ylim=[0, df['velocity'].max()], ax=ax)
+
+        # Let secondary shine through
+        ax.set_zorder(1)
+        ax.set_facecolor([0,0,0,0])
+
         return ax
