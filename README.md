@@ -21,32 +21,66 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
 #### Latest stable release from pypi**
 ```shell
 pip install py-ballisticcalc
+
+# Using precompiled backend (improves performance)
+pip install py-ballisticcalc[exts]
+
+# Using matplotlib and pandas uses additional dependencies
+pip install py-ballisticcalc[charts]
 ```
-#### Installing from sources
-**MSVC** or **GCC** required
-* Download and install **MSVC** or **GCC** depending on target platform
-* Use one of the references you need:
+
+
+#### Using matplotlib and pandas uses additional dependencies
 ```shell
-# no binary from PyPi
-pip install py-ballisticcalc==<version> --no-binary py-ballisticcalc
-
-# master brunch
-pip install git+https://github.com/o-murphy/py_ballisticcalc
-
-# specific branch
-pip install git+https://github.com/o-murphy/py_ballisticcalc.git@<target_branch_name>
+pip install py-ballisticcalc[charts]
 ```
 
-#### Clone and build
-**MSVC** or **GCC** required
-```shell
-git clone https://github.com/o-murphy/py_ballisticcalc
-cd py_ballisticcalc
-python -m venv venv
-. venv/bin/activate
-pip install cython
-python setup.py build_ext --inplace
-```
+
+[//]: # (#### Installing from sources)
+
+[//]: # (**MSVC** or **GCC** required)
+
+[//]: # (* Download and install **MSVC** or **GCC** depending on target platform)
+
+[//]: # (* Use one of the references you need:)
+
+[//]: # (```shell)
+
+[//]: # (# no binary from PyPi)
+
+[//]: # (pip install py-ballisticcalc==<version> --no-binary py-ballisticcalc)
+
+[//]: # ()
+[//]: # (# master brunch)
+
+[//]: # (pip install git+https://github.com/o-murphy/py_ballisticcalc)
+
+[//]: # ()
+[//]: # (# specific branch)
+
+[//]: # (pip install git+https://github.com/o-murphy/py_ballisticcalc.git@<target_branch_name>)
+
+[//]: # (```)
+
+[//]: # (#### Clone and build)
+
+[//]: # (**MSVC** or **GCC** required)
+
+[//]: # (```shell)
+
+[//]: # (git clone https://github.com/o-murphy/py_ballisticcalc)
+
+[//]: # (cd py_ballisticcalc)
+
+[//]: # (python -m venv venv)
+
+[//]: # (. venv/bin/activate)
+
+[//]: # (pip install cython)
+
+[//]: # (python setup.py build_ext --inplace)
+
+[//]: # (```)
 
 ## Usage
 
