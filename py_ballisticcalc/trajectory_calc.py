@@ -1,7 +1,8 @@
+# pylint: disable=missing-class-docstring,missing-function-docstring
 """pure python trajectory calculation backend"""
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 from typing import NamedTuple
 
 from .conditions import Atmo, Shot, Wind
@@ -76,7 +77,7 @@ class Vector:
     def __mul__(self, other: [int, float, 'Vector']):
         if isinstance(other, (int, float)):
             return self.mul_by_const(other)
-        elif isinstance(other, Vector):
+        if isinstance(other, Vector):
             return self.mul_by_vector(other)
         raise TypeError(other)
 
@@ -163,7 +164,7 @@ class TrajectoryCalc:
 
                 delta_time = calc_step / velocity_vector.x
 
-                drag = density_factor * velocity * self.drag_by_match(velocity / mach)
+                drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
 
                 velocity_vector -= (velocity_vector * drag - gravity_vector) * delta_time
                 delta_range_vector = Vector(calc_step, velocity_vector.y * delta_time,
@@ -187,7 +188,7 @@ class TrajectoryCalc:
                     dist_step: Distance, filter_flags: TrajFlag):
 
         time = 0
-
+        look_angle = weapon.zero_look_angle >> Angular.Radian
         twist = weapon.twist >> Distance.Inch
         length = ammo.length >> Distance.Inch
         diameter = ammo.dm.diameter >> Distance.Inch
@@ -214,14 +215,12 @@ class TrajectoryCalc:
 
         next_range_distance = .0
         barrel_azimuth = .0
+        previous_mach = .0
 
         gravity_vector = Vector(.0, cGravityConstant, .0)
         range_vector = Vector(.0, -sight_height, .0)
 
         ranges = []
-
-        previous_y = 0
-        previous_mach = 0
 
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)
@@ -244,6 +243,13 @@ class TrajectoryCalc:
             stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
             twist_coefficient = -1 if twist > 0 else 1
 
+        # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
+        seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
+        if range_vector.y >= 0:
+            seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
+        elif range_vector.y < 0 and barrel_elevation < look_angle:
+            seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
+
         while range_vector.x <= maximum_range + calc_step:
             _flag = TrajFlag.NONE
 
@@ -262,12 +268,20 @@ class TrajectoryCalc:
                 else:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
-            # Zero-crossing check
-            if range_vector.x > 0:  # skipping zero point when "sight_height == 0"
-                if range_vector.y < 0 <= previous_y:
-                    _flag |= TrajFlag.ZERO_DOWN
-                elif range_vector.y >= 0 > previous_y:
-                    _flag |= TrajFlag.ZERO_UP
+            # Zero-crossing checks
+            if range_vector.x > 0:
+                # Zero reference line is the sight line defined by look_angle
+                reference_height = range_vector.x * math.tan(look_angle)
+                # If we haven't seen ZERO_UP, we look for that first
+                if not seen_zero & TrajFlag.ZERO_UP:
+                    if range_vector.y >= reference_height:
+                        _flag |= TrajFlag.ZERO_UP
+                        seen_zero |= TrajFlag.ZERO_UP
+                # We've crossed above sight line; now look for crossing back through it
+                elif not seen_zero & TrajFlag.ZERO_DOWN:
+                    if range_vector.y < reference_height:
+                        _flag |= TrajFlag.ZERO_DOWN
+                        seen_zero |= TrajFlag.ZERO_DOWN
 
             # Mach crossing check
             if (velocity / mach <= 1) and (previous_mach > 1):
@@ -295,7 +309,6 @@ class TrajectoryCalc:
                 if current_item == ranges_length:
                     break
 
-            previous_y = range_vector.y
             previous_mach = velocity / mach
 
             velocity_adjusted = velocity_vector - wind_vector
@@ -303,7 +316,7 @@ class TrajectoryCalc:
             delta_time = calc_step / velocity_vector.x
             velocity = velocity_adjusted.magnitude()
 
-            drag = density_factor * velocity * self.drag_by_match(velocity / mach)
+            drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
 
             velocity_vector -= (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calc_step,
@@ -315,7 +328,7 @@ class TrajectoryCalc:
 
         return ranges
 
-    def drag_by_match(self, mach: float):
+    def drag_by_mach(self, mach: float):
         cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
