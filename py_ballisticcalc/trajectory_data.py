@@ -336,7 +336,9 @@ class HitResult:
         df.plot(x='distance', xlabel=Set.Units.distance.symbol,
                 y=['velocity'], ylabel=Set.Units.velocity.symbol,
                 secondary_y=True, color=[0,.3,0,.5],
-                ylim=[0, df['velocity'].max()], ax=ax)
+                ylim=[df['velocity'].min() - (Unit.FPS(100) >> Set.Units.velocity),
+                      df['velocity'].max() + (Unit.FPS(100) >> Set.Units.velocity)],
+                ax=ax)
 
         # Let secondary shine through
         ax.set_zorder(1)
