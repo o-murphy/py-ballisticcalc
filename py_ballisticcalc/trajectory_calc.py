@@ -266,7 +266,7 @@ class TrajectoryCalc:
                 if current_wind == len_winds - 1:
                     next_wind_range = 1e7
                 else:
-                    next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
+                    next_wind_range = winds[current_wind].until_distance >> Distance.Foot
 
             # Zero-crossing checks
             if range_vector.x > 0:
