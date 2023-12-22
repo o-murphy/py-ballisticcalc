@@ -241,7 +241,7 @@ cdef class TrajectoryCalc:
             wind_vector = Vector(.0, .0, .0)
         else:
             if len_winds > 1:
-                next_wind_range = winds[0].until_distance() >> Distance.Foot
+                next_wind_range = winds[0].until_distance >> Distance.Foot
             wind_vector = wind_to_vector(shot_info, winds[0])
 
         if Settings.USE_POWDER_SENSITIVITY:
