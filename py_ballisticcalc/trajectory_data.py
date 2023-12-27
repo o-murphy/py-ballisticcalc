@@ -276,7 +276,7 @@ class HitResult:
         """:return: the trajectory table as a DataFrame"""
         if pd is None:
             raise ImportError("Install pandas to get trajectory as dataframe")
-        self.__check_extra__()
+        # self.__check_extra__()
         col_names = list(TrajectoryData._fields)
         trajectory = [p.in_def_units() for p in self]
         return pd.DataFrame(trajectory, columns=col_names)

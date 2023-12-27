@@ -4,7 +4,7 @@ __author__ = "o-murphy"
 __copyright__ = ("",)
 
 __credits__ = ["o-murphy"]
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 
 from .backend import *
