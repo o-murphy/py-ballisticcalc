@@ -58,6 +58,8 @@ shot = Shot(Distance.Meter(1000), atmo=current_atmo, winds=current_winds)
 
 shot_result = calc.fire(shot, Distance.Meter(100))
 
+shot_result.dataframe.to_clipboard()
+
 from pprint import pprint
 fieldsss = TrajectoryData._fields
 
