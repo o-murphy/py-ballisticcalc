@@ -11,7 +11,7 @@ from .settings import Settings
 from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
 
-__all__ = ('TrajectoryCalc', )
+__all__ = ('TrajectoryCalc',)
 
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
@@ -101,7 +101,7 @@ class TrajectoryCalc:
 
     def get_calc_step(self, step: float):
 
-        maximum_step = Settings._MAX_CALC_STEP_SIZE
+        maximum_step = Settings.get_max_calc_step_size()
         step /= 2
 
         if step > maximum_step:
@@ -206,6 +206,7 @@ class TrajectoryCalc:
         current_item = 0
 
         stability_coefficient = 1.0
+        twist_coefficient = 0
         next_wind_range = 1e7
 
         barrel_elevation = (shot_info.zero_angle >> Angular.Radian) + (
@@ -222,43 +223,47 @@ class TrajectoryCalc:
 
         ranges = []
 
-        if len_winds < 1:
-            wind_vector = Vector(.0, .0, .0)
-        else:
-            if len_winds > 1:
-                next_wind_range = winds[0].until_distance() >> Distance.Foot
-            wind_vector = wind_to_vector(shot_info, winds[0])
+        wind_vector = Vector(0, 0, 0)
 
-        if Settings.USE_POWDER_SENSITIVITY:
-            velocity = ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
-        else:
-            velocity = ammo.mv >> Velocity.FPS
+        def get_initial_wind():
+            nonlocal wind_vector, next_wind_range
+            if len_winds < 1:
+                wind_vector = Vector(.0, .0, .0)
+            else:
+                if len_winds > 1:
+                    next_wind_range = winds[0].until_distance() >> Distance.Foot
+                wind_vector = wind_to_vector(shot_info, winds[0])
 
-        # x - distance towards target, y - drop and z - windage
-        velocity_vector = Vector(math.cos(barrel_elevation) * math.cos(barrel_azimuth),
-                                 math.sin(barrel_elevation),
-                                 math.cos(barrel_elevation) * math.sin(barrel_azimuth)) * velocity
+        def accurate_velocity_to_temperature():
+            if Settings.USE_POWDER_SENSITIVITY:
+                return ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
+            else:
+                return ammo.mv >> Velocity.FPS
 
-        if twist != 0 and length and diameter:
-            stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
-            twist_coefficient = -1 if twist > 0 else 1
+        def get_initial_velocity_vector():
+            # x - distance towards target, y - drop and z - windage
+            return Vector(math.cos(barrel_elevation) * math.cos(barrel_azimuth),
+                          math.sin(barrel_elevation),
+                          math.cos(barrel_elevation) * math.sin(barrel_azimuth)) * velocity
 
-        # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
-        if range_vector.y >= 0:
-            seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
-        elif range_vector.y < 0 and barrel_elevation < look_angle:
-            seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
+        def accurate_to_twist():
+            nonlocal stability_coefficient, twist_coefficient
+            if twist != 0 and length and diameter:
+                stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
+                twist_coefficient = -1 if twist > 0 else 1
 
-        while range_vector.x <= maximum_range + calc_step:
-            _flag = TrajFlag.NONE
+        def look_for_seen_zero():
+            # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
+            seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
+            if range_vector.y >= 0:
+                seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
+            elif range_vector.y < 0 and barrel_elevation < look_angle:
+                seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
+            return seen_zero
 
-            if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
-                break
-
-            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(
-                alt0 + range_vector.y)
-
+        # NOTE: bellow the functions to calculate trajectory over the loop
+        def get_next_wind():
+            nonlocal current_wind, next_wind_range, wind_vector
             if range_vector.x >= next_wind_range:
                 current_wind += 1
                 wind_vector = wind_to_vector(shot_info, winds[current_wind])
@@ -268,6 +273,8 @@ class TrajectoryCalc:
                 else:
                     next_wind_range = winds[current_wind].until_distance >> Distance.Foot
 
+        def look_for_zero_crossing():
+            nonlocal seen_zero, _flag
             # Zero-crossing checks
             if range_vector.x > 0:
                 # Zero reference line is the sight line defined by look_angle
@@ -283,32 +290,35 @@ class TrajectoryCalc:
                         _flag |= TrajFlag.ZERO_DOWN
                         seen_zero |= TrajFlag.ZERO_DOWN
 
+        def look_for_mach_crossing():
             # Mach crossing check
-            if (velocity / mach <= 1) and (previous_mach > 1):
+            nonlocal _flag
+            if velocity / mach <= 1 < previous_mach:
                 _flag |= TrajFlag.MACH
 
+        def look_for_next_range():
             # Next range check
+            nonlocal _flag, next_range_distance, current_item
             if range_vector.x >= next_range_distance:
                 _flag |= TrajFlag.RANGE
                 next_range_distance += step
                 current_item += 1
 
-            if _flag & filter_flags:
+        def register_trajectory_point():
 
-                windage = range_vector.z
+            windage = range_vector.z
 
-                if twist != 0:
-                    windage += (1.25 * (stability_coefficient + 1.2)
-                                * math.pow(time, 1.83) * twist_coefficient) / 12
+            if twist != 0:
+                windage += (1.25 * (stability_coefficient + 1.2)
+                            * math.pow(time, 1.83) * twist_coefficient) / 12
 
-                ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
-                    velocity, mach, windage, weight, _flag.value
-                ))
+            ranges.append(create_trajectory_row(
+                time, range_vector, velocity_vector,
+                velocity, mach, windage, weight, _flag.value
+            ))
 
-                if current_item == ranges_length:
-                    break
-
+        def init_next_range_data():
+            nonlocal previous_mach, velocity_vector, range_vector, velocity, time
             previous_mach = velocity / mach
 
             velocity_adjusted = velocity_vector - wind_vector
@@ -326,6 +336,34 @@ class TrajectoryCalc:
             velocity = velocity_vector.magnitude()
             time += delta_range_vector.magnitude() / velocity
 
+        get_initial_wind()
+        velocity = accurate_velocity_to_temperature()
+        velocity_vector = get_initial_velocity_vector()
+        accurate_to_twist()
+        seen_zero = look_for_seen_zero()
+
+        while range_vector.x <= maximum_range + calc_step:
+
+            if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
+                break
+
+            _flag = TrajFlag.NONE  # reset a trajectory flag
+
+            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(
+                alt0 + range_vector.y)
+
+            get_next_wind()
+            look_for_zero_crossing()
+            look_for_mach_crossing()
+            look_for_next_range()
+
+            if _flag & filter_flags:
+                register_trajectory_point()
+                if current_item == ranges_length:
+                    break
+
+            init_next_range_data()
+
         return ranges
 
     def drag_by_mach(self, mach: float):
@@ -334,9 +372,6 @@ class TrajectoryCalc:
 
     @property
     def cdm(self):
-        return self._cdm()
-
-    def _cdm(self):
         """
         Returns custom drag function based on input data
         """
@@ -389,7 +424,6 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
     trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
-
 
     return TrajectoryData(
         time=time,
