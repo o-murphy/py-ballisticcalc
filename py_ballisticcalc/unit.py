@@ -89,6 +89,9 @@ class Unit(IntEnum):
         """
         return UnitPropsDict[self].symbol
 
+    def __repr__(self) -> str:
+        return UnitPropsDict[self].name
+    
     def __call__(self: 'Unit', value: [int, float, 'AbstractUnit']) -> 'AbstractUnit':
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
