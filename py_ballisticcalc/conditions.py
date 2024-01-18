@@ -128,7 +128,11 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
 
 @dataclass
 class Wind(TypedUnits):
-    """Stores wind data at the desired distance"""
+    """
+    Stores wind data at the desired distance.
+    direction_from = 0 is blowing from behind shooter. 
+    direction_from = 90 degrees is blowing from shooter's left towards right.
+    """
     velocity: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
     direction_from: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     until_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)

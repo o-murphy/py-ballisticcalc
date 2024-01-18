@@ -366,7 +366,7 @@ def wind_to_vector(shot: Shot, wind: Wind):
 
     Looks like we only start with data on wind direction in the x-z plane, not any vertical components.
     Therefore, given wind velocity v with angle d:
-        The downrange "range" component as v*cos(d)
+        The downrange "range" component is v*cos(d)
         The orthogonal "cross" component is v*sin(d)
     When the bullet has a vertical velocity component, meaning velocity angle to horizon a > 0
         the sin(a) range component acts to lift it in the y axis, and only cos(a) acts in the x axis

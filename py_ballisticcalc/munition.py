@@ -24,6 +24,8 @@ class Weapon(TypedUnits):
     def __post_init__(self):
         if not self.twist:
             self.twist = 0
+        if not self.zero_elevation:
+            self.zero_elevation = 0
 
 
 @dataclass

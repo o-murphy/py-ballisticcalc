@@ -502,6 +502,8 @@ class Angular(AbstractUnit):
             result = value / 6 * pi
         else:
             return super().to_raw(value, units)
+        if result > 2*pi:
+            result = result % (2*pi)
         return result
 
     def from_raw(self, value: float, units: Unit):

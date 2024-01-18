@@ -26,6 +26,9 @@ class TestAngular(unittest.TestCase):
             with self.subTest(unit=u):
                 back_n_forth(self, 3, u)
 
+    def test_angle_truncation(self):
+        self.assertAlmostEqual(Angular(720, Angular.Degree), Angular(0, Angular.Degree))
+
 
 class TestDistance(unittest.TestCase):
 
