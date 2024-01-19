@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 
 from .conditions import Shot
-# pylint: disable=import-error,no-name-in-module
+# pylint: disable=import-error,no-name-in-module,wildcard-import,unused-wildcard-import
 from .backend import *
 from .trajectory_data import HitResult
 from .unit import Angular, Distance

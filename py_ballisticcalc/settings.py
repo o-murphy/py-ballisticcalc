@@ -5,16 +5,17 @@ from .unit import Unit, Distance
 
 __all__ = ('Settings',)
 
-class Metadataclass(type):  # Provide representation of static dataclass
-    def __repr__(self):
-        return '\n'.join(f'{field.name} = {getattr(self, field.name)!r}'
-                    for field in dataclasses.fields(self))
+class Metadataclass(type):
+    """Provide representation method for static dataclasses."""
+    def __repr__(cls):
+        return '\n'.join(f'{field.name} = {getattr(cls, field.name)!r}'
+                    for field in dataclasses.fields(cls))
 
 class Settings:  # pylint: disable=too-few-public-methods
     """Global settings class of the py_ballisticcalc library"""
 
     @dataclasses.dataclass
-    class Units(object, metaclass=Metadataclass):  # pylint: disable=too-few-public-methods
+    class Units(metaclass=Metadataclass):  # pylint: disable=too-many-instance-attributes
         """Default units for specified measures"""
         angular: Unit = Unit.DEGREE
         distance: Unit = Unit.YARD
