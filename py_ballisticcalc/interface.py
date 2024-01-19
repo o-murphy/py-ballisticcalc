@@ -1,8 +1,7 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
 
-from .conditions import Atmo, Shot
-from .munition import Weapon, Ammo
+from .conditions import Shot
 # pylint: disable=import-error,no-name-in-module
 from .backend import *
 from .trajectory_data import HitResult

@@ -17,16 +17,12 @@ length = Distance.Inch(1.282)  # Or declare units explicitly
 dm = DragModel(0.223, TableG7, weight, diameter)
 ammo = Ammo(dm, length, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
-
 gun = Weapon(sight_height=9, twist=12)
-zero_atmo = Atmo.icao(100)
-
-# defining calculator instance
-calc = Calculator(weapon=gun, ammo=ammo, zero_atmo=zero_atmo)
-calc.set_weapon_zero(Distance.Meter(100))
 current_atmo = Atmo(110, 1000, 15, 72)
 current_winds = [Wind(2, 90)]
-shot = Shot(weapon=gun, atmo=current_atmo, winds=current_winds)
+shot = Shot(weapon=gun, ammo=ammo, atmo=current_atmo, winds=current_winds)
+calc = Calculator()
+calc.set_weapon_zero(shot, Distance.Meter(100))
 
 shot_result = calc.fire(shot, trajectory_range=1000, trajectory_step=100)
 
