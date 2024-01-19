@@ -12,12 +12,11 @@ class TestDangerSpace(unittest.TestCase):
         dm = DragModel(0.223, TableG7, weight, diameter)
         ammo = Ammo(dm, length, Velocity.FPS(2750), Temperature.Celsius(15))
         ammo.calc_powder_sens(2723, 0)
-        zero_atmo = Atmo.icao(100)
-        calc = Calculator(weapon, ammo, zero_atmo)
+        calc = Calculator()
         current_atmo = Atmo(110, 1000, 15, 72)
         current_winds = [Wind(2, 90)]
-        shot = Shot(weapon=weapon, atmo=current_atmo, winds=current_winds)
-        calc.set_weapon_zero(Distance.Foot(300))
+        shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo, winds=current_winds)
+        calc.set_weapon_zero(shot, Distance.Foot(300))
         self.shot_result = calc.fire(shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(100), extra_data=True)
 
     def test_danger_space(self):

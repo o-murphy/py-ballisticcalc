@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 from .settings import Settings as Set
 from .unit import Distance, Velocity, Temperature, Pressure, TypedUnits, Angular
-from .munition import Weapon
+from .munition import Weapon, Ammo
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
@@ -164,6 +164,7 @@ class Shot(TypedUnits):
     cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
     weapon: Weapon = field(default=None)
+    ammo: Ammo = field(default=None)
     atmo: Atmo = field(default=None)
     winds: list[Wind] = field(default=None)
 

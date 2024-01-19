@@ -16,19 +16,14 @@ __all__ = ('Calculator',)
 class Calculator:
     """Basic interface for the ballistics calculator"""
 
-    weapon: Weapon
-    ammo: Ammo
-    zero_atmo: Atmo = field(default_factory=Atmo.icao)
-
-    _calc: TrajectoryCalc = field(init=False, repr=True, compare=False, default=None)
+    _calc: TrajectoryCalc = field(init=False, repr=False, compare=False, default=None)
 
     @property
     def cdm(self):
         """returns custom drag function based on input data"""
         return self._calc.cdm
 
-    def set_weapon_zero(self, zero_distance: [float, Distance],
-                        zero_look_angle: Angular = Angular.Degree(0)) -> Angular:
+    def set_weapon_zero(self, shot: Shot, zero_distance: [float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.
 
         :param zero_distance: Sight-line distance to "zero," which is point we want to hit.
@@ -39,13 +34,13 @@ class Calculator:
                 For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         :param zero_look_angle: Angle between sight line and horizontal when sighting zero target.
         """
-        self._calc = TrajectoryCalc(self.ammo)
+        self._calc = TrajectoryCalc(shot.ammo)
         zero_distance = Settings.Units.distance(zero_distance)
-        zero_total_elevation = self._calc.zero_angle(self.weapon, self.zero_atmo,
-                                                    zero_distance, zero_look_angle)
-        self.weapon.zero_elevation = Angular.Radian((zero_total_elevation >> Angular.Radian)
-                                                     - (zero_look_angle >> Angular.Radian))
-        return self.weapon.zero_elevation
+        zero_total_elevation = self._calc.zero_angle(shot.weapon, shot.atmo,
+                                                    zero_distance, shot.look_angle)
+        shot.weapon.zero_elevation = Angular.Radian((zero_total_elevation >> Angular.Radian)
+                                                     - (shot.look_angle >> Angular.Radian))
+        return shot.weapon.zero_elevation
 
     def fire(self, shot: Shot, trajectory_range: [float, Distance],
              trajectory_step: [float, Distance] = 0,
@@ -57,8 +52,10 @@ class Calculator:
         :param extra_data: True => store TrajectoryData for every calculation step;
             False => store TrajectoryData only for each trajectory_step
         """
+        if not trajectory_step:
+            trajectory_step = trajectory_range / 10.0
         trajectory_range = Settings.Units.distance(trajectory_range)
         step = Settings.Units.distance(trajectory_step)
-        self._calc = TrajectoryCalc(self.ammo)
+        self._calc = TrajectoryCalc(shot.ammo)
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
         return HitResult(shot, data, extra_data)
