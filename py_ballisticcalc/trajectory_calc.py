@@ -231,7 +231,7 @@ class TrajectoryCalc:
 
         if twist != 0 and length and diameter:
             stability_coefficient = calculate_stability_coefficient(shot_info.weapon.twist, ammo, atmo)
-            twist_coefficient = -1 if twist > 0 else 1
+            twist_coefficient = 1 if twist > 0 else -1
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one

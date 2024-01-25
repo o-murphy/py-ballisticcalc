@@ -48,6 +48,16 @@ class TestComputer(unittest.TestCase):
 
     def test_no_twist(self):
         """Barrel with no twist should have no spin drift"""
+        shot = Shot(weapon=Weapon(twist=0), ammo=self.ammo, atmo=self.atmosphere)
+        t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertEqual(t.trajectory[5].windage.raw_value, 0)
+
+    def test_twist_right(self):
+        """Barrel with right-hand twist should have positive spin drift"""
+        shot = Shot(weapon=Weapon(twist=10), ammo=self.ammo, atmo=self.atmosphere)
+        t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertGreater(t.trajectory[5].windage.raw_value, 0)
+
 
 if __name__ == '__main__':
     unittest.main()

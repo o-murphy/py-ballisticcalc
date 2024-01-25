@@ -23,6 +23,8 @@ class Weapon(TypedUnits):
     zero_elevation: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
     def __post_init__(self):
+        if not self.sight_height:
+            self.sight_height = 0
         if not self.twist:
             self.twist = 0
         if not self.zero_elevation:

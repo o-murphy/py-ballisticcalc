@@ -269,14 +269,18 @@ class HitResult:
                            find_end_danger(i),
                            look_angle)
 
-    @property
-    def dataframe(self):
-        """:return: the trajectory table as a DataFrame"""
+    def dataframe(self, formatted: bool = False) -> pd.DataFrame:
+        """
+        :param formatted: False for values as floats; True for strings with units
+        :return: the trajectory table as a DataFrame
+        """
         if pd is None:
             raise ImportError("Install pandas to get trajectory as dataframe")
-        self.__check_extra__()
         col_names = list(TrajectoryData._fields)
-        trajectory = [p.in_def_units() for p in self]
+        if formatted:
+            trajectory = [p.formatted() for p in self]
+        else:
+            trajectory = [p.in_def_units() for p in self]
         return pd.DataFrame(trajectory, columns=col_names)
 
     def plot(self, look_angle: Angular = None) -> 'Axes':
@@ -290,7 +294,7 @@ class HitResult:
             logging.warning("HitResult.plot: To show extended data"
                             "Use Calculator.fire(..., extra_data=True)")
         font_size = PLOT_FONT_SIZE
-        df = self.dataframe
+        df = self.dataframe()
         ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
         max_range = self.trajectory[-1].distance >> Set.Units.distance
 
@@ -304,8 +308,8 @@ class HitResult:
             if TrajFlag(p.flag) & TrajFlag.MACH:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
                         [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(), "Mach 1",
-                        fontsize=font_size, rotation=90)
+                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(),
+                        "Mach 1", fontsize=font_size, rotation=90)
 
         max_range_in_drop_units = self.trajectory[-1].distance >> Set.Units.drop
         # Sight line

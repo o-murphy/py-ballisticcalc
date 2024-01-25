@@ -94,19 +94,20 @@ class TestTrajectory(unittest.TestCase):
     def test_path_g7(self):
         dm = DragModel(0.223, TableG7, 168, 0.308)
         ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
-        weapon = Weapon(2, 11.24, zero_elevation=Angular.MOA(4.221))
-        shot_info = Shot(weapon=weapon, winds=[Wind(Velocity(5, Velocity.MPH), -45)])
+        weapon = Weapon(2, 12, zero_elevation=Angular.MOA(4.221))
+        shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), -45)])
 
         calc = TrajectoryCalc(ammo)
         data = calc.trajectory(shot_info, Distance.Yard(1000), Distance.Yard(100))
 
         self.custom_assert_equal(len(data), 11, 0.1, "Length")
 
+        # Dist(yd), vel(fps), Mach, energy(ft-lb), drop(in), drop(mil), wind(in), wind(mil), time, ogw
         test_data = [
-            [data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.Mil],
-            [data[1], 100, 2544.3, 2.279, 2416, 0, 0, -0.35, -0.09, 0.113, 698, Angular.Mil],
-            [data[5], 500, 1810.7, 1.622, 1226, -56.3, -3.18, -9.96, -0.55, 0.673, 252, Angular.Mil],
-            [data[10], 1000, 1081.3, 0.968, 442, -401.6, -11.32, -50.98, -1.44, 1.748, 55, Angular.Mil]
+            [data[0], 0,     2750, 2.46, 2821,  -2.0,   0.0,   0.0,  0.00, 0.000, 880, Angular.Mil],
+            [data[1], 100,   2545, 2.28, 2416,   0.0,   0.0,  -0.2, -0.06, 0.113, 698, Angular.Mil],
+            [data[5], 500,   1814, 1.62, 1227, -56.2,  -3.2,  -6.3, -0.36, 0.672, 252, Angular.Mil],
+            [data[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54, Angular.Mil]
         ]
 
         for i, d in enumerate(test_data):

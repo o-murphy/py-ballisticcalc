@@ -21,9 +21,9 @@ cA2: float = 0.00152907
 cA3: float = -3.07031e-06
 cA4: float = 4.21329e-07
 cA5: float = 3.342e-04
-cStandardTemperature: float = 59.0
-cStandardPressure: float = 29.92
-cStandardDensity: float = 0.076474
+cStandardTemperature: float = 59.0  # degrees F
+cStandardPressure: float = 29.92    # InHg
+cStandardDensity: float = 0.076474  # lb/ft^3
 
 cIcaoTemperatureDeltaR: float = cIcaoStandardTemperatureR - cIcaoFreezingPointTemperatureR
 
@@ -35,7 +35,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     altitude: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
     temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
-    humidity: float = 0.78
+    humidity: float = 0
     density: float = field(init=False)
     mach: Velocity = field(init=False)
     _mach1: Velocity = field(init=False)
@@ -45,11 +45,10 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     _ta: float = field(init=False)
 
     def __post_init__(self):
-
         if self.humidity > 1:
             self.humidity = self.humidity / 100.0
         if not 0 <= self.humidity <= 1:
-            self.humidity = 0.78
+            self.humidity = 0.0
         if not self.altitude:
             self.altitude = Distance.Foot(0)
         if not self.pressure:
