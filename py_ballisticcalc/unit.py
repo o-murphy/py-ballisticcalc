@@ -1,5 +1,5 @@
 """
-Use-full types for units of measurement conversion for ballistics calculations
+Useful types for units of measurement conversion for ballistics calculations
 """
 
 import typing
@@ -22,7 +22,7 @@ class Unit(IntEnum):
     MOA = 2
     MIL = 3
     MRAD = 4
-    THOUSAND = 5
+    THOUSANDTH = 5
     INCHES_PER_100YD = 6
     CM_PER_100M = 7
     O_CLOCK = 8
@@ -68,7 +68,6 @@ class Unit(IntEnum):
     @property
     def key(self) -> str:
         """
-        :rtype: str
         :return: readable name of the unit of measure
         """
         return UnitPropsDict[self].name
@@ -76,15 +75,13 @@ class Unit(IntEnum):
     @property
     def accuracy(self) -> int:
         """
-        :rtype: int
         :return: default accuracy of the unit of measure
         """
         return UnitPropsDict[self].accuracy
 
     @property
-    def symbol(self):
+    def symbol(self) -> str:
         """
-        :rtype: str
         :return: short symbol of the unit of measure in CI
         """
         return UnitPropsDict[self].symbol
@@ -115,7 +112,7 @@ class Unit(IntEnum):
         elif 70 <= self < 80:
             obj = Weight(value, self)
         else:
-            raise TypeError(f"{self} Unit is not supports")
+            raise TypeError(f"{self} Unit is not supported")
         return obj
 
 
@@ -132,8 +129,8 @@ UnitPropsDict = {
     Unit.MOA: UnitProps('moa', 2, 'moa'),
     Unit.MIL: UnitProps('mil', 2, 'mil'),
     Unit.MRAD: UnitProps('mrad', 2, 'mrad'),
-    Unit.THOUSAND: UnitProps('thousand', 2, 'ths'),
-    Unit.INCHES_PER_100YD: UnitProps('inches/100yd', 2, 'in/100yd'),
+    Unit.THOUSANDTH: UnitProps('thousandth', 2, 'ths'),
+    Unit.INCHES_PER_100YD: UnitProps('inch/100yd', 2, 'in/100yd'),
     Unit.CM_PER_100M: UnitProps('cm/100m', 2, 'cm/100m'),
     Unit.O_CLOCK: UnitProps('h', 2, 'h'),
 
@@ -148,7 +145,7 @@ UnitPropsDict = {
     Unit.KILOMETER: UnitProps("kilometer", 3, "km"),
     Unit.LINE: UnitProps("line", 3, "ln"),
 
-    Unit.FOOT_POUND: UnitProps('foot * pound', 0, 'ft·lb'),
+    Unit.FOOT_POUND: UnitProps('foot-pound', 0, 'ft·lb'),
     Unit.JOULE: UnitProps('joule', 0, 'J'),
 
     Unit.MM_HG: UnitProps('mmhg', 0, 'mmHg'),
@@ -192,7 +189,7 @@ class AbstractUnit:
         self._defined_units: Unit = units
 
     def __str__(self) -> str:
-        """Returns readable unit value
+        """
         :return: readable unit value
         """
         units = self._defined_units
@@ -200,8 +197,8 @@ class AbstractUnit:
         v = self.from_raw(self._value, units)
         return f'{round(v, props.accuracy)}{props.symbol}'
 
-    def __repr__(self):
-        """Returns instance as readable view
+    def __repr__(self) -> str:
+        """
         :return: instance as readable view
         """
         return f'<{self.__class__.__name__}: {self << self.units} ({round(self._value, 4)})>'
@@ -272,7 +269,7 @@ class AbstractUnit:
         return self.__class__(value, units)
 
     def get_in(self, units: Unit) -> float:
-        """Returns value in specified units
+        """
         :param units: Unit enum type
         :return: value in specified units
         """
@@ -280,7 +277,7 @@ class AbstractUnit:
 
     @property
     def units(self) -> Unit:
-        """Returns defined units
+        """
         :return: defined units
         """
         return self._defined_units
@@ -492,7 +489,7 @@ class Angular(AbstractUnit):
             result = value / 3200 * pi
         elif units == Angular.MRad:
             result = value / 1000
-        elif units == Angular.Thousand:
+        elif units == Angular.Thousandth:
             result = value / 3000 * pi
         elif units == Angular.InchesPer100Yd:
             result = atan(value / 3600)
@@ -517,7 +514,7 @@ class Angular(AbstractUnit):
             result = value * 3200 / pi
         elif units == Angular.MRad:
             result = value * 1000
-        elif units == Angular.Thousand:
+        elif units == Angular.Thousandth:
             result = value * 3000 / pi
         elif units == Angular.InchesPer100Yd:
             result = tan(value) * 3600
@@ -534,7 +531,7 @@ class Angular(AbstractUnit):
     MOA = Unit.MOA
     Mil = Unit.MIL
     MRad = Unit.MRAD
-    Thousand = Unit.THOUSAND
+    Thousandth = Unit.THOUSANDTH
     InchesPer100Yd = Unit.INCHES_PER_100YD
     CmPer100M = Unit.CM_PER_100M
     OClock = Unit.O_CLOCK

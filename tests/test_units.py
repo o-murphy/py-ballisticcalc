@@ -18,7 +18,7 @@ class TestAngular(unittest.TestCase):
             Angular.MRad,
             Angular.Mil,
             Angular.Radian,
-            Angular.Thousand
+            Angular.Thousandth
         ]
 
     def test_angular(self):
