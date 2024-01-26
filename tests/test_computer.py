@@ -1,8 +1,7 @@
 """Unittests for the py_ballisticcalc library"""
 
 import unittest
-from math import fabs
-from py_ballisticcalc import *
+from py_ballisticcalc import DragModel, Ammo, Weapon, Calculator, Shot, Wind, Velocity, TableG7, Atmo, Angular
 
 
 class TestComputer(unittest.TestCase):

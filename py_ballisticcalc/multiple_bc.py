@@ -53,8 +53,8 @@ class MultiBC:  # pylint: disable=too-few-public-methods
     def _parse_mbc(self, mbc_table):
         table = []
         for p in mbc_table:
-            print(p['V'], Set.Units.velocity)
-            print(Set.Units.velocity(p['V']))
+            # print(p['V'], Set.Units.velocity)
+            # print(Set.Units.velocity(p['V']))
             v = Set.Units.velocity(p['V']) >> Velocity.MPS
             mbc = MultiBCRow(p['BC'], v)
             table.append(mbc)

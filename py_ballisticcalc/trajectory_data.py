@@ -269,7 +269,7 @@ class HitResult:
                            find_end_danger(i),
                            look_angle)
 
-    def dataframe(self, formatted: bool = False) -> pd.DataFrame:
+    def dataframe(self, formatted: bool = False):
         """
         :param formatted: False for values as floats; True for strings with units
         :return: the trajectory table as a DataFrame
