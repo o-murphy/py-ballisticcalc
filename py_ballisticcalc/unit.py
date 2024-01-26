@@ -44,7 +44,7 @@ class Unit(IntEnum):
     MM_HG = 40
     IN_HG = 41
     BAR = 42
-    HP = 43
+    HPA = 43
     PSI = 44
 
     FAHRENHEIT = 50
@@ -154,7 +154,7 @@ UnitPropsDict = {
     Unit.MM_HG: UnitProps('mmhg', 0, 'mmHg'),
     Unit.IN_HG: UnitProps('inhg', 6, '?'),
     Unit.BAR: UnitProps('bar', 2, 'bar'),
-    Unit.HP: UnitProps('hp', 4, 'hPa'),
+    Unit.HPA: UnitProps('hpa', 4, 'hPa'),
     Unit.PSI: UnitProps('psi', 4, 'psi'),
 
     Unit.FAHRENHEIT: UnitProps('fahrenheit', 1, '°F'),
@@ -368,7 +368,7 @@ class Pressure(AbstractUnit):
             result = value * 25.4
         elif units == Pressure.Bar:
             result = value * 750.061683
-        elif units == Pressure.HP:
+        elif units == Pressure.hPa:
             result = value * 750.061683 / 1000
         elif units == Pressure.PSI:
             result = value * 51.714924102396
@@ -383,7 +383,7 @@ class Pressure(AbstractUnit):
             result = value / 25.4
         elif units == Pressure.Bar:
             result = value / 750.061683
-        elif units == Pressure.HP:
+        elif units == Pressure.hPa:
             result = value / 750.061683 * 1000
         elif units == Pressure.PSI:
             result = value / 51.714924102396
@@ -394,7 +394,7 @@ class Pressure(AbstractUnit):
     MmHg = Unit.MM_HG
     InHg = Unit.IN_HG
     Bar = Unit.BAR
-    HP = Unit.HP
+    hPa = Unit.HPA
     PSI = Unit.PSI
 
 
@@ -634,13 +634,3 @@ class TypedUnits:  # pylint: disable=too-few-public-methods
 #     if obj is None:
 #         return None
 #     raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
-
-
-# Default units
-# Angular.Radian
-# Distance.Inch
-# Energy.FootPound
-# Weight.Grain
-# Velocity.MPS
-# Temperature.Fahrenheit
-# Pressure.MmHg

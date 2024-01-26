@@ -52,11 +52,19 @@ class TestComputer(unittest.TestCase):
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertEqual(t.trajectory[5].windage.raw_value, 0)
 
-    def test_twist_right(self):
-        """Barrel with right-hand twist should have positive spin drift"""
-        shot = Shot(weapon=Weapon(twist=10), ammo=self.ammo, atmo=self.atmosphere)
-        t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
-        self.assertGreater(t.trajectory[5].windage.raw_value, 0)
+    def test_twist(self):
+        """Barrel with right-hand twist should have positive spin drift.
+            Barrel with left-hand twist should have negative spin drift.
+            Faster twist rates should produce larger drift.
+        """
+        shot = Shot(weapon=Weapon(twist=12), ammo=self.ammo, atmo=self.atmosphere)
+        twist_right = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertGreater(twist_right.trajectory[5].windage.raw_value, 0)
+        shot = Shot(weapon=Weapon(twist=-8), ammo=self.ammo, atmo=self.atmosphere)
+        twist_left = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertLess(twist_left.trajectory[5].windage.raw_value, 0)
+        # Faster twist should produce larger drift:
+        self.assertGreater(-twist_left.trajectory[5].windage.raw_value, twist_right.trajectory[5].windage.raw_value)
 
 
 if __name__ == '__main__':

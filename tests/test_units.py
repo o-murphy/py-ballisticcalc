@@ -74,7 +74,7 @@ class TestPressure(unittest.TestCase):
         self.unit_class = Pressure
         self.unit_list = [
             Pressure.Bar,
-            Pressure.HP,
+            Pressure.hPa,
             Pressure.MmHg,
             Pressure.InHg
         ]
