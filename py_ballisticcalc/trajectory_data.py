@@ -133,6 +133,7 @@ class DangerSpace(NamedTuple):
     def __str__(self) -> str:
         return f'Danger space at {self.at_range.distance << Set.Units.distance} '\
              + f'for {self.target_height << Set.Units.drop} tall target '\
+             + (f'at {self.look_angle << Angular.Degree} look-angle ' if self.look_angle != 0 else '') \
              + f'ranges from {self.begin.distance << Set.Units.distance} '\
              + f'to {self.end.distance << Set.Units.distance}'
 
@@ -193,6 +194,27 @@ class HitResult:
         if len(data) < 1:
             raise ArithmeticError("Can't find zero crossing points")
         return data
+    
+    def index_at_distance(self, d: Distance) -> int:
+        """
+        :param d: Distance for which we want Trajectory Data
+        :return: Index of first trajectory row with .distance >= d; otherwise -1
+        """
+        # Get index of first trajectory point with distance >= at_range
+        return next((i for i in range(len(self.trajectory))
+                  if self.trajectory[i].distance >= d), -1)
+
+    def get_at_distance(self, d: Distance) -> TrajectoryData:
+        """
+        :param d: Distance for which we want Trajectory Data
+        :return: First trajectory row with .distance >= d
+        """
+        i = self.index_at_distance(d)
+        if i < 0:
+            raise ArithmeticError(
+                f"Calculated trajectory doesn't reach requested distance {d}"
+            )
+        return self.trajectory[i]
 
     def danger_space(self,
                      at_range: [float, Distance],
@@ -217,8 +239,7 @@ class HitResult:
         look_angle = Set.Units.angular(look_angle)
 
         # Get index of first trajectory point with distance >= at_range
-        i = next((i for i in range(len(self.trajectory))
-                  if self.trajectory[i].distance >= at_range), -1)
+        i = self.index_at_distance(at_range)
         if i < 0:
             raise ArithmeticError(
                 f"Calculated trajectory doesn't reach requested distance {at_range}"
