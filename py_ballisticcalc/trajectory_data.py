@@ -132,12 +132,12 @@ class DangerSpace(NamedTuple):
 
     def __str__(self) -> str:
         return f'Danger space at {self.at_range.distance << Set.Units.distance} '\
-             + f'for {self.target_height << Set.Units.drop} tall target '\
-             + (f'at {self.look_angle << Angular.Degree} look-angle ' if self.look_angle != 0 else '') \
-             + f'ranges from {self.begin.distance << Set.Units.distance} '\
-             + f'to {self.end.distance << Set.Units.distance}'
+          + f'for {self.target_height << Set.Units.drop} tall target '\
+          + (f'at {self.look_angle << Angular.Degree} look-angle ' if self.look_angle != 0 else '')\
+          + f'ranges from {self.begin.distance << Set.Units.distance} '\
+          + f'to {self.end.distance << Set.Units.distance}'
 
-    def overlay(self, ax: 'Axes'):
+    def overlay(self, ax: 'Axes', label: str=None):
         """Highlights danger-space region on plot"""
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
@@ -161,9 +161,11 @@ class DangerSpace(NamedTuple):
         polygon = patches.Polygon(vertices, closed=True,
                                   edgecolor='none', facecolor='r', alpha=0.3)
         ax.add_patch(polygon)
-        ax.text(begin_dist + (end_dist-begin_dist)/2, end_drop,
-                f"Danger space\nat {self.at_range.distance << Set.Units.distance}",
-                linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
+        if label is None:  # Add default label
+            label = f"Danger space\nat {self.at_range.distance << Set.Units.distance}"
+        if label != '':
+            ax.text(begin_dist + (end_dist-begin_dist)/2, end_drop, label,
+                    linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
 
 
 @dataclass(frozen=True)
@@ -194,7 +196,7 @@ class HitResult:
         if len(data) < 1:
             raise ArithmeticError("Can't find zero crossing points")
         return data
-    
+
     def index_at_distance(self, d: Distance) -> int:
         """
         :param d: Distance for which we want Trajectory Data

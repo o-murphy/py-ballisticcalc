@@ -8,7 +8,7 @@ from math import pi, atan, tan
 from typing import NamedTuple
 from dataclasses import dataclass
 
-__all__ = ('Unit', 'AbstractUnit', 'UnitPropsDict', 'Distance',
+__all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
            'Energy', 'Weight', 'TypedUnits')
 
@@ -136,12 +136,12 @@ UnitPropsDict = {
 
     Unit.INCH: UnitProps("inch", 1, "inch"),
     Unit.FOOT: UnitProps("foot", 2, "ft"),
-    Unit.YARD: UnitProps("yard", 2, "yd"),
+    Unit.YARD: UnitProps("yard", 1, "yd"),
     Unit.MILE: UnitProps("mile", 3, "mi"),
     Unit.NAUTICAL_MILE: UnitProps("nautical mile", 3, "nm"),
     Unit.MILLIMETER: UnitProps("millimeter", 3, "mm"),
     Unit.CENTIMETER: UnitProps("centimeter", 3, "cm"),
-    Unit.METER: UnitProps("meter", 3, "m"),
+    Unit.METER: UnitProps("meter", 1, "m"),
     Unit.KILOMETER: UnitProps("kilometer", 3, "km"),
     Unit.LINE: UnitProps("line", 3, "ln"),
 
