@@ -136,7 +136,7 @@ UnitPropsDict = {
 
     Unit.INCH: UnitProps("inch", 1, "inch"),
     Unit.FOOT: UnitProps("foot", 2, "ft"),
-    Unit.YARD: UnitProps("yard", 3, "yd"),
+    Unit.YARD: UnitProps("yard", 2, "yd"),
     Unit.MILE: UnitProps("mile", 3, "mi"),
     Unit.NAUTICAL_MILE: UnitProps("nautical mile", 3, "nm"),
     Unit.MILLIMETER: UnitProps("millimeter", 3, "mm"),
@@ -168,7 +168,7 @@ UnitPropsDict = {
     Unit.GRAIN: UnitProps('grain', 0, 'gr'),
     Unit.OUNCE: UnitProps('ounce', 1, 'oz'),
     Unit.GRAM: UnitProps('gram', 1, 'g'),
-    Unit.POUND: UnitProps('pound', 3, 'lb'),
+    Unit.POUND: UnitProps('pound', 0, 'lb'),
     Unit.KILOGRAM: UnitProps('kilogram', 3, 'kg'),
     Unit.NEWTON: UnitProps('newton', 3, 'N'),
 }
