@@ -22,23 +22,29 @@ class Calculator:
         """returns custom drag function based on input data"""
         return self._calc.cdm
 
-    def set_weapon_zero(self, shot: Shot, zero_distance: [float, Distance]) -> Angular:
+    def barrel_elevation_for_target(self, shot: Shot, target_distance: [float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.
 
-        :param zero_distance: Sight-line distance to "zero," which is point we want to hit.
+        :param target_distance: Look-distance to "zero," which is point we want to hit.
             This is the distance that a rangefinder would return with no ballistic adjustment.
             NB: Some rangefinders offer an adjusted distance based on inclinometer measurement.
                 However, without a complete ballistic model these can only approximate the effects
                 on ballistic trajectory of shooting uphill or downhill.  Therefore:
                 For maximum accuracy, use the raw sight distance and look_angle as inputs here.
-        :param zero_look_angle: Angle between sight line and horizontal when sighting zero target.
         """
         self._calc = TrajectoryCalc(shot.ammo)
-        zero_distance = Settings.Units.distance(zero_distance)
-        zero_total_elevation = self._calc.zero_angle(shot.weapon, shot.atmo,
-                                                    zero_distance, shot.look_angle)
-        shot.weapon.zero_elevation = Angular.Radian((zero_total_elevation >> Angular.Radian)
-                                                     - (shot.look_angle >> Angular.Radian))
+        target_distance = Settings.Units.distance(target_distance)
+        total_elevation = self._calc.zero_angle(shot.weapon, shot.atmo,
+                                                target_distance, shot.look_angle)
+        return Angular.Radian((total_elevation >> Angular.Radian)
+                                 - (shot.look_angle >> Angular.Radian))
+        
+    def set_weapon_zero(self, shot: Shot, zero_distance: [float, Distance]) -> Angular:
+        """Sets shot.weapon.zero_elevation so that it hits a target at zero_distance.
+
+        :param target_distance: Look-distance to "zero," which is point we want to hit.
+        """
+        shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
         return shot.weapon.zero_elevation
 
     def fire(self, shot: Shot, trajectory_range: [float, Distance],
