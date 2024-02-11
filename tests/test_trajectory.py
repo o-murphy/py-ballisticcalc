@@ -12,9 +12,8 @@ class TestTrajectory(unittest.TestCase):
         ammo = Ammo(dm, 0.9, 2600)
         weapon = Weapon(Distance(3.2, Distance.Inch))
         atmosphere = Atmo.icao()
-        calc = TrajectoryCalc(ammo)
-
-        zero_angle = calc.zero_angle(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
+        calc = Calculator()
+        zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                      Distance(100, Distance.Yard))
 
         self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001651, 6,
@@ -25,9 +24,8 @@ class TestTrajectory(unittest.TestCase):
         ammo = Ammo(dm, 0.9, 2750)
         weapon = Weapon(Distance(2, Distance.Inch))
         atmosphere = Atmo.icao()
-        calc = TrajectoryCalc(ammo)
-
-        zero_angle = calc.zero_angle(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
+        calc = Calculator()
+        zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                      Distance(100, Distance.Yard))
 
         self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001228, 6,

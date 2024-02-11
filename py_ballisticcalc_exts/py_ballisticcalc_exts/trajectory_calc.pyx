@@ -121,8 +121,8 @@ cdef class TrajectoryCalc:
             step /= pow(10, step_order - maximum_order + 1)
         return step
 
-    def zero_angle(self, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
-        return self._zero_angle(self.ammo, weapon, atmo, distance, look_angle)
+    def zero_angle(self, shot_info: Shot, distance: Distance):
+        return self._zero_angle(shot_info, distance)
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: [float, Distance],
                    extra_data: bool = False):
@@ -138,21 +138,25 @@ cdef class TrajectoryCalc:
             filter_flags = CTrajFlag.ALL
         return self._trajectory(self.ammo, atmo, shot_info, winds, max_range, step, filter_flags)
 
-    cdef _zero_angle(TrajectoryCalc self, object ammo, object weapon, object atmo, object distance, object look_angle):
+    cdef _zero_angle(TrajectoryCalc self, object shot_info, object distance):
         cdef:
             double calc_step = self.get_calc_step(distance.units(10) >> Distance.Foot)
-            double zero_distance = cos(look_angle >> Angular.Radian) * (distance >> Distance.Foot)
-            double height_at_zero = sin(look_angle >> Angular.Radian) * (distance >> Distance.Foot)
+            double zero_distance = cos(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
+            double height_at_zero = sin(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
             double maximum_range = zero_distance + calc_step
-            double sight_height = weapon.sight_height >> Distance.Foot
-            double mach = atmo.mach >> Velocity.FPS
-            double density_factor = atmo.density_factor()
-            double muzzle_velocity = ammo.mv >> Velocity.FPS
+            double sight_height = shot_info.weapon.sight_height >> Distance.Foot
+            double mach = shot_info.atmo.mach >> Velocity.FPS
+            double density_factor = shot_info.atmo.density_factor()
+            double muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+            double cant_cosine = cos(shot_info.cant_angle >> Angular.Radian)
+            double cant_sine = sin(shot_info.cant_angle >> Angular.Radian)
+
             double barrel_azimuth = 0.0
             double barrel_elevation = atan(height_at_zero / zero_distance)
             int iterations_count = 0
             double zero_finding_error = cZeroFindingAccuracy * 2
             Vector gravity_vector = Vector(.0, cGravityConstant, .0)
+
             double velocity, time, delta_time, drag
             Vector range_vector, velocity_vector, delta_range_vector
 
@@ -160,7 +164,7 @@ cdef class TrajectoryCalc:
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
             velocity = muzzle_velocity
             time = 0.0
-            range_vector = Vector(.0, -sight_height, .0)
+            range_vector = Vector(.0, -cant_cosine*sight_height, -cant_sine*sight_height)
             velocity_vector = Vector(
                 cos(barrel_elevation) * cos(barrel_azimuth),
                 sin(barrel_elevation),
@@ -213,23 +217,23 @@ cdef class TrajectoryCalc:
             int ranges_length = int(maximum_range / step) + 1
             int len_winds = len(winds)
             int current_item, current_wind, twist_coefficient
+            double next_range_distance = .0
+            double previous_mach = .0
+            list ranges = []
 
             double stability_coefficient = 1.0
             double next_wind_range = 1e7
+            double alt0 = atmo.altitude >> Distance.Foot
 
             double barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
-            double alt0 = atmo.altitude >> Distance.Foot
+            double barrel_azimuth = shot_info.barrel_azimuth >> Angular.Radian
             double sight_height = shot_info.weapon.sight_height >> Distance.Foot
-
-            double next_range_distance = .0
-            double barrel_azimuth = .0
-            double previous_mach = .0
-
+            double cant_cosine = cos(shot_info.cant_angle >> Angular.Radian)
+            double cant_sine = sin(shot_info.cant_angle >> Angular.Radian)
+            Vector range_vector = Vector(.0, -cant_cosine*sight_height, -cant_sine*sight_height)
             Vector gravity_vector = Vector(.0, cGravityConstant, .0)
-            Vector range_vector = Vector(.0, -sight_height, .0)
-            Vector velocity_vector, velocity_adjusted, delta_range_vector, wind_vector
 
-            list ranges = []
+            Vector velocity_vector, velocity_adjusted, delta_range_vector, wind_vector
 
             object _flag, seen_zero  # CTrajFlag
 
