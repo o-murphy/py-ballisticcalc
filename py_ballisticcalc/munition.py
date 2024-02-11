@@ -46,6 +46,10 @@ class Ammo(TypedUnits):
     temp_modifier: float = field(default=0)
     powder_temp: [float, Temperature] = field(default_factory=lambda: Temperature.Celsius(15))
 
+    def __post_init__(self):
+        if not self.length:
+            self.length = 0
+
     def calc_powder_sens(self, other_velocity: [float, Velocity],
                          other_temperature: [float, Temperature]) -> float:
         """Calculates velocity correction by temperature change

@@ -2,8 +2,8 @@
 
 import unittest
 import copy
-from py_ballisticcalc import DragModel, Ammo, Weapon, Calculator, Shot, Wind, Velocity, TableG7, Atmo, Angular
-
+from py_ballisticcalc import DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7
+from py_ballisticcalc.unit import *
 
 class TestComputer(unittest.TestCase):
     """Basic verifications that wind, spin, and cant values produce effects of correct sign and magnitude"""
@@ -15,7 +15,7 @@ class TestComputer(unittest.TestCase):
         self.dm = DragModel(0.22, TableG7, 168, 0.308)
         self.ammo = Ammo(self.dm, 1.22, Velocity(2600, Velocity.FPS))
         self.weapon = Weapon(4, 12)
-        self.atmosphere = Atmo.icao()
+        self.atmosphere = Atmo.icao()  # Standard sea-level atmosphere
         self.calc = Calculator()
         self.baseline_shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere)
         self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range, trajectory_step=self.step)
@@ -55,7 +55,7 @@ class TestComputer(unittest.TestCase):
         self.assertAlmostEqual(t.trajectory[5].drop.raw_value-self.weapon.sight_height.raw_value,
                                 self.baseline_trajectory[5].drop.raw_value)
         self.assertAlmostEqual(t.trajectory[5].windage, self.baseline_trajectory[5].windage)
-#endregion
+#endregion Cant_angle
 
 #region Wind
     def test_wind_from_left(self):
@@ -85,7 +85,8 @@ class TestComputer(unittest.TestCase):
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(6, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertLess(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
-#endregion
+#endregion Wind
+        
 #region Twist
     def test_no_twist(self):
         """Barrel with no twist should have no spin drift"""
@@ -106,7 +107,57 @@ class TestComputer(unittest.TestCase):
         self.assertLess(twist_left.trajectory[5].windage.raw_value, 0)
         # Faster twist should produce larger drift:
         self.assertGreater(-twist_left.trajectory[5].windage.raw_value, twist_right.trajectory[5].windage.raw_value)
-#endregion
-        
+#endregion Twist
+
+#region Atmo
+    def test_humidity(self):
+        """Increasing relative humidity should decrease drop (due to decreasing density)"""
+        humid = Atmo(humidity=.9)  # 90% humidity
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=humid)
+        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertGreater(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
+
+    def test_temp_atmo(self):
+        """Dropping temperature should increase drop (due to increasing density)"""
+        cold = Atmo(temperature=Temperature.Celsius(0))
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
+        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertLess(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
+
+    def test_altitude(self):
+        """Increasing altitude should decrease drop (due to decreasing density)"""
+        high = Atmo.icao(Distance.Foot(5000))
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=high)
+        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertGreater(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
+
+    def test_pressure(self):
+        """Decreasing pressure should decrease drop (due to decreasing density)"""
+        thin = Atmo(pressure=Pressure.InHg(20.0))
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=thin)
+        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertGreater(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
+#endregion Atmo
+
+#region Ammo
+    def test_ammo_drag(self):
+        """Increasing ballistic coefficient (BC) should decrease drop"""
+        tdm = DragModel(self.dm.value+0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter)
+        slick = Ammo(tdm, self.ammo.length, self.ammo.mv)
+        shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
+        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertGreater(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
+
+    def test_ammo_optional(self):
+        """DragModel.weight and .diameter, and Ammo.length, are only relevant when computing
+            spin-drift.  Drop should match baseline with those parameters omitted.
+        """
+        tdm = DragModel(self.dm.value, self.dm.drag_table)
+        tammo = Ammo(tdm, mv=self.ammo.mv)
+        shot = Shot(weapon=self.weapon, ammo=tammo, atmo=self.atmosphere)
+        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertEqual(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
+#endregion Ammo
+
 if __name__ == '__main__':
     unittest.main()

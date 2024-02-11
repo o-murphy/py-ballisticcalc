@@ -39,8 +39,8 @@ cdef class DragModel:
 
     def __init__(self, double value,
                  drag_table: typing.Iterable,
-                 weight: [float, Weight],
-                 diameter: [float, Distance]):
+                 weight: [float, Weight]=0,
+                 diameter: [float, Distance]=0):
         self.__post__init__(value, drag_table, weight, diameter)
 
     cdef __post__init__(DragModel self, double value, object drag_table, double weight, double diameter):
@@ -65,8 +65,9 @@ cdef class DragModel:
 
         self.weight = Set.Units.weight(weight)
         self.diameter = Set.Units.diameter(diameter)
-        self.sectional_density = self._get_sectional_density()
-        self.form_factor = self._get_form_factor(self.value)
+        if weight != 0 and diameter != 0:
+            self.sectional_density = self._get_sectional_density()
+            self.form_factor = self._get_form_factor(self.value)
         self.drag_table = drag_table
 
     cdef double _get_form_factor(self, double bc):

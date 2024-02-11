@@ -204,6 +204,7 @@ class TrajectoryCalc:
         ranges = []
 
         stability_coefficient = 1.0
+        twist_coefficient = 0
         next_wind_range = 1e7
         alt0 = atmo.altitude >> Distance.Foot
 

@@ -60,7 +60,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def icao(altitude: [float, Distance] = 0):
-        """Creates Atmosphere with ICAO values"""
+        """Creates standard ICAO atmosphere at given altitude"""
         altitude = Set.Units.distance(altitude)
         temperature = Temperature.Fahrenheit(
             cIcaoStandardTemperatureR + (altitude >> Distance.Foot)

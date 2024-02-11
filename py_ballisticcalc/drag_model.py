@@ -27,11 +27,11 @@ class DragDataPoint:
 
 
 class DragModel:
-
+    """.weight and .diameter are only relevant for computing spin drift"""
     def __init__(self, value: float,
                  drag_table: typing.Iterable,
-                 weight: [float, Weight],
-                 diameter: [float, Distance]):
+                 weight: [float, Weight]=0,
+                 diameter: [float, Distance]=0):
         self.__post__init__(value, drag_table, weight, diameter)
 
     def __post__init__(self, value: float, drag_table, weight, diameter):
@@ -55,8 +55,9 @@ class DragModel:
 
         self.weight = Set.Units.weight(weight)
         self.diameter = Set.Units.diameter(diameter)
-        self.sectional_density = self._get_sectional_density()
-        self.form_factor = self._get_form_factor(self.value)
+        if weight != 0 and diameter != 0:
+            self.sectional_density = self._get_sectional_density()
+            self.form_factor = self._get_form_factor(self.value)
         self.drag_table = drag_table
 
     def _get_form_factor(self, bc: float):
