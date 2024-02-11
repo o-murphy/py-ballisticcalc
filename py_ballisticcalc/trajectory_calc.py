@@ -108,8 +108,8 @@ class TrajectoryCalc:
             step /= math.pow(10, step_order - maximum_order + 1)
         return step
 
-    def zero_angle(self, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
-        return self._zero_angle(self.ammo, weapon, atmo, distance, look_angle)
+    def zero_angle(self, shot_info: Shot, distance: Distance):
+        return self._zero_angle(shot_info, distance)
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
@@ -123,15 +123,18 @@ class TrajectoryCalc:
             filter_flags = TrajFlag.ALL
         return self._trajectory(self.ammo, atmo, shot_info, winds, max_range, dist_step, filter_flags)
 
-    def _zero_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo, distance: Distance, look_angle: Angular):
+    def _zero_angle(self, shot_info: Shot, distance: Distance):
         calc_step = self.get_calc_step(distance.units(10) >> Distance.Foot)
-        zero_distance = math.cos(look_angle >> Angular.Radian) * (distance >> Distance.Foot)
-        height_at_zero = math.sin(look_angle >> Angular.Radian) * (distance >> Distance.Foot)
+        zero_distance = math.cos(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
+        height_at_zero = math.sin(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
         maximum_range = zero_distance + calc_step
-        sight_height = weapon.sight_height >> Distance.Foot
-        mach = atmo.mach >> Velocity.FPS
-        density_factor = atmo.density_factor()
-        muzzle_velocity = ammo.mv >> Velocity.FPS
+        sight_height = shot_info.weapon.sight_height >> Distance.Foot
+        mach = shot_info.atmo.mach >> Velocity.FPS
+        density_factor = shot_info.atmo.density_factor()
+        muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+        cant_cosine = math.cos(shot_info.cant_angle >> Angular.Radian)
+        cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
+
         barrel_azimuth = 0.0
         barrel_elevation = math.atan(height_at_zero / zero_distance)
         iterations_count = 0
@@ -142,7 +145,7 @@ class TrajectoryCalc:
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
             velocity = muzzle_velocity
             time = 0.0
-            range_vector = Vector(.0, -sight_height, .0)
+            range_vector = Vector(.0, -cant_cosine*sight_height, -cant_sine*sight_height)
             velocity_vector = Vector(
                 math.cos(barrel_elevation) * math.cos(barrel_azimuth),
                 math.sin(barrel_elevation),
@@ -195,22 +198,22 @@ class TrajectoryCalc:
         len_winds = len(winds)
         current_wind = 0
         current_item = 0
+        next_range_distance = .0
+        previous_mach = .0
+        ranges = []
 
         stability_coefficient = 1.0
         next_wind_range = 1e7
+        alt0 = atmo.altitude >> Distance.Foot
 
         barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
-        alt0 = atmo.altitude >> Distance.Foot
+        barrel_azimuth = shot_info.barrel_azimuth >> Angular.Radian
         sight_height = shot_info.weapon.sight_height >> Distance.Foot
-
-        next_range_distance = .0
-        barrel_azimuth = .0  # TODO use from shot_info
-        previous_mach = .0
+        cant_cosine = math.cos(shot_info.cant_angle >> Angular.Radian)
+        cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
+        range_vector = Vector(.0, -cant_cosine*sight_height, -cant_sine*sight_height)
 
         gravity_vector = Vector(.0, cGravityConstant, .0)
-        range_vector = Vector(.0, -sight_height, .0)
-
-        ranges = []
 
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)

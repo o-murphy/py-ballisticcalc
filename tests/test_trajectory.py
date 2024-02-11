@@ -14,7 +14,8 @@ class TestTrajectory(unittest.TestCase):
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
-        zero_angle = calc.zero_angle(weapon, atmosphere, Distance(100, Distance.Yard), Angular.Degree(0))
+        zero_angle = calc.zero_angle(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
+                                     Distance(100, Distance.Yard))
 
         self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001651, 6,
                                f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
@@ -26,7 +27,8 @@ class TestTrajectory(unittest.TestCase):
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
 
-        zero_angle = calc.zero_angle(weapon, atmosphere, Distance(100, Distance.Yard), Angular.Degree(0))
+        zero_angle = calc.zero_angle(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
+                                     Distance(100, Distance.Yard))
 
         self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001228, 6,
                                f'TestZero2 failed {zero_angle >> Angular.Radian:.10f}')

@@ -16,7 +16,7 @@ class Weapon(TypedUnits):
     :param twist: Distance for barrel rifling to complete one complete turn.
         Positive value => right-hand twist, negative value => left-hand twist.
     :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
-        Typically computed by ballistic Calculator.
+        (Typically computed by ballistic Calculator.)
     """
     sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
     twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
@@ -33,8 +33,13 @@ class Weapon(TypedUnits):
 
 @dataclass
 class Ammo(TypedUnits):
-    """Creates Ammo and Projectile properties"""
-
+    """
+    :param dm: DragModel for projectile
+    :param length: Length of projectile
+    :param mv: Muzzle Velocity
+    :param temp_modifier: Coefficient for effect of temperature on mv
+    :param powder_temp: Baseline temperature that produces the given mv
+    """
     dm: DragModel = field(default=None)
     length: [float, Distance] = field(default_factory=lambda: Set.Units.length)
     mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)

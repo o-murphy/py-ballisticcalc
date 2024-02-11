@@ -34,8 +34,7 @@ class Calculator:
         """
         self._calc = TrajectoryCalc(shot.ammo)
         target_distance = Settings.Units.distance(target_distance)
-        total_elevation = self._calc.zero_angle(shot.weapon, shot.atmo,
-                                                target_distance, shot.look_angle)
+        total_elevation = self._calc.zero_angle(shot, target_distance)
         return Angular.Radian((total_elevation >> Angular.Radian)
                                  - (shot.look_angle >> Angular.Radian))
         
