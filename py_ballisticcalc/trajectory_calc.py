@@ -92,6 +92,7 @@ class Vector:
 
 
 class TrajectoryCalc:
+    """All calculations are done in units of Feet and fps"""
 
     def __init__(self, ammo: Ammo):
         self.ammo = ammo
@@ -220,14 +221,14 @@ class TrajectoryCalc:
         else:
             if len_winds > 1:
                 next_wind_range = winds[0].until_distance() >> Distance.Foot
-            wind_vector = wind_to_vector(shot_info, winds[0])
+            wind_vector = wind_to_vector(winds[0])
 
         if Settings.USE_POWDER_SENSITIVITY:
             velocity = ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
         else:
             velocity = ammo.mv >> Velocity.FPS
 
-        # x - distance towards target, y - drop and z - windage
+        # x: downrange distance (towards target), y: drop, z: windage
         velocity_vector = Vector(math.cos(barrel_elevation) * math.cos(barrel_azimuth),
                                  math.sin(barrel_elevation),
                                  math.cos(barrel_elevation) * math.sin(barrel_azimuth)) * velocity
@@ -254,7 +255,7 @@ class TrajectoryCalc:
 
             if range_vector.x >= next_wind_range:
                 current_wind += 1
-                wind_vector = wind_to_vector(shot_info, winds[current_wind])
+                wind_vector = wind_to_vector(winds[current_wind])
 
                 if current_wind == len_winds - 1:
                     next_wind_range = 1e7
@@ -362,36 +363,20 @@ def calculate_stability_coefficient(twist_rate: Distance, ammo: Ammo, atmo: Atmo
     return sd * fv * ftp
 
 
-def wind_to_vector(shot: Shot, wind: Wind):
-    """
-    Wind angle of zero is blowing from behind shooter
-    90-degree is blowing towards shooter's right
+def wind_to_vector(wind: Wind) -> Vector:
+    """Calculate wind vector to add to projectile velocity vector each iteration:
+        Aerodynamic drag is function of velocity relative to the air stream.
 
-    Looks like we only start with data on wind direction in the x-z plane, not any vertical components.
-    Therefore, given wind velocity v with angle d:
-        The downrange "range" component is v*cos(d)
-        The orthogonal "cross" component is v*sin(d)
-    When the bullet has a vertical velocity component, meaning velocity angle to horizon a > 0
-        the sin(a) range component acts to lift it in the y axis, and only cos(a) acts in the x axis
-        ... of course this is reduced by any amount of the velocity that points in the z axis
-        which we determine using  the cant_angle
-    TODO: Right now this takes the initial (launch) elevation and cant_angle components.
-        This is an OK "flat-fire" approximation but we actually have the angle of travel at every instant
-        so we should use that instead.
-    TODO: Correct terms now that Shot class factors cant out of barrel elevation
+    Wind angle of zero is blowing from behind shooter
+    Wind angle of 90-degree is blowing towards shooter's right
+
+    NB: Presently we can only define Wind in the x-z plane, not any vertical component.
     """
-    sight_cosine = math.cos(shot.barrel_elevation >> Angular.Radian)
-    sight_sine = math.sin(shot.barrel_elevation >> Angular.Radian)
-    cant_cosine = math.cos(shot.cant_angle >> Angular.Radian)
-    cant_sine = math.sin(shot.cant_angle >> Angular.Radian)
-    range_velocity = (wind.velocity >> Velocity.FPS) * math.cos(
-        wind.direction_from >> Angular.Radian)
-    cross_component = (wind.velocity >> Velocity.FPS) * math.sin(
-        wind.direction_from >> Angular.Radian)
-    range_factor = -range_velocity * sight_sine
-    return Vector(range_velocity * sight_cosine,
-                  range_factor * cant_cosine + cross_component * cant_sine,
-                  cross_component * cant_cosine - range_factor * cant_sine)
+    # Downrange (x-axis) wind velocity component:
+    range_component = (wind.velocity >> Velocity.FPS) * math.cos(wind.direction_from >> Angular.Radian)
+    # Cross (z-axis) wind velocity component:
+    cross_component = (wind.velocity >> Velocity.FPS) * math.sin(wind.direction_from >> Angular.Radian)
+    return Vector(range_component, 0, cross_component)
 
 
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,

@@ -128,7 +128,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
 @dataclass
 class Wind(TypedUnits):
     """
-    Stores wind data at the desired distance.
+    Wind direction and velocity by down-range distance.
     direction_from = 0 is blowing from behind shooter. 
     direction_from = 90 degrees is blowing from shooter's left towards right.
     """

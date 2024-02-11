@@ -124,7 +124,7 @@ cdef class TrajectoryCalc:
     def zero_angle(self, shot_info: Shot, distance: Distance):
         return self._zero_angle(shot_info, distance)
 
-    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: [float, Distance],
+    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
         cdef:
             object step = Settings.Units.distance(dist_step)
@@ -242,7 +242,7 @@ cdef class TrajectoryCalc:
         else:
             if len_winds > 1:
                 next_wind_range = winds[0].until_distance() >> Distance.Foot
-            wind_vector = wind_to_vector(shot_info, winds[0])
+            wind_vector = wind_to_vector(winds[0])
 
         if Settings.USE_POWDER_SENSITIVITY:
             velocity = ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
@@ -274,7 +274,7 @@ cdef class TrajectoryCalc:
 
             if range_vector.x >= next_wind_range:
                 current_wind += 1
-                wind_vector = wind_to_vector(shot_info, winds[current_wind])
+                wind_vector = wind_to_vector(winds[current_wind])
 
                 if current_wind == len_winds - 1:
                     next_wind_range = 1e7
@@ -382,18 +382,11 @@ cdef double calculate_stability_coefficient(object twist_rate, object ammo, obje
         double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
     return sd * fv * ftp
 
-cdef Vector wind_to_vector(object shot, object wind):
+cdef Vector wind_to_vector(object wind):
     cdef:
-        double sight_cosine = cos(shot.barrel_elevation >> Angular.Radian)
-        double sight_sine = sin(shot.barrel_elevation >> Angular.Radian)
-        double cant_cosine = cos(shot.cant_angle >> Angular.Radian)
-        double cant_sine = sin(shot.cant_angle >> Angular.Radian)
-        double range_velocity = (wind.velocity >> Velocity.FPS) * cos(wind.direction_from >> Angular.Radian)
+        double range_component = (wind.velocity >> Velocity.FPS) * cos(wind.direction_from >> Angular.Radian)
         double cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction_from >> Angular.Radian)
-        double range_factor = -range_velocity * sight_sine
-    return Vector(range_velocity * sight_cosine,
-                  range_factor * cant_cosine + cross_component * cant_sine,
-                  cross_component * cant_cosine - range_factor * cant_sine)
+    return Vector(range_component, 0., cross_component)
 
 cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
                            double velocity, double mach, double windage, double weight, object flag):

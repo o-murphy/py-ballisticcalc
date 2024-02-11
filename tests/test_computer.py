@@ -46,7 +46,7 @@ class TestComputer(unittest.TestCase):
         self.assertGreater(t.trajectory[5].windage.raw_value, t.trajectory[3].windage.raw_value)
 
     def test_cant_zero_sight_height(self):
-        """Cant_angle = 90 degrees with sight_height=0 should match baseline with:
+        """Cant_angle = 90 degrees with sight_height=0 and barrel_elevation=0 should match baseline with:
             drop+=baseline.sight_height, windage no change
         """
         canted = Shot(weapon=Weapon(sight_height=0, twist=self.weapon.twist),
