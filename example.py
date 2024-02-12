@@ -9,7 +9,7 @@ Set.Units.temperature = Temperature.Celsius
 Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
-Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
+Set.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
 
 # Define ammunition parameters
 weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units

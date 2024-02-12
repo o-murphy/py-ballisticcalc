@@ -36,53 +36,47 @@ class Ammo(TypedUnits):
     """
     :param dm: DragModel for projectile
     :param mv: Muzzle Velocity
-    :param temp_modifier: Coefficient for effect of temperature on mv
     :param powder_temp: Baseline temperature that produces the given mv
+    :param temp_modifier: Change in velocity w temperature: fps per °C.
+        Can be computed with .calc_powder_sens().  Only applies if
+        Settings.USE_POWDER_SENSITIVITY = True.
     """
     dm: DragModel = field(default=None)
     mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
+    powder_temp: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
     temp_modifier: float = field(default=0)
-    powder_temp: [float, Temperature] = field(default_factory=lambda: Temperature.Celsius(15))
+
+    def __post_init__(self):
+        if not self.powder_temp:
+            self.powder_temp = Temperature.Celsius(15)
 
     def calc_powder_sens(self, other_velocity: [float, Velocity],
                          other_temperature: [float, Temperature]) -> float:
-        """Calculates velocity correction by temperature change
-        :param other_velocity: other velocity
+        """Calculates velocity correction by temperature change; assigns to self.temp_modifier
+        :param other_velocity: other velocity at other_temperature
         :param other_temperature: other temperature
         :return: temperature modifier
         """
-        # (800-792) / (15 - 0) * (15/792) * 100 = 1.01
-        # creates temperature modifier in percent at each 15C
-        v0 = self.mv >> Velocity.MPS
+        v0 = self.mv >> Velocity.FPS
         t0 = self.powder_temp >> Temperature.Celsius
-        v1 = Set.Units.velocity(other_velocity) >> Velocity.MPS
+        v1 = Set.Units.velocity(other_velocity) >> Velocity.FPS
         t1 = Set.Units.temperature(other_temperature) >> Temperature.Celsius
 
-        v_delta = math.fabs(v0 - v1)
-        t_delta = math.fabs(t0 - t1)
-        v_lower = v1 if v1 < v0 else v0
-
-        if v_delta == 0 or t_delta == 0:
+        if t0 == t1:
             raise ValueError(
-                "Temperature modifier error, other velocity "
-                "and temperature can't be same as default"
+                "Can't calculate powder sensitivity without temperature differential."
             )
-
-        self.temp_modifier = v_delta / t_delta * (15 / v_lower)  # * 100
-
+        else:
+            self.temp_modifier = (v0 - v1) / (t0 - t1)
         return self.temp_modifier
 
     def get_velocity_for_temp(self, current_temp: [float, Temperature]) -> Velocity:
-        """Calculates current velocity by temperature correction
-        :param current_temp: temperature on current atmosphere
-        :return: velocity corrected for temperature specified
+        """Calculates muzzle velocity at temperature, based on temp_modifier.
+        :param current_temp: Temperature of cartridge.
+        :return: muzzle velocity corrected to current_temp
         """
-        temp_modifier = self.temp_modifier
-        v0 = self.mv >> Velocity.MPS
+        v0 = self.mv >> Velocity.FPS
         t0 = self.powder_temp >> Temperature.Celsius
         t1 = Set.Units.temperature(current_temp) >> Temperature.Celsius
-
-        t_delta = t1 - t0
-        muzzle_velocity = temp_modifier / (15 / v0) * t_delta + v0
-
-        return Velocity.MPS(muzzle_velocity)
+        muzzle_velocity = v0 - self.temp_modifier * (t0 - t1)
+        return Velocity.FPS(muzzle_velocity)

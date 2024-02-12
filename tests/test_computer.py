@@ -3,6 +3,7 @@
 import unittest
 import copy
 from py_ballisticcalc import DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7
+from py_ballisticcalc import Settings as Set
 from py_ballisticcalc.unit import *
 
 class TestComputer(unittest.TestCase):
@@ -13,7 +14,7 @@ class TestComputer(unittest.TestCase):
         self.range = 1000
         self.step = 100
         self.dm = DragModel(0.22, TableG7, 168, 0.308, 1.22)
-        self.ammo = Ammo(self.dm, Velocity(2600, Velocity.FPS))
+        self.ammo = Ammo(self.dm, Velocity.FPS(2600))
         self.weapon = Weapon(4, 12)
         self.atmosphere = Atmo.icao()  # Standard sea-level atmosphere
         self.calc = Calculator()
@@ -157,6 +158,18 @@ class TestComputer(unittest.TestCase):
         shot = Shot(weapon=self.weapon, ammo=tammo, atmo=self.atmosphere)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertEqual(t.trajectory[5].drop, self.baseline_trajectory[5].drop)
+
+    def test_powder_sensitivity(self):
+        """With USE_POWDER_SENSITIVITY: Reducing temperature should reduce muzzle velocity"""
+        previous = Set.USE_POWDER_SENSITIVITY
+        Set.USE_POWDER_SENSITIVITY = True
+        self.ammo.calc_powder_sens(Velocity.FPS(2550), Temperature.Celsius(0))
+        cold = Atmo(temperature=Temperature.Celsius(-5))
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
+        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
+        Set.USE_POWDER_SENSITIVITY = previous
+
 #endregion Ammo
 
 if __name__ == '__main__':

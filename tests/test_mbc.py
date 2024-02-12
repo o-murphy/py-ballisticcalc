@@ -12,7 +12,7 @@ class TestMBC(unittest.TestCase):
             mbc_table=[{'BC': p[0], 'V': p[1]} for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
         )
         dm = DragModel.from_mbc(mbc)
-        ammo = Ammo(dm, 1, 800)
+        ammo = Ammo(dm, 800)
         cdm = TrajectoryCalc(ammo=ammo).cdm
         self.assertIsNot(cdm, None)
         ret = list(cdm)
