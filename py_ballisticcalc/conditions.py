@@ -9,8 +9,7 @@ from .munition import Weapon, Ammo
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
-cIcaoStandardTemperatureR: float = 518.67
-cIcaoFreezingPointTemperatureR: float = 459.67  # Misnamed: This is actually conversion from F to R
+cDegreesFtoR: float = 459.67  # °R = °F + 459.67
 cTemperatureGradient: float = -3.56616e-03
 cIcaoStandardHumidity: float = 0.0
 cPressureExponent: float = -5.255876
@@ -21,11 +20,11 @@ cA2: float = 0.00152907
 cA3: float = -3.07031e-06
 cA4: float = 4.21329e-07
 cA5: float = 3.342e-04
-cStandardTemperature: float = 59.0  # degrees F
-cStandardPressure: float = 29.92    # InHg
-cStandardDensity: float = 0.076474  # lb/ft^3
-
-cIcaoTemperatureDeltaR: float = cIcaoStandardTemperatureR - cIcaoFreezingPointTemperatureR
+# ICAO standard atmosphere:
+cStandardTemperatureR: float = 518.67  # = 59°F
+cStandardTemperatureF: float = 59.0    # degrees F
+cStandardPressure: float = 29.92       # InHg
+cStandardDensity: float = 0.076474     # lb/ft^3
 
 
 @dataclass
@@ -60,9 +59,9 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
-        return Temperature.Fahrenheit(cIcaoStandardTemperatureR
+        return Temperature.Fahrenheit(cStandardTemperatureR
                     + (altitude >> Distance.Foot) * cTemperatureGradient
-                    - cIcaoFreezingPointTemperatureR)
+                    - cDegreesFtoR)
 
     @staticmethod
     def standard_pressure(altitude: Distance, temperature: Temperature) -> Pressure:
@@ -80,8 +79,8 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
 
         # TODO: Pretty sure this needs to be a function of altitude too?
         pressure = Pressure.InHg(
-            cStandardPressure * math.pow(cIcaoStandardTemperatureR
-                / ((temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
+            cStandardPressure * math.pow(cStandardTemperatureR
+                / ((temperature >> Temperature.Fahrenheit) + cDegreesFtoR),
                                          cPressureExponent
                                         )
         )
@@ -107,9 +106,9 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             hc = 1.0
 
         density = cStandardDensity * (
-                cIcaoStandardTemperatureR / (t + cIcaoFreezingPointTemperatureR)
+                cStandardTemperatureR / (t + cDegreesFtoR)
         ) * hc
-        mach = math.sqrt(t + cIcaoFreezingPointTemperatureR) * cSpeedOfSound
+        mach = math.sqrt(t + cDegreesFtoR) * cSpeedOfSound
         return density, mach
 
     def calculate(self) -> None:
@@ -117,7 +116,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         self._t0 = self.temperature >> Temperature.Fahrenheit
         self._p0 = self.pressure >> Pressure.InHg
         self._a0 = self.altitude >> Distance.Foot
-        self._ta = self._a0 * cTemperatureGradient + cIcaoTemperatureDeltaR
+        self._ta = self._a0 * cTemperatureGradient + cStandardTemperatureF
 
         self.density, self._mach1 = self.calculate0(self._t0, self._p0)
         self.mach = Velocity(self._mach1, Velocity.FPS)
@@ -129,7 +128,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             mach = self._mach1
             return density, mach
 
-        tb = altitude * cTemperatureGradient + cIcaoTemperatureDeltaR
+        tb = altitude * cTemperatureGradient + cStandardTemperatureF
         t = self._t0 + self._ta - tb
         p = self._p0 * math.pow(self._t0 / t, cPressureExponent)
 
