@@ -1,0 +1,51 @@
+[build-system]
+requires = ["setuptools", "wheel", 'cython']
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "py_ballisticcalc.exts"
+
+authors = [
+    { name="o-murphy", email="thehelixpg@gmail.com" },
+]
+description = "LGPL library for small arms ballistic calculations (Python 3)"
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "python3"]
+license = {file = "LICENSE"}
+classifiers = [
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dependencies = []
+dynamic = ["version"]
+
+[project.urls]
+"Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
+"Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
+#"Funding" = "https://donate.pypi.org"
+#"Say Thanks!" = ""
+"Source" = "https://github.com/o-murphy/py_ballisticcalc"
+
+[tool.setuptools]
+py-modules = ["py_ballisticcalc_exts"]
+
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["py_ballisticcalc_exts*"]  # alternatively: `exclude = ["additional*"]`
+
+
+[tool.setuptools.dynamic]
+version = {attr = "py_ballisticcalc_exts.__version__"}

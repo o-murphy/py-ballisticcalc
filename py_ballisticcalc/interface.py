@@ -1,233 +1,65 @@
+"""Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
-from collections import OrderedDict
-from enum import Enum
-from typing import List
-import math
-import pandas as pd
-import pyximport
-pyximport.install()  # Will compile .pyx if necessary
-from .trajectory_calculator import *
-from .trajectory_data import *
-from .shot_parameters import *
-from .atmosphere import *
-from .drag import *
-from .projectile import *
-from .wind import *
-from .bmath import unit
 
-@dataclass
-class Display:
-    units: str = '' # String to display
-    digits: int = 0 # Decimal points to display
-    def asDictEntry(self, s: str='', addSpace: bool=True):
-        display = self.units
-        if s:
-            display = s + (' ' if (addSpace and self.units) else '') + display
-        return (s, [display, self.digits])
+from .conditions import Shot
+# pylint: disable=import-error,no-name-in-module,wildcard-import,unused-wildcard-import
+from .backend import *
+from .trajectory_data import HitResult
+from .unit import Angular, Distance
+from .settings import Settings
 
-UNIT_DISPLAY = {
-    unit.AngularRadian         : Display('rad', 6),
-    unit.AngularDegree         : Display('°', 4),
-    unit.AngularMOA            : Display('MOA', 2),
-    unit.AngularMil            : Display('mil', 2),
-    unit.AngularMRad           : Display('mrad', 2),
-    unit.AngularThousand       : Display('ths', 2),
-    unit.AngularInchesPer100Yd : Display('iph', 2),
-    unit.AngularCmPer100M      : Display('cm/100m', 2),
-    unit.VelocityFPS : Display('fps', 0),
-    unit.VelocityMPH : Display('mph', 0),
-    unit.VelocityMPS : Display('m/s', 1),
-    unit.VelocityKMH : Display('km/h', 0),
-    unit.VelocityKT  : Display('kt', 0),
-    unit.DistanceInch         : Display('in.', 1),
-    unit.DistanceFoot         : Display('ft', 2),
-    unit.DistanceYard         : Display('yd', 0),
-    unit.DistanceMile         : Display('mi', 3),
-    unit.DistanceNauticalMile : Display('nm', 3),
-    unit.DistanceMillimeter   : Display('mm', 0),
-    unit.DistanceCentimeter   : Display('cm', 1),
-    unit.DistanceMeter        : Display('m', 2),
-    unit.DistanceKilometer    : Display('km', 3),
-    unit.DistanceLine         : Display('ln', 1),  # No idea what this is
-    unit.EnergyFootPound : Display('ft·lb', 0),
-    unit.EnergyJoule     : Display('J', 0),
-    unit.PressureMmHg : Display('mmHg', 2),
-    unit.PressureInHg : Display('inHg', 2),
-    unit.PressureBar  : Display('bar', 2),
-    unit.PressureHP   : Display('hPa', 4),
-    unit.PressurePSI  : Display('psi', 4),
-    unit.TemperatureFahrenheit : Display('°F', 0),
-    unit.TemperatureCelsius    : Display('°C', 0),
-    unit.TemperatureKelvin     : Display('°K', 0),
-    unit.TemperatureRankin     : Display('°R', 0),
-    unit.WeightGrain    : Display('gr', 1),
-    unit.WeightOunce    : Display('oz', 2),
-    unit.WeightGram     : Display('g', 2),
-    unit.WeightPound    : Display('lb', 3),
-    unit.WeightKilogram : Display('kg', 4),
-    unit.WeightNewton   : Display('N', 3)
-}
+__all__ = ('Calculator',)
 
-class ROW_TYPE(Enum):
-    TRAJECTORY = 1
-    ZERO = 2
-    MACH1 = 3
-
-@dataclass
-class Bullet:
-    BC: float       # G7 Ballistic Coefficient
-    caliber: float
-    grains: float   # Weight
-    length: float
-    muzzleVelocity: float
-    velocityUnits: unit.Velocity = unit.VelocityFPS
-
-@dataclass
-class Gun:
-    sightHeight: float = 0
-    heightUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
-    # "Twist" is #/twistUnits in barrel length for rifling to complete one full circle
-    barrelTwist: float = 0  # Positive is right-hand, negative is left-hand
-    twistUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
-
-@dataclass
-class Air:
-    """Defaults to standard atmosphere at sea level"""
-    altitude: float = 0         # Elevation above sea level
-    altUnits: unit.Distance = unit.DistanceFoot
-    pressure: float = 29.92
-    pressureUnits: int = PressureInHg
-    temperature: float = 59
-    tempUnits: int = TemperatureFahrenheit
-    humidity: float = 0         # Relative Humidity
-    windSpeed: float = 0
-    windUnits: unit.Velocity = unit.VelocityMPH
-    windDirection: float = 0    # Degrees; wind blowing from behind shooter = 0 degrees; blowing to shooter's right = 90 degrees
 
 @dataclass
 class Calculator:
-    bullet: Bullet
-    gun: Gun = Gun()
-    air: Air = Air()
-    distanceUnits: int = unit.DistanceYard #unit.Distance = unit.DistanceYard
-    heightUnits: int = unit.DistanceInch #unit.Distance = unit.DistanceInch
-    angleUnits: int = unit.AngularMOA #unit.Angular = unit.AngularMOA
-    energyUnits: int = unit.EnergyFootPound
+    """Basic interface for the ballistics calculator"""
 
-    _bc: BallisticCoefficient = field(init=False, repr=False, compare=False)
-    _ammo: Ammunition = field(init=False, repr=False, compare=False)
-    _atmosphere: Atmosphere = field(init=False, repr=False, compare=False)
-    _projectile: ProjectileWithDimensions = field(init=False, repr=False, compare=False)
-    _wind: list[WindInfo] = field(init=False, repr=False, compare=False)
+    _calc: TrajectoryCalc = field(init=False, repr=False, compare=False, default=None)
 
-    def __post_init__(self):
-        self._updateObjects()
+    @property
+    def cdm(self):
+        """returns custom drag function based on input data"""
+        return self._calc.cdm
 
-    def _updateObjects(self):
-        """Create objects used by calculator based on current class datafields"""
-        self._bc = BallisticCoefficient(self.bullet.BC, DragTableG7,
-                                        unit.Weight(self.bullet.grains, unit.WeightGrain),
-                                        unit.Distance(self.bullet.caliber, unit.DistanceInch), TableG7)
-        self._projectile = ProjectileWithDimensions(self._bc,
-                                                    unit.Distance(self.bullet.caliber, unit.DistanceInch),
-                                                    unit.Distance(self.bullet.length, unit.DistanceInch),
-                                                    unit.Weight(self.bullet.grains, unit.WeightGrain))
-        self._ammo = Ammunition(self._projectile, unit.Velocity(self.bullet.muzzleVelocity, self.bullet.velocityUnits))
-        self._atmosphere = Atmosphere(unit.Distance(self.air.altitude, self.air.altUnits),
-                                      Pressure(self.air.pressure, self.air.pressureUnits),
-                                      Temperature(self.air.temperature, self.air.tempUnits),
-                                      self.air.humidity)
-        self._wind = create_only_wind_info(unit.Velocity(self.air.windSpeed, self.air.windUnits),
-                                           unit.Angular(self.air.windDirection, unit.AngularDegree))
+    def barrel_elevation_for_target(self, shot: Shot, target_distance: [float, Distance]) -> Angular:
+        """Calculates barrel elevation to hit target at zero_distance.
 
-    def elevationForZeroDistance(self, distance: Distance) -> float:
+        :param target_distance: Look-distance to "zero," which is point we want to hit.
+            This is the distance that a rangefinder would return with no ballistic adjustment.
+            NB: Some rangefinders offer an adjusted distance based on inclinometer measurement.
+                However, without a complete ballistic model these can only approximate the effects
+                on ballistic trajectory of shooting uphill or downhill.  Therefore:
+                For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         """
-        Calculates barrel elevation to hit zero at given distance.
-        This is not always the second zero; depending on parameters
-            it might return the first (climbing) zero of the trajectory.
+        self._calc = TrajectoryCalc(shot.ammo)
+        target_distance = Settings.Units.distance(target_distance)
+        total_elevation = self._calc.zero_angle(shot, target_distance)
+        return Angular.Radian((total_elevation >> Angular.Radian)
+                                 - (shot.look_angle >> Angular.Radian))
+        
+    def set_weapon_zero(self, shot: Shot, zero_distance: [float, Distance]) -> Angular:
+        """Sets shot.weapon.zero_elevation so that it hits a target at zero_distance.
+
+        :param target_distance: Look-distance to "zero," which is point we want to hit.
         """
-        calc = TrajectoryCalculator()
-        return calc.sight_angle(distance, Distance(self.gun.sightHeight, self.gun.heightUnits),
-                                self._ammo, self._atmosphere).get_in(self.angleUnits)
-    
-    def zeroGivenElevation(self, elevation: float = None) -> TrajectoryData:
+        shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
+        return shot.weapon.zero_elevation
+
+    def fire(self, shot: Shot, trajectory_range: [float, Distance],
+             trajectory_step: [float, Distance] = 0,
+             extra_data: bool = False) -> HitResult:
+        """Calculates trajectory
+        :param shot: shot parameters (initial position and barrel angle)
+        :param range: Downrange distance at which to stop computing trajectory
+        :param trajectory_step: step between trajectory points to record
+        :param extra_data: True => store TrajectoryData for every calculation step;
+            False => store TrajectoryData only for each trajectory_step
         """
-        Find the zero distance for a given barrel elevation.
-        This will always return the second (descending) zero.
-        """
-        calc = TrajectoryCalculator()
-        shot = ShotParameters(unit.Angular(elevation, self.angleUnits),
-                              unit.Distance(1e5, DistanceMile), unit.Distance(1e5, DistanceMile))
-        data = calc.trajectory(self._ammo, self._atmosphere, shot, self._wind,
-                               Distance(self.gun.barrelTwist, self.gun.twistUnits),
-                               Distance(self.gun.sightHeight, self.gun.heightUnits),
-                               stopAtZero=True)
-        if len(data) > 1:
-            return data[1]
-        else:
-            return data[0]  # No downrange zero found, so just return starting row
-            # NOTE: We could speed up detecting this by checking whether the first row with negative angle
-            #   also has negative drop, because it's not going to go positive after that!
-
-    def dangerSpace(self, trajectory: TrajectoryData, targetHeight: float) -> float:
-        """Given a TrajectoryData row, we have the angle of travel of bullet at that point in its trajectory, which is at distance *d*.
-            "Danger Space" is defined for *d* and for a target of height `targetHeight` as the error range for the target, meaning
-            if the trajectory hits the center of the target when the target is exactly at *d*, then "Danger Space" is the distance
-            before or after *d* across which the bullet would still hit somewhere on the target.  (This ignores windage; vertical only.)"""
-        # NOTE: Presently this is a coarse estimate based on point that is only good for small danger spaces – i.e., longer distances
-        #   where trajectory is steeper.  To get exact danger space instead run detailed trajectory to see exact distances where 
-        #   trajectory height crosses 1/2 targetHeight before and after *d*.
-        return -unit.Distance(targetHeight / math.tan(trajectory.angle().get_in(AngularRadian)), self.heightUnits).get_in(self.distanceUnits)
-
-    def trajectory(self, range: float, step: float, elevation: float = None, zeroDistance: float = None,
-                   stopAtZero: bool = False, stopAtMach1: bool = False) -> pd.DataFrame:
-        """We use zeroDistance if given.  Otherwise elevation if given.  Otherwise elevation = 0."""
-        if zeroDistance is None:
-            if elevation is None:
-                elevation = 0  # If we have 
-        else:
-            elevation = self.elevationForZeroDistance(Distance(zeroDistance, self.distanceUnits))
-        calc = TrajectoryCalculator()
-        shot = ShotParameters(unit.Angular(elevation, self.angleUnits),
-                              unit.Distance(range, self.distanceUnits),
-                              unit.Distance(step, self.distanceUnits))
-        data = calc.trajectory(self._ammo, self._atmosphere, shot, self._wind,
-                               Distance(self.gun.barrelTwist, self.gun.twistUnits),
-                               Distance(self.gun.sightHeight, self.gun.heightUnits),                               
-                               stopAtZero=stopAtZero, stopAtMach1=stopAtMach1)
-        return self.trajectoryRowsToDataFrame(data)
-
-    def trajectoryRowsToDataFrame(self, rows: List[TrajectoryData]) -> pd.DataFrame:
-        # Dictionary of column header names and display precision
-        self.tableCols = OrderedDict([UNIT_DISPLAY[self.distanceUnits].asDictEntry('Distance'),
-                                      UNIT_DISPLAY[self.bullet.velocityUnits].asDictEntry('Velocity'),
-                                      UNIT_DISPLAY[self.angleUnits].asDictEntry('Angle'),
-                                      Display(digits=2).asDictEntry('Mach'),
-                                      Display(digits=3).asDictEntry('Time'),
-                                      UNIT_DISPLAY[self.heightUnits].asDictEntry('Drop'),
-                                      UNIT_DISPLAY[self.angleUnits].asDictEntry('DropAngle'),
-                                      UNIT_DISPLAY[self.heightUnits].asDictEntry('Windage'),
-                                      UNIT_DISPLAY[self.angleUnits].asDictEntry('WindageAngle'),
-                                      UNIT_DISPLAY[self.energyUnits].asDictEntry('Energy')
-                                    ])
-
-        r = []  # List of trajectory table rows
-        for d in rows:
-            distance = d.travelled_distance().get_in(self.distanceUnits)
-            velocity = d.velocity().get_in(self.bullet.velocityUnits)
-            angle = d.angle().get_in(self.angleUnits)
-            mach = d.mach_velocity()
-            time = d.time().total_seconds()
-            drop = d.drop().get_in(self.heightUnits)
-            dropMOA = d.drop_adjustment().get_in(self.angleUnits)
-            wind = d.windage().get_in(self.heightUnits)
-            windMOA = d.windage_adjustment().get_in(self.angleUnits)
-            energy = d.energy().get_in(self.energyUnits)
-            note = ''
-            if d.row_type() == ROW_TYPE.MACH1.value: note = 'Mach1'
-            elif d.row_type() == ROW_TYPE.ZERO.value: note = 'Zero'
-            r.append([distance, velocity, angle, mach, time, drop, dropMOA, wind, windMOA, energy, note])
-    
-        colNames = list(zip(*self.tableCols.values()))[0] + ('Note',)
-        self.trajectoryTable = pd.DataFrame(r, columns=colNames)
-        return self.trajectoryTable.round(dict(self.tableCols.values())).set_index(colNames[0])
+        if not trajectory_step:
+            trajectory_step = trajectory_range / 10.0
+        trajectory_range = Settings.Units.distance(trajectory_range)
+        step = Settings.Units.distance(trajectory_step)
+        self._calc = TrajectoryCalc(shot.ammo)
+        data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
+        return HitResult(shot, data, extra_data)

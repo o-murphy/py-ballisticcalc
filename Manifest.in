@@ -1,3 +1,3 @@
-recursive-include py_ballisticcalc *.pyx
-include requirements*.txt
-include LICENSE
+prune py_ballisticcalc_exts
+prune tests
+include py.typed
