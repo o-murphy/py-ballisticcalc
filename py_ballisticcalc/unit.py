@@ -149,7 +149,7 @@ UnitPropsDict = {
     Unit.JOULE: UnitProps('joule', 0, 'J'),
 
     Unit.MM_HG: UnitProps('mmhg', 0, 'mmHg'),
-    Unit.IN_HG: UnitProps('inhg', 6, '?'),
+    Unit.IN_HG: UnitProps('inhg', 6, 'Hg'),
     Unit.BAR: UnitProps('bar', 2, 'bar'),
     Unit.HPA: UnitProps('hpa', 4, 'hPa'),
     Unit.PSI: UnitProps('psi', 4, 'psi'),

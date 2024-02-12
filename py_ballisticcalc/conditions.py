@@ -10,7 +10,7 @@ from .munition import Weapon, Ammo
 __all__ = ('Atmo', 'Wind', 'Shot')
 
 cIcaoStandardTemperatureR: float = 518.67
-cIcaoFreezingPointTemperatureR: float = 459.67
+cIcaoFreezingPointTemperatureR: float = 459.67  # Misnamed: This is actually conversion from F to R
 cTemperatureGradient: float = -3.56616e-03
 cIcaoStandardHumidity: float = 0.0
 cPressureExponent: float = -5.255876
@@ -51,27 +51,39 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             self.humidity = 0.0
         if not self.altitude:
             self.altitude = Distance.Foot(0)
-        if not self.pressure:
-            self.pressure = Pressure.InHg(cStandardPressure)
         if not self.temperature:
-            self.temperature = Temperature.Fahrenheit(cStandardTemperature)
+            self.temperature = Atmo.standard_temperature(self.altitude)
+        if not self.pressure:
+            self.pressure = Atmo.standard_pressure(self.altitude, self.temperature)
 
         self.calculate()
 
     @staticmethod
-    def icao(altitude: [float, Distance] = 0):
-        """Creates standard ICAO atmosphere at given altitude"""
-        altitude = Set.Units.distance(altitude)
-        temperature = Temperature.Fahrenheit(
-            cIcaoStandardTemperatureR + (altitude >> Distance.Foot)
-            * cTemperatureGradient - cIcaoFreezingPointTemperatureR
-        )
+    def standard_temperature(altitude: Distance) -> Temperature:
+        return Temperature.Fahrenheit(cIcaoStandardTemperatureR
+                    + (altitude >> Distance.Foot) * cTemperatureGradient
+                    - cIcaoFreezingPointTemperatureR)
 
+    @staticmethod
+    def standard_pressure(altitude: Distance, temperature: Temperature) -> Pressure:
+        # TODO: Find correct formula
+        return Pressure.InHg(cStandardPressure)
+
+    @staticmethod
+    def icao(altitude: [float, Distance] = 0, temperature: Temperature=None):
+        """Creates standard ICAO atmosphere at given altitude.
+            If temperature not specified uses standard temperature.
+        """
+        altitude = Set.Units.distance(altitude)
+        if temperature is None:
+            temperature = Atmo.standard_temperature(altitude)
+
+        # TODO: Pretty sure this needs to be a function of altitude too?
         pressure = Pressure.InHg(
-            cStandardPressure * math.pow(cIcaoStandardTemperatureR / (
-                    (temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
-                                    cPressureExponent
-                                    )
+            cStandardPressure * math.pow(cIcaoStandardTemperatureR
+                / ((temperature >> Temperature.Fahrenheit) + cIcaoFreezingPointTemperatureR),
+                                         cPressureExponent
+                                        )
         )
 
         return Atmo(
