@@ -32,7 +32,7 @@ cdef struct DragTableRow:
 
 cdef class DragModel:
     cdef:
-        readonly object weight, diameter
+        readonly object weight, diameter, length
         readonly list drag_table
         readonly double value, form_factor
         double sectional_density
@@ -40,10 +40,11 @@ cdef class DragModel:
     def __init__(self, double value,
                  drag_table: typing.Iterable,
                  weight: [float, Weight]=0,
-                 diameter: [float, Distance]=0):
-        self.__post__init__(value, drag_table, weight, diameter)
+                 diameter: [float, Distance]=0,
+                 length: [float, Distance]=0):
+        self.__post__init__(value, drag_table, weight, diameter, length)
 
-    cdef __post__init__(DragModel self, double value, object drag_table, double weight, double diameter):
+    cdef __post__init__(DragModel self, double value, object drag_table, double weight, double diameter, double length):
         cdef:
             double table_len = len(drag_table)
             str error = ''
@@ -63,6 +64,7 @@ cdef class DragModel:
         else:
             raise ValueError('Wrong drag data')
 
+        self.length = Set.Units.length(length)
         self.weight = Set.Units.weight(weight)
         self.diameter = Set.Units.diameter(diameter)
         if weight != 0 and diameter != 0:

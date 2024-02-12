@@ -10,8 +10,7 @@ from .munition import Weapon, Ammo
 __all__ = ('Atmo', 'Wind', 'Shot')
 
 cDegreesFtoR: float = 459.67  # °R = °F + 459.67
-cTemperatureGradient: float = -3.56616e-03
-cIcaoStandardHumidity: float = 0.0
+cTemperatureGradient: float = -3.56616e-03  # Lapse rate, °F/ft
 cPressureExponent: float = -5.255876
 cSpeedOfSound: float = 49.0223
 cA0: float = 1.24871
@@ -21,16 +20,15 @@ cA3: float = -3.07031e-06
 cA4: float = 4.21329e-07
 cA5: float = 3.342e-04
 # ICAO standard atmosphere:
-cStandardTemperatureR: float = 518.67  # = 59°F
-cStandardTemperatureF: float = 59.0    # degrees F
+cStandardTemperatureR: float = 518.67  # °R=59°F
+cStandardTemperatureF: float = 59.0    # °F
 cStandardPressure: float = 29.92       # InHg
 cStandardDensity: float = 0.076474     # lb/ft^3
-
+cStandardHumidity: float = 0.0         # Relative Humidity
 
 @dataclass
 class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
-    """Stores atmosphere data for the trajectory calculation"""
-
+    """Atmospheric conditions and density calculations"""
     altitude: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
     temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
@@ -59,6 +57,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
+        """ICAO standard temperature for altitude"""
         return Temperature.Fahrenheit(cStandardTemperatureR
                     + (altitude >> Distance.Foot) * cTemperatureGradient
                     - cDegreesFtoR)
@@ -89,7 +88,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             altitude >> Set.Units.distance,
             pressure >> Set.Units.pressure,
             temperature >> Set.Units.temperature,
-            cIcaoStandardHumidity
+            cStandardHumidity
         )
 
     def density_factor(self):

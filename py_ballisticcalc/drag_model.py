@@ -27,14 +27,15 @@ class DragDataPoint:
 
 
 class DragModel:
-    """.weight and .diameter are only relevant for computing spin drift"""
+    """NOTE: .weight, .diameter, .length are only relevant for computing spin drift"""
     def __init__(self, value: float,
                  drag_table: typing.Iterable,
                  weight: [float, Weight]=0,
-                 diameter: [float, Distance]=0):
-        self.__post__init__(value, drag_table, weight, diameter)
+                 diameter: [float, Distance]=0,
+                 length: [float, Distance]=0):
+        self.__post__init__(value, drag_table, weight, diameter, length)
 
-    def __post__init__(self, value: float, drag_table, weight, diameter):
+    def __post__init__(self, value: float, drag_table, weight, diameter, length):
         table_len = len(drag_table)
         error = ''
 
@@ -53,6 +54,7 @@ class DragModel:
         else:
             raise ValueError('Wrong drag data')
 
+        self.length = Set.Units.length(length)
         self.weight = Set.Units.weight(weight)
         self.diameter = Set.Units.diameter(diameter)
         if weight != 0 and diameter != 0:

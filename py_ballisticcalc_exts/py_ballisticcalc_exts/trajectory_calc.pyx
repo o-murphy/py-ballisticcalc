@@ -204,7 +204,7 @@ cdef class TrajectoryCalc:
 
             double look_angle = shot_info.look_angle >> Angular.Radian
             double twist = shot_info.weapon.twist >> Distance.Inch
-            double length = ammo.length >> Distance.Inch
+            double length = ammo.dm.length >> Distance.Inch
             double diameter = ammo.dm.diameter >> Distance.Inch
             double weight = ammo.dm.weight >> Weight.Grain
 
@@ -373,7 +373,7 @@ cdef double calculate_stability_coefficient(object twist_rate, object ammo, obje
         double weight = ammo.dm.weight >> Weight.Grain
         double diameter = ammo.dm.diameter >> Distance.Inch
         double twist = fabs(twist_rate >> Distance.Inch) / diameter
-        double length = (ammo.length >> Distance.Inch) / diameter
+        double length = (ammo.dm.length >> Distance.Inch) / diameter
         double ft = atmo.temperature >> Temperature.Fahrenheit
         double mv = ammo.mv >> Velocity.FPS
         double pt = atmo.pressure >> Pressure.InHg

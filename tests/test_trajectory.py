@@ -8,8 +8,8 @@ from py_ballisticcalc import *
 class TestTrajectory(unittest.TestCase):
 
     def test_zero1(self):
-        dm = DragModel(0.365, TableG1, 69, 0.223)
-        ammo = Ammo(dm, 0.9, 2600)
+        dm = DragModel(0.365, TableG1, 69, 0.223, 0.9)
+        ammo = Ammo(dm, 2600)
         weapon = Weapon(Distance(3.2, Distance.Inch))
         atmosphere = Atmo.icao()
         calc = Calculator()
@@ -20,8 +20,8 @@ class TestTrajectory(unittest.TestCase):
                                f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
 
     def test_zero2(self):
-        dm = DragModel(0.223, TableG7, 69, 0.223)
-        ammo = Ammo(dm, 0.9, 2750)
+        dm = DragModel(0.223, TableG7, 69, 0.223, 0.9)
+        ammo = Ammo(dm, 2750)
         weapon = Weapon(Distance(2, Distance.Inch))
         atmosphere = Atmo.icao()
         calc = Calculator()
@@ -69,8 +69,8 @@ class TestTrajectory(unittest.TestCase):
                                      data.windage_adj >> adjustment_unit, 0.5, "WAdj")
 
     def test_path_g1(self):
-        dm = DragModel(0.223, TableG1, 168, 0.308)
-        ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
+        dm = DragModel(0.223, TableG1, 168, 0.308, 1.282)
+        ammo = Ammo(dm, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), zero_elevation=Angular(0.001228, Angular.Radian))
         atmosphere = Atmo.icao()
         calc = TrajectoryCalc(ammo)
@@ -92,8 +92,8 @@ class TestTrajectory(unittest.TestCase):
                 self.validate_one(*d)
 
     def test_path_g7(self):
-        dm = DragModel(0.223, TableG7, 168, 0.308)
-        ammo = Ammo(dm, 1.282, Velocity(2750, Velocity.FPS))
+        dm = DragModel(0.223, TableG7, 168, 0.308, 1.282)
+        ammo = Ammo(dm, Velocity(2750, Velocity.FPS))
         weapon = Weapon(2, 12, zero_elevation=Angular.MOA(4.221))
         shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), -45)])
 

@@ -12,8 +12,8 @@ class TestComputer(unittest.TestCase):
         """Baseline shot has barrel at zero elevation"""
         self.range = 1000
         self.step = 100
-        self.dm = DragModel(0.22, TableG7, 168, 0.308)
-        self.ammo = Ammo(self.dm, 1.22, Velocity(2600, Velocity.FPS))
+        self.dm = DragModel(0.22, TableG7, 168, 0.308, 1.22)
+        self.ammo = Ammo(self.dm, Velocity(2600, Velocity.FPS))
         self.weapon = Weapon(4, 12)
         self.atmosphere = Atmo.icao()  # Standard sea-level atmosphere
         self.calc = Calculator()
@@ -142,8 +142,8 @@ class TestComputer(unittest.TestCase):
 #region Ammo
     def test_ammo_drag(self):
         """Increasing ballistic coefficient (BC) should decrease drop"""
-        tdm = DragModel(self.dm.value+0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter)
-        slick = Ammo(tdm, self.ammo.length, self.ammo.mv)
+        tdm = DragModel(self.dm.value+0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
+        slick = Ammo(tdm, self.ammo.mv)
         shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertGreater(t.trajectory[5].drop, self.baseline_trajectory[5].drop)

@@ -14,11 +14,11 @@ Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder
 # Define ammunition parameters
 weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
 length = Distance.Inch(1.282)  # Or declare units explicitly
-dm = DragModel(0.223, TableG7, weight, diameter)
-ammo = Ammo(dm, length, 2750, 15)
+dm = DragModel(0.223, TableG7, weight, diameter, length)
+ammo = Ammo(dm, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
 gun = Weapon(sight_height=9, twist=12)
-current_atmo = Atmo(110, 1000, 15, 72)
+current_atmo = Atmo(110, 29.8, 15, 72)
 current_winds = [Wind(2, 90)]
 shot = Shot(weapon=gun, ammo=ammo, atmo=current_atmo, winds=current_winds)
 calc = Calculator()

@@ -17,15 +17,18 @@ class DragDataPoint:
 
 
 class DragModel:
+    """NOTE: .weight, .diameter, .length are only relevant for computing spin drift"""
     table: list
     weight: Weight
     diameter: Distance
-    value: float
+    length: Distance
+    value: float  # BC
 
     def __init__(self, value: float,
                  drag_table: list,
                  weight: [float, Weight],
-                 diameter: [float, Distance]):
+                 diameter: [float, Distance],
+                 length: [float, Distance]):
         pass
 
     def drag(self, mach: float) -> float:

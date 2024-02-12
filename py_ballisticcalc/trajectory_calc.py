@@ -185,7 +185,7 @@ class TrajectoryCalc:
         time = 0
         look_angle = shot_info.look_angle >> Angular.Radian
         twist = shot_info.weapon.twist >> Distance.Inch
-        length = ammo.length >> Distance.Inch
+        length = ammo.dm.length >> Distance.Inch
         diameter = ammo.dm.diameter >> Distance.Inch
         weight = ammo.dm.weight >> Weight.Grain
 
@@ -352,7 +352,7 @@ def calculate_stability_coefficient(twist_rate: Distance, ammo: Ammo, atmo: Atmo
     weight = ammo.dm.weight >> Weight.Grain
     diameter = ammo.dm.diameter >> Distance.Inch
     twist = math.fabs(twist_rate >> Distance.Inch) / diameter
-    length = (ammo.length >> Distance.Inch) / diameter
+    length = (ammo.dm.length >> Distance.Inch) / diameter
     ft = atmo.temperature >> Temperature.Fahrenheit
     mv = ammo.mv >> Velocity.FPS
     pt = atmo.pressure >> Pressure.InHg

@@ -8,8 +8,8 @@ class TestDangerSpace(unittest.TestCase):
         self.look_angle = Angular.Degree(0)
         weight, diameter = 168, 0.308
         length = Distance.Inch(1.282)
-        dm = DragModel(0.223, TableG7, weight, diameter)
-        ammo = Ammo(dm, length, Velocity.FPS(2750), Temperature.Celsius(15))
+        dm = DragModel(0.223, TableG7, weight, diameter, length)
+        ammo = Ammo(dm, Velocity.FPS(2750), Temperature.Celsius(15))
         ammo.calc_powder_sens(2723, 0)
         current_winds = [Wind(2, 90)]
         shot = Shot(weapon=Weapon(), ammo=ammo, winds=current_winds)
