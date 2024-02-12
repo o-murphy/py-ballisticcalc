@@ -5,8 +5,6 @@ Installation
 ------------
 ```python setup.py build_ext --inplace```
 
-## Usage
-
 Usage
 ------------
 See ```Example.ipynb```
