@@ -126,13 +126,13 @@ class UnitProps(NamedTuple):
 UnitPropsDict = {
     Unit.RAD: UnitProps('radian', 6, 'rad'),
     Unit.DEGREE: UnitProps('degree', 4, '°'),
-    Unit.MOA: UnitProps('moa', 2, 'moa'),
+    Unit.MOA: UnitProps('MOA', 2, 'MOA'),
     Unit.MIL: UnitProps('mil', 2, 'mil'),
     Unit.MRAD: UnitProps('mrad', 2, 'mrad'),
     Unit.THOUSANDTH: UnitProps('thousandth', 2, 'ths'),
     Unit.INCHES_PER_100YD: UnitProps('inch/100yd', 2, 'in/100yd'),
     Unit.CM_PER_100M: UnitProps('cm/100m', 2, 'cm/100m'),
-    Unit.O_CLOCK: UnitProps('h', 2, 'h'),
+    Unit.O_CLOCK: UnitProps('hour', 2, 'h'),
 
     Unit.INCH: UnitProps("inch", 1, "inch"),
     Unit.FOOT: UnitProps("foot", 2, "ft"),
@@ -148,10 +148,10 @@ UnitPropsDict = {
     Unit.FOOT_POUND: UnitProps('foot-pound', 0, 'ft·lb'),
     Unit.JOULE: UnitProps('joule', 0, 'J'),
 
-    Unit.MM_HG: UnitProps('mmhg', 0, 'mmHg'),
-    Unit.IN_HG: UnitProps('inhg', 6, 'Hg'),
+    Unit.MM_HG: UnitProps('mmHg', 0, 'mmHg'),
+    Unit.IN_HG: UnitProps('inHg', 6, 'inHg'),
     Unit.BAR: UnitProps('bar', 2, 'bar'),
-    Unit.HPA: UnitProps('hpa', 4, 'hPa'),
+    Unit.HPA: UnitProps('hPa', 4, 'hPa'),
     Unit.PSI: UnitProps('psi', 4, 'psi'),
 
     Unit.FAHRENHEIT: UnitProps('fahrenheit', 1, '°F'),
@@ -163,9 +163,9 @@ UnitPropsDict = {
     Unit.KMH: UnitProps('kmh', 1, 'km/h'),
     Unit.FPS: UnitProps('fps', 1, 'ft/s'),
     Unit.MPH: UnitProps('mph', 1, 'mph'),
-    Unit.KT: UnitProps('kt', 1, 'kt'),
+    Unit.KT: UnitProps('knot', 1, 'kt'),
 
-    Unit.GRAIN: UnitProps('grain', 0, 'gr'),
+    Unit.GRAIN: UnitProps('grain', 1, 'gr'),
     Unit.OUNCE: UnitProps('ounce', 1, 'oz'),
     Unit.GRAM: UnitProps('gram', 1, 'g'),
     Unit.POUND: UnitProps('pound', 0, 'lb'),
