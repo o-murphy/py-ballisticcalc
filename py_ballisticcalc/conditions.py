@@ -10,9 +10,12 @@ from .munition import Weapon, Ammo
 __all__ = ('Atmo', 'Wind', 'Shot')
 
 cDegreesFtoR: float = 459.67  # °R = °F + 459.67
-cTemperatureGradient: float = -3.56616e-03  # Lapse rate, °F/ft
-cPressureExponent: float = -5.255876
-cSpeedOfSound: float = 49.0223
+cDegreesCtoK: float = 273.15  # °K = °C + 273.15
+cLapseRateImperial: float = -3.56616e-03  # Lapse rate, °F/ft
+cPressureExponent: float = -5.255876      # =g*M/R*L
+cSpeedOfSoundImperial: float = 49.0223    # Mach1 in fps = cSpeedOfSound * sqrt(°R)
+cSpeedOfSoundMetric: float = 331.3        # Mach1 in m/s = cSpeedOfSound * sqrt(°K)
+cDensityImperialToMetric: float = 16.0185 # lb/ft^3 to kg/m^3
 cA0: float = 1.24871
 cA1: float = 0.0988438
 cA2: float = 0.00152907
@@ -51,21 +54,27 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         if not self.temperature:
             self.temperature = Atmo.standard_temperature(self.altitude)
         if not self.pressure:
-            self.pressure = Atmo.standard_pressure(self.altitude, self.temperature)
+            self.pressure = Atmo.standard_pressure(self.altitude)#, self.temperature)
 
         self.calculate()
 
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
         """ICAO standard temperature for altitude"""
-        return Temperature.Fahrenheit(cStandardTemperatureR
-                    + (altitude >> Distance.Foot) * cTemperatureGradient
-                    - cDegreesFtoR)
+        return Temperature.Fahrenheit(cStandardTemperatureF
+                    + (altitude >> Distance.Foot) * cLapseRateImperial)
 
     @staticmethod
-    def standard_pressure(altitude: Distance, temperature: Temperature) -> Pressure:
-        # TODO: Find correct formula
-        return Pressure.InHg(cStandardPressure)
+    def standard_pressure(altitude: Distance) -> Pressure:
+        """ICAO standard pressure for altitude"""
+        return Pressure.InHg(0.02953
+            * math.pow(3.73145 - (2.56555e-05) * (altitude >> Distance.Foot),
+                       -cPressureExponent)
+            )
+
+    @staticmethod
+    def standard(altitude: [float, Distance] = 0, temperature: Temperature=None):
+        return Atmo.icao(altitude, temperature)
 
     @staticmethod
     def icao(altitude: [float, Distance] = 0, temperature: Temperature=None):
@@ -91,7 +100,23 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             cStandardHumidity
         )
 
-    def density_factor(self):
+    @staticmethod
+    def machF(fahrenheit: float) -> float:
+        """:return: Mach 1 in fps for Fahrenheit temperature"""
+        return math.sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
+
+    @staticmethod
+    def machC(celsius: float) -> float:
+        """:return: Mach 1 in m/s for Celsius temperature"""
+        return math.sqrt(1+celsius / cDegreesCtoK) * cSpeedOfSoundMetric
+
+    def temperature_at_altitude(self, altitude: float) -> float:
+        """ Interpolated temperature at altitude
+        :return: temperature in °F
+        """
+        return (altitude - self._a0) * cLapseRateImperial + self._t0
+
+    def density_factor(self) -> float:
         """:return: projectile density_factor"""
         return self.density / cStandardDensity
 
@@ -107,7 +132,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         density = cStandardDensity * (
                 cStandardTemperatureR / (t + cDegreesFtoR)
         ) * hc
-        mach = math.sqrt(t + cDegreesFtoR) * cSpeedOfSound
+        mach = math.sqrt(t + cDegreesFtoR) * cSpeedOfSoundImperial
         return density, mach
 
     def calculate(self) -> None:
@@ -115,7 +140,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         self._t0 = self.temperature >> Temperature.Fahrenheit
         self._p0 = self.pressure >> Pressure.InHg
         self._a0 = self.altitude >> Distance.Foot
-        self._ta = self._a0 * cTemperatureGradient + cStandardTemperatureF
+        self._ta = self._a0 * cLapseRateImperial + cStandardTemperatureF
 
         self.density, self._mach1 = self.calculate0(self._t0, self._p0)
         self.mach = Velocity(self._mach1, Velocity.FPS)
@@ -127,7 +152,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             mach = self._mach1
             return density, mach
 
-        tb = altitude * cTemperatureGradient + cStandardTemperatureF
+        tb = altitude * cLapseRateImperial + cStandardTemperatureF
         t = self._t0 + self._ta - tb
         p = self._p0 * math.pow(self._t0 / t, cPressureExponent)
 
