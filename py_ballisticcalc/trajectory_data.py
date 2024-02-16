@@ -142,12 +142,14 @@ class DangerSpace(NamedTuple):
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
 
-        begin_dist = self.begin.distance >> Set.Units.distance
-        begin_drop = self.begin.drop >> Set.Units.drop
-        end_dist = self.end.distance >> Set.Units.distance
-        end_drop = self.end.drop >> Set.Units.drop
-        range_dist = self.at_range.distance >> Set.Units.distance
-        range_drop = self.at_range.drop >> Set.Units.drop
+        cosine = math.cos(self.look_angle >> Angular.Radian)
+        sine = math.sin(self.look_angle >> Angular.Radian)
+        begin_dist = (self.begin.distance >> Set.Units.distance) * cosine
+        begin_drop = (self.begin.drop >> Set.Units.drop) * cosine
+        end_dist = (self.end.distance >> Set.Units.distance) * cosine
+        end_drop = (self.end.drop >> Set.Units.drop) * cosine
+        range_dist = (self.at_range.distance >> Set.Units.distance) * cosine
+        range_drop = (self.at_range.drop >> Set.Units.drop) * cosine
         h = self.target_height >> Set.Units.drop
 
         # Target position and height:

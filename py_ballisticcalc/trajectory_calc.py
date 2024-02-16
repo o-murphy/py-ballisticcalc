@@ -178,6 +178,8 @@ class TrajectoryCalc:
                     break
 
             iterations_count += 1
+        if zero_finding_error > cZeroFindingAccuracy:
+            raise Exception(f'Zero vertical error {zero_finding_error} feet, after {iterations_count} iterations.')
 
         return Angular.Radian(barrel_elevation)
 
