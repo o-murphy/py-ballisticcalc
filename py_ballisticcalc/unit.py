@@ -281,7 +281,7 @@ class AbstractUnit:
         :return: defined units
         """
         return self._defined_units
-    
+
     @property
     def unit_value(self) -> float:
         """Returns float value in defined units"""

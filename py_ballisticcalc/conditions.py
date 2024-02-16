@@ -81,11 +81,10 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             * math.pow(3.73145 - (2.56555e-05) * (altitude >> Distance.Foot),
                        cPressureExponent)
             )
-        """Metric formula
-        Pressure.hPa(cStandardPressureMetric
-            * math.pow(1 - cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
-                       cPressureExponent))
-        """
+        # # Metric formula
+        # Pressure.hPa(cStandardPressureMetric
+        #     * math.pow(1 - cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
+        #                cPressureExponent))
 
     @staticmethod
     def standard(altitude: [float, Distance] = 0, temperature: Temperature=None):
@@ -129,7 +128,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         tC = t >> Temperature.Celsius
         pM = (p >> Pressure.hPa) * 100  # Pressure in Pascals
         # Tetens approximation to saturation vapor pressure:
-        psat = 6.1078*math.pow(10, 17.27 * tC / (tC + 237.3))  
+        psat = 6.1078*math.pow(10, 17.27 * tC / (tC + 237.3))
         pv = humidity*psat  # Pressure of water vapor in Pascals
         pd = pM - pv    # Partial pressure of dry air in Pascals
         # Density in metric units kg/m^3

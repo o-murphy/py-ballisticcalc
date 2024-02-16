@@ -1,4 +1,4 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-class-docstring,missing-function-docstring,line-too-long,invalid-name
 """pure python trajectory calculation backend"""
 
 import math
@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 from .conditions import Atmo, Shot, Wind
-from .munition import Ammo, Weapon
+from .munition import Ammo
 from .settings import Settings
 from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature

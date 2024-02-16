@@ -1,5 +1,4 @@
 """Module for Weapon and Ammo properties definitions"""
-import math
 from dataclasses import dataclass, field
 
 from .drag_model import DragModel
@@ -63,9 +62,8 @@ class Ammo(TypedUnits):
         t1 = Set.Units.temperature(other_temperature) >> Temperature.Celsius
 
         if t0 == t1:
-            raise ValueError(
-                "Can't calculate powder sensitivity without temperature differential."
-            )
+            # Can't calculate powder sensitivity without temperature differential.
+            self.temp_modifier = 0.
         else:
             self.temp_modifier = (v0 - v1) / (t0 - t1)
         return self.temp_modifier

@@ -143,7 +143,6 @@ class DangerSpace(NamedTuple):
             raise ImportError("Install matplotlib to get results as a plot")
 
         cosine = math.cos(self.look_angle >> Angular.Radian)
-        sine = math.sin(self.look_angle >> Angular.Radian)
         begin_dist = (self.begin.distance >> Set.Units.distance) * cosine
         begin_drop = (self.begin.drop >> Set.Units.drop) * cosine
         end_dist = (self.end.distance >> Set.Units.distance) * cosine
