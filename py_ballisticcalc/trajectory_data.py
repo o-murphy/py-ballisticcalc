@@ -359,12 +359,11 @@ class HitResult:
                  rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
                  fontsize=font_size, color='k', ha='right',
                  va='top' if sight_above_bbl else 'bottom')
-
+        # Plot velocity (on secondary axis)
         df.plot(x='distance', xlabel=Set.Units.distance.symbol,
                 y=['velocity'], ylabel=Set.Units.velocity.symbol,
                 secondary_y=True, color=[0,.3,0,.5],
                 ylim=[0, df['velocity'].max()], ax=ax)
-
         # Let secondary shine through
         ax.set_zorder(1)
         ax.set_facecolor([0,0,0,0])

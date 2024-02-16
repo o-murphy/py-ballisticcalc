@@ -350,29 +350,6 @@ cdef class TrajectoryCalc:
         cdef double cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
-    @property
-    def cdm(self):
-        return self._cdm()
-
-    cdef _cdm(self):
-        """
-        Returns custom drag function based on input data
-        """
-        cdef:
-            # double ff = self.ammo.dm.form_factor
-            list drag_table = self.ammo.dm.drag_table
-            list cdm = []
-            double bc = self.ammo.dm.value
-
-        for point in drag_table:
-            st_mach = point['Mach']
-            st_cd = calculate_by_curve(drag_table, self._curve, st_mach)
-            # cd = st_cd * ff
-            cd = st_cd * bc
-            cdm.append({'CD': cd, 'Mach': st_mach})
-
-        return cdm
-
 cdef double calculate_stability_coefficient(object twist_rate, object ammo, object atmo):
     cdef:
         double weight = ammo.dm.weight >> Weight.Grain

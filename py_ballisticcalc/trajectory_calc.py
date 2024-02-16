@@ -331,23 +331,6 @@ class TrajectoryCalc:
         cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
-    @property
-    def cdm(self):
-        """
-        Returns custom drag function based on input data
-        """
-        drag_table = self.ammo.dm.drag_table
-        cdm = []
-        bc = self.ammo.dm.value
-
-        for point in drag_table:
-            st_mach = point['Mach']
-            st_cd = calculate_by_curve(drag_table, self._curve, st_mach)
-            cd = st_cd * bc
-            cdm.append({'CD': cd, 'Mach': st_mach})
-
-        return cdm
-
 
 def calculate_stability_coefficient(twist_rate: Distance, ammo: Ammo, atmo: Atmo):
     weight = ammo.dm.weight >> Weight.Grain
@@ -398,26 +381,33 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         mach=velocity / mach,
         energy=Energy.FootPound(calculate_energy(weight, velocity)),
         angle=Angular.Radian(trajectory_angle),
-        ogw=Weight.Pound(calculate_ogv(weight, velocity)),
+        ogw=Weight.Pound(calculate_ogw(weight, velocity)),
         flag=flag
     )
 
 
 def get_correction(distance: float, offset: float):
+    """:return: Sight adjustment in radians"""
     if distance != 0:
         return math.atan(offset / distance)
     return 0  # None
 
 
 def calculate_energy(bullet_weight: float, velocity: float):
+    """:return: energy in ft-lbs"""
     return bullet_weight * math.pow(velocity, 2) / 450400
 
 
-def calculate_ogv(bullet_weight: float, velocity: float):
+def calculate_ogw(bullet_weight: float, velocity: float):
+    """:return: Optimal Game Weight in pounds"""
     return math.pow(bullet_weight, 2) * math.pow(velocity, 3) * 1.5e-12
 
 
 def calculate_curve(data_points):
+    """
+    :param DragTable: data_points
+    :return: List[CurvePoints] to interpolate drag coefficient
+    """
     # rate, x1, x2, x3, y1, y2, y3, a, b, c
     # curve = []
     # curve_point
@@ -454,11 +444,11 @@ def calculate_curve(data_points):
 
 
 def calculate_by_curve(data: list, curve: list, mach: float):
-    """returning the calculated drag for a
-    specified mach based on previously calculated data"""
-    # num_points, mlo, mhi, mid
-    # cdef CurvePoint curve_m
-
+    """Binary search for drag coefficient based on Mach number
+    :param DragTable: data
+    :param List: Output of calculate_curve(data)
+    :return float: drag coefficient
+    """
     num_points = int(len(curve))
     mlo = 0
     mhi = num_points - 2
