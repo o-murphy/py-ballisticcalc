@@ -101,7 +101,7 @@ class TrajectoryCalc:
         self._curve = calculate_curve(self._table_data)
 
     def get_calc_step(self, step: float):
-        maximum_step = Settings._MAX_CALC_STEP_SIZE
+        maximum_step = Settings.get_max_calc_step_size()
         step /= 2
         if step > maximum_step:
             step_order = int(math.floor(math.log10(step)))
@@ -333,9 +333,6 @@ class TrajectoryCalc:
 
     @property
     def cdm(self):
-        return self._cdm()
-
-    def _cdm(self):
         """
         Returns custom drag function based on input data
         """
