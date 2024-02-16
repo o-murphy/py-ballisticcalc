@@ -131,10 +131,13 @@ class TrajectoryCalc:
         maximum_range = zero_distance + calc_step
         sight_height = shot_info.weapon.sight_height >> Distance.Foot
         mach = shot_info.atmo.mach >> Velocity.FPS
-        density_factor = shot_info.atmo.density_factor()
-        muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+        density_factor = shot_info.atmo.density_ratio
         cant_cosine = math.cos(shot_info.cant_angle >> Angular.Radian)
         cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
+        if Settings.USE_POWDER_SENSITIVITY:
+            muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
+        else:
+            muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
 
         barrel_azimuth = 0.0
         barrel_elevation = math.atan(height_at_zero / zero_distance)
@@ -181,7 +184,6 @@ class TrajectoryCalc:
     def _trajectory(self, ammo: Ammo, atmo: Atmo,
                     shot_info: Shot, winds: list[Wind],
                     max_range: Distance, dist_step: Distance, filter_flags: TrajFlag):
-
         time = 0
         look_angle = shot_info.look_angle >> Angular.Radian
         twist = shot_info.weapon.twist >> Distance.Inch

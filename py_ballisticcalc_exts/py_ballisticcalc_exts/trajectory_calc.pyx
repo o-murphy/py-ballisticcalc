@@ -146,7 +146,7 @@ cdef class TrajectoryCalc:
             double maximum_range = zero_distance + calc_step
             double sight_height = shot_info.weapon.sight_height >> Distance.Foot
             double mach = shot_info.atmo.mach >> Velocity.FPS
-            double density_factor = shot_info.atmo.density_factor()
+            double density_factor = shot_info.atmo.density_ratio
             double muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
             double cant_cosine = cos(shot_info.cant_angle >> Angular.Radian)
             double cant_sine = sin(shot_info.cant_angle >> Angular.Radian)
@@ -159,6 +159,9 @@ cdef class TrajectoryCalc:
 
             double velocity, time, delta_time, drag
             Vector range_vector, velocity_vector, delta_range_vector
+
+        if Settings.USE_POWDER_SENSITIVITY:
+            muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
 
         # x - distance towards target, y - drop and z - windage
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:

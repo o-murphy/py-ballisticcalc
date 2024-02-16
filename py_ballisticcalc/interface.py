@@ -56,9 +56,9 @@ class Calculator:
         :param extra_data: True => store TrajectoryData for every calculation step;
             False => store TrajectoryData only for each trajectory_step
         """
-        if not trajectory_step:
-            trajectory_step = trajectory_range / 10.0
         trajectory_range = Settings.Units.distance(trajectory_range)
+        if not trajectory_step:
+            trajectory_step = trajectory_range.unit_value / 10.0
         step = Settings.Units.distance(trajectory_step)
         self._calc = TrajectoryCalc(shot.ammo)
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data)

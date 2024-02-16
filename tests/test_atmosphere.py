@@ -15,16 +15,15 @@ class TestAtmosphere(unittest.TestCase):
     def test_standard(self):
         self.assertAlmostEqual(self.standard.temperature >> Temperature.Fahrenheit, 59.0, places=1)
         self.assertAlmostEqual(self.standard.pressure >> Pressure.hPa, 1013.25, places=1)
-        self.assertAlmostEqual(self.standard.density, 0.076474, places=4)
+        self.assertAlmostEqual(self.standard.density_imperial, 0.076474, places=4)
 
     def test_high(self):
         # Ref https://www.engineeringtoolbox.com/standard-atmosphere-d_604.html
         self.assertAlmostEqual(self.highICAO.temperature >> Temperature.Fahrenheit, 23.36, places=1)
-        self.assertAlmostEqual(self.highICAO.density_factor(), 0.7387, places=3)
+        self.assertAlmostEqual(self.highICAO.density_ratio, 0.7387, places=3)
         # Ref https://www.engineeringtoolbox.com/international-standard-atmosphere-d_985.html
         self.assertAlmostEqual(self.highISA.pressure >> Pressure.hPa, 899, places=0)
-        self.assertAlmostEqual(self.highISA.density, 0.0694, places=3)
-        self.assertAlmostEqual(self.highISA.density_factor(), 0.9075, places=4)
+        self.assertAlmostEqual(self.highISA.density_ratio, 0.9075, places=4)
 
     def test_mach(self):
         # Ref https://www.omnicalculator.com/physics/speed-of-sound

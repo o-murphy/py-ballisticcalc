@@ -40,7 +40,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
     temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
     humidity: float = 0.0           # Relative humidity [0% to 100%]
-    density: float = field(init=False)  # Imperial (lb/ft^3)
+    density_ratio: float = field(init=False)  # Density / cStandardDensity
     mach: Velocity = field(init=False)  # Mach 1 in reference atmosphere
     _mach1: float = field(init=False)  # Mach 1 in reference atmosphere in fps
     _a0: float = field(init=False)  # Initial reference altitude (ft)
@@ -64,7 +64,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         self._p0 = self.pressure >> Pressure.InHg
         self._a0 = self.altitude >> Distance.Foot
         self._ta = self._a0 * cLapseRateImperial + cStandardTemperatureF
-        self.density = self.calculate_density(self._t0, self._p0)
+        self.density_ratio = self.calculate_density(self._t0, self._p0) / cStandardDensity
         self._mach1 = Atmo.machF(self._t0)
         self.mach = Velocity.FPS(self._mach1)
 
@@ -136,6 +136,16 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         density = (pd*0.0289652 + pv*0.018016)/(8.31446 *(tC + cDegreesCtoK))
         return density / cDensityImperialToMetric
 
+    @property
+    def density_metric(self) -> float:
+        """Returns density in kg/m^3"""
+        return self.density_ratio * cStandardDensityMetric
+
+    @property
+    def density_imperial(self) -> float:
+        """Returns density in lb/ft^3"""
+        return self.density_ratio * cStandardDensity
+
     def temperature_at_altitude(self, altitude: float) -> float:
         """ Interpolated temperature at altitude
         :param altitude: ASL in ft
@@ -143,12 +153,8 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         """
         return (altitude - self._a0) * cLapseRateImperial + self._t0
 
-    def density_factor(self) -> float:
-        """:return: air density ratio"""
-        return self.density / cStandardDensity
-
     def calculate_density(self, t: float, p: float) -> float:
-        """DEPRECATED
+        """
         :param t: temperature in °F
         :param p: pressure in inHg
         :return: density with specified atmosphere
@@ -172,12 +178,12 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         """
         # Within 30 ft of initial altitude use initial values
         if math.fabs(self._a0 - altitude) < 30:
-            density_ratio = self.density / cStandardDensity
+            density_ratio = self.density_ratio
             mach = self._mach1
         else:
-            t = self.temperature_at_altitude(altitude)
             # https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation
             density_ratio = math.exp(-altitude/34112.0)
+            t = self.temperature_at_altitude(altitude)
             mach = Atmo.machF(t)
         return density_ratio, mach
 
