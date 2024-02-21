@@ -92,11 +92,11 @@ class Vector:
 
 
 class TrajectoryCalc:
-    """All calculations are done in units of Feet and fps"""
+    """All calculations are done in units of feet and fps"""
 
     def __init__(self, ammo: Ammo):
         self.ammo = ammo
-        self._bc = self.ammo.dm.value
+        self._bc = self.ammo.dm.BC
         self._table_data = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
 
@@ -328,6 +328,13 @@ class TrajectoryCalc:
         return ranges
 
     def drag_by_mach(self, mach: float):
+        """ Drag force = V^2 * Cd * AirDensity * S / 2m where:
+            cStandardDensity of Air = 0.076474 lb/ft^3
+            S is cross-section = d^2 pi/4, where d is bullet diameter in inches
+            m is bullet mass in pounds
+        BC contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
+        Thus: The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
+        """
         cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 

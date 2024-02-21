@@ -143,7 +143,7 @@ class TestComputer(unittest.TestCase):
 #region Ammo
     def test_ammo_drag(self):
         """Increasing ballistic coefficient (BC) should decrease drop"""
-        tdm = DragModel(self.dm.value+0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
+        tdm = DragModel(self.dm.BC+0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
         slick = Ammo(tdm, self.ammo.mv)
         shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
@@ -153,7 +153,7 @@ class TestComputer(unittest.TestCase):
         """DragModel.weight and .diameter, and Ammo.length, are only relevant when computing
             spin-drift.  Drop should match baseline with those parameters omitted.
         """
-        tdm = DragModel(self.dm.value, self.dm.drag_table)
+        tdm = DragModel(self.dm.BC, self.dm.drag_table)
         tammo = Ammo(tdm, mv=self.ammo.mv)
         shot = Shot(weapon=self.weapon, ammo=tammo, atmo=self.atmosphere)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)

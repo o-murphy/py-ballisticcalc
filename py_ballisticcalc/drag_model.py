@@ -14,9 +14,8 @@ __all__ = ('DragModel', 'make_data_points')
 
 @dataclass
 class DragDataPoint:
-
-    CD: float
-    Mach: float
+    CD: float    # Drag coefficient
+    Mach: float  # Velocity in Mach units
 
     def __iter__(self):
         yield self.CD
@@ -27,30 +26,39 @@ class DragDataPoint:
 
 
 class DragModel:
-    """NOTE: .weight, .diameter, .length are only relevant for computing spin drift"""
-    def __init__(self, value: float,
+    """
+    :param BC: Ballistic Coefficient of bullet = weight / diameter^2 / i,
+        where weight is in pounds, diameter is in inches, and
+        i is the bullet's form factor relative to the selected drag model
+    :param drag_table: List of {Mach, Cd} pairs defining the standard drag model
+    :param weight: Bullet weight in grains
+    :param diameter: Bullet diameter in inches
+    :param length: Bullet length in inches
+    NOTE: .weight, .diameter, .length are only relevant for computing spin drift
+    """
+    def __init__(self, BC: float,
                  drag_table: typing.Iterable,
                  weight: [float, Weight]=0,
                  diameter: [float, Distance]=0,
                  length: [float, Distance]=0):
-        self.__post__init__(value, drag_table, weight, diameter, length)
+        self.__post__init__(BC, drag_table, weight, diameter, length)
 
-    def __post__init__(self, value: float, drag_table, weight, diameter, length):
+    def __post__init__(self, BC: float, drag_table, weight, diameter, length):
         table_len = len(drag_table)
         error = ''
 
         if table_len <= 0:
             error = 'Custom drag table must be longer than 0'
-        elif value <= 0:
-            error = 'Drag coefficient must be greater than zero'
+        elif BC <= 0:
+            error = 'Ballistic coefficient must be greater than zero'
 
         if error:
             raise ValueError(error)
 
         if drag_table in DragTablesSet:
-            self.value = value
+            self.BC = BC
         elif table_len > 0:
-            self.value = 1  # or 0.999
+            self.BC = 1.0
         else:
             raise ValueError('Wrong drag data')
 
@@ -59,7 +67,7 @@ class DragModel:
         self.diameter = Set.Units.diameter(diameter)
         if weight != 0 and diameter != 0:
             self.sectional_density = self._get_sectional_density()
-            self.form_factor = self._get_form_factor(self.value)
+            self.form_factor = self._get_form_factor(self.BC)
         self.drag_table = drag_table
 
     def _get_form_factor(self, bc: float):
