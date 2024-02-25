@@ -257,7 +257,7 @@ class HitResult:
         def find_begin_danger(row_num: int) -> TrajectoryData:
             """
             Beginning of danger space is last .distance' < .distance where 
-                |target_center - .drop'| >= target_height/2
+                (.drop' - target_center) >= target_height/2
             :param row_num: Index of the trajectory point for which we are calculating danger space
             :return: Distance marking beginning of danger space
             """
@@ -267,14 +267,14 @@ class HitResult:
                 target_center = center_row.drop.raw_value + tan_look_angle * (
                         prime_row.distance.raw_value - center_row.distance.raw_value
                 )
-                if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
+                if (prime_row.drop.raw_value - target_center) >= target_height_half:
                     return self.trajectory[i]
             return self.trajectory[0]
 
         def find_end_danger(row_num: int) -> TrajectoryData:
             """
-            End of danger space is first .distance' > .distance where 
-                |target_center - .drop'| >= target_height/2
+            End of danger space is first .distance' > .distance where
+                (target_center - .drop') >= target_height/2
             :param row_num: Index of the trajectory point for which we are calculating danger space
             :return: Distance marking end of danger space
             """
@@ -283,7 +283,7 @@ class HitResult:
                 prime_row = self.trajectory[i]
                 target_center = center_row.drop.raw_value + tan_look_angle * (
                         prime_row.distance.raw_value - center_row.distance.raw_value)
-                if abs(target_center - prime_row.drop.raw_value) >= target_height_half:
+                if target_center - prime_row.drop.raw_value >= target_height_half:
                     return prime_row
             return self.trajectory[-1]
 
