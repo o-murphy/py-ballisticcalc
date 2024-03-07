@@ -110,16 +110,10 @@ cdef class TrajectoryCalc:
         self._table_data = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
 
-    cdef double get_calc_step(self, double step):
-        cdef:
-            int step_order, maximum_order
-            double maximum_step = Settings.get_max_calc_step_size()
-        step /= 2
-        if step > maximum_step:
-            step_order = int(floor(log10(step)))
-            maximum_order = int(floor(log10(maximum_step)))
-            step /= pow(10, step_order - maximum_order + 1)
-        return step
+    cdef double get_calc_step(self, double step = 0):
+        if step == 0:
+            return Settings.get_max_calc_step_size() / 2.0
+        return min(step, Settings.get_max_calc_step_size()) / 2.0
 
     def zero_angle(self, shot_info: Shot, distance: Distance):
         return self._zero_angle(shot_info, distance)
@@ -140,7 +134,7 @@ cdef class TrajectoryCalc:
 
     cdef _zero_angle(TrajectoryCalc self, object shot_info, object distance):
         cdef:
-            double calc_step = self.get_calc_step(distance.units(10) >> Distance.Foot)
+            double calc_step = self.get_calc_step()
             double zero_distance = cos(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
             double height_at_zero = sin(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
             double maximum_range = zero_distance + calc_step
@@ -178,7 +172,7 @@ cdef class TrajectoryCalc:
                 if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                     break
 
-                delta_time = calc_step / velocity_vector.x
+                delta_time = calc_step / velocity
 
                 drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
 
@@ -204,8 +198,8 @@ cdef class TrajectoryCalc:
     cdef _trajectory(TrajectoryCalc self, object ammo, object atmo, object shot_info,
                      list[object] winds, object max_range, object dist_step, CTrajFlag filter_flags):
         cdef:
-            double density_factor, mach
-            double time, velocity, windage, delta_time, drag
+            double time = 0
+            double density_factor, mach, velocity, windage, delta_time, drag
 
             double look_angle = shot_info.look_angle >> Angular.Radian
             double twist = shot_info.weapon.twist >> Distance.Inch
@@ -213,7 +207,6 @@ cdef class TrajectoryCalc:
             double diameter = ammo.dm.diameter >> Distance.Inch
             double weight = ammo.dm.weight >> Weight.Grain
 
-            # double step = shot_info.step >> Distance.Foot
             double step = dist_step >> Distance.Foot
             double calc_step = self.get_calc_step(step)
 
@@ -329,13 +322,11 @@ cdef class TrajectoryCalc:
 
             previous_mach = velocity / mach
 
+            delta_time = calc_step / velocity
+
             velocity_adjusted = velocity_vector - wind_vector
-
-            delta_time = calc_step / velocity_vector.x
             velocity = velocity_adjusted.magnitude()
-
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
-
             velocity_vector -= (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calc_step,
                                         velocity_vector.y * delta_time,

@@ -16,7 +16,7 @@ class TestTrajectory(unittest.TestCase):
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                      Distance(100, Distance.Yard))
 
-        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001651, 6,
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001652, 6,
                                f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
 
     def test_zero2(self):
@@ -33,7 +33,7 @@ class TestTrajectory(unittest.TestCase):
 
     def custom_assert_equal(self, a, b, accuracy, name):
         with self.subTest(name=name):
-            self.assertLess(fabs(a - b), accuracy, f'Assertion {name} failed ({a}/{b}, {accuracy})')
+            self.assertLess(fabs(a - b), accuracy, f'Equality {name} failed (|{a} - {b}|, {accuracy} digits)')
 
     def validate_one(self, data: TrajectoryData, distance: float, velocity: float,
                      mach: float, energy: float, path: float, hold: float,
@@ -73,13 +73,14 @@ class TestTrajectory(unittest.TestCase):
         ammo = Ammo(dm, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), zero_elevation=Angular(0.001228, Angular.Radian))
         atmosphere = Atmo.icao()
-        calc = TrajectoryCalc(ammo)
-        shot_info = Shot(weapon=weapon, atmo=atmosphere,
+        shot_info = Shot(weapon=weapon, ammo=ammo, atmo=atmosphere,
                          winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
-        data = calc.trajectory(shot_info, Distance.Yard(1000), Distance.Yard(100))
 
-        self.custom_assert_equal(len(data), 11, 0.1, "Length")
+        calc = Calculator()
+        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
+        self.assertEqual(len(data), 11, "Trajectory Row Count")
 
+        # Dist(yd), vel(fps), Mach, energy(ft-lb), drop(in), drop(mil), wind(in), wind(mil), time, ogw
         test_data = [
             [data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.MOA],
             [data[1], 100, 2351.2, 2.106, 2061, 0, 0, -0.6, -0.6, 0.118, 550, Angular.MOA],
@@ -95,12 +96,11 @@ class TestTrajectory(unittest.TestCase):
         dm = DragModel(0.223, TableG7, 168, 0.308, 1.282)
         ammo = Ammo(dm, Velocity(2750, Velocity.FPS))
         weapon = Weapon(2, 12, zero_elevation=Angular.MOA(4.221))
-        shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), -45)])
+        shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), Angular.Degree(-45))])
 
-        calc = TrajectoryCalc(ammo)
-        data = calc.trajectory(shot_info, Distance.Yard(1000), Distance.Yard(100))
-
-        self.custom_assert_equal(len(data), 11, 0.1, "Length")
+        calc = Calculator()
+        data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
+        self.assertEqual(len(data), 11, "Trajectory Row Count")
 
         # Dist(yd), vel(fps), Mach, energy(ft-lb), drop(in), drop(mil), wind(in), wind(mil), time, ogw
         test_data = [

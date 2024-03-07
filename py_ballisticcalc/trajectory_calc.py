@@ -100,16 +100,20 @@ class TrajectoryCalc:
         self._table_data = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
 
-    def get_calc_step(self, step: float):
-        maximum_step = Settings.get_max_calc_step_size()
-        step /= 2
-        if step > maximum_step:
-            step_order = int(math.floor(math.log10(step)))
-            maximum_order = int(math.floor(math.log10(maximum_step)))
-            step /= math.pow(10, step_order - maximum_order + 1)
-        return step
+    def get_calc_step(self, step: float = 0):
+        """Keep step under max_calc_step_size
+        :param step: proposed step size
+        :return: step size for calculations (in feet)
+        """
+        if step == 0:
+            return Settings.get_max_calc_step_size() / 2.0
+        return min(step, Settings.get_max_calc_step_size()) / 2.0
 
     def zero_angle(self, shot_info: Shot, distance: Distance):
+        """Find barrel elevation to hit zero
+        :param shot_info: Shot conditions
+        :param distance: Zero distance
+        """
         return self._zero_angle(shot_info, distance)
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
@@ -125,7 +129,7 @@ class TrajectoryCalc:
         return self._trajectory(self.ammo, atmo, shot_info, winds, max_range, dist_step, filter_flags)
 
     def _zero_angle(self, shot_info: Shot, distance: Distance):
-        calc_step = self.get_calc_step(distance.units(10) >> Distance.Foot)
+        calc_step = self.get_calc_step()
         zero_distance = math.cos(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
         height_at_zero = math.sin(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
         maximum_range = zero_distance + calc_step
@@ -160,10 +164,9 @@ class TrajectoryCalc:
                 if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                     break
 
-                delta_time = calc_step / velocity_vector.x
+                delta_time = calc_step / velocity
 
                 drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
-
                 velocity_vector -= (velocity_vector * drag - gravity_vector) * delta_time
                 delta_range_vector = Vector(calc_step, velocity_vector.y * delta_time,
                                             velocity_vector.z * delta_time)
@@ -186,6 +189,9 @@ class TrajectoryCalc:
     def _trajectory(self, ammo: Ammo, atmo: Atmo,
                     shot_info: Shot, winds: list[Wind],
                     max_range: Distance, dist_step: Distance, filter_flags: TrajFlag):
+        """Calculate trajectory for specified shot
+        :return: list of TrajectoryData, one for each dist_step, out to max_range
+        """
         time = 0
         look_angle = shot_info.look_angle >> Angular.Radian
         twist = shot_info.weapon.twist >> Distance.Inch
@@ -193,7 +199,6 @@ class TrajectoryCalc:
         diameter = ammo.dm.diameter >> Distance.Inch
         weight = ammo.dm.weight >> Weight.Grain
 
-        # step = shot_info.step >> Distance.Foot
         step = dist_step >> Distance.Foot
         calc_step = self.get_calc_step(step)
 
@@ -310,13 +315,11 @@ class TrajectoryCalc:
 
             previous_mach = velocity / mach
 
+            delta_time = calc_step / velocity
+
             velocity_adjusted = velocity_vector - wind_vector
-
-            delta_time = calc_step / velocity_vector.x
             velocity = velocity_adjusted.magnitude()
-
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
-
             velocity_vector -= (velocity_adjusted * drag - gravity_vector) * delta_time
             delta_range_vector = Vector(calc_step,
                                         velocity_vector.y * delta_time,

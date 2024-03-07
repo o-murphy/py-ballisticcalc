@@ -33,7 +33,7 @@ class Settings:  # pylint: disable=too-few-public-methods
         target_height: Unit = Unit.INCH
         twist: Unit = Unit.INCH
 
-    _MAX_CALC_STEP_SIZE: float = 1
+    _MAX_CALC_STEP_SIZE: float = 0.5
     USE_POWDER_SENSITIVITY: bool = False
 
     @classmethod
