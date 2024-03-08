@@ -172,7 +172,7 @@ cdef class TrajectoryCalc:
                 if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                     break
 
-                delta_time = calc_step / velocity
+                delta_time = calc_step / velocity_vector.x
 
                 drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
 
@@ -304,25 +304,22 @@ cdef class TrajectoryCalc:
                 next_range_distance += step
                 current_item += 1
 
-            if _flag & filter_flags:
-
+            if _flag & filter_flags:  # Record TrajectoryData row
                 windage = range_vector.z
-
-                if twist != 0:
+                if twist != 0:  # Add spin drift to windage
                     windage += (1.25 * (stability_coefficient + 1.2)
                                 * pow(time, 1.83) * twist_coefficient) / 12
-
                 ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
-                    velocity, mach, windage, weight, _flag
+                    time, range_vector, velocity_vector, velocity,
+                    mach, windage, look_angle, reference_height,
+                    density_factor, drag, weight, _flag
                 ))
-
                 if current_item == ranges_length:
                     break
 
             previous_mach = velocity / mach
 
-            delta_time = calc_step / velocity
+            delta_time = calc_step / velocity_vector.x
 
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()
@@ -368,24 +365,30 @@ cdef Vector wind_to_vector(object wind):
         double cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction_from >> Angular.Radian)
     return Vector(range_component, 0., cross_component)
 
-cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
-                           double velocity, double mach, double windage, double weight, object flag):
+cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector, double velocity,
+                           double mach, double windage, double look_angle, double reference_height,
+                           double density_factor, double drag, double weight, object flag):
     cdef:
-        double drop_adjustment = get_correction(range_vector.x, range_vector.y)
+        double drop_adjustment = get_correction(range_vector.x, range_vector.y - reference_height)
         double windage_adjustment = get_correction(range_vector.x, windage)
         double trajectory_angle = atan(velocity_vector.y / velocity_vector.x)
 
     return TrajectoryData(
         time=time,
         distance=Distance.Foot(range_vector.x),
+        velocity=Velocity.FPS(velocity),
+        mach=velocity / mach,
         drop=Distance.Foot(range_vector.y),
+        target_drop=Distance.Foot(range_vector.y - reference_height),
         drop_adj=Angular.Radian(drop_adjustment),
         windage=Distance.Foot(windage),
         windage_adj=Angular.Radian(windage_adjustment),
-        velocity=Velocity.FPS(velocity),
-        mach=velocity / mach,
-        energy=Energy.FootPound(calculate_energy(weight, velocity)),
+        look_distance= Distance.Foot(range_vector.x / cos(look_angle)),
+        look_height= Distance.Foot(reference_height),
         angle=Angular.Radian(trajectory_angle),
+        density_factor = density_factor-1,
+        drag = drag,
+        energy=Energy.FootPound(calculate_energy(weight, velocity)),
         ogw=Weight.Pound(calculate_ogv(weight, velocity)),
         flag=flag
     )
