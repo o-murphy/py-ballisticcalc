@@ -46,19 +46,23 @@ class TrajFlag(Flag):
 
 class TrajectoryData(NamedTuple):
     """
-    Represents point of trajectory in applicable data types
+    Data for one point in ballistic trajectory
 
     Attributes:
         time (float): bullet flight time
-        distance (Distance): traveled distance
-        velocity (Velocity): velocity in current trajectory point
-        mach (float): velocity in current trajectory point in "Mach" number
-        drop (Distance):
-        drop_adj (Angular):
+        distance (Distance): x-axis coordinate
+        velocity (Velocity): velocity
+        mach (float): velocity in Mach units
+        drop (Distance): y-axis coordinate
+        target_drop (Distance): drop relative to sight-line
+        drop_adj (Angular): sight adjustment to zero target_drop at this distance
         windage (Distance):
         windage_adj (Angular):
-        angle (Angular)
-        mach float
+        look_distance (Distance): sight-line distance = .distance/cosine(look_angle)
+        look_height (Distance): y-coordinate of sight-line = .distance*tan(look_angle)
+        angle (Angular): Angle of velocity vector relative to x axis
+        density_factor (float): Ratio of air density here to standard density
+        drag (float): Current drag coefficient
         energy (Energy):
         ogw (Weight): optimal game weight
         rtype (int): row type
@@ -67,12 +71,17 @@ class TrajectoryData(NamedTuple):
     time: float
     distance: Distance
     velocity: Velocity
-    mach: float  # velocity in Mach
+    mach: float
     drop: Distance
-    drop_adj: Angular  # drop_adjustment
+    target_drop: Distance
+    drop_adj: Angular
     windage: Distance
-    windage_adj: Angular  # windage_adjustment
-    angle: Angular  # Trajectory angle
+    windage_adj: Angular
+    look_distance: Distance
+    look_height: Distance
+    angle: Angular
+    density_factor: float
+    drag: float
     energy: Energy
     ogw: Weight
     flag: typing.Union[TrajFlag, int]
@@ -87,15 +96,20 @@ class TrajectoryData(NamedTuple):
             return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 
         return (
-            f'{self.time:.2f} s',
+            f'{self.time:.3f} s',
             _fmt(self.distance, Set.Units.distance),
             _fmt(self.velocity, Set.Units.velocity),
             f'{self.mach:.2f} mach',
             _fmt(self.drop, Set.Units.drop),
+            _fmt(self.target_drop, Set.Units.drop),
             _fmt(self.drop_adj, Set.Units.adjustment),
             _fmt(self.windage, Set.Units.drop),
             _fmt(self.windage_adj, Set.Units.adjustment),
+            _fmt(self.look_distance, Set.Units.distance),
+            _fmt(self.look_height, Set.Units.distance),
             _fmt(self.angle, Set.Units.angular),
+            f'{self.density_factor:.3e}',
+            f'{self.drag:.3f}',
             _fmt(self.energy, Set.Units.energy),
             _fmt(self.ogw, Set.Units.ogw),
 
@@ -112,10 +126,15 @@ class TrajectoryData(NamedTuple):
             self.velocity >> Set.Units.velocity,
             self.mach,
             self.drop >> Set.Units.drop,
+            self.target_drop >> Set.Units.drop,
             self.drop_adj >> Set.Units.adjustment,
             self.windage >> Set.Units.drop,
             self.windage_adj >> Set.Units.adjustment,
+            self.look_distance >> Set.Units.distance,
+            self.look_height >> Set.Units.distance,
             self.angle >> Set.Units.angular,
+            self.density_factor,
+            self.drag,
             self.energy >> Set.Units.energy,
             self.ogw >> Set.Units.ogw,
             TrajFlag(self.flag)

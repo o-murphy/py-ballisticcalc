@@ -164,7 +164,7 @@ class TrajectoryCalc:
                 if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                     break
 
-                delta_time = calc_step / velocity
+                delta_time = calc_step / velocity_vector.x
 
                 drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
                 velocity_vector -= (velocity_vector * drag - gravity_vector) * delta_time
@@ -211,7 +211,7 @@ class TrajectoryCalc:
         next_range_distance = .0
         previous_mach = .0
         ranges = []
-
+        drag = 0
         stability_coefficient = 1.0
         twist_coefficient = 0
         next_wind_range = 1e7
@@ -260,22 +260,22 @@ class TrajectoryCalc:
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
 
-            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(
-                alt0 + range_vector.y)
-
             if range_vector.x >= next_wind_range:
                 current_wind += 1
                 wind_vector = wind_to_vector(winds[current_wind])
-
                 if current_wind == len_winds - 1:
                     next_wind_range = 1e7
                 else:
                     next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
 
+            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(
+                alt0 + range_vector.y)
+
+            # Zero reference line is the sight line defined by look_angle
+            reference_height = range_vector.x * math.tan(look_angle)
+
             # Zero-crossing checks
             if range_vector.x > 0:
-                # Zero reference line is the sight line defined by look_angle
-                reference_height = range_vector.x * math.tan(look_angle)
                 # If we haven't seen ZERO_UP, we look for that first
                 if not seen_zero & TrajFlag.ZERO_UP:
                     if range_vector.y >= reference_height:
@@ -297,25 +297,22 @@ class TrajectoryCalc:
                 next_range_distance += step
                 current_item += 1
 
-            if _flag & filter_flags:
-
+            if _flag & filter_flags:  # Record TrajectoryData row
                 windage = range_vector.z
-
-                if twist != 0:
+                if twist != 0:  # Add spin drift to windage
                     windage += (1.25 * (stability_coefficient + 1.2)
                                 * math.pow(time, 1.83) * twist_coefficient) / 12
-
                 ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
-                    velocity, mach, windage, weight, _flag.value
+                    time, range_vector, velocity_vector, velocity,
+                    mach, windage, look_angle, reference_height,
+                    density_factor, drag, weight, _flag.value
                 ))
-
                 if current_item == ranges_length:
                     break
 
             previous_mach = velocity / mach
 
-            delta_time = calc_step / velocity
+            delta_time = calc_step / velocity_vector.x
 
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()
@@ -374,25 +371,31 @@ def wind_to_vector(wind: Wind) -> Vector:
     return Vector(range_component, 0, cross_component)
 
 
-def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
-                          velocity: float, mach: float, windage: float, weight: float, flag: int):
-    drop_adjustment = get_correction(range_vector.x, range_vector.y)
+def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector, velocity: float,
+                          mach: float, windage: float, look_angle: float, reference_height: float,
+                          density_factor: float, drag: float, weight: float, flag: int):
+    drop_adjustment = get_correction(range_vector.x, range_vector.y - reference_height)
     windage_adjustment = get_correction(range_vector.x, windage)
     trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
 
     return TrajectoryData(
-        time=time,
-        distance=Distance.Foot(range_vector.x),
-        drop=Distance.Foot(range_vector.y),
-        drop_adj=Angular.Radian(drop_adjustment),
-        windage=Distance.Foot(windage),
-        windage_adj=Angular.Radian(windage_adjustment),
-        velocity=Velocity.FPS(velocity),
-        mach=velocity / mach,
-        energy=Energy.FootPound(calculate_energy(weight, velocity)),
-        angle=Angular.Radian(trajectory_angle),
-        ogw=Weight.Pound(calculate_ogw(weight, velocity)),
-        flag=flag
+        time= time,
+        distance= Distance.Foot(range_vector.x),
+        velocity= Velocity.FPS(velocity),
+        mach= velocity / mach,
+        drop= Distance.Foot(range_vector.y),
+        target_drop= Distance.Foot(range_vector.y - reference_height),
+        drop_adj= Angular.Radian(drop_adjustment),
+        windage= Distance.Foot(windage),
+        windage_adj= Angular.Radian(windage_adjustment),
+        look_distance= Distance.Foot(range_vector.x / math.cos(look_angle)),
+        look_height= Distance.Foot(reference_height),
+        angle = Angular.Radian(trajectory_angle),
+        density_factor = density_factor-1,
+        drag = drag,
+        energy = Energy.FootPound(calculate_energy(weight, velocity)),
+        ogw = Weight.Pound(calculate_ogw(weight, velocity)),
+        flag = flag
     )
 
 
