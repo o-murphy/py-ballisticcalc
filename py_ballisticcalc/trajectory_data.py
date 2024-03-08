@@ -53,7 +53,7 @@ class TrajectoryData(NamedTuple):
         distance (Distance): x-axis coordinate
         velocity (Velocity): velocity
         mach (float): velocity in Mach units
-        drop (Distance): y-axis coordinate
+        height (Distance): y-axis coordinate
         target_drop (Distance): drop relative to sight-line
         drop_adj (Angular): sight adjustment to zero target_drop at this distance
         windage (Distance):
@@ -72,13 +72,12 @@ class TrajectoryData(NamedTuple):
     distance: Distance
     velocity: Velocity
     mach: float
-    drop: Distance
+    height: Distance
     target_drop: Distance
     drop_adj: Angular
     windage: Distance
     windage_adj: Angular
     look_distance: Distance
-    look_height: Distance
     angle: Angular
     density_factor: float
     drag: float
@@ -100,13 +99,12 @@ class TrajectoryData(NamedTuple):
             _fmt(self.distance, Set.Units.distance),
             _fmt(self.velocity, Set.Units.velocity),
             f'{self.mach:.2f} mach',
-            _fmt(self.drop, Set.Units.drop),
+            _fmt(self.height, Set.Units.drop),
             _fmt(self.target_drop, Set.Units.drop),
             _fmt(self.drop_adj, Set.Units.adjustment),
             _fmt(self.windage, Set.Units.drop),
             _fmt(self.windage_adj, Set.Units.adjustment),
             _fmt(self.look_distance, Set.Units.distance),
-            _fmt(self.look_height, Set.Units.distance),
             _fmt(self.angle, Set.Units.angular),
             f'{self.density_factor:.3e}',
             f'{self.drag:.3f}',
@@ -125,13 +123,12 @@ class TrajectoryData(NamedTuple):
             self.distance >> Set.Units.distance,
             self.velocity >> Set.Units.velocity,
             self.mach,
-            self.drop >> Set.Units.drop,
+            self.height >> Set.Units.drop,
             self.target_drop >> Set.Units.drop,
             self.drop_adj >> Set.Units.adjustment,
             self.windage >> Set.Units.drop,
             self.windage_adj >> Set.Units.adjustment,
             self.look_distance >> Set.Units.distance,
-            self.look_height >> Set.Units.distance,
             self.angle >> Set.Units.angular,
             self.density_factor,
             self.drag,
@@ -163,11 +160,11 @@ class DangerSpace(NamedTuple):
 
         cosine = math.cos(self.look_angle >> Angular.Radian)
         begin_dist = (self.begin.distance >> Set.Units.distance) * cosine
-        begin_drop = (self.begin.drop >> Set.Units.drop) * cosine
+        begin_drop = (self.begin.height >> Set.Units.drop) * cosine
         end_dist = (self.end.distance >> Set.Units.distance) * cosine
-        end_drop = (self.end.drop >> Set.Units.drop) * cosine
+        end_drop = (self.end.height >> Set.Units.drop) * cosine
         range_dist = (self.at_range.distance >> Set.Units.distance) * cosine
-        range_drop = (self.at_range.drop >> Set.Units.drop) * cosine
+        range_drop = (self.at_range.height >> Set.Units.drop) * cosine
         h = self.target_height >> Set.Units.drop
 
         # Target position and height:
@@ -241,7 +238,7 @@ class HitResult:
     def danger_space(self,
                      at_range: [float, Distance],
                      target_height: [float, Distance],
-                     look_angle: [float, Angular] = Angular(0, Angular.Degree)
+                     look_angle: [float, Angular] = None
                      ) -> DangerSpace:
         """
         Assume that the trajectory hits the center of a target at any distance.
@@ -250,7 +247,7 @@ class HitResult:
         along the line of sight we can move a target such that the trajectory is still 
         within *h*/2 of the original drop.
 
-        :param at_range: Danger space is calculated for a target centered at this distance
+        :param at_range: Danger space is calculated for a target centered at this sight distance
         :param target_height: Target height (*h*) determines danger space
         :param look_angle: Ranging errors occur along the look angle to the target
         """
@@ -258,7 +255,11 @@ class HitResult:
 
         at_range = Set.Units.distance(at_range)
         target_height = Set.Units.distance(target_height)
-        look_angle = Set.Units.angular(look_angle)
+        target_height_half = target_height.raw_value / 2.0
+        if look_angle is None:
+            look_angle = self.shot.look_angle
+        else:
+            look_angle = Set.Units.angular(look_angle)
 
         # Get index of first trajectory point with distance >= at_range
         i = self.index_at_distance(at_range)
@@ -266,12 +267,6 @@ class HitResult:
             raise ArithmeticError(
                 f"Calculated trajectory doesn't reach requested distance {at_range}"
             )
-
-        target_height_half = target_height.raw_value / 2.0
-        tan_look_angle = math.tan(look_angle >> Angular.Radian)
-
-        # Target_center height shifts along look_angle as:
-        #   target_center' = target_center + (.distance' - .distance) * tan(look_angle)
 
         def find_begin_danger(row_num: int) -> TrajectoryData:
             """
@@ -283,10 +278,7 @@ class HitResult:
             center_row = self.trajectory[row_num]
             for i in range(row_num - 1, 0, -1):
                 prime_row = self.trajectory[i]
-                target_center = center_row.drop.raw_value + tan_look_angle * (
-                        prime_row.distance.raw_value - center_row.distance.raw_value
-                )
-                if (prime_row.drop.raw_value - target_center) >= target_height_half:
+                if (prime_row.target_drop.raw_value - center_row.target_drop.raw_value) >= target_height_half:
                     return self.trajectory[i]
             return self.trajectory[0]
 
@@ -300,9 +292,7 @@ class HitResult:
             center_row = self.trajectory[row_num]
             for i in range(row_num + 1, len(self.trajectory)):
                 prime_row = self.trajectory[i]
-                target_center = center_row.drop.raw_value + tan_look_angle * (
-                        prime_row.distance.raw_value - center_row.distance.raw_value)
-                if target_center - prime_row.drop.raw_value >= target_height_half:
+                if (center_row.target_drop.raw_value - prime_row.target_drop.raw_value) >= target_height_half:
                     return prime_row
             return self.trajectory[-1]
 
@@ -338,20 +328,20 @@ class HitResult:
                             "Use Calculator.fire(..., extra_data=True)")
         font_size = PLOT_FONT_SIZE
         df = self.dataframe()
-        ax = df.plot(x='distance', y=['drop'], ylabel=Set.Units.drop.symbol)
+        ax = df.plot(x='distance', y=['height'], ylabel=Set.Units.drop.symbol)
         max_range = self.trajectory[-1].distance >> Set.Units.distance
 
         for p in self.trajectory:
             if TrajFlag(p.flag) & TrajFlag.ZERO:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(),
+                        [df['height'].min(), p.height >> Set.Units.drop], linestyle=':')
+                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['height'].min(),
                         f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
                         fontsize=font_size, rotation=90)
             if TrajFlag(p.flag) & TrajFlag.MACH:
                 ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['drop'].min(), p.drop >> Set.Units.drop], linestyle=':')
-                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['drop'].min(),
+                        [df['height'].min(), p.height >> Set.Units.drop], linestyle=':')
+                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['height'].min(),
                         "Mach 1", fontsize=font_size, rotation=90)
 
         max_range_in_drop_units = self.trajectory[-1].distance >> Set.Units.drop

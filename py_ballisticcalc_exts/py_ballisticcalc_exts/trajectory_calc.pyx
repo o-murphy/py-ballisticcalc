@@ -310,8 +310,8 @@ cdef class TrajectoryCalc:
                     windage += (1.25 * (stability_coefficient + 1.2)
                                 * pow(time, 1.83) * twist_coefficient) / 12
                 ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector, velocity,
-                    mach, windage, look_angle, reference_height,
+                    time, range_vector, velocity_vector,
+                    velocity, mach, windage, look_angle,
                     density_factor, drag, weight, _flag
                 ))
                 if current_item == ranges_length:
@@ -365,11 +365,11 @@ cdef Vector wind_to_vector(object wind):
         double cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction_from >> Angular.Radian)
     return Vector(range_component, 0., cross_component)
 
-cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector, double velocity,
-                           double mach, double windage, double look_angle, double reference_height,
+cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
+                           double velocity, double mach, double windage, double look_angle,
                            double density_factor, double drag, double weight, object flag):
     cdef:
-        double drop_adjustment = get_correction(range_vector.x, range_vector.y - reference_height)
+        double drop_adjustment = get_correction(range_vector.x, range_vector.y)
         double windage_adjustment = get_correction(range_vector.x, windage)
         double trajectory_angle = atan(velocity_vector.y / velocity_vector.x)
 
@@ -378,13 +378,12 @@ cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vec
         distance=Distance.Foot(range_vector.x),
         velocity=Velocity.FPS(velocity),
         mach=velocity / mach,
-        drop=Distance.Foot(range_vector.y),
-        target_drop=Distance.Foot(range_vector.y - reference_height),
-        drop_adj=Angular.Radian(drop_adjustment),
+        height=Distance.Foot(range_vector.y),
+        target_drop=Distance.Foot((range_vector.y - range_vector.x * tan(look_angle)) * cos(look_angle)),
+        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
         windage=Distance.Foot(windage),
         windage_adj=Angular.Radian(windage_adjustment),
         look_distance= Distance.Foot(range_vector.x / cos(look_angle)),
-        look_height= Distance.Foot(reference_height),
         angle=Angular.Radian(trajectory_angle),
         density_factor = density_factor-1,
         drag = drag,

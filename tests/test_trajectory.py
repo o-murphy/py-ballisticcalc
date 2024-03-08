@@ -48,11 +48,11 @@ class TestTrajectory(unittest.TestCase):
         self.custom_assert_equal(ogv, data.ogw >> Weight.Pound, 1, "OGV")
 
         if distance >= 800:
-            self.custom_assert_equal(path, data.drop >> Distance.Inch, 4, 'Drop')
+            self.custom_assert_equal(path, data.height >> Distance.Inch, 4, 'Drop')
         elif distance >= 500:
-            self.custom_assert_equal(path, data.drop >> Distance.Inch, 1, 'Drop')
+            self.custom_assert_equal(path, data.height >> Distance.Inch, 1, 'Drop')
         else:
-            self.custom_assert_equal(path, data.drop >> Distance.Inch, 0.5, 'Drop')
+            self.custom_assert_equal(path, data.height >> Distance.Inch, 0.5, 'Drop')
 
         if distance > 1:
             self.custom_assert_equal(hold, data.drop_adj >> adjustment_unit, 0.5, 'Hold')
