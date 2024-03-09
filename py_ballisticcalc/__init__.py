@@ -1,9 +1,10 @@
-__author__ = "dbookstaber"
+"""LGPL library for small arms ballistic calculations (Python 3.8+)"""
+
+__author__ = "o-murphy"
 __copyright__ = ("",)
 
-__credits__ = ["o-murphy"]
-__version__ = "1.2"
-
+__credits__ = ["o-murphy", "dbookstaber"]
+__version__ = "2.0.0b0"
 
 from .backend import *
 from .drag_tables import *
