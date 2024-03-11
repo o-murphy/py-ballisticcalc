@@ -41,17 +41,12 @@ class DragModel:
                  weight: [float, Weight]=0,
                  diameter: [float, Distance]=0,
                  length: [float, Distance]=0):
-        self.__post__init__(BC, drag_table, weight, diameter, length)
-
-    def __post__init__(self, BC: float, drag_table, weight, diameter, length):
         table_len = len(drag_table)
         error = ''
-
         if table_len <= 0:
             error = 'Custom drag table must be longer than 0'
         elif BC <= 0:
             error = 'Ballistic coefficient must be greater than zero'
-
         if error:
             raise ValueError(error)
 
