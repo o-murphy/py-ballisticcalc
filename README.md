@@ -166,7 +166,7 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1*un
 
 The shooter typically cares about the line of sight (LoS): Sight adjustments (_drop_ in the following figure) are made relative to LoS, and ranging errors – and hence [danger space](#danger-space) – follow the line of sight, not the horizon.
 
-The following diagram shows how _look distance_ and _drop_ relate by _look angle_ to the (distance _x_, height _y_) data produced by the calculator.
+The following diagram shows how _look distance_ and _drop_ relate by _look angle_ to the underlying (distance _x_, height _y_) trajectory data.
 ![Look-angle trigonometry](doc/BallisticTrig.png)
 
 ## Danger Space
@@ -178,17 +178,13 @@ Danger space is a practical measure of sensitivity to ranging error.  It is defi
 
 The library provides trajectory calculation for ballistic projectiles including air rifles, bows, firearms, artillery, and so on.
 
-The 3DoF model that is used in this calculator is rooted in old C sources of version 2 of the public version of JBM calculator, ported to C#, optimized, fixed and extended with elements described in Litz's _Applied Ballistics_ book and from the friendly project of Alexandre Trofimov and then ported to Go.
+The 3DoF model that is used in this calculator is rooted in public C code of [JBM's calculator](https://jbmballistics.com/ballistics/calculators/calculators.shtml), ported to C#, optimized, fixed and extended with elements described in Litz's _Applied Ballistics_ book and from the friendly project of Alexandre Trofimov and then ported to Go.
 
 This Python3 implementation has been expanded to support multiple ballistic coefficients and custom drag functions, such as those derived from Doppler radar data.
 
-**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)**
+**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)**.
 
-**[C# version of the package is located here](https://github.com/gehtsoft-usa/BallisticCalculator1)**
-
-**[The online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)**
-
-Go documentation can be obtained using godoc tool.
+**[C# version of the package is located here](https://github.com/gehtsoft-usa/BallisticCalculator1), and [the online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)**.
 
 ## Contributors
 **This project exists thanks to all the people who contribute.**

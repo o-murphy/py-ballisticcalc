@@ -230,7 +230,7 @@ class TrajectoryCalc:
             wind_vector = Vector(.0, .0, .0)
         else:
             if len_winds > 1:
-                next_wind_range = winds[0].until_distance() >> Distance.Foot
+                next_wind_range = winds[0].until_distance >> Distance.Foot
             wind_vector = wind_to_vector(winds[0])
 
         if Settings.USE_POWDER_SENSITIVITY:
@@ -266,7 +266,7 @@ class TrajectoryCalc:
                 if current_wind == len_winds - 1:
                     next_wind_range = 1e7
                 else:
-                    next_wind_range = winds[current_wind].until_distance() >> Distance.Foot
+                    next_wind_range = winds[current_wind].until_distance >> Distance.Foot
 
             density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(
                 alt0 + range_vector.y)
