@@ -214,7 +214,7 @@ class TrajectoryCalc:
         drag = 0
         stability_coefficient = 1.0
         twist_coefficient = 0
-        next_wind_range = 1e7
+        next_wind_range = Wind.MAX_DISTANCE_FEET
         alt0 = atmo.altitude >> Distance.Foot
 
         barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
@@ -229,9 +229,8 @@ class TrajectoryCalc:
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)
         else:
-            if len_winds > 1:
-                next_wind_range = winds[0].until_distance >> Distance.Foot
             wind_vector = wind_to_vector(winds[0])
+            next_wind_range = winds[0].until_distance >> Distance.Foot
 
         if Settings.USE_POWDER_SENSITIVITY:
             velocity = ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
@@ -262,10 +261,11 @@ class TrajectoryCalc:
 
             if range_vector.x >= next_wind_range:
                 current_wind += 1
-                wind_vector = wind_to_vector(winds[current_wind])
-                if current_wind == len_winds - 1:
-                    next_wind_range = 1e7
+                if current_wind >= len_winds:  # No more winds listed after this range
+                    wind_vector = Vector(.0, .0, .0)
+                    next_wind_range = Wind.MAX_DISTANCE_FEET
                 else:
+                    wind_vector = wind_to_vector(winds[current_wind])
                     next_wind_range = winds[current_wind].until_distance >> Distance.Foot
 
             density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(

@@ -197,10 +197,11 @@ class Wind(TypedUnits):
     velocity: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
     direction_from: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
     until_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
+    MAX_DISTANCE_FEET = 1e8
 
     def __post_init__(self):
         if not self.until_distance:
-            self.until_distance = Distance.Meter(9999)  # TODO: Set to a fundamental max value
+            self.until_distance = Distance.Foot(Wind.MAX_DISTANCE_FEET)
         if not self.direction_from or not self.velocity:
             self.direction_from = 0
             self.velocity = 0
