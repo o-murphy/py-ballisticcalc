@@ -164,6 +164,7 @@ cdef class TrajectoryCalc:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+        self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     cdef _zero_angle(TrajectoryCalc self, object shot_info, object distance):
         cdef:
@@ -196,15 +197,13 @@ cdef class TrajectoryCalc:
     cdef _trajectory(TrajectoryCalc self, object shot_info,
                      double maximum_range, double step, CTrajFlag filter_flags):
         cdef:
-            double density_factor, mach, velocity, windage, delta_time
+            object _flag, seen_zero  # CTrajFlag
+            double density_factor, mach, velocity, delta_time
             list ranges = []
             int ranges_length = int(maximum_range / step) + 1
-
             double time = .0
             double previous_mach = .0
             double drag = .0
-            double stability_coefficient = 1.0
-            int twist_coefficient = 0
 
             int len_winds = len(shot_info.winds)
             int current_item, current_wind
@@ -213,12 +212,6 @@ cdef class TrajectoryCalc:
 
             Vector velocity_vector, velocity_adjusted
             Vector range_vector, delta_range_vector, wind_vector
-
-            object _flag, seen_zero  # CTrajFlag
-
-        if self.twist and self.length and self.diameter:
-            stability_coefficient = self.stability_coefficient(shot_info.atmo)
-            twist_coefficient = 1 if self.twist > 0 else -1
 
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)
@@ -285,13 +278,9 @@ cdef class TrajectoryCalc:
 
                 # Record TrajectoryData row
                 if _flag & filter_flags:
-                    windage = range_vector.z
-                    if self.twist != 0:  # Add spin drift to windage
-                        windage += (1.25 * (stability_coefficient + 1.2)
-                                    * pow(time, 1.83) * twist_coefficient) / 12
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
-                        velocity, mach, windage, self.look_angle,
+                        velocity, mach, self.spin_drift(time), self.look_angle,
                         density_factor, drag, self.weight, _flag
                     ))
                     if current_item == ranges_length:
@@ -320,7 +309,7 @@ cdef class TrajectoryCalc:
         if not filter_flags:
             ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
-                        velocity, mach, 0, self.look_angle,
+                        velocity, mach, self.spin_drift(time), self.look_angle,
                         density_factor, drag, self.weight, _flag))
         return ranges
 
@@ -335,16 +324,29 @@ cdef class TrajectoryCalc:
         cdef double cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
-    cdef double stability_coefficient(self, object atmo):
-        cdef:
-            double twist_rate = fabs(self.twist) / self.diameter
-            double length = self.length / self.diameter
-            double sd = 30 * self.weight / (pow(twist_rate, 2) * pow(self.diameter, 3) * length * (1 + pow(length, 2)))
-            double fv = pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
-            double ft = atmo.temperature >> Temperature.Fahrenheit
-            double pt = atmo.pressure >> Pressure.InHg
-            double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
-        return sd * fv * ftp
+    cdef double spin_drift(self, double time):
+        """Litz spin-drift approximation
+        :param time: Time of flight
+        :return: windage due to spin drift, in feet
+        """
+        if self.twist != 0:
+            sign = 1 if self.twist > 0 else -1
+            return sign * (1.25 * (self.stability_coefficient + 1.2) * pow(time, 1.83) ) / 12
+        return 0
+
+    cdef double calc_stability_coefficient(self, object atmo):
+        """Miller stability coefficient"""
+        if self.twist and self.length and self.diameter:
+            cdef:
+                double twist_rate = fabs(self.twist) / self.diameter
+                double length = self.length / self.diameter
+                double sd = 30 * self.weight / (pow(twist_rate, 2) * pow(self.diameter, 3) * length * (1 + pow(length, 2)))
+                double fv = pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
+                double ft = atmo.temperature >> Temperature.Fahrenheit
+                double pt = atmo.pressure >> Pressure.InHg
+                double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+            return sd * fv * ftp
+        return 0
 
 cdef Vector wind_to_vector(object wind):
     cdef:
@@ -353,9 +355,10 @@ cdef Vector wind_to_vector(object wind):
     return Vector(range_component, 0., cross_component)
 
 cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
-                           double velocity, double mach, double windage, double look_angle,
+                           double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, object flag):
     cdef:
+        double windage = range_vector.z + spin_drift
         double drop_adjustment = get_correction(range_vector.x, range_vector.y)
         double windage_adjustment = get_correction(range_vector.x, windage)
         double trajectory_angle = atan(velocity_vector.y / velocity_vector.x)

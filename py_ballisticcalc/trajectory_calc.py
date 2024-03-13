@@ -145,6 +145,7 @@ class TrajectoryCalc:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+        self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     def _zero_angle(self, shot_info: Shot, distance: Distance):
         self._init_trajectory(shot_info)
@@ -183,15 +184,9 @@ class TrajectoryCalc:
         """
         ranges = []
         ranges_length = int(maximum_range / step) + 1
-
         time = 0
         previous_mach = .0
         drag = 0
-        stability_coefficient = 1.0
-        twist_coefficient = 0
-        if self.twist and self.length and self.diameter:
-            stability_coefficient = self.stability_coefficient(shot_info.atmo)
-            twist_coefficient = 1 if self.twist > 0 else -1
 
         len_winds = len(shot_info.winds)
         current_wind = 0
@@ -262,13 +257,9 @@ class TrajectoryCalc:
 
                 # Record TrajectoryData row
                 if _flag & filter_flags:
-                    windage = range_vector.z
-                    if self.twist != 0:  # Add spin drift to windage
-                        windage += (1.25 * (stability_coefficient + 1.2)
-                                    * math.pow(time, 1.83) * twist_coefficient) / 12
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
-                        velocity, mach, windage, self.look_angle,
+                        velocity, mach, self.spin_drift(time), self.look_angle,
                         density_factor, drag, self.weight, _flag.value
                     ))
                     if current_item == ranges_length:
@@ -297,7 +288,7 @@ class TrajectoryCalc:
         if not filter_flags:
             ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
-                        velocity, mach, 0, self.look_angle,
+                        velocity, mach, self.spin_drift(time), self.look_angle,
                         density_factor, drag, self.weight, _flag.value))
         return ranges
 
@@ -313,20 +304,34 @@ class TrajectoryCalc:
         cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
-    def stability_coefficient(self, atmo: Atmo) -> float:
-        twist_rate = math.fabs(self.twist) / self.diameter
-        length = self.length / self.diameter
-        # Miller stability formula
-        sd = 30 * self.weight / (
-                math.pow(twist_rate, 2) * math.pow(self.diameter, 3) * length * (1 + math.pow(length, 2))
-        )
-        # Velocity correction factor
-        fv = math.pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
-        # Atmospheric correction
-        ft = atmo.temperature >> Temperature.Fahrenheit
-        pt = atmo.pressure >> Pressure.InHg
-        ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
-        return sd * fv * ftp
+    def spin_drift(self, time) -> float:
+        """Litz spin-drift approximation
+        :param time: Time of flight
+        :return: windage due to spin drift, in feet
+        """
+        if self.twist != 0:
+            sign = 1 if self.twist > 0 else -1
+            return sign * (1.25 * (self.stability_coefficient + 1.2)
+                        * math.pow(time, 1.83) ) / 12
+        return 0
+
+    def calc_stability_coefficient(self, atmo: Atmo) -> float:
+        """Miller stability coefficient"""
+        if self.twist and self.length and self.diameter:
+            twist_rate = math.fabs(self.twist) / self.diameter
+            length = self.length / self.diameter
+            # Miller stability formula
+            sd = 30 * self.weight / (
+                    math.pow(twist_rate, 2) * math.pow(self.diameter, 3) * length * (1 + math.pow(length, 2))
+            )
+            # Velocity correction factor
+            fv = math.pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
+            # Atmospheric correction
+            ft = atmo.temperature >> Temperature.Fahrenheit
+            pt = atmo.pressure >> Pressure.InHg
+            ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+            return sd * fv * ftp
+        return 0
 
 
 def wind_to_vector(wind: Wind) -> Vector:
@@ -346,8 +351,9 @@ def wind_to_vector(wind: Wind) -> Vector:
 
 
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
-                          velocity: float, mach: float, windage: float, look_angle: float,
+                          velocity: float, mach: float, spin_drift: float, look_angle: float,
                           density_factor: float, drag: float, weight: float, flag: int) -> TrajectoryData:
+    windage = range_vector.z + spin_drift
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
     trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
