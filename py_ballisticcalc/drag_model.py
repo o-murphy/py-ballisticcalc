@@ -65,6 +65,9 @@ class DragModel:
             self.form_factor = self._get_form_factor(self.BC)
         self.drag_table = drag_table
 
+    def __repr__(self):
+        return f"DragModel(BC={self.BC}, wgt={self.weight}, dia={self.diameter}, len={self.length})"
+
     def _get_form_factor(self, bc: float):
         return self.sectional_density / bc
 

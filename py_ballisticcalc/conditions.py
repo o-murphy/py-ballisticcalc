@@ -229,6 +229,7 @@ class Shot(TypedUnits):
     ammo: Ammo = field(default=None)
     atmo: Atmo = field(default=None)
     winds: list[Wind] = field(default=None)
+    # NOTE: Calculator assumes that winds are sorted by Wind.until_distance (ascending)
 
     @property
     def barrel_elevation(self) -> Angular:
