@@ -116,6 +116,7 @@ cdef class TrajectoryCalc:
         double alt0
         double calc_step
         double muzzle_velocity
+        double stability_coefficient
 
     def __init__(self, ammo: Ammo):
         self.ammo = ammo
@@ -336,15 +337,16 @@ cdef class TrajectoryCalc:
 
     cdef double calc_stability_coefficient(self, object atmo):
         """Miller stability coefficient"""
+        cdef:
+            double twist_rate, length, sd, fv, ft, pt, ftp
         if self.twist and self.length and self.diameter:
-            cdef:
-                double twist_rate = fabs(self.twist) / self.diameter
-                double length = self.length / self.diameter
-                double sd = 30 * self.weight / (pow(twist_rate, 2) * pow(self.diameter, 3) * length * (1 + pow(length, 2)))
-                double fv = pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
-                double ft = atmo.temperature >> Temperature.Fahrenheit
-                double pt = atmo.pressure >> Pressure.InHg
-                double ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+            twist_rate = fabs(self.twist) / self.diameter
+            length = self.length / self.diameter
+            sd = 30 * self.weight / (pow(twist_rate, 2) * pow(self.diameter, 3) * length * (1 + pow(length, 2)))
+            fv = pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
+            ft = atmo.temperature >> Temperature.Fahrenheit
+            pt = atmo.pressure >> Pressure.InHg
+            ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
             return sd * fv * ftp
         return 0
 
