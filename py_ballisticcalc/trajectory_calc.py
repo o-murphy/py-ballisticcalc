@@ -1,4 +1,4 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-class-docstring,missing-function-docstring,line-too-long,invalid-name,attribute-defined-outside-init
 """pure python trajectory calculation backend"""
 
 import math
@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from typing import NamedTuple
 
 from .conditions import Atmo, Shot, Wind
-from .munition import Ammo, Weapon
+from .munition import Ammo
 from .settings import Settings
 from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
 
-__all__ = ('TrajectoryCalc',)
+__all__ = ('TrajectoryCalc', )
 
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
@@ -92,370 +92,312 @@ class Vector:
 
 
 class TrajectoryCalc:
+    """All calculations are done in units of feet and fps"""
 
     def __init__(self, ammo: Ammo):
         self.ammo = ammo
-        self._bc = self.ammo.dm.value
+        self._bc = self.ammo.dm.BC
         self._table_data = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
+        self.gravity_vector = Vector(.0, cGravityConstant, .0)
 
-    def get_calc_step(self, step: float):
+    def get_calc_step(self, step: float = 0):
+        """Keep step under max_calc_step_size
+        :param step: proposed step size
+        :return: step size for calculations (in feet)
+        """
+        if step == 0:
+            return Settings.get_max_calc_step_size() / 2.0
+        return min(step, Settings.get_max_calc_step_size()) / 2.0
 
-        maximum_step = Settings.get_max_calc_step_size()
-        step /= 2
-
-        if step > maximum_step:
-            step_order = int(math.floor(math.log10(step)))
-            maximum_order = int(math.floor(math.log10(maximum_step)))
-            step /= math.pow(10, step_order - maximum_order + 1)
-
-        return step
-
-    def zero_angle(self, weapon: Weapon, atmo: Atmo):
-        return self._zero_angle(self.ammo, weapon, atmo)
-
-    def trajectory(self, weapon: Weapon, shot_info: Shot, step: [float, Distance],
+    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
-
-        dist_step = Settings.Units.distance(step)
-        atmo = shot_info.atmo
-        winds = shot_info.winds
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            print('ext', extra_data)
             dist_step = Distance.Foot(0.2)
             filter_flags = TrajFlag.ALL
-        return self._trajectory(self.ammo, weapon, atmo, shot_info, winds, dist_step, filter_flags)
 
-    def _zero_angle(self, ammo: Ammo, weapon: Weapon, atmo: Atmo):
-        calc_step = self.get_calc_step(weapon.zero_distance.units(10) >> Distance.Foot)
-        zero_distance = math.cos(
-            weapon.zero_look_angle >> Angular.Radian
-        ) * (weapon.zero_distance >> Distance.Foot)
-        height_at_zero = math.sin(
-            weapon.zero_look_angle >> Angular.Radian
-        ) * (weapon.zero_distance >> Distance.Foot)
-        maximum_range = zero_distance + calc_step
-        sight_height = weapon.sight_height >> Distance.Foot
-        mach = atmo.mach >> Velocity.FPS
-        density_factor = atmo.density_factor()
-        muzzle_velocity = ammo.mv >> Velocity.FPS
-        barrel_azimuth = 0.0
-        barrel_elevation = math.atan(height_at_zero / zero_distance)
+        self._init_trajectory(shot_info)
+        return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags)
+
+    def _init_trajectory(self, shot_info: Shot):
+        self.look_angle = shot_info.look_angle >> Angular.Radian
+        self.twist = shot_info.weapon.twist >> Distance.Inch
+        self.length = shot_info.ammo.dm.length >> Distance.Inch
+        self.diameter = shot_info.ammo.dm.diameter >> Distance.Inch
+        self.weight = shot_info.ammo.dm.weight >> Weight.Grain
+        self.barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
+        self.barrel_azimuth = shot_info.barrel_azimuth >> Angular.Radian
+        self.sight_height = shot_info.weapon.sight_height >> Distance.Foot
+        self.cant_cosine = math.cos(shot_info.cant_angle >> Angular.Radian)
+        self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
+        self.alt0 = shot_info.atmo.altitude >> Distance.Foot
+        self.calc_step = self.get_calc_step()
+        if Settings.USE_POWDER_SENSITIVITY:
+            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
+        else:
+            self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+        self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
+
+    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+        """
+        :param shot_info: Shot parameters
+        :param distance: Zero distance
+        :return: Barrel elevation to hit zero distance
+        """
+        self._init_trajectory(shot_info)
+
+        zero_distance = math.cos(self.look_angle) * (distance >> Distance.Foot)
+        height_at_zero = math.sin(self.look_angle) * (distance >> Distance.Foot)
+        maximum_range = zero_distance - 1.5*self.calc_step
+        self.barrel_azimuth = 0.0
+        self.barrel_elevation = math.atan(height_at_zero / zero_distance)
+        self.twist = 0
+
         iterations_count = 0
         zero_finding_error = cZeroFindingAccuracy * 2
-        gravity_vector = Vector(.0, cGravityConstant, .0)
-
-        # x - distance towards target, y - drop and z - windage
+        # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
-            velocity = muzzle_velocity
-            time = 0.0
-            range_vector = Vector(.0, -sight_height, .0)
-            velocity_vector = Vector(
-                math.cos(barrel_elevation) * math.cos(barrel_azimuth),
-                math.sin(barrel_elevation),
-                math.cos(barrel_elevation) * math.sin(barrel_azimuth)
-            ) * velocity
-
-            while range_vector.x <= maximum_range:
-                if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
-                    break
-
-                delta_time = calc_step / velocity_vector.x
-
-                drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
-
-                velocity_vector -= (velocity_vector * drag - gravity_vector) * delta_time
-                delta_range_vector = Vector(calc_step, velocity_vector.y * delta_time,
-                                            velocity_vector.z * delta_time)
-                range_vector += delta_range_vector
-                velocity = velocity_vector.magnitude()
-                time += delta_range_vector.magnitude() / velocity
-
-                if math.fabs(range_vector.x - zero_distance) < 0.5 * calc_step:
-                    zero_finding_error = math.fabs(range_vector.y - height_at_zero)
-                    if zero_finding_error > cZeroFindingAccuracy:
-                        barrel_elevation -= (range_vector.y - height_at_zero) / range_vector.x
-                    break
-
+            t = self._trajectory(shot_info, maximum_range, zero_distance, TrajFlag.NONE)[0]
+            height = t.height >> Distance.Foot
+            zero_finding_error = math.fabs(height - height_at_zero)
+            if zero_finding_error > cZeroFindingAccuracy:
+                self.barrel_elevation -= (height - height_at_zero) / zero_distance
+            else:  # last barrel_elevation hit zero!
+                break
             iterations_count += 1
 
-        return Angular.Radian(barrel_elevation)
+        if zero_finding_error > cZeroFindingAccuracy:
+            # TODO: Don't raise exception; return a tuple that contains the error so caller can check how close zero is
+            raise Exception(f'Zero vertical error {zero_finding_error} feet, after {iterations_count} iterations.')
+        return Angular.Radian(self.barrel_elevation)
 
-    def _trajectory(self, ammo: Ammo, weapon: Weapon, atmo: Atmo,
-                    shot_info: Shot, winds: list[Wind],
-                    dist_step: Distance, filter_flags: TrajFlag):
-
-        time = 0
-        look_angle = weapon.zero_look_angle >> Angular.Radian
-        twist = weapon.twist >> Distance.Inch
-        length = ammo.length >> Distance.Inch
-        diameter = ammo.dm.diameter >> Distance.Inch
-        weight = ammo.dm.weight >> Weight.Grain
-
-        # step = shot_info.step >> Distance.Foot
-        step = dist_step >> Distance.Foot
-        calc_step = self.get_calc_step(step)
-
-        maximum_range = (shot_info.max_range >> Distance.Foot) + 1
-
+    def _trajectory(self, shot_info: Shot, maximum_range: float, step: float,
+                    filter_flags: TrajFlag) -> list[TrajectoryData]:
+        """Calculate trajectory for specified shot
+        :param maximum_range: Feet down range to stop calculation
+        :param dist_step: Frequency (in feet down range) to record TrajectoryData
+        :return: list of TrajectoryData, one for each dist_step, out to max_range
+        """
+        ranges = []
         ranges_length = int(maximum_range / step) + 1
-        len_winds = len(winds)
+        time = 0
+        previous_mach = .0
+        drag = 0
+
+        len_winds = len(shot_info.winds)
         current_wind = 0
         current_item = 0
-
-        stability_coefficient = 1.0
-        twist_coefficient = 0
-        next_wind_range = 1e7
-
-        barrel_elevation = (shot_info.zero_angle >> Angular.Radian) + (
-                shot_info.relative_angle >> Angular.Radian)
-        alt0 = atmo.altitude >> Distance.Foot
-        sight_height = weapon.sight_height >> Distance.Foot
-
         next_range_distance = .0
-        barrel_azimuth = .0
-        previous_mach = .0
+        next_wind_range = Wind.MAX_DISTANCE_FEET
+        if len_winds < 1:
+            wind_vector = Vector(.0, .0, .0)
+        else:
+            wind_vector = wind_to_vector(shot_info.winds[0])
+            next_wind_range = shot_info.winds[0].until_distance >> Distance.Foot
 
-        gravity_vector = Vector(.0, cGravityConstant, .0)
-        range_vector = Vector(.0, -sight_height, .0)
+        velocity = self.muzzle_velocity
+        # x: downrange distance, y: drop, z: windage
+        range_vector = Vector(.0, -self.cant_cosine*self.sight_height, -self.cant_sine*self.sight_height)
+        velocity_vector = Vector(math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
+                                 math.sin(self.barrel_elevation),
+                                 math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)) * velocity
 
-        ranges = []
+        # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
+        seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
+        if range_vector.y >= 0:
+            seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
+        elif range_vector.y < 0 and self.barrel_elevation < self.look_angle:
+            seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
 
-        wind_vector = Vector(0, 0, 0)
+        #region Trajectory Loop
+        while range_vector.x <= maximum_range + self.calc_step:
+            _flag = TrajFlag.NONE
 
-        def get_initial_wind():
-            nonlocal wind_vector, next_wind_range
-            if len_winds < 1:
-                wind_vector = Vector(.0, .0, .0)
-            else:
-                if len_winds > 1:
-                    next_wind_range = winds[0].until_distance() >> Distance.Foot
-                wind_vector = wind_to_vector(shot_info, winds[0])
-
-        def accurate_velocity_to_temperature():
-            if Settings.USE_POWDER_SENSITIVITY:
-                return ammo.get_velocity_for_temp(atmo.temperature) >> Velocity.FPS
-            else:
-                return ammo.mv >> Velocity.FPS
-
-        def get_initial_velocity_vector():
-            # x - distance towards target, y - drop and z - windage
-            return Vector(math.cos(barrel_elevation) * math.cos(barrel_azimuth),
-                          math.sin(barrel_elevation),
-                          math.cos(barrel_elevation) * math.sin(barrel_azimuth)) * velocity
-
-        def accurate_to_twist():
-            nonlocal stability_coefficient, twist_coefficient
-            if twist != 0 and length and diameter:
-                stability_coefficient = calculate_stability_coefficient(ammo, weapon, atmo)
-                twist_coefficient = -1 if twist > 0 else 1
-
-        def look_for_seen_zero():
-            # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-            seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
-            if range_vector.y >= 0:
-                seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
-            elif range_vector.y < 0 and barrel_elevation < look_angle:
-                seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
-            return seen_zero
-
-        # NOTE: bellow the functions to calculate trajectory over the loop
-        def get_next_wind():
-            nonlocal current_wind, next_wind_range, wind_vector
             if range_vector.x >= next_wind_range:
                 current_wind += 1
-                wind_vector = wind_to_vector(shot_info, winds[current_wind])
-
-                if current_wind == len_winds - 1:
-                    next_wind_range = 1e7
+                if current_wind >= len_winds:  # No more winds listed after this range
+                    wind_vector = Vector(.0, .0, .0)
+                    next_wind_range = Wind.MAX_DISTANCE_FEET
                 else:
-                    next_wind_range = winds[current_wind].until_distance >> Distance.Foot
+                    wind_vector = wind_to_vector(shot_info.winds[current_wind])
+                    next_wind_range = shot_info.winds[current_wind].until_distance >> Distance.Foot
 
-        def look_for_zero_crossing():
-            nonlocal seen_zero, _flag
-            # Zero-crossing checks
-            if range_vector.x > 0:
-                # Zero reference line is the sight line defined by look_angle
-                reference_height = range_vector.x * math.tan(look_angle)
-                # If we haven't seen ZERO_UP, we look for that first
-                if not seen_zero & TrajFlag.ZERO_UP:
-                    if range_vector.y >= reference_height:
-                        _flag |= TrajFlag.ZERO_UP
-                        seen_zero |= TrajFlag.ZERO_UP
-                # We've crossed above sight line; now look for crossing back through it
-                elif not seen_zero & TrajFlag.ZERO_DOWN:
-                    if range_vector.y < reference_height:
-                        _flag |= TrajFlag.ZERO_DOWN
-                        seen_zero |= TrajFlag.ZERO_DOWN
+            density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
+                self.alt0 + range_vector.y)
 
-        def look_for_mach_crossing():
-            # Mach crossing check
-            nonlocal _flag
-            if velocity / mach <= 1 < previous_mach:
-                _flag |= TrajFlag.MACH
+            if filter_flags:
+                # Zero-crossing checks
+                if range_vector.x > 0:
+                    # Zero reference line is the sight line defined by look_angle
+                    reference_height = range_vector.x * math.tan(self.look_angle)
+                    # If we haven't seen ZERO_UP, we look for that first
+                    if not seen_zero & TrajFlag.ZERO_UP:
+                        if range_vector.y >= reference_height:
+                            _flag |= TrajFlag.ZERO_UP
+                            seen_zero |= TrajFlag.ZERO_UP
+                    # We've crossed above sight line; now look for crossing back through it
+                    elif not seen_zero & TrajFlag.ZERO_DOWN:
+                        if range_vector.y < reference_height:
+                            _flag |= TrajFlag.ZERO_DOWN
+                            seen_zero |= TrajFlag.ZERO_DOWN
 
-        def look_for_next_range():
-            # Next range check
-            nonlocal _flag, next_range_distance, current_item
-            if range_vector.x >= next_range_distance:
-                _flag |= TrajFlag.RANGE
-                next_range_distance += step
-                current_item += 1
+                # Mach crossing check
+                if (velocity / mach <= 1) and (previous_mach > 1):
+                    _flag |= TrajFlag.MACH
 
-        def register_trajectory_point():
+                # Next range check
+                if range_vector.x >= next_range_distance:
+                    _flag |= TrajFlag.RANGE
+                    next_range_distance += step
+                    current_item += 1
 
-            windage = range_vector.z
+                # Record TrajectoryData row
+                if _flag & filter_flags:
+                    ranges.append(create_trajectory_row(
+                        time, range_vector, velocity_vector,
+                        velocity, mach, self.spin_drift(time), self.look_angle,
+                        density_factor, drag, self.weight, _flag.value
+                    ))
+                    if current_item == ranges_length:
+                        break
 
-            if twist != 0:
-                windage += (1.25 * (stability_coefficient + 1.2)
-                            * math.pow(time, 1.83) * twist_coefficient) / 12
-
-            ranges.append(create_trajectory_row(
-                time, range_vector, velocity_vector,
-                velocity, mach, windage, weight, _flag.value
-            ))
-
-        def init_next_range_data():
-            nonlocal previous_mach, velocity_vector, range_vector, velocity, time
             previous_mach = velocity / mach
 
+            #region Ballistic calculation step
+            delta_time = self.calc_step / velocity_vector.x
             velocity_adjusted = velocity_vector - wind_vector
-
-            delta_time = calc_step / velocity_vector.x
             velocity = velocity_adjusted.magnitude()
-
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
-
-            velocity_vector -= (velocity_adjusted * drag - gravity_vector) * delta_time
-            delta_range_vector = Vector(calc_step,
+            velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time
+            delta_range_vector = Vector(self.calc_step,
                                         velocity_vector.y * delta_time,
                                         velocity_vector.z * delta_time)
             range_vector += delta_range_vector
             velocity = velocity_vector.magnitude()
             time += delta_range_vector.magnitude() / velocity
 
-        get_initial_wind()
-        velocity = accurate_velocity_to_temperature()
-        velocity_vector = get_initial_velocity_vector()
-        accurate_to_twist()
-        seen_zero = look_for_seen_zero()
-
-        while range_vector.x <= maximum_range + calc_step:
-
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
-
-            _flag = TrajFlag.NONE  # reset a trajectory flag
-
-            density_factor, mach = atmo.get_density_factor_and_mach_for_altitude(
-                alt0 + range_vector.y)
-
-            get_next_wind()
-            look_for_zero_crossing()
-            look_for_mach_crossing()
-            look_for_next_range()
-
-            if _flag & filter_flags:
-                register_trajectory_point()
-                if current_item == ranges_length:
-                    break
-
-            init_next_range_data()
-
+            #endregion
+        #endregion
+        # If filter_flags == 0 then all we want is the ending value
+        if not filter_flags:
+            ranges.append(create_trajectory_row(
+                        time, range_vector, velocity_vector,
+                        velocity, mach, self.spin_drift(time), self.look_angle,
+                        density_factor, drag, self.weight, _flag.value))
         return ranges
 
-    def drag_by_mach(self, mach: float):
+    def drag_by_mach(self, mach: float) -> float:
+        """ Drag force = V^2 * Cd * AirDensity * S / 2m where:
+                cStandardDensity of Air = 0.076474 lb/ft^3
+                S is cross-section = d^2 pi/4, where d is bullet diameter in inches
+                m is bullet mass in pounds
+            BC contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
+            Thus: The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
+        :return: Drag coefficient at the given mach number
+        """
         cd = calculate_by_curve(self._table_data, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
-    @property
-    def cdm(self):
+    def spin_drift(self, time) -> float:
+        """Litz spin-drift approximation
+        :param time: Time of flight
+        :return: windage due to spin drift, in feet
         """
-        Returns custom drag function based on input data
-        """
-        drag_table = self.ammo.dm.drag_table
-        cdm = []
-        bc = self.ammo.dm.value
+        if self.twist != 0:
+            sign = 1 if self.twist > 0 else -1
+            return sign * (1.25 * (self.stability_coefficient + 1.2)
+                        * math.pow(time, 1.83) ) / 12
+        return 0
 
-        for point in drag_table:
-            st_mach = point['Mach']
-            st_cd = calculate_by_curve(drag_table, self._curve, st_mach)
-            cd = st_cd * bc
-            cdm.append({'CD': cd, 'Mach': st_mach})
-
-        return cdm
-
-
-def calculate_stability_coefficient(ammo: Ammo, rifle: Weapon, atmo: Atmo):
-    weight = ammo.dm.weight >> Weight.Grain
-    diameter = ammo.dm.diameter >> Distance.Inch
-    twist = math.fabs(rifle.twist >> Distance.Inch) / diameter
-    length = (ammo.length >> Distance.Inch) / diameter
-    ft = atmo.temperature >> Temperature.Fahrenheit
-    mv = ammo.mv >> Velocity.FPS
-    pt = atmo.pressure >> Pressure.InHg
-    sd = 30 * weight / (
-            math.pow(twist, 2) * math.pow(diameter, 3) * length * (1 + math.pow(length, 2))
-    )
-    fv = math.pow(mv / 2800, 1.0 / 3.0)
-    ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
-    return sd * fv * ftp
+    def calc_stability_coefficient(self, atmo: Atmo) -> float:
+        """Miller stability coefficient"""
+        if self.twist and self.length and self.diameter:
+            twist_rate = math.fabs(self.twist) / self.diameter
+            length = self.length / self.diameter
+            # Miller stability formula
+            sd = 30 * self.weight / (
+                    math.pow(twist_rate, 2) * math.pow(self.diameter, 3) * length * (1 + math.pow(length, 2))
+            )
+            # Velocity correction factor
+            fv = math.pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
+            # Atmospheric correction
+            ft = atmo.temperature >> Temperature.Fahrenheit
+            pt = atmo.pressure >> Pressure.InHg
+            ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+            return sd * fv * ftp
+        return 0
 
 
-def wind_to_vector(shot: Shot, wind: Wind):
-    sight_cosine = math.cos(shot.zero_angle >> Angular.Radian)
-    sight_sine = math.sin(shot.zero_angle >> Angular.Radian)
-    cant_cosine = math.cos(shot.cant_angle >> Angular.Radian)
-    cant_sine = math.sin(shot.cant_angle >> Angular.Radian)
-    range_velocity = (wind.velocity >> Velocity.FPS) * math.cos(
-        wind.direction_from >> Angular.Radian)
-    cross_component = (wind.velocity >> Velocity.FPS) * math.sin(
-        wind.direction_from >> Angular.Radian)
-    range_factor = -range_velocity * sight_sine
-    return Vector(range_velocity * sight_cosine,
-                  range_factor * cant_cosine + cross_component * cant_sine,
-                  cross_component * cant_cosine - range_factor * cant_sine)
+def wind_to_vector(wind: Wind) -> Vector:
+    """Calculate wind vector to add to projectile velocity vector each iteration:
+        Aerodynamic drag is function of velocity relative to the air stream.
+
+    Wind angle of zero is blowing from behind shooter
+    Wind angle of 90-degree is blowing towards shooter's right
+
+    NOTE: Presently we can only define Wind in the x-z plane, not any vertical component.
+    """
+    # Downrange (x-axis) wind velocity component:
+    range_component = (wind.velocity >> Velocity.FPS) * math.cos(wind.direction_from >> Angular.Radian)
+    # Cross (z-axis) wind velocity component:
+    cross_component = (wind.velocity >> Velocity.FPS) * math.sin(wind.direction_from >> Angular.Radian)
+    return Vector(range_component, 0, cross_component)
 
 
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
-                          velocity: float, mach: float, windage: float, weight: float, flag: int):
+                          velocity: float, mach: float, spin_drift: float, look_angle: float,
+                          density_factor: float, drag: float, weight: float, flag: int) -> TrajectoryData:
+    windage = range_vector.z + spin_drift
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
     trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
 
     return TrajectoryData(
-        time=time,
-        distance=Distance.Foot(range_vector.x),
-        drop=Distance.Foot(range_vector.y),
-        drop_adj=Angular.Radian(drop_adjustment),
-        windage=Distance.Foot(windage),
-        windage_adj=Angular.Radian(windage_adjustment),
-        velocity=Velocity.FPS(velocity),
-        mach=velocity / mach,
-        energy=Energy.FootPound(calculate_energy(weight, velocity)),
-        angle=Angular.Radian(trajectory_angle),
-        ogw=Weight.Pound(calculate_ogv(weight, velocity)),
-        flag=flag
+        time= time,
+        distance= Distance.Foot(range_vector.x),
+        velocity= Velocity.FPS(velocity),
+        mach= velocity / mach,
+        height= Distance.Foot(range_vector.y),
+        target_drop= Distance.Foot((range_vector.y - range_vector.x * math.tan(look_angle))*math.cos(look_angle)),
+        drop_adj= Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
+        windage= Distance.Foot(windage),
+        windage_adj= Angular.Radian(windage_adjustment),
+        look_distance= Distance.Foot(range_vector.x / math.cos(look_angle)),
+        angle = Angular.Radian(trajectory_angle),
+        density_factor = density_factor-1,
+        drag = drag,
+        energy = Energy.FootPound(calculate_energy(weight, velocity)),
+        ogw = Weight.Pound(calculate_ogw(weight, velocity)),
+        flag = flag
     )
 
 
-def get_correction(distance: float, offset: float):
+def get_correction(distance: float, offset: float) -> float:
+    """:return: Sight adjustment in radians"""
     if distance != 0:
         return math.atan(offset / distance)
-    return 0  # better None
+    return 0  # None
 
 
-def calculate_energy(bullet_weight: float, velocity: float):
+def calculate_energy(bullet_weight: float, velocity: float) -> float:
+    """:return: energy in ft-lbs"""
     return bullet_weight * math.pow(velocity, 2) / 450400
 
 
-def calculate_ogv(bullet_weight: float, velocity: float):
+def calculate_ogw(bullet_weight: float, velocity: float) -> float:
+    """:return: Optimal Game Weight in pounds"""
     return math.pow(bullet_weight, 2) * math.pow(velocity, 3) * 1.5e-12
 
 
-def calculate_curve(data_points):
+def calculate_curve(data_points) -> list[CurvePoint]:
+    """
+    :param DragTable: data_points
+    :return: List[CurvePoints] to interpolate drag coefficient
+    """
     # rate, x1, x2, x3, y1, y2, y3, a, b, c
     # curve = []
     # curve_point
@@ -491,12 +433,12 @@ def calculate_curve(data_points):
     return curve
 
 
-def calculate_by_curve(data: list, curve: list, mach: float):
-    """returning the calculated drag for a
-    specified mach based on previously calculated data"""
-    # num_points, mlo, mhi, mid
-    # cdef CurvePoint curve_m
-
+def calculate_by_curve(data: list, curve: list, mach: float) -> float:
+    """Binary search for drag coefficient based on Mach number
+    :param DragTable: data
+    :param List: Output of calculate_curve(data)
+    :return float: drag coefficient
+    """
     num_points = int(len(curve))
     mlo = 0
     mhi = num_points - 2
