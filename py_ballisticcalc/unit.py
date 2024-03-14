@@ -13,7 +13,7 @@ __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Energy', 'Weight', 'TypedUnits')
 
 
-class Unit(IntEnum):
+class Unit(IntEnum):  # pylint disable=invalid-name
     """
     Usage of IntEnum simplify data serializing for using it with databases etc.
     """
