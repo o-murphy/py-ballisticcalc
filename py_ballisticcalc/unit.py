@@ -17,40 +17,40 @@ class Unit(IntEnum):
     """
     Usage of IntEnum simplify data serializing for using it with databases etc.
     """
-    RAD = 0
-    DEGREE = 1
+    Radian = 0
+    Degree = 1
     MOA = 2
-    MIL = 3
-    MRAD = 4
-    THOUSANDTH = 5
-    INCHES_PER_100YD = 6
-    CM_PER_100M = 7
-    O_CLOCK = 8
+    Mil = 3
+    MRad = 4
+    Thousandth = 5
+    InchesPer100Yd = 6
+    CmPer100M = 7
+    OClock = 8
 
-    INCH = 10
-    FOOT = 11
-    YARD = 12
-    MILE = 13
-    NAUTICAL_MILE = 14
-    MILLIMETER = 15
-    CENTIMETER = 16
-    METER = 17
-    KILOMETER = 18
-    LINE = 19
+    Inch = 10
+    Foot = 11
+    Yard = 12
+    Mile = 13
+    NauticalMile = 14
+    Millimeter = 15
+    Centimeter = 16
+    Meter = 17
+    Kilometer = 18
+    Line = 19
 
-    FOOT_POUND = 30
-    JOULE = 31
+    FootPound = 30
+    Joule = 31
 
-    MM_HG = 40
-    IN_HG = 41
-    BAR = 42
-    HPA = 43
+    MmHg = 40
+    InHg = 41
+    Bar = 42
+    hPa = 43
     PSI = 44
 
-    FAHRENHEIT = 50
-    CELSIUS = 51
-    KELVIN = 52
-    RANKIN = 53
+    Fahrenheit = 50
+    Celsius = 51
+    Kelvin = 52
+    Rankin = 53
 
     MPS = 60
     KMH = 61
@@ -58,12 +58,12 @@ class Unit(IntEnum):
     MPH = 63
     KT = 64
 
-    GRAIN = 70
-    OUNCE = 71
-    GRAM = 72
-    POUND = 73
-    KILOGRAM = 74
-    NEWTON = 75
+    Grain = 70
+    Ounce = 71
+    Gram = 72
+    Pound = 73
+    Kilgram = 74
+    Newton = 75
 
     @property
     def key(self) -> str:
@@ -124,40 +124,40 @@ class UnitProps(NamedTuple):
 
 
 UnitPropsDict = {
-    Unit.RAD: UnitProps('radian', 6, 'rad'),
-    Unit.DEGREE: UnitProps('degree', 4, '°'),
+    Unit.Radian: UnitProps('radian', 6, 'rad'),
+    Unit.Degree: UnitProps('degree', 4, '°'),
     Unit.MOA: UnitProps('MOA', 2, 'MOA'),
-    Unit.MIL: UnitProps('mil', 2, 'mil'),
-    Unit.MRAD: UnitProps('mrad', 2, 'mrad'),
-    Unit.THOUSANDTH: UnitProps('thousandth', 2, 'ths'),
-    Unit.INCHES_PER_100YD: UnitProps('inch/100yd', 2, 'in/100yd'),
-    Unit.CM_PER_100M: UnitProps('cm/100m', 2, 'cm/100m'),
-    Unit.O_CLOCK: UnitProps('hour', 2, 'h'),
+    Unit.Mil: UnitProps('mil', 2, 'mil'),
+    Unit.MRad: UnitProps('mrad', 2, 'mrad'),
+    Unit.Thousandth: UnitProps('thousandth', 2, 'ths'),
+    Unit.InchesPer100Yd: UnitProps('inch/100yd', 2, 'in/100yd'),
+    Unit.CmPer100M: UnitProps('cm/100m', 2, 'cm/100m'),
+    Unit.OClock: UnitProps('hour', 2, 'h'),
 
-    Unit.INCH: UnitProps("inch", 1, "inch"),
-    Unit.FOOT: UnitProps("foot", 2, "ft"),
-    Unit.YARD: UnitProps("yard", 1, "yd"),
-    Unit.MILE: UnitProps("mile", 3, "mi"),
-    Unit.NAUTICAL_MILE: UnitProps("nautical mile", 3, "nm"),
-    Unit.MILLIMETER: UnitProps("millimeter", 3, "mm"),
-    Unit.CENTIMETER: UnitProps("centimeter", 3, "cm"),
-    Unit.METER: UnitProps("meter", 1, "m"),
-    Unit.KILOMETER: UnitProps("kilometer", 3, "km"),
-    Unit.LINE: UnitProps("line", 3, "ln"),
+    Unit.Inch: UnitProps("inch", 1, "inch"),
+    Unit.Foot: UnitProps("foot", 2, "ft"),
+    Unit.Yard: UnitProps("yard", 1, "yd"),
+    Unit.Mile: UnitProps("mile", 3, "mi"),
+    Unit.NauticalMile: UnitProps("nautical mile", 3, "nm"),
+    Unit.Millimeter: UnitProps("millimeter", 3, "mm"),
+    Unit.Centimeter: UnitProps("centimeter", 3, "cm"),
+    Unit.Meter: UnitProps("meter", 1, "m"),
+    Unit.Kilometer: UnitProps("kilometer", 3, "km"),
+    Unit.Line: UnitProps("line", 3, "ln"),
 
-    Unit.FOOT_POUND: UnitProps('foot-pound', 0, 'ft·lb'),
-    Unit.JOULE: UnitProps('joule', 0, 'J'),
+    Unit.FootPound: UnitProps('foot-pound', 0, 'ft·lb'),
+    Unit.Joule: UnitProps('joule', 0, 'J'),
 
-    Unit.MM_HG: UnitProps('mmHg', 0, 'mmHg'),
-    Unit.IN_HG: UnitProps('inHg', 6, 'inHg'),
-    Unit.BAR: UnitProps('bar', 2, 'bar'),
-    Unit.HPA: UnitProps('hPa', 4, 'hPa'),
+    Unit.MmHg: UnitProps('mmHg', 0, 'mmHg'),
+    Unit.InHg: UnitProps('inHg', 6, 'inHg'),
+    Unit.Bar: UnitProps('bar', 2, 'bar'),
+    Unit.hPa: UnitProps('hPa', 4, 'hPa'),
     Unit.PSI: UnitProps('psi', 4, 'psi'),
 
-    Unit.FAHRENHEIT: UnitProps('fahrenheit', 1, '°F'),
-    Unit.CELSIUS: UnitProps('celsius', 1, '°C'),
-    Unit.KELVIN: UnitProps('kelvin', 1, '°K'),
-    Unit.RANKIN: UnitProps('rankin', 1, '°R'),
+    Unit.Fahrenheit: UnitProps('fahrenheit', 1, '°F'),
+    Unit.Celsius: UnitProps('celsius', 1, '°C'),
+    Unit.Kelvin: UnitProps('kelvin', 1, '°K'),
+    Unit.Rankin: UnitProps('rankin', 1, '°R'),
 
     Unit.MPS: UnitProps('mps', 0, 'm/s'),
     Unit.KMH: UnitProps('kmh', 1, 'km/h'),
@@ -165,12 +165,12 @@ UnitPropsDict = {
     Unit.MPH: UnitProps('mph', 1, 'mph'),
     Unit.KT: UnitProps('knot', 1, 'kt'),
 
-    Unit.GRAIN: UnitProps('grain', 1, 'gr'),
-    Unit.OUNCE: UnitProps('ounce', 1, 'oz'),
-    Unit.GRAM: UnitProps('gram', 1, 'g'),
-    Unit.POUND: UnitProps('pound', 0, 'lb'),
-    Unit.KILOGRAM: UnitProps('kilogram', 3, 'kg'),
-    Unit.NEWTON: UnitProps('newton', 3, 'N'),
+    Unit.Grain: UnitProps('grain', 1, 'gr'),
+    Unit.Ounce: UnitProps('ounce', 1, 'oz'),
+    Unit.Gram: UnitProps('gram', 1, 'g'),
+    Unit.Pound: UnitProps('pound', 0, 'lb'),
+    Unit.Kilgram: UnitProps('kilogram', 3, 'kg'),
+    Unit.Newton: UnitProps('newton', 3, 'N'),
 }
 
 
@@ -348,16 +348,16 @@ class Distance(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Inch = Unit.INCH
-    Foot = Unit.FOOT
-    Yard = Unit.YARD
-    Mile = Unit.MILE
-    NauticalMile = Unit.NAUTICAL_MILE
-    Millimeter = Unit.MILLIMETER
-    Centimeter = Unit.CENTIMETER
-    Meter = Unit.METER
-    Kilometer = Unit.KILOMETER
-    Line = Unit.LINE
+    Inch = Unit.Inch
+    Foot = Unit.Foot
+    Yard = Unit.Yard
+    Mile = Unit.Mile
+    NauticalMile = Unit.NauticalMile
+    Millimeter = Unit.Millimeter
+    Centimeter = Unit.Centimeter
+    Meter = Unit.Meter
+    Kilometer = Unit.Kilometer
+    Line = Unit.Line
 
 
 class Pressure(AbstractUnit):
@@ -393,10 +393,10 @@ class Pressure(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    MmHg = Unit.MM_HG
-    InHg = Unit.IN_HG
-    Bar = Unit.BAR
-    hPa = Unit.HPA
+    MmHg = Unit.MmHg
+    InHg = Unit.InHg
+    Bar = Unit.Bar
+    hPa = Unit.hPa
     PSI = Unit.PSI
 
 
@@ -437,12 +437,12 @@ class Weight(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Grain = Unit.GRAIN
-    Ounce = Unit.OUNCE
-    Gram = Unit.GRAM
-    Pound = Unit.POUND
-    Kilogram = Unit.KILOGRAM
-    Newton = Unit.NEWTON
+    Grain = Unit.Grain
+    Ounce = Unit.Ounce
+    Gram = Unit.Gram
+    Pound = Unit.Pound
+    Kilogram = Unit.Kilgram
+    Newton = Unit.Newton
 
 
 class Temperature(AbstractUnit):
@@ -474,10 +474,10 @@ class Temperature(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Fahrenheit = Unit.FAHRENHEIT
-    Celsius = Unit.CELSIUS
-    Kelvin = Unit.KELVIN
-    Rankin = Unit.RANKIN
+    Fahrenheit = Unit.Fahrenheit
+    Celsius = Unit.Celsius
+    Kelvin = Unit.Kelvin
+    Rankin = Unit.Rankin
 
 
 class Angular(AbstractUnit):
@@ -531,15 +531,15 @@ class Angular(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Radian = Unit.RAD
-    Degree = Unit.DEGREE
+    Radian = Unit.Radian
+    Degree = Unit.Degree
     MOA = Unit.MOA
-    Mil = Unit.MIL
-    MRad = Unit.MRAD
-    Thousandth = Unit.THOUSANDTH
-    InchesPer100Yd = Unit.INCHES_PER_100YD
-    CmPer100M = Unit.CM_PER_100M
-    OClock = Unit.O_CLOCK
+    Mil = Unit.Mil
+    MRad = Unit.MRad
+    Thousandth = Unit.Thousandth
+    InchesPer100Yd = Unit.InchesPer100Yd
+    CmPer100M = Unit.CmPer100M
+    OClock = Unit.OClock
 
 
 class Velocity(AbstractUnit):
@@ -595,8 +595,8 @@ class Energy(AbstractUnit):
             return value / 0.737562149277
         return super().from_raw(value, units)
 
-    FootPound = Unit.FOOT_POUND
-    Joule = Unit.JOULE
+    FootPound = Unit.FootPound
+    Joule = Unit.Joule
 
 
 @dataclass

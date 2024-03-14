@@ -110,13 +110,6 @@ class TrajectoryCalc:
             return Settings.get_max_calc_step_size() / 2.0
         return min(step, Settings.get_max_calc_step_size()) / 2.0
 
-    def zero_angle(self, shot_info: Shot, distance: Distance):
-        """Find barrel elevation to hit zero
-        :param shot_info: Shot conditions
-        :param distance: Zero distance
-        """
-        return self._zero_angle(shot_info, distance)
-
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
         filter_flags = TrajFlag.RANGE
@@ -147,7 +140,12 @@ class TrajectoryCalc:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
-    def _zero_angle(self, shot_info: Shot, distance: Distance):
+    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+        """
+        :param shot_info: Shot parameters
+        :param distance: Zero distance
+        :return: Barrel elevation to hit zero distance
+        """
         self._init_trajectory(shot_info)
 
         zero_distance = math.cos(self.look_angle) * (distance >> Distance.Foot)

@@ -17,21 +17,21 @@ class Settings:  # pylint: disable=too-few-public-methods
     @dataclasses.dataclass
     class Units(metaclass=Metadataclass):  # pylint: disable=too-many-instance-attributes
         """Default units for specified measures"""
-        angular: Unit = Unit.DEGREE
-        distance: Unit = Unit.YARD
+        angular: Unit = Unit.Degree
+        distance: Unit = Unit.Yard
         velocity: Unit = Unit.FPS
-        pressure: Unit = Unit.IN_HG
-        temperature: Unit = Unit.FAHRENHEIT
-        diameter: Unit = Unit.INCH
-        length: Unit = Unit.INCH
-        weight: Unit = Unit.GRAIN
-        adjustment: Unit = Unit.MIL
-        drop: Unit = Unit.INCH
-        energy: Unit = Unit.FOOT_POUND
-        ogw: Unit = Unit.POUND
-        sight_height: Unit = Unit.INCH
-        target_height: Unit = Unit.INCH
-        twist: Unit = Unit.INCH
+        pressure: Unit = Unit.InHg
+        temperature: Unit = Unit.Fahrenheit
+        diameter: Unit = Unit.Inch
+        length: Unit = Unit.Inch
+        weight: Unit = Unit.Grain
+        adjustment: Unit = Unit.Mil
+        drop: Unit = Unit.Inch
+        energy: Unit = Unit.FootPound
+        ogw: Unit = Unit.Pound
+        sight_height: Unit = Unit.Inch
+        target_height: Unit = Unit.Inch
+        twist: Unit = Unit.Inch
 
     _MAX_CALC_STEP_SIZE: float = 0.5
     USE_POWDER_SENSITIVITY: bool = False
