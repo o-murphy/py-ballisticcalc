@@ -36,7 +36,7 @@ jobs:
         else
           echo "Pytest failed, running without capture"
           # Add your additional commands here
-          pytest tests --no-header --no-summary -v -s
+          pytest tests -v
         fi
 
     - name: Build cython modules

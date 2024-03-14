@@ -11,13 +11,9 @@ class TestMBC(unittest.TestCase):
             diameter=Distance(0.308, Distance.Inch),
             mbc_table=[{'BC': p[0], 'V': p[1]} for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
         )
-        dm = DragModel.from_mbc(mbc)
-        ammo = Ammo(dm, 1, 800)
-        cdm = TrajectoryCalc(ammo=ammo).cdm
-        self.assertIsNot(cdm, None)
-        ret = list(cdm)
-        self.assertEqual(ret[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
-        self.assertEqual(ret[-1], {'Mach': 5.0, 'CD': 0.15771258594668947})
+        cdm = mbc.cdm
+        self.assertEqual(cdm[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
+        self.assertEqual(cdm[-1], {'Mach': 5.0, 'CD': 0.1577125859466895})
 
     def test_mbc_valid(self):
         # Litz's multi-bc table comversion to CDM, 338LM 285GR HORNADY ELD-M

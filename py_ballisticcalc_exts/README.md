@@ -97,37 +97,28 @@ from py_ballisticcalc import Ammo, Atmo, Wind
 from py_ballisticcalc import Weapon, Shot, Calculator
 from py_ballisticcalc import Settings as Set
 
-
-# set global library settings
+# Modify default units
 Set.Units.velocity = Velocity.FPS
 Set.Units.temperature = Temperature.Celsius
-# Set.Units.distance = Distance.Meter
+Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
-Set.set_max_calc_step_size(Distance.Foot(1))
-Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
+Set.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
 
-# define params with default units
-weight, diameter = 168, 0.308
-# or define with specified units
-length = Distance.Inch(1.282)  # length = Distance(1.282, Distance.Inch)
-
-weapon = Weapon(9, 100, 2)
-dm = DragModel(0.223, TableG7, weight, diameter)
-
-ammo = Ammo(dm, length, 2750, 15)
+# Define ammunition parameters
+weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
+length = Distance.Inch(1.282)  # Or declare units explicitly
+dm = DragModel(0.223, TableG7, weight, diameter, length)
+ammo = Ammo(dm, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
-
-zero_atmo = Atmo.icao(100)
-
-# defining calculator instance
-calc = Calculator(weapon, ammo, zero_atmo)
-
-current_atmo = Atmo(110, 1000, 15, 72)
+gun = Weapon(sight_height=9, twist=12, zero_elevation=Angular.MIL(2))
+current_atmo = Atmo(110, 29.8, 15, 72)
 current_winds = [Wind(2, 90)]
-shot = Shot(1500, atmo=current_atmo, winds=current_winds)
+shot = Shot(weapon=gun, ammo=ammo, atmo=current_atmo, winds=current_winds)
+calc = Calculator()
+calc.set_weapon_zero(shot, Distance.Meter(100))
 
-shot_result = calc.fire(shot, trajectory_step=Distance.Yard(100))
+shot_result = calc.fire(shot, trajectory_range=1000, trajectory_step=100)
 
 for p in shot_result:
     print(p.formatted())
@@ -138,13 +129,13 @@ python -m py_ballisticcalc.example
 ```
 
 ```
-['0.00 s', '0.000 m', '2750.0 ft/s', '2.46 mach', '-9.000 cm', '0.00 mil', '0.000 cm', '0.00 mil', '3825 J']
-['0.12 s', '100.000 m', '2528.6 ft/s', '2.26 mach', '0.005 cm', '0.00 mil', '-3.556 cm', '-0.36 mil', '3233 J']
-['0.26 s', '200.050 m', '2317.2 ft/s', '2.08 mach', '-7.558 cm', '-0.38 mil', '-13.602 cm', '-0.69 mil', '2715 J']
-['0.41 s', '300.050 m', '2116.6 ft/s', '1.90 mach', '-34.843 cm', '-1.18 mil', '-30.956 cm', '-1.05 mil', '2266 J']
-['0.57 s', '400.000 m', '1926.5 ft/s', '1.73 mach', '-85.739 cm', '-2.18 mil', '-57.098 cm', '-1.45 mil', '1877 J']
-['0.75 s', '500.000 m', '1745.0 ft/s', '1.56 mach', '-165.209 cm', '-3.37 mil', '-94.112 cm', '-1.92 mil', '1540 J']
-['0.95 s', '600.000 m', '1571.4 ft/s', '1.41 mach', '-279.503 cm', '-4.74 mil', '-144.759 cm', '-2.46 mil', '1249 J']
+['0.00 s', '0.0 m', '2750.0 ft/s', '2.46 mach', '-9.000 cm', '0.00 mil', '0.000 cm', '0.00 mil', '3825 J']
+['0.12 s', '100.0 m', '2528.6 ft/s', '2.26 mach', '0.005 cm', '0.00 mil', '-3.556 cm', '-0.36 mil', '3233 J']
+['0.26 s', '200.0 m', '2317.2 ft/s', '2.08 mach', '-7.558 cm', '-0.38 mil', '-13.602 cm', '-0.69 mil', '2715 J']
+['0.41 s', '300.0 m', '2116.6 ft/s', '1.90 mach', '-34.843 cm', '-1.18 mil', '-30.956 cm', '-1.05 mil', '2266 J']
+['0.57 s', '400.0 m', '1926.5 ft/s', '1.73 mach', '-85.739 cm', '-2.18 mil', '-57.098 cm', '-1.45 mil', '1877 J']
+['0.75 s', '500.0 m', '1745.0 ft/s', '1.56 mach', '-165.209 cm', '-3.37 mil', '-94.112 cm', '-1.92 mil', '1540 J']
+['0.95 s', '600.0 m', '1571.4 ft/s', '1.41 mach', '-279.503 cm', '-4.74 mil', '-144.759 cm', '-2.46 mil', '1249 J']
 ```
 
 ## Contributors

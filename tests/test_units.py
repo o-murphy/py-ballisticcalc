@@ -18,13 +18,16 @@ class TestAngular(unittest.TestCase):
             Angular.MRad,
             Angular.Mil,
             Angular.Radian,
-            Angular.Thousand
+            Angular.Thousandth
         ]
 
     def test_angular(self):
         for u in self.unit_list:
             with self.subTest(unit=u):
                 back_n_forth(self, 3, u)
+
+    def test_angle_truncation(self):
+        self.assertAlmostEqual(Angular(720, Angular.Degree), Angular(0, Angular.Degree))
 
 
 class TestDistance(unittest.TestCase):
@@ -71,7 +74,7 @@ class TestPressure(unittest.TestCase):
         self.unit_class = Pressure
         self.unit_list = [
             Pressure.Bar,
-            Pressure.HP,
+            Pressure.hPa,
             Pressure.MmHg,
             Pressure.InHg
         ]
