@@ -34,7 +34,7 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = []
-dynamic = ["version"]
+#dynamic = ["version"]
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
