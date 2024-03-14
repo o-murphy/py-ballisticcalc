@@ -7,6 +7,7 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
   * [From sources](#installing-from-sources)
   * [Clone and build](#clone-and-build)
 * **[Usage](#usage)**
+  * **[Jupyter notebook](Example.ipynb)**
   * [Units of measure](#unit-manipulation-syntax)
   * [An example of calculations](#an-example-of-calculations)
   * [Output example](#example-of-the-formatted-output)
@@ -19,6 +20,12 @@ LGPL library for small arms ballistic calculations (Python 3.9+)
 #### Latest stable release from pypi**
 ```shell
 pip install py-ballisticcalc
+
+# Using precompiled backend (improves performance)
+pip install py-ballisticcalc[exts]
+
+# Using matplotlib and pandas uses additional dependencies
+pip install py-ballisticcalc[charts]
 ```
 #### Installing from sources
 **MSVC** or **GCC** required
@@ -60,7 +67,7 @@ unit_in_meter = Distance(100, Distance.Meter)
 # 2. short syntax by Unit type class
 unit_in_meter = Distance.Meter(100)
 # 3. by Unit enum class
-unit_in_meter = Unit.METER(100)
+unit_in_meter = Unit.Meter(100)
 
 # >>> <Distance>: 100.0 m (3937.0078740157483)
 
@@ -91,43 +98,31 @@ Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
 #### An example of calculations
 
 ```python
-from py_ballisticcalc import Velocity, Temperature, Distance
-from py_ballisticcalc import DragModel, TableG7
-from py_ballisticcalc import Ammo, Atmo, Wind
-from py_ballisticcalc import Weapon, Shot, Calculator
+from py_ballisticcalc import *
 from py_ballisticcalc import Settings as Set
 
-
-# set global library settings
+# Modify default units
 Set.Units.velocity = Velocity.FPS
 Set.Units.temperature = Temperature.Celsius
-# Set.Units.distance = Distance.Meter
+Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
 
-Set.set_max_calc_step_size(Distance.Foot(1))
-Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
+Set.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
 
-# define params with default units
-weight, diameter = 168, 0.308
-# or define with specified units
-length = Distance.Inch(1.282)  # length = Distance(1.282, Distance.Inch)
-
-weapon = Weapon(9, 100, 2)
-dm = DragModel(0.223, TableG7, weight, diameter)
-
-ammo = Ammo(dm, length, 2750, 15)
+# Define ammunition parameters
+weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
+length = Distance.Inch(1.282)  # Or declare units explicitly
+dm = DragModel(0.223, TableG7, weight, diameter, length)
+ammo = Ammo(dm, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
-
-zero_atmo = Atmo.icao(100)
-
-# defining calculator instance
-calc = Calculator(weapon, ammo, zero_atmo)
-
-current_atmo = Atmo(110, 1000, 15, 72)
+gun = Weapon(sight_height=9, twist=12)
+current_atmo = Atmo(110, 29.8, 15, 72)
 current_winds = [Wind(2, 90)]
-shot = Shot(1500, atmo=current_atmo, winds=current_winds)
+shot = Shot(weapon=gun, ammo=ammo, atmo=current_atmo, winds=current_winds)
+calc = Calculator()
+calc.set_weapon_zero(shot, Distance.Meter(100))
 
-shot_result = calc.fire(shot, trajectory_step=Distance.Yard(100))
+shot_result = calc.fire(shot, trajectory_range=1000, trajectory_step=100)
 
 for p in shot_result:
     print(p.formatted())
@@ -138,13 +133,16 @@ python -m py_ballisticcalc.example
 ```
 
 ```
-['0.00 s', '0.000 m', '2750.0 ft/s', '2.46 mach', '-9.000 cm', '0.00 mil', '0.000 cm', '0.00 mil', '3825 J']
-['0.12 s', '100.000 m', '2528.6 ft/s', '2.26 mach', '0.005 cm', '0.00 mil', '-3.556 cm', '-0.36 mil', '3233 J']
-['0.26 s', '200.050 m', '2317.2 ft/s', '2.08 mach', '-7.558 cm', '-0.38 mil', '-13.602 cm', '-0.69 mil', '2715 J']
-['0.41 s', '300.050 m', '2116.6 ft/s', '1.90 mach', '-34.843 cm', '-1.18 mil', '-30.956 cm', '-1.05 mil', '2266 J']
-['0.57 s', '400.000 m', '1926.5 ft/s', '1.73 mach', '-85.739 cm', '-2.18 mil', '-57.098 cm', '-1.45 mil', '1877 J']
-['0.75 s', '500.000 m', '1745.0 ft/s', '1.56 mach', '-165.209 cm', '-3.37 mil', '-94.112 cm', '-1.92 mil', '1540 J']
-['0.95 s', '600.000 m', '1571.4 ft/s', '1.41 mach', '-279.503 cm', '-4.74 mil', '-144.759 cm', '-2.46 mil', '1249 J']
+('0.000 s', '0.0 m', '2750.0 ft/s', '2.46 mach', '-3.5 inch', '-3.5 inch', '0.00 mil', '0.0 inch', '0.00 mil', '0.0 m', '0.0939 °', '-4.062e-03', '0.000', '2821 ft·lb', '880 lb', 8)
+('0.125 s', '100.1 m', '2526.5 ft/s', '2.26 mach', '0.0 inch', '0.0 inch', '0.00 mil', '0.2 inch', '0.05 mil', '100.1 m', '0.0068 °', '-4.062e-03', '0.665', '2381 ft·lb', '683 lb', 9)
+('0.260 s', '200.0 m', '2313.5 ft/s', '2.07 mach', '-3.0 inch', '-3.0 inch', '-0.39 mil', '0.8 inch', '0.10 mil', '200.0 m', '-0.0967 °', '-4.062e-03', '0.633', '1996 ft·lb', '524 lb', 8)
+('0.409 s', '300.1 m', '2111.2 ft/s', '1.89 mach', '-13.8 inch', '-13.8 inch', '-1.19 mil', '1.9 inch', '0.16 mil', '300.1 m', '-0.2207 °', '-4.062e-03', '0.599', '1663 ft·lb', '398 lb', 8)
+('0.572 s', '400.1 m', '1919.6 ft/s', '1.72 mach', '-33.9 inch', '-33.9 inch', '-2.19 mil', '3.5 inch', '0.22 mil', '400.1 m', '-0.3701 °', '-4.062e-03', '0.570', '1374 ft·lb', '299 lb', 8)
+('0.751 s', '500.0 m', '1736.8 ft/s', '1.56 mach', '-65.4 inch', '-65.4 inch', '-3.38 mil', '5.7 inch', '0.30 mil', '500.0 m', '-0.5516 °', '-4.062e-03', '0.545', '1125 ft·lb', '222 lb', 8)
+('0.951 s', '600.1 m', '1561.9 ft/s', '1.40 mach', '-110.7 inch', '-110.7 inch', '-4.77 mil', '8.7 inch', '0.37 mil', '600.1 m', '-0.7748 °', '-4.062e-03', '0.521', '910 ft·lb', '161 lb', 8)
+('1.173 s', '700.0 m', '1395.2 ft/s', '1.25 mach', '-173.1 inch', '-173.1 inch', '-6.40 mil', '12.6 inch', '0.47 mil', '700.0 m', '-1.0525 °', '-4.062e-03', '0.495', '726 ft·lb', '115 lb', 8)
+('1.423 s', '800.0 m', '1238.1 ft/s', '1.11 mach', '-257.0 inch', '-257.0 inch', '-8.31 mil', '17.6 inch', '0.57 mil', '800.0 m', '-1.4030 °', '-4.062e-03', '0.462', '572 ft·lb', '80 lb', 8)
+('1.705 s', '900.1 m', '1097.8 ft/s', '0.98 mach', '-368.2 inch', '-368.2 inch', '-10.58 mil', '24.1 inch', '0.69 mil', '900.1 m', '-1.8503 °', '-9.633e-03', '0.333', '450 ft·lb', '56 lb', 8)
 ```
 
 ## Contributors

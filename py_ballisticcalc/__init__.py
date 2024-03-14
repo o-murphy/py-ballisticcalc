@@ -1,10 +1,12 @@
 """LGPL library for small arms ballistic calculations (Python 3.8+)"""
 
 __author__ = "o-murphy"
-__copyright__ = ("",)
+__copyright__ = (
+    "Copyright 2023 Dmytro Yaroshenko (https://github.com/o-murphy)",
+    "Copyright 2024 David Bookstaber (https://github.com/dbookstaber)"
+)
 
 __credits__ = ["o-murphy", "dbookstaber"]
-__version__ = "2.0.0b0"
 
 from .backend import *
 from .drag_tables import *

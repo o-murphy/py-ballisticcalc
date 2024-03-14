@@ -1,3 +1,6 @@
+# Copyright 2023 Dmytro Yaroshenko (https://github.com/o-murphy)
+# Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
+
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
@@ -5,9 +8,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
+version = "2.0.0b0"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
+    { name="dbookstaber", email="bookstaber@gmail.com"}
 ]
 description = "LGPL library for small arms ballistic calculations (Python 3)"
 readme = "README.md"
@@ -48,8 +53,8 @@ include = ["py_ballisticcalc*"]  # alternatively: `exclude = ["additional*"]`
 exclude = ["py_ballisticcalc_exts*"]
 
 
-[tool.setuptools.dynamic]
-version = {attr = "py_ballisticcalc.__version__"}
+#[tool.setuptools.dynamic]
+#version = {attr = "py_ballisticcalc.__version__"}
 
 
 [project.optional-dependencies]
