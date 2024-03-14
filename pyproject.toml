@@ -53,6 +53,6 @@ version = {attr = "py_ballisticcalc.__version__"}
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==1.1.4']
+exts = ['py_ballisticcalc.exts==2.0.0b0']
 lint = ['pylint', 'flake8']
 charts = ['matplotlib', 'pandas']
