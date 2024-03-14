@@ -5,10 +5,11 @@ from py_ballisticcalc import Settings as Set
 
 # set global library settings
 Set.Units.velocity = Velocity.MPS
-Set.Units.adjustment = Angular.CmPer100M
+Set.Units.adjustment = Angular.Mil
 Set.Units.temperature = Temperature.Celsius
 Set.Units.distance = Distance.Meter
 Set.Units.sight_height = Distance.Centimeter
+Set.Units.drop = Distance.Centimeter
 
 Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
 
