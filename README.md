@@ -1,5 +1,5 @@
 # BallisticCalculator
-LGPL library for small arms ballistic calculations (Python 3.9+)
+LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
 
 # Installation
 ```python setup.py build_ext --inplace```
