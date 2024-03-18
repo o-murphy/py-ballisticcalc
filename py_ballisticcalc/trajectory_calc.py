@@ -141,10 +141,10 @@ class TrajectoryCalc:
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
-        """
+        """Iterative algorithm to find barrel elevation needed for a particular zero
         :param shot_info: Shot parameters
         :param distance: Zero distance
-        :return: Barrel elevation to hit zero distance
+        :return: Barrel elevation to hit height zero at zero distance
         """
         self._init_trajectory(shot_info)
 
@@ -159,10 +159,12 @@ class TrajectoryCalc:
         zero_finding_error = cZeroFindingAccuracy * 2
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
+            # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             t = self._trajectory(shot_info, maximum_range, zero_distance, TrajFlag.NONE)[0]
             height = t.height >> Distance.Foot
             zero_finding_error = math.fabs(height - height_at_zero)
             if zero_finding_error > cZeroFindingAccuracy:
+                # Adjust barrel elevation to close height at zero distance
                 self.barrel_elevation -= (height - height_at_zero) / zero_distance
             else:  # last barrel_elevation hit zero!
                 break
