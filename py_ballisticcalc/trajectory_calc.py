@@ -141,10 +141,10 @@ class TrajectoryCalc:
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
-        """
+        """Iterative algorithm to find barrel elevation needed for a particular zero
         :param shot_info: Shot parameters
         :param distance: Zero distance
-        :return: Barrel elevation to hit zero distance
+        :return: Barrel elevation to hit height zero at zero distance
         """
         self._init_trajectory(shot_info)
 
@@ -159,10 +159,12 @@ class TrajectoryCalc:
         zero_finding_error = cZeroFindingAccuracy * 2
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
+            # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             t = self._trajectory(shot_info, maximum_range, zero_distance, TrajFlag.NONE)[0]
             height = t.height >> Distance.Foot
             zero_finding_error = math.fabs(height - height_at_zero)
             if zero_finding_error > cZeroFindingAccuracy:
+                # Adjust barrel elevation to close height at zero distance
                 self.barrel_elevation -= (height - height_at_zero) / zero_distance
             else:  # last barrel_elevation hit zero!
                 break
@@ -180,12 +182,13 @@ class TrajectoryCalc:
         :param dist_step: Frequency (in feet down range) to record TrajectoryData
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
-        ranges = []
+        ranges = []  # Record of TrajectoryData points to return
         ranges_length = int(maximum_range / step) + 1
         time = 0
         previous_mach = .0
         drag = 0
 
+        #region Initialize wind-related variables to first wind reading (if any)
         len_winds = len(shot_info.winds)
         current_wind = 0
         current_item = 0
@@ -196,13 +199,16 @@ class TrajectoryCalc:
         else:
             wind_vector = wind_to_vector(shot_info.winds[0])
             next_wind_range = shot_info.winds[0].until_distance >> Distance.Foot
+        #endregion
 
+        #region Initialize velocity and position of projectile
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         range_vector = Vector(.0, -self.cant_cosine*self.sight_height, -self.cant_sine*self.sight_height)
         velocity_vector = Vector(math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
                                  math.sin(self.barrel_elevation),
                                  math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)) * velocity
+        #endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
@@ -215,6 +221,7 @@ class TrajectoryCalc:
         while range_vector.x <= maximum_range + self.calc_step:
             _flag = TrajFlag.NONE
 
+            # Update wind reading at current point in trajectory
             if range_vector.x >= next_wind_range:
                 current_wind += 1
                 if current_wind >= len_winds:  # No more winds listed after this range
@@ -224,9 +231,11 @@ class TrajectoryCalc:
                     wind_vector = wind_to_vector(shot_info.winds[current_wind])
                     next_wind_range = shot_info.winds[current_wind].until_distance >> Distance.Foot
 
+            # Update air density at current point in trajectory
             density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
+            #region Check whether to record TrajectoryData row at current point
             if filter_flags:
                 # Zero-crossing checks
                 if range_vector.x > 0:
@@ -262,20 +271,27 @@ class TrajectoryCalc:
                     ))
                     if current_item == ranges_length:
                         break
+            #endregion
 
             previous_mach = velocity / mach
 
-            #region Ballistic calculation step
+            #region Ballistic calculation step (point-mass)
+            # Time step is set to advance bullet calc_step distance along x axis
             delta_time = self.calc_step / velocity_vector.x
+            # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
             velocity_adjusted = velocity_vector - wind_vector
-            velocity = velocity_adjusted.magnitude()
+            velocity = velocity_adjusted.magnitude()  # Velocity relative to air
+            # Drag is a function of air density and velocity relative to the air
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
+            # Bullet velocity changes due to both drag and gravity
             velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time
+            # Bullet position changes by velocity times the time step
             delta_range_vector = Vector(self.calc_step,
                                         velocity_vector.y * delta_time,
                                         velocity_vector.z * delta_time)
+            # Update the bullet position
             range_vector += delta_range_vector
-            velocity = velocity_vector.magnitude()
+            velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_range_vector.magnitude() / velocity
 
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:

@@ -1,23 +1,10 @@
 # BallisticCalculator
-LGPL library for small arms ballistic calculations (Python 3.9+)
+LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
 
-### Table of contents
-* **[Installation](#installation)**
-  * [Latest stable](#latest-stable-release-from-pypi)
-  * [From sources](#installing-from-sources)
-  * [Clone and build](#clone-and-build)
-* **[Usage](#usage)**
-  * **[Jupyter notebook](Example.ipynb)**
-  * [Units of measure](#unit-manipulation-syntax)
-  * [An example of calculations](#an-example-of-calculations)
-  * [Output example](#example-of-the-formatted-output)
-* **[Older versions]()**
-  * [v1.0.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.0.12)
-* **[Contributors](#contributors)**
-* **[About project](#about-project)**
+# Installation
+```python setup.py build_ext --inplace```
 
-### Installation
-#### Latest stable release from pypi**
+## Latest stable release from pypi
 ```shell
 pip install py-ballisticcalc
 
@@ -27,156 +14,198 @@ pip install py-ballisticcalc[exts]
 # Using matplotlib and pandas uses additional dependencies
 pip install py-ballisticcalc[charts]
 ```
-#### Installing from sources
-**MSVC** or **GCC** required
-* Download and install **MSVC** or **GCC** depending on target platform
-* Use one of the references you need:
-```shell
-# no binary from PyPi
-pip install py-ballisticcalc==<version> --no-binary py-ballisticcalc
 
-# master brunch
-pip install git+https://github.com/o-murphy/py_ballisticcalc
+# Usage
+**See [Example.ipynb](Example.ipynb) for detailed illustrations of all features and usage.**
 
-# specific branch
-pip install git+https://github.com/o-murphy/py_ballisticcalc.git@<target_branch_name>
+```python
+# Uncomment pyximport to compile instead of running pure python
+#import pyximport; pyximport.install(language_level=3)
+
+from py_ballisticcalc import DragModel, TableG7, TableG1
+from py_ballisticcalc import Ammo, Atmo, Wind
+from py_ballisticcalc import Weapon, Shot, Calculator
+from py_ballisticcalc import Settings as Set
+from py_ballisticcalc.unit import *
 ```
 
-#### Clone and build
-**MSVC** or **GCC** required
-```shell
-git clone https://github.com/o-murphy/py_ballisticcalc
-cd py_ballisticcalc
-python -m venv venv
-. venv/bin/activate
-pip install cython
-python setup.py build_ext --inplace
+## Simple Zero
+```python
+# Establish 100-yard zero for a standard .308, G7 BC=0.22, muzzle velocity 2600fps
+zero = Shot(weapon=Weapon(sight_height=2), ammo=Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(2600)))
+calc = Calculator()
+zero_distance = Distance.Yard(100)
+zero_elevation = calc.set_weapon_zero(zero, zero_distance)
+print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << Set.Units.adjustment}')
 ```
 
-## Usage
+    Barrel elevation for 100.0yd zero: 1.33mil
 
-The library supports all the popular units of measurement, and adds different built-in methods to define and manipulate it
-#### Unit manipulation syntax:
+## Plot Trajectory with Danger Space
+```python
+# Plot trajectory out to 500 yards
+shot_result = calc.fire(zero, trajectory_range=500, extra_data=True)
+ax = shot_result.plot()
+# Find danger space for a half-meter tall target at 300 yards
+danger_space = shot_result.danger_space(Distance.Yard(300), Distance.Meter(.5))
+print(danger_space)
+danger_space.overlay(ax)  # Highlight danger space on the plot
+plt.show()
+```
+
+    Danger space at 300.0yd for 19.7inch tall target ranges from 217.1yd to 355.7yd
+![plot](doc/output_2_1.png)
+
+
+## Print Range Card
+```python
+# Range card for this zero with 5mph cross-wind from left to right
+zero.winds = [Wind(Velocity.MPH(5), Angular.OClock(3))]
+range_card = calc.fire(zero, trajectory_range=1000)
+range_card.dataframe().to_clipboard()
+range_card.dataframe(True)[['distance', 'velocity', 'mach', 'time', 'target_drop', 'drop_adj', 'windage', 'windage_adj']].set_index('distance')
+```
+
+| distance | velocity | mach | time | target_drop | drop_adj | windage | windage_adj |
+| -------- | -------- | ---- | ---- | ----------- | -------- | ------- | ----------- |
+| 0.0 yd | 2600.0 ft/s | 2.33 mach | 0.000 s | -2.0 inch | 0.00 mil | -0.0 inch | 0.00 mil |
+| 100.0 yd | 2398.1 ft/s | 2.15 mach | 0.120 s | -0.0 inch | -0.00 mil | 0.4 inch | 0.12 mil |
+| 200.0 yd | 2205.5 ft/s | 1.98 mach | 0.251 s | -4.1 inch | -0.57 mil | 1.7 inch | 0.25 mil |
+| 300.0 yd | 2022.3 ft/s | 1.81 mach | 0.393 s | -15.3 inch | -1.44 mil | 4.1 inch | 0.39 mil |
+| 400.0 yd | 1847.5 ft/s | 1.65 mach | 0.548 s | -35.0 inch | -2.48 mil | 7.6 inch | 0.54 mil |
+| 500.0 yd | 1680.1 ft/s | 1.50 mach | 0.718 s | -65.0 inch | -3.68 mil | 12.4 inch | 0.70 mil |
+| 600.0 yd | 1519.5 ft/s | 1.36 mach | 0.906 s | -107.3 inch | -5.06 mil | 18.8 inch | 0.89 mil |
+| 700.0 yd | 1366.0 ft/s | 1.22 mach | 1.114 s | -164.8 inch | -6.66 mil | 27.0 inch | 1.09 mil |
+| 800.0 yd | 1221.3 ft/s | 1.09 mach | 1.347 s | -240.9 inch | -8.52 mil | 37.3 inch | 1.32 mil |
+| 900.0 yd | 1093.2 ft/s | 0.98 mach | 1.607 s | -340.5 inch | -10.71 mil | 50.0 inch | 1.57 mil |
+| 1000.0 yd | 1029.8 ft/s | 0.92 mach | 1.891 s | -469.0 inch | -13.27 mil | 64.8 inch | 1.83 mil |
+
+## Complex Example
+
+Here we define a standard .50BMG, enable powder temperature sensitivity, and zero for a distance of 500 meters, in a 5°C atmosphere at altitude 1000ft ASL.
+
+```python
+dm = DragModel(0.62, TableG1, 661, 0.51, 2.3)
+ammo=Ammo(dm, Velocity.MPS(850), Temperature.Celsius(15))
+ammo.calc_powder_sens(Velocity.MPS(820), Temperature.Celsius(0))
+weapon = Weapon(sight_height=Distance.Centimeter(9), twist=15)
+atmo = Atmo(altitude=Distance.Foot(1000), temperature=Unit.CELSIUS(5), humidity=.5)
+zero = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
+zero_distance = Distance.Meter(500)
+calc = Calculator()
+zero_elevation = calc.set_weapon_zero(zero, zero_distance)
+print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << Set.Units.adjustment}')
+print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velocity_for_temp(atmo.temperature) << Velocity.MPS}')
+```
+
+    Barrel elevation for 500.0m zero: 4.69mil
+    Muzzle velocity at zero temperature 5.0°C is 830.0m/s
+
+## Units
 
 ```python
 from py_ballisticcalc.unit import *
 
-# ways to define value in units
+# Print default units
+from py_ballisticcalc import Settings
+print(str(Settings.Units))
+
+# Change default
+Set.Units.distance = Unit.FOOT
+print(f'Default distance unit: {Set.Units.distance.name}')
+# Can create value in default unit with either float or another unit of same type
+print(f'\tInstantiated from float (5): {Set.Units.distance(5)}')
+print(f'\tInstantiated from Distance.Line(200): {Set.Units.distance(Distance.Line(200))}')
+
+# Ways to define value in units
 # 1. old syntax
 unit_in_meter = Distance(100, Distance.Meter)
 # 2. short syntax by Unit type class
 unit_in_meter = Distance.Meter(100)
 # 3. by Unit enum class
-unit_in_meter = Unit.Meter(100)
+unit_in_meter = Unit.METER(100)
+print(f'100 meters: {unit_in_meter}')
+# >>> 100 meters: 100.0m
 
-# >>> <Distance>: 100.0 m (3937.0078740157483)
-
-# convert unit
-# 1. by method
-unit_in_yard = unit_in_meter.convert(Distance.Yard)
+# Convert unit
+# 1. by .convert()
+unit_in_yards = unit_in_meter.convert(Distance.Yard)
 # 2. using shift syntax
 unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
-# >>> <Distance>: 109.36132983377078 yd (3937.0078740157483)
+print(f'100 meters in {unit_in_yards.units.key}: {unit_in_yards}')
+# >>> 100 meters in yard: 109.4yd
 
-# get value in specified units
-# 1. by method
+# Get value in specified units (as float)
+# 1. by .get_in()
 value_in_km = unit_in_yards.get_in(Distance.Kilometer)
 # 2. by shift syntax
 value_in_km = unit_in_yards >> Distance.Kilometer  # '>>=' operator also supports
-# >>> 0.1
+print(f'100 meters, value in km: {value_in_km}  (value type is {type(value_in_km)})')
+# >>> 100 meters, value in km: 0.1  (value type is <class 'float'>)
 
-# getting unit raw value:
-rvalue = Distance.Meter(10).raw_value
-rvalue = float(Distance.Meter(10))
+# Getting unit raw value (a float)
+rvalue = Distance.Meter(100).raw_value
+rvalue = float(Distance.Meter(100))
+print(f'100 meters in raw value: {rvalue}  (raw type is {type(rvalue)})')
+# >>> 100 meters in raw value: 3937.0078740157483  (raw type is <class 'float'>)
 
-# units comparison:
-# supports operators like < > <= >= == !=
-Distance.Meter(100) == Distance.Centimeter(100)  # >>> False, compare two units by raw value
-Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
+# Comparison operators supported: < > <= >= == !=
+print(f'Comparison: {unit_in_meter} == {Distance.Centimeter(100)}: {unit_in_meter == Distance.Centimeter(100)}')
+# >>> False, compare two units by raw value
+print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1*unit_in_meter.raw_value}')
+# >>> True, compare unit with float by raw value
 ```
 
-#### An example of calculations
+# Concepts
 
-```python
-from py_ballisticcalc import *
-from py_ballisticcalc import Settings as Set
+## Look angle
+*Look angle* is the elevation of the sight line (a.k.a., _Line of Sight_, or _LoS_) relative to the horizon.  For flat fire at angles close to horizontal this does not make a significant difference.  When the look angle is significantly above or below the horizon the trajectory will be different because:
 
-# Modify default units
-Set.Units.velocity = Velocity.FPS
-Set.Units.temperature = Temperature.Celsius
-Set.Units.distance = Distance.Meter
-Set.Units.sight_height = Distance.Centimeter
+1. Gravity is not orthogonal to the velocity
+2. Air density changes with altitude, so the drag effects will vary across an arcing trajectory.
 
-Set.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
+The shooter typically cares about the line of sight (LoS): Sight adjustments (_drop_ in the following figure) are made relative to LoS, and ranging errors – and hence [danger space](#danger-space) – follow the line of sight, not the horizon.
 
-# Define ammunition parameters
-weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
-length = Distance.Inch(1.282)  # Or declare units explicitly
-dm = DragModel(0.223, TableG7, weight, diameter, length)
-ammo = Ammo(dm, 2750, 15)
-ammo.calc_powder_sens(2723, 0)
-gun = Weapon(sight_height=9, twist=12)
-current_atmo = Atmo(110, 29.8, 15, 72)
-current_winds = [Wind(2, 90)]
-shot = Shot(weapon=gun, ammo=ammo, atmo=current_atmo, winds=current_winds)
-calc = Calculator()
-calc.set_weapon_zero(shot, Distance.Meter(100))
+The following diagram shows how _look distance_ and _drop_ relate by _look angle_ to the underlying (distance _x_, height _y_) trajectory data.
+![Look-angle trigonometry](doc/BallisticTrig.png)
 
-shot_result = calc.fire(shot, trajectory_range=1000, trajectory_step=100)
+## Danger Space
+Danger space is a practical measure of sensitivity to ranging error.  It is defined for a target of height *h* and distance *d*, and it indicates how far forward and backward along the line of sight the target can move such that the trajectory will still hit somewhere (vertically) on the target.
 
-for p in shot_result:
-    print(p.formatted())
-```
-#### Example of the formatted output:
-```shell
-python -m py_ballisticcalc.example
-```
+![Danger Space](doc/DangerSpace.png)
 
-```
-('0.000 s', '0.0 m', '2750.0 ft/s', '2.46 mach', '-3.5 inch', '-3.5 inch', '0.00 mil', '0.0 inch', '0.00 mil', '0.0 m', '0.0939 °', '-4.062e-03', '0.000', '2821 ft·lb', '880 lb', 8)
-('0.125 s', '100.1 m', '2526.5 ft/s', '2.26 mach', '0.0 inch', '0.0 inch', '0.00 mil', '0.2 inch', '0.05 mil', '100.1 m', '0.0068 °', '-4.062e-03', '0.665', '2381 ft·lb', '683 lb', 9)
-('0.260 s', '200.0 m', '2313.5 ft/s', '2.07 mach', '-3.0 inch', '-3.0 inch', '-0.39 mil', '0.8 inch', '0.10 mil', '200.0 m', '-0.0967 °', '-4.062e-03', '0.633', '1996 ft·lb', '524 lb', 8)
-('0.409 s', '300.1 m', '2111.2 ft/s', '1.89 mach', '-13.8 inch', '-13.8 inch', '-1.19 mil', '1.9 inch', '0.16 mil', '300.1 m', '-0.2207 °', '-4.062e-03', '0.599', '1663 ft·lb', '398 lb', 8)
-('0.572 s', '400.1 m', '1919.6 ft/s', '1.72 mach', '-33.9 inch', '-33.9 inch', '-2.19 mil', '3.5 inch', '0.22 mil', '400.1 m', '-0.3701 °', '-4.062e-03', '0.570', '1374 ft·lb', '299 lb', 8)
-('0.751 s', '500.0 m', '1736.8 ft/s', '1.56 mach', '-65.4 inch', '-65.4 inch', '-3.38 mil', '5.7 inch', '0.30 mil', '500.0 m', '-0.5516 °', '-4.062e-03', '0.545', '1125 ft·lb', '222 lb', 8)
-('0.951 s', '600.1 m', '1561.9 ft/s', '1.40 mach', '-110.7 inch', '-110.7 inch', '-4.77 mil', '8.7 inch', '0.37 mil', '600.1 m', '-0.7748 °', '-4.062e-03', '0.521', '910 ft·lb', '161 lb', 8)
-('1.173 s', '700.0 m', '1395.2 ft/s', '1.25 mach', '-173.1 inch', '-173.1 inch', '-6.40 mil', '12.6 inch', '0.47 mil', '700.0 m', '-1.0525 °', '-4.062e-03', '0.495', '726 ft·lb', '115 lb', 8)
-('1.423 s', '800.0 m', '1238.1 ft/s', '1.11 mach', '-257.0 inch', '-257.0 inch', '-8.31 mil', '17.6 inch', '0.57 mil', '800.0 m', '-1.4030 °', '-4.062e-03', '0.462', '572 ft·lb', '80 lb', 8)
-('1.705 s', '900.1 m', '1097.8 ft/s', '0.98 mach', '-368.2 inch', '-368.2 inch', '-10.58 mil', '24.1 inch', '0.69 mil', '900.1 m', '-1.8503 °', '-9.633e-03', '0.333', '450 ft·lb', '56 lb', 8)
-```
+# About project
+
+The library provides trajectory calculation for ballistic projectiles including air rifles, bows, firearms, artillery, and so on.
+
+The 3DoF model that is used in this calculator is rooted in public C code of [JBM's calculator](https://jbmballistics.com/ballistics/calculators/calculators.shtml), ported to C#, optimized, fixed and extended with elements described in Litz's _Applied Ballistics_ book and from the friendly project of Alexandre Trofimov and then ported to Go.
+
+This Python3 implementation has been expanded to support multiple ballistic coefficients and custom drag functions, such as those derived from Doppler radar data.
+
+**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)**.
+
+**[C# version of the package is located here](https://github.com/gehtsoft-usa/BallisticCalculator1), and [the online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)**.
 
 ## Contributors
-### This project exists thanks to all the people who contribute.
-#### Special thanks to:
-- **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert, Financial Engineer \
-*For the help in understanding and improvement of some calculation methods*
+**This project exists thanks to all the people who contribute.**
+
+<a href="https://github.com/o-murphy/py_ballisticcalc/graphs/contributors"><img height=32 src="https://contrib.rocks/image?repo=o-murphy/py_ballisticcalc" /></a>
+
+Special thanks to:
+- **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert\
+*For help understanding and improving the functionality*
 - **[Nikolay Gekht](https://github.com/nikolaygekht)** \
-*For the sources code on C# and GO-lang from which this project firstly was forked from*
+*For the sources code on C# and GO-lang from which this project firstly was forked*
 
-## About project
+## Sister projects
 
-The library provides trajectory calculation for projectiles including for various
-applications, including air rifles, bows, firearms, artillery and so on.
+* **Py-BalCalc** - GUI App for [py_ballisticcalc](https://github.com/o-murphy/py_ballisticcalc) solver library and profiles editor
+* **eBallistica** - Kivy based mobile App for ballistic calculations
 
-3DF model that is used in this calculator is rooted in old C sources of version 2 of the public version of JBM
-calculator, ported to C#, optimized, fixed and extended with elements described in
-Litz's "Applied Ballistics" book and from the friendly project of Alexandre Trofimov
-and then ported to Go.
+* <img align="center" height=32 src="https://github.com/JAremko/ArcherBC2/blob/main/resources/skins/sol-dark/icons/icon-frame.png?raw=true" /> [ArcherBC2](https://github.com/JAremko/ArcherBC2) and [ArcherBC2 mobile](https://github.com/ApodemusSylvaticus/archerBC2_mobile) - Ballistic profile editors
+  - *See also [a7p_transfer_example](https://github.com/JAremko/a7p_transfer_example) or [a7p](https://github.com/o-murphy/a7p) repo to get info about the ballistic profile format*
 
-Now it's also ported to python3 and expanded to support calculation trajectory by 
-multiple ballistics coefficients and using custom drag data (such as Doppler radar data ©Lapua, etc.)
-
-The online version of Go documentation is located here: https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc
-
-C# version of the package is located here: https://github.com/gehtsoft-usa/BallisticCalculator1
-
-The online version of C# API documentation is located here: https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html
-
-Go documentation can be obtained using godoc tool.
-
-The current status of the project is ALPHA version.
-
-#### RISK NOTICE
+## RISK NOTICE
 
 The library performs very limited simulation of a complex physical process and so it performs a lot of approximations. Therefore, the calculation results MUST NOT be considered as completely and reliably reflecting actual behavior or characteristics of projectiles. While these results may be used for educational purpose, they must NOT be considered as reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human life at risk.
 
