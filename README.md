@@ -1,10 +1,35 @@
 # BallisticCalculator
 LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
 
-# Installation
-```python setup.py build_ext --inplace```
+### Table of contents
+* **[Installation](#installation)**
+  * [Latest stable](#latest-stable-release-from-pypi)
 
-## Latest stable release from pypi
+  [//]: # (    * [From sources]&#40;#installing-from-sources&#41;)
+  [//]: # (  * [Clone and build]&#40;#clone-and-build&#41;)
+
+* **[Usage](#usage)**
+  * [Simple example](#simple-zero)
+  * [Plot trajectory](#plot-trajectory-with-danger-space)
+  * [Range card](#plot-trajectory-with-danger-space)
+  * [Complex example](#complex-example)
+  * [Jupyter notebook](Example.ipynb)
+  * [Units of measure](#units)
+
+  [//]: # (  * [An example of calculations]&#40;#an-example-of-calculations&#41;)
+  [//]: # (  * [Output example]&#40;#example-of-the-formatted-output&#41;)
+* **[Concepts](#concepts)**
+* **[Older versions]()**
+  * [v1.1.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.1.4)
+  * [v1.0.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.0.12)
+* **[Contributors](#contributors)**
+* **[About project](#about-project)**
+
+# Installation
+
+[//]: # (```python setup.py build_ext --inplace```)
+
+[//]: # (## Latest stable release from pypi)
 ```shell
 pip install py-ballisticcalc
 
@@ -123,7 +148,7 @@ unit_in_meter = Distance(100, Distance.Meter)
 # 2. short syntax by Unit type class
 unit_in_meter = Distance.Meter(100)
 # 3. by Unit enum class
-unit_in_meter = Unit.METER(100)
+unit_in_meter = Unit.Meter(100)
 print(f'100 meters: {unit_in_meter}')
 # >>> 100 meters: 100.0m
 
@@ -197,13 +222,17 @@ Special thanks to:
 - **[Nikolay Gekht](https://github.com/nikolaygekht)** \
 *For the sources code on C# and GO-lang from which this project firstly was forked*
 
-## Sister projects
+[//]: # (## Sister projects)
 
-* **Py-BalCalc** - GUI App for [py_ballisticcalc](https://github.com/o-murphy/py_ballisticcalc) solver library and profiles editor
-* **eBallistica** - Kivy based mobile App for ballistic calculations
+[//]: # ()
+[//]: # (* **Py-BalCalc** - GUI App for [py_ballisticcalc]&#40;https://github.com/o-murphy/py_ballisticcalc&#41; solver library and profiles editor)
 
-* <img align="center" height=32 src="https://github.com/JAremko/ArcherBC2/blob/main/resources/skins/sol-dark/icons/icon-frame.png?raw=true" /> [ArcherBC2](https://github.com/JAremko/ArcherBC2) and [ArcherBC2 mobile](https://github.com/ApodemusSylvaticus/archerBC2_mobile) - Ballistic profile editors
-  - *See also [a7p_transfer_example](https://github.com/JAremko/a7p_transfer_example) or [a7p](https://github.com/o-murphy/a7p) repo to get info about the ballistic profile format*
+[//]: # (* **eBallistica** - Kivy based mobile App for ballistic calculations)
+
+[//]: # ()
+[//]: # (* <img align="center" height=32 src="https://github.com/JAremko/ArcherBC2/blob/main/resources/skins/sol-dark/icons/icon-frame.png?raw=true" /> [ArcherBC2]&#40;https://github.com/JAremko/ArcherBC2&#41; and [ArcherBC2 mobile]&#40;https://github.com/ApodemusSylvaticus/archerBC2_mobile&#41; - Ballistic profile editors)
+
+[//]: # (  - *See also [a7p_transfer_example]&#40;https://github.com/JAremko/a7p_transfer_example&#41; or [a7p]&#40;https://github.com/o-murphy/a7p&#41; repo to get info about the ballistic profile format*)
 
 ## RISK NOTICE
 
