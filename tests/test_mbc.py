@@ -2,7 +2,11 @@ import unittest
 from typing import NamedTuple
 
 from py_ballisticcalc import *
+from py_ballisticcalc import Settings as Set
 from py_ballisticcalc.trajectory_calc import calculate_curve, calculate_by_curve
+
+
+Set.Units.velocity = Unit.FPS
 
 
 class TestMBC(unittest.TestCase):
@@ -25,7 +29,7 @@ class TestMBC(unittest.TestCase):
             TestData(
                 "Berger .308 168gr BT",
                 168,
-                1.220,
+                0.308,
                 [0.224, 0.227, 0.234, 0.239],
                 [0.414, 0.350, 0.307, 0.276],
                 [1.128, 1.116, 1.079, 1.060],
@@ -33,7 +37,7 @@ class TestMBC(unittest.TestCase):
             TestData(
                 "SMK .308 168gr",
                 168,
-                1.215,
+                0.308,
                 [0.211, 0.214, 0.222, 0.226],
                 [0.441, 0.371, 0.325, 0.291],
                 [1.201, 1.184, 1.142, 1.119],
@@ -41,7 +45,7 @@ class TestMBC(unittest.TestCase):
             TestData(
                 "SMK .338 300gr",
                 300,
-                1.7,
+                0.338,
                 [0.370, 0.374, 0.386, 0.393],
                 [0.373, 0.315, 0.276, 0.248],
                 [1.015, 1.004, 0.971, 0.954],
@@ -49,7 +53,7 @@ class TestMBC(unittest.TestCase):
             TestData(
                 "HORNADY .338 250gr BTHP",
                 250,
-                1.567,
+                0.338,
                 [0.314, 0.317, 0.327, 0.332],
                 [0.366, 0.309, 0.272, 0.244],
                 [0.996, 0.987, 0.956, 0.940],
@@ -80,15 +84,18 @@ class TestMBC(unittest.TestCase):
                 )
 
                 sd = mbc._get_sectional_density()
+                # sd = bullet.w / 7000 / (bullet.d ** 2)
 
-                print("i\tI\tCDst\tCD")
+                print("i\tI\tCDst\tCDref\tCDres")
                 for BC, I, CD, V in b:
                     with self.subTest(f"{bullet.name} {BC}"):
 
                         cd = calculate_by_curve(TableG7, curve, V / cIcao1MachFPS)
 
                         i = mbc._get_form_factor(BC)
-                        print(f"{i}\t{I}\t{cd}\t{CD}")
+                        # i = sd / BC
+                        cd_ = mbc._get_counted_cd(i, cd)
+                        print(f"{i}\t{I}\t{cd}\t{CD}\t{cd_}")
                         # self.assertAlmostEqual(cd, CD, places=1)
 
 

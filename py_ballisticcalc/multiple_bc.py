@@ -82,8 +82,6 @@ class MultiBC:  # pylint: disable=too-few-public-methods
         )
         bc_mah.append(BCMachRow(bc_mah[-1].BC, self._table_data[0].Mach))
 
-        # yield bc_mah[0].BC
-
         ret.append(bc_mah[0].BC)
 
         for bc_max, bc_min in zip(bc_mah, bc_mah[1:]):
