@@ -1,15 +1,15 @@
 """Module to create custom drag function based on Multiple ballistic coefficients"""
-import typing
-from math import pow as math_pow
 from typing import NamedTuple, Iterable
 
-from .conditions import Atmo
 # pylint: disable=import-error,no-name-in-module
 from .backend import make_data_points
+from .conditions import Atmo
 from .settings import Settings as Set
 from .unit import Distance, Weight, Velocity
 
-__all__ = ('MultiBC', )
+__all__ = ('MultiBC',)
+
+cIcao1MachFPS = 1116.4499224539381  # 1 mach value in FPS for standard ICAO atmosphere
 
 
 class MultiBCRow(NamedTuple):
@@ -41,11 +41,7 @@ class MultiBC:  # pylint: disable=too-few-public-methods
         self.diameter = diameter
         self.sectional_density = self._get_sectional_density()
 
-        atmosphere = Atmo.icao()
-
-        altitude = Distance.Meter(0) >> Distance.Foot
-        _, mach = atmosphere.get_density_factor_and_mach_for_altitude(altitude)
-        self.speed_of_sound = Velocity.FPS(mach) >> Velocity.MPS
+        _, mach = Atmo.icao().get_density_factor_and_mach_for_altitude(0)
 
         self._table_data = make_data_points(drag_table)
         self._bc_table = self._parse_mbc(mbc_table)
@@ -53,17 +49,18 @@ class MultiBC:  # pylint: disable=too-few-public-methods
     def _parse_mbc(self, mbc_table):
         table = []
         for p in mbc_table:
-            # print(p['V'], Set.Units.velocity)
-            # print(Set.Units.velocity(p['V']))
             v = Set.Units.velocity(p['V']) >> Velocity.MPS
             mbc = MultiBCRow(p['BC'], v)
             table.append(mbc)
         return sorted(table, reverse=True)
 
     def _get_sectional_density(self) -> float:
+        """
+        SD = (weight / 7000) / dia^2
+        """
         w = self.weight >> Weight.Grain
         d = self.diameter >> Distance.Inch
-        return w / math_pow(d, 2) / 7000
+        return w / 7000 / (d ** 2)
 
     def _get_form_factor(self, bc) -> float:
         return self.sectional_density / bc
@@ -72,18 +69,22 @@ class MultiBC:  # pylint: disable=too-few-public-methods
     def _get_counted_cd(form_factor, standard_cd):
         return standard_cd * form_factor
 
-    def _interpolate_bc_table(self) -> typing.Generator:
+    def _adjust_bc(self) -> list[float]:
         """
         Extends input bc table by creating bc value for each point of standard Drag Model
         """
+        ret = []
+
         bc_table = tuple(self._bc_table)
         bc_mah = [BCMachRow(bc_table[0].BC, self._table_data[-1].Mach)]
         bc_mah.extend(
-            [BCMachRow(point.BC, point.V / self.speed_of_sound) for point in bc_table]
+            [BCMachRow(point.BC, point.V / cIcao1MachFPS) for point in bc_table]
         )
         bc_mah.append(BCMachRow(bc_mah[-1].BC, self._table_data[0].Mach))
 
-        yield bc_mah[0].BC
+        # yield bc_mah[0].BC
+
+        ret.append(bc_mah[0].BC)
 
         for bc_max, bc_min in zip(bc_mah, bc_mah[1:]):
             df_part = [
@@ -92,19 +93,24 @@ class MultiBC:  # pylint: disable=too-few-public-methods
             ddf = len(df_part)
             bc_delta = (bc_max.BC - bc_min.BC) / ddf
             for j in range(ddf):
-                yield bc_max.BC - bc_delta * j
+                # yield bc_max.BC - bc_delta * j
 
-    def _cdm_generator(self) -> typing.Generator:
-        bc_extended = reversed(list(self._interpolate_bc_table()))
-        form_factors = [self._get_form_factor(bc) for bc in bc_extended]
-
-        for i, point in enumerate(self._table_data):
-            cd = form_factors[i] * point.CD
-            yield {'CD': cd, 'Mach': point.Mach}
+                ret.append(bc_max.BC - bc_delta * j)
+        return ret
 
     @property
     def cdm(self) -> list[dict]:
         """
         :return: custom drag function based on input multiple ballistic coefficients
         """
-        return list(self._cdm_generator())
+
+        cdm = []
+
+        bc_extended = reversed(self._adjust_bc())
+        form_factors = [self._get_form_factor(bc) for bc in bc_extended]
+
+        for i, point in enumerate(self._table_data):
+            cd = form_factors[i] * point.CD
+            cdm.append({'CD': cd, 'Mach': point.Mach})
+
+        return cdm
