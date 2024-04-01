@@ -10,6 +10,7 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 from .backend import *
 from .drag_tables import *
+from .drag_model import *
 from .settings import *
 from .interface import *
 from .trajectory_data import *

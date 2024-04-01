@@ -148,7 +148,7 @@ cdef class TrajectoryCalc:
         self._init_trajectory(shot_info)            
         return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags)
 
-    def _init_trajectory(self, shot_info: Shot):
+    cdef _init_trajectory(self, shot_info: Shot):
         self.look_angle = shot_info.look_angle >> Angular.Radian
         self.twist = shot_info.weapon.twist >> Distance.Inch
         self.length = shot_info.ammo.dm.length >> Distance.Inch
@@ -202,12 +202,13 @@ cdef class TrajectoryCalc:
             double density_factor, mach, velocity, delta_time
             list ranges = []
             int ranges_length = int(maximum_range / step) + 1
+            int current_item = 0
             double time = .0
             double previous_mach = .0
             double drag = .0
 
             int len_winds = len(shot_info.winds)
-            int current_item, current_wind
+            int current_wind = 0
             double next_range_distance = .0
             double next_wind_range = Wind.MAX_DISTANCE_FEET
 

@@ -9,7 +9,6 @@ try:
 
     logger.info("Binary modules found, running in binary mode")
 except ImportError as error:
-    from .drag_model import *
     from .trajectory_calc import *
 
     logger.warning("Library running in pure python mode. "

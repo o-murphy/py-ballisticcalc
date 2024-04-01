@@ -61,13 +61,11 @@ class DragModel:
         if error:
             raise ValueError(error)
 
-        if isinstance(drag_table[0], DragDataPoint):
-            self.drag_table = drag_table
-        else:  # Convert from list of dicts to list of DragDataPoints
-            self.drag_table = make_data_points(drag_table)
+        self.drag_table = drag_table if isinstance(drag_table[0], DragDataPoint)\
+            else make_data_points(drag_table) # Convert from list of dicts to list of DragDataPoints
 
         # BC is a list, so generate new drag table by interpolating the BCpoints
-        if hasattr(BC, '__getitem__'):
+        if isinstance(BC, list):
             BC = sorted(BC)  # Make sure we're sorted for np.interp
             self.BCinterp = numpy.interp([x['Mach'] for x in drag_table],
                                          [x.Mach for x in BC],
