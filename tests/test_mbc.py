@@ -1,41 +1,45 @@
+"Unit tests of multiple-BC drag models"
+
 import unittest
 from py_ballisticcalc import *
 
 
 class TestMBC(unittest.TestCase):
 
-    def test_mbc(self):
-        mbc = MultiBC(
-            drag_table=TableG7,
-            weight=Weight(178, Weight.Grain),
-            diameter=Distance(0.308, Distance.Inch),
-            mbc_table=[{'BC': p[0], 'V': p[1]} for p in ((0.275, 800), (0.255, 500), (0.26, 700))],
-        )
-        cdm = mbc.cdm
-        self.assertEqual(cdm[0], {'Mach': 0.0, 'CD': 0.1259323091692403})
-        self.assertEqual(cdm[-1], {'Mach': 5.0, 'CD': 0.1577125859466895})
+    def setUp(self) -> None:
+        "Establish baseline trajectory"
+        self.range = 1000
+        self.step = 100
+        self.dm = DragModel(0.22, TableG7)
+        self.ammo = Ammo(self.dm, Velocity.FPS(2600))
+        self.weapon = Weapon(4, 12)
+        self.calc = Calculator()
+        self.baseline_shot = Shot(weapon=self.weapon, ammo=self.ammo)
+        self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
 
-    def test_mbc_valid(self):
-        # Litz's multi-bc table comversion to CDM, 338LM 285GR HORNADY ELD-M
-        mbc = MultiBC(
-            drag_table=TableG7,
-            weight=Weight.Grain(285),
-            diameter=Distance.Inch(0.338),
-            mbc_table=[{'BC': p[0], 'V': Velocity.MPS(p[1])} for p in ((0.417, 745), (0.409, 662), (0.4, 580))],
-        )
-        cdm = mbc.cdm
-        cds = [p['CD'] for p in cdm]
-        machs = [p['Mach'] for p in cdm]
+    def test_mbc1(self):
+        "We should get the same trajectory whether we give single BC or use multi-BC with single value"
+        dm_multi = DragModel([BCpoint(.22, V=Velocity.FPS(2500)), BCpoint(.22, V=Velocity.FPS(1500)), BCpoint(BC=.22, Mach=3)], TableG7)
+        multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
+        multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
+        for i in range(len(multi_trajectory)):
+            self.assertEqual(multi_trajectory[i].formatted(), self.baseline_trajectory[i].formatted())
 
-        reference = (
-            (1, 0.3384895315),
-            (2, 0.2573873416),
-            (3, 0.2069547831),
-            (4, 0.1652052415),
-            (5, 0.1381406102),
-        )
+    def test_mbc2(self):
+        "Setting different BC above muzzle velocity should have no effect"
+        dm_multi = DragModel([BCpoint(.22, V=Velocity.FPS(2700)), BCpoint(.5, V=Velocity.FPS(3500))], TableG7)
+        multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
+        multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
+        for i in range(len(multi_trajectory)):
+            self.assertEqual(multi_trajectory[i].formatted(), self.baseline_trajectory[i].formatted())
 
-        for mach, cd in reference:
-            idx = machs.index(mach)
-            with self.subTest(mach=mach):
-                self.assertAlmostEqual(cds[idx], cd, 3)
+    def test_mbc3(self):
+        "Setting higher BC should result in higher downrange velocities"
+        # So here we'll boost the BC for velocities lower than the baseline's velocity at 200 yards
+        dm_multi = DragModel([BCpoint(.5, V=self.baseline_trajectory[3].velocity), BCpoint(.22, V=self.baseline_trajectory[2].velocity)], TableG7)
+        multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
+        multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
+        # Should show no change before 200 yards
+        self.assertEqual(multi_trajectory[1].velocity.raw_value, self.baseline_trajectory[1].velocity.raw_value)
+        # Should be faster at any point after 200 yards
+        self.assertGreater(multi_trajectory[4].velocity.raw_value, self.baseline_trajectory[4].velocity.raw_value)

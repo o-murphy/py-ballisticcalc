@@ -11,7 +11,6 @@ __credits__ = ["o-murphy", "dbookstaber"]
 from .backend import *
 from .drag_tables import *
 from .settings import *
-from .multiple_bc import *
 from .interface import *
 from .trajectory_data import *
 from .conditions import *
