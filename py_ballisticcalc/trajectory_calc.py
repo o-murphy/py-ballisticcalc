@@ -21,6 +21,7 @@ cGravityConstant = -32.17405
 
 
 class CurvePoint(NamedTuple):
+    "Coefficients for quadratic interpolation"
     a: float
     b: float
     c: float
