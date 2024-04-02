@@ -1,9 +1,9 @@
 # pylint: disable=wildcard-import
-"""Searching for an available backends"""
+"""Check for available backends"""
 
 from .logger import logger
 
-# trying to use cython based backend
+# try to use cython based backend
 try:
     from py_ballisticcalc_exts import *
 

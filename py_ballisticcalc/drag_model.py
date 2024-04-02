@@ -1,7 +1,6 @@
 """Drag model of projectile"""
 
 import math
-import numpy
 import typing
 from dataclasses import dataclass, field
 
@@ -15,13 +14,13 @@ cSpeedOfSoundMetric = 340.0  # Speed of sound in standard atmosphere, in m/s
 
 @dataclass
 class DragDataPoint:
-    "Drag coefficient at Mach number"
+    """Drag coefficient at Mach number"""
     Mach: float  # Velocity in Mach units
     CD: float    # Drag coefficient
 
 @dataclass(order=True)
 class BCpoint:
-    "For multi-BC drag models, designed to sort by Mach ascending"
+    """For multi-BC drag models, designed to sort by Mach ascending"""
     BC: float = field(compare=False)  # Ballistic Coefficient at the given Mach number
     Mach: float = field(default=-1, compare=True)  # Velocity in Mach units
     # Velocity only referenced if Mach number not supplied
@@ -67,7 +66,7 @@ class DragModel:
         # BC is a list, so generate new drag table by interpolating the BCpoints
         if isinstance(BC, list):
             BC = sorted(BC)  # Make sure we're sorted for np.interp
-            self.BCinterp = numpy.interp([x['Mach'] for x in drag_table],
+            self.BCinterp = linear_interpolation([x['Mach'] for x in drag_table],
                                          [x.Mach for x in BC],
                                          [x.BC for x in BC])
             for i in range(len(self.drag_table)):
@@ -96,10 +95,45 @@ class DragModel:
 
 
 def make_data_points(drag_table: typing.Iterable) -> list[BCpoint]:
-    "Convert drag table from list of dictionaries to list of DragDataPoints"
+    """Convert drag table from list of dictionaries to list of DragDataPoints"""
     return [DragDataPoint(point['Mach'], point['CD']) for point in drag_table]
 
 
 def sectional_density(weight: float, diameter: float) -> float:
-    "Sectional density in lbs/in^2"
+    """Sectional density in lbs/in^2"""
     return weight / math.pow(diameter, 2) / 7000
+
+
+def linear_interpolation(x: list[float], xp: list[float], yp: list[float]) -> list[float]:
+    """Piecewise linear interpolation
+    :param x: List of points for which we want interpolated values
+    :param xp: List of existing points (x coordinate), *sorted in ascending order*
+    :param yp: List of values for existing points (y coordinate)
+    :return: List of interpolated values y for inputs x
+    """
+    if len(xp) != len(yp):
+        raise ValueError("xp and yp lists must have same length")
+    
+    y = []
+
+    for xi in x:
+        if xi <= xp[0]:
+            y.append(yp[0])
+        elif xi >= xp[-1]:
+            y.append(yp[-1])
+        else:
+            # Binary search to find interval containing xi
+            left, right = 0, len(xp) - 1
+            while left < right:
+                mid = (left + right) // 2
+                if xp[mid] <= xi < xp[mid+1]:
+                    slope = (yp[mid + 1] - yp[mid]) / (xp[mid + 1] - xp[mid])
+                    y.append(yp[mid] + slope * (xi - xp[mid]))  # Interpolated value for xi
+                    break
+                elif xi < xp[mid]:
+                    right = mid
+                else:
+                    left = mid + 1
+            if left == right:
+                y.append(yp[left])
+    return y
