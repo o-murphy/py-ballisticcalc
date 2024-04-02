@@ -90,12 +90,15 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit']) -> 'AbstractUnit':
+    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit'] = None) -> ['AbstractUnit', 'Unit']:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
+        if value is None:
+            return self
+
         if isinstance(value, AbstractUnit):
             return value << self
         if 0 <= self < 10:
