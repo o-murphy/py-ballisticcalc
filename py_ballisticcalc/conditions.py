@@ -36,9 +36,9 @@ cStandardDensity: float = 0.076474        # lb/ft^3
 @dataclass
 class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations"""
-    altitude: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
-    pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
-    temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
+    altitude: [float, Distance] = field(default_factory=Set.Units.distance)
+    pressure: [float, Pressure] = field(default_factory=Set.Units.pressure)
+    temperature: [float, Temperature] = field(default_factory=Set.Units.temperature)
     humidity: float = 0.0           # Relative humidity [0% to 100%]
     density_ratio: float = field(init=False)  # Density / cStandardDensity
     mach: Velocity = field(init=False)  # Mach 1 in reference atmosphere
@@ -194,9 +194,9 @@ class Wind(TypedUnits):
     direction_from = 0 is blowing from behind shooter. 
     direction_from = 90 degrees is blowing from shooter's left towards right.
     """
-    velocity: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
-    direction_from: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
-    until_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
+    velocity: [float, Velocity] = field(default_factory=Set.Units.velocity)
+    direction_from: [float, Angular] = field(default_factory=Set.Units.angular)
+    until_distance: [float, Distance] = field(default_factory=Set.Units.distance)
     MAX_DISTANCE_FEET = 1e8
 
     def __post_init__(self):
@@ -221,9 +221,9 @@ class Shot(TypedUnits):
     :param cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
         from the vertical plane into the horizontal plane by sine(cant_angle)
     """
-    look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
-    relative_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
-    cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
+    look_angle: [float, Angular] = field(default_factory=Set.Units.angular)
+    relative_angle: [float, Angular] = field(default_factory=Set.Units.angular)
+    cant_angle: [float, Angular] = field(default_factory=Set.Units.angular)
 
     weapon: Weapon = field(default=None)
     ammo: Ammo = field(default=None)
