@@ -1,4 +1,9 @@
+import typing
 import unittest
+import warnings
+from dataclasses import field, dataclass
+
+from py_ballisticcalc import Settings
 from py_ballisticcalc.unit import *
 
 
@@ -6,6 +11,75 @@ def back_n_forth(test, value, units):
     u = test.unit_class(value, units)
     v = u >> units
     test.assertAlmostEqual(v, value, 7, f'Read back failed for {units}')
+
+
+class TestPrefUnits(unittest.TestCase):
+
+    def test_pref(self):
+
+        @dataclass
+        class _TypedUnits:  # pylint: disable=too-few-public-methods
+            """
+            Abstract class to apply auto-conversion values to
+            specified units by type-hints in inherited dataclasses
+            """
+
+            def __setattr__(self, key, value):
+                """
+                converts value to specified units by type-hints in inherited dataclass
+                """
+
+                _fields = self.__getattribute__('__dataclass_fields__')
+
+                if (_field := _fields.get(key)) and not isinstance(value, AbstractUnit):
+                    # print(f"{key=} {value=} {type(value)}")
+
+                    if units := _field.metadata.get('units'):
+
+                        if isinstance(units, Unit):
+                            value = units(value)
+                        elif isinstance(units, str):
+                            value = Settings.Units.__dict__[units](value)
+                        else:
+                            raise TypeError("Unsupported unit or dimension")
+
+                    elif isinstance(default_factory := _field.default_factory, typing.Callable):
+                        warnings.warn(
+                            "Using 'default_factory' is deprecated, "
+                            "use 'metadata={'units': 'sight_height'} for preferred units"
+                            "or {'units': Unit.Meter}' instead. metadata['units'] has a priority",
+                            DeprecationWarning
+                        )
+
+                        if isinstance(value, Unit):
+                            value = None
+                        else:
+                            value = default_factory()(value)
+
+                super().__setattr__(key, value)
+
+        @dataclass
+        class TestClass(_TypedUnits):
+            as_metadata_str: [float, Distance] = field(metadata={'units': "sight_height"})
+            as_metadata_unit: [float, Distance] = field(metadata={'units': Unit.Meter})
+            as_default_factory: [float, Distance] = field(default_factory=lambda: Settings.Units.sight_height)
+
+        tc1 = TestClass(1, 1, 1)
+        self.assertEqual(tc1.as_metadata_str.units, Unit.Inch)
+        self.assertEqual(tc1.as_metadata_unit.units, Unit.Meter)
+        self.assertEqual(tc1.as_default_factory.units, Unit.Inch)
+
+        tc2 = TestClass(Unit.Meter(1), Unit.Meter(1), Unit.Meter(1))
+        self.assertEqual(tc2.as_metadata_str.units, Unit.Meter)
+        self.assertEqual(tc2.as_metadata_unit.units, Unit.Meter)
+        self.assertEqual(tc2.as_default_factory.units, Unit.Meter)
+
+        Settings.Units.sight_height = Unit.Centimeter
+
+        tc3 = TestClass(1, 1, 1)
+        self.assertEqual(tc3.as_metadata_str.units, Unit.Centimeter)
+        self.assertEqual(tc3.as_metadata_unit.units, Unit.Meter)
+        self.assertEqual(tc3.as_default_factory.units, Unit.Centimeter)
 
 
 class TestAngular(unittest.TestCase):

@@ -3,8 +3,8 @@
 import math
 from dataclasses import dataclass, field
 
-from .settings import Settings as Set
-from .unit import Distance, Velocity, Temperature, Pressure, TypedUnits, Angular
+from .settings import Settings as Set, PreferUnits
+from .unit import Distance, Velocity, Temperature, Pressure, TypedUnits, Angular, Dimension
 from .munition import Weapon, Ammo
 
 __all__ = ('Atmo', 'Wind', 'Shot')
@@ -34,11 +34,13 @@ cSpeedOfSoundImperial: float = 49.0223    # Mach1 in fps = cSpeedOfSound * sqrt(
 cStandardDensity: float = 0.076474        # lb/ft^3
 
 @dataclass
-class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
+class Atmo(PreferUnits):  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations"""
-    altitude: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
-    pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
-    temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
+
+    altitude: [float, Pressure] = Dimension(units="distance")
+    pressure: [float, Pressure] = Dimension(units="pressure")
+    temperature: [float, Temperature] = Dimension(units="temperature")
+
     humidity: float = 0.0           # Relative humidity [0% to 100%]
     density_ratio: float = field(init=False)  # Density / cStandardDensity
     mach: Velocity = field(init=False)  # Mach 1 in reference atmosphere

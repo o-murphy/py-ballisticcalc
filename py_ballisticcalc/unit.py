@@ -3,14 +3,15 @@ Useful types for units of measurement conversion for ballistics calculations
 """
 
 import typing
+import warnings
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple
-from dataclasses import dataclass
+from dataclasses import dataclass, MISSING, Field
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'TypedUnits')
+           'Energy', 'Weight', 'TypedUnits', 'Dimension')
 
 
 # pylint: disable=invalid-name
@@ -90,12 +91,16 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit']) -> 'AbstractUnit':
+    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit'] = None) -> 'AbstractUnit':
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
+
+        # if value is None:
+        #     return self
+
         if isinstance(value, AbstractUnit):
             return value << self
         if 0 <= self < 10:
@@ -505,8 +510,8 @@ class Angular(AbstractUnit):
             result = value / 6 * pi
         else:
             return super().to_raw(value, units)
-        if result > 2*pi:
-            result = result % (2*pi)
+        if result > 2 * pi:
+            result = result % (2 * pi)
         return result
 
     def from_raw(self, value: float, units: Unit):
@@ -612,6 +617,13 @@ class TypedUnits:  # pylint: disable=too-few-public-methods
         converts value to specified units by type-hints in inherited dataclass
         """
 
+        warnings.warn(
+            "Using 'default_factory' is deprecated, "
+            "use 'metadata={'units': 'sight_height'} for preferred units"
+            "or {'units': Unit.Meter}' instead. metadata['units'] has a priority",
+            DeprecationWarning
+        )
+
         _fields = self.__getattribute__('__dataclass_fields__')
         # fields(self.__class__)[0].name
         if key in _fields and not isinstance(value, AbstractUnit):
@@ -624,6 +636,27 @@ class TypedUnits:  # pylint: disable=too-few-public-methods
 
         super().__setattr__(key, value)
 
+
+# def dimension(*, init=True, repr=True,
+#               hash=None, compare=True, metadata=None, kw_only=MISSING, **kwargs):
+#     """Return an object to identify dataclass fields.
+#     It is an error to specify both default and default_factory.
+#     """
+#     default, default_factory = None, MISSING
+#     if metadata is None:
+#         metadata = {}
+#     metadata.update(kwargs)
+#     return Field(default, default_factory, init, repr, hash, compare, metadata, kw_only)
+
+
+class Dimension(Field):
+    def __init__(self, units: [str, Unit], init=True, repr=True,
+              hash=None, compare=True, metadata=None, kw_only=MISSING):
+        default, default_factory = None, MISSING
+        if metadata is None:
+            metadata = {}
+        metadata['units'] = units
+        super().__init__(default, default_factory, init, repr, hash, compare, metadata, kw_only)
 
 # def is_unit(obj: [AbstractUnit, float, int]):
 #     """
