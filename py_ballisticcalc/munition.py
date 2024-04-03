@@ -18,9 +18,9 @@ class Weapon(TypedUnits):
     :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
         (Typically computed by ballistic Calculator.)
     """
-    sight_height: [float, Distance] = field(default_factory=Set.Units.sight_height)
-    twist: [float, Distance] = field(default_factory=Set.Units.twist)
-    zero_elevation: [float, Angular] = field(default_factory=Set.Units.angular)
+    sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
+    twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
+    zero_elevation: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
 
     def __post_init__(self):
         if not self.sight_height:
@@ -42,8 +42,8 @@ class Ammo(TypedUnits):
             Settings.USE_POWDER_SENSITIVITY = True
     """
     dm: DragModel = field(default=None)
-    mv: [float, Velocity] = field(default_factory=Set.Units.velocity)
-    powder_temp: [float, Temperature] = field(default_factory=Set.Units.temperature)
+    mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
+    powder_temp: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
     temp_modifier: float = field(default=0)
 
     def __post_init__(self):
