@@ -1,4 +1,4 @@
-"Unit tests of multiple-BC drag models"
+"Unit tests of multiple-bc drag models"
 
 import unittest
 from py_ballisticcalc import *
@@ -18,7 +18,7 @@ class TestMBC(unittest.TestCase):
         self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
 
     def test_mbc1(self):
-        "We should get the same trajectory whether we give single BC or use multi-BC with single value"
+        "We should get the same trajectory whether we give single bc or use multi-bc with single value"
         dm_multi = DragModelMultiBC([BCpoint(.22, V=Velocity.FPS(2500)), BCpoint(.22, V=Velocity.FPS(1500)), BCpoint(BC=.22, Mach=3)], TableG7)
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
@@ -26,7 +26,7 @@ class TestMBC(unittest.TestCase):
             self.assertEqual(multi_trajectory[i].formatted(), self.baseline_trajectory[i].formatted())
 
     def test_mbc2(self):
-        "Setting different BC above muzzle velocity should have no effect"
+        "Setting different bc above muzzle velocity should have no effect"
         dm_multi = DragModelMultiBC([BCpoint(.22, V=Velocity.FPS(2700)), BCpoint(.5, V=Velocity.FPS(3500))], TableG7)
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
@@ -34,8 +34,8 @@ class TestMBC(unittest.TestCase):
             self.assertEqual(multi_trajectory[i].formatted(), self.baseline_trajectory[i].formatted())
 
     def test_mbc3(self):
-        "Setting higher BC should result in higher downrange velocities"
-        # So here we'll boost the BC for velocities lower than the baseline's velocity at 200 yards
+        "Setting higher bc should result in higher downrange velocities"
+        # So here we'll boost the bc for velocities lower than the baseline's velocity at 200 yards
         dm_multi = DragModelMultiBC([BCpoint(.5, V=self.baseline_trajectory[3].velocity), BCpoint(.22, V=self.baseline_trajectory[2].velocity)], TableG7)
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory

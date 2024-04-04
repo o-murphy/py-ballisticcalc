@@ -312,7 +312,7 @@ class TrajectoryCalc:
                 cStandardDensity of Air = 0.076474 lb/ft^3
                 S is cross-section = d^2 pi/4, where d is bullet diameter in inches
                 m is bullet mass in pounds
-            BC contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
+            bc contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
             Thus: The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
         :return: Drag coefficient at the given mach number
         """

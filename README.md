@@ -56,7 +56,7 @@ from py_ballisticcalc.unit import *
 
 ## Simple Zero
 ```python
-# Establish 100-yard zero for a standard .308, G7 BC=0.22, muzzle velocity 2600fps
+# Establish 100-yard zero for a standard .308, G7 bc=0.22, muzzle velocity 2600fps
 zero = Shot(weapon=Weapon(sight_height=2), ammo=Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(2600)))
 calc = Calculator()
 zero_distance = Distance.Yard(100)

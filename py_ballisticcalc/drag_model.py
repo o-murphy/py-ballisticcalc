@@ -1,26 +1,27 @@
 """Drag model of projectile"""
 
 import math
-import typing
 from dataclasses import dataclass, field
+from typing import Mapping, Union
 
 from .settings import Settings as Set
 from .unit import Weight, Distance, Velocity
-#from .drag_tables import DragTablesSet
 
 __all__ = ('DragModel', 'DragDataPoint', 'BCpoint', 'DragModelMultiBC')
 
 cSpeedOfSoundMetric = 340.0  # Speed of sound in standard atmosphere, in m/s
 
+
 @dataclass
 class DragDataPoint:
     """Drag coefficient at Mach number"""
     Mach: float  # Velocity in Mach units
-    CD: float    # Drag coefficient
+    CD: float  # Drag coefficient
+
 
 @dataclass(order=True)
 class BCpoint:
-    """For multi-BC drag models, designed to sort by Mach ascending"""
+    """For multi-bc drag models, designed to sort by Mach ascending"""
     BC: float = field(compare=False)  # Ballistic Coefficient at the given Mach number
     Mach: float = field(default=-1, compare=True)  # Velocity in Mach units
     # Velocity only referenced if Mach number not supplied
@@ -31,11 +32,12 @@ class BCpoint:
         if self.Mach < 0:
             self.Mach = (self.V >> Velocity.MPS) / cSpeedOfSoundMetric
         if self.BC <= 0:
-            raise ValueError('BC must be positive')
+            raise ValueError('bc must be positive')
+
 
 class DragModel:
     """
-    :param BC: Ballistic Coefficient of bullet = weight / diameter^2 / i,
+    :param bc: Ballistic Coefficient of bullet = weight / diameter^2 / i,
             where weight is in pounds, diameter is in inches, and
             i is the bullet's form factor relative to the selected drag model.
     :param drag_table: If passed as List of {Mach, CD} dictionaries, this
@@ -45,23 +47,24 @@ class DragModel:
     :param length: Bullet length in inches
     NOTE: .weight, .diameter, .length are only relevant for computing spin drift
     """
-    def __init__(self, BC: float,
-                 drag_table: typing.Iterable,
-                 weight: [float, Weight]=0,
-                 diameter: [float, Distance]=0,
-                 length: [float, Distance]=0):
+
+    def __init__(self, bc: float,
+                 drag_table: list[Mapping[float, float]],
+                 weight: [float, Weight] = 0,
+                 diameter: [float, Distance] = 0,
+                 length: [float, Distance] = 0):
         error = ''
         if len(drag_table) <= 0:
             error = 'Received empty drag table'
-        elif BC <= 0:
+        elif bc <= 0:
             error = 'Ballistic coefficient must be positive'
         if error:
             raise ValueError(error)
 
-        self.drag_table = drag_table if isinstance(drag_table[0], DragDataPoint)\
-            else make_data_points(drag_table) # Convert from list of dicts to list of DragDataPoints
+        self.drag_table = drag_table if isinstance(drag_table[0], DragDataPoint) \
+            else make_data_points(drag_table)  # Convert from list of dicts to list of DragDataPoints
 
-        self.BC = BC
+        self.BC = bc
         self.length = Set.Units.length(length)
         self.weight = Set.Units.weight(weight)
         self.diameter = Set.Units.diameter(diameter)
@@ -70,7 +73,7 @@ class DragModel:
             self.form_factor = self._get_form_factor(self.BC)
 
     def __repr__(self) -> str:
-        return f"DragModel(BC={self.BC}, wgt={self.weight}, dia={self.diameter}, len={self.length})"
+        return f"DragModel(bc={self.BC}, wgt={self.weight}, dia={self.diameter}, len={self.length})"
 
     def _get_form_factor(self, bc: float) -> float:
         return self.sectional_density / bc
@@ -81,7 +84,7 @@ class DragModel:
         return sectional_density(w, d)
 
 
-def make_data_points(drag_table: typing.Iterable) -> list[BCpoint]:
+def make_data_points(drag_table: list[Mapping[float, float]]) -> list[DragDataPoint]:
     """Convert drag table from list of dictionaries to list of DragDataPoints"""
     return [DragDataPoint(point['Mach'], point['CD']) for point in drag_table]
 
@@ -95,14 +98,17 @@ def sectional_density(weight: float, diameter: float) -> float:
     return weight / math.pow(diameter, 2) / 7000
 
 
-def DragModelMultiBC(BCpoints: list[BCpoint], drag_table: typing.Iterable,
-                 weight: [float, Weight]=0,
-                 diameter: [float, Distance]=0,
-                 length: [float, Distance]=0) -> DragModel:
-    """Compute a drag model based on multiple BCs.
-        If weight and diameter are provided then we set BC=sectional density.
-        Otherwise we set BC=1 and the drag_table contains final drag terms.
-    :param BC:
+def DragModelMultiBC(bc_points: list[BCpoint],
+                     drag_table: list[Mapping[float, float]],
+                     weight: [float, Weight] = 0,
+                     diameter: [float, Distance] = 0,
+                     length: [float, Distance] = 0) -> DragModel:
+    """
+    Compute a drag model based on multiple BCs.
+    If weight and diameter are provided then we set bc=sectional density.
+    Otherwise, we set bc=1 and the drag_table contains final drag terms.
+    :param bc_points:
+    :param drag_table: list of dicts containing drag table data
     :param weight: Bullet weight in grains
     :param diameter: Bullet diameter in inches
     :param length: Bullet length in inches
@@ -114,19 +120,21 @@ def DragModelMultiBC(BCpoints: list[BCpoint], drag_table: typing.Iterable,
     else:
         BC = 1.0
 
-    drag_table = drag_table if isinstance(drag_table[0], DragDataPoint)\
-        else make_data_points(drag_table) # Convert from list of dicts to list of DragDataPoints
+    drag_table = drag_table if isinstance(drag_table[0], DragDataPoint) \
+        else make_data_points(drag_table)  # Convert from list of dicts to list of DragDataPoints
 
-    BCpoints = sorted(BCpoints)  # Make sure BCpoints are sorted for linear interpolation
+    bc_points = sorted(bc_points)  # Make sure bc_points are sorted for linear interpolation
     BCinterp = linear_interpolation([x.Mach for x in drag_table],
-                                    [x.Mach for x in BCpoints],
-                                    [x.BC / BC for x in BCpoints])
+                                    [x.Mach for x in bc_points],
+                                    [x.BC / BC for x in bc_points])
     for i in range(len(drag_table)):
         drag_table[i].CD = drag_table[i].CD / BCinterp[i]
     return DragModel(BC, drag_table, weight, diameter, length)
 
 
-def linear_interpolation(x: list[float], xp: list[float], yp: list[float]) -> list[float]:
+def linear_interpolation(x: Union[list[float], tuple[float]],
+                         xp: Union[list[float], tuple[float]],
+                         yp: Union[list[float], tuple[float]]) -> Union[list[float], tuple[float]]:
     """Piecewise linear interpolation
     :param x: List of points for which we want interpolated values
     :param xp: List of existing points (x coordinate), *sorted in ascending order*
@@ -135,7 +143,7 @@ def linear_interpolation(x: list[float], xp: list[float], yp: list[float]) -> li
     """
     if len(xp) != len(yp):
         raise ValueError("xp and yp lists must have same length")
-    
+
     y = []
 
     for xi in x:
@@ -148,7 +156,7 @@ def linear_interpolation(x: list[float], xp: list[float], yp: list[float]) -> li
             left, right = 0, len(xp) - 1
             while left < right:
                 mid = (left + right) // 2
-                if xp[mid] <= xi < xp[mid+1]:
+                if xp[mid] <= xi < xp[mid + 1]:
                     slope = (yp[mid + 1] - yp[mid]) / (xp[mid + 1] - xp[mid])
                     y.append(yp[mid] + slope * (xi - xp[mid]))  # Interpolated value for xi
                     break

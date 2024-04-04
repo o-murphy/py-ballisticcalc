@@ -3,14 +3,14 @@
 import math
 from dataclasses import dataclass, field
 
+from .munition import Weapon, Ammo
 from .settings import Settings as Set
 from .unit import Distance, Velocity, Temperature, Pressure, TypedUnits, Angular
-from .munition import Weapon, Ammo
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
-cStandardHumidity: float = 0.0            # Relative Humidity
-cPressureExponent: float = 5.255876     # =g*M/R*L
+cStandardHumidity: float = 0.0  # Relative Humidity
+cPressureExponent: float = 5.255876  # =g*M/R*L
 cA0: float = 1.24871
 cA1: float = 0.0988438
 cA2: float = 0.00152907
@@ -18,20 +18,21 @@ cA3: float = -3.07031e-06
 cA4: float = 4.21329e-07
 cA5: float = 3.342e-04
 # ISA, metric units: (https://www.engineeringtoolbox.com/international-standard-atmosphere-d_985.html)
-cDegreesCtoK: float = 273.15              # °K = °C + 273.15
-cStandardTemperatureC: float = 15.0       # °C
-cLapseRateMetric: float = -6.5e-03        # Lapse Rate, °C/m
+cDegreesCtoK: float = 273.15  # °K = °C + 273.15
+cStandardTemperatureC: float = 15.0  # °C
+cLapseRateMetric: float = -6.5e-03  # Lapse Rate, °C/m
 cStandardPressureMetric: float = 1013.25  # hPa
-cSpeedOfSoundMetric: float = 331.3        # Mach1 in m/s = cSpeedOfSound * sqrt(°K)
-cStandardDensityMetric: float = 1.2250    # kg/m^3
-cDensityImperialToMetric: float = 16.0185 # lb/ft^3 to kg/m^3
+cSpeedOfSoundMetric: float = 331.3  # Mach1 in m/s = cSpeedOfSound * sqrt(°K)
+cStandardDensityMetric: float = 1.2250  # kg/m^3
+cDensityImperialToMetric: float = 16.0185  # lb/ft^3 to kg/m^3
 # ICAO standard atmosphere:
-cDegreesFtoR: float = 459.67              # °R = °F + 459.67
-cStandardTemperatureF: float = 59.0       # °F
+cDegreesFtoR: float = 459.67  # °R = °F + 459.67
+cStandardTemperatureF: float = 59.0  # °F
 cLapseRateImperial: float = -3.56616e-03  # Lapse rate, °F/ft
-cStandardPressure: float = 29.92          # InHg
-cSpeedOfSoundImperial: float = 49.0223    # Mach1 in fps = cSpeedOfSound * sqrt(°R)
-cStandardDensity: float = 0.076474        # lb/ft^3
+cStandardPressure: float = 29.92  # InHg
+cSpeedOfSoundImperial: float = 49.0223  # Mach1 in fps = cSpeedOfSound * sqrt(°R)
+cStandardDensity: float = 0.076474  # lb/ft^3
+
 
 @dataclass
 class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
@@ -39,7 +40,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     altitude: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
     pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
     temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
-    humidity: float = 0.0           # Relative humidity [0% to 100%]
+    humidity: float = 0.0  # Relative humidity [0% to 100%]
     density_ratio: float = field(init=False)  # Density / cStandardDensity
     mach: Velocity = field(init=False)  # Mach 1 in reference atmosphere
     _mach1: float = field(init=False)  # Mach 1 in reference atmosphere in fps
@@ -58,7 +59,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         if not self.temperature:
             self.temperature = Atmo.standard_temperature(self.altitude)
         if not self.pressure:
-            self.pressure =  Atmo.standard_pressure(self.altitude)
+            self.pressure = Atmo.standard_pressure(self.altitude)
 
         self._t0 = self.temperature >> Temperature.Fahrenheit
         self._p0 = self.pressure >> Pressure.InHg
@@ -72,29 +73,29 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     def standard_temperature(altitude: Distance) -> Temperature:
         """ICAO standard temperature for altitude"""
         return Temperature.Fahrenheit(cStandardTemperatureF
-                    + (altitude >> Distance.Foot) * cLapseRateImperial)
+                                      + (altitude >> Distance.Foot) * cLapseRateImperial)
 
     @staticmethod
     def standard_pressure(altitude: Distance) -> Pressure:
         """ICAO standard pressure for altitude"""
         return Pressure.InHg(0.02953
-            * math.pow(3.73145 - (2.56555e-05) * (altitude >> Distance.Foot),
-                       cPressureExponent)
-            )
+                             * math.pow(3.73145 - 2.56555e-05 * (altitude >> Distance.Foot),
+                                        cPressureExponent)
+                             )
         # # Metric formula
         # Pressure.hPa(cStandardPressureMetric
         #     * math.pow(1 - cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
         #                cPressureExponent))
 
     @staticmethod
-    def standard(altitude: [float, Distance] = 0, temperature: Temperature=None):
+    def standard(altitude: [float, Distance] = 0, temperature: Temperature = None):
         """Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
         return Atmo.icao(altitude, temperature)
 
     @staticmethod
-    def icao(altitude: [float, Distance] = 0, temperature: Temperature=None):
+    def icao(altitude: [float, Distance] = 0, temperature: Temperature = None):
         """Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
@@ -118,7 +119,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def machC(celsius: float) -> float:
         """:return: Mach 1 in m/s for Celsius temperature"""
-        return math.sqrt(1+celsius / cDegreesCtoK) * cSpeedOfSoundMetric
+        return math.sqrt(1 + celsius / cDegreesCtoK) * cSpeedOfSoundMetric
 
     @staticmethod
     def air_density(t: Temperature, p: Pressure, humidity: float) -> float:
@@ -128,11 +129,11 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         tC = t >> Temperature.Celsius
         pM = (p >> Pressure.hPa) * 100  # Pressure in Pascals
         # Tetens approximation to saturation vapor pressure:
-        psat = 6.1078*math.pow(10, 17.27 * tC / (tC + 237.3))
-        pv = humidity*psat  # Pressure of water vapor in Pascals
-        pd = pM - pv    # Partial pressure of dry air in Pascals
+        psat = 6.1078 * math.pow(10, 17.27 * tC / (tC + 237.3))
+        pv = humidity * psat  # Pressure of water vapor in Pascals
+        pd = pM - pv  # Partial pressure of dry air in Pascals
         # Density in metric units kg/m^3
-        density = (pd*0.0289652 + pv*0.018016)/(8.31446 *(tC + cDegreesCtoK))
+        density = (pd * 0.0289652 + pv * 0.018016) / (8.31446 * (tC + cDegreesCtoK))
         return density / cDensityImperialToMetric
 
     @property
@@ -181,7 +182,7 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
             mach = self._mach1
         else:
             # https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation
-            density_ratio = math.exp(-altitude/34112.0)
+            density_ratio = math.exp(-altitude / 34112.0)
             t = self.temperature_at_altitude(altitude)
             mach = Atmo.machF(t)
         return density_ratio, mach
@@ -229,6 +230,7 @@ class Shot(TypedUnits):
     ammo: Ammo = field(default=None)
     atmo: Atmo = field(default=None)
     winds: list[Wind] = field(default=None)
+
     # NOTE: Calculator assumes that winds are sorted by Wind.until_distance (ascending)
 
     @property
@@ -237,14 +239,14 @@ class Shot(TypedUnits):
         return Angular.Radian((self.look_angle >> Angular.Radian)
                               + math.cos(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
-                               + (self.relative_angle >> Angular.Radian)))
+                                 + (self.relative_angle >> Angular.Radian)))
 
     @property
     def barrel_azimuth(self) -> Angular:
         """Horizontal angle of barrel relative to sight line"""
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
-                               + (self.relative_angle >> Angular.Radian)))
+                                 + (self.relative_angle >> Angular.Radian)))
 
     def __post_init__(self):
         if not self.look_angle:
