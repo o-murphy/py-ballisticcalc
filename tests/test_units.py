@@ -18,7 +18,7 @@ class TestPrefUnits(unittest.TestCase):
     def test_pref(self):
 
         @dataclass
-        class TestClass(PreferredUnits.Mixine):
+        class TestClass(PreferredUnits.Mixin):
             as_metadata_str: [float, Distance] = Dimension(prefer_units='sight_height')
             as_metadata_unit: [float, Distance] = Dimension(prefer_units=Unit.Meter)
 

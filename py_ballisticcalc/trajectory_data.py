@@ -24,7 +24,6 @@ except ImportError as error:
 
 __all__ = ('TrajectoryData', 'HitResult', 'TrajFlag')
 
-
 PLOT_FONT_HEIGHT = 72
 PLOT_FONT_SIZE = 552 / PLOT_FONT_HEIGHT
 
@@ -58,13 +57,13 @@ class TrajectoryData(NamedTuple):
         windage (Distance):
         windage_adj (Angular):
         look_distance (Distance): sight-line distance = .distance/cosine(look_angle)
-        look_height (Distance): y-coordinate of sight-line = .distance*tan(look_angle)
-        angle (Angular): Angle of velocity vector relative to x axis
+        # look_height (Distance): y-coordinate of sight-line = .distance*tan(look_angle)
+        angle (Angular): Angle of velocity vector relative to x-axis
         density_factor (float): Ratio of air density here to standard density
         drag (float): Current drag coefficient
         energy (Energy):
         ogw (Weight): optimal game weight
-        rtype (int): row type
+        flag (int): row type
     """
 
     time: float
@@ -146,13 +145,13 @@ class DangerSpace(NamedTuple):
     look_angle: Angular
 
     def __str__(self) -> str:
-        return f'Danger space at {self.at_range.distance << PreferredUnits.distance} '\
-          + f'for {self.target_height << PreferredUnits.drop} tall target '\
-          + (f'at {self.look_angle << Angular.Degree} look-angle ' if self.look_angle != 0 else '')\
-          + f'ranges from {self.begin.distance << PreferredUnits.distance} '\
-          + f'to {self.end.distance << PreferredUnits.distance}'
+        return f'Danger space at {self.at_range.distance << PreferredUnits.distance} ' \
+            + f'for {self.target_height << PreferredUnits.drop} tall target ' \
+            + (f'at {self.look_angle << Angular.Degree} look-angle ' if self.look_angle != 0 else '') \
+            + f'ranges from {self.begin.distance << PreferredUnits.distance} ' \
+            + f'to {self.end.distance << PreferredUnits.distance}'
 
-    def overlay(self, ax: 'Axes', label: str=None):
+    def overlay(self, ax: 'Axes', label: str = None):
         """Highlights danger-space region on plot"""
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
@@ -180,7 +179,7 @@ class DangerSpace(NamedTuple):
         if label is None:  # Add default label
             label = f"Danger space\nat {self.at_range.distance << PreferredUnits.distance}"
         if label != '':
-            ax.text(begin_dist + (end_dist-begin_dist)/2, end_drop, label,
+            ax.text(begin_dist + (end_dist - begin_dist) / 2, end_drop, label,
                     linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
 
 
@@ -192,8 +191,7 @@ class HitResult:
     extra: bool = False
 
     def __iter__(self):
-        for row in self.trajectory:
-            yield row
+        yield from self.trajectory
 
     def __getitem__(self, item):
         return self.trajectory[item]
@@ -220,15 +218,15 @@ class HitResult:
         """
         # Get index of first trajectory point with distance >= at_range
         return next((i for i in range(len(self.trajectory))
-                  if self.trajectory[i].distance >= d), -1)
+                     if self.trajectory[i].distance >= d), -1)
 
     def get_at_distance(self, d: Distance) -> TrajectoryData:
         """
         :param d: Distance for which we want Trajectory Data
         :return: First trajectory row with .distance >= d
         """
-        i = self.index_at_distance(d)
-        if i < 0:
+
+        if i := self.index_at_distance(d) < 0:
             raise ArithmeticError(
                 f"Calculated trajectory doesn't reach requested distance {d}"
             )
@@ -261,24 +259,22 @@ class HitResult:
             look_angle = PreferredUnits.angular(look_angle)
 
         # Get index of first trajectory point with distance >= at_range
-        i = self.index_at_distance(at_range)
-        if i < 0:
+        if (index := self.index_at_distance(at_range)) < 0:
             raise ArithmeticError(
                 f"Calculated trajectory doesn't reach requested distance {at_range}"
             )
 
         def find_begin_danger(row_num: int) -> TrajectoryData:
             """
-            Beginning of danger space is last .distance' < .distance where 
+            Beginning of danger space is last .distance' < .distance where
                 (.drop' - target_center) >= target_height/2
             :param row_num: Index of the trajectory point for which we are calculating danger space
             :return: Distance marking beginning of danger space
             """
             center_row = self.trajectory[row_num]
-            for i in range(row_num - 1, 0, -1):
-                prime_row = self.trajectory[i]
+            for prime_row in reversed(self.trajectory[:row_num]):
                 if (prime_row.target_drop.raw_value - center_row.target_drop.raw_value) >= target_height_half:
-                    return self.trajectory[i]
+                    return prime_row
             return self.trajectory[0]
 
         def find_end_danger(row_num: int) -> TrajectoryData:
@@ -289,19 +285,18 @@ class HitResult:
             :return: Distance marking end of danger space
             """
             center_row = self.trajectory[row_num]
-            for i in range(row_num + 1, len(self.trajectory)):
-                prime_row = self.trajectory[i]
+            for prime_row in self.trajectory[row_num + 1:]:
                 if (center_row.target_drop.raw_value - prime_row.target_drop.raw_value) >= target_height_half:
                     return prime_row
             return self.trajectory[-1]
 
-        return DangerSpace(self.trajectory[i],
+        return DangerSpace(self.trajectory[index],
                            target_height,
-                           find_begin_danger(i),
-                           find_end_danger(i),
+                           find_begin_danger(index),
+                           find_end_danger(index),
                            look_angle)
 
-    def dataframe(self, formatted: bool = False):
+    def dataframe(self, formatted: bool = False) -> 'DataFrame':
         """
         :param formatted: False for values as floats; True for strings with prefer_units
         :return: the trajectory table as a DataFrame
@@ -334,45 +329,45 @@ class HitResult:
             if TrajFlag(p.flag) & TrajFlag.ZERO:
                 ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
                         [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
-                ax.text((p.distance >> PreferredUnits.distance) + max_range/100, df['height'].min(),
+                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
                         f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
                         fontsize=font_size, rotation=90)
             if TrajFlag(p.flag) & TrajFlag.MACH:
                 ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
                         [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
-                ax.text((p.distance >> PreferredUnits.distance) + max_range/100, df['height'].min(),
+                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
                         "Mach 1", fontsize=font_size, rotation=90)
 
         max_range_in_drop_units = self.trajectory[-1].distance >> PreferredUnits.drop
         # Sight line
         x_sight = [0, df.distance.max()]
         y_sight = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
-        ax.plot(x_sight, y_sight, linestyle='--', color=[.3,0,.3,.5])
+        ax.plot(x_sight, y_sight, linestyle='--', color=[.3, 0, .3, .5])
         # Barrel pointing line
         x_bbl = [0, df.distance.max()]
         y_bbl = [-(self.shot.weapon.sight_height >> PreferredUnits.drop),
-                    max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
-                    -(self.shot.weapon.sight_height >> PreferredUnits.drop)]
-        ax.plot(x_bbl, y_bbl, linestyle=':', color=[0,0,0,.5])
+                 max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
+                 - (self.shot.weapon.sight_height >> PreferredUnits.drop)]
+        ax.plot(x_bbl, y_bbl, linestyle=':', color=[0, 0, 0, .5])
         # Line labels
-        sight_above_bbl = True if y_sight[1] > y_bbl[1] else False
-        angle = math.degrees(math.atan((y_sight[1]-y_sight[0])/(x_sight[1]-x_sight[0])))
+        sight_above_bbl = y_sight[1] > y_bbl[1]
+        angle = math.degrees(math.atan((y_sight[1] - y_sight[0]) / (x_sight[1] - x_sight[0])))
         ax.text(x_sight[1], y_sight[1], "Sight line", linespacing=1.2,
-                 rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
-                 fontsize=font_size, color=[.3,0,.3,1], ha='right',
-                 va='bottom' if sight_above_bbl else 'top')
-        angle = math.degrees(math.atan((y_bbl[1]-y_bbl[0])/(x_bbl[1]-x_bbl[0])))
+                rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
+                fontsize=font_size, color=[.3, 0, .3, 1], ha='right',
+                va='bottom' if sight_above_bbl else 'top')
+        angle = math.degrees(math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0])))
         ax.text(x_bbl[1], y_bbl[1], "Barrel pointing", linespacing=1.2,
-                 rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
-                 fontsize=font_size, color='k', ha='right',
-                 va='top' if sight_above_bbl else 'bottom')
+                rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
+                fontsize=font_size, color='k', ha='right',
+                va='top' if sight_above_bbl else 'bottom')
         # Plot velocity (on secondary axis)
         df.plot(x='distance', xlabel=PreferredUnits.distance.symbol,
                 y=['velocity'], ylabel=PreferredUnits.velocity.symbol,
-                secondary_y=True, color=[0,.3,0,.5],
+                secondary_y=True, color=[0, .3, 0, .5],
                 ylim=[0, df['velocity'].max()], ax=ax)
         # Let secondary shine through
         ax.set_zorder(1)
-        ax.set_facecolor([0,0,0,0])
+        ax.set_facecolor([0, 0, 0, 0])
 
         return ax

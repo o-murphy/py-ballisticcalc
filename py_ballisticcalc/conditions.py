@@ -35,7 +35,7 @@ cStandardDensity: float = 0.076474  # lb/ft^3
 
 
 @dataclass
-class Atmo(PreferredUnits.Mixine):  # pylint: disable=too-many-instance-attributes
+class Atmo(PreferredUnits.Mixin):  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations"""
 
     altitude: [float, Pressure] = Dimension(prefer_units="distance")
@@ -51,7 +51,7 @@ class Atmo(PreferredUnits.Mixine):  # pylint: disable=too-many-instance-attribut
     _p0: float = field(init=False)  # Barometric pressure (sea level)
     _ta: float = field(init=False)  # Standard temperature at reference altitude °F
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.humidity > 1:
             self.humidity = self.humidity / 100.0
         if not 0 <= self.humidity <= 1:
@@ -90,14 +90,14 @@ class Atmo(PreferredUnits.Mixine):  # pylint: disable=too-many-instance-attribut
         #                cPressureExponent))
 
     @staticmethod
-    def standard(altitude: [float, Distance] = 0, temperature: Temperature = None):
+    def standard(altitude: [float, Distance] = 0, temperature: Temperature = None) -> 'Atmo':
         """Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
         return Atmo.icao(altitude, temperature)
 
     @staticmethod
-    def icao(altitude: [float, Distance] = 0, temperature: Temperature = None):
+    def icao(altitude: [float, Distance] = 0, temperature: Temperature = None) -> 'Atmo':
         """Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
@@ -173,7 +173,7 @@ class Atmo(PreferredUnits.Mixine):  # pylint: disable=too-many-instance-attribut
         ) * hc
         return density
 
-    def get_density_factor_and_mach_for_altitude(self, altitude: float):
+    def get_density_factor_and_mach_for_altitude(self, altitude: float) -> (float, float):
         """
         :param altitude: ASL in units of feet
         :return: density ratio and Mach 1 (fps) for the specified altitude
@@ -191,7 +191,7 @@ class Atmo(PreferredUnits.Mixine):  # pylint: disable=too-many-instance-attribut
 
 
 @dataclass
-class Wind(PreferredUnits.Mixine):
+class Wind(PreferredUnits.Mixin):
     """
     Wind direction and velocity by down-range distance.
     direction_from = 0 is blowing from behind shooter. 
@@ -203,7 +203,7 @@ class Wind(PreferredUnits.Mixine):
     until_distance: [float, Distance] = Dimension(prefer_units='distance')
     MAX_DISTANCE_FEET = 1e8
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.until_distance:
             self.until_distance = Distance.Foot(Wind.MAX_DISTANCE_FEET)
         if not self.direction_from or not self.velocity:
@@ -212,12 +212,12 @@ class Wind(PreferredUnits.Mixine):
 
 
 @dataclass
-class Shot(PreferredUnits.Mixine):
+class Shot(PreferredUnits.Mixin):
     """
     Stores shot parameters for the trajectory calculation.
     
     :param look_angle: Angle of sight line relative to horizontal.
-        If look_angle != 0 then any target in sight crosshairs will be at a different altitude:
+        If the look_angle != 0 then any target in sight crosshairs will be at a different altitude:
             With target_distance = sight distance to a target (i.e., as through a rangefinder):
                 * Horizontal distance X to target = cos(look_angle) * target_distance
                 * Vertical distance Y to target = sin(look_angle) * target_distance
@@ -252,7 +252,7 @@ class Shot(PreferredUnits.Mixine):
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if not self.look_angle:
             self.look_angle = 0
         if not self.relative_angle:

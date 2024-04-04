@@ -3,22 +3,25 @@ Useful types for prefer_units of measurement conversion for ballistics calculati
 """
 import os
 import sys
-from abc import ABC
-from dataclasses import dataclass, MISSING, Field, fields
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, MISSING, Field
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple, Union
+from typing import NamedTuple, Union, TypeVar
 
 from py_ballisticcalc.logger import logger
 
 try:
-    import tomllib as tomllib
+    import tomllib
 except ImportError:
     import tomli as tomllib
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
            'Energy', 'Weight', 'Dimension', 'PreferredUnits', 'basicConfig')
+
+
+AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
 
 
 # pylint: disable=invalid-name
@@ -71,7 +74,7 @@ class Unit(IntEnum):
     Ounce = 71
     Gram = 72
     Pound = 73
-    Kilgram = 74
+    Kilogram = 74
     Newton = 75
 
     @property
@@ -98,7 +101,7 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit'] = None) -> 'AbstractUnit':
+    def __call__(self: 'Unit', value: [int, float, AbstractUnitType] = None) -> AbstractUnitType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
@@ -182,7 +185,7 @@ UnitPropsDict = {
     Unit.Ounce: UnitProps('ounce', 1, 'oz'),
     Unit.Gram: UnitProps('gram', 1, 'g'),
     Unit.Pound: UnitProps('pound', 0, 'lb'),
-    Unit.Kilgram: UnitProps('kilogram', 3, 'kg'),
+    Unit.Kilogram: UnitProps('kilogram', 3, 'kg'),
     Unit.Newton: UnitProps('newton', 3, 'N'),
 }
 
@@ -245,7 +248,7 @@ class AbstractUnit:
 
     def _unit_support_error(self, value: float, units: Unit):
         """Validates the prefer_units
-        :param value: value of the unit
+        :param value: value of the instance
         :param units: Unit enum type
         :return: value in specified prefer_units
         """
@@ -259,7 +262,7 @@ class AbstractUnit:
 
     def to_raw(self, value: float, units: Unit) -> float:
         """Converts value with specified prefer_units to raw value
-        :param value: value of the unit
+        :param value: value of the instance
         :param units: Unit enum type
         :return: value in specified prefer_units
         """
@@ -454,7 +457,7 @@ class Weight(AbstractUnit):
     Ounce = Unit.Ounce
     Gram = Unit.Gram
     Pound = Unit.Pound
-    Kilogram = Unit.Kilgram
+    Kilogram = Unit.Kilogram
     Newton = Unit.Newton
 
 
@@ -616,8 +619,8 @@ class PreferredUnitsMeta(type):
     """Provide representation method for static dataclasses."""
 
     def __repr__(cls):
-        return '\n'.join(f'{field.name} = {getattr(cls, field.name)!r}'
-                         for field in fields(cls))
+        return '\n'.join(f'{field} = {getattr(cls, field)!r}'
+                         for field in getattr(cls, '__dataclass_fields__'))
 
 
 @dataclass
@@ -641,7 +644,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
     twist: Unit = Unit.Inch
 
     @dataclass
-    class Mixine(ABC):  # pylint: disable=too-few-public-methods
+    class Mixin(ABC):  # pylint: disable=too-few-public-methods
         """
         TODO: move it to Units, use it instead of TypedUnits
         Abstract class to apply auto-conversion values to
@@ -670,12 +673,13 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
 
     @classmethod
     def set(cls, **kwargs):
-        for key, value in kwargs.items():
+        """set preferred units from Mapping"""
+        for attribute, value in kwargs.items():
             try:
-                if hasattr(PreferredUnits, key):
-                    setattr(PreferredUnits, key, Unit[value])
+                if hasattr(PreferredUnits, attribute):
+                    setattr(PreferredUnits, attribute, Unit[value])
                 else:
-                    logger.warning(f"attribute {key} not found in preferred_units")
+                    logger.warning(f"{attribute=} not found in preferred_units")
             except KeyError:
                 logger.warning(f"{value=} not found in preferred_units")
 
@@ -724,26 +728,27 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
 
     @classmethod
     def basic_config(cls, filename=None, **preferred_units):
-
+        """
+        Method to load preferred units from file or Mapping
+        """
         if filename and preferred_units:
             raise ValueError("Can't use preferred_units and config file at same time")
-        elif preferred_units:
+        if preferred_units:
             cls.set(**preferred_units)
         else:
             # trying to load definitions from pybc.toml
             cls._load_config(filename)
 
 
-
 # pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
 class Dimension(Field):
     """
     Definition of measure units specified field for
-    PreferredUnits.Mixine based dataclasses
+    PreferredUnits.Mixin based dataclasses
     """
 
-    def __init__(self, prefer_units: Union[str, Unit], init=True, repr=True,
-                 hash=None, compare=True, metadata=None):
+    def __init__(self, prefer_units: Union[str, Unit], init=True, repr_=True,
+                 hash_=None, compare=True, metadata=None):
         if metadata is None:
             metadata = {}
         metadata['prefer_units'] = prefer_units
@@ -758,11 +763,20 @@ class Dimension(Field):
             raise RuntimeError("Unsupported python version")
 
         super().__init__(default=None, default_factory=MISSING,
-                         init=init, repr=repr,
-                         hash=hash, compare=compare,
+                         init=init, repr=repr_,
+                         hash=hash_, compare=compare,
                          metadata=metadata, **extra)
 
+    @abstractmethod
+    def __rshift__(self, other):
+        ...
 
-PreferredUnits.basic_config()  # init PrefferedUnits
+    @abstractmethod
+    def __lshift__(self, other):
+        ...
 
+
+PreferredUnits.basic_config()  # init PreferredUnits
+
+# export method globally
 basicConfig = PreferredUnits.basic_config

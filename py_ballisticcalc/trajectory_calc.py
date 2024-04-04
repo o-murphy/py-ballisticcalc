@@ -1,17 +1,19 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring,line-too-long,invalid-name,attribute-defined-outside-init
+# pylint: disable=missing-class-docstring,missing-function-docstring
+# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
 """pure python trajectory calculation backend"""
 
 import math
 from dataclasses import dataclass
 from typing import NamedTuple
 
+from .drag_model import DragDataPoint
 from .conditions import Atmo, Shot, Wind
 from .munition import Ammo
 from .settings import Settings
 from .trajectory_data import TrajectoryData, TrajFlag
 from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
 
-__all__ = ('TrajectoryCalc', )
+__all__ = ('TrajectoryCalc',)
 
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
@@ -21,7 +23,7 @@ cGravityConstant = -32.17405
 
 
 class CurvePoint(NamedTuple):
-    "Coefficients for quadratic interpolation"
+    """Coefficients for quadratic interpolation"""
     a: float
     b: float
     c: float
@@ -102,7 +104,8 @@ class TrajectoryCalc:
         self._curve = calculate_curve(self._table_data)
         self.gravity_vector = Vector(.0, cGravityConstant, .0)
 
-    def get_calc_step(self, step: float = 0):
+    @staticmethod
+    def get_calc_step(step: float = 0):
         """Keep step under max_calc_step_size
         :param step: proposed step size
         :return: step size for calculations (in feet)
@@ -151,7 +154,7 @@ class TrajectoryCalc:
 
         zero_distance = math.cos(self.look_angle) * (distance >> Distance.Foot)
         height_at_zero = math.sin(self.look_angle) * (distance >> Distance.Foot)
-        maximum_range = zero_distance - 1.5*self.calc_step
+        maximum_range = zero_distance - 1.5 * self.calc_step
         self.barrel_azimuth = 0.0
         self.barrel_elevation = math.atan(height_at_zero / zero_distance)
         self.twist = 0
@@ -180,7 +183,7 @@ class TrajectoryCalc:
                     filter_flags: TrajFlag) -> list[TrajectoryData]:
         """Calculate trajectory for specified shot
         :param maximum_range: Feet down range to stop calculation
-        :param dist_step: Frequency (in feet down range) to record TrajectoryData
+        :param step: Frequency (in feet down range) to record TrajectoryData
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
         ranges = []  # Record of TrajectoryData points to return
@@ -189,7 +192,7 @@ class TrajectoryCalc:
         previous_mach = .0
         drag = 0
 
-        #region Initialize wind-related variables to first wind reading (if any)
+        # region Initialize wind-related variables to first wind reading (if any)
         len_winds = len(shot_info.winds)
         current_wind = 0
         current_item = 0
@@ -200,25 +203,25 @@ class TrajectoryCalc:
         else:
             wind_vector = wind_to_vector(shot_info.winds[0])
             next_wind_range = shot_info.winds[0].until_distance >> Distance.Foot
-        #endregion
+        # endregion
 
-        #region Initialize velocity and position of projectile
+        # region Initialize velocity and position of projectile
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -self.cant_cosine*self.sight_height, -self.cant_sine*self.sight_height)
+        range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
         velocity_vector = Vector(math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
                                  math.sin(self.barrel_elevation),
                                  math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)) * velocity
-        #endregion
+        # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        seen_zero = TrajFlag.NONE  # Record when we see each zero crossing so we only register one
+        seen_zero = TrajFlag.NONE  # Record when we see each zero crossing, so we only register one
         if range_vector.y >= 0:
             seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
         elif range_vector.y < 0 and self.barrel_elevation < self.look_angle:
             seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
 
-        #region Trajectory Loop
+        # region Trajectory Loop
         while range_vector.x <= maximum_range + self.calc_step:
             _flag = TrajFlag.NONE
 
@@ -236,7 +239,7 @@ class TrajectoryCalc:
             density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
-            #region Check whether to record TrajectoryData row at current point
+            # region Check whether to record TrajectoryData row at current point
             if filter_flags:
                 # Zero-crossing checks
                 if range_vector.x > 0:
@@ -272,11 +275,11 @@ class TrajectoryCalc:
                     ))
                     if current_item == ranges_length:
                         break
-            #endregion
+            # endregion
 
             previous_mach = velocity / mach
 
-            #region Ballistic calculation step (point-mass)
+            # region Ballistic calculation step (point-mass)
             # Time step is set to advance bullet calc_step distance along x axis
             delta_time = self.calc_step / velocity_vector.x
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
@@ -297,14 +300,14 @@ class TrajectoryCalc:
 
             if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
                 break
-            #endregion
-        #endregion
+            # endregion
+        # endregion
         # If filter_flags == 0 then all we want is the ending value
         if not filter_flags:
             ranges.append(create_trajectory_row(
-                        time, range_vector, velocity_vector,
-                        velocity, mach, self.spin_drift(time), self.look_angle,
-                        density_factor, drag, self.weight, _flag.value))
+                time, range_vector, velocity_vector,
+                velocity, mach, self.spin_drift(time), self.look_angle,
+                density_factor, drag, self.weight, _flag.value))
         return ranges
 
     def drag_by_mach(self, mach: float) -> float:
@@ -327,7 +330,7 @@ class TrajectoryCalc:
         if self.twist != 0:
             sign = 1 if self.twist > 0 else -1
             return sign * (1.25 * (self.stability_coefficient + 1.2)
-                        * math.pow(time, 1.83) ) / 12
+                           * math.pow(time, 1.83)) / 12
         return 0
 
     def calc_stability_coefficient(self, atmo: Atmo) -> float:
@@ -368,28 +371,45 @@ def wind_to_vector(wind: Wind) -> Vector:
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
                           density_factor: float, drag: float, weight: float, flag: int) -> TrajectoryData:
+    """
+    Create a TrajectoryData object representing a single row of trajectory data.
+
+    :param time: Time of flight.
+    :param range_vector: Vector representing range.
+    :param velocity_vector: Vector representing velocity.
+    :param velocity: Velocity value.
+    :param mach: Mach number.
+    :param spin_drift: Spin drift value.
+    :param look_angle: Look angle value.
+    :param density_factor: Density factor.
+    :param drag: Drag value.
+    :param weight: Weight value.
+    :param flag: Flag value.
+
+    :return: A TrajectoryData object representing the trajectory data.
+    """
     windage = range_vector.z + spin_drift
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
     trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
 
     return TrajectoryData(
-        time= time,
-        distance= Distance.Foot(range_vector.x),
-        velocity= Velocity.FPS(velocity),
-        mach= velocity / mach,
-        height= Distance.Foot(range_vector.y),
-        target_drop= Distance.Foot((range_vector.y - range_vector.x * math.tan(look_angle))*math.cos(look_angle)),
-        drop_adj= Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
-        windage= Distance.Foot(windage),
-        windage_adj= Angular.Radian(windage_adjustment),
-        look_distance= Distance.Foot(range_vector.x / math.cos(look_angle)),
-        angle = Angular.Radian(trajectory_angle),
-        density_factor = density_factor-1,
-        drag = drag,
-        energy = Energy.FootPound(calculate_energy(weight, velocity)),
-        ogw = Weight.Pound(calculate_ogw(weight, velocity)),
-        flag = flag
+        time=time,
+        distance=Distance.Foot(range_vector.x),
+        velocity=Velocity.FPS(velocity),
+        mach=velocity / mach,
+        height=Distance.Foot(range_vector.y),
+        target_drop=Distance.Foot((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
+        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
+        windage=Distance.Foot(windage),
+        windage_adj=Angular.Radian(windage_adjustment),
+        look_distance=Distance.Foot(range_vector.x / math.cos(look_angle)),
+        angle=Angular.Radian(trajectory_angle),
+        density_factor=density_factor - 1,
+        drag=drag,
+        energy=Energy.FootPound(calculate_energy(weight, velocity)),
+        ogw=Weight.Pound(calculate_ogw(weight, velocity)),
+        flag=flag
     )
 
 
@@ -410,9 +430,9 @@ def calculate_ogw(bullet_weight: float, velocity: float) -> float:
     return math.pow(bullet_weight, 2) * math.pow(velocity, 3) * 1.5e-12
 
 
-def calculate_curve(data_points) -> list[CurvePoint]:
+def calculate_curve(data_points: list[DragDataPoint]) -> list[CurvePoint]:
     """Piecewise quadratic interpolation of drag curve
-    :param DragTable: List[{Mach, CD}] data_points in ascending Mach order
+    :param data_points: List[{Mach, CD}] data_points in ascending Mach order
     :return: List[CurvePoints] to interpolate drag coefficient
     """
     # rate, x1, x2, x3, y1, y2, y3, a, b, c
@@ -420,8 +440,8 @@ def calculate_curve(data_points) -> list[CurvePoint]:
     # curve_point
     # num_points, len_data_points, len_data_range
 
-    rate = (data_points[1].CD - data_points[0].CD) \
-           / (data_points[1].Mach - data_points[0].Mach)
+    rate = (data_points[1].CD - data_points[0].CD
+            ) / (data_points[1].Mach - data_points[0].Mach)
     curve = [CurvePoint(0, rate, data_points[0].CD - data_points[0].Mach * rate)]
     len_data_points = int(len(data_points))
     len_data_range = len_data_points - 1
@@ -451,9 +471,11 @@ def calculate_curve(data_points) -> list[CurvePoint]:
 
 
 def calculate_by_curve(data: list, curve: list, mach: float) -> float:
-    """Binary search for drag coefficient based on Mach number
-    :param DragTable: data
-    :param List: Output of calculate_curve(data)
+    """
+    Binary search for drag coefficient based on Mach number
+    :param data: data
+    :param curve: Output of calculate_curve(data)
+    :param mach: Mach value for which we're searching for CD
     :return float: drag coefficient
     """
     num_points = int(len(curve))

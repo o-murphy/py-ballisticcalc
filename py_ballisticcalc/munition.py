@@ -9,7 +9,7 @@ __all__ = ('Weapon', 'Ammo')
 
 
 @dataclass
-class Weapon(PreferredUnits.Mixine):
+class Weapon(PreferredUnits.Mixin):
     """
     :param sight_height: Vertical distance from center of bore line to center of sight line.
     :param twist: Distance for barrel rifling to complete one complete turn.
@@ -31,7 +31,7 @@ class Weapon(PreferredUnits.Mixine):
 
 
 @dataclass
-class Ammo(PreferredUnits.Mixine):
+class Ammo(PreferredUnits.Mixin):
     """
     :param dm: DragModel for projectile
     :param mv: Muzzle Velocity

@@ -1,5 +1,6 @@
 """Example of library usage"""
 
+# pylint: disable=wildcard-import,unused-wildcard-import
 from py_ballisticcalc import *
 from py_ballisticcalc import Settings as Set
 
