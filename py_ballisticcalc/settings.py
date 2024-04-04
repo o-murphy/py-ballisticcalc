@@ -1,45 +1,12 @@
 """Global settings of the py_ballisticcalc library"""
 import logging
-from dataclasses import dataclass, fields
-
-from .unit import Unit, Distance
+from .unit import Distance
 
 __all__ = ('Settings',)
 
 
-class Metadataclass(type):
-    """Provide representation method for static dataclasses."""
-
-    def __repr__(cls):
-        return '\n'.join(f'{field.name} = {getattr(cls, field.name)!r}'
-                         for field in fields(cls))
-
-
 class Settings:  # pylint: disable=too-few-public-methods
     """Global settings class of the py_ballisticcalc library"""
-
-    # @dataclass
-    # class Units(metaclass=Metadataclass):  # pylint: disable=too-many-instance-attributes
-    #     """Default prefer_units for specified measures"""
-    #
-    #     # TODO: move it to Units, use instance instead of class
-    #     # TODO: add default sets for imperial/metric
-    #
-    #     angular: Unit = Unit.Degree
-    #     distance: Unit = Unit.Yard
-    #     velocity: Unit = Unit.FPS
-    #     pressure: Unit = Unit.InHg
-    #     temperature: Unit = Unit.Fahrenheit
-    #     diameter: Unit = Unit.Inch
-    #     length: Unit = Unit.Inch
-    #     weight: Unit = Unit.Grain
-    #     adjustment: Unit = Unit.Mil
-    #     drop: Unit = Unit.Inch
-    #     energy: Unit = Unit.FootPound
-    #     ogw: Unit = Unit.Pound
-    #     sight_height: Unit = Unit.Inch
-    #     target_height: Unit = Unit.Inch
-    #     twist: Unit = Unit.Inch
 
     _MAX_CALC_STEP_SIZE: float = 0.5
     USE_POWDER_SENSITIVITY: bool = False

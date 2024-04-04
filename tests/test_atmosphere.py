@@ -1,6 +1,5 @@
 import unittest
 from py_ballisticcalc import Atmo
-from py_ballisticcalc import Settings as Set
 from py_ballisticcalc.unit import *
 
 class TestAtmosphere(unittest.TestCase):

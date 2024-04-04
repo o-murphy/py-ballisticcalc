@@ -4,8 +4,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Mapping, Union
 
-from .unit import Weight, Distance, Velocity, PreferredUnits
-from .drag_tables import DragTablesSet
+from .unit import Weight, Distance, Velocity, PreferredUnits, Dimension
 
 __all__ = ('DragModel', 'DragDataPoint', 'BCpoint', 'DragModelMultiBC')
 
@@ -25,7 +24,7 @@ class BCpoint:
     BC: float = field(compare=False)  # Ballistic Coefficient at the given Mach number
     Mach: float = field(default=-1, compare=True)  # Velocity in Mach units
     # Velocity only referenced if Mach number not supplied
-    V: Velocity = Dimension(preferred_units='velocity', compare=False)
+    V: Velocity = Dimension(prefer_units='velocity', compare=False)
 
     def __post_init__(self):
         # If Mach not defined then convert V using standard atmosphere
