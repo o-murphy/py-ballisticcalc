@@ -1,12 +1,12 @@
-from py_ballisticcalc import Unit
+from py_ballisticcalc import Unit, PreferredUnits
 from py_ballisticcalc import DragModel, TableG1
 from py_ballisticcalc import Ammo
 from py_ballisticcalc import Weapon, Shot, Calculator
 from py_ballisticcalc import Settings as Set
 
-Set.Units.distance = Unit.METER
-Set.Units.velocity = Unit.MPS
-Set.Units.sight_height = Unit.CENTIMETER
+PreferredUnits.distance = Unit.METER
+PreferredUnits.velocity = Unit.MPS
+PreferredUnits.sight_height = Unit.CENTIMETER
 
 dm = DragModel(0.62, TableG1, 661, 0.51)
 ammo = Ammo(dm, 2.3, 837)

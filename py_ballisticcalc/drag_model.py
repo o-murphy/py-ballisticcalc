@@ -5,8 +5,7 @@ from dataclasses import dataclass
 
 import math
 
-from .settings import Settings as Set
-from .unit import Weight, Distance
+from .unit import Weight, Distance, PreferredUnits
 from .drag_tables import DragTablesSet
 
 __all__ = ('DragModel', 'make_data_points')
@@ -15,7 +14,7 @@ __all__ = ('DragModel', 'make_data_points')
 @dataclass
 class DragDataPoint:
     CD: float    # Drag coefficient
-    Mach: float  # Velocity in Mach units
+    Mach: float  # Velocity in Mach prefer_units
 
     def __iter__(self):
         yield self.CD
@@ -57,9 +56,9 @@ class DragModel:
         else:
             raise ValueError('Wrong drag data')
 
-        self.length = Set.Units.length(length)
-        self.weight = Set.Units.weight(weight)
-        self.diameter = Set.Units.diameter(diameter)
+        self.length = PreferredUnits.length(length)
+        self.weight = PreferredUnits.weight(weight)
+        self.diameter = PreferredUnits.diameter(diameter)
         if weight != 0 and diameter != 0:
             self.sectional_density = self._get_sectional_density()
             self.form_factor = self._get_form_factor(self.BC)

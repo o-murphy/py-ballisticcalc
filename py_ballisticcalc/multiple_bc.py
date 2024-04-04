@@ -6,8 +6,7 @@ from typing import NamedTuple, Iterable
 from .conditions import Atmo
 # pylint: disable=import-error,no-name-in-module
 from .backend import make_data_points
-from .settings import Settings as Set
-from .unit import Distance, Weight, Velocity
+from .unit import Distance, Weight, Velocity, PreferredUnits
 
 __all__ = ('MultiBC', )
 
@@ -15,7 +14,7 @@ __all__ = ('MultiBC', )
 class MultiBCRow(NamedTuple):
     """Multi-BC point, for internal usage"""
     BC: float
-    V: Set.Units.velocity
+    V: Velocity
 
 
 class DragTableRow(NamedTuple):
@@ -53,9 +52,7 @@ class MultiBC:  # pylint: disable=too-few-public-methods
     def _parse_mbc(self, mbc_table):
         table = []
         for p in mbc_table:
-            # print(p['V'], Set.Units.velocity)
-            # print(Set.Units.velocity(p['V']))
-            v = Set.Units.velocity(p['V']) >> Velocity.MPS
+            v = PreferredUnits.velocity(p['V']) >> Velocity.MPS
             mbc = MultiBCRow(p['BC'], v)
             table.append(mbc)
         return sorted(table, reverse=True)

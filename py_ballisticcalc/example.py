@@ -3,17 +3,17 @@
 from py_ballisticcalc import *
 from py_ballisticcalc import Settings as Set
 
-# Modify default units
-Set.Units.velocity = Velocity.FPS
-Set.Units.temperature = Temperature.Celsius
-Set.Units.distance = Distance.Meter
-Set.Units.sight_height = Distance.Centimeter
+# Modify default prefer_units
+PreferredUnits.velocity = Velocity.FPS
+PreferredUnits.temperature = Temperature.Celsius
+PreferredUnits.distance = Distance.Meter
+PreferredUnits.sight_height = Distance.Centimeter
 
 Set.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
 
 # Define ammunition parameters
 weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
-length = Distance.Inch(1.282)  # Or declare units explicitly
+length = Distance.Inch(1.282)  # Or declare prefer_units explicitly
 dm = DragModel(0.223, TableG7, weight, diameter, length)
 ammo = Ammo(dm, 2750, 15)
 ammo.calc_powder_sens(2723, 0)

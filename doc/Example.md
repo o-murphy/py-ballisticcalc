@@ -61,7 +61,7 @@ plt.show()
 weapon = Weapon(4, 200, 12, Angular.Degree(10))
 calc = Calculator(weapon, ammo)
 zero_elevation = calc.elevation
-print(f'To hit target at {weapon.zero_distance << Set.Units.distance} sighted at a ' 
+print(f'To hit target at {weapon.zero_distance << PreferredUnits.distance} sighted at a ' 
       f'{weapon.zero_look_angle << Angular.Degree} look angle, Barrel elevation={zero_elevation << Angular.Degree}')
 ```
 

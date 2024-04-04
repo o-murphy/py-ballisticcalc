@@ -5,8 +5,8 @@ from .conditions import Shot
 # pylint: disable=import-error,no-name-in-module,wildcard-import,unused-wildcard-import
 from .backend import *
 from .trajectory_data import HitResult
-from .unit import Angular, Distance
-from .settings import Settings
+from .unit import Angular, Distance, PreferredUnits
+
 
 __all__ = ('Calculator',)
 
@@ -33,7 +33,7 @@ class Calculator:
                 For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         """
         self._calc = TrajectoryCalc(shot.ammo)
-        target_distance = Settings.Units.distance(target_distance)
+        target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._calc.zero_angle(shot, target_distance)
         return Angular.Radian((total_elevation >> Angular.Radian)
                                  - (shot.look_angle >> Angular.Radian))
@@ -56,10 +56,10 @@ class Calculator:
         :param extra_data: True => store TrajectoryData for every calculation step;
             False => store TrajectoryData only for each trajectory_step
         """
-        trajectory_range = Settings.Units.distance(trajectory_range)
+        trajectory_range = PreferredUnits.distance(trajectory_range)
         if not trajectory_step:
             trajectory_step = trajectory_range.unit_value / 10.0
-        step = Settings.Units.distance(trajectory_step)
+        step = PreferredUnits.distance(trajectory_step)
         self._calc = TrajectoryCalc(shot.ammo)
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
         return HitResult(shot, data, extra_data)

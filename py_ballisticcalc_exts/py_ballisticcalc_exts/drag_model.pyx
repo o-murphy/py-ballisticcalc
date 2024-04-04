@@ -2,15 +2,14 @@ import typing
 
 from libc.math cimport pow
 
-from py_ballisticcalc.settings import Settings as Set
-from py_ballisticcalc.unit import Weight, Distance
+from py_ballisticcalc.unit import Weight, Distance, PreferredUnits
 from py_ballisticcalc.drag_tables import DragTablesSet
 
 __all__ = ('DragModel', 'make_data_points')
 
 cdef class DragDataPoint:
     cdef readonly double CD  # Drag coefficient
-    cdef readonly Mach       # Velocity in Mach units
+    cdef readonly Mach       # Velocity in Mach prefer_units
 
     def __cinit__(self, cd: float, mach: float):
         self.CD = cd
@@ -74,9 +73,9 @@ cdef class DragModel:
         else:
             raise ValueError('Wrong drag data')
 
-        self.length = Set.Units.length(length)
-        self.weight = Set.Units.weight(weight)
-        self.diameter = Set.Units.diameter(diameter)
+        self.length = PreferredUnits.length(length)
+        self.weight = PreferredUnits.weight(weight)
+        self.diameter = PreferredUnits.diameter(diameter)
         if weight != 0 and diameter != 0:
             self.sectional_density = self._get_sectional_density()
             self.form_factor = self._get_form_factor(self.BC)
@@ -96,7 +95,7 @@ cdef class DragModel:
         return DragModel(1, mbc.cdm, mbc.weight, mbc.diameter)
 
 
-cpdef list make_data_points(drag_table: typing.Iterable):
+cpdef list make_data_points(drag_table: any):
     return [DragDataPoint(point['CD'], point['Mach']) for point in drag_table]
 
 
