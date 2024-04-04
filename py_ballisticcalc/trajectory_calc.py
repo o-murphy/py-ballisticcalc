@@ -185,7 +185,6 @@ class TrajectoryCalc:
         """
         ranges = []  # Record of TrajectoryData points to return
         ranges_length = int(maximum_range / step) + 1
-        current_item = 0
         time = 0
         previous_mach = .0
         drag = 0
@@ -193,6 +192,7 @@ class TrajectoryCalc:
         #region Initialize wind-related variables to first wind reading (if any)
         len_winds = len(shot_info.winds)
         current_wind = 0
+        current_item = 0
         next_range_distance = .0
         next_wind_range = Wind.MAX_DISTANCE_FEET
         if len_winds < 1:

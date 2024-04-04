@@ -1,16 +1,18 @@
 """
-Useful types for units of measurement conversion for ballistics calculations
+Useful types for prefer_units of measurement conversion for ballistics calculations
 """
 
 import typing
+import warnings
+from abc import ABC
+from dataclasses import dataclass, MISSING, Field, fields
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple
-from dataclasses import dataclass
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'TypedUnits')
+           'Energy', 'Weight', 'TypedUnits', 'Dimension', 'PreferredUnits')
 
 
 # pylint: disable=invalid-name
@@ -90,12 +92,16 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit']) -> 'AbstractUnit':
+    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit'] = None) -> 'AbstractUnit':
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
+
+        # if value is None:
+        #     return self
+
         if isinstance(value, AbstractUnit):
             return value << self
         if 0 <= self < 10:
@@ -177,7 +183,7 @@ UnitPropsDict = {
 
 class AbstractUnit:
     """Abstract class for unit of measure instance definition
-    Stores defined unit and value, applies conversions to other units
+    Stores defined unit and value, applies conversions to other prefer_units
     """
     __slots__ = ('_value', '_defined_units')
 
@@ -232,10 +238,10 @@ class AbstractUnit:
         return self.convert(other)
 
     def _unit_support_error(self, value: float, units: Unit):
-        """Validates the units
+        """Validates the prefer_units
         :param value: value of the unit
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         if not isinstance(units, Unit):
             err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
@@ -246,25 +252,25 @@ class AbstractUnit:
         return 0
 
     def to_raw(self, value: float, units: Unit) -> float:
-        """Converts value with specified units to raw value
+        """Converts value with specified prefer_units to raw value
         :param value: value of the unit
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         return self._unit_support_error(value, units)
 
     def from_raw(self, value: float, units: Unit) -> float:
-        """Converts raw value to specified units
+        """Converts raw value to specified prefer_units
         :param value: raw value of the unit
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         return self._unit_support_error(value, units)
 
     def convert(self, units: Unit) -> 'AbstractUnit':
-        """Returns new unit instance in specified units
+        """Returns new unit instance in specified prefer_units
         :param units: Unit enum type
-        :return: new unit instance in specified units
+        :return: new unit instance in specified prefer_units
         """
         value = self.get_in(units)
         return self.__class__(value, units)
@@ -272,20 +278,20 @@ class AbstractUnit:
     def get_in(self, units: Unit) -> float:
         """
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         return self.from_raw(self._value, units)
 
     @property
     def units(self) -> Unit:
         """
-        :return: defined units
+        :return: defined prefer_units
         """
         return self._defined_units
 
     @property
     def unit_value(self) -> float:
-        """Returns float value in defined units"""
+        """Returns float value in defined prefer_units"""
         return self.get_in(self.units)
 
     @property
@@ -505,8 +511,8 @@ class Angular(AbstractUnit):
             result = value / 6 * pi
         else:
             return super().to_raw(value, units)
-        if result > 2*pi:
-            result = result % (2*pi)
+        if result > 2 * pi:
+            result = result % (2 * pi)
         return result
 
     def from_raw(self, value: float, units: Unit):
@@ -604,13 +610,20 @@ class Energy(AbstractUnit):
 class TypedUnits:  # pylint: disable=too-few-public-methods
     """
     Abstract class to apply auto-conversion values to
-    specified units by type-hints in inherited dataclasses
+    specified prefer_units by type-hints in inherited dataclasses
     """
 
     def __setattr__(self, key, value):
         """
-        converts value to specified units by type-hints in inherited dataclass
+        converts value to specified prefer_units by type-hints in inherited dataclass
         """
+
+        warnings.warn(
+            "Using 'default_factory' is deprecated, "
+            "use 'metadata={'prefer_units': 'sight_height'} for preferred prefer_units"
+            "or {'prefer_units': Unit.Meter}' instead. metadata['prefer_units'] has a priority",
+            DeprecationWarning
+        )
 
         _fields = self.__getattribute__('__dataclass_fields__')
         # fields(self.__class__)[0].name
@@ -625,15 +638,81 @@ class TypedUnits:  # pylint: disable=too-few-public-methods
         super().__setattr__(key, value)
 
 
-# def is_unit(obj: [AbstractUnit, float, int]):
+# def dimension(*, init=True, repr=True,
+#               hash=None, compare=True, metadata=None, kw_only=MISSING, **kwargs):
+#     """Return an object to identify dataclass fields.
+#     It is an error to specify both default and default_factory.
 #     """
-#     Check if obj is inherited by AbstractUnit
-#     :return: False - if float or int
-#     """
-#     if isinstance(obj, AbstractUnit):
-#         return True
-#     if isinstance(obj, (float, int)):
-#         return False
-#     if obj is None:
-#         return None
-#     raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
+#     default, default_factory = None, MISSING
+#     if metadata is None:
+#         metadata = {}
+#     metadata.update(kwargs)
+#     return Field(default, default_factory, init, repr, hash, compare, metadata, kw_only)
+
+class Metadataclass(type):
+    """Provide representation method for static dataclasses."""
+
+    def __repr__(cls):
+        return '\n'.join(f'{field.name} = {getattr(cls, field.name)!r}'
+                         for field in fields(cls))
+
+
+@dataclass
+class PreferredUnits(metaclass=Metadataclass):  # pylint: disable=too-many-instance-attributes
+    """Default prefer_units for specified measures"""
+
+    # TODO: move it to Units, use instance instead of class
+    # TODO: add default sets for imperial/metric
+
+    angular: Unit = Unit.Degree
+    distance: Unit = Unit.Yard
+    velocity: Unit = Unit.FPS
+    pressure: Unit = Unit.InHg
+    temperature: Unit = Unit.Fahrenheit
+    diameter: Unit = Unit.Inch
+    length: Unit = Unit.Inch
+    weight: Unit = Unit.Grain
+    adjustment: Unit = Unit.Mil
+    drop: Unit = Unit.Inch
+    energy: Unit = Unit.FootPound
+    ogw: Unit = Unit.Pound
+    sight_height: Unit = Unit.Inch
+    target_height: Unit = Unit.Inch
+    twist: Unit = Unit.Inch
+
+    @dataclass
+    class Mixine(ABC):  # pylint: disable=too-few-public-methods
+        """
+        TODO: move it to Units, use it instead of TypedUnits
+        Abstract class to apply auto-conversion values to
+        specified prefer_units by type-hints in inherited dataclasses
+        """
+
+        def __setattr__(self, key, value):
+            """
+            converts value to specified prefer_units by type-hints in inherited dataclass
+            """
+
+            _fields = self.__getattribute__('__dataclass_fields__')
+
+            if (_field := _fields.get(key)) and value is not None and not isinstance(value, AbstractUnit):
+
+                if units := _field.metadata.get('prefer_units'):
+
+                    if isinstance(units, Unit):
+                        value = units(value)
+                    elif isinstance(units, str):
+                        value = PreferredUnits.__dict__[units](value)
+                    else:
+                        raise TypeError(f"Unsupported unit or dimension use one of {PreferredUnits}")
+
+            super().__setattr__(key, value)
+
+
+class Dimension(Field):
+    def __init__(self, prefer_units: [str, Unit], init=True, repr=True,
+                 hash=None, compare=True, metadata=None, kw_only=MISSING):
+        if metadata is None:
+            metadata = {}
+        metadata['prefer_units'] = prefer_units
+        super().__init__(None, MISSING, init, repr, hash, compare, metadata, kw_only)

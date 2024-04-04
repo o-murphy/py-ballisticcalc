@@ -61,7 +61,7 @@ zero = Shot(weapon=Weapon(sight_height=2), ammo=Ammo(DragModel(0.22, TableG7), m
 calc = Calculator()
 zero_distance = Distance.Yard(100)
 zero_elevation = calc.set_weapon_zero(zero, zero_distance)
-print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << Set.Units.adjustment}')
+print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << PreferredUnits.adjustment}')
 ```
 
     Barrel elevation for 100.0yd zero: 1.33mil
@@ -119,7 +119,7 @@ zero = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
 zero_distance = Distance.Meter(500)
 calc = Calculator()
 zero_elevation = calc.set_weapon_zero(zero, zero_distance)
-print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << Set.Units.adjustment}')
+print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << PreferredUnits.adjustment}')
 print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velocity_for_temp(atmo.temperature) << Velocity.MPS}')
 ```
 
@@ -131,18 +131,18 @@ print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velo
 ```python
 from py_ballisticcalc.unit import *
 
-# Print default units
-from py_ballisticcalc import Settings
+# Print default prefer_units
+from py_ballisticcalc import Settings, PreferredUnits
 print(str(Settings.Units))
 
 # Change default
-Set.Units.distance = Unit.FOOT
-print(f'Default distance unit: {Set.Units.distance.name}')
+PreferredUnits.distance = Unit.FOOT
+print(f'Default distance unit: {PreferredUnits.distance.name}')
 # Can create value in default unit with either float or another unit of same type
-print(f'\tInstantiated from float (5): {Set.Units.distance(5)}')
-print(f'\tInstantiated from Distance.Line(200): {Set.Units.distance(Distance.Line(200))}')
+print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
+print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
 
-# Ways to define value in units
+# Ways to define value in prefer_units
 # 1. old syntax
 unit_in_meter = Distance(100, Distance.Meter)
 # 2. short syntax by Unit type class
@@ -160,7 +160,7 @@ unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
 print(f'100 meters in {unit_in_yards.units.key}: {unit_in_yards}')
 # >>> 100 meters in yard: 109.4yd
 
-# Get value in specified units (as float)
+# Get value in specified prefer_units (as float)
 # 1. by .get_in()
 value_in_km = unit_in_yards.get_in(Distance.Kilometer)
 # 2. by shift syntax
@@ -176,7 +176,7 @@ print(f'100 meters in raw value: {rvalue}  (raw type is {type(rvalue)})')
 
 # Comparison operators supported: < > <= >= == !=
 print(f'Comparison: {unit_in_meter} == {Distance.Centimeter(100)}: {unit_in_meter == Distance.Centimeter(100)}')
-# >>> False, compare two units by raw value
+# >>> False, compare two prefer_units by raw value
 print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1*unit_in_meter.raw_value}')
 # >>> True, compare unit with float by raw value
 ```

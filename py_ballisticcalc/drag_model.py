@@ -4,8 +4,8 @@ import math
 from dataclasses import dataclass, field
 from typing import Mapping, Union
 
-from .settings import Settings as Set
-from .unit import Weight, Distance, Velocity
+from .unit import Weight, Distance, Velocity, PreferredUnits
+from .drag_tables import DragTablesSet
 
 __all__ = ('DragModel', 'DragDataPoint', 'BCpoint', 'DragModelMultiBC')
 
@@ -25,7 +25,7 @@ class BCpoint:
     BC: float = field(compare=False)  # Ballistic Coefficient at the given Mach number
     Mach: float = field(default=-1, compare=True)  # Velocity in Mach units
     # Velocity only referenced if Mach number not supplied
-    V: Velocity = field(default_factory=lambda: Set.Units.velocity, compare=False)
+    V: Velocity = Dimension(preferred_units='velocity', compare=False)
 
     def __post_init__(self):
         # If Mach not defined then convert V using standard atmosphere
@@ -65,9 +65,9 @@ class DragModel:
             else make_data_points(drag_table)  # Convert from list of dicts to list of DragDataPoints
 
         self.BC = bc
-        self.length = Set.Units.length(length)
-        self.weight = Set.Units.weight(weight)
-        self.diameter = Set.Units.diameter(diameter)
+        self.length = PreferredUnits.length(length)
+        self.weight = PreferredUnits.weight(weight)
+        self.diameter = PreferredUnits.diameter(diameter)
         if weight > 0 and diameter > 0:
             self.sectional_density = self._get_sectional_density()
             self.form_factor = self._get_form_factor(self.BC)
@@ -113,8 +113,8 @@ def DragModelMultiBC(bc_points: list[BCpoint],
     :param diameter: Bullet diameter in inches
     :param length: Bullet length in inches
     """
-    weight = Set.Units.weight(weight)
-    diameter = Set.Units.diameter(diameter)
+    weight = PreferredUnits.weight(weight)
+    diameter = PreferredUnits.diameter(diameter)
     if weight > 0 and diameter > 0:
         BC = sectional_density(weight >> Weight.Grain, diameter >> Distance.Inch)
     else:

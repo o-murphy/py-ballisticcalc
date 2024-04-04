@@ -3,14 +3,13 @@ import math
 from dataclasses import dataclass, field
 
 from .drag_model import DragModel
-from .settings import Settings as Set
-from .unit import TypedUnits, Velocity, Temperature, Distance, Angular
+from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, Dimension
 
 __all__ = ('Weapon', 'Ammo')
 
 
 @dataclass
-class Weapon(TypedUnits):
+class Weapon(PreferredUnits.Mixine):
     """
     :param sight_height: Vertical distance from center of bore line to center of sight line.
     :param twist: Distance for barrel rifling to complete one complete turn.
@@ -18,9 +17,9 @@ class Weapon(TypedUnits):
     :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
         (Typically computed by ballistic Calculator.)
     """
-    sight_height: [float, Distance] = field(default_factory=lambda: Set.Units.sight_height)
-    twist: [float, Distance] = field(default_factory=lambda: Set.Units.twist)
-    zero_elevation: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
+    sight_height: [float, Distance] = Dimension(prefer_units='sight_height')
+    twist: [float, Distance] = Dimension(prefer_units='twist')
+    zero_elevation: [float, Angular] = Dimension(prefer_units='angular')
 
     def __post_init__(self):
         if not self.sight_height:
@@ -32,7 +31,7 @@ class Weapon(TypedUnits):
 
 
 @dataclass
-class Ammo(TypedUnits):
+class Ammo(PreferredUnits.Mixine):
     """
     :param dm: DragModel for projectile
     :param mv: Muzzle Velocity
@@ -42,8 +41,8 @@ class Ammo(TypedUnits):
             Settings.USE_POWDER_SENSITIVITY = True
     """
     dm: DragModel = field(default=None)
-    mv: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
-    powder_temp: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
+    mv: [float, Velocity] = Dimension(prefer_units='velocity')
+    powder_temp: [float, Temperature] = Dimension(prefer_units='temperature')
     temp_modifier: float = field(default=0)
 
     def __post_init__(self):
@@ -59,8 +58,8 @@ class Ammo(TypedUnits):
         """
         v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
-        v1 = Set.Units.velocity(other_velocity) >> Velocity.MPS
-        t1 = Set.Units.temperature(other_temperature) >> Temperature.Celsius
+        v1 = PreferredUnits.velocity(other_velocity) >> Velocity.MPS
+        t1 = PreferredUnits.temperature(other_temperature) >> Temperature.Celsius
 
         v_delta = math.fabs(v0 - v1)
         t_delta = math.fabs(t0 - t1)
@@ -81,7 +80,7 @@ class Ammo(TypedUnits):
         """
         v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
-        t1 = Set.Units.temperature(current_temp) >> Temperature.Celsius
+        t1 = PreferredUnits.temperature(current_temp) >> Temperature.Celsius
         t_delta = t1 - t0
         muzzle_velocity = self.temp_modifier / (15 / v0) * t_delta + v0
         return Velocity.MPS(muzzle_velocity)

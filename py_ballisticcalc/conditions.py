@@ -4,8 +4,8 @@ import math
 from dataclasses import dataclass, field
 
 from .munition import Weapon, Ammo
-from .settings import Settings as Set
-from .unit import Distance, Velocity, Temperature, Pressure, TypedUnits, Angular
+# from .settings import Settings as Set
+from .unit import Distance, Velocity, Temperature, Pressure, Angular, Dimension, PreferredUnits
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
@@ -17,7 +17,7 @@ cA2: float = 0.00152907
 cA3: float = -3.07031e-06
 cA4: float = 4.21329e-07
 cA5: float = 3.342e-04
-# ISA, metric units: (https://www.engineeringtoolbox.com/international-standard-atmosphere-d_985.html)
+# ISA, metric prefer_units: (https://www.engineeringtoolbox.com/international-standard-atmosphere-d_985.html)
 cDegreesCtoK: float = 273.15  # °K = °C + 273.15
 cStandardTemperatureC: float = 15.0  # °C
 cLapseRateMetric: float = -6.5e-03  # Lapse Rate, °C/m
@@ -35,11 +35,13 @@ cStandardDensity: float = 0.076474  # lb/ft^3
 
 
 @dataclass
-class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
+class Atmo(PreferredUnits.Mixine):  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations"""
-    altitude: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
-    pressure: [float, Pressure] = field(default_factory=lambda: Set.Units.pressure)
-    temperature: [float, Temperature] = field(default_factory=lambda: Set.Units.temperature)
+
+    altitude: [float, Pressure] = Dimension(prefer_units="distance")
+    pressure: [float, Pressure] = Dimension(prefer_units="pressure")
+    temperature: [float, Temperature] = Dimension(prefer_units="temperature")
+
     humidity: float = 0.0  # Relative humidity [0% to 100%]
     density_ratio: float = field(init=False)  # Density / cStandardDensity
     mach: Velocity = field(init=False)  # Mach 1 in reference atmosphere
@@ -99,15 +101,15 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
         """Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
-        altitude = Set.Units.distance(altitude)
+        altitude = PreferredUnits.distance(altitude)
         if temperature is None:
             temperature = Atmo.standard_temperature(altitude)
         pressure = Atmo.standard_pressure(altitude)
 
         return Atmo(
-            altitude >> Set.Units.distance,
-            pressure >> Set.Units.pressure,
-            temperature >> Set.Units.temperature,
+            altitude >> PreferredUnits.distance,
+            pressure >> PreferredUnits.pressure,
+            temperature >> PreferredUnits.temperature,
             cStandardHumidity
         )
 
@@ -189,15 +191,16 @@ class Atmo(TypedUnits):  # pylint: disable=too-many-instance-attributes
 
 
 @dataclass
-class Wind(TypedUnits):
+class Wind(PreferredUnits.Mixine):
     """
     Wind direction and velocity by down-range distance.
     direction_from = 0 is blowing from behind shooter. 
     direction_from = 90 degrees is blowing from shooter's left towards right.
     """
-    velocity: [float, Velocity] = field(default_factory=lambda: Set.Units.velocity)
-    direction_from: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
-    until_distance: [float, Distance] = field(default_factory=lambda: Set.Units.distance)
+
+    velocity: [float, Velocity] = Dimension(prefer_units='velocity')
+    direction_from: [float, Angular] = Dimension(prefer_units='angular')
+    until_distance: [float, Distance] = Dimension(prefer_units='distance')
     MAX_DISTANCE_FEET = 1e8
 
     def __post_init__(self):
@@ -209,7 +212,7 @@ class Wind(TypedUnits):
 
 
 @dataclass
-class Shot(TypedUnits):
+class Shot(PreferredUnits.Mixine):
     """
     Stores shot parameters for the trajectory calculation.
     
@@ -222,9 +225,10 @@ class Shot(TypedUnits):
     :param cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
         from the vertical plane into the horizontal plane by sine(cant_angle)
     """
-    look_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
-    relative_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
-    cant_angle: [float, Angular] = field(default_factory=lambda: Set.Units.angular)
+
+    look_angle: [float, Angular] = Dimension(prefer_units='angular')
+    relative_angle: [float, Angular] = Dimension(prefer_units='angular')
+    cant_angle: [float, Angular] = Dimension(prefer_units='angular')
 
     weapon: Weapon = field(default=None)
     ammo: Ammo = field(default=None)
