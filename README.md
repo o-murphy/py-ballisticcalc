@@ -131,7 +131,7 @@ print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velo
 ```python
 from py_ballisticcalc.unit import *
 
-# Print default prefer_units
+# Print default units
 from py_ballisticcalc import Settings, PreferredUnits
 print(str(Settings.Units))
 
@@ -142,7 +142,7 @@ print(f'Default distance unit: {PreferredUnits.distance.name}')
 print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
 print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
 
-# Ways to define value in prefer_units
+# Ways to define value in units
 # 1. old syntax
 unit_in_meter = Distance(100, Distance.Meter)
 # 2. short syntax by Unit type class
@@ -160,7 +160,7 @@ unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
 print(f'100 meters in {unit_in_yards.units.key}: {unit_in_yards}')
 # >>> 100 meters in yard: 109.4yd
 
-# Get value in specified prefer_units (as float)
+# Get value in specified units (as float)
 # 1. by .get_in()
 value_in_km = unit_in_yards.get_in(Distance.Kilometer)
 # 2. by shift syntax
@@ -176,7 +176,7 @@ print(f'100 meters in raw value: {rvalue}  (raw type is {type(rvalue)})')
 
 # Comparison operators supported: < > <= >= == !=
 print(f'Comparison: {unit_in_meter} == {Distance.Centimeter(100)}: {unit_in_meter == Distance.Centimeter(100)}')
-# >>> False, compare two prefer_units by raw value
+# >>> False, compare two units by raw value
 print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1*unit_in_meter.raw_value}')
 # >>> True, compare unit with float by raw value
 ```
