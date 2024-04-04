@@ -5,10 +5,11 @@ from py_ballisticcalc import basicConfig, PreferredUnits, Unit
 class TestConfigLoader(TestCase):
 
     def test_preferred_units_load(self):
+        basicConfig()
         self.assertEqual(PreferredUnits.distance, Unit.Yard)
 
     def test_custom_config_path(self):
         basicConfig("../.pybc-template.toml")
-        self.assertEqual(PreferredUnits.distance, Unit.Meter)
+        self.assertEqual(PreferredUnits.distance, Unit.Foot)
 
 

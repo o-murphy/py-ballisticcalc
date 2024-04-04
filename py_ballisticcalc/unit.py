@@ -669,7 +669,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
             super().__setattr__(key, value)
 
     @classmethod
-    def _load_preferred_units(cls, **kwargs):
+    def set(cls, **kwargs):
         for key, value in kwargs.items():
             try:
                 if hasattr(PreferredUnits, key):
@@ -716,7 +716,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
 
             if _pybc := _config.get('pybc'):
                 if preferred_units := _pybc.get('preferred_units'):
-                    cls._load_preferred_units(**preferred_units)
+                    cls.set(**preferred_units)
                 else:
                     logger.warning("Config has not `pybc.preferred_units` section")
             else:
@@ -728,7 +728,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
         if filename and preferred_units:
             raise ValueError("Can't use preferred_units and config file at same time")
         elif preferred_units:
-            cls._load_preferred_units(**preferred_units)
+            cls.set(**preferred_units)
         else:
             # trying to load definitions from pybc.toml
             cls._load_config(filename)
