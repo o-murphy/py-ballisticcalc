@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 
 from setuptools import setup, Extension
+import numpy
 
 try:
     from Cython.Build import cythonize
@@ -14,6 +15,41 @@ try:
 except ImportError:
     # USE_CYTHON = False
     cythonize = False
+
+
+
+compiler_directives = {
+    "language_level": 3,
+    "embedsignature": True,
+    "cdivision": True,
+    "binding": False,
+    "c_api_binop_methods": True,
+    # "embedsignature.format": 'python'
+    # "annotation_typing": False,
+    # "cpp_locals": True
+    # "optimize.use_switch": True,
+    # "optimize.unpack_method_calls": False
+    "warn.undeclared": True,
+    "warn.unreachable": True,
+    "warn.maybe_uninitialized": True,
+    "warn.unused": True,
+    "warn.unused_arg": True,
+    # "warn.unused_result": True,
+    "warn.multiple_declarators": True,
+    "show_performance_hints": True,
+}
+
+extra_compile_args = [
+    # "-CYTHON_USE_TYPE_SLOTS=1",
+    # "-CYTHON_USE_PYTYPE_LOOKUP=1",
+    # "-CYTHON_AVOID_BORROWED_REFS=1",
+    # "-CYTHON_USE_PYLONG_INTERNALS=1",
+    # "-CYTHON_USE_PYLIST_INTERNALS=1",
+    # "-CYTHON_USE_UNICODE_INTERNALS=1",
+    # "-CYTHON_FAST_GIL=1",
+    # "-CYTHON_UNPACK_METHODS=1",
+    # "-CYTHON_USE_DICT_VERSIONS=1",
+]
 
 
 def iter_extensions(path) -> list:
@@ -27,7 +63,11 @@ def iter_extensions(path) -> list:
     for ext_path in Path.iterdir(extensions_dir):
         if ext_path.suffix == '.pyx':
             ext_name = f"{'.'.join(extensions_dir.parts)}.{ext_path.stem}"
-            ext = Extension(ext_name, [ext_path.as_posix()])
+            ext = Extension(ext_name,
+                            [ext_path.as_posix()],
+                            extra_compile_args=extra_compile_args,
+                            include_dirs=[numpy.get_include()]
+                            )
             founded_extensions.append(ext)
     return founded_extensions
 
@@ -59,8 +99,9 @@ for path_ in extensions_paths:
     extensions += iter_extensions(path_)
 
 if cythonize:
-    compiler_directives = {"language_level": 3, "embedsignature": True}
-    extensions = cythonize(extensions, compiler_directives=compiler_directives)
+    extensions = cythonize(extensions,
+                           compiler_directives=compiler_directives,
+                           annotate=True)
 else:
     extensions = no_cythonize(extensions)
 

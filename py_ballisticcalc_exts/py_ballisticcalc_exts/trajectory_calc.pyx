@@ -1,7 +1,7 @@
-from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan, log10, floor
+from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan, floor
 cimport cython
 
-from py_ballisticcalc.conditions import Atmo, Shot, Wind
+from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.settings import Settings
 from py_ballisticcalc.trajectory_data import TrajectoryData
@@ -27,6 +27,7 @@ cdef enum CTrajFlag:
     DANGER = 16
     ZERO = ZERO_UP | ZERO_DOWN
     ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
+
 
 cdef class Vector:
     cdef double x
@@ -125,21 +126,17 @@ cdef class TrajectoryCalc:
         self._curve = calculate_curve(self._table_data)
         self.gravity_vector = Vector(.0, cGravityConstant, .0)
 
-    cdef double get_calc_step(self, double step = 0):
-        if step == 0:
-            return Settings.get_max_calc_step_size() / 2.0
-        return min(step, Settings.get_max_calc_step_size()) / 2.0
-
     def zero_angle(self, shot_info: Shot, distance: Distance):
         return self._zero_angle(shot_info, distance)
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
         cdef:
-            object step = PreferredUnits.distance(dist_step)
-            object atmo = shot_info.atmo
-            list winds = shot_info.winds
+            # object atmo = shot_info.atmo
+            # list winds = shot_info.winds
             CTrajFlag filter_flags = CTrajFlag.RANGE
+
+        dist_step = PreferredUnits.distance(dist_step)  #  was unused there ???
 
         if extra_data:
             dist_step = Distance.Foot(0.2)
@@ -160,7 +157,7 @@ cdef class TrajectoryCalc:
         self.cant_cosine = cos(shot_info.cant_angle >> Angular.Radian)
         self.cant_sine = sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
-        self.calc_step = self.get_calc_step()
+        self.calc_step = get_calc_step()
         if Settings.USE_POWDER_SENSITIVITY:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
         else:
@@ -174,6 +171,9 @@ cdef class TrajectoryCalc:
             double maximum_range = zero_distance
             int iterations_count = 0
             double zero_finding_error = cZeroFindingAccuracy * 2
+
+            object t
+            double height
 
         self._init_trajectory(shot_info)
         self.barrel_azimuth = 0.0
@@ -196,9 +196,9 @@ cdef class TrajectoryCalc:
         return Angular.Radian(self.barrel_elevation)
 
     cdef _trajectory(TrajectoryCalc self, object shot_info,
-                     double maximum_range, double step, CTrajFlag filter_flags):
+                     double maximum_range, double step, int filter_flags):
         cdef:
-            object _flag, seen_zero  # CTrajFlag
+            int _flag, seen_zero  # CTrajFlag
             double density_factor, mach, velocity, delta_time
             list ranges = []
             int ranges_length = int(maximum_range / step) + 1
@@ -211,6 +211,9 @@ cdef class TrajectoryCalc:
             int current_wind = 0
             double next_range_distance = .0
             double next_wind_range = Wind.MAX_DISTANCE_FEET
+            double _max_wind_distance_feed = Wind.MAX_DISTANCE_FEET
+
+            double reference_height
 
             Vector velocity_vector, velocity_adjusted
             Vector range_vector, delta_range_vector, wind_vector
@@ -244,7 +247,7 @@ cdef class TrajectoryCalc:
                 current_wind += 1
                 if current_wind >= len_winds:  # No more winds listed after this range
                     wind_vector = Vector(.0, .0, .0)
-                    next_wind_range = Wind.MAX_DISTANCE_FEET
+                    next_wind_range = _max_wind_distance_feed  # better for cython optimization
                 else:
                     wind_vector = wind_to_vector(shot_info.winds[current_wind])
                     next_wind_range = shot_info.winds[current_wind].until_distance >> Distance.Foot
@@ -269,7 +272,8 @@ cdef class TrajectoryCalc:
                             seen_zero |= CTrajFlag.ZERO_DOWN
 
                 # Mach crossing check
-                if (velocity / mach <= 1) and (previous_mach > 1):
+                # if (velocity / mach <= 1) and (previous_mach > 1):
+                if velocity / mach <= 1 < previous_mach:  # better cython optimization
                     _flag |= CTrajFlag.MACH
 
                 # Next range check
@@ -292,6 +296,8 @@ cdef class TrajectoryCalc:
 
             #region Ballistic calculation step
             delta_time = self.calc_step / velocity_vector.x
+
+            # using .subtract insstead of "/" better optimized by cython
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
@@ -331,6 +337,7 @@ cdef class TrajectoryCalc:
         :param time: Time of flight
         :return: windage due to spin drift, in feet
         """
+        cdef int sign
         if self.twist != 0:
             sign = 1 if self.twist > 0 else -1
             return sign * (1.25 * (self.stability_coefficient + 1.2) * pow(time, 1.83) ) / 12
@@ -391,6 +398,14 @@ cdef double get_correction(double distance, double offset):
         return atan(offset / distance)
     return 0  # better None
 
+
+cdef double get_calc_step(double step = 0):
+    cdef double defined_max = Settings.get_max_calc_step_size()
+    # cdef double defined_max = 0.5  # const will be better optimized with cython
+    if step == 0:
+        return defined_max / 2.0
+    return min(step, defined_max) / 2.0
+
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400
 
@@ -401,7 +416,7 @@ cdef list calculate_curve(list data_points):
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
     cdef list curve = []
     cdef CurvePoint curve_point
-    cdef int num_points, len_data_points, len_data_range
+    cdef int i, num_points, len_data_points, len_data_range
 
     rate = (data_points[1].CD - data_points[0].CD) / (data_points[1].Mach - data_points[0].Mach)
     curve = [CurvePoint(0, rate, data_points[0].CD - data_points[0].Mach * rate)]
@@ -430,7 +445,7 @@ cdef list calculate_curve(list data_points):
     return curve
 
 cdef double calculate_by_curve(list data, list curve, double mach):
-    cdef int num_points, mlo, mhi, mid
+    cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint curve_m
 
     num_points = int(len(curve))
