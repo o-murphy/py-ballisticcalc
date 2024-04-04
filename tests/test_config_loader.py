@@ -11,7 +11,10 @@ class TestConfigLoader(TestCase):
 
     def test_custom_config_path(self):
 
-        assets_dir = os.path.join(os.path.dirname(__file__), '..', 'assets')
+        assets_dir = os.path.join(
+            os.path.dirname(
+                os.path.dirname(__file__)
+            ), 'assets')
 
         basicConfig(os.path.join(assets_dir, ".pybc-imperial.toml"))
         self.assertEqual(PreferredUnits.distance, Unit.Foot)
