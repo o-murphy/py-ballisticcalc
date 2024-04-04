@@ -1,6 +1,7 @@
 """
 Useful types for prefer_units of measurement conversion for ballistics calculations
 """
+import os
 import sys
 from abc import ABC
 from dataclasses import dataclass, MISSING, Field, fields
@@ -8,9 +9,16 @@ from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Union
 
+from py_ballisticcalc.logger import logger
+
+try:
+    import tomllib as tomllib
+except ImportError:
+    import tomli as tomllib
+
 __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'Dimension', 'PreferredUnits')
+           'Energy', 'Weight', 'Dimension', 'PreferredUnits', 'basicConfig')
 
 
 # pylint: disable=invalid-name
@@ -660,22 +668,74 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
 
             super().__setattr__(key, value)
 
+    @classmethod
+    def _load_preferred_units(cls, **kwargs):
+        for key, value in kwargs.items():
+            try:
+                if hasattr(PreferredUnits, key):
+                    setattr(PreferredUnits, key, Unit[value])
+                else:
+                    logger.warning(f"attribute {key} not found in preferred_units")
+            except KeyError:
+                logger.warning(f"{value=} not found in preferred_units")
+
+    @classmethod
+    def _load_config(cls, filepath=None):
+
+        def find_pybc_toml(start_dir=os.path.dirname(__file__)):
+            """
+            Search for the pyproject.toml file starting from the specified directory.
+            :param start_dir: (str) The directory to start searching from. Default is the current working directory.
+            :return: str: The absolute path to the pyproject.toml file if found, otherwise None.
+            """
+            current_dir = os.path.abspath(start_dir)
+            while True:
+                # Check if pybc.toml or .pybc.toml exists in the current directory
+                pybc_paths = [
+                    os.path.join(current_dir, '.pybc.toml'),
+                    os.path.join(current_dir, 'pybc.toml'),
+                ]
+                for pypc_path in pybc_paths:
+                    if os.path.exists(pypc_path):
+                        return os.path.abspath(pypc_path)
+
+                # Move to the parent directory
+                parent_dir = os.path.dirname(current_dir)
+
+                # If we have reached the root directory, stop searching
+                if parent_dir == current_dir:
+                    return None
+
+                current_dir = parent_dir
+
+        if filepath is None:
+            filepath = find_pybc_toml()
+
+        with open(filepath, "rb") as fp:
+            _config = tomllib.load(fp)
+
+            if _pybc := _config.get('pybc'):
+                if preferred_units := _pybc.get('preferred_units'):
+                    cls._load_preferred_units(**preferred_units)
+                else:
+                    logger.warning("Config has not `pybc.preferred_units` section")
+            else:
+                logger.warning("Config has not `pybc` section")
+
+    @classmethod
+    def basic_config(cls, filename=None, **preferred_units):
+
+        if filename and preferred_units:
+            raise ValueError("Can't use preferred_units and config file at same time")
+        elif preferred_units:
+            cls._load_preferred_units(**preferred_units)
+        else:
+            # trying to load definitions from pybc.toml
+            cls._load_config(filename)
+
+
 
 # pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
-# class Dimension(Field):
-#     """
-#     Definition of measure units specified field for
-#     PreferredUnits.Mixine based dataclasses
-#     """
-#
-#     def __init__(self, prefer_units: [str, Unit], init=True, repr=True,
-#                  hash=None, compare=True, metadata=None, kw_only=MISSING):
-#         if metadata is None:
-#             metadata = {}
-#         metadata['prefer_units'] = prefer_units
-#         super().__init__(None, MISSING, init, repr, hash, compare, metadata, kw_only)
-
-
 class Dimension(Field):
     """
     Definition of measure units specified field for
@@ -687,7 +747,6 @@ class Dimension(Field):
         if metadata is None:
             metadata = {}
         metadata['prefer_units'] = prefer_units
-
 
         major, minor = sys.version_info.major, sys.version_info.minor
 
@@ -702,3 +761,8 @@ class Dimension(Field):
                          init=init, repr=repr,
                          hash=hash, compare=compare,
                          metadata=metadata, **extra)
+
+
+PreferredUnits.basic_config()  # init PrefferedUnits
+
+basicConfig = PreferredUnits.basic_config
