@@ -56,12 +56,12 @@ from py_ballisticcalc.unit import *
 
 ## Simple Zero
 ```python
-# Establish 100-yard zero for a standard .308, G7 BC=0.22, muzzle velocity 2600fps
+# Establish 100-yard zero for a standard .308, G7 bc=0.22, muzzle velocity 2600fps
 zero = Shot(weapon=Weapon(sight_height=2), ammo=Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(2600)))
 calc = Calculator()
 zero_distance = Distance.Yard(100)
 zero_elevation = calc.set_weapon_zero(zero, zero_distance)
-print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << Set.Units.adjustment}')
+print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << PreferredUnits.adjustment}')
 ```
 
     Barrel elevation for 100.0yd zero: 1.33mil
@@ -119,7 +119,7 @@ zero = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
 zero_distance = Distance.Meter(500)
 calc = Calculator()
 zero_elevation = calc.set_weapon_zero(zero, zero_distance)
-print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << Set.Units.adjustment}')
+print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << PreferredUnits.adjustment}')
 print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velocity_for_temp(atmo.temperature) << Velocity.MPS}')
 ```
 
@@ -132,15 +132,15 @@ print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velo
 from py_ballisticcalc.unit import *
 
 # Print default units
-from py_ballisticcalc import Settings
+from py_ballisticcalc import Settings, PreferredUnits
 print(str(Settings.Units))
 
 # Change default
-Set.Units.distance = Unit.FOOT
-print(f'Default distance unit: {Set.Units.distance.name}')
+PreferredUnits.distance = Unit.FOOT
+print(f'Default distance unit: {PreferredUnits.distance.name}')
 # Can create value in default unit with either float or another unit of same type
-print(f'\tInstantiated from float (5): {Set.Units.distance(5)}')
-print(f'\tInstantiated from Distance.Line(200): {Set.Units.distance(Distance.Line(200))}')
+print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
+print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
 
 # Ways to define value in units
 # 1. old syntax

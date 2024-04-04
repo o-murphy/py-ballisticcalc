@@ -1,5 +1,6 @@
 """Templates of the common used drag tables"""
 
+
 TableG1 = [
     {'Mach': 0.00, 'CD': 0.2629},
     {'Mach': 0.05, 'CD': 0.2558},
@@ -666,5 +667,3 @@ TableGS = [
     {'Mach': 3.95, 'CD': 0.9295},
     {'Mach': 4.00, 'CD': 0.9280},
 ]
-
-DragTablesSet = [value for key, value in globals().items() if key.startswith("Table")]

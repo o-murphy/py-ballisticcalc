@@ -6,8 +6,7 @@ from dataclasses import dataclass, field
 from enum import Flag
 from typing import NamedTuple
 
-from .settings import Settings as Set
-from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit
+from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
 from .conditions import Shot
 
 try:
@@ -52,7 +51,7 @@ class TrajectoryData(NamedTuple):
         time (float): bullet flight time
         distance (Distance): x-axis coordinate
         velocity (Velocity): velocity
-        mach (float): velocity in Mach units
+        mach (float): velocity in Mach prefer_units
         height (Distance): y-axis coordinate
         target_drop (Distance): drop relative to sight-line
         drop_adj (Angular): sight adjustment to zero target_drop at this distance
@@ -87,7 +86,7 @@ class TrajectoryData(NamedTuple):
 
     def formatted(self) -> tuple:
         """
-        :return: matrix of formatted strings for each value of trajectory in default units
+        :return: matrix of formatted strings for each value of trajectory in default prefer_units
         """
 
         def _fmt(v: AbstractUnit, u: Unit):
@@ -96,44 +95,44 @@ class TrajectoryData(NamedTuple):
 
         return (
             f'{self.time:.3f} s',
-            _fmt(self.distance, Set.Units.distance),
-            _fmt(self.velocity, Set.Units.velocity),
+            _fmt(self.distance, PreferredUnits.distance),
+            _fmt(self.velocity, PreferredUnits.velocity),
             f'{self.mach:.2f} mach',
-            _fmt(self.height, Set.Units.drop),
-            _fmt(self.target_drop, Set.Units.drop),
-            _fmt(self.drop_adj, Set.Units.adjustment),
-            _fmt(self.windage, Set.Units.drop),
-            _fmt(self.windage_adj, Set.Units.adjustment),
-            _fmt(self.look_distance, Set.Units.distance),
-            _fmt(self.angle, Set.Units.angular),
+            _fmt(self.height, PreferredUnits.drop),
+            _fmt(self.target_drop, PreferredUnits.drop),
+            _fmt(self.drop_adj, PreferredUnits.adjustment),
+            _fmt(self.windage, PreferredUnits.drop),
+            _fmt(self.windage_adj, PreferredUnits.adjustment),
+            _fmt(self.look_distance, PreferredUnits.distance),
+            _fmt(self.angle, PreferredUnits.angular),
             f'{self.density_factor:.3e}',
             f'{self.drag:.3f}',
-            _fmt(self.energy, Set.Units.energy),
-            _fmt(self.ogw, Set.Units.ogw),
+            _fmt(self.energy, PreferredUnits.energy),
+            _fmt(self.ogw, PreferredUnits.ogw),
 
             self.flag
         )
 
     def in_def_units(self) -> tuple:
         """
-        :return: matrix of floats of the trajectory in default units
+        :return: matrix of floats of the trajectory in default prefer_units
         """
         return (
             self.time,
-            self.distance >> Set.Units.distance,
-            self.velocity >> Set.Units.velocity,
+            self.distance >> PreferredUnits.distance,
+            self.velocity >> PreferredUnits.velocity,
             self.mach,
-            self.height >> Set.Units.drop,
-            self.target_drop >> Set.Units.drop,
-            self.drop_adj >> Set.Units.adjustment,
-            self.windage >> Set.Units.drop,
-            self.windage_adj >> Set.Units.adjustment,
-            self.look_distance >> Set.Units.distance,
-            self.angle >> Set.Units.angular,
+            self.height >> PreferredUnits.drop,
+            self.target_drop >> PreferredUnits.drop,
+            self.drop_adj >> PreferredUnits.adjustment,
+            self.windage >> PreferredUnits.drop,
+            self.windage_adj >> PreferredUnits.adjustment,
+            self.look_distance >> PreferredUnits.distance,
+            self.angle >> PreferredUnits.angular,
             self.density_factor,
             self.drag,
-            self.energy >> Set.Units.energy,
-            self.ogw >> Set.Units.ogw,
+            self.energy >> PreferredUnits.energy,
+            self.ogw >> PreferredUnits.ogw,
             TrajFlag(self.flag)
         )
 
@@ -147,11 +146,11 @@ class DangerSpace(NamedTuple):
     look_angle: Angular
 
     def __str__(self) -> str:
-        return f'Danger space at {self.at_range.distance << Set.Units.distance} '\
-          + f'for {self.target_height << Set.Units.drop} tall target '\
+        return f'Danger space at {self.at_range.distance << PreferredUnits.distance} '\
+          + f'for {self.target_height << PreferredUnits.drop} tall target '\
           + (f'at {self.look_angle << Angular.Degree} look-angle ' if self.look_angle != 0 else '')\
-          + f'ranges from {self.begin.distance << Set.Units.distance} '\
-          + f'to {self.end.distance << Set.Units.distance}'
+          + f'ranges from {self.begin.distance << PreferredUnits.distance} '\
+          + f'to {self.end.distance << PreferredUnits.distance}'
 
     def overlay(self, ax: 'Axes', label: str=None):
         """Highlights danger-space region on plot"""
@@ -159,13 +158,13 @@ class DangerSpace(NamedTuple):
             raise ImportError("Install matplotlib to get results as a plot")
 
         cosine = math.cos(self.look_angle >> Angular.Radian)
-        begin_dist = (self.begin.distance >> Set.Units.distance) * cosine
-        begin_drop = (self.begin.height >> Set.Units.drop) * cosine
-        end_dist = (self.end.distance >> Set.Units.distance) * cosine
-        end_drop = (self.end.height >> Set.Units.drop) * cosine
-        range_dist = (self.at_range.distance >> Set.Units.distance) * cosine
-        range_drop = (self.at_range.height >> Set.Units.drop) * cosine
-        h = self.target_height >> Set.Units.drop
+        begin_dist = (self.begin.distance >> PreferredUnits.distance) * cosine
+        begin_drop = (self.begin.height >> PreferredUnits.drop) * cosine
+        end_dist = (self.end.distance >> PreferredUnits.distance) * cosine
+        end_drop = (self.end.height >> PreferredUnits.drop) * cosine
+        range_dist = (self.at_range.distance >> PreferredUnits.distance) * cosine
+        range_drop = (self.at_range.height >> PreferredUnits.drop) * cosine
+        h = self.target_height >> PreferredUnits.drop
 
         # Target position and height:
         ax.plot((range_dist, range_dist), (range_drop + h / 2, range_drop - h / 2),
@@ -179,7 +178,7 @@ class DangerSpace(NamedTuple):
                                   edgecolor='none', facecolor='r', alpha=0.3)
         ax.add_patch(polygon)
         if label is None:  # Add default label
-            label = f"Danger space\nat {self.at_range.distance << Set.Units.distance}"
+            label = f"Danger space\nat {self.at_range.distance << PreferredUnits.distance}"
         if label != '':
             ax.text(begin_dist + (end_dist-begin_dist)/2, end_drop, label,
                     linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
@@ -253,13 +252,13 @@ class HitResult:
         """
         self.__check_extra__()
 
-        at_range = Set.Units.distance(at_range)
-        target_height = Set.Units.distance(target_height)
+        at_range = PreferredUnits.distance(at_range)
+        target_height = PreferredUnits.distance(target_height)
         target_height_half = target_height.raw_value / 2.0
         if look_angle is None:
             look_angle = self.shot.look_angle
         else:
-            look_angle = Set.Units.angular(look_angle)
+            look_angle = PreferredUnits.angular(look_angle)
 
         # Get index of first trajectory point with distance >= at_range
         i = self.index_at_distance(at_range)
@@ -304,7 +303,7 @@ class HitResult:
 
     def dataframe(self, formatted: bool = False):
         """
-        :param formatted: False for values as floats; True for strings with units
+        :param formatted: False for values as floats; True for strings with prefer_units
         :return: the trajectory table as a DataFrame
         """
         if pd is None:
@@ -328,32 +327,32 @@ class HitResult:
                             "Use Calculator.fire(..., extra_data=True)")
         font_size = PLOT_FONT_SIZE
         df = self.dataframe()
-        ax = df.plot(x='distance', y=['height'], ylabel=Set.Units.drop.symbol)
-        max_range = self.trajectory[-1].distance >> Set.Units.distance
+        ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol)
+        max_range = self.trajectory[-1].distance >> PreferredUnits.distance
 
         for p in self.trajectory:
             if TrajFlag(p.flag) & TrajFlag.ZERO:
-                ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['height'].min(), p.height >> Set.Units.drop], linestyle=':')
-                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['height'].min(),
+                ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
+                        [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
+                ax.text((p.distance >> PreferredUnits.distance) + max_range/100, df['height'].min(),
                         f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
                         fontsize=font_size, rotation=90)
             if TrajFlag(p.flag) & TrajFlag.MACH:
-                ax.plot([p.distance >> Set.Units.distance, p.distance >> Set.Units.distance],
-                        [df['height'].min(), p.height >> Set.Units.drop], linestyle=':')
-                ax.text((p.distance >> Set.Units.distance) + max_range/100, df['height'].min(),
+                ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
+                        [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
+                ax.text((p.distance >> PreferredUnits.distance) + max_range/100, df['height'].min(),
                         "Mach 1", fontsize=font_size, rotation=90)
 
-        max_range_in_drop_units = self.trajectory[-1].distance >> Set.Units.drop
+        max_range_in_drop_units = self.trajectory[-1].distance >> PreferredUnits.drop
         # Sight line
         x_sight = [0, df.distance.max()]
         y_sight = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
         ax.plot(x_sight, y_sight, linestyle='--', color=[.3,0,.3,.5])
         # Barrel pointing line
         x_bbl = [0, df.distance.max()]
-        y_bbl = [-(self.shot.weapon.sight_height >> Set.Units.drop),
+        y_bbl = [-(self.shot.weapon.sight_height >> PreferredUnits.drop),
                     max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
-                    -(self.shot.weapon.sight_height >> Set.Units.drop)]
+                    -(self.shot.weapon.sight_height >> PreferredUnits.drop)]
         ax.plot(x_bbl, y_bbl, linestyle=':', color=[0,0,0,.5])
         # Line labels
         sight_above_bbl = True if y_sight[1] > y_bbl[1] else False
@@ -368,8 +367,8 @@ class HitResult:
                  fontsize=font_size, color='k', ha='right',
                  va='top' if sight_above_bbl else 'bottom')
         # Plot velocity (on secondary axis)
-        df.plot(x='distance', xlabel=Set.Units.distance.symbol,
-                y=['velocity'], ylabel=Set.Units.velocity.symbol,
+        df.plot(x='distance', xlabel=PreferredUnits.distance.symbol,
+                y=['velocity'], ylabel=PreferredUnits.velocity.symbol,
                 secondary_y=True, color=[0,.3,0,.5],
                 ylim=[0, df['velocity'].max()], ax=ax)
         # Let secondary shine through

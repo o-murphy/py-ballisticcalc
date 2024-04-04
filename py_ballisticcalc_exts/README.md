@@ -77,7 +77,7 @@ The library supports all the popular units of measurement, and adds different bu
 ```python
 from py_ballisticcalc.unit import *
 
-# ways to define value in units
+# ways to define value in prefer_units
 # 1. old syntax
 unit_in_meter = Distance(100, Distance.Meter)
 # 2. short syntax by Unit type class
@@ -94,7 +94,7 @@ unit_in_yard = unit_in_meter.convert(Distance.Yard)
 unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
 # >>> <Distance>: 109.36132983377078 yd (3937.0078740157483)
 
-# get value in specified units
+# get value in specified prefer_units
 # 1. by method
 value_in_km = unit_in_yards.get_in(Distance.Kilometer)
 # 2. by shift syntax
@@ -105,9 +105,9 @@ value_in_km = unit_in_yards >> Distance.Kilometer  # '>>=' operator also support
 rvalue = Distance.Meter(10).raw_value
 rvalue = float(Distance.Meter(10))
 
-# units comparison:
+# prefer_units comparison:
 # supports operators like < > <= >= == !=
-Distance.Meter(100) == Distance.Centimeter(100)  # >>> False, compare two units by raw value
+Distance.Meter(100) == Distance.Centimeter(100)  # >>> False, compare two prefer_units by raw value
 Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
 ```
 
@@ -115,19 +115,19 @@ Distance.Meter(100) > 10  # >>> True, compare unit with float by raw value
 
 ```python
 from py_ballisticcalc import *
-from py_ballisticcalc import Settings as Set
+from py_ballisticcalc import Settings, PreferredUnits
 
-# Modify default units
-Set.Units.velocity = Velocity.FPS
-Set.Units.temperature = Temperature.Celsius
-Set.Units.distance = Distance.Meter
-Set.Units.sight_height = Distance.Centimeter
+# Modify default prefer_units
+PreferredUnits.velocity = Velocity.FPS
+PreferredUnits.temperature = Temperature.Celsius
+PreferredUnits.distance = Distance.Meter
+PreferredUnits.sight_height = Distance.Centimeter
 
-Set.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
+Settings.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
 
 # Define ammunition parameters
 weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
-length = Distance.Inch(1.282)  # Or declare units explicitly
+length = Distance.Inch(1.282)  # Or declare prefer_units explicitly
 dm = DragModel(0.223, TableG7, weight, diameter, length)
 ammo = Ammo(dm, 2750, 15)
 ammo.calc_powder_sens(2723, 0)

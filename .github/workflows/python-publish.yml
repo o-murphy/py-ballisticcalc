@@ -10,7 +10,7 @@ name: Upload Python Package
 
 on:
   release:
-    types: [published]
+    types: [published, edited]
     
   workflow_dispatch:
 
@@ -28,9 +28,9 @@ jobs:
         python-version: [ "3.9", "3.10", "3.11", "3.12" ]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -78,9 +78,9 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -104,7 +104,7 @@ jobs:
         TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: python-package-artifacts
         path: dist/
