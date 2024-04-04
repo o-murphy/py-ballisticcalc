@@ -1,12 +1,12 @@
 """
 Useful types for prefer_units of measurement conversion for ballistics calculations
 """
-
+import sys
 from abc import ABC
 from dataclasses import dataclass, MISSING, Field, fields
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple
+from typing import NamedTuple, Union
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
@@ -662,15 +662,43 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
 
 
 # pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
+# class Dimension(Field):
+#     """
+#     Definition of measure units specified field for
+#     PreferredUnits.Mixine based dataclasses
+#     """
+#
+#     def __init__(self, prefer_units: [str, Unit], init=True, repr=True,
+#                  hash=None, compare=True, metadata=None, kw_only=MISSING):
+#         if metadata is None:
+#             metadata = {}
+#         metadata['prefer_units'] = prefer_units
+#         super().__init__(None, MISSING, init, repr, hash, compare, metadata, kw_only)
+
+
 class Dimension(Field):
     """
     Definition of measure units specified field for
     PreferredUnits.Mixine based dataclasses
     """
 
-    def __init__(self, prefer_units: [str, Unit], init=True, repr=True,
-                 hash=None, compare=True, metadata=None, kw_only=MISSING):
+    def __init__(self, prefer_units: Union[str, Unit], init=True, repr=True,
+                 hash=None, compare=True, metadata=None):
         if metadata is None:
             metadata = {}
         metadata['prefer_units'] = prefer_units
-        super().__init__(None, MISSING, init, repr, hash, compare, metadata, kw_only)
+
+
+        major, minor = sys.version_info.major, sys.version_info.minor
+
+        if major >= 3 and minor > 9:
+            extra = {'kw_only': MISSING}
+        elif major >= 3 and minor == 9:
+            extra = {}
+        else:
+            raise RuntimeError("Unsupported python version")
+
+        super().__init__(default=None, default_factory=MISSING,
+                         init=init, repr=repr,
+                         hash=hash, compare=compare,
+                         metadata=metadata, **extra)
