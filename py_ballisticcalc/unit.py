@@ -2,8 +2,6 @@
 Useful types for prefer_units of measurement conversion for ballistics calculations
 """
 
-import typing
-import warnings
 from abc import ABC
 from dataclasses import dataclass, MISSING, Field, fields
 from enum import IntEnum
@@ -12,7 +10,7 @@ from typing import NamedTuple
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'TypedUnits', 'Dimension', 'PreferredUnits')
+           'Energy', 'Weight', 'Dimension', 'PreferredUnits')
 
 
 # pylint: disable=invalid-name
@@ -606,50 +604,7 @@ class Energy(AbstractUnit):
     Joule = Unit.Joule
 
 
-@dataclass
-class TypedUnits:  # pylint: disable=too-few-public-methods
-    """
-    Abstract class to apply auto-conversion values to
-    specified prefer_units by type-hints in inherited dataclasses
-    """
-
-    def __setattr__(self, key, value):
-        """
-        converts value to specified prefer_units by type-hints in inherited dataclass
-        """
-
-        warnings.warn(
-            "Using 'default_factory' is deprecated, "
-            "use 'metadata={'prefer_units': 'sight_height'} for preferred prefer_units"
-            "or {'prefer_units': Unit.Meter}' instead. metadata['prefer_units'] has a priority",
-            DeprecationWarning
-        )
-
-        _fields = self.__getattribute__('__dataclass_fields__')
-        # fields(self.__class__)[0].name
-        if key in _fields and not isinstance(value, AbstractUnit):
-            default_factory = _fields[key].default_factory
-            if isinstance(default_factory, typing.Callable):
-                if isinstance(value, Unit):
-                    value = None
-                else:
-                    value = default_factory()(value)
-
-        super().__setattr__(key, value)
-
-
-# def dimension(*, init=True, repr=True,
-#               hash=None, compare=True, metadata=None, kw_only=MISSING, **kwargs):
-#     """Return an object to identify dataclass fields.
-#     It is an error to specify both default and default_factory.
-#     """
-#     default, default_factory = None, MISSING
-#     if metadata is None:
-#         metadata = {}
-#     metadata.update(kwargs)
-#     return Field(default, default_factory, init, repr, hash, compare, metadata, kw_only)
-
-class Metadataclass(type):
+class PreferredUnitsMeta(type):
     """Provide representation method for static dataclasses."""
 
     def __repr__(cls):
@@ -658,11 +613,8 @@ class Metadataclass(type):
 
 
 @dataclass
-class PreferredUnits(metaclass=Metadataclass):  # pylint: disable=too-many-instance-attributes
+class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-instance-attributes
     """Default prefer_units for specified measures"""
-
-    # TODO: move it to Units, use instance instead of class
-    # TODO: add default sets for imperial/metric
 
     angular: Unit = Unit.Degree
     distance: Unit = Unit.Yard
@@ -709,7 +661,13 @@ class PreferredUnits(metaclass=Metadataclass):  # pylint: disable=too-many-insta
             super().__setattr__(key, value)
 
 
+# pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
 class Dimension(Field):
+    """
+    Definition of measure units specified field for
+    PreferredUnits.Mixine based dataclasses
+    """
+
     def __init__(self, prefer_units: [str, Unit], init=True, repr=True,
                  hash=None, compare=True, metadata=None, kw_only=MISSING):
         if metadata is None:

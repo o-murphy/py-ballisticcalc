@@ -123,11 +123,11 @@ def DragModelMultiBC(bc_points: list[BCpoint],
         else make_data_points(drag_table)  # Convert from list of dicts to list of DragDataPoints
 
     bc_points = sorted(bc_points)  # Make sure bc_points are sorted for linear interpolation
-    BCinterp = linear_interpolation([x.Mach for x in drag_table],
+    bc_interp = linear_interpolation([x.Mach for x in drag_table],
                                     [x.Mach for x in bc_points],
                                     [x.BC / BC for x in bc_points])
     for i in range(len(drag_table)):
-        drag_table[i].CD = drag_table[i].CD / BCinterp[i]
+        drag_table[i].CD = drag_table[i].CD / bc_interp[i]
     return DragModel(BC, drag_table, weight, diameter, length)
 
 

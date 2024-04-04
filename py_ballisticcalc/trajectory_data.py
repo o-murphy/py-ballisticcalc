@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 from enum import Flag
 from typing import NamedTuple
 
-from .settings import Settings as Set
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
 from .conditions import Shot
 
