@@ -136,7 +136,7 @@ cdef class TrajectoryCalc:
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
         cdef:
-            object step = Settings.Units.distance(dist_step)
+            object step = PreferredUnits.distance(dist_step)
             object atmo = shot_info.atmo
             list winds = shot_info.winds
             CTrajFlag filter_flags = CTrajFlag.RANGE
