@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.0.0b1"
+version = "2.0.0b3"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -33,7 +33,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = []
+dependencies = ["tomli; python_version<'3.11'"]
 #dynamic = ["version"]
 
 [project.urls]
@@ -53,11 +53,7 @@ include = ["py_ballisticcalc*"]  # alternatively: `exclude = ["additional*"]`
 exclude = ["py_ballisticcalc_exts*"]
 
 
-#[tool.setuptools.dynamic]
-#version = {attr = "py_ballisticcalc.__version__"}
-
-
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.0.0b1']
+exts = ['py_ballisticcalc.exts==2.0.0b3']
 lint = ['pylint', 'flake8']
 charts = ['matplotlib', 'pandas']

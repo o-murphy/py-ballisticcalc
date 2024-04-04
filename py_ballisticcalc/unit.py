@@ -1,16 +1,27 @@
 """
-Useful types for units of measurement conversion for ballistics calculations
+Useful types for prefer_units of measurement conversion for ballistics calculations
 """
-
-import typing
+import os
+import sys
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, MISSING, Field
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple
-from dataclasses import dataclass
+from typing import NamedTuple, Union, TypeVar
+
+from py_ballisticcalc.logger import logger
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 __all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'TypedUnits')
+           'Energy', 'Weight', 'Dimension', 'PreferredUnits', 'basicConfig')
+
+
+AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
 
 
 # pylint: disable=invalid-name
@@ -63,7 +74,7 @@ class Unit(IntEnum):
     Ounce = 71
     Gram = 72
     Pound = 73
-    Kilgram = 74
+    Kilogram = 74
     Newton = 75
 
     @property
@@ -90,12 +101,16 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: 'Unit', value: [int, float, 'AbstractUnit']) -> 'AbstractUnit':
+    def __call__(self: 'Unit', value: [int, float, AbstractUnitType] = None) -> AbstractUnitType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
+
+        # if value is None:
+        #     return self
+
         if isinstance(value, AbstractUnit):
             return value << self
         if 0 <= self < 10:
@@ -170,14 +185,14 @@ UnitPropsDict = {
     Unit.Ounce: UnitProps('ounce', 1, 'oz'),
     Unit.Gram: UnitProps('gram', 1, 'g'),
     Unit.Pound: UnitProps('pound', 0, 'lb'),
-    Unit.Kilgram: UnitProps('kilogram', 3, 'kg'),
+    Unit.Kilogram: UnitProps('kilogram', 3, 'kg'),
     Unit.Newton: UnitProps('newton', 3, 'N'),
 }
 
 
 class AbstractUnit:
     """Abstract class for unit of measure instance definition
-    Stores defined unit and value, applies conversions to other units
+    Stores defined unit and value, applies conversions to other prefer_units
     """
     __slots__ = ('_value', '_defined_units')
 
@@ -232,10 +247,10 @@ class AbstractUnit:
         return self.convert(other)
 
     def _unit_support_error(self, value: float, units: Unit):
-        """Validates the units
-        :param value: value of the unit
+        """Validates the prefer_units
+        :param value: value of the instance
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         if not isinstance(units, Unit):
             err_msg = f"Type expected: {Unit}, {type(Unit).__name__} " \
@@ -246,25 +261,25 @@ class AbstractUnit:
         return 0
 
     def to_raw(self, value: float, units: Unit) -> float:
-        """Converts value with specified units to raw value
-        :param value: value of the unit
+        """Converts value with specified prefer_units to raw value
+        :param value: value of the instance
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         return self._unit_support_error(value, units)
 
     def from_raw(self, value: float, units: Unit) -> float:
-        """Converts raw value to specified units
+        """Converts raw value to specified prefer_units
         :param value: raw value of the unit
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         return self._unit_support_error(value, units)
 
     def convert(self, units: Unit) -> 'AbstractUnit':
-        """Returns new unit instance in specified units
+        """Returns new unit instance in specified prefer_units
         :param units: Unit enum type
-        :return: new unit instance in specified units
+        :return: new unit instance in specified prefer_units
         """
         value = self.get_in(units)
         return self.__class__(value, units)
@@ -272,20 +287,20 @@ class AbstractUnit:
     def get_in(self, units: Unit) -> float:
         """
         :param units: Unit enum type
-        :return: value in specified units
+        :return: value in specified prefer_units
         """
         return self.from_raw(self._value, units)
 
     @property
     def units(self) -> Unit:
         """
-        :return: defined units
+        :return: defined prefer_units
         """
         return self._defined_units
 
     @property
     def unit_value(self) -> float:
-        """Returns float value in defined units"""
+        """Returns float value in defined prefer_units"""
         return self.get_in(self.units)
 
     @property
@@ -442,7 +457,7 @@ class Weight(AbstractUnit):
     Ounce = Unit.Ounce
     Gram = Unit.Gram
     Pound = Unit.Pound
-    Kilogram = Unit.Kilgram
+    Kilogram = Unit.Kilogram
     Newton = Unit.Newton
 
 
@@ -505,8 +520,8 @@ class Angular(AbstractUnit):
             result = value / 6 * pi
         else:
             return super().to_raw(value, units)
-        if result > 2*pi:
-            result = result % (2*pi)
+        if result > 2 * pi:
+            result = result % (2 * pi)
         return result
 
     def from_raw(self, value: float, units: Unit):
@@ -600,40 +615,168 @@ class Energy(AbstractUnit):
     Joule = Unit.Joule
 
 
+class PreferredUnitsMeta(type):
+    """Provide representation method for static dataclasses."""
+
+    def __repr__(cls):
+        return '\n'.join(f'{field} = {getattr(cls, field)!r}'
+                         for field in getattr(cls, '__dataclass_fields__'))
+
+
 @dataclass
-class TypedUnits:  # pylint: disable=too-few-public-methods
-    """
-    Abstract class to apply auto-conversion values to
-    specified units by type-hints in inherited dataclasses
-    """
+class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-instance-attributes
+    """Default prefer_units for specified measures"""
 
-    def __setattr__(self, key, value):
+    angular: Unit = Unit.Degree
+    distance: Unit = Unit.Yard
+    velocity: Unit = Unit.FPS
+    pressure: Unit = Unit.InHg
+    temperature: Unit = Unit.Fahrenheit
+    diameter: Unit = Unit.Inch
+    length: Unit = Unit.Inch
+    weight: Unit = Unit.Grain
+    adjustment: Unit = Unit.Mil
+    drop: Unit = Unit.Inch
+    energy: Unit = Unit.FootPound
+    ogw: Unit = Unit.Pound
+    sight_height: Unit = Unit.Inch
+    target_height: Unit = Unit.Inch
+    twist: Unit = Unit.Inch
+
+    @dataclass
+    class Mixin(ABC):  # pylint: disable=too-few-public-methods
         """
-        converts value to specified units by type-hints in inherited dataclass
+        TODO: move it to Units, use it instead of TypedUnits
+        Abstract class to apply auto-conversion values to
+        specified prefer_units by type-hints in inherited dataclasses
         """
 
-        _fields = self.__getattribute__('__dataclass_fields__')
-        # fields(self.__class__)[0].name
-        if key in _fields and not isinstance(value, AbstractUnit):
-            default_factory = _fields[key].default_factory
-            if isinstance(default_factory, typing.Callable):
-                if isinstance(value, Unit):
-                    value = None
+        def __setattr__(self, key, value):
+            """
+            converts value to specified prefer_units by type-hints in inherited dataclass
+            """
+
+            _fields = self.__getattribute__('__dataclass_fields__')
+
+            if (_field := _fields.get(key)) and value is not None and not isinstance(value, AbstractUnit):
+
+                if units := _field.metadata.get('prefer_units'):
+
+                    if isinstance(units, Unit):
+                        value = units(value)
+                    elif isinstance(units, str):
+                        value = PreferredUnits.__dict__[units](value)
+                    else:
+                        raise TypeError(f"Unsupported unit or dimension use one of {PreferredUnits}")
+
+            super().__setattr__(key, value)
+
+    @classmethod
+    def set(cls, **kwargs):
+        """set preferred units from Mapping"""
+        for attribute, value in kwargs.items():
+            try:
+                if hasattr(PreferredUnits, attribute):
+                    setattr(PreferredUnits, attribute, Unit[value])
                 else:
-                    value = default_factory()(value)
+                    logger.warning(f"{attribute=} not found in preferred_units")
+            except KeyError:
+                logger.warning(f"{value=} not found in preferred_units")
 
-        super().__setattr__(key, value)
+    @classmethod
+    def _load_config(cls, filepath=None):
+
+        def find_pybc_toml(start_dir=os.path.dirname(__file__)):
+            """
+            Search for the pyproject.toml file starting from the specified directory.
+            :param start_dir: (str) The directory to start searching from. Default is the current working directory.
+            :return: str: The absolute path to the pyproject.toml file if found, otherwise None.
+            """
+            current_dir = os.path.abspath(start_dir)
+            while True:
+                # Check if pybc.toml or .pybc.toml exists in the current directory
+                pybc_paths = [
+                    os.path.join(current_dir, '.pybc.toml'),
+                    os.path.join(current_dir, 'pybc.toml'),
+                ]
+                for pypc_path in pybc_paths:
+                    if os.path.exists(pypc_path):
+                        return os.path.abspath(pypc_path)
+
+                # Move to the parent directory
+                parent_dir = os.path.dirname(current_dir)
+
+                # If we have reached the root directory, stop searching
+                if parent_dir == current_dir:
+                    return None
+
+                current_dir = parent_dir
+
+        if filepath is None:
+            filepath = find_pybc_toml()
+
+        with open(filepath, "rb") as fp:
+            _config = tomllib.load(fp)
+
+            if _pybc := _config.get('pybc'):
+                if preferred_units := _pybc.get('preferred_units'):
+                    cls.set(**preferred_units)
+                else:
+                    logger.warning("Config has not `pybc.preferred_units` section")
+            else:
+                logger.warning("Config has not `pybc` section")
+
+    @classmethod
+    def basic_config(cls, filename=None, **preferred_units):
+        """
+        Method to load preferred units from file or Mapping
+        """
+        if filename and preferred_units:
+            raise ValueError("Can't use preferred_units and config file at same time")
+        if preferred_units:
+            cls.set(**preferred_units)
+        else:
+            # trying to load definitions from pybc.toml
+            cls._load_config(filename)
 
 
-# def is_unit(obj: [AbstractUnit, float, int]):
-#     """
-#     Check if obj is inherited by AbstractUnit
-#     :return: False - if float or int
-#     """
-#     if isinstance(obj, AbstractUnit):
-#         return True
-#     if isinstance(obj, (float, int)):
-#         return False
-#     if obj is None:
-#         return None
-#     raise TypeError(f"Expected Unit, int, or float, found {obj.__class__.__name__}")
+# pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
+class Dimension(Field):
+    """
+    Definition of measure units specified field for
+    PreferredUnits.Mixin based dataclasses
+    """
+
+    def __init__(self, prefer_units: Union[str, Unit], init=True, repr_=True,
+                 hash_=None, compare=True, metadata=None):
+        if metadata is None:
+            metadata = {}
+        metadata['prefer_units'] = prefer_units
+
+        major, minor = sys.version_info.major, sys.version_info.minor
+
+        if major >= 3 and minor > 9:
+            extra = {'kw_only': MISSING}
+        elif major >= 3 and minor == 9:
+            extra = {}
+        else:
+            raise RuntimeError("Unsupported python version")
+
+        super().__init__(default=None, default_factory=MISSING,
+                         init=init, repr=repr_,
+                         hash=hash_, compare=compare,
+                         metadata=metadata, **extra)
+
+    @abstractmethod
+    def __rshift__(self, other):
+        ...
+
+    @abstractmethod
+    def __lshift__(self, other):
+        ...
+
+
+PreferredUnits.basic_config()  # init PreferredUnits
+
+# export method globally
+basicConfig = PreferredUnits.basic_config

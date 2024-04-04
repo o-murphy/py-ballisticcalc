@@ -6,5 +6,4 @@ __copyright__ = (
 
 __credits__ = ["o-murphy", "dbookstaber"]
 
-from .drag_model import *
 from .trajectory_calc import *

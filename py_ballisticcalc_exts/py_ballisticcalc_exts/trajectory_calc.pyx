@@ -136,7 +136,7 @@ cdef class TrajectoryCalc:
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
         cdef:
-            object step = Settings.Units.distance(dist_step)
+            object step = PreferredUnits.distance(dist_step)
             object atmo = shot_info.atmo
             list winds = shot_info.winds
             CTrajFlag filter_flags = CTrajFlag.RANGE
@@ -148,7 +148,7 @@ cdef class TrajectoryCalc:
         self._init_trajectory(shot_info)            
         return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags)
 
-    def _init_trajectory(self, shot_info: Shot):
+    cdef _init_trajectory(self, shot_info: Shot):
         self.look_angle = shot_info.look_angle >> Angular.Radian
         self.twist = shot_info.weapon.twist >> Distance.Inch
         self.length = shot_info.ammo.dm.length >> Distance.Inch
@@ -202,12 +202,13 @@ cdef class TrajectoryCalc:
             double density_factor, mach, velocity, delta_time
             list ranges = []
             int ranges_length = int(maximum_range / step) + 1
+            int current_item = 0
             double time = .0
             double previous_mach = .0
             double drag = .0
 
             int len_winds = len(shot_info.winds)
-            int current_item, current_wind
+            int current_wind = 0
             double next_range_distance = .0
             double next_wind_range = Wind.MAX_DISTANCE_FEET
 
@@ -319,7 +320,7 @@ cdef class TrajectoryCalc:
             cStandardDensity of Air = 0.076474 lb/ft^3
             S is cross-section = d^2 pi/4, where d is bullet diameter in inches
             m is bullet mass in pounds
-        BC contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
+        bc contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
         Thus: The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
         """
         cdef double cd = calculate_by_curve(self._table_data, self._curve, mach)
@@ -402,18 +403,18 @@ cdef list calculate_curve(list data_points):
     cdef CurvePoint curve_point
     cdef int num_points, len_data_points, len_data_range
 
-    rate = (data_points[1]['CD'] - data_points[0]['CD']) / (data_points[1]['Mach'] - data_points[0]['Mach'])
-    curve = [CurvePoint(0, rate, data_points[0]['CD'] - data_points[0]['Mach'] * rate)]
+    rate = (data_points[1].CD - data_points[0].CD) / (data_points[1].Mach - data_points[0].Mach)
+    curve = [CurvePoint(0, rate, data_points[0].CD - data_points[0].Mach * rate)]
     len_data_points = int(len(data_points))
     len_data_range = len_data_points - 1
 
     for i in range(1, len_data_range):
-        x1 = data_points[i - 1]['Mach']
-        x2 = data_points[i]['Mach']
-        x3 = data_points[i + 1]['Mach']
-        y1 = data_points[i - 1]['CD']
-        y2 = data_points[i]['CD']
-        y3 = data_points[i + 1]['CD']
+        x1 = data_points[i - 1].Mach
+        x2 = data_points[i].Mach
+        x3 = data_points[i + 1].Mach
+        y1 = data_points[i - 1].CD
+        y2 = data_points[i].CD
+        y3 = data_points[i + 1].CD
         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
                 (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
@@ -422,9 +423,9 @@ cdef list calculate_curve(list data_points):
         curve.append(curve_point)
 
     num_points = len_data_points
-    rate = (data_points[num_points - 1]['CD'] - data_points[num_points - 2]['CD']) / \
-           (data_points[num_points - 1]['Mach'] - data_points[num_points - 2]['Mach'])
-    curve_point = CurvePoint(0, rate, data_points[num_points - 1]['CD'] - data_points[num_points - 2]['Mach'] * rate)
+    rate = (data_points[num_points - 1].CD - data_points[num_points - 2].CD) / \
+           (data_points[num_points - 1].Mach - data_points[num_points - 2].Mach)
+    curve_point = CurvePoint(0, rate, data_points[num_points - 1].CD - data_points[num_points - 2].Mach * rate)
     curve.append(curve_point)
     return curve
 
@@ -438,12 +439,12 @@ cdef double calculate_by_curve(list data, list curve, double mach):
 
     while mhi - mlo > 1:
         mid = int(floor(mhi + mlo) / 2.0)
-        if data[mid]['Mach'] < mach:
+        if data[mid].Mach < mach:
             mlo = mid
         else:
             mhi = mid
 
-    if data[mhi]['Mach'] - mach > mach - data[mlo]['Mach']:
+    if data[mhi].Mach - mach > mach - data[mlo].Mach:
         m = mlo
     else:
         m = mhi
