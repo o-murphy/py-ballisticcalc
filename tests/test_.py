@@ -10,6 +10,3 @@ class TestImports(unittest.TestCase):
         except ImportError as err:
             print(err)
             py_ballisticcalc_exts = None
-        if py_ballisticcalc_exts:
-            from py_ballisticcalc.backend import DragModel
-            print(DragModel)

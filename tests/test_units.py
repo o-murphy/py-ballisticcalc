@@ -1,4 +1,9 @@
+import typing
 import unittest
+import warnings
+from dataclasses import field, dataclass
+
+from py_ballisticcalc import Settings
 from py_ballisticcalc.unit import *
 
 
@@ -6,6 +11,30 @@ def back_n_forth(test, value, units):
     u = test.unit_class(value, units)
     v = u >> units
     test.assertAlmostEqual(v, value, 7, f'Read back failed for {units}')
+
+
+class TestPrefUnits(unittest.TestCase):
+
+    def test_pref(self):
+
+        @dataclass
+        class TestClass(PreferredUnits.Mixin):
+            as_metadata_str: [float, Distance] = Dimension(prefer_units='sight_height')
+            as_metadata_unit: [float, Distance] = Dimension(prefer_units=Unit.Meter)
+
+        tc1 = TestClass(1, 1)
+        self.assertEqual(tc1.as_metadata_str.units, Unit.Inch)
+        self.assertEqual(tc1.as_metadata_unit.units, Unit.Meter)
+
+        tc2 = TestClass(Unit.Meter(1), Unit.Meter(1))
+        self.assertEqual(tc2.as_metadata_str.units, Unit.Meter)
+        self.assertEqual(tc2.as_metadata_unit.units, Unit.Meter)
+
+        PreferredUnits.sight_height = Unit.Centimeter
+
+        tc3 = TestClass(1, 1)
+        self.assertEqual(tc3.as_metadata_str.units, Unit.Centimeter)
+        self.assertEqual(tc3.as_metadata_unit.units, Unit.Meter)
 
 
 class TestAngular(unittest.TestCase):

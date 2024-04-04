@@ -142,7 +142,7 @@ class TestComputer(unittest.TestCase):
 
 #region Ammo
     def test_ammo_drag(self):
-        """Increasing ballistic coefficient (BC) should decrease drop"""
+        """Increasing ballistic coefficient (bc) should decrease drop"""
         tdm = DragModel(self.dm.BC+0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
         slick = Ammo(tdm, self.ammo.mv)
         shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)

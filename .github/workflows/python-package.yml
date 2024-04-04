@@ -15,9 +15,9 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -28,6 +28,13 @@ jobs:
         
         python -m pip install --upgrade pip
         python -m pip install setuptools pytest cython
+
+    - name: Check Python version and install tomli if less than 3.11
+      run: |
+        python_version=$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")
+        if [ $(echo "${python_version} < 3.11" | bc -l) -eq 1 ]; then
+            python -m pip install tomli
+        fi
 
     - name: Run unittest tests in pure python mode
       run: |
