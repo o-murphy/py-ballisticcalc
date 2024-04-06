@@ -59,6 +59,7 @@ def _load_config(filepath=None):
             find_pybc_toml(os.path.dirname(__file__))
 
     logger.info(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
+    print(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
 
     with open(filepath, "rb") as fp:
         _config = tomllib.load(fp)
@@ -109,6 +110,8 @@ def _basic_config(filename=None,
 
 
 basicConfig = _basic_config
+
+basicConfig()
 
 __all__ = [
     'Calculator',
