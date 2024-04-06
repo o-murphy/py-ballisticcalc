@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 
 from setuptools import setup, Extension
-import numpy
+# import numpy
 
 try:
     from Cython.Build import cythonize
@@ -66,7 +66,7 @@ def iter_extensions(path) -> list:
             ext = Extension(ext_name,
                             [ext_path.as_posix()],
                             extra_compile_args=extra_compile_args,
-                            include_dirs=[numpy.get_include()]
+                            # include_dirs=[numpy.get_include()]
                             )
             founded_extensions.append(ext)
     return founded_extensions
