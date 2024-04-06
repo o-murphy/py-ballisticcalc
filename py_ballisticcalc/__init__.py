@@ -58,8 +58,7 @@ def _load_config(filepath=None):
         if (filepath := find_pybc_toml()) is None:
             find_pybc_toml(os.path.dirname(__file__))
 
-    logger.info(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
-    print(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
+    logger.debug(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
 
     with open(filepath, "rb") as fp:
         _config = tomllib.load(fp)
