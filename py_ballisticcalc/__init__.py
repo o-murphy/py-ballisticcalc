@@ -119,6 +119,7 @@ __all__ = [
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
     'set_global_use_powder_sensitivity',
+    'reset_globals',
     'DragModel',
     'DragDataPoint',
     'BCPoint',

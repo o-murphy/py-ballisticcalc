@@ -18,6 +18,7 @@ __all__ = (
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
     'set_global_use_powder_sensitivity',
+    'reset_globals'
 )
 
 cZeroFindingAccuracy = 0.000005
@@ -36,6 +37,12 @@ def get_global_max_calc_step_size() -> Distance:
 
 def get_global_use_powder_sensitivity() -> bool:
     return _globalUsePowderSensitivity
+
+
+def reset_globals() -> None:
+    global _globalUsePowderSensitivity, _globalMaxCalcStepSize
+    _globalUsePowderSensitivity = False
+    _globalMaxCalcStepSize = Distance.Foot(0.5)
 
 
 def set_global_max_calc_step_size(value: [float, Distance]) -> None:

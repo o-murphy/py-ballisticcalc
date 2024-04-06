@@ -9,7 +9,8 @@ try:
                                        get_global_max_calc_step_size,
                                        get_global_use_powder_sensitivity,
                                        set_global_max_calc_step_size,
-                                       set_global_use_powder_sensitivity)
+                                       set_global_use_powder_sensitivity,
+                                       reset_globals)
 
     logger.info("Binary modules found, running in binary mode")
 except ImportError as error:
@@ -17,7 +18,8 @@ except ImportError as error:
                                   get_global_max_calc_step_size,
                                   get_global_use_powder_sensitivity,
                                   set_global_max_calc_step_size,
-                                  set_global_use_powder_sensitivity)
+                                  set_global_use_powder_sensitivity,
+                                  reset_globals)
 
     logger.warning("Library running in pure python mode. "
                    "For better performance install 'py_ballisticcalc.exts' package")
@@ -28,4 +30,5 @@ __all__ = (
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
     'set_global_use_powder_sensitivity',
+    'reset_globals',
 )

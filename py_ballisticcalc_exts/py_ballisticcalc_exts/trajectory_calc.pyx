@@ -12,6 +12,7 @@ __all__ = (
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
     'set_global_use_powder_sensitivity',
+    'reset_globals'
 )
 
 cdef double cZeroFindingAccuracy = 0.000005
@@ -43,6 +44,12 @@ def set_global_use_powder_sensitivity(value: bool) -> None:
     if not isinstance(value, bool):
         raise TypeError(f"set_global_use_powder_sensitivity {value=} is not a boolean")
     _globalUsePowderSensitivity = int(value)
+
+
+def reset_globals() -> None:
+    global _globalUsePowderSensitivity, _globalMaxCalcStepSize
+    _globalUsePowderSensitivity = False
+    _globalMaxCalcStepSize = Distance.Foot(0.5)
 
 
 cdef struct CurvePoint:

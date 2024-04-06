@@ -669,6 +669,25 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
             super().__setattr__(key, value)
 
     @classmethod
+    def defaults(self):
+        """resets preferred units to defaults"""
+        self.angular = Unit.Degree
+        self.distance = Unit.Yard
+        self.velocity = Unit.FPS
+        self.pressure = Unit.InHg
+        self.temperature = Unit.Fahrenheit
+        self.diameter = Unit.Inch
+        self.length = Unit.Inch
+        self.weight = Unit.Grain
+        self.adjustment = Unit.Mil
+        self.drop = Unit.Inch
+        self.energy = Unit.FootPound
+        self.ogw = Unit.Pound
+        self.sight_height = Unit.Inch
+        self.target_height = Unit.Inch
+        self.twist = Unit.Inch
+
+    @classmethod
     def set(cls, **kwargs):
         """set preferred units from Mapping"""
         for attribute, value in kwargs.items():
