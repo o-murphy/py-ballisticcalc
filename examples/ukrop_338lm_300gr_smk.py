@@ -1,7 +1,7 @@
 """Example of library usage"""
 
 from py_ballisticcalc import *
-from py_ballisticcalc import Settings as Set
+
 
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS
@@ -11,7 +11,7 @@ PreferredUnits.distance = Distance.Meter
 PreferredUnits.sight_height = Distance.Centimeter
 PreferredUnits.drop = Distance.Centimeter
 
-Set.USE_POWDER_SENSITIVITY = True  # enable muzzle velocity correction my powder temperature
+set_global_use_powder_sensitivity(True)  # enable muzzle velocity correction my powder temperature
 
 # define params with default prefer_units
 weight, diameter = 300, 0.338

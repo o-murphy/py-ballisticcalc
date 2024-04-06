@@ -2,7 +2,7 @@ from py_ballisticcalc import Unit, PreferredUnits
 from py_ballisticcalc import DragModel, TableG1
 from py_ballisticcalc import Ammo
 from py_ballisticcalc import Weapon, Shot, Calculator
-from py_ballisticcalc import Settings as Set
+
 
 PreferredUnits.distance = Unit.METER
 PreferredUnits.velocity = Unit.MPS

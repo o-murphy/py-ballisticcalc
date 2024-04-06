@@ -2,9 +2,12 @@
 
 import unittest
 import copy
-from py_ballisticcalc import DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7
-from py_ballisticcalc import Settings as Set
+from py_ballisticcalc import (
+    DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7,
+    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity
+)
 from py_ballisticcalc.unit import *
+
 
 class TestComputer(unittest.TestCase):
     """Basic verifications that wind, spin, and cant values produce effects of correct sign and magnitude"""
@@ -160,15 +163,15 @@ class TestComputer(unittest.TestCase):
         self.assertEqual(t.trajectory[5].height, self.baseline_trajectory[5].height)
 
     def test_powder_sensitivity(self):
-        """With USE_POWDER_SENSITIVITY: Reducing temperature should reduce muzzle velocity"""
-        previous = Set.USE_POWDER_SENSITIVITY
-        Set.USE_POWDER_SENSITIVITY = True
+        """With _globalUsePowderSensitivity: Reducing temperature should reduce muzzle velocity"""
+        previous = get_global_use_powder_sensitivity()
+        set_global_use_powder_sensitivity(True)
         self.ammo.calc_powder_sens(Velocity.FPS(2550), Temperature.Celsius(0))
         cold = Atmo(temperature=Temperature.Celsius(-5))
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
-        Set.USE_POWDER_SENSITIVITY = previous
+        set_global_use_powder_sensitivity(previous)
 
 #endregion Ammo
 

@@ -1,7 +1,7 @@
 """
 Useful types for prefer_units of measurement conversion for ballistics calculations
 """
-import os
+
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, MISSING, Field
@@ -11,14 +11,11 @@ from typing import NamedTuple, Union, TypeVar
 
 from py_ballisticcalc.logger import logger
 
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
 
-__all__ = ('Unit', 'AbstractUnit', 'UnitProps', 'UnitPropsDict', 'Distance',
+__all__ = ('Unit', 'AbstractUnit', 'AbstractUnitType', 'UnitProps',
+           'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'Dimension', 'PreferredUnits', 'basicConfig')
+           'Energy', 'Weight', 'Dimension', 'PreferredUnits')
 
 
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
@@ -672,72 +669,42 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
             super().__setattr__(key, value)
 
     @classmethod
+    def defaults(self):
+        """resets preferred units to defaults"""
+        self.angular = Unit.Degree
+        self.distance = Unit.Yard
+        self.velocity = Unit.FPS
+        self.pressure = Unit.InHg
+        self.temperature = Unit.Fahrenheit
+        self.diameter = Unit.Inch
+        self.length = Unit.Inch
+        self.weight = Unit.Grain
+        self.adjustment = Unit.Mil
+        self.drop = Unit.Inch
+        self.energy = Unit.FootPound
+        self.ogw = Unit.Pound
+        self.sight_height = Unit.Inch
+        self.target_height = Unit.Inch
+        self.twist = Unit.Inch
+
+    @classmethod
     def set(cls, **kwargs):
         """set preferred units from Mapping"""
         for attribute, value in kwargs.items():
-            try:
-                if hasattr(PreferredUnits, attribute):
-                    setattr(PreferredUnits, attribute, Unit[value])
+
+            if hasattr(PreferredUnits, attribute):
+                if isinstance(value, Unit):
+                    setattr(PreferredUnits, attribute, value)
+                elif isinstance(value, str):
+                    try:
+                        setattr(PreferredUnits, attribute, Unit[value])
+                    except KeyError:
+                        logger.warning(f"{value=} not a member of Unit")
                 else:
-                    logger.warning(f"{attribute=} not found in preferred_units")
-            except KeyError:
-                logger.warning(f"{value=} not found in preferred_units")
-
-    @classmethod
-    def _load_config(cls, filepath=None):
-
-        def find_pybc_toml(start_dir=os.path.dirname(__file__)):
-            """
-            Search for the pyproject.toml file starting from the specified directory.
-            :param start_dir: (str) The directory to start searching from. Default is the current working directory.
-            :return: str: The absolute path to the pyproject.toml file if found, otherwise None.
-            """
-            current_dir = os.path.abspath(start_dir)
-            while True:
-                # Check if pybc.toml or .pybc.toml exists in the current directory
-                pybc_paths = [
-                    os.path.join(current_dir, '.pybc.toml'),
-                    os.path.join(current_dir, 'pybc.toml'),
-                ]
-                for pypc_path in pybc_paths:
-                    if os.path.exists(pypc_path):
-                        return os.path.abspath(pypc_path)
-
-                # Move to the parent directory
-                parent_dir = os.path.dirname(current_dir)
-
-                # If we have reached the root directory, stop searching
-                if parent_dir == current_dir:
-                    return None
-
-                current_dir = parent_dir
-
-        if filepath is None:
-            filepath = find_pybc_toml()
-
-        with open(filepath, "rb") as fp:
-            _config = tomllib.load(fp)
-
-            if _pybc := _config.get('pybc'):
-                if preferred_units := _pybc.get('preferred_units'):
-                    cls.set(**preferred_units)
-                else:
-                    logger.warning("Config has not `pybc.preferred_units` section")
+                    logger.warning(f"type of {value=} have not been converted to a member of Unit")
             else:
-                logger.warning("Config has not `pybc` section")
+                logger.warning(f"{attribute=} not found in preferred_units")
 
-    @classmethod
-    def basic_config(cls, filename=None, **preferred_units):
-        """
-        Method to load preferred units from file or Mapping
-        """
-        if filename and preferred_units:
-            raise ValueError("Can't use preferred_units and config file at same time")
-        if preferred_units:
-            cls.set(**preferred_units)
-        else:
-            # trying to load definitions from pybc.toml
-            cls._load_config(filename)
 
 
 # pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
@@ -774,9 +741,3 @@ class Dimension(Field):
     @abstractmethod
     def __lshift__(self, other):
         ...
-
-
-PreferredUnits.basic_config()  # init PreferredUnits
-
-# export method globally
-basicConfig = PreferredUnits.basic_config

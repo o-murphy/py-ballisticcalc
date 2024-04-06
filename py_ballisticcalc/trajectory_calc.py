@@ -9,17 +9,54 @@ from typing import NamedTuple
 from .drag_model import DragDataPoint
 from .conditions import Atmo, Shot, Wind
 from .munition import Ammo
-from .settings import Settings
 from .trajectory_data import TrajectoryData, TrajFlag
-from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
+from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
 
-__all__ = ('TrajectoryCalc',)
+__all__ = (
+    'TrajectoryCalc',
+    'get_global_max_calc_step_size',
+    'get_global_use_powder_sensitivity',
+    'set_global_max_calc_step_size',
+    'set_global_use_powder_sensitivity',
+    'reset_globals'
+)
 
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
 cMaximumDrop = -15000
 cMaxIterations = 20
 cGravityConstant = -32.17405
+
+_globalUsePowderSensitivity = False
+_globalMaxCalcStepSize = Distance.Foot(0.5)
+
+
+def get_global_max_calc_step_size() -> Distance:
+    return _globalMaxCalcStepSize
+
+
+def get_global_use_powder_sensitivity() -> bool:
+    return _globalUsePowderSensitivity
+
+
+def reset_globals() -> None:
+    global _globalUsePowderSensitivity, _globalMaxCalcStepSize
+    _globalUsePowderSensitivity = False
+    _globalMaxCalcStepSize = Distance.Foot(0.5)
+
+
+def set_global_max_calc_step_size(value: [float, Distance]) -> None:
+    global _globalMaxCalcStepSize
+    if (_value := PreferredUnits.distance(value)).raw_value <= 0:
+        raise ValueError("_globalMaxCalcStepSize have to be > 0")
+    _globalMaxCalcStepSize = PreferredUnits.distance(value)
+
+
+def set_global_use_powder_sensitivity(value: bool) -> None:
+    global _globalUsePowderSensitivity
+    if not isinstance(value, bool):
+        raise TypeError(f"set_global_use_powder_sensitivity {value=} is not a boolean")
+    _globalUsePowderSensitivity = value
 
 
 class CurvePoint(NamedTuple):
@@ -110,9 +147,10 @@ class TrajectoryCalc:
         :param step: proposed step size
         :return: step size for calculations (in feet)
         """
+        preferred_step = _globalMaxCalcStepSize >> Distance.Foot
         if step == 0:
-            return Settings.get_max_calc_step_size() / 2.0
-        return min(step, Settings.get_max_calc_step_size()) / 2.0
+            return preferred_step / 2.0
+        return min(step, preferred_step) / 2.0
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False):
@@ -138,7 +176,7 @@ class TrajectoryCalc:
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = self.get_calc_step()
-        if Settings.USE_POWDER_SENSITIVITY:
+        if _globalUsePowderSensitivity:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS

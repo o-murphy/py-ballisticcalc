@@ -1,7 +1,7 @@
 # Config template for py_ballisticcalc
 
 title = "py_ballisticcalc config"
-version = "2.0.0b3"
+version = "2.0.0b4"
 
 [pybc.preferred_units]
 angular = 'Degree'
@@ -21,5 +21,5 @@ target_height = 'Inch'
 twist = 'Inch'
 
 [pybc.calculator]
-max_calc_step_size = [0.5, "Foot"]
-use_powder_sensitivity = true
+max_calc_step_size = { value = 0.5, units = "Foot" }
+use_powder_sensitivity = false
