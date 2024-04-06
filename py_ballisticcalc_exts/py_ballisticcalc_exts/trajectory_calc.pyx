@@ -3,17 +3,47 @@ cimport cython
 
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.munition import Ammo
-from py_ballisticcalc.settings import Settings
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import *
 
-__all__ = ('TrajectoryCalc',)
+__all__ = (
+    'TrajectoryCalc',
+    'get_global_max_calc_step_size',
+    'get_global_use_powder_sensitivity',
+    'set_global_max_calc_step_size',
+    'set_global_use_powder_sensitivity',
+)
 
 cdef double cZeroFindingAccuracy = 0.000005
 cdef double cMinimumVelocity = 50.0
 cdef double cMaximumDrop = -15000
 cdef int cMaxIterations = 20
 cdef double cGravityConstant = -32.17405
+
+cdef int _globalUsePowderSensitivity = False
+cdef object _globalMaxCalcStepSize = Distance.Foot(0.5)
+
+def get_global_max_calc_step_size() -> Distance:
+    return _globalMaxCalcStepSize
+
+
+def get_global_use_powder_sensitivity() -> bool:
+    return bool(_globalUsePowderSensitivity)
+
+
+def set_global_max_calc_step_size(value: [object, float]) -> None:
+    global _globalMaxCalcStepSize
+    if (_value := PreferredUnits.distance(value)).raw_value <= 0:
+        raise ValueError("_globalMaxCalcStepSize have to be > 0")
+    _globalMaxCalcStepSize = PreferredUnits.distance(value)
+
+
+def set_global_use_powder_sensitivity(value: bool) -> None:
+    global _globalUsePowderSensitivity
+    if not isinstance(value, bool):
+        raise TypeError(f"set_global_use_powder_sensitivity {value=} is not a boolean")
+    _globalUsePowderSensitivity = int(value)
+
 
 cdef struct CurvePoint:
     double a, b, c
@@ -158,7 +188,7 @@ cdef class TrajectoryCalc:
         self.cant_sine = sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = get_calc_step()
-        if Settings.USE_POWDER_SENSITIVITY:
+        if _globalUsePowderSensitivity:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
@@ -398,13 +428,13 @@ cdef double get_correction(double distance, double offset):
         return atan(offset / distance)
     return 0  # better None
 
-
+@cython.cdivision(True)
 cdef double get_calc_step(double step = 0):
-    cdef double defined_max = Settings.get_max_calc_step_size()
+    cdef double preferred_step = _globalMaxCalcStepSize >> Distance.Foot
     # cdef double defined_max = 0.5  # const will be better optimized with cython
     if step == 0:
-        return defined_max / 2.0
-    return min(step, defined_max) / 2.0
+        return preferred_step / 2.0
+    return min(step, preferred_step) / 2.0
 
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400

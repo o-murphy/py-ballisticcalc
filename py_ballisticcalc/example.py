@@ -2,7 +2,7 @@
 
 # pylint: disable=wildcard-import,unused-wildcard-import
 from py_ballisticcalc import *
-from py_ballisticcalc import Settings as Set
+
 
 # Modify default prefer_units
 PreferredUnits.velocity = Velocity.FPS
@@ -10,7 +10,7 @@ PreferredUnits.temperature = Temperature.Celsius
 PreferredUnits.distance = Distance.Meter
 PreferredUnits.sight_height = Distance.Centimeter
 
-Set.USE_POWDER_SENSITIVITY = True  # Correct muzzle velocity for powder temperature
+set_global_use_powder_sensitivity(True)  # Correct muzzle velocity for powder temperature
 
 # Define ammunition parameters
 weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units

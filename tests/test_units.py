@@ -1,9 +1,6 @@
-import typing
 import unittest
-import warnings
-from dataclasses import field, dataclass
+from dataclasses import dataclass
 
-from py_ballisticcalc import Settings
 from py_ballisticcalc.unit import *
 
 
@@ -16,7 +13,6 @@ def back_n_forth(test, value, units):
 class TestPrefUnits(unittest.TestCase):
 
     def test_pref(self):
-
         @dataclass
         class TestClass(PreferredUnits.Mixin):
             as_metadata_str: [float, Distance] = Dimension(prefer_units='sight_height')
