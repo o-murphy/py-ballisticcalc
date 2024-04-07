@@ -8,16 +8,21 @@ from dataclasses import dataclass, MISSING, Field
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Union, TypeVar
+import re
+
 
 from py_ballisticcalc.logger import logger
 
 
-__all__ = ('Unit', 'AbstractUnit', 'AbstractUnitType', 'UnitProps',
+__all__ = ('Unit', 'UnitType',
+           'AbstractUnit', 'AbstractUnitType',
+           'UnitProps', 'UnitAliases',
            'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
            'Energy', 'Weight', 'Dimension', 'PreferredUnits')
 
 
+UnitType = TypeVar('UnitType', bound='Unit')
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
 
 
@@ -98,7 +103,7 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: 'Unit', value: [int, float, AbstractUnitType] = None) -> AbstractUnitType:
+    def __call__(self: UnitType, value: [int, float, AbstractUnitType] = None) -> AbstractUnitType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
@@ -127,6 +132,58 @@ class Unit(IntEnum):
         else:
             raise TypeError(f"{self} Unit is not supported")
         return obj
+
+    @staticmethod
+    def find_unit_by_alias(string_to_find, aliases):
+        # Iterate over the keys of the dictionary
+        for aliases_tuple in aliases.keys():
+            # Check if the string is present in any of the tuples
+            # if any(string_to_find in alias for alias in aliases_tuple):
+            if string_to_find in aliases_tuple:
+                return aliases[aliases_tuple]
+        return None  # If not found, return None or handle it as needed
+
+    @staticmethod
+    def parse_unit(input_: str) -> UnitType:
+        if not isinstance(input_, str):
+            raise TypeError(f"type str required for {input_}")
+        if hasattr(PreferredUnits, input_):
+            return getattr(PreferredUnits, input_)
+        try:
+            return Unit[input_]
+        except KeyError:
+            return Unit.find_unit_by_alias(input_, UnitAliases)
+
+    @staticmethod
+    def parse_value(input_: [str, float, int], preferred: [UnitType, str]) -> AbstractUnitType:
+
+        def create_as_preferred(value):
+            if isinstance(preferred, Unit):
+                return preferred(float(value))
+            if isinstance(preferred, str):
+                if units := Unit.parse_unit(preferred):
+                    return units(float(value))
+            raise TypeError(f"Unsupported {preferred=} unit alias")
+
+        if isinstance(input_, (float, int)):
+            return create_as_preferred(input_)
+
+        if not isinstance(input_, str):
+            raise TypeError(f"Unsupported {input_=} type, [str, float, int] expected")
+
+        input_string = input_.replace(" ", "")
+        if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
+            value = match.group()
+            return create_as_preferred(value)
+
+        if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
+            value, alias = match.groups()
+            if units := Unit.parse_unit(alias):
+                return units(float(value))
+            else:
+                raise TypeError(f"Unsupported unit {alias=}")
+
+        raise ValueError(f"Can't parse unit {input_=}")
 
 
 class UnitProps(NamedTuple):
@@ -184,6 +241,58 @@ UnitPropsDict = {
     Unit.Pound: UnitProps('pound', 0, 'lb'),
     Unit.Kilogram: UnitProps('kilogram', 3, 'kg'),
     Unit.Newton: UnitProps('newton', 3, 'N'),
+}
+
+
+UnitAliases = {
+    ('radian', 'rad'): Unit.Radian,
+    ('degree', 'deg'): Unit.Degree,
+    ('moa', ): Unit.MOA,
+    ('mil', ): Unit.Mil,
+    ('mrad', ): Unit.MRad,
+    ('thousandth', 'ths'): Unit.Thousandth,
+    ('inch/100yd', 'in/100yd', 'inch/100yd', 'in/100yard'): Unit.InchesPer100Yd,
+    ('centimeter/100m', 'cm/100m', 'cm/100meter', 'centimeter/100meter'): Unit.CmPer100M,
+    ('hour', 'h'): Unit.OClock,
+
+    ('inch', 'in'): Unit.Inch,
+    ('foot', 'ft'): Unit.Foot,
+    ('yard', 'yd'): Unit.Yard,
+    ('mile', 'mi', 'mi.'): Unit.Mile,
+    ('nauticalmile', 'nm', 'nmi'): Unit.NauticalMile,
+    ('millimeter', 'mm'): Unit.Millimeter,
+    ('centimeter', 'cm'): Unit.Centimeter,
+    ('meter', 'm'): Unit.Meter,
+    ('kilometer', 'km'): Unit.Kilometer,
+    ('line', 'ln', 'liniа'): Unit.Line,
+
+    ('footpound', 'foot-pound', 'ft⋅lbf', 'ft⋅lbf', 'ft⋅lb'
+     'foot*pound', 'ft*lbf', 'ft*lbf', 'ft*lb'): Unit.FootPound,
+    ('joule', 'J'): Unit.Joule,
+
+    ('mmHg', ): Unit.MmHg,
+    ('inHg', '″Hg'): Unit.InHg,
+    ('bar', ): Unit.Bar,
+    ('hectopascal', 'hPa'): Unit.hPa,
+    ('psi', 'lbf/in2'): Unit.PSI,
+
+    ('fahrenheit', '°F', 'F', 'degF'): Unit.Fahrenheit,
+    ('celsius', '°C', 'C', 'degC'): Unit.Celsius,
+    ('kelvin', '°K', 'K', 'degK'): Unit.Kelvin,
+    ('rankin', '°R', 'R', 'degR'): Unit.Rankin,
+
+    ('meter/second', 'm/s', 'meter/s', 'm/second', 'mps'): Unit.MPS,
+    ('kilometer/hour', 'km/h', 'kilometer/h', 'km/hour', 'kmh'): Unit.KMH,
+    ('foot/second', 'ft/s', 'foot/s', 'ft/second', 'fps'): Unit.FPS,
+    ('mile/hour', 'mi/h', 'mile/h', 'mi/hour', 'mph'): Unit.MPH,
+    ('knot', 'kn', 'kt'): Unit.KT,
+
+    ('grain', 'gr', 'grn'): Unit.Grain,
+    ('ounce', 'oz'): Unit.Ounce,
+    ('gram', 'g'): Unit.Ounce,
+    ('pound', 'lb'): Unit.Pound,
+    ('kilogram', 'kilogramme', 'kg'): Unit.Kilogram,
+    ('newton', 'N'): Unit.Kilogram,
 }
 
 
@@ -273,7 +382,7 @@ class AbstractUnit:
         """
         return self._unit_support_error(value, units)
 
-    def convert(self, units: Unit) -> 'AbstractUnit':
+    def convert(self, units: Unit) -> AbstractUnitType:
         """Returns new unit instance in specified prefer_units
         :param units: Unit enum type
         :return: new unit instance in specified prefer_units

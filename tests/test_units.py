@@ -33,6 +33,41 @@ class TestPrefUnits(unittest.TestCase):
         self.assertEqual(tc3.as_metadata_unit.units, Unit.Meter)
 
 
+class TestUnitsParser(unittest.TestCase):
+    def test_parse_values(self):
+
+        valid_cases = [
+            '10', '10.2', '.2', '0.', '10ft*lb', '10footpound'
+        ]
+
+        for case in valid_cases:
+
+            with self.subTest(case):
+                ret = Unit.parse_value(case, Unit.FootPound)
+                self.assertIsInstance(ret, Energy)
+                self.assertEqual(ret.units, Unit.FootPound)
+
+            with self.subTest(case):
+                ret = Unit.parse_value(case, 'footpound')
+                self.assertIsInstance(ret, Energy)
+                self.assertEqual(ret.units, Unit.FootPound)
+
+            with self.subTest(case):
+                ret = Unit.parse_value(case, 'ft*lb')
+                self.assertIsInstance(ret, Energy)
+                self.assertEqual(ret.units, Unit.FootPound)
+
+            with self.subTest(case):
+                ret = Unit.parse_value(case, 'energy')
+                self.assertIsInstance(ret, Energy)
+                self.assertEqual(ret.units, Unit.FootPound)
+
+    def test_parse_units(self):
+
+        ret = Unit.parse_unit('ft*lb')
+        self.assertIsInstance(ret, Unit)
+
+
 class TestAngular(unittest.TestCase):
 
     def setUp(self) -> None:
