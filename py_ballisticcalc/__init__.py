@@ -137,6 +137,8 @@ __all__ = [
     'Weapon',
     'Ammo',
     'Unit',
+    'UnitType',
+    'UnitAliases',
     'AbstractUnit',
     'AbstractUnitType',
     'UnitProps',
@@ -149,7 +151,8 @@ __all__ = [
     'Energy',
     'Weight',
     'Dimension',
-    'PreferredUnits'
+    'PreferredUnits',
+    'get_drag_tables_names'
 ]
 
 __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]

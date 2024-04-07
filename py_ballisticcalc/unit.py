@@ -139,12 +139,13 @@ class Unit(IntEnum):
         for aliases_tuple in aliases.keys():
             # Check if the string is present in any of the tuples
             # if any(string_to_find in alias for alias in aliases_tuple):
-            if string_to_find in aliases_tuple:
+            if string_to_find in (each.lower() for each in aliases_tuple):
                 return aliases[aliases_tuple]
         return None  # If not found, return None or handle it as needed
 
     @staticmethod
     def parse_unit(input_: str) -> UnitType:
+        input_ = input_.strip().lower()
         if not isinstance(input_, str):
             raise TypeError(f"type str required for {input_}")
         if hasattr(PreferredUnits, input_):
@@ -771,7 +772,10 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                     if isinstance(units, Unit):
                         value = units(value)
                     elif isinstance(units, str):
-                        value = PreferredUnits.__dict__[units](value)
+                        if _units := Unit.parse_unit(units):
+                            value = _units(value)
+                        else:
+                            raise TypeError(f"Unsupported unit or dimension use one of {PreferredUnits}")
                     else:
                         raise TypeError(f"Unsupported unit or dimension use one of {PreferredUnits}")
 
@@ -805,9 +809,9 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 if isinstance(value, Unit):
                     setattr(PreferredUnits, attribute, value)
                 elif isinstance(value, str):
-                    try:
-                        setattr(PreferredUnits, attribute, Unit[value])
-                    except KeyError:
+                    if _unit := Unit.parse_unit(value):
+                        setattr(PreferredUnits, attribute, _unit)
+                    else:
                         logger.warning(f"{value=} not a member of Unit")
                 else:
                     logger.warning(f"type of {value=} have not been converted to a member of Unit")

@@ -669,4 +669,9 @@ TableGS = [
 ]
 
 
-__all__ = ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]
+def get_drag_tables_names():
+    return ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]
+
+
+__all__ = ['get_drag_tables_names']
+__all__ += get_drag_tables_names()
