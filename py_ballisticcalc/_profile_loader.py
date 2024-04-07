@@ -10,6 +10,12 @@ from py_ballisticcalc import basicConfig, Unit, Weapon, logger, Atmo
 logger.setLevel(logging.DEBUG)
 
 
+def check_expected_props(props, expected_props, section=None):
+    # just for debug
+    if len(not_provided := (expected_props - props.keys())):
+        logger.debug(f"Not provided: {not_provided} for {section=}, defaults will be loaded")
+
+
 def load_dimension(dimension: [dict, int, str, float],
                    preferred: str, key: str = None):
     if isinstance(dimension, (str, int, float)):
@@ -26,10 +32,13 @@ def load_dimension(dimension: [dict, int, str, float],
 
 
 def parse_weapon(weapon: dict):
+    expected = ('barrel_twist', 'sight_height')
     required = ('barrel_twist', 'sight_height')
 
+    check_expected_props(weapon, expected, 'weapon')
+
     if len(not_presented := (required - weapon.keys())):
-        raise ValueError(f"required properties {not_presented} are not presented for weapon")
+        raise ValueError(f"Required properties {not_presented} are not presented for weapon")
 
     barrel_twist = load_dimension(weapon['barrel_twist'], 'barrel_twist', 'weapon.barrel_twist')
     sight_height = load_dimension(weapon['sight_height'], 'sight_height', 'weapon.barrel_twist')
@@ -50,8 +59,7 @@ def parse_zero_atmo(zero_atmo: dict):
 
     # just for debug
     expected = ('altitude', 'pressure', 'temperature', 'humidity')
-    if len(not_provided := (expected - zero_atmo.keys())):
-        logger.debug(f"Not provided: {not_provided} for zero_atmo, defaults will be loaded")
+    check_expected_props(zero_atmo, expected, 'zero_atmo')
 
     atmo_kwargs = {}
 
@@ -102,7 +110,8 @@ def load_toml(path):
 if __name__ == '__main__':
     import os
     tomlpath = os.path.join(
-        os.path.dirname(os.getcwd()),
+        # os.path.dirname(os.getcwd()),
+        os.path.dirname(os.path.dirname(__file__)),
         'examples', 'myammo.toml'
     )
     load_toml(tomlpath)

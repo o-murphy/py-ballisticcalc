@@ -59,7 +59,7 @@ pybc.ammo.drag.table = [
 altitude = 1000
 pressure = 1000
 temperature = 15
-humidity = 0
+#humidity = 0
 
 [[pybc.winds]]
 velocity = 2
