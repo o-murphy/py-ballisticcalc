@@ -85,6 +85,8 @@ def _load_config(filepath=None):
         else:
             logger.warning("Config has not `pybc` section")
 
+    logger.debug("Calculator globals and PreferredUnits load success")
+
 
 def _basic_config(filename=None,
                   max_calc_step_size: [float, Distance] = None,
