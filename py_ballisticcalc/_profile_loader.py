@@ -1,6 +1,7 @@
 import logging
 import re
 from math import isinf
+from typing import Any
 
 try:
     import tomllib
@@ -8,23 +9,30 @@ except ImportError:
     import tomli as tomllib
 
 import py_ballisticcalc
-from py_ballisticcalc import basicConfig, Unit, Weapon, logger, Atmo, AbstractUnitType, Ammo, DragModel, \
-    get_drag_tables_names, BCPoint, DragModelMultiBC, Wind
+from py_ballisticcalc import (
+    basicConfig, Unit, Weapon, logger, Atmo, AbstractUnitType, Ammo, DragModel,
+    get_drag_tables_names, BCPoint, DragModelMultiBC, Wind, DragDataPoint
+)
 
 logger.setLevel(logging.DEBUG)
 
 
-def check_expected_props(props: dict, expected_props: [list, tuple], section=None) -> set:
-    # just for debug
-    if logger.level <= logging.DEBUG:
-        if len(not_provided := (expected_props - props.keys())):
-            logger.debug(f"Not provided: {not_provided} for {section=}, defaults will be loaded")
-            return not_provided
+def check_expected_props(props: dict, expected_props: [list, tuple], section=None, required=False) -> set:
+    if len(not_provided := (expected_props - props.keys())) > 0:
+        if required:
+            raise ValueError(f"Required properties {not_provided} are not presented for {section=}")
+        logger.debug(f"Not provided: {not_provided} for {section=}, defaults will be loaded")
+        return not_provided
 
 
-def check_required_props(props: dict, required_props: [list, tuple], section=None) -> None:
-    if len(not_presented := (required_props - props.keys())):
-        raise ValueError(f"Required properties {not_presented} are not presented for {section=}")
+def get_prop(props: dict, key_: Any, default=None, section: str='./', required: bool=False, msg: str='') -> ():
+    if (ret := props.get(key_)) is default:
+        _msg = (f"property '{key_}' not found in '{section}' "
+                f"or returns {default}") + (f", {msg}" if msg else '')
+        if required:
+            raise KeyError(f"Required {_msg}")
+        logger.warning(_msg)
+    return ret
 
 
 def load_dimension(dimension: [dict, int, str, float],
@@ -48,16 +56,13 @@ def load_dimension(dimension: [dict, int, str, float],
 
 
 def parse_weapon(weapon: dict) -> Weapon:
-    expected = ('barrel_twist', 'sight_height')
     required = ('barrel_twist', 'sight_height')
-
-    check_expected_props(weapon, expected, 'pybc.weapon')
-    check_required_props(weapon, required, 'pybc.weapon')
+    check_expected_props(weapon, required, 'weapon', required=True)
 
     barrel_twist = load_dimension(weapon['barrel_twist'], 'barrel_twist', 'weapon.barrel_twist')
     sight_height = load_dimension(weapon['sight_height'], 'sight_height', 'weapon.barrel_twist')
 
-    if _zero_elevation := weapon.get('zero_elevation'):
+    if _zero_elevation := get_prop(weapon, 'zero_elevation', section="weapon"):
         zero_elevation = load_dimension(_zero_elevation, 'angular', 'weapon.zero_elevation')
         return Weapon(sight_height, barrel_twist, zero_elevation)
 
@@ -71,15 +76,14 @@ def parse_bc(bc: [list, float, int, str]) -> [list[BCPoint], float]:
         multi_bc = []
 
         for i, item in enumerate(bc):
-            _v = item.get("v")
-            _bc = item.get('bc')
-            if not _v or not _bc:
-                raise ValueError("Each item of list of bc have been a mapping {v: <velocity>, bc: <float>}")
-            _v_value = load_dimension(_v, 'velocity', f'drag.bc[{i}].v')
+            section = f"drag.bc[{i}]"
+            _v = get_prop(item, "v", section=section, required=True)
+            _bc = get_prop(item, "bc", section=section, required=True)
+            _v_value = load_dimension(_v, 'velocity', f'{section}.v')
             try:
                 _bc_value = float(_bc)
             except ValueError:
-                raise ValueError(f"could not convert string to float: drag.bc[{i}].bc={_bc}")
+                raise ValueError(f"could not convert string to float: {section}.bc={_bc}")
 
             multi_bc.append(BCPoint(BC=_bc_value, V=_v_value))
         return multi_bc
@@ -89,95 +93,136 @@ def parse_bc(bc: [list, float, int, str]) -> [list[BCPoint], float]:
     raise TypeError(f"bc have be a list of BCPoints or number")
 
 
+def parse_custom_table(custom_table: list) -> list[DragDataPoint]:
+
+    def parse_row(row_: dict, idx: int = 0) -> DragDataPoint:
+
+        section = f'drag.custom_table[{idx}]'
+
+        required = ("mach", "cd")
+
+        # check_expected_props(row_, required, f"{section}.{custom_table[idx]=}", required=True)
+
+        mach = get_prop(row_, "mach", section=section, required=True)
+        cd = get_prop(row_, "cd", section=section, required=True)
+
+        if mach is not None and mach >= 0:
+            if not isinstance(mach, (str, float, int)):
+                raise TypeError(
+                    f"Mach value have to be parsed as float {section}.mach={custom_table[idx]['mach']})"
+                )
+        else:
+            raise ValueError(f"Mach value have to be >= 0 {section}={custom_table[idx]}")
+
+        if mach >= 0:
+            if not isinstance(cd, (str, float, int)):
+                raise TypeError(
+                    f"CD value have to be parsed as float {section}.cd={custom_table[idx]['cd']=})"
+                )
+        else:
+            raise ValueError(f"CD value have to be >= 0 {section}={custom_table[idx]}")
+
+        return DragDataPoint(float(mach), float(cd))
+
+    if not isinstance(custom_table, list) or len(custom_table) == 0:
+        raise TypeError(f"drag.custom_table have to be a list and not be empty")
+
+    drag_data_points = []
+
+    for i, row in enumerate(custom_table):
+        drag_data_points.append(parse_row(row))
+    return drag_data_points
+
+
 def parse_drag(drag: dict) -> DragModel:
-    expected = ('bullet_weight', 'bullet_diameter', 'bullet_length')
     required = ('bullet_weight', 'bullet_diameter', 'bullet_length')
 
-    check_expected_props(drag, expected, "ammo.drag")
-    check_required_props(drag, required, "ammo.drag")
+    check_expected_props(drag, required, "ammo.drag", required=True)
 
     drag_kwargs = {}
 
     # bullet dimensions load
-    if _bullet_weight := drag.get('bullet_weight'):
+    if _bullet_weight := get_prop(drag, 'bullet_weight', section="drag", required=True):
         drag_kwargs['weight'] = load_dimension(
-            _bullet_weight, 'weight', 'ammo.drag.bullet_weight')
+            _bullet_weight, 'weight', 'drag.bullet_weight')
 
-    if _bullet_diameter := drag.get('bullet_diameter'):
+    if _bullet_diameter := get_prop(drag, 'bullet_diameter', section="drag", required=True):
         drag_kwargs['diameter'] = load_dimension(
-            _bullet_diameter, 'diameter', 'ammo.drag.bullet_diameter')
+            _bullet_diameter, 'diameter', 'drag.bullet_diameter')
 
-    if _bullet_length := drag.get('bullet_length'):
+    if _bullet_length := get_prop(drag, 'bullet_length', section="drag", required=True):
         drag_kwargs['length'] = load_dimension(
-            _bullet_length, 'length', 'ammo.drag.bullet_length')
+            _bullet_length, 'length', 'drag.bullet_length')
 
-    _model = drag.get('model')
-    _bc = drag.get('bc')
-    _custom_table = drag.get('custom_table')
+    _model = get_prop(drag, 'model', section="drag")
+    _bc = get_prop(drag, 'bc', section="drag")
+    _custom_table = get_prop(drag, 'custom_table', section="drag")
 
-    if all((_model, _bc, _custom_table)):
+    if any((_model, _bc)) and _custom_table:
         raise ValueError(
             "You cannot specify all at same time: bc, model and custom_table "
             "Please use (model + bc) or custom_table instead"
         )
 
-    if _custom_table:
-        raise NotImplementedError
+    if all((_model, _bc)):
 
-    if not all((_model, _bc)):
-        raise ValueError(f"Expected both (model and bc) is not None: model={_model}, bc={_bc}")
+        model_match = ''
+        for pattern in (r"^table(g\w)$", r"^(g\w)$"):
+            if _model_match := re.match(pattern, _model, re.IGNORECASE):
+                model_match = _model_match.group(1).upper()
+                break
 
-    model_match = ''
-    for pattern in (r"^table(g\w)$", r"^(g\w)$"):
-        if _model_match := re.match(pattern, _model, re.IGNORECASE):
-            model_match = _model_match.group(1).upper()
-            break
+        if not hasattr(py_ballisticcalc, f"Table{model_match}"):
+            raise ValueError(f"Unrecognized model: {_model}, "
+                             f"use one of the following: {get_drag_tables_names()}")
 
-    if not hasattr(py_ballisticcalc, f"Table{model_match}"):
-        raise ValueError(f"Unrecognized model: {_model}, "
-                         f"use one of the following: {get_drag_tables_names()}")
+        drag_kwargs['drag_table'] = getattr(py_ballisticcalc, f"Table{model_match}")
+        bc = parse_bc(_bc)
 
-    drag_kwargs['drag_table'] = getattr(py_ballisticcalc, f"Table{model_match}")
-    bc = parse_bc(_bc)
+        if isinstance(bc, float):
+            drag_kwargs['bc'] = bc
+            return DragModel(**drag_kwargs)
+        elif isinstance(bc, list):
+            drag_kwargs['bc_points'] = bc
+            return DragModelMultiBC(**drag_kwargs)
+        else:
+            raise TypeError("Unrecognized bc")
 
-    if isinstance(bc, float):
-        drag_kwargs['bc'] = bc
-        return DragModel(**drag_kwargs)
-    elif isinstance(bc, list):
-        drag_kwargs['bc_points'] = bc
-        return DragModelMultiBC(**drag_kwargs)
+    elif _custom_table:
+        if _drag_table := parse_custom_table(_custom_table):
+            return DragModel(bc=1, drag_table=_drag_table, **drag_kwargs)
+        else:
+            raise ValueError("Wrong custom drag table")
+
     else:
-        raise TypeError("Unrecognized bc")
+        raise TypeError("Unrecognized drag data provided")
 
 
 def parse_ammo(ammo: dict) -> Ammo:
-    expected = ('muzzle_velocity', 'drag', 'powder_temp', 'powder_temp_modifier')
     required = ('muzzle_velocity', 'drag', 'powder_temp', 'powder_temp_modifier')
 
-    check_expected_props(ammo, expected, 'pybc.ammo')
-    check_required_props(ammo, required, 'pybc.ammo')
+    check_expected_props(ammo, required, 'ammo', required=True)
 
     ammo_kwargs = {}
 
-    if _muzzle_velocity := ammo.get('muzzle_velocity'):
+    if _muzzle_velocity := get_prop(ammo, 'muzzle_velocity', section="ammo"):
         ammo_kwargs['mv'] = load_dimension(
             _muzzle_velocity, 'velocity', 'ammo.muzzle_velocity')
 
-    if _powder_temp := ammo.get('powder_temp'):
+    if _powder_temp := get_prop(ammo, 'powder_temp', section="ammo"):
         ammo_kwargs['powder_temp'] = load_dimension(
             _powder_temp, 'temperature', 'ammo.powder_temp')
 
-    if _powder_temp_modifier := ammo.get('powder_temp_modifier'):
+    if _powder_temp_modifier := get_prop(ammo, 'powder_temp_modifier', section="ammo"):
         try:
             ammo_kwargs['temp_modifier'] = float(_powder_temp_modifier)
         except ValueError as err:
-            logger.warning(f"Powder temp modifier load warning for value={_powder_temp_modifier}: {err}")
+            logger.warning(f"Powder temp modifier load "
+                           f"warning for value={_powder_temp_modifier}: {err}")
 
-    if _drag := ammo.get('drag'):
+    if _drag := get_prop(ammo, 'drag', section="ammo", required=True):
         ammo_kwargs['dm'] = parse_drag(_drag)
         logger.debug(f"Loaded: dm={ammo_kwargs['dm']}")
-    else:
-        raise ValueError("pybc.ammo.drag section not provided")
 
     return Ammo(**ammo_kwargs)
 
@@ -185,23 +230,23 @@ def parse_ammo(ammo: dict) -> Ammo:
 def parse_zero_atmo(zero_atmo: dict) -> Atmo:
     # just for debug
     expected = ('altitude', 'pressure', 'temperature', 'humidity')
-    check_expected_props(zero_atmo, expected, 'pybc.zero_atmo')
+    check_expected_props(zero_atmo, expected, 'zero_atmo')
 
     atmo_kwargs = {}
 
-    if _altitude := zero_atmo.get('altitude'):
+    if _altitude := get_prop(zero_atmo, 'altitude', section="zero_atmo"):
         atmo_kwargs['altitude'] = load_dimension(
             _altitude, 'distance', 'zero_atmo.altitude')
 
-    if _pressure := zero_atmo.get('pressure'):
+    if _pressure := get_prop(zero_atmo, 'pressure', section="zero_atmo"):
         atmo_kwargs['pressure'] = load_dimension(
             _pressure, 'pressure', 'zero_atmo.pressure')
 
-    if _temperature := zero_atmo.get('temperature'):
+    if _temperature := get_prop(zero_atmo, 'temperature', section="zero_atmo"):
         atmo_kwargs['temperature'] = load_dimension(
             _temperature, 'temperature', 'zero_atmo.temperature')
 
-    if _humidity := zero_atmo.get('humidity'):
+    if _humidity := get_prop(zero_atmo, 'humidity', section="zero_atmo"):
         try:
             atmo_kwargs['humidity'] = float(_humidity)
         except ValueError as err:
@@ -217,31 +262,32 @@ def parse_winds(wind: [dict, list]) -> list[Wind]:
 
     i = 0
 
-    def parse_single_wind(_wind: dict, requires_until_distance=False) -> Wind:
-        expected = ('velocity', 'direction_from', 'until_distance')
+    def parse_single_wind(_wind: dict, requires_until_distance=False, idx=0) -> Wind:
+        section = f"wind[{idx}]"
+        expected = ('until_distance', )
         required = ['velocity', 'direction_from']
         if requires_until_distance:
             required += ['until_distance']
 
-        check_expected_props(_wind, expected, f"pybc.wind[{i}]")
-        check_required_props(_wind, expected, f"pybc.wind[{i}]")
+        check_expected_props(_wind, expected, f"{section}")
+        check_expected_props(_wind, required, f"{section}", required=True)
 
         wind_kwargs = {}
 
-        if _velocity := _wind.get('velocity'):
+        if _velocity := get_prop(_wind, 'velocity', section=section, required=True):
             wind_kwargs['velocity'] = load_dimension(
-                _velocity, 'velocity', f'pybc.wind[{i}].velocity')
+                _velocity, 'velocity', f'{section}.velocity')
 
-        if _direction_from := _wind.get('direction_from'):
+        if _direction_from := get_prop(_wind, 'direction_from', section=section, required=True):
             wind_kwargs['direction_from'] = load_dimension(
-                _direction_from, 'angular', f'pybc.wind[{i}].direction_from')
+                _direction_from, 'angular', f'{section}.direction_from')
 
-        if _until_distance := _wind.get('until_distance'):
+        if _until_distance := get_prop(_wind, 'until_distance', section=section):
             wind_kwargs['until_distance'] = load_dimension(
-                _until_distance, 'distance', f'pybc.wind[{i}].until_distance')
+                _until_distance, 'distance', f'{section}.until_distance')
 
         if not ('velocity' and 'direction_from') in wind_kwargs:
-            raise ValueError(f"Wrong pybc.wind[{i}]")
+            raise ValueError(f"Wrong wind[{i}]")
 
         return Wind(**wind_kwargs)
 
@@ -250,46 +296,39 @@ def parse_winds(wind: [dict, list]) -> list[Wind]:
     elif isinstance(wind, list):
         if not len(wind):
             return [Wind()]
-        winds = [parse_single_wind(w, requires_until_distance=True) for i, w in enumerate(wind)]
+        winds = [parse_single_wind(w, True, i) for i, w in enumerate(wind)]
         return winds
-    raise ValueError(f"Wrong pybc.wind provided: {wind}")
+    raise ValueError(f"Wrong wind provided: {wind}")
 
 
 def load_toml(path):
     with open(path, 'rb') as fp:
         data = tomllib.load(fp)
 
-    if pybc := data.get("pybc"):
-        basicConfig(path)
+    # if pybc := data.get("pybc"):
+    # if pybc := data.get("pybc"):
 
-        if _weapon := pybc.get('weapon'):
-            weapon = parse_weapon(_weapon)
-            logger.debug(f"Loaded: {weapon=}")
-        else:
-            raise ValueError("pybc.weapon section not provided")
+    pybc = get_prop(data, "pybc", None, "<file>", required=True)
 
-        if _ammo := pybc.get("ammo"):
-            ammo = parse_ammo(_ammo)
-            logger.debug(f"Loaded: {ammo=}")
-        else:
-            raise ValueError("pybc.ammo section not provided")
+    basicConfig(path)
 
-        if _zero_atmo := pybc.get("zero_atmo"):
-            zero_atmo = parse_zero_atmo(_zero_atmo)
-            logger.debug(f"Loaded: {zero_atmo=}")
-        else:
-            logger.debug(f"ZeroAtmo section not provided, ICAO Atmo will be loaded")
+    _weapon = get_prop(pybc, "weapon", None, "<file>.pybc", required=True)
+    weapon = parse_weapon(_weapon)
+    logger.debug(f"Loaded: {weapon=}")
 
-        if _winds := pybc.get("wind"):
-            winds = parse_winds(_winds)
-            logger.debug(f"Loaded: {winds=}")
-        else:
-            logger.debug(f"pybc.wind section not provided, empty Wind will be loaded")
-            winds = [Wind()]
-        logger.debug(f"Loaded: {winds=}")
+    _ammo = get_prop(pybc, "ammo", None, "<file>.pybc", required=True)
+    ammo = parse_ammo(_ammo)
+    logger.debug(f"Loaded: {ammo=}")
 
-    else:
-        raise ValueError("pybc section not provided")
+    _zero_atmo = get_prop(pybc, "zero_atmo", None, "<file>.zero_atmo",
+                          required=True, msg='ICAO Atmo will be loaded')
+    zero_atmo = parse_zero_atmo(_zero_atmo)
+    logger.debug(f"Loaded: {zero_atmo=}")
+
+    _winds = get_prop(pybc, "wind", None, "<file>.wind",
+                      msg="empty Wind will be loaded")
+    winds = parse_winds(_winds)
+    logger.debug(f"Loaded: {winds=}")
 
 
 if __name__ == '__main__':
@@ -298,6 +337,6 @@ if __name__ == '__main__':
     tomlpath = os.path.join(
         # os.path.dirname(os.getcwd()),
         os.path.dirname(os.path.dirname(__file__)),
-        'examples', 'myammo.toml'
+        'examples', 'lapua_338lm_ap529_300gr.toml'
     )
     load_toml(tomlpath)
