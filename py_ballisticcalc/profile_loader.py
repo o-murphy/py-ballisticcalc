@@ -310,6 +310,8 @@ def load_profile(data: dict) -> [[None], (Weapon, Ammo, Atmo, [Wind])]:
 
     weapon, ammo, zero_atmo, winds = None, None, None, None
 
+    # TODO: add zero_distance
+
     # _weapon = get_prop(pybc, "weapon", None, "<file>.pybc", required=True)
     if _weapon := get_prop(pybc, "weapon", None, "<file>.pybc"):
         weapon = parse_weapon(_weapon)
