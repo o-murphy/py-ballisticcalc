@@ -1,0 +1,14 @@
+title = "zero atmo and winds config template"
+
+
+pybc.wind = [
+    { velocity = 2, direction_from = 30, until_distance = 1000 },
+    { velocity = 1, direction_from = 1, until_distance = +inf }
+]
+
+
+[pybc.zero_atmo]
+altitude = 1000
+pressure = 1000
+temperature = 15
+humidity = 0

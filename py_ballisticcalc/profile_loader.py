@@ -2,6 +2,7 @@ import logging
 import re
 from math import isinf
 from typing import Any
+import os
 
 try:
     import tomllib
@@ -14,7 +15,7 @@ from py_ballisticcalc import (
     get_drag_tables_names, BCPoint, DragModelMultiBC, Wind, DragDataPoint
 )
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def check_expected_props(props: dict, expected_props: [list, tuple], section=None, required=False) -> set:
@@ -25,7 +26,7 @@ def check_expected_props(props: dict, expected_props: [list, tuple], section=Non
         return not_provided
 
 
-def get_prop(props: dict, key_: Any, default=None, section: str='./', required: bool=False, msg: str='') -> ():
+def get_prop(props: dict, key_: Any, default=None, section: str = './', required: bool = False, msg: str = '') -> ():
     if (ret := props.get(key_)) is default:
         _msg = (f"property '{key_}' not found in '{section}' "
                 f"or returns {default}") + (f", {msg}" if msg else '')
@@ -71,7 +72,6 @@ def parse_weapon(weapon: dict) -> Weapon:
 
 
 def parse_bc(bc: [list, float, int, str]) -> [list[BCPoint], float]:
-
     if isinstance(bc, list):
         multi_bc = []
 
@@ -94,7 +94,6 @@ def parse_bc(bc: [list, float, int, str]) -> [list[BCPoint], float]:
 
 
 def parse_custom_table(custom_table: list) -> list[DragDataPoint]:
-
     def parse_row(row_: dict, idx: int = 0) -> DragDataPoint:
 
         section = f'drag.custom_table[{idx}]'
@@ -259,12 +258,11 @@ def parse_zero_atmo(zero_atmo: dict) -> Atmo:
 
 
 def parse_winds(wind: [dict, list]) -> list[Wind]:
-
     i = 0
 
     def parse_single_wind(_wind: dict, requires_until_distance=False, idx=0) -> Wind:
         section = f"wind[{idx}]"
-        expected = ('until_distance', )
+        expected = ('until_distance',)
         required = ['velocity', 'direction_from']
         if requires_until_distance:
             required += ['until_distance']
@@ -301,42 +299,66 @@ def parse_winds(wind: [dict, list]) -> list[Wind]:
     raise ValueError(f"Wrong wind provided: {wind}")
 
 
-def load_toml(path):
+def read_toml(path: [str, os.PathLike]) -> dict:
     with open(path, 'rb') as fp:
-        data = tomllib.load(fp)
+        basicConfig(path)
+        return tomllib.load(fp)
 
-    # if pybc := data.get("pybc"):
-    # if pybc := data.get("pybc"):
 
+def load_profile(data: dict) -> [[None], (Weapon, Ammo, Atmo, [Wind])]:
     pybc = get_prop(data, "pybc", None, "<file>", required=True)
 
-    basicConfig(path)
+    weapon, ammo, zero_atmo, winds = None, None, None, None
 
-    _weapon = get_prop(pybc, "weapon", None, "<file>.pybc", required=True)
-    weapon = parse_weapon(_weapon)
-    logger.debug(f"Loaded: {weapon=}")
+    # _weapon = get_prop(pybc, "weapon", None, "<file>.pybc", required=True)
+    if _weapon := get_prop(pybc, "weapon", None, "<file>.pybc"):
+        weapon = parse_weapon(_weapon)
+        logger.debug(f"Loaded: {weapon=}")
 
-    _ammo = get_prop(pybc, "ammo", None, "<file>.pybc", required=True)
-    ammo = parse_ammo(_ammo)
-    logger.debug(f"Loaded: {ammo=}")
+    # _ammo = get_prop(pybc, "ammo", None, "<file>.pybc", required=True)
+    if _ammo := get_prop(pybc, "ammo", None, "<file>.pybc"):
+        ammo = parse_ammo(_ammo)
+        logger.debug(f"Loaded: {ammo=}")
 
-    _zero_atmo = get_prop(pybc, "zero_atmo", None, "<file>.zero_atmo",
-                          required=True, msg='ICAO Atmo will be loaded')
-    zero_atmo = parse_zero_atmo(_zero_atmo)
-    logger.debug(f"Loaded: {zero_atmo=}")
+    if _zero_atmo := get_prop(pybc, "zero_atmo", None, "<file>.zero_atmo",
+                              # required=True, msg='ICAO Atmo will be loaded'):
+                              msg='ICAO Atmo will be loaded'):
+        zero_atmo = parse_zero_atmo(_zero_atmo)
+        logger.debug(f"Loaded: {zero_atmo=}")
 
-    _winds = get_prop(pybc, "wind", None, "<file>.wind",
-                      msg="empty Wind will be loaded")
-    winds = parse_winds(_winds)
-    logger.debug(f"Loaded: {winds=}")
+    if _winds := get_prop(pybc, "wind", None, "<file>.wind",
+                          msg="empty Wind will be loaded"):
+        winds = parse_winds(_winds)
+        logger.debug(f"Loaded: {winds=}")
+
+    return weapon, ammo, zero_atmo, winds
 
 
-if __name__ == '__main__':
-    import os
+def load_multiple_toml(*toml_files: [str, os.PathLike]) -> (Weapon, Ammo, Atmo, [Wind]):
+    if len(toml_files) > 0:
+        logger.warning(f"Last presented config overloads previous. Be care to provide valid data")
 
-    tomlpath = os.path.join(
-        # os.path.dirname(os.getcwd()),
-        os.path.dirname(os.path.dirname(__file__)),
-        'examples', 'lapua_338lm_ap529_300gr.toml'
-    )
-    load_toml(tomlpath)
+    weapon, ammo, zero_atmo, winds = None, None, None, None
+
+    for toml_file in toml_files:
+        try:
+            logger.info(f"Loading {toml_file}")
+            data = read_toml(toml_file)
+            _weapon, _ammo, _zero_atmo, _winds = load_profile(data)
+            if _weapon:
+                weapon = _weapon
+            if _ammo:
+                ammo = _ammo
+            if _zero_atmo:
+                zero_atmo = _zero_atmo
+            if _winds:
+                winds = _winds
+        except Exception as err:
+            if logger.level <= logging.DEBUG:
+                logger.exception(err)
+            raise ValueError(f"Error occurred in {toml_file}")
+
+    if all((weapon, ammo, zero_atmo, winds)):
+        logger.info(f"weapon, ammo, zero_atmo, winds load successful")
+        return weapon, ammo, zero_atmo, winds
+    raise ValueError(f"No valid data provided in {toml_files}")
