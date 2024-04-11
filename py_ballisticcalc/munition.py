@@ -1,11 +1,25 @@
 """Module for Weapon and Ammo properties definitions"""
 import math
 from dataclasses import dataclass, field
+from enum import IntEnum
 
 from .drag_model import DragModel
 from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, Dimension
 
 __all__ = ('Weapon', 'Ammo')
+
+
+class FocalPlane(IntEnum):
+    First = 1
+    Second = 2
+
+
+@dataclass
+class Sight(PreferredUnits.Mixin):
+    focal_plane: FocalPlane = field(default=FocalPlane.First)
+    scale_factor: float = field(default=1.)
+    h_click_size: [float, Angular] = Dimension(prefer_units='adjustment')
+    v_click_size: [float, Angular] = Dimension(prefer_units='adjustment')
 
 
 @dataclass
@@ -20,6 +34,7 @@ class Weapon(PreferredUnits.Mixin):
     sight_height: [float, Distance] = Dimension(prefer_units='sight_height')
     twist: [float, Distance] = Dimension(prefer_units='twist')
     zero_elevation: [float, Angular] = Dimension(prefer_units='angular')
+    sight: [Sight, None] = field(default=None)
 
     def __post_init__(self):
         if not self.sight_height:
