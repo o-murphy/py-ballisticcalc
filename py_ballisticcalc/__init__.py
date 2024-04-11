@@ -56,34 +56,35 @@ def _load_config(filepath=None):
 
     if filepath is None:
         if (filepath := find_pybc_toml()) is None:
-            find_pybc_toml(os.path.dirname(__file__))
+            filepath = find_pybc_toml(os.path.dirname(__file__))
 
-    logger.debug(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
+    if filepath is not None:
+        logger.debug(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
 
-    with open(filepath, "rb") as fp:
-        _config = tomllib.load(fp)
+        with open(filepath, "rb") as fp:
+            _config = tomllib.load(fp)
 
-        if _pybc := _config.get('pybc'):
-            if preferred_units := _pybc.get('preferred_units'):
-                PreferredUnits.set(**preferred_units)
+            if _pybc := _config.get('pybc'):
+                if preferred_units := _pybc.get('preferred_units'):
+                    PreferredUnits.set(**preferred_units)
+                else:
+                    logger.warning("Config has not `pybc.preferred_units` section")
+
+                if calculator := _pybc.get('calculator'):
+                    if max_calc_step_size := calculator.get('max_calc_step_size'):
+                        try:
+                            _val = max_calc_step_size.get("value")
+                            _units = Unit[max_calc_step_size.get("units")]
+                            set_global_max_calc_step_size(_units(_val))
+                        except (KeyError, TypeError, ValueError):
+                            logger.warning("Wrong max_calc_step_size units or value")
+
+                    if use_powder_sensitivity := calculator.get('use_powder_sensitivity'):
+                        set_global_use_powder_sensitivity(use_powder_sensitivity)
+                else:
+                    logger.warning("Config has not `pybc.calculator` section")
             else:
-                logger.warning("Config has not `pybc.preferred_units` section")
-
-            if calculator := _pybc.get('calculator'):
-                if max_calc_step_size := calculator.get('max_calc_step_size'):
-                    try:
-                        _val = max_calc_step_size.get("value")
-                        _units = Unit[max_calc_step_size.get("units")]
-                        set_global_max_calc_step_size(_units(_val))
-                    except (KeyError, TypeError, ValueError):
-                        logger.warning("Wrong max_calc_step_size units or value")
-
-                if use_powder_sensitivity := calculator.get('use_powder_sensitivity'):
-                    set_global_use_powder_sensitivity(use_powder_sensitivity)
-            else:
-                logger.warning("Config has not `pybc.calculator` section")
-        else:
-            logger.warning("Config has not `pybc` section")
+                logger.warning("Config has not `pybc` section")
 
 
 def _basic_config(filename=None,

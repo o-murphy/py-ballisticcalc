@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.0.0"
+version = "2.0.1"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -54,6 +54,6 @@ exclude = ["py_ballisticcalc_exts*"]
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.0.0']
+exts = ['py_ballisticcalc.exts==2.0.1']
 lint = ['pylint', 'flake8']
 charts = ['matplotlib', 'pandas']
