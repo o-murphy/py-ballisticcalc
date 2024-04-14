@@ -137,6 +137,7 @@ __all__ = [
     'Shot',
     'Weapon',
     'Ammo',
+    'Sight',
     'Unit',
     'UnitType',
     'UnitAliases',

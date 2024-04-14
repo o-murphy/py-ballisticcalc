@@ -198,7 +198,7 @@ UnitPropsDict = {
     Unit.Radian: UnitProps('radian', 6, 'rad'),
     Unit.Degree: UnitProps('degree', 4, '°'),
     Unit.MOA: UnitProps('MOA', 2, 'MOA'),
-    Unit.Mil: UnitProps('mil', 2, 'mil'),
+    Unit.Mil: UnitProps('mil', 3, 'mil'),
     Unit.MRad: UnitProps('mrad', 2, 'mrad'),
     Unit.Thousandth: UnitProps('thousandth', 2, 'ths'),
     Unit.InchesPer100Yd: UnitProps('inch/100yd', 2, 'in/100yd'),
