@@ -51,10 +51,29 @@ class TestSight(unittest.TestCase):
 
         for case in cases:
             with self.subTest(case=case):
-                step = s._get_sfp_reticle_steps(
-                    Unit.Meter(case['td']), case['mag']
-                ).vertical.unit_value
-                self.assertAlmostEqual(step, case['step'], places=7)
+                adj = s.get_adjustment(Unit.Meter(case['td']),
+                                       Unit.Mil(1),
+                                       Unit.Mil(1),
+                                       case['mag']).vertical
+                self.assertAlmostEqual(adj, case['adj'], places=7)
+
+    def test_lwir(self):
+        click_size = Unit.Mil(0.25)
+        s = Sight(focal_plane=Sight.FocalPlane.LWIR,
+                  scale_factor=Unit.Meter(100),
+                  h_click_size=click_size,
+                  v_click_size=click_size)
+
+        cases = [
+            {"td": 100, "mag": 1, 'step': 0.25, 'adj': 4},
+            {"td": 200, "mag": 1, 'step': 0.25, 'adj': 4},
+            {"td": 100, "mag": 2, 'step': 0.25, 'adj': 8},
+            {"td": 200, "mag": 2, 'step': 0.25, 'adj': 8},
+            {"td": 100, "mag": 10, 'step': 0.25, 'adj': 40},
+            {"td": 200, "mag": 10, 'step': 0.25, 'adj': 40},
+            {"td": 50, "mag": 1, 'step': 0.25, 'adj': 4},
+            {"td": 50, "mag": 10, 'step': 0.25, 'adj': 40},
+        ]
 
         for case in cases:
             with self.subTest(case=case):

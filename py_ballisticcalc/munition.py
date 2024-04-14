@@ -32,10 +32,12 @@ class Sight(PreferredUnits.Mixin):
     v_click_size: [float, Angular] = Dimension(prefer_units='adjustment')
 
     def __post_init__(self):
-        if not self.scale_factor:
-            self.scale_factor = PreferredUnits.distance(100)
+        if not self.scale_factor and self.focal_plane == Sight.FocalPlane.SFP:
+            raise ValueError('Scale_factor required for SFP sights')
 
-        if self.focal_plane not in (Sight.FocalPlane.SFP, Sight.FocalPlane.FFP):
+        if self.focal_plane not in (Sight.FocalPlane.SFP,
+                                    Sight.FocalPlane.FFP,
+                                    Sight.FocalPlane.LWIR):
             raise ValueError("Wrong focal plane")
 
     def _adjust_sfp_reticle_steps(self, target_distance: [float, Distance], magnification: float) -> ReticleStep:
