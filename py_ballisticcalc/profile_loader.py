@@ -12,7 +12,7 @@ except ImportError:
 import py_ballisticcalc
 from py_ballisticcalc import (
     basicConfig, Unit, Weapon, logger, Atmo, AbstractUnitType, Ammo, DragModel,
-    get_drag_tables_names, BCPoint, DragModelMultiBC, Wind, DragDataPoint
+    get_drag_tables_names, BCPoint, DragModelMultiBC, Wind, DragDataPoint, Distance
 )
 
 logger.setLevel(logging.INFO)
@@ -305,17 +305,17 @@ def read_toml(path: [str, os.PathLike]) -> dict:
         return tomllib.load(fp)
 
 
-def load_profile(data: dict) -> [[None], (Weapon, Ammo, Atmo, [Wind])]:
+def load_profile(data: dict) -> [[None], (Weapon, Ammo, Atmo, [Wind], Distance)]:
     pybc = get_prop(data, "pybc", None, "<file>", required=True)
 
-    weapon, ammo, zero_atmo, winds = None, None, None, None
-
-    # TODO: add zero_distance
+    weapon, ammo, zero_atmo, winds, zero_distance = None, None, None, None, None
 
     # _weapon = get_prop(pybc, "weapon", None, "<file>.pybc", required=True)
     if _weapon := get_prop(pybc, "weapon", None, "<file>.pybc"):
         weapon = parse_weapon(_weapon)
         logger.debug(f"Loaded: {weapon=}")
+        _zero_distance = get_prop(_weapon, "zero_distance")
+        zero_distance = load_dimension(_zero_distance, "weapon.zero_distance")
 
     # _ammo = get_prop(pybc, "ammo", None, "<file>.pybc", required=True)
     if _ammo := get_prop(pybc, "ammo", None, "<file>.pybc"):
@@ -333,20 +333,20 @@ def load_profile(data: dict) -> [[None], (Weapon, Ammo, Atmo, [Wind])]:
         winds = parse_winds(_winds)
         logger.debug(f"Loaded: {winds=}")
 
-    return weapon, ammo, zero_atmo, winds
+    return weapon, ammo, zero_atmo, winds, zero_distance
 
 
-def load_multiple_toml(*toml_files: [str, os.PathLike]) -> (Weapon, Ammo, Atmo, [Wind]):
+def load_multiple_toml(*toml_files: [str, os.PathLike]) -> (Weapon, Ammo, Atmo, [Wind], Distance):
     if len(toml_files) > 0:
         logger.warning(f"Last presented config overloads previous. Be care to provide valid data")
 
-    weapon, ammo, zero_atmo, winds = None, None, None, None
+    weapon, ammo, zero_atmo, winds, zero_distance = None, None, None, None, None
 
     for toml_file in toml_files:
         try:
             logger.info(f"Loading {toml_file}")
             data = read_toml(toml_file)
-            _weapon, _ammo, _zero_atmo, _winds = load_profile(data)
+            _weapon, _ammo, _zero_atmo, _winds, _zero_distance = load_profile(data)
             if _weapon:
                 weapon = _weapon
             if _ammo:
@@ -355,12 +355,14 @@ def load_multiple_toml(*toml_files: [str, os.PathLike]) -> (Weapon, Ammo, Atmo, 
                 zero_atmo = _zero_atmo
             if _winds:
                 winds = _winds
+            if _zero_distance:
+                zero_distance = _zero_distance
         except Exception as err:
             if logger.level <= logging.DEBUG:
                 logger.exception(err)
             raise ValueError(f"Error occurred in {toml_file}")
 
-    if all((weapon, ammo, zero_atmo, winds)):
-        logger.info(f"weapon, ammo, zero_atmo, winds load successful")
-        return weapon, ammo, zero_atmo, winds
+    if all((weapon, ammo, zero_atmo, winds, )):
+        logger.info(f"weapon, ammo, zero_atmo, winds, zero_distance load successful")
+        return weapon, ammo, zero_atmo, winds, zero_distance
     raise ValueError(f"No valid data provided in {toml_files}")

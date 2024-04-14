@@ -26,7 +26,7 @@ def main(argv):
 
         # TODO: also add to toml parser
         general.add_argument("-zd", "--shot-dist", action="store_true", help="Zero distance")
-        general.add_argument("-sd", "--shot-dist", action="store_true", help="Shot distance")
+        general.add_argument("-sd", "--zero-dist", action="store_true", help="Shot distance")
 
         zero_atmo = parser.add_argument_group('Zero atmo', 'Zero atmosphere parameters')
         zero_atmo.add_argument("-zt", "--zero-t", action="store", help="Zero temperature")
@@ -50,12 +50,13 @@ def main(argv):
             logger.setLevel(logging.DEBUG)
             logger.info("Debug messages enabled")
 
-        weapon, ammo, zero_atmo, winds = load_multiple_toml(*argv.files)
+        weapon, ammo, zero_atmo, winds, zero_distance = load_multiple_toml(*argv.files)
         from pprint import pprint
         pprint(weapon)
-        print(ammo)
-        print(zero_atmo)
-        print(winds)
+        pprint(zero_distance)
+        pprint(ammo)
+        pprint(zero_atmo)
+        pprint(winds)
     except Exception as exc:
         logger.exception(exc)
 

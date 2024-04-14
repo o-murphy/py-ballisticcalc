@@ -4,6 +4,7 @@ title = "Lapua .338LM ap529 300gr"
 [pybc.weapon]
 barrel_twist = "10inch"
 sight_height = "70mm"
+zero_distance = "100m"
 
 
 [pybc.ammo]
