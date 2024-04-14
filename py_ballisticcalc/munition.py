@@ -36,7 +36,7 @@ class Sight(PreferredUnits.Mixin):
         if self.focal_plane not in (Sight.FocalPlane.SFP, Sight.FocalPlane.FFP):
             raise ValueError("Wrong focal plane")
 
-    def get_reticle_steps(self, target_distance: [float, Distance], magnification: float) -> ReticleStep:
+    def _get_sfp_reticle_steps(self, target_distance: [float, Distance], magnification: float) -> ReticleStep:
         if self.focal_plane == Sight.FocalPlane.SFP:
             def get_sfp_step(click_size: Angular):
                 # Don't need distances conversion cause of it's destroying there
@@ -57,12 +57,12 @@ class Sight(PreferredUnits.Mixin):
         else:
             raise ValueError("Wrong focal plane")
 
-    def _get_adjustment(self, target_distance: Distance,
-                        drop_adj: Angular, windage_adj: Angular,
-                        magnification: float):
-        steps = self.get_reticle_steps(target_distance, magnification)
+    def get_adjustment(self, target_distance: Distance,
+                       drop_adj: Angular, windage_adj: Angular,
+                       magnification: float):
 
         if self.focal_plane == Sight.FocalPlane.SFP:
+            steps = self._get_sfp_reticle_steps(target_distance, magnification)
             return Sight.Clicks(
                 drop_adj.raw_value / steps.vertical.raw_value,
                 windage_adj.raw_value / steps.horizontal.raw_value
@@ -70,17 +70,17 @@ class Sight(PreferredUnits.Mixin):
         elif self.focal_plane == Sight.FocalPlane.FFP:
             # adjust clicks to magnification
             return Sight.Clicks(
-                drop_adj.raw_value / (steps.vertical.raw_value / magnification),
-                windage_adj.raw_value / (steps.horizontal.raw_value / magnification)
+                drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
+                windage_adj.raw_value / (self.h_click_size.raw_value / magnification)
             )
         else:
             raise ValueError("Wrong focal plane")
 
-    def get_adjustment(self, trajectory_point: 'TrajectoryData', magnification: float) -> Clicks:
-        return self._get_adjustment(trajectory_point.target_distance,
-                                    trajectory_point.drop_adj,
-                                    trajectory_point.windage_adj,
-                                    magnification)
+    def get_trajectory_adjustment(self, trajectory_point: 'TrajectoryData', magnification: float) -> Clicks:
+        return self.get_adjustment(trajectory_point.target_distance,
+                                   trajectory_point.drop_adj,
+                                   trajectory_point.windage_adj,
+                                   magnification)
 
 
 @dataclass

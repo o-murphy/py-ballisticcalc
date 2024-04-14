@@ -23,12 +23,12 @@ class TestSight(unittest.TestCase):
 
         for case in cases:
             with self.subTest(case=case):
-                step = s.get_reticle_steps(Unit.Meter(case['td']), case['mag']).vertical.unit_value
+                step = s._get_sfp_reticle_steps(Unit.Meter(case['td']), case['mag']).vertical.unit_value
                 self.assertAlmostEqual(step, case['step'], places=6)
 
         for case in cases:
             with self.subTest(case=case):
-                adj = s._get_adjustment(Unit.Meter(case['td']), Unit.Mil(1), Unit.Mil(1), case['mag']).vertical
+                adj = s.get_adjustment(Unit.Meter(case['td']), Unit.Mil(1), Unit.Mil(1), case['mag']).vertical
                 self.assertAlmostEqual(adj, case['adj'], places=6)
 
     def test_ffp(self):
@@ -51,15 +51,15 @@ class TestSight(unittest.TestCase):
 
         for case in cases:
             with self.subTest(case=case):
-                step = s.get_reticle_steps(
+                step = s._get_sfp_reticle_steps(
                     Unit.Meter(case['td']), case['mag']
                 ).vertical.unit_value
                 self.assertAlmostEqual(step, case['step'], places=7)
 
         for case in cases:
             with self.subTest(case=case):
-                adj = s._get_adjustment(Unit.Meter(case['td']),
-                                        Unit.Mil(1),
-                                        Unit.Mil(1),
-                                        case['mag']).vertical
+                adj = s.get_adjustment(Unit.Meter(case['td']),
+                                       Unit.Mil(1),
+                                       Unit.Mil(1),
+                                       case['mag']).vertical
                 self.assertAlmostEqual(adj, case['adj'], places=7)
