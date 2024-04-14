@@ -15,6 +15,8 @@ class Sight(PreferredUnits.Mixin):
     class FocalPlane(IntEnum):
         FFP = 1  # First focal plane
         SFP = 2  # Second focal plane
+        LWIR = 10  # LWIR based device with scalable reticle
+        # and adjusted click size to it's magnification
 
     class ReticleStep(NamedTuple):
         vertical: Angular
@@ -36,38 +38,41 @@ class Sight(PreferredUnits.Mixin):
         if self.focal_plane not in (Sight.FocalPlane.SFP, Sight.FocalPlane.FFP):
             raise ValueError("Wrong focal plane")
 
-    def _get_sfp_reticle_steps(self, target_distance: [float, Distance], magnification: float) -> ReticleStep:
-        if self.focal_plane == Sight.FocalPlane.SFP:
-            def get_sfp_step(click_size: Angular):
-                # Don't need distances conversion cause of it's destroying there
-                return click_size.units(
-                    click_size.unit_value
-                    * self.scale_factor.raw_value
-                    / _td.raw_value
-                    * magnification
-                )
+    def _adjust_sfp_reticle_steps(self, target_distance: [float, Distance], magnification: float) -> ReticleStep:
+        if not self.focal_plane == Sight.FocalPlane.SFP:
+            raise ValueError("Required SFP focal plane")
 
-            _td = PreferredUnits.distance(target_distance)
-            _h_step = get_sfp_step(self.h_click_size)
-            _v_step = get_sfp_step(self.v_click_size)
-            return Sight.ReticleStep(_v_step, _v_step)
-        elif self.focal_plane == Sight.FocalPlane.FFP:
-            _td = PreferredUnits.distance(target_distance)
-            return Sight.ReticleStep(self.h_click_size, self.v_click_size)
-        else:
-            raise ValueError("Wrong focal plane")
+        # adjust reticle scale relative to target distance and magnification
+        def get_sfp_step(click_size: Angular):
+            # Don't need distances conversion cause of it's destroying there
+            return click_size.units(
+                click_size.unit_value
+                * self.scale_factor.raw_value
+                / _td.raw_value
+                * magnification
+            )
+
+        _td = PreferredUnits.distance(target_distance)
+        _h_step = get_sfp_step(self.h_click_size)
+        _v_step = get_sfp_step(self.v_click_size)
+        return Sight.ReticleStep(_v_step, _v_step)
 
     def get_adjustment(self, target_distance: Distance,
                        drop_adj: Angular, windage_adj: Angular,
                        magnification: float):
 
         if self.focal_plane == Sight.FocalPlane.SFP:
-            steps = self._get_sfp_reticle_steps(target_distance, magnification)
+            steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
             return Sight.Clicks(
                 drop_adj.raw_value / steps.vertical.raw_value,
                 windage_adj.raw_value / steps.horizontal.raw_value
             )
         elif self.focal_plane == Sight.FocalPlane.FFP:
+            return Sight.Clicks(
+                drop_adj.raw_value / self.v_click_size.raw_value,
+                windage_adj.raw_value / self.h_click_size.raw_value
+            )
+        elif self.focal_plane == Sight.FocalPlane.LWIR:
             # adjust clicks to magnification
             return Sight.Clicks(
                 drop_adj.raw_value / (self.v_click_size.raw_value / magnification),

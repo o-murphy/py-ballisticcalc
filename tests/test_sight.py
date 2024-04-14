@@ -41,12 +41,12 @@ class TestSight(unittest.TestCase):
         cases = [
             {"td": 100, "mag": 1, 'step': 0.25, 'adj': 4},
             {"td": 200, "mag": 1, 'step': 0.25, 'adj': 4},
-            {"td": 100, "mag": 2, 'step': 0.25, 'adj': 8},
-            {"td": 200, "mag": 2, 'step': 0.25, 'adj': 8},
-            {"td": 100, "mag": 10, 'step': 0.25, 'adj': 40},
-            {"td": 200, "mag": 10, 'step': 0.25, 'adj': 40},
+            {"td": 100, "mag": 2, 'step': 0.25, 'adj': 4},
+            {"td": 200, "mag": 2, 'step': 0.25, 'adj': 4},
+            {"td": 100, "mag": 10, 'step': 0.25, 'adj': 4},
+            {"td": 200, "mag": 10, 'step': 0.25, 'adj': 4},
             {"td": 50, "mag": 1, 'step': 0.25, 'adj': 4},
-            {"td": 50, "mag": 10, 'step': 0.25, 'adj': 40},
+            {"td": 50, "mag": 10, 'step': 0.25, 'adj': 4},
         ]
 
         for case in cases:
