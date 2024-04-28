@@ -57,3 +57,6 @@ exclude = ["py_ballisticcalc_exts*"]
 exts = ['py_ballisticcalc.exts==2.1.0b0']
 lint = ['pylint', 'flake8']
 charts = ['matplotlib', 'pandas']
+
+[project.scripts]
+pybc = "py_ballisticcalc.__main__:main"
