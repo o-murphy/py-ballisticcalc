@@ -31,7 +31,7 @@ class BCPoint:
         if self.Mach < 0:
             self.Mach = (self.V >> Velocity.MPS) / cSpeedOfSoundMetric
         if self.BC <= 0:
-            raise ValueError('bc must be positive')
+            raise ValueError('Ballistic coefficient must be positive')
 
 
 DragTableDataType = [list[dict[str, float]], list[DragDataPoint]]
@@ -55,13 +55,12 @@ class DragModel:
                  weight: [float, Weight] = 0,
                  diameter: [float, Distance] = 0,
                  length: [float, Distance] = 0):
-        error = ''
+
         if len(drag_table) <= 0:
-            error = 'Received empty drag table'
+            # TODO: maybe have to require minimum size, cause few values don't give a valid result
+            raise ValueError('Received empty drag table')
         elif bc <= 0:
-            error = 'Ballistic coefficient must be positive'
-        if error:
-            raise ValueError(error)
+            raise ValueError('Ballistic coefficient must be positive')
 
         self.drag_table = make_data_points(drag_table)
 
@@ -144,8 +143,7 @@ def linear_interpolation(x: Union[list[float], tuple[float]],
     :param yp: List of values for existing points (y coordinate)
     :return: List of interpolated values y for inputs x
     """
-    if len(xp) != len(yp):
-        raise ValueError("xp and yp lists must have same length")
+    assert len(xp) == len(yp), "xp and yp lists must have same length"
 
     y = []
 

@@ -12,7 +12,7 @@ try:
                                        set_global_use_powder_sensitivity,
                                        reset_globals)
 
-    logger.info("Binary modules found, running in binary mode")
+    logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     from .trajectory_calc import (TrajectoryCalc,
                                   get_global_max_calc_step_size,
@@ -21,8 +21,8 @@ except ImportError as error:
                                   set_global_use_powder_sensitivity,
                                   reset_globals)
 
-    logger.warning("Library running in pure python mode. "
-                   "For better performance install 'py_ballisticcalc.exts' package")
+    logger.info("Library running in pure python mode. "
+                "For better performance install 'py_ballisticcalc.exts' package")
 
 __all__ = (
     'TrajectoryCalc',

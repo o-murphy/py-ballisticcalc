@@ -1,11 +1,95 @@
 """Module for Weapon and Ammo properties definitions"""
 import math
 from dataclasses import dataclass, field
+from enum import IntEnum
+from typing import NamedTuple
 
 from .drag_model import DragModel
-from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, Dimension
+from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, Dimension, AbstractUnitType
 
-__all__ = ('Weapon', 'Ammo')
+__all__ = ('Weapon', 'Ammo', 'Sight')
+
+
+@dataclass
+class Sight(PreferredUnits.Mixin):
+    class FocalPlane(IntEnum):
+        FFP = 1  # First focal plane
+        SFP = 2  # Second focal plane
+        LWIR = 10  # LWIR based device with scalable reticle
+        # and adjusted click size to it's magnification
+
+    class ReticleStep(NamedTuple):
+        vertical: Angular
+        horizontal: Angular
+
+    class Clicks(NamedTuple):
+        vertical: float
+        horizontal: float
+
+    focal_plane: FocalPlane = field(default=FocalPlane.FFP)
+    scale_factor: [float, Distance] = Dimension(prefer_units='distance')
+    h_click_size: [float, Angular] = Dimension(prefer_units='adjustment')
+    v_click_size: [float, Angular] = Dimension(prefer_units='adjustment')
+
+    def __post_init__(self):
+        if self.focal_plane not in Sight.FocalPlane.__members__.values():
+            raise ValueError("Wrong focal plane")
+        if not self.scale_factor and self.focal_plane == Sight.FocalPlane.SFP:
+            raise ValueError('Scale_factor required for SFP sights')
+        if (
+                not isinstance(self.h_click_size, Angular)
+                or not isinstance(self.v_click_size, Angular)
+        ):
+            raise TypeError("type Angular expected for 'h_click_size' and 'v_click_size'")
+        if self.h_click_size.raw_value <= 0 or self.v_click_size.raw_value <= 0:
+            raise TypeError("'h_click_size' and 'v_click_size' have to be positive")
+
+    def _adjust_sfp_reticle_steps(self, target_distance: [float, Distance], magnification: float) -> ReticleStep:
+        assert self.focal_plane == Sight.FocalPlane.SFP, "SFP focal plane required"
+
+        # adjust reticle scale relative to target distance and magnification
+        def get_sfp_step(click_size: [Angular, AbstractUnitType]):
+            # Don't need distances conversion cause of it's destroying there
+            return click_size.units(
+                click_size.unit_value
+                * self.scale_factor.raw_value
+                / _td.raw_value
+                * magnification
+            )
+
+        _td = PreferredUnits.distance(target_distance)
+        _h_step = get_sfp_step(self.h_click_size)
+        _v_step = get_sfp_step(self.v_click_size)
+        return Sight.ReticleStep(_v_step, _v_step)
+
+    def get_adjustment(self, target_distance: Distance,
+                       drop_adj: Angular, windage_adj: Angular,
+                       magnification: float):
+
+        if self.focal_plane == Sight.FocalPlane.SFP:
+            steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
+            return Sight.Clicks(
+                drop_adj.raw_value / steps.vertical.raw_value,
+                windage_adj.raw_value / steps.horizontal.raw_value
+            )
+        elif self.focal_plane == Sight.FocalPlane.FFP:
+            return Sight.Clicks(
+                drop_adj.raw_value / self.v_click_size.raw_value,
+                windage_adj.raw_value / self.h_click_size.raw_value
+            )
+        elif self.focal_plane == Sight.FocalPlane.LWIR:
+            # adjust clicks to magnification
+            return Sight.Clicks(
+                drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
+                windage_adj.raw_value / (self.h_click_size.raw_value / magnification)
+            )
+        raise AttributeError("Wrong focal_plane")
+
+    def get_trajectory_adjustment(self, trajectory_point: 'TrajectoryData', magnification: float) -> Clicks:
+        return self.get_adjustment(trajectory_point.distance,
+                                   trajectory_point.drop_adj,
+                                   trajectory_point.windage_adj,
+                                   magnification)
 
 
 @dataclass
@@ -20,6 +104,7 @@ class Weapon(PreferredUnits.Mixin):
     sight_height: [float, Distance] = Dimension(prefer_units='sight_height')
     twist: [float, Distance] = Dimension(prefer_units='twist')
     zero_elevation: [float, Angular] = Dimension(prefer_units='angular')
+    sight: [Sight, None] = field(default=None)
 
     def __post_init__(self):
         if not self.sight_height:

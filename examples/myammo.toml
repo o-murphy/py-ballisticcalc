@@ -1,0 +1,75 @@
+title = "Lapua .338LM ap529 300gr"
+
+
+[pybc.weapon]
+barrel_twist = "10inch"
+sight_height = "70mm"
+zero_distance = "100m"
+
+
+[pybc.ammo]
+
+muzzle_velocity = "2690fps"
+powder_temp = "15C"
+powder_temp_modifier = "1"
+
+
+[pybc.ammo.drag]
+
+bullet_weight = "300gr"
+bullet_diameter = '0.338in'
+bullet_length = "1.661in"
+
+
+custom_table = [
+    { cd = 0.275, mach = 0.000 },
+    { cd = 0.260, mach = 0.200 },
+    { cd = 0.231, mach = 0.400 },
+    { cd = 0.181, mach = 0.600 },
+    { cd = 0.181, mach = 0.700 },
+    { cd = 0.180, mach = 0.750 },
+    { cd = 0.177, mach = 0.800 },
+    { cd = 0.174, mach = 0.850 },
+    { cd = 0.176, mach = 0.875 },
+    { cd = 0.181, mach = 0.900 },
+    { cd = 0.194, mach = 0.925 },
+    { cd = 0.221, mach = 0.950 },
+    { cd = 0.257, mach = 0.975 },
+    { cd = 0.335, mach = 1.000 },
+    { cd = 0.367, mach = 1.025 },
+    { cd = 0.374, mach = 1.050 },
+    { cd = 0.376, mach = 1.075 },
+    { cd = 0.375, mach = 1.100 },
+    { cd = 0.374, mach = 1.125 },
+    { cd = 0.372, mach = 1.150 },
+    { cd = 0.369, mach = 1.200 },
+    { cd = 0.366, mach = 1.250 },
+    { cd = 0.363, mach = 1.300 },
+    { cd = 0.355, mach = 1.400 },
+    { cd = 0.348, mach = 1.500 },
+    { cd = 0.342, mach = 1.600 },
+    { cd = 0.335, mach = 1.700 },
+    { cd = 0.328, mach = 1.800 },
+    { cd = 0.322, mach = 1.900 },
+    { cd = 0.315, mach = 2.000 },
+    { cd = 0.309, mach = 2.100 },
+    { cd = 0.302, mach = 2.200 },
+    { cd = 0.293, mach = 2.300 },
+    { cd = 0.286, mach = 2.400 },
+    { cd = 0.279, mach = 2.500 },
+    { cd = 0.273, mach = 2.600 },
+    { cd = 0.267, mach = 2.700 },
+    { cd = 0.260, mach = 2.800 },
+    { cd = 0.254, mach = 2.900 },
+    { cd = 0.246, mach = 3.000 },
+    { cd = 0.237, mach = 3.200 },
+    { cd = 0.230, mach = 3.400 },
+    { cd = 0.224, mach = 3.600 },
+    { cd = 0.219, mach = 3.800 },
+    { cd = 0.214, mach = 4.000 },
+    { cd = 0.210, mach = 4.200 },
+    { cd = 0.206, mach = 4.400 },
+    { cd = 0.201, mach = 4.600 },
+    { cd = 0.197, mach = 4.800 },
+    { cd = 0.195, mach = 5.000 },
+]
