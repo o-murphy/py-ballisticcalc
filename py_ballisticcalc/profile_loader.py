@@ -15,7 +15,13 @@ from py_ballisticcalc import (
     get_drag_tables_names, BCPoint, DragModelMultiBC, Wind, DragDataPoint, Distance
 )
 
+__all__ = ('ProfileLoadingError', 'load_multiple_toml', 'load_profile')
+
 logger.setLevel(logging.INFO)
+
+
+class ProfileLoadingError(Exception):
+    pass
 
 
 def check_expected_props(props: dict, expected_props: [list, tuple], section=None, required=False) -> set:

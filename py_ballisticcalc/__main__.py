@@ -1,7 +1,6 @@
 import logging
-import sys
 
-from py_ballisticcalc.profile_loader import load_multiple_toml
+from py_ballisticcalc.profile_loader import load_multiple_toml, ProfileLoadingError
 from py_ballisticcalc import logger
 import argparse
 from importlib import metadata
@@ -72,6 +71,8 @@ def main():
         pprint(ammo)
         pprint(zero_atmo)
         pprint(winds)
+    except ProfileLoadingError as exc:
+        logger.exception(exc)
     except Exception as exc:
         logger.exception(exc)
 

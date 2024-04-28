@@ -6,6 +6,7 @@ from py_ballisticcalc import Sight, Unit
 class TestSight(unittest.TestCase):
 
     def test_sfp(self):
+
         click_size = Unit.Mil(0.25)
         s = Sight(focal_plane=Sight.FocalPlane.SFP,
                   scale_factor=Unit.Meter(100),
@@ -23,7 +24,7 @@ class TestSight(unittest.TestCase):
 
         for case in cases:
             with self.subTest(case=case):
-                step = s._get_sfp_reticle_steps(Unit.Meter(case['td']), case['mag']).vertical.unit_value
+                step = s._adjust_sfp_reticle_steps(Unit.Meter(case['td']), case['mag']).vertical.unit_value
                 self.assertAlmostEqual(step, case['step'], places=6)
 
         for case in cases:

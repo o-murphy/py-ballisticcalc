@@ -10,20 +10,30 @@ from math import pi, atan, tan
 from typing import NamedTuple, Union, TypeVar
 import re
 
-
 from py_ballisticcalc.logger import logger
-
 
 __all__ = ('Unit', 'UnitType',
            'AbstractUnit', 'AbstractUnitType',
            'UnitProps', 'UnitAliases',
            'UnitPropsDict', 'Distance',
            'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'Dimension', 'PreferredUnits')
-
+           'Energy', 'Weight', 'Dimension', 'PreferredUnits',
+           'UnitAliasError', 'UnitTypeError', 'UnitConversionError')
 
 UnitType = TypeVar('UnitType', bound='Unit')
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
+
+
+class UnitTypeError(TypeError):
+    pass
+
+
+class UnitConversionError(UnitTypeError):
+    pass
+
+
+class UnitAliasError(ValueError):
+    pass
 
 
 # pylint: disable=invalid-name
@@ -38,7 +48,7 @@ class Unit(IntEnum):
     MRad = 4
     Thousandth = 5
     InchesPer100Yd = 6
-    CmPer100M = 7
+    CmPer100m = 7
     OClock = 8
 
     Inch = 10
@@ -130,7 +140,7 @@ class Unit(IntEnum):
         elif 70 <= self < 80:
             obj = Weight(value, self)
         else:
-            raise TypeError(f"{self} Unit is not supported")
+            raise UnitTypeError(f"{self} Unit is not supported")
         return obj
 
     @staticmethod
@@ -147,7 +157,7 @@ class Unit(IntEnum):
     def parse_unit(input_: str) -> UnitType:
         input_ = input_.strip().lower()
         if not isinstance(input_, str):
-            raise TypeError(f"type str required for {input_}")
+            raise TypeError(f"type str expected for 'input_', got {type(input_)}")
         if hasattr(PreferredUnits, input_):
             return getattr(PreferredUnits, input_)
         try:
@@ -164,13 +174,13 @@ class Unit(IntEnum):
             if isinstance(preferred, str):
                 if units := Unit.parse_unit(preferred):
                     return units(float(value))
-            raise TypeError(f"Unsupported {preferred=} unit alias")
+            raise UnitAliasError(f"Unsupported {preferred=} unit alias")
 
         if isinstance(input_, (float, int)):
             return create_as_preferred(input_)
 
         if not isinstance(input_, str):
-            raise TypeError(f"Unsupported {input_=} type, [str, float, int] expected")
+            raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
 
         input_string = input_.replace(" ", "")
         if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
@@ -182,9 +192,9 @@ class Unit(IntEnum):
             if units := Unit.parse_unit(alias):
                 return units(float(value))
             else:
-                raise TypeError(f"Unsupported unit {alias=}")
+                raise UnitAliasError(f"Unsupported unit {alias=}")
 
-        raise ValueError(f"Can't parse unit {input_=}")
+        raise UnitAliasError(f"Can't parse unit {input_=}")
 
 
 class UnitProps(NamedTuple):
@@ -202,7 +212,7 @@ UnitPropsDict = {
     Unit.MRad: UnitProps('mrad', 2, 'mrad'),
     Unit.Thousandth: UnitProps('thousandth', 2, 'ths'),
     Unit.InchesPer100Yd: UnitProps('inch/100yd', 2, 'in/100yd'),
-    Unit.CmPer100M: UnitProps('cm/100m', 2, 'cm/100m'),
+    Unit.CmPer100m: UnitProps('cm/100m', 2, 'cm/100m'),
     Unit.OClock: UnitProps('hour', 2, 'h'),
 
     Unit.Inch: UnitProps("inch", 1, "inch"),
@@ -244,16 +254,15 @@ UnitPropsDict = {
     Unit.Newton: UnitProps('newton', 3, 'N'),
 }
 
-
 UnitAliases = {
     ('radian', 'rad'): Unit.Radian,
     ('degree', 'deg'): Unit.Degree,
-    ('moa', ): Unit.MOA,
-    ('mil', ): Unit.Mil,
-    ('mrad', ): Unit.MRad,
+    ('moa',): Unit.MOA,
+    ('mil',): Unit.Mil,
+    ('mrad',): Unit.MRad,
     ('thousandth', 'ths'): Unit.Thousandth,
-    ('inch/100yd', 'in/100yd', 'inch/100yd', 'in/100yard'): Unit.InchesPer100Yd,
-    ('centimeter/100m', 'cm/100m', 'cm/100meter', 'centimeter/100meter'): Unit.CmPer100M,
+    ('inch/100yd', 'in/100yd', 'inch/100yd', 'in/100yard, inper100yd'): Unit.InchesPer100Yd,
+    ('centimeter/100m', 'cm/100m', 'cm/100meter', 'centimeter/100meter', 'cmper100m'): Unit.CmPer100m,
     ('hour', 'h'): Unit.OClock,
 
     ('inch', 'in'): Unit.Inch,
@@ -267,13 +276,13 @@ UnitAliases = {
     ('kilometer', 'km'): Unit.Kilometer,
     ('line', 'ln', 'liniа'): Unit.Line,
 
-    ('footpound', 'foot-pound', 'ft⋅lbf', 'ft⋅lbf', 'ft⋅lb'
+    ('footpound', 'foot-pound', 'ft⋅lbf', 'ft⋅lbf', 'ft⋅lb',
      'foot*pound', 'ft*lbf', 'ft*lbf', 'ft*lb'): Unit.FootPound,
     ('joule', 'J'): Unit.Joule,
 
-    ('mmHg', ): Unit.MmHg,
+    ('mmHg',): Unit.MmHg,
     ('inHg', '″Hg'): Unit.InHg,
-    ('bar', ): Unit.Bar,
+    ('bar',): Unit.Bar,
     ('hectopascal', 'hPa'): Unit.hPa,
     ('psi', 'lbf/in2'): Unit.PSI,
 
@@ -290,7 +299,7 @@ UnitAliases = {
 
     ('grain', 'gr', 'grn'): Unit.Grain,
     ('ounce', 'oz'): Unit.Ounce,
-    ('gram', 'g'): Unit.Ounce,
+    ('gram', 'g'): Unit.Gram,
     ('pound', 'lb'): Unit.Pound,
     ('kilogram', 'kilogramme', 'kg'): Unit.Kilogram,
     ('newton', 'N'): Unit.Kilogram,
@@ -353,7 +362,7 @@ class AbstractUnit:
     def __rlshift__(self, other: Unit):
         return self.convert(other)
 
-    def _unit_support_error(self, value: float, units: Unit):
+    def _validate_unit_type(self, value: float, units: Unit):
         """Validates the prefer_units
         :param value: value of the instance
         :param units: Unit enum type
@@ -364,7 +373,7 @@ class AbstractUnit:
                       f"found: {type(units).__name__} ({value})"
             raise TypeError(err_msg)
         if units not in self.__dict__.values():
-            raise ValueError(f'{self.__class__.__name__}: unit {units} is not supported')
+            raise UnitConversionError(f'{self.__class__.__name__}: unit {units} is not supported')
         return 0
 
     def to_raw(self, value: float, units: Unit) -> float:
@@ -373,7 +382,7 @@ class AbstractUnit:
         :param units: Unit enum type
         :return: value in specified prefer_units
         """
-        return self._unit_support_error(value, units)
+        return self._validate_unit_type(value, units)
 
     def from_raw(self, value: float, units: Unit) -> float:
         """Converts raw value to specified prefer_units
@@ -381,7 +390,7 @@ class AbstractUnit:
         :param units: Unit enum type
         :return: value in specified prefer_units
         """
-        return self._unit_support_error(value, units)
+        return self._validate_unit_type(value, units)
 
     def convert(self, units: Unit) -> AbstractUnitType:
         """Returns new unit instance in specified prefer_units
@@ -621,7 +630,7 @@ class Angular(AbstractUnit):
             result = value / 3000 * pi
         elif units == Angular.InchesPer100Yd:
             result = atan(value / 3600)
-        elif units == Angular.CmPer100M:
+        elif units == Angular.CmPer100m:
             result = atan(value / 10000)
         elif units == Angular.OClock:
             result = value / 6 * pi
@@ -646,7 +655,7 @@ class Angular(AbstractUnit):
             result = value * 3000 / pi
         elif units == Angular.InchesPer100Yd:
             result = tan(value) * 3600
-        elif units == Angular.CmPer100M:
+        elif units == Angular.CmPer100m:
             result = tan(value) * 10000
         elif units == Angular.OClock:
             result = value * 6 / pi
@@ -661,7 +670,7 @@ class Angular(AbstractUnit):
     MRad = Unit.MRad
     Thousandth = Unit.Thousandth
     InchesPer100Yd = Unit.InchesPer100Yd
-    CmPer100M = Unit.CmPer100M
+    CmPer100m = Unit.CmPer100m
     OClock = Unit.OClock
 
 
@@ -775,9 +784,9 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                         if _units := Unit.parse_unit(units):
                             value = _units(value)
                         else:
-                            raise TypeError(f"Unsupported unit or dimension use one of {PreferredUnits}")
+                            raise UnitTypeError(f"Unsupported unit or dimension, use one of {PreferredUnits}")
                     else:
-                        raise TypeError(f"Unsupported unit or dimension use one of {PreferredUnits}")
+                        raise UnitTypeError(f"Unsupported unit or dimension, use one of {PreferredUnits}")
 
             super().__setattr__(key, value)
 
@@ -819,7 +828,6 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 logger.warning(f"{attribute=} not found in preferred_units")
 
 
-
 # pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
 class Dimension(Field):
     """
@@ -829,6 +837,7 @@ class Dimension(Field):
 
     def __init__(self, prefer_units: Union[str, Unit], init=True, repr_=True,
                  hash_=None, compare=True, metadata=None):
+
         if metadata is None:
             metadata = {}
         metadata['prefer_units'] = prefer_units
@@ -846,6 +855,10 @@ class Dimension(Field):
                          init=init, repr=repr_,
                          hash=hash_, compare=compare,
                          metadata=metadata, **extra)
+
+    @property
+    def raw_value(self):
+        raise NotImplementedError
 
     @abstractmethod
     def __rshift__(self, other):
