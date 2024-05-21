@@ -225,8 +225,7 @@ class HitResult:
         :param d: Distance for which we want Trajectory Data
         :return: First trajectory row with .distance >= d
         """
-
-        if i := self.index_at_distance(d) < 0:
+        if (i := self.index_at_distance(d)) < 0:
             raise ArithmeticError(
                 f"Calculated trajectory doesn't reach requested distance {d}"
             )
