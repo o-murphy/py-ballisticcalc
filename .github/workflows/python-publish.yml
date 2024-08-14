@@ -40,7 +40,8 @@ jobs:
           sudo apt-get install build-essential -y
 
           python -m pip install --upgrade pip
-          python -m pip install setuptools pytest cython
+          python -m pip install setuptools cython
+          python -m pip install -e .[dev]
 
       - name: Run unittest tests in pure python mode
         run: |

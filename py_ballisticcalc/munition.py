@@ -1,17 +1,17 @@
 """Module for Weapon and Ammo properties definitions"""
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntEnum
 from typing import NamedTuple, Union, Optional
 
 from .drag_model import DragModel
-from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, Dimension, AbstractUnitType
+from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, AbstractUnitType
 
 __all__ = ('Weapon', 'Ammo', 'Sight')
 
 
 @dataclass
-class Sight(PreferredUnits.Mixin):
+class Sight:
     class FocalPlane(IntEnum):
         FFP = 1  # First focal plane
         SFP = 2  # Second focal plane
@@ -26,21 +26,35 @@ class Sight(PreferredUnits.Mixin):
         vertical: float
         horizontal: float
 
-    focal_plane: FocalPlane = field(default=FocalPlane.FFP)
-    scale_factor: Union[float, Distance] = Dimension(prefer_units='distance')
-    h_click_size: Union[float, Angular] = Dimension(prefer_units='adjustment')
-    v_click_size: Union[float, Angular] = Dimension(prefer_units='adjustment')
+    focal_plane: FocalPlane
+    scale_factor: Distance
+    h_click_size: Angular
+    v_click_size: Angular
 
-    def __post_init__(self):
-        if self.focal_plane not in Sight.FocalPlane.__members__.values():
+    # def __post_init__(self):
+    def __init__(self,
+                 focal_plane: FocalPlane = FocalPlane.FFP,
+                 scale_factor: Optional[Union[float, Distance]] = None,
+                 h_click_size: Optional[Union[float, Angular]] = None,
+                 v_click_size: Optional[Union[float, Angular]] = None):
+
+        if focal_plane not in Sight.FocalPlane.__members__.values():
             raise ValueError("Wrong focal plane")
-        if not self.scale_factor and self.focal_plane == Sight.FocalPlane.SFP:
+
+        if not scale_factor and focal_plane == Sight.FocalPlane.SFP:
             raise ValueError('Scale_factor required for SFP sights')
+
         if (
-                not isinstance(self.h_click_size, Angular)
-                or not isinstance(self.v_click_size, Angular)
+                not isinstance(h_click_size, (Angular, float, int))
+                or not isinstance(v_click_size, (Angular, float, int))
         ):
             raise TypeError("type Angular expected for 'h_click_size' and 'v_click_size'")
+
+        self.focal_plane = focal_plane
+        self.scale_factor = PreferredUnits.distance(scale_factor or 1)
+        self.h_click_size = PreferredUnits.adjustment(h_click_size)
+        self.v_click_size = PreferredUnits.adjustment(v_click_size)
+
         if self.h_click_size.raw_value <= 0 or self.v_click_size.raw_value <= 0:
             raise TypeError("'h_click_size' and 'v_click_size' have to be positive")
 
@@ -93,7 +107,7 @@ class Sight(PreferredUnits.Mixin):
 
 
 @dataclass
-class Weapon(PreferredUnits.Mixin):
+class Weapon:
     """
     :param sight_height: Vertical distance from center of bore line to center of sight line.
     :param twist: Distance for barrel rifling to complete one complete turn.
@@ -101,18 +115,21 @@ class Weapon(PreferredUnits.Mixin):
     :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
         (Typically computed by ballistic Calculator.)
     """
-    sight_height: Union[float, Distance] = Dimension(prefer_units='sight_height')
-    twist: Union[float, Distance] = Dimension(prefer_units='twist')
-    zero_elevation: Union[float, Angular] = Dimension(prefer_units='angular')
-    sight: Optional[Sight] = field(default=None)
 
-    def __post_init__(self):
-        if not self.sight_height:
-            self.sight_height = 0
-        if not self.twist:
-            self.twist = 0
-        if not self.zero_elevation:
-            self.zero_elevation = 0
+    sight_height: Distance
+    twist: Distance
+    zero_elevation: Angular
+    sight: Optional[Sight]
+
+    def __init__(self,
+                 sight_height: Optional[Union[float, Distance]] = None,
+                 twist: Optional[Union[float, Distance]] = None,
+                 zero_elevation: Optional[Union[float, Angular]] = None,
+                 sight: Optional[Sight] = None):
+        self.sight_height = PreferredUnits.sight_height(sight_height or 0)
+        self.twist = PreferredUnits.twist(twist or 0)
+        self.zero_elevation = PreferredUnits.angular(zero_elevation or 0)
+        self.sight = sight
 
 
 @dataclass

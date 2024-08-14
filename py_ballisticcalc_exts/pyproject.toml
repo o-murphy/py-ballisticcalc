@@ -33,7 +33,7 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = ['typing_extensions']
+dependencies = []
 #dynamic = ["version"]
 
 [project.urls]
