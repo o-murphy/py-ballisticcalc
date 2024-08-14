@@ -125,7 +125,8 @@ class Ammo(PreferredUnits.Mixin):
         Can be computed with .calc_powder_sens().  Only applies if:
             Settings.USE_POWDER_SENSITIVITY = True
     """
-    dm: DragModel = field(default=None)
+    # dm: DragModel = field(default=None)
+    dm: DragModel
     mv: Union[float, Velocity] = Dimension(prefer_units='velocity')
     powder_temp: Union[float, Temperature] = Dimension(prefer_units='temperature')
     temp_modifier: float = field(default=0)
@@ -158,7 +159,7 @@ class Ammo(PreferredUnits.Mixin):
         self.temp_modifier = v_delta / t_delta * (15 / v_lower)  # * 100
         return self.temp_modifier
 
-    def get_velocity_for_temp(self, current_temp: [float, Temperature]) -> Velocity:
+    def get_velocity_for_temp(self, current_temp: Union[float, Temperature]) -> Velocity:
         """Calculates muzzle velocity at temperature, based on temp_modifier.
         :param current_temp: Temperature of cartridge powder
         :return: Muzzle velocity corrected to current_temp

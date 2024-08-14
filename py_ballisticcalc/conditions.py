@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from typing import List, Union, Optional, Tuple
 
 from .munition import Weapon, Ammo
-# from .settings import Settings as Set
 from .unit import Distance, Velocity, Temperature, Pressure, Angular, Dimension, PreferredUnits
 
 __all__ = ('Atmo', 'Wind', 'Shot')
@@ -39,7 +38,7 @@ cStandardDensity: float = 0.076474  # lb/ft^3
 class Atmo(PreferredUnits.Mixin):  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations"""
 
-    altitude: Union[float, Pressure] = Dimension(prefer_units="distance")
+    altitude: Union[float, Distance] = Dimension(prefer_units="distance")
     pressure: Union[float, Pressure] = Dimension(prefer_units="pressure")
     temperature: Union[float, Temperature] = Dimension(prefer_units="temperature")
 
@@ -231,10 +230,10 @@ class Shot(PreferredUnits.Mixin):
     relative_angle: Union[float, Angular] = Dimension(prefer_units='angular')
     cant_angle: Union[float, Angular] = Dimension(prefer_units='angular')
 
-    weapon: Optional[Weapon] = field(default=None)
-    ammo: Optional[Ammo] = field(default=None)
-    atmo: Optional[Atmo] = field(default=None)
-    winds: List[Wind] = field(default=None)
+    weapon: Weapon = field(default_factory=Weapon)
+    ammo: Ammo = field(default_factory=Ammo)
+    atmo: Atmo = field(default_factory=Atmo.icao)
+    winds: List[Wind] = field(default_factory=list)
 
     # NOTE: Calculator assumes that winds are sorted by Wind.until_distance (ascending)
 

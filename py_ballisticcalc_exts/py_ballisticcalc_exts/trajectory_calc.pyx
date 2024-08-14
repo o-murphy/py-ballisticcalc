@@ -27,30 +27,26 @@ cdef object _globalMaxCalcStepSize = Distance.Foot(0.5)
 def get_global_max_calc_step_size() -> Distance:
     return _globalMaxCalcStepSize
 
-
 def get_global_use_powder_sensitivity() -> bool:
     return bool(_globalUsePowderSensitivity)
 
-
 def set_global_max_calc_step_size(value: [object, float]) -> None:
     global _globalMaxCalcStepSize
-    if (_value := PreferredUnits.distance(value)).raw_value <= 0:
+    cdef double _value = PreferredUnits.distance(value).raw_value
+    if _value <= 0:
         raise ValueError("_globalMaxCalcStepSize have to be > 0")
     _globalMaxCalcStepSize = PreferredUnits.distance(value)
-
 
 def set_global_use_powder_sensitivity(value: bool) -> None:
     global _globalUsePowderSensitivity
     if not isinstance(value, bool):
-        raise TypeError(f"set_global_use_powder_sensitivity {value=} is not a boolean")
+        raise TypeError(f"set_global_use_powder_sensitivity value={value} is not a boolean")
     _globalUsePowderSensitivity = int(value)
-
 
 def reset_globals() -> None:
     global _globalUsePowderSensitivity, _globalMaxCalcStepSize
     _globalUsePowderSensitivity = False
     _globalMaxCalcStepSize = Distance.Foot(0.5)
-
 
 cdef struct CurvePoint:
     double a, b, c
@@ -64,7 +60,6 @@ cdef enum CTrajFlag:
     DANGER = 16
     ZERO = ZERO_UP | ZERO_DOWN
     ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
-
 
 cdef class Vector:
     cdef double x
@@ -179,7 +174,7 @@ cdef class TrajectoryCalc:
             dist_step = Distance.Foot(0.2)
             filter_flags = CTrajFlag.ALL
 
-        self._init_trajectory(shot_info)            
+        self._init_trajectory(shot_info)
         return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags)
 
     cdef _init_trajectory(self, shot_info: Shot):
@@ -216,7 +211,7 @@ cdef class TrajectoryCalc:
         self.barrel_azimuth = 0.0
         self.barrel_elevation = atan(height_at_zero / zero_distance)
         self.twist = 0
-        maximum_range -= 1.5*self.calc_step
+        maximum_range -= 1.5 * self.calc_step
 
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
@@ -263,11 +258,10 @@ cdef class TrajectoryCalc:
 
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -self.cant_cosine*self.sight_height, -self.cant_sine*self.sight_height)
+        range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
         velocity_vector = Vector(cos(self.barrel_elevation) * cos(self.barrel_azimuth),
                                  sin(self.barrel_elevation),
                                  cos(self.barrel_elevation) * sin(self.barrel_azimuth)) * velocity
-
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         seen_zero = CTrajFlag.NONE  # Record when we see each zero crossing so we only register one
@@ -353,9 +347,9 @@ cdef class TrajectoryCalc:
         # If filter_flags == 0 then all we want is the ending value
         if not filter_flags:
             ranges.append(create_trajectory_row(
-                        time, range_vector, velocity_vector,
-                        velocity, mach, self.spin_drift(time), self.look_angle,
-                        density_factor, drag, self.weight, _flag))
+                time, range_vector, velocity_vector,
+                velocity, mach, self.spin_drift(time), self.look_angle,
+                density_factor, drag, self.weight, _flag))
         return ranges
 
     cdef double drag_by_mach(self, double mach):
@@ -377,7 +371,7 @@ cdef class TrajectoryCalc:
         cdef int sign
         if self.twist != 0:
             sign = 1 if self.twist > 0 else -1
-            return sign * (1.25 * (self.stability_coefficient + 1.2) * pow(time, 1.83) ) / 12
+            return sign * (1.25 * (self.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
         return 0
 
     cdef double calc_stability_coefficient(self, object atmo):
@@ -420,10 +414,10 @@ cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vec
         drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
         windage=Distance.Foot(windage),
         windage_adj=Angular.Radian(windage_adjustment),
-        look_distance= Distance.Foot(range_vector.x / cos(look_angle)),
+        look_distance=Distance.Foot(range_vector.x / cos(look_angle)),
         angle=Angular.Radian(trajectory_angle),
-        density_factor = density_factor-1,
-        drag = drag,
+        density_factor=density_factor - 1,
+        drag=drag,
         energy=Energy.FootPound(calculate_energy(weight, velocity)),
         ogw=Weight.Pound(calculate_ogv(weight, velocity)),
         flag=flag

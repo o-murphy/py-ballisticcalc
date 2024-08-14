@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
-from typing import Union, List
+from typing import Union, List, Dict
 
 from .unit import Weight, Distance, Velocity, PreferredUnits, Dimension
 
@@ -34,7 +34,7 @@ class BCPoint:
             raise ValueError('Ballistic coefficient must be positive')
 
 
-DragTableDataType = [list[dict[str, float]], list[DragDataPoint]]
+DragTableDataType = Union[List[Dict[str, float]], List[DragDataPoint]]
 
 
 class DragModel:
@@ -86,7 +86,7 @@ class DragModel:
 
 def make_data_points(drag_table: DragTableDataType) -> list[DragDataPoint]:
     """Convert drag table from list of dictionaries to list of DragDataPoints"""
-    if isinstance(drag_table[0], DragDataPoint):
+    if all([isinstance(i, DragDataPoint) for i in drag_table]):
         return drag_table
     return [DragDataPoint(point['Mach'], point['CD']) for point in drag_table]
 

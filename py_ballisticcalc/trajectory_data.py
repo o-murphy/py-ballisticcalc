@@ -1,9 +1,8 @@
 """Implements a point of trajectory class in applicable data types"""
 import logging
 import math
-import typing
 from dataclasses import dataclass, field
-from enum import Flag
+from enum import IntFlag
 from typing import NamedTuple, Optional, Union
 
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
@@ -28,7 +27,7 @@ PLOT_FONT_HEIGHT = 72
 PLOT_FONT_SIZE = 552 / PLOT_FONT_HEIGHT
 
 
-class TrajFlag(Flag):
+class TrajFlag(IntFlag):
     """Flags for marking trajectory row if Zero or Mach crossing
     Also uses to set a filters for a trajectory calculation loop
     """
@@ -81,7 +80,7 @@ class TrajectoryData(NamedTuple):
     drag: float
     energy: Energy
     ogw: Weight
-    flag: typing.Union[TrajFlag, int]
+    flag: Union[TrajFlag, int]
 
     def formatted(self) -> tuple:
         """
@@ -234,7 +233,7 @@ class HitResult:
     def danger_space(self,
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],
-                     look_angle: Union[float, Angular] = None
+                     look_angle: Optional[Union[float, Angular]] = None
                      ) -> DangerSpace:
         """
         Assume that the trajectory hits the center of a target at any distance.

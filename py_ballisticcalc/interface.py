@@ -1,6 +1,6 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
-from typing import Union, Optional
+from typing import Union
 
 from .conditions import Shot
 # pylint: disable=import-error,no-name-in-module,wildcard-import,unused-wildcard-import
@@ -16,7 +16,7 @@ __all__ = ('Calculator',)
 class Calculator:
     """Basic interface for the ballistics calculator"""
 
-    _calc: Optional[TrajectoryCalc] = field(init=False, repr=False, compare=False, default=None)
+    _calc: TrajectoryCalc = field(init=False, repr=False, compare=False)
 
     @property
     def cdm(self):

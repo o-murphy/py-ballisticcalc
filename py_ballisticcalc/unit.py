@@ -113,7 +113,7 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: UnitType, value: Optional[Union[int, float, AbstractUnitType]] = None) -> AbstractUnitType:
+    def __call__(self: UnitType, value: Union[int, float, AbstractUnitType]) -> AbstractUnitType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
@@ -122,7 +122,7 @@ class Unit(IntEnum):
 
         # if value is None:
         #     return self
-        obj: Any
+        obj: AbstractUnit
         if isinstance(value, AbstractUnit):
             return value << self
         if 0 <= self < 10:
@@ -144,7 +144,7 @@ class Unit(IntEnum):
         return obj
 
     @staticmethod
-    def find_unit_by_alias(string_to_find: str, aliases: Dict[Tuple[str], UnitType]) -> Optional[UnitType]:
+    def find_unit_by_alias(string_to_find: str, aliases: Dict[Tuple[str, ...], UnitType]) -> Optional[UnitType]:
         # Iterate over the keys of the dictionary
         for aliases_tuple in aliases.keys():
             # Check if the string is present in any of the tuples
@@ -154,7 +154,7 @@ class Unit(IntEnum):
         return None  # If not found, return None or handle it as needed
 
     @staticmethod
-    def parse_unit(input_: str) -> UnitType:
+    def parse_unit(input_: str) -> Optional[UnitType]:
         input_ = input_.strip().lower()
         if not isinstance(input_, str):
             raise TypeError(f"type str expected for 'input_', got {type(input_)}")
@@ -353,13 +353,13 @@ class AbstractUnit:
     def __ge__(self, other):
         return float(self) >= other
 
-    def __lshift__(self, other: Unit):
+    def __lshift__(self, other: Union[UnitType, AbstractUnitType]) -> Unit:
         return self.convert(other)
 
-    def __rshift__(self, other: Unit):
+    def __rshift__(self, other: Union[UnitType, AbstractUnitType]):
         return self.get_in(other)
 
-    def __rlshift__(self, other: Unit):
+    def __rlshift__(self, other: Union[UnitType, AbstractUnitType]) -> Unit:
         return self.convert(other)
 
     def _validate_unit_type(self, value: float, units: Unit):
@@ -856,14 +856,14 @@ class Dimension(Field):
                          hash=hash_, compare=compare,
                          metadata=metadata, **extra)
 
-    @property
-    def raw_value(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def __rshift__(self, other):
-        ...
-
-    @abstractmethod
-    def __lshift__(self, other):
-        ...
+    # @property
+    # def raw_value(self):
+    #     raise NotImplementedError
+    #
+    # @abstractmethod
+    # def __rshift__(self, other):
+    #     ...
+    #
+    # @abstractmethod
+    # def __lshift__(self, other):
+    #     ...

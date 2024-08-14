@@ -72,62 +72,62 @@ class Vector:
     y: float
     z: float
 
-    def magnitude(self):
+    def magnitude(self) -> float:
         return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 
-    def mul_by_const(self, a: float):
+    def mul_by_const(self, a: float) -> 'Vector':
         return Vector(self.x * a, self.y * a, self.z * a)
 
-    def mul_by_vector(self, b: 'Vector'):
+    def mul_by_vector(self, b: 'Vector') -> float:
         return self.x * b.x + self.y * b.y + self.z * b.z
 
-    def add(self, b: 'Vector'):
+    def add(self, b: 'Vector') -> 'Vector':
         return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
 
-    def subtract(self, b: 'Vector'):
+    def subtract(self, b: 'Vector') -> 'Vector':
         return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
 
-    def negate(self):
+    def negate(self) -> 'Vector':
         return Vector(-self.x, -self.y, -self.z)
 
-    def normalize(self):
+    def normalize(self) -> 'Vector':
         m = self.magnitude()
         if math.fabs(m) < 1e-10:
             return Vector(self.x, self.y, self.z)
         return self.mul_by_const(1.0 / m)
 
-    def __add__(self, other: 'Vector'):
+    def __add__(self, other: 'Vector') -> 'Vector':
         return self.add(other)
 
-    def __radd__(self, other: 'Vector'):
+    def __radd__(self, other: 'Vector') -> 'Vector':
         return self.add(other)
 
-    def __iadd__(self, other: 'Vector'):
+    def __iadd__(self, other: 'Vector') -> 'Vector':
         return self.add(other)
 
-    def __sub__(self, other: 'Vector'):
+    def __sub__(self, other: 'Vector') -> 'Vector':
         return self.subtract(other)
 
-    def __rsub__(self, other: 'Vector'):
+    def __rsub__(self, other: 'Vector') -> 'Vector':
         return self.subtract(other)
 
-    def __isub__(self, other: 'Vector'):
+    def __isub__(self, other: 'Vector') -> 'Vector':
         return self.subtract(other)
 
-    def __mul__(self, other: Union[int, float, 'Vector']):
+    def __mul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
         if isinstance(other, (int, float)):
             return self.mul_by_const(other)
         if isinstance(other, Vector):
             return self.mul_by_vector(other)
         raise TypeError(other)
 
-    def __rmul__(self, other: Union[int, float, 'Vector']):
+    def __rmul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
         return self.__mul__(other)
 
-    def __imul__(self, other):
+    def __imul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
         return self.__mul__(other)
 
-    def __neg__(self):
+    def __neg__(self) -> 'Vector':
         return self.negate()
 
 

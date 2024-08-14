@@ -9,26 +9,26 @@ __copyright__ = (
 __credits__ = ["o-murphy", "dbookstaber"]
 
 import os
-
-from .backend import *
-from .drag_tables import *
-from .drag_model import *
-from .interface import *
-from .logger import logger
-from .trajectory_data import *
-from .conditions import *
-from .munition import *
-from .unit import *
+import sys
 from typing import Dict, Union, Optional
 
-try:
-    import tomllib
-except ImportError:
+from .backend import *
+from .conditions import *
+from .drag_model import *
+from .drag_tables import *
+from .interface import *
+from .logger import logger
+from .munition import *
+from .trajectory_data import *
+from .unit import *
+
+if sys.version_info[:2] < (3, 11):
     import tomli as tomllib
+else:
+    import tomllib
 
 
 def _load_config(filepath=None):
-
     def find_pybc_toml(start_dir=os.getcwd()):
         """
         Search for the pyproject.toml file starting from the specified directory.
@@ -94,7 +94,6 @@ def _basic_config(filename=None,
                   max_calc_step_size: Optional[Union[float, Distance]] = None,
                   use_powder_sensitivity: bool = False,
                   preferred_units: Optional[Dict[str, Unit]] = None):
-
     """
     Method to load preferred units from file or Mapping
     """
