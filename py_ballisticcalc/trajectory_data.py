@@ -4,7 +4,7 @@ import math
 import typing
 from dataclasses import dataclass, field
 from enum import Flag
-from typing import NamedTuple
+from typing import NamedTuple, Optional, Union
 
 from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
 from .conditions import Shot
@@ -151,7 +151,7 @@ class DangerSpace(NamedTuple):
             + f'ranges from {self.begin.distance << PreferredUnits.distance} ' \
             + f'to {self.end.distance << PreferredUnits.distance}'
 
-    def overlay(self, ax: 'Axes', label: str = None):
+    def overlay(self, ax: 'Axes', label: Optional[str] = None):
         """Highlights danger-space region on plot"""
         if matplotlib is None:
             raise ImportError("Install matplotlib to get results as a plot")
@@ -232,9 +232,9 @@ class HitResult:
         return self.trajectory[i]
 
     def danger_space(self,
-                     at_range: [float, Distance],
-                     target_height: [float, Distance],
-                     look_angle: [float, Angular] = None
+                     at_range: Union[float, Distance],
+                     target_height: Union[float, Distance],
+                     look_angle: Union[float, Angular] = None
                      ) -> DangerSpace:
         """
         Assume that the trajectory hits the center of a target at any distance.
@@ -309,7 +309,7 @@ class HitResult:
             trajectory = [p.in_def_units() for p in self]
         return pd.DataFrame(trajectory, columns=col_names)
 
-    def plot(self, look_angle: Angular = None) -> 'Axes':
+    def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':
         """:return: graph of the trajectory"""
         if look_angle is None:
             look_angle = self.shot.look_angle

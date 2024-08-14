@@ -1,5 +1,6 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
+from typing import Union, Optional
 
 from .conditions import Shot
 # pylint: disable=import-error,no-name-in-module,wildcard-import,unused-wildcard-import
@@ -15,14 +16,14 @@ __all__ = ('Calculator',)
 class Calculator:
     """Basic interface for the ballistics calculator"""
 
-    _calc: TrajectoryCalc = field(init=False, repr=False, compare=False, default=None)
+    _calc: Optional[TrajectoryCalc] = field(init=False, repr=False, compare=False, default=None)
 
     @property
     def cdm(self):
         """returns custom drag function based on input data"""
         return self._calc._table_data
 
-    def barrel_elevation_for_target(self, shot: Shot, target_distance: [float, Distance]) -> Angular:
+    def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.
         :param shot: Shot instance for which calculate barrel elevation is
         :param target_distance: Look-distance to "zero," which is point we want to hit.
@@ -39,7 +40,7 @@ class Calculator:
             (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
         )
 
-    def set_weapon_zero(self, shot: Shot, zero_distance: [float, Distance]) -> Angular:
+    def set_weapon_zero(self, shot: Shot, zero_distance: Union[float, Distance]) -> Angular:
         """Sets shot.weapon.zero_elevation so that it hits a target at zero_distance.
         :param shot: Shot instance from which we take a zero
         :param zero_distance: Look-distance to "zero," which is point we want to hit.
@@ -47,8 +48,8 @@ class Calculator:
         shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
         return shot.weapon.zero_elevation
 
-    def fire(self, shot: Shot, trajectory_range: [float, Distance],
-             trajectory_step: [float, Distance] = 0,
+    def fire(self, shot: Shot, trajectory_range: Union[float, Distance],
+             trajectory_step: Union[float, Distance] = 0,
              extra_data: bool = False) -> HitResult:
         """Calculates trajectory
         :param shot: shot parameters (initial position and barrel angle)
@@ -60,7 +61,7 @@ class Calculator:
         trajectory_range = PreferredUnits.distance(trajectory_range)
         if not trajectory_step:
             trajectory_step = trajectory_range.unit_value / 10.0
-        step = PreferredUnits.distance(trajectory_step)
+        step: Distance = PreferredUnits.distance(trajectory_step)
         self._calc = TrajectoryCalc(shot.ammo)
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
         return HitResult(shot, data, extra_data)

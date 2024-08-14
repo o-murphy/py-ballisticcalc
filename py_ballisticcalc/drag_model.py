@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
-from typing import Union
+from typing import Union, List
 
 from .unit import Weight, Distance, Velocity, PreferredUnits, Dimension
 
@@ -52,9 +52,9 @@ class DragModel:
 
     def __init__(self, bc: float,
                  drag_table: DragTableDataType,
-                 weight: [float, Weight] = 0,
-                 diameter: [float, Distance] = 0,
-                 length: [float, Distance] = 0):
+                 weight: Union[float, Weight] = 0,
+                 diameter: Union[float, Distance] = 0,
+                 length: Union[float, Distance] = 0):
 
         if len(drag_table) <= 0:
             # TODO: maybe have to require minimum size, cause few values don't give a valid result
@@ -100,11 +100,11 @@ def sectional_density(weight: float, diameter: float) -> float:
     return weight / math.pow(diameter, 2) / 7000
 
 
-def DragModelMultiBC(bc_points: list[BCPoint],
+def DragModelMultiBC(bc_points: List[BCPoint],
                      drag_table: DragTableDataType,
-                     weight: [float, Weight] = 0,
-                     diameter: [float, Distance] = 0,
-                     length: [float, Distance] = 0) -> DragModel:
+                     weight: Union[float, Weight] = 0,
+                     diameter: Union[float, Distance] = 0,
+                     length: Union[float, Distance] = 0) -> DragModel:
     """
     Compute a drag model based on multiple BCs.
     If weight and diameter are provided then we set bc=sectional density.

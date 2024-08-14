@@ -2,6 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
+from typing import List, Union, Optional, Tuple
 
 from .munition import Weapon, Ammo
 # from .settings import Settings as Set
@@ -38,9 +39,9 @@ cStandardDensity: float = 0.076474  # lb/ft^3
 class Atmo(PreferredUnits.Mixin):  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations"""
 
-    altitude: [float, Pressure] = Dimension(prefer_units="distance")
-    pressure: [float, Pressure] = Dimension(prefer_units="pressure")
-    temperature: [float, Temperature] = Dimension(prefer_units="temperature")
+    altitude: Union[float, Pressure] = Dimension(prefer_units="distance")
+    pressure: Union[float, Pressure] = Dimension(prefer_units="pressure")
+    temperature: Union[float, Temperature] = Dimension(prefer_units="temperature")
 
     humidity: float = 0.0  # Relative humidity [0% to 100%]
     density_ratio: float = field(init=False)  # Density / cStandardDensity
@@ -90,14 +91,14 @@ class Atmo(PreferredUnits.Mixin):  # pylint: disable=too-many-instance-attribute
         #                cPressureExponent))
 
     @staticmethod
-    def standard(altitude: [float, Distance] = 0, temperature: Temperature = None) -> 'Atmo':
+    def standard(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None) -> 'Atmo':
         """Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
         return Atmo.icao(altitude, temperature)
 
     @staticmethod
-    def icao(altitude: [float, Distance] = 0, temperature: Temperature = None) -> 'Atmo':
+    def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None) -> 'Atmo':
         """Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
@@ -173,7 +174,7 @@ class Atmo(PreferredUnits.Mixin):  # pylint: disable=too-many-instance-attribute
         ) * hc
         return density
 
-    def get_density_factor_and_mach_for_altitude(self, altitude: float) -> (float, float):
+    def get_density_factor_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
         """
         :param altitude: ASL in units of feet
         :return: density ratio and Mach 1 (fps) for the specified altitude
@@ -198,9 +199,9 @@ class Wind(PreferredUnits.Mixin):
     direction_from = 90 degrees is blowing from shooter's left towards right.
     """
 
-    velocity: [float, Velocity] = Dimension(prefer_units='velocity')
-    direction_from: [float, Angular] = Dimension(prefer_units='angular')
-    until_distance: [float, Distance] = Dimension(prefer_units='distance')
+    velocity: Union[float, Velocity] = Dimension(prefer_units='velocity')
+    direction_from: Union[float, Angular] = Dimension(prefer_units='angular')
+    until_distance: Union[float, Distance] = Dimension(prefer_units='distance')
     MAX_DISTANCE_FEET = 1e8
 
     def __post_init__(self) -> None:
@@ -226,14 +227,14 @@ class Shot(PreferredUnits.Mixin):
         from the vertical plane into the horizontal plane by sine(cant_angle)
     """
 
-    look_angle: [float, Angular] = Dimension(prefer_units='angular')
-    relative_angle: [float, Angular] = Dimension(prefer_units='angular')
-    cant_angle: [float, Angular] = Dimension(prefer_units='angular')
+    look_angle: Union[float, Angular] = Dimension(prefer_units='angular')
+    relative_angle: Union[float, Angular] = Dimension(prefer_units='angular')
+    cant_angle: Union[float, Angular] = Dimension(prefer_units='angular')
 
-    weapon: Weapon = field(default=None)
-    ammo: Ammo = field(default=None)
-    atmo: Atmo = field(default=None)
-    winds: list[Wind] = field(default=None)
+    weapon: Optional[Weapon] = field(default=None)
+    ammo: Optional[Ammo] = field(default=None)
+    atmo: Optional[Atmo] = field(default=None)
+    winds: List[Wind] = field(default=None)
 
     # NOTE: Calculator assumes that winds are sorted by Wind.until_distance (ascending)
 

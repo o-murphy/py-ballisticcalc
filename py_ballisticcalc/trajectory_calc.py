@@ -4,7 +4,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import NamedTuple
+from typing import NamedTuple, Union
 
 from .drag_model import DragDataPoint
 from .conditions import Atmo, Shot, Wind
@@ -28,7 +28,7 @@ cMaxIterations = 20
 cGravityConstant = -32.17405
 
 _globalUsePowderSensitivity = False
-_globalMaxCalcStepSize = Distance.Foot(0.5)
+_globalMaxCalcStepSize: Distance = Distance.Foot(0.5)
 
 
 def get_global_max_calc_step_size() -> Distance:
@@ -45,7 +45,7 @@ def reset_globals() -> None:
     _globalMaxCalcStepSize = Distance.Foot(0.5)
 
 
-def set_global_max_calc_step_size(value: [float, Distance]) -> None:
+def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
     global _globalMaxCalcStepSize
     if (_value := PreferredUnits.distance(value)).raw_value <= 0:
         raise ValueError("_globalMaxCalcStepSize have to be > 0")
@@ -114,14 +114,14 @@ class Vector:
     def __isub__(self, other: 'Vector'):
         return self.subtract(other)
 
-    def __mul__(self, other: [int, float, 'Vector']):
+    def __mul__(self, other: Union[int, float, 'Vector']):
         if isinstance(other, (int, float)):
             return self.mul_by_const(other)
         if isinstance(other, Vector):
             return self.mul_by_vector(other)
         raise TypeError(other)
 
-    def __rmul__(self, other: [int, float, 'Vector']):
+    def __rmul__(self, other: Union[int, float, 'Vector']):
         return self.__mul__(other)
 
     def __imul__(self, other):
