@@ -2,7 +2,7 @@
 import math
 from dataclasses import dataclass, field
 from enum import IntEnum
-from typing import NamedTuple
+from typing import NamedTuple, Union, Optional
 
 from .drag_model import DragModel
 from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, Dimension, AbstractUnitType
@@ -27,9 +27,9 @@ class Sight(PreferredUnits.Mixin):
         horizontal: float
 
     focal_plane: FocalPlane = field(default=FocalPlane.FFP)
-    scale_factor: [float, Distance] = Dimension(prefer_units='distance')
-    h_click_size: [float, Angular] = Dimension(prefer_units='adjustment')
-    v_click_size: [float, Angular] = Dimension(prefer_units='adjustment')
+    scale_factor: Union[float, Distance] = Dimension(prefer_units='distance')
+    h_click_size: Union[float, Angular] = Dimension(prefer_units='adjustment')
+    v_click_size: Union[float, Angular] = Dimension(prefer_units='adjustment')
 
     def __post_init__(self):
         if self.focal_plane not in Sight.FocalPlane.__members__.values():
@@ -44,11 +44,11 @@ class Sight(PreferredUnits.Mixin):
         if self.h_click_size.raw_value <= 0 or self.v_click_size.raw_value <= 0:
             raise TypeError("'h_click_size' and 'v_click_size' have to be positive")
 
-    def _adjust_sfp_reticle_steps(self, target_distance: [float, Distance], magnification: float) -> ReticleStep:
+    def _adjust_sfp_reticle_steps(self, target_distance: Union[float, Distance], magnification: float) -> ReticleStep:
         assert self.focal_plane == Sight.FocalPlane.SFP, "SFP focal plane required"
 
         # adjust reticle scale relative to target distance and magnification
-        def get_sfp_step(click_size: [Angular, AbstractUnitType]):
+        def get_sfp_step(click_size: Union[Angular, AbstractUnitType]):
             # Don't need distances conversion cause of it's destroying there
             return click_size.units(
                 click_size.unit_value
@@ -101,10 +101,10 @@ class Weapon(PreferredUnits.Mixin):
     :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
         (Typically computed by ballistic Calculator.)
     """
-    sight_height: [float, Distance] = Dimension(prefer_units='sight_height')
-    twist: [float, Distance] = Dimension(prefer_units='twist')
-    zero_elevation: [float, Angular] = Dimension(prefer_units='angular')
-    sight: [Sight, None] = field(default=None)
+    sight_height: Union[float, Distance] = Dimension(prefer_units='sight_height')
+    twist: Union[float, Distance] = Dimension(prefer_units='twist')
+    zero_elevation: Union[float, Angular] = Dimension(prefer_units='angular')
+    sight: Optional[Sight] = field(default=None)
 
     def __post_init__(self):
         if not self.sight_height:
@@ -126,16 +126,16 @@ class Ammo(PreferredUnits.Mixin):
             Settings.USE_POWDER_SENSITIVITY = True
     """
     dm: DragModel = field(default=None)
-    mv: [float, Velocity] = Dimension(prefer_units='velocity')
-    powder_temp: [float, Temperature] = Dimension(prefer_units='temperature')
+    mv: Union[float, Velocity] = Dimension(prefer_units='velocity')
+    powder_temp: Union[float, Temperature] = Dimension(prefer_units='temperature')
     temp_modifier: float = field(default=0)
 
     def __post_init__(self):
         if not self.powder_temp:
             self.powder_temp = Temperature.Celsius(15)
 
-    def calc_powder_sens(self, other_velocity: [float, Velocity],
-                         other_temperature: [float, Temperature]) -> float:
+    def calc_powder_sens(self, other_velocity: Union[float, Velocity],
+                         other_temperature: Union[float, Temperature]) -> float:
         """Calculates velocity correction by temperature change; assigns to self.temp_modifier
         :param other_velocity: other velocity at other_temperature
         :param other_temperature: other temperature

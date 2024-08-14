@@ -19,6 +19,7 @@ from .trajectory_data import *
 from .conditions import *
 from .munition import *
 from .unit import *
+from typing import Dict, Union, Optional
 
 try:
     import tomllib
@@ -90,9 +91,9 @@ def _load_config(filepath=None):
 
 
 def _basic_config(filename=None,
-                  max_calc_step_size: [float, Distance] = None,
+                  max_calc_step_size: Optional[Union[float, Distance]] = None,
                   use_powder_sensitivity: bool = False,
-                  preferred_units: dict[str, Unit] = None):
+                  preferred_units: Optional[Dict[str, Unit]] = None):
 
     """
     Method to load preferred units from file or Mapping

@@ -14,7 +14,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
   * [Range card](#plot-trajectory-with-danger-space)
   * [Complex example](#complex-example)
   * [Jupyter notebook](Example.ipynb)
-  * [Units of measure](#units)
+  * [Units of measure](#units-and-preferences)
 
   [//]: # (  * [An example of calculations]&#40;#an-example-of-calculations&#41;)
   [//]: # (  * [Output example]&#40;#example-of-the-formatted-output&#41;)
@@ -47,11 +47,7 @@ pip install py-ballisticcalc[charts]
 # Uncomment pyximport to compile instead of running pure python
 #import pyximport; pyximport.install(language_level=3)
 
-from py_ballisticcalc import DragModel, TableG7, TableG1
-from py_ballisticcalc import Ammo, Atmo, Wind
-from py_ballisticcalc import Weapon, Shot, Calculator
-from py_ballisticcalc import Settings as Set
-from py_ballisticcalc.unit import *
+from py_ballisticcalc import *
 ```
 
 ## Simple Zero
@@ -126,21 +122,83 @@ print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velo
     Barrel elevation for 500.0m zero: 4.69mil
     Muzzle velocity at zero temperature 5.0°C is 830.0m/s
 
-## Units
+## Units and Preferences
+In version 2.x.x we changed concepts of settings, there are 2 ways to set preferences
+
+#### 1.1. To change library default units directly from code use `PreferredUnits` object
 
 ```python
-from py_ballisticcalc.unit import *
+from py_ballisticcalc import PreferredUnits
 
-# Print default units
-from py_ballisticcalc import Settings, PreferredUnits
-print(str(Settings.Units))
+# Change default library units
+PreferredUnits.velocity = Velocity.MPS
+PreferredUnits.adjustment = Angular.Mil
+PreferredUnits.temperature = Temperature.Celsius
+PreferredUnits.distance = Distance.Meter
+PreferredUnits.sight_height = Distance.Centimeter
+PreferredUnits.drop = Distance.Centimeter
 
-# Change default
-PreferredUnits.distance = Unit.FOOT
+print(f'PreferredUnits: {str(PreferredUnits)}')
 print(f'Default distance unit: {PreferredUnits.distance.name}')
+
 # Can create value in default unit with either float or another unit of same type
 print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
 print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
+```
+
+#### 1.2. To change solver global setting use global flags setters
+
+```python
+from py_ballisticcalc import *
+
+# enable powder sensitivity calculation
+set_global_use_powder_sensitivity(True)
+# enable powder sensitivity calculation
+set_global_max_calc_step_size(Unit.Meter(1))
+
+# get that values
+enabled = get_global_use_powder_sensitivity()
+step = get_global_max_calc_step_size()
+
+# reset global flags to defaults
+reset_globals()
+```
+
+#### 2. Use new method to set preferred units/settings globally for the venv or the user
+Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
+Or place this file in user's home directory. _(The file in project root have priority.)_
+You can use `basicConfig()` function to load your custom `.toml` file
+
+The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
+and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/assets)
+
+```toml
+# Config template for py_ballisticcalc
+
+title = "standard py_ballisticcalc config template"
+version = "2.0.0b4"
+
+[pybc.preferred_units]
+angular = 'Degree'
+distance = 'Yard'
+velocity = 'FPS'
+# ... other there
+
+[pybc.calculator]
+max_calc_step_size = { value = 0.5, units = "Foot" }
+use_powder_sensitivity = false
+# ...
+```
+
+```python
+from py_ballisticcalc import basicConfig
+
+basicConfig("path/to/your_config.toml")
+```
+
+#### Available manipulations with units
+```python
+from py_ballisticcalc.unit import *
 
 # Ways to define value in units
 # 1. old syntax
