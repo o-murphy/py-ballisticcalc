@@ -54,6 +54,6 @@ exclude = ["py_ballisticcalc_exts*"]
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.1.0b1']
+exts = ['py_ballisticcalc.exts==2.0.3']
 lint = ['pylint', 'flake8']
 charts = ['matplotlib', 'pandas']
