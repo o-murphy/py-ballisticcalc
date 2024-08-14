@@ -116,7 +116,7 @@ class Weapon(PreferredUnits.Mixin):
 
 
 @dataclass
-class Ammo(PreferredUnits.Mixin):
+class Ammo:
     """
     :param dm: DragModel for projectile
     :param mv: Muzzle Velocity
@@ -125,15 +125,21 @@ class Ammo(PreferredUnits.Mixin):
         Can be computed with .calc_powder_sens().  Only applies if:
             Settings.USE_POWDER_SENSITIVITY = True
     """
-    # dm: DragModel = field(default=None)
-    dm: DragModel
-    mv: Union[float, Velocity] = Dimension(prefer_units='velocity')
-    powder_temp: Union[float, Temperature] = Dimension(prefer_units='temperature')
-    temp_modifier: float = field(default=0)
 
-    def __post_init__(self):
-        if not self.powder_temp:
-            self.powder_temp = Temperature.Celsius(15)
+    dm: DragModel
+    mv: Velocity
+    powder_temp: Temperature
+    temp_modifier: float
+
+    def __init__(self,
+                 dm: DragModel,
+                 mv: Union[float, Velocity],
+                 powder_temp: Optional[Union[float, Temperature]] = None,
+                 temp_modifier: float = 0):
+        self.dm = dm
+        self.mv = PreferredUnits.velocity(mv or 0)
+        self.powder_temp = PreferredUnits.temperature(powder_temp or Temperature.Celsius(15))
+        self.temp_modifier = temp_modifier or 0
 
     def calc_powder_sens(self, other_velocity: Union[float, Velocity],
                          other_temperature: Union[float, Temperature]) -> float:
