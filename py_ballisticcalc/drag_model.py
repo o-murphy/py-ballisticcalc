@@ -2,7 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Tuple
 
 from .unit import Weight, Distance, Velocity, PreferredUnits, Dimension
 
@@ -84,7 +84,7 @@ class DragModel:
         return sectional_density(w, d)
 
 
-def make_data_points(drag_table: DragTableDataType) -> list[DragDataPoint]:
+def make_data_points(drag_table: DragTableDataType) -> List[DragDataPoint]:
     """Convert drag table from list of dictionaries to list of DragDataPoints"""
     if all([isinstance(i, DragDataPoint) for i in drag_table]):
         return drag_table
@@ -134,9 +134,9 @@ def DragModelMultiBC(bc_points: List[BCPoint],
     return DragModel(bc, drag_table, weight, diameter, length)
 
 
-def linear_interpolation(x: Union[list[float], tuple[float]],
-                         xp: Union[list[float], tuple[float]],
-                         yp: Union[list[float], tuple[float]]) -> Union[list[float], tuple[float]]:
+def linear_interpolation(x: Union[List[float], Tuple[float]],
+                         xp: Union[List[float], Tuple[float]],
+                         yp: Union[List[float], Tuple[float]]) -> Union[List[float], Tuple[float]]:
     """Piecewise linear interpolation
     :param x: List of points for which we want interpolated values
     :param xp: List of existing points (x coordinate), *sorted in ascending order*

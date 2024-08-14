@@ -8,6 +8,7 @@ from dataclasses import dataclass, MISSING, Field
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Union, TypeVar, Optional, Any, Dict, Tuple
+from typing_extensions import Self
 import re
 
 from py_ballisticcalc.logger import logger
@@ -20,9 +21,10 @@ __all__ = ('Unit', 'UnitType',
            'Energy', 'Weight', 'Dimension', 'PreferredUnits',
            'UnitAliasError', 'UnitTypeError', 'UnitConversionError')
 
-UnitType = TypeVar('UnitType', bound='Unit')
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
-
+UnitType = TypeVar('UnitType', bound='Unit')
+# UnitType: TypeAlias = "Unit"
+# AbstractUnitType: TypeAlias = "AbstractUnit"
 
 class UnitTypeError(TypeError):
     pass
@@ -113,7 +115,7 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: UnitType, value: Union[int, float, AbstractUnitType]) -> AbstractUnitType:
+    def __call__(self: Any, value: Union[int, float, AbstractUnitType]) -> AbstractUnitType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
@@ -353,13 +355,13 @@ class AbstractUnit:
     def __ge__(self, other):
         return float(self) >= other
 
-    def __lshift__(self, other: Union[UnitType, AbstractUnitType]) -> Unit:
+    def __lshift__(self, other: Unit) -> Self:
         return self.convert(other)
 
-    def __rshift__(self, other: Union[UnitType, AbstractUnitType]):
+    def __rshift__(self, other: Unit) -> float:
         return self.get_in(other)
 
-    def __rlshift__(self, other: Union[UnitType, AbstractUnitType]) -> Unit:
+    def __rlshift__(self, other: Unit) -> Self:
         return self.convert(other)
 
     def _validate_unit_type(self, value: float, units: Unit):
@@ -392,7 +394,7 @@ class AbstractUnit:
         """
         return self._validate_unit_type(value, units)
 
-    def convert(self, units: Unit) -> AbstractUnitType:
+    def convert(self, units: Unit) -> Self:
         """Returns new unit instance in specified prefer_units
         :param units: Unit enum type
         :return: new unit instance in specified prefer_units
