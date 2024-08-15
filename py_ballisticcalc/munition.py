@@ -2,27 +2,34 @@
 import math
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import NamedTuple, Union, Optional
+from typing_extensions import NamedTuple, Union, Optional, Any
 
-from .drag_model import DragModel
-from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, AbstractUnitType
+from py_ballisticcalc.drag_model import DragModel
+from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits, AbstractUnitType
 
-__all__ = ('Weapon', 'Ammo', 'Sight')
-
+TrajectoryData: Any
 
 @dataclass
 class Sight:
+    """Sight data for sight specific adjustment calculation"""
+
     class FocalPlane(IntEnum):
+        """FocalPlane enum"""
+
         FFP = 1  # First focal plane
         SFP = 2  # Second focal plane
         LWIR = 10  # LWIR based device with scalable reticle
         # and adjusted click size to it's magnification
 
     class ReticleStep(NamedTuple):
+        """Reticle step"""
+
         vertical: Angular
         horizontal: Angular
 
     class Clicks(NamedTuple):
+        """Clicks tuple"""
+
         vertical: float
         horizontal: float
 
@@ -59,6 +66,8 @@ class Sight:
             raise TypeError("'h_click_size' and 'v_click_size' have to be positive")
 
     def _adjust_sfp_reticle_steps(self, target_distance: Union[float, Distance], magnification: float) -> ReticleStep:
+        """Calculates the SFP reticle steps for a target distance and magnification"""
+
         assert self.focal_plane == Sight.FocalPlane.SFP, "SFP focal plane required"
 
         # adjust reticle scale relative to target distance and magnification
@@ -79,6 +88,7 @@ class Sight:
     def get_adjustment(self, target_distance: Distance,
                        drop_adj: Angular, windage_adj: Angular,
                        magnification: float):
+        """Calculate adjustment for target distance and magnification"""
 
         if self.focal_plane == Sight.FocalPlane.SFP:
             steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
@@ -86,12 +96,12 @@ class Sight:
                 drop_adj.raw_value / steps.vertical.raw_value,
                 windage_adj.raw_value / steps.horizontal.raw_value
             )
-        elif self.focal_plane == Sight.FocalPlane.FFP:
+        if self.focal_plane == Sight.FocalPlane.FFP:
             return Sight.Clicks(
                 drop_adj.raw_value / self.v_click_size.raw_value,
                 windage_adj.raw_value / self.h_click_size.raw_value
             )
-        elif self.focal_plane == Sight.FocalPlane.LWIR:
+        if self.focal_plane == Sight.FocalPlane.LWIR:
             # adjust clicks to magnification
             return Sight.Clicks(
                 drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
@@ -100,6 +110,8 @@ class Sight:
         raise AttributeError("Wrong focal_plane")
 
     def get_trajectory_adjustment(self, trajectory_point: 'TrajectoryData', magnification: float) -> Clicks:
+        """Calculate adjustment for target distance and magnification for `TrajectoryData` instance"""
+
         return self.get_adjustment(trajectory_point.distance,
                                    trajectory_point.drop_adj,
                                    trajectory_point.windage_adj,
@@ -193,3 +205,6 @@ class Ammo:
         t_delta = t1 - t0
         muzzle_velocity = self.temp_modifier / (15 / v0) * t_delta + v0
         return Velocity.MPS(muzzle_velocity)
+
+
+__all__ = ('Weapon', 'Ammo', 'Sight')

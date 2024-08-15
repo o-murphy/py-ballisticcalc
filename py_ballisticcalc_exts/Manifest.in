@@ -1,3 +1,5 @@
 recursive-include py_ballisticcalc_exts *.pyx
 recursive-include py_ballisticcalc_exts *.pyi
 include py.typed
+include LICENSE
+include README.md

@@ -1,5 +1,6 @@
 import unittest
 from dataclasses import dataclass
+from typing import Optional, Union
 
 from py_ballisticcalc.unit import *
 
@@ -12,11 +13,18 @@ def back_n_forth(test, value, units):
 
 class TestPrefUnits(unittest.TestCase):
 
+    @unittest.skip('Deprecated')
     def test_pref(self):
         @dataclass
-        class TestClass(PreferredUnits.Mixin):
-            as_metadata_str: [float, Distance] = Dimension(prefer_units='sight_height')
-            as_metadata_unit: [float, Distance] = Dimension(prefer_units=Unit.Meter)
+        class TestClass:
+            as_metadata_str: Distance
+            as_metadata_unit: Distance
+
+            def __init__(self,
+                         as_metadata_str: Optional[Union[float, Distance]] = None,
+                         as_metadata_unit: Optional[Union[float, Distance]] = None):
+                self.as_metadata_unit = PreferredUnits.distance(as_metadata_str or 0)
+                self.as_metadata_str = Unit.Meter(as_metadata_unit or 0)
 
         tc1 = TestClass(1, 1)
         self.assertEqual(tc1.as_metadata_str.units, Unit.Inch)

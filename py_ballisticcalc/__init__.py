@@ -155,9 +155,18 @@ __all__ = [
     'Pressure',
     'Energy',
     'Weight',
-    'Dimension',
     'PreferredUnits',
-    'get_drag_tables_names'
+    'get_drag_tables_names',
 ]
 
-__all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]
+# __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]
+__all__ += [
+    'TableG1',
+    'TableG7',
+    'TableG2',
+    'TableG5',
+    'TableG6',
+    'TableG8',
+    'TableGI',
+    'TableGS'
+]

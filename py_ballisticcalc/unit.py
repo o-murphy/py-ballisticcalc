@@ -2,39 +2,31 @@
 Useful types for prefer_units of measurement conversion for ballistics calculations
 """
 
-import sys
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, MISSING, Field
+import re
+from dataclasses import dataclass
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple, Union, TypeVar, Optional, Any, Dict, Tuple
-from typing_extensions import Self
-import re
+
+from typing_extensions import NamedTuple, Union, TypeVar, Optional, Any, Dict, Tuple, Self
 
 from py_ballisticcalc.logger import logger
 
-__all__ = ('Unit', 'UnitType',
-           'AbstractUnit', 'AbstractUnitType',
-           'UnitProps', 'UnitAliases',
-           'UnitPropsDict', 'Distance',
-           'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight', 'Dimension', 'PreferredUnits',
-           'UnitAliasError', 'UnitTypeError', 'UnitConversionError')
-
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
 UnitType = TypeVar('UnitType', bound='Unit')
-# UnitType: TypeAlias = "Unit"
-# AbstractUnitType: TypeAlias = "AbstractUnit"
+
 
 class UnitTypeError(TypeError):
+    """Unit type error"""
     pass
 
 
 class UnitConversionError(UnitTypeError):
+    """Unit conversion error"""
     pass
 
 
 class UnitAliasError(ValueError):
+    """Unit alias error"""
     pass
 
 
@@ -147,6 +139,8 @@ class Unit(IntEnum):
 
     @staticmethod
     def find_unit_by_alias(string_to_find: str, aliases: Dict[Tuple[str, ...], UnitType]) -> Optional[UnitType]:
+        """Find unit type by string and aliases dict"""
+
         # Iterate over the keys of the dictionary
         for aliases_tuple in aliases.keys():
             # Check if the string is present in any of the tuples
@@ -157,6 +151,8 @@ class Unit(IntEnum):
 
     @staticmethod
     def parse_unit(input_: str) -> Optional[UnitType]:
+        """Parse the unit type from string"""
+
         input_ = input_.strip().lower()
         if not isinstance(input_, str):
             raise TypeError(f"type str expected for 'input_', got {type(input_)}")
@@ -169,13 +165,14 @@ class Unit(IntEnum):
 
     @staticmethod
     def parse_value(input_: Union[str, float, int], preferred: Optional[Union[UnitType, str]]) -> AbstractUnitType:
+        """Parse the unit value and return 'AbstractUnit'"""
 
-        def create_as_preferred(value):
+        def create_as_preferred(value_):
             if isinstance(preferred, Unit):
-                return preferred(float(value))
+                return preferred(float(value_))
             if isinstance(preferred, str):
-                if units := Unit.parse_unit(preferred):
-                    return units(float(value))
+                if units_ := Unit.parse_unit(preferred):
+                    return units_(float(value_))
             raise UnitAliasError(f"Unsupported {preferred=} unit alias")
 
         if isinstance(input_, (float, int)):
@@ -193,8 +190,7 @@ class Unit(IntEnum):
             value, alias = match.groups()
             if units := Unit.parse_unit(alias):
                 return units(float(value))
-            else:
-                raise UnitAliasError(f"Unsupported unit {alias=}")
+            raise UnitAliasError(f"Unsupported unit {alias=}")
 
         raise UnitAliasError(f"Can't parse unit {input_=}")
 
@@ -761,55 +757,25 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
     target_height: Unit = Unit.Inch
     twist: Unit = Unit.Inch
 
-    @dataclass
-    class Mixin(ABC):  # pylint: disable=too-few-public-methods
-        """
-        TODO: move it to Units, use it instead of TypedUnits
-        Abstract class to apply auto-conversion values to
-        specified prefer_units by type-hints in inherited dataclasses
-        """
-
-        def __setattr__(self, key, value):
-            """
-            converts value to specified prefer_units by type-hints in inherited dataclass
-            """
-
-            _fields = self.__getattribute__('__dataclass_fields__')
-
-            if (_field := _fields.get(key)) and value is not None and not isinstance(value, AbstractUnit):
-
-                if units := _field.metadata.get('prefer_units'):
-
-                    if isinstance(units, Unit):
-                        value = units(value)
-                    elif isinstance(units, str):
-                        if _units := Unit.parse_unit(units):
-                            value = _units(value)
-                        else:
-                            raise UnitTypeError(f"Unsupported unit or dimension, use one of {PreferredUnits}")
-                    else:
-                        raise UnitTypeError(f"Unsupported unit or dimension, use one of {PreferredUnits}")
-
-            super().__setattr__(key, value)
 
     @classmethod
-    def defaults(self):
+    def defaults(cls):
         """resets preferred units to defaults"""
-        self.angular = Unit.Degree
-        self.distance = Unit.Yard
-        self.velocity = Unit.FPS
-        self.pressure = Unit.InHg
-        self.temperature = Unit.Fahrenheit
-        self.diameter = Unit.Inch
-        self.length = Unit.Inch
-        self.weight = Unit.Grain
-        self.adjustment = Unit.Mil
-        self.drop = Unit.Inch
-        self.energy = Unit.FootPound
-        self.ogw = Unit.Pound
-        self.sight_height = Unit.Inch
-        self.target_height = Unit.Inch
-        self.twist = Unit.Inch
+        cls.angular = Unit.Degree
+        cls.distance = Unit.Yard
+        cls.velocity = Unit.FPS
+        cls.pressure = Unit.InHg
+        cls.temperature = Unit.Fahrenheit
+        cls.diameter = Unit.Inch
+        cls.length = Unit.Inch
+        cls.weight = Unit.Grain
+        cls.adjustment = Unit.Mil
+        cls.drop = Unit.Inch
+        cls.energy = Unit.FootPound
+        cls.ogw = Unit.Pound
+        cls.sight_height = Unit.Inch
+        cls.target_height = Unit.Inch
+        cls.twist = Unit.Inch
 
     @classmethod
     def set(cls, **kwargs):
@@ -830,42 +796,11 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 logger.warning(f"{attribute=} not found in preferred_units")
 
 
-# pylint: disable=redefined-builtin,too-few-public-methods,too-many-arguments
-class Dimension(Field):
-    """
-    Definition of measure units specified field for
-    PreferredUnits.Mixin based dataclasses
-    """
-
-    def __init__(self, prefer_units: Union[str, Unit], init=True, repr_=True,
-                 hash_=None, compare=True, metadata=None):
-
-        if metadata is None:
-            metadata = {}
-        metadata['prefer_units'] = prefer_units
-
-        major, minor = sys.version_info.major, sys.version_info.minor
-
-        if major >= 3 and minor > 9:
-            extra = {'kw_only': MISSING}
-        elif major >= 3 and minor == 9:
-            extra = {}
-        else:
-            raise RuntimeError("Unsupported python version")
-
-        super().__init__(default=None, default_factory=MISSING,
-                         init=init, repr=repr_,
-                         hash=hash_, compare=compare,
-                         metadata=metadata, **extra)
-
-    # @property
-    # def raw_value(self):
-    #     raise NotImplementedError
-    #
-    # @abstractmethod
-    # def __rshift__(self, other):
-    #     ...
-    #
-    # @abstractmethod
-    # def __lshift__(self, other):
-    #     ...
+__all__ = ('Unit', 'UnitType',
+           'AbstractUnit', 'AbstractUnitType',
+           'UnitProps', 'UnitAliases',
+           'UnitPropsDict', 'Distance',
+           'Velocity', 'Angular', 'Temperature', 'Pressure',
+           'Energy', 'Weight',
+           'PreferredUnits',
+           'UnitAliasError', 'UnitTypeError', 'UnitConversionError')

@@ -2,12 +2,10 @@
 
 import math
 from dataclasses import dataclass
-from typing import List, Union, Optional, Tuple
+from typing_extensions import List, Union, Optional, Tuple
 
-from .munition import Weapon, Ammo
-from .unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
-
-__all__ = ('Atmo', 'Wind', 'Shot')
+from py_ballisticcalc.munition import Weapon, Ammo
+from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 
 cStandardHumidity: float = 0.0  # Relative Humidity
 cPressureExponent: float = 5.255876  # =g*M/R*L
@@ -205,14 +203,14 @@ class Wind:
     velocity: Velocity
     direction_from: Angular
     until_distance: Distance
-    MAX_DISTANCE_FEET: int = 1e8
+    MAX_DISTANCE_FEET: float = 1e8
 
     def __init__(self,
                  velocity: Optional[Union[float, Velocity]] = None,
                  direction_from: Optional[Union[float, Angular]] = None,
                  until_distance: Optional[Union[float, Distance]] = None,
                  *,
-                 max_distance_feet: Optional[int] = 1e8):
+                 max_distance_feet: Optional[float] = 1e8):
         self.MAX_DISTANCE_FEET = max_distance_feet or 1e8
         self.velocity = PreferredUnits.velocity(velocity or 0)
         self.direction_from = PreferredUnits.angular(direction_from or 0)
@@ -277,3 +275,6 @@ class Shot:
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
+
+
+__all__ = ('Atmo', 'Wind', 'Shot')

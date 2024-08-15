@@ -1,15 +1,12 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
-from typing import Union
+from typing_extensions import Union
 
-from .conditions import Shot
-# pylint: disable=import-error,no-name-in-module,wildcard-import,unused-wildcard-import
-from .backend import *
-from .trajectory_data import HitResult
-from .unit import Angular, Distance, PreferredUnits
-
-
-__all__ = ('Calculator',)
+from py_ballisticcalc.conditions import Shot
+# pylint: disable=import-error,no-name-in-module,wildcard-import
+from py_ballisticcalc.backend import TrajectoryCalc
+from py_ballisticcalc.trajectory_data import HitResult
+from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 
 @dataclass
@@ -65,3 +62,6 @@ class Calculator:
         self._calc = TrajectoryCalc(shot.ammo)
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
         return HitResult(shot, data, extra_data)
+
+
+__all__ = ('Calculator',)
