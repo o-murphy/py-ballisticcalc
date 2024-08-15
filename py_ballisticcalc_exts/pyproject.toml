@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc.exts"
-version = "2.0.4rc1"
+version = "2.0.4rc2"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -34,13 +34,10 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = []
-#dynamic = ["version"]
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
 "Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
-#"Funding" = "https://donate.pypi.org"
-#"Say Thanks!" = ""
 "Source" = "https://github.com/o-murphy/py_ballisticcalc"
 
 [tool.setuptools]
@@ -49,10 +46,10 @@ py-modules = ["py_ballisticcalc_exts"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["py_ballisticcalc_exts*"]  # alternatively: `exclude = ["additional*"]`
+include = ["py_ballisticcalc_exts*"]
 
-
-#[tool.setuptools.dynamic]
-#version = {attr = "py_ballisticcalc_exts.__version__"}
 [project.optional-dependencies]
-dev = ['cython', 'build', 'setuptools']
+dev = ['cython', 'build', 'setuptools', 'cibuildwheel']
+
+[tool.cibuildwheel]
+before-all = "uname -a"

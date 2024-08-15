@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.0.4rc1"
+version = "2.0.4rc2"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -33,14 +33,11 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = ['typing_extensions>=4.12', "tomli; python_version<'3.11'"]
-#dynamic = ["version"]
+dependencies = ["typing_extensions>=4.12", "tomli; python_version<'3.11'"]
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
 "Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
-#"Funding" = "https://donate.pypi.org"
-#"Say Thanks!" = ""
 "Source" = "https://github.com/o-murphy/py_ballisticcalc"
 
 
@@ -49,11 +46,19 @@ py-modules = ["py_ballisticcalc"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["py_ballisticcalc*"]  # alternatively: `exclude = ["additional*"]`
+include = ["py_ballisticcalc*"]
 exclude = ["py_ballisticcalc_exts*"]
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.0.4rc1']
+exts = ['py_ballisticcalc.exts==2.0.4rc2']
 charts = ['matplotlib', 'pandas']
-dev = ['pylint', 'flake8', 'mypy', 'pytest', 'setuptools', 'build', 'pandas-stubs', 'matplotlib-stubs']
+dev = [
+    'jupyter',
+    'pylint',
+    'mypy',
+    'pytest',
+    'build',
+    'pandas-stubs',
+    'matplotlib-stubs'
+]
