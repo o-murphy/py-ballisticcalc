@@ -62,12 +62,12 @@ jobs:
       - name: Build pure python package
         run: python -m build
 
-      - name: Build binary python package
-        run: |
-          cd py_ballisticcalc_exts
-          python -m build --outdir ../dist
-          cd ..
-          ls dist
+#      - name: Build binary python package
+#        run: |
+#          cd py_ballisticcalc_exts
+#          python -m build --outdir ../dist
+#          cd ..
+#          ls dist
 
       - name: Publish package to Test PyPI
         run: |
@@ -77,7 +77,7 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
 
   deploy-exts:
-    needs: build
+    needs: test-build-deploy
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -104,10 +104,11 @@ jobs:
         cd py_ballisticcalc_exts
         python -m build --outdir ../dist
         cd ..
+        ls
 
-    - name: Publish package to PyPI
+    - name: Publish package to Test PyPI
       run: |
-        python -m twine upload dist/* --skip-existing --verbose --non-interactive
+        python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
       env:
         TWINE_USERNAME: __token__
         TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
