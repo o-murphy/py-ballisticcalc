@@ -19,13 +19,9 @@ compiler_directives = {
     "show_performance_hints": True,
 }
 
-extensions_paths = [
-    'py_ballisticcalc_exts/*.pyx'
-]
-
 extensions = [
     Extension('py_ballisticcalc_exts.trajectory_calc',
-              ['py_ballisticcalc_exts/*.pyx'])
+              ['py_ballisticcalc_exts/trajectory_calc.pyx'])
 ]
 
 extensions = cythonize(extensions,
