@@ -16,6 +16,9 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
 
     runs-on: ${{ matrix.os }}
+    environment: release
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +44,7 @@ jobs:
       - name: List ./dist
         run: ls ./dist
 
-      - name: Publish package to PyPI
+      - name: Publish package distributions to PyPI
         run: |
           python -m twine upload dist/* --skip-existing --verbose --non-interactive
         env:
