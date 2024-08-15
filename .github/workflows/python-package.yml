@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     runs-on: ${{ matrix.os }}
@@ -32,22 +32,29 @@ jobs:
         python -m pip install setuptools cython
         python -m pip install -e .[dev]
 
-    - name: Check Python version and install tomli if less than 3.11
-      run: |
-        python_version=$(python -c "import sys; print('.'.join(map(str, sys.version_info[:2])))")
-        if [ $(echo "${python_version} < 3.11" | bc -l) -eq 1 ]; then
-            python -m pip install tomli
-        fi
-
     - name: Run unittest tests in pure python mode
       run: |
-        if pytest tests --no-header --no-summary -v; then
-          echo "Pytest succeeded."
-        else
+        pytest tests --no-header --no-summary -v
+        if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          # Add your additional commands here
           pytest tests -v
+        else
+          echo "Pytest succeeded."
         fi
+      shell: bash
+      if: runner.os != 'Windows'
+
+    - name: Run unittest tests in pure python mode on Windows
+      run: |
+        pytest tests --no-header --no-summary -v
+        if %ERRORLEVEL% neq 0 (
+          echo Pytest failed, running without capture
+          pytest tests -v
+        ) else (
+          echo Pytest succeeded.
+        )
+      shell: cmd
+      if: runner.os == 'Windows'
 
     - name: Build cython modules
       run: |
@@ -57,10 +64,24 @@ jobs:
 
     - name: Run unittest tests in binary mode
       run: |
-        if pytest tests --no-header --no-summary -v; then
-          echo "Pytest succeeded."
-        else
+        pytest tests --no-header --no-summary -v
+        if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          # Add your additional commands here
-          pytest tests --no-header --no-summary -v -s
+          pytest tests -v
+        else
+          echo "Pytest succeeded."
         fi
+      shell: bash
+      if: runner.os != 'Windows'
+
+    - name: Run unittest tests in binary mode on Windows
+      run: |
+        pytest tests --no-header --no-summary -v
+        if %ERRORLEVEL% neq 0 (
+          echo Pytest failed, running without capture
+          pytest tests -v
+        ) else (
+          echo Pytest succeeded.
+        )
+      shell: cmd
+      if: runner.os == 'Windows'
