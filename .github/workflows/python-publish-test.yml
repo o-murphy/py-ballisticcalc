@@ -75,3 +75,39 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+  deploy-exts:
+    needs: build
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev]
+        python -m pip install twine
+
+    - name: Build extensions package
+      run: |
+        cd py_ballisticcalc_exts
+        python -m build --outdir ../dist
+        cd ..
+
+    - name: Publish package to PyPI
+      run: |
+        python -m twine upload dist/* --skip-existing --verbose --non-interactive
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
