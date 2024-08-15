@@ -26,10 +26,6 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install build-essential -y
-
-          python -m pip install --upgrade pip
           python -m pip install build cibuildwheel twine 
 
       - name: Build pure python package
