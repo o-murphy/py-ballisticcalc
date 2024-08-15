@@ -68,10 +68,9 @@ jobs:
           python -m build --outdir ../dist
           cd ..
 
-#      - name: Publish package to TestPyPI
-#        uses: pypa/gh-action-pypi-publish@release/v1
-#        with:
-#          skip-existing: true
-#          user: __token__
-#          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-#          repository-url: https://test.pypi.org/legacy/
+      - name: Publish package to Test PyPI
+        run: |
+          python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
