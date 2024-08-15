@@ -29,7 +29,8 @@ jobs:
           sudo apt-get install build-essential -y
           
           python -m pip install --upgrade pip
-          python -m pip install setuptools pytest cython
+          python -m pip install setuptools cython
+          python -m pip install -e .[dev]
 
       - name: Run unittest tests in pure python mode
         run: |
@@ -71,17 +72,18 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install build twine
+          python -m pip install -e .[dev]
+          python -m pip install twine
 
       - name: Build package
         run: python -m build
 
-      - name: Publish package to Test PyPI
+      - name: Publish package to PyPI
         run: |
-          python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
+          python -m twine upload dist/* --skip-existing --verbose --non-interactive
         env:
           TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
   deploy-exts:
     needs: build
@@ -103,7 +105,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install build twine
+        python -m pip install -e .[dev]
+        python -m pip install twine
 
     - name: Build extensions package
       run: |
@@ -111,9 +114,9 @@ jobs:
         python -m build --outdir ../dist
         cd ..
 
-    - name: Publish package to Test PyPI
+    - name: Publish package to PyPI
       run: |
-        python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
+        python -m twine upload dist/* --skip-existing --verbose --non-interactive
       env:
         TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

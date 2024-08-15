@@ -1,14 +1,11 @@
 """Classes to define zeroing or current environment conditions"""
 
 import math
-from dataclasses import dataclass, field
-from typing import List, Union, Optional, Tuple
+from dataclasses import dataclass
+from typing_extensions import List, Union, Optional, Tuple
 
-from .munition import Weapon, Ammo
-# from .settings import Settings as Set
-from .unit import Distance, Velocity, Temperature, Pressure, Angular, Dimension, PreferredUnits
-
-__all__ = ('Atmo', 'Wind', 'Shot')
+from py_ballisticcalc.munition import Weapon, Ammo
+from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 
 cStandardHumidity: float = 0.0  # Relative Humidity
 cPressureExponent: float = 5.255876  # =g*M/R*L
@@ -36,33 +33,37 @@ cStandardDensity: float = 0.076474  # lb/ft^3
 
 
 @dataclass
-class Atmo(PreferredUnits.Mixin):  # pylint: disable=too-many-instance-attributes
+class Atmo:  # pylint: disable=too-many-instance-attributes
     """Atmospheric conditions and density calculations"""
 
-    altitude: Union[float, Pressure] = Dimension(prefer_units="distance")
-    pressure: Union[float, Pressure] = Dimension(prefer_units="pressure")
-    temperature: Union[float, Temperature] = Dimension(prefer_units="temperature")
+    altitude: Distance
+    pressure: Pressure
+    temperature: Temperature
+    humidity: float  # Relative humidity [0% to 100%]
 
-    humidity: float = 0.0  # Relative humidity [0% to 100%]
-    density_ratio: float = field(init=False)  # Density / cStandardDensity
-    mach: Velocity = field(init=False)  # Mach 1 in reference atmosphere
-    _mach1: float = field(init=False)  # Mach 1 in reference atmosphere in fps
-    _a0: float = field(init=False)  # Initial reference altitude (ft)
-    _t0: float = field(init=False)  # Temperature given at reference altitude °F
-    _p0: float = field(init=False)  # Barometric pressure (sea level)
-    _ta: float = field(init=False)  # Standard temperature at reference altitude °F
+    density_ratio: float
+    mach: Velocity
+    _mach1: float
+    _a0: float
+    _t0: float
+    _p0: float
+    _ta: float
 
-    def __post_init__(self) -> None:
+    def __init__(self,
+                 altitude: Optional[Union[float, Distance]] = None,
+                 pressure: Optional[Union[float, Pressure]] = None,
+                 temperature: Optional[Union[float, Temperature]] = None,
+                 humidity: float = 0.0):
+
+        self.humidity = humidity or 0.0
         if self.humidity > 1:
-            self.humidity = self.humidity / 100.0
+            self.humidity = humidity / 100.0
         if not 0 <= self.humidity <= 1:
             self.humidity = 0.0
-        if not self.altitude:
-            self.altitude = Distance.Foot(0)
-        if not self.temperature:
-            self.temperature = Atmo.standard_temperature(self.altitude)
-        if not self.pressure:
-            self.pressure = Atmo.standard_pressure(self.altitude)
+
+        self.altitude = PreferredUnits.distance(altitude or 0)
+        self.pressure = PreferredUnits.pressure(pressure or Atmo.standard_pressure(self.altitude))
+        self.temperature = PreferredUnits.temperature(temperature or Atmo.standard_temperature(self.altitude))
 
         self._t0 = self.temperature >> Temperature.Fahrenheit
         self._p0 = self.pressure >> Pressure.InHg
@@ -192,28 +193,32 @@ class Atmo(PreferredUnits.Mixin):  # pylint: disable=too-many-instance-attribute
 
 
 @dataclass
-class Wind(PreferredUnits.Mixin):
+class Wind:
     """
     Wind direction and velocity by down-range distance.
     direction_from = 0 is blowing from behind shooter. 
     direction_from = 90 degrees is blowing from shooter's left towards right.
     """
 
-    velocity: Union[float, Velocity] = Dimension(prefer_units='velocity')
-    direction_from: Union[float, Angular] = Dimension(prefer_units='angular')
-    until_distance: Union[float, Distance] = Dimension(prefer_units='distance')
-    MAX_DISTANCE_FEET = 1e8
+    velocity: Velocity
+    direction_from: Angular
+    until_distance: Distance
+    MAX_DISTANCE_FEET: float = 1e8
 
-    def __post_init__(self) -> None:
-        if not self.until_distance:
-            self.until_distance = Distance.Foot(Wind.MAX_DISTANCE_FEET)
-        if not self.direction_from or not self.velocity:
-            self.direction_from = 0
-            self.velocity = 0
+    def __init__(self,
+                 velocity: Optional[Union[float, Velocity]] = None,
+                 direction_from: Optional[Union[float, Angular]] = None,
+                 until_distance: Optional[Union[float, Distance]] = None,
+                 *,
+                 max_distance_feet: Optional[float] = 1e8):
+        self.MAX_DISTANCE_FEET = max_distance_feet or 1e8
+        self.velocity = PreferredUnits.velocity(velocity or 0)
+        self.direction_from = PreferredUnits.angular(direction_from or 0)
+        self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(Wind.MAX_DISTANCE_FEET))
 
 
 @dataclass
-class Shot(PreferredUnits.Mixin):
+class Shot:
     """
     Stores shot parameters for the trajectory calculation.
     
@@ -227,14 +232,32 @@ class Shot(PreferredUnits.Mixin):
         from the vertical plane into the horizontal plane by sine(cant_angle)
     """
 
-    look_angle: Union[float, Angular] = Dimension(prefer_units='angular')
-    relative_angle: Union[float, Angular] = Dimension(prefer_units='angular')
-    cant_angle: Union[float, Angular] = Dimension(prefer_units='angular')
+    look_angle: Angular
+    relative_angle: Angular
+    cant_angle: Angular
 
-    weapon: Optional[Weapon] = field(default=None)
-    ammo: Optional[Ammo] = field(default=None)
-    atmo: Optional[Atmo] = field(default=None)
-    winds: List[Wind] = field(default=None)
+    weapon: Weapon
+    ammo: Ammo
+    atmo: Atmo
+    winds: List[Wind]
+
+    def __init__(self,
+                 weapon: Weapon,
+                 ammo: Ammo,
+                 look_angle: Optional[Union[float, Angular]] = None,
+                 relative_angle: Optional[Union[float, Angular]] = None,
+                 cant_angle: Optional[Union[float, Angular]] = None,
+
+                 atmo: Optional[Atmo] = None,
+                 winds: Optional[List[Wind]] = None
+                 ):
+        self.look_angle = PreferredUnits.angular(look_angle or 0)
+        self.relative_angle = PreferredUnits.angular(relative_angle or 0)
+        self.cant_angle = PreferredUnits.angular(cant_angle or 0)
+        self.weapon = weapon
+        self.ammo = ammo
+        self.atmo = atmo or Atmo.icao()
+        self.winds = winds or [Wind()]
 
     # NOTE: Calculator assumes that winds are sorted by Wind.until_distance (ascending)
 
@@ -253,14 +276,5 @@ class Shot(PreferredUnits.Mixin):
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
 
-    def __post_init__(self) -> None:
-        if not self.look_angle:
-            self.look_angle = 0
-        if not self.relative_angle:
-            self.relative_angle = 0
-        if not self.cant_angle:
-            self.cant_angle = 0
-        if not self.atmo:
-            self.atmo = Atmo.icao()
-        if not self.winds:
-            self.winds = [Wind()]
+
+__all__ = ('Atmo', 'Wind', 'Shot')

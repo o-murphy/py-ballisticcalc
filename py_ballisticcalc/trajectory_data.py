@@ -1,34 +1,38 @@
 """Implements a point of trajectory class in applicable data types"""
 import logging
 import math
-import typing
 from dataclasses import dataclass, field
-from enum import Flag
-from typing import NamedTuple, Optional, Union
+from enum import IntFlag
+from typing_extensions import NamedTuple, Optional, Union, Any
 
-from .unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
-from .conditions import Shot
+from py_ballisticcalc.conditions import Shot
+from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
+
+pandas: Any
+DataFrame: Any
+matplotlib: Any
+Polygon: Any
+Axes: Any
 
 try:
-    import pandas as pd
+    import pandas
 except ImportError as error:
     logging.warning("Install pandas to convert trajectory to dataframe")
-    pd = None
+    pandas = None
 
 try:
     import matplotlib
-    from matplotlib import patches
+    from matplotlib.patches import Polygon
 except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
-
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag')
+    Polygon = None
 
 PLOT_FONT_HEIGHT = 72
 PLOT_FONT_SIZE = 552 / PLOT_FONT_HEIGHT
 
 
-class TrajFlag(Flag):
+class TrajFlag(IntFlag):
     """Flags for marking trajectory row if Zero or Mach crossing
     Also uses to set a filters for a trajectory calculation loop
     """
@@ -81,7 +85,7 @@ class TrajectoryData(NamedTuple):
     drag: float
     energy: Energy
     ogw: Weight
-    flag: typing.Union[TrajFlag, int]
+    flag: Union[TrajFlag, int]
 
     def formatted(self) -> tuple:
         """
@@ -153,7 +157,7 @@ class DangerSpace(NamedTuple):
 
     def overlay(self, ax: 'Axes', label: Optional[str] = None):
         """Highlights danger-space region on plot"""
-        if matplotlib is None:
+        if matplotlib is None or not Polygon:
             raise ImportError("Install matplotlib to get results as a plot")
 
         cosine = math.cos(self.look_angle >> Angular.Radian)
@@ -173,8 +177,8 @@ class DangerSpace(NamedTuple):
             (begin_dist, begin_drop), (end_dist, begin_drop),
             (end_dist, end_drop), (begin_dist, end_drop)
         )
-        polygon = patches.Polygon(vertices, closed=True,
-                                  edgecolor='none', facecolor='r', alpha=0.3)
+        polygon = Polygon(vertices, closed=True,
+                          edgecolor='none', facecolor='r', alpha=0.3)
         ax.add_patch(polygon)
         if label is None:  # Add default label
             label = f"Danger space\nat {self.at_range.distance << PreferredUnits.distance}"
@@ -234,7 +238,7 @@ class HitResult:
     def danger_space(self,
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],
-                     look_angle: Union[float, Angular] = None
+                     look_angle: Optional[Union[float, Angular]] = None
                      ) -> DangerSpace:
         """
         Assume that the trajectory hits the center of a target at any distance.
@@ -300,14 +304,14 @@ class HitResult:
         :param formatted: False for values as floats; True for strings with prefer_units
         :return: the trajectory table as a DataFrame
         """
-        if pd is None:
+        if pandas is None:
             raise ImportError("Install pandas to get trajectory as dataframe")
         col_names = list(TrajectoryData._fields)
         if formatted:
             trajectory = [p.formatted() for p in self]
         else:
             trajectory = [p.in_def_units() for p in self]
-        return pd.DataFrame(trajectory, columns=col_names)
+        return pandas.DataFrame(trajectory, columns=col_names)
 
     def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':
         """:return: graph of the trajectory"""
@@ -370,3 +374,6 @@ class HitResult:
         ax.set_facecolor([0, 0, 0, 0])
 
         return ax
+
+
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag')

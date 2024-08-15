@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc.exts"
-version = "2.0.3"
+version = "2.0.4rc1"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -54,3 +54,5 @@ include = ["py_ballisticcalc_exts*"]  # alternatively: `exclude = ["additional*"
 
 #[tool.setuptools.dynamic]
 #version = {attr = "py_ballisticcalc_exts.__version__"}
+[project.optional-dependencies]
+dev = ['cython', 'build', 'setuptools']

@@ -1,50 +1,73 @@
 """Module for Weapon and Ammo properties definitions"""
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import IntEnum
-from typing import NamedTuple, Union, Optional
+from typing_extensions import NamedTuple, Union, Optional, Any
 
-from .drag_model import DragModel
-from .unit import Velocity, Temperature, Distance, Angular, PreferredUnits, Dimension, AbstractUnitType
+from py_ballisticcalc.drag_model import DragModel
+from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits, AbstractUnitType
 
-__all__ = ('Weapon', 'Ammo', 'Sight')
-
+TrajectoryData: Any
 
 @dataclass
-class Sight(PreferredUnits.Mixin):
+class Sight:
+    """Sight data for sight specific adjustment calculation"""
+
     class FocalPlane(IntEnum):
+        """FocalPlane enum"""
+
         FFP = 1  # First focal plane
         SFP = 2  # Second focal plane
         LWIR = 10  # LWIR based device with scalable reticle
         # and adjusted click size to it's magnification
 
     class ReticleStep(NamedTuple):
+        """Reticle step"""
+
         vertical: Angular
         horizontal: Angular
 
     class Clicks(NamedTuple):
+        """Clicks tuple"""
+
         vertical: float
         horizontal: float
 
-    focal_plane: FocalPlane = field(default=FocalPlane.FFP)
-    scale_factor: Union[float, Distance] = Dimension(prefer_units='distance')
-    h_click_size: Union[float, Angular] = Dimension(prefer_units='adjustment')
-    v_click_size: Union[float, Angular] = Dimension(prefer_units='adjustment')
+    focal_plane: FocalPlane
+    scale_factor: Distance
+    h_click_size: Angular
+    v_click_size: Angular
 
-    def __post_init__(self):
-        if self.focal_plane not in Sight.FocalPlane.__members__.values():
+    # def __post_init__(self):
+    def __init__(self,
+                 focal_plane: FocalPlane = FocalPlane.FFP,
+                 scale_factor: Optional[Union[float, Distance]] = None,
+                 h_click_size: Optional[Union[float, Angular]] = None,
+                 v_click_size: Optional[Union[float, Angular]] = None):
+
+        if focal_plane not in Sight.FocalPlane.__members__.values():
             raise ValueError("Wrong focal plane")
-        if not self.scale_factor and self.focal_plane == Sight.FocalPlane.SFP:
+
+        if not scale_factor and focal_plane == Sight.FocalPlane.SFP:
             raise ValueError('Scale_factor required for SFP sights')
+
         if (
-                not isinstance(self.h_click_size, Angular)
-                or not isinstance(self.v_click_size, Angular)
+                not isinstance(h_click_size, (Angular, float, int))
+                or not isinstance(v_click_size, (Angular, float, int))
         ):
             raise TypeError("type Angular expected for 'h_click_size' and 'v_click_size'")
+
+        self.focal_plane = focal_plane
+        self.scale_factor = PreferredUnits.distance(scale_factor or 1)
+        self.h_click_size = PreferredUnits.adjustment(h_click_size)
+        self.v_click_size = PreferredUnits.adjustment(v_click_size)
+
         if self.h_click_size.raw_value <= 0 or self.v_click_size.raw_value <= 0:
             raise TypeError("'h_click_size' and 'v_click_size' have to be positive")
 
     def _adjust_sfp_reticle_steps(self, target_distance: Union[float, Distance], magnification: float) -> ReticleStep:
+        """Calculates the SFP reticle steps for a target distance and magnification"""
+
         assert self.focal_plane == Sight.FocalPlane.SFP, "SFP focal plane required"
 
         # adjust reticle scale relative to target distance and magnification
@@ -65,6 +88,7 @@ class Sight(PreferredUnits.Mixin):
     def get_adjustment(self, target_distance: Distance,
                        drop_adj: Angular, windage_adj: Angular,
                        magnification: float):
+        """Calculate adjustment for target distance and magnification"""
 
         if self.focal_plane == Sight.FocalPlane.SFP:
             steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
@@ -72,12 +96,12 @@ class Sight(PreferredUnits.Mixin):
                 drop_adj.raw_value / steps.vertical.raw_value,
                 windage_adj.raw_value / steps.horizontal.raw_value
             )
-        elif self.focal_plane == Sight.FocalPlane.FFP:
+        if self.focal_plane == Sight.FocalPlane.FFP:
             return Sight.Clicks(
                 drop_adj.raw_value / self.v_click_size.raw_value,
                 windage_adj.raw_value / self.h_click_size.raw_value
             )
-        elif self.focal_plane == Sight.FocalPlane.LWIR:
+        if self.focal_plane == Sight.FocalPlane.LWIR:
             # adjust clicks to magnification
             return Sight.Clicks(
                 drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
@@ -86,6 +110,8 @@ class Sight(PreferredUnits.Mixin):
         raise AttributeError("Wrong focal_plane")
 
     def get_trajectory_adjustment(self, trajectory_point: 'TrajectoryData', magnification: float) -> Clicks:
+        """Calculate adjustment for target distance and magnification for `TrajectoryData` instance"""
+
         return self.get_adjustment(trajectory_point.distance,
                                    trajectory_point.drop_adj,
                                    trajectory_point.windage_adj,
@@ -93,7 +119,7 @@ class Sight(PreferredUnits.Mixin):
 
 
 @dataclass
-class Weapon(PreferredUnits.Mixin):
+class Weapon:
     """
     :param sight_height: Vertical distance from center of bore line to center of sight line.
     :param twist: Distance for barrel rifling to complete one complete turn.
@@ -101,22 +127,25 @@ class Weapon(PreferredUnits.Mixin):
     :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
         (Typically computed by ballistic Calculator.)
     """
-    sight_height: Union[float, Distance] = Dimension(prefer_units='sight_height')
-    twist: Union[float, Distance] = Dimension(prefer_units='twist')
-    zero_elevation: Union[float, Angular] = Dimension(prefer_units='angular')
-    sight: Optional[Sight] = field(default=None)
 
-    def __post_init__(self):
-        if not self.sight_height:
-            self.sight_height = 0
-        if not self.twist:
-            self.twist = 0
-        if not self.zero_elevation:
-            self.zero_elevation = 0
+    sight_height: Distance
+    twist: Distance
+    zero_elevation: Angular
+    sight: Optional[Sight]
+
+    def __init__(self,
+                 sight_height: Optional[Union[float, Distance]] = None,
+                 twist: Optional[Union[float, Distance]] = None,
+                 zero_elevation: Optional[Union[float, Angular]] = None,
+                 sight: Optional[Sight] = None):
+        self.sight_height = PreferredUnits.sight_height(sight_height or 0)
+        self.twist = PreferredUnits.twist(twist or 0)
+        self.zero_elevation = PreferredUnits.angular(zero_elevation or 0)
+        self.sight = sight
 
 
 @dataclass
-class Ammo(PreferredUnits.Mixin):
+class Ammo:
     """
     :param dm: DragModel for projectile
     :param mv: Muzzle Velocity
@@ -125,14 +154,21 @@ class Ammo(PreferredUnits.Mixin):
         Can be computed with .calc_powder_sens().  Only applies if:
             Settings.USE_POWDER_SENSITIVITY = True
     """
-    dm: DragModel = field(default=None)
-    mv: Union[float, Velocity] = Dimension(prefer_units='velocity')
-    powder_temp: Union[float, Temperature] = Dimension(prefer_units='temperature')
-    temp_modifier: float = field(default=0)
 
-    def __post_init__(self):
-        if not self.powder_temp:
-            self.powder_temp = Temperature.Celsius(15)
+    dm: DragModel
+    mv: Velocity
+    powder_temp: Temperature
+    temp_modifier: float
+
+    def __init__(self,
+                 dm: DragModel,
+                 mv: Union[float, Velocity],
+                 powder_temp: Optional[Union[float, Temperature]] = None,
+                 temp_modifier: float = 0):
+        self.dm = dm
+        self.mv = PreferredUnits.velocity(mv or 0)
+        self.powder_temp = PreferredUnits.temperature(powder_temp or Temperature.Celsius(15))
+        self.temp_modifier = temp_modifier or 0
 
     def calc_powder_sens(self, other_velocity: Union[float, Velocity],
                          other_temperature: Union[float, Temperature]) -> float:
@@ -158,7 +194,7 @@ class Ammo(PreferredUnits.Mixin):
         self.temp_modifier = v_delta / t_delta * (15 / v_lower)  # * 100
         return self.temp_modifier
 
-    def get_velocity_for_temp(self, current_temp: [float, Temperature]) -> Velocity:
+    def get_velocity_for_temp(self, current_temp: Union[float, Temperature]) -> Velocity:
         """Calculates muzzle velocity at temperature, based on temp_modifier.
         :param current_temp: Temperature of cartridge powder
         :return: Muzzle velocity corrected to current_temp
@@ -169,3 +205,6 @@ class Ammo(PreferredUnits.Mixin):
         t_delta = t1 - t0
         muzzle_velocity = self.temp_modifier / (15 / v0) * t_delta + v0
         return Velocity.MPS(muzzle_velocity)
+
+
+__all__ = ('Weapon', 'Ammo', 'Sight')

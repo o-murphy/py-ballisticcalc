@@ -1,4 +1,4 @@
-name: Pylint
+name: Mypy typing check
 
 on: [push, pull_request]
 
@@ -17,8 +17,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install -e .[dev]
+        python -m pip install -e .[dev,charts]
+        python -m pip install pandas-stubs matplotlib-stubs
 
-    - name: Analysing the code with pylint
+    - name: Analysing the code with mypy
       run: |
-        pylint ./py_ballisticcalc 
+        mypy ./py_ballisticcalc 

@@ -4,22 +4,13 @@
 
 import math
 from dataclasses import dataclass
-from typing import NamedTuple, Union
+from typing_extensions import NamedTuple, Union, List
 
-from .drag_model import DragDataPoint
-from .conditions import Atmo, Shot, Wind
-from .munition import Ammo
-from .trajectory_data import TrajectoryData, TrajFlag
-from .unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
-
-__all__ = (
-    'TrajectoryCalc',
-    'get_global_max_calc_step_size',
-    'get_global_use_powder_sensitivity',
-    'set_global_max_calc_step_size',
-    'set_global_use_powder_sensitivity',
-    'reset_globals'
-)
+from py_ballisticcalc.drag_model import DragDataPoint
+from py_ballisticcalc.conditions import Atmo, Shot, Wind
+from py_ballisticcalc.munition import Ammo
+from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
+from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
 
 cZeroFindingAccuracy = 0.000005
 cMinimumVelocity = 50.0
@@ -40,12 +31,14 @@ def get_global_use_powder_sensitivity() -> bool:
 
 
 def reset_globals() -> None:
+    # pylint: disable=global-statement
     global _globalUsePowderSensitivity, _globalMaxCalcStepSize
     _globalUsePowderSensitivity = False
     _globalMaxCalcStepSize = Distance.Foot(0.5)
 
 
 def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
+    # pylint: disable=global-statement
     global _globalMaxCalcStepSize
     if (_value := PreferredUnits.distance(value)).raw_value <= 0:
         raise ValueError("_globalMaxCalcStepSize have to be > 0")
@@ -53,6 +46,7 @@ def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
 
 
 def set_global_use_powder_sensitivity(value: bool) -> None:
+    # pylint: disable=global-statement
     global _globalUsePowderSensitivity
     if not isinstance(value, bool):
         raise TypeError(f"set_global_use_powder_sensitivity {value=} is not a boolean")
@@ -72,62 +66,62 @@ class Vector:
     y: float
     z: float
 
-    def magnitude(self):
+    def magnitude(self) -> float:
         return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
 
-    def mul_by_const(self, a: float):
+    def mul_by_const(self, a: float) -> 'Vector':
         return Vector(self.x * a, self.y * a, self.z * a)
 
-    def mul_by_vector(self, b: 'Vector'):
+    def mul_by_vector(self, b: 'Vector') -> float:
         return self.x * b.x + self.y * b.y + self.z * b.z
 
-    def add(self, b: 'Vector'):
+    def add(self, b: 'Vector') -> 'Vector':
         return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
 
-    def subtract(self, b: 'Vector'):
+    def subtract(self, b: 'Vector') -> 'Vector':
         return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
 
-    def negate(self):
+    def negate(self) -> 'Vector':
         return Vector(-self.x, -self.y, -self.z)
 
-    def normalize(self):
+    def normalize(self) -> 'Vector':
         m = self.magnitude()
         if math.fabs(m) < 1e-10:
             return Vector(self.x, self.y, self.z)
         return self.mul_by_const(1.0 / m)
 
-    def __add__(self, other: 'Vector'):
+    def __add__(self, other: 'Vector') -> 'Vector':
         return self.add(other)
 
-    def __radd__(self, other: 'Vector'):
+    def __radd__(self, other: 'Vector') -> 'Vector':
         return self.add(other)
 
-    def __iadd__(self, other: 'Vector'):
+    def __iadd__(self, other: 'Vector') -> 'Vector':
         return self.add(other)
 
-    def __sub__(self, other: 'Vector'):
+    def __sub__(self, other: 'Vector') -> 'Vector':
         return self.subtract(other)
 
-    def __rsub__(self, other: 'Vector'):
+    def __rsub__(self, other: 'Vector') -> 'Vector':
         return self.subtract(other)
 
-    def __isub__(self, other: 'Vector'):
+    def __isub__(self, other: 'Vector') -> 'Vector':
         return self.subtract(other)
 
-    def __mul__(self, other: Union[int, float, 'Vector']):
+    def __mul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
         if isinstance(other, (int, float)):
             return self.mul_by_const(other)
         if isinstance(other, Vector):
             return self.mul_by_vector(other)
         raise TypeError(other)
 
-    def __rmul__(self, other: Union[int, float, 'Vector']):
+    def __rmul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
         return self.__mul__(other)
 
-    def __imul__(self, other):
+    def __imul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
         return self.__mul__(other)
 
-    def __neg__(self):
+    def __neg__(self) -> 'Vector':
         return self.negate()
 
 
@@ -135,9 +129,9 @@ class TrajectoryCalc:
     """All calculations are done in units of feet and fps"""
 
     def __init__(self, ammo: Ammo):
-        self.ammo = ammo
-        self._bc = self.ammo.dm.BC
-        self._table_data = ammo.dm.drag_table
+        self.ammo: Ammo = ammo
+        self._bc: float = self.ammo.dm.BC
+        self._table_data: List[DragDataPoint] = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
         self.gravity_vector = Vector(.0, cGravityConstant, .0)
 
@@ -224,18 +218,18 @@ class TrajectoryCalc:
         :param step: Frequency (in feet down range) to record TrajectoryData
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
-        ranges = []  # Record of TrajectoryData points to return
-        ranges_length = int(maximum_range / step) + 1
-        time = 0
-        previous_mach = .0
-        drag = 0
+        ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
+        ranges_length: int = int(maximum_range / step) + 1
+        time: float = 0
+        previous_mach: float = .0
+        drag: float = 0
 
         # region Initialize wind-related variables to first wind reading (if any)
         len_winds = len(shot_info.winds)
         current_wind = 0
         current_item = 0
         next_range_distance = .0
-        next_wind_range = Wind.MAX_DISTANCE_FEET
+        next_wind_range: float = Wind.MAX_DISTANCE_FEET
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)
         else:
@@ -247,9 +241,11 @@ class TrajectoryCalc:
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
-        velocity_vector = Vector(math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
-                                 math.sin(self.barrel_elevation),
-                                 math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)) * velocity
+        velocity_vector: Vector = Vector(
+            math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
+            math.sin(self.barrel_elevation),
+            math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)
+        ) * velocity  # type: ignore
         # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
@@ -326,7 +322,7 @@ class TrajectoryCalc:
             # Drag is a function of air density and velocity relative to the air
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
             # Bullet velocity changes due to both drag and gravity
-            velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time
+            velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time  # type: ignore
             # Bullet position changes by velocity times the time step
             delta_range_vector = Vector(self.calc_step,
                                         velocity_vector.y * delta_time,
@@ -533,3 +529,13 @@ def calculate_by_curve(data: list, curve: list, mach: float) -> float:
         m = mhi
     curve_m = curve[m]
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
+
+
+__all__ = (
+    'TrajectoryCalc',
+    'get_global_max_calc_step_size',
+    'get_global_use_powder_sensitivity',
+    'set_global_max_calc_step_size',
+    'set_global_use_powder_sensitivity',
+    'reset_globals'
+)

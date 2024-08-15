@@ -1,5 +1,6 @@
 import unittest
 from dataclasses import dataclass
+from typing import Optional, Union
 
 from py_ballisticcalc.unit import *
 
@@ -8,29 +9,6 @@ def back_n_forth(test, value, units):
     u = test.unit_class(value, units)
     v = u >> units
     test.assertAlmostEqual(v, value, 7, f'Read back failed for {units}')
-
-
-class TestPrefUnits(unittest.TestCase):
-
-    def test_pref(self):
-        @dataclass
-        class TestClass(PreferredUnits.Mixin):
-            as_metadata_str: [float, Distance] = Dimension(prefer_units='sight_height')
-            as_metadata_unit: [float, Distance] = Dimension(prefer_units=Unit.Meter)
-
-        tc1 = TestClass(1, 1)
-        self.assertEqual(tc1.as_metadata_str.units, Unit.Inch)
-        self.assertEqual(tc1.as_metadata_unit.units, Unit.Meter)
-
-        tc2 = TestClass(Unit.Meter(1), Unit.Meter(1))
-        self.assertEqual(tc2.as_metadata_str.units, Unit.Meter)
-        self.assertEqual(tc2.as_metadata_unit.units, Unit.Meter)
-
-        PreferredUnits.sight_height = Unit.Centimeter
-
-        tc3 = TestClass(1, 1)
-        self.assertEqual(tc3.as_metadata_str.units, Unit.Centimeter)
-        self.assertEqual(tc3.as_metadata_unit.units, Unit.Meter)
 
 
 class TestUnitsParser(unittest.TestCase):
@@ -43,28 +21,28 @@ class TestUnitsParser(unittest.TestCase):
         for case in valid_cases:
 
             with self.subTest(case):
-                ret = Unit.parse_value(case, Unit.FootPound)
+                ret = _parse_value(case, Unit.FootPound)
                 self.assertIsInstance(ret, Energy)
                 self.assertEqual(ret.units, Unit.FootPound)
 
             with self.subTest(case):
-                ret = Unit.parse_value(case, 'footpound')
+                ret = _parse_value(case, 'footpound')
                 self.assertIsInstance(ret, Energy)
                 self.assertEqual(ret.units, Unit.FootPound)
 
             with self.subTest(case):
-                ret = Unit.parse_value(case, 'ft*lb')
+                ret = _parse_value(case, 'ft*lb')
                 self.assertIsInstance(ret, Energy)
                 self.assertEqual(ret.units, Unit.FootPound)
 
             with self.subTest(case):
-                ret = Unit.parse_value(case, 'energy')
+                ret = _parse_value(case, 'energy')
                 self.assertIsInstance(ret, Energy)
                 self.assertEqual(ret.units, Unit.FootPound)
 
     def test_parse_units(self):
 
-        ret = Unit.parse_unit('ft*lb')
+        ret = _parse_unit('ft*lb')
         self.assertIsInstance(ret, Unit)
 
 

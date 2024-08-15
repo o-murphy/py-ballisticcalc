@@ -2,11 +2,9 @@
 
 import math
 from dataclasses import dataclass, field
-from typing import Union, List
+from typing_extensions import Union, List, Dict, Tuple, Optional
 
-from .unit import Weight, Distance, Velocity, PreferredUnits, Dimension
-
-__all__ = ('DragModel', 'DragDataPoint', 'BCPoint', 'DragModelMultiBC')
+from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
 
 cSpeedOfSoundMetric = 340.0  # Speed of sound in standard atmosphere, in m/s
 
@@ -21,20 +19,34 @@ class DragDataPoint:
 @dataclass(order=True)
 class BCPoint:
     """For multi-bc drag models, designed to sort by Mach ascending"""
-    BC: float = field(compare=False)  # Ballistic Coefficient at the given Mach number
-    Mach: float = field(default=-1, compare=True)  # Velocity in Mach units
-    # Velocity only referenced if Mach number not supplied
-    V: Velocity = Dimension(prefer_units='velocity', compare=False)
 
-    def __post_init__(self):
-        # If Mach not defined then convert V using standard atmosphere
-        if self.Mach < 0:
-            self.Mach = (self.V >> Velocity.MPS) / cSpeedOfSoundMetric
-        if self.BC <= 0:
+    BC: float = field(compare=False)
+    Mach: float = field(compare=True)
+    V: Optional[Velocity] = field(compare=False)
+
+    def __init__(self,
+                 BC: float,
+                 Mach: Optional[float] = None,
+                 V: Optional[Union[float, Velocity]] = None):
+
+        if BC <= 0:
             raise ValueError('Ballistic coefficient must be positive')
 
+        if Mach and V:
+            raise ValueError("You cannot specify both 'Mach' and 'V' at the same time")
 
-DragTableDataType = [list[dict[str, float]], list[DragDataPoint]]
+        if not Mach and not V:
+            raise ValueError("One of 'Mach' and 'V' must be specified")
+
+        self.BC = BC
+        self.V = PreferredUnits.velocity(V or 0)
+        if V:
+            self.Mach = (self.V >> Velocity.MPS) / cSpeedOfSoundMetric
+        elif Mach:
+            self.Mach = Mach
+
+
+DragTableDataType = Union[List[Dict[str, float]], List[DragDataPoint]]
 
 
 class DragModel:
@@ -59,7 +71,7 @@ class DragModel:
         if len(drag_table) <= 0:
             # TODO: maybe have to require minimum size, cause few values don't give a valid result
             raise ValueError('Received empty drag table')
-        elif bc <= 0:
+        if bc <= 0:
             raise ValueError('Ballistic coefficient must be positive')
 
         self.drag_table = make_data_points(drag_table)
@@ -84,11 +96,17 @@ class DragModel:
         return sectional_density(w, d)
 
 
-def make_data_points(drag_table: DragTableDataType) -> list[DragDataPoint]:
+def make_data_points(drag_table: DragTableDataType) -> List[DragDataPoint]:
     """Convert drag table from list of dictionaries to list of DragDataPoints"""
-    if isinstance(drag_table[0], DragDataPoint):
-        return drag_table
-    return [DragDataPoint(point['Mach'], point['CD']) for point in drag_table]
+    try:
+        return [
+            point if isinstance(point, DragDataPoint) else DragDataPoint(point['Mach'], point['CD'])
+            for point in drag_table
+        ]
+    except (KeyError, TypeError) as exc:
+        raise TypeError(
+            "All items in drag_table must be of type DragDataPoint or dict with 'Mach' and 'CD' keys"
+        ) from exc
 
 
 def sectional_density(weight: float, diameter: float) -> float:
@@ -134,9 +152,9 @@ def DragModelMultiBC(bc_points: List[BCPoint],
     return DragModel(bc, drag_table, weight, diameter, length)
 
 
-def linear_interpolation(x: Union[list[float], tuple[float]],
-                         xp: Union[list[float], tuple[float]],
-                         yp: Union[list[float], tuple[float]]) -> Union[list[float], tuple[float]]:
+def linear_interpolation(x: Union[List[float], Tuple[float]],
+                         xp: Union[List[float], Tuple[float]],
+                         yp: Union[List[float], Tuple[float]]) -> Union[List[float], Tuple[float]]:
     """Piecewise linear interpolation
     :param x: List of points for which we want interpolated values
     :param xp: List of existing points (x coordinate), *sorted in ascending order*
@@ -168,3 +186,6 @@ def linear_interpolation(x: Union[list[float], tuple[float]],
             if left == right:
                 y.append(yp[left])
     return y
+
+
+__all__ = ('DragModel', 'DragDataPoint', 'BCPoint', 'DragModelMultiBC')

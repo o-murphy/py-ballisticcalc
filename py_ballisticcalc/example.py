@@ -14,7 +14,7 @@ set_global_use_powder_sensitivity(True)  # Correct muzzle velocity for powder te
 
 # Define ammunition parameters
 weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
-length = Distance.Inch(1.282)  # Or declare prefer_units explicitly
+length: Distance = Distance.Inch(1.282)  # Or declare prefer_units explicitly
 dm = DragModel(0.223, TableG7, weight, diameter, length)
 ammo = Ammo(dm, 2750, 15)
 ammo.calc_powder_sens(2723, 0)
