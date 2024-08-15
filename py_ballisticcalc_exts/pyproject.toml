@@ -49,4 +49,7 @@ where = ["."]
 include = ["py_ballisticcalc_exts*"]
 
 [project.optional-dependencies]
-dev = ['cython', 'build', 'setuptools']
+dev = ['cython', 'build', 'setuptools', 'cibuildwheel']
+
+[tool.cibuildwheel]
+before-all = "uname -a"

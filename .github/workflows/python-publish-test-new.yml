@@ -1,0 +1,114 @@
+name: Upload Python Package to Test PyPI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  test-build-deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential -y
+          
+          python -m pip install --upgrade pip
+          python -m pip install cython twine
+          python -m pip install -e .[dev]
+
+      - name: Run tests in pure python mode
+        run: |
+          if pytest tests --no-header --no-summary -v; then
+            echo "Pytest succeeded."
+          else
+            echo "Pytest failed, running without capture"
+            # Add your additional commands here
+            pytest tests --no-header --no-summary -v -s
+          fi
+
+      - name: Build cython modules
+        run: |
+          cd py_ballisticcalc_exts
+          python setup.py build_ext --inplace
+          cd ..
+
+      - name: Run tests in binary mode
+        run: |
+          if pytest tests --no-header --no-summary -v; then
+            echo "Pytest succeeded."
+          else
+            echo "Pytest failed, running without capture"
+            # Add your additional commands here
+            pytest tests --no-header --no-summary -v -s
+          fi
+
+      - name: Build pure python package
+        run: python -m build
+
+#      - name: Build binary python package
+#        run: |
+#          cd py_ballisticcalc_exts
+#          python -m build --outdir ../dist
+#          cd ..
+#          ls dist
+
+      - name: Publish package to Test PyPI
+        run: |
+          python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+
+  deploy-exts:
+    needs: test-build-deploy
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev]
+        python -m pip install twine
+
+    - name: Build extensions package
+      run: |
+        cd py_ballisticcalc_exts
+        python -m build --outdir ../dist
+        cd ..
+        ls
+
+    - name: Publish package to Test PyPI
+      run: |
+        python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
