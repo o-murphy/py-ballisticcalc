@@ -67,6 +67,7 @@ jobs:
           cd py_ballisticcalc_exts
           python -m build --outdir ../dist
           cd ..
+          ls dist
 
       - name: Publish package to Test PyPI
         run: |
