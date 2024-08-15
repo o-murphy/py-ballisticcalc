@@ -37,7 +37,7 @@ jobs:
       - name: Build binary python package
         run: |
           cd py_ballisticcalc_exts
-          python -m build --outdir ../
+          python -m build --sdist --outdir ../dist
           cibuildwheel --output-dir ../dist
           cd ..
 
