@@ -1,0 +1,131 @@
+# This workflow will upload a Python Package using Twine when a release is created
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python#publishing-to-package-registries
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Upload Python Package
+
+on:
+  release:
+    types: [published, edited]
+    
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential -y
+
+          python -m pip install --upgrade pip
+          python -m pip install setuptools cython
+          python -m pip install -e .[dev]
+
+      - name: Run unittest tests in pure python mode
+        run: |
+          if pytest tests --no-header --no-summary -v; then
+            echo "Pytest succeeded."
+          else
+            echo "Pytest failed, running without capture"
+            # Add your additional commands here
+            pytest tests --no-header --no-summary -v -s
+          fi
+
+      - name: Build cython modules
+        run: |
+          cd py_ballisticcalc_exts
+          python setup.py build_ext --inplace
+          cd ..
+
+      - name: Run unittest tests in binary mode
+        run: |
+          if pytest tests --no-header --no-summary -v; then
+            echo "Pytest succeeded."
+          else
+            echo "Pytest failed, running without capture"
+            # Add your additional commands here
+            pytest tests --no-header --no-summary -v -s
+          fi
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.9"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e .[dev]
+        python -m pip install twine
+
+    - name: Build package
+      run: python -m build
+
+    - name: Publish package to Test PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
+
+  deploy-exts:
+    needs: [build, deploy]
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12" ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+          python -m pip install twine
+
+      - name: Build extensions package
+        run: |
+          cd py_ballisticcalc_exts
+          python -m build --outdir ../dist
+          cd ..
+
+      - name: Publish package to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
