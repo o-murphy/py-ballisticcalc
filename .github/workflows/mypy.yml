@@ -1,4 +1,4 @@
-name: Pylint
+name: Mypy typing check
 
 on: [push, pull_request]
 
@@ -21,4 +21,4 @@ jobs:
 
     - name: Analysing the code with pylint
       run: |
-        pylint ./py_ballisticcalc 
+        mypy ./py_ballisticcalc 

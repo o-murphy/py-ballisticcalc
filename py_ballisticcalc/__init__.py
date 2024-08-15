@@ -139,7 +139,6 @@ __all__ = [
     'Ammo',
     'Sight',
     'Unit',
-    'UnitType',
     'UnitAliases',
     'UnitAliasError',
     'UnitTypeError',

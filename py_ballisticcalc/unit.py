@@ -7,12 +7,11 @@ from dataclasses import dataclass
 from enum import IntEnum
 from math import pi, atan, tan
 
-from typing_extensions import NamedTuple, Union, TypeVar, Optional, Any, Dict, Tuple, Self
+from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Self
 
 from py_ballisticcalc.logger import logger
 
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
-UnitType = TypeVar('UnitType', bound='Unit')
 
 
 class UnitTypeError(TypeError):
@@ -107,18 +106,16 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: Any, value: Union[int, float, AbstractUnitType]) -> AbstractUnitType:
+    def __call__(self: Self, value: Union[int, float, AbstractUnitType]) -> AbstractUnitType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
 
-        # if value is None:
-        #     return self
         obj: AbstractUnit
         if isinstance(value, AbstractUnit):
-            return value << self
+            return value << self  # type: ignore
         if 0 <= self < 10:
             obj = Angular(value, self)
         elif 10 <= self < 20:
@@ -135,64 +132,7 @@ class Unit(IntEnum):
             obj = Weight(value, self)
         else:
             raise UnitTypeError(f"{self} Unit is not supported")
-        return obj
-
-    @staticmethod
-    def find_unit_by_alias(string_to_find: str, aliases: Dict[Tuple[str, ...], UnitType]) -> Optional[UnitType]:
-        """Find unit type by string and aliases dict"""
-
-        # Iterate over the keys of the dictionary
-        for aliases_tuple in aliases.keys():
-            # Check if the string is present in any of the tuples
-            # if any(string_to_find in alias for alias in aliases_tuple):
-            if string_to_find in (each.lower() for each in aliases_tuple):
-                return aliases[aliases_tuple]
-        return None  # If not found, return None or handle it as needed
-
-    @staticmethod
-    def parse_unit(input_: str) -> Optional[UnitType]:
-        """Parse the unit type from string"""
-
-        input_ = input_.strip().lower()
-        if not isinstance(input_, str):
-            raise TypeError(f"type str expected for 'input_', got {type(input_)}")
-        if hasattr(PreferredUnits, input_):
-            return getattr(PreferredUnits, input_)
-        try:
-            return Unit[input_]
-        except KeyError:
-            return Unit.find_unit_by_alias(input_, UnitAliases)
-
-    @staticmethod
-    def parse_value(input_: Union[str, float, int], preferred: Optional[Union[UnitType, str]]) -> AbstractUnitType:
-        """Parse the unit value and return 'AbstractUnit'"""
-
-        def create_as_preferred(value_):
-            if isinstance(preferred, Unit):
-                return preferred(float(value_))
-            if isinstance(preferred, str):
-                if units_ := Unit.parse_unit(preferred):
-                    return units_(float(value_))
-            raise UnitAliasError(f"Unsupported {preferred=} unit alias")
-
-        if isinstance(input_, (float, int)):
-            return create_as_preferred(input_)
-
-        if not isinstance(input_, str):
-            raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
-
-        input_string = input_.replace(" ", "")
-        if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
-            value = match.group()
-            return create_as_preferred(value)
-
-        if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
-            value, alias = match.groups()
-            if units := Unit.parse_unit(alias):
-                return units(float(value))
-            raise UnitAliasError(f"Unsupported unit {alias=}")
-
-        raise UnitAliasError(f"Can't parse unit {input_=}")
+        return obj  # type: ignore
 
 
 class UnitProps(NamedTuple):
@@ -757,7 +697,6 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
     target_height: Unit = Unit.Inch
     twist: Unit = Unit.Inch
 
-
     @classmethod
     def defaults(cls):
         """resets preferred units to defaults"""
@@ -786,7 +725,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 if isinstance(value, Unit):
                     setattr(PreferredUnits, attribute, value)
                 elif isinstance(value, str):
-                    if _unit := Unit.parse_unit(value):
+                    if _unit := _parse_unit(value):
                         setattr(PreferredUnits, attribute, _unit)
                     else:
                         logger.warning(f"{value=} not a member of Unit")
@@ -796,11 +735,83 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 logger.warning(f"{attribute=} not found in preferred_units")
 
 
-__all__ = ('Unit', 'UnitType',
-           'AbstractUnit', 'AbstractUnitType',
-           'UnitProps', 'UnitAliases',
-           'UnitPropsDict', 'Distance',
-           'Velocity', 'Angular', 'Temperature', 'Pressure',
-           'Energy', 'Weight',
-           'PreferredUnits',
-           'UnitAliasError', 'UnitTypeError', 'UnitConversionError')
+def _find_unit_by_alias(string_to_find: str, aliases: Dict[Tuple[str, ...], Unit]) -> Optional[Unit]:
+    """Find unit type by string and aliases dict"""
+
+    # Iterate over the keys of the dictionary
+    for aliases_tuple in aliases.keys():
+        # Check if the string is present in any of the tuples
+        # if any(string_to_find in alias for alias in aliases_tuple):
+        if string_to_find in (each.lower() for each in aliases_tuple):
+            return aliases[aliases_tuple]
+    return None  # If not found, return None or handle it as needed
+
+
+def _parse_unit(input_: str) -> Optional[Unit]:
+    """Parse the unit type from string"""
+
+    input_ = input_.strip().lower()
+    if not isinstance(input_, str):
+        raise TypeError(f"type str expected for 'input_', got {type(input_)}")
+    if hasattr(PreferredUnits, input_):
+        return getattr(PreferredUnits, input_)
+    try:
+        return Unit[input_]
+    except KeyError:
+        return _find_unit_by_alias(input_, UnitAliases)
+
+
+def _parse_value(input_: Union[str, float, int],
+                 preferred: Optional[Union[Unit, str]]) -> Optional[AbstractUnit]:
+    """Parse the unit value and return 'AbstractUnit'"""
+
+    def create_as_preferred(value_):
+        if isinstance(preferred, Unit):
+            return preferred(float(value_))
+        if isinstance(preferred, str):
+            if units_ := _parse_unit(preferred):
+                return units_(float(value_))
+        raise UnitAliasError(f"Unsupported {preferred=} unit alias")
+
+    if isinstance(input_, (float, int)):
+        return create_as_preferred(input_)
+
+    if not isinstance(input_, str):
+        raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
+
+    input_string = input_.replace(" ", "")
+    if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
+        value = match.group()
+        return create_as_preferred(value)
+
+    if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
+        value, alias = match.groups()
+        if units := _parse_unit(alias):
+            return units(float(value))
+        raise UnitAliasError(f"Unsupported unit {alias=}")
+
+    raise UnitAliasError(f"Can't parse unit {input_=}")
+
+
+__all__ = (
+    'Unit',
+    'AbstractUnit',
+    'AbstractUnitType',
+    'UnitProps',
+    'UnitAliases',
+    'UnitPropsDict',
+    'Distance',
+    'Velocity',
+    'Angular',
+    'Temperature',
+    'Pressure',
+    'Energy',
+    'Weight',
+    'PreferredUnits',
+    'UnitAliasError',
+    'UnitTypeError',
+    'UnitConversionError',
+    # opt
+    '_parse_unit',
+    '_parse_value'
+)
