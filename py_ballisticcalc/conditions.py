@@ -239,7 +239,7 @@ class Shot:
     weapon: Weapon
     ammo: Ammo
     atmo: Atmo
-    winds: List[Wind]
+    winds: List[Wind]  # use property Shot.winds to get sorted winds
 
     def __init__(self,
                  weapon: Weapon,
@@ -257,9 +257,8 @@ class Shot:
         self.weapon = weapon
         self.ammo = ammo
         self.atmo = atmo or Atmo.icao()
-        self.winds = winds or [Wind()]
-
-    # NOTE: Calculator assumes that winds are sorted by Wind.until_distance (ascending)
+        # sort winds by Wind.until distance
+        self.winds = sorted(winds or [Wind()], key=lambda wind: wind.until_distance.raw_value)
 
     @property
     def barrel_elevation(self) -> Angular:

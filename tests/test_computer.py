@@ -22,9 +22,10 @@ class TestComputer(unittest.TestCase):
         self.atmosphere = Atmo.icao()  # Standard sea-level atmosphere
         self.calc = Calculator()
         self.baseline_shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere)
-        self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range,
+                                                  trajectory_step=self.step)
 
-#region Cant_angle
+    # region Cant_angle
     def test_cant_zero_elevation(self):
         """Cant_angle = 90 degrees with zero barrel elevation should match baseline with:
             drop+=sight_height, windage-=sight_height
@@ -32,20 +33,20 @@ class TestComputer(unittest.TestCase):
         canted = copy.copy(self.baseline_shot)
         canted.cant_angle = Angular.Degree(90)
         t = self.calc.fire(canted, trajectory_range=self.range, trajectory_step=self.step)
-        self.assertAlmostEqual(t.trajectory[5].height.raw_value-self.weapon.sight_height.raw_value,
-                                self.baseline_trajectory[5].height.raw_value)
-        self.assertAlmostEqual(t.trajectory[5].windage.raw_value+self.weapon.sight_height.raw_value,
-                                self.baseline_trajectory[5].windage.raw_value)
+        self.assertAlmostEqual(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value,
+                               self.baseline_trajectory[5].height.raw_value)
+        self.assertAlmostEqual(t.trajectory[5].windage.raw_value + self.weapon.sight_height.raw_value,
+                               self.baseline_trajectory[5].windage.raw_value)
 
     def test_cant_positive_elevation(self):
         """Cant_angle = 90 degrees with positive barrel elevation and zero twist should match baseline with:
             drop+=sight_height, windage-=sight_height at muzzle, increasingly positive down-range
         """
         canted = Shot(weapon=Weapon(sight_height=self.weapon.sight_height, twist=0, zero_elevation=Angular.Mil(2)),
-                    ammo=self.ammo, atmo=self.atmosphere, cant_angle=Angular.Degree(90))
+                      ammo=self.ammo, atmo=self.atmosphere, cant_angle=Angular.Degree(90))
         t = self.calc.fire(canted, trajectory_range=self.range, trajectory_step=self.step)
-        self.assertAlmostEqual(t.trajectory[5].height.raw_value-self.weapon.sight_height.raw_value,
-                                self.baseline_trajectory[5].height.raw_value, 2)
+        self.assertAlmostEqual(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value,
+                               self.baseline_trajectory[5].height.raw_value, 2)
         self.assertAlmostEqual(t.trajectory[0].windage.raw_value, -self.weapon.sight_height.raw_value)
         self.assertGreater(t.trajectory[5].windage.raw_value, t.trajectory[3].windage.raw_value)
 
@@ -54,14 +55,15 @@ class TestComputer(unittest.TestCase):
             drop+=baseline.sight_height, windage no change
         """
         canted = Shot(weapon=Weapon(sight_height=0, twist=self.weapon.twist),
-                    ammo=self.ammo, atmo=self.atmosphere, cant_angle=Angular.Degree(90))
+                      ammo=self.ammo, atmo=self.atmosphere, cant_angle=Angular.Degree(90))
         t = self.calc.fire(canted, trajectory_range=self.range, trajectory_step=self.step)
-        self.assertAlmostEqual(t.trajectory[5].height.raw_value-self.weapon.sight_height.raw_value,
-                                self.baseline_trajectory[5].height.raw_value)
+        self.assertAlmostEqual(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value,
+                               self.baseline_trajectory[5].height.raw_value)
         self.assertAlmostEqual(t.trajectory[5].windage, self.baseline_trajectory[5].windage)
-#endregion Cant_angle
 
-#region Wind
+    # endregion Cant_angle
+
+    # region Wind
     def test_wind_from_left(self):
         """Wind from left should increase windage"""
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
@@ -89,9 +91,10 @@ class TestComputer(unittest.TestCase):
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(6, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertLess(t.trajectory[5].height, self.baseline_trajectory[5].height)
-#endregion Wind
-        
-#region Twist
+
+    # endregion Wind
+
+    # region Twist
     def test_no_twist(self):
         """Barrel with no twist should have no spin drift"""
         shot = Shot(weapon=Weapon(twist=0), ammo=self.ammo, atmo=self.atmosphere)
@@ -111,9 +114,10 @@ class TestComputer(unittest.TestCase):
         self.assertLess(twist_left.trajectory[5].windage.raw_value, 0)
         # Faster twist should produce larger drift:
         self.assertGreater(-twist_left.trajectory[5].windage.raw_value, twist_right.trajectory[5].windage.raw_value)
-#endregion Twist
 
-#region Atmo
+    # endregion Twist
+
+    # region Atmo
     def test_humidity(self):
         """Increasing relative humidity should decrease drop (due to decreasing density)"""
         humid = Atmo(humidity=.9)  # 90% humidity
@@ -141,12 +145,13 @@ class TestComputer(unittest.TestCase):
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=thin)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertGreater(t.trajectory[5].height, self.baseline_trajectory[5].height)
-#endregion Atmo
 
-#region Ammo
+    # endregion Atmo
+
+    # region Ammo
     def test_ammo_drag(self):
         """Increasing ballistic coefficient (bc) should decrease drop"""
-        tdm = DragModel(self.dm.BC+0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
+        tdm = DragModel(self.dm.BC + 0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
         slick = Ammo(tdm, self.ammo.mv)
         shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
@@ -173,7 +178,33 @@ class TestComputer(unittest.TestCase):
         self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
         set_global_use_powder_sensitivity(previous)
 
-#endregion Ammo
+    # endregion Ammo
+
+    # region Shot
+    def test_winds_sort(self):
+        winds = [
+            Wind(Unit.MPS(0), Unit.Degree(90), Unit.Meter(100)),
+            Wind(Unit.MPS(1), Unit.Degree(60), Unit.Meter(300)),
+            Wind(Unit.MPS(2), Unit.Degree(30), Unit.Meter(200)),
+            Wind(Unit.MPS(2), Unit.Degree(30), Unit.Meter(50)),
+        ]
+
+        # sorted_winds = sorted(winds, key=lambda winds: winds.until_distance.raw_value)
+
+        # print()
+        shot = Shot(
+            None, None, 0, 0, 0, None,
+            winds
+        )
+        sorted_winds = shot.winds
+        self.assertIs(sorted_winds[0], winds[3])
+        self.assertIs(sorted_winds[1], winds[0])
+        self.assertIs(sorted_winds[2], winds[2])
+        self.assertIs(sorted_winds[3], winds[1])
+
+
+# endregion Shot
+
 
 if __name__ == '__main__':
     unittest.main()
