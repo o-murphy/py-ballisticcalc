@@ -158,6 +158,10 @@ cdef class TrajectoryCalc:
         self._curve = calculate_curve(self._table_data)
         self.gravity_vector = Vector(.0, cGravityConstant, .0)
 
+    @property
+    def table_data(self) -> list:
+        return self._table_data
+
     def zero_angle(self, shot_info: Shot, distance: Distance):
         return self._zero_angle(shot_info, distance)
 
@@ -224,7 +228,7 @@ cdef class TrajectoryCalc:
                 break
             iterations_count += 1
         if zero_finding_error > cZeroFindingAccuracy:
-            raise Exception(f'Zero vertical error {zero_finding_error} feet, after {iterations_count} iterations.')
+            raise RuntimeError(f'Zero vertical error {zero_finding_error} feet, after {iterations_count} iterations.')
         return Angular.Radian(self.barrel_elevation)
 
     cdef _trajectory(TrajectoryCalc self, object shot_info,

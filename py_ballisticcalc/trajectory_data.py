@@ -4,9 +4,9 @@ import math
 from dataclasses import dataclass, field
 from enum import IntFlag
 from typing_extensions import NamedTuple, Optional, Union, Any
-
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
+
 
 pandas: Any
 DataFrame: Any
@@ -14,15 +14,16 @@ matplotlib: Any
 Polygon: Any
 Axes: Any
 
+
 try:
-    import pandas
+    import pandas  # type: ignore
 except ImportError as error:
-    logging.warning("Install pandas to convert trajectory to dataframe")
+    logging.warning("Install pandas to convert trajectory to pandas.DataFrame")
     pandas = None
 
 try:
-    import matplotlib
-    from matplotlib.patches import Polygon
+    import matplotlib  # type: ignore
+    from matplotlib.patches import Polygon  # type: ignore
 except ImportError as error:
     logging.warning("Install matplotlib to get results as a plot")
     matplotlib = None
@@ -155,10 +156,10 @@ class DangerSpace(NamedTuple):
             + f'ranges from {self.begin.distance << PreferredUnits.distance} ' \
             + f'to {self.end.distance << PreferredUnits.distance}'
 
-    def overlay(self, ax: 'Axes', label: Optional[str] = None):
+    def overlay(self, ax: 'Axes', label: Optional[str] = None):  # type: ignore
         """Highlights danger-space region on plot"""
         if matplotlib is None or not Polygon:
-            raise ImportError("Install matplotlib to get results as a plot")
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
 
         cosine = math.cos(self.look_angle >> Angular.Radian)
         begin_dist = (self.begin.distance >> PreferredUnits.distance) * cosine
@@ -299,13 +300,13 @@ class HitResult:
                            find_end_danger(index),
                            look_angle)
 
-    def dataframe(self, formatted: bool = False) -> 'DataFrame':
+    def dataframe(self, formatted: bool = False) -> 'DataFrame':  # type: ignore
         """
         :param formatted: False for values as floats; True for strings with prefer_units
         :return: the trajectory table as a DataFrame
         """
         if pandas is None:
-            raise ImportError("Install pandas to get trajectory as dataframe")
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame")
         col_names = list(TrajectoryData._fields)
         if formatted:
             trajectory = [p.formatted() for p in self]
@@ -313,13 +314,13 @@ class HitResult:
             trajectory = [p.in_def_units() for p in self]
         return pandas.DataFrame(trajectory, columns=col_names)
 
-    def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':
+    def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':  # type: ignore
         """:return: graph of the trajectory"""
         if look_angle is None:
             look_angle = self.shot.look_angle
 
         if matplotlib is None:
-            raise ImportError("Install matplotlib to plot results")
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
         if not self.extra:
             logging.warning("HitResult.plot: To show extended data"
                             "Use Calculator.fire(..., extra_data=True)")

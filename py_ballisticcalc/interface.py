@@ -18,7 +18,7 @@ class Calculator:
     @property
     def cdm(self):
         """returns custom drag function based on input data"""
-        return self._calc._table_data
+        return self._calc.table_data
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.

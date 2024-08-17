@@ -11,22 +11,20 @@ from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple,
 
 from py_ballisticcalc.logger import logger
 
+# pylint: disable=invalid-name
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
 
 
 class UnitTypeError(TypeError):
     """Unit type error"""
-    pass
 
 
 class UnitConversionError(UnitTypeError):
     """Unit conversion error"""
-    pass
 
 
 class UnitAliasError(ValueError):
     """Unit alias error"""
-    pass
 
 
 # pylint: disable=invalid-name
@@ -811,7 +809,6 @@ __all__ = (
     'UnitAliasError',
     'UnitTypeError',
     'UnitConversionError',
-    # opt
     '_parse_unit',
     '_parse_value'
 )
