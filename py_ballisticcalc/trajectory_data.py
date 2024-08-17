@@ -3,16 +3,22 @@ import logging
 import math
 from dataclasses import dataclass, field
 from enum import IntFlag
-from typing_extensions import NamedTuple, Optional, Union
-
+from typing_extensions import NamedTuple, Optional, Union, Any
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
+
+
+pandas: Any
+DataFrame: Any
+matplotlib: Any
+Polygon: Any
+Axes: Any
 
 
 try:
     import pandas  # type: ignore
 except ImportError as error:
-    logging.warning("Install pandas to convert trajectory to dataframe")
+    logging.warning("Install pandas to convert trajectory to pandas.DataFrame")
     pandas = None
 
 try:
@@ -153,7 +159,7 @@ class DangerSpace(NamedTuple):
     def overlay(self, ax: 'Axes', label: Optional[str] = None):  # type: ignore
         """Highlights danger-space region on plot"""
         if matplotlib is None or not Polygon:
-            raise ImportError("Install matplotlib to get results as a plot")
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
 
         cosine = math.cos(self.look_angle >> Angular.Radian)
         begin_dist = (self.begin.distance >> PreferredUnits.distance) * cosine
@@ -300,7 +306,7 @@ class HitResult:
         :return: the trajectory table as a DataFrame
         """
         if pandas is None:
-            raise ImportError("Install pandas to get trajectory as dataframe")
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame")
         col_names = list(TrajectoryData._fields)
         if formatted:
             trajectory = [p.formatted() for p in self]
@@ -314,7 +320,7 @@ class HitResult:
             look_angle = self.shot.look_angle
 
         if matplotlib is None:
-            raise ImportError("Install matplotlib to plot results")
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
         if not self.extra:
             logging.warning("HitResult.plot: To show extended data"
                             "Use Calculator.fire(..., extra_data=True)")
