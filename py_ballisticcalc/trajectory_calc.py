@@ -128,12 +128,22 @@ class Vector:
 class TrajectoryCalc:
     """All calculations are done in units of feet and fps"""
 
+    # the attributes have to be defined before usage
+    barrel_azimuth: float
+    barrel_elevation: float
+    twist: float
+
     def __init__(self, ammo: Ammo):
         self.ammo: Ammo = ammo
         self._bc: float = self.ammo.dm.BC
         self._table_data: List[DragDataPoint] = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
         self.gravity_vector = Vector(.0, cGravityConstant, .0)
+
+    @property
+    def table_data(self) -> List[DragDataPoint]:
+        """:return: List[DragDataPoint]"""
+        return self._table_data
 
     @staticmethod
     def get_calc_step(step: float = 0):
@@ -187,9 +197,9 @@ class TrajectoryCalc:
         zero_distance = math.cos(self.look_angle) * (distance >> Distance.Foot)
         height_at_zero = math.sin(self.look_angle) * (distance >> Distance.Foot)
         maximum_range = zero_distance - 1.5 * self.calc_step
-        self.barrel_azimuth = 0.0
-        self.barrel_elevation = math.atan(height_at_zero / zero_distance)
-        self.twist = 0
+        # self.barrel_azimuth = 0.0
+        # self.barrel_elevation = math.atan(height_at_zero / zero_distance)
+        # self.twist = 0.0
 
         iterations_count = 0
         zero_finding_error = cZeroFindingAccuracy * 2
@@ -208,7 +218,7 @@ class TrajectoryCalc:
 
         if zero_finding_error > cZeroFindingAccuracy:
             # TODO: Don't raise exception; return a tuple that contains the error so caller can check how close zero is
-            raise Exception(f'Zero vertical error {zero_finding_error} feet, after {iterations_count} iterations.')
+            raise RuntimeError(f'Zero vertical error {zero_finding_error} feet, after {iterations_count} iterations.')
         return Angular.Radian(self.barrel_elevation)
 
     def _trajectory(self, shot_info: Shot, maximum_range: float, step: float,
@@ -223,6 +233,10 @@ class TrajectoryCalc:
         time: float = 0
         previous_mach: float = .0
         drag: float = 0
+
+        # guarantee that mach and density_factor would be referenced before assignment
+        mach: float = .0
+        density_factor: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
         len_winds = len(shot_info.winds)
@@ -291,7 +305,7 @@ class TrajectoryCalc:
                             seen_zero |= TrajFlag.ZERO_DOWN
 
                 # Mach crossing check
-                if (velocity / mach <= 1) and (previous_mach > 1):
+                if previous_mach > 1 >= velocity / mach:  # (velocity / mach <= 1) and (previous_mach > 1)
                     _flag |= TrajFlag.MACH
 
                 # Next range check
