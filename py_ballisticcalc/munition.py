@@ -86,26 +86,26 @@ class Sight:
         return Sight.ReticleStep(_v_step, _v_step)
 
     def get_adjustment(self, target_distance: Distance,
-                       drop_adj: Angular, windage_adj: Angular,
+                       drop_angle: Angular, windage_angle: Angular,
                        magnification: float):
         """Calculate adjustment for target distance and magnification"""
 
         if self.focal_plane == Sight.FocalPlane.SFP:
             steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
             return Sight.Clicks(
-                drop_adj.raw_value / steps.vertical.raw_value,
-                windage_adj.raw_value / steps.horizontal.raw_value
+                drop_angle.raw_value / steps.vertical.raw_value,
+                windage_angle.raw_value / steps.horizontal.raw_value
             )
         if self.focal_plane == Sight.FocalPlane.FFP:
             return Sight.Clicks(
-                drop_adj.raw_value / self.v_click_size.raw_value,
-                windage_adj.raw_value / self.h_click_size.raw_value
+                drop_angle.raw_value / self.v_click_size.raw_value,
+                windage_angle.raw_value / self.h_click_size.raw_value
             )
         if self.focal_plane == Sight.FocalPlane.LWIR:
             # adjust clicks to magnification
             return Sight.Clicks(
-                drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
-                windage_adj.raw_value / (self.h_click_size.raw_value / magnification)
+                drop_angle.raw_value / (self.v_click_size.raw_value / magnification),
+                windage_angle.raw_value / (self.h_click_size.raw_value / magnification)
             )
         raise AttributeError("Wrong focal_plane")
 
@@ -113,8 +113,8 @@ class Sight:
         """Calculate adjustment for target distance and magnification for `TrajectoryData` instance"""
 
         return self.get_adjustment(trajectory_point.distance,
-                                   trajectory_point.drop_adj,
-                                   trajectory_point.windage_adj,
+                                   trajectory_point.drop_angle,
+                                   trajectory_point.windage_angle,
                                    magnification)
 
 

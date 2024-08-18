@@ -55,7 +55,7 @@ class TestTrajectory(unittest.TestCase):
             self.custom_assert_equal(path, data.height >> Distance.Inch, 0.5, 'Drop')
 
         if distance > 1:
-            self.custom_assert_equal(hold, data.drop_adj >> adjustment_unit, 0.5, 'Hold')
+            self.custom_assert_equal(hold, data.drop_angle >> adjustment_unit, 0.5, 'Hold')
 
         if distance >= 800:
             self.custom_assert_equal(windage, data.windage >> Distance.Inch, 1.5, "Windage")
@@ -66,7 +66,7 @@ class TestTrajectory(unittest.TestCase):
 
         if distance > 1:
             self.custom_assert_equal(wind_adjustment,
-                                     data.windage_adj >> adjustment_unit, 0.5, "WAdj")
+                                     data.windage_angle >> adjustment_unit, 0.5, "WAdj")
 
     def test_path_g1(self):
         dm = DragModel(0.223, TableG1, 168, 0.308, 1.282)

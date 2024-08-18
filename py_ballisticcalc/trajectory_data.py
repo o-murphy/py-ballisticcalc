@@ -58,9 +58,9 @@ class TrajectoryData(NamedTuple):
         mach (float): velocity in Mach prefer_units
         height (Distance): y-axis coordinate
         target_drop (Distance): drop relative to sight-line
-        drop_adj (Angular): sight adjustment to zero target_drop at this distance
+        drop_angle (Angular): sight adjustment to zero target_drop at this distance
         windage (Distance):
-        windage_adj (Angular):
+        windage_angle (Angular):
         look_distance (Distance): sight-line distance = .distance/cosine(look_angle)
         # look_height (Distance): y-coordinate of sight-line = .distance*tan(look_angle)
         angle (Angular): Angle of velocity vector relative to x-axis
@@ -77,9 +77,9 @@ class TrajectoryData(NamedTuple):
     mach: float
     height: Distance
     target_drop: Distance
-    drop_adj: Angular
+    drop_angle: Angular
     windage: Distance
-    windage_adj: Angular
+    windage_angle: Angular
     look_distance: Distance
     angle: Angular
     density_factor: float
@@ -104,9 +104,9 @@ class TrajectoryData(NamedTuple):
             f'{self.mach:.2f} mach',
             _fmt(self.height, PreferredUnits.drop),
             _fmt(self.target_drop, PreferredUnits.drop),
-            _fmt(self.drop_adj, PreferredUnits.adjustment),
+            _fmt(self.drop_angle, PreferredUnits.adjustment),
             _fmt(self.windage, PreferredUnits.drop),
-            _fmt(self.windage_adj, PreferredUnits.adjustment),
+            _fmt(self.windage_angle, PreferredUnits.adjustment),
             _fmt(self.look_distance, PreferredUnits.distance),
             _fmt(self.angle, PreferredUnits.angular),
             f'{self.density_factor:.3e}',
@@ -128,9 +128,9 @@ class TrajectoryData(NamedTuple):
             self.mach,
             self.height >> PreferredUnits.drop,
             self.target_drop >> PreferredUnits.drop,
-            self.drop_adj >> PreferredUnits.adjustment,
+            self.drop_angle >> PreferredUnits.adjustment,
             self.windage >> PreferredUnits.drop,
-            self.windage_adj >> PreferredUnits.adjustment,
+            self.windage_angle >> PreferredUnits.adjustment,
             self.look_distance >> PreferredUnits.distance,
             self.angle >> PreferredUnits.angular,
             self.density_factor,

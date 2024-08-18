@@ -437,8 +437,8 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     :return: A TrajectoryData object representing the trajectory data.
     """
     windage = range_vector.z + spin_drift
-    drop_adjustment = get_correction(range_vector.x, range_vector.y)
-    windage_adjustment = get_correction(range_vector.x, windage)
+    drop_angle = get_correction(range_vector.x, range_vector.y)
+    windage_angle = get_correction(range_vector.x, windage)
     trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
 
     return TrajectoryData(
@@ -448,9 +448,9 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         mach=velocity / mach,
         height=Distance.Foot(range_vector.y),
         target_drop=Distance.Foot((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
-        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
+        drop_angle=Angular.Radian(drop_angle - (look_angle if range_vector.x else 0)),
         windage=Distance.Foot(windage),
-        windage_adj=Angular.Radian(windage_adjustment),
+        windage_angle=Angular.Radian(windage_angle),
         look_distance=Distance.Foot(range_vector.x / math.cos(look_angle)),
         angle=Angular.Radian(trajectory_angle),
         density_factor=density_factor - 1,
