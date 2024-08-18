@@ -331,7 +331,7 @@ class HitResult:
 
         for p in self.trajectory:
             if TrajFlag(p.flag) & TrajFlag.ZERO:
-                ax.plot([p.x_sight >> PreferredUnits.distance, p.x >> PreferredUnits.distance],
+                ax.plot([p.x >> PreferredUnits.distance, p.x >> PreferredUnits.distance],
                         [df['y'].min(), p.y >> PreferredUnits.drop], linestyle=':')
                 ax.text((p.x >> PreferredUnits.distance) + max_range / 100, df['y'].min(),
                         f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
