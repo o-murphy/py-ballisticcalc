@@ -112,7 +112,7 @@ class Sight:
     def get_trajectory_adjustment(self, trajectory_point: 'TrajectoryData', magnification: float) -> Clicks:
         """Calculate adjustment for target distance and magnification for `TrajectoryData` instance"""
 
-        return self.get_adjustment(trajectory_point.distance,
+        return self.get_adjustment(trajectory_point.x,
                                    trajectory_point.drop_angle,
                                    trajectory_point.windage_angle,
                                    magnification)

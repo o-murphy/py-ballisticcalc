@@ -443,7 +443,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
 
     return TrajectoryData(
         time=time,
-        distance=Distance.Foot(range_vector.x),
+        x=Distance.Foot(range_vector.x),
         velocity=Velocity.FPS(velocity),
         mach=velocity / mach,
         y=Distance.Foot(range_vector.y),
@@ -451,7 +451,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         drop_angle=Angular.Radian(drop_angle - (look_angle if range_vector.x else 0)),
         windage=Distance.Foot(windage),
         windage_angle=Angular.Radian(windage_angle),
-        look_distance=Distance.Foot(range_vector.x / math.cos(look_angle)),
+        distance=Distance.Foot(range_vector.x / math.cos(look_angle)),
         angle=Angular.Radian(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,

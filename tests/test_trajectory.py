@@ -40,7 +40,7 @@ class TestTrajectory(unittest.TestCase):
                      windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: Unit):
 
-        self.custom_assert_equal(distance, data.distance >> Distance.Yard, 0.001, "Distance")
+        self.custom_assert_equal(distance, data.x >> Distance.Yard, 0.001, "Distance")
         self.custom_assert_equal(velocity, data.velocity >> Velocity.FPS, 5, "Velocity")
         self.custom_assert_equal(mach, data.mach, 0.005, "Mach")
         self.custom_assert_equal(energy, data.energy >> Energy.FootPound, 5, "Energy")
