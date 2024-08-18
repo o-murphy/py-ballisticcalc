@@ -50,25 +50,24 @@ fieldsss = TrajectoryData._fields
 
 def calculate_lead_angle(target_speed, target_size, bullet_speed, initial_distance, time_of_flight):
     """
-    Розрахунок кута упередження маючи швидкість і розмір цілі, швидкість кулі, початкову відстань до цілі.
+    Calculation of the lead angle given the target speed and size, bullet speed, and initial distance to the target.
 
-    :param target_speed: Швидкість цілі (м/с)
-    :param target_size: Довжина цілі (м)
-    :param bullet_speed: Швидкість кулі (м/с)
-    :param initial_distance: Початкова відстань до цілі (м)
-    :return: Кут упередження в градусах
+    :param target_speed: Target speed (m/s)
+    :param target_size: Target length (m)
+    :param bullet_speed: Bullet speed (m/s)
+    :param initial_distance: Initial distance to the target (m)
+    :param time_of_flight: Time of flight (s)
+    :return: Lead angle in degrees
     """
     # Час польоту кулі
     # time_of_flight = initial_distance / bullet_speed
 
-    # Відстань, яку пройде ніс цілі
-    # distance_nose_travel = target_speed * time_of_flight + target_size
-    distance_nose_travel = target_speed * time_of_flight + target_size
-
-    # Обчислення кута упередження
+    # Distance the target's nose will travel
+    distance_nose_travel = target_speed * time_of_flight + target_size    
+    
     lead_angle = math.atan(distance_nose_travel / initial_distance)
 
-    # Перетворення кута в градуси
+    # Converting the angle to degrees
     lead_angle_degrees = math.degrees(lead_angle)
 
     return lead_angle_degrees

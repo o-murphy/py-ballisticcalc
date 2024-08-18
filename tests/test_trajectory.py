@@ -40,7 +40,7 @@ class TestTrajectory(unittest.TestCase):
                      windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: Unit):
 
-        self.custom_assert_equal(distance, data.distance >> Distance.Yard, 0.001, "Distance")
+        self.custom_assert_equal(distance, data.x >> Distance.Yard, 0.001, "Distance")
         self.custom_assert_equal(velocity, data.velocity >> Velocity.FPS, 5, "Velocity")
         self.custom_assert_equal(mach, data.mach, 0.005, "Mach")
         self.custom_assert_equal(energy, data.energy >> Energy.FootPound, 5, "Energy")
@@ -48,14 +48,14 @@ class TestTrajectory(unittest.TestCase):
         self.custom_assert_equal(ogv, data.ogw >> Weight.Pound, 1, "OGV")
 
         if distance >= 800:
-            self.custom_assert_equal(path, data.height >> Distance.Inch, 4, 'Drop')
+            self.custom_assert_equal(path, data.y >> Distance.Inch, 4, 'Drop')
         elif distance >= 500:
-            self.custom_assert_equal(path, data.height >> Distance.Inch, 1, 'Drop')
+            self.custom_assert_equal(path, data.y >> Distance.Inch, 1, 'Drop')
         else:
-            self.custom_assert_equal(path, data.height >> Distance.Inch, 0.5, 'Drop')
+            self.custom_assert_equal(path, data.y >> Distance.Inch, 0.5, 'Drop')
 
         if distance > 1:
-            self.custom_assert_equal(hold, data.drop_adj >> adjustment_unit, 0.5, 'Hold')
+            self.custom_assert_equal(hold, data.drop_angle >> adjustment_unit, 0.5, 'Hold')
 
         if distance >= 800:
             self.custom_assert_equal(windage, data.windage >> Distance.Inch, 1.5, "Windage")
@@ -66,7 +66,7 @@ class TestTrajectory(unittest.TestCase):
 
         if distance > 1:
             self.custom_assert_equal(wind_adjustment,
-                                     data.windage_adj >> adjustment_unit, 0.5, "WAdj")
+                                     data.windage_angle >> adjustment_unit, 0.5, "WAdj")
 
     def test_path_g1(self):
         dm = DragModel(0.223, TableG1, 168, 0.308, 1.282)
