@@ -207,7 +207,7 @@ class TrajectoryCalc:
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             t = self._trajectory(shot_info, maximum_range, zero_distance, TrajFlag.NONE)[0]
-            height = t.height >> Distance.Foot
+            height = t.y >> Distance.Foot
             zero_finding_error = math.fabs(height - height_at_zero)
             if zero_finding_error > cZeroFindingAccuracy:
                 # Adjust barrel elevation to close height at zero distance
@@ -446,7 +446,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         distance=Distance.Foot(range_vector.x),
         velocity=Velocity.FPS(velocity),
         mach=velocity / mach,
-        height=Distance.Foot(range_vector.y),
+        y=Distance.Foot(range_vector.y),
         target_drop=Distance.Foot((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
         drop_angle=Angular.Radian(drop_angle - (look_angle if range_vector.x else 0)),
         windage=Distance.Foot(windage),

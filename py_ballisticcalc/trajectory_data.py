@@ -56,7 +56,7 @@ class TrajectoryData(NamedTuple):
         distance (Distance): x-axis coordinate
         velocity (Velocity): velocity
         mach (float): velocity in Mach prefer_units
-        height (Distance): y-axis coordinate
+        y (Distance): y-axis coordinate
         target_drop (Distance): drop relative to sight-line
         drop_angle (Angular): sight adjustment to zero target_drop at this distance
         windage (Distance):
@@ -75,7 +75,7 @@ class TrajectoryData(NamedTuple):
     distance: Distance
     velocity: Velocity
     mach: float
-    height: Distance
+    y: Distance
     target_drop: Distance
     drop_angle: Angular
     windage: Distance
@@ -102,7 +102,7 @@ class TrajectoryData(NamedTuple):
             _fmt(self.distance, PreferredUnits.distance),
             _fmt(self.velocity, PreferredUnits.velocity),
             f'{self.mach:.2f} mach',
-            _fmt(self.height, PreferredUnits.drop),
+            _fmt(self.y, PreferredUnits.drop),
             _fmt(self.target_drop, PreferredUnits.drop),
             _fmt(self.drop_angle, PreferredUnits.adjustment),
             _fmt(self.windage, PreferredUnits.drop),
@@ -126,7 +126,7 @@ class TrajectoryData(NamedTuple):
             self.distance >> PreferredUnits.distance,
             self.velocity >> PreferredUnits.velocity,
             self.mach,
-            self.height >> PreferredUnits.drop,
+            self.y >> PreferredUnits.drop,
             self.target_drop >> PreferredUnits.drop,
             self.drop_angle >> PreferredUnits.adjustment,
             self.windage >> PreferredUnits.drop,
@@ -163,11 +163,11 @@ class DangerSpace(NamedTuple):
 
         cosine = math.cos(self.look_angle >> Angular.Radian)
         begin_dist = (self.begin.distance >> PreferredUnits.distance) * cosine
-        begin_drop = (self.begin.height >> PreferredUnits.drop) * cosine
+        begin_drop = (self.begin.y >> PreferredUnits.drop) * cosine
         end_dist = (self.end.distance >> PreferredUnits.distance) * cosine
-        end_drop = (self.end.height >> PreferredUnits.drop) * cosine
+        end_drop = (self.end.y >> PreferredUnits.drop) * cosine
         range_dist = (self.at_range.distance >> PreferredUnits.distance) * cosine
-        range_drop = (self.at_range.height >> PreferredUnits.drop) * cosine
+        range_drop = (self.at_range.y >> PreferredUnits.drop) * cosine
         h = self.target_height >> PreferredUnits.drop
 
         # Target position and height:
@@ -326,20 +326,20 @@ class HitResult:
                             "Use Calculator.fire(..., extra_data=True)")
         font_size = PLOT_FONT_SIZE
         df = self.dataframe()
-        ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol)
+        ax = df.plot(x='distance', y=['y'], ylabel=PreferredUnits.drop.symbol)
         max_range = self.trajectory[-1].distance >> PreferredUnits.distance
 
         for p in self.trajectory:
             if TrajFlag(p.flag) & TrajFlag.ZERO:
                 ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-                        [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
-                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
+                        [df['y'].min(), p.y >> PreferredUnits.drop], linestyle=':')
+                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['y'].min(),
                         f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
                         fontsize=font_size, rotation=90)
             if TrajFlag(p.flag) & TrajFlag.MACH:
                 ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-                        [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
-                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
+                        [df['y'].min(), p.y >> PreferredUnits.drop], linestyle=':')
+                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['y'].min(),
                         "Mach 1", fontsize=font_size, rotation=90)
 
         max_range_in_drop_units = self.trajectory[-1].distance >> PreferredUnits.drop
