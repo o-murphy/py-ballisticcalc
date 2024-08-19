@@ -1,6 +1,6 @@
 import unittest
 
-from py_ballisticcalc import Sight, Unit
+from py_ballisticcalc import Sight, Unit, SightFocalPlane
 
 
 class TestSight(unittest.TestCase):
@@ -8,7 +8,7 @@ class TestSight(unittest.TestCase):
     def test_sfp(self):
 
         click_size = Unit.Mil(0.25)
-        s = Sight(focal_plane=Sight.FocalPlane.SFP,
+        s = Sight(focal_plane=SightFocalPlane.SFP,
                   scale_factor=Unit.Meter(100),
                   h_click_size=click_size,
                   v_click_size=click_size)
@@ -34,7 +34,7 @@ class TestSight(unittest.TestCase):
 
     def test_ffp(self):
         click_size = Unit.Mil(0.25)
-        s = Sight(focal_plane=Sight.FocalPlane.FFP,
+        s = Sight(focal_plane=SightFocalPlane.FFP,
                   scale_factor=Unit.Meter(100),
                   h_click_size=click_size,
                   v_click_size=click_size)
@@ -60,7 +60,7 @@ class TestSight(unittest.TestCase):
 
     def test_lwir(self):
         click_size = Unit.Mil(0.25)
-        s = Sight(focal_plane=Sight.FocalPlane.LWIR,
+        s = Sight(focal_plane=SightFocalPlane.LWIR,
                   scale_factor=Unit.Meter(100),
                   h_click_size=click_size,
                   v_click_size=click_size)

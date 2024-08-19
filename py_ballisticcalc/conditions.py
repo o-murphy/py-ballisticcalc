@@ -2,6 +2,7 @@
 
 import math
 from dataclasses import dataclass
+
 from typing_extensions import List, Union, Optional, Tuple
 
 from py_ballisticcalc.munition import Weapon, Ammo
@@ -211,10 +212,10 @@ class Wind:
                  until_distance: Optional[Union[float, Distance]] = None,
                  *,
                  max_distance_feet: Optional[float] = 1e8):
-        self.MAX_DISTANCE_FEET = max_distance_feet or 1e8
+        self.MAX_DISTANCE_FEET = float(max_distance_feet or 1e8)
         self.velocity = PreferredUnits.velocity(velocity or 0)
         self.direction_from = PreferredUnits.angular(direction_from or 0)
-        self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(Wind.MAX_DISTANCE_FEET))
+        self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(self.MAX_DISTANCE_FEET))
 
 
 @dataclass

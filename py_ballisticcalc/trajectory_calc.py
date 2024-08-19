@@ -4,19 +4,20 @@
 
 import math
 from dataclasses import dataclass
-from typing_extensions import NamedTuple, Union, List
 
-from py_ballisticcalc.drag_model import DragDataPoint
+from typing_extensions import NamedTuple, Union, List, Final
+
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
+from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
 
-cZeroFindingAccuracy = 0.000005
-cMinimumVelocity = 50.0
-cMaximumDrop = -15000
-cMaxIterations = 20
-cGravityConstant = -32.17405
+cZeroFindingAccuracy: Final = 0.000005
+cMinimumVelocity: Final = 50.0
+cMaximumDrop: Final = -15000
+cMaxIterations: Final = 20
+cGravityConstant: Final = -32.17405
 
 _globalUsePowderSensitivity = False
 _globalMaxCalcStepSize: Distance = Distance.Foot(0.5)
@@ -230,9 +231,9 @@ class TrajectoryCalc:
         """
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         ranges_length: int = int(maximum_range / step) + 1
-        time: float = 0
+        time: float = .0
         previous_mach: float = .0
-        drag: float = 0
+        drag: float = .0
 
         # guarantee that mach and density_factor would be referenced before assignment
         mach: float = .0

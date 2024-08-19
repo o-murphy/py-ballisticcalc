@@ -2,7 +2,7 @@
 # Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
 
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools", "wheel", "mypy[mypyc]"]
 build-backend = "setuptools.build_meta"
 
 
