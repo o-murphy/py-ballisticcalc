@@ -58,7 +58,7 @@ jobs:
 
     - name: Build cython modules
       run: |
-        cd py_ballisticcalc_exts
+        cd ./py_ballisticcalc.exts
         python setup.py build_ext --inplace
         cd ..
 

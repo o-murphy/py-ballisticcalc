@@ -10,7 +10,7 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 import os
 import sys
-from typing import Dict, Union, Optional
+from typing_extensions import Dict, Union, Optional
 
 from .backend import *
 from .conditions import *
