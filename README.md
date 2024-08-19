@@ -14,7 +14,8 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
   * [Range card](#plot-trajectory-with-danger-space)
   * [Complex example](#complex-example)
   * [Jupyter notebook](Example.ipynb)
-  * [Units of measure](#units-and-preferences)
+  * [Preferences](#preferences)
+  * [Units of measure](#units)
 
   [//]: # (  * [An example of calculations]&#40;#an-example-of-calculations&#41;)
   [//]: # (  * [Output example]&#40;#example-of-the-formatted-output&#41;)
@@ -122,10 +123,10 @@ print(f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velo
     Barrel elevation for 500.0m zero: 4.69mil
     Muzzle velocity at zero temperature 5.0°C is 830.0m/s
 
-## Units and Preferences
+## Preferences
 In version 2.x.x we changed concepts of settings, there are 2 ways to set preferences
 
-#### 1.1. To change library default units directly from code use `PreferredUnits` object
+#### 1. To change library default units directly from code use `PreferredUnits` object
 
 ```python
 from py_ballisticcalc import PreferredUnits
@@ -146,7 +147,7 @@ print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
 print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
 ```
 
-#### 1.2. To change solver global setting use global flags setters
+#### 2. To change solver global setting use global flags setters
 
 ```python
 from py_ballisticcalc import *
@@ -164,7 +165,8 @@ step = get_global_max_calc_step_size()
 reset_globals()
 ```
 
-#### 2. Use new method to set preferred units/settings globally for the venv or the user
+## Units
+#### Use new method to set preferred units/settings globally for the venv or the user
 Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
 Or place this file in user's home directory. _(The file in project root have priority.)_
 You can use `basicConfig()` function to load your custom `.toml` file
