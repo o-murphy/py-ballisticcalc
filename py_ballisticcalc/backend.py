@@ -1,5 +1,6 @@
 # pylint: disable=wildcard-import
 """Check for available backends"""
+import warnings
 
 from .logger import logger
 
@@ -21,8 +22,8 @@ except ImportError as error:
                                   set_global_use_powder_sensitivity,
                                   reset_globals)
 
-    logger.info("Library running in pure python mode. "
-                "For better performance install 'py_ballisticcalc.exts' package")
+    warnings.warn("Library running in pure python mode. "
+                  "For better performance install 'py_ballisticcalc.exts' package")
 
 __all__ = (
     'TrajectoryCalc',
