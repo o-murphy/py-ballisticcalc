@@ -3,17 +3,17 @@ import logging
 import math
 from dataclasses import dataclass, field
 from enum import IntFlag
-from typing_extensions import NamedTuple, Optional, Union, Any
+
+from typing_extensions import NamedTuple, Optional, Union, Any, Tuple
+
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
-
 
 pandas: Any
 DataFrame: Any
 matplotlib: Any
 Polygon: Any
 Axes: Any
-
 
 try:
     import pandas  # type: ignore
@@ -88,12 +88,12 @@ class TrajectoryData(NamedTuple):
     ogw: Weight
     flag: Union[TrajFlag, int]
 
-    def formatted(self) -> tuple:
+    def formatted(self) -> Tuple:
         """
         :return: matrix of formatted strings for each value of trajectory in default prefer_units
         """
 
-        def _fmt(v: AbstractUnit, u: Unit):
+        def _fmt(v: AbstractUnit, u: Unit) -> str:
             """simple formatter"""
             return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 

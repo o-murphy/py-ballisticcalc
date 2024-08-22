@@ -1,10 +1,12 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
-from typing_extensions import Union
 
-from py_ballisticcalc.conditions import Shot
+from typing_extensions import Union, List
+
 # pylint: disable=import-error,no-name-in-module,wildcard-import
 from py_ballisticcalc.backend import TrajectoryCalc
+from py_ballisticcalc.conditions import Shot
+from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.trajectory_data import HitResult
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
@@ -16,7 +18,7 @@ class Calculator:
     _calc: TrajectoryCalc = field(init=False, repr=False, compare=False)
 
     @property
-    def cdm(self):
+    def cdm(self) -> List[DragDataPoint]:
         """returns custom drag function based on input data"""
         return self._calc.table_data
 

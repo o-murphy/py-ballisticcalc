@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from math import pi, atan, tan
 
-from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Self
+from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Self, Final
 
 from py_ballisticcalc.logger import logger
 
@@ -15,7 +15,7 @@ from py_ballisticcalc.logger import logger
 AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
 
 
-class UnitTypeError(TypeError):
+class UnitTypeError(Exception):
     """Unit type error"""
 
 
@@ -23,7 +23,7 @@ class UnitConversionError(UnitTypeError):
     """Unit conversion error"""
 
 
-class UnitAliasError(ValueError):
+class UnitAliasError(Exception):
     """Unit alias error"""
 
 
@@ -416,16 +416,16 @@ class Distance(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Inch = Unit.Inch
-    Foot = Unit.Foot
-    Yard = Unit.Yard
-    Mile = Unit.Mile
-    NauticalMile = Unit.NauticalMile
-    Millimeter = Unit.Millimeter
-    Centimeter = Unit.Centimeter
-    Meter = Unit.Meter
-    Kilometer = Unit.Kilometer
-    Line = Unit.Line
+    Inch: Final[Unit] = Unit.Inch
+    Foot: Final[Unit] = Unit.Foot
+    Yard: Final[Unit] = Unit.Yard
+    Mile: Final[Unit] = Unit.Mile
+    NauticalMile: Final[Unit] = Unit.NauticalMile
+    Millimeter: Final[Unit] = Unit.Millimeter
+    Centimeter: Final[Unit] = Unit.Centimeter
+    Meter: Final[Unit] = Unit.Meter
+    Kilometer: Final[Unit] = Unit.Kilometer
+    Line: Final[Unit] = Unit.Line
 
 
 class Pressure(AbstractUnit):
@@ -461,11 +461,11 @@ class Pressure(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    MmHg = Unit.MmHg
-    InHg = Unit.InHg
-    Bar = Unit.Bar
-    hPa = Unit.hPa
-    PSI = Unit.PSI
+    MmHg: Final[Unit] = Unit.MmHg
+    InHg: Final[Unit] = Unit.InHg
+    Bar: Final[Unit] = Unit.Bar
+    hPa: Final[Unit] = Unit.hPa
+    PSI: Final[Unit] = Unit.PSI
 
 
 class Weight(AbstractUnit):
@@ -505,12 +505,12 @@ class Weight(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Grain = Unit.Grain
-    Ounce = Unit.Ounce
-    Gram = Unit.Gram
-    Pound = Unit.Pound
-    Kilogram = Unit.Kilogram
-    Newton = Unit.Newton
+    Grain: Final[Unit] = Unit.Grain
+    Ounce: Final[Unit] = Unit.Ounce
+    Gram: Final[Unit] = Unit.Gram
+    Pound: Final[Unit] = Unit.Pound
+    Kilogram: Final[Unit] = Unit.Kilogram
+    Newton: Final[Unit] = Unit.Newton
 
 
 class Temperature(AbstractUnit):
@@ -542,10 +542,10 @@ class Temperature(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Fahrenheit = Unit.Fahrenheit
-    Celsius = Unit.Celsius
-    Kelvin = Unit.Kelvin
-    Rankin = Unit.Rankin
+    Fahrenheit: Final[Unit] = Unit.Fahrenheit
+    Celsius: Final[Unit] = Unit.Celsius
+    Kelvin: Final[Unit] = Unit.Kelvin
+    Rankin: Final[Unit] = Unit.Rankin
 
 
 class Angular(AbstractUnit):
@@ -599,15 +599,15 @@ class Angular(AbstractUnit):
             return super().from_raw(value, units)
         return result
 
-    Radian = Unit.Radian
-    Degree = Unit.Degree
-    MOA = Unit.MOA
-    Mil = Unit.Mil
-    MRad = Unit.MRad
-    Thousandth = Unit.Thousandth
-    InchesPer100Yd = Unit.InchesPer100Yd
-    CmPer100m = Unit.CmPer100m
-    OClock = Unit.OClock
+    Radian: Final[Unit] = Unit.Radian
+    Degree: Final[Unit] = Unit.Degree
+    MOA: Final[Unit] = Unit.MOA
+    Mil: Final[Unit] = Unit.Mil
+    MRad: Final[Unit] = Unit.MRad
+    Thousandth: Final[Unit] = Unit.Thousandth
+    InchesPer100Yd: Final[Unit] = Unit.InchesPer100Yd
+    CmPer100m: Final[Unit] = Unit.CmPer100m
+    OClock: Final[Unit] = Unit.OClock
 
 
 class Velocity(AbstractUnit):
@@ -639,11 +639,11 @@ class Velocity(AbstractUnit):
             return value * 1.94384449
         return super().from_raw(value, units)
 
-    MPS = Unit.MPS
-    KMH = Unit.KMH
-    FPS = Unit.FPS
-    MPH = Unit.MPH
-    KT = Unit.KT
+    MPS: Final[Unit] = Unit.MPS
+    KMH: Final[Unit] = Unit.KMH
+    FPS: Final[Unit] = Unit.FPS
+    MPH: Final[Unit] = Unit.MPH
+    KT: Final[Unit] = Unit.KT
 
 
 class Energy(AbstractUnit):
@@ -663,8 +663,8 @@ class Energy(AbstractUnit):
             return value / 0.737562149277
         return super().from_raw(value, units)
 
-    FootPound = Unit.FootPound
-    Joule = Unit.Joule
+    FootPound: Final = Unit.FootPound
+    Joule: Final = Unit.Joule
 
 
 class PreferredUnitsMeta(type):

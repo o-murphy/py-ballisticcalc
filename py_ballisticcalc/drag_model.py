@@ -2,11 +2,11 @@
 
 import math
 from dataclasses import dataclass, field
-from typing_extensions import Union, List, Dict, Tuple, Optional
+from typing_extensions import Union, List, Dict, Tuple, Optional, Final
 
 from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
 
-cSpeedOfSoundMetric = 340.0  # Speed of sound in standard atmosphere, in m/s
+cSpeedOfSoundMetric: Final = 340.0  # Speed of sound in standard atmosphere, in m/s
 
 
 @dataclass
