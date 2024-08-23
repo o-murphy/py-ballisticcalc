@@ -2,6 +2,7 @@
 import math
 
 from py_ballisticcalc import *
+from py_ballisticcalc.trajectory_calc import Vector
 
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS
@@ -12,7 +13,7 @@ PreferredUnits.sight_height = Distance.Centimeter
 PreferredUnits.drop = Distance.Centimeter
 
 
-def get_trajectory(pitch):
+def get_trajectory(look_angle):
     # set_global_use_powder_sensitivity(True)  # enable muzzle velocity correction my powder temperature
 
     # define params with default prefer_units
@@ -34,96 +35,90 @@ def get_trajectory(pitch):
     calc = Calculator()
     calc.set_weapon_zero(zero, zero_distance)
 
-    shot = Shot(look_angle=pitch, weapon=weapon, ammo=ammo, atmo=zero_atmo)
+    shot = Shot(look_angle=look_angle, weapon=weapon, ammo=ammo, atmo=zero_atmo)
     shot_result = calc.fire(shot, Distance.Meter(1001), Distance.Meter(100))
     return shot_result
 
 
-def calculate_vertical_preemption(target_speed, target_size, initial_target_distance, time_of_flight,
-                                  target_azimuth_rad,
-                                  pitch_rad):
-    ## pitch change depends on target flight direction (now not depends on x travel)
 
-    # x - horizontal move
-    # y - distance to shooter
-    # z - altitude
-
-    target_altitude_z = math.sin(pitch_rad) * initial_target_distance
-    initial_target_distance_y = math.cos(pitch_rad) * initial_target_distance
-
-    target_nose_travel_distance = target_speed * time_of_flight + target_size
-    target_nose_travel_distance_y = math.cos(target_azimuth_rad) * target_nose_travel_distance
-
-    target_nose_travel_distance_projected_y = initial_target_distance_y - target_nose_travel_distance_y
-
-    pitch_projected_rad = math.atan(target_altitude_z / target_nose_travel_distance_projected_y)
-
-    return pitch_rad - pitch_projected_rad
-
-
-def calculate_horizontal_preemption(target_speed, target_size, initial_target_distance_y, time_of_flight,
-                                    target_azimuth_rad,
-                                    pitch_rad):
-    # FIXME: have also depends on pitch
-
-    target_nose_travel_distance = target_speed * time_of_flight + target_size
-    target_nose_travel_distance_y = math.cos(target_azimuth_rad) * target_nose_travel_distance
-    target_nose_travel_distance_x = math.sin(target_azimuth_rad) * target_nose_travel_distance
-
-    target_nose_travel_distance_projected_y = initial_target_distance_y - target_nose_travel_distance_y
-
-    preemption_rad = math.atan(target_nose_travel_distance_x / target_nose_travel_distance_projected_y)
-    return preemption_rad
-
-
-def calculate_preemption(target_speed, target_size, initial_distance, time_of_flight, target_azimuth, pitch):
-    """
-    Розрахунок кута упередження маючи швидкість і розмір цілі, початкову відстань до цілі.
-
-    :param target_speed: Швидкість цілі (м/с)
-    :param target_size: Довжина цілі (м)
-    :param initial_distance: Початкова відстань до цілі (м)
-    :return: Кут упередження в градусах
-    """
-
-    target_azimuth_rad = math.radians(target_azimuth)
-    pitch_rad = math.radians(pitch)  # FIXME: have also depends on pitch
-
-    preemption_x = calculate_horizontal_preemption(target_speed, target_size, initial_distance, time_of_flight,
-                                                   target_azimuth_rad, pitch_rad)
-    preemption_y = calculate_vertical_preemption(target_speed, target_size, initial_distance, time_of_flight,
-                                                 target_azimuth_rad,
-                                                 pitch_rad)
-
-    return Unit.Radian(preemption_x), Unit.Radian(preemption_y)
-
-
-def get_one(target_speed, target_size, hor_target_angle, pitch):
-    shot_result = get_trajectory(pitch)
-
-    print(f"{target_size=}m, {target_speed=}m/s")
-    print("lead angle, time, distance, velocity")
-    for p in shot_result[1:]:
-        time = p.time
-        lax, lay = calculate_preemption(target_speed >> Unit.MPS,
-                                        target_size >> Unit.Meter,
-                                        p.distance >> Unit.Meter,
-                                        p.time,
-                                        hor_target_angle >> Unit.Degree,
-                                        p.angle >> Unit.Degree)
-        # if a > max_lead_angle:
-        #     continue
-        print(f"{lax << Unit.Degree} ({lax << Unit.Thousandth}), "
-              f"{lay << Unit.Degree} ({lay << Unit.Thousandth}), "
-              f"{time:.02f}s, {p.distance >> Unit.Meter:.0f}m, "
-              f"{p.velocity >> Unit.MPS:.0f}m/s")
-
-
+    
 target_speed = Unit.MPS(50)
 target_size = Unit.Meter(3)
-max_lead_angle = Unit.Degree(6.21)
+#max_lead_angle = Unit.Degree(6.21)
+look_angle = Unit.Degree(20)
+target_direction = Unit.Degree(45)
+target_azimuth = Unit.Degree(15)
 
-get_one(target_speed, target_size, hor_target_angle=Unit.Degree(90), pitch=Unit.Degree(20))
-get_one(target_speed, target_size, hor_target_angle=Unit.Degree(90), pitch=Unit.Degree(30))
+shot_result = get_trajectory(look_angle)
 
-print((Unit.Thousandth(5) >> Unit.CmPer100m) / (1 / 5))
+
+def target_trajectory(target_speed, target_length, initial_target_look_distance, time_of_flight, direction_rad, look_angle_rad, azimuth_rad):
+    
+    t_length_vector = Vector(
+        x=math.sin(direction_rad) * target_length,
+        y=math.cos(direction_rad) * target_length,
+        z=0
+    )
+    
+    t_distance_vector = Vector(
+        x=0,
+        y=math.cos(look_angle_rad) * initial_target_look_distance,
+        z=math.sin(look_angle_rad) * initial_target_look_distance
+    )
+    
+    t_velocity_vector = Vector(
+        x=math.sin(direction_rad) * target_speed,
+        y=math.cos(direction_rad) * target_speed,
+        z=0
+    )
+    
+    #print(f'{t_velocity_vector=}')
+    t_traveled_vector = t_velocity_vector * time_of_flight
+    #print(f'{t_traveled_vector=}')
+    #print(f'{t_distance_vector=}')
+    #t_pos_at_time = t_distance_vector - #t_length_vector - t_traveled_vector
+    t_pos_at_time = t_distance_vector - t_traveled_vector
+    #print(time_of_flight, f'{t_pos_at_time.x:.02f}  {t_pos_at_time.y:.02f}  {t_pos_at_time.z:.02f}')
+    #print(t_pos_at_time)
+    #print()
+    
+    look_angle_at_time = math.atan(t_pos_at_time.z/t_pos_at_time.y)
+    
+    distance = t_pos_at_time.z / math.sin(look_angle_at_time)
+    
+    
+    
+    x_shift = -math.atan(t_pos_at_time.x / distance)
+    
+    azimuth_at_time = azimuth_rad-x_shift
+    
+    if x_shift != 0:
+        distance = t_pos_at_time.x / math.sin(x_shift)
+        
+    y_shift = -(look_angle_at_time-look_angle_rad)
+    
+    print(dict(
+        time=time_of_flight,
+        x_shift=Unit.Radian(x_shift),
+        y_shift=Unit.Radian(y_shift),
+        distance=Unit.Meter(distance),
+        elevation=Unit.Radian(look_angle_at_time),
+        azimuth=Unit.Radian(azimuth_at_time)
+    ))
+    
+
+print(f"{target_size << Unit.Meter}, {target_speed << Unit.MPS}")
+print("lead angle, time, distance, velocity\n")
+for i in range(10):
+    time = i/10
+    target_trajectory(
+        target_speed >> Unit.MPS, 
+        target_size >> Unit.Meter,
+        500,
+        time,
+        target_direction >> Unit.Radian,
+        look_angle >> Unit.Radian,
+        target_azimuth >> Unit.Radian
+    )
+
+#print('\n', (Unit.Thousandth(5) >> Unit.CmPer100m) / (1 / 5))
