@@ -120,6 +120,7 @@ __all__ = [
     'basicConfig',
     'logger',
     'TrajectoryCalc',
+    'Vector',
     'get_global_max_calc_step_size',
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',

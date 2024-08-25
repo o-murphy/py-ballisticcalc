@@ -548,6 +548,7 @@ def calculate_by_curve(data: list, curve: list, mach: float) -> float:
 
 __all__ = (
     'TrajectoryCalc',
+    'Vector',
     'get_global_max_calc_step_size',
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
