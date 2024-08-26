@@ -1,3 +1,5 @@
+import math
+
 from aerial_targets_shooting.aerial_target import AerialTarget
 from py_ballisticcalc import *
 from PIL import Image, ImageDraw
@@ -70,13 +72,14 @@ draw = ImageDraw.Draw(im)
 
 # initial values
 flight_direction, look_angle, flight_time = 0, 0, 0
-distance = Distance.Meter(501)
+distance = Distance.Meter(1001)
 
-# for look_angle in range(10, 31, 10):
-for look_angle in range(20, 21, 10):
+for look_angle in range(10, 31, 10):
+# for look_angle in range(20, 21, 10):
 
     color = grid_colors.pop(0)
     points = []
+    adjusted_points = []
     time_deltas = []
     for flight_direction in range(0, 360, 15):
         # define first target position to sight line
@@ -94,7 +97,7 @@ for look_angle in range(20, 21, 10):
         flight_time = shot_result[-1:][0].time
 
         # calculate target position relative to sight line
-        target, pos = initial_target.at_time(flight_time)
+        _, pos = initial_target.at_time(flight_time)
 
         # [print(row) for row in f"{pos!r}".split(', ')]
         # print()
@@ -102,25 +105,37 @@ for look_angle in range(20, 21, 10):
         xs = pos.x_shift >> Unit.Thousandth
         ys = pos.y_shift >> Unit.Thousandth
 
-        points.append((im.width // 2 + xs * (grid_scale // 4), im.height // 2 + ys * (grid_scale // 4)))
-
         adjusted_shot_result = get_trajectory_for_look_angle(pos.look_distance, pos.look_angle)
         adjusted_flight_time = adjusted_shot_result[-1:][0].time
         time_deltas.append(flight_time - adjusted_flight_time)
-        target1, pos1 = initial_target.at_time(adjusted_flight_time)
-        p1 = (im.width // 2 + (pos1.x_shift >> Unit.Thousandth) * (grid_scale // 4), im.height // 2 + (pos1.y_shift >> Unit.Thousandth) * (grid_scale // 4))
-        draw.circle(p1, radius=3, fill="#0000ff")
+        _, adjusted_pos = initial_target.at_time(adjusted_flight_time)
+
+        pos_projection_point = (
+            im.width // 2 + xs * (grid_scale // 4),
+            im.height // 2 + ys * (grid_scale // 4)
+        )
+
+        adjusted_pos_projection_point = (
+            im.width // 2 + (adjusted_pos.x_shift >> Unit.Thousandth) * (grid_scale // 4),
+            im.height // 2 + (adjusted_pos.y_shift >> Unit.Thousandth) * (grid_scale // 4)
+        )
+
+        points.append(pos_projection_point)
+        adjusted_points.append(adjusted_pos_projection_point)
+
+        # draw.circle(adjusted_pos_projection_point, radius=3, fill="#0000ff")
         # print(f"time: {flight_time:.3f} | {adjusted_flight_time:.3f} | {flight_time-adjusted_flight_time:.3f}")
 
     print(f"{max(time_deltas):.5f}")
 
-    for p in points:
-        draw.circle(p, radius=3, fill=color)
+    for i, p in enumerate(adjusted_points):
+        draw.circle(p, radius=2, fill=color)
+        draw.circle(points[i], radius=1, fill='black')
 
-    max_x = max(points, key=lambda p: p[0])[0]
-    min_x = min(points, key=lambda p: p[0])[0]
-    max_y = max(points, key=lambda p: p[1])[1]
-    min_y = min(points, key=lambda p: p[1])[1]
+    max_x = max(adjusted_points, key=lambda p: p[0])[0]
+    min_x = min(adjusted_points, key=lambda p: p[0])[0]
+    max_y = max(adjusted_points, key=lambda p: p[1])[1]
+    min_y = min(adjusted_points, key=lambda p: p[1])[1]
 
     draw.ellipse((
         min_x,
