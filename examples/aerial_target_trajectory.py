@@ -56,7 +56,7 @@ def get_trajectory_for_look_angle(distance, look_angle):
     calc.set_weapon_zero(zero, zero_distance)
 
     shot = Shot(look_angle=look_angle, weapon=weapon, ammo=ammo, atmo=zero_atmo)
-    shot_result = calc.fire(shot, distance, Distance.Meter(100))
+    shot_result = calc.fire(shot, distance, Distance.Meter(10))
     return shot_result
 
 
@@ -70,12 +70,14 @@ draw = ImageDraw.Draw(im)
 
 # initial values
 flight_direction, look_angle, flight_time = 0, 0, 0
-distance = Distance.Meter(301)
+distance = Distance.Meter(501)
 
-for look_angle in range(10, 31, 10):
+# for look_angle in range(10, 31, 10):
+for look_angle in range(20, 21, 10):
 
     color = grid_colors.pop(0)
     points = []
+    time_deltas = []
     for flight_direction in range(0, 360, 15):
         # define first target position to sight line
         initial_target = AerialTarget(
@@ -101,6 +103,16 @@ for look_angle in range(10, 31, 10):
         ys = pos.y_shift >> Unit.Thousandth
 
         points.append((im.width // 2 + xs * (grid_scale // 4), im.height // 2 + ys * (grid_scale // 4)))
+
+        adjusted_shot_result = get_trajectory_for_look_angle(pos.look_distance, pos.look_angle)
+        adjusted_flight_time = adjusted_shot_result[-1:][0].time
+        time_deltas.append(flight_time - adjusted_flight_time)
+        target1, pos1 = initial_target.at_time(adjusted_flight_time)
+        p1 = (im.width // 2 + (pos1.x_shift >> Unit.Thousandth) * (grid_scale // 4), im.height // 2 + (pos1.y_shift >> Unit.Thousandth) * (grid_scale // 4))
+        draw.circle(p1, radius=3, fill="#0000ff")
+        # print(f"time: {flight_time:.3f} | {adjusted_flight_time:.3f} | {flight_time-adjusted_flight_time:.3f}")
+
+    print(f"{max(time_deltas):.5f}")
 
     for p in points:
         draw.circle(p, radius=3, fill=color)

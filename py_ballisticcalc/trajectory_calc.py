@@ -338,7 +338,7 @@ class TrajectoryCalc:
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
             # Bullet velocity changes due to both drag and gravity
             velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time  # type: ignore
-            # Bullet position changes by velocity times the time step
+            # Bullet position changes by velocity time_deltas the time step
             delta_range_vector = Vector(self.calc_step,
                                         velocity_vector.y * delta_time,
                                         velocity_vector.z * delta_time)

@@ -99,7 +99,7 @@ class AerialTarget:
             direction,
             look_angle,
             azimuth,
-            # length,
+            length,
         ] = self._prepared
 
         direction_vector = Vector(
