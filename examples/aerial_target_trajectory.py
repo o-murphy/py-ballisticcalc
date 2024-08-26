@@ -1,8 +1,13 @@
-import math
+import asyncio
+import logging
+
+from PIL import Image, ImageDraw, ImageFont
 
 from aerial_targets_shooting.aerial_target import AerialTarget
 from py_ballisticcalc import *
-from PIL import Image, ImageDraw
+from py_ballisticcalc.logger import logger
+
+logger.setLevel(logging.DEBUG)
 
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS
@@ -15,7 +20,7 @@ PreferredUnits.angular = Angular.Degree
 
 
 def new_img(scale=20):
-    im = Image.new('RGB', (640, 480), color='white')
+    im = Image.new('RGB', im_size, color='white')
     draw = ImageDraw.Draw(im)
     draw.line(((im.width // 2, 0), (im.width // 2, im.height)), fill='black')
     draw.line(((0, im.height // 2), (im.width, im.height // 2)), fill='black')
@@ -63,95 +68,135 @@ def get_trajectory_for_look_angle(distance, look_angle):
 
 
 # props to draw reticle
-click = 3.01
+click = 1.5
 grid_colors = ['red', 'blue', 'green']
 grid_scale = int((Unit.Thousandth(5) >> Unit.CmPer100m) / click)
 print(f'{grid_scale=}')
-im = new_img(grid_scale)
-draw = ImageDraw.Draw(im)
+
+im: Image = None
+draw: ImageDraw = None
+im_size = (1188, 842)
 
 # initial values
 flight_direction, look_angle, flight_time = 0, 0, 0
-distance = Distance.Meter(1001)
+distance = Distance.Meter(501)
+initial_target = None
+font = ImageFont.truetype("arial.ttf", 20)
+shot_result = None
 
-for look_angle in range(10, 31, 10):
-# for look_angle in range(20, 21, 10):
 
-    color = grid_colors.pop(0)
-    points = []
-    adjusted_points = []
-    time_deltas = []
-    for flight_direction in range(0, 360, 15):
-        # define first target position to sight line
-        initial_target = AerialTarget(
-            Velocity.MPS(50),
-            distance,
-            Angular.Degree(flight_direction),
-            Angular.Degree(look_angle),
-            Angular.Degree(15),
-            Distance.Meter(3)
-        )
+async def get_preemption_point(look_angle, flight_direction):
+    global initial_target
+    # define first target position to sight line
+    initial_target = AerialTarget(
+        Velocity.MPS(50),
+        distance,
+        Angular.Degree(flight_direction),
+        Angular.Degree(look_angle),
+        Angular.Degree(15),
+        Distance.Meter(3)
+    )
 
-        # calculate trajectory to get bullet flight time
-        shot_result = get_trajectory_for_look_angle(distance, initial_target.look_angle)
-        flight_time = shot_result[-1:][0].time
+    # calculate trajectory to get bullet flight time
+    flight_time = shot_result[-1:][0].time
 
-        # calculate target position relative to sight line
-        _, pos = initial_target.at_time(flight_time)
+    # calculate target position relative to sight line
+    _, pos = initial_target.at_time(flight_time)
 
-        # [print(row) for row in f"{pos!r}".split(', ')]
-        # print()
+    # [print(row) for row in f"{pos!r}".split(', ')]
+    # print()
 
-        xs = pos.x_shift >> Unit.Thousandth
-        ys = pos.y_shift >> Unit.Thousandth
+    xs = pos.x_shift >> Unit.Thousandth
+    ys = pos.y_shift >> Unit.Thousandth
 
-        adjusted_shot_result = get_trajectory_for_look_angle(pos.look_distance, pos.look_angle)
-        adjusted_flight_time = adjusted_shot_result[-1:][0].time
-        time_deltas.append(flight_time - adjusted_flight_time)
-        _, adjusted_pos = initial_target.at_time(adjusted_flight_time)
+    adjusted_shot_result = get_trajectory_for_look_angle(pos.look_distance, pos.look_angle)
+    adjusted_flight_time = adjusted_shot_result[-1:][0].time
 
-        pos_projection_point = (
-            im.width // 2 + xs * (grid_scale // 4),
-            im.height // 2 + ys * (grid_scale // 4)
-        )
+    _, adjusted_pos = initial_target.at_time(adjusted_flight_time)
 
-        adjusted_pos_projection_point = (
-            im.width // 2 + (adjusted_pos.x_shift >> Unit.Thousandth) * (grid_scale // 4),
-            im.height // 2 + (adjusted_pos.y_shift >> Unit.Thousandth) * (grid_scale // 4)
-        )
+    pos_projection_point = (
+        im.width // 2 + xs * (grid_scale // 4),
+        im.height // 2 + ys * (grid_scale // 4)
+    )
 
-        points.append(pos_projection_point)
-        adjusted_points.append(adjusted_pos_projection_point)
+    adjusted_pos_projection_point = (
+        im.width // 2 + (adjusted_pos.x_shift >> Unit.Thousandth) * (grid_scale // 4),
+        im.height // 2 + (adjusted_pos.y_shift >> Unit.Thousandth) * (grid_scale // 4)
+    )
 
-        # draw.circle(adjusted_pos_projection_point, radius=3, fill="#0000ff")
-        # print(f"time: {flight_time:.3f} | {adjusted_flight_time:.3f} | {flight_time-adjusted_flight_time:.3f}")
+    # draw.circle(adjusted_pos_projection_point, radius=3, fill="#0000ff")
+    # print(f"time: {flight_time:.3f} | {adjusted_flight_time:.3f} | {flight_time-adjusted_flight_time:.3f}")
+    return pos_projection_point, adjusted_pos_projection_point
 
-    print(f"{max(time_deltas):.5f}")
 
-    for i, p in enumerate(adjusted_points):
-        draw.circle(p, radius=2, fill=color)
-        draw.circle(points[i], radius=1, fill='black')
+async def get_preemption_points(look_angle):
+    global shot_result
+    shot_result = get_trajectory_for_look_angle(distance, look_angle)
+    tasks = [get_preemption_point(look_angle, flight_direction) for flight_direction in range(0, 360, 15)]
+    points = await asyncio.gather(*tasks)
+    # points += [(-p[0], p) for p in points]
+    return points
 
-    max_x = max(adjusted_points, key=lambda p: p[0])[0]
-    min_x = min(adjusted_points, key=lambda p: p[0])[0]
-    max_y = max(adjusted_points, key=lambda p: p[1])[1]
-    min_y = min(adjusted_points, key=lambda p: p[1])[1]
 
-    draw.ellipse((
-        min_x,
-        min_y,
-        max_x,
-        max_y
-    ), outline=color)
+async def draw_preemption_points(draw):
+    tasks = [get_preemption_points(look_angle) for look_angle in range(10, 31, 10)]
+    ellipses = await asyncio.gather(*tasks)
+    colors = ['red', 'blue', 'green']
+    look_angles_ = list(range(10, 31, 10))
 
-    draw.text((im.width // 2 + 10, max_y),
-              f"look_angle: {look_angle}deg",
-              fill=color)
+    for ellipse in ellipses:
+        look_angle_ = look_angles_.pop(0)
+        color = colors.pop()
+        points, adjusted_points = zip(*ellipse)
 
-draw.text((10, 10),
-          text=f"time:          {flight_time}s\n"
-               f"look distance: {distance >> Unit.Meter}m\n"
-               f"click:         {click}",
-          fill='black')
+        for i, p in enumerate(adjusted_points):
+            if logger.level == logging.DEBUG:
+                draw.circle(p, radius=2, fill=color)
+                draw.circle(points[i], radius=1, fill='black')
+            else:
+                draw.circle(p, radius=2, fill='black')
 
-im.save(f"{look_angle}deg_{distance}m_{click}.png")
+        max_x = max(adjusted_points, key=lambda p: p[0])[0]
+        min_x = min(adjusted_points, key=lambda p: p[0])[0]
+        max_y = max(adjusted_points, key=lambda p: p[1])[1]
+        min_y = min(adjusted_points, key=lambda p: p[1])[1]
+
+        if logger.level == logging.DEBUG:
+            draw.ellipse((
+                min_x,
+                min_y,
+                max_x,
+                max_y
+            ), outline=color)
+
+            draw.text((im.width // 2 + 10, max_y),
+                      f"look_angle: {look_angle_:.2f}deg",
+                      fill=color,
+                      font=font)
+        else:
+            draw.ellipse((
+                min_x,
+                min_y,
+                max_x,
+                max_y
+            ), outline='black')
+
+    if logger.level == logging.DEBUG:
+        draw.text((10, 10),
+                  text=f"look distance: {distance >> Unit.Meter:.2f}m\n"
+                       f"click:         {click:.3f}",
+                  fill='black',
+                  font=font)
+
+
+async def calculate_reticles():
+    global distance, im, draw
+    for d in [500, 800, 1000]:
+        distance = Distance.Meter(d)
+        im = new_img(grid_scale)
+        draw = ImageDraw.Draw(im)
+        await draw_preemption_points(draw)
+        im.save(f"{distance}m_{click}_{im_size[0]}x{im_size[1]}.png")
+
+
+asyncio.run(calculate_reticles())

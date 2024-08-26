@@ -108,7 +108,7 @@ class AerialTarget:
             z=0
         )
 
-        # length_vector = direction_vector * length  # FIXME: not using now
+        length_vector = direction_vector * length  # FIXME: not using now
         velocity_vector = direction_vector * speed
 
         distance_vector = Vector(
@@ -118,7 +118,7 @@ class AerialTarget:
         )
 
         traveled_distance_vector = velocity_vector * time_of_flight
-        pos_at_time = distance_vector - traveled_distance_vector
+        pos_at_time = distance_vector + length_vector - traveled_distance_vector
         # print(distance_vector, traveled_distance_vector)
         look_angle_at_time = math.atan(pos_at_time.z / pos_at_time.y)
         # print(pos_at_time)
