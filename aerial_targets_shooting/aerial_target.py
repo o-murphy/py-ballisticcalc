@@ -69,7 +69,9 @@ class AerialTarget:
         self.azimuth = PreferredUnits.angular(azimuth or 0)
         self.length = PreferredUnits.distance(length or 0)
         self.time_step = time_step or 0.
+        self._prepare()
 
+    def _prepare(self):
         self._prepared = AerialTargetPrepared(
             self.speed >> Velocity.FPS,
             self.look_distance >> Distance.Foot,
@@ -94,52 +96,66 @@ class AerialTarget:
 
     def at_time(self, time_of_flight: float) -> Tuple['AerialTarget', AerialTargetPosition]:
         [
-            speed,
-            look_distance,
-            direction,
-            look_angle,
-            azimuth,
+            velocity_fps,
+            new_look_distance_foot,
+            direction_angle_rad,
+            look_angle_rad,
+            azimuth_rad,
             length,
         ] = self._prepared
 
-        direction_vector = Vector(
-            x=math.sin(direction),
-            y=math.cos(direction),
-            z=0
-        )
+        velocity_vector = Vector(
+            math.sin(direction_angle_rad), math.cos(direction_angle_rad), 0
+        ) * -velocity_fps
 
-        length_vector = direction_vector * length  # FIXME: not using now
-        velocity_vector = direction_vector * speed
+        distance_vector = Vector(0, math.cos(look_angle_rad), math.sin(look_angle_rad)) * new_look_distance_foot
 
-        distance_vector = Vector(
-            x=0,
-            y=math.cos(look_angle) * look_distance,
-            z=math.sin(look_angle) * look_distance
-        )
+        expected_distance_vector = distance_vector + (velocity_vector * time_of_flight)
 
-        traveled_distance_vector = velocity_vector * time_of_flight
-        pos_at_time = distance_vector + length_vector - traveled_distance_vector
-        # print(distance_vector, traveled_distance_vector)
-        look_angle_at_time = math.atan(pos_at_time.z / pos_at_time.y)
-        # print(pos_at_time)
-        distance = pos_at_time.z / math.sin(look_angle_at_time)
+        horizontal_preemption_angle_rad = math.atan(expected_distance_vector.x / expected_distance_vector.y)
+        new_look_angle_rad = math.atan(expected_distance_vector.z / expected_distance_vector.y)
+        vertical_preemption_angle_rad = new_look_angle_rad - look_angle_rad
+        new_look_distance_foot = (expected_distance_vector.y / math.cos(new_look_angle_rad)) * math.cos(
+            horizontal_preemption_angle_rad)
+        # print(new_look_distance_foot, math.degrees(horizontal_preemption_angle_rad), math.degrees(new_look_angle_rad))
+        # print(Unit.Radian(horizontal_preemption_angle_rad) >> Unit.Thousandth,
+        #       Unit.Radian(vertical_preemption_angle_rad) >> Unit.Thousandth)
 
-        x_shift = math.atan(pos_at_time.x / distance)
-
-        azimuth_at_time = azimuth + x_shift
-
-        if x_shift != 0:
-            distance = pos_at_time.x / math.sin(x_shift)
-
-        y_shift = look_angle - look_angle_at_time
+        # velocity_vector = Vector(
+        #     x=math.sin(math.pi+direction),
+        #     y=math.cos(math.pi+direction),
+        #     z=0
+        # ) * speed
+        #
+        # distance_vector = Vector(
+        #     x=0,
+        #     y=math.cos(look_angle),
+        #     z=math.sin(look_angle)
+        # ) * look_distance
+        #
+        # traveled_distance_vector = velocity_vector * time_of_flight
+        # pos_at_time = distance_vector - traveled_distance_vector
+        # # print(distance_vector, traveled_distance_vector)
+        # look_angle_at_time = math.atan(pos_at_time.z / pos_at_time.y)
+        # # print(pos_at_time)
+        # distance = pos_at_time.z / math.sin(look_angle_at_time)
+        #
+        # x_shift = math.atan(pos_at_time.x / distance)
+        #
+        # azimuth_at_time = azimuth + x_shift
+        #
+        # if x_shift != 0:
+        #     distance = pos_at_time.x / math.sin(x_shift)
+        #
+        # y_shift = look_angle - look_angle_at_time
 
         pos = AerialTargetPosition(
             time_of_flight,
-            Angular.Radian(x_shift),
-            Angular.Radian(y_shift),
-            Distance.Foot(distance),
-            Angular.Radian(look_angle_at_time),
-            Angular.Radian(azimuth_at_time)
+            Angular.Radian(-horizontal_preemption_angle_rad),
+            Angular.Radian(-vertical_preemption_angle_rad),
+            Distance.Foot(new_look_distance_foot),
+            Angular.Radian(new_look_angle_rad),
+            Angular.Radian(azimuth_rad)
         )
 
         target = AerialTarget(
