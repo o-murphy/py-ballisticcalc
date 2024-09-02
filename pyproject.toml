@@ -47,7 +47,6 @@ py-modules = ["py_ballisticcalc"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["py_ballisticcalc*"]
-exclude = ["py_ballisticcalc_exts*"]
 
 
 [project.optional-dependencies]

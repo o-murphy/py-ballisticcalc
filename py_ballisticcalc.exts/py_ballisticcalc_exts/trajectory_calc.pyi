@@ -5,7 +5,7 @@ from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.unit import Angular, Distance
 from typing_extensions import NamedTuple, Union
 
-__all__ = ['TrajectoryCalc', 'get_global_max_calc_step_size', 'get_global_use_powder_sensitivity', 'set_global_max_calc_step_size', 'set_global_use_powder_sensitivity', 'reset_globals']
+__all__ = ['TrajectoryCalc', 'Vector', 'get_global_max_calc_step_size', 'get_global_use_powder_sensitivity', 'set_global_max_calc_step_size', 'set_global_use_powder_sensitivity', 'reset_globals']
 
 def get_global_max_calc_step_size() -> Distance: ...
 def get_global_use_powder_sensitivity() -> bool: ...

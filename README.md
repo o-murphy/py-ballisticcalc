@@ -76,7 +76,7 @@ plt.show()
 ```
 
     Danger space at 300.0yd for 19.7inch tall target ranges from 217.1yd to 355.7yd
-![plot](doc/output_2_1.png)
+![plot](doc/TrajectoryPlot1.png)
 
 
 ## Print Range Card
@@ -252,12 +252,12 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1*un
 The shooter typically cares about the line of sight (LoS): Sight adjustments (_drop_ in the following figure) are made relative to LoS, and ranging errors – and hence [danger space](#danger-space) – follow the line of sight, not the horizon.
 
 The following diagram shows how _look distance_ and _drop_ relate by _look angle_ to the underlying (distance _x_, height _y_) trajectory data.
-![Look-angle trigonometry](doc/BallisticTrig.png)
+![Look-angle trigonometry](doc/BallisticTrig.svg)
 
 ## Danger Space
 Danger space is a practical measure of sensitivity to ranging error.  It is defined for a target of height *h* and distance *d*, and it indicates how far forward and backward along the line of sight the target can move such that the trajectory will still hit somewhere (vertically) on the target.
 
-![Danger Space](doc/DangerSpace.png)
+![Danger Space](doc/DangerSpace.svg)
 
 # About project
 

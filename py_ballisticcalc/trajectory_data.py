@@ -263,6 +263,7 @@ class HitResult:
             look_angle = PreferredUnits.angular(look_angle)
 
         # Get index of first trajectory point with distance >= at_range
+        print(at_range)
         if (index := self.index_at_distance(at_range)) < 0:
             raise ArithmeticError(
                 f"Calculated trajectory doesn't reach requested distance {at_range}"
