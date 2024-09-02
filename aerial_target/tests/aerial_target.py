@@ -3,7 +3,7 @@ import sys
 import warnings
 from concurrent import futures
 
-from aerial_targets_shooting.aerial_target import AerialTarget
+from aerial_target.aerial_target import AerialTarget
 from py_ballisticcalc import *
 
 logger.setLevel(logging.DEBUG)
@@ -50,7 +50,7 @@ click = 3.01
 grid_scale = int((Unit.Thousandth(5) >> Unit.CmPer100m) / click)
 logger.info(f'{grid_scale=}')
 im, draw = new_img(grid_scale, (640, 480))
-distance = 1000
+distance = 800
 
 target = AerialTarget(Velocity.MPS(50),
                       Distance.Meter(distance),
@@ -63,7 +63,7 @@ dm = DragModel(0.62, TableG1, 661, 0.51, 2.3)
 ammo = Ammo(dm, 900)
 zero_atmo = Atmo(altitude=150, pressure=1000, temperature=15, humidity=50)
 
-for look_angle in range(10, 31, 10):
+for look_angle in range(20, 21, 10):
     target.look_angle = Angular.Degree(look_angle)
     points = []
     adjusted_points = []
