@@ -15,10 +15,10 @@ We uses simplified model, so it is assumed that
   * sight look angle
   * target's size (to accurate adjustment)
 
-<img src="./assets/aerial_target.svg" alt="Aerial Target" style="width: 100%;">
+<img src="./assets/AerialTargetTrajectory.svg" alt="Aerial Target" style="width: 100%;">
 
 
 ## We can create a precalculated reticle for specific projectile and target
 There the reticle example that was precalculated for the target size of ~3m, velocity - 50mps, look distance - 800m and the look angle - 20 degrees
 
-<img src="./assets/aerial_target_reticle.svg" alt="Aerial Target" style="width: 100%;">
+<img src="./assets/AerialTargetReticle.svg" alt="Aerial Target" style="width: 100%;">
