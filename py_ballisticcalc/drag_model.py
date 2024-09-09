@@ -2,6 +2,7 @@
 
 import math
 from dataclasses import dataclass, field
+
 from typing_extensions import Union, List, Dict, Tuple, Optional, Final
 
 from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
@@ -142,7 +143,7 @@ def DragModelMultiBC(bc_points: List[BCPoint],
 
     drag_table = make_data_points(drag_table)  # Convert from list of dicts to list of DragDataPoints
 
-    bc_points.sort()  # Make sure bc_points are sorted for linear interpolation
+    bc_points.sort(key=lambda p: p.Mach)  # Make sure bc_points are sorted for linear interpolation
     bc_interp = linear_interpolation([x.Mach for x in drag_table],
                                      [x.Mach for x in bc_points],
                                      [x.BC / bc for x in bc_points])
