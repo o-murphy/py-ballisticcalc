@@ -51,7 +51,7 @@ plt.show()
 
 
     
-![png](output_2_1.png)
+![png](PlotTrajectoryWithDangerSpace.svg)
     
 
 
@@ -89,7 +89,7 @@ plt.show()
 
 
     
-![png](output_4_1.png)
+![png](ComplexExample.svg)
     
 
 
