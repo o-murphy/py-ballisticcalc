@@ -1,12 +1,12 @@
 # 375 CheyTac Hornady 390gr A-Tip custom drag function
-from py_ballisticcalc import *
+from py_ballisticcalc import PreferredUnits, Unit, DragModelMultiBC, BCPoint, TableG7
 
-PreferredUnits.velocity = Velocity.MPS
-PreferredUnits.adjustment = Angular.Mil
-PreferredUnits.temperature = Temperature.Celsius
-PreferredUnits.distance = Distance.Meter
-PreferredUnits.sight_height = Distance.Centimeter
-PreferredUnits.drop = Distance.Centimeter
+PreferredUnits.velocity = Unit.MPS
+PreferredUnits.adjustment = Unit.Mil
+PreferredUnits.temperature = Unit.Celsius
+PreferredUnits.distance = Unit.Meter
+PreferredUnits.sight_height = Unit.Centimeter
+PreferredUnits.drop = Unit.Centimeter
 PreferredUnits.weight = Unit.Grain
 PreferredUnits.length = Unit.Inch
 PreferredUnits.diameter = Unit.Inch
