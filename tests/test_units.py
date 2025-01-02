@@ -45,6 +45,9 @@ class TestUnitsParser(unittest.TestCase):
         ret = _parse_unit('ft*lb')
         self.assertIsInstance(ret, Unit)
 
+        ret = _parse_unit("newton")
+        self.assertEqual(ret, Unit.Newton)
+
 
 class TestAngular(unittest.TestCase):
 
