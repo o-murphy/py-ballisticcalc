@@ -238,7 +238,7 @@ UnitAliases = {
     ('gram', 'g'): Unit.Gram,
     ('pound', 'lb'): Unit.Pound,
     ('kilogram', 'kilogramme', 'kg'): Unit.Kilogram,
-    ('newton', 'N'): Unit.Kilogram,
+    ('newton', 'N'): Unit.Newton,
 }
 
 
