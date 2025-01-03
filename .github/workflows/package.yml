@@ -31,6 +31,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install setuptools cython
         python -m pip install -e .[dev]
+        python -m pip install typing_extensions
 
     - name: Run tests in pure python mode
       run: |
