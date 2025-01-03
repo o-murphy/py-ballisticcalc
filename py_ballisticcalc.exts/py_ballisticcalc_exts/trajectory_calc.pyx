@@ -1,5 +1,6 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan, floor
 cimport cython
+from py_ballisticcalc_exts.early_bind_atmo cimport EarlyBindAtmo
 
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.munition import Ammo
@@ -377,6 +378,10 @@ cdef class TrajectoryCalc:
 
             _TrajectoryDataFilter data_filter
 
+        cdef:
+            # early bindings
+            cdef EarlyBindAtmo atmo = EarlyBindAtmo(shot_info.atmo)
+
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
@@ -399,8 +404,9 @@ cdef class TrajectoryCalc:
             if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
-            density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
-                self.alt0 + range_vector.y)
+            # overwrite density_factor and mach by pointer
+            atmo.get_density_factor_and_mach_for_altitude(
+                self.alt0 + range_vector.y, &density_factor, &mach)
 
             if filter_flags:
 
@@ -414,8 +420,6 @@ cdef class TrajectoryCalc:
                     if data_filter.should_break():
                         break
 
-            previous_mach = velocity / mach
-
             #region Ballistic calculation step
             delta_time = self.calc_step / velocity_vector.x
 
@@ -426,7 +430,8 @@ cdef class TrajectoryCalc:
             velocity = velocity_adjusted.magnitude()
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
             # velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time
-            velocity_vector = velocity_vector.subtract((velocity_adjusted.mul_by_const(drag).subtract(self.gravity_vector)).mul_by_const(delta_time))
+            velocity_vector = velocity_vector.subtract(
+                (velocity_adjusted.mul_by_const(drag).subtract(self.gravity_vector)).mul_by_const(delta_time))
             delta_range_vector = Vector(self.calc_step,
                                         velocity_vector.y * delta_time,
                                         velocity_vector.z * delta_time)

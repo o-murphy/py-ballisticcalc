@@ -653,7 +653,7 @@ try:
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
-
+    print(error)
     warnings.warn("Library running in pure python mode. "
                   "For better performance install 'py_ballisticcalc.exts' package")
 
