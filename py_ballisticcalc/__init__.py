@@ -12,7 +12,8 @@ import os
 import sys
 from typing_extensions import Dict, Union, Optional
 
-from .backend import *
+# from .backend import *
+from .trajectory_calc import *
 from .conditions import *
 from .drag_model import *
 from .drag_tables import *
