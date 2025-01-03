@@ -208,7 +208,7 @@ class _WindSock:
         self.winds: Tuple[Wind, ...] = winds
         self.current: int = 0
         self.next_range: float = Wind.MAX_DISTANCE_FEET
-        self._last_vector_cache = None
+        self._last_vector_cache: Union[Vector, None] = None
         self._length = len(winds)
         self.current_vector()
 
