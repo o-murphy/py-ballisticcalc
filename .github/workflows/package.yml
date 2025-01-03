@@ -16,8 +16,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
-        # python-version: ["3.9", "3.10", "3.11", "3.12", "3.13.0-rc.3"]
-        # python 3.13 disabled temporary cause of test (windows-latest, 3.13.0-rc.3) failed
+#        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13.0-rc.3"]
+#        python 3.13 disabled temporary cause of test (windows-latest, 3.13.0-rc.3) failed
         python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     runs-on: ${{ matrix.os }}
