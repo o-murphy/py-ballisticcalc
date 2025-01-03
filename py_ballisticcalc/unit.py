@@ -5,6 +5,7 @@ Useful types for prefer_units of measurement conversion for ballistics calculati
 import re
 from dataclasses import dataclass
 from enum import IntEnum
+from imp import get_magic
 from math import pi, atan, tan
 
 from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Self, Final
@@ -292,11 +293,11 @@ class AbstractUnit:
     def __lshift__(self, other: Unit) -> Self:
         return self.convert(other)
 
-    def __rshift__(self, other: Unit) -> float:
-        return self.get_in(other)
+    # def __rshift__(self, other: Unit) -> float:
+    #     return self.get_in(other)
 
-    def __rlshift__(self, other: Unit) -> Self:
-        return self.convert(other)
+    # def __rlshift__(self, other: Unit) -> Self:
+    #     return self.convert(other)
 
     def _validate_unit_type(self, value: float, units: Unit):
         """Validates the prefer_units
@@ -361,6 +362,10 @@ class AbstractUnit:
         :return: raw unit value
         """
         return self._value
+
+    # aliases more efficient than wrappers
+    __rshift__ = get_in
+    __rlshift__ = convert
 
 
 class Distance(AbstractUnit):

@@ -119,6 +119,10 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def machF(fahrenheit: float) -> float:
         """:return: Mach 1 in fps for Fahrenheit temperature"""
+        if fahrenheit < -cDegreesFtoR:
+            raise ValueError(
+                f"Invalid temperature: {fahrenheit}°F. It must be >= {-cDegreesFtoR} to avoid a domain error."
+            )
         return math.sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
 
     @staticmethod
@@ -240,7 +244,7 @@ class Shot:
     weapon: Weapon
     ammo: Ammo
     atmo: Atmo
-    winds: List[Wind]  # use property Shot.winds to get sorted winds
+    _winds: List[Wind]  # use property Shot.winds to get sorted winds
 
     def __init__(self,
                  weapon: Weapon,
@@ -258,8 +262,16 @@ class Shot:
         self.weapon = weapon
         self.ammo = ammo
         self.atmo = atmo or Atmo.icao()
-        # sort winds by Wind.until distance
-        self.winds = sorted(winds or [Wind()], key=lambda wind: wind.until_distance.raw_value)
+        self._winds = winds or [Wind()]
+
+    @property
+    def winds(self) -> Tuple[Wind, ...]:
+        # guarantee that winds returns sorted by Wind.until distance
+        return tuple(sorted(self._winds, key=lambda wind: wind.until_distance.raw_value))
+
+    @winds.setter
+    def winds(self, winds: Optional[List[Wind]] = None):
+        self._winds = winds or [Wind()]
 
     @property
     def barrel_elevation(self) -> Angular:
