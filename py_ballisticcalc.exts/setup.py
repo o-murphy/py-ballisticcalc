@@ -21,7 +21,9 @@ compiler_directives = {
 
 extensions = [
     Extension('py_ballisticcalc_exts.trajectory_calc',
-              ['py_ballisticcalc_exts/trajectory_calc.pyx'])
+              ['py_ballisticcalc_exts/trajectory_calc.pyx']),
+    Extension('py_ballisticcalc_exts.early_bind_atmo',
+              ['py_ballisticcalc_exts/early_bind_atmo.pyx'])
 ]
 
 extensions = cythonize(extensions,
