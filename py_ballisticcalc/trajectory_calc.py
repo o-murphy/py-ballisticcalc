@@ -125,6 +125,94 @@ class Vector:
     def __neg__(self) -> 'Vector':
         return self.negate()
 
+    def __abs__(self) -> float:
+        return self.magnitude()
+
+    def __truediv__(self) -> 'Vector':
+        return self.normalize()
+
+
+class _TrajectoryDataFilter:
+    def __init__(self, filter_flags: TrajFlag, flag: TrajFlag, seen_zero: TrajFlag,
+                 ranges_length: int):
+        self.filter: TrajFlag = filter_flags
+        self.flag: TrajFlag = flag
+        self.seen_zero: TrajFlag = seen_zero
+        self.current_item: int = 0
+        self.ranges_length: int = ranges_length
+        self.previous_mach: float = 0.0
+        self.next_range_distance: float = 0.0
+
+    def setup_seen_zero(self, range_vector: Vector, barrel_elevation: float, look_angle: float):
+        if range_vector.y >= 0:
+            self.seen_zero |= TrajFlag.ZERO_UP
+        elif range_vector.y < 0 and barrel_elevation < look_angle:
+            self.seen_zero |= TrajFlag.ZERO_DOWN
+
+    def should_register(self, range_vector, velocity, mach, step, look_angle) -> bool:
+        # if self.filter:
+        self.check_zero_crossing(range_vector, look_angle)
+        self.check_mach_crossing(velocity, mach)
+        self.check_next_range(range_vector, step)
+        # if self.should_break():
+        #     self.filter = None
+        return self.should_register_data()
+
+    def should_break(self):
+        return self.current_item == self.ranges_length
+        # if self.current_item == self.ranges_length:
+        #     raise _StopCalculation()
+
+    def should_register_data(self) -> bool:
+        # Record TrajectoryData row
+        return bool(self.flag & self.filter)
+
+    def check_next_range(self, range_vector: Vector, step: float):
+        # Next range check
+        if range_vector.x >= self.next_range_distance:
+            self.flag |= TrajFlag.RANGE
+            self.next_range_distance += step
+            self.current_item += 1
+        # return next_range_distance
+
+    def check_mach_crossing(self, velocity: float, mach: float):
+        # Mach crossing check
+        if self.previous_mach > 1 >= velocity / mach:  # (velocity / mach <= 1) and (previous_mach > 1)
+            self.flag |= TrajFlag.MACH
+        self.previous_mach = velocity / mach
+
+    def check_zero_crossing(self, range_vector: Vector, look_angle: float):
+        # Zero-crossing checks
+        if range_vector.x > 0:
+            # Zero reference line is the sight line defined by look_angle
+            reference_height = range_vector.x * math.tan(look_angle)
+            # If we haven't seen ZERO_UP, we look for that first
+            if not self.seen_zero & TrajFlag.ZERO_UP:
+                if range_vector.y >= reference_height:
+                    self.flag |= TrajFlag.ZERO_UP
+                    self.seen_zero |= TrajFlag.ZERO_UP
+            # We've crossed above sight line; now look for crossing back through it
+            elif not self.seen_zero & TrajFlag.ZERO_DOWN:
+                if range_vector.y < reference_height:
+                    self.flag |= TrajFlag.ZERO_DOWN
+                    self.seen_zero |= TrajFlag.ZERO_DOWN
+
+
+class ZeroFindingError(RuntimeError):
+    """
+    contains an instance of last barrel elevation; so caller can check how close zero is
+    """
+
+    def __init__(self,
+                 zero_finding_error,
+                 iterations_count,
+                 last_barrel_elevation: Angular):
+        self.zero_finding_error: float = zero_finding_error
+        self.iterations_count: int = iterations_count
+        self.last_barrel_elevation: Angular = last_barrel_elevation
+        super().__init__(f'Zero vertical error {zero_finding_error} '
+                         f'feet, after {iterations_count} iterations.')
+
 
 class TrajectoryCalc:
     """All calculations are done in units of feet and fps"""
@@ -218,8 +306,8 @@ class TrajectoryCalc:
             iterations_count += 1
 
         if zero_finding_error > cZeroFindingAccuracy:
-            # TODO: Don't raise exception; return a tuple that contains the error so caller can check how close zero is
-            raise RuntimeError(f'Zero vertical error {zero_finding_error} feet, after {iterations_count} iterations.')
+            # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
+            raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
     def _trajectory(self, shot_info: Shot, maximum_range: float, step: float,
@@ -230,9 +318,7 @@ class TrajectoryCalc:
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
-        ranges_length: int = int(maximum_range / step) + 1
         time: float = .0
-        previous_mach: float = .0
         drag: float = .0
 
         # guarantee that mach and density_factor would be referenced before assignment
@@ -242,8 +328,6 @@ class TrajectoryCalc:
         # region Initialize wind-related variables to first wind reading (if any)
         len_winds = len(shot_info.winds)
         current_wind = 0
-        current_item = 0
-        next_range_distance = .0
         next_wind_range: float = Wind.MAX_DISTANCE_FEET
         if len_winds < 1:
             wind_vector = Vector(.0, .0, .0)
@@ -264,15 +348,15 @@ class TrajectoryCalc:
         # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        seen_zero = TrajFlag.NONE  # Record when we see each zero crossing, so we only register one
-        if range_vector.y >= 0:
-            seen_zero |= TrajFlag.ZERO_UP  # We're starting above zero; we can only go down
-        elif range_vector.y < 0 and self.barrel_elevation < self.look_angle:
-            seen_zero |= TrajFlag.ZERO_DOWN  # We're below and pointing down from look angle; no zeroes!
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
+                                            flag=TrajFlag.NONE,
+                                            seen_zero=TrajFlag.NONE,
+                                            ranges_length=int(maximum_range / step) + 1)
+        data_filter.setup_seen_zero(range_vector, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
         while range_vector.x <= maximum_range + self.calc_step:
-            _flag = TrajFlag.NONE
+            data_filter.flag = TrajFlag.NONE
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= next_wind_range:
@@ -290,43 +374,18 @@ class TrajectoryCalc:
 
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:
-                # Zero-crossing checks
-                if range_vector.x > 0:
-                    # Zero reference line is the sight line defined by look_angle
-                    reference_height = range_vector.x * math.tan(self.look_angle)
-                    # If we haven't seen ZERO_UP, we look for that first
-                    if not seen_zero & TrajFlag.ZERO_UP:
-                        if range_vector.y >= reference_height:
-                            _flag |= TrajFlag.ZERO_UP
-                            seen_zero |= TrajFlag.ZERO_UP
-                    # We've crossed above sight line; now look for crossing back through it
-                    elif not seen_zero & TrajFlag.ZERO_DOWN:
-                        if range_vector.y < reference_height:
-                            _flag |= TrajFlag.ZERO_DOWN
-                            seen_zero |= TrajFlag.ZERO_DOWN
-
-                # Mach crossing check
-                if previous_mach > 1 >= velocity / mach:  # (velocity / mach <= 1) and (previous_mach > 1)
-                    _flag |= TrajFlag.MACH
-
-                # Next range check
-                if range_vector.x >= next_range_distance:
-                    _flag |= TrajFlag.RANGE
-                    next_range_distance += step
-                    current_item += 1
 
                 # Record TrajectoryData row
-                if _flag & filter_flags:
+                if data_filter.should_register(range_vector, velocity, mach, step, self.look_angle):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
-                        density_factor, drag, self.weight, _flag.value
+                        density_factor, drag, self.weight, data_filter.flag
                     ))
-                    if current_item == ranges_length:
+                    if data_filter.should_break():
                         break
-            # endregion
 
-            previous_mach = velocity / mach
+            # endregion
 
             # region Ballistic calculation step (point-mass)
             # Time step is set to advance bullet calc_step distance along x axis
@@ -356,7 +415,7 @@ class TrajectoryCalc:
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
-                density_factor, drag, self.weight, _flag.value))
+                density_factor, drag, self.weight, TrajFlag.NONE))
         return ranges
 
     def drag_by_mach(self, mach: float) -> float:
@@ -419,7 +478,7 @@ def wind_to_vector(wind: Wind) -> Vector:
 
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
-                          density_factor: float, drag: float, weight: float, flag: int) -> TrajectoryData:
+                          density_factor: float, drag: float, weight: float, flag: TrajFlag) -> TrajectoryData:
     """
     Create a TrajectoryData object representing a single row of trajectory data.
 
@@ -458,7 +517,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         drag=drag,
         energy=Energy.FootPound(calculate_energy(weight, velocity)),
         ogw=Weight.Pound(calculate_ogw(weight, velocity)),
-        flag=flag
+        flag=flag.value
     )
 
 
