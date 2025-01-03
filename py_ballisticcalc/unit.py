@@ -5,7 +5,6 @@ Useful types for prefer_units of measurement conversion for ballistics calculati
 import re
 from dataclasses import dataclass
 from enum import IntEnum
-from imp import get_magic
 from math import pi, atan, tan
 
 from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Self, Final
