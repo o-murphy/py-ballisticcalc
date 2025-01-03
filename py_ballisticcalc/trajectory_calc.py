@@ -138,21 +138,24 @@ class Vector:
 
 
 class _TrajectoryDataFilter:
-    def __init__(self, filter_flags: TrajFlag, flag: TrajFlag, seen_zero: TrajFlag,
+    def __init__(self, filter_flags: TrajFlag,
                  ranges_length: int):
         self.filter: TrajFlag = filter_flags
-        self.flag: TrajFlag = flag
-        self.seen_zero: TrajFlag = seen_zero
+        self.current_flag: TrajFlag = TrajFlag.NONE
+        self.seen_zero: TrajFlag = TrajFlag.NONE
         self.current_item: int = 0
         self.ranges_length: int = ranges_length
         self.previous_mach: float = 0.0
         self.next_range_distance: float = 0.0
 
-    def setup_seen_zero(self, range_vector: Vector, barrel_elevation: float, look_angle: float) -> None:
-        if range_vector.y >= 0:
+    def setup_seen_zero(self, height: float, barrel_elevation: float, look_angle: float) -> None:
+        if height >= 0:
             self.seen_zero |= TrajFlag.ZERO_UP
-        elif range_vector.y < 0 and barrel_elevation < look_angle:
+        elif height < 0 and barrel_elevation < look_angle:
             self.seen_zero |= TrajFlag.ZERO_DOWN
+
+    def clear_current_flag(self):
+        self.current_flag = TrajFlag.NONE
 
     def should_record(self,
                       range_vector: Vector,
@@ -163,7 +166,7 @@ class _TrajectoryDataFilter:
         self.check_zero_crossing(range_vector, look_angle)
         self.check_mach_crossing(velocity, mach)
         self.check_next_range(range_vector.x, step)
-        return bool(self.flag & self.filter)
+        return bool(self.current_flag & self.filter)
 
     def should_break(self) -> bool:
         return self.current_item == self.ranges_length
@@ -171,7 +174,7 @@ class _TrajectoryDataFilter:
     def check_next_range(self, next_range: float, step: float):
         # Next range check
         if next_range >= self.next_range_distance:
-            self.flag |= TrajFlag.RANGE
+            self.current_flag |= TrajFlag.RANGE
             self.next_range_distance += step
             self.current_item += 1
 
@@ -179,7 +182,7 @@ class _TrajectoryDataFilter:
         # Mach crossing check
         current_mach = velocity / mach
         if self.previous_mach > 1 >= current_mach:  # (velocity / mach <= 1) and (previous_mach > 1)
-            self.flag |= TrajFlag.MACH
+            self.current_flag |= TrajFlag.MACH
         self.previous_mach = current_mach
 
     def check_zero_crossing(self, range_vector: Vector, look_angle: float):
@@ -191,12 +194,12 @@ class _TrajectoryDataFilter:
             # If we haven't seen ZERO_UP, we look for that first
             if not (self.seen_zero & TrajFlag.ZERO_UP):
                 if range_vector.y >= reference_height:
-                    self.flag |= TrajFlag.ZERO_UP
+                    self.current_flag |= TrajFlag.ZERO_UP
                     self.seen_zero |= TrajFlag.ZERO_UP
             # We've crossed above sight line; now look for crossing back through it
             elif not (self.seen_zero & TrajFlag.ZERO_DOWN):
                 if range_vector.y < reference_height:
-                    self.flag |= TrajFlag.ZERO_DOWN
+                    self.current_flag |= TrajFlag.ZERO_DOWN
                     self.seen_zero |= TrajFlag.ZERO_DOWN
 
 
@@ -206,24 +209,22 @@ class _WindSock:
         self.current: int = 0
         self.next_range: float = Wind.MAX_DISTANCE_FEET
         self._last_vector_cache = None
-        if self.winds:  # Initialize _last_vector_cache only if there are winds
-            self.current_vector()
-
-    def __len__(self) -> int:
-        return len(self.winds)
+        self._length = len(winds)
+        self.current_vector()
 
     def current_vector(self) -> Vector:
-        if len(self) < 1:
+        if self._length < 1:
             self._last_vector_cache = Vector(.0, .0, .0)
         else:
-            self._last_vector_cache = wind_to_vector(self.winds[self.current])
-            self.next_range = self.winds[self.current].until_distance >> Distance.Foot
+            cur_wind = self.winds[self.current]
+            self._last_vector_cache = wind_to_vector(cur_wind)
+            self.next_range = cur_wind.until_distance >> Distance.Foot
         return self._last_vector_cache
 
     def vector_for_range(self, next_range: float):
         if next_range >= self.next_range:
             self.current += 1
-            if self.current >= len(self):  # No more winds listed after this range
+            if self.current >= self._length:  # No more winds listed after this range
                 self.next_range = Wind.MAX_DISTANCE_FEET
                 self._last_vector_cache = Vector(.0, .0, .0)
             return self.current_vector()
@@ -386,14 +387,12 @@ class TrajectoryCalc:
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
-                                            flag=TrajFlag.NONE,
-                                            seen_zero=TrajFlag.NONE,
                                             ranges_length=int(maximum_range / step) + 1)
-        data_filter.setup_seen_zero(range_vector, self.barrel_elevation, self.look_angle)
+        data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
         while range_vector.x <= maximum_range + self.calc_step:
-            data_filter.flag = TrajFlag.NONE
+            data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
@@ -411,7 +410,7 @@ class TrajectoryCalc:
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
-                        density_factor, drag, self.weight, data_filter.flag
+                        density_factor, drag, self.weight, data_filter.current_flag
                     ))
                     if data_filter.should_break():
                         break
