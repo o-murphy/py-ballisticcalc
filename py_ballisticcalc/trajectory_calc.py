@@ -143,22 +143,24 @@ class _TrajectoryDataFilter:
         self.previous_mach: float = 0.0
         self.next_range_distance: float = 0.0
 
-    def setup_seen_zero(self, range_vector: Vector, barrel_elevation: float, look_angle: float):
+    def setup_seen_zero(self, range_vector: Vector, barrel_elevation: float, look_angle: float) -> None:
         if range_vector.y >= 0:
             self.seen_zero |= TrajFlag.ZERO_UP
         elif range_vector.y < 0 and barrel_elevation < look_angle:
             self.seen_zero |= TrajFlag.ZERO_DOWN
 
-    def should_register(self, range_vector, velocity, mach, step, look_angle) -> bool:
-        # if self.filter:
+    def should_register(self,
+                        range_vector: Vector,
+                        velocity: float,
+                        mach: float,
+                        step: float,
+                        look_angle: float) -> bool:
         self.check_zero_crossing(range_vector, look_angle)
         self.check_mach_crossing(velocity, mach)
         self.check_next_range(range_vector, step)
-        # if self.should_break():
-        #     self.filter = None
         return self.should_register_data()
 
-    def should_break(self):
+    def should_break(self) -> bool:
         return self.current_item == self.ranges_length
         # if self.current_item == self.ranges_length:
         #     raise _StopCalculation()
@@ -200,13 +202,23 @@ class _TrajectoryDataFilter:
 
 class ZeroFindingError(RuntimeError):
     """
-    contains an instance of last barrel elevation; so caller can check how close zero is
+    Exception for zero-finding issues.
+    Contains:
+    - Zero finding error magnitude
+    - Iteration count
+    - Last barrel elevation (Angular instance)
     """
 
     def __init__(self,
-                 zero_finding_error,
-                 iterations_count,
+                 zero_finding_error: float,
+                 iterations_count: int,
                  last_barrel_elevation: Angular):
+        """
+        Parameters:
+        - zero_finding_error: The error magnitude (float)
+        - iterations_count: The number of iterations performed (int)
+        - last_barrel_elevation: The last computed barrel elevation (Angular)
+        """
         self.zero_finding_error: float = zero_finding_error
         self.iterations_count: int = iterations_count
         self.last_barrel_elevation: Angular = last_barrel_elevation
@@ -605,8 +617,25 @@ def calculate_by_curve(data: list, curve: list, mach: float) -> float:
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
 
+try:
+    # replace with cython based implementation
+    from py_ballisticcalc_exts import (TrajectoryCalc, ZeroFindingError, Vector,  # type: ignore
+                                       get_global_max_calc_step_size,
+                                       get_global_use_powder_sensitivity,
+                                       set_global_max_calc_step_size,
+                                       set_global_use_powder_sensitivity,
+                                       reset_globals)
+
+    from .logger import logger
+    logger.debug("Binary modules found, running in binary mode")
+except ImportError as error:
+    import warnings
+    warnings.warn("Library running in pure python mode. "
+                  "For better performance install 'py_ballisticcalc.exts' package")
+
 __all__ = (
     'TrajectoryCalc',
+    'ZeroFindingError',
     'Vector',
     'get_global_max_calc_step_size',
     'get_global_use_powder_sensitivity',
