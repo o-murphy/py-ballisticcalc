@@ -1,11 +1,11 @@
 from libc.math cimport fabs, exp, sqrt
-cimport cython
+from cython cimport final
 
 cdef double cDegreesFtoR = 459.67
 cdef double cSpeedOfSoundImperial = 49.0223
 cdef double cLapseRateImperial = -3.56616e-03
 
-@cython.final
+@final
 cdef class EarlyBindAtmo:
 
     def __cinit__(EarlyBindAtmo self, object atmo):
