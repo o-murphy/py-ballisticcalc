@@ -15,7 +15,7 @@ __all__ = (
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
     'set_global_use_powder_sensitivity',
-    'reset_globals'
+    'reset_globals',
 )
 
 cdef double cZeroFindingAccuracy = 0.000005
@@ -25,20 +25,21 @@ cdef int cMaxIterations = 20
 cdef double cGravityConstant = -32.17405
 
 cdef bint _globalUsePowderSensitivity = False
-cdef object _globalMaxCalcStepSize = Distance.Foot(0.5)
+cdef double _globalMaxCalcStepSizeFeet = 0.5
 
 def get_global_max_calc_step_size() -> Distance:
-    return _globalMaxCalcStepSize
+    return PreferredUnits.distance(Distance.Foot(_globalMaxCalcStepSizeFeet))
 
 def get_global_use_powder_sensitivity() -> bool:
     return bool(_globalUsePowderSensitivity)
 
 def set_global_max_calc_step_size(value: [object, float]) -> None:
-    global _globalMaxCalcStepSize
-    cdef double _value = PreferredUnits.distance(value).raw_value
+    global _globalMaxCalcStepSizeFeet
+    cdef double _value = PreferredUnits.distance(value)._feet
     if _value <= 0:
         raise ValueError("_globalMaxCalcStepSize have to be > 0")
-    _globalMaxCalcStepSize = PreferredUnits.distance(value)
+    _globalMaxCalcStepSizeFeet = _value
+
 
 def set_global_use_powder_sensitivity(value: bool) -> None:
     global _globalUsePowderSensitivity
@@ -47,9 +48,9 @@ def set_global_use_powder_sensitivity(value: bool) -> None:
     _globalUsePowderSensitivity = <int>value
 
 def reset_globals() -> None:
-    global _globalUsePowderSensitivity, _globalMaxCalcStepSize
+    global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
     _globalUsePowderSensitivity = False
-    _globalMaxCalcStepSize = Distance.Foot(0.5)
+    _globalMaxCalcStepSizeFeet = 0.5
 
 cdef struct CurvePoint:
     double a, b, c
@@ -545,7 +546,7 @@ cdef double get_correction(double distance, double offset):
     return 0  # better None
 
 cdef double get_calc_step(double step = 0):
-    cdef double preferred_step = _globalMaxCalcStepSize._feet  # shortcut for (_globalMaxCalcStepSize >> Distance.Foot)
+    cdef double preferred_step = _globalMaxCalcStepSizeFeet
     # cdef double defined_max = 0.5  # const will be better optimized with cython
     if step == 0:
         return preferred_step / 2.0

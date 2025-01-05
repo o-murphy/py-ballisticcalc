@@ -10,8 +10,6 @@ PreferredUnits.distance = Distance.Meter
 PreferredUnits.sight_height = Distance.Centimeter
 PreferredUnits.drop = Distance.Centimeter
 
-set_global_use_powder_sensitivity(True)  # enable muzzle velocity correction my powder temperature
-
 # define params with default prefer_units
 weight, diameter = 300, 0.338
 # or define with specified prefer_units
@@ -30,7 +28,7 @@ zero_atmo = Atmo(
 zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 zero_distance=Distance.Meter(100)
 
-calc = Calculator()
+calc = Calculator(_config={'use_powder_sensitivity': True, })
 calc.set_weapon_zero(zero, zero_distance)
 
 current_atmo = Atmo(
