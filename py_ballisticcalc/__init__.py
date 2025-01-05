@@ -133,6 +133,7 @@ __all__ = [
     'DragModelMultiBC',
     'TrajectoryData',
     'HitResult',
+    'DangerSpace',
     'TrajFlag',
     'Atmo',
     'Wind',
