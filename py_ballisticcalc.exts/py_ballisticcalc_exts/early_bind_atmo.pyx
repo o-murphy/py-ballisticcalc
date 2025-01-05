@@ -6,9 +6,9 @@ cdef double cSpeedOfSoundImperial = 49.0223
 cdef double cLapseRateImperial = -3.56616e-03
 
 @final
-cdef class EarlyBindAtmo:
+cdef class _EarlyBindAtmo:
 
-    def __cinit__(EarlyBindAtmo self, object atmo):
+    def __cinit__(_EarlyBindAtmo self, object atmo):
         self._t0 = atmo._t0
         self._a0 = atmo._a0
         self._mach1 = atmo._mach1
@@ -16,7 +16,7 @@ cdef class EarlyBindAtmo:
 
     # Function to calculate density factor and Mach at altitude
     cdef void get_density_factor_and_mach_for_altitude(
-            EarlyBindAtmo self, double altitude, double* density_ratio, double* mach
+            _EarlyBindAtmo self, double altitude, double* density_ratio, double* mach
     ) nogil:
         """
         :param altitude: ASL in units of feet

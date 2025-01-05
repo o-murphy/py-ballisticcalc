@@ -280,7 +280,7 @@ class TrajectoryCalc:
 
     def __init__(self, ammo: Ammo, _config: Config):
         self.ammo: Ammo = ammo
-        self._config: Config = _config
+        self.__config: Config = _config
 
         self._bc: float = self.ammo.dm.BC
         self._table_data: List[DragDataPoint] = ammo.dm.drag_table
@@ -300,7 +300,7 @@ class TrajectoryCalc:
         :param step: proposed step size
         :return: step size for calculations (in feet)
         """
-        preferred_step = self._config.max_calc_step_size_feet
+        preferred_step = self.__config.max_calc_step_size_feet
         if step == 0:
             return preferred_step / 2.0
         return min(step, preferred_step) / 2.0
@@ -329,9 +329,7 @@ class TrajectoryCalc:
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = self.get_calc_step()
-        print("STEEEP", self.calc_step)
-        # if _globalUsePowderSensitivity:
-        if self._config.use_powder_sensitivity:
+        if self.__config.use_powder_sensitivity:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
@@ -345,8 +343,8 @@ class TrajectoryCalc:
         """
         self._init_trajectory(shot_info)
 
-        _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
-        _cMaxIterations = self._config.cMaxIterations
+        _cZeroFindingAccuracy = self.__config.cZeroFindingAccuracy
+        _cMaxIterations = self.__config.cMaxIterations
 
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
@@ -383,8 +381,8 @@ class TrajectoryCalc:
         :param step: Frequency (in feet down range) to record TrajectoryData
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
-        _cMinimumVelocity = self._config.cMinimumVelocity
-        _cMaximumDrop = self._config.cMaximumDrop
+        _cMinimumVelocity = self.__config.cMinimumVelocity
+        _cMaximumDrop = self.__config.cMaximumDrop
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         time: float = .0
