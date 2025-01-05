@@ -12,7 +12,6 @@ import os
 import sys
 from typing_extensions import Dict, Union, Optional
 
-# from .backend import *
 from .trajectory_calc import *
 from .conditions import *
 from .drag_model import *
@@ -116,6 +115,7 @@ basicConfig = _basic_config
 
 basicConfig()
 
+# pylint: disable=duplicate-code
 __all__ = [
     'Calculator',
     'basicConfig',
@@ -133,6 +133,7 @@ __all__ = [
     'DragModelMultiBC',
     'TrajectoryData',
     'HitResult',
+    'DangerSpace',
     'TrajFlag',
     'Atmo',
     'Wind',

@@ -370,6 +370,29 @@ class AbstractUnit:
 class Distance(AbstractUnit):
     """Distance unit"""
 
+    @property
+    def _inch(self) -> float:
+        """
+        Interhal shortcut for Distance() >> Distance.Inch
+
+        Returns:
+            float: The calculated value in inch.
+        """
+        return self._value
+
+    @property
+    def _feet(self) -> float:
+        """
+        Interhal shortcut for Distance() >> Distance.Foot
+
+        This property converts the internal value (assumed to be in inches)
+        to feet by dividing it by 12.
+
+        Returns:
+            float: The calculated value in feet.
+        """
+        return self._value / 12
+
     def to_raw(self, value: float, units: Unit):
         if units == Distance.Inch:
             return value
@@ -435,6 +458,16 @@ class Distance(AbstractUnit):
 class Pressure(AbstractUnit):
     """Pressure unit"""
 
+    @property
+    def _inHg(self) -> float:
+        """
+        Interhal shortcut for Pressure() >> Distance.InHg
+
+        Returns:
+            float: The calculated value in InHg.
+        """
+        return self._value / 25.4
+
     def to_raw(self, value: float, units: Unit):
         if units == Pressure.MmHg:
             return value
@@ -474,6 +507,16 @@ class Pressure(AbstractUnit):
 
 class Weight(AbstractUnit):
     """Weight unit"""
+
+    @property
+    def _grain(self) -> float:
+        """
+        Interhal shortcut for Weight() >> Distance.Grain
+
+        Returns:
+            float: The calculated value in grain.
+        """
+        return self._value
 
     def to_raw(self, value: float, units: Unit):
         if units == Weight.Grain:
@@ -520,6 +563,16 @@ class Weight(AbstractUnit):
 class Temperature(AbstractUnit):
     """Temperature unit"""
 
+    @property
+    def _F(self) -> float:
+        """
+        Interhal shortcut for Temperature() >> Temperature.Fahrenheit
+
+        Returns:
+            float: The calculated value in Fahrenheit.
+        """
+        return self._value
+
     def to_raw(self, value: float, units: Unit):
         if units == Temperature.Fahrenheit:
             return value
@@ -554,6 +607,16 @@ class Temperature(AbstractUnit):
 
 class Angular(AbstractUnit):
     """Angular unit"""
+
+    @property
+    def _rad(self):
+        """
+        Interhal shortcut for Angular() >> Angular.Radian
+
+        Returns:
+            float: The calculated value in rad.
+        """
+        return self._value
 
     def to_raw(self, value: float, units: Unit):
         if units == Angular.Radian:
@@ -616,6 +679,19 @@ class Angular(AbstractUnit):
 
 class Velocity(AbstractUnit):
     """Velocity unit"""
+
+    @property
+    def _fps(self) -> float:
+        """
+        Interhal shortcut for Velocity() >> Velocity.FPS
+
+        This property converts the internal value (assumed to be in mps)
+        to fps by multiplying it by 3.2808399.
+
+        Returns:
+            float: The calculated value in fps.
+        """
+        return self._value * 3.2808399
 
     def to_raw(self, value: float, units: Unit):
         if units == Velocity.MPS:

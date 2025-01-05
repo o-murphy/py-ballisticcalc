@@ -1,6 +1,4 @@
 """Implements a point of trajectory class in applicable data types"""
-import logging
-import math
 from dataclasses import dataclass, field
 from enum import IntFlag
 
@@ -9,28 +7,8 @@ from typing_extensions import NamedTuple, Optional, Union, Any, Tuple
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
 
-pandas: Any
 DataFrame: Any
-matplotlib: Any
-Polygon: Any
 Axes: Any
-
-try:
-    import pandas  # type: ignore
-except ImportError as error:
-    logging.warning("Install pandas to convert trajectory to pandas.DataFrame")
-    pandas = None
-
-try:
-    import matplotlib  # type: ignore
-    from matplotlib.patches import Polygon  # type: ignore
-except ImportError as error:
-    logging.warning("Install matplotlib to get results as a plot")
-    matplotlib = None
-    Polygon = None
-
-PLOT_FONT_HEIGHT = 72
-PLOT_FONT_SIZE = 552 / PLOT_FONT_HEIGHT
 
 
 class TrajFlag(IntFlag):
@@ -156,36 +134,16 @@ class DangerSpace(NamedTuple):
             + f'ranges from {self.begin.distance << PreferredUnits.distance} ' \
             + f'to {self.end.distance << PreferredUnits.distance}'
 
+    # pylint: disable=import-outside-toplevel
     def overlay(self, ax: 'Axes', label: Optional[str] = None):  # type: ignore
         """Highlights danger-space region on plot"""
-        if matplotlib is None or not Polygon:
-            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
-
-        cosine = math.cos(self.look_angle >> Angular.Radian)
-        begin_dist = (self.begin.distance >> PreferredUnits.distance) * cosine
-        begin_drop = (self.begin.height >> PreferredUnits.drop) * cosine
-        end_dist = (self.end.distance >> PreferredUnits.distance) * cosine
-        end_drop = (self.end.height >> PreferredUnits.drop) * cosine
-        range_dist = (self.at_range.distance >> PreferredUnits.distance) * cosine
-        range_drop = (self.at_range.height >> PreferredUnits.drop) * cosine
-        h = self.target_height >> PreferredUnits.drop
-
-        # Target position and height:
-        ax.plot((range_dist, range_dist), (range_drop + h / 2, range_drop - h / 2),
-                color='r', linestyle=':')
-        # Shaded danger-space region:
-        vertices = (
-            (begin_dist, begin_drop), (end_dist, begin_drop),
-            (end_dist, end_drop), (begin_dist, end_drop)
-        )
-        polygon = Polygon(vertices, closed=True,
-                          edgecolor='none', facecolor='r', alpha=0.3)
-        ax.add_patch(polygon)
-        if label is None:  # Add default label
-            label = f"Danger space\nat {self.at_range.distance << PreferredUnits.distance}"
-        if label != '':
-            ax.text(begin_dist + (end_dist - begin_dist) / 2, end_drop, label, color='r',
-                    linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
+        try:
+            from py_ballisticcalc.visualize.plot import add_danger_space_overlay  # type: ignore
+            add_danger_space_overlay(self, ax, label)
+        except ImportError as err:
+            raise ImportError(
+                "Use `pip install py_ballisticcalc[charts]` to get results as a plot"
+            ) from err
 
 
 @dataclass(frozen=True)
@@ -236,6 +194,7 @@ class HitResult:
             )
         return self.trajectory[i]
 
+    # pylint: disable=import-outside-toplevel
     def danger_space(self,
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],
@@ -263,7 +222,6 @@ class HitResult:
             look_angle = PreferredUnits.angular(look_angle)
 
         # Get index of first trajectory point with distance >= at_range
-        print(at_range)
         if (index := self.index_at_distance(at_range)) < 0:
             raise ArithmeticError(
                 f"Calculated trajectory doesn't reach requested distance {at_range}"
@@ -301,178 +259,30 @@ class HitResult:
                            find_end_danger(index),
                            look_angle)
 
+    # pylint: disable=import-outside-toplevel
     def dataframe(self, formatted: bool = False) -> 'DataFrame':  # type: ignore
         """
         :param formatted: False for values as floats; True for strings with prefer_units
         :return: the trajectory table as a DataFrame
         """
-        if pandas is None:
-            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame")
-        col_names = list(TrajectoryData._fields)
-        if formatted:
-            trajectory = [p.formatted() for p in self]
-        else:
-            trajectory = [p.in_def_units() for p in self]
-        return pandas.DataFrame(trajectory, columns=col_names)
+        try:
+            from py_ballisticcalc.visualize.dataframe import hit_result_as_dataframe
+            return hit_result_as_dataframe(self, formatted)
+        except ImportError as err:
+            raise ImportError(
+                "Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame"
+            )from err
 
+    # pylint: disable=import-outside-toplevel
     def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':  # type: ignore
         """:return: graph of the trajectory"""
-        colors = {
-            "trajectory": (130 / 255, 179 / 255, 102 / 255, 1.0),
-            "frame": (215 / 255, 155 / 255, 0),
-            "velocity": (108 / 255, 142 / 255, 191 / 255, 1.0),
-            "sight": (150 / 255, 115 / 255, 166 / 255, 1.0),
-            "barrel": (184 / 255, 84 / 255, 80 / 255, 1.0),
-            "face": (0, 0, 0, 0),
-            TrajFlag.ZERO_UP: (215 / 255, 155 / 255, 0),
-            TrajFlag.ZERO_DOWN: (108 / 255, 142 / 255, 191 / 255, 1.0),
-            TrajFlag.MACH: (184 / 255, 84 / 255, 80 / 255, 1.0)
-        }
-
-        if look_angle is None:
-            look_angle = self.shot.look_angle
-
-        if matplotlib is None:
-            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
-        if not self.extra:
-            logging.warning("HitResult.plot: To show extended data"
-                            "Use Calculator.fire(..., extra_data=True)")
-        font_size = PLOT_FONT_SIZE
-        df = self.dataframe()
-        fig, ax = matplotlib.pyplot.subplots()
-
-        ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol,
-                     color=colors['trajectory'], linewidth=2, ax=ax)
-        max_range = self.trajectory[-1].distance >> PreferredUnits.distance
-
-        for p in self.trajectory:
-            if TrajFlag(p.flag) & TrajFlag.ZERO:
-                ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-                        [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':', color=colors[TrajFlag(p.flag) & TrajFlag.ZERO])
-                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
-                        f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
-                        fontsize=font_size, rotation=90, color=colors[TrajFlag(p.flag) & TrajFlag.ZERO])
-            if TrajFlag(p.flag) & TrajFlag.MACH:
-                ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-                        [df['height'].min(), p.height >> PreferredUnits.drop],
-                        linestyle=':', color=colors[TrajFlag.MACH])
-                ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
-                        "Mach 1", fontsize=font_size, rotation=90, color=colors[TrajFlag.MACH])
-
-        # Transparent figure and axes background
-        fig.patch.set_alpha(0.0)  # Set the figure (background) to transparent
-        ax.patch.set_alpha(0.0)  # Set the axis background to transparent
-
-        max_range_in_drop_units = self.trajectory[-1].distance >> PreferredUnits.drop
-        # Sight line
-        x_sight = [0, df.distance.max()]
-        y_sight = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
-        ax.plot(x_sight, y_sight, linestyle='--', color=colors['sight'])
-        # Barrel pointing line
-        x_bbl = [0, df.distance.max()]
-        y_bbl = [-(self.shot.weapon.sight_height >> PreferredUnits.drop),
-                 max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
-                 - (self.shot.weapon.sight_height >> PreferredUnits.drop)]
-        ax.plot(x_bbl, y_bbl, linestyle=':', color=colors['barrel'])
-        # Line labels
-        sight_above_bbl = y_sight[1] > y_bbl[1]
-        angle = math.degrees(math.atan((y_sight[1] - y_sight[0]) / (x_sight[1] - x_sight[0])))
-        ax.text(x_sight[1], y_sight[1], "Sight line", linespacing=1.2,
-                rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
-                fontsize=font_size, color=colors['sight'], ha='right',
-                va='bottom' if sight_above_bbl else 'top')
-        angle = math.degrees(math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0])))
-        ax.text(x_bbl[1], y_bbl[1], "Barrel pointing", linespacing=1.2,
-                rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
-                fontsize=font_size, color=colors['barrel'], ha='right',
-                va='top' if sight_above_bbl else 'bottom')
-        # Plot velocity (on secondary axis)
-        df.plot(x='distance', xlabel=PreferredUnits.distance.symbol,
-                y=['velocity'], ylabel=PreferredUnits.velocity.symbol,
-                secondary_y=True, color=colors['velocity'],
-                ylim=[0, df['velocity'].max()], ax=ax)
-        # Let secondary shine through
-        ax.set_zorder(1)
-        ax.set_facecolor(colors['face'])
-
-        # Set frame (border) color to rgb(215, 155, 0)
-        for spine in ax.spines.values():
-            spine.set_edgecolor(colors['frame'])
-            spine.set_linewidth(1)  # Optional: set the thickness of the frame
-
-        # Set axis labels to the same color (rgb(215, 155, 0))
-        ax.xaxis.label.set_color(colors['frame'])  # X-axis label color
-        ax.yaxis.label.set_color(colors['frame'])  # Y-axis label color
-        ax.right_ax.yaxis.label.set_color(colors['frame'])  # Secondary Y-axis label color (if applicable)
-
-        # Set the ticks color to match the frame and labels (optional)
-        ax.tick_params(axis='x', colors=colors['frame'])
-        ax.tick_params(axis='y', colors=colors['frame'])
-        ax.right_ax.tick_params(axis='y', colors=colors['frame'])  # For the secondary y-axis
-
-        return ax
-
-    # def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':  # type: ignore
-    #     """:return: graph of the trajectory"""
-    #     if look_angle is None:
-    #         look_angle = self.shot.look_angle
-    #
-    #     if matplotlib is None:
-    #         raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
-    #     if not self.extra:
-    #         logging.warning("HitResult.plot: To show extended data"
-    #                         "Use Calculator.fire(..., extra_data=True)")
-    #     font_size = PLOT_FONT_SIZE
-    #     df = self.dataframe()
-    #     ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol)
-    #     max_range = self.trajectory[-1].distance >> PreferredUnits.distance
-    #
-    #     for p in self.trajectory:
-    #         if TrajFlag(p.flag) & TrajFlag.ZERO:
-    #             ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-    #                     [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
-    #             ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
-    #                     f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
-    #                     fontsize=font_size, rotation=90)
-    #         if TrajFlag(p.flag) & TrajFlag.MACH:
-    #             ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-    #                     [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':')
-    #             ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
-    #                     "Mach 1", fontsize=font_size, rotation=90)
-    #
-    #     max_range_in_drop_units = self.trajectory[-1].distance >> PreferredUnits.drop
-    #     # Sight line
-    #     x_sight = [0, df.distance.max()]
-    #     y_sight = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
-    #     ax.plot(x_sight, y_sight, linestyle='--', color=[.3, 0, .3, .5])
-    #     # Barrel pointing line
-    #     x_bbl = [0, df.distance.max()]
-    #     y_bbl = [-(self.shot.weapon.sight_height >> PreferredUnits.drop),
-    #              max_range_in_drop_units * math.tan(self.trajectory[0].angle >> Angular.Radian)
-    #              - (self.shot.weapon.sight_height >> PreferredUnits.drop)]
-    #     ax.plot(x_bbl, y_bbl, linestyle=':', color=[0, 0, 0, .5])
-    #     # Line labels
-    #     sight_above_bbl = y_sight[1] > y_bbl[1]
-    #     angle = math.degrees(math.atan((y_sight[1] - y_sight[0]) / (x_sight[1] - x_sight[0])))
-    #     ax.text(x_sight[1], y_sight[1], "Sight line", linespacing=1.2,
-    #             rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
-    #             fontsize=font_size, color=[.3, 0, .3, 1], ha='right',
-    #             va='bottom' if sight_above_bbl else 'top')
-    #     angle = math.degrees(math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0])))
-    #     ax.text(x_bbl[1], y_bbl[1], "Barrel pointing", linespacing=1.2,
-    #             rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
-    #             fontsize=font_size, color='k', ha='right',
-    #             va='top' if sight_above_bbl else 'bottom')
-    #     # Plot velocity (on secondary axis)
-    #     df.plot(x='distance', xlabel=PreferredUnits.distance.symbol,
-    #             y=['velocity'], ylabel=PreferredUnits.velocity.symbol,
-    #             secondary_y=True, color=[0, .3, 0, .5],
-    #             ylim=[0, df['velocity'].max()], ax=ax)
-    #     # Let secondary shine through
-    #     ax.set_zorder(1)
-    #     ax.set_facecolor([0, 0, 0, 0])
-    #
-    #     return ax
+        try:
+            from py_ballisticcalc.visualize.plot import hit_result_as_plot  # type: ignore
+            return hit_result_as_plot(self, look_angle)
+        except ImportError as err:
+            raise ImportError(
+                "Use `pip install py_ballisticcalc[charts]` to get results as a plot"
+            ) from err
 
 
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag')
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')

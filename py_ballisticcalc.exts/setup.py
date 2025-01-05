@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 """setup.py script for py_ballisticcalc library"""
-
 from setuptools import setup, Extension
-from Cython.Build import cythonize
+try:
+    from Cython.Build import cythonize
+except ImportError:
+    import sys
+    # use this command to skip build wheel and compile modules on unsupported platforms
+    # pip install --no-build-isolation --no-binary :all: py-ballisticcalc.exts
+    setup()
+    sys.exit(0)  # Stop installation
+
 
 compiler_directives = {
     "language_level": 3,

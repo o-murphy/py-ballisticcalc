@@ -157,6 +157,7 @@ class _TrajectoryDataFilter:
     def clear_current_flag(self):
         self.current_flag = TrajFlag.NONE
 
+    # pylint: disable=too-many-positional-arguments
     def should_record(self,
                       range_vector: Vector,
                       velocity: float,
@@ -192,12 +193,12 @@ class _TrajectoryDataFilter:
             # Zero reference line is the sight line defined by look_angle
             reference_height = range_vector.x * math.tan(look_angle)
             # If we haven't seen ZERO_UP, we look for that first
-            if not (self.seen_zero & TrajFlag.ZERO_UP):
+            if not (self.seen_zero & TrajFlag.ZERO_UP):  # pylint: disable=superfluous-parens
                 if range_vector.y >= reference_height:
                     self.current_flag |= TrajFlag.ZERO_UP
                     self.seen_zero |= TrajFlag.ZERO_UP
             # We've crossed above sight line; now look for crossing back through it
-            elif not (self.seen_zero & TrajFlag.ZERO_DOWN):
+            elif not (self.seen_zero & TrajFlag.ZERO_DOWN):  # pylint: disable=superfluous-parens
                 if range_vector.y < reference_height:
                     self.current_flag |= TrajFlag.ZERO_DOWN
                     self.seen_zero |= TrajFlag.ZERO_DOWN
@@ -257,6 +258,7 @@ class ZeroFindingError(RuntimeError):
                          f'feet, after {iterations_count} iterations.')
 
 
+# pylint: disable=too-many-instance-attributes
 class TrajectoryCalc:
     """All calculations are done in units of feet and fps"""
 
@@ -269,8 +271,11 @@ class TrajectoryCalc:
         self.ammo: Ammo = ammo
         self._bc: float = self.ammo.dm.BC
         self._table_data: List[DragDataPoint] = ammo.dm.drag_table
-        self._curve = calculate_curve(self._table_data)
-        self.gravity_vector = Vector(.0, cGravityConstant, .0)
+        self._curve: List[CurvePoint] = calculate_curve(self._table_data)
+        self.gravity_vector: Vector = Vector(.0, cGravityConstant, .0)
+
+        # use calculation over list[double] instead of list[DragDataPoint]
+        self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
 
     @property
     def table_data(self) -> List[DragDataPoint]:
@@ -458,7 +463,9 @@ class TrajectoryCalc:
             Thus: The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
         :return: Drag coefficient at the given mach number
         """
-        cd = calculate_by_curve(self._table_data, self._curve, mach)
+        # cd = calculate_by_curve(self._table_data, self._curve, mach)
+        # use calculation over list[double] instead of list[DragDataPoint]
+        cd = _calculate_by_curve_and_mach_list(self.__mach_list, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
     def spin_drift(self, time) -> float:
@@ -510,6 +517,7 @@ def wind_to_vector(wind: Wind) -> Vector:
     return Vector(range_component, 0, cross_component)
 
 
+# pylint: disable=too-many-positional-arguments
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
                           density_factor: float, drag: float, weight: float, flag: TrajFlag) -> TrajectoryData:
@@ -612,7 +620,8 @@ def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
     return curve
 
 
-def calculate_by_curve(data: List, curve: List, mach: float) -> float:
+# use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
+def calculate_by_curve(data: List[DragDataPoint], curve: List[CurvePoint], mach: float) -> float:
     """
     Binary search for drag coefficient based on Mach number
     :param data: data
@@ -639,6 +648,34 @@ def calculate_by_curve(data: List, curve: List, mach: float) -> float:
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
 
+# Function to convert a list of DragDataPoint to an array of doubles containing only Mach values
+def _get_only_mach_data(data: List[DragDataPoint]) -> List[float]:
+    result = []
+    for dp in data:
+        result.append(dp.Mach)
+    return result
+
+
+def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurvePoint], mach: float) -> float:
+    num_points = len(curve)
+    mlo = 0
+    mhi = num_points - 2
+
+    while mhi - mlo > 1:
+        mid = (mhi + mlo) // 2
+        if mach_list[mid] < mach:
+            mlo = mid
+        else:
+            mhi = mid
+
+    if mach_list[mhi] - mach > mach - mach_list[mlo]:
+        m = mlo
+    else:
+        m = mhi
+    curve_m = curve[m]
+    return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
+
+
 try:
     # replace with cython based implementation
     from py_ballisticcalc_exts import (TrajectoryCalc, ZeroFindingError, Vector,  # type: ignore
@@ -653,6 +690,7 @@ try:
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
+
     print(error)
     warnings.warn("Library running in pure python mode. "
                   "For better performance install 'py_ballisticcalc.exts' package")

@@ -1,25 +1,28 @@
-import pyximport; pyximport.install(language_level=3)
-from py_ballisticcalc import *
 import matplotlib
-from matplotlib import pyplot as plt
+from py_ballisticcalc import *
+from py_ballisticcalc.visualize.plot import show_hit_result_plot
 
-matplotlib.use('TkAgg')
-
-Settings.Units.velocity = Velocity.MPS
+PreferredUnits.velocity = Velocity.MPS
 
 dm = DragModel(0.22, TableG7, 168, 0.308)
-ammo = Ammo(dm, 1.22, Velocity(2600, Velocity.FPS))
+ammo = Ammo(dm, Velocity.FPS(2600))
 weapon = Weapon(4, 100, 11.24, Angular.Mil(0))
 
-calc = Calculator(weapon, ammo)
-calc.calculate_elevation()
+calc = Calculator()
+zero_shot = Shot(weapon, ammo)
+calc.set_weapon_zero(zero_shot, Distance.Yard(100))
 
-shot = Shot(1200, zero_angle=calc.elevation, relative_angle=Angular.Mil(0))
-shot_result = calc.fire(shot, 0, extra_data=True)
+shot = Shot(weapon, ammo, relative_angle=Angular.Mil(0))
+shot_result = calc.fire(shot, Distance.Yard(1000), extra_data=True)
 danger_space = shot_result.danger_space(
     Distance.Yard(1000), Distance.Meter(1.5), Angular.Mil(0)
 )
 ax = shot_result.plot()
 danger_space.overlay(ax)
-# ax.legend()
-plt.show()
+print(
+    shot_result.dataframe()
+)
+
+matplotlib.use('TkAgg')
+show_hit_result_plot()
+

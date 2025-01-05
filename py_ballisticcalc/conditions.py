@@ -246,6 +246,7 @@ class Shot:
     atmo: Atmo
     _winds: List[Wind]  # use property Shot.winds to get sorted winds
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(self,
                  weapon: Weapon,
                  ammo: Ammo,
@@ -266,6 +267,7 @@ class Shot:
 
     @property
     def winds(self) -> Tuple[Wind, ...]:
+        """Returns sorted Tuple[Wind, ...]"""
         # guarantee that winds returns sorted by Wind.until distance
         return tuple(sorted(self._winds, key=lambda wind: wind.until_distance.raw_value))
 

@@ -1,5 +1,5 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan, floor
-cimport cython
+from cython cimport final
 from py_ballisticcalc_exts.early_bind_atmo cimport EarlyBindAtmo
 
 from py_ballisticcalc.conditions import Shot, Wind
@@ -44,7 +44,7 @@ def set_global_use_powder_sensitivity(value: bool) -> None:
     global _globalUsePowderSensitivity
     if not isinstance(value, bool):
         raise TypeError(f"set_global_use_powder_sensitivity value={value} is not a boolean")
-    _globalUsePowderSensitivity = int(value)
+    _globalUsePowderSensitivity = <int>value
 
 def reset_globals() -> None:
     global _globalUsePowderSensitivity, _globalMaxCalcStepSize
@@ -132,6 +132,7 @@ cdef class Vector:
     def __neg__(Vector self):
         return self.negate()
 
+@final
 cdef class _TrajectoryDataFilter:
     cdef:
         int filter, current_flag, seen_zero
@@ -197,6 +198,7 @@ cdef class _TrajectoryDataFilter:
                     self.current_flag |= CTrajFlag.ZERO_DOWN
                     self.seen_zero |= CTrajFlag.ZERO_DOWN
 
+@final
 cdef class _WindSock:
     cdef object winds
     cdef int current
@@ -224,7 +226,7 @@ cdef class _WindSock:
         else:
             cur_wind = self.winds[self.current]
             self._last_vector_cache = wind_to_vector(cur_wind)
-            self.next_range = cur_wind.until_distance >> Distance.Foot  # Assuming 1.0 is for Distance.Foot
+            self.next_range = cur_wind.until_distance._feet  # Assuming 1.0 is for Distance.Foot
         return self._last_vector_cache
 
     cdef Vector vector_for_range(_WindSock self, double next_range):
@@ -285,12 +287,17 @@ cdef class TrajectoryCalc:
         double muzzle_velocity
         double stability_coefficient
 
+        list __mach_list
+
     def __init__(self, ammo: Ammo):
         self.ammo = ammo
         self._bc = self.ammo.dm.BC
         self._table_data = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
         self.gravity_vector = Vector(.0, cGravityConstant, .0)
+
+        # get list[double] instead of list[DragDataPoint]
+        self.__mach_list = _get_only_mach_data(self._table_data)
 
     @property
     def table_data(self) -> list:
@@ -311,31 +318,31 @@ cdef class TrajectoryCalc:
             filter_flags = CTrajFlag.ALL
 
         self._init_trajectory(shot_info)
-        return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags)
+        return self._trajectory(shot_info, max_range._feet, dist_step._feet, filter_flags)
 
     cdef _init_trajectory(self, shot_info: Shot):
-        self.look_angle = shot_info.look_angle >> Angular.Radian
-        self.twist = shot_info.weapon.twist >> Distance.Inch
-        self.length = shot_info.ammo.dm.length >> Distance.Inch
-        self.diameter = shot_info.ammo.dm.diameter >> Distance.Inch
-        self.weight = shot_info.ammo.dm.weight >> Weight.Grain
-        self.barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
-        self.barrel_azimuth = shot_info.barrel_azimuth >> Angular.Radian
-        self.sight_height = shot_info.weapon.sight_height >> Distance.Foot
-        self.cant_cosine = cos(shot_info.cant_angle >> Angular.Radian)
-        self.cant_sine = sin(shot_info.cant_angle >> Angular.Radian)
-        self.alt0 = shot_info.atmo.altitude >> Distance.Foot
+        self.look_angle = shot_info.look_angle._rad
+        self.twist = shot_info.weapon.twist._inch
+        self.length = shot_info.ammo.dm.length._inch
+        self.diameter = shot_info.ammo.dm.diameter._inch
+        self.weight = shot_info.ammo.dm.weight._grain
+        self.barrel_elevation = shot_info.barrel_elevation._rad
+        self.barrel_azimuth = shot_info.barrel_azimuth._rad
+        self.sight_height = shot_info.weapon.sight_height._feet
+        self.cant_cosine = cos(shot_info.cant_angle._rad)
+        self.cant_sine = sin(shot_info.cant_angle._rad)
+        self.alt0 = shot_info.atmo.altitude._feet
         self.calc_step = get_calc_step()
         if _globalUsePowderSensitivity:
-            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
+            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature)._fps # shortcut for >> Velocity.FPS
         else:
-            self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+            self.muzzle_velocity = shot_info.ammo.mv._fps # shortcut for >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     cdef _zero_angle(TrajectoryCalc self, object shot_info, object distance):
         cdef:
-            double zero_distance = cos(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
-            double height_at_zero = sin(shot_info.look_angle >> Angular.Radian) * (distance >> Distance.Foot)
+            double zero_distance = cos(shot_info.look_angle._rad) * distance._feet
+            double height_at_zero = sin(shot_info.look_angle._rad) * distance._feet
             double maximum_range = zero_distance
             int iterations_count = 0
             double zero_finding_error = cZeroFindingAccuracy * 2
@@ -352,7 +359,7 @@ cdef class TrajectoryCalc:
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
             t = self._trajectory(shot_info, maximum_range, zero_distance, CTrajFlag.NONE)[0]
-            height = t.height >> Distance.Foot
+            height = t.height._feet # use there internal shortcut instead of (t.height >> Distance.Foot)
             zero_finding_error = fabs(height - height_at_zero)
             if zero_finding_error > cZeroFindingAccuracy:
                 self.barrel_elevation -= (height - height_at_zero) / zero_distance
@@ -363,10 +370,12 @@ cdef class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    cdef _trajectory(TrajectoryCalc self, object shot_info,
+    cdef list _trajectory(TrajectoryCalc self, object shot_info,
                      double maximum_range, double step, int filter_flags):
         cdef:
-            double density_factor, mach, velocity, delta_time
+            double velocity, delta_time
+            double density_factor = .0
+            double mach = .0
             list ranges = []
             double time = .0
             double drag = .0
@@ -392,7 +401,7 @@ cdef class TrajectoryCalc:
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(
             filter_flags=filter_flags,
-            ranges_length=int(maximum_range / step) + 1
+            ranges_length=<int>((maximum_range / step) + 1)
         )
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
@@ -460,7 +469,9 @@ cdef class TrajectoryCalc:
         bc contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
         Thus: The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
         """
-        cdef double cd = calculate_by_curve(self._table_data, self._curve, mach)
+        # cdef double cd = calculate_by_curve(self._table_data, self._curve, mach)
+        # use calculation over list[double] instead of list[DragDataPoint]
+        cdef double cd = _calculate_by_curve_and_mach_list(self.__mach_list, self._curve, mach)
         return cd * 2.08551e-04 / self._bc
 
     cdef double spin_drift(self, double time):
@@ -483,16 +494,21 @@ cdef class TrajectoryCalc:
             length = self.length / self.diameter
             sd = 30 * self.weight / (pow(twist_rate, 2) * pow(self.diameter, 3) * length * (1 + pow(length, 2)))
             fv = pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
-            ft = atmo.temperature >> Temperature.Fahrenheit
-            pt = atmo.pressure >> Pressure.InHg
+            ft = atmo.temperature._F
+            pt = atmo.pressure._inHg
             ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
             return sd * fv * ftp
         return 0
 
 cdef Vector wind_to_vector(object wind):
     cdef:
-        double range_component = (wind.velocity >> Velocity.FPS) * cos(wind.direction_from >> Angular.Radian)
-        double cross_component = (wind.velocity >> Velocity.FPS) * sin(wind.direction_from >> Angular.Radian)
+        # no need convert it twice
+        double wind_velocity_fps = wind.velocity._fps  # shortcut for (wind.velocity >> Velocity.FPS)
+        double wind_direction_rad = wind.direction_from._rad  # shortcut for (wind.direction_from >> Angular.Radian)
+        # Downrange (x-axis) wind velocity component:
+        double range_component = wind_velocity_fps * cos(wind_direction_rad)
+        # Downrange (x-axis) wind velocity component:
+        double cross_component = wind_velocity_fps * sin(wind_direction_rad)
     return Vector(range_component, 0., cross_component)
 
 cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
@@ -523,15 +539,13 @@ cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vec
         flag=flag
     )
 
-@cython.cdivision(True)
 cdef double get_correction(double distance, double offset):
     if distance != 0:
         return atan(offset / distance)
     return 0  # better None
 
-@cython.cdivision(True)
 cdef double get_calc_step(double step = 0):
-    cdef double preferred_step = _globalMaxCalcStepSize >> Distance.Foot
+    cdef double preferred_step = _globalMaxCalcStepSize._feet  # shortcut for (_globalMaxCalcStepSize >> Distance.Foot)
     # cdef double defined_max = 0.5  # const will be better optimized with cython
     if step == 0:
         return preferred_step / 2.0
@@ -551,7 +565,7 @@ cdef list calculate_curve(list data_points):
 
     rate = (data_points[1].CD - data_points[0].CD) / (data_points[1].Mach - data_points[0].Mach)
     curve = [CurvePoint(0, rate, data_points[0].CD - data_points[0].Mach * rate)]
-    len_data_points = int(len(data_points))
+    len_data_points = len(data_points)
     len_data_range = len_data_points - 1
 
     for i in range(1, len_data_range):
@@ -575,22 +589,57 @@ cdef list calculate_curve(list data_points):
     curve.append(curve_point)
     return curve
 
+# use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
 cdef double calculate_by_curve(list data, list curve, double mach):
     cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint curve_m
 
-    num_points = int(len(curve))
+    num_points = len(curve)
     mlo = 0
     mhi = num_points - 2
 
     while mhi - mlo > 1:
-        mid = int(floor(mhi + mlo) / 2.0)
+        mid = (mhi + mlo) // 2
         if data[mid].Mach < mach:
             mlo = mid
         else:
             mhi = mid
 
     if data[mhi].Mach - mach > mach - data[mlo].Mach:
+        m = mlo
+    else:
+        m = mhi
+    curve_m = curve[m]
+    return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
+
+cdef list _get_only_mach_data(list data):
+    cdef int data_len = len(data)
+    cdef list result = [None] * data_len  # Preallocate the list to avoid resizing during appending
+    cdef int i
+    cdef object dp  # Assuming dp is an object with a Mach attribute
+
+    for i in range(data_len):
+        dp = data[i]  # Direct indexing is more efficient than using `PyList_GET_ITEM`
+        result[i] = dp.Mach  # Directly assign the value to the pre-allocated result list
+
+    return result
+
+cdef double _calculate_by_curve_and_mach_list(list mach_list, list curve, double mach):
+    cdef int num_points, mlo, mhi, mid, m
+    cdef CurvePoint curve_m
+
+    num_points = len(curve)
+    mlo = 0
+    mhi = num_points - 2
+
+    while mhi - mlo > 1:
+        mid = (mhi + mlo) // 2
+        if mach_list[mid] < mach:
+            mlo = mid
+        else:
+            mhi = mid
+
+    if mach_list[mhi] - mach > mach - mach_list[mlo]:
         m = mlo
     else:
         m = mhi
