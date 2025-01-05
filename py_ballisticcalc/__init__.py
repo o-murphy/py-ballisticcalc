@@ -149,8 +149,8 @@ __all__ = [
     'UnitAliasError',
     'UnitTypeError',
     'UnitConversionError',
-    'AbstractUnit',
-    'AbstractUnitType',
+    'AbstractDimension',
+    'AbstractDimensionType',
     'UnitProps',
     'UnitPropsDict',
     'Distance',
@@ -162,6 +162,7 @@ __all__ = [
     'Weight',
     'PreferredUnits',
     'get_drag_tables_names',
+    'constants',
 ]
 
 # __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]

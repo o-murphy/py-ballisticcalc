@@ -5,7 +5,7 @@ from enum import IntFlag
 from typing_extensions import NamedTuple, Optional, Union, Any, Tuple
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractUnit, Unit, PreferredUnits
+from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractDimension, Unit, PreferredUnits
 
 DataFrame: Any
 Axes: Any
@@ -71,7 +71,7 @@ class TrajectoryData(NamedTuple):
         :return: matrix of formatted strings for each value of trajectory in default prefer_units
         """
 
-        def _fmt(v: AbstractUnit, u: Unit) -> str:
+        def _fmt(v: AbstractDimension, u: Unit) -> str:
             """simple formatter"""
             return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 

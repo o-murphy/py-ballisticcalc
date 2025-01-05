@@ -3,11 +3,10 @@
 import math
 from dataclasses import dataclass, field
 
-from typing_extensions import Union, List, Dict, Tuple, Optional, Final
+from typing_extensions import Union, List, Dict, Tuple, Optional
 
 from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
-
-cSpeedOfSoundMetric: Final = 340.0  # Speed of sound in standard atmosphere, in m/s
+from py_ballisticcalc.constants import cDegreesCtoK, cSpeedOfSoundMetric, cStandardTemperatureC
 
 
 @dataclass
@@ -42,9 +41,14 @@ class BCPoint:
         self.BC = BC
         self.V = PreferredUnits.velocity(V or 0)
         if V:
-            self.Mach = (self.V >> Velocity.MPS) / cSpeedOfSoundMetric
+            self.Mach = (self.V >> Velocity.MPS) / self._machC()
         elif Mach:
             self.Mach = Mach
+
+    @staticmethod
+    def _machC() -> float:
+        """:return: Mach 1 in m/s for Celsius temperature"""
+        return math.sqrt(1 + cStandardTemperatureC / cDegreesCtoK) * cSpeedOfSoundMetric
 
 
 DragTableDataType = Union[List[Dict[str, float]], List[DragDataPoint]]

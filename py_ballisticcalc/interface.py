@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing_extensions import Union, List
 
 # pylint: disable=import-error,no-name-in-module,wildcard-import
-# from py_ballisticcalc.backend import TrajectoryCalc
 from py_ballisticcalc.trajectory_calc import TrajectoryCalc
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint

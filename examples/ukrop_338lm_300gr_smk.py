@@ -1,5 +1,4 @@
 """Example of library usage"""
-
 from py_ballisticcalc import *
 
 
@@ -42,6 +41,7 @@ current_atmo = Atmo(
 )
 shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
 shot_result = calc.fire(shot, Distance.Meter(1000))
+
 
 from pprint import pprint
 fieldsss = TrajectoryData._fields

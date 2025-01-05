@@ -13,11 +13,11 @@ from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
 
-cZeroFindingAccuracy: Final = 0.000005
-cMinimumVelocity: Final = 50.0
-cMaximumDrop: Final = -15000
-cMaxIterations: Final = 20
-cGravityConstant: Final = -32.17405
+cZeroFindingAccuracy: Final[float] = 0.000005
+cMinimumVelocity: Final[float] = 50.0
+cMaximumDrop: Final[float] = -15000
+cMaxIterations: Final[float] = 20
+cGravityConstant: Final[float] = -32.17405
 
 _globalUsePowderSensitivity = False
 _globalMaxCalcStepSize: Distance = Distance.Foot(0.5)
