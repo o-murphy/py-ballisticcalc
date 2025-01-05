@@ -1,8 +1,11 @@
 # type: ignore
+# pylint: skip-file
+
 import math
 
 from typing_extensions import Optional
-from py_ballisticcalc import TrajFlag, PreferredUnits, Angular, DangerSpace
+from py_ballisticcalc.trajectory_data import TrajFlag, DangerSpace
+from py_ballisticcalc.unit import PreferredUnits, Angular
 
 try:
     import matplotlib

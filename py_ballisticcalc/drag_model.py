@@ -63,6 +63,7 @@ class DragModel:
     NOTE: .weight, .diameter, .length are only relevant for computing spin drift
     """
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(self, bc: float,
                  drag_table: DragTableDataType,
                  weight: Union[float, Weight] = 0,
@@ -70,7 +71,7 @@ class DragModel:
                  length: Union[float, Distance] = 0):
 
         if len(drag_table) <= 0:
-            # TODO: maybe have to require minimum size, cause few values don't give a valid result
+            # TODO: maybe have to require minimum items count, cause few values don't give a valid result
             raise ValueError('Received empty drag table')
         if bc <= 0:
             raise ValueError('Ballistic coefficient must be positive')

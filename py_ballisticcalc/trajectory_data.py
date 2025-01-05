@@ -134,7 +134,9 @@ class DangerSpace(NamedTuple):
             + f'ranges from {self.begin.distance << PreferredUnits.distance} ' \
             + f'to {self.end.distance << PreferredUnits.distance}'
 
+    # pylint: disable=import-outside-toplevel
     def overlay(self, ax: 'Axes', label: Optional[str] = None):  # type: ignore
+        """Highlights danger-space region on plot"""
         try:
             from py_ballisticcalc.visualize.plot import add_danger_space_overlay  # type: ignore
             add_danger_space_overlay(self, ax, label)
@@ -192,6 +194,7 @@ class HitResult:
             )
         return self.trajectory[i]
 
+    # pylint: disable=import-outside-toplevel
     def danger_space(self,
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],
@@ -256,6 +259,7 @@ class HitResult:
                            find_end_danger(index),
                            look_angle)
 
+    # pylint: disable=import-outside-toplevel
     def dataframe(self, formatted: bool = False) -> 'DataFrame':  # type: ignore
         """
         :param formatted: False for values as floats; True for strings with prefer_units
@@ -269,6 +273,7 @@ class HitResult:
                 "Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame"
             )from err
 
+    # pylint: disable=import-outside-toplevel
     def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':  # type: ignore
         """:return: graph of the trajectory"""
         try:

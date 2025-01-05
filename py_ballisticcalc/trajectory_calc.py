@@ -157,6 +157,7 @@ class _TrajectoryDataFilter:
     def clear_current_flag(self):
         self.current_flag = TrajFlag.NONE
 
+    # pylint: disable=too-many-positional-arguments
     def should_record(self,
                       range_vector: Vector,
                       velocity: float,
@@ -192,12 +193,12 @@ class _TrajectoryDataFilter:
             # Zero reference line is the sight line defined by look_angle
             reference_height = range_vector.x * math.tan(look_angle)
             # If we haven't seen ZERO_UP, we look for that first
-            if not (self.seen_zero & TrajFlag.ZERO_UP):
+            if not (self.seen_zero & TrajFlag.ZERO_UP):  # pylint: disable=superfluous-parens
                 if range_vector.y >= reference_height:
                     self.current_flag |= TrajFlag.ZERO_UP
                     self.seen_zero |= TrajFlag.ZERO_UP
             # We've crossed above sight line; now look for crossing back through it
-            elif not (self.seen_zero & TrajFlag.ZERO_DOWN):
+            elif not (self.seen_zero & TrajFlag.ZERO_DOWN):  # pylint: disable=superfluous-parens
                 if range_vector.y < reference_height:
                     self.current_flag |= TrajFlag.ZERO_DOWN
                     self.seen_zero |= TrajFlag.ZERO_DOWN
@@ -257,6 +258,7 @@ class ZeroFindingError(RuntimeError):
                          f'feet, after {iterations_count} iterations.')
 
 
+# pylint: disable=too-many-instance-attributes
 class TrajectoryCalc:
     """All calculations are done in units of feet and fps"""
 
@@ -515,6 +517,7 @@ def wind_to_vector(wind: Wind) -> Vector:
     return Vector(range_component, 0, cross_component)
 
 
+# pylint: disable=too-many-positional-arguments
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
                           density_factor: float, drag: float, weight: float, flag: TrajFlag) -> TrajectoryData:

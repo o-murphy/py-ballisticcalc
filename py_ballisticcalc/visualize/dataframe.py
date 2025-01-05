@@ -1,4 +1,6 @@
-from py_ballisticcalc import HitResult, TrajectoryData
+# pylint: skip-file
+
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 
 try:
     from pandas import DataFrame
