@@ -1,6 +1,7 @@
 """Unittests for the specific issues library"""
 
 import unittest
+from typing_extensions import Union
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
                               Angular, Calculator, RangeError, HitResult, logger)
 
@@ -20,7 +21,7 @@ class TestIssue96_97(unittest.TestCase):
 
         def must_fire(interface: Calculator, zero_shot,
                       trajectory_range, extra_data,
-                      **kwargs) -> (HitResult, RangeError | None):
+                      **kwargs) -> (HitResult, Union[RangeError, None]):
             """wrapper function to resolve RangeError and get HitResult"""
             try:
                 # try to get valid result
@@ -33,4 +34,4 @@ class TestIssue96_97(unittest.TestCase):
 
         # should return error
         self.assertIsInstance(err, RangeError)
-        self.assertIsInstance(hit_result, HitResult, "Expected HitResult but got %s" % type(hit_result))
+        self.assertIsInstance(hit_result, HitResult, f"Expected HitResult but got {type(hit_result)}")
