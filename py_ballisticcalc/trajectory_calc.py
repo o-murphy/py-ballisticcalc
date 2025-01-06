@@ -12,6 +12,24 @@ from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
+from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
+
+__all__ = (
+    'TrajectoryCalc',
+    'Vector',
+    'get_global_max_calc_step_size',
+    'get_global_use_powder_sensitivity',
+    'set_global_max_calc_step_size',
+    'set_global_use_powder_sensitivity',
+    'reset_globals',
+    'cZeroFindingAccuracy',
+    'cMinimumVelocity',
+    'cMaximumDrop',
+    'cMaxIterations',
+    'cGravityConstant',
+    'cMinimumAltitude',
+    'Config',
+)
 
 cZeroFindingAccuracy: Final[float] = 0.000005
 cMinimumVelocity: Final[float] = 50.0
@@ -245,32 +263,6 @@ class _WindSock:
         return self._last_vector_cache
 
 
-class ZeroFindingError(RuntimeError):
-    """
-    Exception for zero-finding issues.
-    Contains:
-    - Zero finding error magnitude
-    - Iteration count
-    - Last barrel elevation (Angular instance)
-    """
-
-    def __init__(self,
-                 zero_finding_error: float,
-                 iterations_count: int,
-                 last_barrel_elevation: Angular):
-        """
-        Parameters:
-        - zero_finding_error: The error magnitude (float)
-        - iterations_count: The number of iterations performed (int)
-        - last_barrel_elevation: The last computed barrel elevation (Angular)
-        """
-        self.zero_finding_error: float = zero_finding_error
-        self.iterations_count: int = iterations_count
-        self.last_barrel_elevation: Angular = last_barrel_elevation
-        super().__init__(f'Zero vertical error {zero_finding_error} '
-                         f'feet, after {iterations_count} iterations.')
-
-
 # pylint: disable=too-many-instance-attributes
 class TrajectoryCalc:
     """All calculations are done in units of feet and fps"""
@@ -467,7 +459,14 @@ class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                break
+                if velocity < _cMinimumVelocity:
+                    reason = RangeError.MinimumVelocityReached
+                elif range_vector.y < _cMaximumDrop:
+                    reason = RangeError.MaximumDropReached
+                else:
+                    reason = RangeError.MinimumAltitudeReached
+                raise RangeError(reason, ranges)
+                # break
             # endregion
 
         # endregion
@@ -703,13 +702,12 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
 
 try:
     # replace with cython based implementation
-    from py_ballisticcalc_exts import (TrajectoryCalc, ZeroFindingError, Vector,  # type: ignore
+    from py_ballisticcalc_exts import (TrajectoryCalc, Vector,  # type: ignore
                                        get_global_max_calc_step_size,
                                        get_global_use_powder_sensitivity,
                                        set_global_max_calc_step_size,
                                        set_global_use_powder_sensitivity,
-                                       reset_globals,
-                                       )
+                                       reset_globals)
 
     from .logger import logger
 
@@ -719,21 +717,3 @@ except ImportError as error:
 
     warnings.warn("Library running in pure python mode. "
                   "For better performance install 'py_ballisticcalc.exts' binary package")
-
-__all__ = (
-    'TrajectoryCalc',
-    'ZeroFindingError',
-    'Vector',
-    'get_global_max_calc_step_size',
-    'get_global_use_powder_sensitivity',
-    'set_global_max_calc_step_size',
-    'set_global_use_powder_sensitivity',
-    'reset_globals',
-    'cZeroFindingAccuracy',
-    'cMinimumVelocity',
-    'cMaximumDrop',
-    'cMaxIterations',
-    'cGravityConstant',
-    'cMinimumAltitude',
-    'Config',
-)

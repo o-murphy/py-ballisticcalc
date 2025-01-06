@@ -10,21 +10,10 @@ from math import pi, atan, tan
 from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Self, Final
 
 from py_ballisticcalc.logger import logger
+from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, UnitAliasError
 
 # pylint: disable=invalid-name
 AbstractDimensionType = TypeVar('AbstractDimensionType', bound='AbstractDimension')
-
-
-class UnitTypeError(Exception):
-    """Unit type error"""
-
-
-class UnitConversionError(UnitTypeError):
-    """Unit conversion error"""
-
-
-class UnitAliasError(Exception):
-    """Unit alias error"""
 
 
 # pylint: disable=invalid-name

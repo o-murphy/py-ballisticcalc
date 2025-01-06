@@ -177,6 +177,7 @@ config: InterfaceConfigDict = {
   # 'cMaximumDrop': ...,
   # 'cMaxIterations': ...,
   # 'cGravityConstant': ...,
+  # 'cMinimumAltitude': ...,
 }
 calc = Calculator(_config=config)
 ```

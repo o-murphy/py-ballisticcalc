@@ -7,10 +7,11 @@ from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import *
+from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
+
 
 __all__ = (
     'TrajectoryCalc',
-    'ZeroFindingError',
     'Vector',
     'get_global_max_calc_step_size',
     'get_global_use_powder_sensitivity',
@@ -241,32 +242,6 @@ cdef class _WindSock:
         return self._last_vector_cache
 
 
-class ZeroFindingError(RuntimeError):
-    """
-    Exception for zero-finding issues.
-    Contains:
-    - Zero finding error magnitude
-    - Iteration count
-    - Last barrel elevation (Angular instance)
-    """
-
-    def __init__(self,
-                 zero_finding_error: float,
-                 iterations_count: int,
-                 last_barrel_elevation: Angular):
-        """
-        Parameters:
-        - zero_finding_error: The error magnitude (float)
-        - iterations_count: The number of iterations performed (int)
-        - last_barrel_elevation: The last computed barrel elevation (Angular)
-        """
-        self.zero_finding_error: float = zero_finding_error
-        self.iterations_count: int = iterations_count
-        self.last_barrel_elevation: Angular = last_barrel_elevation
-        super().__init__(f'Zero vertical error {zero_finding_error} '
-                         f'feet, after {iterations_count} iterations.')
-
-
 cdef class TrajectoryCalc:
     cdef:
         object ammo
@@ -475,7 +450,14 @@ cdef class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                break
+                if velocity < _cMinimumVelocity:
+                    reason = RangeError.MinimumVelocityReached
+                elif range_vector.y < _cMaximumDrop:
+                    reason = RangeError.MaximumDropReached
+                else:
+                    reason = RangeError.MinimumAltitudeReached
+                raise RangeError(reason, ranges)
+                # break
             #endregion
         #endregion
         # If filter_flags == 0 then all we want is the ending value

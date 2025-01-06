@@ -10,7 +10,6 @@ from .trajectory_calc import *
 
 __all__ = (
     'TrajectoryCalc',
-    'ZeroFindingError',
     'Vector',
     'get_global_max_calc_step_size',
     'get_global_use_powder_sensitivity',
