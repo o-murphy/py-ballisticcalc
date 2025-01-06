@@ -28,7 +28,8 @@ zero_atmo = Atmo(
 zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 zero_distance=Distance.Meter(100)
 
-calc = Calculator(_config={'use_powder_sensitivity': True, 'cMinimumVelocity': 0})
+config: InterfaceConfigDict = {'use_powder_sensitivity': True, 'cMinimumVelocity': 0}
+calc = Calculator(_config=config)
 calc.set_weapon_zero(zero, zero_distance)
 
 current_atmo = Atmo(

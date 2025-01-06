@@ -21,6 +21,7 @@ from .logger import logger
 from .munition import *
 from .trajectory_data import *
 from .unit import *
+from .interface_config import *
 
 if sys.version_info[:2] < (3, 11):
     import tomli as tomllib
@@ -122,6 +123,7 @@ __all__ = [
     'logger',
     'TrajectoryCalc',
     'Vector',
+    "InterfaceConfigDict",
     'get_global_max_calc_step_size',
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
