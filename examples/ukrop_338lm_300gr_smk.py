@@ -1,5 +1,4 @@
 """Example of library usage"""
-
 from py_ballisticcalc import *
 
 
@@ -10,8 +9,6 @@ PreferredUnits.temperature = Temperature.Celsius
 PreferredUnits.distance = Distance.Meter
 PreferredUnits.sight_height = Distance.Centimeter
 PreferredUnits.drop = Distance.Centimeter
-
-set_global_use_powder_sensitivity(True)  # enable muzzle velocity correction my powder temperature
 
 # define params with default prefer_units
 weight, diameter = 300, 0.338
@@ -31,7 +28,8 @@ zero_atmo = Atmo(
 zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 zero_distance=Distance.Meter(100)
 
-calc = Calculator()
+config: InterfaceConfigDict = {'use_powder_sensitivity': True, 'cMinimumVelocity': 0}
+calc = Calculator(_config=config)
 calc.set_weapon_zero(zero, zero_distance)
 
 current_atmo = Atmo(
@@ -42,6 +40,7 @@ current_atmo = Atmo(
 )
 shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
 shot_result = calc.fire(shot, Distance.Meter(1000))
+
 
 from pprint import pprint
 fieldsss = TrajectoryData._fields

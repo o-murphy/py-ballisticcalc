@@ -1,21 +1,22 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
 
-from typing_extensions import Union, List
+from typing_extensions import Union, List, Optional
 
 # pylint: disable=import-error,no-name-in-module,wildcard-import
-# from py_ballisticcalc.backend import TrajectoryCalc
 from py_ballisticcalc.trajectory_calc import TrajectoryCalc
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.trajectory_data import HitResult
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
+from py_ballisticcalc.interface_config import InterfaceConfigDict, create_interface_config
 
 
 @dataclass
 class Calculator:
     """Basic interface for the ballistics calculator"""
 
+    _config: Optional[InterfaceConfigDict] = field(default=None)
     _calc: TrajectoryCalc = field(init=False, repr=False, compare=False)
 
     @property
@@ -33,7 +34,7 @@ class Calculator:
                 on ballistic trajectory of shooting uphill or downhill.  Therefore:
                 For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         """
-        self._calc = TrajectoryCalc(shot.ammo)
+        self._calc = TrajectoryCalc(shot.ammo, create_interface_config(self._config))
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._calc.zero_angle(shot, target_distance)
         return Angular.Radian(
@@ -62,9 +63,10 @@ class Calculator:
         if not trajectory_step:
             trajectory_step = trajectory_range.unit_value / 10.0
         step: Distance = PreferredUnits.distance(trajectory_step)
-        self._calc = TrajectoryCalc(shot.ammo)
+        self._calc = TrajectoryCalc(shot.ammo, create_interface_config(self._config))
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
         return HitResult(shot, data, extra_data)
+
 
 
 __all__ = ('Calculator',)

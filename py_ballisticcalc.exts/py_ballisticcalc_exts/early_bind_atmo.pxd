@@ -4,7 +4,7 @@ cdef double cSpeedOfSoundImperial
 cdef double cLapseRateImperial
 
 # Declare class
-cdef class EarlyBindAtmo:
+cdef class _EarlyBindAtmo:
     cdef:
         double _t0
         double _a0
@@ -12,5 +12,5 @@ cdef class EarlyBindAtmo:
         double density_ratio
 
     cdef void get_density_factor_and_mach_for_altitude(
-            EarlyBindAtmo self, double altitude, double * density_ratio, double * mach
+            _EarlyBindAtmo self, double altitude, double * density_ratio, double * mach
     ) nogil

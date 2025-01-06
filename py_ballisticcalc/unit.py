@@ -12,7 +12,7 @@ from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple,
 from py_ballisticcalc.logger import logger
 
 # pylint: disable=invalid-name
-AbstractUnitType = TypeVar('AbstractUnitType', bound='AbstractUnit')
+AbstractDimensionType = TypeVar('AbstractDimensionType', bound='AbstractDimension')
 
 
 class UnitTypeError(Exception):
@@ -104,15 +104,15 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: Self, value: Union[int, float, AbstractUnitType]) -> AbstractUnitType:
+    def __call__(self: Self, value: Union[int, float, AbstractDimensionType]) -> AbstractDimensionType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
 
-        obj: AbstractUnit
-        if isinstance(value, AbstractUnit):
+        obj: AbstractDimension
+        if isinstance(value, AbstractDimension):
             return value << self  # type: ignore
         if 0 <= self < 10:
             obj = Angular(value, self)
@@ -242,7 +242,7 @@ UnitAliases = {
 }
 
 
-class AbstractUnit:
+class AbstractDimension:
     """Abstract class for unit of measure instance definition
     Stores defined unit and value, applies conversions to other prefer_units
     """
@@ -367,7 +367,7 @@ class AbstractUnit:
     __rlshift__ = convert
 
 
-class Distance(AbstractUnit):
+class Distance(AbstractDimension):
     """Distance unit"""
 
     @property
@@ -455,7 +455,7 @@ class Distance(AbstractUnit):
     Line: Final[Unit] = Unit.Line
 
 
-class Pressure(AbstractUnit):
+class Pressure(AbstractDimension):
     """Pressure unit"""
 
     @property
@@ -505,7 +505,7 @@ class Pressure(AbstractUnit):
     PSI: Final[Unit] = Unit.PSI
 
 
-class Weight(AbstractUnit):
+class Weight(AbstractDimension):
     """Weight unit"""
 
     @property
@@ -560,7 +560,7 @@ class Weight(AbstractUnit):
     Newton: Final[Unit] = Unit.Newton
 
 
-class Temperature(AbstractUnit):
+class Temperature(AbstractDimension):
     """Temperature unit"""
 
     @property
@@ -605,7 +605,7 @@ class Temperature(AbstractUnit):
     Rankin: Final[Unit] = Unit.Rankin
 
 
-class Angular(AbstractUnit):
+class Angular(AbstractDimension):
     """Angular unit"""
 
     @property
@@ -677,7 +677,7 @@ class Angular(AbstractUnit):
     OClock: Final[Unit] = Unit.OClock
 
 
-class Velocity(AbstractUnit):
+class Velocity(AbstractDimension):
     """Velocity unit"""
 
     @property
@@ -726,7 +726,7 @@ class Velocity(AbstractUnit):
     KT: Final[Unit] = Unit.KT
 
 
-class Energy(AbstractUnit):
+class Energy(AbstractDimension):
     """Energy unit"""
 
     def to_raw(self, value: float, units: Unit):
@@ -840,7 +840,7 @@ def _parse_unit(input_: str) -> Optional[Unit]:
 
 
 def _parse_value(input_: Union[str, float, int],
-                 preferred: Optional[Union[Unit, str]]) -> Optional[AbstractUnit]:
+                 preferred: Optional[Union[Unit, str]]) -> Optional[AbstractDimension]:
     """Parse the unit value and return 'AbstractUnit'"""
 
     def create_as_preferred(value_):
@@ -873,8 +873,8 @@ def _parse_value(input_: Union[str, float, int],
 
 __all__ = (
     'Unit',
-    'AbstractUnit',
-    'AbstractUnitType',
+    'AbstractDimension',
+    'AbstractDimensionType',
     'UnitProps',
     'UnitAliases',
     'UnitPropsDict',

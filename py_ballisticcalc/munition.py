@@ -6,7 +6,7 @@ from enum import IntEnum
 from typing_extensions import NamedTuple, Union, Optional, Any
 
 from py_ballisticcalc.drag_model import DragModel
-from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits, AbstractUnitType
+from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits
 
 TrajectoryData: Any
 
@@ -77,7 +77,7 @@ class Sight:
         assert self.focal_plane == SightFocalPlane.SFP, "SFP focal plane required"
 
         # adjust reticle scale relative to target distance and magnification
-        def get_sfp_step(click_size: Union[Angular, AbstractUnitType]):
+        def get_sfp_step(click_size: Angular):
             # Don't need distances conversion cause of it's destroying there
             return click_size.units(
                 click_size.unit_value

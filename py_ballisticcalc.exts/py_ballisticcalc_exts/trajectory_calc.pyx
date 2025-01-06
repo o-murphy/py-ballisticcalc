@@ -1,6 +1,7 @@
 from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan, floor
 from cython cimport final
-from py_ballisticcalc_exts.early_bind_atmo cimport EarlyBindAtmo
+from py_ballisticcalc_exts.early_bind_atmo cimport _EarlyBindAtmo
+from py_ballisticcalc_exts.early_bind_config cimport _Config, _early_bind_config
 
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.munition import Ammo
@@ -15,7 +16,7 @@ __all__ = (
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
     'set_global_use_powder_sensitivity',
-    'reset_globals'
+    'reset_globals',
 )
 
 cdef double cZeroFindingAccuracy = 0.000005
@@ -25,20 +26,21 @@ cdef int cMaxIterations = 20
 cdef double cGravityConstant = -32.17405
 
 cdef bint _globalUsePowderSensitivity = False
-cdef object _globalMaxCalcStepSize = Distance.Foot(0.5)
+cdef double _globalMaxCalcStepSizeFeet = 0.5
 
 def get_global_max_calc_step_size() -> Distance:
-    return _globalMaxCalcStepSize
+    return PreferredUnits.distance(Distance.Foot(_globalMaxCalcStepSizeFeet))
 
 def get_global_use_powder_sensitivity() -> bool:
     return bool(_globalUsePowderSensitivity)
 
 def set_global_max_calc_step_size(value: [object, float]) -> None:
-    global _globalMaxCalcStepSize
-    cdef double _value = PreferredUnits.distance(value).raw_value
+    global _globalMaxCalcStepSizeFeet
+    cdef double _value = PreferredUnits.distance(value)._feet
     if _value <= 0:
         raise ValueError("_globalMaxCalcStepSize have to be > 0")
-    _globalMaxCalcStepSize = PreferredUnits.distance(value)
+    _globalMaxCalcStepSizeFeet = _value
+
 
 def set_global_use_powder_sensitivity(value: bool) -> None:
     global _globalUsePowderSensitivity
@@ -47,9 +49,9 @@ def set_global_use_powder_sensitivity(value: bool) -> None:
     _globalUsePowderSensitivity = <int>value
 
 def reset_globals() -> None:
-    global _globalUsePowderSensitivity, _globalMaxCalcStepSize
+    global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
     _globalUsePowderSensitivity = False
-    _globalMaxCalcStepSize = Distance.Foot(0.5)
+    _globalMaxCalcStepSizeFeet = 0.5
 
 cdef struct CurvePoint:
     double a, b, c
@@ -288,16 +290,26 @@ cdef class TrajectoryCalc:
         double stability_coefficient
 
         list __mach_list
+        _Config __config
 
-    def __init__(self, ammo: Ammo):
+    def __init__(self, ammo: Ammo, _config: object):
         self.ammo = ammo
+        self.__config = _early_bind_config(_config)
+
         self._bc = self.ammo.dm.BC
         self._table_data = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
-        self.gravity_vector = Vector(.0, cGravityConstant, .0)
+        self.gravity_vector = Vector(.0, self.__config.cGravityConstant, .0)
 
         # get list[double] instead of list[DragDataPoint]
         self.__mach_list = _get_only_mach_data(self._table_data)
+
+    cdef double get_calc_step(self, double step = 0):
+        cdef double preferred_step = self.__config.max_calc_step_size_feet
+        # cdef double defined_max = 0.5  # const will be better optimized with cython
+        if step == 0:
+            return preferred_step / 2.0
+        return min(step, preferred_step) / 2.0
 
     @property
     def table_data(self) -> list:
@@ -332,8 +344,8 @@ cdef class TrajectoryCalc:
         self.cant_cosine = cos(shot_info.cant_angle._rad)
         self.cant_sine = sin(shot_info.cant_angle._rad)
         self.alt0 = shot_info.atmo.altitude._feet
-        self.calc_step = get_calc_step()
-        if _globalUsePowderSensitivity:
+        self.calc_step = self.get_calc_step()
+        if self.__config.use_powder_sensitivity:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature)._fps # shortcut for >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv._fps # shortcut for >> Velocity.FPS
@@ -341,11 +353,16 @@ cdef class TrajectoryCalc:
 
     cdef _zero_angle(TrajectoryCalc self, object shot_info, object distance):
         cdef:
+            # early bindings
+            double _cZeroFindingAccuracy = self.__config.cZeroFindingAccuracy
+            double _cMaxIterations = self.__config.cMaxIterations
+
+        cdef:
             double zero_distance = cos(shot_info.look_angle._rad) * distance._feet
             double height_at_zero = sin(shot_info.look_angle._rad) * distance._feet
             double maximum_range = zero_distance
             int iterations_count = 0
-            double zero_finding_error = cZeroFindingAccuracy * 2
+            double zero_finding_error = _cZeroFindingAccuracy * 2
 
             object t
             double height
@@ -357,16 +374,16 @@ cdef class TrajectoryCalc:
         maximum_range -= 1.5 * self.calc_step
 
         # x = horizontal distance down range, y = drop, z = windage
-        while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
+        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             t = self._trajectory(shot_info, maximum_range, zero_distance, CTrajFlag.NONE)[0]
             height = t.height._feet # use there internal shortcut instead of (t.height >> Distance.Foot)
             zero_finding_error = fabs(height - height_at_zero)
-            if zero_finding_error > cZeroFindingAccuracy:
+            if zero_finding_error > _cZeroFindingAccuracy:
                 self.barrel_elevation -= (height - height_at_zero) / zero_distance
             else:  # last barrel_elevation hit zero!
                 break
             iterations_count += 1
-        if zero_finding_error > cZeroFindingAccuracy:
+        if zero_finding_error > _cZeroFindingAccuracy:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
@@ -389,7 +406,9 @@ cdef class TrajectoryCalc:
 
         cdef:
             # early bindings
-            cdef EarlyBindAtmo atmo = EarlyBindAtmo(shot_info.atmo)
+            _EarlyBindAtmo atmo = _EarlyBindAtmo(shot_info.atmo)
+            double _cMinimumVelocity = self.__config.cMinimumVelocity
+            double _cMaximumDrop = self.__config.cMaximumDrop
 
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
@@ -449,7 +468,7 @@ cdef class TrajectoryCalc:
             velocity = velocity_vector.magnitude()
             time += delta_range_vector.magnitude() / velocity
 
-            if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
+            if velocity < _cMinimumVelocity or range_vector.y < _cMaximumDrop:
                 break
             #endregion
         #endregion
@@ -544,12 +563,12 @@ cdef double get_correction(double distance, double offset):
         return atan(offset / distance)
     return 0  # better None
 
-cdef double get_calc_step(double step = 0):
-    cdef double preferred_step = _globalMaxCalcStepSize._feet  # shortcut for (_globalMaxCalcStepSize >> Distance.Foot)
-    # cdef double defined_max = 0.5  # const will be better optimized with cython
-    if step == 0:
-        return preferred_step / 2.0
-    return min(step, preferred_step) / 2.0
+# cdef double get_calc_step(double step = 0):
+#     cdef double preferred_step = _globalMaxCalcStepSizeFeet
+#     # cdef double defined_max = 0.5  # const will be better optimized with cython
+#     if step == 0:
+#         return preferred_step / 2.0
+#     return min(step, preferred_step) / 2.0
 
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400

@@ -7,30 +7,7 @@ from typing_extensions import List, Union, Optional, Tuple
 
 from py_ballisticcalc.munition import Weapon, Ammo
 from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
-
-cStandardHumidity: float = 0.0  # Relative Humidity
-cPressureExponent: float = 5.255876  # =g*M/R*L
-cA0: float = 1.24871
-cA1: float = 0.0988438
-cA2: float = 0.00152907
-cA3: float = -3.07031e-06
-cA4: float = 4.21329e-07
-cA5: float = 3.342e-04
-# ISA, metric prefer_units: (https://www.engineeringtoolbox.com/international-standard-atmosphere-d_985.html)
-cDegreesCtoK: float = 273.15  # °K = °C + 273.15
-cStandardTemperatureC: float = 15.0  # °C
-cLapseRateMetric: float = -6.5e-03  # Lapse Rate, °C/m
-cStandardPressureMetric: float = 1013.25  # hPa
-cSpeedOfSoundMetric: float = 331.3  # Mach1 in m/s = cSpeedOfSound * sqrt(°K)
-cStandardDensityMetric: float = 1.2250  # kg/m^3
-cDensityImperialToMetric: float = 16.0185  # lb/ft^3 to kg/m^3
-# ICAO standard atmosphere:
-cDegreesFtoR: float = 459.67  # °R = °F + 459.67
-cStandardTemperatureF: float = 59.0  # °F
-cLapseRateImperial: float = -3.56616e-03  # Lapse rate, °F/ft
-cStandardPressure: float = 29.92  # InHg
-cSpeedOfSoundImperial: float = 49.0223  # Mach1 in fps = cSpeedOfSound * sqrt(°R)
-cStandardDensity: float = 0.076474  # lb/ft^3
+from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 
 @dataclass

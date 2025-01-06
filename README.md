@@ -129,7 +129,7 @@ In version 2.x.x we changed concepts of settings, there are 2 ways to set prefer
 #### 1. To change library default units directly from code use `PreferredUnits` object
 
 ```python
-from py_ballisticcalc import PreferredUnits
+from py_ballisticcalc import PreferredUnits, Velocity, Angular, Temperature, Distance
 
 # Change default library units
 PreferredUnits.velocity = Velocity.MPS
@@ -148,7 +148,8 @@ print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distanc
 ```
 
 #### 2. To change solver global setting use global flags setters
-
+> [!IMPORTANT]  
+> This way is deprecated and will be removed in a future version, use [InterfaceConfigDict](#3-to-change-solver-interface-setting-use-_config-attribute-for-calculator)
 ```python
 from py_ballisticcalc import *
 
@@ -163,6 +164,21 @@ step = get_global_max_calc_step_size()
 
 # reset global flags to defaults
 reset_globals()
+```
+
+#### 3. To change solver interface setting use _config attribute for Calculator
+```python
+from py_ballisticcalc import Calculator, InterfaceConfigDict
+config: InterfaceConfigDict = {
+  'use_powder_sensitivity': True, 
+  'max_calc_step_size_feet': 1.,
+  # 'cZeroFindingAccuracy': ...,
+  'cMinimumVelocity': 0,
+  # 'cMaximumDrop': ...,
+  # 'cMaxIterations': ...,
+  # 'cGravityConstant': ...,
+}
+calc = Calculator(_config=config)
 ```
 
 ## Units

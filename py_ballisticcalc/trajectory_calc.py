@@ -13,18 +13,18 @@ from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
 
-cZeroFindingAccuracy: Final = 0.000005
-cMinimumVelocity: Final = 50.0
-cMaximumDrop: Final = -15000
-cMaxIterations: Final = 20
-cGravityConstant: Final = -32.17405
+cZeroFindingAccuracy: Final[float] = 0.000005
+cMinimumVelocity: Final[float] = 50.0
+cMaximumDrop: Final[float] = -15000
+cMaxIterations: Final[float] = 20
+cGravityConstant: Final[float] = -32.17405
 
 _globalUsePowderSensitivity = False
-_globalMaxCalcStepSize: Distance = Distance.Foot(0.5)
+_globalMaxCalcStepSizeFeet: float = 0.5
 
 
 def get_global_max_calc_step_size() -> Distance:
-    return _globalMaxCalcStepSize
+    return PreferredUnits.distance(Distance.Foot(_globalMaxCalcStepSizeFeet))
 
 
 def get_global_use_powder_sensitivity() -> bool:
@@ -33,17 +33,17 @@ def get_global_use_powder_sensitivity() -> bool:
 
 def reset_globals() -> None:
     # pylint: disable=global-statement
-    global _globalUsePowderSensitivity, _globalMaxCalcStepSize
+    global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
     _globalUsePowderSensitivity = False
-    _globalMaxCalcStepSize = Distance.Foot(0.5)
+    _globalMaxCalcStepSizeFeet = 0.5
 
 
 def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
     # pylint: disable=global-statement
-    global _globalMaxCalcStepSize
+    global _globalMaxCalcStepSizeFeet
     if (_value := PreferredUnits.distance(value)).raw_value <= 0:
         raise ValueError("_globalMaxCalcStepSize have to be > 0")
-    _globalMaxCalcStepSize = PreferredUnits.distance(value)
+    _globalMaxCalcStepSizeFeet = _value >> Distance.Foot
 
 
 def set_global_use_powder_sensitivity(value: bool) -> None:
@@ -135,6 +135,17 @@ class Vector:
     __rmul__ = __mul__
     __imul__ = __mul__
     __neg__ = negate
+
+
+# Define the NamedTuple to match the config structure
+class Config(NamedTuple):
+    use_powder_sensitivity: bool
+    max_calc_step_size_feet: float
+    cZeroFindingAccuracy: float
+    cMinimumVelocity: float
+    cMaximumDrop: float
+    cMaxIterations: float
+    cGravityConstant: float
 
 
 class _TrajectoryDataFilter:
@@ -267,12 +278,14 @@ class TrajectoryCalc:
     barrel_elevation: float
     twist: float
 
-    def __init__(self, ammo: Ammo):
+    def __init__(self, ammo: Ammo, _config: Config):
         self.ammo: Ammo = ammo
+        self.__config: Config = _config
+
         self._bc: float = self.ammo.dm.BC
         self._table_data: List[DragDataPoint] = ammo.dm.drag_table
         self._curve: List[CurvePoint] = calculate_curve(self._table_data)
-        self.gravity_vector: Vector = Vector(.0, cGravityConstant, .0)
+        self.gravity_vector: Vector = Vector(.0, _config.cGravityConstant, .0)
 
         # use calculation over list[double] instead of list[DragDataPoint]
         self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
@@ -282,13 +295,12 @@ class TrajectoryCalc:
         """:return: List[DragDataPoint]"""
         return self._table_data
 
-    @staticmethod
-    def get_calc_step(step: float = 0):
+    def get_calc_step(self, step: float = 0):
         """Keep step under max_calc_step_size
         :param step: proposed step size
         :return: step size for calculations (in feet)
         """
-        preferred_step = _globalMaxCalcStepSize >> Distance.Foot
+        preferred_step = self.__config.max_calc_step_size_feet
         if step == 0:
             return preferred_step / 2.0
         return min(step, preferred_step) / 2.0
@@ -317,7 +329,7 @@ class TrajectoryCalc:
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = self.get_calc_step()
-        if _globalUsePowderSensitivity:
+        if self.__config.use_powder_sensitivity:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
@@ -331,6 +343,9 @@ class TrajectoryCalc:
         """
         self._init_trajectory(shot_info)
 
+        _cZeroFindingAccuracy = self.__config.cZeroFindingAccuracy
+        _cMaxIterations = self.__config.cMaxIterations
+
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
         height_at_zero = math.sin(self.look_angle) * distance_feet
@@ -340,21 +355,21 @@ class TrajectoryCalc:
         # self.twist = 0.0
 
         iterations_count = 0
-        zero_finding_error = cZeroFindingAccuracy * 2
+        zero_finding_error = _cZeroFindingAccuracy * 2
         # x = horizontal distance down range, y = drop, z = windage
-        while zero_finding_error > cZeroFindingAccuracy and iterations_count < cMaxIterations:
+        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             t = self._trajectory(shot_info, maximum_range, zero_distance, TrajFlag.NONE)[0]
             height = t.height >> Distance.Foot
             zero_finding_error = math.fabs(height - height_at_zero)
-            if zero_finding_error > cZeroFindingAccuracy:
+            if zero_finding_error > _cZeroFindingAccuracy:
                 # Adjust barrel elevation to close height at zero distance
                 self.barrel_elevation -= (height - height_at_zero) / zero_distance
             else:  # last barrel_elevation hit zero!
                 break
             iterations_count += 1
 
-        if zero_finding_error > cZeroFindingAccuracy:
+        if zero_finding_error > _cZeroFindingAccuracy:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
@@ -366,6 +381,9 @@ class TrajectoryCalc:
         :param step: Frequency (in feet down range) to record TrajectoryData
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
+        _cMinimumVelocity = self.__config.cMinimumVelocity
+        _cMaximumDrop = self.__config.cMaximumDrop
+
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         time: float = .0
         drag: float = .0
@@ -441,7 +459,7 @@ class TrajectoryCalc:
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_range_vector.magnitude() / velocity
 
-            if velocity < cMinimumVelocity or range_vector.y < cMaximumDrop:
+            if velocity < _cMinimumVelocity or range_vector.y < _cMaximumDrop:
                 break
             # endregion
 
@@ -683,17 +701,16 @@ try:
                                        get_global_use_powder_sensitivity,
                                        set_global_max_calc_step_size,
                                        set_global_use_powder_sensitivity,
-                                       reset_globals)
+                                       reset_globals,
+                                       )
 
     from .logger import logger
 
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
-
-    print(error)
     warnings.warn("Library running in pure python mode. "
-                  "For better performance install 'py_ballisticcalc.exts' package")
+                  "For better performance install 'py_ballisticcalc.exts' binary package")
 
 __all__ = (
     'TrajectoryCalc',
@@ -703,5 +720,11 @@ __all__ = (
     'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
     'set_global_use_powder_sensitivity',
-    'reset_globals'
+    'reset_globals',
+    'cZeroFindingAccuracy',
+    'cMinimumVelocity',
+    'cMaximumDrop',
+    'cMaxIterations',
+    'cGravityConstant',
+    'Config',
 )
