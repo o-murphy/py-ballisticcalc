@@ -27,5 +27,9 @@ cdef class _EarlyBindAtmo:
             mach[0] = self._mach1
         else:
             density_ratio[0] = exp(-altitude / 34112.0)
-            t = (altitude - self._a0) * cLapseRateImperial + self._t0
-            mach[0] = sqrt(t + cDegreesFtoR) * cSpeedOfSoundImperial
+            fahrenheit = (altitude - self._a0) * cLapseRateImperial + self._t0
+            if fahrenheit < -cDegreesFtoR:
+                raise ValueError(
+                    f"Invalid temperature: {fahrenheit}°F. It must be >= {-cDegreesFtoR} to avoid a domain error."
+                )
+            mach[0] = sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
