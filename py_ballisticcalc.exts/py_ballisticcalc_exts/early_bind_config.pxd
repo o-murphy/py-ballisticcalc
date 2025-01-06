@@ -4,7 +4,8 @@ cdef struct _Config:
     double cZeroFindingAccuracy
     double cMinimumVelocity
     double cMaximumDrop
-    double cMaxIterations
+    int cMaxIterations
     double cGravityConstant
+    double cMinimumAltitude
 
 cdef _Config _early_bind_config(object config)

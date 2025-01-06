@@ -12,4 +12,5 @@ cdef _Config _early_bind_config(object config):
         config.cMaximumDrop,
         config.cMaxIterations,
         config.cGravityConstant,
+        config.cMinimumAltitude,
     )

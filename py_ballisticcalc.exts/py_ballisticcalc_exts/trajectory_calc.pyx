@@ -1,5 +1,5 @@
-from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan, floor
 from cython cimport final
+from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan
 from py_ballisticcalc_exts.early_bind_atmo cimport _EarlyBindAtmo
 from py_ballisticcalc_exts.early_bind_config cimport _Config, _early_bind_config
 
@@ -24,6 +24,7 @@ cdef double cMinimumVelocity = 50.0
 cdef double cMaximumDrop = -15000
 cdef int cMaxIterations = 20
 cdef double cGravityConstant = -32.17405
+cdef double cMinimumAltitude = -1410.748
 
 cdef bint _globalUsePowderSensitivity = False
 cdef double _globalMaxCalcStepSizeFeet = 0.5
@@ -41,12 +42,11 @@ def set_global_max_calc_step_size(value: [object, float]) -> None:
         raise ValueError("_globalMaxCalcStepSize have to be > 0")
     _globalMaxCalcStepSizeFeet = _value
 
-
 def set_global_use_powder_sensitivity(value: bool) -> None:
     global _globalUsePowderSensitivity
     if not isinstance(value, bool):
         raise TypeError(f"set_global_use_powder_sensitivity value={value} is not a boolean")
-    _globalUsePowderSensitivity = <int>value
+    _globalUsePowderSensitivity = <int> value
 
 def reset_globals() -> None:
     global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
@@ -346,9 +346,10 @@ cdef class TrajectoryCalc:
         self.alt0 = shot_info.atmo.altitude._feet
         self.calc_step = self.get_calc_step()
         if self.__config.use_powder_sensitivity:
-            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature)._fps # shortcut for >> Velocity.FPS
+            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(
+                shot_info.atmo.temperature)._fps  # shortcut for >> Velocity.FPS
         else:
-            self.muzzle_velocity = shot_info.ammo.mv._fps # shortcut for >> Velocity.FPS
+            self.muzzle_velocity = shot_info.ammo.mv._fps  # shortcut for >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     cdef _zero_angle(TrajectoryCalc self, object shot_info, object distance):
@@ -376,7 +377,7 @@ cdef class TrajectoryCalc:
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             t = self._trajectory(shot_info, maximum_range, zero_distance, CTrajFlag.NONE)[0]
-            height = t.height._feet # use there internal shortcut instead of (t.height >> Distance.Foot)
+            height = t.height._feet  # use there internal shortcut instead of (t.height >> Distance.Foot)
             zero_finding_error = fabs(height - height_at_zero)
             if zero_finding_error > _cZeroFindingAccuracy:
                 self.barrel_elevation -= (height - height_at_zero) / zero_distance
@@ -388,7 +389,7 @@ cdef class TrajectoryCalc:
         return Angular.Radian(self.barrel_elevation)
 
     cdef list _trajectory(TrajectoryCalc self, object shot_info,
-                     double maximum_range, double step, int filter_flags):
+                          double maximum_range, double step, int filter_flags):
         cdef:
             double velocity, delta_time
             double density_factor = .0
@@ -409,6 +410,7 @@ cdef class TrajectoryCalc:
             _EarlyBindAtmo atmo = _EarlyBindAtmo(shot_info.atmo)
             double _cMinimumVelocity = self.__config.cMinimumVelocity
             double _cMaximumDrop = self.__config.cMaximumDrop
+            double _cMinimumAltitude = self.__config.cMinimumAltitude
 
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
@@ -420,7 +422,7 @@ cdef class TrajectoryCalc:
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(
             filter_flags=filter_flags,
-            ranges_length=<int>((maximum_range / step) + 1)
+            ranges_length=<int> ((maximum_range / step) + 1)
         )
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
@@ -468,7 +470,11 @@ cdef class TrajectoryCalc:
             velocity = velocity_vector.magnitude()
             time += delta_range_vector.magnitude() / velocity
 
-            if velocity < _cMinimumVelocity or range_vector.y < _cMaximumDrop:
+            if (
+                    velocity < _cMinimumVelocity
+                    or range_vector.y < _cMaximumDrop
+                    or self.alt0 + range_vector.y < _cMinimumAltitude
+            ):
                 break
             #endregion
         #endregion

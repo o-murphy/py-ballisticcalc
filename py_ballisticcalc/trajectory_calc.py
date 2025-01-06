@@ -16,8 +16,9 @@ from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, P
 cZeroFindingAccuracy: Final[float] = 0.000005
 cMinimumVelocity: Final[float] = 50.0
 cMaximumDrop: Final[float] = -15000
-cMaxIterations: Final[float] = 20
+cMaxIterations: Final[int] = 20
 cGravityConstant: Final[float] = -32.17405
+cMinimumAltitude: Final[float] = -1410.748  # ft
 
 _globalUsePowderSensitivity = False
 _globalMaxCalcStepSizeFeet: float = 0.5
@@ -144,8 +145,9 @@ class Config(NamedTuple):
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
-    cMaxIterations: float
+    cMaxIterations: int
     cGravityConstant: float
+    cMinimumAltitude: float
 
 
 class _TrajectoryDataFilter:
@@ -383,6 +385,7 @@ class TrajectoryCalc:
         """
         _cMinimumVelocity = self.__config.cMinimumVelocity
         _cMaximumDrop = self.__config.cMaximumDrop
+        _cMinimumAltitude = self.__config.cMinimumAltitude
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         time: float = .0
@@ -459,7 +462,11 @@ class TrajectoryCalc:
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_range_vector.magnitude() / velocity
 
-            if velocity < _cMinimumVelocity or range_vector.y < _cMaximumDrop:
+            if (
+                    velocity < _cMinimumVelocity
+                    or range_vector.y < _cMaximumDrop
+                    or self.alt0 + range_vector.y < _cMinimumAltitude
+            ):
                 break
             # endregion
 
@@ -709,6 +716,7 @@ try:
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
+
     warnings.warn("Library running in pure python mode. "
                   "For better performance install 'py_ballisticcalc.exts' binary package")
 
@@ -726,5 +734,6 @@ __all__ = (
     'cMaximumDrop',
     'cMaxIterations',
     'cGravityConstant',
+    'cMinimumAltitude',
     'Config',
 )

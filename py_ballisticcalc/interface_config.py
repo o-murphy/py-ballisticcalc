@@ -3,7 +3,7 @@ from typing_extensions import TypedDict, Optional
 from py_ballisticcalc.unit import Distance
 from py_ballisticcalc.trajectory_calc import (
     cZeroFindingAccuracy, cMinimumVelocity, cMaximumDrop, cMaxIterations,
-    cGravityConstant,
+    cGravityConstant, cMinimumAltitude,
     get_global_max_calc_step_size, get_global_use_powder_sensitivity, Config
 )
 
@@ -20,8 +20,9 @@ class InterfaceConfigDict(TypedDict, total=False):
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
-    cMaxIterations: float
+    cMaxIterations: int
     cGravityConstant: float
+    cMinimumAltitude: float
 
 def create_interface_config(interface_config: Optional[InterfaceConfigDict] = None) -> Config:
     config = InterfaceConfigDict(
@@ -32,6 +33,7 @@ def create_interface_config(interface_config: Optional[InterfaceConfigDict] = No
         cMaximumDrop=cMaximumDrop,
         cMaxIterations=cMaxIterations,
         cGravityConstant=cGravityConstant,
+        cMinimumAltitude=cMinimumAltitude,
     )
     if interface_config is not None and isinstance(interface_config, dict):
         config.update(interface_config)
