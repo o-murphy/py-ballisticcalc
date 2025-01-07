@@ -105,6 +105,10 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def machC(celsius: float) -> float:
         """:return: Mach 1 in m/s for Celsius temperature"""
+        if celsius < -cDegreesCtoK:
+            raise ValueError(
+                f"Invalid temperature: {celsius}°C. It must be >= {-cDegreesCtoK} to avoid a domain error."
+            )
         return math.sqrt(1 + celsius / cDegreesCtoK) * cSpeedOfSoundMetric
 
     @staticmethod

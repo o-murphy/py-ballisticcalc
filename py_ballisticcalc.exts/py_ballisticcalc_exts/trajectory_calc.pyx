@@ -211,34 +211,36 @@ cdef class _WindSock:
     cdef float _max_distance_feet
 
     def __cinit__(_WindSock self, object winds):
-        self.winds = winds
+        self.winds = winds or tuple()
         self.current = 0
-        self._max_distance_feet = Wind.MAX_DISTANCE_FEET
         self.next_range = self._max_distance_feet
         self._last_vector_cache = None
         self._length = len(winds)
-        self.current_vector()
 
-    cdef int length(_WindSock self):
-        return self._length
+        # Initialize cache correctly
+        self.update_cache()
 
     cdef Vector current_vector(_WindSock self):
+        return self._last_vector_cache
+
+    cdef void update_cache(_WindSock self):
         cdef object cur_wind
-        if self._length < 1:
-            self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-        else:
+        if self.current < self._length:
             cur_wind = self.winds[self.current]
             self._last_vector_cache = wind_to_vector(cur_wind)
-            self.next_range = cur_wind.until_distance._feet  # Assuming 1.0 is for Distance.Foot
-        return self._last_vector_cache
+            self.next_range = cur_wind.until_distance >> Distance.Foot
+        else:
+            self._last_vector_cache = Vector(0.0, 0.0, 0.0)
+            self.next_range = Wind.MAX_DISTANCE_FEET
 
     cdef Vector vector_for_range(_WindSock self, double next_range):
         if next_range >= self.next_range:
             self.current += 1
-            if self.current >= self._length:  # No more winds listed after this range
-                self.next_range = self._max_distance_feet
+            if self.current >= self._length:
                 self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-            return self.current_vector()
+                self.next_range = Wind.MAX_DISTANCE_FEET
+            else:
+                self.update_cache()  # This will trigger cache updates.
         return self._last_vector_cache
 
 

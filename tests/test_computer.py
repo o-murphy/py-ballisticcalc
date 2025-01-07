@@ -92,6 +92,29 @@ class TestComputer(unittest.TestCase):
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertLess(t.trajectory[5].height, self.baseline_trajectory[5].height)
 
+    def test_multiple_wind(self):
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
+                    winds=[Wind(Velocity.MPS(4), Angular.OClock(9), until_distance=Distance.Meter(500)),
+                           Wind(Velocity.MPS(4), Angular.OClock(3), until_distance=Distance.Meter(800))])
+        t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertLess(t.trajectory[5].windage, self.baseline_trajectory[5].windage)
+
+    def test_no_winds(self):
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
+                    winds=[])
+        # set empty list
+        shot._winds = []
+        try:
+            self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        except Exception as e:
+            self.fail("self.calc.fire() raised ExceptionType unexpectedly!")
+
+        self._winds = None
+        try:
+            self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        except Exception as e:
+            self.fail("self.calc.fire() raised ExceptionType unexpectedly!")
+
     # endregion Wind
 
     # region Twist

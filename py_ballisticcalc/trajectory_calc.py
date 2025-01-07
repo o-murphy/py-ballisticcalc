@@ -110,39 +110,12 @@ class Vector:
             return Vector(self.x, self.y, self.z)
         return self.mul_by_const(1.0 / m)
 
-    # def __add__(self, other: 'Vector') -> 'Vector':
-    #     return self.add(other)
-    #
-    # def __radd__(self, other: 'Vector') -> 'Vector':
-    #     return self.add(other)
-    #
-    # def __iadd__(self, other: 'Vector') -> 'Vector':
-    #     return self.add(other)
-    #
-    # def __sub__(self, other: 'Vector') -> 'Vector':
-    #     return self.subtract(other)
-    #
-    # def __rsub__(self, other: 'Vector') -> 'Vector':
-    #     return self.subtract(other)
-    #
-    # def __isub__(self, other: 'Vector') -> 'Vector':
-    #     return self.subtract(other)
-
     def __mul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
         if isinstance(other, (int, float)):
             return self.mul_by_const(other)
         if isinstance(other, Vector):
             return self.mul_by_vector(other)
         raise TypeError(other)
-
-    # def __rmul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
-    #     return self.__mul__(other)
-    #
-    # def __imul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
-    #     return self.__mul__(other)
-    #
-    # def __neg__(self) -> 'Vector':
-    #     return self.negate()
 
     # aliases more efficient than wrappers
     __add__ = add
@@ -236,30 +209,39 @@ class _TrajectoryDataFilter:
 
 
 class _WindSock:
-    def __init__(self, winds: Tuple[Wind, ...]):
-        self.winds: Tuple[Wind, ...] = winds
+    def __init__(self, winds: Union[Tuple["Wind", ...], None]):
+        self.winds: Tuple["Wind", ...] = winds or tuple()
         self.current: int = 0
         self.next_range: float = Wind.MAX_DISTANCE_FEET
-        self._last_vector_cache: Union[Vector, None] = None
+        self._last_vector_cache: Union["Vector", None] = None
         self._length = len(winds)
-        self.current_vector()
 
-    def current_vector(self) -> Vector:
-        if self._length < 1:
-            self._last_vector_cache = Vector(.0, .0, .0)
-        else:
+        # Initialize cache correctly
+        self.update_cache()
+
+    def current_vector(self) -> "Vector":
+        """Returns the current cached wind vector."""
+        return self._last_vector_cache
+
+    def update_cache(self) -> None:
+        """Updates the cache only if needed or if forced during initialization."""
+        if self.current < self._length:
             cur_wind = self.winds[self.current]
             self._last_vector_cache = wind_to_vector(cur_wind)
             self.next_range = cur_wind.until_distance >> Distance.Foot
-        return self._last_vector_cache
+        else:
+            self._last_vector_cache = Vector(0.0, 0.0, 0.0)
+            self.next_range = Wind.MAX_DISTANCE_FEET
 
-    def vector_for_range(self, next_range: float):
+    def vector_for_range(self, next_range: float) -> "Vector":
+        """Updates the wind vector if `next_range` surpasses `self.next_range`."""
         if next_range >= self.next_range:
             self.current += 1
-            if self.current >= self._length:  # No more winds listed after this range
+            if self.current >= self._length:
+                self._last_vector_cache = Vector(0.0, 0.0, 0.0)
                 self.next_range = Wind.MAX_DISTANCE_FEET
-                self._last_vector_cache = Vector(.0, .0, .0)
-            return self.current_vector()
+            else:
+                self.update_cache()  # This will trigger cache updates.
         return self._last_vector_cache
 
 

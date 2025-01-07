@@ -58,6 +58,7 @@ dev = [
     'pylint',
     'mypy',
     'pytest',
+    'pytest-xdist',
     'build',
     'pandas-stubs',
     'matplotlib-stubs'

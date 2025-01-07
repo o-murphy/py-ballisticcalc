@@ -38,7 +38,7 @@ jobs:
         pytest tests --no-header --no-summary -v
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          pytest tests -v
+          pytest tests -v -n auto
         else
           echo "Pytest succeeded."
         fi
@@ -50,7 +50,7 @@ jobs:
         pytest tests --no-header --no-summary -v
         if %ERRORLEVEL% neq 0 (
           echo Pytest failed, running without capture
-          pytest tests -v
+          pytest tests -v -n auto
         ) else (
           echo Pytest succeeded.
         )
