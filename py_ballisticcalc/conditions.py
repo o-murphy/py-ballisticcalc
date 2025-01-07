@@ -1,6 +1,7 @@
 """Classes to define zeroing or current environment conditions"""
 
 import math
+import warnings
 from dataclasses import dataclass
 
 from typing_extensions import List, Union, Optional, Tuple
@@ -97,18 +98,20 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     def machF(fahrenheit: float) -> float:
         """:return: Mach 1 in fps for Fahrenheit temperature"""
         if fahrenheit < -cDegreesFtoR:
-            raise ValueError(
-                f"Invalid temperature: {fahrenheit}°F. It must be >= {-cDegreesFtoR} to avoid a domain error."
-            )
+            fahrenheit = -cDegreesFtoR
+            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to absolute zero "
+                           f"It must be >= {-cDegreesFtoR} to avoid a domain error."
+                           f"redefine 'cDegreesFtoR' constant to increase it", RuntimeWarning)
         return math.sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
 
     @staticmethod
     def machC(celsius: float) -> float:
         """:return: Mach 1 in m/s for Celsius temperature"""
         if celsius < -cDegreesCtoK:
-            raise ValueError(
-                f"Invalid temperature: {celsius}°C. It must be >= {-cDegreesCtoK} to avoid a domain error."
-            )
+            celsius = -cDegreesCtoK
+            warnings.warn(f"Invalid temperature: {celsius}°C. Adjusted to absolute zero "
+                           f"It must be >= {-cDegreesCtoK} to avoid a domain error."
+                           f"redefine 'cDegreesCtoK' constant to increase it", RuntimeWarning)
         return math.sqrt(1 + celsius / cDegreesCtoK) * cSpeedOfSoundMetric
 
     @staticmethod
@@ -141,7 +144,12 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         :param altitude: ASL in ft
         :return: temperature in °F
         """
-        return (altitude - self._a0) * cLapseRateImperial + self._t0
+        t = (altitude - self._a0) * cLapseRateImperial + self._t0
+        if t < cLowestTempF:
+            t = cLowestTempF
+            warnings.warn(f"Reached minimum temperature limit. Adjusted to {cLowestTempF}°F "
+                           "redefine 'cLowestTempF' constant to increase it ", RuntimeWarning)
+        return t
 
     def calculate_density(self, t: float, p: float) -> float:
         """

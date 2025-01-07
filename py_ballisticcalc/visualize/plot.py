@@ -4,6 +4,8 @@
 import math
 
 from typing_extensions import Optional
+import warnings
+
 from py_ballisticcalc.trajectory_data import TrajFlag, DangerSpace
 from py_ballisticcalc.unit import PreferredUnits, Angular
 
@@ -14,7 +16,7 @@ try:
 except ImportError as error:
     from py_ballisticcalc.logger import logger
 
-    logger.warning("Install matplotlib to get results as a plot")
+    warnings.warn("Install matplotlib to get results as a plot", UserWarning)
     raise error
 
 __all__ = (
@@ -87,8 +89,8 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
     #     raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
     if not hit_result.extra:
         from py_ballisticcalc.logger import logger
-        logger.warning("HitResult.plot: To show extended data"
-                       "Use Calculator.fire(..., extra_data=True)")
+        warnings.warn("HitResult.plot: To show extended data"
+                      "Use Calculator.fire(..., extra_data=True)")
 
     font_size = PLOT_FONT_SIZE
     df = hit_result.dataframe()

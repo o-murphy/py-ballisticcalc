@@ -359,6 +359,7 @@ class TrajectoryCalc:
         :param step: Frequency (in feet down range) to record TrajectoryData
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
+
         _cMinimumVelocity = self.__config.cMinimumVelocity
         _cMaximumDrop = self.__config.cMaximumDrop
         _cMinimumAltitude = self.__config.cMinimumAltitude
@@ -393,6 +394,7 @@ class TrajectoryCalc:
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
+        warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         while range_vector.x <= maximum_range + self.calc_step:
             data_filter.clear_current_flag()
 
@@ -528,7 +530,8 @@ def wind_to_vector(wind: Wind) -> Vector:
 # pylint: disable=too-many-positional-arguments
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
-                          density_factor: float, drag: float, weight: float, flag: Union[TrajFlag, int]) -> TrajectoryData:
+                          density_factor: float, drag: float, weight: float,
+                          flag: Union[TrajFlag, int]) -> TrajectoryData:
     """
     Create a TrajectoryData object representing a single row of trajectory data.
 
@@ -700,4 +703,4 @@ except ImportError as error:
     import warnings
 
     warnings.warn("Library running in pure python mode. "
-                  "For better performance install 'py_ballisticcalc.exts' binary package")
+                  "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

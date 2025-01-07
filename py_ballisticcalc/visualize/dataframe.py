@@ -1,4 +1,5 @@
 # pylint: skip-file
+import warnings
 
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 
@@ -7,7 +8,7 @@ try:
 except ImportError as error:
     from py_ballisticcalc.logger import logger
 
-    logger.warning("Install pandas to convert trajectory to pandas.DataFrame")
+    warnings.warn("Install pandas to convert trajectory to pandas.DataFrame", UserWarning)
     raise error
 
 

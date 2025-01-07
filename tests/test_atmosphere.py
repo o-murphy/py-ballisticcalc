@@ -33,7 +33,7 @@ class TestAtmosphere(unittest.TestCase):
         self.assertAlmostEqual(self.highISA.mach >> Velocity.MPS, 336.4, places=1)
 
     def test_altitude(self):
-        with self.assertRaises(ValueError):
+        with self.assertWarns(RuntimeWarning):
             Atmo().get_density_factor_and_mach_for_altitude(2302418.9194204034)
 
 

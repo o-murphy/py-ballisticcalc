@@ -25,3 +25,5 @@ cLapseRateImperial: Final[float] = -3.56616e-03  # Lapse rate, °F/ft
 cStandardPressure: Final[float] = 29.92  # InHg
 cSpeedOfSoundImperial: Final[float] = 49.0223  # Mach1 in fps = cSpeedOfSound * sqrt(°R)
 cStandardDensity: Final[float] = 0.076474  # lb/ft^3
+
+cLowestTempF: Final[float] = -130  # °F

@@ -3,6 +3,7 @@ from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan
 from py_ballisticcalc_exts.early_bind_atmo cimport _EarlyBindAtmo
 from py_ballisticcalc_exts.early_bind_config cimport _Config, _early_bind_config
 
+import warnings
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData
@@ -405,6 +406,7 @@ cdef class TrajectoryCalc:
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         #region Trajectory Loop
+        warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         while range_vector.x <= maximum_range + self.calc_step:
             data_filter.clear_current_flag()
 
