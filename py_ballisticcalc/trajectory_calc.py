@@ -214,13 +214,15 @@ class _WindSock:
         self.current: int = 0
         self.next_range: float = Wind.MAX_DISTANCE_FEET
         self._last_vector_cache: Union["Vector", None] = None
-        self._length = len(winds)
+        self._length = len(self.winds)
 
         # Initialize cache correctly
         self.update_cache()
 
     def current_vector(self) -> "Vector":
         """Returns the current cached wind vector."""
+        if not self._last_vector_cache:
+            raise RuntimeError(f"No cached wind vector")
         return self._last_vector_cache
 
     def update_cache(self) -> None:
@@ -242,7 +244,7 @@ class _WindSock:
                 self.next_range = Wind.MAX_DISTANCE_FEET
             else:
                 self.update_cache()  # This will trigger cache updates.
-        return self._last_vector_cache
+        return self.current_vector()
 
 
 # pylint: disable=too-many-instance-attributes

@@ -208,19 +208,20 @@ cdef class _WindSock:
     cdef double next_range
     cdef Vector _last_vector_cache
     cdef int _length
-    cdef float _max_distance_feet
 
     def __cinit__(_WindSock self, object winds):
         self.winds = winds or tuple()
         self.current = 0
-        self.next_range = self._max_distance_feet
+        self.next_range = Wind.MAX_DISTANCE_FEET
         self._last_vector_cache = None
-        self._length = len(winds)
+        self._length = len(self.winds)
 
         # Initialize cache correctly
         self.update_cache()
 
     cdef Vector current_vector(_WindSock self):
+        if not self._last_vector_cache:
+            raise RuntimeError(f"No cached wind vector")
         return self._last_vector_cache
 
     cdef void update_cache(_WindSock self):
