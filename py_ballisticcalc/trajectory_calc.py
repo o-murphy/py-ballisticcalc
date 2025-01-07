@@ -142,11 +142,11 @@ class Config(NamedTuple):
 
 
 class _TrajectoryDataFilter:
-    def __init__(self, filter_flags: TrajFlag,
+    def __init__(self, filter_flags: Union[TrajFlag, int],
                  ranges_length: int):
-        self.filter: TrajFlag = filter_flags
-        self.current_flag: TrajFlag = TrajFlag.NONE
-        self.seen_zero: TrajFlag = TrajFlag.NONE
+        self.filter: Union[TrajFlag, int] = filter_flags
+        self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
+        self.seen_zero: Union[TrajFlag, int] = TrajFlag.NONE
         self.current_item: int = 0
         self.ranges_length: int = ranges_length
         self.previous_mach: float = 0.0
@@ -353,7 +353,7 @@ class TrajectoryCalc:
         return Angular.Radian(self.barrel_elevation)
 
     def _trajectory(self, shot_info: Shot, maximum_range: float, step: float,
-                    filter_flags: TrajFlag) -> List[TrajectoryData]:
+                    filter_flags: Union[TrajFlag, int]) -> List[TrajectoryData]:
         """Calculate trajectory for specified shot
         :param maximum_range: Feet down range to stop calculation
         :param step: Frequency (in feet down range) to record TrajectoryData
@@ -528,7 +528,7 @@ def wind_to_vector(wind: Wind) -> Vector:
 # pylint: disable=too-many-positional-arguments
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
-                          density_factor: float, drag: float, weight: float, flag: TrajFlag) -> TrajectoryData:
+                          density_factor: float, drag: float, weight: float, flag: Union[TrajFlag, int]) -> TrajectoryData:
     """
     Create a TrajectoryData object representing a single row of trajectory data.
 
@@ -567,7 +567,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         drag=drag,
         energy=Energy.FootPound(calculate_energy(weight, velocity)),
         ogw=Weight.Pound(calculate_ogw(weight, velocity)),
-        flag=flag.value
+        flag=flag
     )
 
 

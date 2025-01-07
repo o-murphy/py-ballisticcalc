@@ -104,7 +104,7 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
                     [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':',
                     color=PLOT_COLORS[TrajFlag(p.flag) & TrajFlag.ZERO])
             ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
-                    f"{(TrajFlag(p.flag) & TrajFlag.ZERO).name}",
+                    f"{TrajFlag.name(TrajFlag(p.flag) & TrajFlag.ZERO)}",
                     fontsize=font_size, rotation=90, color=PLOT_COLORS[TrajFlag(p.flag) & TrajFlag.ZERO])
         if TrajFlag(p.flag) & TrajFlag.MACH:
             ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
