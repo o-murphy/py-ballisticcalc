@@ -35,10 +35,10 @@ jobs:
 
     - name: Run tests in pure python mode
       run: |
-        pytest tests --no-header --no-summary -v
+        pytest tests --no-header --no-summary -v -n auto
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          pytest tests -v -n auto
+          pytest tests -v
         else
           echo "Pytest succeeded."
         fi
@@ -47,10 +47,10 @@ jobs:
 
     - name: Run tests in pure python mode on Windows
       run: |
-        pytest tests --no-header --no-summary -v
+        pytest tests --no-header --no-summary -v -n auto
         if %ERRORLEVEL% neq 0 (
           echo Pytest failed, running without capture
-          pytest tests -v -n auto
+          pytest tests -v
         ) else (
           echo Pytest succeeded.
         )
