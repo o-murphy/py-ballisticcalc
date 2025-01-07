@@ -4,7 +4,7 @@ import unittest
 import copy
 from py_ballisticcalc import (
     DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7,
-    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity
+    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity, RangeError
 )
 from py_ballisticcalc.unit import *
 
@@ -200,6 +200,14 @@ class TestComputer(unittest.TestCase):
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
         set_global_use_powder_sensitivity(previous)
+
+    def test_zero_velocity(self):
+        tdm = DragModel(self.dm.BC + 0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
+        slick = Ammo(tdm, 0)
+        shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
+
+        with self.assertRaises(RangeError):
+            self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
 
     # endregion Ammo
 
