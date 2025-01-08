@@ -1,11 +1,14 @@
 from cython cimport final
-from libc.math cimport sqrt, fabs, pow, sin, cos, tan, atan
+from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
+from py_ballisticcalc_exts.vector cimport Vector
 from py_ballisticcalc_exts.early_bind_atmo cimport _EarlyBindAtmo
-from py_ballisticcalc_exts.early_bind_config cimport _Config, _early_bind_config
+from py_ballisticcalc_exts.early_bind_config cimport _ConfigStruct, _early_bind_config
 
 import warnings
-from py_ballisticcalc.conditions import Shot, Wind
-from py_ballisticcalc.munition import Ammo
+
+from typing_extensions import Type
+
+from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import *
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
@@ -13,47 +16,7 @@ from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 
 __all__ = (
     'TrajectoryCalc',
-    'Vector',
-    'get_global_max_calc_step_size',
-    'get_global_use_powder_sensitivity',
-    'set_global_max_calc_step_size',
-    'set_global_use_powder_sensitivity',
-    'reset_globals',
 )
-
-cdef double cZeroFindingAccuracy = 0.000005
-cdef double cMinimumVelocity = 50.0
-cdef double cMaximumDrop = -15000
-cdef int cMaxIterations = 20
-cdef double cGravityConstant = -32.17405
-cdef double cMinimumAltitude = -1410.748
-
-cdef bint _globalUsePowderSensitivity = False
-cdef double _globalMaxCalcStepSizeFeet = 0.5
-
-def get_global_max_calc_step_size() -> Distance:
-    return PreferredUnits.distance(Distance.Foot(_globalMaxCalcStepSizeFeet))
-
-def get_global_use_powder_sensitivity() -> bool:
-    return bool(_globalUsePowderSensitivity)
-
-def set_global_max_calc_step_size(value: [object, float]) -> None:
-    global _globalMaxCalcStepSizeFeet
-    cdef double _value = PreferredUnits.distance(value)._feet
-    if _value <= 0:
-        raise ValueError("_globalMaxCalcStepSize have to be > 0")
-    _globalMaxCalcStepSizeFeet = _value
-
-def set_global_use_powder_sensitivity(value: bool) -> None:
-    global _globalUsePowderSensitivity
-    if not isinstance(value, bool):
-        raise TypeError(f"set_global_use_powder_sensitivity value={value} is not a boolean")
-    _globalUsePowderSensitivity = <int> value
-
-def reset_globals() -> None:
-    global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
-    _globalUsePowderSensitivity = False
-    _globalMaxCalcStepSizeFeet = 0.5
 
 cdef struct CurvePoint:
     double a, b, c
@@ -68,74 +31,6 @@ cdef enum CTrajFlag:
     ZERO = ZERO_UP | ZERO_DOWN
     ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
 
-cdef class Vector:
-    cdef double x
-    cdef double y
-    cdef double z
-
-    def __cinit__(Vector self, double x, double y, double z):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    cdef double magnitude(Vector self):
-        return sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
-
-    cdef Vector mul_by_const(Vector self, double a):
-        return Vector(self.x * a, self.y * a, self.z * a)
-
-    cdef double mul_by_vector(Vector self, Vector b):
-        return self.x * b.x + self.y * b.y + self.z * b.z
-
-    cdef Vector add(Vector self, Vector b):
-        return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
-
-    cdef Vector subtract(Vector self, Vector b):
-        return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
-
-    cdef Vector negate(Vector self):
-        return Vector(-self.x, -self.y, -self.z)
-
-    cdef Vector normalize(Vector self):
-        cdef double m = self.magnitude()
-        if fabs(m) < 1e-10:
-            return Vector(self.x, self.y, self.z)
-        return self.mul_by_const(1.0 / m)
-
-    def __add__(Vector self, Vector other):
-        return self.add(other)
-
-    def __radd__(Vector self, Vector other):
-        return self.add(other)
-
-    def __iadd__(Vector self, Vector other):
-        return self.add(other)
-
-    def __sub__(Vector self, Vector other):
-        return self.subtract(other)
-
-    def __rsub__(Vector self, Vector other):
-        return self.subtract(other)
-
-    def __isub__(Vector self, Vector other):
-        return self.subtract(other)
-
-    def __mul__(Vector self, object other):
-        if isinstance(other, (int, float)):
-            return self.mul_by_const(other)
-        if isinstance(other, Vector):
-            return self.mul_by_vector(other)
-        raise TypeError(other)
-
-    def __rmul__(Vector self, object other):
-        return self.__mul__(other)
-
-    def __imul__(Vector self, object other):
-        return self.__mul__(other)
-
-    def __neg__(Vector self):
-        return self.negate()
-
 @final
 cdef class _TrajectoryDataFilter:
     cdef:
@@ -143,7 +38,7 @@ cdef class _TrajectoryDataFilter:
         int current_item, ranges_length
         double previous_mach, next_range_distance
 
-    def __cinit__(_TrajectoryDataFilter self, int filter_flags, int ranges_length):
+    def __cinit__(_TrajectoryDataFilter self, int filter_flags, int ranges_length) -> None:
         self.filter = filter_flags
         self.current_flag = CTrajFlag.NONE
         self.seen_zero = CTrajFlag.NONE
@@ -152,53 +47,53 @@ cdef class _TrajectoryDataFilter:
         self.previous_mach = 0.0
         self.next_range_distance = 0.0
 
-    cdef setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
+    cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
         if height >= 0:
             self.seen_zero |= CTrajFlag.ZERO_UP
         elif height < 0 and barrel_elevation < look_angle:
             self.seen_zero |= CTrajFlag.ZERO_DOWN
 
-    cdef clear_current_flag(_TrajectoryDataFilter self):
+    cdef void clear_current_flag(_TrajectoryDataFilter self):
         self.current_flag = CTrajFlag.NONE
 
     cdef bint should_record(_TrajectoryDataFilter self, Vector range_vector, double velocity, double mach, double step,
                             double look_angle):
         self.check_zero_crossing(range_vector, look_angle)
         self.check_mach_crossing(velocity, mach)
-        self.check_next_range(range_vector.x, step)
+        self.check_next_range(range_vector._x, step)
         return (self.current_flag & self.filter) != 0
 
     cdef bint should_break(_TrajectoryDataFilter self):
         return self.current_item == self.ranges_length
 
-    cdef check_next_range(_TrajectoryDataFilter self, double next_range, double step):
+    cdef void check_next_range(_TrajectoryDataFilter self, double next_range, double step):
         # Next range check
         if next_range >= self.next_range_distance:
             self.current_flag |= CTrajFlag.RANGE
             self.next_range_distance += step
             self.current_item += 1
 
-    cdef check_mach_crossing(_TrajectoryDataFilter self, double velocity, double mach):
+    cdef void check_mach_crossing(_TrajectoryDataFilter self, double velocity, double mach):
         # Mach crossing check
         cdef double current_mach = velocity / mach
         if self.previous_mach > 1 >= current_mach:
             self.current_flag |= CTrajFlag.MACH
         self.previous_mach = current_mach
 
-    cdef check_zero_crossing(_TrajectoryDataFilter self, Vector range_vector, double look_angle):
+    cdef void check_zero_crossing(_TrajectoryDataFilter self, Vector range_vector, double look_angle):
         # Zero-crossing checks
 
-        if range_vector.x > 0:
+        if range_vector._x > 0:
             # Zero reference line is the sight line defined by look_angle
-            reference_height = range_vector.x * tan(look_angle)
+            reference_height = range_vector._x * tan(look_angle)
             # If we haven't seen ZERO_UP, we look for that first
             if not (self.seen_zero & CTrajFlag.ZERO_UP):
-                if range_vector.x >= reference_height:
+                if range_vector._x >= reference_height:
                     self.current_flag |= CTrajFlag.ZERO_UP
                     self.seen_zero |= CTrajFlag.ZERO_UP
             # We've crossed above sight line; now look for crossing back through it
             elif not (self.seen_zero & CTrajFlag.ZERO_DOWN):
-                if range_vector.x < reference_height:
+                if range_vector._x < reference_height:
                     self.current_flag |= CTrajFlag.ZERO_DOWN
                     self.seen_zero |= CTrajFlag.ZERO_DOWN
 
@@ -269,9 +164,9 @@ cdef class TrajectoryCalc:
         double stability_coefficient
 
         list __mach_list
-        _Config __config
+        _ConfigStruct __config
 
-    def __init__(self, ammo: Ammo, _config: object):
+    def __cinit__(TrajectoryCalc self, object ammo, object _config):
         self.ammo = ammo
         self.__config = _early_bind_config(_config)
 
@@ -294,11 +189,11 @@ cdef class TrajectoryCalc:
     def table_data(self) -> list:
         return self._table_data
 
-    def zero_angle(self, shot_info: Shot, distance: Distance):
+    def zero_angle(self, object shot_info, object distance):
         return self._zero_angle(shot_info, distance)
 
-    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
-                   extra_data: bool = False):
+    def trajectory(self, object shot_info, object max_range, object dist_step,
+                   bint extra_data = False) -> Type[list[TrajectoryData]]:
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
 
@@ -311,7 +206,7 @@ cdef class TrajectoryCalc:
         self._init_trajectory(shot_info)
         return self._trajectory(shot_info, max_range._feet, dist_step._feet, filter_flags)
 
-    cdef _init_trajectory(self, shot_info: Shot):
+    cdef void _init_trajectory(self, object shot_info):
         self.look_angle = shot_info.look_angle._rad
         self.twist = shot_info.weapon.twist._inch
         self.length = shot_info.ammo.dm.length._inch
@@ -331,7 +226,7 @@ cdef class TrajectoryCalc:
             self.muzzle_velocity = shot_info.ammo.mv._fps  # shortcut for >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
-    cdef _zero_angle(TrajectoryCalc self, object shot_info, object distance):
+    cdef object _zero_angle(TrajectoryCalc self, object shot_info, object distance):
         cdef:
             # early bindings
             double _cZeroFindingAccuracy = self.__config.cZeroFindingAccuracy
@@ -396,27 +291,27 @@ cdef class TrajectoryCalc:
         range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
         velocity_vector = Vector(cos(self.barrel_elevation) * cos(self.barrel_azimuth),
                                  sin(self.barrel_elevation),
-                                 cos(self.barrel_elevation) * sin(self.barrel_azimuth)) * velocity
+                                 cos(self.barrel_elevation) * sin(self.barrel_azimuth)).mul_by_const(velocity)
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(
             filter_flags=filter_flags,
             ranges_length=<int> ((maximum_range / step) + 1)
         )
-        data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
+        data_filter.setup_seen_zero(range_vector._y, self.barrel_elevation, self.look_angle)
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
-        while range_vector.x <= maximum_range + self.calc_step:
+        while range_vector._x <= maximum_range + self.calc_step:
             data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
-            if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
-                wind_vector = wind_sock.vector_for_range(range_vector.x)
+            if range_vector._x >= wind_sock.next_range:  # require check before call to improve performance
+                wind_vector = wind_sock.vector_for_range(range_vector._x)
 
             # overwrite density_factor and mach by pointer
             atmo.get_density_factor_and_mach_for_altitude(
-                self.alt0 + range_vector.y, &density_factor, &mach)
+                self.alt0 + range_vector._y, &density_factor, &mach)
 
             if filter_flags:
 
@@ -431,7 +326,7 @@ cdef class TrajectoryCalc:
                         break
 
             #region Ballistic calculation step
-            delta_time = self.calc_step / velocity_vector.x
+            delta_time = self.calc_step / max(1.0, velocity_vector._x)
 
             # use just cdef methods to
             # using .subtract .add instead of "/" better optimized by cython
@@ -442,9 +337,7 @@ cdef class TrajectoryCalc:
             # velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time
             velocity_vector = velocity_vector.subtract(
                 (velocity_adjusted.mul_by_const(drag).subtract(self.gravity_vector)).mul_by_const(delta_time))
-            delta_range_vector = Vector(self.calc_step,
-                                        velocity_vector.y * delta_time,
-                                        velocity_vector.z * delta_time)
+            delta_range_vector = velocity_vector.mul_by_const(delta_time)
             # range_vector += delta_range_vector
             range_vector = range_vector.add(delta_range_vector)
             velocity = velocity_vector.magnitude()
@@ -452,12 +345,12 @@ cdef class TrajectoryCalc:
 
             if (
                     velocity < _cMinimumVelocity
-                    or range_vector.y < _cMaximumDrop
-                    or self.alt0 + range_vector.y < _cMinimumAltitude
+                    or range_vector._y < _cMaximumDrop
+                    or self.alt0 + range_vector._y < _cMinimumAltitude
             ):
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
-                elif range_vector.y < _cMaximumDrop:
+                elif range_vector._y < _cMaximumDrop:
                     reason = RangeError.MaximumDropReached
                 else:
                     reason = RangeError.MinimumAltitudeReached
@@ -526,23 +419,24 @@ cdef Vector wind_to_vector(object wind):
 cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, object flag):
+
     cdef:
-        double windage = range_vector.z + spin_drift
-        double drop_adjustment = get_correction(range_vector.x, range_vector.y)
-        double windage_adjustment = get_correction(range_vector.x, windage)
-        double trajectory_angle = atan(velocity_vector.y / velocity_vector.x)
+        double windage = range_vector._z + spin_drift
+        double drop_adjustment = get_correction(range_vector._x, range_vector._y)
+        double windage_adjustment = get_correction(range_vector._x, windage)
+        double trajectory_angle = atan2(velocity_vector._y, velocity_vector._x);
 
     return TrajectoryData(
         time=time,
-        distance=Distance.Foot(range_vector.x),
+        distance=Distance.Foot(range_vector._x),
         velocity=Velocity.FPS(velocity),
         mach=velocity / mach,
-        height=Distance.Foot(range_vector.y),
-        target_drop=Distance.Foot((range_vector.y - range_vector.x * tan(look_angle)) * cos(look_angle)),
-        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
+        height=Distance.Foot(range_vector._y),
+        target_drop=Distance.Foot((range_vector._y - range_vector._x * tan(look_angle)) * cos(look_angle)),
+        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector._x else 0)),
         windage=Distance.Foot(windage),
         windage_adj=Angular.Radian(windage_adjustment),
-        look_distance=Distance.Foot(range_vector.x / cos(look_angle)),
+        look_distance=Distance.Foot(range_vector._x / cos(look_angle)),
         angle=Angular.Radian(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,
@@ -555,13 +449,6 @@ cdef double get_correction(double distance, double offset):
     if distance != 0:
         return atan(offset / distance)
     return 0  # better None
-
-# cdef double get_calc_step(double step = 0):
-#     cdef double preferred_step = _globalMaxCalcStepSizeFeet
-#     # cdef double defined_max = 0.5  # const will be better optimized with cython
-#     if step == 0:
-#         return preferred_step / 2.0
-#     return min(step, preferred_step) / 2.0
 
 cdef double calculate_energy(double bullet_weight, double velocity):
     return bullet_weight * pow(velocity, 2) / 450400

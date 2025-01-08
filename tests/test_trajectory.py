@@ -88,9 +88,17 @@ class TestTrajectory(unittest.TestCase):
             [data[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20, Angular.MOA]
         ]
 
+        failures = []
+
         for i, d in enumerate(test_data):
-            with self.subTest(f"validate one {i}"):
-                self.validate_one(*d)
+            try:
+                with self.subTest(f"validate one {i}"):
+                    self.validate_one(*d)
+            except AssertionError as e:
+                failures.append(f"Subtest {i} failed: {str(e)}")
+
+        if failures:
+            self.fail("\n".join(failures))  # Raise a single failure with all messages
 
     def test_path_g7(self):
         dm = DragModel(0.223, TableG7, 168, 0.308, 1.282)
@@ -110,9 +118,17 @@ class TestTrajectory(unittest.TestCase):
             [data[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54, Angular.Mil]
         ]
 
+        failures = []
+
         for i, d in enumerate(test_data):
-            with self.subTest(f"validate one {i}"):
-                self.validate_one(*d)
+            try:
+                with self.subTest(f"validate one {i}"):
+                    self.validate_one(*d)
+            except AssertionError as e:
+                failures.append(f"Subtest {i} failed: {str(e)}")
+
+        if failures:
+            self.fail("\n".join(failures))  # Raise a single failure with all messages
 
 
 if __name__ == '__main__':

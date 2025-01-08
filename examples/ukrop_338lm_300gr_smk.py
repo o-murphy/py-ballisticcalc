@@ -39,7 +39,7 @@ current_atmo = Atmo(
     humidity=29
 )
 shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
-shot_result = calc.fire(shot, Distance.Meter(1000), extra_data=True)
+shot_result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
 
 
 from pprint import pprint
