@@ -3,16 +3,16 @@
 """pure python trajectory calculation backend"""
 
 import math
-from dataclasses import dataclass
 
 from typing_extensions import NamedTuple, Union, List, Final, Tuple
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
+from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
-from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
+from py_ballisticcalc.vector import Vector
 
 __all__ = (
     'TrajectoryCalc',
@@ -78,55 +78,6 @@ class CurvePoint(NamedTuple):
     a: float
     b: float
     c: float
-
-
-@dataclass
-class Vector:
-    x: float
-    y: float
-    z: float
-
-    def magnitude(self) -> float:
-        return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
-
-    def mul_by_const(self, a: float) -> 'Vector':
-        return Vector(self.x * a, self.y * a, self.z * a)
-
-    def mul_by_vector(self, b: 'Vector') -> float:
-        return self.x * b.x + self.y * b.y + self.z * b.z
-
-    def add(self, b: 'Vector') -> 'Vector':
-        return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
-
-    def subtract(self, b: 'Vector') -> 'Vector':
-        return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
-
-    def negate(self) -> 'Vector':
-        return Vector(-self.x, -self.y, -self.z)
-
-    def normalize(self) -> 'Vector':
-        m = self.magnitude()
-        if math.fabs(m) < 1e-10:
-            return Vector(self.x, self.y, self.z)
-        return self.mul_by_const(1.0 / m)
-
-    def __mul__(self, other: Union[int, float, 'Vector']) -> Union[float, 'Vector']:
-        if isinstance(other, (int, float)):
-            return self.mul_by_const(other)
-        if isinstance(other, Vector):
-            return self.mul_by_vector(other)
-        raise TypeError(other)
-
-    # aliases more efficient than wrappers
-    __add__ = add
-    __radd__ = add
-    __iadd__ = add
-    __sub__ = subtract
-    __rsub__ = subtract
-    __isub__ = subtract
-    __rmul__ = __mul__
-    __imul__ = __mul__
-    __neg__ = negate
 
 
 # Define the NamedTuple to match the config structure
@@ -385,7 +336,7 @@ class TrajectoryCalc:
             math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
             math.sin(self.barrel_elevation),
             math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)
-        ) * velocity  # type: ignore
+        ).mul_by_const(velocity)  # type: ignore
         # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
@@ -423,7 +374,7 @@ class TrajectoryCalc:
 
             # region Ballistic calculation step (point-mass)
             # Time step is set to advance bullet calc_step distance along x axis
-            delta_time = self.calc_step / velocity_vector.x
+            delta_time = self.calc_step / max(1.0, velocity_vector.x)
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()  # Velocity relative to air
@@ -432,9 +383,7 @@ class TrajectoryCalc:
             # Bullet velocity changes due to both drag and gravity
             velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time  # type: ignore
             # Bullet position changes by velocity time_deltas the time step
-            delta_range_vector = Vector(self.calc_step,
-                                        velocity_vector.y * delta_time,
-                                        velocity_vector.z * delta_time)
+            delta_range_vector = velocity_vector * delta_time
             # Update the bullet position
             range_vector += delta_range_vector
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
@@ -552,7 +501,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     windage = range_vector.z + spin_drift
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
-    trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
+    trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
 
     return TrajectoryData(
         time=time,
@@ -689,18 +638,10 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
 
 try:
     # replace with cython based implementation
-    from py_ballisticcalc_exts import (TrajectoryCalc, Vector,  # type: ignore
-                                       get_global_max_calc_step_size,
-                                       get_global_use_powder_sensitivity,
-                                       set_global_max_calc_step_size,
-                                       set_global_use_powder_sensitivity,
-                                       reset_globals)
-
+    from py_ballisticcalc_exts import TrajectoryCalc, Vector
     from .logger import logger
-
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
-
     warnings.warn("Library running in pure python mode. "
                   "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

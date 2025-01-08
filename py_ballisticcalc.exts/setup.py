@@ -27,6 +27,8 @@ compiler_directives = {
 }
 
 extensions = [
+    Extension('py_ballisticcalc_exts.vector',
+              ['py_ballisticcalc_exts/vector.pyx']),
     Extension('py_ballisticcalc_exts.trajectory_calc',
               ['py_ballisticcalc_exts/trajectory_calc.pyx']),
     Extension('py_ballisticcalc_exts.early_bind_atmo',
