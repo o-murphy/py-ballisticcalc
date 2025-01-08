@@ -423,7 +423,7 @@ class TrajectoryCalc:
 
             # region Ballistic calculation step (point-mass)
             # Time step is set to advance bullet calc_step distance along x axis
-            delta_time = self.calc_step / velocity_vector.x
+            delta_time = self.calc_step / max(1.0, velocity_vector.x)
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()  # Velocity relative to air
@@ -432,7 +432,7 @@ class TrajectoryCalc:
             # Bullet velocity changes due to both drag and gravity
             velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time  # type: ignore
             # Bullet position changes by velocity time_deltas the time step
-            delta_range_vector = Vector(self.calc_step,
+            delta_range_vector = Vector(velocity_vector.x * delta_time,
                                         velocity_vector.y * delta_time,
                                         velocity_vector.z * delta_time)
             # Update the bullet position
