@@ -92,3 +92,6 @@ cdef class Vector:
 
     def __neg__(Vector self):
         return self.negate()
+
+    def __str__(Vector self):
+        return f"Vector(x={self._x}, y={self._y}, z={self._z})"

@@ -501,7 +501,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     windage = range_vector.z + spin_drift
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
-    trajectory_angle = math.atan(velocity_vector.y / velocity_vector.x)
+    trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
 
     return TrajectoryData(
         time=time,

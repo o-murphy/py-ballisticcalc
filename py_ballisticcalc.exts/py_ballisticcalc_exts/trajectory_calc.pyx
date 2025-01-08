@@ -1,5 +1,5 @@
 from cython cimport final
-from libc.math cimport fabs, pow, sin, cos, tan, atan
+from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
 from py_ballisticcalc_exts.early_bind_atmo cimport _EarlyBindAtmo
 from py_ballisticcalc_exts.early_bind_config cimport _Config, _early_bind_config
 from py_ballisticcalc_exts.vector cimport Vector
@@ -456,14 +456,14 @@ cdef Vector wind_to_vector(object wind):
 cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, object flag):
-    if velocity_vector._x == 0:
-        raise ZeroDivisionError("float division by zero")
+    # if velocity_vector._x == 0:
+    #     raise ZeroDivisionError("float division by zero")
 
     cdef:
         double windage = range_vector._z + spin_drift
         double drop_adjustment = get_correction(range_vector._x, range_vector._y)
         double windage_adjustment = get_correction(range_vector._x, windage)
-        double trajectory_angle = atan(velocity_vector._y / velocity_vector._x)
+        double trajectory_angle = atan2(velocity_vector._y, velocity_vector._x);
 
     return TrajectoryData(
         time=time,
