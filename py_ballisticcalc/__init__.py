@@ -182,3 +182,13 @@ __all__ += [
     'TableGI',
     'TableGS'
 ]
+
+
+try:
+    # check if cython based extensions installed
+    import py_ballisticcalc_exts
+    logger.debug("Binary modules found, running in binary mode")
+except ImportError as error:
+    import warnings
+    warnings.warn("Library running in pure python mode. "
+                  "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

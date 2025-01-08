@@ -28,7 +28,7 @@ zero_atmo = Atmo(
 zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 zero_distance=Distance.Meter(100)
 
-config: InterfaceConfigDict = {'use_powder_sensitivity': True, 'cMinimumVelocity': 0}
+config: InterfaceConfigDict = {'use_powder_sensitivity': True}
 calc = Calculator(_config=config)
 calc.set_weapon_zero(zero, zero_distance)
 
@@ -39,14 +39,14 @@ current_atmo = Atmo(
     humidity=29
 )
 shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
-shot_result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
-
-
-from pprint import pprint
-fieldsss = TrajectoryData._fields
-
-for p in shot_result:
-
-    table = [{fieldsss[i]: it} for i, it in enumerate(p.formatted())]
-
-    pprint(table)
+# shot_result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
+#
+#
+# from pprint import pprint
+# fieldsss = TrajectoryData._fields
+#
+# for p in shot_result:
+#
+#     table = [{fieldsss[i]: it} for i, it in enumerate(p.formatted())]
+#
+#     pprint(table)

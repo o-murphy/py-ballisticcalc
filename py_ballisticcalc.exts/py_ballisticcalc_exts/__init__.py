@@ -8,8 +8,10 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 from .trajectory_calc import TrajectoryCalc
 from .vector import Vector
+from .wind import Wind
 
 __all__ = (
     'TrajectoryCalc',
     'Vector',
+    'Wind',
 )

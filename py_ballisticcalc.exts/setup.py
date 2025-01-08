@@ -31,10 +31,12 @@ extensions = [
               ['py_ballisticcalc_exts/vector.pyx']),
     Extension('py_ballisticcalc_exts.trajectory_calc',
               ['py_ballisticcalc_exts/trajectory_calc.pyx']),
-    Extension('py_ballisticcalc_exts.early_bind_atmo',
-              ['py_ballisticcalc_exts/early_bind_atmo.pyx']),
-    Extension('py_ballisticcalc_exts.early_bind_config',
-              ['py_ballisticcalc_exts/early_bind_config.pyx']),
+    Extension('py_ballisticcalc_exts._early_bind_atmo',
+              ['py_ballisticcalc_exts/_early_bind_atmo.pyx']),
+    Extension('py_ballisticcalc_exts._early_bind_config',
+              ['py_ballisticcalc_exts/_early_bind_config.pyx']),
+    Extension('py_ballisticcalc_exts.wind',
+              ['py_ballisticcalc_exts/wind.pyx']),
 ]
 
 extensions = cythonize(extensions,

@@ -3,7 +3,7 @@
 """pure python trajectory calculation backend"""
 
 import math
-
+import warnings
 from typing_extensions import NamedTuple, Union, List, Final, Tuple
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
@@ -13,6 +13,7 @@ from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
 from py_ballisticcalc.vector import Vector
+from py_ballisticcalc.logger import logger
 
 __all__ = (
     'TrajectoryCalc',
@@ -652,9 +653,6 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
 try:
     # replace with cython based implementation
     from py_ballisticcalc_exts import TrajectoryCalc, Vector  # type: ignore
-    from .logger import logger
     logger.debug("Binary modules found, running in binary mode")
-except ImportError as error:
-    import warnings
-    warnings.warn("Library running in pure python mode. "
-                  "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)
+except ImportError as err:
+    logger.debug(err)

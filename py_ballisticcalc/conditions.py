@@ -9,6 +9,9 @@ from typing_extensions import List, Union, Optional, Tuple
 from py_ballisticcalc.munition import Weapon, Ammo
 from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from py_ballisticcalc.logger import logger
+
+__all__ = ('Atmo', 'Wind', 'Shot')
 
 
 @dataclass
@@ -100,8 +103,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         if fahrenheit < -cDegreesFtoR:
             fahrenheit = -cDegreesFtoR
             warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to absolute zero "
-                           f"It must be >= {-cDegreesFtoR} to avoid a domain error."
-                           f"redefine 'cDegreesFtoR' constant to increase it", RuntimeWarning)
+                          f"It must be >= {-cDegreesFtoR} to avoid a domain error."
+                          f"redefine 'cDegreesFtoR' constant to increase it", RuntimeWarning)
         return math.sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
 
     @staticmethod
@@ -110,8 +113,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         if celsius < -cDegreesCtoK:
             celsius = -cDegreesCtoK
             warnings.warn(f"Invalid temperature: {celsius}°C. Adjusted to absolute zero "
-                           f"It must be >= {-cDegreesCtoK} to avoid a domain error."
-                           f"redefine 'cDegreesCtoK' constant to increase it", RuntimeWarning)
+                          f"It must be >= {-cDegreesCtoK} to avoid a domain error."
+                          f"redefine 'cDegreesCtoK' constant to increase it", RuntimeWarning)
         return math.sqrt(1 + celsius / cDegreesCtoK) * cSpeedOfSoundMetric
 
     @staticmethod
@@ -148,7 +151,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         if t < cLowestTempF:
             t = cLowestTempF
             warnings.warn(f"Reached minimum temperature limit. Adjusted to {cLowestTempF}°F "
-                           "redefine 'cLowestTempF' constant to increase it ", RuntimeWarning)
+                          "redefine 'cLowestTempF' constant to increase it ", RuntimeWarning)
         return t
 
     def calculate_density(self, t: float, p: float) -> float:
@@ -280,4 +283,8 @@ class Shot:
                                  + (self.relative_angle >> Angular.Radian)))
 
 
-__all__ = ('Atmo', 'Wind', 'Shot')
+try:
+    # replace with cython based implementation
+    from py_ballisticcalc_exts import Wind  # type: ignore
+except ImportError as err:
+    logger.debug(err)

@@ -1,14 +1,15 @@
 from cython cimport final
 from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
 from py_ballisticcalc_exts.vector cimport Vector
-from py_ballisticcalc_exts.early_bind_atmo cimport _EarlyBindAtmo
-from py_ballisticcalc_exts.early_bind_config cimport _ConfigStruct, _early_bind_config
+from py_ballisticcalc_exts.wind cimport Wind, _WIND_MAX_DISTANCE_FEET
+from py_ballisticcalc_exts._early_bind_atmo cimport _EarlyBindAtmo
+from py_ballisticcalc_exts._early_bind_config cimport _ConfigStruct, _early_bind_config
 
 import warnings
 
 from typing_extensions import Type
 
-from py_ballisticcalc.conditions import Wind
+# from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import *
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
@@ -99,16 +100,16 @@ cdef class _TrajectoryDataFilter:
 
 @final
 cdef class _WindSock:
-    cdef object winds
+    cdef tuple[Wind] winds
     cdef int current
     cdef double next_range
     cdef Vector _last_vector_cache
     cdef int _length
 
-    def __cinit__(_WindSock self, object winds):
+    def __cinit__(_WindSock self, tuple[Wind] winds):
         self.winds = winds or tuple()
         self.current = 0
-        self.next_range = Wind.MAX_DISTANCE_FEET
+        self.next_range = _WIND_MAX_DISTANCE_FEET
         self._last_vector_cache = None
         self._length = len(self.winds)
 
@@ -121,21 +122,21 @@ cdef class _WindSock:
         return self._last_vector_cache
 
     cdef void update_cache(_WindSock self):
-        cdef object cur_wind
+        cdef Wind cur_wind
         if self.current < self._length:
             cur_wind = self.winds[self.current]
             self._last_vector_cache = wind_to_vector(cur_wind)
             self.next_range = cur_wind.until_distance >> Distance.Foot
         else:
             self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-            self.next_range = Wind.MAX_DISTANCE_FEET
+            self.next_range = _WIND_MAX_DISTANCE_FEET
 
     cdef Vector vector_for_range(_WindSock self, double next_range):
         if next_range >= self.next_range:
             self.current += 1
             if self.current >= self._length:
                 self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-                self.next_range = Wind.MAX_DISTANCE_FEET
+                self.next_range = _WIND_MAX_DISTANCE_FEET
             else:
                 self.update_cache()  # This will trigger cache updates.
         return self._last_vector_cache
@@ -405,7 +406,7 @@ cdef class TrajectoryCalc:
             return sd * fv * ftp
         return 0
 
-cdef Vector wind_to_vector(object wind):
+cdef Vector wind_to_vector(Wind wind):
     cdef:
         # no need convert it twice
         double wind_velocity_fps = wind.velocity._fps  # shortcut for (wind.velocity >> Velocity.FPS)
