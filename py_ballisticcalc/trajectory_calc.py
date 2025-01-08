@@ -93,6 +93,14 @@ class Config(NamedTuple):
 
 
 class _TrajectoryDataFilter:
+    filter: Union[TrajFlag, int]
+    current_flag: Union[TrajFlag, int]
+    seen_zero: Union[TrajFlag, int]
+    current_item: int
+    ranges_length: int
+    previous_mach: float
+    next_range_distance: float
+
     def __init__(self, filter_flags: Union[TrajFlag, int],
                  ranges_length: int):
         self.filter: Union[TrajFlag, int] = filter_flags
@@ -160,6 +168,10 @@ class _TrajectoryDataFilter:
 
 
 class _WindSock:
+    winds: tuple['Wind', ...]
+    current: int
+    next_range: float
+
     def __init__(self, winds: Union[Tuple["Wind", ...], None]):
         self.winds: Tuple["Wind", ...] = winds or tuple()
         self.current: int = 0
@@ -202,10 +214,11 @@ class _WindSock:
 class TrajectoryCalc:
     """All calculations are done in units of feet and fps"""
 
-    # the attributes have to be defined before usage
     barrel_azimuth: float
     barrel_elevation: float
     twist: float
+    ammo: Ammo
+    gravity_vector: Vector
 
     def __init__(self, ammo: Ammo, _config: Config):
         self.ammo: Ammo = ammo
@@ -638,7 +651,7 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
 
 try:
     # replace with cython based implementation
-    from py_ballisticcalc_exts import TrajectoryCalc, Vector
+    from py_ballisticcalc_exts import TrajectoryCalc, Vector  # type: ignore
     from .logger import logger
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
