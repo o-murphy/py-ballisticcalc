@@ -638,18 +638,10 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
 
 try:
     # replace with cython based implementation
-    from py_ballisticcalc_exts import (TrajectoryCalc, Vector,  # type: ignore
-                                       get_global_max_calc_step_size,
-                                       get_global_use_powder_sensitivity,
-                                       set_global_max_calc_step_size,
-                                       set_global_use_powder_sensitivity,
-                                       reset_globals)
-
+    from py_ballisticcalc_exts import TrajectoryCalc, Vector
     from .logger import logger
-
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
-
     warnings.warn("Library running in pure python mode. "
                   "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

@@ -6,20 +6,10 @@ __copyright__ = (
 
 __credits__ = ["o-murphy", "dbookstaber"]
 
-from .trajectory_calc import (TrajectoryCalc,
-                              get_global_max_calc_step_size,
-                              get_global_use_powder_sensitivity,
-                              set_global_max_calc_step_size,
-                              set_global_use_powder_sensitivity,
-                              reset_globals,)
+from .trajectory_calc import TrajectoryCalc
 from .vector import Vector
 
 __all__ = (
     'TrajectoryCalc',
     'Vector',
-    'get_global_max_calc_step_size',
-    'get_global_use_powder_sensitivity',
-    'set_global_max_calc_step_size',
-    'set_global_use_powder_sensitivity',
-    'reset_globals',
 )
