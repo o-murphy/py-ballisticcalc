@@ -296,17 +296,13 @@ class TrajectoryCalc:
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
         height_at_zero = math.sin(self.look_angle) * distance_feet
-        maximum_range = zero_distance - 1.5 * self.calc_step
-        # self.barrel_azimuth = 0.0
-        # self.barrel_elevation = math.atan(height_at_zero / zero_distance)
-        # self.twist = 0.0
 
         iterations_count = 0
         zero_finding_error = _cZeroFindingAccuracy * 2
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
-            t = self._trajectory(shot_info, maximum_range, zero_distance, TrajFlag.NONE)[0]
+            t = self._trajectory(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
             height = t.height >> Distance.Foot
             zero_finding_error = math.fabs(height - height_at_zero)
             if zero_finding_error > _cZeroFindingAccuracy:
