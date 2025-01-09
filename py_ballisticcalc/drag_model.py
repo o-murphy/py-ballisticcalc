@@ -3,10 +3,11 @@
 import math
 from dataclasses import dataclass, field
 
-from typing_extensions import Union, List, Tuple, Optional, TypedDict
+from typing_extensions import Union, List, Tuple, Optional
 
 from py_ballisticcalc.constants import cDegreesCtoK, cSpeedOfSoundMetric, cStandardTemperatureC
 from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
+from py_ballisticcalc.drag_tables import DragTablePointDictType
 
 
 @dataclass
@@ -16,8 +17,7 @@ class DragDataPoint:
     CD: float  # Drag coefficient
 
 
-DragDataPointDictType = TypedDict('DragDataPointDictType', {'Mach': float, 'CD': float})
-DragTableDataType = Union[List[DragDataPointDictType], List[DragDataPoint]]
+DragTableDataType = Union[List[DragTablePointDictType], List[DragDataPoint]]
 
 
 @dataclass(order=True)
