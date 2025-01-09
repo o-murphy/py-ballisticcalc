@@ -5,7 +5,7 @@ try:
     from Cython.Build import cythonize
 except ImportError:
     import sys
-    # use this command to skip build wheel and compile modules on unsupported platforms
+    # use this command to skip building wheel and compiling modules on unsupported platforms
     # pip install --no-build-isolation --no-binary :all: py-ballisticcalc.exts
     setup()
     sys.exit(0)  # Stop installation
@@ -26,17 +26,19 @@ compiler_directives = {
     "show_performance_hints": True,
 }
 
+extension_names = [
+    "vector",
+    "conditions",
+    "trajectory_calc",
+    "_data_repr",
+    "_early_bind_atmo",
+    "_early_bind_config",
+]
+
 extensions = [
-    Extension('py_ballisticcalc_exts.vector',
-              ['py_ballisticcalc_exts/vector.pyx']),
-    Extension('py_ballisticcalc_exts.trajectory_calc',
-              ['py_ballisticcalc_exts/trajectory_calc.pyx']),
-    Extension('py_ballisticcalc_exts._early_bind_atmo',
-              ['py_ballisticcalc_exts/_early_bind_atmo.pyx']),
-    Extension('py_ballisticcalc_exts._early_bind_config',
-              ['py_ballisticcalc_exts/_early_bind_config.pyx']),
-    Extension('py_ballisticcalc_exts.wind',
-              ['py_ballisticcalc_exts/wind.pyx']),
+    Extension('py_ballisticcalc_exts.' + name,
+              ['py_ballisticcalc_exts/' + name + '.pyx'])
+    for name in extension_names
 ]
 
 extensions = cythonize(extensions,

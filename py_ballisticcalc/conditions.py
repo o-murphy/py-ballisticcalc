@@ -264,7 +264,7 @@ class Shot:
         return tuple(sorted(self._winds, key=lambda wind: wind.until_distance.raw_value))
 
     @winds.setter
-    def winds(self, winds: Optional[List[Wind]] = None):
+    def winds(self, winds: Optional[List[Wind]]):
         self._winds = winds or [Wind()]
 
     @property
@@ -285,6 +285,6 @@ class Shot:
 
 try:
     # replace with cython based implementation
-    from py_ballisticcalc_exts import Wind  # type: ignore
+    from py_ballisticcalc_exts import Wind, Shot  # type: ignore
 except ImportError as err:
     logger.debug(err)

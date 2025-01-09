@@ -103,13 +103,13 @@ class TestComputer(unittest.TestCase):
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
                     winds=[])
         # set empty list
-        shot._winds = []
+        shot.winds = []
         try:
             self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         except Exception as e:
             self.fail("self.calc.fire() raised ExceptionType unexpectedly!")
 
-        self._winds = None
+        self.winds = None
         try:
             self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         except Exception as e:

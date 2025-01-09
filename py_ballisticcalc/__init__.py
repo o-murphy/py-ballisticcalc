@@ -186,7 +186,7 @@ __all__ += [
 
 try:
     # check if cython based extensions installed
-    import py_ballisticcalc_exts
+    import py_ballisticcalc_exts  # type: ignore
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings

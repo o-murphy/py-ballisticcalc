@@ -14,7 +14,11 @@
         let lineText = pre.textContent.trim();
 
         // Skip empty lines or lines that start with a comment
-        if (lineText.match(/^\d+: #/) || !lineText.match(/:\s*\S/)) return;
+        if (
+            lineText.match(/^\d+: #/)
+            || lineText.match(/^\d+: """/)
+            || !lineText.match(/:\s*\S/)
+        ) return;
 
         totalLines++;
 
@@ -33,11 +37,11 @@
 
     let cythonizedLinesPercent = ((1 - pythonOverheadLines / totalLines) * 100);
     let cythonizedPercent = ((1 - totalScore / (totalLines*100)) * 100).toFixed(2);
-    console.log(totalScore, totalLines*100)
-    console.log(`Total Non-Empty Lines: ${totalLines}`);
-    console.log(`Python Overhead Lines: ${pythonOverheadLines}`);
-    console.log(`Cythonization Percentage: ${cythonizedPercent}%`);
-    console.log(`Python Overhead Lines Percentage: ${(100-cythonizedLinesPercent).toFixed(2)}%`);
+    console.log(`# Total Score: ${totalScore}, Possible Score: ${totalLines*100}`)
+    console.log(`# Total Non-Empty Lines: ${totalLines}`);
+    console.log(`# Python Overhead Lines: ${pythonOverheadLines}`);
+    console.log(`# Cythonization Percentage: ${cythonizedPercent}%`);
+    console.log(`# Python Overhead Lines Percentage: ${(100-cythonizedLinesPercent).toFixed(2)}%`);
     // console.log(`Total Score Sum: ${totalScore}`);  // Output the sum of all scores
     // console.log(`Total Score Rate: ${1 - (totalScore / totalLines*100) * 100}`);  // Output the sum of all scores
 })();

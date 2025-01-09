@@ -1,7 +1,15 @@
+"""
+# Total Score: 2421, Possible Score: 46900
+# VM40:36 # Total Non-Empty Lines: 469
+# VM40:37 # Python Overhead Lines: 153
+# VM40:38 # Cythonization Percentage: 94.84%
+# VM40:39 # Python Overhead Lines Percentage: 32.62%
+"""
+
 from cython cimport final
 from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
 from py_ballisticcalc_exts.vector cimport Vector
-from py_ballisticcalc_exts.wind cimport Wind, _WIND_MAX_DISTANCE_FEET
+from py_ballisticcalc_exts.conditions cimport Wind, Shot, _WIND_MAX_DISTANCE_FEET
 from py_ballisticcalc_exts._early_bind_atmo cimport _EarlyBindAtmo
 from py_ballisticcalc_exts._early_bind_config cimport _ConfigStruct, _early_bind_config
 
@@ -190,7 +198,7 @@ cdef class TrajectoryCalc:
     def table_data(self) -> list:
         return self._table_data
 
-    def zero_angle(self, object shot_info, object distance):
+    def zero_angle(self, Shot shot_info, object distance):
         return self._zero_angle(shot_info, distance)
 
     def trajectory(self, object shot_info, object max_range, object dist_step,
@@ -207,7 +215,7 @@ cdef class TrajectoryCalc:
         self._init_trajectory(shot_info)
         return self._trajectory(shot_info, max_range._feet, dist_step._feet, filter_flags)
 
-    cdef void _init_trajectory(self, object shot_info):
+    cdef void _init_trajectory(self, Shot shot_info):
         self.look_angle = shot_info.look_angle._rad
         self.twist = shot_info.weapon.twist._inch
         self.length = shot_info.ammo.dm.length._inch
@@ -227,7 +235,7 @@ cdef class TrajectoryCalc:
             self.muzzle_velocity = shot_info.ammo.mv._fps  # shortcut for >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
-    cdef object _zero_angle(TrajectoryCalc self, object shot_info, object distance):
+    cdef object _zero_angle(TrajectoryCalc self, Shot shot_info, object distance):
         cdef:
             # early bindings
             double _cZeroFindingAccuracy = self.__config.cZeroFindingAccuracy
@@ -263,7 +271,7 @@ cdef class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    cdef list _trajectory(TrajectoryCalc self, object shot_info,
+    cdef list _trajectory(TrajectoryCalc self, Shot shot_info,
                           double maximum_range, double step, int filter_flags):
         cdef:
             double velocity, delta_time
