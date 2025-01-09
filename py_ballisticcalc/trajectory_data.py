@@ -4,7 +4,10 @@ from dataclasses import dataclass, field
 from typing_extensions import NamedTuple, Optional, Union, Any, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractDimension, Unit, PreferredUnits
+
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
 
 DataFrame: Any
 Axes: Any
@@ -19,6 +22,7 @@ _TrajFlagNames = {
     3: 'ZERO',
     31: 'ALL',
 }
+
 
 class TrajFlag(int):
     """Flags for marking trajectory row if Zero or Mach crossing
@@ -87,7 +91,7 @@ class TrajectoryData(NamedTuple):
     ogw: Weight
     flag: Union[TrajFlag, int]
 
-    def formatted(self) -> Tuple:
+    def formatted(self) -> Tuple[str, ...]:
         """
         :return: matrix of formatted strings for each value of trajectory in default prefer_units
         """
@@ -116,7 +120,7 @@ class TrajectoryData(NamedTuple):
             TrajFlag.name(self.flag)
         )
 
-    def in_def_units(self) -> tuple:
+    def in_def_units(self) -> Tuple[float, ...]:
         """
         :return: matrix of floats of the trajectory in default prefer_units
         """
@@ -306,4 +310,8 @@ class HitResult:
             ) from err
 
 
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
+try:
+    # replace with cython based implementation
+    from py_ballisticcalc_exts import TrajectoryData  # type: ignore
+except ImportError as err:
+    logger.debug(err)

@@ -44,7 +44,6 @@ cythonized:
         Total time: 11.529288 seconds
         Execution rate: 10.41 calls per second
 """
-
 from py_ballisticcalc import Unit
 from ukrop_338lm_300gr_smk import calc, shot
 

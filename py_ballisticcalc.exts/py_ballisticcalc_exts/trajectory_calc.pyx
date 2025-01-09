@@ -1,24 +1,22 @@
 """
-# Total Score: 2421, Possible Score: 46900
-# VM40:36 # Total Non-Empty Lines: 469
-# VM40:37 # Python Overhead Lines: 153
-# VM40:38 # Cythonization Percentage: 94.84%
-# VM40:39 # Python Overhead Lines Percentage: 32.62%
+# Total Score: 2394, Possible Score: 45200
+# Total Non-Empty Lines: 452
+# Python Overhead Lines: 152
+# Cythonization Percentage: 94.70%
+# Python Overhead Lines Percentage: 33.63%
 """
 
 from cython cimport final
 from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
 from py_ballisticcalc_exts.vector cimport Vector
 from py_ballisticcalc_exts.conditions cimport Wind, Shot, _WIND_MAX_DISTANCE_FEET
+from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData, CTrajFlag
 from py_ballisticcalc_exts._early_bind_atmo cimport _EarlyBindAtmo
 from py_ballisticcalc_exts._early_bind_config cimport _ConfigStruct, _early_bind_config
 
 import warnings
-
 from typing_extensions import Type
 
-# from py_ballisticcalc.conditions import Wind
-from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import *
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 
@@ -29,16 +27,6 @@ __all__ = (
 
 cdef struct CurvePoint:
     double a, b, c
-
-cdef enum CTrajFlag:
-    NONE = 0
-    ZERO_UP = 1
-    ZERO_DOWN = 2
-    MACH = 4
-    RANGE = 8
-    DANGER = 16
-    ZERO = ZERO_UP | ZERO_DOWN
-    ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
 
 @final
 cdef class _TrajectoryDataFilter:
@@ -155,7 +143,7 @@ cdef class TrajectoryCalc:
         object ammo
         double _bc
         list _table_data
-        list _curve
+        list[CurvePoint] _curve
         Vector gravity_vector
         double look_angle
         double twist
@@ -172,7 +160,7 @@ cdef class TrajectoryCalc:
         double muzzle_velocity
         double stability_coefficient
 
-        list __mach_list
+        list[double] __mach_list
         _ConfigStruct __config
 
     def __cinit__(TrajectoryCalc self, object ammo, object _config):
@@ -271,13 +259,13 @@ cdef class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    cdef list _trajectory(TrajectoryCalc self, Shot shot_info,
+    cdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
                           double maximum_range, double step, int filter_flags):
         cdef:
             double velocity, delta_time
             double density_factor = .0
             double mach = .0
-            list ranges = []
+            list[TrajectoryData] ranges = []
             double time = .0
             double drag = .0
             Vector velocity_vector, velocity_adjusted
@@ -339,15 +327,12 @@ cdef class TrajectoryCalc:
 
             # use just cdef methods to
             # using .subtract .add instead of "/" better optimized by cython
-            # velocity_adjusted = velocity_vector - wind_vector
             velocity_adjusted = velocity_vector.subtract(wind_vector)
             velocity = velocity_adjusted.magnitude()
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
-            # velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time
             velocity_vector = velocity_vector.subtract(
                 (velocity_adjusted.mul_by_const(drag).subtract(self.gravity_vector)).mul_by_const(delta_time))
             delta_range_vector = velocity_vector.mul_by_const(delta_time)
-            # range_vector += delta_range_vector
             range_vector = range_vector.add(delta_range_vector)
             velocity = velocity_vector.magnitude()
             time += delta_range_vector.magnitude() / velocity
@@ -364,8 +349,8 @@ cdef class TrajectoryCalc:
                 else:
                     reason = RangeError.MinimumAltitudeReached
                 raise RangeError(reason, ranges)
-                # break
             #endregion
+
         #endregion
         # If filter_flags == 0 then all we want is the ending value
         if not filter_flags:
@@ -425,7 +410,7 @@ cdef Vector wind_to_vector(Wind wind):
         double cross_component = wind_velocity_fps * sin(wind_direction_rad)
     return Vector(range_component, 0., cross_component)
 
-cdef create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
+cdef TrajectoryData create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, object flag):
 
@@ -465,9 +450,9 @@ cdef double calculate_energy(double bullet_weight, double velocity):
 cdef double calculate_ogv(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
 
-cdef list calculate_curve(list data_points):
+cdef list[CurvePoint] calculate_curve(list data_points):
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
-    cdef list curve = []
+    cdef list[CurvePoint] curve = []
     cdef CurvePoint curve_point
     cdef int i, num_points, len_data_points, len_data_range
 
@@ -498,7 +483,7 @@ cdef list calculate_curve(list data_points):
     return curve
 
 # use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
-cdef double calculate_by_curve(list data, list curve, double mach):
+cdef double calculate_by_curve(list data, list[CurvePoint] curve, double mach):
     cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint curve_m
 
@@ -520,19 +505,19 @@ cdef double calculate_by_curve(list data, list curve, double mach):
     curve_m = curve[m]
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
-cdef list _get_only_mach_data(list data):
+cdef list[double] _get_only_mach_data(list data):
     cdef int data_len = len(data)
-    cdef list result = [None] * data_len  # Preallocate the list to avoid resizing during appending
+    cdef list[double] result = []  # [.0] * data_len # Preallocate the list to avoid resizing during appending
     cdef int i
     cdef object dp  # Assuming dp is an object with a Mach attribute
 
     for i in range(data_len):
         dp = data[i]  # Direct indexing is more efficient than using `PyList_GET_ITEM`
-        result[i] = dp.Mach  # Directly assign the value to the pre-allocated result list
+        result.append(dp.Mach)  # result[i] = dp.Mach # Directly assign the value to the pre-allocated result list
 
     return result
 
-cdef double _calculate_by_curve_and_mach_list(list mach_list, list curve, double mach):
+cdef double _calculate_by_curve_and_mach_list(list[double] mach_list, list[CurvePoint] curve, double mach):
     cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint curve_m
 
