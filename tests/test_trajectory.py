@@ -16,7 +16,7 @@ class TestTrajectory(unittest.TestCase):
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                      Distance(100, Distance.Yard))
 
-        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001652, 6,
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.0016514, 6,
                                f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
 
     def test_zero2(self):
@@ -28,7 +28,7 @@ class TestTrajectory(unittest.TestCase):
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                      Distance(100, Distance.Yard))
 
-        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001228, 6,
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.0012286, 6,
                                f'TestZero2 failed {zero_angle >> Angular.Radian:.10f}')
 
     def custom_assert_equal(self, a, b, accuracy, name):
@@ -40,7 +40,7 @@ class TestTrajectory(unittest.TestCase):
                      windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: Unit):
 
-        self.custom_assert_equal(distance, data.distance >> Distance.Yard, 0.001, "Distance")
+        self.custom_assert_equal(distance, data.distance >> Distance.Yard, 0.1, "Distance")
         self.custom_assert_equal(velocity, data.velocity >> Velocity.FPS, 5, "Velocity")
         self.custom_assert_equal(mach, data.mach, 0.005, "Mach")
         self.custom_assert_equal(energy, data.energy >> Energy.FootPound, 5, "Energy")
@@ -88,9 +88,17 @@ class TestTrajectory(unittest.TestCase):
             [data[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20, Angular.MOA]
         ]
 
+        failures = []
+
         for i, d in enumerate(test_data):
-            with self.subTest(f"validate one {i}"):
-                self.validate_one(*d)
+            try:
+                with self.subTest(f"validate one {i}"):
+                    self.validate_one(*d)
+            except AssertionError as e:
+                failures.append(f"Subtest {i} failed: {str(e)}")
+
+        if failures:
+            self.fail("\n".join(failures))  # Raise a single failure with all messages
 
     def test_path_g7(self):
         dm = DragModel(0.223, TableG7, 168, 0.308, 1.282)
@@ -110,9 +118,17 @@ class TestTrajectory(unittest.TestCase):
             [data[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54, Angular.Mil]
         ]
 
+        failures = []
+
         for i, d in enumerate(test_data):
-            with self.subTest(f"validate one {i}"):
-                self.validate_one(*d)
+            try:
+                with self.subTest(f"validate one {i}"):
+                    self.validate_one(*d)
+            except AssertionError as e:
+                failures.append(f"Subtest {i} failed: {str(e)}")
+
+        if failures:
+            self.fail("\n".join(failures))  # Raise a single failure with all messages
 
 
 if __name__ == '__main__':

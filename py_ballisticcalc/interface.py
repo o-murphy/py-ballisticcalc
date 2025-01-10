@@ -51,20 +51,22 @@ class Calculator:
 
     def fire(self, shot: Shot, trajectory_range: Union[float, Distance],
              trajectory_step: Union[float, Distance] = 0,
-             extra_data: bool = False) -> HitResult:
+             extra_data: bool = False,
+             time_step: float = 0.0) -> HitResult:
         """Calculates trajectory
         :param shot: shot parameters (initial position and barrel angle)
         :param trajectory_range: Downrange distance at which to stop computing trajectory
         :param trajectory_step: step between trajectory points to record
         :param extra_data: True => store TrajectoryData for every calculation step;
             False => store TrajectoryData only for each trajectory_step
+        :param time_step: (seconds) If > 0 then record TrajectoryData at least this frequently
         """
         trajectory_range = PreferredUnits.distance(trajectory_range)
         if not trajectory_step:
             trajectory_step = trajectory_range.unit_value / 10.0
         step: Distance = PreferredUnits.distance(trajectory_step)
         self._calc = TrajectoryCalc(shot.ammo, create_interface_config(self._config))
-        data = self._calc.trajectory(shot, trajectory_range, step, extra_data)
+        data = self._calc.trajectory(shot, trajectory_range, step, extra_data, time_step)
         return HitResult(shot, data, extra_data)
 
 

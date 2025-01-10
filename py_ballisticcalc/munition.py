@@ -205,11 +205,14 @@ class Ammo:
         :param current_temp: Temperature of cartridge powder
         :return: Muzzle velocity corrected to current_temp
         """
-        v0 = self.mv >> Velocity.MPS
-        t0 = self.powder_temp >> Temperature.Celsius
-        t1 = PreferredUnits.temperature(current_temp) >> Temperature.Celsius
-        t_delta = t1 - t0
-        muzzle_velocity = self.temp_modifier / (15 / v0) * t_delta + v0
+        try:
+            v0 = self.mv >> Velocity.MPS
+            t0 = self.powder_temp >> Temperature.Celsius
+            t1 = PreferredUnits.temperature(current_temp) >> Temperature.Celsius
+            t_delta = t1 - t0
+            muzzle_velocity = self.temp_modifier / (15 / v0) * t_delta + v0
+        except ZeroDivisionError:
+            muzzle_velocity = 0
         return Velocity.MPS(muzzle_velocity)
 
 

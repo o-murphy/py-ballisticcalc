@@ -22,6 +22,7 @@ from .munition import *
 from .trajectory_data import *
 from .unit import *
 from .interface_config import *
+from .exceptions import *
 
 if sys.version_info[:2] < (3, 11):
     import tomli as tomllib
@@ -148,9 +149,6 @@ __all__ = [
     'SightReticleStep',
     'Unit',
     'UnitAliases',
-    'UnitAliasError',
-    'UnitTypeError',
-    'UnitConversionError',
     'AbstractDimension',
     'AbstractDimensionType',
     'UnitProps',
@@ -165,6 +163,12 @@ __all__ = [
     'PreferredUnits',
     'get_drag_tables_names',
     'constants',
+    'exceptions',
+    'UnitAliasError',
+    'UnitTypeError',
+    'UnitConversionError',
+    'ZeroFindingError',
+    'RangeError',
 ]
 
 # __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]
@@ -178,3 +182,13 @@ __all__ += [
     'TableGI',
     'TableGS'
 ]
+
+
+try:
+    # check if cython based extensions installed
+    import py_ballisticcalc_exts  # type: ignore
+    logger.debug("Binary modules found, running in binary mode")
+except ImportError as error:
+    import warnings
+    warnings.warn("Library running in pure python mode. "
+                  "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

@@ -1,28 +1,53 @@
 """Implements a point of trajectory class in applicable data types"""
 from dataclasses import dataclass, field
-from enum import IntFlag
 
-from typing_extensions import NamedTuple, Optional, Union, Any, Tuple
+from typing_extensions import NamedTuple, Optional, Union, Any, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractDimension, Unit, PreferredUnits
+
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
 
 DataFrame: Any
 Axes: Any
 
+_TrajFlagNames = {
+    0: 'NONE',
+    1: 'ZERO_UP',
+    2: 'ZERO_DOWN',
+    4: 'MACH',
+    8: 'RANGE',
+    16: 'DANGER',
+    3: 'ZERO',
+    31: 'ALL',
+}
 
-class TrajFlag(IntFlag):
+
+class TrajFlag(int):
     """Flags for marking trajectory row if Zero or Mach crossing
     Also uses to set a filters for a trajectory calculation loop
     """
-    NONE = 0
-    ZERO_UP = 1
-    ZERO_DOWN = 2
-    MACH = 4
-    RANGE = 8
-    DANGER = 16
-    ZERO = ZERO_UP | ZERO_DOWN
-    ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
+    NONE: Final[int] = 0
+    ZERO_UP: Final[int] = 1
+    ZERO_DOWN: Final[int] = 2
+    MACH: Final[int] = 4
+    RANGE: Final[int] = 8
+    DANGER: Final[int] = 16
+    ZERO: Final[int] = ZERO_UP | ZERO_DOWN
+    ALL: Final[int] = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
+
+    @staticmethod
+    def name(value: Union[int, 'TrajFlag']) -> str:
+        """Return a concatenated name representation of the given flag value."""
+        if value in _TrajFlagNames:
+            return _TrajFlagNames[value]
+
+        parts = [name for bit, name in _TrajFlagNames.items() if bit and (value & bit) == bit]
+        if "ZERO_UP" in parts and "ZERO_DOWN" in parts:
+            parts.remove("ZERO_UP")
+            parts.remove("ZERO_DOWN")
+        return "|".join(parts) if parts else "UNKNOWN"
 
 
 class TrajectoryData(NamedTuple):
@@ -66,7 +91,7 @@ class TrajectoryData(NamedTuple):
     ogw: Weight
     flag: Union[TrajFlag, int]
 
-    def formatted(self) -> Tuple:
+    def formatted(self) -> Tuple[str, ...]:
         """
         :return: matrix of formatted strings for each value of trajectory in default prefer_units
         """
@@ -92,10 +117,10 @@ class TrajectoryData(NamedTuple):
             _fmt(self.energy, PreferredUnits.energy),
             _fmt(self.ogw, PreferredUnits.ogw),
 
-            self.flag
+            TrajFlag.name(self.flag)
         )
 
-    def in_def_units(self) -> tuple:
+    def in_def_units(self) -> Tuple[float, ...]:
         """
         :return: matrix of floats of the trajectory in default prefer_units
         """
@@ -115,7 +140,7 @@ class TrajectoryData(NamedTuple):
             self.drag,
             self.energy >> PreferredUnits.energy,
             self.ogw >> PreferredUnits.ogw,
-            TrajFlag(self.flag)
+            self.flag
         )
 
 
@@ -169,7 +194,7 @@ class HitResult:
     def zeros(self) -> list[TrajectoryData]:
         """:return: zero crossing points"""
         self.__check_extra__()
-        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO.value]
+        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
         if len(data) < 1:
             raise ArithmeticError("Can't find zero crossing points")
         return data
@@ -285,4 +310,8 @@ class HitResult:
             ) from err
 
 
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
+try:
+    # replace with cython based implementation
+    from py_ballisticcalc_exts import TrajectoryData  # type: ignore
+except ImportError as err:
+    logger.debug(err)

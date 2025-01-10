@@ -8,6 +8,6 @@ console_handler.setFormatter(formatter)
 
 logger = logging.getLogger('py_balcalc')
 logger.addHandler(console_handler)
-logger.setLevel(logging.INFO)
+# logger.setLevel(logging.INFO)
 
 __all__ = ('logger',)

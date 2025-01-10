@@ -1,7 +1,10 @@
 """Templates of the common used drag tables"""
+from typing_extensions import TypedDict, List
+
+DragTablePointDictType = TypedDict('DragTablePointDictType', {'Mach': float, 'CD': float})
 
 
-TableG1 = [
+TableG1: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.2629},
     {'Mach': 0.05, 'CD': 0.2558},
     {'Mach': 0.10, 'CD': 0.2487},
@@ -83,7 +86,7 @@ TableG1 = [
     {'Mach': 5.00, 'CD': 0.4988}
 ]
 
-TableG7 = [
+TableG7: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.1198},
     {'Mach': 0.05, 'CD': 0.1197},
     {'Mach': 0.10, 'CD': 0.1196},
@@ -170,7 +173,7 @@ TableG7 = [
     {'Mach': 5.00, 'CD': 0.1618},
 ]
 
-TableG2 = [
+TableG2: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.2303},
     {'Mach': 0.05, 'CD': 0.2298},
     {'Mach': 0.10, 'CD': 0.2287},
@@ -258,7 +261,7 @@ TableG2 = [
     {'Mach': 5.00, 'CD': 0.1648},
 ]
 
-TableG5 = [
+TableG5: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.1710},
     {'Mach': 0.05, 'CD': 0.1719},
     {'Mach': 0.10, 'CD': 0.1727},
@@ -337,7 +340,7 @@ TableG5 = [
     {'Mach': 5.00, 'CD': 0.2280},
 ]
 
-TableG6 = [
+TableG6: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.2617},
     {'Mach': 0.05, 'CD': 0.2553},
     {'Mach': 0.10, 'CD': 0.2491},
@@ -419,7 +422,7 @@ TableG6 = [
     {'Mach': 5.00, 'CD': 0.1574},
 ]
 
-TableG8 = [
+TableG8: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.2105},
     {'Mach': 0.05, 'CD': 0.2105},
     {'Mach': 0.10, 'CD': 0.2104},
@@ -500,7 +503,7 @@ TableG8 = [
     {'Mach': 5.00, 'CD': 0.1713},
 ]
 
-TableGI = [
+TableGI: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.2282},
     {'Mach': 0.05, 'CD': 0.2282},
     {'Mach': 0.10, 'CD': 0.2282},
@@ -584,7 +587,7 @@ TableGI = [
     {'Mach': 5.00, 'CD': 0.4082},
 ]
 
-TableGS = [
+TableGS: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.4662},
     {'Mach': 0.05, 'CD': 0.4689},
     {'Mach': 0.10, 'CD': 0.4717},
@@ -674,7 +677,7 @@ def get_drag_tables_names():
     return [f"TableG{n}" for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]
 
 
-__all__ = ['get_drag_tables_names']
+__all__ = ['get_drag_tables_names', 'DragTablePointDictType']
 __all__ += [
     'TableG1',
     'TableG7',

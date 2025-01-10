@@ -1,11 +1,8 @@
 from typing_extensions import TypedDict, Optional
-
-from py_ballisticcalc.unit import Distance
 from py_ballisticcalc.trajectory_calc import (
-    cZeroFindingAccuracy, cMinimumVelocity, cMaximumDrop, cMaxIterations,
-    cGravityConstant,
-    get_global_max_calc_step_size, get_global_use_powder_sensitivity, Config
+    Config,
 )
+from py_ballisticcalc import trajectory_calc
 
 __all__ = (
     "Config",
@@ -17,21 +14,26 @@ __all__ = (
 class InterfaceConfigDict(TypedDict, total=False):
     use_powder_sensitivity: bool
     max_calc_step_size_feet: float
+    chart_resolution: float
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
-    cMaxIterations: float
+    cMaxIterations: int
     cGravityConstant: float
+    cMinimumAltitude: float
+
 
 def create_interface_config(interface_config: Optional[InterfaceConfigDict] = None) -> Config:
     config = InterfaceConfigDict(
-        use_powder_sensitivity=get_global_use_powder_sensitivity(),
-        max_calc_step_size_feet=get_global_max_calc_step_size() >> Distance.Foot,
-        cZeroFindingAccuracy=cZeroFindingAccuracy,
-        cMinimumVelocity=cMinimumVelocity,
-        cMaximumDrop=cMaximumDrop,
-        cMaxIterations=cMaxIterations,
-        cGravityConstant=cGravityConstant,
+        use_powder_sensitivity=trajectory_calc._globalUsePowderSensitivity,
+        max_calc_step_size_feet=trajectory_calc._globalMaxCalcStepSizeFeet,
+        chart_resolution=trajectory_calc._globalChartResolution,
+        cZeroFindingAccuracy=trajectory_calc.cZeroFindingAccuracy,
+        cMinimumVelocity=trajectory_calc.cMinimumVelocity,
+        cMaximumDrop=trajectory_calc.cMaximumDrop,
+        cMaxIterations=trajectory_calc.cMaxIterations,
+        cGravityConstant=trajectory_calc.cGravityConstant,
+        cMinimumAltitude=trajectory_calc.cMinimumAltitude,
     )
     if interface_config is not None and isinstance(interface_config, dict):
         config.update(interface_config)

@@ -3,10 +3,11 @@
 import math
 from dataclasses import dataclass, field
 
-from typing_extensions import Union, List, Dict, Tuple, Optional
+from typing_extensions import Union, List, Tuple, Optional
 
-from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
 from py_ballisticcalc.constants import cDegreesCtoK, cSpeedOfSoundMetric, cStandardTemperatureC
+from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
+from py_ballisticcalc.drag_tables import DragTablePointDictType
 
 
 @dataclass
@@ -14,6 +15,9 @@ class DragDataPoint:
     """Drag coefficient at Mach number"""
     Mach: float  # Velocity in Mach units
     CD: float  # Drag coefficient
+
+
+DragTableDataType = Union[List[DragTablePointDictType], List[DragDataPoint]]
 
 
 @dataclass(order=True)
@@ -49,9 +53,6 @@ class BCPoint:
     def _machC() -> float:
         """:return: Mach 1 in m/s for Celsius temperature"""
         return math.sqrt(1 + cStandardTemperatureC / cDegreesCtoK) * cSpeedOfSoundMetric
-
-
-DragTableDataType = Union[List[Dict[str, float]], List[DragDataPoint]]
 
 
 class DragModel:

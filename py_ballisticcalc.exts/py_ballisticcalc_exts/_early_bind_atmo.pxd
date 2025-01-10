@@ -13,4 +13,4 @@ cdef class _EarlyBindAtmo:
 
     cdef void get_density_factor_and_mach_for_altitude(
             _EarlyBindAtmo self, double altitude, double * density_ratio, double * mach
-    ) nogil
+    )

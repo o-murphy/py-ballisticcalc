@@ -4,9 +4,10 @@ import unittest
 import copy
 from py_ballisticcalc import (
     DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7,
-    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity
+    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity, RangeError,
 )
 from py_ballisticcalc.unit import *
+from py_ballisticcalc import trajectory_calc
 
 
 class TestComputer(unittest.TestCase):
@@ -91,6 +92,29 @@ class TestComputer(unittest.TestCase):
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(6, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertLess(t.trajectory[5].height, self.baseline_trajectory[5].height)
+
+    def test_multiple_wind(self):
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
+                    winds=[Wind(Velocity.MPS(4), Angular.OClock(9), until_distance=Distance.Meter(500)),
+                           Wind(Velocity.MPS(4), Angular.OClock(3), until_distance=Distance.Meter(800))])
+        t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        self.assertLess(t.trajectory[5].windage, self.baseline_trajectory[5].windage)
+
+    def test_no_winds(self):
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
+                    winds=[])
+        # set empty list
+        shot.winds = []
+        try:
+            self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        except Exception as e:
+            self.fail("self.calc.fire() raised ExceptionType unexpectedly!")
+
+        self.winds = None
+        try:
+            self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        except Exception as e:
+            self.fail("self.calc.fire() raised ExceptionType unexpectedly!")
 
     # endregion Wind
 
@@ -177,6 +201,15 @@ class TestComputer(unittest.TestCase):
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
         set_global_use_powder_sensitivity(previous)
+
+    # @unittest.skip("Raises ZeroDivisionError")
+    def test_zero_velocity(self):
+        tdm = DragModel(self.dm.BC + 0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
+        slick = Ammo(tdm, 0)
+        shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
+
+        with self.assertRaises(RangeError):
+            self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
 
     # endregion Ammo
 
