@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
         dep_ver = extract_dep_version(pkg_toml, bin_pkg_name)
 
-        assert pkg_ver != bin_pkg_ver, f"Versions don't match {pkg_name}=={pkg_ver} != {bin_pkg_name}=={bin_pkg_ver}"
+        assert pkg_ver == bin_pkg_ver, f"Versions don't match {pkg_name}=={pkg_ver} != {bin_pkg_name}=={bin_pkg_ver}"
         assert dep_ver == bin_pkg_ver, f"Versions don't match {bin_pkg_name}=={bin_pkg_ver} != {dep_ver}"
     except AssertionError as err:
         raise err

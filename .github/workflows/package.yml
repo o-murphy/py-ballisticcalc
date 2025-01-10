@@ -28,7 +28,7 @@ jobs:
 
     - name: Validate exts version matching
       run: |
-        python ./scripts/before_deploy
+        python scripts/before_deploy.py
 
     - name: Install dependencies
       run: |     
