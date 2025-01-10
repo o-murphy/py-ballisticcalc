@@ -30,7 +30,7 @@ PLOT_FONT_SIZE = 552 / PLOT_FONT_HEIGHT
 
 PLOT_COLORS = {
     "trajectory": (130 / 255, 179 / 255, 102 / 255, 1.0),
-    "frame": (215 / 255, 155 / 255, .0),
+    "frame": (.0, .0, .0, 1.0),
     "velocity": (108 / 255, 142 / 255, 191 / 255, 1.0),
     "sight": (150 / 255, 115 / 255, 166 / 255, 1.0),
     "barrel": (184 / 255, 84 / 255, 80 / 255, 1.0),
@@ -132,12 +132,18 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
     ax.plot(x_bbl, y_bbl, linestyle=':', color=PLOT_COLORS['barrel'])
     # Line labels
     sight_above_bbl = y_sight[1] > y_bbl[1]
-    angle = math.degrees(math.atan((y_sight[1] - y_sight[0]) / (x_sight[1] - x_sight[0])))
+    if (x_sight[1] - x_sight[0]) == 0:
+        angle = 90
+    else:
+        angle = math.degrees(math.atan((y_sight[1] - y_sight[0]) / (x_sight[1] - x_sight[0])))
     ax.text(x_sight[1], y_sight[1], "Sight line", linespacing=1.2,
             rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
             fontsize=font_size, color=PLOT_COLORS['sight'], ha='right',
             va='bottom' if sight_above_bbl else 'top')
-    angle = math.degrees(math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0])))
+    if (x_bbl[1] - x_bbl[0]) == 0:
+        angle = 90
+    else:
+        angle = math.degrees(math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0])))
     ax.text(x_bbl[1], y_bbl[1], "Barrel pointing", linespacing=1.2,
             rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
             fontsize=font_size, color=PLOT_COLORS['barrel'], ha='right',

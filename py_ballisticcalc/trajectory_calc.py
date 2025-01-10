@@ -39,6 +39,7 @@ cMaxIterations: Final[int] = 20
 cGravityConstant: Final[float] = -32.17405
 cMinimumAltitude: Final[float] = -1410.748  # ft
 
+_globalChartResolution: float = 0.2  # ft
 _globalUsePowderSensitivity = False
 _globalMaxCalcStepSizeFeet: float = 0.5
 
@@ -103,13 +104,16 @@ class _TrajectoryDataFilter:
     next_range_distance: float
 
     def __init__(self, filter_flags: Union[TrajFlag, int],
-                 ranges_length: int):
+                 ranges_length: int, time_step: float = 0.0):
+        """If a time_step is indicated, then we will record a row at least that often in the trajectory"""
         self.filter: Union[TrajFlag, int] = filter_flags
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
         self.seen_zero: Union[TrajFlag, int] = TrajFlag.NONE
+        self.time_step = time_step
         self.current_item: int = 0
         self.ranges_length: int = ranges_length
         self.previous_mach: float = 0.0
+        self.previous_time: float = 0.0
         self.next_range_distance: float = 0.0
 
     def setup_seen_zero(self, height: float, barrel_elevation: float, look_angle: float) -> None:
@@ -127,21 +131,35 @@ class _TrajectoryDataFilter:
                       velocity: float,
                       mach: float,
                       step: float,
-                      look_angle: float) -> bool:
+                      look_angle: float,
+                      time: float) -> bool:
         self.check_zero_crossing(range_vector, look_angle)
         self.check_mach_crossing(velocity, mach)
-        self.check_next_range(range_vector.x, step)
+        if self.check_next_range(range_vector.x, step):
+            self.previous_time = time
+        elif self.time_step > 0:
+            self.check_next_time(time)
         return bool(self.current_flag & self.filter)
 
     def should_break(self) -> bool:
         return self.current_item == self.ranges_length
 
-    def check_next_range(self, next_range: float, step: float):
-        # Next range check
+    def check_next_range(self, next_range: float, step: float) -> bool:
+        """
+        If we passed the next_range point, set the RANGE flag and update the next_range_distance
+        :return: True if we passed the next range step
+        """
         if next_range >= self.next_range_distance:
             self.current_flag |= TrajFlag.RANGE
             self.next_range_distance += step
             self.current_item += 1
+            return True
+        return False
+
+    def check_next_time(self, time: float):
+        if time > self.previous_time + self.time_step:
+            self.current_flag |= TrajFlag.RANGE
+            self.previous_time = time
 
     def check_mach_crossing(self, velocity: float, mach: float):
         # Mach crossing check
@@ -249,15 +267,15 @@ class TrajectoryCalc:
         return min(step, preferred_step) / 2.0
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
-                   extra_data: bool = False):
+                   extra_data: bool = False, time_step: float = 0.0):
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            dist_step = Distance.Foot(0.2)
+            dist_step = Distance.Foot(_globalChartResolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
-        return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags)
+        return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags, time_step)
 
     def _init_trajectory(self, shot_info: Shot):
         self.look_angle = shot_info.look_angle >> Angular.Radian
@@ -292,17 +310,13 @@ class TrajectoryCalc:
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
         height_at_zero = math.sin(self.look_angle) * distance_feet
-        maximum_range = zero_distance - 1.5 * self.calc_step
-        # self.barrel_azimuth = 0.0
-        # self.barrel_elevation = math.atan(height_at_zero / zero_distance)
-        # self.twist = 0.0
 
         iterations_count = 0
         zero_finding_error = _cZeroFindingAccuracy * 2
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
-            t = self._trajectory(shot_info, maximum_range, zero_distance, TrajFlag.NONE)[0]
+            t = self._trajectory(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
             height = t.height >> Distance.Foot
             zero_finding_error = math.fabs(height - height_at_zero)
             if zero_finding_error > _cZeroFindingAccuracy:
@@ -318,10 +332,13 @@ class TrajectoryCalc:
         return Angular.Radian(self.barrel_elevation)
 
     def _trajectory(self, shot_info: Shot, maximum_range: float, step: float,
-                    filter_flags: Union[TrajFlag, int]) -> List[TrajectoryData]:
+                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """Calculate trajectory for specified shot
         :param maximum_range: Feet down range to stop calculation
         :param step: Frequency (in feet down range) to record TrajectoryData
+        :param time_step: If > 0 then record TrajectoryData after this many seconds elapse
+            since last record, as could happen when trajectory is nearly vertical
+            and there is too little movement downrange to trigger a record based on range.
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
 
@@ -355,7 +372,8 @@ class TrajectoryCalc:
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
-                                            ranges_length=int(maximum_range / step) + 1)
+                                            ranges_length=int(maximum_range / step) + 1,
+                                            time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
@@ -375,7 +393,7 @@ class TrajectoryCalc:
             if filter_flags:  # require check before call to improve performance
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle):
+                if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
@@ -387,11 +405,11 @@ class TrajectoryCalc:
             # endregion
 
             # region Ballistic calculation step (point-mass)
-            # Time step is set to advance bullet calc_step distance along x axis
-            delta_time = self.calc_step / max(1.0, velocity_vector.x)
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()  # Velocity relative to air
+            # Time step is normalized by velocity so that we take smaller steps when moving faster
+            delta_time = self.calc_step / max(1.0, velocity)
             # Drag is a function of air density and velocity relative to the air
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
             # Bullet velocity changes due to both drag and gravity
@@ -401,7 +419,7 @@ class TrajectoryCalc:
             # Update the bullet position
             range_vector += delta_range_vector
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
-            time += delta_range_vector.magnitude() / velocity
+            time += delta_time
 
             if (
                     velocity < _cMinimumVelocity
@@ -499,9 +517,9 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     Create a TrajectoryData object representing a single row of trajectory data.
 
     :param time: Time of flight.
-    :param range_vector: Vector representing range.
-    :param velocity_vector: Vector representing velocity.
-    :param velocity: Velocity value.
+    :param range_vector: Position vector.
+    :param velocity_vector: Velocity vector.
+    :param velocity: Velocity magnitude.
     :param mach: Mach number.
     :param spin_drift: Spin drift value.
     :param look_angle: Look angle value.

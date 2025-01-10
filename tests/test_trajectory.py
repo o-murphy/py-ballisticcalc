@@ -16,7 +16,7 @@ class TestTrajectory(unittest.TestCase):
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                      Distance(100, Distance.Yard))
 
-        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001652, 6,
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.0016514, 6,
                                f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
 
     def test_zero2(self):
@@ -28,7 +28,7 @@ class TestTrajectory(unittest.TestCase):
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                      Distance(100, Distance.Yard))
 
-        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.001228, 6,
+        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.0012286, 6,
                                f'TestZero2 failed {zero_angle >> Angular.Radian:.10f}')
 
     def custom_assert_equal(self, a, b, accuracy, name):
@@ -40,7 +40,6 @@ class TestTrajectory(unittest.TestCase):
                      windage: float, wind_adjustment: float, time: float, ogv: float,
                      adjustment_unit: Unit):
 
-        # self.custom_assert_equal(distance, data.distance >> Distance.Yard, 0.001, "Distance")
         self.custom_assert_equal(distance, data.distance >> Distance.Yard, 0.1, "Distance")
         self.custom_assert_equal(velocity, data.velocity >> Velocity.FPS, 5, "Velocity")
         self.custom_assert_equal(mach, data.mach, 0.005, "Mach")
