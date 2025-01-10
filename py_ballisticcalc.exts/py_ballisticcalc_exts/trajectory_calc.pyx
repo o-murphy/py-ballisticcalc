@@ -33,15 +33,18 @@ cdef class _TrajectoryDataFilter:
     cdef:
         int filter, current_flag, seen_zero
         int current_item, ranges_length
-        double previous_mach, next_range_distance
+        double previous_mach, previous_time, next_range_distance, time_step
 
-    def __cinit__(_TrajectoryDataFilter self, int filter_flags, int ranges_length) -> None:
+    def __cinit__(_TrajectoryDataFilter self,
+                  int filter_flags, int ranges_length, double time_step = 0.0) -> None:
         self.filter = filter_flags
         self.current_flag = CTrajFlag.NONE
         self.seen_zero = CTrajFlag.NONE
+        self.time_step = time_step
         self.current_item = 0
         self.ranges_length = ranges_length
         self.previous_mach = 0.0
+        self.previous_time = 0.0
         self.next_range_distance = 0.0
 
     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
@@ -53,22 +56,38 @@ cdef class _TrajectoryDataFilter:
     cdef void clear_current_flag(_TrajectoryDataFilter self):
         self.current_flag = CTrajFlag.NONE
 
-    cdef bint should_record(_TrajectoryDataFilter self, Vector range_vector, double velocity, double mach, double step,
-                            double look_angle):
+    cdef bint should_record(_TrajectoryDataFilter self,
+                            Vector range_vector,
+                            double velocity,
+                            double mach,
+                            double step,
+                            double look_angle,
+                            double time,
+                            ):
         self.check_zero_crossing(range_vector, look_angle)
         self.check_mach_crossing(velocity, mach)
-        self.check_next_range(range_vector._x, step)
+        if self.check_next_range(range_vector.x, step):
+            self.previous_time = time
+        elif self.time_step > 0:
+            self.check_next_time(time)
         return (self.current_flag & self.filter) != 0
 
     cdef bint should_break(_TrajectoryDataFilter self):
         return self.current_item == self.ranges_length
 
-    cdef void check_next_range(_TrajectoryDataFilter self, double next_range, double step):
+    cdef bint check_next_range(_TrajectoryDataFilter self, double next_range, double step):
         # Next range check
         if next_range >= self.next_range_distance:
             self.current_flag |= CTrajFlag.RANGE
             self.next_range_distance += step
             self.current_item += 1
+            return True
+        return False
+
+    cdef void check_next_time(self, double time):
+        if time > self.previous_time + self.time_step:
+            self.current_flag |= CTrajFlag.RANGE
+            self.previous_time = time
 
     cdef void check_mach_crossing(_TrajectoryDataFilter self, double velocity, double mach):
         # Mach crossing check
@@ -190,18 +209,18 @@ cdef class TrajectoryCalc:
         return self._zero_angle(shot_info, distance)
 
     def trajectory(self, object shot_info, object max_range, object dist_step,
-                   bint extra_data = False) -> Type[list[TrajectoryData]]:
+                   bint extra_data = False, double time_step = 0.0) -> Type[list[TrajectoryData]]:
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
 
         dist_step = PreferredUnits.distance(dist_step)  #  was unused there ???
 
         if extra_data:
-            dist_step = Distance.Foot(0.2)
+            dist_step = Distance.Foot(self.__config.chart_resolution)
             filter_flags = CTrajFlag.ALL
 
         self._init_trajectory(shot_info)
-        return self._trajectory(shot_info, max_range._feet, dist_step._feet, filter_flags)
+        return self._trajectory(shot_info, max_range._feet, dist_step._feet, filter_flags, time_step)
 
     cdef void _init_trajectory(self, Shot shot_info):
         self.look_angle = shot_info.look_angle._rad
@@ -260,7 +279,7 @@ cdef class TrajectoryCalc:
         return Angular.Radian(self.barrel_elevation)
 
     cdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
-                          double maximum_range, double step, int filter_flags):
+                          double maximum_range, double step, int filter_flags, double time_step = 0.0):
         cdef:
             double velocity, delta_time
             double density_factor = .0
@@ -271,8 +290,10 @@ cdef class TrajectoryCalc:
             Vector velocity_vector, velocity_adjusted
             Vector range_vector, delta_range_vector
 
+            # region Initialize wind-related variables to first wind reading (if any)
             _WindSock wind_sock = _WindSock(shot_info.winds)
             Vector wind_vector = wind_sock.current_vector()
+            # endregion
 
             _TrajectoryDataFilter data_filter
 
@@ -283,18 +304,19 @@ cdef class TrajectoryCalc:
             double _cMaximumDrop = self.__config.cMaximumDrop
             double _cMinimumAltitude = self.__config.cMinimumAltitude
 
+        # region Initialize velocity and position of projectile
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
         velocity_vector = Vector(cos(self.barrel_elevation) * cos(self.barrel_azimuth),
                                  sin(self.barrel_elevation),
                                  cos(self.barrel_elevation) * sin(self.barrel_azimuth)).mul_by_const(velocity)
+        # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = _TrajectoryDataFilter(
-            filter_flags=filter_flags,
-            ranges_length=<int> ((maximum_range / step) + 1)
-        )
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
+                                            ranges_length=<int> ((maximum_range / step) + 1),
+                                            time_step=time_step)
         data_filter.setup_seen_zero(range_vector._y, self.barrel_elevation, self.look_angle)
 
         #region Trajectory Loop
@@ -313,7 +335,7 @@ cdef class TrajectoryCalc:
             if filter_flags:
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle):
+                if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
@@ -323,19 +345,19 @@ cdef class TrajectoryCalc:
                         break
 
             #region Ballistic calculation step
-            delta_time = self.calc_step / max(1.0, velocity_vector._x)
-
             # use just cdef methods to
             # using .subtract .add instead of "/" better optimized by cython
             velocity_adjusted = velocity_vector.subtract(wind_vector)
             velocity = velocity_adjusted.magnitude()
+            delta_time = self.calc_step / max(1.0, velocity)
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
             velocity_vector = velocity_vector.subtract(
                 (velocity_adjusted.mul_by_const(drag).subtract(self.gravity_vector)).mul_by_const(delta_time))
             delta_range_vector = velocity_vector.mul_by_const(delta_time)
             range_vector = range_vector.add(delta_range_vector)
             velocity = velocity_vector.magnitude()
-            time += delta_range_vector.magnitude() / velocity
+            # time += delta_range_vector.magnitude() / velocity
+            time += delta_time
 
             if (
                     velocity < _cMinimumVelocity

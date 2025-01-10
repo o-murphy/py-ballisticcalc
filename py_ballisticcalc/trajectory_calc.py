@@ -86,6 +86,7 @@ class CurvePoint(NamedTuple):
 class Config(NamedTuple):
     use_powder_sensitivity: bool
     max_calc_step_size_feet: float
+    chart_resolution: float
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
@@ -271,7 +272,7 @@ class TrajectoryCalc:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            dist_step = Distance.Foot(_globalChartResolution)
+            dist_step = Distance.Foot(self.__config.chart_resolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
@@ -401,7 +402,6 @@ class TrajectoryCalc:
                     ))
                     if data_filter.should_break():
                         break
-
             # endregion
 
             # region Ballistic calculation step (point-mass)

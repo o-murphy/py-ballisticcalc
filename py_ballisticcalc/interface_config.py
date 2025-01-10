@@ -1,10 +1,11 @@
 from typing_extensions import TypedDict, Optional
-
-from py_ballisticcalc.unit import Distance
 from py_ballisticcalc.trajectory_calc import (
+    Config,
     cZeroFindingAccuracy, cMinimumVelocity, cMaximumDrop, cMaxIterations,
     cGravityConstant, cMinimumAltitude,
-    get_global_max_calc_step_size, get_global_use_powder_sensitivity, Config
+    _globalChartResolution,
+    _globalMaxCalcStepSizeFeet,
+    _globalUsePowderSensitivity,
 )
 
 __all__ = (
@@ -17,6 +18,7 @@ __all__ = (
 class InterfaceConfigDict(TypedDict, total=False):
     use_powder_sensitivity: bool
     max_calc_step_size_feet: float
+    chart_resolution: float
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
@@ -24,10 +26,12 @@ class InterfaceConfigDict(TypedDict, total=False):
     cGravityConstant: float
     cMinimumAltitude: float
 
+
 def create_interface_config(interface_config: Optional[InterfaceConfigDict] = None) -> Config:
     config = InterfaceConfigDict(
-        use_powder_sensitivity=get_global_use_powder_sensitivity(),
-        max_calc_step_size_feet=get_global_max_calc_step_size() >> Distance.Foot,
+        use_powder_sensitivity=_globalUsePowderSensitivity,
+        max_calc_step_size_feet=_globalMaxCalcStepSizeFeet,
+        chart_resolution=_globalChartResolution,
         cZeroFindingAccuracy=cZeroFindingAccuracy,
         cMinimumVelocity=cMinimumVelocity,
         cMaximumDrop=cMaximumDrop,
