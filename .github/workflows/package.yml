@@ -26,6 +26,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Validate exts version matching
+      run: |
+        python ./scripts/before_deploy
+
     - name: Install dependencies
       run: |     
         python -m pip install --upgrade pip

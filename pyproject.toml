@@ -2,13 +2,13 @@
 # Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
 
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools", "wheel", "tomli; python_version<'3.11'"]
 build-backend = "setuptools.build_meta"
 
 
 [project]
 name = "py_ballisticcalc"
-version = "2.0.8b1.post1"
+version = "2.1.0a1"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -50,7 +50,7 @@ include = ["py_ballisticcalc*"]
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.0.8b1']
+exts = ['py_ballisticcalc.exts==2.1.0a1']
 charts = ['matplotlib', 'pandas']
 visualize = ['matplotlib', 'pandas']
 dev = [
