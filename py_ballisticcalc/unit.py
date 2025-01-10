@@ -784,6 +784,30 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
         cls.twist = Unit.Inch
 
     @classmethod
+    def use_metric_system(cls):
+        """Setup defaults for metric system"""
+        PreferredUnits.angular = Angular.Degree
+        PreferredUnits.distance = Distance.Meter
+        PreferredUnits.velocity = Velocity.MPS
+        PreferredUnits.pressure = Pressure.hPa
+        PreferredUnits.temperature = Temperature.Celsius
+        PreferredUnits.diameter = Distance.Millimeter
+        PreferredUnits.length = Distance.Centimeter
+        PreferredUnits.weight = Weight.Gram
+        PreferredUnits.adjustment = Angular.Thousandth
+        PreferredUnits.drop = Distance.Meter
+        PreferredUnits.energy = Energy.Joule
+        PreferredUnits.ogw = Weight.Kilogram
+        PreferredUnits.sight_height = Distance.Centimeter
+        PreferredUnits.target_height = Distance.Centimeter
+        PreferredUnits.twist = Distance.Centimeter
+
+    @classmethod
+    def use_imperial_system(cls):
+        """Synonym to defaults"""
+        cls.defaults()
+
+    @classmethod
     def set(cls, **kwargs):
         """set preferred units from Mapping"""
         for attribute, value in kwargs.items():
