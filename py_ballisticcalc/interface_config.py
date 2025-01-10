@@ -1,12 +1,8 @@
 from typing_extensions import TypedDict, Optional
 from py_ballisticcalc.trajectory_calc import (
     Config,
-    cZeroFindingAccuracy, cMinimumVelocity, cMaximumDrop, cMaxIterations,
-    cGravityConstant, cMinimumAltitude,
-    _globalChartResolution,
-    _globalMaxCalcStepSizeFeet,
-    _globalUsePowderSensitivity,
 )
+from py_ballisticcalc import trajectory_calc
 
 __all__ = (
     "Config",
@@ -29,15 +25,15 @@ class InterfaceConfigDict(TypedDict, total=False):
 
 def create_interface_config(interface_config: Optional[InterfaceConfigDict] = None) -> Config:
     config = InterfaceConfigDict(
-        use_powder_sensitivity=_globalUsePowderSensitivity,
-        max_calc_step_size_feet=_globalMaxCalcStepSizeFeet,
-        chart_resolution=_globalChartResolution,
-        cZeroFindingAccuracy=cZeroFindingAccuracy,
-        cMinimumVelocity=cMinimumVelocity,
-        cMaximumDrop=cMaximumDrop,
-        cMaxIterations=cMaxIterations,
-        cGravityConstant=cGravityConstant,
-        cMinimumAltitude=cMinimumAltitude,
+        use_powder_sensitivity=trajectory_calc._globalUsePowderSensitivity,
+        max_calc_step_size_feet=trajectory_calc._globalMaxCalcStepSizeFeet,
+        chart_resolution=trajectory_calc._globalChartResolution,
+        cZeroFindingAccuracy=trajectory_calc.cZeroFindingAccuracy,
+        cMinimumVelocity=trajectory_calc.cMinimumVelocity,
+        cMaximumDrop=trajectory_calc.cMaximumDrop,
+        cMaxIterations=trajectory_calc.cMaxIterations,
+        cGravityConstant=trajectory_calc.cGravityConstant,
+        cMinimumAltitude=trajectory_calc.cMinimumAltitude,
     )
     if interface_config is not None and isinstance(interface_config, dict):
         config.update(interface_config)

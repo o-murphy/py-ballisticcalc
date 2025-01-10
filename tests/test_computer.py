@@ -4,9 +4,10 @@ import unittest
 import copy
 from py_ballisticcalc import (
     DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7,
-    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity, RangeError
+    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity, RangeError,
 )
 from py_ballisticcalc.unit import *
+from py_ballisticcalc import trajectory_calc
 
 
 class TestComputer(unittest.TestCase):
