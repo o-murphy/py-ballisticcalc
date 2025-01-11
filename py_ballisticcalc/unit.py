@@ -796,6 +796,8 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                         setattr(PreferredUnits, attribute, _unit)
                     else:
                         logger.warning(f"{value=} not a member of Unit")
+                elif isinstance(value, bool):
+                    setattr(PreferredUnits, attribute, value)
                 else:
                     logger.warning(f"type of {value=} have not been converted to a member of Unit")
             else:
