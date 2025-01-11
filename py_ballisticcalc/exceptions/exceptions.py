@@ -1,3 +1,4 @@
+"""py_ballisticcalc exception types"""
 from typing_extensions import List, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
