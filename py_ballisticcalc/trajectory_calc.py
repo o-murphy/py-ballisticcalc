@@ -205,7 +205,7 @@ class _WindSock:
     def current_vector(self) -> "Vector":
         """Returns the current cached wind vector."""
         if not self._last_vector_cache:
-            raise RuntimeError(f"No cached wind vector")
+            raise RuntimeError("No cached wind vector")
         return self._last_vector_cache
 
     def update_cache(self) -> None:
@@ -257,7 +257,7 @@ class TrajectoryCalc:
         """:return: List[DragDataPoint]"""
         return self._table_data
 
-    def get_calc_step(self, step: float = 0):
+    def get_calc_step(self, step: float = 0) -> float:
         """Keep step under max_calc_step_size
         :param step: proposed step size
         :return: step size for calculations (in feet)
@@ -268,7 +268,7 @@ class TrajectoryCalc:
         return min(step, preferred_step) / 2.0
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
-                   extra_data: bool = False, time_step: float = 0.0):
+                   extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
@@ -276,9 +276,10 @@ class TrajectoryCalc:
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
-        return self._trajectory(shot_info, max_range >> Distance.Foot, dist_step >> Distance.Foot, filter_flags, time_step)
+        return self._trajectory(shot_info, max_range >> Distance.Foot,
+                                dist_step >> Distance.Foot, filter_flags, time_step)
 
-    def _init_trajectory(self, shot_info: Shot):
+    def _init_trajectory(self, shot_info: Shot) -> None:
         self.look_angle = shot_info.look_angle >> Angular.Radian
         self.twist = shot_info.weapon.twist >> Distance.Inch
         self.length = shot_info.ammo.dm.length >> Distance.Inch
@@ -417,7 +418,7 @@ class TrajectoryCalc:
             # Bullet position changes by velocity time_deltas the time step
             delta_range_vector = velocity_vector * delta_time
             # Update the bullet position
-            range_vector += delta_range_vector
+            range_vector += delta_range_vector  # type: ignore
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
 
@@ -670,6 +671,7 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
 
 try:
     # replace with cython based implementation
+    # pylint: disable=reimported
     from py_ballisticcalc_exts import TrajectoryCalc, Vector  # type: ignore
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as err:

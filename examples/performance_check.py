@@ -11,38 +11,38 @@ Got:
 pure python:
 
     Calculate barrel elevation at distance 100.0m 120 times:
-    Total time: 1.638778 seconds
-    Execution rate: 73.23 calls per second
+    Total time: 2.296317 seconds
+    Execution rate: 52.26 calls per second
 
     extra_data=False:
 
         Calculate trajectory to distance 1000.0m 120 times:
-        Total time: 9.233984 seconds
-        Execution rate: 13.00 calls per second
+        Total time: 8.731324 seconds
+        Execution rate: 13.74 calls per second
 
     extra_data=True:
 
         Calculate trajectory to distance 1000.0m 120 times:
-        Total time: 24.767394 seconds
-        Execution rate: 4.85 calls per second
+        Total time: 23.651555 seconds
+        Execution rate: 5.07 calls per second
 
 cythonized:
 
     Calculate barrel elevation at distance 100.0m 120 times:
-    Total time: 0.284459 seconds
-    Execution rate: 421.85 calls per second
+    Total time: 0.273300 seconds
+    Execution rate: 439.08 calls per second
 
     extra_data=False:
 
         Calculate trajectory to distance 1000.0m 120 times:
-        Total time: 0.969684 seconds
-        Execution rate: 123.75 calls per second
+        Total time: 1.010342 seconds
+        Execution rate: 118.77 calls per second
 
     extra_data=True:
 
         Calculate trajectory to distance 1000.0m 120 times:
-        Total time: 11.529288 seconds
-        Execution rate: 10.41 calls per second
+        Total time: 11.458543 seconds
+        Execution rate: 10.47 calls per second
 """
 from py_ballisticcalc import Unit
 from ukrop_338lm_300gr_smk import calc, shot
