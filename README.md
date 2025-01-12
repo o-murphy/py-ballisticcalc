@@ -189,7 +189,11 @@ Or place this file in user's home directory. _(The file in project root have pri
 You can use `basicConfig()` function to load your custom `.toml` file
 
 The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
-and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/assets)
+and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/assets). They include settings for [metric]
+(https://github.com/o-murphy/py-ballisticcalc/tree/master/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/assets/.pybc-imperial.toml) and 
+[mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/assets/.pybc-mixed.toml) mode. 
+Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for diameter,
+length, weight and adjustment units.
 
 ```toml
 # Config template for py_ballisticcalc
