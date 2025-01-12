@@ -115,7 +115,7 @@ def _basic_config(filename=None,
         _load_config(filename)
 
 
-def _resolve_resource_path(path: os.PathLike):
+def _resolve_resource_path(path: str):
     with importlib.resources.files('py_ballisticcalc').joinpath(path) as config_file:
         return config_file
 
