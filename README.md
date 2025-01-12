@@ -214,7 +214,7 @@ use_powder_sensitivity = false
 # ...
 ```
 
-##### Load .pybc.toml peresset
+##### Load .pybc.toml presets
 ```python
 from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
 
@@ -222,6 +222,7 @@ loadImperialUnits()
 loadMetricUnits()
 loadMixedUnits()
 ```
+(Use just one of these three methods - only the last one called counts).
 
 ##### Custom .pybc.toml
 ```python
