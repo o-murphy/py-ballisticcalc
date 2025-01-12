@@ -116,8 +116,7 @@ def _basic_config(filename=None,
 
 
 def _resolve_resource_path(path: str):
-    with importlib.resources.files('py_ballisticcalc').joinpath(path) as config_file:
-        return config_file
+    return importlib.resources.files('py_ballisticcalc').joinpath(path)
 
 
 def _load_imperial_units():
@@ -131,6 +130,7 @@ def _load_metric_units():
 def _load_mixed_units():
     _basic_config(_resolve_resource_path('assets/.pybc-mixed.toml'))
 
+
 loadImperialUnits = _load_imperial_units
 loadMetricUnits = _load_metric_units
 loadMixedUnits = _load_mixed_units
@@ -138,7 +138,6 @@ loadMixedUnits = _load_mixed_units
 basicConfig = _basic_config
 
 basicConfig()
-
 
 # pylint: disable=duplicate-code
 __all__ = [
