@@ -169,16 +169,16 @@ reset_globals()
 #### 3. To change solver interface setting use _config attribute for Calculator
 ```python
 from py_ballisticcalc import Calculator, InterfaceConfigDict
-config: InterfaceConfigDict = {
-  'use_powder_sensitivity': True, 
-  'max_calc_step_size_feet': 1.,
-  # 'cZeroFindingAccuracy': ...,
-  'cMinimumVelocity': 0,
-  # 'cMaximumDrop': ...,
-  # 'cMaxIterations': ...,
-  # 'cGravityConstant': ...,
-  # 'cMinimumAltitude': ...,
-}
+config = InterfaceConfigDict(
+    use_powder_sensitivity = True, 
+    max_calc_step_size_feet=1.,
+  # cZeroFindingAccuracy= ...,
+    cMinimumVelocity= 0,
+  # cMaximumDrop= ...,
+  # cMaxIterations= ...,
+  # cGravityConstant= ...,
+  # cMinimumAltitude= ...,
+)
 calc = Calculator(_config=config)
 ```
 
@@ -186,10 +186,15 @@ calc = Calculator(_config=config)
 #### Use new method to set preferred units/settings globally for the venv or the user
 Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
 Or place this file in user's home directory. _(The file in project root have priority.)_
+Use `loadMetricUnits()`, `loadImperialUnits()` or `loadMixedUnits()` to manualy load one of preinstalled pressets.
 You can use `basicConfig()` function to load your custom `.toml` file
 
 The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
-and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/assets)
+and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets). They include settings for [metric]
+(https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-imperial.toml) and 
+[mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-mixed.toml) mode. 
+Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for diameter,
+length, weight and adjustment units.
 
 ```toml
 # Config template for py_ballisticcalc
@@ -209,6 +214,16 @@ use_powder_sensitivity = false
 # ...
 ```
 
+##### Load .pybc.toml peresset
+```python
+from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
+
+loadImperialUnits()
+loadMetricUnits()
+loadMixedUnits()
+```
+
+##### Custom .pybc.toml
 ```python
 from py_ballisticcalc import basicConfig
 
