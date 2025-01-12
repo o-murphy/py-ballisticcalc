@@ -1,6 +1,6 @@
 import os
 from unittest import TestCase
-from py_ballisticcalc import (basicConfig, PreferredUnits, Unit,
+from py_ballisticcalc import (basicConfig, PreferredUnits, Unit, loadMixedUnits, loadMetricUnits, loadImperialUnits,
                               get_global_max_calc_step_size, reset_globals)
 
 ASSETS_DIR = os.path.join(
@@ -24,15 +24,15 @@ class TestConfigLoader(TestCase):
             self.assertEqual(PreferredUnits.distance, Unit.Meter)
 
         with self.subTest("imperial"):
-            basicConfig(os.path.join(ASSETS_DIR, ".pybc-imperial.toml"))
+            loadImperialUnits()
             self.assertEqual(PreferredUnits.distance, Unit.Foot)
 
-        with self.subTest("mixed"):
-            basicConfig(os.path.join(ASSETS_DIR, ".pybc-metrics.toml"))
+        with self.subTest("metric"):
+            loadMetricUnits()
             self.assertEqual(PreferredUnits.distance, Unit.Meter)
 
         with self.subTest("mixed"):
-            basicConfig(os.path.join(ASSETS_DIR, ".pybc-mixed.toml"))
+            loadMixedUnits()
             self.assertEqual(PreferredUnits.velocity, Unit.MPS)
 
         basicConfig()
