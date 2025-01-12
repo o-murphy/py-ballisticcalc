@@ -9,20 +9,17 @@ distance = 'Meter'
 velocity = 'MPS'
 pressure = 'hPa'
 temperature = 'Celsius'
-diameter = 'Inch'
-length = 'Inch'
-weight = 'Grain'
-adjustment = 'Mil'
+diameter = 'Centimeter'
+length = 'Centimeter'
+weight = 'Gram'
+adjustment = 'CmPer100m'
 drop = 'Centimeter'
-energy = 'FootPound'
+energy = 'Joule'
 ogw = 'Kilogram'
-sight_height = 'Inch'
+sight_height = 'Centimeter'
 target_height = 'Meter'
-twist = 'Inch'
+twist = 'Centimeter'
 
-[pybc.calculator]
-use_powder_sensitivity = false
-
-[pybc.calculator.max_calc_step_size]
-value = 0.5
-units = "Foot"
+#[pybc.calculator]
+#max_calc_step_size = { value = 0.5, units = "Foot" }
+#use_powder_sensitivity = false

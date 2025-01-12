@@ -10,6 +10,8 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 import os
 import sys
+import importlib.resources
+
 from typing_extensions import Dict, Union, Optional
 
 from .trajectory_calc import *
@@ -113,6 +115,26 @@ def _basic_config(filename=None,
         _load_config(filename)
 
 
+def _resolve_resource_path(path: str):
+    return importlib.resources.files('py_ballisticcalc').joinpath(path)
+
+
+def _load_imperial_units():
+    _basic_config(_resolve_resource_path('assets/.pybc-imperial.toml'))
+
+
+def _load_metric_units():
+    _basic_config(_resolve_resource_path('assets/.pybc-metrics.toml'))
+
+
+def _load_mixed_units():
+    _basic_config(_resolve_resource_path('assets/.pybc-mixed.toml'))
+
+
+loadImperialUnits = _load_imperial_units
+loadMetricUnits = _load_metric_units
+loadMixedUnits = _load_mixed_units
+
 basicConfig = _basic_config
 
 basicConfig()
@@ -121,6 +143,9 @@ basicConfig()
 __all__ = [
     'Calculator',
     'basicConfig',
+    'loadImperialUnits',
+    'loadMetricUnits',
+    'loadMixedUnits',
     'logger',
     'TrajectoryCalc',
     'Vector',
@@ -183,12 +208,13 @@ __all__ += [
     'TableGS'
 ]
 
-
 try:
     # check if cython based extensions installed
     import py_ballisticcalc_exts  # type: ignore
+
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
+
     warnings.warn("Library running in pure python mode. "
                   "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

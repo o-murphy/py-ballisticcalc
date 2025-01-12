@@ -4,3 +4,4 @@ include py.typed
 include Example.ipynb
 include LICENSE
 include README.md
+recursive-include */assets *.toml
