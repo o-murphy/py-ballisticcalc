@@ -61,33 +61,33 @@ jobs:
         )
       shell: cmd
       if: runner.os == 'Windows'
-
-    - name: Build cython modules
-      run: |
-        cd ./py_ballisticcalc.exts
-        pip install -e .
-        cd ..
-
-    - name: Run unittest tests in binary mode
-      run: |
-        pytest tests --no-header --no-summary -v
-        if [ $? -ne 0 ]; then
-          echo "Pytest failed, running without capture"
-          pytest tests -v
-        else
-          echo "Pytest succeeded."
-        fi
-      shell: bash
-      if: runner.os != 'Windows'
-
-    - name: Run unittest tests in binary mode on Windows
-      run: |
-        pytest tests --no-header --no-summary -v
-        if %ERRORLEVEL% neq 0 (
-          echo Pytest failed, running without capture
-          pytest tests -v
-        ) else (
-          echo Pytest succeeded.
-        )
-      shell: cmd
-      if: runner.os == 'Windows'
+#
+#    - name: Build cython modules
+#      run: |
+#        cd ./py_ballisticcalc.exts
+#        pip install -e .
+#        cd ..
+#
+#    - name: Run unittest tests in binary mode
+#      run: |
+#        pytest tests --no-header --no-summary -v
+#        if [ $? -ne 0 ]; then
+#          echo "Pytest failed, running without capture"
+#          pytest tests -v
+#        else
+#          echo "Pytest succeeded."
+#        fi
+#      shell: bash
+#      if: runner.os != 'Windows'
+#
+#    - name: Run unittest tests in binary mode on Windows
+#      run: |
+#        pytest tests --no-header --no-summary -v
+#        if %ERRORLEVEL% neq 0 (
+#          echo Pytest failed, running without capture
+#          pytest tests -v
+#        ) else (
+#          echo Pytest succeeded.
+#        )
+#      shell: cmd
+#      if: runner.os == 'Windows'

@@ -1,8 +1,11 @@
-from py_ballisticcalc_exts._data_repr cimport _DataRepr
+from cython cimport final
+
+
 from py_ballisticcalc.unit import PreferredUnits
 
 
-cdef class TrajectoryData(_DataRepr):
+@final
+cdef class TrajectoryData:
 
     def __cinit__(TrajectoryData self,
                     double time,
