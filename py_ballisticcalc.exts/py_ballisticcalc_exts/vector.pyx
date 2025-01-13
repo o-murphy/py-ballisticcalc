@@ -68,7 +68,7 @@ cdef class Vector:
     cdef Vector _negate(Vector self):
         return Vector(-self._x, -self._y, -self._z)
 
-    def _negate(Vector self):
+    def negate(Vector self):
         return self._negate()
 
     cdef Vector _normalize(Vector self):
