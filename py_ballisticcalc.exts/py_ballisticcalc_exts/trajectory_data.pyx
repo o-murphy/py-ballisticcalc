@@ -1,16 +1,10 @@
 from cython cimport final
 
-try:
-    import typing
-    import dataclasses
-except ImportError:
-    pass  # The modules don't actually have to exist for Cython to use them as annotations
 
 from py_ballisticcalc.unit import PreferredUnits
 
 
 @final
-@dataclasses.dataclass
 cdef class TrajectoryData:
 
     def __cinit__(TrajectoryData self,
