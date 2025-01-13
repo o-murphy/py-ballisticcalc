@@ -32,7 +32,7 @@ else:
     import tomllib
 
 
-def _load_config(filepath=None):
+def _load_config(filepath=None, suppress_warnings=False):
     def find_pybc_toml(start_dir=os.getcwd()):
         """
         Search for the pyproject.toml file starting from the specified directory.
@@ -73,7 +73,8 @@ def _load_config(filepath=None):
                 if preferred_units := _pybc.get('preferred_units'):
                     PreferredUnits.set(**preferred_units)
                 else:
-                    logger.warning("Config has not `pybc.preferred_units` section")
+                    if not suppress_warnings:
+                        logger.warning("Config has not `pybc.preferred_units` section")
 
                 if calculator := _pybc.get('calculator'):
                     if max_calc_step_size := calculator.get('max_calc_step_size'):
@@ -82,14 +83,17 @@ def _load_config(filepath=None):
                             _units = Unit[max_calc_step_size.get("units")]
                             set_global_max_calc_step_size(_units(_val))
                         except (KeyError, TypeError, ValueError):
-                            logger.warning("Wrong max_calc_step_size units or value")
+                            if not suppress_warnings:
+                                logger.warning("Wrong max_calc_step_size units or value")
 
                     if use_powder_sensitivity := calculator.get('use_powder_sensitivity'):
                         set_global_use_powder_sensitivity(use_powder_sensitivity)
                 else:
-                    logger.warning("Config has not `pybc.calculator` section")
+                    if not suppress_warnings:
+                        logger.warning("Config has not `pybc.calculator` section")
             else:
-                logger.warning("Config has not `pybc` section")
+                if not suppress_warnings:
+                    logger.warning("Config has not `pybc` section")
 
     logger.debug("Calculator globals and PreferredUnits load success")
 
@@ -97,7 +101,7 @@ def _load_config(filepath=None):
 def _basic_config(filename=None,
                   max_calc_step_size: Optional[Union[float, Distance]] = None,
                   use_powder_sensitivity: bool = False,
-                  preferred_units: Optional[Dict[str, Unit]] = None):
+                  preferred_units: Optional[Dict[str, Unit]] = None, suppress_warnings=False):
     """
     Method to load preferred units from file or Mapping
     """
@@ -112,7 +116,7 @@ def _basic_config(filename=None,
             set_global_use_powder_sensitivity(use_powder_sensitivity)
     else:
         # trying to load definitions from pybc.toml
-        _load_config(filename)
+        _load_config(filename, suppress_warnings)
 
 
 def _resolve_resource_path(path: str):
@@ -120,15 +124,15 @@ def _resolve_resource_path(path: str):
 
 
 def _load_imperial_units():
-    _basic_config(_resolve_resource_path('assets/.pybc-imperial.toml'))
+    _basic_config(_resolve_resource_path('assets/.pybc-imperial.toml'), suppress_warnings=True)
 
 
 def _load_metric_units():
-    _basic_config(_resolve_resource_path('assets/.pybc-metrics.toml'))
+    _basic_config(_resolve_resource_path('assets/.pybc-metrics.toml'), suppress_warnings=True)
 
 
 def _load_mixed_units():
-    _basic_config(_resolve_resource_path('assets/.pybc-mixed.toml'))
+    _basic_config(_resolve_resource_path('assets/.pybc-mixed.toml'), suppress_warnings=True)
 
 
 loadImperialUnits = _load_imperial_units
