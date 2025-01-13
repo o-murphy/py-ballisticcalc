@@ -1,0 +1,93 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python cythonized package tests
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Validate exts version matching
+      run: |
+        python -m pip install tomli
+        python scripts/before_deploy.py
+
+    - name: Install dependencies
+      run: |     
+        python -m pip install --upgrade pip
+        python -m pip install setuptools cython
+        python -m pip install -e .[dev]
+        python -m pip install typing_extensions
+
+#    - name: Run tests in pure python mode
+#      run: |
+#        pytest tests --no-header --no-summary -v -n auto
+#        if [ $? -ne 0 ]; then
+#          echo "Pytest failed, running without capture"
+#          pytest tests -v
+#        else
+#          echo "Pytest succeeded."
+#        fi
+#      shell: bash
+#      if: runner.os != 'Windows'
+#
+#    - name: Run tests in pure python mode on Windows
+#      run: |
+#        pytest tests --no-header --no-summary -v -n auto
+#        if %ERRORLEVEL% neq 0 (
+#          echo Pytest failed, running without capture
+#          pytest tests -v
+#        ) else (
+#          echo Pytest succeeded.
+#        )
+#      shell: cmd
+#      if: runner.os == 'Windows'
+
+    - name: Build cython modules
+      run: |
+        cd ./py_ballisticcalc.exts
+        pip install -e .
+        cd ..
+
+    - name: Run unittest tests in binary mode
+      run: |
+        pytest tests --no-header --no-summary -v
+        if [ $? -ne 0 ]; then
+          echo "Pytest failed, running without capture"
+          pytest tests -v
+        else
+          echo "Pytest succeeded."
+        fi
+      shell: bash
+      if: runner.os != 'Windows'
+
+    - name: Run unittest tests in binary mode on Windows
+      run: |
+        pytest tests --no-header --no-summary -v
+        if %ERRORLEVEL% neq 0 (
+          echo Pytest failed, running without capture
+          pytest tests -v
+        ) else (
+          echo Pytest succeeded.
+        )
+      shell: cmd
+      if: runner.os == 'Windows'
