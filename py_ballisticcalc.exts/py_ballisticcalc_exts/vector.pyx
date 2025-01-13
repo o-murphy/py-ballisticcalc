@@ -35,29 +35,50 @@ cdef class Vector:
     def z(self, double v) -> None:
         self._z = v
 
-    cpdef double magnitude(Vector self):
+    cdef double _magnitude(Vector self):
         return sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
 
-    cdef Vector mul_by_const(Vector self, double a):
+    def magnitude(Vector self):
+        return self._magnitude()
+
+    cdef Vector _mul_by_const(Vector self, double a):
         return Vector(self._x * a, self._y * a, self._z * a)
 
-    cdef double mul_by_vector(Vector self, Vector b):
+    def mul_by_const(Vector self, double a):
+        return self._mul_by_const(a)
+
+    cdef double _mul_by_vector(Vector self, Vector b):
         return self._x * b._x + self._y * b._y + self._z * b._z
 
-    cdef Vector add(Vector self, Vector b):
+    def mul_by_vector(Vector self, Vector b):
+        return self._mul_by_vector(b)
+
+    cdef Vector _add(Vector self, Vector b):
         return Vector(self._x + b._x, self._y + b._y, self._z + b._z)
 
-    cdef Vector subtract(Vector self, Vector b):
+    def add(Vector self, Vector b):
+        return self._add(b)
+
+    cdef Vector _subtract(Vector self, Vector b):
         return Vector(self._x - b._x, self._y - b._y, self._z - b._z)
 
-    cdef Vector negate(Vector self):
+    def subtract(Vector self, Vector b):
+        return self._substract(b)
+
+    cdef Vector _negate(Vector self):
         return Vector(-self._x, -self._y, -self._z)
 
-    cdef Vector normalize(Vector self):
+    def _negate(Vector self):
+        return self._negate()
+
+    cdef Vector _normalize(Vector self):
         cdef double m = self.magnitude()
         if fabs(m) < 1e-10:
             return Vector(self._x, self._y, self._z)
         return self.mul_by_const(1.0 / m)
+
+    def normalize(Vector self):
+        return self._normalize()
 
     def __add__(Vector self, Vector other):
         return self.add(other)
