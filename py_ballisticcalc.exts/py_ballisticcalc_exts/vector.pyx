@@ -35,7 +35,7 @@ cdef class Vector:
     def z(self, double v) -> None:
         self._z = v
 
-    cdef double magnitude(Vector self):
+    cpdef double magnitude(Vector self):
         return sqrt(self._x * self._x + self._y * self._y + self._z * self._z)
 
     cdef Vector mul_by_const(Vector self, double a):
