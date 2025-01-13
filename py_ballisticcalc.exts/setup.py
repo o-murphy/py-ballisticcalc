@@ -31,7 +31,6 @@ extension_names = [
     "conditions",
     "trajectory_calc",
     "trajectory_data",
-    "_data_repr",
     "_early_bind_atmo",
     "_early_bind_config",
 ]

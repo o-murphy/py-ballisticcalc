@@ -1,18 +1,24 @@
 from libc.math cimport cos, sin
-from py_ballisticcalc_exts._data_repr cimport _DataRepr
 from py_ballisticcalc.unit import Distance, PreferredUnits, Angular
+
+try:
+    import typing
+    import dataclasses
+except ImportError:
+    pass  # The modules don't actually have to exist for Cython to use them as annotations
 
 cdef double _WIND_MAX_DISTANCE_FEET = 1e8
 
 
-cdef class Wind(_DataRepr):
+@dataclasses.dataclass
+cdef class Wind:
     """
     Wind direction and velocity by down-range distance.
     direction_from = 0 is blowing from behind shooter.
     direction_from = 90 degrees is blowing from shooter's left towards right.
     """
 
-    def __cinit__(Wind self,
+    def __init__(Wind self,
                   object velocity = None,
                   object direction_from = None,
                   object until_distance = None,
@@ -24,7 +30,8 @@ cdef class Wind(_DataRepr):
         self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(_WIND_MAX_DISTANCE_FEET))
 
 
-cdef class Shot(_DataRepr):
+@dataclasses.dataclass
+cdef class Shot:
     """
     Stores shot parameters for the trajectory calculation.
 
@@ -38,7 +45,7 @@ cdef class Shot(_DataRepr):
         from the vertical plane into the horizontal plane by sine(cant_angle)
     """
 
-    def __cinit__(Shot self,
+    def __init__(Shot self,
                   object weapon,
                   object ammo,
                   object look_angle = None,
@@ -90,42 +97,3 @@ cdef class Shot(_DataRepr):
                                  self.cant_angle,
                                  self.atmo,
                                  self._winds))
-
-# cimport cython
-# from cython.dataclasses cimport dataclass, field
-# try:
-#     import typing
-#     import dataclasses
-# except ImportError:
-#     pass  # The modules don't actually have to exist for Cython to use them as annotations
-#
-# from py_ballisticcalc.unit import Distance, PreferredUnits
-#
-# cdef double _MAX_DISTANCE_FEET = 1e8
-#
-# @dataclass
-# cdef class Wind:
-#     """
-#     Wind direction and velocity by down-range distance.
-#     direction_from = 0 is blowing from behind the shooter.
-#     direction_from = 90 degrees is blowing from shooter's left towards right.
-#     """
-#     # Using Cython types for variables where possible
-#     velocity: object = field(default=None)
-#     direction_from: object = field(default=0)
-#     until_distance: object = field(default=Distance.Foot(_MAX_DISTANCE_FEET))
-#
-#     # Defining the constant field with a Cython type
-#     MAX_DISTANCE_FEET: cython.double = _MAX_DISTANCE_FEET
-#
-#     # Initialization
-#     def __init__(self,
-#                  object velocity = None,
-#                  object direction_from = None,
-#                  object until_distance = None,
-#                  *,
-#                  double max_distance_feet = _MAX_DISTANCE_FEET):
-#         self.MAX_DISTANCE_FEET = <double> (max_distance_feet or _MAX_DISTANCE_FEET)
-#         self.velocity = PreferredUnits.velocity(velocity or 0)
-#         self.direction_from = PreferredUnits.angular(direction_from or 0)
-#         self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(self.MAX_DISTANCE_FEET))
