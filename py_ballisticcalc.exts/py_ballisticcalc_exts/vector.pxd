@@ -1,3 +1,6 @@
+# from py_ballisticcalc_exts._data_repr cimport _Comparable
+
+
 cdef class Vector:
     cdef double _x
     cdef double _y

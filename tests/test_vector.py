@@ -3,6 +3,7 @@ import unittest
 
 from py_ballisticcalc import Vector
 
+
 class TestVector(unittest.TestCase):
     """Test for methods available on Vector in python, in order to ensure that they work as well in cython."""
     def test_magnitude_available(self):
@@ -24,7 +25,7 @@ class TestVector(unittest.TestCase):
         result= vector.add(Vector(4, 6, 8))
         self.assertEqual(result, Vector(3, 4, 5))
 
-    def test_substract(self):
+    def test_subtract(self):
         vector = Vector(-1, -2, -3)
         result = vector.subtract(Vector(4, 5, 6))
         self.assertEqual(result, Vector(-5, -7, -9))

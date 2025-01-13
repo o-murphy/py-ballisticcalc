@@ -1,9 +1,17 @@
 from libc.math cimport sqrt, fabs
 from cython cimport final
+# from py_ballisticcalc_exts._data_repr cimport _Comparable
+
+try:
+    import typing
+    import dataclasses
+except ImportError:
+    pass  # The modules don't actually have to exists for Cython to use them as annotations
 
 __all__ = ('Vector',)
 
 @final
+@dataclasses.dataclass
 cdef class Vector:
 
     def __cinit__(Vector self, double x, double y, double z):
@@ -63,12 +71,12 @@ cdef class Vector:
         return Vector(self._x - b._x, self._y - b._y, self._z - b._z)
 
     def subtract(Vector self, Vector b):
-        return self._substract(b)
+        return self._subtract(b)
 
     cdef Vector _negate(Vector self):
         return Vector(-self._x, -self._y, -self._z)
 
-    def _negate(Vector self):
+    def negate(Vector self):
         return self._negate()
 
     cdef Vector _normalize(Vector self):

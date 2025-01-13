@@ -1,6 +1,3 @@
-from py_ballisticcalc_exts._data_repr cimport _DataRepr
-
-
 cdef enum CTrajFlag:
     NONE = 0
     ZERO_UP = 1
@@ -12,7 +9,7 @@ cdef enum CTrajFlag:
     ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
 
 
-cdef class TrajectoryData(_DataRepr):
+cdef class TrajectoryData:
     cdef:
         readonly double time
         readonly object distance
