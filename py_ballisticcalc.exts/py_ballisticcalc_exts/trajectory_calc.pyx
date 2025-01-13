@@ -310,7 +310,7 @@ cdef class TrajectoryCalc:
         range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
         velocity_vector = Vector(cos(self.barrel_elevation) * cos(self.barrel_azimuth),
                                  sin(self.barrel_elevation),
-                                 cos(self.barrel_elevation) * sin(self.barrel_azimuth)).mul_by_const(velocity)
+                                 cos(self.barrel_elevation) * sin(self.barrel_azimuth))._mul_by_const(velocity)
         # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings

@@ -80,37 +80,37 @@ cdef class Vector:
         return self._negate()
 
     cdef Vector _normalize(Vector self):
-        cdef double m = self.magnitude()
+        cdef double m = self._magnitude()
         if fabs(m) < 1e-10:
             return Vector(self._x, self._y, self._z)
-        return self.mul_by_const(1.0 / m)
+        return self._mul_by_const(1.0 / m)
 
     def normalize(Vector self):
         return self._normalize()
 
     def __add__(Vector self, Vector other):
-        return self.add(other)
+        return self._add(other)
 
     def __radd__(Vector self, Vector other):
-        return self.add(other)
+        return self._add(other)
 
     def __iadd__(Vector self, Vector other):
-        return self.add(other)
+        return self._add(other)
 
     def __sub__(Vector self, Vector other):
-        return self.subtract(other)
+        return self._subtract(other)
 
     def __rsub__(Vector self, Vector other):
-        return self.subtract(other)
+        return self._subtract(other)
 
     def __isub__(Vector self, Vector other):
-        return self.subtract(other)
+        return self._subtract(other)
 
     def __mul__(Vector self, object other):
         if isinstance(other, (int, float)):
-            return self.mul_by_const(<double>other)
+            return self._mul_by_const(<double>other)
         if isinstance(other, Vector):
-            return self.mul_by_vector(<Vector>other)
+            return self._mul_by_vector(<Vector>other)
         raise TypeError(other)
 
     def __rmul__(Vector self, object other):
@@ -120,7 +120,7 @@ cdef class Vector:
         return self.__mul__(other)
 
     def __neg__(Vector self):
-        return self.negate()
+        return self._negate()
 
     def __str__(Vector self):
         return f"Vector(x={self._x}, y={self._y}, z={self._z})"
