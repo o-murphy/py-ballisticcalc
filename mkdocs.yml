@@ -1,6 +1,7 @@
 site_name: py-ballisticcalc
 site_description: LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
 edit_uri: edit/main/docs/
+site_url: https://o-murphy.github.io/py-ballisticcalc/
 
 nav:
 - Get started:
