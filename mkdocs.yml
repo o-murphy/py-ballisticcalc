@@ -11,8 +11,10 @@ nav:
 #  - Contributing: contributing.md
 #  - Changelog: changelog.md
 - Concepts:
-  - Classes: concepts/classes.md
+#  - Classes: concepts/classes.md
   - Units and Dimensions: concepts/units.md
+  - Weapon: concepts/weapon.md
+  - Ammo: concepts/ammo.md
 #  - Types:
   - Engines: concepts/engines.md
 #  - Performance:
