@@ -14,6 +14,7 @@ import importlib.resources
 
 from typing_extensions import Dict, Union, Optional
 
+from .vector import *
 from .trajectory_calc import *
 from .conditions import *
 from .drag_model import *
@@ -30,6 +31,17 @@ if sys.version_info[:2] < (3, 11):
     import tomli as tomllib
 else:
     import tomllib
+
+try:
+    # check if cython based extensions installed
+    import py_ballisticcalc_exts  # type: ignore
+
+    logger.debug("Binary modules found, running in binary mode")
+except ImportError as error:
+    import warnings
+
+    warnings.warn("Library running in pure python mode. "
+                  "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)
 
 
 def _load_config(filepath=None, suppress_warnings=False):
@@ -203,14 +215,3 @@ __all__ += [
     'TableGI',
     'TableGS'
 ]
-
-try:
-    # check if cython based extensions installed
-    import py_ballisticcalc_exts  # type: ignore
-
-    logger.debug("Binary modules found, running in binary mode")
-except ImportError as error:
-    import warnings
-
-    warnings.warn("Library running in pure python mode. "
-                  "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

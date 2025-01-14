@@ -1,6 +1,5 @@
 import unittest
-from dataclasses import dataclass
-from typing import Optional, Union
+
 
 from py_ballisticcalc.unit import *
 

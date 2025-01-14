@@ -6,7 +6,6 @@ from py_ballisticcalc import (
     DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError,
 )
 from py_ballisticcalc.unit import *
-from py_ballisticcalc import trajectory_calc
 
 
 class TestComputer(unittest.TestCase):
