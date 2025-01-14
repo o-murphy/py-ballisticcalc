@@ -9,4 +9,11 @@ try:
 except ImportError as err:
     """Fallback to pure python"""
     from py_ballisticcalc.conditions.conditions import Wind, Shot
+
     logger.debug(err)
+
+__all__ = (
+    'Wind',
+    'Shot',
+    'Atmo'
+)

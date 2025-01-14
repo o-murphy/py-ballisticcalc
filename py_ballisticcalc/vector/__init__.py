@@ -7,5 +7,5 @@ try:
     from py_ballisticcalc_exts.vector import Vector  # type: ignore
 except ImportError as err:
     """Fallback to pure python"""
-    from py_ballisticcalc.vector.vector import Atmo
+    from py_ballisticcalc.vector.vector import Vector
     logger.debug(err)

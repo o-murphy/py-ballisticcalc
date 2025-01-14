@@ -241,10 +241,12 @@ class HitResult:
         at_range = PreferredUnits.distance(at_range)
         target_height = PreferredUnits.distance(target_height)
         target_height_half = target_height.raw_value / 2.0
+
+        _look_angle: Angular
         if look_angle is None:
-            look_angle = self.shot.look_angle
+            _look_angle = self.shot.look_angle
         else:
-            look_angle = PreferredUnits.angular(look_angle)
+            _look_angle = PreferredUnits.angular(look_angle)
 
         # Get index of first trajectory point with distance >= at_range
         if (index := self.index_at_distance(at_range)) < 0:
@@ -282,7 +284,7 @@ class HitResult:
                            target_height,
                            find_begin_danger(index),
                            find_end_danger(index),
-                           look_angle)
+                           _look_angle)
 
     # pylint: disable=import-outside-toplevel
     def dataframe(self, formatted: bool = False) -> 'DataFrame':  # type: ignore
