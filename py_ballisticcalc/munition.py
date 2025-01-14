@@ -120,11 +120,13 @@ class Sight:
 @dataclass
 class Weapon:
     """
-    :param sight_height: Vertical distance from center of bore line to center of sight line.
-    :param twist: Distance for barrel rifling to complete one complete turn.
-        Positive value => right-hand twist, negative value => left-hand twist.
-    :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
-        (Typically computed by ballistic Calculator.)
+    A base class for creating Weapon.
+
+    Attributes:
+        sight_height: Sight height
+        twist: Twist
+        zero_elevation: Zero elevation
+        sight: Sight properties
     """
 
     sight_height: Distance
@@ -137,6 +139,35 @@ class Weapon:
                  twist: Optional[Union[float, Distance]] = None,
                  zero_elevation: Optional[Union[float, Angular]] = None,
                  sight: Optional[Sight] = None):
+        """
+        Create a new weapon instance with given parameters
+
+        Args:
+            sight_height: Vertical distance from center of bore line to center of sight line.
+            twist: Distance for barrel rifling to complete one complete turn.
+            Positive value => right-hand twist, negative value => left-hand twist.
+            zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
+            (Typically computed by ballistic Calculator.)
+            sight: Sight properties
+
+        Example:
+            This is how you can create a weapon
+
+            ```python
+            from py_ballisticcalc import Weapon, Unis, Sight
+
+            weapon = Weapon(
+                sight_height=Unit.Inch(2.),
+                twist=Unit.Inch(10.),
+                zero_elevation=Unit.Mil(0),
+                sight=Sight(
+                    'FFP', 2,
+                    h_click_size=Unit.Mil(0.2),
+                    v_click_size=Unit.Mil(0.2)
+                )
+            )
+            ```
+        """
         self.sight_height = PreferredUnits.sight_height(sight_height or 0)
         self.twist = PreferredUnits.twist(twist or 0)
         self.zero_elevation = PreferredUnits.angular(zero_elevation or 0)
