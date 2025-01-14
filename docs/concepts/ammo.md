@@ -37,7 +37,7 @@ Fields of a `Ammo` can be accessed as normal attributes of `ammo` instance
 Ammo instance is mutable object and field values can be changed through attribute assignment
 
 !!! warning
-    Direct assignment to access to attributes of `ammo` is restricted and not recommended, it can be not reinitialized properly after that
+    Direct values assignment to attributes of `ammo` is restricted and not recommended, it can be not reinitialized properly after that
 
 !!! note
     See the API documentation of [`Ammo`][py_ballisticcalc.munition.Ammo] for the class definition including a full list of methods and attributes.

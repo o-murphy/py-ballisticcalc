@@ -33,5 +33,14 @@ Fields of a `Weapon` can be accessed as normal attributes of `weapon` instance
 
 Weapon instance is mutable object and field values can be changed through attribute assignment
 
+### Weapon methods and properties
+
+Weapon possess the following methods and attributes:
+
+* [`sight_height`][py_ballisticcalc.munition.Weapon.sight_height]: Sight height, given distance from barrel axis and sight lense axis 
+* [`twist`][py_ballisticcalc.munition.Weapon.twist]: Given barrel twist, accepted as ratio 1 / given value 
+* [`zero_elevation`][py_ballisticcalc.munition.Weapon.zero_elevation]: Barrel elevation - the angle that displays how barrel should be elevated to hit target on zeroing distance 
+* [`sight`][py_ballisticcalc.munition.Weapon.sight]: Sight type and properties
+
 !!! note
     See the API documentation of [`Weapon`][py_ballisticcalc.munition.Weapon] for the class definition including a full list of methods and attributes.
