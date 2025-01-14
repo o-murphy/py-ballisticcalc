@@ -1,6 +1,6 @@
 site_name: py-ballisticcalc
 site_description: LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
-#edit_uri: edit/main/docs/
+edit_uri: edit/main/docs/
 
 nav:
 - Get started:
@@ -14,12 +14,13 @@ nav:
 - Concepts:
 #  - Classes: concepts/classes.md
     - Munition:
-        - "🔫 Weapon": concepts/weapon.md  # <-- Added a dummy sub-level
-        - "💣 Ammo": concepts/ammo.md
+#        - concepts/munition/index.md
+        - "🔫 Weapon": concepts/munition/weapon.md  # <-- Added a dummy sub-level
+        - "💣 Ammo": concepts/munition/ammo.md
     - Conditions:
-        - "🌡️ Atmo": concepts/atmo.md
-        - "💨 Wind": concepts/wind.md
-        - "🎯 Shot": concepts/shot.md
+        - "🌡️ Atmo": concepts/conditions/atmo.md
+        - "💨 Wind": concepts/conditions/wind.md
+        - "🎯 Shot": concepts/conditions/shot.md
     - Units and Dimensions:
         - "📏 Unit": concepts/unit.md
     - Engines:
@@ -27,12 +28,12 @@ nav:
 #  - Performance:
 - API Documentation:
     - Munition:
-      - Weapon: api/weapon.md
-      - Ammo: api/ammo.md
+      - Weapon: api/munition/weapon.md
+      - Ammo: api/munition/ammo.md
     - Conditions:
-      - Atmo: api/atmo.md
-      - Wind: api/wind.md
-      - Shot: api/shot.md
+      - Atmo: api/conditions/atmo.md
+      - Wind: api/conditions/wind.md
+      - Shot: api/conditions/shot.md
 #- Examples:
 #- Error Messages:
 - Internals:
@@ -77,6 +78,7 @@ theme:
     - navigation.instant.progress
     - navigation.path
 #    - navigation.sections
+#    - navigation.path
     - navigation.expand
     - navigation.top
     - navigation.tracking
