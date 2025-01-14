@@ -2,9 +2,9 @@
 
 import unittest
 
-from typing_extensions import Union, Tuple
+from typing_extensions import Union
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
-                              Angular, Calculator, RangeError, HitResult, logger)
+                              Angular, Calculator, RangeError, HitResult)
 
 
 class TestIssue96_97(unittest.TestCase):

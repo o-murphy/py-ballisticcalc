@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from typing_extensions import NamedTuple, Optional, Union, Any, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.logger import logger
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractDimension, Unit, PreferredUnits
 
 __all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
@@ -310,10 +309,3 @@ class HitResult:
             raise ImportError(
                 "Use `pip install py_ballisticcalc[charts]` to get results as a plot"
             ) from err
-
-
-try:
-    # replace with cython based implementation
-    from py_ballisticcalc_exts import TrajectoryData  # type: ignore
-except ImportError as err:
-    logger.debug(err)
