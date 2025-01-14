@@ -1,9 +1,8 @@
 """Module for Weapon and Ammo properties definitions"""
 import math
 from dataclasses import dataclass
-from enum import IntEnum
 
-from typing_extensions import NamedTuple, Union, Optional, Any
+from typing_extensions import NamedTuple, Union, Optional, Any, Literal, get_args
 
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits
@@ -11,13 +10,7 @@ from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, Pref
 TrajectoryData: Any
 
 
-class SightFocalPlane(IntEnum):
-    """SightFocalPlane enum"""
-
-    FFP = 1  # First focal plane
-    SFP = 2  # Second focal plane
-    LWIR = 10  # LWIR based device with scalable reticle
-    # and adjusted click size to it's magnification
+SightFocalPlane = Literal['FFP', 'SFP', 'LWIR']
 
 
 class SightReticleStep(NamedTuple):
@@ -45,15 +38,15 @@ class Sight:
 
     # def __post_init__(self):
     def __init__(self,
-                 focal_plane: SightFocalPlane = SightFocalPlane.FFP,
+                 focal_plane: SightFocalPlane = 'FFP',
                  scale_factor: Optional[Union[float, Distance]] = None,
                  h_click_size: Optional[Union[float, Angular]] = None,
                  v_click_size: Optional[Union[float, Angular]] = None):
 
-        if focal_plane not in SightFocalPlane.__members__.values():
+        if focal_plane not in get_args(SightFocalPlane):
             raise ValueError("Wrong focal plane")
 
-        if not scale_factor and focal_plane == SightFocalPlane.SFP:
+        if not scale_factor and focal_plane == 'SFP':
             raise ValueError('Scale_factor required for SFP sights')
 
         if (
@@ -74,7 +67,7 @@ class Sight:
                                   magnification: float) -> SightReticleStep:
         """Calculates the SFP reticle steps for a target distance and magnification"""
 
-        assert self.focal_plane == SightFocalPlane.SFP, "SFP focal plane required"
+        assert self.focal_plane == 'SFP', "SFP focal plane required"
 
         # adjust reticle scale relative to target distance and magnification
         def get_sfp_step(click_size: Angular):
@@ -96,18 +89,18 @@ class Sight:
                        magnification: float):
         """Calculate adjustment for target distance and magnification"""
 
-        if self.focal_plane == SightFocalPlane.SFP:
+        if self.focal_plane == 'SFP':
             steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
             return SightClicks(
                 drop_adj.raw_value / steps.vertical.raw_value,
                 windage_adj.raw_value / steps.horizontal.raw_value
             )
-        if self.focal_plane == SightFocalPlane.FFP:
+        if self.focal_plane == 'FFP':
             return SightClicks(
                 drop_adj.raw_value / self.v_click_size.raw_value,
                 windage_adj.raw_value / self.h_click_size.raw_value
             )
-        if self.focal_plane == SightFocalPlane.LWIR:
+        if self.focal_plane == 'LWIR':
             # adjust clicks to magnification
             return SightClicks(
                 drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
@@ -127,11 +120,13 @@ class Sight:
 @dataclass
 class Weapon:
     """
-    :param sight_height: Vertical distance from center of bore line to center of sight line.
-    :param twist: Distance for barrel rifling to complete one complete turn.
-        Positive value => right-hand twist, negative value => left-hand twist.
-    :param zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
-        (Typically computed by ballistic Calculator.)
+    A base class for creating Weapon.
+
+    Attributes:
+        sight_height: Sight height
+        twist: Twist
+        zero_elevation: Zero elevation
+        sight: Sight properties
     """
 
     sight_height: Distance
@@ -144,6 +139,35 @@ class Weapon:
                  twist: Optional[Union[float, Distance]] = None,
                  zero_elevation: Optional[Union[float, Angular]] = None,
                  sight: Optional[Sight] = None):
+        """
+        Create a new weapon instance with given parameters
+
+        Args:
+            sight_height: Vertical distance from center of bore line to center of sight line.
+            twist: Distance for barrel rifling to complete one complete turn.
+                Positive value => right-hand twist, negative value => left-hand twist.
+            zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
+                (Typically computed by ballistic Calculator.)
+            sight: Sight properties
+
+        Example:
+            This is how you can create a weapon
+
+            ```python
+            from py_ballisticcalc import Weapon, Unis, Sight
+
+            weapon = Weapon(
+                sight_height=Unit.Inch(2.),
+                twist=Unit.Inch(10.),
+                zero_elevation=Unit.Mil(0),
+                sight=Sight(
+                    'FFP', 2,
+                    h_click_size=Unit.Mil(0.2),
+                    v_click_size=Unit.Mil(0.2)
+                )
+            )
+            ```
+        """
         self.sight_height = PreferredUnits.sight_height(sight_height or 0)
         self.twist = PreferredUnits.twist(twist or 0)
         self.zero_elevation = PreferredUnits.angular(zero_elevation or 0)
@@ -153,12 +177,17 @@ class Weapon:
 @dataclass
 class Ammo:
     """
-    :param dm: DragModel for projectile
-    :param mv: Muzzle Velocity
-    :param powder_temp: Baseline temperature that produces the given mv
-    :param temp_modifier: Change in velocity w temperature: % per 15°C.
-        Can be computed with .calc_powder_sens().  Only applies if:
-            Settings.USE_POWDER_SENSITIVITY = True
+    A base class for creating Weapon.
+
+    Attributes:
+        dm: DragModel for projectile
+        mv: Muzzle Velocity
+        powder_temp: Baseline temperature that produces the given mv
+        temp_modifier: Change in velocity w temperature: % per 15°C.
+            Can be computed with .calc_powder_sens().  Only applies if:
+                Settings.use_powder_sensitivity = True
+        use_powder_sensitivity: Flag to allow to adjust muzzle velocity to the powder sensitivity
+
     """
 
     dm: DragModel
@@ -173,6 +202,39 @@ class Ammo:
                  powder_temp: Optional[Union[float, Temperature]] = None,
                  temp_modifier: float = 0,
                  use_powder_sensitivity: bool = False):
+        """
+        Create a new ammo instance with given parameters
+
+        Args:
+            dm: drag model
+            mv: muzzle velocity at given powder temperature
+            powder_temp: powder temperature
+            temp_modifier: Change in velocity w temperature: % per 15°C.
+                Can be computed with .calc_powder_sens().  Only applies if:
+                Ammo.use_powder_sensitivity = True
+            use_powder_sensitivity: should adjust muzzle velocity using powder sensitivity
+
+        Example:
+            This is how you can create a weapon
+
+            ```python
+            from py_ballisticcalc import Ammo, Unit, DragModel
+
+            ammo = Ammo(
+                dm=DragModel(
+                    bc=0.381,
+                    drag_table=TableG7,
+                    weight=Unit.Grain(300),
+                    length=Unit.Inch(1.7),
+                    diameter=Unit.Inch(0.338),
+                ),
+                mv=Unit.MPS(815),
+                powder_temp=Unit.Celsius(15),
+                temp_modifier=0.123,
+                use_powder_sensitivity=True,
+            )
+            ```
+        """
         self.dm = dm
         self.mv = PreferredUnits.velocity(mv or 0)
         self.powder_temp = PreferredUnits.temperature(powder_temp or Temperature.Celsius(15))
@@ -182,9 +244,21 @@ class Ammo:
     def calc_powder_sens(self, other_velocity: Union[float, Velocity],
                          other_temperature: Union[float, Temperature]) -> float:
         """Calculates velocity correction by temperature change; assigns to self.temp_modifier
-        :param other_velocity: other velocity at other_temperature
-        :param other_temperature: other temperature
-        :return: temperature modifier in terms %v_delta/15°C
+
+        Args:
+            other_velocity: other velocity at other_temperature
+            other_temperature: other temperature
+
+        Returns:
+            temperature modifier in terms %v_delta/15°C
+
+        Example:
+            ```python
+            powder_sensitivity = ammo.calc_powder_sens(
+                Unit.MPS(830),
+                Unit.Celsius(200)
+            )
+            ```
         """
         v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
@@ -205,8 +279,19 @@ class Ammo:
 
     def get_velocity_for_temp(self, current_temp: Union[float, Temperature]) -> Velocity:
         """Calculates muzzle velocity at temperature, based on temp_modifier.
-        :param current_temp: Temperature of cartridge powder
-        :return: Muzzle velocity corrected to current_temp
+
+        Args:
+            current_temp: Temperature of cartridge powder
+
+        Returns:
+            Muzzle velocity corrected to current_temp
+
+        Example:
+            ```python
+            muzzle_velocity = ammo.get_velocity_for_temp(
+                Unit.Celsius(200)
+            )
+            ```
         """
         try:
             v0 = self.mv >> Velocity.MPS

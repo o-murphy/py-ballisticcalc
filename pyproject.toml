@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.1.0a3"
+version = "2.1.0a4"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -50,7 +50,7 @@ include = ["py_ballisticcalc*"]
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.1.0a3']
+exts = ['py_ballisticcalc.exts==2.1.0a4']
 charts = ['matplotlib', 'pandas']
 visualize = ['matplotlib', 'pandas']
 dev = [
@@ -62,4 +62,14 @@ dev = [
     'build',
     'pandas-stubs',
     'matplotlib-stubs'
+]
+docs = [
+    'mkdocs',
+    'mkdocs-exclude',
+    'mkdocs-material[imaging]',
+    'mkdocs-redirects',
+    'mkdocstrings-python',
+    'mkdocstrings',
+    'mkdocs-autorefs',
+    'mike',
 ]

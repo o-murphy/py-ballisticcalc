@@ -652,12 +652,3 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
         m = mhi
     curve_m = curve[m]
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
-
-
-try:
-    # replace with cython based implementation
-    # pylint: disable=reimported
-    from py_ballisticcalc_exts import TrajectoryCalc, Vector  # type: ignore
-    logger.debug("Binary modules found, running in binary mode")
-except ImportError as err:
-    logger.debug(err)

@@ -287,8 +287,4 @@ class Shot:
                                  + (self.relative_angle >> Angular.Radian)))
 
 
-try:
-    # replace with cython based implementation
-    from py_ballisticcalc_exts import Wind, Shot  # type: ignore
-except ImportError as err:
-    logger.debug(err)
+
