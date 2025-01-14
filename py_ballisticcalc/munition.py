@@ -197,6 +197,37 @@ class Ammo:
                  powder_temp: Optional[Union[float, Temperature]] = None,
                  temp_modifier: float = 0,
                  use_powder_sensitivity: bool = False):
+        """
+        Create a new ammo instance with given parameters
+
+        Args:
+            dm: drag model
+            mv: muzzle velocity at given powder temperature
+            powder_temp: powder temperature
+            use_powder_sensitivity: should adjust muzzle velocity using powder sensitivity
+            (Typically computed by ballistic Calculator.)
+
+        Example:
+            This is how you can create a weapon
+
+            ```python
+            from py_ballisticcalc import Ammo, Unit, DragModel
+
+            ammo = Ammo(
+                dm=DragModel(
+                    bc=0.381,
+                    drag_table=TableG7,
+                    weight=Unit.Grain(300),
+                    length=Unit.Inch(1.7),
+                    diameter=Unit.Inch(0.338),
+                ),
+                mv=Unit.MPS(815),
+                powder_temp=Unit.Celsius(15),
+                temp_modifier=0.123,
+                use_powder_sensitivity=True,
+            )
+            ```
+        """
         self.dm = dm
         self.mv = PreferredUnits.velocity(mv or 0)
         self.powder_temp = PreferredUnits.temperature(powder_temp or Temperature.Celsius(15))

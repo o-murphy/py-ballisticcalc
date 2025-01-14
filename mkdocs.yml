@@ -20,7 +20,7 @@ nav:
   - Engines: concepts/engines.md
 #  - Performance:
 - API Documentation:
-    - Weapon: api/weapon.md
+    - Munition: api/munition.md
 #- Examples:
 #- Error Messages:
 - Internals:
