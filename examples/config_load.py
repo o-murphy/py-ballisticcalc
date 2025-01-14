@@ -1,5 +1,4 @@
-from py_ballisticcalc import (basicConfig, PreferredUnits, loadMixedUnits,
-                              get_global_use_powder_sensitivity, get_global_max_calc_step_size)
+from py_ballisticcalc import (basicConfig, PreferredUnits, loadMixedUnits)
 
 import importlib.resources
 
@@ -11,8 +10,6 @@ with importlib.resources.files('py_ballisticcalc').joinpath('assets/.pybc-imperi
 
 print("Imperial:")
 print(PreferredUnits)
-print(get_global_use_powder_sensitivity())
-print(get_global_max_calc_step_size())
 
 print()
 
@@ -20,5 +17,3 @@ loadMixedUnits()
 
 print("Mixed:")
 print(PreferredUnits)
-print(get_global_use_powder_sensitivity())
-print(get_global_max_calc_step_size())

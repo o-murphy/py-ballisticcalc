@@ -12,7 +12,6 @@ __all__ = (
 
 
 class InterfaceConfigDict(TypedDict, total=False):
-    use_powder_sensitivity: bool
     max_calc_step_size_feet: float
     chart_resolution: float
     cZeroFindingAccuracy: float

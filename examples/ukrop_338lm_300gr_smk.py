@@ -17,7 +17,8 @@ length = Distance.Inch(1.7)
 
 weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
 dm = DragModel(0.381, TableG7, weight, diameter, length)
-ammo = Ammo(dm=dm, mv=Unit.MPS(815), powder_temp=Temperature.Celsius(0), temp_modifier=0.0123, use_powder_sensitivity=True)
+ammo = Ammo(dm=dm, mv=Unit.MPS(815), powder_temp=Temperature.Celsius(0), temp_modifier=0.0123,
+            use_powder_sensitivity=True)
 
 zero_atmo = Atmo(
     altitude=Unit.Meter(150),
