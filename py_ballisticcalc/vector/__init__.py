@@ -8,4 +8,7 @@ try:
 except ImportError as err:
     """Fallback to pure python"""
     from py_ballisticcalc.vector._vector import Vector
+
     logger.debug(err)
+
+__all__ = ('Vector',)
