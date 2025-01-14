@@ -1,3 +1,5 @@
+"""Bootstrap to load binary Wind, Shot extensions"""
+
 from py_ballisticcalc.conditions.conditions import Atmo
 from py_ballisticcalc.logger import logger
 

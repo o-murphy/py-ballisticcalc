@@ -20,7 +20,8 @@ nav:
   - Engines: concepts/engines.md
 #  - Performance:
 - API Documentation:
-    - Munition: api/munition.md
+    - Weapon: api/weapon.md
+    - Ammo: api/ammo.md
     - Conditions: api/conditions.md
 #- Examples:
 #- Error Messages:

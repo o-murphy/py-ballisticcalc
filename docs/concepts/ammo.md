@@ -39,5 +39,15 @@ Ammo instance is mutable object and field values can be changed through attribut
 !!! warning
     Direct values assignment to attributes of `ammo` is restricted and not recommended, it can be not reinitialized properly after that
 
+Weapon possess the following methods and attributes:
+
+* [`dm`][py_ballisticcalc.munition.Ammo.dm]: DragModel for projectile
+* [`mv`][py_ballisticcalc.munition.Ammo.mv]: Muzzle Velocity
+* [`powder_temp`][py_ballisticcalc.munition.Ammo.powder_temp]: Baseline temperature that produces the given mv
+* [`temp_modifier`][py_ballisticcalc.munition.Ammo.temp_modifier]: Change in velocity w temperature: % per 15°C.
+* [`use_powder_sensitivity`][py_ballisticcalc.munition.Ammo.use_powder_sensitivity]: Flag to enable adjusting muzzle velocity to powder temperature
+* [`calc_powder_sens`][py_ballisticcalc.munition.Ammo.calc_powder_sens]: Method to calculate powder temperature sensitivity coefficient
+* [`get_velocity_for_temp`][py_ballisticcalc.munition.Ammo.get_velocity_for_temp]: Method to get adjusted muzzle velocity to powder sensitivity
+
 !!! note
     See the API documentation of [`Ammo`][py_ballisticcalc.munition.Ammo] for the class definition including a full list of methods and attributes.

@@ -145,9 +145,9 @@ class Weapon:
         Args:
             sight_height: Vertical distance from center of bore line to center of sight line.
             twist: Distance for barrel rifling to complete one complete turn.
-            Positive value => right-hand twist, negative value => left-hand twist.
+                Positive value => right-hand twist, negative value => left-hand twist.
             zero_elevation: Angle of barrel relative to sight line when sight is set to "zero."
-            (Typically computed by ballistic Calculator.)
+                (Typically computed by ballistic Calculator.)
             sight: Sight properties
 
         Example:
@@ -177,12 +177,17 @@ class Weapon:
 @dataclass
 class Ammo:
     """
-    :param dm: DragModel for projectile
-    :param mv: Muzzle Velocity
-    :param powder_temp: Baseline temperature that produces the given mv
-    :param temp_modifier: Change in velocity w temperature: % per 15°C.
-        Can be computed with .calc_powder_sens().  Only applies if:
-            Settings.USE_POWDER_SENSITIVITY = True
+    A base class for creating Weapon.
+
+    Attributes:
+        dm: DragModel for projectile
+        mv: Muzzle Velocity
+        powder_temp: Baseline temperature that produces the given mv
+        temp_modifier: Change in velocity w temperature: % per 15°C.
+            Can be computed with .calc_powder_sens().  Only applies if:
+                Settings.use_powder_sensitivity = True
+        use_powder_sensitivity: Flag to allow to adjust muzzle velocity to the powder sensitivity
+
     """
 
     dm: DragModel
@@ -204,8 +209,10 @@ class Ammo:
             dm: drag model
             mv: muzzle velocity at given powder temperature
             powder_temp: powder temperature
+            temp_modifier: Change in velocity w temperature: % per 15°C.
+                Can be computed with .calc_powder_sens().  Only applies if:
+                Ammo.use_powder_sensitivity = True
             use_powder_sensitivity: should adjust muzzle velocity using powder sensitivity
-            (Typically computed by ballistic Calculator.)
 
         Example:
             This is how you can create a weapon
@@ -237,9 +244,21 @@ class Ammo:
     def calc_powder_sens(self, other_velocity: Union[float, Velocity],
                          other_temperature: Union[float, Temperature]) -> float:
         """Calculates velocity correction by temperature change; assigns to self.temp_modifier
-        :param other_velocity: other velocity at other_temperature
-        :param other_temperature: other temperature
-        :return: temperature modifier in terms %v_delta/15°C
+
+        Args:
+            other_velocity: other velocity at other_temperature
+            other_temperature: other temperature
+
+        Returns:
+            temperature modifier in terms %v_delta/15°C
+
+        Example:
+            ```python
+            powder_sensitivity = ammo.calc_powder_sens(
+                Unit.MPS(830),
+                Unit.Celsius(200)
+            )
+            ```
         """
         v0 = self.mv >> Velocity.MPS
         t0 = self.powder_temp >> Temperature.Celsius
@@ -260,8 +279,19 @@ class Ammo:
 
     def get_velocity_for_temp(self, current_temp: Union[float, Temperature]) -> Velocity:
         """Calculates muzzle velocity at temperature, based on temp_modifier.
-        :param current_temp: Temperature of cartridge powder
-        :return: Muzzle velocity corrected to current_temp
+
+        Args:
+            current_temp: Temperature of cartridge powder
+
+        Returns:
+            Muzzle velocity corrected to current_temp
+
+        Example:
+            ```python
+            muzzle_velocity = ammo.get_velocity_for_temp(
+                Unit.Celsius(200)
+            )
+            ```
         """
         try:
             v0 = self.mv >> Velocity.MPS
