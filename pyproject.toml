@@ -63,3 +63,13 @@ dev = [
     'pandas-stubs',
     'matplotlib-stubs'
 ]
+docs = [
+    'mkdocs',
+    'mkdocs-exclude',
+#    'mkdocs-material[imaging]',
+    'mkdocs-redirects',
+    'mkdocstrings-python',
+    'mkdocstrings',
+    'mkdocs-autorefs',
+    'mike',
+]

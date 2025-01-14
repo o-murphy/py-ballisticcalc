@@ -1,5 +1,6 @@
 site_name: py-ballisticcalc
 site_description: LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
+edit_uri: edit/main/docs/
 
 nav:
 - Get started:
@@ -18,7 +19,8 @@ nav:
 #  - Types:
   - Engines: concepts/engines.md
 #  - Performance:
-#- API Documentation:
+- API Documentation:
+    - Weapon: api/weapon.md
 #- Examples:
 #- Error Messages:
 - Internals:
@@ -120,3 +122,39 @@ markdown_extensions:
     emoji_generator: !!python/name:material.extensions.emoji.to_svg
 - pymdownx.tabbed:
     alternate_style: true
+
+#hooks:
+#- 'docs/plugins/main.py'
+
+#watch:
+#  - py_ballisticcalc
+
+plugins:
+#- social
+- mike:
+    alias_type: symlink
+    canonical_version: latest
+- search
+#- exclude:
+#    glob:
+#    - theme/announce.html
+#    - plugins/*
+#    - __pycache__/*
+- autorefs
+- mkdocstrings:
+    handlers:
+      python:
+        paths: [.]
+        options:
+          show_source: false
+#          members_order: source
+#          separate_signature: true
+#          filters: ["!^_"]
+#          docstring_options:
+#            ignore_init_summary: true
+#          merge_init_into_class: true
+#          show_signature_annotations: true
+#          signature_crossrefs: true
+#        import:
+#          - url: https://docs.python.org/3/objects.inv
+#            domains: [py, std]
