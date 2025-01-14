@@ -4,7 +4,7 @@ If you need help getting started with **py-ballisticcalc** or with advanced usag
 
 ## :material-help: Usage Documentation
 
-The [usage documentation](concepts/classes.md) is the most complete guide on how to use **py-ballisticcalc**.
+The [usage documentation](concepts/munition/weapon.md) is the most complete guide on how to use **py-ballisticcalc**.
 
 [//]: # (## :material-api: API Documentation)
 
