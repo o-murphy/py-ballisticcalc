@@ -19,9 +19,7 @@ __all__ = (
     'TrajectoryCalc',
     'Vector',
     'get_global_max_calc_step_size',
-    'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
-    'set_global_use_powder_sensitivity',
     'reset_globals',
     'cZeroFindingAccuracy',
     'cMinimumVelocity',
@@ -48,10 +46,6 @@ def get_global_max_calc_step_size() -> Distance:
     return PreferredUnits.distance(Distance.Foot(_globalMaxCalcStepSizeFeet))
 
 
-def get_global_use_powder_sensitivity() -> bool:
-    return _globalUsePowderSensitivity
-
-
 def reset_globals() -> None:
     # pylint: disable=global-statement
     global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
@@ -67,14 +61,6 @@ def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
     _globalMaxCalcStepSizeFeet = _value >> Distance.Foot
 
 
-def set_global_use_powder_sensitivity(value: bool) -> None:
-    # pylint: disable=global-statement
-    global _globalUsePowderSensitivity
-    if not isinstance(value, bool):
-        raise TypeError(f"set_global_use_powder_sensitivity {value=} is not a boolean")
-    _globalUsePowderSensitivity = value
-
-
 class CurvePoint(NamedTuple):
     """Coefficients for quadratic interpolation"""
     a: float
@@ -84,7 +70,6 @@ class CurvePoint(NamedTuple):
 
 # Define the NamedTuple to match the config structure
 class Config(NamedTuple):
-    use_powder_sensitivity: bool
     max_calc_step_size_feet: float
     chart_resolution: float
     cZeroFindingAccuracy: float
@@ -292,8 +277,8 @@ class TrajectoryCalc:
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = self.get_calc_step()
-        if self.__config.use_powder_sensitivity:
-            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.temperature) >> Velocity.FPS
+        if shot_info.ammo.use_powder_sensitivity:
+            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
         else:
             self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)

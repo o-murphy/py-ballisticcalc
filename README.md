@@ -108,7 +108,7 @@ Here we define a standard .50BMG, enable powder temperature sensitivity, and zer
 
 ```python
 dm = DragModel(0.62, TableG1, 661, 0.51, 2.3)
-ammo=Ammo(dm, Velocity.MPS(850), Temperature.Celsius(15))
+ammo=Ammo(dm, Velocity.MPS(850), Temperature.Celsius(15), use_powder_sens=True)
 ammo.calc_powder_sens(Velocity.MPS(820), Temperature.Celsius(0))
 weapon = Weapon(sight_height=Distance.Centimeter(9), twist=15)
 atmo = Atmo(altitude=Distance.Foot(1000), temperature=Unit.Celsius(5), humidity=.5)
@@ -148,18 +148,13 @@ print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distanc
 ```
 
 #### 2. To change solver global setting use global flags setters
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > This way is deprecated and will be removed in a future version, use [InterfaceConfigDict](#3-to-change-solver-interface-setting-use-_config-attribute-for-calculator)
+> _globalUsePowderSensitivity no more supports, use Ammo.use_powder_sens instead and Atmo.powder_t
 ```python
 from py_ballisticcalc import *
 
-# enable powder sensitivity calculation
-set_global_use_powder_sensitivity(True)
-# enable powder sensitivity calculation
 set_global_max_calc_step_size(Unit.Meter(1))
-
-# get that values
-enabled = get_global_use_powder_sensitivity()
 step = get_global_max_calc_step_size()
 
 # reset global flags to defaults
@@ -170,7 +165,6 @@ reset_globals()
 ```python
 from py_ballisticcalc import Calculator, InterfaceConfigDict
 config = InterfaceConfigDict(
-    use_powder_sensitivity = True, 
     max_calc_step_size_feet=1.,
   # cZeroFindingAccuracy= ...,
     cMinimumVelocity= 0,
@@ -210,7 +204,6 @@ velocity = 'FPS'
 
 [pybc.calculator]
 max_calc_step_size = { value = 0.5, units = "Foot" }
-use_powder_sensitivity = false
 # ...
 ```
 

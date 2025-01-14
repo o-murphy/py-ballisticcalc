@@ -11,8 +11,6 @@ PreferredUnits.distance = Distance.Meter
 PreferredUnits.sight_height = Distance.Centimeter
 PreferredUnits.drop = Distance.Centimeter
 
-set_global_use_powder_sensitivity(True)  # enable muzzle velocity correction my powder temperature
-
 # define params with default prefer_units
 weight = Unit.parse_value('300gr', 'weight')  # using specified alias
 diameter = Unit.parse_value(0.338, 'in')  # using preferred alias of type(str)
@@ -25,7 +23,8 @@ weapon = Weapon(sight_height=Unit.parse_value(9, "sight_height"),
 
 # no changes bellow
 dm = DragModel(0.381, TableG7, weight, diameter, length)
-ammo = Ammo(dm=dm, mv=Unit.MPS(815), powder_temp=Temperature.Celsius(0), temp_modifier=0.0123)
+ammo = Ammo(dm=dm, mv=Unit.MPS(815), powder_temp=Temperature.Celsius(0),
+            temp_modifier=0.0123, use_powder_sensitivity=True)
 
 zero_atmo = Atmo(
     altitude=Unit.Meter(150),

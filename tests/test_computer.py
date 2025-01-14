@@ -3,8 +3,7 @@
 import unittest
 import copy
 from py_ballisticcalc import (
-    DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7,
-    get_global_use_powder_sensitivity, set_global_use_powder_sensitivity, RangeError,
+    DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError,
 )
 from py_ballisticcalc.unit import *
 from py_ballisticcalc import trajectory_calc
@@ -193,14 +192,29 @@ class TestComputer(unittest.TestCase):
 
     def test_powder_sensitivity(self):
         """With _globalUsePowderSensitivity: Reducing temperature should reduce muzzle velocity"""
-        previous = get_global_use_powder_sensitivity()
-        set_global_use_powder_sensitivity(True)
         self.ammo.calc_powder_sens(Velocity.FPS(2550), Temperature.Celsius(0))
-        cold = Atmo(temperature=Temperature.Celsius(-5))
-        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
-        t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
-        self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
-        set_global_use_powder_sensitivity(previous)
+
+        with self.subTest("don't uses powder sensitivity"):
+            cold = Atmo(temperature=Temperature.Celsius(-5))
+            shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
+            t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+            self.assertEqual(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
+
+        self.ammo.use_powder_sensitivity = True
+
+        with self.subTest("powder temperature the same as atmosphere temperature"):
+            cold = Atmo(temperature=Temperature.Celsius(-5))
+            shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
+            t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+            self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
+
+        with self.subTest("different powder temperature"):
+            cold = Atmo(powder_t=Temperature.Celsius(-5))
+            shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=cold)
+            t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+            self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
+
+        self.ammo.use_powder_sensitivity = False
 
     # @unittest.skip("Raises ZeroDivisionError")
     def test_zero_velocity(self):

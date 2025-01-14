@@ -235,11 +235,15 @@ cdef class TrajectoryCalc:
         self.cant_sine = sin(shot_info.cant_angle._rad)
         self.alt0 = shot_info.atmo.altitude._feet
         self.calc_step = self.get_calc_step()
-        if self.__config.use_powder_sensitivity:
-            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(
-                shot_info.atmo.temperature)._fps  # shortcut for >> Velocity.FPS
+        if shot_info.ammo.use_powder_sensitivity:
+            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         else:
-            self.muzzle_velocity = shot_info.ammo.mv._fps  # shortcut for >> Velocity.FPS
+            self.muzzle_velocity = shot_info.ammo.mv._fps
+        # if self.__config.use_powder_sensitivity:
+        #     self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(
+        #         shot_info.atmo.temperature)._fps  # shortcut for >> Velocity.FPS
+        # else:
+        #     self.muzzle_velocity = shot_info.ammo.mv._fps  # shortcut for >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     cdef object _zero_angle(TrajectoryCalc self, Shot shot_info, object distance):

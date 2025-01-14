@@ -10,13 +10,11 @@ PreferredUnits.temperature = Temperature.Celsius
 PreferredUnits.distance = Distance.Meter
 PreferredUnits.sight_height = Distance.Centimeter
 
-set_global_use_powder_sensitivity(True)  # Correct muzzle velocity for powder temperature
-
 # Define ammunition parameters
 weight, diameter = 168, 0.308  # Numbers will be assumed to use default Settings.Units
 length: Distance = Distance.Inch(1.282)  # Or declare prefer_units explicitly
 dm = DragModel(0.223, TableG7, weight, diameter, length)
-ammo = Ammo(dm, 2750, 15)
+ammo = Ammo(dm, 2750, 15, use_powder_sensitivity=True)
 ammo.calc_powder_sens(2723, 0)
 gun = Weapon(sight_height=9, twist=12)
 current_atmo = Atmo(110, 29.8, 15, 72)

@@ -85,9 +85,6 @@ def _load_config(filepath=None, suppress_warnings=False):
                         except (KeyError, TypeError, ValueError):
                             if not suppress_warnings:
                                 logger.warning("Wrong max_calc_step_size units or value")
-
-                    if use_powder_sensitivity := calculator.get('use_powder_sensitivity'):
-                        set_global_use_powder_sensitivity(use_powder_sensitivity)
                 else:
                     if not suppress_warnings:
                         logger.warning("Config has not `pybc.calculator` section")
@@ -100,20 +97,17 @@ def _load_config(filepath=None, suppress_warnings=False):
 
 def _basic_config(filename=None,
                   max_calc_step_size: Optional[Union[float, Distance]] = None,
-                  use_powder_sensitivity: bool = False,
                   preferred_units: Optional[Dict[str, Unit]] = None, suppress_warnings=False):
     """
     Method to load preferred units from file or Mapping
     """
-    if filename and (preferred_units or max_calc_step_size or use_powder_sensitivity):
+    if filename and (preferred_units or max_calc_step_size):
         raise ValueError("Can't use preferred_units and config file at same time")
-    if not filename and (preferred_units or max_calc_step_size or use_powder_sensitivity):
+    if not filename and (preferred_units or max_calc_step_size):
         if preferred_units:
             PreferredUnits.set(**preferred_units)
         if max_calc_step_size:
             set_global_max_calc_step_size(max_calc_step_size)
-        if use_powder_sensitivity:
-            set_global_use_powder_sensitivity(use_powder_sensitivity)
     else:
         # trying to load definitions from pybc.toml
         _load_config(filename, suppress_warnings)
@@ -155,9 +149,7 @@ __all__ = [
     'Vector',
     "InterfaceConfigDict",
     'get_global_max_calc_step_size',
-    'get_global_use_powder_sensitivity',
     'set_global_max_calc_step_size',
-    'set_global_use_powder_sensitivity',
     'reset_globals',
     'DragModel',
     'DragDataPoint',
