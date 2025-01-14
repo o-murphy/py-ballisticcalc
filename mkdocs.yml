@@ -21,6 +21,7 @@ nav:
 #  - Performance:
 - API Documentation:
     - Munition: api/munition.md
+    - Conditions: api/conditions.md
 #- Examples:
 #- Error Messages:
 - Internals:
