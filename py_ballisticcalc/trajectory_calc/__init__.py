@@ -1,9 +1,41 @@
 """Bootstrap to load binary TrajectoryCalc, Vector extensions"""
+from typing_extensions import Union, Final
+
+from py_ballisticcalc.unit import Distance, PreferredUnits
+
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_calc.trajectory_calc import (Config,
-                                                              get_global_max_calc_step_size,
-                                                              set_global_max_calc_step_size,
-                                                              reset_globals)
+from py_ballisticcalc.trajectory_calc._trajectory_calc import Config
+
+cZeroFindingAccuracy: Final[float] = 0.000005
+cMinimumVelocity: Final[float] = 50.0
+cMaximumDrop: Final[float] = -15000
+cMaxIterations: Final[int] = 20
+cGravityConstant: Final[float] = -32.17405
+cMinimumAltitude: Final[float] = -1410.748  # ft
+
+_globalChartResolution: float = 0.2  # ft
+_globalUsePowderSensitivity = False
+_globalMaxCalcStepSizeFeet: float = 0.5
+
+
+def get_global_max_calc_step_size() -> Distance:
+    return PreferredUnits.distance(Distance.Foot(_globalMaxCalcStepSizeFeet))
+
+
+def reset_globals() -> None:
+    # pylint: disable=global-statement
+    global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
+    _globalUsePowderSensitivity = False
+    _globalMaxCalcStepSizeFeet = 0.5
+
+
+def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
+    # pylint: disable=global-statement
+    global _globalMaxCalcStepSizeFeet
+    if (_value := PreferredUnits.distance(value)).raw_value <= 0:
+        raise ValueError("_globalMaxCalcStepSize have to be > 0")
+    _globalMaxCalcStepSizeFeet = _value >> Distance.Foot
+
 
 try:
     # replace with cython based implementation
@@ -11,6 +43,22 @@ try:
     from py_ballisticcalc_exts.vector import Vector  # type: ignore
 except ImportError as err:
     """Fallback to pure python"""
-    from py_ballisticcalc.trajectory_calc.trajectory_calc import TrajectoryCalc
-    from py_ballisticcalc.vector.vector import Vector
+    from py_ballisticcalc.trajectory_calc._trajectory_calc import TrajectoryCalc
+    from py_ballisticcalc.vector._vector import Vector
+
     logger.debug(err)
+
+__all__ = (
+    'TrajectoryCalc',
+    'Vector',
+    'get_global_max_calc_step_size',
+    'set_global_max_calc_step_size',
+    'reset_globals',
+    'cZeroFindingAccuracy',
+    'cMinimumVelocity',
+    'cMaximumDrop',
+    'cMaxIterations',
+    'cGravityConstant',
+    'cMinimumAltitude',
+    'Config',
+)

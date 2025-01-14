@@ -4,61 +4,21 @@
 
 import math
 import warnings
-from typing_extensions import NamedTuple, Union, List, Final, Tuple
+from typing_extensions import NamedTuple, Union, List, Tuple
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
-from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, PreferredUnits
+from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
 from py_ballisticcalc.vector import Vector
-from py_ballisticcalc.logger import logger
 
 __all__ = (
     'TrajectoryCalc',
     'Vector',
-    'get_global_max_calc_step_size',
-    'set_global_max_calc_step_size',
-    'reset_globals',
-    'cZeroFindingAccuracy',
-    'cMinimumVelocity',
-    'cMaximumDrop',
-    'cMaxIterations',
-    'cGravityConstant',
-    'cMinimumAltitude',
     'Config',
 )
-
-cZeroFindingAccuracy: Final[float] = 0.000005
-cMinimumVelocity: Final[float] = 50.0
-cMaximumDrop: Final[float] = -15000
-cMaxIterations: Final[int] = 20
-cGravityConstant: Final[float] = -32.17405
-cMinimumAltitude: Final[float] = -1410.748  # ft
-
-_globalChartResolution: float = 0.2  # ft
-_globalUsePowderSensitivity = False
-_globalMaxCalcStepSizeFeet: float = 0.5
-
-
-def get_global_max_calc_step_size() -> Distance:
-    return PreferredUnits.distance(Distance.Foot(_globalMaxCalcStepSizeFeet))
-
-
-def reset_globals() -> None:
-    # pylint: disable=global-statement
-    global _globalUsePowderSensitivity, _globalMaxCalcStepSizeFeet
-    _globalUsePowderSensitivity = False
-    _globalMaxCalcStepSizeFeet = 0.5
-
-
-def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
-    # pylint: disable=global-statement
-    global _globalMaxCalcStepSizeFeet
-    if (_value := PreferredUnits.distance(value)).raw_value <= 0:
-        raise ValueError("_globalMaxCalcStepSize have to be > 0")
-    _globalMaxCalcStepSizeFeet = _value >> Distance.Foot
 
 
 class CurvePoint(NamedTuple):

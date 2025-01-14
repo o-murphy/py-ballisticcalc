@@ -9,7 +9,7 @@ from typing_extensions import List, Union, Optional, Tuple
 from py_ballisticcalc.munition import Weapon, Ammo
 from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
-from py_ballisticcalc.logger import logger
+
 
 __all__ = ('Atmo', 'Wind', 'Shot')
 
