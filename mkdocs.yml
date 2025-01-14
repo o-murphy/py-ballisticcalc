@@ -13,16 +13,26 @@ nav:
 #  - Changelog: changelog.md
 - Concepts:
 #  - Classes: concepts/classes.md
-  - Units and Dimensions: concepts/units.md
-  - Weapon: concepts/weapon.md
-  - Ammo: concepts/ammo.md
-#  - Types:
-  - Engines: concepts/engines.md
+    - Munition:
+        - "🔫 Weapon": concepts/weapon.md  # <-- Added a dummy sub-level
+        - "💣 Ammo": concepts/ammo.md
+    - Conditions:
+        - "🌡️ Atmo": concepts/atmo.md
+        - "💨 Wind": concepts/wind.md
+        - "🎯 Shot": concepts/shot.md
+    - Units and Dimensions:
+        - "📏 Unit": concepts/unit.md
+    - Engines:
+        - "⚙️ Engines": concepts/engines.md
 #  - Performance:
 - API Documentation:
-    - Weapon: api/weapon.md
-    - Ammo: api/ammo.md
-    - Conditions: api/conditions.md
+    - Munition:
+      - Weapon: api/weapon.md
+      - Ammo: api/ammo.md
+    - Conditions:
+      - Atmo: api/atmo.md
+      - Wind: api/wind.md
+      - Shot: api/shot.md
 #- Examples:
 #- Error Messages:
 - Internals:
@@ -66,7 +76,8 @@ theme:
     - navigation.instant.preview
     - navigation.instant.progress
     - navigation.path
-    - navigation.sections
+#    - navigation.sections
+    - navigation.expand
     - navigation.top
     - navigation.tracking
     - search.suggest
@@ -157,6 +168,8 @@ plugins:
           merge_init_into_class: true
           show_signature_annotations: true
           signature_crossrefs: true
+
+          docstring_section_style: table
         import:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]
