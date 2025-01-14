@@ -108,7 +108,7 @@ Here we define a standard .50BMG, enable powder temperature sensitivity, and zer
 
 ```python
 dm = DragModel(0.62, TableG1, 661, 0.51, 2.3)
-ammo=Ammo(dm, Velocity.MPS(850), Temperature.Celsius(15))
+ammo=Ammo(dm, Velocity.MPS(850), Temperature.Celsius(15), use_powder_sens=True)
 ammo.calc_powder_sens(Velocity.MPS(820), Temperature.Celsius(0))
 weapon = Weapon(sight_height=Distance.Centimeter(9), twist=15)
 atmo = Atmo(altitude=Distance.Foot(1000), temperature=Unit.Celsius(5), humidity=.5)
@@ -148,18 +148,13 @@ print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distanc
 ```
 
 #### 2. To change solver global setting use global flags setters
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > This way is deprecated and will be removed in a future version, use [InterfaceConfigDict](#3-to-change-solver-interface-setting-use-_config-attribute-for-calculator)
+> _globalUsePowderSensitivity no more supports, use Ammo.use_powder_sens instead and Atmo.powder_t
 ```python
 from py_ballisticcalc import *
 
-# enable powder sensitivity calculation
-set_global_use_powder_sensitivity(True)
-# enable powder sensitivity calculation
 set_global_max_calc_step_size(Unit.Meter(1))
-
-# get that values
-enabled = get_global_use_powder_sensitivity()
 step = get_global_max_calc_step_size()
 
 # reset global flags to defaults
@@ -169,16 +164,15 @@ reset_globals()
 #### 3. To change solver interface setting use _config attribute for Calculator
 ```python
 from py_ballisticcalc import Calculator, InterfaceConfigDict
-config: InterfaceConfigDict = {
-  'use_powder_sensitivity': True, 
-  'max_calc_step_size_feet': 1.,
-  # 'cZeroFindingAccuracy': ...,
-  'cMinimumVelocity': 0,
-  # 'cMaximumDrop': ...,
-  # 'cMaxIterations': ...,
-  # 'cGravityConstant': ...,
-  # 'cMinimumAltitude': ...,
-}
+config = InterfaceConfigDict(
+    max_calc_step_size_feet=1.,
+  # cZeroFindingAccuracy= ...,
+    cMinimumVelocity= 0,
+  # cMaximumDrop= ...,
+  # cMaxIterations= ...,
+  # cGravityConstant= ...,
+  # cMinimumAltitude= ...,
+)
 calc = Calculator(_config=config)
 ```
 
@@ -186,10 +180,15 @@ calc = Calculator(_config=config)
 #### Use new method to set preferred units/settings globally for the venv or the user
 Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
 Or place this file in user's home directory. _(The file in project root have priority.)_
+Use `loadMetricUnits()`, `loadImperialUnits()` or `loadMixedUnits()` to manualy load one of preinstalled pressets.
 You can use `basicConfig()` function to load your custom `.toml` file
 
 The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
-and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/assets)
+and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets). They include settings for [metric]
+(https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-imperial.toml) and 
+[mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-mixed.toml) mode. 
+Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for diameter,
+length, weight and adjustment units.
 
 ```toml
 # Config template for py_ballisticcalc
@@ -205,10 +204,20 @@ velocity = 'FPS'
 
 [pybc.calculator]
 max_calc_step_size = { value = 0.5, units = "Foot" }
-use_powder_sensitivity = false
 # ...
 ```
 
+##### Load .pybc.toml presets
+```python
+from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
+
+loadImperialUnits()
+loadMetricUnits()
+loadMixedUnits()
+```
+(Use just one of these three methods - only the last one called counts).
+
+##### Custom .pybc.toml
 ```python
 from py_ballisticcalc import basicConfig
 

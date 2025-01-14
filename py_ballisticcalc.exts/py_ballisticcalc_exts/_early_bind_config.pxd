@@ -1,5 +1,4 @@
 cdef struct _ConfigStruct:
-    bint use_powder_sensitivity
     double max_calc_step_size_feet
     double chart_resolution
     double cZeroFindingAccuracy

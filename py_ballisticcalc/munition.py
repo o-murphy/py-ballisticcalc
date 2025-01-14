@@ -165,16 +165,19 @@ class Ammo:
     mv: Velocity
     powder_temp: Temperature
     temp_modifier: float
+    use_powder_sensitivity: bool = False
 
     def __init__(self,
                  dm: DragModel,
                  mv: Union[float, Velocity],
                  powder_temp: Optional[Union[float, Temperature]] = None,
-                 temp_modifier: float = 0):
+                 temp_modifier: float = 0,
+                 use_powder_sensitivity: bool = False):
         self.dm = dm
         self.mv = PreferredUnits.velocity(mv or 0)
         self.powder_temp = PreferredUnits.temperature(powder_temp or Temperature.Celsius(15))
         self.temp_modifier = temp_modifier or 0
+        self.use_powder_sensitivity = use_powder_sensitivity
 
     def calc_powder_sens(self, other_velocity: Union[float, Velocity],
                          other_temperature: Union[float, Temperature]) -> float:

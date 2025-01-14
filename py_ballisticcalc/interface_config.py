@@ -25,7 +25,6 @@ class InterfaceConfigDict(TypedDict, total=False):
 
 def create_interface_config(interface_config: Optional[InterfaceConfigDict] = None) -> Config:
     config = InterfaceConfigDict(
-        use_powder_sensitivity=trajectory_calc._globalUsePowderSensitivity,
         max_calc_step_size_feet=trajectory_calc._globalMaxCalcStepSizeFeet,
         chart_resolution=trajectory_calc._globalChartResolution,
         cZeroFindingAccuracy=trajectory_calc.cZeroFindingAccuracy,

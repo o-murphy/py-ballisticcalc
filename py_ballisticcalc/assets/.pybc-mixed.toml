@@ -21,7 +21,6 @@ target_height = 'Meter'
 twist = 'Inch'
 
 #[pybc.calculator]
-#use_powder_sensitivity = false
 #
 #[pybc.calculator.max_calc_step_size]
 #value = 0.5
