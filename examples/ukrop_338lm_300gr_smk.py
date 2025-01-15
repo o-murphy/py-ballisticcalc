@@ -3,7 +3,6 @@ import RKballistic
 
 from py_ballisticcalc import *
 
-
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS
 PreferredUnits.adjustment = Angular.Mil
@@ -29,7 +28,7 @@ zero_atmo = Atmo(
     humidity=78
 )
 zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
-zero_distance=Distance.Meter(100)
+zero_distance = Distance.Meter(100)
 
 config: InterfaceConfigDict = {}
 calc = Calculator(_config=config)
@@ -43,18 +42,7 @@ current_atmo = Atmo(
 )
 shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
 shot_result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
-print(shot_result.trajectory[0].velocity << Unit.MPS)
-#
-#
-# from pprint import pprint
-# fieldsss = TrajectoryData._fields
-#
-# for p in shot_result:
-#
-#     table = [{fieldsss[i]: it} for i, it in enumerate(p.formatted())]
-#
-#     pprint(table)
 
-rk4 = calc = RKballistic.RK4Calculator(_config=config)
+rk4 = RKballistic.RK4Calculator(_config=config)
 rk4.set_weapon_zero(zero, zero_distance)
-rk_4_result = shot_result = rk4.fire(shot, Distance.Meter(1000), extra_data=False)
+rk_4_result = rk4.fire(shot, Distance.Meter(1000), extra_data=False)

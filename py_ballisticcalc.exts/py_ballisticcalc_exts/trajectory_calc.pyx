@@ -8,16 +8,17 @@
 
 from cython cimport final
 from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
-from py_ballisticcalc_exts.vector cimport Vector
 from py_ballisticcalc_exts.conditions cimport Wind, Shot, _WIND_MAX_DISTANCE_FEET
 from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData, CTrajFlag
 from py_ballisticcalc_exts._early_bind_atmo cimport _EarlyBindAtmo
 from py_ballisticcalc_exts._early_bind_config cimport _ConfigStruct, _early_bind_config
+from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
 
 import warnings
 from typing_extensions import Type
 
-from py_ballisticcalc.unit import *
+from py_ballisticcalc.logger import logger
+from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 
 
@@ -33,7 +34,7 @@ cdef class _TrajectoryDataFilter:
     cdef:
         int filter, current_flag, seen_zero
         int current_item, ranges_length
-        double previous_mach, previous_time, next_range_distance, time_step
+        double previous_mach, previous_time, next_range_distance, time_step, look_angle
 
     def __cinit__(_TrajectoryDataFilter self,
                   int filter_flags, int ranges_length, double time_step = 0.0) -> None:
@@ -46,25 +47,27 @@ cdef class _TrajectoryDataFilter:
         self.previous_mach = 0.0
         self.previous_time = 0.0
         self.next_range_distance = 0.0
+        self.look_angle = 0
 
     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
         if height >= 0:
             self.seen_zero |= CTrajFlag.ZERO_UP
         elif height < 0 and barrel_elevation < look_angle:
             self.seen_zero |= CTrajFlag.ZERO_DOWN
+        self.look_angle = look_angle
 
     cdef void clear_current_flag(_TrajectoryDataFilter self):
         self.current_flag = CTrajFlag.NONE
 
     cdef bint should_record(_TrajectoryDataFilter self,
-                            Vector range_vector,
+                            CVector range_vector,
                             double velocity,
                             double mach,
                             double step,
-                            double look_angle,
+                            # double look_angle,
                             double time,
                             ):
-        self.check_zero_crossing(range_vector, look_angle)
+        self.check_zero_crossing(range_vector)
         self.check_mach_crossing(velocity, mach)
         if self.check_next_range(range_vector.x, step):
             self.previous_time = time
@@ -96,20 +99,20 @@ cdef class _TrajectoryDataFilter:
             self.current_flag |= CTrajFlag.MACH
         self.previous_mach = current_mach
 
-    cdef void check_zero_crossing(_TrajectoryDataFilter self, Vector range_vector, double look_angle):
+    cdef void check_zero_crossing(_TrajectoryDataFilter self, CVector range_vector):
         # Zero-crossing checks
 
-        if range_vector._x > 0:
+        if range_vector.x > 0:
             # Zero reference line is the sight line defined by look_angle
-            reference_height = range_vector._x * tan(look_angle)
+            reference_height = range_vector.x * tan(self.look_angle)
             # If we haven't seen ZERO_UP, we look for that first
             if not (self.seen_zero & CTrajFlag.ZERO_UP):
-                if range_vector._x >= reference_height:
+                if range_vector.x >= reference_height:
                     self.current_flag |= CTrajFlag.ZERO_UP
                     self.seen_zero |= CTrajFlag.ZERO_UP
             # We've crossed above sight line; now look for crossing back through it
             elif not (self.seen_zero & CTrajFlag.ZERO_DOWN):
-                if range_vector._x < reference_height:
+                if range_vector.x < reference_height:
                     self.current_flag |= CTrajFlag.ZERO_DOWN
                     self.seen_zero |= CTrajFlag.ZERO_DOWN
 
@@ -118,22 +121,24 @@ cdef class _WindSock:
     cdef tuple[Wind] winds
     cdef int current
     cdef double next_range
-    cdef Vector _last_vector_cache
+    # cdef Vector _last_vector_cache
+    cdef CVector _last_vector_cache
     cdef int _length
 
     def __cinit__(_WindSock self, tuple[Wind] winds):
         self.winds = winds or tuple()
         self.current = 0
         self.next_range = _WIND_MAX_DISTANCE_FEET
-        self._last_vector_cache = None
+        # self._last_vector_cache = None
+        self._last_vector_cache = CVector(0.0, 0.0, 0.0)
         self._length = len(self.winds)
 
         # Initialize cache correctly
         self.update_cache()
 
-    cdef Vector current_vector(_WindSock self):
-        if not self._last_vector_cache:
-            raise RuntimeError(f"No cached wind vector")
+    cdef CVector current_vector(_WindSock self):
+        # if not self._last_vector_cache:
+        #     raise RuntimeError(f"No cached wind vector")
         return self._last_vector_cache
 
     cdef void update_cache(_WindSock self):
@@ -143,14 +148,14 @@ cdef class _WindSock:
             self._last_vector_cache = wind_to_vector(cur_wind)
             self.next_range = cur_wind.until_distance >> Distance.Foot
         else:
-            self._last_vector_cache = Vector(0.0, 0.0, 0.0)
+            self._last_vector_cache = CVector(0.0, 0.0, 0.0)
             self.next_range = _WIND_MAX_DISTANCE_FEET
 
-    cdef Vector vector_for_range(_WindSock self, double next_range):
+    cdef CVector vector_for_range(_WindSock self, double next_range):
         if next_range >= self.next_range:
             self.current += 1
             if self.current >= self._length:
-                self._last_vector_cache = Vector(0.0, 0.0, 0.0)
+                self._last_vector_cache = CVector(0.0, 0.0, 0.0)
                 self.next_range = _WIND_MAX_DISTANCE_FEET
             else:
                 self.update_cache()  # This will trigger cache updates.
@@ -161,9 +166,9 @@ cdef class TrajectoryCalc:
     cdef:
         object ammo
         double _bc
-        list _table_data
+        list[object] _table_data
         list[CurvePoint] _curve
-        Vector gravity_vector
+        CVector gravity_vector
         double look_angle
         double twist
         double length
@@ -180,16 +185,18 @@ cdef class TrajectoryCalc:
         double stability_coefficient
 
         list[double] __mach_list
+        public object _config
         _ConfigStruct __config
 
     def __cinit__(TrajectoryCalc self, object ammo, object _config):
         self.ammo = ammo
+        self._config = _config
         self.__config = _early_bind_config(_config)
 
         self._bc = self.ammo.dm.BC
         self._table_data = ammo.dm.drag_table
         self._curve = calculate_curve(self._table_data)
-        self.gravity_vector = Vector(.0, self.__config.cGravityConstant, .0)
+        self.gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
 
         # get list[double] instead of list[DragDataPoint]
         self.__mach_list = _get_only_mach_data(self._table_data)
@@ -202,7 +209,7 @@ cdef class TrajectoryCalc:
         return min(step, preferred_step) / 2.0
 
     @property
-    def table_data(self) -> list:
+    def table_data(self) -> list[object]:
         return self._table_data
 
     def zero_angle(self, Shot shot_info, object distance):
@@ -212,8 +219,6 @@ cdef class TrajectoryCalc:
                    bint extra_data = False, double time_step = 0.0) -> Type[list[TrajectoryData]]:
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
-
-        dist_step = PreferredUnits.distance(dist_step)  #  was unused there ???
 
         if extra_data:
             dist_step = Distance.Foot(self.__config.chart_resolution)
@@ -239,11 +244,6 @@ cdef class TrajectoryCalc:
             self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         else:
             self.muzzle_velocity = shot_info.ammo.mv._fps
-        # if self.__config.use_powder_sensitivity:
-        #     self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(
-        #         shot_info.atmo.temperature)._fps  # shortcut for >> Velocity.FPS
-        # else:
-        #     self.muzzle_velocity = shot_info.ammo.mv._fps  # shortcut for >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     cdef object _zero_angle(TrajectoryCalc self, Shot shot_info, object distance):
@@ -282,7 +282,8 @@ cdef class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    cdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
+
+    cpdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
                           double maximum_range, double step, int filter_flags, double time_step = 0.0):
         cdef:
             double velocity, delta_time
@@ -291,12 +292,15 @@ cdef class TrajectoryCalc:
             list[TrajectoryData] ranges = []
             double time = .0
             double drag = .0
-            Vector velocity_vector, velocity_adjusted
-            Vector range_vector, delta_range_vector
+            CVector range_vector, velocity_vector
+            # CVector delta_range_vector, velocity_adjusted
+            CVector _dir_vector
+            CVector gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
+            double calc_step = self.calc_step
 
             # region Initialize wind-related variables to first wind reading (if any)
             _WindSock wind_sock = _WindSock(shot_info.winds)
-            Vector wind_vector = wind_sock.current_vector()
+            CVector wind_vector = wind_sock.current_vector()
             # endregion
 
             _TrajectoryDataFilter data_filter
@@ -311,35 +315,39 @@ cdef class TrajectoryCalc:
         # region Initialize velocity and position of projectile
         velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
-        velocity_vector = Vector(cos(self.barrel_elevation) * cos(self.barrel_azimuth),
+        range_vector = CVector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
+        _dir_vector = CVector(cos(self.barrel_elevation) * cos(self.barrel_azimuth),
                                  sin(self.barrel_elevation),
-                                 cos(self.barrel_elevation) * sin(self.barrel_azimuth))._mul_by_const(velocity)
+                                 cos(self.barrel_elevation) * sin(self.barrel_azimuth))
+        velocity_vector = mul_c(&_dir_vector, velocity)
         # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
                                             ranges_length=<int> ((maximum_range / step) + 1),
                                             time_step=time_step)
-        data_filter.setup_seen_zero(range_vector._y, self.barrel_elevation, self.look_angle)
+        data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
-        while range_vector._x <= maximum_range + self.calc_step:
+        cdef int it = 0
+        while range_vector.x <= maximum_range + calc_step:
+            it += 1
             data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
-            if range_vector._x >= wind_sock.next_range:  # require check before call to improve performance
-                wind_vector = wind_sock.vector_for_range(range_vector._x)
+            if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
+                wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # overwrite density_factor and mach by pointer
             atmo.get_density_factor_and_mach_for_altitude(
-                self.alt0 + range_vector._y, &density_factor, &mach)
+                self.alt0 + range_vector.y, &density_factor, &mach)
 
             if filter_flags:
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
+                # if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
+                if data_filter.should_record(range_vector, velocity, mach, step, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
@@ -350,27 +358,36 @@ cdef class TrajectoryCalc:
 
             #region Ballistic calculation step
             # use just cdef methods to
-            # using .subtract .add instead of "/" better optimized by cython
-            velocity_adjusted = velocity_vector._subtract(wind_vector)
-            velocity = velocity_adjusted._magnitude()
-            delta_time = self.calc_step / max(1.0, velocity)
+
+            # # using integrate() slower than direct operations
+            # integrate(&range_vector, &velocity_vector, &wind_vector, &gravity_vector, &time, &drag, &velocity,
+            #           density_factor, mach, calc_step, self.drag_by_mach)
+
+            velocity_adjusted = sub(&velocity_vector, &wind_vector)
+            velocity = mag(&velocity_adjusted)
+            delta_time = calc_step / max(1.0, velocity)
             drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
-            velocity_vector = velocity_vector._subtract(
-                (velocity_adjusted._mul_by_const(drag)._subtract(self.gravity_vector))._mul_by_const(delta_time))
-            delta_range_vector = velocity_vector._mul_by_const(delta_time)
-            range_vector = range_vector._add(delta_range_vector)
-            velocity = velocity_vector._magnitude()
-            # time += delta_range_vector._magnitude() / velocity
+
+            _temp1 = mul_c(&velocity_adjusted, drag)
+            _temp2 = sub(&_temp1, &gravity_vector)
+            _temp3 = mul_c(&_temp2, delta_time)
+
+            velocity_vector = sub(&velocity_vector, &_temp3)
+
+            delta_range_vector = mul_c(&velocity_vector, delta_time)
+            range_vector = add(&range_vector, &delta_range_vector)
+
+            velocity = mag(&velocity_vector)
             time += delta_time
 
             if (
                     velocity < _cMinimumVelocity
-                    or range_vector._y < _cMaximumDrop
-                    or self.alt0 + range_vector._y < _cMinimumAltitude
+                    or range_vector.y < _cMaximumDrop
+                    or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
-                elif range_vector._y < _cMaximumDrop:
+                elif range_vector.y < _cMaximumDrop:
                     reason = RangeError.MaximumDropReached
                 else:
                     reason = RangeError.MinimumAltitudeReached
@@ -384,6 +401,7 @@ cdef class TrajectoryCalc:
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
                 density_factor, drag, self.weight, CTrajFlag.NONE))
+        logger.debug(f"euler cy it {it}")
         return ranges
 
     cdef double drag_by_mach(self, double mach):
@@ -425,7 +443,38 @@ cdef class TrajectoryCalc:
             return sd * fv * ftp
         return 0
 
-cdef Vector wind_to_vector(Wind wind):
+# cdef void integrate(CVector *range_vector, CVector *velocity_vector, CVector *wind_vector,
+#                     CVector *gravity_vector, double *time, double *drag, double *velocity,
+#                     double density_factor, double mach, double calc_step,
+#                     object drag_by_mach):
+#     cdef CVector velocity_adjusted
+#     cdef CVector delta_range_vector
+#     cdef CVector _temp1, _temp2, _temp3
+#     cdef double delta_time
+#
+#     velocity_adjusted = sub(velocity_vector, wind_vector)
+#     velocity[0] = mag(&velocity_adjusted)
+#     delta_time = calc_step / max(1.0, velocity[0])
+#
+#     # Call function pointer
+#     drag[0] = density_factor * velocity[0] * drag_by_mach(velocity[0] / mach)
+#
+#     _temp1 = mul_c(&velocity_adjusted, drag[0])
+#     _temp2 = sub(&_temp1, gravity_vector)
+#     _temp3 = mul_c(&_temp2, delta_time)
+#
+#     # Modify velocity_vector in place
+#     velocity_vector[0] = sub(velocity_vector, &_temp3)
+#
+#     delta_range_vector = mul_c(velocity_vector, delta_time)
+#
+#     # Modify range_vector in place
+#     range_vector[0] = add(range_vector, &delta_range_vector)
+#
+#     velocity[0] = mag(velocity_vector)
+#     time[0] += delta_time
+
+cdef CVector wind_to_vector(Wind wind):
     cdef:
         # no need convert it twice
         double wind_velocity_fps = wind.velocity._fps  # shortcut for (wind.velocity >> Velocity.FPS)
@@ -434,36 +483,72 @@ cdef Vector wind_to_vector(Wind wind):
         double range_component = wind_velocity_fps * cos(wind_direction_rad)
         # Downrange (x-axis) wind velocity component:
         double cross_component = wind_velocity_fps * sin(wind_direction_rad)
-    return Vector(range_component, 0., cross_component)
+    return CVector(range_component, 0., cross_component)
 
-cdef TrajectoryData create_trajectory_row(double time, Vector range_vector, Vector velocity_vector,
+cdef TrajectoryData create_trajectory_row(double time, CVector range_vector, CVector velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, object flag):
+                           double density_factor, double drag, double weight, int flag):
 
     cdef:
-        double windage = range_vector._z + spin_drift
-        double drop_adjustment = get_correction(range_vector._x, range_vector._y)
-        double windage_adjustment = get_correction(range_vector._x, windage)
-        double trajectory_angle = atan2(velocity_vector._y, velocity_vector._x);
+        double windage = range_vector.z + spin_drift
+        double drop_adjustment = get_correction(range_vector.x, range_vector.y)
+        double windage_adjustment = get_correction(range_vector.x, windage)
+        double trajectory_angle = atan2(velocity_vector.y, velocity_vector.x);
 
     return TrajectoryData(
         time=time,
-        distance=Distance.Foot(range_vector._x),
-        velocity=Velocity.FPS(velocity),
+        distance=_new_feet(range_vector.x),
+        velocity=_new_fps(velocity),
         mach=velocity / mach,
-        height=Distance.Foot(range_vector._y),
-        target_drop=Distance.Foot((range_vector._y - range_vector._x * tan(look_angle)) * cos(look_angle)),
-        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector._x else 0)),
-        windage=Distance.Foot(windage),
-        windage_adj=Angular.Radian(windage_adjustment),
-        look_distance=Distance.Foot(range_vector._x / cos(look_angle)),
-        angle=Angular.Radian(trajectory_angle),
+        height=_new_feet(range_vector.y),
+        target_drop=_new_feet(
+            (range_vector.y - range_vector.x * tan(look_angle)) * cos(look_angle)
+        ),
+        drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
+        windage=_new_feet(windage),
+        windage_adj=_new_rad(windage_adjustment),
+        look_distance=_new_feet(range_vector.x / cos(look_angle)),
+        angle=_new_rad(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,
-        energy=Energy.FootPound(calculate_energy(weight, velocity)),
-        ogw=Weight.Pound(calculate_ogv(weight, velocity)),
+        energy=_new_ft_lb(calculate_energy(weight, velocity)),
+        ogw=_new_lb(calculate_ogv(weight, velocity)),
         flag=flag
     )
+
+cdef object _new_feet(double v):
+    d = object.__new__(Distance)
+    d._value = v * 12
+    d._defined_units = Unit.Foot
+    return d
+
+
+cdef object _new_fps(double v):
+    d = object.__new__(Velocity)
+    d._value = v / 3.2808399
+    d._defined_units = Unit.FPS
+    return d
+
+
+cdef object _new_rad(double v):
+    d = object.__new__(Angular)
+    d._value = v
+    d._defined_units = Unit.Radian
+    return d
+
+
+cdef object _new_ft_lb(double v):
+    d = object.__new__(Energy)
+    d._value = v
+    d._defined_units = Unit.FootPound
+    return d
+
+
+cdef object _new_lb(double v):
+    d = object.__new__(Weight)
+    d._value = v / 0.000142857143
+    d._defined_units = Unit.Pound
+    return d
 
 cdef double get_correction(double distance, double offset):
     if distance != 0:
@@ -476,7 +561,7 @@ cdef double calculate_energy(double bullet_weight, double velocity):
 cdef double calculate_ogv(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
 
-cdef list[CurvePoint] calculate_curve(list data_points):
+cdef list[CurvePoint] calculate_curve(list[object] data_points):
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
     cdef list[CurvePoint] curve = []
     cdef CurvePoint curve_point
@@ -509,7 +594,7 @@ cdef list[CurvePoint] calculate_curve(list data_points):
     return curve
 
 # use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
-cdef double calculate_by_curve(list data, list[CurvePoint] curve, double mach):
+cdef double calculate_by_curve(list[object] data, list[CurvePoint] curve, double mach):
     cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint curve_m
 
@@ -531,7 +616,7 @@ cdef double calculate_by_curve(list data, list[CurvePoint] curve, double mach):
     curve_m = curve[m]
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
-cdef list[double] _get_only_mach_data(list data):
+cdef list[double] _get_only_mach_data(list[object] data):
     cdef int data_len = len(data)
     cdef list[double] result = []  # [.0] * data_len # Preallocate the list to avoid resizing during appending
     cdef int i

@@ -278,8 +278,8 @@ class AbstractDimension:
     def __ge__(self, other):
         return float(self) >= other
 
-    def __lshift__(self, other: Unit) -> Self:
-        return self.convert(other)
+    # def __lshift__(self, other: Unit) -> Self:
+    #     return self.convert(other)
 
     # def __rshift__(self, other: Unit) -> float:
     #     return self.get_in(other)
@@ -322,8 +322,11 @@ class AbstractDimension:
         :param units: Unit enum type
         :return: new unit instance in specified prefer_units
         """
-        value = self.get_in(units)
-        return self.__class__(value, units)
+        # TODO: creating unnecessary instances?
+        # value = self.get_in(units)
+        # return self.__class__(value, units)
+        self._defined_units = units
+        return self
 
     def get_in(self, units: Unit) -> float:
         """
@@ -354,6 +357,7 @@ class AbstractDimension:
     # aliases more efficient than wrappers
     __rshift__ = get_in
     __rlshift__ = convert
+    __lshift__ = convert
 
 
 class Distance(AbstractDimension):
