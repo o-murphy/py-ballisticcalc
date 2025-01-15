@@ -488,25 +488,58 @@ cdef TrajectoryData create_trajectory_row(double time, CVector range_vector, CVe
 
     return TrajectoryData(
         time=time,
-        distance=Distance(range_vector.x, Unit.Foot),
-        velocity=Velocity(velocity, Unit.FPS),
+        distance=_new_feet(range_vector.x),
+        velocity=_new_fps(velocity),
         mach=velocity / mach,
-        height=Distance(range_vector.y, Unit.Foot),
-        target_drop=Distance(
-            (range_vector.y - range_vector.x * tan(look_angle)) * cos(look_angle),
-            Unit.Foot
+        height=_new_feet(range_vector.y),
+        target_drop=_new_feet(
+            (range_vector.y - range_vector.x * tan(look_angle)) * cos(look_angle)
         ),
-        drop_adj=Angular(drop_adjustment - (look_angle if range_vector.x else 0), Unit.Radian),
-        windage=Distance(windage, Unit.Foot),
-        windage_adj=Angular(windage_adjustment, Unit.Radian),
-        look_distance=Distance(range_vector.x / cos(look_angle), Unit.Foot),
-        angle=Angular(trajectory_angle, Unit.Radian),
+        drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
+        windage=_new_feet(windage),
+        windage_adj=_new_rad(windage_adjustment),
+        look_distance=_new_feet(range_vector.x / cos(look_angle)),
+        angle=_new_rad(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,
-        energy=Energy(calculate_energy(weight, velocity), Unit.FootPound),
-        ogw=Weight(calculate_ogv(weight, velocity), Unit.Pound),
+        energy=_new_ft_lb(calculate_energy(weight, velocity)),
+        ogw=_new_lb(calculate_ogv(weight, velocity)),
         flag=flag
     )
+
+cdef object _new_feet(double v):
+    d = object.__new__(Distance)
+    d._value = v * 12
+    d._defined_units = Unit.Foot
+    return d
+
+
+cdef object _new_fps(double v):
+    d = object.__new__(Velocity)
+    d._value = v / 3.2808399
+    d._defined_units = Unit.FPS
+    return d
+
+
+cdef object _new_rad(double v):
+    d = object.__new__(Angular)
+    d._value = v
+    d._defined_units = Unit.Radian
+    return d
+
+
+cdef object _new_ft_lb(double v):
+    d = object.__new__(Energy)
+    d._value = v
+    d._defined_units = Unit.FootPound
+    return d
+
+
+cdef object _new_lb(double v):
+    d = object.__new__(Weight)
+    d._value = v / 0.000142857143
+    d._defined_units = Unit.Pound
+    return d
 
 cdef double get_correction(double distance, double offset):
     if distance != 0:

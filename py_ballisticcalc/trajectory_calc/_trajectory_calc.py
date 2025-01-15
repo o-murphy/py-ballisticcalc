@@ -4,6 +4,7 @@
 
 import math
 import warnings
+
 from typing_extensions import NamedTuple, Union, List, Tuple
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
@@ -483,22 +484,57 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
 
     return TrajectoryData(
         time=time,
-        distance=Distance(range_vector.x, Unit.Foot),
-        velocity=Velocity(velocity, Unit.FPS),
+        distance=_new_feet(range_vector.x),
+        velocity=_new_fps(velocity),
         mach=velocity / mach,
-        height=Distance(range_vector.y, Unit.Foot),
-        target_drop=Distance((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle), Unit.Foot),
-        drop_adj=Angular(drop_adjustment - (look_angle if range_vector.x else 0), Unit.Radian),
-        windage=Distance(windage, Unit.Foot),
-        windage_adj=Angular(windage_adjustment, Unit.Radian),
-        look_distance=Distance(range_vector.x / math.cos(look_angle), Unit.Foot),
-        angle=Angular(trajectory_angle, Unit.Radian),
+        height=_new_feet(range_vector.y),
+        target_drop=_new_feet((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
+        drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
+        windage=_new_feet(windage),
+        windage_adj=_new_rad(windage_adjustment),
+        look_distance=_new_feet(range_vector.x / math.cos(look_angle)),
+        angle=_new_rad(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,
-        energy=Energy(calculate_energy(weight, velocity), Unit.FootPound),
-        ogw=Weight(calculate_ogw(weight, velocity), Unit.Pound),
+        energy=_new_ft_lb(calculate_energy(weight, velocity)),
+        ogw=_new_lb(calculate_ogw(weight, velocity)),
         flag=flag
     )
+
+
+def _new_feet(v: float):
+    d = object.__new__(Distance)
+    d._value = v * 12
+    d._defined_units = Unit.Foot
+    return d
+
+
+def _new_fps(v: float):
+    d = object.__new__(Velocity)
+    d._value = v / 3.2808399
+    d._defined_units = Unit.FPS
+    return d
+
+
+def _new_rad(v: float):
+    d = object.__new__(Angular)
+    d._value = v
+    d._defined_units = Unit.Radian
+    return d
+
+
+def _new_ft_lb(v: float):
+    d = object.__new__(Energy)
+    d._value = v
+    d._defined_units = Unit.FootPound
+    return d
+
+
+def _new_lb(v: float):
+    d = object.__new__(Weight)
+    d._value = v / 0.000142857143
+    d._defined_units = Unit.Pound
+    return d
 
 
 def get_correction(distance: float, offset: float) -> float:
