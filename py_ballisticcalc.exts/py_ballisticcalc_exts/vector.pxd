@@ -13,3 +13,15 @@ cdef class Vector:
     cdef Vector _subtract(Vector self, Vector b)
     cdef Vector _negate(Vector self)
     cdef Vector _normalize(Vector self)
+
+
+cdef struct CVector:
+    double x, y, z
+
+cdef double mag(CVector * v)
+cdef CVector mul_c(CVector * v, double a)
+cdef double mul_v(CVector * v, CVector * b)
+cdef CVector add(CVector * v, CVector * b)
+cdef CVector sub(CVector * v, CVector * b)
+cdef CVector neg(CVector * v)
+cdef CVector norm(CVector * v)
