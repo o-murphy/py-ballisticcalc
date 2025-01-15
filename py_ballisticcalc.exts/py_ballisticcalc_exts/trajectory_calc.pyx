@@ -8,7 +8,6 @@
 
 from cython cimport final
 from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
-# from py_ballisticcalc_exts.vector cimport Vector
 from py_ballisticcalc_exts.conditions cimport Wind, Shot, _WIND_MAX_DISTANCE_FEET
 from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData, CTrajFlag
 from py_ballisticcalc_exts._early_bind_atmo cimport _EarlyBindAtmo
@@ -18,6 +17,7 @@ from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, 
 import warnings
 from typing_extensions import Type
 
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 
@@ -185,10 +185,12 @@ cdef class TrajectoryCalc:
         double stability_coefficient
 
         list[double] __mach_list
+        public object _config
         _ConfigStruct __config
 
     def __cinit__(TrajectoryCalc self, object ammo, object _config):
         self.ammo = ammo
+        self._config = _config
         self.__config = _early_bind_config(_config)
 
         self._bc = self.ammo.dm.BC
@@ -280,7 +282,8 @@ cdef class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    cdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
+
+    cpdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
                           double maximum_range, double step, int filter_flags, double time_step = 0.0):
         cdef:
             double velocity, delta_time
@@ -327,7 +330,9 @@ cdef class TrajectoryCalc:
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
+        cdef int it = 0
         while range_vector.x <= maximum_range + calc_step:
+            it += 1
             data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
@@ -396,6 +401,7 @@ cdef class TrajectoryCalc:
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
                 density_factor, drag, self.weight, CTrajFlag.NONE))
+        logger.debug(f"euler cy it {it}")
         return ranges
 
     cdef double drag_by_mach(self, double mach):

@@ -47,6 +47,10 @@ cythonized:
 import RKballistic
 from timeit import timeit
 from py_ballisticcalc import *
+from py_ballisticcalc.logger import logger
+import logging
+
+logger.setLevel(logging.DEBUG)
 
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS
@@ -61,23 +65,8 @@ weight, diameter = 300, 0.338
 # or define with specified prefer_units
 length = Distance.Inch(1.7)
 
-weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
-dm = DragModel(0.381, TableG7, weight, diameter, length)
-ammo = Ammo(dm=dm, mv=Unit.MPS(815), powder_temp=Temperature.Celsius(0), temp_modifier=0.0123,
-            use_powder_sensitivity=True)
-
-zero_atmo = Atmo(
-    altitude=Unit.Meter(150),
-    pressure=Unit.MmHg(745),
-    temperature=Unit.Celsius(-1),
-    humidity=78
-)
-zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 zero_distance = Distance.Meter(100)
-
-config: InterfaceConfigDict = {}
-calc = Calculator(_config=config)
-calc.set_weapon_zero(zero, zero_distance)
+shot_distance = Unit.Meter(1000)
 
 current_atmo = Atmo(
     altitude=Unit.Meter(150),
@@ -85,43 +74,85 @@ current_atmo = Atmo(
     temperature=Unit.Celsius(23),
     humidity=29,
 )
-shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
-shot_result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
 
+zero_atmo = Atmo(
+    altitude=Unit.Meter(150),
+    pressure=Unit.MmHg(745),
+    temperature=Unit.Celsius(-1),
+    humidity=78
+)
+
+def init_zero_shot():
+
+    weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
+    dm = DragModel(0.381, TableG7, weight, diameter, length)
+    ammo = Ammo(dm=dm, mv=Unit.MPS(815), powder_temp=Temperature.Celsius(0), temp_modifier=0.0123,
+                use_powder_sensitivity=True)
+
+    zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
+
+
+    return zero
+
+def use_zero_shot(calc_):
+    zero = init_zero_shot()
+    calc_.set_weapon_zero(zero, zero_distance)
+
+    shot = Shot(weapon=zero.weapon, ammo=zero.ammo, atmo=current_atmo)
+    calc_.fire(shot, shot_distance, extra_data=True)
+    return shot
+
+
+config: InterfaceConfigDict = {}
+calc = Calculator(_config=config)
 rk4 = RKballistic.RK4Calculator(_config=config)
-rk4.set_weapon_zero(zero, zero_distance)
-rk_4_result = rk4.fire(shot, Distance.Meter(1000), extra_data=False)
+
+
+
+
+logger.debug("Euler iter")
+use_zero_shot(calc)
+logger.debug("RK4 iter")
+use_zero_shot(rk4)
+print(type(rk4), type(rk4._calc))
 
 number = 120
-zero_distance = Unit.Meter(100)
-shot_distance = Unit.Meter(1000)
 
-def run_check(calc):
-    total_time = timeit(lambda: calc.barrel_elevation_for_target(shot, zero_distance), number=number)
+
+def run_check(calc_):
+    total_time = timeit(lambda: calc_.barrel_elevation_for_target(init_zero_shot(), zero_distance), number=number)
     rate = number / total_time  # executions per second
 
     print("Calculate barrel elevation at distance {} {} times:".format(zero_distance, number))
     print(f"Total time: {total_time:.6f} seconds")
     print(f"Execution rate: {rate:.2f} calls per second")
 
-    total_time = timeit(lambda: calc.fire(shot, shot_distance, extra_data=False), number=number)
+    # preinit
+    zero_shot = init_zero_shot()
+    calc_.set_weapon_zero(zero_shot, zero_distance)
+    shot = Shot(weapon=zero_shot.weapon, ammo=zero_shot.ammo, atmo=current_atmo)
+
+
+    total_time = timeit(lambda: calc_.fire(shot, shot_distance, extra_data=False), number=number)
     rate = number / total_time  # executions per second
 
     print("Calculate trajectory to distance {} {} times:".format(shot_distance, number))
     print(f"Total time: {total_time:.6f} seconds")
     print(f"Execution rate: {rate:.2f} calls per second")
 
-    total_time = timeit(lambda: calc.fire(shot, shot_distance, extra_data=True), number=number)
+    total_time = timeit(lambda: calc_.fire(shot, shot_distance, extra_data=True), number=number)
     rate = number / total_time  # executions per second
 
-    print("Calculate trajectory to distance {} {} times:".format(shot_distance, number))
+    print("Calculate trajectory to distance + extra {} {} times:".format(shot_distance, number))
     print(f"Total time: {total_time:.6f} seconds")
     print(f"Execution rate: {rate:.2f} calls per second")
     print()
 
 
-print("Euler")
+logger.setLevel(logging.INFO)
+
+
+logger.debug("Euler bench")
 run_check(calc)
-print()
-print("RK4")
+logger.debug("RK4 bench")
 run_check(rk4)

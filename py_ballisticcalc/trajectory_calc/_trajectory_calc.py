@@ -7,6 +7,7 @@ import warnings
 
 from typing_extensions import NamedTuple, Union, List, Tuple
 
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
@@ -196,7 +197,7 @@ class TrajectoryCalc:
 
     def __init__(self, ammo: Ammo, _config: Config):
         self.ammo: Ammo = ammo
-        self.__config: Config = _config
+        self._config: Config = _config
 
         self._bc: float = self.ammo.dm.BC
         self._table_data: List[DragDataPoint] = ammo.dm.drag_table
@@ -216,7 +217,7 @@ class TrajectoryCalc:
         :param step: proposed step size
         :return: step size for calculations (in feet)
         """
-        preferred_step = self.__config.max_calc_step_size_feet
+        preferred_step = self._config.max_calc_step_size_feet
         if step == 0:
             return preferred_step / 2.0
         return min(step, preferred_step) / 2.0
@@ -226,7 +227,7 @@ class TrajectoryCalc:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            dist_step = Distance.Foot(self.__config.chart_resolution)
+            dist_step = Distance.Foot(self._config.chart_resolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
@@ -260,8 +261,8 @@ class TrajectoryCalc:
         """
         self._init_trajectory(shot_info)
 
-        _cZeroFindingAccuracy = self.__config.cZeroFindingAccuracy
-        _cMaxIterations = self.__config.cMaxIterations
+        _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
+        _cMaxIterations = self._config.cMaxIterations
 
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
@@ -298,9 +299,9 @@ class TrajectoryCalc:
         :return: list of TrajectoryData, one for each dist_step, out to max_range
         """
 
-        _cMinimumVelocity = self.__config.cMinimumVelocity
-        _cMaximumDrop = self.__config.cMaximumDrop
-        _cMinimumAltitude = self.__config.cMinimumAltitude
+        _cMinimumVelocity = self._config.cMinimumVelocity
+        _cMaximumDrop = self._config.cMaximumDrop
+        _cMinimumAltitude = self._config.cMinimumAltitude
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         time: float = .0
@@ -334,7 +335,9 @@ class TrajectoryCalc:
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
+        it = 0
         while range_vector.x <= maximum_range + self.calc_step:
+            it += 1
             data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
@@ -398,6 +401,7 @@ class TrajectoryCalc:
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
                 density_factor, drag, self.weight, TrajFlag.NONE))
+        logger.debug(f"euler py it {it}")
         return ranges
 
     def drag_by_mach(self, mach: float) -> float:
