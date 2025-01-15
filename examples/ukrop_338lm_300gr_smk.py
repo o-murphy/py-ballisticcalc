@@ -1,4 +1,6 @@
 """Example of library usage"""
+import RKballistic
+
 from py_ballisticcalc import *
 
 
@@ -52,3 +54,7 @@ print(shot_result.trajectory[0].velocity << Unit.MPS)
 #     table = [{fieldsss[i]: it} for i, it in enumerate(p.formatted())]
 #
 #     pprint(table)
+
+rk4 = calc = RKballistic.RK4Calculator(_config=config)
+rk4.set_weapon_zero(zero, zero_distance)
+rk_4_result = shot_result = rk4.fire(shot, Distance.Meter(1000), extra_data=False)

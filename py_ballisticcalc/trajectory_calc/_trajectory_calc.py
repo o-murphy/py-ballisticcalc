@@ -18,6 +18,12 @@ __all__ = (
     'TrajectoryCalc',
     'Vector',
     'Config',
+    'calculate_energy',
+    'calculate_ogw',
+    'get_correction',
+    'create_trajectory_row',
+    '_TrajectoryDataFilter',
+    '_WindSock'
 )
 
 
