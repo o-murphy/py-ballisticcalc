@@ -17,7 +17,7 @@ from py_ballisticcalc_exts._early_bind_config cimport _ConfigStruct, _early_bind
 import warnings
 from typing_extensions import Type
 
-from py_ballisticcalc.unit import *
+from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 
 
@@ -161,7 +161,7 @@ cdef class TrajectoryCalc:
     cdef:
         object ammo
         double _bc
-        list _table_data
+        list[object] _table_data
         list[CurvePoint] _curve
         Vector gravity_vector
         double look_angle
@@ -202,7 +202,7 @@ cdef class TrajectoryCalc:
         return min(step, preferred_step) / 2.0
 
     @property
-    def table_data(self) -> list:
+    def table_data(self) -> list[object]:
         return self._table_data
 
     def zero_angle(self, Shot shot_info, object distance):
@@ -212,8 +212,6 @@ cdef class TrajectoryCalc:
                    bint extra_data = False, double time_step = 0.0) -> Type[list[TrajectoryData]]:
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
-
-        dist_step = PreferredUnits.distance(dist_step)  #  was unused there ???
 
         if extra_data:
             dist_step = Distance.Foot(self.__config.chart_resolution)
@@ -448,20 +446,23 @@ cdef TrajectoryData create_trajectory_row(double time, Vector range_vector, Vect
 
     return TrajectoryData(
         time=time,
-        distance=Distance.Foot(range_vector._x),
-        velocity=Velocity.FPS(velocity),
+        distance=Distance(range_vector._x, Unit.Foot),
+        velocity=Velocity(velocity, Unit.FPS),
         mach=velocity / mach,
-        height=Distance.Foot(range_vector._y),
-        target_drop=Distance.Foot((range_vector._y - range_vector._x * tan(look_angle)) * cos(look_angle)),
-        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector._x else 0)),
-        windage=Distance.Foot(windage),
-        windage_adj=Angular.Radian(windage_adjustment),
-        look_distance=Distance.Foot(range_vector._x / cos(look_angle)),
-        angle=Angular.Radian(trajectory_angle),
+        height=Distance(range_vector._y, Unit.Foot),
+        target_drop=Distance(
+            (range_vector._y - range_vector._x * tan(look_angle)) * cos(look_angle),
+            Unit.Foot
+        ),
+        drop_adj=Angular(drop_adjustment - (look_angle if range_vector._x else 0), Unit.Radian),
+        windage=Distance(windage, Unit.Foot),
+        windage_adj=Angular(windage_adjustment, Unit.Radian),
+        look_distance=Distance(range_vector._x / cos(look_angle), Unit.Foot),
+        angle=Angular(trajectory_angle, Unit.Radian),
         density_factor=density_factor - 1,
         drag=drag,
-        energy=Energy.FootPound(calculate_energy(weight, velocity)),
-        ogw=Weight.Pound(calculate_ogv(weight, velocity)),
+        energy=Energy(calculate_energy(weight, velocity), Unit.FootPound),
+        ogw=Weight(calculate_ogv(weight, velocity), Unit.Pound),
         flag=flag
     )
 
@@ -476,7 +477,7 @@ cdef double calculate_energy(double bullet_weight, double velocity):
 cdef double calculate_ogv(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
 
-cdef list[CurvePoint] calculate_curve(list data_points):
+cdef list[CurvePoint] calculate_curve(list[object] data_points):
     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
     cdef list[CurvePoint] curve = []
     cdef CurvePoint curve_point
@@ -509,7 +510,7 @@ cdef list[CurvePoint] calculate_curve(list data_points):
     return curve
 
 # use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
-cdef double calculate_by_curve(list data, list[CurvePoint] curve, double mach):
+cdef double calculate_by_curve(list[object] data, list[CurvePoint] curve, double mach):
     cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint curve_m
 
@@ -531,7 +532,7 @@ cdef double calculate_by_curve(list data, list[CurvePoint] curve, double mach):
     curve_m = curve[m]
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
-cdef list[double] _get_only_mach_data(list data):
+cdef list[double] _get_only_mach_data(list[object] data):
     cdef int data_len = len(data)
     cdef list[double] result = []  # [.0] * data_len # Preallocate the list to avoid resizing during appending
     cdef int i
