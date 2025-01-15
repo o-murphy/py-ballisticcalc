@@ -49,6 +49,7 @@ class _TrajectoryDataFilter:
     ranges_length: int
     previous_mach: float
     next_range_distance: float
+    look_angle: float
 
     def __init__(self, filter_flags: Union[TrajFlag, int],
                  ranges_length: int, time_step: float = 0.0):
@@ -62,12 +63,14 @@ class _TrajectoryDataFilter:
         self.previous_mach: float = 0.0
         self.previous_time: float = 0.0
         self.next_range_distance: float = 0.0
+        self.look_angle: float = 0.0
 
     def setup_seen_zero(self, height: float, barrel_elevation: float, look_angle: float) -> None:
         if height >= 0:
             self.seen_zero |= TrajFlag.ZERO_UP
         elif height < 0 and barrel_elevation < look_angle:
             self.seen_zero |= TrajFlag.ZERO_DOWN
+        self.look_angle: float = look_angle
 
     def clear_current_flag(self):
         self.current_flag = TrajFlag.NONE
@@ -78,9 +81,8 @@ class _TrajectoryDataFilter:
                       velocity: float,
                       mach: float,
                       step: float,
-                      look_angle: float,
                       time: float) -> bool:
-        self.check_zero_crossing(range_vector, look_angle)
+        self.check_zero_crossing(range_vector)
         self.check_mach_crossing(velocity, mach)
         if self.check_next_range(range_vector.x, step):
             self.previous_time = time
@@ -115,12 +117,12 @@ class _TrajectoryDataFilter:
             self.current_flag |= TrajFlag.MACH
         self.previous_mach = current_mach
 
-    def check_zero_crossing(self, range_vector: Vector, look_angle: float):
+    def check_zero_crossing(self, range_vector: Vector):
         # Zero-crossing checks
 
         if range_vector.x > 0:
             # Zero reference line is the sight line defined by look_angle
-            reference_height = range_vector.x * math.tan(look_angle)
+            reference_height = range_vector.x * math.tan(self.look_angle)
             # If we haven't seen ZERO_UP, we look for that first
             if not (self.seen_zero & TrajFlag.ZERO_UP):  # pylint: disable=superfluous-parens
                 if range_vector.y >= reference_height:
@@ -341,7 +343,7 @@ class TrajectoryCalc:
             if filter_flags:  # require check before call to improve performance
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
+                if data_filter.should_record(range_vector, velocity, mach, step, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,

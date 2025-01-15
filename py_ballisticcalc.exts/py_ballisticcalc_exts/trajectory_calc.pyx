@@ -34,7 +34,7 @@ cdef class _TrajectoryDataFilter:
     cdef:
         int filter, current_flag, seen_zero
         int current_item, ranges_length
-        double previous_mach, previous_time, next_range_distance, time_step
+        double previous_mach, previous_time, next_range_distance, time_step, look_angle
 
     def __cinit__(_TrajectoryDataFilter self,
                   int filter_flags, int ranges_length, double time_step = 0.0) -> None:
@@ -47,12 +47,14 @@ cdef class _TrajectoryDataFilter:
         self.previous_mach = 0.0
         self.previous_time = 0.0
         self.next_range_distance = 0.0
+        self.look_angle = 0
 
     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
         if height >= 0:
             self.seen_zero |= CTrajFlag.ZERO_UP
         elif height < 0 and barrel_elevation < look_angle:
             self.seen_zero |= CTrajFlag.ZERO_DOWN
+        self.look_angle = look_angle
 
     cdef void clear_current_flag(_TrajectoryDataFilter self):
         self.current_flag = CTrajFlag.NONE
@@ -62,10 +64,10 @@ cdef class _TrajectoryDataFilter:
                             double velocity,
                             double mach,
                             double step,
-                            double look_angle,
+                            # double look_angle,
                             double time,
                             ):
-        self.check_zero_crossing(range_vector, look_angle)
+        self.check_zero_crossing(range_vector)
         self.check_mach_crossing(velocity, mach)
         if self.check_next_range(range_vector.x, step):
             self.previous_time = time
@@ -97,12 +99,12 @@ cdef class _TrajectoryDataFilter:
             self.current_flag |= CTrajFlag.MACH
         self.previous_mach = current_mach
 
-    cdef void check_zero_crossing(_TrajectoryDataFilter self, CVector range_vector, double look_angle):
+    cdef void check_zero_crossing(_TrajectoryDataFilter self, CVector range_vector):
         # Zero-crossing checks
 
         if range_vector.x > 0:
             # Zero reference line is the sight line defined by look_angle
-            reference_height = range_vector.x * tan(look_angle)
+            reference_height = range_vector.x * tan(self.look_angle)
             # If we haven't seen ZERO_UP, we look for that first
             if not (self.seen_zero & CTrajFlag.ZERO_UP):
                 if range_vector.x >= reference_height:
@@ -339,7 +341,8 @@ cdef class TrajectoryCalc:
             if filter_flags:
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
+                # if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
+                if data_filter.should_record(range_vector, velocity, mach, step, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
