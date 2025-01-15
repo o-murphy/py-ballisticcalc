@@ -124,3 +124,27 @@ cdef class Vector:
 
     def __str__(Vector self):
         return f"Vector(x={self._x}, y={self._y}, z={self._z})"
+
+cdef double mag(CVector * v):
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
+
+cdef CVector mul_c(CVector * v, double a):
+    return CVector(v.x * a, v.y * a, v.z * a)
+
+cdef double mul_v(CVector * v, CVector * b):
+    return v.x * b.x + v.y * b.y + v.z * b.z
+
+cdef CVector add(CVector * v, CVector * b):
+    return CVector(v.x + b.x, v.y + b.y, v.z + b.z)
+
+cdef CVector sub(CVector * v, CVector * b):
+    return CVector(v.x - b.x, v.y - b.y, v.z - b.z)
+
+cdef CVector neg(CVector * v):
+    return CVector(-v.x, -v.y, -v.z)
+
+cdef CVector norm(CVector * v):
+    cdef double m = mag(v)
+    if fabs(m) < 1e-10:
+        return CVector(v.x, v.y, v.z)
+    return mul_c(v, 1.0 / m)

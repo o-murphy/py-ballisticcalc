@@ -11,7 +11,7 @@ from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.munition import Ammo
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
-from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature
+from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, Unit
 from py_ballisticcalc.vector import Vector
 
 __all__ = (
@@ -483,20 +483,20 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
 
     return TrajectoryData(
         time=time,
-        distance=Distance.Foot(range_vector.x),
-        velocity=Velocity.FPS(velocity),
+        distance=Distance(range_vector.x, Unit.Foot),
+        velocity=Velocity(velocity, Unit.FPS),
         mach=velocity / mach,
-        height=Distance.Foot(range_vector.y),
-        target_drop=Distance.Foot((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
-        drop_adj=Angular.Radian(drop_adjustment - (look_angle if range_vector.x else 0)),
-        windage=Distance.Foot(windage),
-        windage_adj=Angular.Radian(windage_adjustment),
-        look_distance=Distance.Foot(range_vector.x / math.cos(look_angle)),
-        angle=Angular.Radian(trajectory_angle),
+        height=Distance(range_vector.y, Unit.Foot),
+        target_drop=Distance((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle), Unit.Foot),
+        drop_adj=Angular(drop_adjustment - (look_angle if range_vector.x else 0), Unit.Radian),
+        windage=Distance(windage, Unit.Foot),
+        windage_adj=Angular(windage_adjustment, Unit.Radian),
+        look_distance=Distance(range_vector.x / math.cos(look_angle), Unit.Foot),
+        angle=Angular(trajectory_angle, Unit.Radian),
         density_factor=density_factor - 1,
         drag=drag,
-        energy=Energy.FootPound(calculate_energy(weight, velocity)),
-        ogw=Weight.Pound(calculate_ogw(weight, velocity)),
+        energy=Energy(calculate_energy(weight, velocity), Unit.FootPound),
+        ogw=Weight(calculate_ogw(weight, velocity), Unit.Pound),
         flag=flag
     )
 
