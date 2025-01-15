@@ -351,6 +351,7 @@ cdef class TrajectoryCalc:
             #region Ballistic calculation step
             # use just cdef methods to
 
+            # # using integrate() slower than direct operations
             # integrate(&range_vector, &velocity_vector, &wind_vector, &gravity_vector, &time, &drag, &velocity,
             #           density_factor, mach, calc_step, self.drag_by_mach)
 
