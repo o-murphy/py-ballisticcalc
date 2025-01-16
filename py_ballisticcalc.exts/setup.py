@@ -29,6 +29,7 @@ compiler_directives = {
 extension_names = [
     "vector",
     "conditions",
+    "munition",
     "trajectory_calc",
     "trajectory_data",
     "_early_bind_atmo",

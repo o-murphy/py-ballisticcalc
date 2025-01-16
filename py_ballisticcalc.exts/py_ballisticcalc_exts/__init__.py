@@ -9,6 +9,7 @@ __credits__ = ["o-murphy", "dbookstaber"]
 from .trajectory_calc import TrajectoryCalc
 from .vector import Vector
 from .conditions import Wind, Shot
+from .munition import Weapon, Ammo
 from .trajectory_data import TrajectoryData
 
 __all__ = (
@@ -17,4 +18,6 @@ __all__ = (
     'Wind',
     'Shot',
     'TrajectoryData',
+    'Weapon',
+    'Ammo',
 )

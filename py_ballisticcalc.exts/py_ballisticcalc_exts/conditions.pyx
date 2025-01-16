@@ -1,5 +1,10 @@
 from libc.math cimport cos, sin
+from py_ballisticcalc_exts.vector cimport CVector
+from py_ballisticcalc_exts.munition cimport Weapon, Ammo
+
+from py_ballisticcalc.vector import Vector
 from py_ballisticcalc.unit import Distance, PreferredUnits, Angular
+from py_ballisticcalc.conditions import Atmo
 
 try:
     import typing
@@ -29,6 +34,22 @@ cdef class Wind:
         self.direction_from = PreferredUnits.angular(direction_from or 0)
         self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(_WIND_MAX_DISTANCE_FEET))
 
+    @property
+    def vector(Wind self) -> Vector:
+        cdef c_vector = self.c_vector()
+        return Vector(c_vector.x, c_vector.y, c_vector.z)
+
+    cdef CVector c_vector(Wind self):
+        cdef:
+            # no need convert it twice
+            double wind_velocity_fps = self.velocity._fps  # shortcut for (wind.velocity >> Velocity.FPS)
+            double wind_direction_rad = self.direction_from._rad  # shortcut for (wind.direction_from >> Angular.Radian)
+            # Downrange (x-axis) wind velocity component:
+            double range_component = wind_velocity_fps * cos(wind_direction_rad)
+            # Downrange (x-axis) wind velocity component:
+            double cross_component = wind_velocity_fps * sin(wind_direction_rad)
+        return CVector(range_component, 0., cross_component)
+
 
 @dataclasses.dataclass
 cdef class Shot:
@@ -46,8 +67,8 @@ cdef class Shot:
     """
 
     def __init__(Shot self,
-                  object weapon,
-                  object ammo,
+                  Weapon weapon,
+                  Ammo ammo,
                   object look_angle = None,
                   object relative_angle = None,
                   object cant_angle = None,
@@ -60,7 +81,6 @@ cdef class Shot:
         self.cant_angle = PreferredUnits.angular(cant_angle or 0)
         self.weapon = weapon
         self.ammo = ammo
-        from py_ballisticcalc.conditions import Atmo
         self.atmo = atmo or Atmo.icao()
         self._winds = winds or [Wind()]
 
@@ -76,6 +96,9 @@ cdef class Shot:
 
     @property
     def barrel_elevation(self) -> Angular:
+        return self._barrel_elevation()
+
+    cdef object _barrel_elevation(Shot self):
         """Barrel elevation in vertical plane from horizontal"""
         return Angular.Radian((self.look_angle >> Angular.Radian)
                               + cos(self.cant_angle >> Angular.Radian)
@@ -84,16 +107,10 @@ cdef class Shot:
 
     @property
     def barrel_azimuth(self) -> Angular:
+        return self._barrel_azimuth()
+
+    cdef object _barrel_azimuth(Shot self):
         """Horizontal angle of barrel relative to sight line"""
         return Angular.Radian(sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
-
-    def __reduce__(self):
-        return (self.__class__, (self.weapon,
-                                 self.ammo,
-                                 self.look_angle,
-                                 self.relative_angle,
-                                 self.cant_angle,
-                                 self.atmo,
-                                 self._winds))
