@@ -192,20 +192,11 @@ class TrajectoryCalc:
     barrel_azimuth: float
     barrel_elevation: float
     twist: float
-    ammo: Ammo
     gravity_vector: Vector
 
-    def __init__(self, ammo: Ammo, _config: Config):
-        self.ammo: Ammo = ammo
+    def __init__(self, _config: Config):
         self._config: Config = _config
-
-        self._bc: float = self.ammo.dm.BC
-        self._table_data: List[DragDataPoint] = ammo.dm.drag_table
-        self._curve: List[CurvePoint] = calculate_curve(self._table_data)
-        self.gravity_vector: Vector = Vector(.0, _config.cGravityConstant, .0)
-
-        # use calculation over list[double] instead of list[DragDataPoint]
-        self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
+        self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
 
     @property
     def table_data(self) -> List[DragDataPoint]:
@@ -235,6 +226,13 @@ class TrajectoryCalc:
                                 dist_step >> Distance.Foot, filter_flags, time_step)
 
     def _init_trajectory(self, shot_info: Shot) -> None:
+        self._bc: float = shot_info.ammo.dm.BC
+        self._table_data: List[DragDataPoint] = shot_info.ammo.dm.drag_table
+        self._curve: List[CurvePoint] = calculate_curve(self._table_data)
+
+        # use calculation over list[double] instead of list[DragDataPoint]
+        self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
+
         self.look_angle = shot_info.look_angle >> Angular.Radian
         self.twist = shot_info.weapon.twist >> Distance.Inch
         self.length = shot_info.ammo.dm.length >> Distance.Inch

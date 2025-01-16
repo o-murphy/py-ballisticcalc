@@ -152,5 +152,5 @@ logger.setLevel(logging.INFO)
 
 logger.info("Euler bench")
 run_check(calc)
-# logger.info("RK4 bench")
-# run_check(rk4)
+logger.info("RK4 bench")
+run_check(rk4)
