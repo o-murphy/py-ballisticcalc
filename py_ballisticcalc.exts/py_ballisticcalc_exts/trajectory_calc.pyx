@@ -9,6 +9,7 @@
 from cython cimport final
 from libc.math cimport fabs, pow, sin, cos, tan, atan, atan2
 from py_ballisticcalc_exts.conditions cimport Wind, Shot, _WIND_MAX_DISTANCE_FEET
+from py_ballisticcalc_exts.munition cimport Ammo
 from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData, CTrajFlag
 from py_ballisticcalc_exts._early_bind_atmo cimport _EarlyBindAtmo
 from py_ballisticcalc_exts._early_bind_config cimport _ConfigStruct, _early_bind_config
@@ -164,7 +165,7 @@ cdef class _WindSock:
 
 cdef class TrajectoryCalc:
     cdef:
-        object ammo
+        Ammo ammo
         double _bc
         list[object] _table_data
         list[CurvePoint] _curve
@@ -188,7 +189,7 @@ cdef class TrajectoryCalc:
         public object _config
         _ConfigStruct __config
 
-    def __cinit__(TrajectoryCalc self, object ammo, object _config):
+    def __cinit__(TrajectoryCalc self, Ammo ammo, object _config):
         self.ammo = ammo
         self._config = _config
         self.__config = _early_bind_config(_config)
@@ -228,6 +229,15 @@ cdef class TrajectoryCalc:
         return self._trajectory(shot_info, max_range._feet, dist_step._feet, filter_flags, time_step)
 
     cdef void _init_trajectory(self, Shot shot_info):
+        # TODO: why not redefine table curve and bc ???
+        # self._bc = shot_info.ammo.dm.BC
+        # self._table_data = shot_info.ammo.dm.drag_table
+        # self._curve = calculate_curve(self._table_data)
+        # self.gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
+
+        # get list[double] instead of list[DragDataPoint]
+        self.__mach_list = _get_only_mach_data(self._table_data)
+
         self.look_angle = shot_info.look_angle._rad
         self.twist = shot_info.weapon.twist._inch
         self.length = shot_info.ammo.dm.length._inch
