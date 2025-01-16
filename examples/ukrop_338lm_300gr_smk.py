@@ -1,7 +1,11 @@
 """Example of library usage"""
 import RKballistic
 
+import logging
 from py_ballisticcalc import *
+from py_ballisticcalc.logger import logger
+
+logger.setLevel(logging.DEBUG)
 
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS

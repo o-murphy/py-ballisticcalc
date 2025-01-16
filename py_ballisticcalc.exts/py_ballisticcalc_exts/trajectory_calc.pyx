@@ -145,7 +145,7 @@ cdef class _WindSock:
         cdef Wind cur_wind
         if self.current < self._length:
             cur_wind = self.winds[self.current]
-            self._last_vector_cache = wind_to_vector(cur_wind)
+            self._last_vector_cache = cur_wind.c_vector()
             self.next_range = cur_wind.until_distance >> Distance.Foot
         else:
             self._last_vector_cache = CVector(0.0, 0.0, 0.0)
@@ -164,7 +164,6 @@ cdef class _WindSock:
 
 cdef class TrajectoryCalc:
     cdef:
-        object ammo
         double _bc
         list[object] _table_data
         list[CurvePoint] _curve
@@ -188,18 +187,10 @@ cdef class TrajectoryCalc:
         public object _config
         _ConfigStruct __config
 
-    def __cinit__(TrajectoryCalc self, object ammo, object _config):
-        self.ammo = ammo
+    def __cinit__(TrajectoryCalc self, object _config):
         self._config = _config
         self.__config = _early_bind_config(_config)
-
-        self._bc = self.ammo.dm.BC
-        self._table_data = ammo.dm.drag_table
-        self._curve = calculate_curve(self._table_data)
         self.gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
-
-        # get list[double] instead of list[DragDataPoint]
-        self.__mach_list = _get_only_mach_data(self._table_data)
 
     cdef double get_calc_step(self, double step = 0):
         cdef double preferred_step = self.__config.max_calc_step_size_feet
@@ -212,7 +203,7 @@ cdef class TrajectoryCalc:
     def table_data(self) -> list[object]:
         return self._table_data
 
-    def zero_angle(self, Shot shot_info, object distance):
+    def zero_angle(self, Shot shot_info, object distance) -> Angular:
         return self._zero_angle(shot_info, distance)
 
     def trajectory(self, object shot_info, object max_range, object dist_step,
@@ -228,20 +219,27 @@ cdef class TrajectoryCalc:
         return self._trajectory(shot_info, max_range._feet, dist_step._feet, filter_flags, time_step)
 
     cdef void _init_trajectory(self, Shot shot_info):
+        self._bc = shot_info.ammo.dm.BC
+        self._table_data = shot_info.ammo.dm.drag_table
+        self._curve = calculate_curve(self._table_data)
+
+        # get list[double] instead of list[DragDataPoint]
+        self.__mach_list = _get_only_mach_data(self._table_data)
+
         self.look_angle = shot_info.look_angle._rad
         self.twist = shot_info.weapon.twist._inch
         self.length = shot_info.ammo.dm.length._inch
         self.diameter = shot_info.ammo.dm.diameter._inch
         self.weight = shot_info.ammo.dm.weight._grain
-        self.barrel_elevation = shot_info.barrel_elevation._rad
-        self.barrel_azimuth = shot_info.barrel_azimuth._rad
+        self.barrel_elevation = shot_info._barrel_elevation()._rad
+        self.barrel_azimuth = shot_info._barrel_azimuth()._rad
         self.sight_height = shot_info.weapon.sight_height._feet
         self.cant_cosine = cos(shot_info.cant_angle._rad)
         self.cant_sine = sin(shot_info.cant_angle._rad)
         self.alt0 = shot_info.atmo.altitude._feet
         self.calc_step = self.get_calc_step()
         if shot_info.ammo.use_powder_sensitivity:
-            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
+            self.muzzle_velocity = shot_info.ammo._get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         else:
             self.muzzle_velocity = shot_info.ammo.mv._fps
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
@@ -283,7 +281,7 @@ cdef class TrajectoryCalc:
         return Angular.Radian(self.barrel_elevation)
 
 
-    cpdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
+    cdef list[TrajectoryData] _trajectory(TrajectoryCalc self, Shot shot_info,
                           double maximum_range, double step, int filter_flags, double time_step = 0.0):
         cdef:
             double velocity, delta_time
@@ -293,8 +291,7 @@ cdef class TrajectoryCalc:
             double time = .0
             double drag = .0
             CVector range_vector, velocity_vector
-            # CVector delta_range_vector, velocity_adjusted
-            CVector _dir_vector
+            CVector delta_range_vector, velocity_adjusted
             CVector gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
             double calc_step = self.calc_step
 
@@ -311,6 +308,10 @@ cdef class TrajectoryCalc:
             double _cMinimumVelocity = self.__config.cMinimumVelocity
             double _cMaximumDrop = self.__config.cMaximumDrop
             double _cMinimumAltitude = self.__config.cMinimumAltitude
+
+        cdef:
+            # temp vectors
+            CVector _dir_vector, _temp1, _temp2, _temp3
 
         # region Initialize velocity and position of projectile
         velocity = self.muzzle_velocity
@@ -333,7 +334,8 @@ cdef class TrajectoryCalc:
         cdef int it = 0
         while range_vector.x <= maximum_range + calc_step:
             it += 1
-            data_filter.clear_current_flag()
+            # data_filter.clear_current_flag()
+            data_filter.current_flag = CTrajFlag.NONE
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
@@ -474,17 +476,6 @@ cdef class TrajectoryCalc:
 #     velocity[0] = mag(velocity_vector)
 #     time[0] += delta_time
 
-cdef CVector wind_to_vector(Wind wind):
-    cdef:
-        # no need convert it twice
-        double wind_velocity_fps = wind.velocity._fps  # shortcut for (wind.velocity >> Velocity.FPS)
-        double wind_direction_rad = wind.direction_from._rad  # shortcut for (wind.direction_from >> Angular.Radian)
-        # Downrange (x-axis) wind velocity component:
-        double range_component = wind_velocity_fps * cos(wind_direction_rad)
-        # Downrange (x-axis) wind velocity component:
-        double cross_component = wind_velocity_fps * sin(wind_direction_rad)
-    return CVector(range_component, 0., cross_component)
-
 cdef TrajectoryData create_trajectory_row(double time, CVector range_vector, CVector velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, int flag):
@@ -593,28 +584,28 @@ cdef list[CurvePoint] calculate_curve(list[object] data_points):
     curve.append(curve_point)
     return curve
 
-# use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
-cdef double calculate_by_curve(list[object] data, list[CurvePoint] curve, double mach):
-    cdef int num_points, mlo, mhi, mid, m
-    cdef CurvePoint curve_m
-
-    num_points = len(curve)
-    mlo = 0
-    mhi = num_points - 2
-
-    while mhi - mlo > 1:
-        mid = (mhi + mlo) // 2
-        if data[mid].Mach < mach:
-            mlo = mid
-        else:
-            mhi = mid
-
-    if data[mhi].Mach - mach > mach - data[mlo].Mach:
-        m = mlo
-    else:
-        m = mhi
-    curve_m = curve[m]
-    return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
+# # use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
+# cdef double calculate_by_curve(list[object] data, list[CurvePoint] curve, double mach):
+#     cdef int num_points, mlo, mhi, mid, m
+#     cdef CurvePoint curve_m
+#
+#     num_points = len(curve)
+#     mlo = 0
+#     mhi = num_points - 2
+#
+#     while mhi - mlo > 1:
+#         mid = (mhi + mlo) // 2
+#         if data[mid].Mach < mach:
+#             mlo = mid
+#         else:
+#             mhi = mid
+#
+#     if data[mhi].Mach - mach > mach - data[mlo].Mach:
+#         m = mlo
+#     else:
+#         m = mhi
+#     curve_m = curve[m]
+#     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
 cdef list[double] _get_only_mach_data(list[object] data):
     cdef int data_len = len(data)

@@ -19,6 +19,9 @@ class Calculator:
     _config: Optional[InterfaceConfigDict] = field(default=None)
     _calc: TrajectoryCalc = field(init=False, repr=False, compare=False)
 
+    def __post_init__(self):
+        self._calc = TrajectoryCalc(create_interface_config(self._config))
+
     @property
     def cdm(self) -> List[DragDataPoint]:
         """returns custom drag function based on input data"""
@@ -34,7 +37,6 @@ class Calculator:
                 on ballistic trajectory of shooting uphill or downhill.  Therefore:
                 For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         """
-        self._calc = TrajectoryCalc(shot.ammo, create_interface_config(self._config))
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._calc.zero_angle(shot, target_distance)
         return Angular.Radian(
@@ -65,7 +67,6 @@ class Calculator:
         if not trajectory_step:
             trajectory_step = trajectory_range.unit_value / 10.0
         step: Distance = PreferredUnits.distance(trajectory_step)
-        self._calc = TrajectoryCalc(shot.ammo, create_interface_config(self._config))
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data, time_step)
         return HitResult(shot, data, extra_data)
 

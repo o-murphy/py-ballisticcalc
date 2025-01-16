@@ -167,7 +167,7 @@ class _WindSock:
         """Updates the cache only if needed or if forced during initialization."""
         if self.current < self._length:
             cur_wind = self.winds[self.current]
-            self._last_vector_cache = wind_to_vector(cur_wind)
+            self._last_vector_cache = cur_wind.vector
             self.next_range = cur_wind.until_distance >> Distance.Foot
         else:
             self._last_vector_cache = Vector(0.0, 0.0, 0.0)
@@ -192,20 +192,11 @@ class TrajectoryCalc:
     barrel_azimuth: float
     barrel_elevation: float
     twist: float
-    ammo: Ammo
     gravity_vector: Vector
 
-    def __init__(self, ammo: Ammo, _config: Config):
-        self.ammo: Ammo = ammo
+    def __init__(self, _config: Config):
         self._config: Config = _config
-
-        self._bc: float = self.ammo.dm.BC
-        self._table_data: List[DragDataPoint] = ammo.dm.drag_table
-        self._curve: List[CurvePoint] = calculate_curve(self._table_data)
-        self.gravity_vector: Vector = Vector(.0, _config.cGravityConstant, .0)
-
-        # use calculation over list[double] instead of list[DragDataPoint]
-        self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
+        self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
 
     @property
     def table_data(self) -> List[DragDataPoint]:
@@ -235,6 +226,13 @@ class TrajectoryCalc:
                                 dist_step >> Distance.Foot, filter_flags, time_step)
 
     def _init_trajectory(self, shot_info: Shot) -> None:
+        self._bc: float = shot_info.ammo.dm.BC
+        self._table_data: List[DragDataPoint] = shot_info.ammo.dm.drag_table
+        self._curve: List[CurvePoint] = calculate_curve(self._table_data)
+
+        # use calculation over list[double] instead of list[DragDataPoint]
+        self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
+
         self.look_angle = shot_info.look_angle >> Angular.Radian
         self.twist = shot_info.weapon.twist >> Distance.Inch
         self.length = shot_info.ammo.dm.length >> Distance.Inch
@@ -448,25 +446,6 @@ class TrajectoryCalc:
         return 0
 
 
-def wind_to_vector(wind: Wind) -> Vector:
-    """Calculate wind vector to add to projectile velocity vector each iteration:
-        Aerodynamic drag is function of velocity relative to the air stream.
-
-    Wind angle of zero is blowing from behind shooter
-    Wind angle of 90-degree is blowing towards shooter's right
-
-    NOTE: Presently we can only define Wind in the x-z plane, not any vertical component.
-    """
-    # no need convert it twice
-    wind_velocity_fps = wind.velocity >> Velocity.FPS
-    wind_direction_rad = wind.direction_from >> Angular.Radian
-    # Downrange (x-axis) wind velocity component:
-    range_component = wind_velocity_fps * math.cos(wind_direction_rad)
-    # Cross (z-axis) wind velocity component:
-    cross_component = wind_velocity_fps * math.sin(wind_direction_rad)
-    return Vector(range_component, 0, cross_component)
-
-
 # pylint: disable=too-many-positional-arguments
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
@@ -606,32 +585,32 @@ def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
     return curve
 
 
-# use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
-def calculate_by_curve(data: List[DragDataPoint], curve: List[CurvePoint], mach: float) -> float:
-    """
-    Binary search for drag coefficient based on Mach number
-    :param data: data
-    :param curve: Output of calculate_curve(data)
-    :param mach: Mach value for which we're searching for CD
-    :return float: drag coefficient
-    """
-    num_points = int(len(curve))
-    mlo = 0
-    mhi = num_points - 2
-
-    while mhi - mlo > 1:
-        mid = int(math.floor(mhi + mlo) / 2.0)
-        if data[mid].Mach < mach:
-            mlo = mid
-        else:
-            mhi = mid
-
-    if data[mhi].Mach - mach > mach - data[mlo].Mach:
-        m = mlo
-    else:
-        m = mhi
-    curve_m = curve[m]
-    return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
+# # use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
+# def calculate_by_curve(data: List[DragDataPoint], curve: List[CurvePoint], mach: float) -> float:
+#     """
+#     Binary search for drag coefficient based on Mach number
+#     :param data: data
+#     :param curve: Output of calculate_curve(data)
+#     :param mach: Mach value for which we're searching for CD
+#     :return float: drag coefficient
+#     """
+#     num_points = int(len(curve))
+#     mlo = 0
+#     mhi = num_points - 2
+#
+#     while mhi - mlo > 1:
+#         mid = int(math.floor(mhi + mlo) / 2.0)
+#         if data[mid].Mach < mach:
+#             mlo = mid
+#         else:
+#             mhi = mid
+#
+#     if data[mhi].Mach - mach > mach - data[mlo].Mach:
+#         m = mlo
+#     else:
+#         m = mhi
+#     curve_m = curve[m]
+#     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
 
 # Function to convert a list of DragDataPoint to an array of doubles containing only Mach values

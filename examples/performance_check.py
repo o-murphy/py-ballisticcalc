@@ -111,10 +111,9 @@ rk4 = RKballistic.RK4Calculator(_config=config)
 
 
 logger.debug("Euler iter")
-use_zero_shot(calc)
+print(timeit(lambda: use_zero_shot(calc), number=1))
 logger.debug("RK4 iter")
-use_zero_shot(rk4)
-print(type(rk4), type(rk4._calc))
+print(timeit(lambda: use_zero_shot(rk4), number=1))
 
 number = 120
 
@@ -131,7 +130,6 @@ def run_check(calc_):
     zero_shot = init_zero_shot()
     calc_.set_weapon_zero(zero_shot, zero_distance)
     shot = Shot(weapon=zero_shot.weapon, ammo=zero_shot.ammo, atmo=current_atmo)
-
 
     total_time = timeit(lambda: calc_.fire(shot, shot_distance, extra_data=False), number=number)
     rate = number / total_time  # executions per second
@@ -152,7 +150,7 @@ def run_check(calc_):
 logger.setLevel(logging.INFO)
 
 
-logger.debug("Euler bench")
+logger.info("Euler bench")
 run_check(calc)
-logger.debug("RK4 bench")
+logger.info("RK4 bench")
 run_check(rk4)

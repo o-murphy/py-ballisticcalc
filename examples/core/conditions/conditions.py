@@ -6,10 +6,9 @@ from dataclasses import dataclass
 
 from typing_extensions import List, Union, Optional, Tuple
 
-from py_ballisticcalc.munition import Weapon, Ammo
-from py_ballisticcalc.vector import Vector
-from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
-from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from ..munition import Weapon, Ammo
+from ..unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
+from ..constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 
 __all__ = ('Atmo', 'Wind', 'Shot')
@@ -217,20 +216,6 @@ class Wind:
         self.velocity = PreferredUnits.velocity(velocity or 0)
         self.direction_from = PreferredUnits.angular(direction_from or 0)
         self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(self.MAX_DISTANCE_FEET))
-
-    @property
-    def vector(self) -> Vector:
-        """
-        Returns:
-            vector representation of the Wind instance
-        """
-        wind_velocity_fps = self.velocity >> Velocity.FPS
-        wind_direction_rad = self.direction_from >> Angular.Radian
-        # Downrange (x-axis) wind velocity component:
-        range_component = wind_velocity_fps * math.cos(wind_direction_rad)
-        # Cross (z-axis) wind velocity component:
-        cross_component = wind_velocity_fps * math.sin(wind_direction_rad)
-        return Vector(range_component, 0, cross_component)
 
 
 @dataclass

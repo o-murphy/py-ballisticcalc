@@ -1,4 +1,6 @@
 # from py_ballisticcalc_exts._data_repr cimport _Comparable
+cdef struct CVector:
+    double x, y, z
 
 
 cdef class Vector:
@@ -14,9 +16,9 @@ cdef class Vector:
     cdef Vector _negate(Vector self)
     cdef Vector _normalize(Vector self)
 
+    cdef CVector c_vector(Vector self)
 
-cdef struct CVector:
-    double x, y, z
+
 
 cdef double mag(CVector * v)
 cdef CVector mul_c(CVector * v, double a)

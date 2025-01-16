@@ -125,6 +125,10 @@ cdef class Vector:
     def __str__(Vector self):
         return f"Vector(x={self._x}, y={self._y}, z={self._z})"
 
+    cdef CVector c_vector(Vector self):
+        return CVector(self._x, self._y, self._z)
+
+
 cdef double mag(CVector * v):
     return sqrt(v.x * v.x + v.y * v.y + v.z * v.z)
 

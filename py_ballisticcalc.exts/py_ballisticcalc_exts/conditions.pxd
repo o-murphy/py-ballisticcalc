@@ -1,3 +1,6 @@
+from py_ballisticcalc_exts.vector cimport CVector
+from py_ballisticcalc_exts.munition cimport Weapon, Ammo
+
 cdef double _WIND_MAX_DISTANCE_FEET
 
 
@@ -14,6 +17,7 @@ cdef class Wind:
         public object until_distance
         public double MAX_DISTANCE_FEET
 
+    cdef CVector c_vector(Wind self)
 
 cdef class Shot:
     """
@@ -34,7 +38,10 @@ cdef class Shot:
         public object relative_angle
         public object cant_angle
 
-        public object weapon
-        public object ammo
+        public Weapon weapon
+        public Ammo ammo
         public object atmo
         list[Wind] _winds
+
+    cdef object _barrel_elevation(Shot self)
+    cdef object _barrel_azimuth(Shot self)
