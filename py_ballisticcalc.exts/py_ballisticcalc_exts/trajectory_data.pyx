@@ -6,6 +6,12 @@ from py_ballisticcalc.unit import PreferredUnits
 
 @final
 cdef class TrajectoryData:
+    __slots__ = ('time', 'distance', 'velocity',
+                 'mach', 'height', 'target_drop', 'drop_adj',
+                 'windage', 'windage_adj', 'look_distance',
+                 'angle', 'density_factor', 'drag', 'energy', 'ogw', 'flag')
+
+    _fields = __slots__
 
     def __cinit__(TrajectoryData self,
                     double time,
