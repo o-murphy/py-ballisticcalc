@@ -1,9 +1,12 @@
 from py_ballisticcalc.unit import Angular, Distance, Energy, Velocity, Weight
-from typing_extensions import NamedTuple, Union
+from typing_extensions import NamedTuple, Union, Tuple
 
 __all__ = ['TrajectoryData']
 
 class TrajectoryData(NamedTuple):
+    __slots__: Tuple[str, ...]
+    _field: Tuple[str, ...]
+
     time: float
     distance: Distance
     velocity: Velocity
