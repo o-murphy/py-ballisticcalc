@@ -206,7 +206,7 @@ cdef class TrajectoryCalc:
     def zero_angle(self, Shot shot_info, object distance) -> Angular:
         return self._zero_angle(shot_info, distance)
 
-    def trajectory(self, object shot_info, object max_range, object dist_step,
+    def trajectory(self, Shot shot_info, object max_range, object dist_step,
                    bint extra_data = False, double time_step = 0.0) -> Type[list[TrajectoryData]]:
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
