@@ -34,7 +34,7 @@ def extract_dep_version(data, name):
 #         raise Exception(f"{name} can't extract version'")
 
 
-if __name__ == '__main__':
+def main():
     # pkg_ver, groups = extract_ver(pkg_name)
     # bin_pkg_ver, bin_groups = extract_ver(bin_pkg_name)
 
@@ -56,3 +56,6 @@ if __name__ == '__main__':
         raise err
     except Exception:
         raise Exception("Could not parse versions")
+
+if __name__ == '__main__':
+    main()

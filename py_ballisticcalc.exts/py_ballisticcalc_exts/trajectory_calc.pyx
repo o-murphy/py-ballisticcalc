@@ -10,8 +10,6 @@
 from cython cimport final
 from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData, CTrajFlag
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_euler cimport (
@@ -35,8 +33,15 @@ from py_ballisticcalc_exts.cy_euler cimport (
     _WIND_MAX_DISTANCE_FEET,
 )
 
+import platform
 import warnings
-from typing_extensions import Type
+if platform.python_implementation() == "PyPy":
+    # noinspection PyUnresolvedReferences
+    from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag
+    from py_ballisticcalc import TrajectoryData
+else:
+    # noinspection PyUnresolvedReferences
+    from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData, CTrajFlag
 
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
@@ -216,7 +221,7 @@ cdef class TrajectoryCalc:
         return self._zero_angle(shot_info, distance)
 
     def trajectory(self, object shot_info, object max_range, object dist_step,
-                   bint extra_data = False, double time_step = 0.0) -> Type[list[object]]:
+                   bint extra_data = False, double time_step = 0.0) -> object:
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
 

@@ -189,6 +189,7 @@ cdef void update_density_factor_and_mach_for_altitude(
     :param altitude: ASL in units of feet
     :return: density ratio and Mach 1 (fps) for the specified altitude
     """
+    cdef double fahrenheit
     if fabs(atmo._a0 - altitude) < 30:
         density_ratio[0] = atmo.density_ratio
         mach[0] = atmo._mach1
