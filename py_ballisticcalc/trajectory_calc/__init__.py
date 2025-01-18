@@ -49,8 +49,8 @@ try:
 except ImportError as err:
     """Fallback to pure python"""
     from py_ballisticcalc.trajectory_calc._trajectory_calc import TrajectoryCalc
-
     logger.debug(err)
+
 
 __all__ = (
     'TrajectoryCalc',

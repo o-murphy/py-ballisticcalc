@@ -44,11 +44,13 @@ cythonized:
         Total time: 11.458543 seconds
         Execution rate: 10.47 calls per second
 """
-import RKballistic
+# import RKballistic
 from timeit import timeit
 from py_ballisticcalc import *
 from py_ballisticcalc.logger import logger
 import logging
+
+print(Shot, Weapon, Wind)
 
 logger.setLevel(logging.DEBUG)
 
@@ -105,15 +107,15 @@ def use_zero_shot(calc_):
 
 config: InterfaceConfigDict = {}
 calc = Calculator(_config=config)
-rk4 = RKballistic.RK4Calculator(_config=config)
+# rk4 = RKballistic.RK4Calculator(_config=config)
 
 
 
 
 logger.debug("Euler iter")
 print(timeit(lambda: use_zero_shot(calc), number=1))
-logger.debug("RK4 iter")
-print(timeit(lambda: use_zero_shot(rk4), number=1))
+# logger.debug("RK4 iter")
+# print(timeit(lambda: use_zero_shot(rk4), number=1))
 
 number = 120
 
@@ -149,8 +151,8 @@ def run_check(calc_):
 
 logger.setLevel(logging.INFO)
 
-
+run_check(calc)
 logger.info("Euler bench")
 run_check(calc)
-logger.info("RK4 bench")
-run_check(rk4)
+# logger.info("RK4 bench")
+# run_check(rk4)
