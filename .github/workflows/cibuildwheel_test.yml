@@ -1,4 +1,4 @@
-name: Upload Python Package to Test PyPI
+name: CiBuildWheel Test
 
 on:
   workflow_dispatch:
