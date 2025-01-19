@@ -10,6 +10,7 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 import os
 import sys
+import platform
 import importlib.resources
 
 from typing_extensions import Dict, Union, Optional
@@ -39,8 +40,9 @@ try:
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
-    warnings.warn("Library running in pure python mode. "
-                  "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)
+    if platform.python_implementation() != "PyPy":
+        warnings.warn("Library running in pure python mode. "
+                      "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)
 
 
 def _load_config(filepath=None, suppress_warnings=False):

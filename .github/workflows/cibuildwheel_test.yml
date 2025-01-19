@@ -1,0 +1,52 @@
+name: CiBuildWheel Test
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+
+  build-deploy:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+
+    runs-on: ${{ matrix.os }}
+    environment: release
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate exts version matching
+        run: |
+          python -m pip install tomli
+          python hooks/version_check.py
+
+      - name: Install dependencies
+        run: |
+          python -m pip install build cibuildwheel twine 
+
+      - name: Build pure python package
+        run: python -m build
+
+      - name: Build binary python package
+        run: |
+          cd ./py_ballisticcalc.exts
+          python -m build --sdist --outdir ../dist
+          cibuildwheel --output-dir ../dist
+          cd ..
+
+      - name: List ./dist
+        run: ls ./dist

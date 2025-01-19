@@ -12,6 +12,8 @@ from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
 # noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, TrajectoryData
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_euler cimport (
     Config_t,
     Wind_t,
@@ -33,15 +35,7 @@ from py_ballisticcalc_exts.cy_euler cimport (
     _WIND_MAX_DISTANCE_FEET,
 )
 
-import platform
 import warnings
-if platform.python_implementation() == "PyPy":
-    # noinspection PyUnresolvedReferences
-    from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag
-    from py_ballisticcalc import TrajectoryData
-else:
-    # noinspection PyUnresolvedReferences
-    from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData, CTrajFlag
 
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
