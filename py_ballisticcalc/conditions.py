@@ -11,7 +11,6 @@ from py_ballisticcalc.vector import Vector
 from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
-
 __all__ = ('Atmo', 'Wind', 'Shot')
 
 
@@ -198,7 +197,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 class Wind:
     """
     Wind direction and velocity by down-range distance.
-    direction_from = 0 is blowing from behind shooter. 
+    direction_from = 0 is blowing from behind shooter.
     direction_from = 90 degrees is blowing from shooter's left towards right.
     """
 
@@ -300,6 +299,3 @@ class Shot:
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
-
-
-
