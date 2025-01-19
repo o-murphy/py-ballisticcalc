@@ -71,5 +71,4 @@ class Calculator:
         return HitResult(shot, data, extra_data)
 
 
-
 __all__ = ('Calculator',)

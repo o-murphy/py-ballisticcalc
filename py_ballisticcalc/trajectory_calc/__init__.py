@@ -4,13 +4,15 @@ from typing_extensions import Union, Final
 from py_ballisticcalc.unit import Distance, PreferredUnits
 
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_calc._trajectory_calc import (Config,
-                                                               get_correction,
-                                                               calculate_energy,
-                                                               calculate_ogw,
-                                                               create_trajectory_row,
-                                                               _TrajectoryDataFilter,
-                                                               _WindSock)
+from py_ballisticcalc.trajectory_calc._trajectory_calc import (
+    Config,
+    get_correction,
+    calculate_energy,
+    calculate_ogw,
+    create_trajectory_row,
+    _TrajectoryDataFilter,
+    _WindSock
+)
 
 cZeroFindingAccuracy: Final[float] = 0.000005
 cMinimumVelocity: Final[float] = 50.0

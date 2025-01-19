@@ -14,8 +14,6 @@ try:
     from matplotlib.patches import Polygon
     from matplotlib import pyplot
 except ImportError as error:
-    from py_ballisticcalc.logger import logger
-
     warnings.warn("Install matplotlib to get results as a plot", UserWarning)
     raise error
 
@@ -85,10 +83,7 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
     if look_angle is None:
         look_angle = hit_result.shot.look_angle
 
-    # if matplotlib is None:
-    #     raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot")
     if not hit_result.extra:
-        from py_ballisticcalc.logger import logger
         warnings.warn("HitResult.plot: To show extended data"
                       "Use Calculator.fire(..., extra_data=True)")
 
@@ -143,11 +138,15 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
     if (x_bbl[1] - x_bbl[0]) == 0:
         angle = 90
     else:
-        angle = math.degrees(math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0])))
-    ax.text(x_bbl[1], y_bbl[1], "Barrel pointing", linespacing=1.2,
-            rotation=angle, rotation_mode='anchor', transform_rotates_text=True,
-            fontsize=font_size, color=PLOT_COLORS['barrel'], ha='right',
-            va='top' if sight_above_bbl else 'bottom')
+        angle = math.degrees(
+            math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0]))
+        )
+    ax.text(x_bbl[1], y_bbl[1],
+            "Barrel pointing", linespacing=1.2,
+            rotation=angle, rotation_mode='anchor',
+            transform_rotates_text=True,
+            fontsize=font_size, color=PLOT_COLORS['barrel'],
+            ha='right', va='top' if sight_above_bbl else 'bottom')
     # Plot velocity (on secondary axis)
     df.plot(x='distance', xlabel=PreferredUnits.distance.symbol,
             y=['velocity'], ylabel=PreferredUnits.velocity.symbol,
@@ -165,11 +164,13 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
     # Set axis labels to the same color (rgb(215, 155, 0))
     ax.xaxis.label.set_color(PLOT_COLORS['frame'])  # X-axis label color
     ax.yaxis.label.set_color(PLOT_COLORS['frame'])  # Y-axis label color
-    ax.right_ax.yaxis.label.set_color(PLOT_COLORS['frame'])  # Secondary Y-axis label color (if applicable)
+    # Secondary Y-axis label color (if applicable)
+    ax.right_ax.yaxis.label.set_color(PLOT_COLORS['frame'])
 
     # Set the ticks color to match the frame and labels (optional)
     ax.tick_params(axis='x', colors=PLOT_COLORS['frame'])
     ax.tick_params(axis='y', colors=PLOT_COLORS['frame'])
-    ax.right_ax.tick_params(axis='y', colors=PLOT_COLORS['frame'])  # For the secondary y-axis
+    # For the secondary y-axis
+    ax.right_ax.tick_params(axis='y', colors=PLOT_COLORS['frame'])
 
     return ax

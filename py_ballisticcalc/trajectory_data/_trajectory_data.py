@@ -226,9 +226,9 @@ class HitResult:
                      ) -> DangerSpace:
         """
         Assume that the trajectory hits the center of a target at any distance.
-        Now we want to know how much ranging error we can tolerate if the critical region 
+        Now we want to know how much ranging error we can tolerate if the critical region
         of the target has height *h*.  I.e., we want to know how far forward and backward
-        along the line of sight we can move a target such that the trajectory is still 
+        along the line of sight we can move a target such that the trajectory is still
         within *h*/2 of the original drop.
 
         :param at_range: Danger space is calculated for a target centered at this sight distance

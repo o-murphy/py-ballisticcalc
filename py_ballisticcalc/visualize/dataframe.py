@@ -6,8 +6,6 @@ from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 try:
     from pandas import DataFrame
 except ImportError as error:
-    from py_ballisticcalc.logger import logger
-
     warnings.warn("Install pandas to convert trajectory to pandas.DataFrame", UserWarning)
     raise error
 

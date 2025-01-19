@@ -73,7 +73,8 @@ class RangeError(RuntimeError):
         """
         Parameters:
         - reason: The error reason (str)
-        - trajectory: The trajectory data before the exception occurred (List[TrajectoryData])
+        - trajectory: The trajectory data before
+                    the exception occurred (List[TrajectoryData])
         """
 
         self.reason: str = reason

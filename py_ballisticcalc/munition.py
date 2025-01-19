@@ -82,7 +82,7 @@ class Sight:
         _td = PreferredUnits.distance(target_distance)
         _h_step = get_sfp_step(self.h_click_size)
         _v_step = get_sfp_step(self.v_click_size)
-        return SightReticleStep(_v_step, _v_step)
+        return SightReticleStep(_h_step, _v_step)
 
     def get_adjustment(self, target_distance: Distance,
                        drop_adj: Angular, windage_adj: Angular,

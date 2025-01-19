@@ -1,5 +1,5 @@
 """Example of library usage"""
-import RKballistic
+# import RKballistic
 
 import logging
 from py_ballisticcalc import *
@@ -47,6 +47,7 @@ current_atmo = Atmo(
 shot = Shot(weapon=weapon, ammo=ammo, atmo=current_atmo)
 shot_result = calc.fire(shot, Distance.Meter(1000), extra_data=False)
 
-rk4 = RKballistic.RK4Calculator(_config=config)
-rk4.set_weapon_zero(zero, zero_distance)
-rk_4_result = rk4.fire(shot, Distance.Meter(1000), extra_data=False)
+# rk4 = RKballistic.RK4Calculator(_config=config)
+# rk4.set_weapon_zero(zero, zero_distance)
+# rk_4_result = rk4.fire(shot, Distance.Meter(1000), extra_data=False)
+print(shot_result.trajectory[0].formatted())

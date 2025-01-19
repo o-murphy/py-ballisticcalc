@@ -4,6 +4,7 @@ from typing import Union
 
 __all__ = ('Vector',)
 
+
 @dataclass
 class Vector:
     x: float
