@@ -1,6 +1,9 @@
 name: CiBuildWheel Test
 
 on:
+  pull_request:
+    branches:
+      - '*'
   workflow_dispatch:
 
 permissions:
