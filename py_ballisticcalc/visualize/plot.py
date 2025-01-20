@@ -93,7 +93,7 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
 
     ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol,
                  color=PLOT_COLORS['trajectory'], linewidth=2, ax=ax)
-    #max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance
+    #max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance  # This doesn't correctly handle backward-bending trajectories
     max_range = df.distance.max()
 
     for p in hit_result.trajectory:
