@@ -293,6 +293,8 @@ class Ammo:
             )
             ```
         """
+        if not self.use_powder_sensitivity:
+            return self.mv
         try:
             v0 = self.mv >> Velocity.MPS
             t0 = self.powder_temp >> Temperature.Celsius

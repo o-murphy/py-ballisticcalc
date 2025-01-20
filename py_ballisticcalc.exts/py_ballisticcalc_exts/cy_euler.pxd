@@ -54,6 +54,7 @@ cdef struct ShotData_t:
     double stability_coefficient
     Atmosphere_t atmo
 
+cdef double cy_get_calc_step(Config_t * config, double step = ?)
 cdef MachList_t cy_table_to_mach(list[object] data)
 cdef Curve_t cy_calculate_curve(list[object] data_points)
 cdef double cy_calculate_by_curve_and_mach_list(MachList_t *mach_list, Curve_t *curve, double mach)
@@ -72,8 +73,6 @@ cdef void free_trajectory(ShotData_t *t)
 cdef double cDegreesFtoR
 cdef double cSpeedOfSoundImperial
 cdef double cLapseRateImperial
-
-cdef double _WIND_MAX_DISTANCE_FEET
 
 cdef struct Wind_t:
     double velocity

@@ -7,10 +7,10 @@ import warnings
 
 from typing_extensions import NamedTuple, Union, List, Tuple
 
-from py_ballisticcalc.logger import logger
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, Unit
 from py_ballisticcalc.vector import Vector
@@ -221,8 +221,8 @@ class TrajectoryCalc:
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
-        return self._trajectory(shot_info, max_range >> Distance.Foot,
-                                dist_step >> Distance.Foot, filter_flags, time_step)
+        return self._integrate(shot_info, max_range >> Distance.Foot,
+                               dist_step >> Distance.Foot, filter_flags, time_step)
 
     def _init_trajectory(self, shot_info: Shot) -> None:
         self._bc: float = shot_info.ammo.dm.BC
@@ -244,10 +244,7 @@ class TrajectoryCalc:
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = self.get_calc_step()
-        if shot_info.ammo.use_powder_sensitivity:
-            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
-        else:
-            self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+        self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
@@ -270,7 +267,7 @@ class TrajectoryCalc:
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
-            t = self._trajectory(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
+            t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
             height = t.height >> Distance.Foot
             zero_finding_error = math.fabs(height - height_at_zero)
             if zero_finding_error > _cZeroFindingAccuracy:
@@ -285,8 +282,8 @@ class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    def _trajectory(self, shot_info: Shot, maximum_range: float, step: float,
-                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
+    def _integrate(self, shot_info: Shot, maximum_range: float, step: float,
+                   filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """Calculate trajectory for specified shot
         :param maximum_range: Feet down range to stop calculation
         :param step: Frequency (in feet down range) to record TrajectoryData

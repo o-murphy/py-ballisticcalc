@@ -32,7 +32,6 @@ from py_ballisticcalc_exts.cy_euler cimport (
     cy_update_stability_coefficient,
     free_trajectory,
     wind_to_c_vector,
-    _WIND_MAX_DISTANCE_FEET,
 )
 
 import warnings
@@ -40,6 +39,8 @@ import warnings
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
+from py_ballisticcalc.constants import cMaxWindDistanceFeet
+from bisect import bisect_left
 
 
 __all__ = (
@@ -135,12 +136,12 @@ cdef class _TrajectoryDataFilter:
 
 @final
 cdef class _WindSock:
-    cdef list[Wind_t] winds
-    cdef int current
-    cdef double next_range
-    # cdef Vector _last_vector_cache
-    cdef CVector _last_vector_cache
-    cdef int _length
+    cdef:
+        list[Wind_t] winds
+        int current
+        double next_range
+        CVector _last_vector_cache
+        int _length
 
     def __cinit__(_WindSock self, object winds):
         self.winds = [
@@ -152,7 +153,7 @@ cdef class _WindSock:
             ) for w in winds
         ]
         self.current = 0
-        self.next_range = _WIND_MAX_DISTANCE_FEET
+        self.next_range = cMaxWindDistanceFeet
         self._last_vector_cache = CVector(0.0, 0.0, 0.0)
         self._length = len(self.winds)
 
@@ -170,14 +171,15 @@ cdef class _WindSock:
             self.next_range = cur_wind.until_distance
         else:
             self._last_vector_cache = CVector(0.0, 0.0, 0.0)
-            self.next_range = _WIND_MAX_DISTANCE_FEET
+            self.next_range = cMaxWindDistanceFeet
 
     cdef CVector vector_for_range(_WindSock self, double next_range):
         if next_range >= self.next_range:
+        # if next_range + 1e-6 >= self.next_range:
             self.current += 1
             if self.current >= self._length:
                 self._last_vector_cache = CVector(0.0, 0.0, 0.0)
-                self.next_range = _WIND_MAX_DISTANCE_FEET
+                self.next_range = cMaxWindDistanceFeet
             else:
                 self.update_cache()  # This will trigger cache updates.
         return self._last_vector_cache
@@ -249,6 +251,7 @@ cdef class TrajectoryCalc:
             cant_sine=sin(shot_info.cant_angle._rad),
             alt0=shot_info.atmo.altitude._feet,
             calc_step=self.get_calc_step(),
+            # calc_step=cy_get_calc_step(self.__config),
             diameter=shot_info.ammo.dm.diameter._inch,
             stability_coefficient=0.0,
             atmo=Atmosphere_t(
@@ -259,11 +262,7 @@ cdef class TrajectoryCalc:
                 density_ratio=shot_info.atmo.density_ratio,
             )
         )
-
-        if shot_info.ammo.use_powder_sensitivity:
-            self.__shot.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
-        else:
-            self.__shot.muzzle_velocity = shot_info.ammo.mv._fps
+        self.__shot.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         cy_update_stability_coefficient(&self.__shot)
 
         self.ws = _WindSock(shot_info.winds)

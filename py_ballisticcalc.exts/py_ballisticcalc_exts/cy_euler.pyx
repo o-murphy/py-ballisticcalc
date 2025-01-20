@@ -18,6 +18,12 @@ cdef Config_t config_bind(object config):
         config.cMinimumAltitude,
     )
 
+cdef double cy_get_calc_step(Config_t * config, double step = 0):
+    cdef double preferred_step = config.max_calc_step_size_feet
+    if step == 0:
+        return preferred_step / 2.0
+    return min(step, preferred_step) / 2.0
+
 cdef MachList_t cy_table_to_mach(list[object] data):
     cdef int data_len = len(data)
     cdef double * result = <double *> malloc(data_len * sizeof(double))
@@ -209,8 +215,6 @@ cdef void update_density_factor_and_mach_for_altitude(
                           f"redefine 'cDegreesFtoR' constant to increase it", RuntimeWarning)
 
         mach[0] = sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
-
-cdef double _WIND_MAX_DISTANCE_FEET = 1e8
 
 cdef CVector wind_to_c_vector(Wind_t * w):
     cdef:

@@ -18,23 +18,56 @@ nav:
 #        - concepts/munition/index.md
         - "🔫 Weapon": concepts/munition/weapon.md  # <-- Added a dummy sub-level
         - "💣 Ammo": concepts/munition/ammo.md
+    - DragModel: concepts/drag_model.md
     - Conditions:
         - "🌡️ Atmo": concepts/conditions/atmo.md
         - "💨 Wind": concepts/conditions/wind.md
         - "🎯 Shot": concepts/conditions/shot.md
     - Units and Dimensions:
+#        - DSL:
         - "📏 Unit": concepts/unit.md
+#        - AbstractUnit:
+#        - Distance:
+#        - Velocity:
+#        - Angular:
+#        - Pressure:
+#        - Temperature:
+#        - Weight:
+#        - Energy:
+    - TrajectoryData: concepts/trajectory_data.md
+    - Vector: concepts/vector.md
+    - Constants: concepts/constants.md
+#    - Interface:
     - Engines:
         - "⚙️ Engines": concepts/engines.md
+#    - Logger: concepts/logger.md
 #  - Performance:
 - API Documentation:
+#    - Units:
+#      - DSL:
+#      - Unit:
+#      - AbstractUnit:
+#      - Distance:
+#      - Velocity:
+#      - Angular:
+#      - Pressure:
+#      - Temperature:
+#      - Weight:
+#      - Energy:
     - Munition:
       - Weapon: api/munition/weapon.md
       - Ammo: api/munition/ammo.md
+    - DragModel: api/drag_model.md
     - Conditions:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md
       - Shot: api/conditions/shot.md
+    - TrajectoryData: api/trajectory_data.md
+    - Constants: api/constants.md
+    - Vector: api/vector.md
+#    - Interface:
+  #    - Engines: api/engines.md
+#    - Logger: api/logger.md
 #- Examples:
 #- Error Messages:
 - Internals:
@@ -93,6 +126,7 @@ repo_url: https://github.com/o-murphy/py_ballisticcalc
 extra:
   version:
     provider: mike
+#    alias: true
   analytics:
     feedback:
       title: Was this page helpful?
