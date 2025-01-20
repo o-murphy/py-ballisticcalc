@@ -1,5 +1,5 @@
 Atmo
-::: py_ballisticcalc.conditions._conditions.Atmo
+::: py_ballisticcalc.conditions.Atmo
     options:
       group_by_category: false
       members:

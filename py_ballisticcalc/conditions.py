@@ -16,7 +16,20 @@ __all__ = ('Atmo', 'Wind', 'Shot')
 
 @dataclass
 class Atmo:  # pylint: disable=too-many-instance-attributes
-    """Atmospheric conditions and density calculations"""
+    """
+    A base class for creating Atmo.
+    Atmospheric conditions and density calculations
+
+    Attributes:
+        altitude: Altitude relative to sea level
+        pressure: Atmospheric pressure
+        temperature: Atmospheric temperature
+        humidity: Atmospheric humidity
+        powder_temp: Custom temperature of powder different to atmospheric.
+            Uses together with Ammo.use_powder_sensitivity
+        density_ratio: Density ratio
+        mach: Velocity instance that keeps velocity in mach for current atmosphere
+    """
 
     altitude: Distance
     pressure: Pressure
@@ -38,6 +51,30 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                  temperature: Optional[Union[float, Temperature]] = None,
                  humidity: float = 0.0,
                  powder_t: Optional[Union[float, Temperature]] = None):
+        """
+        Create a new Atmo instance with given parameters
+
+        Args:
+            altitude: Altitude relative to sea level
+            pressure: Atmospheric pressure
+            temperature: Atmospheric temperature
+            humidity: Atmospheric humidity in percents
+            powder_t: Custom temperature of powder different to atmospheric.
+                Uses together with Ammo.use_powder_sensitivity
+
+        Example:
+            This is how you can create an Atmo
+            ```python
+            from py_ballisticcalc import Atmo
+            wind = Wind(
+                altitude=Unit.Meter(100),
+                pressure=Unit.hPa(1000),
+                temperature=Unit.Celsius(20),
+                humidity=50,
+                powder_t=1.23
+            )
+            ```
+        """
 
         self.humidity = humidity or 0.0
         if self.humidity > 1:
@@ -61,13 +98,19 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
-        """ICAO standard temperature for altitude"""
+        """
+        Returns:
+            ICAO standard temperature for altitude
+        """
         return Temperature.Fahrenheit(cStandardTemperatureF
                                       + (altitude >> Distance.Foot) * cLapseRateImperial)
 
     @staticmethod
     def standard_pressure(altitude: Distance) -> Pressure:
-        """ICAO standard pressure for altitude"""
+        """
+        Returns:
+            ICAO standard pressure for altitude
+        """
         return Pressure.InHg(0.02953
                              * math.pow(3.73145 - 2.56555e-05 * (altitude >> Distance.Foot),
                                         cPressureExponent)
@@ -79,14 +122,24 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def standard(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None) -> 'Atmo':
-        """Creates standard ICAO atmosphere at given altitude.
+        """
+        Args:
+            altitude: relative to sea level
+            temperature: Temperature instance
+        Returns:
+            Atmo instance. Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
         return Atmo.icao(altitude, temperature)
 
     @staticmethod
     def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None) -> 'Atmo':
-        """Creates standard ICAO atmosphere at given altitude.
+        """
+        Args:
+            altitude: relative to sea level
+            temperature: Temperature instance
+        Returns:
+            Atmo instance. Creates standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
         """
         altitude = PreferredUnits.distance(altitude)
@@ -103,7 +156,12 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machF(fahrenheit: float) -> float:
-        """:return: Mach 1 in fps for Fahrenheit temperature"""
+        """
+        Args:
+            fahrenheit: Fahrenheit temperature
+        Returns:
+            Mach 1 in fps for Fahrenheit temperature
+        """
         if fahrenheit < -cDegreesFtoR:
             fahrenheit = -cDegreesFtoR
             warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to absolute zero "
@@ -113,7 +171,12 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machC(celsius: float) -> float:
-        """:return: Mach 1 in m/s for Celsius temperature"""
+        """
+        Args:
+            celsius: Celsius temperature
+        Returns:
+            Mach 1 in m/s for Celsius temperature
+        """
         if celsius < -cDegreesCtoK:
             celsius = -cDegreesCtoK
             warnings.warn(f"Invalid temperature: {celsius}°C. Adjusted to absolute zero "
@@ -123,8 +186,16 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def air_density(t: Temperature, p: Pressure, humidity: float) -> float:
-        """Source: https://en.wikipedia.org/wiki/Density_of_air#Humid_air
-        :return: Density in Imperial units (lb/ft^3)
+        """
+        Wiki: [Density_of_air](https://en.wikipedia.org/wiki/Density_of_air#Humid_air)
+
+        Args:
+            t: Temperature instance
+            p: Pressure instance
+            humidity: Humidity instance
+
+        Returns:
+            Density in Imperial units (lb/ft^3)
         """
         tC = t >> Temperature.Celsius
         pM = (p >> Pressure.hPa) * 100  # Pressure in Pascals
@@ -138,18 +209,27 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @property
     def density_metric(self) -> float:
-        """Returns density in kg/m^3"""
+        """
+        Returns:
+            density in kg/m^3
+        """
         return self.density_ratio * cStandardDensityMetric
 
     @property
     def density_imperial(self) -> float:
-        """Returns density in lb/ft^3"""
+        """
+        Returns:
+             density in lb/ft^3
+        """
         return self.density_ratio * cStandardDensity
 
     def temperature_at_altitude(self, altitude: float) -> float:
-        """ Interpolated temperature at altitude
-        :param altitude: ASL in ft
-        :return: temperature in °F
+        """
+        Interpolated temperature at altitude
+        Args:
+             altitude: ASL in ft
+        Returns:
+            temperature in °F
         """
         t = (altitude - self._a0) * cLapseRateImperial + self._t0
         if t < cLowestTempF:
@@ -160,9 +240,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     def calculate_density(self, t: float, p: float) -> float:
         """
-        :param t: temperature in °F
-        :param p: pressure in inHg
-        :return: density with specified atmosphere
+        Args:
+            t: temperature in °F
+            p: pressure in inHg
+        Returns:
+            density with specified atmosphere
         """
         if t > 0:
             et0 = cA0 + t * (cA1 + t * (cA2 + t * (cA3 + t * cA4)))
@@ -178,8 +260,10 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
         """
-        :param altitude: ASL in units of feet
-        :return: density ratio and Mach 1 (fps) for the specified altitude
+        Args:
+            altitude: ASL in units of feet
+        Returns:
+            density ratio and Mach 1 (fps) for the specified altitude
         """
         # Within 30 ft of initial altitude use initial values
         if math.fabs(self._a0 - altitude) < 30:
@@ -196,9 +280,15 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 @dataclass
 class Wind:
     """
+    A base class for creating Wind.
     Wind direction and velocity by down-range distance.
-    direction_from = 0 is blowing from behind shooter.
-    direction_from = 90 degrees is blowing from shooter's left towards right.
+
+    Attributes:
+        velocity: speed of wind
+        direction_from: 0 is blowing from behind shooter.
+            90 degrees is blowing from shooter's left towards right.
+        until_distance: until which distance the specified wind blows
+        MAX_DISTANCE_FEET: Optional custom max wind distance
     """
 
     velocity: Velocity
@@ -212,6 +302,27 @@ class Wind:
                  until_distance: Optional[Union[float, Distance]] = None,
                  *,
                  max_distance_feet: Optional[float] = cMaxWindDistanceFeet):
+        """
+        Create a new wind instance with given parameters
+
+        Args:
+            velocity: speed of wind
+            direction_from: 0 is blowing from behind shooter.
+                90 degrees is blowing from shooter's left towards right.
+            until_distance: until which distance the specified wind blows
+            MAX_DISTANCE_FEET: Optional custom max wind distance
+
+        Example:
+            This is how you can create a wind
+            ```python
+            from py_ballisticcalc import Wind
+            wind = Wind(
+                velocity=Unit.FPS(2700),
+                direction_from=Unit.Degree(20)
+            )
+            ```
+        """
+
         self.MAX_DISTANCE_FEET = float(max_distance_feet or cMaxWindDistanceFeet)
         self.velocity = PreferredUnits.velocity(velocity or 0)
         self.direction_from = PreferredUnits.angular(direction_from or 0)
@@ -235,16 +346,21 @@ class Wind:
 @dataclass
 class Shot:
     """
+    A base class for creating Shot.
     Stores shot parameters for the trajectory calculation.
-    
-    :param look_angle: Angle of sight line relative to horizontal.
-        If the look_angle != 0 then any target in sight crosshairs will be at a different altitude:
-            With target_distance = sight distance to a target (i.e., as through a rangefinder):
-                * Horizontal distance X to target = cos(look_angle) * target_distance
-                * Vertical distance Y to target = sin(look_angle) * target_distance
-    :param relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
-    :param cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
-        from the vertical plane into the horizontal plane by sine(cant_angle)
+
+    Attributes:
+        look_angle: Angle of sight line relative to horizontal.
+            If the look_angle != 0 then any target in sight crosshairs will be at a different altitude:
+                With target_distance = sight distance to a target (i.e., as through a rangefinder):
+                    * Horizontal distance X to target = cos(look_angle) * target_distance
+                    * Vertical distance Y to target = sin(look_angle) * target_distance
+        relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
+        cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
+            from the vertical plane into the horizontal plane by sine(cant_angle)
+        weapon: Weapon instance uses for making shot
+        ammo: Ammo instance uses for making shot
+        atmo: Atmo instance uses for making shot
     """
 
     look_angle: Angular
@@ -267,6 +383,39 @@ class Shot:
                  atmo: Optional[Atmo] = None,
                  winds: Optional[List[Wind]] = None
                  ):
+        """
+        A base class for creating Shot.
+        Stores shot parameters for the trajectory calculation.
+
+        Args:
+            look_angle: Angle of sight line relative to horizontal.
+                If the look_angle != 0 then any target in sight crosshairs will be at a different altitude:
+                    With target_distance = sight distance to a target (i.e., as through a rangefinder):
+                        * Horizontal distance X to target = cos(look_angle) * target_distance
+                        * Vertical distance Y to target = sin(look_angle) * target_distance
+            relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
+            cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
+                from the vertical plane into the horizontal plane by sine(cant_angle)
+            weapon: Weapon instance used for making shot
+            ammo: Ammo instance used for making shot
+            atmo: Atmo instance used for making shot
+            winds: list of winds used for making shot
+
+        Example:
+            This is how you can create a shot
+            ```python
+            from py_ballisticcalc import Weapon, Ammo, Atmo, Wind
+            shot = Shot(
+                weapon=Weapon(...),
+                ammo=Ammo(...),
+                look_angle=Unit.Degree(5),
+                relative_angle=Unit.Degree(0),
+                cant_angle=Unit.Degree(0),
+                atmo=Atmo(...),
+                winds=[Wind(...), ... ]
+            )
+            ```
+        """
         self.look_angle = PreferredUnits.angular(look_angle or 0)
         self.relative_angle = PreferredUnits.angular(relative_angle or 0)
         self.cant_angle = PreferredUnits.angular(cant_angle or 0)
@@ -277,17 +426,33 @@ class Shot:
 
     @property
     def winds(self) -> Tuple[Wind, ...]:
-        """Returns sorted Tuple[Wind, ...]"""
+        """
+        Property that returns winds sorted by until distance
+
+        Returns:
+            Tuple[Wind, ...] sorted by until distance
+        """
         # guarantee that winds returns sorted by Wind.until distance
         return tuple(sorted(self._winds, key=lambda wind: wind.until_distance.raw_value))
 
     @winds.setter
     def winds(self, winds: Optional[List[Wind]]):
+        """
+        Property that allows set list of winds for the shot
+
+        Args:
+            winds: list of the winds for the shot
+        """
         self._winds = winds or [Wind()]
 
     @property
     def barrel_elevation(self) -> Angular:
-        """Barrel elevation in vertical plane from horizontal"""
+        """
+        Barrel elevation in vertical plane from horizontal
+
+        Returns:
+            Angle of barrel elevation in vertical plane from horizontal
+        """
         return Angular.Radian((self.look_angle >> Angular.Radian)
                               + math.cos(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
@@ -295,7 +460,12 @@ class Shot:
 
     @property
     def barrel_azimuth(self) -> Angular:
-        """Horizontal angle of barrel relative to sight line"""
+        """
+        Horizontal angle of barrel relative to sight line
+
+        Returns:
+            Horizontal angle of barrel relative to sight line
+        """
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
