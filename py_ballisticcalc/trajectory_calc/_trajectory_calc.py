@@ -244,10 +244,7 @@ class TrajectoryCalc:
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
         self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = self.get_calc_step()
-        if shot_info.ammo.use_powder_sensitivity:
-            self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
-        else:
-            self.muzzle_velocity = shot_info.ammo.mv >> Velocity.FPS
+        self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:

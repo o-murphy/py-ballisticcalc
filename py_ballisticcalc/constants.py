@@ -27,3 +27,4 @@ cSpeedOfSoundImperial: Final[float] = 49.0223  # Mach1 in fps = cSpeedOfSound * 
 cStandardDensity: Final[float] = 0.076474  # lb/ft^3
 
 cLowestTempF: Final[float] = -130  # °F
+cMaxWindDistanceFeet: Final[float] = 1e8

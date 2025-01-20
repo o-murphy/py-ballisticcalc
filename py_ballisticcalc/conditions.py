@@ -204,15 +204,15 @@ class Wind:
     velocity: Velocity
     direction_from: Angular
     until_distance: Distance
-    MAX_DISTANCE_FEET: float = 1e8
+    MAX_DISTANCE_FEET: float = cMaxWindDistanceFeet
 
     def __init__(self,
                  velocity: Optional[Union[float, Velocity]] = None,
                  direction_from: Optional[Union[float, Angular]] = None,
                  until_distance: Optional[Union[float, Distance]] = None,
                  *,
-                 max_distance_feet: Optional[float] = 1e8):
-        self.MAX_DISTANCE_FEET = float(max_distance_feet or 1e8)
+                 max_distance_feet: Optional[float] = cMaxWindDistanceFeet):
+        self.MAX_DISTANCE_FEET = float(max_distance_feet or cMaxWindDistanceFeet)
         self.velocity = PreferredUnits.velocity(velocity or 0)
         self.direction_from = PreferredUnits.angular(direction_from or 0)
         self.until_distance = PreferredUnits.distance(until_distance or Distance.Foot(self.MAX_DISTANCE_FEET))
