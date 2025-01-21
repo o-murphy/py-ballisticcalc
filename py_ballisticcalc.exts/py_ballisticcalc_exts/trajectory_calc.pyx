@@ -190,14 +190,13 @@ cdef class TrajectoryCalc:
         list[object] _table_data
         CVector gravity_vector
         public object _config
+        _WindSock ws
         Config_t __config
         ShotData_t __shot
-        _WindSock ws
 
     def __cinit__(TrajectoryCalc self, object _config):
         self._config = _config
-        self.__config = config_bind(_config)
-        self.gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
+        self.gravity_vector = CVector(.0, self._config.cGravityConstant, .0)
 
     # def __dealloc__(TrajectoryCalc self):
     #     free_trajectory(&self.__shot)
@@ -218,6 +217,10 @@ cdef class TrajectoryCalc:
 
     def trajectory(self, object shot_info, object max_range, object dist_step,
                    bint extra_data = False, double time_step = 0.0) -> object:
+        # hack to reload config if it was changed explicit on existed instance
+        self.__config = config_bind(self._config)
+        self.gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
+
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
 
@@ -269,6 +272,10 @@ cdef class TrajectoryCalc:
 
 
     cdef object _zero_angle(TrajectoryCalc self, object shot_info, object distance):
+        # hack to reload config if it was changed explicit on existed instance
+        self.__config = config_bind(self._config)
+        self.gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
+
         cdef:
             # early bindings
             double _cZeroFindingAccuracy = self.__config.cZeroFindingAccuracy
