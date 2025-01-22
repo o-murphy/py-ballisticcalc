@@ -93,7 +93,8 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
 
     ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol,
                  color=PLOT_COLORS['trajectory'], linewidth=2, ax=ax)
-    max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance
+    #max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance  # This doesn't correctly handle backward-bending trajectories
+    max_range = df.distance.max()
 
     for p in hit_result.trajectory:
         if TrajFlag(p.flag) & TrajFlag.ZERO:
@@ -114,13 +115,13 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
     fig.patch.set_alpha(0.0)  # Set the figure (background) to transparent
     ax.patch.set_alpha(0.0)  # Set the axis background to transparent
 
-    max_range_in_drop_units = hit_result.trajectory[-1].distance >> PreferredUnits.drop
+    max_range_in_drop_units = PreferredUnits.distance(df.distance.max()) >> PreferredUnits.drop
     # Sight line
-    x_sight = [0, df.distance.max()]
+    x_sight = [0, max_range]
     y_sight = [0, max_range_in_drop_units * math.tan(look_angle >> Angular.Radian)]
     ax.plot(x_sight, y_sight, linestyle='--', color=PLOT_COLORS['sight'])
     # Barrel pointing line
-    x_bbl = [0, df.distance.max()]
+    x_bbl = [0, max_range]
     y_bbl = [-(hit_result.shot.weapon.sight_height >> PreferredUnits.drop),
              max_range_in_drop_units * math.tan(hit_result.trajectory[0].angle >> Angular.Radian)
              - (hit_result.shot.weapon.sight_height >> PreferredUnits.drop)]

@@ -142,6 +142,10 @@ class _TrajectoryDataFilter:
 
 
 class _WindSock:
+    """
+    Currently this class assumes that requests for wind readings will only be made in order of increasing range.
+    This assumption is violated if the projectile is blown or otherwise moves backwards.
+    """
     winds: tuple['Wind', ...]
     current: int
     next_range: float
