@@ -65,8 +65,12 @@ class Calculator:
         """
         trajectory_range = PreferredUnits.distance(trajectory_range)
         if not trajectory_step:
-            trajectory_step = trajectory_range.unit_value / 10.0
-        step: Distance = PreferredUnits.distance(trajectory_step)
+            # need to use raw value in order to avoid unit conversion
+            trajectory_step = trajectory_range.raw_value / 10.0
+            # default unit for distance is Inch, therefore, specifying value directly in it
+            step: Distance = Distance.Inch(trajectory_step)
+        else:
+            step = PreferredUnits.distance(trajectory_step)
         data = self._calc.trajectory(shot, trajectory_range, step, extra_data, time_step)
         return HitResult(shot, data, extra_data)
 
