@@ -4,6 +4,7 @@
 
 import math
 import warnings
+from bisect import bisect_left
 
 from typing_extensions import NamedTuple, Union, List, Tuple
 
@@ -140,52 +141,94 @@ class _TrajectoryDataFilter:
                     self.current_flag |= TrajFlag.ZERO_DOWN
                     self.seen_zero |= TrajFlag.ZERO_DOWN
 
-
 class _WindSock:
     """
-    Currently this class assumes that requests for wind readings will only be made in order of increasing range.
-    This assumption is violated if the projectile is blown or otherwise moves backwards.
+    Finds and returns the wind vector for the given range (target_range) based on thresholds.
+    Caches the previous wind index to optimize repeated calls for similar ranges.
     """
     winds: tuple['Wind', ...]
-    current: int
-    next_range: float
+    distances: list[float]
+    previous_wind_index: int  # Cache to store the last used wind index
+    previous_range: float
 
     def __init__(self, winds: Union[Tuple["Wind", ...], None]):
         self.winds: Tuple["Wind", ...] = winds or tuple()
-        self.current: int = 0
-        self.next_range: float = Wind.MAX_DISTANCE_FEET
-        self._last_vector_cache: Union["Vector", None] = None
-        self._length = len(self.winds)
+        self.distances = [wind.until_distance >> Distance.Foot for wind in self.winds]
+        self.previous_wind_index: int = -1  # Initialize with an invalid index
+        self.previous_range: float = -1.0  # Initialize with an invalid range
 
-        # Initialize cache correctly
-        self.update_cache()
+    def should_change_wind(self, next_range) -> bool:
+        # Skip processing if the range hasn't changed since the last call
+        if self.previous_range == next_range:
+            return False
 
-    def current_vector(self) -> "Vector":
-        """Returns the current cached wind vector."""
-        if not self._last_vector_cache:
-            raise RuntimeError("No cached wind vector")
-        return self._last_vector_cache
+        # Find the closest vector for the new range
+        new_index = self.find_closest_index(next_range)
 
-    def update_cache(self) -> None:
-        """Updates the cache only if needed or if forced during initialization."""
-        if self.current < self._length:
-            cur_wind = self.winds[self.current]
-            self._last_vector_cache = cur_wind.vector
-            self.next_range = cur_wind.until_distance >> Distance.Foot
+        # Check if the wind region has changed
+        if new_index == self.previous_wind_index:
+            # Update the cached range but not the vector
+            self.previous_range = next_range
+            return False
+
+        # Update cache with the new index and range
+        self.previous_wind_index = new_index
+        self.previous_range = next_range
+        return True
+
+    def vector_for_range(self, next_range: float) -> Union["Vector", None]:
+        """
+        Returns the closest or interpolated wind vector for the given range if the wind region changes.
+        Otherwise, returns None if the wind vector does not need updating.
+        """
+        return self.find_closest_vector(next_range)
+
+    def find_closest_index(self, target_range: float):
+        # Start searching from the cached index to optimize
+        if self.previous_wind_index != -1:
+            start_index = max(0, min(self.previous_wind_index, len(self.distances) - 1))
         else:
-            self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-            self.next_range = Wind.MAX_DISTANCE_FEET
+            start_index = 0
 
-    def vector_for_range(self, next_range: float) -> "Vector":
-        """Updates the wind vector if `next_range` surpasses `self.next_range`."""
-        if next_range >= self.next_range:
-            self.current += 1
-            if self.current >= self._length:
-                self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-                self.next_range = Wind.MAX_DISTANCE_FEET
-            else:
-                self.update_cache()  # This will trigger cache updates.
-        return self.current_vector()
+        # Find the appropriate position using bisect_left starting from the cached index
+        return bisect_left(self.distances, target_range, lo=start_index)
+
+    def find_closest_vector(self, target_range: float) -> "Vector":
+        """
+        Finds and returns an interpolated wind vector for the given range (target_range) and the wind index:
+        - If the range is within the distance of two winds, interpolate between their vectors.
+        - If the range surpasses the maximum wind distance, return a zero vector.
+        """
+        if not self.winds:
+            return Vector(0.0, 0.0, 0.0)  # If there are no winds, return a zero vector and invalid index.
+
+        # Check if the target range exceeds the maximum wind distance
+        if target_range > self.distances[-1]:
+            return Vector(0.0, 0.0, 0.0)
+
+        pos = self.find_closest_index(target_range)
+
+        if pos == 0:
+            # Target is smaller than the smallest distance, return the first wind vector
+            return self.winds[0].vector
+        else:
+            # Get the two closest winds for interpolation
+            lower_wind = self.winds[pos - 1]
+            upper_wind = self.winds[pos]
+
+            lower_distance = self.distances[pos - 1]
+            upper_distance = self.distances[pos]
+
+            if target_range < lower_distance:
+                # Return the lower wind if the target is exactly at or before it
+                return lower_wind.vector
+
+            # Calculate the interpolation factor (0 <= factor <= 1)
+            factor = (target_range - lower_distance) / (upper_distance - lower_distance)
+
+            # Interpolate between the two vectors
+            interpolated_vector = lower_wind.vector * (1 - factor) + upper_wind.vector * factor
+            return interpolated_vector
 
 
 # pylint: disable=too-many-instance-attributes
@@ -311,7 +354,7 @@ class TrajectoryCalc:
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(shot_info.winds)
-        wind_vector = wind_sock.current_vector()
+        wind_vector = wind_sock.vector_for_range(0)
         # endregion
 
         # region Initialize velocity and position of projectile
@@ -339,7 +382,7 @@ class TrajectoryCalc:
             data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
-            if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
+            if wind_sock.should_change_wind(range_vector.x):
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory

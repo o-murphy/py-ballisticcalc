@@ -138,10 +138,13 @@ cdef class _TrajectoryDataFilter:
 cdef class _WindSock:
     cdef:
         list[Wind_t] winds
-        int current
-        double next_range
-        CVector _last_vector_cache
-        int _length
+        list[double] distances
+        int previous_wind_index
+        double previous_range
+        # int current
+        # double next_range
+        # CVector _last_vector_cache
+        # int _length
 
     def __cinit__(_WindSock self, object winds):
         self.winds = [
@@ -152,37 +155,98 @@ cdef class _WindSock:
                 w.MAX_DISTANCE_FEET
             ) for w in winds
         ]
-        self.current = 0
-        self.next_range = cMaxWindDistanceFeet
-        self._last_vector_cache = CVector(0.0, 0.0, 0.0)
-        self._length = len(self.winds)
+        self.distances = [wind.until_distance._feet for wind in winds]
+        self.previous_wind_index = -1
+        self.previous_range = -1.0
 
-        # Initialize cache correctly
-        self.update_cache()
+    cdef bint should_change_wind(self, double next_range):
+        cdef int new_index
+        # Skip processing if the range hasn't changed since the last call
+        if self.previous_range == next_range:
+            return False
 
-    cdef CVector current_vector(_WindSock self):
-        return self._last_vector_cache
+        # Find the closest vector for the new range
+        new_index = self.find_closest_index(next_range)
 
-    cdef void update_cache(_WindSock self):
-        cdef Wind_t cur_wind
-        if self.current < self._length:
-            cur_wind = self.winds[self.current]
-            self._last_vector_cache = wind_to_c_vector(&cur_wind)
-            self.next_range = cur_wind.until_distance
+        # Check if the wind region has changed
+        if new_index == self.previous_wind_index:
+            # Update the cached range but not the vector
+            self.previous_range = next_range
+            return False
+
+        # Update cache with the new index and range
+        self.previous_wind_index = new_index
+        self.previous_range = next_range
+        return True
+
+    cdef CVector vector_for_range(self, double next_range):
+        """
+        Returns the closest or interpolated wind vector for the given range if the wind region changes.
+        Otherwise, returns None if the wind vector does not need updating.
+        """
+        return self.find_closest_vector(next_range)
+
+    cdef int find_closest_index(self, double target_range):
+        cdef int start_index
+        # Start searching from the cached index to optimize
+        if self.previous_wind_index != -1:
+            start_index = max(0, min(self.previous_wind_index, len(self.distances) - 1))
         else:
-            self._last_vector_cache = CVector(0.0, 0.0, 0.0)
-            self.next_range = cMaxWindDistanceFeet
+            start_index = 0
 
-    cdef CVector vector_for_range(_WindSock self, double next_range):
-        if next_range >= self.next_range:
-        # if next_range + 1e-6 >= self.next_range:
-            self.current += 1
-            if self.current >= self._length:
-                self._last_vector_cache = CVector(0.0, 0.0, 0.0)
-                self.next_range = cMaxWindDistanceFeet
-            else:
-                self.update_cache()  # This will trigger cache updates.
-        return self._last_vector_cache
+        # Find the appropriate position using bisect_left starting from the cached index
+        return bisect_left(self.distances, target_range, lo=start_index)
+
+
+    cdef CVector find_closest_vector(self, double target_range):
+        """
+        Finds and returns an interpolated wind vector for the given range (target_range) and the wind index:
+        - If the range is within the distance of two winds, interpolate between their vectors.
+        - If the range surpasses the maximum wind distance, return a zero vector.
+        """
+
+        cdef:
+            int pos
+            Wind_t lower_wind, upper_wind, wind_0
+            double lower_distance, upper_distance, factor
+            CVector lower_wind_vector, upper_wind_vector, interpolated_vector
+            CVector adjusted_lower_wind_vector, adjusted_upper_wind_vector
+
+        if not self.winds:
+            return CVector(0.0, 0.0, 0.0)  # If there are no winds, return a zero vector and invalid index.
+
+        # Check if the target range exceeds the maximum wind distance
+        if target_range > self.distances[-1]:
+            return CVector(0.0, 0.0, 0.0)
+
+        pos = self.find_closest_index(target_range)
+
+        if pos == 0:
+            # Target is smaller than the smallest distance, return the first wind vector
+            wind_0 = self.winds[0]
+            return wind_to_c_vector(&wind_0)
+        else:
+            # Get the two closest winds for interpolation
+            lower_wind = self.winds[pos - 1]
+            upper_wind = self.winds[pos]
+
+            lower_distance = self.distances[pos - 1]
+            upper_distance = self.distances[pos]
+
+            if target_range < lower_distance:
+                # Return the lower wind if the target is exactly at or before it
+                return wind_to_c_vector(&lower_wind)
+
+            # Calculate the interpolation factor (0 <= factor <= 1)
+            factor = (target_range - lower_distance) / (upper_distance - lower_distance)
+
+            # Interpolate between the two vectors
+            lower_wind_vector = wind_to_c_vector(&lower_wind)
+            upper_wind_vector = wind_to_c_vector(&upper_wind)
+            adjusted_lower_wind_vector = mul_c(&lower_wind_vector, 1 - factor)
+            adjusted_upper_wind_vector = mul_c(&upper_wind_vector, factor)
+            interpolated_vector =  add(&adjusted_lower_wind_vector, &interpolated_vector)
+            return interpolated_vector
 
 
 cdef class TrajectoryCalc:
@@ -328,7 +392,8 @@ cdef class TrajectoryCalc:
             double calc_step = self.__shot.calc_step
 
             # region Initialize wind-related variables to first wind reading (if any)
-            CVector wind_vector = self.ws.current_vector()
+            # CVector wind_vector = self.ws.current_vector()
+            CVector wind_vector = self.ws.vector_for_range(0)
             # endregion
 
             _TrajectoryDataFilter data_filter
@@ -367,7 +432,9 @@ cdef class TrajectoryCalc:
             data_filter.current_flag = CTrajFlag.NONE
 
             # Update wind reading at current point in trajectory
-            if range_vector.x >= self.ws.next_range:  # require check before call to improve performance
+            # if range_vector.x >= self.ws.next_range:  # require check before call to improve performance
+            #     wind_vector = self.ws.vector_for_range(range_vector.x)
+            if self.ws.should_change_wind(range_vector.x):
                 wind_vector = self.ws.vector_for_range(range_vector.x)
 
             # overwrite density_factor and mach by pointer

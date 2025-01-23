@@ -2,10 +2,13 @@
 
 import unittest
 import copy
+import logging
 from py_ballisticcalc import (
     DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError,
 )
 from py_ballisticcalc.unit import *
+from py_ballisticcalc.logger import logger
+logger.setLevel(logging.DEBUG)
 
 
 class TestComputer(unittest.TestCase):
