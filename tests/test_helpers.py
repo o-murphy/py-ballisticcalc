@@ -59,30 +59,30 @@ def test_find_index_for_timepoint(one_degree_shot):
     assert abs(one_degree_shot.trajectory[index].time - one_second_time_point) <= abs(
         one_degree_shot.trajectory[index + 1].time - one_second_time_point
     )
-    #
-    # # when strictly_bigger_or_equal is Treu, we are finding first existing time point, which is biiger or equal to
-    # # the specified time
-    # bigger_index = find_index_for_time_point(
-    #     one_degree_shot, one_second_time_point, strictly_bigger_or_equal=True
-    # )
-    # assert bigger_index == index + 1
-    #
-    # shot_max_time_point = one_degree_shot[-1].time
-    #
-    # # Edge case testing - we should be able to find the last available time point in both modes
-    # last_point_index = find_index_for_time_point(
-    #     one_degree_shot, shot_max_time_point, strictly_bigger_or_equal=False
-    # )
-    # assert last_point_index != -1
-    # # print(f"{shot_max_time_point=} {one_degree_shot.trajectory[last_point_index].time=} {last_point_index=}" )
-    # # print(f"{shot_max_time_point=} {one_degree_shot.trajectory[len(one_degree_shot.trajectory) - 1].time=} {len(one_degree_shot.trajectory) - 1=}")
-    # assert last_point_index == len(one_degree_shot.trajectory) - 1
-    #
-    # last_point_index = find_index_for_time_point(
-    #     one_degree_shot, shot_max_time_point, strictly_bigger_or_equal=True
-    # )
-    # assert last_point_index != -1
-    # assert last_point_index == len(one_degree_shot.trajectory) - 1
+
+    # when strictly_bigger_or_equal is Treu, we are finding first existing time point, which is biiger or equal to
+    # the specified time
+    bigger_index = find_index_for_time_point(
+        one_degree_shot, one_second_time_point, strictly_bigger_or_equal=True
+    )
+    assert bigger_index == index + 1
+
+    shot_max_time_point = one_degree_shot[-1].time
+
+    # Edge case testing - we should be able to find the last available time point in both modes
+    last_point_index = find_index_for_time_point(
+        one_degree_shot, shot_max_time_point, strictly_bigger_or_equal=False
+    )
+    assert last_point_index != -1
+    # print(f"{shot_max_time_point=} {one_degree_shot.trajectory[last_point_index].time=} {last_point_index=}" )
+    # print(f"{shot_max_time_point=} {one_degree_shot.trajectory[len(one_degree_shot.trajectory) - 1].time=} {len(one_degree_shot.trajectory) - 1=}")
+    assert last_point_index == len(one_degree_shot.trajectory) - 1
+
+    last_point_index = find_index_for_time_point(
+        one_degree_shot, shot_max_time_point, strictly_bigger_or_equal=True
+    )
+    assert last_point_index != -1
+    assert last_point_index == len(one_degree_shot.trajectory) - 1
     #
     # # if deviation of searched time point is equal to max_time_deviation_in_seconds, then last point should be found
     # index = find_index_for_time_point(
