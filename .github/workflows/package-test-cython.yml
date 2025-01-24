@@ -70,7 +70,7 @@ jobs:
 
     - name: Run unittest tests in binary mode
       run: |
-        pytest tests --no-header --no-summary -v
+        pytest tests --no-header -v
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
           pytest tests -v
@@ -82,7 +82,7 @@ jobs:
 
     - name: Run unittest tests in binary mode on Windows
       run: |
-        pytest tests --no-header --no-summary -v
+        pytest tests --no-header -v
         if %ERRORLEVEL% neq 0 (
           echo Pytest failed, running without capture
           pytest tests -v
