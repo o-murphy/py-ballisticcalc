@@ -1,6 +1,6 @@
 import bisect
 import math
-from typing import Callable, Any, Final
+from typing import Callable, Any, Final, List
 
 from py_ballisticcalc import HitResult, TrajFlag, TrajectoryData, Velocity, Distance, AbstractDimension
 
@@ -70,7 +70,7 @@ def find_velocity_less_than_index(
 
 class BisectWrapper:
     """Wrapper for usage with bisect_for_condition."""
-    def __init__(self, array: list, callable: Callable)->None:
+    def __init__(self, array: List, callable: Callable)->None:
         self.array = array
         self.callable = callable
 
@@ -84,7 +84,7 @@ class BisectWrapper:
         return len(self.array)
 
 
-def bisect_for_monotonic_condition(arr: list, wrapper: BisectWrapper)->int:
+def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper)->int:
     """ Perform search in the ordered array for the first point, satisfying monotonic condition.
 
         Monotonic condition is a condition, which is consistently increases or decreases.
@@ -102,7 +102,7 @@ def bisect_for_monotonic_condition(arr: list, wrapper: BisectWrapper)->int:
     return -1
 
 def find_first_index_satisfying_monotonic_condition(
-    arr: list[TrajectoryData], monotonic_condition: Callable[[Any], bool]
+    arr: List[TrajectoryData], monotonic_condition: Callable[[Any], bool]
 )->int:
     # Find the index where the condition first becomes true
     # Uses bisect to find the first index satisfying the condition.
@@ -111,21 +111,22 @@ def find_first_index_satisfying_monotonic_condition(
 
 
 
-def find_nearest_index_satisfying_monotonic_condition(arr: list[TrajectoryData], target_value:float,
+def find_nearest_index_satisfying_monotonic_condition(arr: List[TrajectoryData], target_value:float,
                                                       value_getter: Callable[[TrajectoryData],float]):
     """
     Finds the index of the object with the nearest value to the target value.
     This performs bisect search for target value, and then compares differences from target value
     to previous and next index, and select index with the smallest difference.
-    In case of tie, the smaller index is returned
+    In case of tie, the smaller index is returned.
     Args:
-        arr: list[TrajectoryData] - The sorted array of trajectory data (always true for time, and almost always
+        arr: The sorted array of trajectory data (always true for time, and almost always
                true for distances (except for extreme cases)).
         target_value: int or float - The target value to find the nearest object for.
         value_getter: function which returns the compared value
 
     Returns:
-        The index of the object with the nearest target value.
+        The index of the object with the nearest target value. In case of tie, the smaller index is returned.
+
     """
     # Find the position where target_time would fit
     pos = bisect.bisect_left(BisectWrapper(arr, value_getter), target_value)
@@ -215,10 +216,10 @@ def find_index_of_apex_point(shot: HitResult) -> int:
     return find_index_of_apex_in_points(shot.trajectory)
 
 
-def find_index_of_apex_in_points(trajectory_points: list)->int:
+def find_index_of_apex_in_points(trajectory_points: List)->int:
     """
     Finds the index of the apex in the uni-modal trajectory.
-    :param trajectory_points: list - The array of objects with a 'height' field, where the height increases
+    :param trajectory_points: The array of objects with a 'height' field, where the height increases
     up to the apex and decreases thereafter.
     :return: int - The index of the apex, or -1 if no valid apex exists (this will happen only if
     trajectory_points is empty.
