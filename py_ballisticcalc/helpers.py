@@ -21,14 +21,15 @@ def find_first_index_matching_condition(
     shot: HitResult, condition: Callable[[TrajectoryData], bool]
 ) -> int:
     """Search sequentially for the index of first point in the trajectory, which matches condition.
-       Returns -1 If no points satisfying condition were found.
+       Returns:
+            Index of the first point, matching condition, and 1 if no such point was found.
     """
     for i, e in enumerate(shot.trajectory):
         if condition(e):
             return i
     return -1
 
-def find_index_of_point_with_flag(shot: HitResult, flag:TrajFlag=TrajFlag.ZERO_DOWN)->int:
+def find_index_of_point_with_flag(shot: HitResult, flag:int=TrajFlag.ZERO_DOWN)->int:
     """Find index of first point, for which `flag` is set.
        Returns:
             Index of first point with TrajFlag.ZERO_DOWN `.

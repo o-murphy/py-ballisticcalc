@@ -83,41 +83,41 @@ def test_find_index_for_timepoint(one_degree_shot):
     )
     assert last_point_index != -1
     assert last_point_index == len(one_degree_shot.trajectory) - 1
-    #
-    # # if deviation of searched time point is equal to max_time_deviation_in_seconds, then last point should be found
-    # index = find_index_for_time_point(
-    #     one_degree_shot,
-    #     shot_max_time_point + 1,
-    #     strictly_bigger_or_equal=False,
-    #     max_time_deviation_in_seconds=1,
-    # )
-    # assert index == len(one_degree_shot.trajectory) - 1
-    #
-    # index = find_index_for_time_point(
-    #     one_degree_shot,
-    #     shot_max_time_point + 1,
-    #     strictly_bigger_or_equal=False,
-    #     max_time_deviation_in_seconds=0.5,
-    # )
-    # assert index == -1
-    #
-    # # we should be able to find first timepoint in both modes
-    # index = find_index_for_time_point(
-    #     one_degree_shot, 0, strictly_bigger_or_equal=False
-    # )
-    # assert 0 == index
-    #
-    # index = find_index_for_time_point(one_degree_shot, 0, strictly_bigger_or_equal=True)
-    # assert 0 == index
-    #
-    # # exception should be thrown on negative time
-    # with pytest.raises(ValueError):
-    #     find_index_for_time_point(one_degree_shot, -1)
-    #
-    # # exception should be thrown on negative max_time_deviation
-    # with pytest.raises(ValueError):
-    #     find_index_for_time_point(one_degree_shot, 0, max_time_deviation_in_seconds=-1)
-    #
+
+    # if deviation of searched time point is equal to max_time_deviation_in_seconds, then last point should be found
+    index = find_index_for_time_point(
+        one_degree_shot,
+        shot_max_time_point + 1,
+        strictly_bigger_or_equal=False,
+        max_time_deviation_in_seconds=1,
+    )
+    assert index == len(one_degree_shot.trajectory) - 1
+
+    index = find_index_for_time_point(
+        one_degree_shot,
+        shot_max_time_point + 1,
+        strictly_bigger_or_equal=False,
+        max_time_deviation_in_seconds=0.5,
+    )
+    assert index == -1
+
+    # we should be able to find first timepoint in both modes
+    index = find_index_for_time_point(
+        one_degree_shot, 0, strictly_bigger_or_equal=False
+    )
+    assert 0 == index
+
+    index = find_index_for_time_point(one_degree_shot, 0, strictly_bigger_or_equal=True)
+    assert 0 == index
+
+    # exception should be thrown on negative time
+    with pytest.raises(ValueError):
+        find_index_for_time_point(one_degree_shot, -1)
+
+    # exception should be thrown on negative max_time_deviation
+    with pytest.raises(ValueError):
+         find_index_for_time_point(one_degree_shot, 0, max_time_deviation_in_seconds=-1)
+    
 
 def test_find_index_for_distance(one_degree_shot):
     shot = one_degree_shot
