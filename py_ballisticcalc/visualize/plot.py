@@ -131,6 +131,8 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None, show_ti
                  color=PLOT_COLORS['trajectory'], linewidth=2, ax=ax)
     #max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance  # This doesn't correctly handle backward-bending trajectories
     max_range = df.distance.max()
+    backward_bending_trajectory = (hit_result[-1].distance>>PreferredUnits.distance)!=max_range
+
 
     for p in hit_result.trajectory:
         if TrajFlag(p.flag) & TrajFlag.ZERO:
@@ -211,6 +213,9 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None, show_ti
     ax.right_ax.tick_params(axis='y', colors=PLOT_COLORS['frame'])
 
     if show_time_axis:
-        add_time_of_flight_axis(ax, hit_result)
+        if not backward_bending_trajectory:
+            add_time_of_flight_axis(ax, hit_result)
+        else:
+            warnings.warn("The trajectory is backward bending. Please add custom time visualization if needed")
 
     return ax
