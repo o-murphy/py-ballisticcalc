@@ -1,3 +1,4 @@
+import sys
 import time
 from random import random
 from typing import NamedTuple
@@ -87,7 +88,7 @@ def test_find_index_for_timepoint(one_degree_shot):
     # if deviation of searched time point is equal to max_time_deviation_in_seconds, then last point should be found
     index = find_index_for_time_point(
         one_degree_shot,
-        shot_max_time_point + 1,
+        shot_max_time_point + (1-sys.float_info.epsilon),
         strictly_bigger_or_equal=False,
         max_time_deviation_in_seconds=1,
     )
@@ -158,12 +159,12 @@ def test_find_apex(one_degree_shot):
 
 
 
-class TestTrajectoryPoint:
+class MockTrajectoryPoint:
     def __init__(self, height):
         self.height = height
 
 def generate_trajectory_points(height_list):
-    return [TestTrajectoryPoint(h) for h in height_list]
+    return [MockTrajectoryPoint(h) for h in height_list]
 
 @pytest.mark.parametrize("input, expected", [
      # Simple cases
