@@ -59,10 +59,11 @@ def find_velocity_less_than_index(
         shot, lambda p: (p.velocity >> velocity_unit) < velocity_in_units
     )
 
-class BisectWrapper(NamedTuple):
+class BisectWrapper:
     """Wrapper for usage with bisect_for_condition."""
-    array: list
-    callable: Callable
+    def __init__(self, array: list, callable: Callable)->None:
+        self.array = array
+        self.callable = callable
 
     def __getitem__(self, index:int)->Any:
         return self.callable(self.array[index])
@@ -100,8 +101,8 @@ def find_first_index_satisfying_monotonic_condition(
 
 
 
-def find_nearest_index_satisfying_monotonic_condition(arr: list[TrajectoryData], target_value:Union[float|AbstractDimension],
-                                                      value_getter: Callable[[TrajectoryData],Union[float|AbstractDimension]]):
+def find_nearest_index_satisfying_monotonic_condition(arr: list[TrajectoryData], target_value:float,
+                                                      value_getter: Callable[[TrajectoryData],float]):
     """
     Finds the index of the object with the nearest value to the target value.
     This performs bisect search for target value, and then compares differences from target value

@@ -157,8 +157,10 @@ def test_find_apex(one_degree_shot):
     assert apex_point_height==9.401238429883138
 
 
-class TestTrajectoryPoint(NamedTuple):
-    height: float
+
+class TestTrajectoryPoint:
+    def __init__(self, height):
+        self.height = height
 
 def generate_trajectory_points(height_list):
     return [TestTrajectoryPoint(h) for h in height_list]
