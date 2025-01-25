@@ -9,8 +9,8 @@ nav:
 #  - Why use py-balllisticcalc: why.md
   - Help: help.md
   - Installation: install.md
-  - Version policy: version-policy.md
-#  - Contributing: contributing.md
+#  - Version policy: version-policy.md
+  - Contributing: contributing.md
 #  - Changelog: changelog.md
 - Concepts:
 #  - Classes: concepts/classes.md
@@ -70,8 +70,8 @@ nav:
 #    - Logger: api/logger.md
 #- Examples:
 #- Error Messages:
-- Internals:
-  - Architecture: internals/architecture.md
+#- Internals:
+#  - Architecture: internals/architecture.md
 - Contributors: contributors.md
 - About: about.md
 

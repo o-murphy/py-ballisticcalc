@@ -72,4 +72,5 @@ docs = [
     'mkdocstrings',
     'mkdocs-autorefs',
     'mike',
+    'pydocstyle',
 ]
