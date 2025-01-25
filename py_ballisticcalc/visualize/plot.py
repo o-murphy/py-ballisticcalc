@@ -101,8 +101,8 @@ def add_time_of_flight_axis(ax: 'Axes', hit_result: HitResult, time_precision: i
         time_label_for_distance(x, PreferredUnits.distance, time_precision)
         for x in sensible_time_ticks
     ]
-    twin_x_axes.xaxis.set_major_locator(ticker.FixedLocator((sensible_time_ticks)))
-    twin_x_axes.xaxis.set_major_formatter(ticker.FixedFormatter((sensible_top_labels)))
+    twin_x_axes.xaxis.set_major_locator(ticker.FixedLocator(sensible_time_ticks))
+    twin_x_axes.xaxis.set_major_formatter(ticker.FixedFormatter(sensible_top_labels))
 
     twin_x_axes.set_xlabel("s")
     return ax
