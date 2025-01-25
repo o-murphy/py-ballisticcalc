@@ -6,13 +6,16 @@ import math
 from typing_extensions import Optional
 import warnings
 
+from py_ballisticcalc import HitResult
 from py_ballisticcalc.trajectory_data import TrajFlag, DangerSpace
 from py_ballisticcalc.unit import PreferredUnits, Angular
+from py_ballisticcalc.helpers import find_time_for_distance_in_shot
 
 try:
     import matplotlib
     from matplotlib.patches import Polygon
-    from matplotlib import pyplot
+    from matplotlib.axes import Axes
+    from matplotlib import pyplot, ticker
 except ImportError as error:
     warnings.warn("Install matplotlib to get results as a plot", UserWarning)
     raise error
@@ -73,10 +76,43 @@ def add_danger_space_overlay(danger_space: DangerSpace, ax: 'Axes', label: Optio
                 linespacing=1.2, fontsize=PLOT_FONT_SIZE, ha='center', va='top')
 
 
-def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axes':  # type: ignore
+def add_time_of_flight_axis(ax: 'Axes', hit_result: HitResult, time_precision: int = 1) -> 'Axes':
+    """Add on the top of shot plot the axis, corresponding to time of flight in seconds.
+       The ticks used for time axis correspond to distance ticks at the bottom of the plot, where it makes sense.
+       :param time_precision: describes how much decimal points should be used in formatting time values
+    """
+    def time_label_for_distance(
+        distance_in_unit, distance_unit, decimal_point_in_seconds
+    ):
+        time = find_time_for_distance_in_shot(hit_result, distance_in_unit, distance_unit)
+        if math.isnan(time):
+            return ""
+        else:
+            return f"{time:.{decimal_point_in_seconds}f}"
+
+    twin_x_axes = ax.twiny()
+    twin_x_axes.set_xlim(ax.get_xlim())
+    xticks = ax.get_xticks()
+    shot_last_distance = hit_result[-1].distance >> PreferredUnits.distance
+    sensible_time_ticks = xticks[xticks <= shot_last_distance]
+    sensible_time_ticks = sensible_time_ticks[sensible_time_ticks >= 0]
+
+    sensible_top_labels = [
+        time_label_for_distance(x, PreferredUnits.distance, time_precision)
+        for x in sensible_time_ticks
+    ]
+    twin_x_axes.xaxis.set_major_locator(ticker.FixedLocator((sensible_time_ticks)))
+    twin_x_axes.xaxis.set_major_formatter(ticker.FixedFormatter((sensible_top_labels)))
+
+    twin_x_axes.set_xlabel("s")
+    return ax
+
+
+def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None, show_time_axis:bool=True) -> 'Axes':  # type: ignore
     """
     :param hit_result: HitResult object
     :param look_angle: look_angle
+    :param show_time_axis: whether time of flight axis should be added to plot
     :return: graph of the trajectory
     """
 
@@ -95,6 +131,8 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
                  color=PLOT_COLORS['trajectory'], linewidth=2, ax=ax)
     #max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance  # This doesn't correctly handle backward-bending trajectories
     max_range = df.distance.max()
+    backward_bending_trajectory = (hit_result[-1].distance>>PreferredUnits.distance)!=max_range
+
 
     for p in hit_result.trajectory:
         if TrajFlag(p.flag) & TrajFlag.ZERO:
@@ -173,5 +211,11 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None) -> 'Axe
     ax.tick_params(axis='y', colors=PLOT_COLORS['frame'])
     # For the secondary y-axis
     ax.right_ax.tick_params(axis='y', colors=PLOT_COLORS['frame'])
+
+    if show_time_axis:
+        if not backward_bending_trajectory:
+            add_time_of_flight_axis(ax, hit_result)
+        else:
+            warnings.warn("The trajectory is backward bending. Please add custom time visualization if needed")
 
     return ax
