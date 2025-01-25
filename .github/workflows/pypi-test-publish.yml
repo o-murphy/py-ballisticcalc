@@ -1,4 +1,4 @@
-name: Upload Python Package to Test PyPI
+name: Upload Python Package to test PyPI
 
 on:
   workflow_dispatch:
@@ -8,16 +8,13 @@ permissions:
 
 jobs:
 
-  build-deploy:
+  build:
     strategy:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
 
     runs-on: ${{ matrix.os }}
-    environment: release
-    permissions:
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -48,9 +45,63 @@ jobs:
       - name: List ./dist
         run: ls ./dist
 
-      - name: Publish package distributions to Test PyPI
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-${{ matrix.os }}
+          path: ./dist
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download artifacts (Ubuntu)
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-ubuntu-latest
+          path: ./dist-ubuntu
+
+      - name: Download artifacts (Windows)
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-windows-latest
+          path: ./dist-windows
+
+      - name: Download artifacts (macOS 13)
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-macos-13
+          path: ./dist-macos-13
+
+      - name: Download artifacts (macOS 14)
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-macos-14
+          path: ./dist-macos-14
+
+      - name: Combine artifacts
         run: |
-          python -m twine upload --repository-url https://test.pypi.org/legacy/ dist/* --skip-existing --verbose --non-interactive
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          mkdir -p dist
+          cp ./dist-ubuntu/* dist/ || true
+          cp ./dist-windows/* dist/ || true
+          cp ./dist-macos-13/* dist/ || true
+          cp ./dist-macos-14/* dist/ || true
+
+      - name: List ./dist
+        run: ls ./dist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: ./dist
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+          repository-url: https://test.pypi.org/legacy/
