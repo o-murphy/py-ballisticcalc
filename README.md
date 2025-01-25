@@ -22,7 +22,7 @@ https://pypi.org/project/py-ballisticcalc/
 [downloads]:
 https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
 [downloads/month]:
-https://static.pepy.tech/personalized-badge/py-ballisticcalc?style=flat-square&period=month&units=abbreviation&left_color=grey&right_color=blue&left_text=Downloads%20Ort
+https://static.pepy.tech/personalized-badge/py-ballisticcalc?style=flat-square&period=month&units=abbreviation&left_color=grey&right_color=blue&left_text=downloads%2Fmonth
 [pepy]:
 https://pepy.tech/project/py-ballisticcalc
 [versions]:
