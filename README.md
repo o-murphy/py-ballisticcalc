@@ -1,6 +1,38 @@
 # BallisticCalculator
 LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
 
+
+[![license]][LGPL-3]
+[![pypi]][PyPiUrl]
+[![downloads]][pepy]
+[![downloads/month]][pepy]
+[![versions]][sources]
+[![Made in Ukraine]][SWUBadge]
+
+
+[sources]:
+https://github.com/o-murphy/py-ballisticcalc
+[license]:
+https://img.shields.io/github/license/o-murphy/py-ballisticcalc?style=flat-square
+[LGPL-3]:
+https://opensource.org/licenses/LGPL-3.0-only
+[pypi]:
+https://img.shields.io/pypi/v/py-ballisticcalc?style=flat-square&logo=pypi
+[PyPiUrl]:
+https://pypi.org/project/py-ballisticcalc/
+[downloads]:
+https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
+[downloads/month]:
+https://static.pepy.tech/personalized-badge/py-ballisticcalc?style=flat-square&period=month&units=abbreviation&left_color=grey&right_color=blue&left_text=downloads%2Fmonth
+[pepy]:
+https://pepy.tech/project/py-ballisticcalc
+[versions]:
+https://img.shields.io/pypi/pyversions/py-ballisticcalc?style=flat-square
+[Made in Ukraine]:
+https://img.shields.io/badge/made_in-Ukraine-ffd700.svg?labelColor=0057b7&style=flat-square
+[SWUBadge]:
+https://stand-with-ukraine.pp.ua
+
 ### Table of contents
 * **[Installation](#installation)**
   * [Latest stable](#latest-stable-release-from-pypi)
