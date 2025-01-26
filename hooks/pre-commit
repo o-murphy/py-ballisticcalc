@@ -13,7 +13,7 @@ def pytest(python_executable):
     result = subprocess.run([python_executable, "-m", "pytest", "./tests"], capture_output=True)
 
     if result.returncode != 0:
-        print(result.stdout.decode())
+        # print(result.stdout.decode())
         print("Tests failed. Commit aborted.")
         sys.exit(1)
 
@@ -22,7 +22,7 @@ def mypy(python_executable):
     result = subprocess.run([python_executable, "-m", "mypy", "./py_ballisticcalc"], capture_output=True)
 
     if result.returncode != 0:
-        print(result.stdout.decode())
+        # print(result.stdout.decode())
         print("Typings error. Commit aborted.")
         sys.exit(1)
 
