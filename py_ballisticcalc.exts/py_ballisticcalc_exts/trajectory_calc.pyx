@@ -225,7 +225,7 @@ cdef class TrajectoryCalc:
             CTrajFlag filter_flags = CTrajFlag.RANGE
 
         if extra_data:
-            dist_step = Distance.Foot(self.__config.chart_resolution)
+            # dist_step = Distance.Foot(self.__config.chart_resolution)
             filter_flags = CTrajFlag.ALL
 
         self._init_trajectory(shot_info)

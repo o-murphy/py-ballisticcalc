@@ -47,6 +47,7 @@ cythonized:
 # import RKballistic
 from timeit import timeit
 from py_ballisticcalc import *
+from py_ballisticcalc import trajectory_calc
 from py_ballisticcalc.logger import logger
 import logging
 
@@ -139,8 +140,7 @@ def run_check(calc_):
     print("Calculate trajectory to distance {} {} times:".format(shot_distance, number))
     print(f"Total time: {total_time:.6f} seconds")
     print(f"Execution rate: {rate:.2f} calls per second")
-
-    total_time = timeit(lambda: calc_.fire(shot, shot_distance, extra_data=True), number=number)
+    total_time = timeit(lambda: calc_.fire(shot, shot_distance, Distance.Foot(trajectory_calc._globalMaxCalcStepSizeFeet), extra_data=True), number=number)
     rate = number / total_time  # executions per second
 
     print("Calculate trajectory to distance + extra {} {} times:".format(shot_distance, number))
