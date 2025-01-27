@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 from py_ballisticcalc import (
     DragModel,
@@ -137,3 +138,41 @@ def test_vertical_shot(zero_height_calc):
     print_out_trajectory_compact(hit_result)
     assert hit_result[-1].distance>>Distance.Meter == pytest.approx(0, abs=1e-10)
     assert hit_result[-1].height>>Distance.Meter == pytest.approx(0, abs=0.1)
+
+def test_no_duplicate_points(zero_height_calc):
+    # this is a shot for point (1000, 0)
+    shot = shot_with_relative_angle_in_degrees(0.46571949074059704)
+    # setting up bigger distance than required by shot
+    range=Distance.Meter(1100)
+    try:
+        extra_data=False
+        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=Distance.Meter(100))
+    except RangeError as e:
+        print(f'{e.reason} {len(e.incomplete_trajectory)=}')
+        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+            hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
+    print_out_trajectory_compact(hit_result)
+    assert len(hit_result.trajectory)>=2
+    assert hit_result[-2]!=hit_result[-1]
+    assert hit_result[-2].distance>>Distance.Meter == pytest.approx(1000, abs=0.2)
+    assert hit_result[-2].height>>Distance.Meter == pytest.approx(0, abs=0.01)
+    assert hit_result[-1].distance>>Distance.Meter == pytest.approx(1000, abs=0.2)
+    assert hit_result[-1].height>>Distance.Meter == pytest.approx(0, abs=0.01)
+
+def test_no_duplicated_point_many_trajectories(zero_height_calc):
+    # bigger than max range of weapon
+    range = Distance.Meter(8000)
+    for extra_data in [False, True]:
+        for angle in np.linspace(0, 90, 11):
+            shot = shot_with_relative_angle_in_degrees(angle)
+            try:
+                hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
+            except RangeError as e:
+                if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+                    print(f'Got range error {e=}')
+                    hit_result = HitResult(shot, e.incomplete_trajectory, extra_data)
+
+                else:
+                    raise e
+            print(f'{len(hit_result.trajectory)=}')
+            assert len(hit_result.trajectory)==len(set(hit_result.trajectory))

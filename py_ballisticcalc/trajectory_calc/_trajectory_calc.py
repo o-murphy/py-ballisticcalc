@@ -383,14 +383,11 @@ class TrajectoryCalc:
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
 
-                # checking that we are not duplicating last point, if it is present
-                if len(ranges)==0 or len(ranges)>0 and ranges[-1].time != time:
-                    # record interruption point
-                    ranges.append(create_trajectory_row(
-                        time, range_vector, velocity_vector,
-                        velocity, mach, self.spin_drift(time), self.look_angle,
-                        density_factor, drag, self.weight, data_filter.current_flag
-                    ))
+                ranges.append(create_trajectory_row(
+                    time, range_vector, velocity_vector,
+                    velocity, mach, self.spin_drift(time), self.look_angle,
+                    density_factor, drag, self.weight, data_filter.current_flag
+                ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
