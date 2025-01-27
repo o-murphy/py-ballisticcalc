@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pytest
 from py_ballisticcalc import (
@@ -16,10 +18,30 @@ from py_ballisticcalc import (
     HitResult,
 )
 
-def print_out_trajectory_compact(hit_result:HitResult, distance_unit: Distance=Distance.Meter):
-    print(f'Length of trajectory: {len(hit_result.trajectory)=}')
-    for i, p in enumerate(hit_result.trajectory):
-        print(f'{i+1}. ({p.distance>>distance_unit}, {p.height>>distance_unit})')
+def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit: Distance = Distance.Meter,
+                                 top_k: int = 5):
+    trajectory_length = len(hit_result.trajectory)
+    if label:
+        print(f'{label}: Length of trajectory: { trajectory_length=}')
+    else:
+        print(f'Length of trajectory: { trajectory_length=}')
+
+
+    trajectory = hit_result.trajectory
+    if top_k<trajectory_length:
+        end_start_top_k = top_k
+        start_end_top_k = trajectory_length - top_k-1
+        if end_start_top_k<start_end_top_k:
+            trajectory = trajectory[:end_start_top_k]+trajectory[start_end_top_k:]
+
+    for i, p in enumerate(trajectory):
+        if i<top_k:
+            index_to_print = i+1
+        else:
+            index_to_print = (trajectory_length-top_k+1)+i-top_k
+        if i==top_k and i!=trajectory_length-top_k:
+            print("...")
+        print(f'{index_to_print}. ({p.distance>>distance_unit}, {p.height>>distance_unit})')
 
 @pytest.fixture()
 def zero_height_calc():
@@ -176,3 +198,70 @@ def test_no_duplicated_point_many_trajectories(zero_height_calc):
                     raise e
             print(f'{len(hit_result.trajectory)=}')
             assert len(hit_result.trajectory)==len(set(hit_result.trajectory))
+
+
+test_points = [
+        (400, 300, 37.018814944137404),
+        (1200, 900, 37.5653274152026),
+        (1200, 1500, 52.1940023594277),
+        (1682.0020070293451, 3979.589760371905, 70.6834782844347),
+        (4422.057278753554, 1975.0518929482573, 34.6455781039671),
+        (5865.263344484814, 1097.7312160636257, 30.1865144767384),
+        (564.766336537204, 1962.27673604624, 74.371041637992),
+        (5281.061059442218, 2529.348893994985, 46.2771485569329),
+        (2756.3221111683733, 4256.441991651934,65.7650037845664),
+        (63.11845014860512, 4215.811071201791, 89.2734502050901),
+        (3304.002996878733, 4187.8846508525485, 65.48673417912764),
+        (6937.3716148080375, 358.5414845184736, 38.98449130666212),
+        (7126.0478000569165, 0.001,  38.58299087491584),
+    ]
+
+@pytest.mark.parametrize("distance, height, angle_in_degrees", test_points)
+def test_end_points_are_included(distance, height, angle_in_degrees, zero_height_calc):
+    shot = shot_with_relative_angle_in_degrees(angle_in_degrees)
+    calc = zero_height_calc
+    range = Distance.Meter(distance)
+    print(f'\nDistance: {distance:.2f} Height: {height:.2f}')
+
+    extra_data_flag = True
+
+    start_time_extra_data = time.time()
+    try:
+        hit_result_extra_data = calc.fire(shot, range, extra_data=extra_data_flag)
+    except RangeError as e:
+        print(f'Got range error {e=}')
+        hit_result_extra_data = HitResult(shot, e.incomplete_trajectory, extra=extra_data_flag)
+    end_time_extra_data = time.time()
+    print(f'{extra_data_flag=} {len(hit_result_extra_data.trajectory)=} {(end_time_extra_data-start_time_extra_data)=:.3f}s')
+    print_out_trajectory_compact(hit_result_extra_data, f"extra_data={extra_data_flag}")
+    last_point_extra_data = hit_result_extra_data[-1]
+    distance_extra_data = last_point_extra_data.distance >> Distance.Meter
+    height_extra_data = last_point_extra_data.height >> Distance.Meter
+    print(f"Extra data={extra_data_flag} Distance {distance_extra_data:.02f} Height {height_extra_data:.02f}")
+    no_extra_data_flag = False
+    start_time_no_extra_data = time.time()
+    try:
+        hit_result_no_extra_data = calc.fire(shot, range, extra_data=no_extra_data_flag,
+                                             #                                       trajectory_step=range)
+                                             trajectory_step=Distance.Foot(0.2))
+        # )
+    except RangeError as e:
+        print(f'Got range error {e=}')
+        hit_result_no_extra_data = HitResult(shot, e.incomplete_trajectory, extra=no_extra_data_flag)
+    end_time_no_extra_data = time.time()
+    print(f'{no_extra_data_flag=} {len(hit_result_no_extra_data.trajectory)=} {(end_time_no_extra_data-start_time_no_extra_data)=:.3f}s')
+    print_out_trajectory_compact(hit_result_no_extra_data, f"extra_data={no_extra_data_flag}")
+
+    last_point_no_extra_data = hit_result_no_extra_data[-1]
+    distance_no_extra_data = last_point_no_extra_data.distance >> Distance.Meter
+    height_no_extra_data = last_point_no_extra_data.height >> Distance.Meter
+
+    print(f"Extra data={no_extra_data_flag}  Distance {distance_no_extra_data} Height {height_no_extra_data}")
+    print(f"Extra data={no_extra_data_flag}  Distance {distance_no_extra_data:.02f} Height {height_no_extra_data:.02f}")
+    distance_difference = abs(distance_extra_data - distance_no_extra_data)
+    height_difference = abs(height_extra_data - height_no_extra_data)
+    print(f'Difference in results Distance: {distance_difference :.02f} '
+          f'Height {height_difference :.02f}')
+
+    assert height_difference<=1e-1
+    assert distance_difference<=1e-1

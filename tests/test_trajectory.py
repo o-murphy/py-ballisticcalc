@@ -78,7 +78,7 @@ class TestTrajectory(unittest.TestCase):
 
         calc = Calculator()
         data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
-        self.assertEqual(len(data), 11, "Trajectory Row Count")
+        self.assertEqual(len(data), 12, "Trajectory Row Count")
 
         # Dist(yd), vel(fps), Mach, energy(ft-lb), drop(in), drop(mil), wind(in), wind(mil), time, ogw
         test_data = [
@@ -108,7 +108,7 @@ class TestTrajectory(unittest.TestCase):
 
         calc = Calculator()
         data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
-        self.assertEqual(len(data), 11, "Trajectory Row Count")
+        self.assertEqual(len(data), 12, "Trajectory Row Count")
 
         # Dist(yd), vel(fps), Mach, energy(ft-lb), drop(in), drop(mil), wind(in), wind(mil), time, ogw
         test_data = [
