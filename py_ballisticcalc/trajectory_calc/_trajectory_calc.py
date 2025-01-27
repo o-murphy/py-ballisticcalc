@@ -221,7 +221,7 @@ class TrajectoryCalc:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            dist_step = Distance.Foot(self._config.chart_resolution)
+            # dist_step = Distance.Foot(self._config.chart_resolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
@@ -382,6 +382,15 @@ class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
+
+                # checking that we are not duplicating last point, if it is present
+                if len(ranges)==0 or len(ranges)>0 and ranges[-1].time != time:
+                    # record interruption point
+                    ranges.append(create_trajectory_row(
+                        time, range_vector, velocity_vector,
+                        velocity, mach, self.spin_drift(time), self.look_angle,
+                        density_factor, drag, self.weight, data_filter.current_flag
+                    ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
