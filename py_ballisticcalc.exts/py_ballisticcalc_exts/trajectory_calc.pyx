@@ -412,13 +412,11 @@ cdef class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.__shot.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                if len(ranges)==0 or len(ranges)>0 and ranges[-1].time != time:
-                    # record interruption point
-                    ranges.append(create_trajectory_row(
-                        time, range_vector, velocity_vector,
-                        velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
-                        density_factor, drag, self.__shot.weight, data_filter.current_flag
-                    ))
+                ranges.append(create_trajectory_row(
+                    time, range_vector, velocity_vector,
+                    velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
+                    density_factor, drag, self.__shot.weight, data_filter.current_flag
+                ))
 
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
