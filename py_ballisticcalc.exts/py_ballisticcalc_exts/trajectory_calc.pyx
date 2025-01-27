@@ -416,8 +416,8 @@ cdef class TrajectoryCalc:
                     # record interruption point
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
-                        velocity, mach, self.spin_drift(time), self.look_angle,
-                        density_factor, drag, self.weight, data_filter.current_flag
+                        velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
+                        density_factor, drag, self.__shot.weight, data_filter.current_flag
                     ))
 
                 if velocity < _cMinimumVelocity:
