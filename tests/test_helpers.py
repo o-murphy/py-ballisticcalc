@@ -137,7 +137,7 @@ def test_find_index_for_distance(one_degree_shot):
     )
     # for reproducibility
     random.seed(42)
-    random_indices = random.sample(range(len(shot.trajectory)), 100)
+    random_indices = random.sample(range(len(shot.trajectory)), min(len(shot.trajectory), 100))
     start_time = time.time()
 
     for i in random_indices:
