@@ -21,7 +21,6 @@ cMaxIterations: Final[int] = 20
 cGravityConstant: Final[float] = -32.17405
 cMinimumAltitude: Final[float] = -1410.748  # ft
 
-_globalChartResolution: float = 0.2  # ft
 _globalUsePowderSensitivity = False
 _globalMaxCalcStepSizeFeet: float = 0.5
 

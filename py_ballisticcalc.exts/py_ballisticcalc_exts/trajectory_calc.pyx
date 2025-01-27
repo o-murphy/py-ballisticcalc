@@ -53,20 +53,23 @@ cdef class _TrajectoryDataFilter:
     cdef:
         int filter, current_flag, seen_zero
         int current_item, ranges_length
-        double previous_mach, previous_time, next_range_distance, time_step, look_angle
+        double previous_mach, previous_time, next_range_distance, range_step, time_step, look_angle
+        bint range_error
 
     def __cinit__(_TrajectoryDataFilter self,
-                  int filter_flags, int ranges_length, double time_step = 0.0) -> None:
+                  int filter_flags, int ranges_length, double range_step, double time_step = 0.0) -> None:
         self.filter = filter_flags
         self.current_flag = CTrajFlag.NONE
         self.seen_zero = CTrajFlag.NONE
         self.time_step = time_step
         self.current_item = 0
         self.ranges_length = ranges_length
+        self.range_step = range_step
         self.previous_mach = 0.0
         self.previous_time = 0.0
         self.next_range_distance = 0.0
         self.look_angle = 0
+        self.range_error = False
 
     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
         if height >= 0:
@@ -82,12 +85,11 @@ cdef class _TrajectoryDataFilter:
                             CVector range_vector,
                             double velocity,
                             double mach,
-                            double step,
                             double time,
                             ):
         self.check_zero_crossing(range_vector)
         self.check_mach_crossing(velocity, mach)
-        if self.check_next_range(range_vector.x, step):
+        if self.check_next_range(range_vector.x, self.range_step):
             self.previous_time = time
         elif self.time_step > 0:
             self.check_next_time(time)
@@ -356,6 +358,7 @@ cdef class TrajectoryCalc:
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
                                             ranges_length=<int> ((maximum_range / step) + 1),
+                                            range_step=step,
                                             time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.__shot.barrel_elevation, self.__shot.look_angle)
 
@@ -377,8 +380,7 @@ cdef class TrajectoryCalc:
             if filter_flags:
 
                 # Record TrajectoryData row
-                # if data_filter.should_record(range_vector, velocity, mach, step, self.look_angle, time):
-                if data_filter.should_record(range_vector, velocity, mach, step, time):
+                if data_filter.should_record(range_vector, velocity, mach, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
@@ -412,23 +414,28 @@ cdef class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.__shot.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
-                elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
-                else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
+                data_filter.range_error = True
+                break
             #endregion
 
         #endregion
         # If filter_flags == 0 then all we want is the ending value
-        if not filter_flags:
+        if not filter_flags or len(ranges) == 0 or data_filter.range_error:
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
                 density_factor, drag, self.__shot.weight, CTrajFlag.NONE))
         logger.debug(f"euler cy it {it}")
+
+        if data_filter.range_error:
+            if velocity < _cMinimumVelocity:
+                reason = RangeError.MinimumVelocityReached
+            elif range_vector.y < _cMaximumDrop:
+                reason = RangeError.MaximumDropReached
+            else:
+                reason = RangeError.MinimumAltitudeReached
+            raise RangeError(reason, ranges)
+
         return ranges
 
 

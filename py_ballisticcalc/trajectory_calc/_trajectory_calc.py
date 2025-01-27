@@ -38,7 +38,6 @@ class CurvePoint(NamedTuple):
 # Define the NamedTuple to match the config structure
 class Config(NamedTuple):
     max_calc_step_size_feet: float
-    chart_resolution: float
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
@@ -57,6 +56,7 @@ class _TrajectoryDataFilter:
     previous_mach: float
     next_range_distance: float
     look_angle: float
+    range_error: bool
 
     def __init__(self, filter_flags: Union[TrajFlag, int],
                  ranges_length: int, range_step: float, time_step: float = 0.0):
@@ -72,6 +72,7 @@ class _TrajectoryDataFilter:
         self.previous_time: float = 0.0
         self.next_range_distance: float = 0.0
         self.look_angle: float = 0.0
+        self.range_error: bool = False
 
     def setup_seen_zero(self, height: float, barrel_elevation: float, look_angle: float) -> None:
         if height >= 0:
@@ -221,7 +222,6 @@ class TrajectoryCalc:
                    extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
         filter_flags = TrajFlag.RANGE
         if extra_data:
-            # dist_step = Distance.Foot(self._config.chart_resolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
@@ -384,24 +384,27 @@ class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
-                elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
-                else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
-                # break
+                data_filter.range_error = True
+                break
             # endregion
 
         # endregion
         # If filter_flags == 0 then all we want is the ending value
-        if not filter_flags:
+        if not filter_flags or len(ranges) == 0 or data_filter.range_error:
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
                 density_factor, drag, self.weight, TrajFlag.NONE))
         logger.debug(f"euler py it {it}")
+
+        if data_filter.range_error:
+            if velocity < _cMinimumVelocity:
+                reason = RangeError.MinimumVelocityReached
+            elif range_vector.y < _cMaximumDrop:
+                reason = RangeError.MaximumDropReached
+            else:
+                reason = RangeError.MinimumAltitudeReached
+            raise RangeError(reason, ranges)
         return ranges
 
     def drag_by_mach(self, mach: float) -> float:

@@ -9,7 +9,6 @@ import warnings
 cdef Config_t config_bind(object config):
     return Config_t(
         config.max_calc_step_size_feet,
-        config.chart_resolution,
         config.cZeroFindingAccuracy,
         config.cMinimumVelocity,
         config.cMaximumDrop,

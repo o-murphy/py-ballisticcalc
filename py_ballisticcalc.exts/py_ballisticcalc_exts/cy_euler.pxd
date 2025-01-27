@@ -2,7 +2,6 @@ from py_ballisticcalc_exts.vector cimport CVector
 
 cdef struct Config_t:
     double max_calc_step_size_feet
-    double chart_resolution
     double cZeroFindingAccuracy
     double cMinimumVelocity
     double cMaximumDrop
