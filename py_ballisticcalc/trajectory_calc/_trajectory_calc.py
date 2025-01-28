@@ -286,11 +286,11 @@ class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    def _integrate(self, shot_info: Shot, maximum_range: float, step: float,
+    def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """Calculate trajectory for specified shot
         :param maximum_range: Feet down range to stop calculation
-        :param step: Frequency (in feet down range) to record TrajectoryData
+        :param record_step: Frequency (in feet down range) to record TrajectoryData
         :param time_step: If > 0 then record TrajectoryData after this many seconds elapse
             since last record, as could happen when trajectory is nearly vertical
             and there is too little movement downrange to trigger a record based on range.
@@ -325,8 +325,10 @@ class TrajectoryCalc:
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
+        # min step is used to handle situation, when record step is smaller than calc_step
+        # in order to prevent range breaking too early
+        min_step = min(self.calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        min_step = min(self.calc_step, step)
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
                                             ranges_length=int((maximum_range)/ min_step) + 1,
                                             time_step=time_step)
@@ -351,7 +353,7 @@ class TrajectoryCalc:
             if filter_flags:  # require check before call to improve performance
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, time):
+                if data_filter.should_record(range_vector, velocity, mach, record_step, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
