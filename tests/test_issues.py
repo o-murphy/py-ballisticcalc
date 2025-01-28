@@ -125,8 +125,8 @@ class TestIssue144(unittest.TestCase):
         self.check_expected_last_point(hit_result)
 
     def check_expected_last_point(self, hit_result):
-        self.assertEqual(12, len(hit_result.trajectory))
+        self.assertEqual(11, len(hit_result.trajectory))
         last_hit_point = hit_result[-1]
-        self.assertEqual(0.9922067927639557, last_hit_point.time)
-        self.assertEqual(740.9242751292853, (last_hit_point.distance >> Distance.Meter))
-        self.assertEqual(168.45192626751157, (last_hit_point.height >> Distance.Meter))
+        self.assertEqual(0.9920863205706615, last_hit_point.time)
+        self.assertEqual(740.8498567639497, (last_hit_point.distance >> Distance.Meter))
+        self.assertEqual(168.4355597904274, (last_hit_point.height >> Distance.Meter))

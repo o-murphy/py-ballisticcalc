@@ -57,13 +57,15 @@ class _TrajectoryDataFilter:
     next_range_distance: float
     look_angle: float
 
-    def __init__(self, filter_flags: Union[TrajFlag, int], time_step: float = 0.0):
+    def __init__(self, filter_flags: Union[TrajFlag, int],
+                 ranges_length: int, time_step: float = 0.0):
         """If a time_step is indicated, then we will record a row at least that often in the trajectory"""
         self.filter: Union[TrajFlag, int] = filter_flags
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
         self.seen_zero: Union[TrajFlag, int] = TrajFlag.NONE
         self.time_step = time_step
         self.current_item: int = 0
+        self.ranges_length: int = ranges_length
         self.previous_mach: float = 0.0
         self.previous_time: float = 0.0
         self.next_range_distance: float = 0.0
@@ -94,6 +96,9 @@ class _TrajectoryDataFilter:
             self.check_next_time(time)
         return bool(self.current_flag & self.filter)
 
+    def should_break(self) -> bool:
+        return self.current_item == self.ranges_length
+
     def check_next_range(self, next_range: float, step: float) -> bool:
         """
         If we passed the next_range point, set the RANGE flag and update the next_range_distance
@@ -101,6 +106,7 @@ class _TrajectoryDataFilter:
         """
         if next_range >= self.next_range_distance:
             self.current_flag |= TrajFlag.RANGE
+            #print(f"{self.next_range_distance=} {step=} {self.current_item=}")
             self.next_range_distance += step
             self.current_item += 1
             return True
@@ -321,13 +327,16 @@ class TrajectoryCalc:
         # endregion
 
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, time_step=time_step)
+        min_step = min(self.calc_step, step)
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
+                                            ranges_length=int((maximum_range)/ min_step) + 1,
+                                            time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         it = 0
-        while range_vector.x <= maximum_range + self.calc_step:
+        while range_vector.x <= maximum_range + min_step:
             it += 1
             data_filter.clear_current_flag()
 
@@ -349,6 +358,10 @@ class TrajectoryCalc:
                         velocity, mach, self.spin_drift(time), self.look_angle,
                         density_factor, drag, self.weight, data_filter.current_flag
                     ))
+                    if data_filter.should_break():
+                        print(f'data_filter.should_break worked at distance {Distance.Foot(range_vector.x)>>Distance.Meter=}')
+                        break
+
             # endregion
 
             # region Ballistic calculation step (point-mass)
@@ -373,7 +386,6 @@ class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
-
                 ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,
                     velocity, mach, self.spin_drift(time), self.look_angle,
@@ -390,8 +402,10 @@ class TrajectoryCalc:
             # endregion
 
         # endregion
-        # If filter_flags == 0 then all we want is the ending value
-        if (len(ranges)>0 and ranges[-1].time != time) or len(ranges)==0:
+        # if not filter_flags:
+        # this check supersedes not filter_flags - as it will be true in any condition
+        if len(ranges)==0:
+        # we need to add end value in case of not filter flag and in case of usual trajectory
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
