@@ -353,7 +353,7 @@ cdef class TrajectoryCalc:
         velocity_vector = mul_c(&_dir_vector, velocity)
         # endregion
 
-        min_step = min(self.calc_step, step)
+        min_step = min(calc_step, step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
                                             ranges_length=<int> ((maximum_range / min_step) + 1),
