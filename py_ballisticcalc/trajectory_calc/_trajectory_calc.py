@@ -53,12 +53,13 @@ class _TrajectoryDataFilter:
     seen_zero: Union[TrajFlag, int]
     current_item: int
     ranges_length: int
+    range_step: float
     previous_mach: float
     next_range_distance: float
     look_angle: float
 
     def __init__(self, filter_flags: Union[TrajFlag, int],
-                 ranges_length: int, time_step: float = 0.0):
+                 ranges_length: int, range_step: float, time_step: float = 0.0):
         """If a time_step is indicated, then we will record a row at least that often in the trajectory"""
         self.filter: Union[TrajFlag, int] = filter_flags
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
@@ -66,6 +67,7 @@ class _TrajectoryDataFilter:
         self.time_step = time_step
         self.current_item: int = 0
         self.ranges_length: int = ranges_length
+        self.range_step: float = range_step
         self.previous_mach: float = 0.0
         self.previous_time: float = 0.0
         self.next_range_distance: float = 0.0
@@ -86,11 +88,10 @@ class _TrajectoryDataFilter:
                       range_vector: Vector,
                       velocity: float,
                       mach: float,
-                      step: float,
                       time: float) -> bool:
         self.check_zero_crossing(range_vector)
         self.check_mach_crossing(velocity, mach)
-        if self.check_next_range(range_vector.x, step):
+        if self.check_next_range(range_vector.x, self.range_step):
             self.previous_time = time
         elif self.time_step > 0:
             self.check_next_time(time)
@@ -329,6 +330,7 @@ class TrajectoryCalc:
         min_step = min(self.calc_step, step)
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
                                             ranges_length=int((maximum_range)/ min_step) + 1,
+                                            range_step=step,
                                             time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
@@ -351,7 +353,7 @@ class TrajectoryCalc:
             if filter_flags:  # require check before call to improve performance
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, time):
+                if data_filter.should_record(range_vector, velocity, mach, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
