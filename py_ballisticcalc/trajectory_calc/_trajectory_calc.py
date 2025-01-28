@@ -106,7 +106,6 @@ class _TrajectoryDataFilter:
         """
         if next_range >= self.next_range_distance:
             self.current_flag |= TrajFlag.RANGE
-            #print(f"{self.next_range_distance=} {step=} {self.current_item=}")
             self.next_range_distance += step
             self.current_item += 1
             return True
@@ -402,8 +401,8 @@ class TrajectoryCalc:
             # endregion
 
         # endregion
+        # this check supercedes not filter_flags - as it will be true in any condition
         # if not filter_flags:
-        # this check supersedes not filter_flags - as it will be true in any condition
         if len(ranges)==0:
         # we need to add end value in case of not filter flag and in case of usual trajectory
             ranges.append(create_trajectory_row(

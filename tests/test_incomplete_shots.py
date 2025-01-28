@@ -1,6 +1,5 @@
 import time
 
-import numpy as np
 import pytest
 from py_ballisticcalc import (
     Distance,
@@ -125,7 +124,8 @@ def test_no_duplicated_point_many_trajectories(zero_height_calc):
     # bigger than max range of weapon
     range = Distance.Meter(8000)
     for extra_data in [False, True]:
-        for angle in np.linspace(0, 90, 11):
+        angle = 0
+        while angle<=90:
             shot = shot_with_relative_angle_in_degrees(angle)
             try:
                 hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
@@ -138,6 +138,7 @@ def test_no_duplicated_point_many_trajectories(zero_height_calc):
                     raise e
             print(f'{len(hit_result.trajectory)=}')
             assert len(hit_result.trajectory)==len(set(hit_result.trajectory))
+            angle += 10
 
 
 test_points = [
