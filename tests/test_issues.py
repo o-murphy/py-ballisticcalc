@@ -78,80 +78,55 @@ class TestIssue144(unittest.TestCase):
     def testResultsWithImperialUnits(self):
         loadImperialUnits()
         hit_result = self.calc.fire(self.shot, self.range, extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
-        last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.check_expected_last_point(hit_result)
 
     def testResultsWithImperialUnits_FloatInput(self):
         loadImperialUnits()
         hit_result = self.calc.fire(self.shot, self.range>>PreferredUnits.distance, extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
-        last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.check_expected_last_point(hit_result)
 
 
     def testResultsWithMetricUnits(self):
         loadMetricUnits()
         hit_result = self.calc.fire(self.shot, self.range, extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
-        last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.check_expected_last_point(hit_result)
 
     def testResultsWithMetricUnits_FloatInput(self):
         loadMetricUnits()
         hit_result = self.calc.fire(self.shot, self.range>>PreferredUnits.distance, extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
-        last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.check_expected_last_point(hit_result)
 
 
     def testResultsWithMetricUnits_FloatTrajectoryStep(self):
         loadMetricUnits()
         hit_result = self.calc.fire(self.shot, self.range, trajectory_step=Distance.Inch(2916.5623262316285)>>PreferredUnits.distance,
                                     extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
-        last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.check_expected_last_point(hit_result)
 
 
     def testResultsWithImperialUnitsAndYards(self):
         loadImperialUnits()
         PreferredUnits.distance = Distance.Yard
         hit_result = self.calc.fire(self.shot, self.range, extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
-        last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.check_expected_last_point(hit_result)
 
     def testResultsWithImperialUnitAndYards_UnitTrajectoryStep(self):
         loadImperialUnits()
         PreferredUnits.distance = Distance.Yard
         hit_result = self.calc.fire(self.shot, self.range, trajectory_step=Distance.Inch(2916.5623262316285),
                                     extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
-        last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.check_expected_last_point(hit_result)
 
 
     def testResultWithImperialUnits_FloatRange(self):
         loadImperialUnits()
         self.assertEqual(PreferredUnits.distance, Distance.Foot)
         hit_result = self.calc.fire(self.shot, self.range>>Distance.Foot, extra_data=False)
-        self.assertEqual(len(hit_result.trajectory), 11)
+        self.check_expected_last_point(hit_result)
+
+    def check_expected_last_point(self, hit_result):
+        self.assertEqual(11, len(hit_result.trajectory))
         last_hit_point = hit_result[-1]
-        self.assertEqual(last_hit_point.time, 0.9920863205706615)
-        self.assertEqual((last_hit_point.distance>>Distance.Meter), 740.8498567639497)
-        self.assertEqual((last_hit_point.height >> Distance.Meter), 168.4355597904274)
+        self.assertEqual(0.9920863205706615, last_hit_point.time)
+        self.assertEqual(740.8498567639497, (last_hit_point.distance >> Distance.Meter))
+        self.assertEqual(168.4355597904274, (last_hit_point.height >> Distance.Meter))
