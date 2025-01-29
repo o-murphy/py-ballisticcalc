@@ -52,17 +52,15 @@ __all__ = (
 cdef class _TrajectoryDataFilter:
     cdef:
         int filter, current_flag, seen_zero
-        int current_item, ranges_length
+        int current_item
         double previous_mach, previous_time, next_range_distance, range_step, time_step, look_angle
 
     def __cinit__(_TrajectoryDataFilter self,
-                  int filter_flags, int ranges_length, double range_step, double time_step = 0.0) -> None:
+                  int filter_flags, double range_step, double time_step = 0.0) -> None:
         self.filter = filter_flags
         self.current_flag = CTrajFlag.NONE
         self.seen_zero = CTrajFlag.NONE
         self.time_step = time_step
-        self.current_item = 0
-        self.ranges_length = ranges_length
         self.range_step = range_step
         self.previous_mach = 0.0
         self.previous_time = 0.0
@@ -93,15 +91,11 @@ cdef class _TrajectoryDataFilter:
             self.check_next_time(time)
         return (self.current_flag & self.filter) != 0
 
-    cdef bint should_break(_TrajectoryDataFilter self):
-        return self.current_item == self.ranges_length
-
     cdef bint check_next_range(_TrajectoryDataFilter self, double next_range, double step):
         # Next range check
         if next_range >= self.next_range_distance:
             self.current_flag |= CTrajFlag.RANGE
             self.next_range_distance += step
-            self.current_item += 1
             return True
         return False
 
@@ -356,7 +350,6 @@ cdef class TrajectoryCalc:
         min_step = min(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
-                                            ranges_length=<int> ((maximum_range / min_step) + 1),
                                             range_step=record_step,
                                             time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.__shot.barrel_elevation, self.__shot.look_angle)
@@ -386,8 +379,6 @@ cdef class TrajectoryCalc:
                         velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
                         density_factor, drag, self.__shot.weight, data_filter.current_flag
                     ))
-                    if data_filter.should_break():
-                        break
 
             #region Ballistic calculation step
             # use just cdef methods to

@@ -51,22 +51,18 @@ class _TrajectoryDataFilter:
     filter: Union[TrajFlag, int]
     current_flag: Union[TrajFlag, int]
     seen_zero: Union[TrajFlag, int]
-    current_item: int
-    ranges_length: int
+    time_step: float
     range_step: float
     previous_mach: float
     next_range_distance: float
     look_angle: float
 
-    def __init__(self, filter_flags: Union[TrajFlag, int],
-                 ranges_length: int, range_step: float, time_step: float = 0.0):
+    def __init__(self, filter_flags: Union[TrajFlag, int], range_step: float, time_step: float = 0.0):
         """If a time_step is indicated, then we will record a row at least that often in the trajectory"""
         self.filter: Union[TrajFlag, int] = filter_flags
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
         self.seen_zero: Union[TrajFlag, int] = TrajFlag.NONE
-        self.time_step = time_step
-        self.current_item: int = 0
-        self.ranges_length: int = ranges_length
+        self.time_step: float = time_step
         self.range_step: float = range_step
         self.previous_mach: float = 0.0
         self.previous_time: float = 0.0
@@ -97,9 +93,6 @@ class _TrajectoryDataFilter:
             self.check_next_time(time)
         return bool(self.current_flag & self.filter)
 
-    def should_break(self) -> bool:
-        return self.current_item == self.ranges_length
-
     def check_next_range(self, next_range: float, step: float) -> bool:
         """
         If we passed the next_range point, set the RANGE flag and update the next_range_distance
@@ -108,7 +101,6 @@ class _TrajectoryDataFilter:
         if next_range >= self.next_range_distance:
             self.current_flag |= TrajFlag.RANGE
             self.next_range_distance += step
-            self.current_item += 1
             return True
         return False
 
@@ -330,10 +322,7 @@ class TrajectoryCalc:
         # in order to prevent range breaking too early
         min_step = min(self.calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
-                                            ranges_length=int((maximum_range)/ min_step) + 1,
-                                            range_step=record_step,
-                                            time_step=time_step)
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step, time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
@@ -361,9 +350,6 @@ class TrajectoryCalc:
                         velocity, mach, self.spin_drift(time), self.look_angle,
                         density_factor, drag, self.weight, data_filter.current_flag
                     ))
-                    if data_filter.should_break():
-                        print(f'data_filter.should_break worked at distance {Distance.Foot(range_vector.x)>>Distance.Meter=}')
-                        break
 
             # endregion
 
