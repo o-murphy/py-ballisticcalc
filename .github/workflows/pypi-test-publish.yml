@@ -78,7 +78,7 @@ jobs:
           path: ./dist-macos-13
 
       - name: Download artifacts (macOS 14)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist-macos-14
           path: ./dist-macos-14
