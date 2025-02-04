@@ -15,7 +15,7 @@ class TestDangerSpace(unittest.TestCase):
         shot = Shot(weapon=Weapon(), ammo=ammo, winds=current_winds)
         calc = Calculator()
         calc.set_weapon_zero(shot, Distance.Foot(300))
-        self.shot_result = calc.fire(shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(100), extra_data=True)
+        self.shot_result = calc.fire(shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(1), extra_data=True)
 
     def test_danger_space(self):
         danger_space = self.shot_result.danger_space(

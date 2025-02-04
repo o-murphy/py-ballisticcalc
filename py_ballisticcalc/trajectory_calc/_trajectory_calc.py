@@ -51,21 +51,19 @@ class _TrajectoryDataFilter:
     filter: Union[TrajFlag, int]
     current_flag: Union[TrajFlag, int]
     seen_zero: Union[TrajFlag, int]
-    current_item: int
-    ranges_length: int
+    time_step: float
+    range_step: float
     previous_mach: float
     next_range_distance: float
     look_angle: float
 
-    def __init__(self, filter_flags: Union[TrajFlag, int],
-                 ranges_length: int, time_step: float = 0.0):
+    def __init__(self, filter_flags: Union[TrajFlag, int], range_step: float, time_step: float = 0.0):
         """If a time_step is indicated, then we will record a row at least that often in the trajectory"""
         self.filter: Union[TrajFlag, int] = filter_flags
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
         self.seen_zero: Union[TrajFlag, int] = TrajFlag.NONE
-        self.time_step = time_step
-        self.current_item: int = 0
-        self.ranges_length: int = ranges_length
+        self.time_step: float = time_step
+        self.range_step: float = range_step
         self.previous_mach: float = 0.0
         self.previous_time: float = 0.0
         self.next_range_distance: float = 0.0
@@ -86,18 +84,14 @@ class _TrajectoryDataFilter:
                       range_vector: Vector,
                       velocity: float,
                       mach: float,
-                      step: float,
                       time: float) -> bool:
         self.check_zero_crossing(range_vector)
         self.check_mach_crossing(velocity, mach)
-        if self.check_next_range(range_vector.x, step):
+        if self.check_next_range(range_vector.x, self.range_step):
             self.previous_time = time
         elif self.time_step > 0:
             self.check_next_time(time)
         return bool(self.current_flag & self.filter)
-
-    def should_break(self) -> bool:
-        return self.current_item == self.ranges_length
 
     def check_next_range(self, next_range: float, step: float) -> bool:
         """
@@ -107,7 +101,6 @@ class _TrajectoryDataFilter:
         if next_range >= self.next_range_distance:
             self.current_flag |= TrajFlag.RANGE
             self.next_range_distance += step
-            self.current_item += 1
             return True
         return False
 
@@ -221,7 +214,7 @@ class TrajectoryCalc:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            dist_step = Distance.Foot(self._config.chart_resolution)
+            # dist_step = Distance.Foot(self._config.chart_resolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
@@ -286,11 +279,11 @@ class TrajectoryCalc:
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    def _integrate(self, shot_info: Shot, maximum_range: float, step: float,
+    def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """Calculate trajectory for specified shot
         :param maximum_range: Feet down range to stop calculation
-        :param step: Frequency (in feet down range) to record TrajectoryData
+        :param record_step: Frequency (in feet down range) to record TrajectoryData
         :param time_step: If > 0 then record TrajectoryData after this many seconds elapse
             since last record, as could happen when trajectory is nearly vertical
             and there is too little movement downrange to trigger a record based on range.
@@ -325,16 +318,17 @@ class TrajectoryCalc:
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
+        # min step is used to handle situation, when record step is smaller than calc_step
+        # in order to prevent range breaking too early
+        min_step = min(self.calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
-                                            ranges_length=int(maximum_range / step) + 1,
-                                            time_step=time_step)
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step, time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         it = 0
-        while range_vector.x <= maximum_range + self.calc_step:
+        while range_vector.x <= maximum_range + min_step:
             it += 1
             data_filter.clear_current_flag()
 
@@ -350,14 +344,13 @@ class TrajectoryCalc:
             if filter_flags:  # require check before call to improve performance
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, step, time):
+                if data_filter.should_record(range_vector, velocity, mach, time):
                     ranges.append(create_trajectory_row(
                         time, range_vector, velocity_vector,
                         velocity, mach, self.spin_drift(time), self.look_angle,
                         density_factor, drag, self.weight, data_filter.current_flag
                     ))
-                    if data_filter.should_break():
-                        break
+
             # endregion
 
             # region Ballistic calculation step (point-mass)
@@ -382,6 +375,11 @@ class TrajectoryCalc:
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
+                ranges.append(create_trajectory_row(
+                    time, range_vector, velocity_vector,
+                    velocity, mach, self.spin_drift(time), self.look_angle,
+                    density_factor, drag, self.weight, data_filter.current_flag
+                ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
@@ -393,8 +391,10 @@ class TrajectoryCalc:
             # endregion
 
         # endregion
-        # If filter_flags == 0 then all we want is the ending value
-        if not filter_flags:
+        # this check supercedes not filter_flags - as it will be true in any condition
+        # if not filter_flags:
+        if len(ranges)==0:
+        # we need to add end value in case of not filter flag and in case of usual trajectory
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
