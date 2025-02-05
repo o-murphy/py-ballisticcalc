@@ -266,6 +266,9 @@ class AbstractDimension:
     def __eq__(self, other):
         return float(self) == other
 
+    def __hash__(self):
+        return hash((self._value, self._defined_units))
+
     def __lt__(self, other):
         return float(self) < other
 

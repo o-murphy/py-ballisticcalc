@@ -46,7 +46,7 @@ jobs:
         run: ls ./dist
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.os }}
           path: ./dist
@@ -60,25 +60,25 @@ jobs:
 
     steps:
       - name: Download artifacts (Ubuntu)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist-ubuntu-latest
           path: ./dist-ubuntu
 
       - name: Download artifacts (Windows)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist-windows-latest
           path: ./dist-windows
 
       - name: Download artifacts (macOS 13)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist-macos-13
           path: ./dist-macos-13
 
       - name: Download artifacts (macOS 14)
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: dist-macos-14
           path: ./dist-macos-14
@@ -95,7 +95,7 @@ jobs:
         run: ls ./dist
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist
           path: ./dist
