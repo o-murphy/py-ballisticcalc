@@ -205,7 +205,7 @@ __all__ = [
     'RangeError',
 ]
 
-# __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S')]
+# __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S', 'RA4')]
 __all__ += [
     'TableG1',
     'TableG7',
@@ -214,5 +214,6 @@ __all__ += [
     'TableG6',
     'TableG8',
     'TableGI',
-    'TableGS'
+    'TableGS',
+    'TableRA4',
 ]
