@@ -1,6 +1,5 @@
 import unittest
-from py_ballisticcalc import Atmo
-from py_ballisticcalc.unit import *
+from py_ballisticcalc import *
 
 class TestAtmosphere(unittest.TestCase):
     """Unittests of the Atmosphere class"""
@@ -33,9 +32,32 @@ class TestAtmosphere(unittest.TestCase):
         self.assertAlmostEqual(self.highISA.mach >> Velocity.MPS, 336.4, places=1)
 
     def test_altitude(self):
+        # Altitude adjustment not valid above troposphere
         with self.assertWarns(RuntimeWarning):
-            Atmo().get_density_factor_and_mach_for_altitude(2302418.9194204034)
+            Atmo().get_density_factor_and_mach_for_altitude(100_000)
 
+    def test_density(self):
+        self.assertAlmostEqual(Atmo.calculate_air_density(20, 1013, 0), 1.20383, places=4)
+        self.assertAlmostEqual(Atmo.calculate_air_density(20, 1013, 1), 1.19332, places=4)
 
-if __name__ == '__main__':
+    #TODO Test effects on trajectory
+    def test_trajectory_effects(self):
+        check_distance = Distance.Yard(1000)
+        ammo = Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(3000))
+        weapon = Weapon()
+        atmo = Atmo().icao()
+        atmo.humidity = 0
+        # Set baseline to zero at 1000 yards
+        zero = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
+        calc = Calculator()
+        calc.set_weapon_zero(zero, check_distance)
+        baseline_trajectory = calc.fire(shot=zero, trajectory_range=check_distance, trajectory_step=check_distance)
+        baseline = baseline_trajectory.get_at_distance(check_distance)
+
+        # Increasing humidity reduces air density which decreases drag
+        atmo.humidity = 1.0
+        t = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=atmo), trajectory_range=check_distance, trajectory_step=check_distance)
+        self.assertGreater(baseline.time, t.get_at_distance(check_distance).time)
+
+if __name__ == "__main__":
     unittest.main()
