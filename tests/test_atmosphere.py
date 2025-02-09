@@ -40,13 +40,11 @@ class TestAtmosphere(unittest.TestCase):
         self.assertAlmostEqual(Atmo.calculate_air_density(20, 1013, 0), 1.20383, places=4)
         self.assertAlmostEqual(Atmo.calculate_air_density(20, 1013, 1), 1.19332, places=4)
 
-    #TODO Test effects on trajectory
     def test_trajectory_effects(self):
         check_distance = Distance.Yard(1000)
         ammo = Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(3000))
         weapon = Weapon()
-        atmo = Atmo().icao()
-        atmo.humidity = 0
+        atmo = Atmo(altitude=0)  # Start with standard sea-level atmosphere
         # Set baseline to zero at 1000 yards
         zero = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
         calc = Calculator()
@@ -56,8 +54,18 @@ class TestAtmosphere(unittest.TestCase):
 
         # Increasing humidity reduces air density which decreases drag
         atmo.humidity = 1.0
-        t = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=atmo), trajectory_range=check_distance, trajectory_step=check_distance)
-        self.assertGreater(baseline.time, t.get_at_distance(check_distance).time)
+        t_humid = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=atmo), trajectory_range=check_distance, trajectory_step=check_distance)
+        self.assertGreater(baseline.time, t_humid.get_at_distance(check_distance).time)
+
+        # Increasing temperature reduces air density which decreases drag
+        warm = Atmo(altitude=0, temperature=Temperature.Fahrenheit(120))
+        t_warm = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=warm), trajectory_range=check_distance, trajectory_step=check_distance)
+        self.assertGreater(baseline.time, t_warm.get_at_distance(check_distance).time)
+
+        # Increasing altitude reduces air density which decreases drag
+        high = Atmo(altitude=Distance.Foot(5000))  # simulate increased altitude
+        t_high = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=high), trajectory_range=check_distance, trajectory_step=check_distance)
+        self.assertGreater(baseline.time, t_high.get_at_distance(check_distance).time)
 
 if __name__ == "__main__":
     unittest.main()

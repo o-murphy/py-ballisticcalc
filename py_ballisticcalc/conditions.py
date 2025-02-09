@@ -90,13 +90,12 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         self._altitude = PreferredUnits.distance(altitude or 0)
         self._pressure = PreferredUnits.pressure(pressure or Atmo.standard_pressure(self.altitude))
         self._temperature = PreferredUnits.temperature(temperature or Atmo.standard_temperature(self.altitude))
-        # ensure that if powder_temperature are not provided we use atmospheric temperature
+        # If powder_temperature not provided we use atmospheric temperature:
         self._powder_temp = PreferredUnits.temperature(powder_t or self.temperature)
 
         self._t0 = self.temperature >> Temperature.Celsius
         self._p0 = self.pressure >> Pressure.hPa
         self._a0 = self.altitude >> Distance.Foot
-        #self._ta = self._a0 * cLapseRateImperial + cStandardTemperatureF
         self._mach = Atmo.machF(self._temperature >> Temperature.Fahrenheit)
         
         self.humidity = humidity
@@ -115,7 +114,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     def humidity(self, value: float) -> None:
         if value < 0 or value > 100:
             raise ValueError("Humidity must be between 0% and 100%.")
-        if(value > 1):
+        if value > 1:
             value = value / 100.0  # Convert to percentage terms
         self._humidity = value
         if not self._initializing:
@@ -145,7 +144,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     def temperature_at_altitude(self, altitude: float) -> float:
         """
-        Interpolated temperature at altitude
+        Temperature at altitude interpolated from zero conditions using lapse rate.
         Args:
             altitude: ASL in ft
         Returns:
@@ -154,27 +153,44 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         t = (altitude - self._a0) * cLapseRateImperial + self._t0
         if t < cLowestTempF:
             t = cLowestTempF
-            warnings.warn(f"Reached minimum temperature limit. Adjusted to {cLowestTempF}°F; "
-                          "redefine 'cLowestTempF' constant to increase it ", RuntimeWarning)
+            warnings.warn(f"Temperature interpolated from altitude fell below minimum temperature limit.  "
+                          f"Model not accurate here.  Temperature bounded at cLowestTempF: {cLowestTempF}°F."
+                          , RuntimeWarning)
         return t
+    
+    def pressure_at_altitude(self, altitude: float) -> float:
+        """
+        Pressure at altitude interpolated from zero conditions using lapse rate.
+        Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations
+        Args:
+            altitude: ASL in ft
+        Returns:
+            pressure in InHg
+        """
+        p = self._p0 * math.pow(1 - cLapseRateImperial * (altitude - self._a0) / (self._t0 + cDegreesFtoR),
+                                cPressureExponent)
+        return p
 
     def get_density_factor_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
         """
+        Ref: https://en.wikipedia.org/wiki/Barometric_formula#Density_equations
         Args:
             altitude: ASL in units of feet.
-                Note: Altitude above TODO: 34,112 ft not modelled.
+                Note: Altitude above 36,000 ft not modelled this way.
         Returns:
             density ratio and Mach 1 (fps) for the specified altitude
         """
-        # Within 30 ft of initial altitude use initial values
+        # Within 30 ft of initial altitude use initial values to save compute
         if math.fabs(self._a0 - altitude) < 30:
-            density_ratio = self.density_ratio
+            density_ratio = self._density_ratio
             mach = self._mach
         else:
-            # https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation
-            # TODO: This adjustment should be applied to base density_ratio
-            density_ratio = math.exp(-altitude / 34112.0)
+            if altitude > 36089:
+                warnings.warn(f"Altitude {altitude} ft is above troposphere."
+                               " Atmospheric model not valid here.", RuntimeWarning)
             t = self.temperature_at_altitude(altitude)
+            p = self.pressure_at_altitude(altitude)
+            density_ratio = self._p0 * t / (self._t0 * p)
             mach = Atmo.machF(t)
         return density_ratio, mach
     
