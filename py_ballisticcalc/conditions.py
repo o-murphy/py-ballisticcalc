@@ -30,24 +30,30 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     """
 
     @property
-    def altitude(self) -> Distance:  # Altitude relative to sea level
+    def altitude(self) -> Distance:
+        """Altitude relative to sea level"""
         return self._altitude
     @property
-    def pressure(self) -> Pressure:  # Unadjusted barometric pressure (station pressure)
+    def pressure(self) -> Pressure:
+        """Unadjusted barometric pressure, a.k.a. station pressure"""
         return self._pressure
     @property
-    def temperature(self) -> Temperature:  # Local air temperature
+    def temperature(self) -> Temperature:
+        """Local air temperature"""
         return self._temperature
     @property
-    def powder_temp(self) -> Temperature:  # Powder temperature
+    def powder_temp(self) -> Temperature:
+        """Powder temperature"""
         return self._powder_temp
     @property
-    def mach(self) -> Velocity:  # Velocity of sound (Mach 1) for current atmosphere
+    def mach(self) -> Velocity:
+        """Velocity of sound (Mach 1) for current atmosphere"""
         return Velocity.FPS(self._mach)
     @property
-    def density_ratio(self) -> float:  # Ratio of current density to standard atmospheric density
+    def density_ratio(self) -> float:
+        """Ratio of current density to standard atmospheric density"""
         return self._density_ratio
-    
+
     _humidity: float  # Relative humidity [0% to 100%]
     _mach: float      # Velocity of sound (Mach 1) for current atmosphere in fps
     _a0: float        # Zero Altitude in feet
@@ -194,14 +200,14 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             # # Ref https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation
             #density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
         return density_ratio, mach
-    
+
     def __str__(self):
         return (
             f"Atmo(altitude={self.altitude}, pressure={self.pressure}, "
             f"temperature={self.temperature}, humidity={self.humidity}, "
             f"density_ratio={self.density_ratio}, mach={self.mach})"
         )
-        
+
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
         """
@@ -288,13 +294,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         return math.sqrt(kelvin) * cSpeedOfSoundMetric
 
     @staticmethod
-    def calculate_air_density(t: Temperature, p: Pressure, humidity: float) -> float:
+    def calculate_air_density(t: float, p: float, humidity: float) -> float:
         """
         Calculate the air density given temperature, pressure, and humidity.
 
         Parameters:
-        t (Temperature): The temperature in degrees Celsius.
-        p (Pressure): The pressure in hPa.
+        t (float): Temperature in degrees Celsius.
+        p (float): Pressure in hPa.
         humidity (float): The relative humidity as a fraction of max [0%-100%]
 
         Returns:
