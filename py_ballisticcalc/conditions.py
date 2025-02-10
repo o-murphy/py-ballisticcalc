@@ -147,14 +147,14 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         Returns:
             temperature in °C
         """
-        t = (altitude - self._a0) * cLapseRateImperial + self._t0
-        if t < self.cLowestTempC:
-            t = self.cLowestTempC
+        t = (altitude - self._a0) * cLapseRateKperFoot + self._t0
+        if t < Atmo.cLowestTempC:
+            t = Atmo.cLowestTempC
             warnings.warn(f"Temperature interpolated from altitude fell below minimum temperature limit.  "
                           f"Model not accurate here.  Temperature bounded at cLowestTempF: {cLowestTempF}°F."
                           , RuntimeWarning)
         return t
-    
+
     def pressure_at_altitude(self, altitude: float) -> float:
         """
         Pressure at altitude interpolated from zero conditions using lapse rate.
@@ -164,7 +164,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         Returns:
             pressure in hPa
         """
-        p = self._p0 * math.pow(1 - cLapseRateImperial * (altitude - self._a0) / (self._t0 + cDegreesCtoK),
+        p = self._p0 * math.pow(1 + cLapseRateKperFoot * (altitude - self._a0) / (self._t0 + cDegreesCtoK),
                                 cPressureExponent)
         return p
 
@@ -187,8 +187,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                                " Atmospheric model not valid here.", RuntimeWarning)
             t = self.temperature_at_altitude(altitude) + cDegreesCtoK
             p = self.pressure_at_altitude(altitude)
-            density_ratio = self._p0 * t / ((self._t0 + cDegreesCtoK) * p)
-            mach = Velocity.MPS(Atmo.machC(t)) >> Velocity.FPS
+            density_ratio = self._p0 * t / ((self._t0 + cDegreesCtoK) * p) / cStandardDensityMetric
+            mach = Velocity.MPS(Atmo.machK(t)) >> Velocity.FPS
         return density_ratio, mach
     
     @staticmethod
@@ -261,10 +261,20 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         """
         if celsius < -cDegreesCtoK:
             bad_temp = celsius
-            celsius = self.cLowestTempC
+            celsius = Atmo.cLowestTempC
             warnings.warn(f"Invalid temperature: {bad_temp}°C. Adjusted to ({celsius}°C)."
                           , RuntimeWarning)
-        return math.sqrt(celsius + cDegreesCtoK) * cSpeedOfSoundMetric
+        return Atmo.machK(celsius + cDegreesCtoK)
+
+    @staticmethod
+    def machK(kelvin: float) -> float:
+        """
+        Args:
+            kelvin: Kelvin temperature
+        Returns:
+            Mach 1 in m/s for Kelvin temperature
+        """
+        return math.sqrt(kelvin) * cSpeedOfSoundMetric
 
     @staticmethod
     def calculate_air_density(t: Temperature, p: Pressure, humidity: float) -> float:

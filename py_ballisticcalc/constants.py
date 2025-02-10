@@ -9,6 +9,7 @@ cPressureExponent: Final[float] = 5.255876  # =g*M/R*L
 # ISA, metric prefer_units: (https://www.engineeringtoolbox.com/international-standard-atmosphere-d_985.html)
 cDegreesCtoK: Final[float] = 273.15  # °K = °C + 273.15
 cStandardTemperatureC: Final[float] = 15.0  # °C
+cLapseRateKperFoot: Final[float] = -0.0019812  # Lapse Rate, °K/ft
 cLapseRateMetric: Final[float] = -6.5e-03  # Lapse Rate, °C/m
 cStandardPressureMetric: Final[float] = 1013.25  # hPa
 cSpeedOfSoundMetric: Final[float] = 20.0467  # Mach1 in m/s = cSpeedOfSound * sqrt(°K)

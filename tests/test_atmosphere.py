@@ -40,6 +40,14 @@ class TestAtmosphere(unittest.TestCase):
         self.assertAlmostEqual(Atmo.calculate_air_density(20, 1013, 0), 1.20383, places=4)
         self.assertAlmostEqual(Atmo.calculate_air_density(20, 1013, 1), 1.19332, places=4)
 
+    def test_changes(self):
+        # Increasing altitude should decrease temperature, pressure, air density, and mach 1 speed
+        self.assertLess(self.standard.temperature_at_altitude(5000), self.standard.temperature >> Temperature.Celsius)
+        self.assertLess(self.standard.pressure_at_altitude(5000), self.standard.pressure >> Pressure.hPa)
+        density_ratio, mach = self.standard.get_density_factor_and_mach_for_altitude(5000)
+        self.assertLess(density_ratio, self.standard.density_ratio)
+        self.assertLess(mach, self.standard.mach >> Velocity.FPS)
+
     def test_trajectory_effects(self):
         check_distance = Distance.Yard(1000)
         ammo = Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(3000))
