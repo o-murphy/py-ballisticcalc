@@ -53,7 +53,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     _a0: float        # Zero Altitude in feet
     _t0: float        # Zero Temperature in Celsius
     _p0: float        # Zero Pressure in hPa
-    #_ta: float
+    cLowestTempC: float = Temperature.Fahrenheit(cLowestTempF) >> Temperature.Celsius  # Lowest modelled temperature in Celsius
 
     def __init__(self,
                  altitude: Optional[Union[float, Distance]] = None,
@@ -86,18 +86,15 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             ```
         """
         self._initializing = True
-
         self._altitude = PreferredUnits.distance(altitude or 0)
         self._pressure = PreferredUnits.pressure(pressure or Atmo.standard_pressure(self.altitude))
         self._temperature = PreferredUnits.temperature(temperature or Atmo.standard_temperature(self.altitude))
         # If powder_temperature not provided we use atmospheric temperature:
         self._powder_temp = PreferredUnits.temperature(powder_t or self.temperature)
-
         self._t0 = self.temperature >> Temperature.Celsius
         self._p0 = self.pressure >> Pressure.hPa
         self._a0 = self.altitude >> Distance.Foot
         self._mach = Atmo.machF(self._temperature >> Temperature.Fahrenheit)
-        
         self.humidity = humidity
         self._initializing = False
         self.update_density_ratio()
@@ -148,11 +145,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         Args:
             altitude: ASL in ft
         Returns:
-            temperature in °F
+            temperature in °C
         """
         t = (altitude - self._a0) * cLapseRateImperial + self._t0
-        if t < cLowestTempF:
-            t = cLowestTempF
+        if t < self.cLowestTempC:
+            t = self.cLowestTempC
             warnings.warn(f"Temperature interpolated from altitude fell below minimum temperature limit.  "
                           f"Model not accurate here.  Temperature bounded at cLowestTempF: {cLowestTempF}°F."
                           , RuntimeWarning)
@@ -165,9 +162,9 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         Args:
             altitude: ASL in ft
         Returns:
-            pressure in InHg
+            pressure in hPa
         """
-        p = self._p0 * math.pow(1 - cLapseRateImperial * (altitude - self._a0) / (self._t0 + cDegreesFtoR),
+        p = self._p0 * math.pow(1 - cLapseRateImperial * (altitude - self._a0) / (self._t0 + cDegreesCtoK),
                                 cPressureExponent)
         return p
 
@@ -188,15 +185,16 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             if altitude > 36089:
                 warnings.warn(f"Altitude {altitude} ft is above troposphere."
                                " Atmospheric model not valid here.", RuntimeWarning)
-            t = self.temperature_at_altitude(altitude)
+            t = self.temperature_at_altitude(altitude) + cDegreesCtoK
             p = self.pressure_at_altitude(altitude)
-            density_ratio = self._p0 * t / (self._t0 * p)
-            mach = Atmo.machF(t)
+            density_ratio = self._p0 * t / ((self._t0 + cDegreesCtoK) * p)
+            mach = Velocity.MPS(Atmo.machC(t)) >> Velocity.FPS
         return density_ratio, mach
     
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
         """
+        Note: This model only valid up to troposphere (~36,000 ft).
         Args:
             altitude: ASL in units of feet.
         Returns:
@@ -208,23 +206,21 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def standard_pressure(altitude: Distance) -> Pressure:
         """
+        Note: This model only valid up to troposphere (~36,000 ft).
+            Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations
         Args:
-            altitude: ASL in units of feet.
+            altitude: Distance above sea level (ASL)
         Returns:
             ICAO standard pressure for altitude
         """
-        return Pressure.InHg(0.02953
-                             * math.pow(3.73145 - 2.56555e-05 * (altitude >> Distance.Foot),
-                                        cPressureExponent)
-                             )
-        # # Metric formula:
-        # Pressure.hPa(cStandardPressureMetric
-        #     * math.pow(1 - cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
-        #                cPressureExponent))
+        return Pressure.hPa(cStandardPressureMetric
+            * math.pow(1 + cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
+                       cPressureExponent))
 
     @staticmethod
     def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None, humidity: float = cStandardHumidity) -> 'Atmo':
         """
+        Note: This model only valid up to troposphere (~36,000 ft).
         Args:
             altitude: relative to sea level
             temperature: air temperature
@@ -237,12 +233,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             temperature = Atmo.standard_temperature(altitude)
         pressure = Atmo.standard_pressure(altitude)
 
-        return Atmo(
-            altitude >> PreferredUnits.distance,
-            pressure >> PreferredUnits.pressure,
-            temperature >> PreferredUnits.temperature,
-            humidity
-        )
+        return Atmo(altitude, pressure, temperature, humidity)
     # Synonym for ICAO standard atmosphere
     standard = icao
 
@@ -255,8 +246,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             Mach 1 in fps for given temperature
         """
         if fahrenheit < -cDegreesFtoR:
-            fahrenheit = -cDegreesFtoR
-            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to absolute zero ({-cDegreesFtoR}°F)."
+            fahrenheit = cLowestTempF
+            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to ({cLowestTempF}°F)."
                           , RuntimeWarning)
         return math.sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
 
@@ -269,10 +260,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             Mach 1 in m/s for Celsius temperature
         """
         if celsius < -cDegreesCtoK:
-            celsius = -cDegreesCtoK
-            warnings.warn(f"Invalid temperature: {celsius}°C. Adjusted to absolute zero ({-cDegreesCtoK}°C)."
+            bad_temp = celsius
+            celsius = self.cLowestTempC
+            warnings.warn(f"Invalid temperature: {bad_temp}°C. Adjusted to ({celsius}°C)."
                           , RuntimeWarning)
-        return math.sqrt(1 + celsius / cDegreesCtoK) * cSpeedOfSoundMetric
+        return math.sqrt(celsius + cDegreesCtoK) * cSpeedOfSoundMetric
 
     @staticmethod
     def calculate_air_density(t: Temperature, p: Pressure, humidity: float) -> float:
@@ -319,13 +311,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             d = 1.83e-11
             e = -0.765e-8
 
-            t = T - 273.15
+            t = T - cDegreesCtoK
             Z = 1 - (p / T) * (a0 + a1 * t + a2 * t ** 2 + (b0 + b1 * t) * x_v + (c0 + c1 * t) * x_v ** 2) \
                 + (p / T) ** 2 * (d + e * x_v ** 2)
             return Z
 
         # Temperature in Kelvin
-        T_K = t + 273.15
+        T_K = t + cDegreesCtoK
 
         # Calculation of saturated vapor pressure and enhancement factor
         p_sv = saturation_vapor_pressure(T_K)
