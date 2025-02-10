@@ -187,10 +187,14 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                                " Atmospheric model not valid here.", RuntimeWarning)
             t = self.temperature_at_altitude(altitude) + cDegreesCtoK
             p = self.pressure_at_altitude(altitude)
-            density_ratio = self._p0 * t / ((self._t0 + cDegreesCtoK) * p) / cStandardDensityMetric
+            density_delta = ((self._t0 + cDegreesCtoK) * p) / (self._p0 * t)
+            density_ratio = self._density_ratio * density_delta
             mach = Velocity.MPS(Atmo.machK(t)) >> Velocity.FPS
         return density_ratio, mach
     
+    def __str__(self):
+        return f"Atmo(altitude={self.altitude}, pressure={self.pressure}, temperature={self.temperature}, humidity={self.humidity}, density_ratio={self.density_ratio}, mach={self.mach})"
+        
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
         """
