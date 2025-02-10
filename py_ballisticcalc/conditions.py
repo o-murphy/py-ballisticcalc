@@ -179,21 +179,27 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         """
         # Within 30 ft of initial altitude use initial values to save compute
         if math.fabs(self._a0 - altitude) < 30:
-            density_ratio = self._density_ratio
             mach = self._mach
+            density_ratio = self._density_ratio
         else:
             if altitude > 36089:
-                warnings.warn(f"Altitude {altitude} ft is above troposphere."
+                warnings.warn("Density request for altitude above troposphere."
                                " Atmospheric model not valid here.", RuntimeWarning)
             t = self.temperature_at_altitude(altitude) + cDegreesCtoK
+            mach = Velocity.MPS(Atmo.machK(t)) >> Velocity.FPS
             p = self.pressure_at_altitude(altitude)
             density_delta = ((self._t0 + cDegreesCtoK) * p) / (self._p0 * t)
             density_ratio = self._density_ratio * density_delta
-            mach = Velocity.MPS(Atmo.machK(t)) >> Velocity.FPS
+            # # Alternative simplified model:
+            #density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
         return density_ratio, mach
     
     def __str__(self):
-        return f"Atmo(altitude={self.altitude}, pressure={self.pressure}, temperature={self.temperature}, humidity={self.humidity}, density_ratio={self.density_ratio}, mach={self.mach})"
+        return (
+            f"Atmo(altitude={self.altitude}, pressure={self.pressure}, "
+            f"temperature={self.temperature}, humidity={self.humidity}, "
+            f"density_ratio={self.density_ratio}, mach={self.mach})"
+        )
         
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
