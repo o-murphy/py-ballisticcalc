@@ -70,3 +70,7 @@ class TestMBC(unittest.TestCase):
             idx = machs.index(mach)
             with self.subTest(mach=mach):
                 self.assertAlmostEqual(cds[idx], cd, 3)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -183,11 +183,16 @@ cdef double cy_calculate_ogw(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
 
 cdef double cDegreesFtoR = 459.67
+cdef double cDegreesCtoK = 273.15
 cdef double cSpeedOfSoundImperial = 49.0223
+cdef double cSpeedOfSoundMetric = 20.0467
+cdef double cLapseRateKperFoot = -0.0019812
 cdef double cLapseRateImperial = -3.56616e-03
+cdef double cPressureExponent = 5.2559
 cdef double cLowestTempF = -130
+cdef double mToFeet = 3.28084
 
-# Function to calculate density factor and Mach at altitude
+# Function to calculate density ratio and Mach speed at altitude
 cdef void update_density_factor_and_mach_for_altitude(
         Atmosphere_t * atmo, double altitude, double * density_ratio, double * mach
 ):
@@ -195,26 +200,35 @@ cdef void update_density_factor_and_mach_for_altitude(
     :param altitude: ASL in units of feet
     :return: density ratio and Mach 1 (fps) for the specified altitude
     """
-    cdef double fahrenheit
+    cdef double celsius, kelvin, pressure, density_delta
     if fabs(atmo._a0 - altitude) < 30:
         density_ratio[0] = atmo.density_ratio
-        mach[0] = atmo._mach1
+        mach[0] = atmo._mach
     else:
-        density_ratio[0] = exp(-altitude / 34112.0)
-        fahrenheit = (altitude - atmo._a0) * cLapseRateImperial + atmo._t0
+        celsius = (altitude - atmo._a0) * cLapseRateKperFoot + atmo._t0
 
-        if fahrenheit < cLowestTempF:
-            fahrenheit = cLowestTempF
-            warnings.warn(f"Reached minimum temperature limit. Adjusted to {cLowestTempF}°F "
+        if altitude > 36089:
+            warnings.warn("Density request for altitude above troposphere."
+                            " Atmospheric model not valid here.", RuntimeWarning)
+        if celsius < -cDegreesCtoK:
+            warnings.warn(f"Invalid temperature: {celsius}°C. Adjusted to absolute zero "
+                          f"It must be >= {-cDegreesFtoR} to avoid a domain error.", RuntimeWarning)
+            celsius = -cDegreesCtoK
+        elif celsius < atmo.cLowestTempC:
+            celsius = atmo.cLowestTempC
+            warnings.warn(f"Reached minimum temperature limit. Adjusted to {celsius}°C "
                           "redefine 'cLowestTempF' constant to increase it ", RuntimeWarning)
 
-        if fahrenheit < -cDegreesFtoR:
-            fahrenheit = -cDegreesFtoR
-            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to absolute zero "
-                          f"It must be >= {-cDegreesFtoR} to avoid a domain error."
-                          f"redefine 'cDegreesFtoR' constant to increase it", RuntimeWarning)
-
-        mach[0] = sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
+        kelvin = celsius + cDegreesCtoK
+        pressure = atmo._p0 * pow(1 + cLapseRateKperFoot * (altitude - atmo._a0) / (atmo._t0 + cDegreesCtoK),
+                            cPressureExponent)
+        density_delta = ((atmo._t0 + cDegreesCtoK) * pressure) / (atmo._p0 * kelvin)
+        density_ratio[0] = atmo.density_ratio * density_delta
+        # Alternative exponential approximation to density:
+        #density_ratio[0] = atmo.density_ratio * exp(-(altitude - atmo._a0) / 34112.0)
+        mach[0] = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet
+        #debug
+        #print(f"Altitude: {altitude}, {atmo._t0}°C now {celsius}°C, pressure {atmo._p0} now {pressure}hPa >> {density_ratio[0]} from density_delta {density_delta}")
 
 cdef CVector wind_to_c_vector(Wind_t * w):
     cdef:

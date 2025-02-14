@@ -198,6 +198,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             density_ratio = self._density_ratio * density_delta
             # # Alternative simplified model:
             # # Ref https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation
+            # # see doc/'Air Density Models.svg' for comparison
             #density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
         return density_ratio, mach
 
