@@ -382,7 +382,7 @@ cdef class TrajectoryCalc:
                     ))
 
             #region Ballistic calculation step
-            # use just cdef methods to
+            # use just cdef methods to maximize speed
 
             velocity_adjusted = sub(&velocity_vector, &wind_vector)
             velocity = mag(&velocity_adjusted)

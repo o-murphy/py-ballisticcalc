@@ -119,17 +119,6 @@ cdef double cy_calculate_by_curve_and_mach_list(MachList_t *mach_list, Curve_t *
     # Return the calculated value using the curve coefficients
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
-cdef double cy_spin_drift(ShotData_t * t, double time):
-    """Litz spin-drift approximation
-    :param time: Time of flight
-    :return: windage due to spin drift, in feet
-    """
-    cdef int sign
-    if t.twist != 0:
-        sign = 1 if t.twist > 0 else -1
-        return sign * (1.25 * (t.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
-    return 0
-
 cdef double cy_drag_by_mach(ShotData_t * t, double mach):
     """ Drag force = V^2 * Cd * AirDensity * S / 2m where:
         cStandardDensity of Air = 0.076474 lb/ft^3
@@ -141,6 +130,17 @@ cdef double cy_drag_by_mach(ShotData_t * t, double mach):
     cdef double cd = cy_calculate_by_curve_and_mach_list(&t.mach_list, &t.curve, mach)
     return cd * 2.08551e-04 / t.bc
 
+cdef double cy_spin_drift(ShotData_t * t, double time):
+    """Litz spin-drift approximation
+    :param time: Time of flight
+    :return: windage due to spin drift, in feet
+    """
+    cdef int sign
+    if (t.twist != 0) and (t.stability_coefficient != 0):
+        sign = 1 if t.twist > 0 else -1
+        return sign * (1.25 * (t.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
+    return 0
+
 cdef void cy_update_stability_coefficient(ShotData_t * t):
     """Miller stability coefficient"""
     cdef:
@@ -148,12 +148,15 @@ cdef void cy_update_stability_coefficient(ShotData_t * t):
     if t.twist and t.length and t.diameter:
         twist_rate = fabs(t.twist) / t.diameter
         length = t.length / t.diameter
-        sd = 30 * t.weight / (pow(twist_rate, 2) * pow(t.diameter, 3) * length * (1 + pow(length, 2)))
+        sd = 30.0 * t.weight / (pow(twist_rate, 2) * pow(t.diameter, 3) * length * (1 + pow(length, 2)))
         fv = pow(t.muzzle_velocity / 2800, 1.0 / 3.0)
-        ft = t.atmo._t0  # F
-        pt = t.atmo._p0  # inHg
-        ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+        ft = (t.atmo._t0 * 9.0 / 5.0) + 32.0  # Convert from Celsius to Fahrenheit
+        pt = t.atmo._p0 / 33.8639  # Convert hPa to inHg
+        ftp = ((ft + 460.0) / (59.0 + 460.0)) * (29.92 / pt)
         t.stability_coefficient = sd * fv * ftp
+    else:
+        t.stability_coefficient = 0.0
+    print(f"Stability coefficient: {t.stability_coefficient}; {twist_rate}, {length}, {sd}, {fv}, {ft}, {pt}, {ftp}")
 
 # Function to free memory for Curve_t
 cdef void free_curve(Curve_t *curve):
