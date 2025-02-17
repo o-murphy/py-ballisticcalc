@@ -2,6 +2,9 @@
 
 import unittest
 import copy
+
+import pytest
+
 from py_ballisticcalc import (
     DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError,
 )
@@ -247,6 +250,14 @@ class TestComputer(unittest.TestCase):
         self.assertIs(sorted_winds[1], winds[0])
         self.assertIs(sorted_winds[2], winds[2])
         self.assertIs(sorted_winds[3], winds[1])
+
+    def test_very_short_shot(self):
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
+                    winds=[])
+        hit_result = self.calc.fire(shot=shot, trajectory_range=Distance.Centimeter(5))
+        print(f'{len(hit_result.trajectory)} {hit_result.trajectory[0]}')
+        assert len(hit_result.trajectory)>1
+        assert hit_result[-1].distance>>Distance.Meter == pytest.approx(0.05, abs=0.03)
 
 
 # endregion Shot
