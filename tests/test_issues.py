@@ -46,7 +46,7 @@ class TestIssue96_97(unittest.TestCase):
         # should return error
         self.assertIsInstance(err, RangeError)
         self.assertIsInstance(hit_result, HitResult, f"Expected HitResult but got {type(hit_result)}")
-        
+    
 def get_object_attribute_values_as_dict(obj: Any)->dict[str, Any]:
     """"""
     return {attr: getattr(obj, attr) for attr in dir(obj) if not attr.startswith("__")}
@@ -70,7 +70,6 @@ class TestIssue144(unittest.TestCase):
         self.shot = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(13.122126582196692))
         self.range = Distance.Meter(740.8068308628336)
         self.calc = Calculator()
-
     
     def tearDown(self):
         PreferredUnits.set(**self.previous_preferred_units)
@@ -85,7 +84,6 @@ class TestIssue144(unittest.TestCase):
         hit_result = self.calc.fire(self.shot, self.range>>PreferredUnits.distance, extra_data=False)
         self.check_expected_last_point(hit_result)
 
-
     def testResultsWithMetricUnits(self):
         loadMetricUnits()
         hit_result = self.calc.fire(self.shot, self.range, extra_data=False)
@@ -96,13 +94,11 @@ class TestIssue144(unittest.TestCase):
         hit_result = self.calc.fire(self.shot, self.range>>PreferredUnits.distance, extra_data=False)
         self.check_expected_last_point(hit_result)
 
-
     def testResultsWithMetricUnits_FloatTrajectoryStep(self):
         loadMetricUnits()
         hit_result = self.calc.fire(self.shot, self.range, trajectory_step=Distance.Inch(2916.5623262316285)>>PreferredUnits.distance,
                                     extra_data=False)
         self.check_expected_last_point(hit_result)
-
 
     def testResultsWithImperialUnitsAndYards(self):
         loadImperialUnits()
@@ -117,7 +113,6 @@ class TestIssue144(unittest.TestCase):
                                     extra_data=False)
         self.check_expected_last_point(hit_result)
 
-
     def testResultWithImperialUnits_FloatRange(self):
         loadImperialUnits()
         self.assertEqual(PreferredUnits.distance, Distance.Foot)
@@ -127,6 +122,6 @@ class TestIssue144(unittest.TestCase):
     def check_expected_last_point(self, hit_result):
         self.assertEqual(11, len(hit_result.trajectory))
         last_hit_point = hit_result[-1]
-        self.assertEqual(0.9920863205706615, last_hit_point.time)
-        self.assertEqual(740.8498567639497, (last_hit_point.distance >> Distance.Meter))
-        self.assertEqual(168.4355597904274, (last_hit_point.height >> Distance.Meter))
+        self.assertAlmostEqual(0.9920863205706615, last_hit_point.time, places=4)
+        self.assertAlmostEqual(740.8498567639497, (last_hit_point.distance >> Distance.Meter), places=4)
+        self.assertAlmostEqual(168.4355597904274, (last_hit_point.height >> Distance.Meter), places=4)

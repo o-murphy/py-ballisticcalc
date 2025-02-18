@@ -52,7 +52,7 @@ class BCPoint:
     @staticmethod
     def _machC() -> float:
         """:return: Mach 1 in m/s for Celsius temperature"""
-        return math.sqrt(1 + cStandardTemperatureC / cDegreesCtoK) * cSpeedOfSoundMetric
+        return math.sqrt(cStandardTemperatureC + cDegreesCtoK) * cSpeedOfSoundMetric
 
 
 class DragModel:

@@ -119,17 +119,6 @@ cdef double cy_calculate_by_curve_and_mach_list(MachList_t *mach_list, Curve_t *
     # Return the calculated value using the curve coefficients
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
-cdef double cy_spin_drift(ShotData_t * t, double time):
-    """Litz spin-drift approximation
-    :param time: Time of flight
-    :return: windage due to spin drift, in feet
-    """
-    cdef int sign
-    if t.twist != 0:
-        sign = 1 if t.twist > 0 else -1
-        return sign * (1.25 * (t.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
-    return 0
-
 cdef double cy_drag_by_mach(ShotData_t * t, double mach):
     """ Drag force = V^2 * Cd * AirDensity * S / 2m where:
         cStandardDensity of Air = 0.076474 lb/ft^3
@@ -141,6 +130,17 @@ cdef double cy_drag_by_mach(ShotData_t * t, double mach):
     cdef double cd = cy_calculate_by_curve_and_mach_list(&t.mach_list, &t.curve, mach)
     return cd * 2.08551e-04 / t.bc
 
+cdef double cy_spin_drift(ShotData_t * t, double time):
+    """Litz spin-drift approximation
+    :param time: Time of flight
+    :return: windage due to spin drift, in feet
+    """
+    cdef int sign
+    if (t.twist != 0) and (t.stability_coefficient != 0):
+        sign = 1 if t.twist > 0 else -1
+        return sign * (1.25 * (t.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
+    return 0
+
 cdef void cy_update_stability_coefficient(ShotData_t * t):
     """Miller stability coefficient"""
     cdef:
@@ -148,12 +148,15 @@ cdef void cy_update_stability_coefficient(ShotData_t * t):
     if t.twist and t.length and t.diameter:
         twist_rate = fabs(t.twist) / t.diameter
         length = t.length / t.diameter
-        sd = 30 * t.weight / (pow(twist_rate, 2) * pow(t.diameter, 3) * length * (1 + pow(length, 2)))
+        sd = 30.0 * t.weight / (pow(twist_rate, 2) * pow(t.diameter, 3) * length * (1 + pow(length, 2)))
         fv = pow(t.muzzle_velocity / 2800, 1.0 / 3.0)
-        ft = t.atmo._t0  # F
-        pt = t.atmo._p0  # inHg
-        ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+        ft = (t.atmo._t0 * 9.0 / 5.0) + 32.0  # Convert from Celsius to Fahrenheit
+        pt = t.atmo._p0 / 33.8639  # Convert hPa to inHg
+        ftp = ((ft + 460.0) / (59.0 + 460.0)) * (29.92 / pt)
         t.stability_coefficient = sd * fv * ftp
+    else:
+        t.stability_coefficient = 0.0
+    print(f"Stability coefficient: {t.stability_coefficient}; {twist_rate}, {length}, {sd}, {fv}, {ft}, {pt}, {ftp}")
 
 # Function to free memory for Curve_t
 cdef void free_curve(Curve_t *curve):
@@ -183,11 +186,16 @@ cdef double cy_calculate_ogw(double bullet_weight, double velocity):
     return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
 
 cdef double cDegreesFtoR = 459.67
+cdef double cDegreesCtoK = 273.15
 cdef double cSpeedOfSoundImperial = 49.0223
+cdef double cSpeedOfSoundMetric = 20.0467
+cdef double cLapseRateKperFoot = -0.0019812
 cdef double cLapseRateImperial = -3.56616e-03
+cdef double cPressureExponent = 5.2559
 cdef double cLowestTempF = -130
+cdef double mToFeet = 3.28084
 
-# Function to calculate density factor and Mach at altitude
+# Function to calculate density ratio and Mach speed at altitude
 cdef void update_density_factor_and_mach_for_altitude(
         Atmosphere_t * atmo, double altitude, double * density_ratio, double * mach
 ):
@@ -195,26 +203,35 @@ cdef void update_density_factor_and_mach_for_altitude(
     :param altitude: ASL in units of feet
     :return: density ratio and Mach 1 (fps) for the specified altitude
     """
-    cdef double fahrenheit
+    cdef double celsius, kelvin, pressure, density_delta
     if fabs(atmo._a0 - altitude) < 30:
         density_ratio[0] = atmo.density_ratio
-        mach[0] = atmo._mach1
+        mach[0] = atmo._mach
     else:
-        density_ratio[0] = exp(-altitude / 34112.0)
-        fahrenheit = (altitude - atmo._a0) * cLapseRateImperial + atmo._t0
+        celsius = (altitude - atmo._a0) * cLapseRateKperFoot + atmo._t0
 
-        if fahrenheit < cLowestTempF:
-            fahrenheit = cLowestTempF
-            warnings.warn(f"Reached minimum temperature limit. Adjusted to {cLowestTempF}°F "
+        if altitude > 36089:
+            warnings.warn("Density request for altitude above troposphere."
+                            " Atmospheric model not valid here.", RuntimeWarning)
+        if celsius < -cDegreesCtoK:
+            warnings.warn(f"Invalid temperature: {celsius}°C. Adjusted to absolute zero "
+                          f"It must be >= {-cDegreesFtoR} to avoid a domain error.", RuntimeWarning)
+            celsius = -cDegreesCtoK
+        elif celsius < atmo.cLowestTempC:
+            celsius = atmo.cLowestTempC
+            warnings.warn(f"Reached minimum temperature limit. Adjusted to {celsius}°C "
                           "redefine 'cLowestTempF' constant to increase it ", RuntimeWarning)
 
-        if fahrenheit < -cDegreesFtoR:
-            fahrenheit = -cDegreesFtoR
-            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to absolute zero "
-                          f"It must be >= {-cDegreesFtoR} to avoid a domain error."
-                          f"redefine 'cDegreesFtoR' constant to increase it", RuntimeWarning)
-
-        mach[0] = sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
+        kelvin = celsius + cDegreesCtoK
+        pressure = atmo._p0 * pow(1 + cLapseRateKperFoot * (altitude - atmo._a0) / (atmo._t0 + cDegreesCtoK),
+                            cPressureExponent)
+        density_delta = ((atmo._t0 + cDegreesCtoK) * pressure) / (atmo._p0 * kelvin)
+        density_ratio[0] = atmo.density_ratio * density_delta
+        # Alternative exponential approximation to density:
+        #density_ratio[0] = atmo.density_ratio * exp(-(altitude - atmo._a0) / 34112.0)
+        mach[0] = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet
+        #debug
+        #print(f"Altitude: {altitude}, {atmo._t0}°C now {celsius}°C, pressure {atmo._p0} now {pressure}hPa >> {density_ratio[0]} from density_delta {density_delta}")
 
 cdef CVector wind_to_c_vector(Wind_t * w):
     cdef:
