@@ -321,7 +321,6 @@ class TrajectoryCalc:
         # min step is used to handle situation, when record step is smaller than calc_step
         # in order to prevent range breaking too early
         min_step = min(self.calc_step, record_step)
-        print(f'{min_step=}')
         if min_step<0.02:
             min_step = self.calc_step
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
