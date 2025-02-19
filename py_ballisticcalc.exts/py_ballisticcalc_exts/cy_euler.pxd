@@ -27,8 +27,9 @@ cdef struct Atmosphere_t:
     double _t0
     double _a0
     double _p0
-    double _mach1
+    double _mach
     double density_ratio
+    double cLowestTempC
 
 cdef void update_density_factor_and_mach_for_altitude(
         Atmosphere_t * atmo, double altitude, double * density_ratio, double * mach

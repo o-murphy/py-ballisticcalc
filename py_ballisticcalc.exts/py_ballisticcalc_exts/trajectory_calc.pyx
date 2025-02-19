@@ -254,9 +254,10 @@ cdef class TrajectoryCalc:
             atmo=Atmosphere_t(
                 _t0=shot_info.atmo._t0,
                 _a0=shot_info.atmo._a0,
-                _p0=shot_info.atmo.pressure.get_in(Unit.InHg),
-                _mach1=shot_info.atmo._mach1,
+                _p0=shot_info.atmo._p0,
+                _mach=shot_info.atmo._mach,
                 density_ratio=shot_info.atmo.density_ratio,
+                cLowestTempC=shot_info.atmo.cLowestTempC,
             )
         )
         self.__shot.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
@@ -384,7 +385,7 @@ cdef class TrajectoryCalc:
                     ))
 
             #region Ballistic calculation step
-            # use just cdef methods to
+            # use just cdef methods to maximize speed
 
             velocity_adjusted = sub(&velocity_vector, &wind_vector)
             velocity = mag(&velocity_adjusted)
