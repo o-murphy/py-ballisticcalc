@@ -11,7 +11,7 @@ from py_ballisticcalc.vector import Vector
 from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
-__all__ = ('Atmo', 'Wind', 'Shot')
+__all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot')
 
 
 class Atmo:  # pylint: disable=too-many-instance-attributes
@@ -360,6 +360,20 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
         density = (p * M_a) / (Z * R * T_K) * (1 - x_v * (1 - M_v / M_a))
         return 100 * density
+
+
+class Vacuum(Atmo):
+    """Vacuum atmosphere has zero drag"""
+    def __init__(self, 
+                 altitude: Optional[Union[float, Distance]] = None,
+                 temperature: Optional[Union[float, Temperature]] = None):
+        super().__init__(altitude, 0, temperature, 0)
+        self.cLowestTempC = cDegreesCtoK
+        self._pressure = PreferredUnits.pressure(0)
+        self._density_ratio = 0
+
+    def update_density_ratio(self):
+        pass
 
 
 @dataclass

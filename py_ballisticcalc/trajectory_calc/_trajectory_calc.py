@@ -429,7 +429,7 @@ class TrajectoryCalc:
 
     def calc_stability_coefficient(self, atmo: Atmo) -> float:
         """Miller stability coefficient"""
-        if self.twist and self.length and self.diameter:
+        if self.twist and self.length and self.diameter and atmo.pressure.raw_value:
             twist_rate = math.fabs(self.twist) / self.diameter
             length = self.length / self.diameter
             # Miller stability formula
