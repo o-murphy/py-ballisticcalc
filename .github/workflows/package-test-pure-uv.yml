@@ -9,9 +9,6 @@ on:
       - '*'
   workflow_dispatch:
 
-env:
-  UV_SYSTEM_PYTHON: 1
-
 jobs:
   test:
     strategy:
@@ -35,7 +32,7 @@ jobs:
         uv run hooks/version_check.py
 
     - name: Install the project
-      run: uv pip install -e .[dev]
+      run: uv sync --dev
 
     - name: Run tests in pure python mode
       run: |

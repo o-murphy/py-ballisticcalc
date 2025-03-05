@@ -1,16 +1,13 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Python cythonized package tests
+name: Python cythonized package tests (uv)
 
 on:
   pull_request:
     branches:
       - '*'
   workflow_dispatch:
-
-env:
-  UV_SYSTEM_PYTHON: 1
 
 jobs:
   test:
@@ -34,12 +31,12 @@ jobs:
         uv run hooks/version_check.py
 
     - name: Install the project
-      run: uv pip install -e .[dev]
+      run: uv sync --dev
 
     - name: Build cython modules
       run: |
         cd ./py_ballisticcalc.exts
-        uv pip install -e .[dev]
+        uv sync --dev
         cd ..
 
     - name: Run unittest tests in binary mode
