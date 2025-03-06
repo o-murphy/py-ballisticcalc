@@ -1,22 +1,20 @@
 import math
-from dataclasses import dataclass
-from typing import Union
+from typing import Union, NamedTuple
 
 __all__ = ('Vector',)
 
 
-@dataclass
-class Vector:
+class Vector(NamedTuple):
     """
     Attributes:
         x: distance
-        y: horizontal
-        z: vertical
+        y: vertical
+        z: horizontal
 
     Args:
         x: distance
-        y: horizontal
-        z: vertical
+        y: vertical
+        z: horizontal
     """
 
     x: float
