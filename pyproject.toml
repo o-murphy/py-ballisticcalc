@@ -11,14 +11,14 @@ name = "py_ballisticcalc"
 version = "2.1.0b6"
 
 authors = [
-    { name="o-murphy", email="thehelixpg@gmail.com" },
-    { name="dbookstaber", email="bookstaber@gmail.com"}
+    { name = "o-murphy", email = "thehelixpg@gmail.com" },
+    { name = "dbookstaber", email = "bookstaber@gmail.com" }
 ]
 description = "LGPL library for small arms ballistic calculations (Python 3)"
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "python3"]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
@@ -48,9 +48,16 @@ py-modules = ["py_ballisticcalc"]
 where = ["."]
 include = ["py_ballisticcalc*"]
 
-[dependency-groups]
+
+[project.optional-dependencies]
+exts = ['py_ballisticcalc.exts==2.1.0b6']
+charts = ['matplotlib', 'pandas']
+visualize = ['matplotlib', 'pandas']
 dev = [
-    "pytest>=8.3.5",
+    'jupyter',
+    'pandas-stubs',
+    'matplotlib-stubs',
+    'pytest>=8.3.5',
     'pylint',
     'mypy',
     'pytest',
@@ -68,14 +75,4 @@ docs = [
     'mkdocs-autorefs',
     'mike',
     'pydocstyle',
-]
-
-[project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.1.0b6']
-charts = ['matplotlib', 'pandas']
-visualize = ['matplotlib', 'pandas']
-dev = [
-    'jupyter',
-    'pandas-stubs',
-    'matplotlib-stubs'
 ]

@@ -2466,24 +2466,12 @@ charts = [
     { name = "pandas" },
 ]
 dev = [
+    { name = "build" },
     { name = "jupyter" },
     { name = "matplotlib-stubs" },
+    { name = "mypy" },
     { name = "pandas-stubs", version = "2.2.2.240807", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pandas-stubs", version = "2.2.3.241126", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-]
-exts = [
-    { name = "py-ballisticcalc-exts" },
-]
-visualize = [
-    { name = "matplotlib", version = "3.9.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "matplotlib", version = "3.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "pandas" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "build" },
-    { name = "mypy" },
     { name = "pylint" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -2500,43 +2488,45 @@ docs = [
     { name = "mkdocstrings-python" },
     { name = "pydocstyle" },
 ]
+exts = [
+    { name = "py-ballisticcalc-exts" },
+]
+visualize = [
+    { name = "matplotlib", version = "3.9.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "matplotlib", version = "3.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "pandas" },
+]
 
 [package.metadata]
 requires-dist = [
+    { name = "build", marker = "extra == 'dev'" },
     { name = "jupyter", marker = "extra == 'dev'" },
     { name = "matplotlib", marker = "extra == 'charts'" },
     { name = "matplotlib", marker = "extra == 'visualize'" },
     { name = "matplotlib-stubs", marker = "extra == 'dev'" },
+    { name = "mike", marker = "extra == 'docs'" },
+    { name = "mkdocs", marker = "extra == 'docs'" },
+    { name = "mkdocs-autorefs", marker = "extra == 'docs'" },
+    { name = "mkdocs-exclude", marker = "extra == 'docs'" },
+    { name = "mkdocs-material", extras = ["imaging"], marker = "extra == 'docs'" },
+    { name = "mkdocs-redirects", marker = "extra == 'docs'" },
+    { name = "mkdocstrings", marker = "extra == 'docs'" },
+    { name = "mkdocstrings-python", marker = "extra == 'docs'" },
+    { name = "mypy", marker = "extra == 'dev'" },
     { name = "pandas", marker = "extra == 'charts'" },
     { name = "pandas", marker = "extra == 'visualize'" },
     { name = "pandas-stubs", marker = "extra == 'dev'" },
     { name = "py-ballisticcalc-exts", marker = "extra == 'exts'", specifier = "==2.1.0b6" },
+    { name = "pydocstyle", marker = "extra == 'docs'" },
+    { name = "pylint", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
+    { name = "pytest-cov", marker = "extra == 'dev'" },
+    { name = "pytest-xdist", marker = "extra == 'dev'" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
 ]
-provides-extras = ["exts", "charts", "visualize", "dev"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "build" },
-    { name = "mypy" },
-    { name = "pylint" },
-    { name = "pytest" },
-    { name = "pytest", specifier = ">=8.3.5" },
-    { name = "pytest-cov" },
-    { name = "pytest-xdist" },
-]
-docs = [
-    { name = "mike" },
-    { name = "mkdocs" },
-    { name = "mkdocs-autorefs" },
-    { name = "mkdocs-exclude" },
-    { name = "mkdocs-material", extras = ["imaging"] },
-    { name = "mkdocs-redirects" },
-    { name = "mkdocstrings" },
-    { name = "mkdocstrings-python" },
-    { name = "pydocstyle" },
-]
+provides-extras = ["exts", "charts", "visualize", "dev", "docs"]
 
 [[package]]
 name = "py-ballisticcalc-exts"
