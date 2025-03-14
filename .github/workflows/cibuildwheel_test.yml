@@ -38,7 +38,7 @@ jobs:
       - name: Build binary python package
         run: |
           cd ./py_ballisticcalc.exts
-          uv build --sdist --outdir ../dist
+          uv build --sdist --out-dir ../dist
           uv run cibuildwheel --output-dir ../dist
           cd ..
 
