@@ -349,6 +349,9 @@ cdef class TrajectoryCalc:
         # endregion
 
         min_step = min(calc_step, record_step)
+        if min_step<0.02:
+            min_step = calc_step
+
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
                                             range_step=record_step,

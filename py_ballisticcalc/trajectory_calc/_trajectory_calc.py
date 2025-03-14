@@ -321,6 +321,8 @@ class TrajectoryCalc:
         # min step is used to handle situation, when record step is smaller than calc_step
         # in order to prevent range breaking too early
         min_step = min(self.calc_step, record_step)
+        if min_step<0.02:
+            min_step = self.calc_step
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step, time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
