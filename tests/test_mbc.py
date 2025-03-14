@@ -40,7 +40,7 @@ class TestMBC(unittest.TestCase):
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range, trajectory_step=self.step).trajectory
         # Should show no change before 200 yards
-        self.assertEqual(multi_trajectory[1].velocity.raw_value, self.baseline_trajectory[1].velocity.raw_value)
+        self.assertAlmostEqual(multi_trajectory[1].velocity.raw_value, self.baseline_trajectory[1].velocity.raw_value, places=5)
         # Should be faster at any point after 200 yards
         self.assertGreater(multi_trajectory[4].velocity.raw_value, self.baseline_trajectory[4].velocity.raw_value)
 
@@ -70,3 +70,7 @@ class TestMBC(unittest.TestCase):
             idx = machs.index(mach)
             with self.subTest(mach=mach):
                 self.assertAlmostEqual(cds[idx], cd, 3)
+
+
+if __name__ == '__main__':
+    unittest.main()

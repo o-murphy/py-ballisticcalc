@@ -41,8 +41,7 @@ Because of this, setting up and running the tests should be very simple.
 You'll need the following prerequisites:
 
 - Any Python version between **Python 3.9 and 3.12**
-- [**venv**](https://docs.python.org/3/library/venv.html) or [**uv
-  **](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
+- [**venv**](https://docs.python.org/3/library/venv.html) or [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
 - **git**
 
 ### Installation and setup
@@ -90,7 +89,7 @@ pylint ./py_ballisticcalc
 mypy ./py_ballisticcalc
 
 # Run automated tests
-pytest ./py_ballisticcalc
+pytest tests
 ```
 
 If you've made any changes to the documentation (including changes to function signatures, class definitions, or

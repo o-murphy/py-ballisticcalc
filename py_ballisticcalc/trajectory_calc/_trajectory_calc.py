@@ -421,7 +421,7 @@ class TrajectoryCalc:
         :param time: Time of flight
         :return: windage due to spin drift, in feet
         """
-        if self.twist != 0:
+        if (self.stability_coefficient != 0) and (self.twist != 0):
             sign = 1 if self.twist > 0 else -1
             return sign * (1.25 * (self.stability_coefficient + 1.2)
                            * math.pow(time, 1.83)) / 12
