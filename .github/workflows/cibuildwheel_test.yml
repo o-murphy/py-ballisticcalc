@@ -18,28 +18,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
 
       - name: Validate exts version matching
         run: |
-          python -m pip install tomli
-          python hooks/version_check.py
+          uv pip install tomli
+          uv run hooks/version_check.py
 
       - name: Install dependencies
         run: |
-          python -m pip install build cibuildwheel twine 
+          uv pip install cibuildwheel
 
       - name: Build pure python package
-        run: python -m build
+        run: uv build
 
       - name: Build binary python package
         run: |
           cd ./py_ballisticcalc.exts
-          python -m build --sdist --outdir ../dist
-          cibuildwheel --output-dir ../dist
+          uv build --sdist --outdir ../dist
+          uv run cibuildwheel --output-dir ../dist
           cd ..
 
       - name: List ./dist
