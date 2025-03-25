@@ -28,26 +28,24 @@ jobs:
     - name: Validate exts version matching
       run: |
         uv pip install tomli
-        uv run hooks/version_check.py
+        python hooks/version_check.py
 
     - name: Install the project
       run: |
-        uv sync --dev
         uv pip install -e .[dev]      
 
     - name: Build cython modules
       run: |
         cd ./py_ballisticcalc.exts
-        uv sync --dev
         uv pip install -e .[dev]
         cd ..
 
     - name: Run unittest tests in binary mode
       run: |
-        uv run pytest tests --no-header -v
+        pytest tests --no-header -v
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          uv run pytest tests -v
+          pytest tests -v
         else
           echo "Pytest succeeded."
         fi
@@ -56,10 +54,10 @@ jobs:
 
     - name: Run unittest tests in binary mode on Windows
       run: |
-        uv run pytest tests --no-header -v
+        pytest tests --no-header -v
         if %ERRORLEVEL% neq 0 (
           echo Pytest failed, running without capture
-          uv run pytest tests -v
+          pytest tests -v
         ) else (
           echo Pytest succeeded.
         )

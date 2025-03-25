@@ -214,19 +214,22 @@ class TestComputer(unittest.TestCase):
             self.assertLess(t.trajectory[0].velocity, self.baseline_trajectory[0].velocity)
 
         self.ammo.use_powder_sensitivity = False
+    # endregion Ammo
 
     # @unittest.skip("Raises ZeroDivisionError")
     def test_zero_velocity(self):
         tdm = DragModel(self.dm.BC + 0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
         slick = Ammo(tdm, 0)
         shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
-
         with self.assertRaises(RangeError):
             self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
 
-    # endregion Ammo
+    def test_very_short_shot(self):
+        """Ensure we always get at least two points in the trajectory"""
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere, winds=[])
+        hit_result = self.calc.fire(shot=shot, trajectory_range=Distance.Centimeter(5))
+        assert len(hit_result.trajectory) > 1
 
-    # region Shot
     def test_winds_sort(self):
         winds = [
             Wind(Unit.MPS(0), Unit.Degree(90), Unit.Meter(100)),
@@ -234,9 +237,7 @@ class TestComputer(unittest.TestCase):
             Wind(Unit.MPS(2), Unit.Degree(30), Unit.Meter(200)),
             Wind(Unit.MPS(2), Unit.Degree(30), Unit.Meter(50)),
         ]
-
         # sorted_winds = sorted(winds, key=lambda winds: winds.until_distance.raw_value)
-
         # print()
         shot = Shot(
             None, None, 0, 0, 0, None,
@@ -247,9 +248,6 @@ class TestComputer(unittest.TestCase):
         self.assertIs(sorted_winds[1], winds[0])
         self.assertIs(sorted_winds[2], winds[2])
         self.assertIs(sorted_winds[3], winds[1])
-
-
-# endregion Shot
 
 
 if __name__ == '__main__':

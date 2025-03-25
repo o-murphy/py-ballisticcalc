@@ -145,7 +145,7 @@ cdef void cy_update_stability_coefficient(ShotData_t * t):
     """Miller stability coefficient"""
     cdef:
         double twist_rate, length, sd, fv, ft, pt, ftp
-    if t.twist and t.length and t.diameter:
+    if t.twist and t.length and t.diameter and t.atmo._p0:
         twist_rate = fabs(t.twist) / t.diameter
         length = t.length / t.diameter
         sd = 30.0 * t.weight / (pow(twist_rate, 2) * pow(t.diameter, 3) * length * (1 + pow(length, 2)))
@@ -156,7 +156,6 @@ cdef void cy_update_stability_coefficient(ShotData_t * t):
         t.stability_coefficient = sd * fv * ftp
     else:
         t.stability_coefficient = 0.0
-    print(f"Stability coefficient: {t.stability_coefficient}; {twist_rate}, {length}, {sd}, {fv}, {ft}, {pt}, {ftp}")
 
 # Function to free memory for Curve_t
 cdef void free_curve(Curve_t *curve):
