@@ -389,12 +389,9 @@ class TrajectoryCalc:
                 raise RangeError(reason, ranges)
                 # break
             # endregion
-
         # endregion
-        # this check supercedes not filter_flags - as it will be true in any condition
-        # if not filter_flags:
-        if len(ranges)==0:
-        # we need to add end value in case of not filter flag and in case of usual trajectory
+        # Ensure that we have at least two data points in trajectory
+        if len(ranges) < 2:
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
@@ -429,7 +426,7 @@ class TrajectoryCalc:
 
     def calc_stability_coefficient(self, atmo: Atmo) -> float:
         """Miller stability coefficient"""
-        if self.twist and self.length and self.diameter:
+        if self.twist and self.length and self.diameter and atmo.pressure.raw_value:
             twist_rate = math.fabs(self.twist) / self.diameter
             length = self.length / self.diameter
             # Miller stability formula

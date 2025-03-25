@@ -21,13 +21,12 @@ jobs:
     - name: Validate exts version matching
       run: |
         uv pip install tomli
-        uv run hooks/version_check.py
+        python hooks/version_check.py
 
     - name: Install the project
       run: |
-        uv sync --dev
         uv pip install -e .[dev]
 
     - name: Analysing the code with mypy
       run: |
-        uv run mypy ./py_ballisticcalc 
+        mypy ./py_ballisticcalc 

@@ -173,6 +173,7 @@ __all__ = [
     'DangerSpace',
     'TrajFlag',
     'Atmo',
+    'Vacuum',
     'Wind',
     'Shot',
     'Weapon',

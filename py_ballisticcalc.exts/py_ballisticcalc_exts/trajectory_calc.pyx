@@ -420,10 +420,9 @@ cdef class TrajectoryCalc:
                     reason = RangeError.MinimumAltitudeReached
                 raise RangeError(reason, ranges)
             #endregion
-
         #endregion
-        # If filter_flags == 0 then all we want is the ending value
-        if len(ranges)==0:
+        # Ensure that we have at least two data points in trajectory
+        if len(ranges) < 2:
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,

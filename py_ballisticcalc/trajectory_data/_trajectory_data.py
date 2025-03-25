@@ -5,8 +5,9 @@ from typing_extensions import NamedTuple, Optional, Union, Any, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractDimension, Unit, PreferredUnits
+from py_ballisticcalc.vector import Vector
 
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
+__all__ = ('BaseTrajData', 'TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
 
 DataFrame: Any
 Axes: Any
@@ -15,10 +16,10 @@ _TrajFlagNames = {
     0: 'NONE',
     1: 'ZERO_UP',
     2: 'ZERO_DOWN',
+    3: 'ZERO',
     4: 'MACH',
     8: 'RANGE',
-    16: 'DANGER',
-    3: 'ZERO',
+    16: 'APEX',
     31: 'ALL',
 }
 
@@ -30,11 +31,11 @@ class TrajFlag(int):
     NONE: Final[int] = 0
     ZERO_UP: Final[int] = 1
     ZERO_DOWN: Final[int] = 2
+    ZERO: Final[int] = ZERO_UP | ZERO_DOWN
     MACH: Final[int] = 4
     RANGE: Final[int] = 8
-    DANGER: Final[int] = 16
-    ZERO: Final[int] = ZERO_UP | ZERO_DOWN
-    ALL: Final[int] = RANGE | ZERO_UP | ZERO_DOWN | MACH | DANGER
+    APEX: Final[int] = 16
+    ALL: Final[int] = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
 
     @staticmethod
     def name(value: Union[int, 'TrajFlag']) -> str:
@@ -47,6 +48,14 @@ class TrajFlag(int):
             parts.remove("ZERO_UP")
             parts.remove("ZERO_DOWN")
         return "|".join(parts) if parts else "UNKNOWN"
+
+
+class BaseTrajData(NamedTuple):
+    """Base class for trajectory data"""
+    time: float
+    position: Vector
+    velocity: Vector
+    mach: float
 
 
 class TrajectoryData(NamedTuple):
