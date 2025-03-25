@@ -156,7 +156,6 @@ cdef void cy_update_stability_coefficient(ShotData_t * t):
         t.stability_coefficient = sd * fv * ftp
     else:
         t.stability_coefficient = 0.0
-    print(f"Stability coefficient: {t.stability_coefficient}; {twist_rate}, {length}, {sd}, {fv}, {ft}, {pt}, {ftp}")
 
 # Function to free memory for Curve_t
 cdef void free_curve(Curve_t *curve):
