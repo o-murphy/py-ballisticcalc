@@ -52,4 +52,5 @@ include = ["py_ballisticcalc_exts*"]
 dev = ['cython', 'build', 'setuptools', 'cibuildwheel']
 
 [tool.cibuildwheel]
-before-all = "uname -a"
+# Use uv and build
+build-frontend = "build[uv]"
