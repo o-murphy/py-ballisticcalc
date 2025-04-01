@@ -409,7 +409,7 @@ class Wind:
             direction_from: 0 is blowing from behind shooter.
                 90 degrees is blowing from shooter's left towards right.
             until_distance: until which distance the specified wind blows
-            MAX_DISTANCE_FEET: Optional custom max wind distance
+            max_distance_feet: Optional custom max wind distance
 
         Example:
             This is how you can create a wind

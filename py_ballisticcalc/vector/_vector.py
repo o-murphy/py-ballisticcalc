@@ -7,14 +7,9 @@ __all__ = ('Vector',)
 class Vector(NamedTuple):
     """
     Attributes:
-        x: distance
-        y: vertical
-        z: horizontal
-
-    Args:
-        x: distance
-        y: vertical
-        z: horizontal
+        x (float): Distance component.
+        y (float): Vertical component.
+        z (float): Horizontal component.
     """
 
     x: float

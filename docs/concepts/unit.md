@@ -1,3 +1,3 @@
 ??? api "API Documentation"
 
-    [`py_ballisticcalc.conditions.unit`][py_ballisticcalc.conditions.unit]<br>
+    [`py_ballisticcalc.unit`][py_ballisticcalc.unit]<br>
