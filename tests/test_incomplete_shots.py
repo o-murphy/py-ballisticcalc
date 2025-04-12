@@ -159,6 +159,7 @@ test_points = [
 
 @pytest.mark.parametrize("distance, height, angle_in_degrees", test_points)
 def test_end_points_are_included(distance, height, angle_in_degrees, zero_height_calc):
+    """Make sure that we get the same result with and without extra data"""
     shot = shot_with_relative_angle_in_degrees(angle_in_degrees)
     calc = zero_height_calc
     range = Distance.Meter(distance)
@@ -182,10 +183,7 @@ def test_end_points_are_included(distance, height, angle_in_degrees, zero_height
     no_extra_data_flag = False
     start_time_no_extra_data = time.time()
     try:
-        hit_result_no_extra_data = calc.fire(shot, range, extra_data=no_extra_data_flag,
-                                             #                                       trajectory_step=range)
-                                             trajectory_step=Distance.Foot(0.2))
-        # )
+        hit_result_no_extra_data = calc.fire(shot, range, extra_data=no_extra_data_flag)
     except RangeError as e:
         print(f'Got range error {e=}')
         hit_result_no_extra_data = HitResult(shot, e.incomplete_trajectory, extra=no_extra_data_flag)
@@ -204,4 +202,4 @@ def test_end_points_are_included(distance, height, angle_in_degrees, zero_height
     print(f'Difference in results Distance: {distance_difference :.02f} '
           f'Height {height_difference :.02f}')
 
-    assert distance_difference<=Distance.Foot(0.2)>>Distance.Meter
+    assert distance_difference <= Distance.Foot(0.2) >> Distance.Meter

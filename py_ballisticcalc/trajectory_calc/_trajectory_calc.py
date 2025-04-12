@@ -5,7 +5,7 @@
 import math
 import warnings
 
-from typing_extensions import NamedTuple, Union, List, Tuple
+from typing_extensions import Optional, NamedTuple, Union, List, Tuple
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
@@ -47,26 +47,46 @@ class Config(NamedTuple):
     cMinimumAltitude: float
 
 
+class BaseTrajData(NamedTuple):
+    """Minimal data for one point in ballistic trajectory"""
+    time: float
+    position: Vector
+    velocity: Vector
+    mach: float
+
+
 class _TrajectoryDataFilter:
+    """Determines when to record trajectory data points based on range and time.
+    For specific points of interest, interpolates between integration steps to get the exact point.
+    """
     filter: Union[TrajFlag, int]
     current_flag: Union[TrajFlag, int]
     seen_zero: Union[TrajFlag, int]
+    time_of_last_record: float
     time_step: float
     range_step: float
     previous_mach: float
-    next_range_distance: float
+    previous_time: float
+    previous_position: Vector
+    previous_velocity: Vector
+    next_record_distance: float
     look_angle: float
 
-    def __init__(self, filter_flags: Union[TrajFlag, int], range_step: float, time_step: float = 0.0):
+    def __init__(self, filter_flags: Union[TrajFlag, int], range_step: float,
+                 initial_position: Vector, initial_velocity: Vector, time_step: float = 0.0):
         """If a time_step is indicated, then we will record a row at least that often in the trajectory"""
         self.filter: Union[TrajFlag, int] = filter_flags
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
         self.seen_zero: Union[TrajFlag, int] = TrajFlag.NONE
         self.time_step: float = time_step
         self.range_step: float = range_step
+        self.time_of_last_record: float = 0.0
+        self.next_record_distance: float = 0.0
         self.previous_mach: float = 0.0
         self.previous_time: float = 0.0
-        self.next_range_distance: float = 0.0
+        self.previous_position: Vector = initial_position
+        self.previous_velocity: Vector = initial_velocity
+        self.previous_v_mach: float = 0.0  # Previous velocity in Mach terms
         self.look_angle: float = 0.0
 
     def setup_seen_zero(self, height: float, barrel_elevation: float, look_angle: float) -> None:
@@ -80,45 +100,47 @@ class _TrajectoryDataFilter:
         self.current_flag = TrajFlag.NONE
 
     # pylint: disable=too-many-positional-arguments
-    def should_record(self,
-                      range_vector: Vector,
-                      velocity: float,
-                      mach: float,
-                      time: float) -> bool:
-        self.check_zero_crossing(range_vector)
-        self.check_mach_crossing(velocity, mach)
-        if self.check_next_range(range_vector.x, self.range_step):
-            self.previous_time = time
+    def should_record(self, position: Vector, velocity: Vector, mach: float,
+                      time: float) -> Optional[BaseTrajData]:
+        data = None
+        if position.x >= self.next_record_distance:
+            if position.x > self.previous_position.x:
+                # Interpolate to get BaseTrajData at the record distance
+                ratio = (self.next_record_distance - self.previous_position.x) / (position.x - self.previous_position.x)
+                data = BaseTrajData(
+                    time=self.previous_time + (time - self.previous_time) * ratio,
+                    position=self.previous_position + (position - self.previous_position) * ratio,
+                    velocity=self.previous_velocity + (velocity - self.previous_velocity) * ratio,
+                    mach=self.previous_mach + (mach - self.previous_mach) * ratio
+                )
+            self.current_flag |= TrajFlag.RANGE
+            self.next_record_distance += self.range_step
+            self.time_of_last_record = time
         elif self.time_step > 0:
             self.check_next_time(time)
-        return bool(self.current_flag & self.filter)
-
-    def check_next_range(self, next_range: float, step: float) -> bool:
-        """
-        If we passed the next_range point, set the RANGE flag and update the next_range_distance
-        :return: True if we passed the next range step
-        """
-        if next_range >= self.next_range_distance:
-            self.current_flag |= TrajFlag.RANGE
-            self.next_range_distance += step
-            return True
-        return False
+        self.check_zero_crossing(position)
+        self.check_mach_crossing(velocity.magnitude(), mach)
+        if bool(self.current_flag & self.filter) and data is None:
+            data = BaseTrajData(time=time, position=position,
+                                velocity=velocity, mach=mach)
+        self.previous_time = time
+        self.previous_position = position
+        self.previous_velocity = velocity
+        self.previous_mach = mach
+        return data
 
     def check_next_time(self, time: float):
-        if time > self.previous_time + self.time_step:
+        if time > self.time_of_last_record + self.time_step:
             self.current_flag |= TrajFlag.RANGE
-            self.previous_time = time
+            self.time_of_last_record = time
 
     def check_mach_crossing(self, velocity: float, mach: float):
-        # Mach crossing check
-        current_mach = velocity / mach
-        if self.previous_mach > 1 >= current_mach:  # (velocity / mach <= 1) and (previous_mach > 1)
+        current_v_mach = velocity / mach
+        if self.previous_v_mach > 1 >= current_v_mach:  # (velocity / mach <= 1) and (previous_mach > 1)
             self.current_flag |= TrajFlag.MACH
-        self.previous_mach = current_mach
+        self.previous_v_mach = current_v_mach
 
     def check_zero_crossing(self, range_vector: Vector):
-        # Zero-crossing checks
-
         if range_vector.x > 0:
             # Zero reference line is the sight line defined by look_angle
             reference_height = range_vector.x * math.tan(self.look_angle)
@@ -318,16 +340,17 @@ class TrajectoryCalc:
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
-        # min step is used to handle situation, when record step is smaller than calc_step
+        # min_step is used to handle situation, when record step is smaller than calc_step
         # in order to prevent range breaking too early
         min_step = min(self.calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step, time_step=time_step)
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
+                        initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
-        it = 0
+        it = 0  # iteration counter
         while range_vector.x <= maximum_range + min_step:
             it += 1
             data_filter.clear_current_flag()
@@ -344,13 +367,11 @@ class TrajectoryCalc:
             if filter_flags:  # require check before call to improve performance
 
                 # Record TrajectoryData row
-                if data_filter.should_record(range_vector, velocity, mach, time):
-                    ranges.append(create_trajectory_row(
-                        time, range_vector, velocity_vector,
-                        velocity, mach, self.spin_drift(time), self.look_angle,
+                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+                    ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
+                        data.velocity.magnitude(), data.mach, self.spin_drift(data.time), self.look_angle,
                         density_factor, drag, self.weight, data_filter.current_flag
                     ))
-
             # endregion
 
             # region Ballistic calculation step (point-mass)
@@ -582,7 +603,7 @@ def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
     return curve
 
 
-# # use get_only_mach_data with calculate_by_curve_and_mach_data cause it faster
+# # use ._get_only_mach_data with ._calculate_by_curve_and_mach_list because it's faster
 # def calculate_by_curve(data: List[DragDataPoint], curve: List[CurvePoint], mach: float) -> float:
 #     """
 #     Binary search for drag coefficient based on Mach number

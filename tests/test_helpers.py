@@ -1,7 +1,6 @@
 import sys
 import time
 from random import random
-from typing import NamedTuple
 
 import pytest
 import random
@@ -117,8 +116,8 @@ def test_find_index_for_timepoint(one_degree_shot):
 
     # exception should be thrown on negative max_time_deviation
     with pytest.raises(ValueError):
-         find_index_for_time_point(one_degree_shot, 0, max_time_deviation_in_seconds=-1)
-    
+        find_index_for_time_point(one_degree_shot, 0, max_time_deviation_in_seconds=-1)
+
 
 def test_find_index_for_distance(one_degree_shot):
     shot = one_degree_shot
@@ -156,7 +155,6 @@ def test_find_apex(one_degree_shot):
     assert index!=-1
     apex_point_height = one_degree_shot.trajectory[index].height >> Distance.Meter
     assert apex_point_height==pytest.approx(9.40, abs=0.01)
-
 
 
 class MockTrajectoryPoint:
