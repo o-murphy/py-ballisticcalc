@@ -1,5 +1,5 @@
 """
-Useful types for prefer_units of measurement conversion for ballistics calculations
+Useful types for PreferredUnits of measurement and conversion for ballistics calculations
 """
 
 import re
@@ -191,7 +191,7 @@ UnitAliases = {
     ('hour', 'h'): Unit.OClock,
 
     ('inch', 'in'): Unit.Inch,
-    ('foot', 'ft'): Unit.Foot,
+    ('foot', 'feet', 'ft'): Unit.Foot,
     ('yard', 'yd'): Unit.Yard,
     ('mile', 'mi', 'mi.'): Unit.Mile,
     ('nauticalmile', 'nm', 'nmi'): Unit.NauticalMile,
@@ -218,7 +218,7 @@ UnitAliases = {
 
     ('meter/second', 'm/s', 'meter/s', 'm/second', 'mps'): Unit.MPS,
     ('kilometer/hour', 'km/h', 'kilometer/h', 'km/hour', 'kmh'): Unit.KMH,
-    ('foot/second', 'ft/s', 'foot/s', 'ft/second', 'fps'): Unit.FPS,
+    ('foot/second', 'feet/second', 'ft/s', 'foot/s', 'feet/s', 'ft/second', 'fps'): Unit.FPS,
     ('mile/hour', 'mi/h', 'mile/h', 'mi/hour', 'mph'): Unit.MPH,
     ('knot', 'kn', 'kt'): Unit.KT,
 
@@ -232,8 +232,8 @@ UnitAliases = {
 
 
 class AbstractDimension:
-    """Abstract class for unit of measure instance definition
-    Stores defined unit and value, applies conversions to other prefer_units
+    """Abstract class for unit of measure instance definition.
+    Stores defined unit and value, applies conversions to other prefer_units.
     """
     __slots__ = ('_value', '_defined_units')
 
@@ -369,7 +369,7 @@ class Distance(AbstractDimension):
     @property
     def _inch(self) -> float:
         """
-        Interhal shortcut for Distance() >> Distance.Inch
+        Internal shortcut for Distance() >> Distance.Inch
 
         Returns:
             float: The calculated value in inch.
@@ -379,7 +379,7 @@ class Distance(AbstractDimension):
     @property
     def _feet(self) -> float:
         """
-        Interhal shortcut for Distance() >> Distance.Foot
+        Internal shortcut for Distance() >> Distance.Foot
 
         This property converts the internal value (assumed to be in inches)
         to feet by dividing it by 12.
@@ -441,6 +441,7 @@ class Distance(AbstractDimension):
 
     Inch: Final[Unit] = Unit.Inch
     Foot: Final[Unit] = Unit.Foot
+    Feet: Final[Unit] = Unit.Foot
     Yard: Final[Unit] = Unit.Yard
     Mile: Final[Unit] = Unit.Mile
     NauticalMile: Final[Unit] = Unit.NauticalMile
@@ -457,7 +458,7 @@ class Pressure(AbstractDimension):
     @property
     def _inHg(self) -> float:
         """
-        Interhal shortcut for Pressure() >> Distance.InHg
+        Internal shortcut for Pressure() >> Distance.InHg
 
         Returns:
             float: The calculated value in InHg.
@@ -507,7 +508,7 @@ class Weight(AbstractDimension):
     @property
     def _grain(self) -> float:
         """
-        Interhal shortcut for Weight() >> Distance.Grain
+        Internal shortcut for Weight() >> Distance.Grain
 
         Returns:
             float: The calculated value in grain.
@@ -562,7 +563,7 @@ class Temperature(AbstractDimension):
     @property
     def _F(self) -> float:
         """
-        Interhal shortcut for Temperature() >> Temperature.Fahrenheit
+        Internal shortcut for Temperature() >> Temperature.Fahrenheit
 
         Returns:
             float: The calculated value in Fahrenheit.
@@ -607,7 +608,7 @@ class Angular(AbstractDimension):
     @property
     def _rad(self):
         """
-        Interhal shortcut for Angular() >> Angular.Radian
+        Internal shortcut for Angular() >> Angular.Radian
 
         Returns:
             float: The calculated value in rad.
@@ -679,7 +680,7 @@ class Velocity(AbstractDimension):
     @property
     def _fps(self) -> float:
         """
-        Interhal shortcut for Velocity() >> Velocity.FPS
+        Internal shortcut for Velocity() >> Velocity.FPS
 
         This property converts the internal value (assumed to be in mps)
         to fps by multiplying it by 3.2808399.
