@@ -1,8 +1,14 @@
 from cython cimport final
 
-
 from py_ballisticcalc.unit import PreferredUnits
+from py_ballisticcalc_exts.vector cimport CVector
 
+cdef class BaseTrajData:
+    def __cinit__(BaseTrajData self, double time, CVector position, CVector velocity, double mach):
+        self.time = time
+        self.position = position
+        self.velocity = velocity
+        self.mach = mach
 
 @final
 cdef class TrajectoryData:

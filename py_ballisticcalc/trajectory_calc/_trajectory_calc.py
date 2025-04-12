@@ -69,6 +69,7 @@ class _TrajectoryDataFilter:
     previous_time: float
     previous_position: Vector
     previous_velocity: Vector
+    previous_v_mach: float
     next_record_distance: float
     look_angle: float
 

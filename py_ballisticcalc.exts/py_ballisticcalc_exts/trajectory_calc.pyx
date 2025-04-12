@@ -12,7 +12,7 @@ from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_euler cimport (
     Config_t,
@@ -53,18 +53,24 @@ cdef class _TrajectoryDataFilter:
     cdef:
         int filter, current_flag, seen_zero
         int current_item
-        double previous_mach, previous_time, next_range_distance, range_step, time_step, look_angle
+        double previous_mach, previous_time, previous_v_mach, next_record_distance
+        double range_step, time_of_last_record, time_step, look_angle
+        CVector previous_position, previous_velocity
 
-    def __cinit__(_TrajectoryDataFilter self,
-                  int filter_flags, double range_step, double time_step = 0.0) -> None:
+    def __cinit__(_TrajectoryDataFilter self, int filter_flags, double range_step,
+                  CVector initial_position, CVector initial_velocity, double time_step = 0.0) -> None:
         self.filter = filter_flags
         self.current_flag = CTrajFlag.NONE
         self.seen_zero = CTrajFlag.NONE
         self.time_step = time_step
         self.range_step = range_step
+        self.time_of_last_record = 0.0
+        self.next_record_distance = 0.0
         self.previous_mach = 0.0
         self.previous_time = 0.0
-        self.next_range_distance = 0.0
+        self.previous_position = initial_position
+        self.previous_velocity = initial_velocity
+        self.previous_v_mach = 0.0
         self.look_angle = 0
 
     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
@@ -77,54 +83,73 @@ cdef class _TrajectoryDataFilter:
     cdef void clear_current_flag(_TrajectoryDataFilter self):
         self.current_flag = CTrajFlag.NONE
 
-    cdef bint should_record(_TrajectoryDataFilter self,
-                            CVector range_vector,
-                            double velocity,
+    cdef BaseTrajData should_record(_TrajectoryDataFilter self,
+                            CVector position,
+                            CVector velocity,
                             double mach,
                             double time,
                             ):
-        self.check_zero_crossing(range_vector)
-        self.check_mach_crossing(velocity, mach)
-        if self.check_next_range(range_vector.x, self.range_step):
-            self.previous_time = time
+        cdef BaseTrajData data = None
+        cdef double ratio
+        cdef CVector temp_position, temp_velocity
+        cdef CVector temp_sub_position, temp_sub_velocity
+        cdef CVector temp_mul_position, temp_mul_velocity
+
+        if position.x >= self.next_record_distance:
+            if position.x > self.previous_position.x:
+                # Interpolate to get BaseTrajData at the record distance
+                ratio = (self.next_record_distance - self.previous_position.x) / (position.x - self.previous_position.x)
+                temp_sub_position = sub(&position, &self.previous_position)
+                temp_mul_position = mul_c(&temp_sub_position, ratio)
+                temp_position = add(&self.previous_position, &temp_mul_position)
+                temp_sub_velocity = sub(&velocity, &self.previous_velocity)
+                temp_mul_velocity = mul_c(&temp_sub_velocity, ratio)
+                temp_velocity = add(&self.previous_velocity, &temp_mul_velocity)
+                data = BaseTrajData(
+                    time=self.previous_time + (time - self.previous_time) * ratio,
+                    position=temp_position,
+                    velocity=temp_velocity,
+                    mach=self.previous_mach + (mach - self.previous_mach) * ratio
+                )
+            self.current_flag |= CTrajFlag.RANGE
+            self.next_record_distance += self.range_step
+            self.time_of_last_record = time
         elif self.time_step > 0:
             self.check_next_time(time)
-        return (self.current_flag & self.filter) != 0
+        self.check_zero_crossing(position)
+        self.check_mach_crossing(mag(&velocity), mach)
+        if (self.current_flag & self.filter) != 0 and data is None:
+            data = BaseTrajData(time=time, position=position,
+                                velocity=velocity, mach=mach)
+        self.previous_time = time
+        self.previous_position = position
+        self.previous_velocity = velocity
+        self.previous_mach = mach
+        return data
 
-    cdef bint check_next_range(_TrajectoryDataFilter self, double next_range, double step):
-        # Next range check
-        if next_range >= self.next_range_distance:
+    cdef void check_next_time(_TrajectoryDataFilter self, double time):
+        if time > self.time_of_last_record + self.time_step:
             self.current_flag |= CTrajFlag.RANGE
-            self.next_range_distance += step
-            return True
-        return False
-
-    cdef void check_next_time(self, double time):
-        if time > self.previous_time + self.time_step:
-            self.current_flag |= CTrajFlag.RANGE
-            self.previous_time = time
+            self.time_of_last_record = time
 
     cdef void check_mach_crossing(_TrajectoryDataFilter self, double velocity, double mach):
-        # Mach crossing check
-        cdef double current_mach = velocity / mach
-        if self.previous_mach > 1 >= current_mach:
+        cdef double current_v_mach = velocity / mach
+        if self.previous_v_mach > 1 >= current_v_mach:
             self.current_flag |= CTrajFlag.MACH
-        self.previous_mach = current_mach
+        self.previous_v_mach = current_v_mach
 
     cdef void check_zero_crossing(_TrajectoryDataFilter self, CVector range_vector):
-        # Zero-crossing checks
-
         if range_vector.x > 0:
             # Zero reference line is the sight line defined by look_angle
             reference_height = range_vector.x * tan(self.look_angle)
             # If we haven't seen ZERO_UP, we look for that first
             if not (self.seen_zero & CTrajFlag.ZERO_UP):
-                if range_vector.x >= reference_height:
+                if range_vector.y >= reference_height:
                     self.current_flag |= CTrajFlag.ZERO_UP
                     self.seen_zero |= CTrajFlag.ZERO_UP
             # We've crossed above sight line; now look for crossing back through it
             elif not (self.seen_zero & CTrajFlag.ZERO_DOWN):
-                if range_vector.x < reference_height:
+                if range_vector.y < reference_height:
                     self.current_flag |= CTrajFlag.ZERO_DOWN
                     self.seen_zero |= CTrajFlag.ZERO_DOWN
 
@@ -327,6 +352,7 @@ cdef class TrajectoryCalc:
             # endregion
 
             _TrajectoryDataFilter data_filter
+            BaseTrajData data
 
         cdef:
             # early bindings
@@ -350,9 +376,8 @@ cdef class TrajectoryCalc:
 
         min_step = min(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags,
-                                            range_step=record_step,
-                                            time_step=time_step)
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
+                        initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
         data_filter.setup_seen_zero(range_vector.y, self.__shot.barrel_elevation, self.__shot.look_angle)
 
         #region Trajectory Loop
@@ -373,11 +398,11 @@ cdef class TrajectoryCalc:
             if filter_flags:
 
                 # Record TrajectoryData row
-                # if data_filter.should_record(range_vector, velocity, mach, record_step, self.look_angle, time):
-                if data_filter.should_record(range_vector, velocity, mach, time):
+                data = data_filter.should_record(range_vector, velocity_vector, mach, time)
+                if data is not None:        
                     ranges.append(create_trajectory_row(
-                        time, range_vector, velocity_vector,
-                        velocity, mach, cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
+                        data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
+                        cy_spin_drift(&self.__shot, time), self.__shot.look_angle,
                         density_factor, drag, self.__shot.weight, data_filter.current_flag
                     ))
 
