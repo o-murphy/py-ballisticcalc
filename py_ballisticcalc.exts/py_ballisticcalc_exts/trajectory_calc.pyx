@@ -36,15 +36,14 @@ from py_ballisticcalc_exts.cy_euler cimport (
 
 import warnings
 
-from py_ballisticcalc.logger import logger
+from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.constants import cMaxWindDistanceFeet
 from bisect import bisect_left
 
-
 __all__ = (
-    'TrajectoryCalc',
+    'TrajectoryCalc'
 )
 
 
@@ -95,6 +94,14 @@ cdef class _TrajectoryDataFilter:
         cdef CVector temp_sub_position, temp_sub_velocity
         cdef CVector temp_mul_position, temp_mul_velocity
 
+        #region DEBUG
+        if get_debug():
+            logger.debug(
+                f"should_record called with time={time}, "
+                f"position=({position.x}, {position.y}, {position.z}), "
+                f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
+            )
+        #endregion
         if position.x >= self.next_record_distance:
             if position.x > self.previous_position.x:
                 # Interpolate to get BaseTrajData at the record distance
@@ -125,6 +132,17 @@ cdef class _TrajectoryDataFilter:
         self.previous_position = position
         self.previous_velocity = velocity
         self.previous_mach = mach
+        #region DEBUG
+        if get_debug():
+            if data is not None:
+                logger.debug(
+                    f"should_record returning BaseTrajData time={data.time}, "
+                    f"position=({data.position.x}, {data.position.y}, {data.position.z}), "
+                    f"velocity=({data.velocity.x}, {data.velocity.y}, {data.velocity.z}), mach={data.mach}"
+                )
+            else:
+                logger.debug("should_record returning None")
+        #endregion
         return data
 
     cdef void check_next_time(_TrajectoryDataFilter self, double time):
@@ -244,7 +262,7 @@ cdef class TrajectoryCalc:
             CTrajFlag filter_flags = CTrajFlag.RANGE
 
         if extra_data:
-            dist_step = Distance.Foot(self.__config.chart_resolution)
+            #dist_step = Distance.Foot(self.__config.chart_resolution)
             filter_flags = CTrajFlag.ALL
 
         self._init_trajectory(shot_info)
