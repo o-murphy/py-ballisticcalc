@@ -12,7 +12,6 @@ def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit:
     else:
         print(f'Length of trajectory: { trajectory_length=}')
 
-
     trajectory = hit_result.trajectory
     if top_k<trajectory_length:
         end_start_top_k = top_k

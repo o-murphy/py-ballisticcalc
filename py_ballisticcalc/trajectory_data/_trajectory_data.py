@@ -5,9 +5,8 @@ from typing_extensions import NamedTuple, Optional, Union, Any, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractDimension, Unit, PreferredUnits
-from py_ballisticcalc.vector import Vector
 
-__all__ = ('BaseTrajData', 'TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
 
 DataFrame: Any
 Axes: Any
@@ -50,14 +49,6 @@ class TrajFlag(int):
         return "|".join(parts) if parts else "UNKNOWN"
 
 
-class BaseTrajData(NamedTuple):
-    """Base class for trajectory data"""
-    time: float
-    position: Vector
-    velocity: Vector
-    mach: float
-
-
 class TrajectoryData(NamedTuple):
     """
     Data for one point in ballistic trajectory
@@ -79,7 +70,7 @@ class TrajectoryData(NamedTuple):
         drag (float): Current drag coefficient
         energy (Energy):
         ogw (Weight): optimal game weight
-        flag (int): row type
+        flag (Union[TrajFlag, int]): row type
     """
 
     time: float

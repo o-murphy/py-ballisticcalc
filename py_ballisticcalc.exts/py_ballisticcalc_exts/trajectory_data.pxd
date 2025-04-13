@@ -1,3 +1,5 @@
+from py_ballisticcalc_exts.vector cimport CVector
+
 cdef enum CTrajFlag:
     NONE = 0
     ZERO_UP = 1
@@ -7,6 +9,14 @@ cdef enum CTrajFlag:
     RANGE = 8
     APEX = 16
     ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
+
+
+cdef class BaseTrajData:
+    cdef:
+        readonly double time
+        readonly CVector position
+        readonly CVector velocity
+        readonly double mach
 
 
 cdef class TrajectoryData:

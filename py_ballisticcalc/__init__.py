@@ -21,7 +21,7 @@ from .conditions import *
 from .drag_model import *
 from .drag_tables import *
 from .interface import *
-from .logger import logger
+from .logger import *
 from .munition import *
 from .trajectory_data import *
 from .unit import *
@@ -87,7 +87,7 @@ def _load_config(filepath=None, suppress_warnings=False):
                     PreferredUnits.set(**preferred_units)
                 else:
                     if not suppress_warnings:
-                        logger.warning("Config has not `pybc.preferred_units` section")
+                        logger.warning("Config has no `pybc.preferred_units` section")
 
                 if calculator := _pybc.get('calculator'):
                     if max_calc_step_size := calculator.get('max_calc_step_size'):
@@ -100,10 +100,10 @@ def _load_config(filepath=None, suppress_warnings=False):
                                 logger.warning("Wrong max_calc_step_size units or value")
                 else:
                     if not suppress_warnings:
-                        logger.warning("Config has not `pybc.calculator` section")
+                        logger.warning("Config has no `pybc.calculator` section")
             else:
                 if not suppress_warnings:
-                    logger.warning("Config has not `pybc` section")
+                    logger.warning("Config has no `pybc` section")
 
     logger.debug("Calculator globals and PreferredUnits load success")
 
@@ -157,10 +157,9 @@ __all__ = [
     'loadImperialUnits',
     'loadMetricUnits',
     'loadMixedUnits',
-    'logger',
     'TrajectoryCalc',
     'Vector',
-    "InterfaceConfigDict",
+    'InterfaceConfigDict',
     'get_global_max_calc_step_size',
     'set_global_max_calc_step_size',
     'reset_globals',
@@ -204,6 +203,11 @@ __all__ = [
     'UnitConversionError',
     'ZeroFindingError',
     'RangeError',
+    'logger',
+    'enable_file_logging',
+    'disable_file_logging',
+    'get_debug',
+    'set_debug',
 ]
 
 # __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S', 'RA4')]

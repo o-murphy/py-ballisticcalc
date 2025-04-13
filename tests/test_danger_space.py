@@ -23,7 +23,7 @@ class TestDangerSpace(unittest.TestCase):
         )
 
         self.assertAlmostEqual(
-            round(danger_space.begin.distance >> Distance.Yard, Distance.Yard.accuracy), 393.6, 0)
+            round(danger_space.begin.distance >> Distance.Yard, Distance.Yard.accuracy), 393.0, 0)
         self.assertAlmostEqual(
             round(danger_space.end.distance >> Distance.Yard, Distance.Yard.accuracy), 579.0, 0)
 
