@@ -112,7 +112,10 @@ class _TrajectoryDataFilter:
             )
         #endregion
         data = None
-        if position.x >= self.next_record_distance:
+        if (self.range_step > 0) and (position.x >= self.next_record_distance):
+            while self.next_record_distance + self.range_step < position.x:
+                # Handle case where we have stepped past more than one record distance
+                self.next_record_distance += self.range_step
             if position.x > self.previous_position.x:
                 # Interpolate to get BaseTrajData at the record distance
                 ratio = (self.next_record_distance - self.previous_position.x) / (position.x - self.previous_position.x)
