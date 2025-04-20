@@ -17,7 +17,7 @@ from py_ballisticcalc.trajectory_calc._trajectory_calc import (
 cZeroFindingAccuracy: Final[float] = 0.000005
 cMinimumVelocity: Final[float] = 50.0
 cMaximumDrop: Final[float] = -15000
-cMaxIterations: Final[int] = 20
+cMaxIterations: Final[int] = 60
 cGravityConstant: Final[float] = -32.17405
 cMinimumAltitude: Final[float] = -1410.748  # ft
 

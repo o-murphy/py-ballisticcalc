@@ -309,16 +309,22 @@ class TrajectoryCalc:
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
-            t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
-            height = t.height >> Distance.Foot
+            try:
+                t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
+                height = t.height >> Distance.Foot
+            except RangeError as e:
+                last_distance_foot = e.last_distance >> Distance.Foot
+                proportion = (last_distance_foot) / zero_distance
+                height = (e.incomplete_trajectory[-1].height >> Distance.Foot) / proportion
+
             zero_finding_error = math.fabs(height - height_at_zero)
+
             if zero_finding_error > _cZeroFindingAccuracy:
                 # Adjust barrel elevation to close height at zero distance
                 self.barrel_elevation -= (height - height_at_zero) / zero_distance
             else:  # last barrel_elevation hit zero!
                 break
             iterations_count += 1
-
         if zero_finding_error > _cZeroFindingAccuracy:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))

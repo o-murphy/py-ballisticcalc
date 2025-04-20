@@ -330,7 +330,7 @@ cdef class TrajectoryCalc:
             double zero_finding_error = _cZeroFindingAccuracy * 2
 
             object t
-            double height
+            double height, last_distance_foot, proportion
 
         self._init_trajectory(shot_info)
         self.__shot.barrel_azimuth = 0.0
@@ -340,9 +340,16 @@ cdef class TrajectoryCalc:
 
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
-            t = self._integrate(maximum_range, zero_distance, CTrajFlag.NONE)[0]
-            height = t.height._feet  # use there internal shortcut instead of (t.height >> Distance.Foot)
+            try:
+                t = self._integrate(maximum_range, zero_distance, CTrajFlag.NONE)[0]
+                height = t.height._feet  # use internal shortcut instead of (t.height >> Distance.Foot)
+            except RangeError as e:
+                last_distance_foot = e.last_distance._feet
+                proportion = (last_distance_foot) / zero_distance
+                height = (e.incomplete_trajectory[-1].height._feet) / proportion
+
             zero_finding_error = fabs(height - height_at_zero)
+
             if zero_finding_error > _cZeroFindingAccuracy:
                 self.__shot.barrel_elevation -= (height - height_at_zero) / zero_distance
             else:  # last barrel_elevation hit zero!
