@@ -313,6 +313,8 @@ class TrajectoryCalc:
                 t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
                 height = t.height >> Distance.Foot
             except RangeError as e:
+                if e.last_distance is None:
+                    raise e
                 last_distance_foot = e.last_distance >> Distance.Foot
                 proportion = (last_distance_foot) / zero_distance
                 height = (e.incomplete_trajectory[-1].height >> Distance.Foot) / proportion
