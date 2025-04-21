@@ -9,8 +9,13 @@ from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Veloci
                               loadMetricUnits, PreferredUnits)
 
 
-class TestIssue96_97(unittest.TestCase):
+def get_object_attribute_values_as_dict(obj: Any) -> dict[str, Any]:
+    """Returns the attributes of an object as a dictionary."""
+    return {attr: getattr(obj, attr) for attr in dir(obj) if not attr.startswith("__")}
 
+
+class TestIssue96_97(unittest.TestCase):
+    """Scenario where velocity.x approaches zero."""
     def setUp(self):
         drag_model = DragModel(bc=0.03,
                                drag_table=TableG1,
@@ -24,7 +29,7 @@ class TestIssue96_97(unittest.TestCase):
         self.trange = Distance.Meter(1600.2437248702522)
 
     def test_must_return_hit_result(self):
-
+        """Return results even when desired trajectory_range isn't reached."""
         with self.assertRaisesRegex(RangeError, "Max range not reached"):
             self.calc.fire(self.zero, self.trange, extra_data=True)
 
@@ -44,11 +49,6 @@ class TestIssue96_97(unittest.TestCase):
         # should return error
         self.assertIsInstance(err, RangeError)
         self.assertIsInstance(hit_result, HitResult, f"Expected HitResult but got {type(hit_result)}")
-
-def get_object_attribute_values_as_dict(obj: Any) -> dict[str, Any]:
-    """Returns the attributes of an object as a dictionary."""
-    return {attr: getattr(obj, attr) for attr in dir(obj) if not attr.startswith("__")}
-
 
 class TestIssue144(unittest.TestCase):
     """Changing the preferred unit should not affect the results"""
