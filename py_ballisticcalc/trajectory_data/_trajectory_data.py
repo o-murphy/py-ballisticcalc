@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing_extensions import NamedTuple, Optional, Union, Any, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, AbstractDimension, Unit, PreferredUnits
+from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, GenericDimension, Unit, PreferredUnits
 
 __all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
 
@@ -95,7 +95,7 @@ class TrajectoryData(NamedTuple):
         :return: matrix of formatted strings for each value of trajectory in default prefer_units
         """
 
-        def _fmt(v: AbstractDimension, u: Unit) -> str:
+        def _fmt(v: GenericDimension, u: Unit) -> str:
             """simple formatter"""
             return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 

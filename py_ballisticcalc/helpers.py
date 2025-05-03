@@ -2,7 +2,7 @@ import bisect
 import math
 from typing import Callable, Any, Final, List
 
-from py_ballisticcalc import HitResult, TrajFlag, TrajectoryData, Velocity, Distance, AbstractDimension
+from py_ballisticcalc import HitResult, TrajFlag, TrajectoryData, Velocity, Distance
 
 EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81 # Acceleration due to gravity (m/s^2)
 

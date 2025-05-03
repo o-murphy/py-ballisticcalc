@@ -6,14 +6,32 @@ import re
 from dataclasses import dataclass
 from enum import IntEnum
 from math import pi, atan, tan
+from typing import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Final, Protocol, runtime_checkable, \
+    SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Type, Any
 
-from typing_extensions import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Self, Final
+from typing_extensions import Self, TypeAlias
 
-from py_ballisticcalc.logger import logger
 from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, UnitAliasError
+from py_ballisticcalc.logger import logger
+
+Number: TypeAlias = Union[float, int]
+
+
+@runtime_checkable
+class Comparable(Protocol):
+    def __eq__(self, other: object) -> bool: ...
+
+    def __lt__(self, other: Self) -> bool: ...
+
+    def __gt__(self, other: Self) -> bool: ...
+
+    def __le__(self, other: Self) -> bool: ...
+
+    def __ge__(self, other: Self) -> bool: ...
+
 
 # pylint: disable=invalid-name
-AbstractDimensionType = TypeVar('AbstractDimensionType', bound='AbstractDimension')
+_GenericDimensionType = TypeVar('_GenericDimensionType', bound='GenericDimension')
 
 
 # pylint: disable=invalid-name
@@ -93,15 +111,15 @@ class Unit(IntEnum):
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
-    def __call__(self: Self, value: Union[int, float, AbstractDimensionType]) -> AbstractDimensionType:
+    def __call__(self: Self, value: Union[Number, _GenericDimensionType]) -> _GenericDimensionType:
         """Creates new unit instance by dot syntax
         :param self: unit as Unit enum
         :param value: numeric value of the unit
         :return: AbstractUnit instance
         """
 
-        obj: AbstractDimension
-        if isinstance(value, AbstractDimension):
+        obj: GenericDimension
+        if isinstance(value, GenericDimension):
             return value << self  # type: ignore
         if 0 <= self < 10:
             obj = Angular(value, self)
@@ -129,7 +147,7 @@ class UnitProps(NamedTuple):
     symbol: str
 
 
-UnitPropsDict = {
+UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Radian: UnitProps('radian', 6, 'rad'),
     Unit.Degree: UnitProps('degree', 4, '°'),
     Unit.MOA: UnitProps('MOA', 2, 'MOA'),
@@ -179,7 +197,9 @@ UnitPropsDict = {
     Unit.Newton: UnitProps('newton', 3, 'N'),
 }
 
-UnitAliases = {
+UnitAliasesType: TypeAlias = Mapping[Tuple[str, ...], Unit]
+
+UnitAliases: UnitAliasesType = {
     ('radian', 'rad'): Unit.Radian,
     ('degree', 'deg'): Unit.Degree,
     ('moa',): Unit.MOA,
@@ -231,18 +251,55 @@ UnitAliases = {
 }
 
 
-class AbstractDimension:
+@runtime_checkable
+class Measured(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
+    _value: Number
+    _defined_units: Unit
+    __slots__ = ('_value', '_defined_units')
+
+    def __init__(self, value: Number, units: Unit): ...
+
+    def __str__(self) -> str: ...
+
+    def __repr__(self) -> str: ...
+
+    def __rshift__(self, units: Unit) -> Number: ...
+
+    def __lshift__(self, units: Unit) -> Self: ...
+
+    def __rlshift__(self, units: Unit) -> Self: ...
+
+    def _validate_unit_type(self, value: Number, units: Unit): ...
+
+    def to_raw(self, value: Number, units: Unit) -> Number: ...
+
+    def from_raw(self, value: Number, units: Unit) -> Number: ...
+
+    def convert(self, units: Unit) -> Self: ...
+
+    def get_in(self, units: Unit) -> Number: ...
+    @property
+    def units(self) -> Unit: ...
+    @property
+    def unit_value(self) -> Number: ...
+    @property
+    def raw_value(self) -> Number: ...
+
+
+class GenericDimension(Generic[_GenericDimensionType]):
     """Abstract class for unit of measure instance definition.
     Stores defined unit and value, applies conversions to other prefer_units.
     """
+    _value: Number
+    _defined_units: Unit
     __slots__ = ('_value', '_defined_units')
 
-    def __init__(self, value: Union[float, int], units: Unit):
+    def __init__(self, value: Number, units: Unit):
         """
         :param units: unit as Unit enum
         :param value: numeric value of the unit
         """
-        self._value: float = self.to_raw(value, units)
+        self._value: Number = self.to_raw(value, units)
         self._defined_units: Unit = units
 
     def __str__(self) -> str:
@@ -260,37 +317,40 @@ class AbstractDimension:
         """
         return f'<{self.__class__.__name__}: {self << self.units} ({round(self._value, 4)})>'
 
-    def __float__(self):
+    def __float__(self) -> float:
         return float(self._value)
 
-    def __eq__(self, other):
+    def __int__(self) -> int:
+        return int(self._value)
+
+    def __eq__(self, other) -> bool:
         return float(self) == other
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self._value, self._defined_units))
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         return float(self) < other
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> bool:
         return float(self) > other
 
-    def __le__(self, other):
+    def __le__(self, other) -> bool:
         return float(self) <= other
 
-    def __ge__(self, other):
+    def __ge__(self, other) -> bool:
         return float(self) >= other
 
     # def __lshift__(self, other: Unit) -> Self:
     #     return self.convert(other)
 
-    # def __rshift__(self, other: Unit) -> float:
+    # def __rshift__(self, other: Unit) -> Number:
     #     return self.get_in(other)
 
     # def __rlshift__(self, other: Unit) -> Self:
     #     return self.convert(other)
 
-    def _validate_unit_type(self, value: float, units: Unit):
+    def _validate_unit_type(self, value: Number, units: Unit):
         """Validates the prefer_units
         :param value: value of the instance
         :param units: Unit enum type
@@ -304,7 +364,7 @@ class AbstractDimension:
             raise UnitConversionError(f'{self.__class__.__name__}: unit {units} is not supported')
         return 0
 
-    def to_raw(self, value: float, units: Unit) -> float:
+    def to_raw(self, value: Number, units: Unit) -> Number:
         """Converts value with specified prefer_units to raw value
         :param value: value of the instance
         :param units: Unit enum type
@@ -312,7 +372,7 @@ class AbstractDimension:
         """
         return self._validate_unit_type(value, units)
 
-    def from_raw(self, value: float, units: Unit) -> float:
+    def from_raw(self, value: Number, units: Unit) -> Number:
         """Converts raw value to specified prefer_units
         :param value: raw value of the unit
         :param units: Unit enum type
@@ -331,7 +391,7 @@ class AbstractDimension:
         self._defined_units = units
         return self
 
-    def get_in(self, units: Unit) -> float:
+    def get_in(self, units: Unit) -> Number:
         """
         :param units: Unit enum type
         :return: value in specified prefer_units
@@ -346,12 +406,12 @@ class AbstractDimension:
         return self._defined_units
 
     @property
-    def unit_value(self) -> float:
+    def unit_value(self) -> Number:
         """Returns float value in defined prefer_units"""
         return self.get_in(self.units)
 
     @property
-    def raw_value(self) -> float:
+    def raw_value(self) -> Number:
         """Raw unit value getter
         :return: raw unit value
         """
@@ -363,21 +423,21 @@ class AbstractDimension:
     __lshift__ = convert
 
 
-class Distance(AbstractDimension):
+class Distance(GenericDimension):
     """Distance unit"""
 
     @property
-    def _inch(self) -> float:
+    def _inch(self) -> Number:
         """
         Internal shortcut for Distance() >> Distance.Inch
 
         Returns:
-            float: The calculated value in inch.
+            Number: The calculated value in inch.
         """
         return self._value
 
     @property
-    def _feet(self) -> float:
+    def _feet(self) -> Number:
         """
         Internal shortcut for Distance() >> Distance.Foot
 
@@ -385,11 +445,11 @@ class Distance(AbstractDimension):
         to feet by dividing it by 12.
 
         Returns:
-            float: The calculated value in feet.
+            Number: The calculated value in feet.
         """
         return self._value / 12
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: Number, units: Unit):
         if units == Distance.Inch:
             return value
         if units == Distance.Foot:
@@ -414,7 +474,7 @@ class Distance(AbstractDimension):
             return super().to_raw(value, units)
         return result
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: Number, units: Unit):
         if units == Distance.Inch:
             return value
         if units == Distance.Foot:
@@ -452,20 +512,20 @@ class Distance(AbstractDimension):
     Line: Final[Unit] = Unit.Line
 
 
-class Pressure(AbstractDimension):
+class Pressure(GenericDimension):
     """Pressure unit"""
 
     @property
-    def _inHg(self) -> float:
+    def _inHg(self) -> Number:
         """
         Internal shortcut for Pressure() >> Distance.InHg
 
         Returns:
-            float: The calculated value in InHg.
+            Number: The calculated value in InHg.
         """
         return self._value / 25.4
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: Number, units: Unit):
         if units == Pressure.MmHg:
             return value
         if units == Pressure.InHg:
@@ -480,7 +540,7 @@ class Pressure(AbstractDimension):
             return super().to_raw(value, units)
         return result
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: Number, units: Unit):
         if units == Pressure.MmHg:
             return value
         if units == Pressure.InHg:
@@ -502,20 +562,20 @@ class Pressure(AbstractDimension):
     PSI: Final[Unit] = Unit.PSI
 
 
-class Weight(AbstractDimension):
+class Weight(GenericDimension):
     """Weight unit"""
 
     @property
-    def _grain(self) -> float:
+    def _grain(self) -> Number:
         """
         Internal shortcut for Weight() >> Distance.Grain
 
         Returns:
-            float: The calculated value in grain.
+            Number: The calculated value in grain.
         """
         return self._value
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: Number, units: Unit):
         if units == Weight.Grain:
             return value
         if units == Weight.Gram:
@@ -532,7 +592,7 @@ class Weight(AbstractDimension):
             return super().to_raw(value, units)
         return result
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: Number, units: Unit):
         if units == Weight.Grain:
             return value
         if units == Weight.Gram:
@@ -557,20 +617,20 @@ class Weight(AbstractDimension):
     Newton: Final[Unit] = Unit.Newton
 
 
-class Temperature(AbstractDimension):
+class Temperature(GenericDimension):
     """Temperature unit"""
 
     @property
-    def _F(self) -> float:
+    def _F(self) -> Number:
         """
         Internal shortcut for Temperature() >> Temperature.Fahrenheit
 
         Returns:
-            float: The calculated value in Fahrenheit.
+            Number: The calculated value in Fahrenheit.
         """
         return self._value
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: Number, units: Unit):
         if units == Temperature.Fahrenheit:
             return value
         if units == Temperature.Rankin:
@@ -583,7 +643,7 @@ class Temperature(AbstractDimension):
             return super().to_raw(value, units)
         return result
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: Number, units: Unit):
         if units == Temperature.Fahrenheit:
             return value
         if units == Temperature.Rankin:
@@ -602,7 +662,7 @@ class Temperature(AbstractDimension):
     Rankin: Final[Unit] = Unit.Rankin
 
 
-class Angular(AbstractDimension):
+class Angular(GenericDimension):
     """Angular unit"""
 
     @property
@@ -611,11 +671,11 @@ class Angular(AbstractDimension):
         Internal shortcut for Angular() >> Angular.Radian
 
         Returns:
-            float: The calculated value in rad.
+            Number: The calculated value in rad.
         """
         return self._value
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: Number, units: Unit):
         if units == Angular.Radian:
             return value
         if units == Angular.Degree:
@@ -640,7 +700,7 @@ class Angular(AbstractDimension):
             result = result % (2 * pi)
         return result
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: Number, units: Unit):
         if units == Angular.Radian:
             return value
         if units == Angular.Degree:
@@ -674,11 +734,11 @@ class Angular(AbstractDimension):
     OClock: Final[Unit] = Unit.OClock
 
 
-class Velocity(AbstractDimension):
+class Velocity(GenericDimension):
     """Velocity unit"""
 
     @property
-    def _fps(self) -> float:
+    def _fps(self) -> Number:
         """
         Internal shortcut for Velocity() >> Velocity.FPS
 
@@ -686,11 +746,11 @@ class Velocity(AbstractDimension):
         to fps by multiplying it by 3.2808399.
 
         Returns:
-            float: The calculated value in fps.
+            Number: The calculated value in fps.
         """
         return self._value * 3.2808399
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: Number, units: Unit):
         if units == Velocity.MPS:
             return value
         if units == Velocity.KMH:
@@ -703,7 +763,7 @@ class Velocity(AbstractDimension):
             return value / 1.94384449
         return super().to_raw(value, units)
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: Number, units: Unit):
         if units == Velocity.MPS:
             return value
         if units == Velocity.KMH:
@@ -723,17 +783,17 @@ class Velocity(AbstractDimension):
     KT: Final[Unit] = Unit.KT
 
 
-class Energy(AbstractDimension):
+class Energy(GenericDimension):
     """Energy unit"""
 
-    def to_raw(self, value: float, units: Unit):
+    def to_raw(self, value: Number, units: Unit):
         if units == Energy.FootPound:
             return value
         if units == Energy.Joule:
             return value * 0.737562149277
         return super().to_raw(value, units)
 
-    def from_raw(self, value: float, units: Unit):
+    def from_raw(self, value: Number, units: Unit):
         if units == Energy.FootPound:
             return value
         if units == Energy.Joule:
@@ -812,7 +872,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 logger.warning(f"{attribute=} not found in preferred_units")
 
 
-def _find_unit_by_alias(string_to_find: str, aliases: Dict[Tuple[str, ...], Unit]) -> Optional[Unit]:
+def _find_unit_by_alias(string_to_find: str, aliases: UnitAliasesType) -> Optional[Unit]:
     """Find unit type by string and aliases dict"""
 
     # Iterate over the keys of the dictionary
@@ -824,7 +884,7 @@ def _find_unit_by_alias(string_to_find: str, aliases: Dict[Tuple[str, ...], Unit
     return None  # If not found, return None or handle it as needed
 
 
-def _parse_unit(input_: str) -> Optional[Unit]:
+def _parse_unit(input_: str) -> Union[Unit, None, Any]:
     """Parse the unit type from string"""
 
     input_ = input_.strip().lower()
@@ -838,8 +898,8 @@ def _parse_unit(input_: str) -> Optional[Unit]:
         return _find_unit_by_alias(input_, UnitAliases)
 
 
-def _parse_value(input_: Union[str, float, int],
-                 preferred: Optional[Union[Unit, str]]) -> Optional[AbstractDimension]:
+def _parse_value(input_: Union[str, Number],
+                 preferred: Optional[Union[Unit, str]]) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
     """Parse the unit value and return 'AbstractUnit'"""
 
     def create_as_preferred(value_):
@@ -872,8 +932,7 @@ def _parse_value(input_: Union[str, float, int],
 
 __all__ = (
     'Unit',
-    'AbstractDimension',
-    'AbstractDimensionType',
+    'GenericDimension',
     'UnitProps',
     'UnitAliases',
     'UnitPropsDict',
