@@ -42,10 +42,10 @@ jobs:
 
     - name: Run unittest tests in binary mode
       run: |
-        pytest tests --no-header -v
+        pytest tests --no-header -v --engine py_ballisticcalc_exts
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          pytest tests -v
+          pytest tests -v --engine py_ballisticcalc_exts
         else
           echo "Pytest succeeded."
         fi
@@ -54,10 +54,10 @@ jobs:
 
     - name: Run unittest tests in binary mode on Windows
       run: |
-        pytest tests --no-header -v
+        pytest tests --no-header -v --engine py_ballisticcalc_exts
         if %ERRORLEVEL% neq 0 (
           echo Pytest failed, running without capture
-          pytest tests -v
+          pytest tests -v --engine py_ballisticcalc_exts
         ) else (
           echo Pytest succeeded.
         )

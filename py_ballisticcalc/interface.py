@@ -1,15 +1,52 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
+from importlib.metadata import entry_points
 
 from typing_extensions import Union, List, Optional
 
 # pylint: disable=import-error,no-name-in-module,wildcard-import
-from py_ballisticcalc.trajectory_calc import TrajectoryCalc
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
+from py_ballisticcalc.generics.engine import EngineProtocol
+from py_ballisticcalc.interface_config import InterfaceConfigDict, create_interface_config
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import HitResult
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
-from py_ballisticcalc.interface_config import InterfaceConfigDict, create_interface_config
+
+
+@dataclass
+class _EngineLoader:
+    _entry_point_group = 'py_ballisticcalc'
+    _entry_point_name = 'engine'
+
+    @classmethod
+    def load(cls, entry_point: Union[str, EngineProtocol] = 'py_ballisticcalc') -> EngineProtocol:
+        if isinstance(entry_point, EngineProtocol):
+            return entry_point
+        elif isinstance(entry_point, str):
+            all_entry_points = entry_points()
+            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
+            found_calculator_class = None
+            engine: Optional[EngineProtocol] = None
+            for ep in ballistic_entry_points:
+                if cls._entry_point_name == ep.name and entry_point in ep.value:
+                    found_calculator_class = ep.value
+                    try:
+                        engine = ep.load()
+                        logger.info(f"Loaded calculator from: {ep.value} (Class: {engine.__name__})")
+                        break  # Assuming you want to load the first matching engine
+                    except ImportError as e:
+                        logger.error(f"Error loading engine from {ep.value}: {e}")
+                    except AttributeError as e:
+                        logger.error(f"Error loading attribute from {ep.value}: {e}")
+                    except Exception as e:
+                        logger.exception(f"An unexpected error occurred loading {ep.value}: {e}")
+
+            if found_calculator_class:
+                return engine  # Instantiate the calculator
+            else:
+                raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
+        raise TypeError("Invalid entry_point type, expected 'str' or 'TrajectoryCalcProtocol'")
 
 
 @dataclass
@@ -17,10 +54,12 @@ class Calculator:
     """Basic interface for the ballistics calculator"""
 
     _config: Optional[InterfaceConfigDict] = field(default=None)
-    _calc: TrajectoryCalc = field(init=False, repr=False, compare=False)
+    _engine: [str, EngineProtocol] = field(default='py_ballisticcalc')
+    _calc: EngineProtocol = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        self._calc = TrajectoryCalc(create_interface_config(self._config))
+        entry: EngineProtocol = _EngineLoader.load(self._engine)
+        self._calc = entry(create_interface_config(self._config))
 
     @property
     def cdm(self) -> List[DragDataPoint]:

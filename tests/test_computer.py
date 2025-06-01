@@ -2,11 +2,39 @@
 
 import unittest
 import copy
+
+import pytest
+
 from py_ballisticcalc import (
     DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError,
 )
 from py_ballisticcalc.unit import *
 
+@pytest.mark.usefixtures("loaded_engine_instance")
+class TestComputerPytest:
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, loaded_engine_instance):
+        self.range = 1000
+        self.step = 100
+        self.dm = DragModel(0.22, TableG7, 168, 0.308, 1.22)
+        self.ammo = Ammo(self.dm, Velocity.FPS(2600))
+        self.weapon = Weapon(4, 12)
+        self.atmosphere = Atmo.icao()
+        self.calc = Calculator(_engine=loaded_engine_instance)
+        self.baseline_shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere)
+        self.baseline_trajectory = self.calc.fire(
+            shot=self.baseline_shot, trajectory_range=self.range, trajectory_step=self.step
+        )
+
+    def test_cant_zero_elevation(self):
+        canted = copy.copy(self.baseline_shot)
+        canted.cant_angle = Angular.Degree(90)
+        t = self.calc.fire(canted, trajectory_range=self.range, trajectory_step=self.step)
+        assert pytest.approx(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value) == \
+               self.baseline_trajectory[5].height.raw_value
+        assert pytest.approx(t.trajectory[5].windage.raw_value + self.weapon.sight_height.raw_value) == \
+               self.baseline_trajectory[5].windage.raw_value
 
 class TestComputer(unittest.TestCase):
     """Basic verifications that wind, spin, and cant values produce effects of correct sign and magnitude"""

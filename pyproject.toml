@@ -33,7 +33,14 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-dependencies = ["typing_extensions>= 4.12.2", "tomli; python_version<'3.11'"]
+dependencies = [
+    "typing_extensions>= 4.12.2",
+ "tomli; python_version<'3.11'",
+ "pytest>=8.3.5",
+]
+
+[project.entry-points.py_ballisticcalc]
+engine = "py_ballisticcalc.trajectory_calc:TrajectoryCalc"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"

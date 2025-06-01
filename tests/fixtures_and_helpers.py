@@ -30,13 +30,13 @@ def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit:
 
 
 @pytest.fixture()
-def zero_height_calc():
+def zero_height_calc(loaded_engine_instance):
     config = InterfaceConfigDict(
         cMinimumVelocity=0,
         cMinimumAltitude=Distance.Meter(0),
         cMaximumDrop=Distance.Meter(0),
     )
-    calc = Calculator(_config=config)
+    calc = Calculator(_config=config, _engine=loaded_engine_instance)
     return calc
 
 
