@@ -1,7 +1,7 @@
-# conftest.py
 import pytest
-from py_ballisticcalc.generics.engine import EngineProtocol
+
 from py_ballisticcalc.interface import _EngineLoader
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -10,6 +10,7 @@ def pytest_addoption(parser):
         default="py_ballisticcalc",
         help="Specify the engine entry point name"
     )
+
 
 @pytest.fixture(scope="class")
 def loaded_engine_instance(request):

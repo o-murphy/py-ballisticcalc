@@ -18,7 +18,7 @@ def calculate_drag_free_range(
 
 
 def find_first_index_matching_condition(
-    shot: HitResult, condition: Callable[[TrajectoryData], bool]
+    shot: HitResult, condition: Callable[[TrajectoryData], int]
 ) -> int:
     """Search sequentially for the index of first point in the trajectory, which matches condition.
        Returns:

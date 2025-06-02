@@ -1,14 +1,14 @@
-from typing import Any, TypeVar
+from typing import TypeVar
 
 from typing_extensions import List, Protocol, runtime_checkable
 
-from examples.core.drag_model import DragDataPoint
+from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.trajectory_data import TrajectoryData
 
 
-ConfigT = TypeVar("ConfigT")
+ConfigT = TypeVar("ConfigT", covariant=True)
 TrajectoryDataT = TypeVar("TrajectoryDataT", bound=TrajectoryData)
 
 

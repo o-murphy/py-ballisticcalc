@@ -23,17 +23,24 @@ class _EngineLoader:
     def load(cls, entry_point: Union[str, EngineProtocol] = 'py_ballisticcalc') -> EngineProtocol:
         if isinstance(entry_point, EngineProtocol):
             return entry_point
-        elif isinstance(entry_point, str):
+        if isinstance(entry_point, str):
             all_entry_points = entry_points()
-            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
+            # for importlib < 5
+            if hasattr(all_entry_points, 'get'):
+                ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
+            # for importlib >= 5
+            elif hasattr(all_entry_points, 'select'):
+                ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
+            else:
+                raise RuntimeError('Entry point not supported')
             found_calculator_class = None
-            engine: Optional[EngineProtocol] = None
+            handle: Optional[EngineProtocol] = None
             for ep in ballistic_entry_points:
                 if cls._entry_point_name == ep.name and entry_point in ep.value:
                     found_calculator_class = ep.value
                     try:
-                        engine = ep.load()
-                        logger.info(f"Loaded calculator from: {ep.value} (Class: {engine.__name__})")
+                        handle = ep.load()
+                        logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
                         break  # Assuming you want to load the first matching engine
                     except ImportError as e:
                         logger.error(f"Error loading engine from {ep.value}: {e}")
@@ -43,7 +50,9 @@ class _EngineLoader:
                         logger.exception(f"An unexpected error occurred loading {ep.value}: {e}")
 
             if found_calculator_class:
-                return engine  # Instantiate the calculator
+                if not isinstance(handle, EngineProtocol):
+                    raise TypeError(f"Unsupported engine type {found_calculator_class}, must implements EngineProtocol")
+                return handle  # Instantiate the calculator
             else:
                 raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
         raise TypeError("Invalid entry_point type, expected 'str' or 'TrajectoryCalcProtocol'")
@@ -54,7 +63,7 @@ class Calculator:
     """Basic interface for the ballistics calculator"""
 
     _config: Optional[InterfaceConfigDict] = field(default=None)
-    _engine: [str, EngineProtocol] = field(default='py_ballisticcalc')
+    _engine: Union[str, EngineProtocol] = field(default='py_ballisticcalc')
     _calc: EngineProtocol = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):

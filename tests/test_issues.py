@@ -1,9 +1,10 @@
 """Unittests for the specific issues library"""
 # mypy: ignore - mypy overhead is not worth it for test code
-import unittest
 from typing import Any
 
+import pytest
 from typing_extensions import Union, Tuple
+
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
                               Angular, Calculator, RangeError, HitResult, InterfaceConfigDict, loadImperialUnits,
                               loadMetricUnits, PreferredUnits)
@@ -14,9 +15,12 @@ def get_object_attribute_values_as_dict(obj: Any) -> dict[str, Any]:
     return {attr: getattr(obj, attr) for attr in dir(obj) if not attr.startswith("__")}
 
 
-class TestIssue96_97(unittest.TestCase):
+@pytest.mark.usefixtures("loaded_engine_instance")
+class TestIssue96_97:
     """Scenario where velocity.x approaches zero."""
-    def setUp(self):
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, loaded_engine_instance):
         drag_model = DragModel(bc=0.03,
                                drag_table=TableG1,
                                diameter=Distance.Millimeter(23),
@@ -25,34 +29,38 @@ class TestIssue96_97(unittest.TestCase):
         ammo = Ammo(drag_model, Velocity.MPS(930))
         weapon = Weapon()
         self.zero = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(1.0))
-        self.calc = Calculator(_config=InterfaceConfigDict(cMinimumVelocity=0))
+        self.calc = Calculator(_engine=loaded_engine_instance, _config=InterfaceConfigDict(cMinimumVelocity=0))
         self.trange = Distance.Meter(1600.2437248702522)
+
+    def must_fire(self, interface: Calculator, zero_shot,
+                  trajectory_range, extra_data,
+                  **kwargs) -> Tuple[HitResult, Union[RangeError, None]]:
+        """wrapper function to resolve RangeError and get HitResult"""
+        try:
+            # try to get valid result
+            return interface.fire(zero_shot, trajectory_range, **kwargs, extra_data=extra_data), None
+        except RangeError as err:
+            # directly init hit result with incomplete data before exception occurred
+            return HitResult(zero_shot, err.incomplete_trajectory, extra=extra_data), err
 
     def test_must_return_hit_result(self):
         """Return results even when desired trajectory_range isn't reached."""
-        with self.assertRaisesRegex(RangeError, "Max range not reached"):
+        with pytest.raises(RangeError, match="Max range not reached"):
             self.calc.fire(self.zero, self.trange, extra_data=True)
 
-        def must_fire(interface: Calculator, zero_shot,
-                      trajectory_range, extra_data,
-                      **kwargs) -> Tuple[HitResult, Union[RangeError, None]]:
-            """wrapper function to resolve RangeError and get HitResult"""
-            try:
-                # try to get valid result
-                return interface.fire(zero_shot, trajectory_range, **kwargs, extra_data=extra_data), None
-            except RangeError as err:
-                # directly init hit result with incomplete data before exception occurred
-                return HitResult(zero_shot, err.incomplete_trajectory, extra=extra_data), err
-
-        hit_result, err = must_fire(self.calc, self.zero, self.trange, extra_data=True)
+        hit_result, err = self.must_fire(self.calc, self.zero, self.trange, extra_data=True)
 
         # should return error
-        self.assertIsInstance(err, RangeError)
-        self.assertIsInstance(hit_result, HitResult, f"Expected HitResult but got {type(hit_result)}")
+        assert isinstance(err, RangeError)
+        assert isinstance(hit_result, HitResult), f"Expected HitResult but got {type(hit_result)}"
 
-class TestIssue144(unittest.TestCase):
+
+@pytest.mark.usefixtures("loaded_engine_instance")
+class TestIssue144:
     """Changing the preferred unit should not affect the results"""
-    def setUp(self):
+
+    @pytest.fixture(autouse=True)
+    def setup_method(self, loaded_engine_instance):
         # storing preferred unit settings in order to avoid influencing other tests
         # due to preferred unit being singletons
         self.previous_preferred_units = get_object_attribute_values_as_dict(PreferredUnits)
@@ -67,10 +75,17 @@ class TestIssue144(unittest.TestCase):
         ammo = Ammo(drag_model, Velocity.MPS(930))
         self.shot = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(13.122126582196692))
         self.range = Distance.Meter(740.8068308628336)
-        self.calc = Calculator()
+        self.calc = Calculator(_engine=loaded_engine_instance)
 
-    def tearDown(self):
+    def teardown_method(self):
         PreferredUnits.set(**self.previous_preferred_units)
+
+    def check_expected_last_point(self, hit_result):
+        assert 11 == len(hit_result.trajectory)
+        last_hit_point = hit_result[-1]
+        assert pytest.approx(0.992020943919257, abs=1e-6) == last_hit_point.time
+        assert pytest.approx(740.8068308628334, abs=1e-6) == (last_hit_point.distance >> Distance.Meter)
+        assert pytest.approx(168.4260740559500, abs=1e-6) == (last_hit_point.height >> Distance.Meter)
 
     def testResultsWithImperialUnits(self):
         loadImperialUnits()
@@ -79,7 +94,7 @@ class TestIssue144(unittest.TestCase):
 
     def testResultsWithImperialUnits_FloatInput(self):
         loadImperialUnits()
-        hit_result = self.calc.fire(self.shot, self.range>>PreferredUnits.distance, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range >> PreferredUnits.distance, extra_data=False)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithMetricUnits(self):
@@ -89,12 +104,13 @@ class TestIssue144(unittest.TestCase):
 
     def testResultsWithMetricUnits_FloatInput(self):
         loadMetricUnits()
-        hit_result = self.calc.fire(self.shot, self.range>>PreferredUnits.distance, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range >> PreferredUnits.distance, extra_data=False)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithMetricUnits_FloatTrajectoryStep(self):
         loadMetricUnits()
-        hit_result = self.calc.fire(self.shot, self.range, trajectory_step=Distance.Inch(2916.5623262316285)>>PreferredUnits.distance,
+        hit_result = self.calc.fire(self.shot, self.range,
+                                    trajectory_step=Distance.Inch(2916.5623262316285) >> PreferredUnits.distance,
                                     extra_data=False)
         self.check_expected_last_point(hit_result)
 
@@ -113,13 +129,6 @@ class TestIssue144(unittest.TestCase):
 
     def testResultWithImperialUnits_FloatRange(self):
         loadImperialUnits()
-        self.assertEqual(PreferredUnits.distance, Distance.Foot)
-        hit_result = self.calc.fire(self.shot, self.range>>Distance.Foot, extra_data=False)
+        assert PreferredUnits.distance == Distance.Foot
+        hit_result = self.calc.fire(self.shot, self.range >> Distance.Foot, extra_data=False)
         self.check_expected_last_point(hit_result)
-
-    def check_expected_last_point(self, hit_result):
-        self.assertEqual(11, len(hit_result.trajectory))
-        last_hit_point = hit_result[-1]
-        self.assertAlmostEqual(0.992020943919257, last_hit_point.time, places=4)
-        self.assertAlmostEqual(740.8068308628334, (last_hit_point.distance >> Distance.Meter), places=4)
-        self.assertAlmostEqual(168.4260740559500, (last_hit_point.height >> Distance.Meter), places=4)

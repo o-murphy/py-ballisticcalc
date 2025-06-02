@@ -45,12 +45,12 @@ def create_shot():
     return shot
 
 
-@pytest.fixture()
-def zero_min_velocity_calc():
+@pytest.fixture(autouse=True)
+def zero_min_velocity_calc(loaded_engine_instance):
     config = InterfaceConfigDict(
         cMinimumVelocity=0,
     )
-    return Calculator(_config=config)
+    return Calculator(_engine=loaded_engine_instance, _config=config)
 
 
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)

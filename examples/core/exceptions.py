@@ -2,8 +2,8 @@
 from typing_extensions import List, TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from ..unit import Angular, Distance  # Only for type checking
-    from ..trajectory_data import TrajectoryData
+    from py_ballisticcalc.unit import Angular, Distance  # Only for type checking
+    from py_ballisticcalc.trajectory_data import TrajectoryData
 
 __all__ = (
     'UnitTypeError',

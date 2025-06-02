@@ -29,7 +29,7 @@ def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit:
         print(f'{index_to_print}. ({p.distance>>distance_unit}, {p.height>>distance_unit})')
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def zero_height_calc(loaded_engine_instance):
     config = InterfaceConfigDict(
         cMinimumVelocity=0,
@@ -63,9 +63,9 @@ def shot_with_relative_angle_in_degrees(angle_in_degrees: float):
     return shot
 
 
-@pytest.fixture()
-def zero_min_velocity_calc():
+@pytest.fixture(autouse=True)
+def zero_min_velocity_calc(loaded_engine_instance):
     config = InterfaceConfigDict(
         cMinimumVelocity=0,
     )
-    return Calculator(_config=config)
+    return Calculator(_config=config, _engine=loaded_engine_instance)
