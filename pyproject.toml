@@ -36,7 +36,6 @@ classifiers = [
 dependencies = [
     "typing_extensions>= 4.12.2",
     "tomli; python_version<'3.11'",
-    "pytest>=8.3.5",
 ]
 
 [project.entry-points.py_ballisticcalc]

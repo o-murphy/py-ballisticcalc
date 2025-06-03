@@ -52,7 +52,7 @@ https://stand-with-ukraine.pp.ua
   * [Preferences](#preferences)
   * [Units of measure](#units)
 
-* **[Custom integrator engines](#custom-integrator-engines)
+* **[Custom integrator engines](#custom-integrator-engines)**
   * [Create custom engine](#create-custom-engine-module)
   * [Custom engine usage](#custom-engine-usage)
   * [Test custom engine](#test-your-custom-engine)
