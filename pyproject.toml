@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.1.0"
+version = "2.1.1b1"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
