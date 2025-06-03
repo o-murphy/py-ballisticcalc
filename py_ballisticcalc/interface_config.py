@@ -1,8 +1,9 @@
 from typing_extensions import TypedDict, Optional
+
+from py_ballisticcalc import trajectory_calc
 from py_ballisticcalc.trajectory_calc import (
     Config,
 )
-from py_ballisticcalc import trajectory_calc
 
 __all__ = (
     "Config",

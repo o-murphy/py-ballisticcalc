@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc.exts"
-version = "2.1.0"
+version = "2.1.1b1"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -34,6 +34,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 dependencies = []
+
+[project.entry-points.py_ballisticcalc]
+engine = "py_ballisticcalc_exts:TrajectoryCalc"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"

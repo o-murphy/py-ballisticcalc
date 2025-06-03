@@ -2,14 +2,14 @@
 # pylint: skip-file
 
 import math
-
-from typing_extensions import Optional
 import warnings
 
+from typing_extensions import Optional
+
 from py_ballisticcalc import HitResult
+from py_ballisticcalc.helpers import find_time_for_distance_in_shot
 from py_ballisticcalc.trajectory_data import TrajFlag, DangerSpace
 from py_ballisticcalc.unit import PreferredUnits, Angular
-from py_ballisticcalc.helpers import find_time_for_distance_in_shot
 
 try:
     import matplotlib
@@ -81,8 +81,9 @@ def add_time_of_flight_axis(ax: 'Axes', hit_result: HitResult, time_precision: i
        The ticks used for time axis correspond to distance ticks at the bottom of the plot, where it makes sense.
        :param time_precision: describes how much decimal points should be used in formatting time values
     """
+
     def time_label_for_distance(
-        distance_in_unit, distance_unit, decimal_point_in_seconds
+            distance_in_unit, distance_unit, decimal_point_in_seconds
     ):
         time = find_time_for_distance_in_shot(hit_result, distance_in_unit, distance_unit)
         if math.isnan(time):
@@ -108,7 +109,8 @@ def add_time_of_flight_axis(ax: 'Axes', hit_result: HitResult, time_precision: i
     return ax
 
 
-def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None, show_time_axis:bool=True) -> 'Axes':  # type: ignore
+def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None,
+                       show_time_axis: bool = True) -> 'Axes':  # type: ignore
     """
     :param hit_result: HitResult object
     :param look_angle: look_angle
@@ -129,10 +131,9 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None, show_ti
 
     ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol,
                  color=PLOT_COLORS['trajectory'], linewidth=2, ax=ax)
-    #max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance  # This doesn't correctly handle backward-bending trajectories
+    # max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance  # This doesn't correctly handle backward-bending trajectories
     max_range = df.distance.max()
-    backward_bending_trajectory = (hit_result[-1].distance>>PreferredUnits.distance)!=max_range
-
+    backward_bending_trajectory = (hit_result[-1].distance >> PreferredUnits.distance) != max_range
 
     for p in hit_result.trajectory:
         if TrajFlag(p.flag) & TrajFlag.ZERO:

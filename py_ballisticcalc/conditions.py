@@ -6,10 +6,10 @@ from dataclasses import dataclass
 
 from typing_extensions import List, Union, Optional, Tuple
 
-from py_ballisticcalc.munition import Weapon, Ammo
-from py_ballisticcalc.vector import Vector
-from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from py_ballisticcalc.munition import Weapon, Ammo
+from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
+from py_ballisticcalc.vector import Vector
 
 __all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot')
 
@@ -33,33 +33,39 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     def altitude(self) -> Distance:
         """Altitude relative to sea level"""
         return self._altitude
+
     @property
     def pressure(self) -> Pressure:
         """Unadjusted barometric pressure, a.k.a. station pressure"""
         return self._pressure
+
     @property
     def temperature(self) -> Temperature:
         """Local air temperature"""
         return self._temperature
+
     @property
     def powder_temp(self) -> Temperature:
         """Powder temperature"""
         return self._powder_temp
+
     @property
     def mach(self) -> Velocity:
         """Velocity of sound (Mach 1) for current atmosphere"""
         return Velocity.FPS(self._mach)
+
     @property
     def density_ratio(self) -> float:
         """Ratio of current density to standard atmospheric density"""
         return self._density_ratio
 
     _humidity: float  # Relative humidity [0% to 100%]
-    _mach: float      # Velocity of sound (Mach 1) for current atmosphere in fps
-    _a0: float        # Zero Altitude in feet
-    _t0: float        # Zero Temperature in Celsius
-    _p0: float        # Zero Pressure in hPa
-    cLowestTempC: float = Temperature.Fahrenheit(cLowestTempF) >> Temperature.Celsius  # Lowest modelled temperature in Celsius
+    _mach: float  # Velocity of sound (Mach 1) for current atmosphere in fps
+    _a0: float  # Zero Altitude in feet
+    _t0: float  # Zero Temperature in Celsius
+    _p0: float  # Zero Pressure in hPa
+    cLowestTempC: float = Temperature.Fahrenheit(
+        cLowestTempF) >> Temperature.Celsius  # Lowest modelled temperature in Celsius
 
     def __init__(self,
                  altitude: Optional[Union[float, Distance]] = None,
@@ -190,7 +196,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         else:
             if altitude > 36089:
                 warnings.warn("Density request for altitude above troposphere."
-                               " Atmospheric model not valid here.", RuntimeWarning)
+                              " Atmospheric model not valid here.", RuntimeWarning)
             t = self.temperature_at_altitude(altitude) + cDegreesCtoK
             mach = Velocity.MPS(Atmo.machK(t)) >> Velocity.FPS
             p = self.pressure_at_altitude(altitude)
@@ -199,7 +205,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             # # Alternative simplified model:
             # # Ref https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation
             # # see doc/'Air Density Models.svg' for comparison
-            #density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
+            # density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
         return density_ratio, mach
 
     def __str__(self):
@@ -232,11 +238,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             ICAO standard pressure for altitude
         """
         return Pressure.hPa(cStandardPressureMetric
-            * math.pow(1 + cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
-                       cPressureExponent))
+                            * math.pow(
+            1 + cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
+            cPressureExponent))
 
     @staticmethod
-    def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None, humidity: float = cStandardHumidity) -> 'Atmo':
+    def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None,
+             humidity: float = cStandardHumidity) -> 'Atmo':
         """
         Note: This model only valid up to troposphere (~36,000 ft).
         Args:
@@ -252,6 +260,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         pressure = Atmo.standard_pressure(altitude)
 
         return Atmo(altitude, pressure, temperature, humidity)
+
     # Synonym for ICAO standard atmosphere
     standard = icao
 
@@ -364,7 +373,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
 class Vacuum(Atmo):
     """Vacuum atmosphere has zero drag"""
-    def __init__(self, 
+
+    def __init__(self,
                  altitude: Optional[Union[float, Distance]] = None,
                  temperature: Optional[Union[float, Temperature]] = None):
         super().__init__(altitude, 0, temperature, 0)

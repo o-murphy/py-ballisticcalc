@@ -4,6 +4,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 
 [![license]][LGPL-3]
 [![pypi]][PyPiUrl]
+[![coverage]][coverage]
 [![downloads]][pepy]
 [![downloads/month]][pepy]
 [![versions]][sources]
@@ -20,6 +21,8 @@ https://opensource.org/licenses/LGPL-3.0-only
 https://img.shields.io/pypi/v/py-ballisticcalc?style=flat-square&logo=pypi
 [PyPiUrl]:
 https://pypi.org/project/py-ballisticcalc/
+[coverage]:
+coverage.svg
 [downloads]:
 https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
 [downloads/month]:
@@ -49,8 +52,17 @@ https://stand-with-ukraine.pp.ua
   * [Preferences](#preferences)
   * [Units of measure](#units)
 
-  [//]: # (  * [An example of calculations]&#40;#an-example-of-calculations&#41;)
-  [//]: # (  * [Output example]&#40;#example-of-the-formatted-output&#41;)
+* **[Custom integrator engines](#custom-integrator-engines)
+  * [Create custom engine](#create-custom-engine-module)
+  * [Custom engine usage](#custom-engine-usage)
+  * [Test custom engine](#test-your-custom-engine)
+  * Compatible open-source integrators
+    * [CyEulerBallistic](https://github.com/o-murphy/CyEulerBallistic) - Cythonized Euler method integrator
+    * [RKballistic](https://github.com/dbookstaber/RKballistic) - Runge-Kutta 4th order method integrator
+
+      [//]: # (  * [An example of calculations]&#40;#an-example-of-calculations&#41;)
+      [//]: # (  * [Output example]&#40;#example-of-the-formatted-output&#41;)
+  
 * **[Concepts](#concepts)**
 * **[Older versions]()**
   * [v1.1.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.1.4)
@@ -298,6 +310,39 @@ print(f'Comparison: {unit_in_meter} == {Distance.Centimeter(100)}: {unit_in_mete
 print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1*unit_in_meter.raw_value}')
 # >>> True, compare unit with float by raw value
 ```
+
+# Custom integrator engines
+Since version `2.1.1b1`
+* The `py_ballisticcalc.exts` module is deprecated, we recommend to use [CyEulerBallistic](CyEulerBallistic)
+* The library switch to explicit setup custom integrator engines using entry_points instead of direct import
+
+### Create custom engine module
+To define custom integrator engine you can create separate module that should have class that implements `py_ballisticcalc.generics.EngineProtocol`
+Also you have to add entry point `py_ballisticcalc.engine` in your module `pyproject.toml`/`setup.py` 
+```toml
+[project.entry-points.py_ballisticcalc]
+engine = "my_awesome_engine_library.my_awesome_module:MyAwesomeEngine"
+```
+
+### Custom engine usage
+For `Calculator` instance definition with custom engine install your library to virtual env and use your library name as `_engine` argument
+It should load your engine class in background
+```python
+from py_ballisticcalc import Calculator
+calc = Calculator(_engine="my_awesome_engine_library")
+```
+
+### Test your custom engine
+To test your custom engine compatibility you can use predefined tests from `py_ballisticcalc`
+* Clone `py_ballisticcalc` to your environment
+* Install `py_ballisticcalc` in editable mode with `dev` dependencies
+  ```shell
+  pip install -e .[dev]
+  ```
+* Run `pytest` with `--engine` argument
+  ```shell
+  pytest ./tests --engine="my_awesome_engine_library" 
+  ```
 
 # Concepts
 

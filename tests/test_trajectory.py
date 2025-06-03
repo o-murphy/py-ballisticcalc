@@ -1,39 +1,39 @@
 """Unittests for the py_ballisticcalc library"""
 
-import unittest
 from math import fabs
+
+import pytest
+
 from py_ballisticcalc import *
 
 
-class TestTrajectory(unittest.TestCase):
+@pytest.mark.usefixtures("loaded_engine_instance")
+class TestTrajectory:
 
-    def test_zero1(self):
+    @pytest.fixture
+    def test_zero1(self, loaded_engine_instance):
         dm = DragModel(0.365, TableG1, 69, 0.223, 0.9)
         ammo = Ammo(dm, 2600)
         weapon = Weapon(Distance(3.2, Distance.Inch))
         atmosphere = Atmo.icao()
-        calc = Calculator()
+        calc = Calculator(_engine=loaded_engine_instance)
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
-                                     Distance(100, Distance.Yard))
+                                                      Distance(100, Distance.Yard))
+        assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-6) == 0.0016514
 
-        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.0016514, 6,
-                               f'TestZero1 failed {zero_angle >> Angular.Radian:.10f}')
-
-    def test_zero2(self):
+    @pytest.fixture
+    def test_zero2(self, loaded_engine_instance):
         dm = DragModel(0.223, TableG7, 69, 0.223, 0.9)
         ammo = Ammo(dm, 2750)
         weapon = Weapon(Distance(2, Distance.Inch))
         atmosphere = Atmo.icao()
-        calc = Calculator()
+        calc = Calculator(_engine=loaded_engine_instance)
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
-                                     Distance(100, Distance.Yard))
-
-        self.assertAlmostEqual(zero_angle >> Angular.Radian, 0.0012286, 6,
-                               f'TestZero2 failed {zero_angle >> Angular.Radian:.10f}')
+                                                      Distance(100, Distance.Yard))
+        assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-6) == 0.0012286
 
     def custom_assert_equal(self, a, b, accuracy, name):
-        with self.subTest(name=name):
-            self.assertLess(fabs(a - b), accuracy, f'Equality {name} failed (|{a} - {b}|, {accuracy} digits)')
+        assert fabs(a - b) < accuracy, f'Equality {name} failed (|{a} - {b}|, {accuracy} digits)'
 
     def validate_one(self, data: TrajectoryData, distance: float, velocity: float,
                      mach: float, energy: float, path: float, hold: float,
@@ -68,7 +68,20 @@ class TestTrajectory(unittest.TestCase):
             self.custom_assert_equal(wind_adjustment,
                                      data.windage_adj >> adjustment_unit, 0.5, "WAdj")
 
-    def test_path_g1(self):
+    @pytest.mark.parametrize(
+        "data_point, distance, velocity, mach, energy, path, hold, windage, wind_adjustment, time, ogv, adjustment_unit",
+        [
+            (lambda trajectory: trajectory[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.MOA),
+            (lambda trajectory: trajectory[1], 100, 2351.2, 2.106, 2061, 0, 0, -0.6, -0.6, 0.118, 550, Angular.MOA),
+            (lambda trajectory: trajectory[5], 500, 1169.1, 1.047, 509.8, -87.9, -16.8, -19.5, -3.7, 0.857, 67,
+             Angular.MOA),
+            (lambda trajectory: trajectory[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20,
+             Angular.MOA),
+        ],
+        ids=["0_yards", "100_yards", "500_yards", "1000_yards"]
+    )
+    def test_path_g1(self, loaded_engine_instance, data_point, distance, velocity, mach, energy, path, hold, windage,
+                     wind_adjustment, time, ogv, adjustment_unit):
         dm = DragModel(0.223, TableG1, 168, 0.308, 1.282)
         ammo = Ammo(dm, Velocity(2750, Velocity.FPS))
         weapon = Weapon(Distance(2, Distance.Inch), zero_elevation=Angular(0.001228, Angular.Radian))
@@ -76,60 +89,33 @@ class TestTrajectory(unittest.TestCase):
         shot_info = Shot(weapon=weapon, ammo=ammo, atmo=atmosphere,
                          winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
 
-        calc = Calculator()
+        calc = Calculator(_engine=loaded_engine_instance)
         data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
-        self.assertEqual(len(data), 11, "Trajectory Row Count")
+        assert len(data) == 11, "Trajectory Row Count"
+        self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
+                          time, ogv, adjustment_unit)
 
-        # Dist(yd), vel(fps), Mach, energy(ft-lb), drop(in), drop(mil), wind(in), wind(mil), time, ogw
-        test_data = [
-            [data[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.MOA],
-            [data[1], 100, 2351.2, 2.106, 2061, 0, 0, -0.6, -0.6, 0.118, 550, Angular.MOA],
-            [data[5], 500, 1169.1, 1.047, 509.8, -87.9, -16.8, -19.5, -3.7, 0.857, 67, Angular.MOA],
-            [data[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20, Angular.MOA]
-        ]
-
-        failures = []
-
-        for i, d in enumerate(test_data):
-            try:
-                with self.subTest(f"validate one {i}"):
-                    self.validate_one(*d)
-            except AssertionError as e:
-                failures.append(f"Subtest {i} failed: {str(e)}")
-
-        if failures:
-            self.fail("\n".join(failures))  # Raise a single failure with all messages
-
-    def test_path_g7(self):
+    @pytest.mark.parametrize(
+        "data_point, distance, velocity, mach, energy, path, hold, windage, wind_adjustment, time, ogv, adjustment_unit",
+        [
+            (lambda trajectory: trajectory[0], 0, 2750, 2.46, 2821, -2.0, 0.0, 0.0, 0.00, 0.000, 880, Angular.Mil),
+            (lambda trajectory: trajectory[1], 100, 2545, 2.28, 2416, 0.0, 0.0, -0.2, -0.06, 0.113, 698, Angular.Mil),
+            (
+            lambda trajectory: trajectory[5], 500, 1814, 1.62, 1227, -56.2, -3.2, -6.3, -0.36, 0.672, 252, Angular.Mil),
+            (lambda trajectory: trajectory[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54,
+             Angular.Mil)
+        ],
+        ids=["0_yards", "100_yards", "500_yards", "1000_yards"]
+    )
+    def test_path_g7(self, loaded_engine_instance, data_point, distance, velocity, mach, energy, path, hold, windage,
+                     wind_adjustment, time, ogv, adjustment_unit):
         dm = DragModel(0.223, TableG7, 168, 0.308, 1.282)
         ammo = Ammo(dm, Velocity(2750, Velocity.FPS))
         weapon = Weapon(2, 12, zero_elevation=Angular.MOA(4.221))
         shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), Angular.Degree(-45))])
 
-        calc = Calculator()
+        calc = Calculator(_engine=loaded_engine_instance)
         data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
-        self.assertEqual(len(data), 11, "Trajectory Row Count")
-
-        # Dist(yd), vel(fps), Mach, energy(ft-lb), drop(in), drop(mil), wind(in), wind(mil), time, ogw
-        test_data = [
-            [data[0], 0,     2750, 2.46, 2821,  -2.0,   0.0,   0.0,  0.00, 0.000, 880, Angular.Mil],
-            [data[1], 100,   2545, 2.28, 2416,   0.0,   0.0,  -0.2, -0.06, 0.113, 698, Angular.Mil],
-            [data[5], 500,   1814, 1.62, 1227, -56.2,  -3.2,  -6.3, -0.36, 0.672, 252, Angular.Mil],
-            [data[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54, Angular.Mil]
-        ]
-
-        failures = []
-
-        for i, d in enumerate(test_data):
-            try:
-                with self.subTest(f"validate one {i}"):
-                    self.validate_one(*d)
-            except AssertionError as e:
-                failures.append(f"Subtest {i} failed: {str(e)}")
-
-        if failures:
-            self.fail("\n".join(failures))  # Raise a single failure with all messages
-
-
-if __name__ == '__main__':
-    unittest.main()
+        assert len(data) == 11, "Trajectory Row Count"
+        self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
+                          time, ogv, adjustment_unit)

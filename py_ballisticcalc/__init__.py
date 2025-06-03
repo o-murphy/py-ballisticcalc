@@ -8,25 +8,25 @@ __copyright__ = (
 
 __credits__ = ["o-murphy", "dbookstaber"]
 
-import os
-import sys
-import platform
 import importlib.resources
+import os
+import platform
+import sys
 
 from typing_extensions import Dict, Union, Optional
 
-from .vector import *
-from .trajectory_calc import *
 from .conditions import *
 from .drag_model import *
 from .drag_tables import *
+from .exceptions import *
 from .interface import *
+from .interface_config import *
 from .logger import *
 from .munition import *
+from .trajectory_calc import *
 from .trajectory_data import *
 from .unit import *
-from .interface_config import *
-from .exceptions import *
+from .vector import *
 
 if sys.version_info[:2] < (3, 11):
     import tomli as tomllib
@@ -36,10 +36,12 @@ else:
 try:
     # check if cython based extensions installed
     import py_ballisticcalc_exts  # type: ignore
+
     del py_ballisticcalc_exts
     logger.debug("Binary modules found, running in binary mode")
 except ImportError as error:
     import warnings
+
     if platform.python_implementation() != "PyPy":
         warnings.warn("Library running in pure python mode. "
                       "For better performance install 'py_ballisticcalc.exts' binary package", UserWarning)

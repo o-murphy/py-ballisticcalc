@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from typing_extensions import Union, List, Tuple, Optional
 
 from py_ballisticcalc.constants import cDegreesCtoK, cSpeedOfSoundMetric, cStandardTemperatureC
-from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
 from py_ballisticcalc.drag_tables import DragTablePointDictType
+from py_ballisticcalc.unit import Weight, Distance, Velocity, PreferredUnits
 
 
 @dataclass

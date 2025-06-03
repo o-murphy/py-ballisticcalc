@@ -9,7 +9,6 @@ from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, Pref
 
 TrajectoryData: Any
 
-
 SightFocalPlane = Literal['FFP', 'SFP', 'LWIR']
 
 

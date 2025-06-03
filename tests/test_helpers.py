@@ -1,20 +1,22 @@
+import random
 import sys
 import time
-from random import random
 
 import pytest
-import random
 
 from py_ballisticcalc import Distance, DragModel, TableG1, Weight, Weapon, Ammo, Shot, Velocity, \
     Angular, Calculator
-
-from py_ballisticcalc.helpers import find_index_of_point_for_distance, find_index_for_time_point, find_index_of_apex_point, \
+from py_ballisticcalc.helpers import calculate_drag_free_range
+from py_ballisticcalc.helpers import find_index_of_point_for_distance, find_index_for_time_point, \
+    find_index_of_apex_point, \
     find_index_of_apex_in_points
 
-from py_ballisticcalc.helpers import calculate_drag_free_range
 
-@pytest.fixture
-def one_degree_shot():
+# from random import random
+
+
+@pytest.fixture(autouse=True)
+def one_degree_shot(loaded_engine_instance):
     drag_model = DragModel(
         bc=0.759,
         drag_table=TableG1,
@@ -28,11 +30,12 @@ def one_degree_shot():
     angle_in_degrees = 1
     shot = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(angle_in_degrees))
     max_drag_free_range = calculate_drag_free_range(
-        muzzle_velocity>>Velocity.MPS, angle_in_degrees
+        muzzle_velocity >> Velocity.MPS, angle_in_degrees
     )
-    calc = Calculator()
+    calc = Calculator(_engine=loaded_engine_instance)
     hit_result = calc.fire(shot, Distance.Meter(max_drag_free_range), extra_data=True)
     return hit_result
+
 
 @pytest.mark.parametrize(
     "velocity,angle,expected_range",
@@ -43,7 +46,7 @@ def one_degree_shot():
     ],
 )
 def test_calculate_drag_free_range(
-    velocity, angle, expected_range
+        velocity, angle, expected_range
 ):
     range = calculate_drag_free_range(velocity, angle)
     assert pytest.approx(range, 0.01) == expected_range
@@ -87,7 +90,7 @@ def test_find_index_for_timepoint(one_degree_shot):
     # if deviation of searched time point is equal to max_time_deviation_in_seconds, then last point should be found
     index = find_index_for_time_point(
         one_degree_shot,
-        shot_max_time_point + (1-sys.float_info.epsilon),
+        shot_max_time_point + (1 - sys.float_info.epsilon),
         strictly_bigger_or_equal=False,
         max_time_deviation_in_seconds=1,
     )
@@ -147,35 +150,37 @@ def test_find_index_for_distance(one_degree_shot):
             shot, p.distance >> Distance.Meter, Distance.Meter
         )
     end_time = time.time()
-    print(f'Search for {len(random_indices)} random point has taken {end_time-start_time:.1f} s')
+    print(f'Search for {len(random_indices)} random point has taken {end_time - start_time:.1f} s')
 
 
 def test_find_apex(one_degree_shot):
     index = find_index_of_apex_point(one_degree_shot)
-    assert index!=-1
+    assert index != -1
     apex_point_height = one_degree_shot.trajectory[index].height >> Distance.Meter
-    assert apex_point_height==pytest.approx(9.40, abs=0.01)
+    assert apex_point_height == pytest.approx(9.40, abs=0.01)
 
 
 class MockTrajectoryPoint:
     def __init__(self, height):
         self.height = height
 
+
 def generate_trajectory_points(height_list):
     return [MockTrajectoryPoint(h) for h in height_list]
 
+
 @pytest.mark.parametrize("input, expected", [
-     # Simple cases
-     (generate_trajectory_points([1, 3, 7,  10, 8, 4]), 3),  # Normal case
-     (generate_trajectory_points([10]), 0),  # Single element
-     # Multiple elements with clear apex
-     (generate_trajectory_points([1, 2, 3, 4]), 3),  # Increasing only
-     (generate_trajectory_points([4, 3, 2, 1]), 0),  # Decreasing only
-     # Edge cases
+    # Simple cases
+    (generate_trajectory_points([1, 3, 7, 10, 8, 4]), 3),  # Normal case
+    (generate_trajectory_points([10]), 0),  # Single element
+    # Multiple elements with clear apex
+    (generate_trajectory_points([1, 2, 3, 4]), 3),  # Increasing only
+    (generate_trajectory_points([4, 3, 2, 1]), 0),  # Decreasing only
+    # Edge cases
     (generate_trajectory_points([1, 5, 5, 1]), 1),
     (generate_trajectory_points([1, 5, 5, 7, 5]), 3),  # Plateau before peak
-    (generate_trajectory_points(list(range(1, 100))+list(range(99, 0, -1))), 98),  # Peak at 99
-     # No valid apex (edge case, behavior depends on definition)
+    (generate_trajectory_points(list(range(1, 100)) + list(range(99, 0, -1))), 98),  # Peak at 99
+    # No valid apex (edge case, behavior depends on definition)
     (generate_trajectory_points([]), -1),  # Empty array
 ])
 def test_find_apex_index(input, expected):
