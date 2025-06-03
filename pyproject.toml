@@ -56,6 +56,10 @@ where = ["."]
 include = ["py_ballisticcalc*"]
 
 
+[pytest]
+testpaths = "tests"
+
+
 [project.optional-dependencies]
 exts = ['py_ballisticcalc.exts==2.1.0']
 charts = ['matplotlib', 'pandas']

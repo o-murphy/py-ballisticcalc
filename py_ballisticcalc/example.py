@@ -3,7 +3,6 @@
 # pylint: disable=wildcard-import,unused-wildcard-import
 from py_ballisticcalc import *
 
-
 # Modify default prefer_units
 PreferredUnits.velocity = Velocity.FPS
 PreferredUnits.temperature = Temperature.Celsius

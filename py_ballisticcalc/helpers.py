@@ -4,11 +4,12 @@ from typing import Callable, Any, Final, List
 
 from py_ballisticcalc import HitResult, TrajFlag, TrajectoryData, Velocity, Distance
 
-EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81 # Acceleration due to gravity (m/s^2)
+EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81  # Acceleration due to gravity (m/s^2)
+
 
 def calculate_drag_free_range(
-    velocity_in_mps: float, angle_in_degrees: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
-)->float:
+        velocity_in_mps: float, angle_in_degrees: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+) -> float:
     """Compute the maximal range for the projectile launched with `velocity_mps` with angle `angle_in_degrees`.
        The result assumes absence of drag force - so this distance will definitely overestimate (ca 4 times)
        the range in presence of drag force.
@@ -18,7 +19,7 @@ def calculate_drag_free_range(
 
 
 def find_first_index_matching_condition(
-    shot: HitResult, condition: Callable[[TrajectoryData], int]
+        shot: HitResult, condition: Callable[[TrajectoryData], int]
 ) -> int:
     """Search sequentially for the index of first point in the trajectory, which matches condition.
        Returns:
@@ -29,7 +30,8 @@ def find_first_index_matching_condition(
             return i
     return -1
 
-def find_index_of_point_with_flag(shot: HitResult, flag:int=TrajFlag.ZERO_DOWN)->int:
+
+def find_index_of_point_with_flag(shot: HitResult, flag: int = TrajFlag.ZERO_DOWN) -> int:
     """Find index of first point, for which `flag` is set.
        Returns:
             Index of first point with TrajFlag.ZERO_DOWN `.
@@ -37,7 +39,8 @@ def find_index_of_point_with_flag(shot: HitResult, flag:int=TrajFlag.ZERO_DOWN)-
      """
     return find_first_index_matching_condition(shot, lambda p: p.flag & flag)
 
-def find_mach_point_index(shot: HitResult)->int:
+
+def find_mach_point_index(shot: HitResult) -> int:
     """Find index of point for which TrjFlag.MACH was set.
        Note - this requires calling calculator with extra_data=True.
        Returns:
@@ -46,7 +49,8 @@ def find_mach_point_index(shot: HitResult)->int:
     """
     return find_index_of_point_with_flag(shot, TrajFlag.MACH)
 
-def find_touch_point_index(shot: HitResult)->int:
+
+def find_touch_point_index(shot: HitResult) -> int:
     """Find index of point when earth was hit by the bullet.
        Note - this requires calling calculator with extra_data=True.
        Returns:
@@ -55,9 +59,10 @@ def find_touch_point_index(shot: HitResult)->int:
     """
     return find_index_of_point_with_flag(shot, TrajFlag.ZERO_DOWN)
 
+
 def find_velocity_less_than_index(
-    shot: HitResult, velocity_in_units: float, velocity_unit=Velocity.MPS
-)->int:
+        shot: HitResult, velocity_in_units: float, velocity_unit=Velocity.MPS
+) -> int:
     """Find index of point where velocity became less than provided velocity.
        Note - this requires calling calculator with extra_data=True.
        Returns:
@@ -68,23 +73,25 @@ def find_velocity_less_than_index(
         shot, lambda p: (p.velocity >> velocity_unit) < velocity_in_units
     )
 
+
 class BisectWrapper:
     """Wrapper for usage with bisect_for_condition."""
-    def __init__(self, array: List, callable: Callable)->None:
+
+    def __init__(self, array: List, callable: Callable) -> None:
         self.array = array
         self.callable = callable
 
-    def __getitem__(self, index:int)->Any:
+    def __getitem__(self, index: int) -> Any:
         return self.callable(self.array[index])
 
-    def check_condition(self, index:int)->bool:
+    def check_condition(self, index: int) -> bool:
         return self.callable(self.array[index])
 
-    def __len__(self)->int:
+    def __len__(self) -> int:
         return len(self.array)
 
 
-def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper)->int:
+def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
     """ Perform search in the ordered array for the first point, satisfying monotonic condition.
 
         Monotonic condition is a condition, which is consistently increases or decreases.
@@ -101,18 +108,17 @@ def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper)->int:
         return idx
     return -1
 
+
 def find_first_index_satisfying_monotonic_condition(
-    arr: List[TrajectoryData], monotonic_condition: Callable[[Any], bool]
-)->int:
+        arr: List[TrajectoryData], monotonic_condition: Callable[[Any], bool]
+) -> int:
     # Find the index where the condition first becomes true
     # Uses bisect to find the first index satisfying the condition.
     return bisect_for_monotonic_condition(arr, BisectWrapper(arr, monotonic_condition))
 
 
-
-
-def find_nearest_index_satisfying_monotonic_condition(arr: List[TrajectoryData], target_value:float,
-                                                      value_getter: Callable[[TrajectoryData],float]):
+def find_nearest_index_satisfying_monotonic_condition(arr: List[TrajectoryData], target_value: float,
+                                                      value_getter: Callable[[TrajectoryData], float]):
     """
     Finds the index of the object with the nearest value to the target value.
     This performs bisect search for target value, and then compares differences from target value
@@ -139,15 +145,15 @@ def find_nearest_index_satisfying_monotonic_condition(arr: List[TrajectoryData],
     before = pos - 1
     after = pos
     if abs(value_getter(arr[before]) - target_value) <= abs(
-        value_getter(arr[after]) - target_value
+            value_getter(arr[after]) - target_value
     ):
         return before
     return after
 
 
 def find_index_of_point_for_distance(
-    shot: HitResult, distance: float, distance_unit=Distance.Meter
-)->int:
+        shot: HitResult, distance: float, distance_unit=Distance.Meter
+) -> int:
     """Find index of point, for which distance is bigger or equal to given `distance`.
        Returns:
             Index of point, where distance >= distance of point.
@@ -161,10 +167,10 @@ def find_index_of_point_for_distance(
 
 
 def find_index_for_time_point(
-    shot: HitResult,
-    time: float,
-    strictly_bigger_or_equal: bool = True,
-    max_time_deviation_in_seconds: float = 1,
+        shot: HitResult,
+        time: float,
+        strictly_bigger_or_equal: bool = True,
+        max_time_deviation_in_seconds: float = 1,
 ) -> int:
     """Find index of time point with nearest time to provided `time`.
        If `strictly_bigger_or_equal` is set, then the first point with time equal to bigger than time is returned.
@@ -216,7 +222,7 @@ def find_index_of_apex_point(shot: HitResult) -> int:
     return find_index_of_apex_in_points(shot.trajectory)
 
 
-def find_index_of_apex_in_points(trajectory_points: List)->int:
+def find_index_of_apex_in_points(trajectory_points: List) -> int:
     """
     Finds the index of the apex in the uni-modal trajectory.
     :param trajectory_points: The array of objects with a 'height' field, where the height increases
@@ -241,8 +247,9 @@ def find_index_of_apex_in_points(trajectory_points: List)->int:
     # Left and right converge to the apex
     return left
 
+
 def find_time_for_distance_in_shot(
-    shot: HitResult, distance_in_unit: float, distance_unit=Distance.Meter
+        shot: HitResult, distance_in_unit: float, distance_unit=Distance.Meter
 ) -> float:
     """Finds time corresponding to certain distance being reached in shot.
     Distance exceed maximal distance in shoot (i.e., no information is available),
@@ -254,4 +261,3 @@ def find_time_for_distance_in_shot(
     if point_index >= 0:
         return shot[point_index].time
     return float("NaN")
-

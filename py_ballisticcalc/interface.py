@@ -1,8 +1,6 @@
 """Implements basic interface for the ballistics calculator"""
-import importlib
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
-from typing import Callable, Dict
 
 from typing_extensions import Union, List, Optional
 
@@ -15,20 +13,22 @@ from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import HitResult
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
+DEFAULT_ENTRY_NAME = 'engine'
+DEFAULT_ENTRY_GROUP = 'py_ballisticcalc'
+DEFAULT_ENTRY = 'py_ballisticcalc'
+
 
 @dataclass
 class _EngineLoader:
-    _entry_point_group = 'py_ballisticcalc'
-    _entry_point_name = 'engine'
+    _entry_point_group = DEFAULT_ENTRY_GROUP
+    _entry_point_name = DEFAULT_ENTRY_NAME
 
     @classmethod
     def list_entries(cls):
         all_entry_points = entry_points()
-        # for importlib < 5
-        if hasattr(all_entry_points, 'get'):
+        if hasattr(all_entry_points, 'get'):  # for importlib < 5
             ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
-        # for importlib >= 5
-        elif hasattr(all_entry_points, 'select'):
+        elif hasattr(all_entry_points, 'select'):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
         else:
             raise RuntimeError('Entry point not supported')
@@ -58,7 +58,7 @@ class _EngineLoader:
         return None
 
     @classmethod
-    def load(cls, entry_point: Union[str, EngineProtocol] = 'py_ballisticcalc') -> EngineProtocol:
+    def load(cls, entry_point: Union[str, EngineProtocol] = DEFAULT_ENTRY) -> EngineProtocol:
         if isinstance(entry_point, EngineProtocol):
             return entry_point
         if isinstance(entry_point, str):
@@ -67,15 +67,12 @@ class _EngineLoader:
             for ep in ballistic_entry_points:
                 if cls._entry_point_name == ep.name and entry_point in ep.value:
                     if handle := cls._load_from_entry(ep):
-                         return handle
+                        return handle
             if not handle:
                 ep = EntryPoint(cls._entry_point_name, entry_point, cls._entry_point_group)
-                try:
-                    handle = cls._load_from_entry(ep)
+                if handle := cls._load_from_entry(ep):
                     logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
                     return handle
-                except ImportError as e:
-                    logger.error(f"Error loading engine from {ep.value}: {e}")
             raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
         raise TypeError("Invalid entry_point type, expected 'str' or 'TrajectoryCalcProtocol'")
 

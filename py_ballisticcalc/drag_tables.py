@@ -3,7 +3,6 @@ from typing_extensions import TypedDict, List
 
 DragTablePointDictType = TypedDict('DragTablePointDictType', {'Mach': float, 'CD': float})
 
-
 TableG1: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.2629},
     {'Mach': 0.05, 'CD': 0.2558},

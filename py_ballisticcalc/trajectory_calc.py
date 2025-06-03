@@ -63,13 +63,14 @@ import warnings
 
 from typing_extensions import Optional, NamedTuple, Union, List, Tuple
 
+from py_ballisticcalc.vector import Vector
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, Unit
-from py_ballisticcalc.vector import Vector
+
 
 # __all__ = (
 #     'TrajectoryCalc',
@@ -111,6 +112,7 @@ class BaseTrajData(NamedTuple):
     mach: float
 
 
+# pylint: disable=too-many-instance-attributes
 class _TrajectoryDataFilter:
     """
     Determines when to record trajectory data points based on range and time.
@@ -178,8 +180,10 @@ class _TrajectoryDataFilter:
                 ratio = (self.next_record_distance - self.previous_position.x) / (position.x - self.previous_position.x)
                 data = BaseTrajData(
                     time=self.previous_time + (time - self.previous_time) * ratio,
-                    position=self.previous_position + (position - self.previous_position) * ratio,  # type: ignore[operator]
-                    velocity=self.previous_velocity + (velocity - self.previous_velocity) * ratio,  # type: ignore[operator]
+                    position=self.previous_position + (position - self.previous_position) * ratio,
+                    # type: ignore[operator]
+                    velocity=self.previous_velocity + (velocity - self.previous_velocity) * ratio,
+                    # type: ignore[operator]
                     mach=self.previous_mach + (mach - self.previous_mach) * ratio
                 )
             self.current_flag |= TrajFlag.RANGE
@@ -707,6 +711,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     )
 
 
+# pylint: disable protected-access
 def _new_feet(v: float):
     d = object.__new__(Distance)
     d._value = v * 12
@@ -714,6 +719,7 @@ def _new_feet(v: float):
     return d
 
 
+# pylint: disable protected-access
 def _new_fps(v: float):
     d = object.__new__(Velocity)
     d._value = v / 3.2808399
@@ -721,6 +727,7 @@ def _new_fps(v: float):
     return d
 
 
+# pylint: disable protected-access
 def _new_rad(v: float):
     d = object.__new__(Angular)
     d._value = v
@@ -728,6 +735,7 @@ def _new_rad(v: float):
     return d
 
 
+# pylint: disable protected-access
 def _new_ft_lb(v: float):
     d = object.__new__(Energy)
     d._value = v
@@ -735,6 +743,7 @@ def _new_ft_lb(v: float):
     return d
 
 
+# pylint: disable protected-access
 def _new_lb(v: float):
     d = object.__new__(Weight)
     d._value = v / 0.000142857143
@@ -904,7 +913,6 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
         m = mhi
     curve_m = curve[m]
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
-
 
 
 __all__ = (

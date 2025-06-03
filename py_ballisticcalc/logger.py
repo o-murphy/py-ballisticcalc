@@ -4,7 +4,7 @@ import logging
 __all__ = ('logger',
            'enable_file_logging',
            'disable_file_logging',
-            'get_debug',
+           'get_debug',
            'set_debug',
            )
 
@@ -22,6 +22,7 @@ DEBUG = False
 # File handler (optional, added dynamically)
 file_handler = None
 
+
 def enable_file_logging(filename: str = "debug.log") -> None:
     """Enable logging to a file, replacing any existing file handler."""
     global file_handler
@@ -36,6 +37,7 @@ def enable_file_logging(filename: str = "debug.log") -> None:
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
+
 def disable_file_logging() -> None:
     """Disable logging to a file if it is currently enabled."""
     global file_handler
@@ -43,6 +45,7 @@ def disable_file_logging() -> None:
         logger.removeHandler(file_handler)
         file_handler.close()
         file_handler = None
+
 
 def set_debug(value: bool) -> None:
     """Set the global DEBUG variable and adjust logging levels."""
@@ -52,6 +55,7 @@ def set_debug(value: bool) -> None:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
+
 
 def get_debug() -> bool:
     """Get the current value of the global DEBUG variable."""

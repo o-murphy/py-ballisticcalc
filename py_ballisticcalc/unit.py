@@ -6,8 +6,8 @@ import re
 from dataclasses import dataclass
 from enum import IntEnum
 from math import pi, atan, tan
-from typing import NamedTuple, Union, TypeVar, Optional, Dict, Tuple, Final, Protocol, runtime_checkable, \
-    SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Type, Any
+from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
+    SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Any
 
 from typing_extensions import Self, TypeAlias
 
@@ -278,10 +278,13 @@ class Measured(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
     def convert(self, units: Unit) -> Self: ...
 
     def get_in(self, units: Unit) -> Number: ...
+
     @property
     def units(self) -> Unit: ...
+
     @property
     def unit_value(self) -> Number: ...
+
     @property
     def raw_value(self) -> Number: ...
 

@@ -1,12 +1,21 @@
+"""
+This module defines the `EngineProtocol`, a protocol that outlines the
+interface for ballistic trajectory calculation engines within the
+py_ballisticcalc library.
+
+It specifies the methods that concrete engine implementations must provide
+to perform trajectory calculations, access drag model data, and determine
+zeroing angles for firearms.
+"""
+
 from typing import TypeVar
 
 from typing_extensions import List, Protocol, runtime_checkable
 
-from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.unit import Distance, Angular
+from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.trajectory_data import TrajectoryData
-
+from py_ballisticcalc.unit import Distance, Angular
 
 ConfigT = TypeVar("ConfigT", covariant=True)
 TrajectoryDataT = TypeVar("TrajectoryDataT", bound=TrajectoryData)
@@ -14,6 +23,13 @@ TrajectoryDataT = TypeVar("TrajectoryDataT", bound=TrajectoryData)
 
 @runtime_checkable
 class EngineProtocol(Protocol[ConfigT, TrajectoryDataT]):
+    """
+    Defines the interface for a ballistic trajectory calculation engine.
+
+    This protocol outlines the methods that any concrete ballistic engine
+    implementation should provide to perform trajectory calculations,
+    retrieve drag model information, and determine zeroing angles.
+    """
 
     def __init__(self, _config: ConfigT):
         """
