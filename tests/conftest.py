@@ -1,7 +1,11 @@
+import logging
+
 import pytest
 
 from py_ballisticcalc.interface import _EngineLoader
+from py_ballisticcalc.logger import logger
 
+logger.setLevel(logging.DEBUG)
 
 def pytest_addoption(parser):
     parser.addoption(

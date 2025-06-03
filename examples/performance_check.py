@@ -50,7 +50,9 @@ from py_ballisticcalc import *
 from py_ballisticcalc.logger import logger
 import logging
 
-print(Shot, Weapon, Wind)
+from py_ballisticcalc.interface import _EngineLoader
+
+
 
 logger.setLevel(logging.DEBUG)
 
@@ -84,6 +86,8 @@ zero_atmo = Atmo(
     humidity=78
 )
 
+
+
 def init_zero_shot():
 
     weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
@@ -105,22 +109,7 @@ def use_zero_shot(calc_):
     return shot
 
 
-config: InterfaceConfigDict = {}
-calc = Calculator(_config=config)
-# rk4 = RKballistic.RK4Calculator(_config=config)
-
-
-
-
-logger.debug("Euler iter")
-print(timeit(lambda: use_zero_shot(calc), number=1))
-# logger.debug("RK4 iter")
-# print(timeit(lambda: use_zero_shot(rk4), number=1))
-
-number = 120
-
-
-def run_check(calc_):
+def run_check(calc_, number):
     total_time = timeit(lambda: calc_.barrel_elevation_for_target(init_zero_shot(), zero_distance), number=number)
     rate = number / total_time  # executions per second
 
@@ -148,11 +137,17 @@ def run_check(calc_):
     print(f"Execution rate: {rate:.2f} calls per second")
     print()
 
+number = 120
+config: InterfaceConfigDict = {}
 
-logger.setLevel(logging.INFO)
+for ep in _EngineLoader.iter_engines():
+    engine = ep.load()
+    print("Engine: %s" % ep.value)
+    calc = Calculator(_config=config, _engine=engine)
+    run_check(calc, number)
+    print()
 
-run_check(calc)
-logger.info("Euler bench")
-run_check(calc)
-# logger.info("RK4 bench")
-# run_check(rk4)
+from examples.trajectory_calc_on_yields import TrajectoryCalc as TCYields
+print("Engine: Pure (yields)")
+calc = Calculator(_config=config, _engine=TCYields)
+run_check(calc, number)

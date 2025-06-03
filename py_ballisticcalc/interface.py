@@ -1,6 +1,8 @@
 """Implements basic interface for the ballistics calculator"""
+import importlib
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points
+from typing import Callable, Dict
 
 from typing_extensions import Union, List, Optional
 
@@ -20,19 +22,39 @@ class _EngineLoader:
     _entry_point_name = 'engine'
 
     @classmethod
+    def list_entries(cls):
+        all_entry_points = entry_points()
+        # for importlib < 5
+        if hasattr(all_entry_points, 'get'):
+            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
+        # for importlib >= 5
+        elif hasattr(all_entry_points, 'select'):
+            ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
+        else:
+            raise RuntimeError('Entry point not supported')
+        return set(ballistic_entry_points)
+
+    @classmethod
+    def iter_engines(cls):
+        ballistic_entry_points = cls.list_entries()
+        for ep in ballistic_entry_points:
+            if cls._entry_point_name == ep.name:
+                yield ep
+
+    # @classmethod
+    # def _find(cls, entry_point: str) -> EngineProtocol:
+    #     ...
+    #
+    # @classmethod
+    # def _import(cls, module_path: str) -> EngineProtocol:
+    #     ...
+
+    @classmethod
     def load(cls, entry_point: Union[str, EngineProtocol] = 'py_ballisticcalc') -> EngineProtocol:
         if isinstance(entry_point, EngineProtocol):
             return entry_point
         if isinstance(entry_point, str):
-            all_entry_points = entry_points()
-            # for importlib < 5
-            if hasattr(all_entry_points, 'get'):
-                ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
-            # for importlib >= 5
-            elif hasattr(all_entry_points, 'select'):
-                ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
-            else:
-                raise RuntimeError('Entry point not supported')
+            ballistic_entry_points = cls.list_entries()
             found_calculator_class = None
             handle: Optional[EngineProtocol] = None
             for ep in ballistic_entry_points:
@@ -123,4 +145,4 @@ class Calculator:
         return HitResult(shot, data, extra_data)
 
 
-__all__ = ('Calculator',)
+__all__ = ('Calculator', '_EngineLoader',)
