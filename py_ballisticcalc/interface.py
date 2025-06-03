@@ -1,7 +1,7 @@
 """Implements basic interface for the ballistics calculator"""
 import importlib
 from dataclasses import dataclass, field
-from importlib.metadata import entry_points
+from importlib.metadata import entry_points, EntryPoint
 from typing import Callable, Dict
 
 from typing_extensions import Union, List, Optional
@@ -41,13 +41,21 @@ class _EngineLoader:
             if cls._entry_point_name == ep.name:
                 yield ep
 
-    # @classmethod
-    # def _find(cls, entry_point: str) -> EngineProtocol:
-    #     ...
-    #
-    # @classmethod
-    # def _import(cls, module_path: str) -> EngineProtocol:
-    #     ...
+    @classmethod
+    def _load_from_entry(cls, ep: EntryPoint) -> Optional[EngineProtocol]:
+        try:
+            handle = ep.load()
+            if not isinstance(handle, EngineProtocol):
+                raise TypeError(f"Unsupported engine type {ep.value}, must implements EngineProtocol")
+            logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
+            return handle
+        except ImportError as e:
+            logger.error(f"Error loading engine from {ep.value}: {e}")
+        except AttributeError as e:
+            logger.error(f"Error loading attribute from {ep.value}: {e}")
+        except Exception as e:
+            logger.exception(f"An unexpected error occurred loading {ep.value}: {e}")
+        return None
 
     @classmethod
     def load(cls, entry_point: Union[str, EngineProtocol] = 'py_ballisticcalc') -> EngineProtocol:
@@ -55,28 +63,20 @@ class _EngineLoader:
             return entry_point
         if isinstance(entry_point, str):
             ballistic_entry_points = cls.list_entries()
-            found_calculator_class = None
             handle: Optional[EngineProtocol] = None
             for ep in ballistic_entry_points:
                 if cls._entry_point_name == ep.name and entry_point in ep.value:
-                    found_calculator_class = ep.value
-                    try:
-                        handle = ep.load()
-                        logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
-                        break  # Assuming you want to load the first matching engine
-                    except ImportError as e:
-                        logger.error(f"Error loading engine from {ep.value}: {e}")
-                    except AttributeError as e:
-                        logger.error(f"Error loading attribute from {ep.value}: {e}")
-                    except Exception as e:
-                        logger.exception(f"An unexpected error occurred loading {ep.value}: {e}")
-
-            if found_calculator_class:
-                if not isinstance(handle, EngineProtocol):
-                    raise TypeError(f"Unsupported engine type {found_calculator_class}, must implements EngineProtocol")
-                return handle  # Instantiate the calculator
-            else:
-                raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
+                    if handle := cls._load_from_entry(ep):
+                         return handle
+            if not handle:
+                ep = EntryPoint(cls._entry_point_name, entry_point, cls._entry_point_group)
+                try:
+                    handle = cls._load_from_entry(ep)
+                    logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
+                    return handle
+                except ImportError as e:
+                    logger.error(f"Error loading engine from {ep.value}: {e}")
+            raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
         raise TypeError("Invalid entry_point type, expected 'str' or 'TrajectoryCalcProtocol'")
 
 
