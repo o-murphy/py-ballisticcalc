@@ -28,14 +28,14 @@ jobs:
     - name: Run coverage
       run: pytest tests --cov=py_ballisticcalc --cov-report=html
 
-    - name: Install "coverage-badge"
-      run: uv pip install coverage-badge
-
-    - name: Generate coverage badge
-      run: coverage-badge -o coverage.svg
-
-    - name: Upload coverage badge
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage.svg
-        path: coverage.svg
+#    - name: Install "coverage-badge"
+#      run: uv pip install coverage-badge
+#
+#    - name: Generate coverage badge
+#      run: coverage-badge -o coverage.svg
+#
+#    - name: Upload coverage badge
+#      uses: actions/upload-artifact@v4
+#      with:
+#        name: coverage.svg
+#        path: coverage.svg
