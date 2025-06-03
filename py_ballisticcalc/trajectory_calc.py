@@ -181,9 +181,7 @@ class _TrajectoryDataFilter:
                 data = BaseTrajData(
                     time=self.previous_time + (time - self.previous_time) * ratio,
                     position=self.previous_position + (position - self.previous_position) * ratio,
-                    # type: ignore[operator]
                     velocity=self.previous_velocity + (velocity - self.previous_velocity) * ratio,
-                    # type: ignore[operator]
                     mach=self.previous_mach + (mach - self.previous_mach) * ratio
                 )
             self.current_flag |= TrajFlag.RANGE
