@@ -40,7 +40,7 @@ dependencies = [
 ]
 
 [project.entry-points.py_ballisticcalc]
-engine = "py_ballisticcalc.trajectory_calc:TrajectoryCalc"
+engine = "py_ballisticcalc:TrajectoryCalc"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
