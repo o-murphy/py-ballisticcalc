@@ -56,12 +56,14 @@ where = ["."]
 include = ["py_ballisticcalc*"]
 
 
-[pytest]
-testpaths = "tests"
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-rf"
+testpaths = ["tests"]
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.1.0']
+exts = ['py_ballisticcalc.exts==2.1.1b1']
 charts = ['matplotlib', 'pandas']
 visualize = ['matplotlib', 'pandas']
 dev = [

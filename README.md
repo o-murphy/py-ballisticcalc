@@ -312,7 +312,7 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1*un
 ```
 
 # Custom integrator engines
-Since 2.1.0
+Since version `2.1.1b1`
 * The `py_ballisticcalc.exts` module is deprecated, we recommend to use [CyEulerBallistic](CyEulerBallistic)
 * The library switch to explicit setup custom integrator engines using entry_points instead of direct import
 
@@ -341,7 +341,7 @@ To test your custom engine compatibility you can use predefined tests from `py_b
   ```
 * Run `pytest` with `--engine` argument
   ```shell
-  pytest ./tests --engine "my_awesome_engine_library" 
+  pytest ./tests --engine="my_awesome_engine_library" 
   ```
 
 # Concepts

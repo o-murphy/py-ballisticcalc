@@ -10,7 +10,7 @@ as [discussions or issues](https://github.com/o-murphy/py-ballisticcalc/issues/n
 To make it as simple as possible for us to help you, please include the output of the following call in your issue:
 
 ```bash
-python -c "from importlib_metadata import metadata; print(metadata('py-ballisticcalc')['Version'])"
+python -c "from importlib.metadata import metadata; print(metadata('py-ballisticcalc')['Version'])"
 ```
 
 Please try to always include the above unless you're unable to install py-ballisticcalc or **know** it's not relevant
@@ -89,8 +89,22 @@ pylint ./py_ballisticcalc
 mypy ./py_ballisticcalc
 
 # Run automated tests
-pytest tests
+pytest
+
+# Run automated tests for specific engine
+pytest --engine="RKBallistic"  # via libraty name
+pytest --engine="my_lib.my_engine:MyEngineClass"  # via entry point path 
 ```
+
+### Coverage
+We use `pytest-cov` to get coverage reports
+```shell
+pytest --cov=py_ballisticcalc --cov-report=html  # for default engine
+pytest --cov=py_ballisticcalc --cov-report=html --engine=py-ballisticcalc # for custom engine 
+```
+
+
+### Documentation
 
 If you've made any changes to the documentation (including changes to function signatures, class definitions, or
 docstrings that will appear in the API documentation), make sure it builds successfully.
