@@ -21,7 +21,8 @@ class Vector(NamedTuple):
         Returns:
             magnitude of Vector instance
         """
-        return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+        # return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+        return math.hypot(self.x, self.y, self.z)
 
     def mul_by_const(self, a: float) -> 'Vector':
         """
