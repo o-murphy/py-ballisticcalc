@@ -13,6 +13,7 @@ __all__ = ('Vector',)
 @final
 @dataclasses.dataclass
 cdef class Vector:
+    __slots__ = ("_x", "_y", "_z")
 
     def __cinit__(Vector self, double x, double y, double z):
         self._x = x
