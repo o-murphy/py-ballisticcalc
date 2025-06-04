@@ -2452,10 +2452,9 @@ wheels = [
 
 [[package]]
 name = "py-ballisticcalc"
-version = "2.1.0"
+version = "2.1.1b1"
 source = { editable = "." }
 dependencies = [
-    { name = "pytest" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "typing-extensions" },
 ]
@@ -2498,6 +2497,20 @@ visualize = [
     { name = "pandas" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "build" },
+    { name = "jupyter" },
+    { name = "matplotlib-stubs" },
+    { name = "mypy" },
+    { name = "pandas-stubs", version = "2.2.2.240807", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "pandas-stubs", version = "2.2.3.241126", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "pylint" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "build", marker = "extra == 'dev'" },
@@ -2517,10 +2530,9 @@ requires-dist = [
     { name = "pandas", marker = "extra == 'charts'" },
     { name = "pandas", marker = "extra == 'visualize'" },
     { name = "pandas-stubs", marker = "extra == 'dev'" },
-    { name = "py-ballisticcalc-exts", marker = "extra == 'exts'", specifier = "==2.1.0" },
+    { name = "py-ballisticcalc-exts", marker = "extra == 'exts'", specifier = "==2.1.1b1" },
     { name = "pydocstyle", marker = "extra == 'docs'" },
     { name = "pylint", marker = "extra == 'dev'" },
-    { name = "pytest", specifier = ">=8.3.5" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
@@ -2530,67 +2542,80 @@ requires-dist = [
 ]
 provides-extras = ["exts", "charts", "visualize", "dev", "docs"]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "build", specifier = ">=1.2.2.post1" },
+    { name = "jupyter", specifier = ">=1.1.1" },
+    { name = "matplotlib-stubs", specifier = ">=0.2.0" },
+    { name = "mypy", specifier = ">=1.15.0" },
+    { name = "pandas-stubs", specifier = ">=2.2.2.240807" },
+    { name = "pylint", specifier = ">=3.3.4" },
+    { name = "pytest", specifier = ">=8.3.5" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-xdist", specifier = ">=3.6.1" },
+]
+
 [[package]]
 name = "py-ballisticcalc-exts"
-version = "2.1.0"
+version = "2.1.1b1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b6/db/5a0e290bcd78fea6141ed8c3dabaf3b874ea06d174b54fdcdddc4856022b/py_ballisticcalc_exts-2.1.0.tar.gz", hash = "sha256:a3b6d0dcb2af61a4b6e4ea8dcb7f1beba21e08395808293ede20cee16c94f7dd", size = 316176 }
+sdist = { url = "https://files.pythonhosted.org/packages/fd/ca/d7a967b1d71ba2c312df969f008a6f7509b6017b9b1ce21c1e146444ccdf/py_ballisticcalc_exts-2.1.1b1.tar.gz", hash = "sha256:f870b04a083336fd26bb374015792d4d0651b054edf7f08ad8131fff843e2df1", size = 316267 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6b/2d/dd105b6f339f488c90953d22f44f06e595f24df3faa60871ee2552a36020/py_ballisticcalc_exts-2.1.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:36a5131234cf8e000ddd8689b69c63fd8ddbf638780f59a19659865773373d2e", size = 452638 },
-    { url = "https://files.pythonhosted.org/packages/54/4b/5c01cacd0c52f8dc0a1d34b8db9bb15db6751f9a5dd471c98441c4b9cb4b/py_ballisticcalc_exts-2.1.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:3b60468d6974690609a630b3e7e6851877a33c18fc922af1356104f7365bc51c", size = 447718 },
-    { url = "https://files.pythonhosted.org/packages/0a/65/b3d0b14be8f12e77de27b0b6260ffae15bb8522eccdaa7e176d821065c52/py_ballisticcalc_exts-2.1.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:293db1b4e068802d3a38e18896be255059df0410f6eae5d3488cf80d6a852ffc", size = 1070790 },
-    { url = "https://files.pythonhosted.org/packages/f3/9a/37773998650abc3c98e12880c1aa9a65d34e6c925e643180890b83bb54fb/py_ballisticcalc_exts-2.1.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9482046a5cca2d5d68c8047d37050d276ee30e7912400b058469c0189be24e27", size = 1031191 },
-    { url = "https://files.pythonhosted.org/packages/c1/8b/14f2ffb72a1f39eb974a7f4090c3ca587150573f075c8e202f30fe1cc7f5/py_ballisticcalc_exts-2.1.0-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:5fe7ac2c9313da475dd760c89e66e6aaf3d108ed694f4b8aca7205553ab14363", size = 1054760 },
-    { url = "https://files.pythonhosted.org/packages/1e/c1/775da701ffe9a47c008259185d1ef33229e5ade672b4196cde6579066ff0/py_ballisticcalc_exts-2.1.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:95623d3b52cc2c945dc20f2bf36c93b8d3f4339acfa9f810f83bfd614790823a", size = 1072553 },
-    { url = "https://files.pythonhosted.org/packages/b1/df/a03660621030a2da946b9f78d73682ad3d24e174e6894ccd8f95d7620913/py_ballisticcalc_exts-2.1.0-cp310-cp310-win32.whl", hash = "sha256:f655500be5f04268b24c89eb7d289a0ead01961fbdae6e79f78ed2d726007a8c", size = 432328 },
-    { url = "https://files.pythonhosted.org/packages/4a/51/668aa3807d493ab964ec1a460987b22ad9e664b44913e71e4bebe400aa8e/py_ballisticcalc_exts-2.1.0-cp310-cp310-win_amd64.whl", hash = "sha256:8af7b81fc2f3fff6740cb3cabb96eb4ad609c751a2b8b9a451ebcc912c853406", size = 444107 },
-    { url = "https://files.pythonhosted.org/packages/14/c5/85a93a3bd655a104b23b791913f745c852de1b2558c64b9dff02fa2c349f/py_ballisticcalc_exts-2.1.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:c05cf2f1e9be8ef01cd71bc782b0cd0e664559fb45d281c1920ae6688833d2c3", size = 451697 },
-    { url = "https://files.pythonhosted.org/packages/9f/f7/360da7214972a6053d375523098481a74f3f8c5d28485c72677394caf8d6/py_ballisticcalc_exts-2.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:ec376518e6475e0468e8ef3e09d7c863034bb78122a28b9a055b96eb952111e1", size = 446286 },
-    { url = "https://files.pythonhosted.org/packages/ad/24/6ea7c7505086bdfa0f488ad0cbb80eab2970806f109f429ca5da867b3e30/py_ballisticcalc_exts-2.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:63ca07e3be11bdf999550caaeb91992b3a7f14979caa70a0d73386ddd2fc049c", size = 1115847 },
-    { url = "https://files.pythonhosted.org/packages/2d/05/f8c2431d0c73d343adb8cac9092b34be6d8ab4b6051931247f02dd6d20da/py_ballisticcalc_exts-2.1.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4c849cfb56da712a6cc4bcab6a7e28177fd6b1b1b7029dac08b4b5cff7703312", size = 1076262 },
-    { url = "https://files.pythonhosted.org/packages/2e/0d/9f6dc1808dd6440fdd89caaf15ac922678b074717d1600e0408196325939/py_ballisticcalc_exts-2.1.0-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:300c133b36180d814874584bd71662c3a49fbcc060fe5adc7dae36ce561152f8", size = 1099179 },
-    { url = "https://files.pythonhosted.org/packages/a5/38/e5daabcbc29cd39b691039ebc61422a5a81af70f49ef4af2b23c5ea09c29/py_ballisticcalc_exts-2.1.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:40627ad5d2df14f7568a7b7ce36d2034e6d8adc2b000fbbd8d6e4a6f17418279", size = 1120375 },
-    { url = "https://files.pythonhosted.org/packages/91/f2/df60d724c092275349102f36d890c5d767982256615404986c0adfc41332/py_ballisticcalc_exts-2.1.0-cp311-cp311-win32.whl", hash = "sha256:efac67880552461df0384587c13d5706d6efc20bebd238b9c2f1371b15fdfb81", size = 430985 },
-    { url = "https://files.pythonhosted.org/packages/bc/26/20df586187cf88d626fa6485be4ba6ea06b29b7b1e7bbb4af279bc2a58fe/py_ballisticcalc_exts-2.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:cb81d3014e8ac3a0c70d137f1c6bf35c0027460a49747cf1625968a43cbaea0c", size = 444339 },
-    { url = "https://files.pythonhosted.org/packages/42/9e/43c527f1aa2ace27d63f6ec8eb5c830694d9242547e43f9a49adfb7e3d65/py_ballisticcalc_exts-2.1.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:407b1a0aee73c788bd4a1944cab5b21a9cbafcd1f240968ed8709c6960699d7d", size = 450045 },
-    { url = "https://files.pythonhosted.org/packages/1b/1b/1ca926cd9971c7375709c38a0ea4b98b0d89bbfd9c4e4c066b648d1a4f97/py_ballisticcalc_exts-2.1.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:95c4375bab07bcc31e5cb8d18135c5493c323b8152f551aff2f166232f476be1", size = 443973 },
-    { url = "https://files.pythonhosted.org/packages/d2/73/2dad6dd02c322527b430ba6127f969efcb79aed5a56448beff6228a09920/py_ballisticcalc_exts-2.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:85b58d2557f67f25b4c24dc9d00b70da2a406c4348cea0e754804eb8ccfd55c9", size = 1122232 },
-    { url = "https://files.pythonhosted.org/packages/48/9d/331c770afbce880ac21cfb69ac79f747a512cffcf034797bd249688319dc/py_ballisticcalc_exts-2.1.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7a19f0de12418bc254a3118fff8845e7470dae98226181c9314f3086a008ff75", size = 1075792 },
-    { url = "https://files.pythonhosted.org/packages/20/50/4383381d7d08a526e30ab26f5b6f0d86161188b31627e361cbf643e9fcf5/py_ballisticcalc_exts-2.1.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:df7d597817071ab3f69051a75c51f202754d9d3baf30b1da0a9b6ae1b6b3f047", size = 1094868 },
-    { url = "https://files.pythonhosted.org/packages/e4/39/47d5248ff33781aa4b067b3188ada50101a2b79cc5451b4dd99566646c6d/py_ballisticcalc_exts-2.1.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:bf508c02b2c5fb6b9d5548e97ec75a25eb11a0f5b79db5ac74cef697b0c1e738", size = 1127284 },
-    { url = "https://files.pythonhosted.org/packages/5b/19/60683b60c20f19100ff2c6cb551af1d430bdb864a375ebf0e1da995cfa82/py_ballisticcalc_exts-2.1.0-cp312-cp312-win32.whl", hash = "sha256:a3095cc3324ec7df6fc72e9a8581bf72c538dc5b2cc76de60faa7c7fc6309a75", size = 428766 },
-    { url = "https://files.pythonhosted.org/packages/09/74/165544b073f0013fcd0d8914cbd8039fde8410a6ae3a137e2e7613252cf5/py_ballisticcalc_exts-2.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:e87ab4cd0f832823b583c69fe4f0e075f10a0296098807d57f36bcbc63cafa16", size = 441316 },
-    { url = "https://files.pythonhosted.org/packages/9a/03/f7b19b8dd30ae0adc28cbc7b13f5f1c6c05817d352c506e2d978c9812535/py_ballisticcalc_exts-2.1.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:79a2f409e30e16e1d0d8adaf432c75fcddabca8d436c8d3834aa8c458f458a05", size = 447613 },
-    { url = "https://files.pythonhosted.org/packages/17/b9/9e18e8680949eb99378a5d39692f1b04ede4fb50ca044ad59e0bfdfd5fce/py_ballisticcalc_exts-2.1.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:33fe4d93d8de3ca0957fb7a2de7f4ff040e4b6eea279afad62af99a8f91cf04b", size = 441976 },
-    { url = "https://files.pythonhosted.org/packages/c7/77/97b7e1cd5f2baa06875b7ea66f86cb3c6feb9b1aee0918cfa561a26582fb/py_ballisticcalc_exts-2.1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0ebbf5359755237fec211d8a10866e24943e3b6185883bab5418d6d2240a4271", size = 1107950 },
-    { url = "https://files.pythonhosted.org/packages/f7/c1/91d992fdd695001f448b0b81534c3de32adc6b7ca50d4b5785e48b414b47/py_ballisticcalc_exts-2.1.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3725f52795802210daf6471c200c91b951730cffbd35c29308588f503f6442f6", size = 1060224 },
-    { url = "https://files.pythonhosted.org/packages/78/71/188b551e6dac167e9ca928d68f64d860dbaf9c6b9137a3f9fbffb99ec042/py_ballisticcalc_exts-2.1.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:45e515a15e4cb892432e5a9f35b199683fd6694a4d05379d105dd2cee7049620", size = 1083451 },
-    { url = "https://files.pythonhosted.org/packages/2b/62/0e53a31d01f1be74ab5ca48f3002eb8142337e722b0cf03c41df44e02f49/py_ballisticcalc_exts-2.1.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:f92a20703f82837b3585ec2cdc6cf3311b62965493cc3b4fe163b00c9f2b0ff7", size = 1122767 },
-    { url = "https://files.pythonhosted.org/packages/7f/6e/ff6641566cc7ad23a440e682681f44b7008cd90b92a24c64a4bfa9a3907f/py_ballisticcalc_exts-2.1.0-cp313-cp313-win32.whl", hash = "sha256:0c62af6fd6600cbace54545aea0c1074efbd28a416f57000a02e94583d37b2a3", size = 427942 },
-    { url = "https://files.pythonhosted.org/packages/a8/e6/b9490707964ab9ed40811b850d64846c7030c62049a4fe41ca09b9d628fd/py_ballisticcalc_exts-2.1.0-cp313-cp313-win_amd64.whl", hash = "sha256:9ea00b61a94e393142f824382ae76bf06a3dbfd0ef545fb2cd3327bc770acfc7", size = 440429 },
-    { url = "https://files.pythonhosted.org/packages/1b/4e/5579eb95e0e44872612366bf7d746d88caf6f414baf75e40e4e8c66cb01e/py_ballisticcalc_exts-2.1.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:577de4ff7d0d4785e3b4c483490fe969f7bfd11f0d7088c67acf5f22deedb1bf", size = 454842 },
-    { url = "https://files.pythonhosted.org/packages/38/89/52fdd1e18b78154508541ca1c6874e411d73df0acd0c14de2caa1cc03637/py_ballisticcalc_exts-2.1.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:1cf094e06cff351fa2ac56565f4dc6f5b0bf0de6d9983d22266c22ec9eec6c9e", size = 449854 },
-    { url = "https://files.pythonhosted.org/packages/65/f0/156e3956333e7deb6ecc6464d1a828a8084d265956b0600a5be25d2bd77f/py_ballisticcalc_exts-2.1.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:881083060daaf25f90e71a272ae434c9633e637f64423c0d040edac5052d803c", size = 1079245 },
-    { url = "https://files.pythonhosted.org/packages/76/04/bc1a1729df47f6aef24878bac93fddb567f3b0cb2d521d996e6493f6e8c2/py_ballisticcalc_exts-2.1.0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a85b35c0081225f0ebf99515e93972ba3b05794dc885e4a52f3b63262c13a485", size = 1039195 },
-    { url = "https://files.pythonhosted.org/packages/db/0c/d1f8f1174d8c157c45564b35331bd621d90d92d45540684606cc198cb615/py_ballisticcalc_exts-2.1.0-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:849380f69816904d3de6d0ccafcea5dfcb4c6cdd618b5e48e25d752ce89e4b4b", size = 1062573 },
-    { url = "https://files.pythonhosted.org/packages/68/6f/00645051dae1887b83c2393a6813abe75ec7b502fcb5d0b003840a089018/py_ballisticcalc_exts-2.1.0-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:37843a00fc7562fb3ef9c50d6cca67aaecdd7c147742041215f84e4bc3dc8b1d", size = 1081861 },
-    { url = "https://files.pythonhosted.org/packages/0a/1c/676fe2e67bd3eb2fd2e9b84ec5d036dded5d194b259c7390533fccd6bd5a/py_ballisticcalc_exts-2.1.0-cp39-cp39-win32.whl", hash = "sha256:a84ba016f54bb21eae9402ac3a7f83961528305b5fb3e293768eefd0ecdeaf11", size = 433935 },
-    { url = "https://files.pythonhosted.org/packages/fc/ba/41ac22e5e3463d4679e655777652240f707083594b7ee554b386e9a9cd66/py_ballisticcalc_exts-2.1.0-cp39-cp39-win_amd64.whl", hash = "sha256:009e4d7cb50573f4fdba1ceb8a1fc088ca24657ffedd3b227d0de6c04c67568d", size = 445947 },
-    { url = "https://files.pythonhosted.org/packages/07/02/b0af6670c07ac31b500a656222c1b4b3511453676d68817917f0f7ebd5f4/py_ballisticcalc_exts-2.1.0-pp310-pypy310_pp73-macosx_10_15_x86_64.whl", hash = "sha256:933380b21438eede322dd6161b385f2dc54c49957039ab87e47c68e1ad5cdfd7", size = 425871 },
-    { url = "https://files.pythonhosted.org/packages/f5/f1/89a75b706d73dc2577723d6766c16e18fdbc5a8844b695f9cc6de625f748/py_ballisticcalc_exts-2.1.0-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:148a2f1a68cbc93ad2c5a6a5388dfaba6431ea1705dc0a7232b89bbe343a2a0f", size = 422373 },
-    { url = "https://files.pythonhosted.org/packages/c6/0b/df8d5a51551c8b8205cfa943e0862a3767868a434978237d3e223942470f/py_ballisticcalc_exts-2.1.0-pp310-pypy310_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2278bb69e38b51b6e35fd7bb6307b0eafcbe8f88e5dd3e365d968fe349975ba7", size = 438764 },
-    { url = "https://files.pythonhosted.org/packages/a5/7a/c8036156542aa117b65f5fb6016acd499c7bbaadbec4645aff883933fa42/py_ballisticcalc_exts-2.1.0-pp310-pypy310_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a2c13142b01ec98ea519a5bb37fe53ab52a7f249bad25c4a59d9a8bb5c99b116", size = 433684 },
-    { url = "https://files.pythonhosted.org/packages/ea/19/7ac336dbb8272276c4960073a8b5b5b275921c846824ccf92f37540592c0/py_ballisticcalc_exts-2.1.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:ca6df3bcce28b75032204d268968e1a412e80015238b6bc0adc3b7f2f531f37e", size = 428693 },
-    { url = "https://files.pythonhosted.org/packages/f4/8a/df1d41881aa718b932fbd0e3ac8ee366799b72200eaec9200fc419023932/py_ballisticcalc_exts-2.1.0-pp311-pypy311_pp73-macosx_10_15_x86_64.whl", hash = "sha256:9684d16ebc002477d0b998acb30a42c4d839c2a2e82a8ab2ba417a89285ead7a", size = 425017 },
-    { url = "https://files.pythonhosted.org/packages/93/de/f0f5eb16e404b07b30a988b3769862dbf865316190fcc4a4073648941705/py_ballisticcalc_exts-2.1.0-pp311-pypy311_pp73-macosx_11_0_arm64.whl", hash = "sha256:5d309ee59352e25d3ab59cddecfc7a5288586de50c2b9c76d4a055bdbb788474", size = 421612 },
-    { url = "https://files.pythonhosted.org/packages/f0/e8/b15fcc6792ec59e6276c70b824a9e2341c254e2d0b3223d323a9c0fea9c3/py_ballisticcalc_exts-2.1.0-pp311-pypy311_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:ab70edf6ca29fe7d25ecbda1666a84a8657be435d9d5ec3f750251d574784d6f", size = 438504 },
-    { url = "https://files.pythonhosted.org/packages/14/bc/bdcb9ae3c5f242bee60c22ddea31697971895f61434155adba3748687aee/py_ballisticcalc_exts-2.1.0-pp311-pypy311_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:be0552034c6e71d06afa371b5f17251baf8b02e831c9d0dd2ebe0f9677bf229a", size = 433383 },
-    { url = "https://files.pythonhosted.org/packages/a0/ff/bb160dd5d64733fee0467e2101e4ad3911d7d6c664db501bf699739318d2/py_ballisticcalc_exts-2.1.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:8cf559f320c6492bfc7bc48cf899d07bd1a39f46df8f18b182b1fd63386be10b", size = 428319 },
-    { url = "https://files.pythonhosted.org/packages/7f/c4/9760711014a6a0a24a442350b155bd44c3c4ae3f9b1f8670786ecc16ed68/py_ballisticcalc_exts-2.1.0-pp39-pypy39_pp73-macosx_10_15_x86_64.whl", hash = "sha256:343449dda5fcbc109247ef9bd5a0227bda0489647db9ebdfe8ccfec2e4e576f1", size = 425747 },
-    { url = "https://files.pythonhosted.org/packages/38/f4/8d8cd88a0a9fcc855f43d5d3a42104b6811951bceca90e99430f4f52584a/py_ballisticcalc_exts-2.1.0-pp39-pypy39_pp73-macosx_11_0_arm64.whl", hash = "sha256:1f70eb412598a7ecb7546d7e62205bcdd0f4064fbb089ba5fad55599e39c8bfa", size = 422244 },
-    { url = "https://files.pythonhosted.org/packages/73/2a/116d8f88c50b49486168abeb2f2bcb06bfb7bb74b3ff5d913a3a6f828046/py_ballisticcalc_exts-2.1.0-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c9ba3f24a7b80bb487f9c269a0b4033b96e5fd65010a481597cd45b47d83a36c", size = 438530 },
-    { url = "https://files.pythonhosted.org/packages/0f/2a/8a234f369718e7da66df6c46e5d499c747608ff37e5c8d35145ec4033a08/py_ballisticcalc_exts-2.1.0-pp39-pypy39_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:60da6e3d3223c18a82f36908cc2cdeefbaf1b7d520e543a824ccb47580576d36", size = 433498 },
-    { url = "https://files.pythonhosted.org/packages/d3/02/38ac6e97626e09aaf2b40a9505cff0410809ef32de4519ca577be06dbed1/py_ballisticcalc_exts-2.1.0-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:0192592455190734bbf90095258f97245ea95c64d08c681e596d246caebf2ca6", size = 428591 },
+    { url = "https://files.pythonhosted.org/packages/a8/10/77aa376dc77e0b19dc25d82d5477c5bed726f4cb4f61b9d3b6368610c676/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:a9a4d6cb9ece5ba0d2d6c4c0172d0e63f1424ac32e79620b82fbea59da1a7e59", size = 452958 },
+    { url = "https://files.pythonhosted.org/packages/c1/8a/53573f67a47e9f40636fbe7568447da0cf9a6da783551c082db7b39ce402/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:d632325db0c986e57f1b38d032a7ee6146066155aa30c448fe67e451bb5a6400", size = 448034 },
+    { url = "https://files.pythonhosted.org/packages/5b/35/d32e6518c6da9c3113ccb4cb6972ffa146cd9d38741bea67b813643f1336/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b7a0611fdd5be517767c5c4a6d17ee10b35e1d249ee629faa63d68c0b2384a3f", size = 1071110 },
+    { url = "https://files.pythonhosted.org/packages/75/c0/5bb555be8518f31f0a388a72ce5b63dad8ba537a29dfe2b110cd2a36823d/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d3314d628d81e903706e8370b1e4fbd3277cdd1208e7c05032a56464ef1143b3", size = 1031511 },
+    { url = "https://files.pythonhosted.org/packages/23/70/0facbd4c85417956bdbc99521b17e50e5609a699bd24eb216936486900b0/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:8b5d16d98f74416898689c2f4a4d690f90b127bb8de5ecafaaf18982a8c6558f", size = 1055080 },
+    { url = "https://files.pythonhosted.org/packages/b8/e6/e85a7243d797d1390615c87032b34e3f3be871717a4640ae3dec7fdede1e/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:05e6e869b4f85a8a58237ddc1470a4b0467a5d05d7041d4a68482a8856247c20", size = 1072875 },
+    { url = "https://files.pythonhosted.org/packages/05/f6/85dd6a4edc7d9f64abefe4b341d1ef7fe9ee32e9099c8a4797f5a02de6f1/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-win32.whl", hash = "sha256:6f26bbb69d4f699db33b3d3589f3de1ac6b79ce3bb7c382a78852124b7bc6a2b", size = 432636 },
+    { url = "https://files.pythonhosted.org/packages/c0/6c/2d2c745da17f5b057b20d04e6f95d33cb918098d4e02c3248955aafa538a/py_ballisticcalc_exts-2.1.1b1-cp310-cp310-win_amd64.whl", hash = "sha256:009cd5801582c7b7d110cb686a1ec712a853e0eff939b4def26df29820244984", size = 444423 },
+    { url = "https://files.pythonhosted.org/packages/c3/40/bbc8c3d9d664b7ca071867c4b10a06bbc6804586ffbdbee7f441895d8607/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:ea10f4a80f9aded84ad592371738dd3323da4dc4028165578fff498c965510d5", size = 452023 },
+    { url = "https://files.pythonhosted.org/packages/1b/78/8c95858fa8c4ddaed31b3f1fe1188cda923fd55f826d0b97b90fa55e2ced/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:1e315c44997a40ae57293f515d2b581e045f21ea64ceb877cba56915b6a40d44", size = 446613 },
+    { url = "https://files.pythonhosted.org/packages/de/f4/67c104f6b290721c2de937bae5ba211fcb1ae2e39cbd29b34f86b01b9dcd/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ef710391876d5f763be1db4b92589c78a5b6d5f583fba3b1e6a034b2366d6e1b", size = 1116166 },
+    { url = "https://files.pythonhosted.org/packages/ed/0b/d955593a1d98a328b7530634edffa973a54921a95126280fbeae395b4938/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c00ea6b3e7e173530bee00b2715e9b55f518f239f588ccaf465ecc50adc982df", size = 1076582 },
+    { url = "https://files.pythonhosted.org/packages/77/a3/f8d7bb76987c4ef9a79d403f96a33c2bc8c56b1533df3bb6aaecf09c8035/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:a149d0cee27e75bb8f85c5e22c3839d637109eaadfb3a73a15b34ebfa04d5bf6", size = 1099499 },
+    { url = "https://files.pythonhosted.org/packages/d6/60/64dbaed606e9d5ab93bc4b31353f48c0a42e7ba0af04045e790fc6216040/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:1c07b785a701dfcaaa21df71928748c2e7c33d63347c9119b93d117a10734585", size = 1120697 },
+    { url = "https://files.pythonhosted.org/packages/cb/f5/5a1b6b010a3f1695d5db344ee0fb80a78049897d915fd202ac6f3f824fa7/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-win32.whl", hash = "sha256:e07e34c02a7211d63b486277f99e872953a0816d807297c9fa72f58a5d783aea", size = 431296 },
+    { url = "https://files.pythonhosted.org/packages/4e/3b/ab93ac8b0c391499380c48d05a5badd6d878542e22f361c7914541347730/py_ballisticcalc_exts-2.1.1b1-cp311-cp311-win_amd64.whl", hash = "sha256:54bb68313af80438f65c0d2f011d24dd5788223493f78a76d976c366223eab40", size = 444648 },
+    { url = "https://files.pythonhosted.org/packages/3d/2c/0d884b1eede594f9e9651dca16b598a639654d24241d3de6864864afd18f/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:27d16144b8983fde5d70143757253a1157f5c54225afa05f6bb2c0942c0abec2", size = 450368 },
+    { url = "https://files.pythonhosted.org/packages/af/85/00b876dea85e35cf07669132ea45366e3d2f401fb947e23ad9d966d91de5/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:4fc122e8cbcb974c01a58764e1ce7575322dec42be5419e14ffe90c27c1f4581", size = 444293 },
+    { url = "https://files.pythonhosted.org/packages/ef/60/7b84b1fdb90ff57efa056cf6a940bab216710f1c0f342d93a330fb8b586d/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b84cb524f1c6faf46c35cd78c6c15e589fea0dae42e86975d065d99134091ba9", size = 1122551 },
+    { url = "https://files.pythonhosted.org/packages/a2/b1/f491a700bac2c5033e870ba9f0f3c434c3601b16b438d34276a8df0de206/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d06fcb1a688e455e615b1610cdc38adf9ca702c6d9c714d5f81283734d7ec548", size = 1076111 },
+    { url = "https://files.pythonhosted.org/packages/93/78/1fa0aafcf3ddeb26c43e01e6876ccb0083471610ae4d45d797977368bef8/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:c20ba324cf9fe98b94fcb441280ecda99b7b0a392ba9ae74689b6713a6b8945d", size = 1095188 },
+    { url = "https://files.pythonhosted.org/packages/ff/2a/c432b288d2ff6943944351a72e977d9f73953f0d42b3a4ad57617c256e75/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:fcc9e77dba5e18117ed7f0acaebe3f828f6eb9a5ac661b63bf82c90f7110bb27", size = 1127604 },
+    { url = "https://files.pythonhosted.org/packages/97/ba/f36dfb5034674d7bc36214f4a785456efe3786e83cb1e8b2180893cdd37b/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-win32.whl", hash = "sha256:0b8744670905e2c8dd798ef7e2fd663a8e8838b3c185020e3c08d094687d85e0", size = 429077 },
+    { url = "https://files.pythonhosted.org/packages/1b/ba/ca8bc044bef9108d7c3de2df121a8fb042bd8e771b00e5c275fdb2807d22/py_ballisticcalc_exts-2.1.1b1-cp312-cp312-win_amd64.whl", hash = "sha256:8536a273de62c915d57a799f620290459f06e4292080482a108578dc937b39da", size = 441632 },
+    { url = "https://files.pythonhosted.org/packages/de/08/5e321f493570a1f8cadf0010cf2ccff9e4d0ce8509d60e5a9c46fc158734/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:8be6137133cc99ca2970748fb2c1b891e5dd2555abae2f4c3879b8625041e45c", size = 447938 },
+    { url = "https://files.pythonhosted.org/packages/dc/62/186ace33198f314631e7ac9cb97d5c7e6f7e500c93dc16fb997139219110/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:107825887079d5ee829e57c111ab5d26415689e826eee1846b67d4db09fe72ee", size = 442299 },
+    { url = "https://files.pythonhosted.org/packages/07/c6/3aa751fd69ad76e7f5cac7452e39d5fac254d872149bf6c8ee9b036eb2e2/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:621b27c6b57115c3fa4f6c7525750bc7098296f48bcd70d15529e85d8d68b360", size = 1108268 },
+    { url = "https://files.pythonhosted.org/packages/2b/9b/c4c40c2cf4042cd9ad2112d982f232ffaea760ca42674eea0f9dae314b4d/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:7a277fa753dfd2456c1706f4928c726ecad37607dcfe15c986f2c7afbfd139a2", size = 1060543 },
+    { url = "https://files.pythonhosted.org/packages/27/ee/d43cfa4e6a2a40fcb30103a41ea03cb9dfc72ef8466c7d95ca2f1cae6e13/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:56185a05a1a994cebc8bd161270b3cbb7901d498564b05dff9544d26cf1e3818", size = 1083771 },
+    { url = "https://files.pythonhosted.org/packages/bd/1f/10b7cb085e3db1f32d069615eddd070fff211d095b880d933616b31766d8/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:930c656fafabaae78b4535b1b2951982b6710844c053128d60b2af1cfbd7ce67", size = 1123090 },
+    { url = "https://files.pythonhosted.org/packages/49/9e/8faf9f8610114c9e4f3fe70729a6b7ef309231dd13d90a1c6a9e952cf4d4/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-win32.whl", hash = "sha256:1056c68855bb331af8543cd4fcf67a1f6a811b886857aa0d990d4a3087f39cfb", size = 428254 },
+    { url = "https://files.pythonhosted.org/packages/67/78/1f8aff1f2c3ab18a096d66dabd42176d81ef1377330dd94048d5d9ba068b/py_ballisticcalc_exts-2.1.1b1-cp313-cp313-win_amd64.whl", hash = "sha256:a93c74d1de8f5bc6f151af181c18318d387f93476f5b815263e432c6cddc5cb0", size = 440744 },
+    { url = "https://files.pythonhosted.org/packages/eb/d3/906984673047bcf571619d25322b545505f0d15640733775b8b6d639cb9b/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:e9b37635f1eaa5e6e329340b0d80e6278b7f1a82cf93e5b77440e37c0a763ea1", size = 455166 },
+    { url = "https://files.pythonhosted.org/packages/91/04/979ba15d04ee6bc6735c9049c60d1429b537ac315c62ff93bc63786c9d8f/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:1dd350359932ee194ddb09e0fcbd4d681b4650a5cfc8a95b60a5cb30d30c1fc5", size = 450166 },
+    { url = "https://files.pythonhosted.org/packages/e2/23/1de5001a810b3165e10d311ada1eec14da4f675fc15531f819af2bd81411/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:16de3ca9d98350d2222e294105f5b3a7401d78c73eacfef0bc247846c4790213", size = 1079565 },
+    { url = "https://files.pythonhosted.org/packages/d0/59/69ce5c13e2e2d0750fb0a6e4ad77cb755f1fbdca42080522ede8f9ff697b/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:801a8cfcaeb819b73019a0fedd866c7197233879c6ba43be4b0fc3ced307aeb4", size = 1039516 },
+    { url = "https://files.pythonhosted.org/packages/b4/60/ec27ba64aeab5f48b1467b2649c522009c172df515675f32948900718707/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:d0233201d92d3eb1e7884487dfeec2d17f8783df55a8caa01f8fa9a16d0bc980", size = 1062896 },
+    { url = "https://files.pythonhosted.org/packages/c2/7a/401823c7585cba0cbccddda44c32891f97d293f8d170bf51a1d20c07cc2f/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:4e3504b05623fe522ca51a2d6ed4513a6b0f35462693b63d2006ad7541104bae", size = 1082179 },
+    { url = "https://files.pythonhosted.org/packages/8a/14/5f9ac698fc15b9fc774d26765c77ce67bb3582735541e35d70f503b9c2e8/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-win32.whl", hash = "sha256:358cf175f8847783a18709e453233565cb04e16749cfb7ab2ebaec9173a4320d", size = 434248 },
+    { url = "https://files.pythonhosted.org/packages/55/df/2d63a2ab42f9c6d8704d7d5e92f559ead77e6ca86729b41d29f9febea583/py_ballisticcalc_exts-2.1.1b1-cp39-cp39-win_amd64.whl", hash = "sha256:7342990f8797d3dbf4e6774e15a581db57e4fb5011ddb1fe7adc46633186af62", size = 446261 },
+    { url = "https://files.pythonhosted.org/packages/76/20/60c3028a446b3b6e5ab85b5f0730ce27099f1edcf65b57e61b9f8112f2af/py_ballisticcalc_exts-2.1.1b1-pp310-pypy310_pp73-macosx_10_15_x86_64.whl", hash = "sha256:d56d5ba5c730aa0b6a47bb2de4aef6f24ec5f297eff31e5526e6badfc8cb5db8", size = 426193 },
+    { url = "https://files.pythonhosted.org/packages/ec/01/6225dfc1f313108cee3b1046feffadc50134a04601071af6f13c3adde07c/py_ballisticcalc_exts-2.1.1b1-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:d125ab1d29b86221c2a60e66759892726454d65fa75034bad2fa162fe7c79240", size = 422694 },
+    { url = "https://files.pythonhosted.org/packages/ad/c4/4161b777e9426c78cef9a6719eb1b4f14fecc28cd296ac2de7732ffef93f/py_ballisticcalc_exts-2.1.1b1-pp310-pypy310_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:81687aed5baa38fead170d0e0713420dc5cc6ebcea420ebd07ba21b8a30f1ebf", size = 439088 },
+    { url = "https://files.pythonhosted.org/packages/f3/de/cd5f8ffb9a05192a4694cb0a021f112fdbdba4286a4b65551749cd16422f/py_ballisticcalc_exts-2.1.1b1-pp310-pypy310_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fc463c4605c5b64d65f223ee006e6b4f928cc99dcb773a9fe46d3b8ebb4a77c6", size = 434006 },
+    { url = "https://files.pythonhosted.org/packages/90/af/baced8bd32972bac421856a82a301de615a4291e5925b865b8c158d4667a/py_ballisticcalc_exts-2.1.1b1-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:95a3b0743fc2b99e142cceca5837f0f8c25109f03d819a19802f4aff143cf017", size = 429009 },
+    { url = "https://files.pythonhosted.org/packages/82/39/a8098ca138652e053842dbb0c75a7cf2fde0497c1bb227cb9eb75ec9ff89/py_ballisticcalc_exts-2.1.1b1-pp311-pypy311_pp73-macosx_10_15_x86_64.whl", hash = "sha256:e622e84425c86d78e200b53be7bd55b920dd651a1e7531c199644aa4f96c1cdc", size = 425338 },
+    { url = "https://files.pythonhosted.org/packages/fa/0c/c7294676a8bb2a84c288246ffbb431346a574d88b41a95c8757347464f7f/py_ballisticcalc_exts-2.1.1b1-pp311-pypy311_pp73-macosx_11_0_arm64.whl", hash = "sha256:c71af867a0b602a313fb1e0a2344025aa5c6f8967541439489f58c4457cdbf4d", size = 421934 },
+    { url = "https://files.pythonhosted.org/packages/bc/eb/d7f9b42d96d47480cde14fcbe8c7947fb392a76176fd1c42c32f92d071dc/py_ballisticcalc_exts-2.1.1b1-pp311-pypy311_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d7dc470844eb781012f8edf6c25149dcd5dc19a6585527f93ea19baca7a675e3", size = 438826 },
+    { url = "https://files.pythonhosted.org/packages/95/27/0a400a173d91e22f93fae9c5b0daa36237286f19ecc3982d946e8df6d7ad/py_ballisticcalc_exts-2.1.1b1-pp311-pypy311_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4d60fa23c7656557f5ce9c7b82411aa467f2436331e60839bf4722903386e99d", size = 433707 },
+    { url = "https://files.pythonhosted.org/packages/da/0d/807e2fadfa2b03d86fde4a958ed9785b0e1575b28e2732c0bba76d1513b9/py_ballisticcalc_exts-2.1.1b1-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:0f2c37756cc3df12d5514117364181d534924419eb124ca4bdca644ea345d825", size = 428632 },
+    { url = "https://files.pythonhosted.org/packages/f0/2b/1a26873859de98afd673301f67f04ed1fcd0c3a1ae6d3f60334ab3c1e59e/py_ballisticcalc_exts-2.1.1b1-pp39-pypy39_pp73-macosx_10_15_x86_64.whl", hash = "sha256:56605a156baa32fff6d20fd43554833943ff6d375712323f88249d806ec4d9f8", size = 426070 },
+    { url = "https://files.pythonhosted.org/packages/38/a5/24f3ca23d1e718ed6616f40532c56e7d5c845de457c9de378147ed3178c1/py_ballisticcalc_exts-2.1.1b1-pp39-pypy39_pp73-macosx_11_0_arm64.whl", hash = "sha256:b4993951032da96d9b546639b02168000cc88d87368cdd9014ddf3ad8d3ad25e", size = 422567 },
+    { url = "https://files.pythonhosted.org/packages/4f/86/2f3f503d97702281eb058071b607ca08b9c7e40237d5a20dc5b62f90cc6a/py_ballisticcalc_exts-2.1.1b1-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:bebf06326245d6e3ecba73eebd0de6048677d3d2041d20900371b0d68e3917fb", size = 438852 },
+    { url = "https://files.pythonhosted.org/packages/23/ee/92c5ef4f06f051058035ae5d549d23a9bb1fb487e4d34f058a4dc3b2da41/py_ballisticcalc_exts-2.1.1b1-pp39-pypy39_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8dd4e6ea2d542e1be58c6a1bdd6dbb261947ba0eebf1b78d719bc7502e817224", size = 433822 },
+    { url = "https://files.pythonhosted.org/packages/4c/b1/13039e4497f2397bb3f9b60ed1ac555ea289c933fd8011fe3fe401d4b4e8/py_ballisticcalc_exts-2.1.1b1-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:812250f1e0f85cc8936d9d7d167756abcbe34273fa30cf35a2dd6e0717720c53", size = 428909 },
 ]
 
 [[package]]

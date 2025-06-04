@@ -10,6 +10,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
+[![Python package tests (uv)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml)
 
 [sources]:
 https://github.com/o-murphy/py-ballisticcalc
