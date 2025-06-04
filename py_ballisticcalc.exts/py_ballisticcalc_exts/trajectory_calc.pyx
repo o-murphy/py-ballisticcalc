@@ -40,7 +40,7 @@ from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.constants import cMaxWindDistanceFeet
-from bisect import bisect_left
+
 
 __all__ = (
     'TrajectoryCalc'
