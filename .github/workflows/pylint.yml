@@ -1,4 +1,4 @@
-name: Pylint (uv)
+name: Pylint
 
 on:
   pull_request:
