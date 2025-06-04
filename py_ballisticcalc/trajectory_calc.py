@@ -1,18 +1,36 @@
-"""Bootstrap to load binary TrajectoryCalc, Vector extensions"""
-from typing_extensions import Union, Final
+# pylint: disable=missing-class-docstring,missing-function-docstring
+# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
+"""pure python trajectory calculation backend"""
 
-from py_ballisticcalc.unit import Distance, PreferredUnits
+import math
+import warnings
 
-# from py_ballisticcalc.logger import logger
-# from py_ballisticcalc.trajectory_calc._trajectory_calc import (
-#     Config,
-#     get_correction,
-#     calculate_energy,
-#     calculate_ogw,
-#     create_trajectory_row,
-#     _TrajectoryDataFilter,
-#     _WindSock
-# )
+from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Final
+
+from py_ballisticcalc.conditions import Atmo, Shot, Wind
+from py_ballisticcalc.drag_model import DragDataPoint
+from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
+from py_ballisticcalc.logger import logger, get_debug
+from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
+from py_ballisticcalc.unit import (Distance, Angular, Velocity, Weight,
+                                   Energy, Pressure, Temperature, Unit, PreferredUnits)
+from py_ballisticcalc.vector import Vector
+
+__all__ = (
+    'TrajectoryCalc',
+    'Vector',
+    'Config',
+    'calculate_energy',
+    'calculate_ogw',
+    'get_correction',
+    'create_trajectory_row',
+    '_TrajectoryDataFilter',
+    '_WindSock',
+    'set_global_max_calc_step_size',
+    'get_global_max_calc_step_size',
+    'reset_globals',
+    'CurvePoint'
+)
 
 cZeroFindingAccuracy: Final[float] = 0.000005
 cMinimumVelocity: Final[float] = 50.0
@@ -45,46 +63,6 @@ def set_global_max_calc_step_size(value: Union[float, Distance]) -> None:
     _globalMaxCalcStepSizeFeet = _value >> Distance.Foot
 
 
-# try:
-#     # replace with cython based implementation
-#     from py_ballisticcalc_exts.trajectory_calc import TrajectoryCalc  # type: ignore
-# except ImportError as err:
-#     """Fallback to pure python"""
-#     from py_ballisticcalc.trajectory_calc._trajectory_calc import TrajectoryCalc
-#
-#     logger.debug(err)
-
-# pylint: disable=missing-class-docstring,missing-function-docstring
-# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
-"""pure python trajectory calculation backend"""
-
-import math
-import warnings
-
-from typing_extensions import Optional, NamedTuple, Union, List, Tuple
-
-from py_ballisticcalc.vector import Vector
-from py_ballisticcalc.conditions import Atmo, Shot, Wind
-from py_ballisticcalc.drag_model import DragDataPoint
-from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
-from py_ballisticcalc.logger import logger, get_debug
-from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
-from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Pressure, Temperature, Unit
-
-
-# __all__ = (
-#     'TrajectoryCalc',
-#     'Vector',
-#     'Config',
-#     'calculate_energy',
-#     'calculate_ogw',
-#     'get_correction',
-#     'create_trajectory_row',
-#     '_TrajectoryDataFilter',
-#     '_WindSock',
-# )
-
-
 class CurvePoint(NamedTuple):
     """Coefficients for quadratic interpolation"""
     a: float
@@ -112,7 +90,6 @@ class BaseTrajData(NamedTuple):
     mach: float
 
 
-# pylint: disable=too-many-instance-attributes
 class _TrajectoryDataFilter:
     """
     Determines when to record trajectory data points based on range and time.
@@ -709,7 +686,6 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     )
 
 
-# pylint: disable protected-access
 def _new_feet(v: float):
     d = object.__new__(Distance)
     d._value = v * 12
@@ -717,7 +693,6 @@ def _new_feet(v: float):
     return d
 
 
-# pylint: disable protected-access
 def _new_fps(v: float):
     d = object.__new__(Velocity)
     d._value = v / 3.2808399
@@ -725,7 +700,6 @@ def _new_fps(v: float):
     return d
 
 
-# pylint: disable protected-access
 def _new_rad(v: float):
     d = object.__new__(Angular)
     d._value = v
@@ -733,7 +707,6 @@ def _new_rad(v: float):
     return d
 
 
-# pylint: disable protected-access
 def _new_ft_lb(v: float):
     d = object.__new__(Energy)
     d._value = v
@@ -741,7 +714,6 @@ def _new_ft_lb(v: float):
     return d
 
 
-# pylint: disable protected-access
 def _new_lb(v: float):
     d = object.__new__(Weight)
     d._value = v / 0.000142857143
@@ -911,24 +883,3 @@ def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurveP
         m = mhi
     curve_m = curve[m]
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
-
-
-__all__ = (
-    'TrajectoryCalc',
-    'get_global_max_calc_step_size',
-    'set_global_max_calc_step_size',
-    'reset_globals',
-    'cZeroFindingAccuracy',
-    'cMinimumVelocity',
-    'cMaximumDrop',
-    'cMaxIterations',
-    'cGravityConstant',
-    'cMinimumAltitude',
-    'Config',
-    'calculate_energy',
-    'calculate_ogw',
-    'get_correction',
-    'create_trajectory_row',
-    '_TrajectoryDataFilter',
-    '_WindSock'
-)

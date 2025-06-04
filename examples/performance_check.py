@@ -147,7 +147,7 @@ for ep in _EngineLoader.iter_engines():
     run_check(calc, number)
     print()
 
-from examples.trajectory_calc_on_yields import TrajectoryCalc as TCYields
+from examples.integrators.pure_on_yields import TrajectoryCalcOnYields as TCYields
 print("Engine: Pure (yields)")
 calc = Calculator(_config=config, _engine=TCYields)
 run_check(calc, number)
