@@ -7,6 +7,9 @@ on:
   pull_request:
     branches:
       - '*'
+  push:
+    branches:
+      - '*' # Run for all branches on push
   workflow_dispatch:
 
 jobs:
