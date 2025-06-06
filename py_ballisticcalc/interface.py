@@ -26,10 +26,10 @@ class _EngineLoader:
     @classmethod
     def list_entries(cls):
         all_entry_points = entry_points()
-        if hasattr(all_entry_points, 'get'):  # for importlib < 5
-            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
-        elif hasattr(all_entry_points, 'select'):  # for importlib >= 5
+        if hasattr(all_entry_points, 'select'):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
+        elif hasattr(all_entry_points, 'get'):  # for importlib < 5
+            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
         else:
             raise RuntimeError('Entry point not supported')
         return set(ballistic_entry_points)
@@ -74,7 +74,7 @@ class _EngineLoader:
                     logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
                     return handle
             raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
-        raise TypeError("Invalid entry_point type, expected 'str' or 'TrajectoryCalcProtocol'")
+        raise TypeError("Invalid entry_point type, expected 'str' or 'EngineProtocol'")
 
 
 @dataclass
