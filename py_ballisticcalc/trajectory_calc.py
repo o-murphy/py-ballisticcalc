@@ -840,10 +840,7 @@ def _get_only_mach_data(data: List[DragDataPoint]) -> List[float]:
     Returns:
         List[float]: A list containing only the Mach values from the input data.
     """
-    result = []
-    for dp in data:
-        result.append(dp.Mach)
-    return result
+    return [dp.Mach for dp in data]
 
 
 def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurvePoint], mach: float) -> float:
