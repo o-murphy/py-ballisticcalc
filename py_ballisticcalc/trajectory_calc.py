@@ -39,7 +39,6 @@ cMaxIterations: Final[int] = 60
 cGravityConstant: Final[float] = -32.17405
 cMinimumAltitude: Final[float] = -1410.748  # ft
 
-_globalChartResolution: float = 0.2  # ft
 _globalUsePowderSensitivity = False
 _globalMaxCalcStepSizeFeet: float = 0.5
 
@@ -73,7 +72,6 @@ class CurvePoint(NamedTuple):
 # Define the NamedTuple to match the config structure
 class Config(NamedTuple):
     max_calc_step_size_feet: float
-    chart_resolution: float
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
@@ -354,7 +352,6 @@ class TrajectoryCalc:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            # dist_step = Distance.Foot(self._config.chart_resolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
