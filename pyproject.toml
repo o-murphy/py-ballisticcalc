@@ -80,7 +80,7 @@ charts = ['matplotlib', 'pandas']
 visualize = ['matplotlib', 'pandas']
 dev = [
     'jupyter',
-    'pandas-stubs',
+#    'pandas-stubs',
     'matplotlib-stubs',
     'pytest>=8.3.5',
     'pylint',
