@@ -419,7 +419,7 @@ class TrajectoryCalc:
                 if e.last_distance is None:
                     raise e
                 last_distance_foot = e.last_distance >> Distance.Foot
-                proportion = (last_distance_foot) / zero_distance
+                proportion = last_distance_foot / zero_distance
                 height = (e.incomplete_trajectory[-1].height >> Distance.Foot) / proportion
 
             zero_finding_error = math.fabs(height - height_at_zero)
