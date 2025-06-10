@@ -373,12 +373,12 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
 class Vacuum(Atmo):
     """Vacuum atmosphere has zero drag"""
+    cLowestTempC: float = cDegreesCtoK
 
     def __init__(self,
                  altitude: Optional[Union[float, Distance]] = None,
                  temperature: Optional[Union[float, Temperature]] = None):
         super().__init__(altitude, 0, temperature, 0)
-        self.cLowestTempC = cDegreesCtoK
         self._pressure = PreferredUnits.pressure(0)
         self._density_ratio = 0
 

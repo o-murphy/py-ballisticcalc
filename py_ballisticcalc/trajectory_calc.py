@@ -39,7 +39,6 @@ cMaxIterations: Final[int] = 60
 cGravityConstant: Final[float] = -32.17405
 cMinimumAltitude: Final[float] = -1410.748  # ft
 
-_globalChartResolution: float = 0.2  # ft
 _globalUsePowderSensitivity = False
 _globalMaxCalcStepSizeFeet: float = 0.5
 
@@ -73,7 +72,6 @@ class CurvePoint(NamedTuple):
 # Define the NamedTuple to match the config structure
 class Config(NamedTuple):
     max_calc_step_size_feet: float
-    chart_resolution: float
     cZeroFindingAccuracy: float
     cMinimumVelocity: float
     cMaximumDrop: float
@@ -354,7 +352,6 @@ class TrajectoryCalc:
         filter_flags = TrajFlag.RANGE
 
         if extra_data:
-            # dist_step = Distance.Foot(self._config.chart_resolution)
             filter_flags = TrajFlag.ALL
 
         self._init_trajectory(shot_info)
@@ -422,7 +419,7 @@ class TrajectoryCalc:
                 if e.last_distance is None:
                     raise e
                 last_distance_foot = e.last_distance >> Distance.Foot
-                proportion = (last_distance_foot) / zero_distance
+                proportion = last_distance_foot / zero_distance
                 height = (e.incomplete_trajectory[-1].height >> Distance.Foot) / proportion
 
             zero_finding_error = math.fabs(height - height_at_zero)
@@ -843,10 +840,7 @@ def _get_only_mach_data(data: List[DragDataPoint]) -> List[float]:
     Returns:
         List[float]: A list containing only the Mach values from the input data.
     """
-    result = []
-    for dp in data:
-        result.append(dp.Mach)
-    return result
+    return [dp.Mach for dp in data]
 
 
 def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurvePoint], mach: float) -> float:
