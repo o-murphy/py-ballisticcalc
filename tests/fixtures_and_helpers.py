@@ -1,6 +1,6 @@
 import pytest
 
-from py_ballisticcalc import HitResult, Distance, InterfaceConfigDict, Calculator, DragModel, TableG1, Weight, Ammo, \
+from py_ballisticcalc import HitResult, Distance, BaseEngineConfigDict, Calculator, DragModel, TableG1, Weight, Ammo, \
     Velocity, Weapon, Shot, Angular
 
 
@@ -31,12 +31,12 @@ def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit:
 
 @pytest.fixture(autouse=True)
 def zero_height_calc(loaded_engine_instance):
-    config = InterfaceConfigDict(
+    config = BaseEngineConfigDict(
         cMinimumVelocity=0,
         cMinimumAltitude=Distance.Meter(0),
         cMaximumDrop=Distance.Meter(0),
     )
-    calc = Calculator(_config=config, _engine=loaded_engine_instance)
+    calc = Calculator(config=config, engine=loaded_engine_instance)
     return calc
 
 
@@ -68,4 +68,4 @@ def zero_min_velocity_calc(loaded_engine_instance):
     config = InterfaceConfigDict(
         cMinimumVelocity=0,
     )
-    return Calculator(_config=config, _engine=loaded_engine_instance)
+    return Calculator(config=config, engine=loaded_engine_instance)

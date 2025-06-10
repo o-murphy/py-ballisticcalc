@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Python cythonized package tests (uv)
+name: Pytest Cythonized Euler
 
 on:
   pull_request:
@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -42,24 +42,11 @@ jobs:
 
     - name: Run unittest tests in binary mode
       run: |
-        pytest tests --no-header -v --engine=py_ballisticcalc_exts
+        pytest tests --no-header -v --engine=CythonizedEulerIntegrationEngine
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          pytest tests -v --engine=py_ballisticcalc_exts
+          pytest tests -v --engine=CythonizedEulerIntegrationEngine
         else
           echo "Pytest succeeded."
         fi
       shell: bash
-      if: runner.os != 'Windows'
-
-    - name: Run unittest tests in binary mode on Windows
-      run: |
-        pytest tests --no-header -v --engine=py_ballisticcalc_exts
-        if %ERRORLEVEL% neq 0 (
-          echo Pytest failed, running without capture
-          pytest tests -v --engine=py_ballisticcalc_exts
-        ) else (
-          echo Pytest succeeded.
-        )
-      shell: cmd
-      if: runner.os == 'Windows'

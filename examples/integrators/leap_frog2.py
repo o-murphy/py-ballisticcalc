@@ -17,9 +17,9 @@ def leapfrog_pure_python_integrator(engine_instance, shot_info: Shot, maximum_ra
     """
     Pure Python Leapfrog integration function.
     """
-    _cMinimumVelocity = engine_instance._config.cMinimumVelocity
-    _cMaximumDrop = engine_instance._config.cMaximumDrop
-    _cMinimumAltitude = engine_instance._config.cMinimumAltitude
+    _cMinimumVelocity = engine_instance.config.cMinimumVelocity
+    _cMaximumDrop = engine_instance.config.cMaximumDrop
+    _cMinimumAltitude = engine_instance.config.cMinimumAltitude
 
     ranges: List[TrajectoryData] = []
     time: float = .0

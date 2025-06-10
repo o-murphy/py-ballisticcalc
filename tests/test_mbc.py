@@ -16,7 +16,7 @@ class TestMBC:
         self.dm = DragModel(0.22, TableG7)
         self.ammo = Ammo(self.dm, Velocity.FPS(2600))
         self.weapon = Weapon(4, 12)
-        self.calc = Calculator(_engine=loaded_engine_instance)
+        self.calc = Calculator(engine=loaded_engine_instance)
         self.baseline_shot = Shot(weapon=self.weapon, ammo=self.ammo)
         self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range,
                                                   trajectory_step=self.step).trajectory

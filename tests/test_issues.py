@@ -6,7 +6,7 @@ import pytest
 from typing_extensions import Union, Tuple
 
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
-                              Angular, Calculator, RangeError, HitResult, InterfaceConfigDict,
+                              Angular, Calculator, RangeError, HitResult, BaseEngineConfigDict,
                               loadImperialUnits, loadMetricUnits, PreferredUnits)
 
 
@@ -28,7 +28,7 @@ class TestIssue96_97:
         ammo = Ammo(drag_model, Velocity.MPS(930))
         weapon = Weapon()
         self.zero = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(1.0))
-        self.calc = Calculator(_engine=loaded_engine_instance, _config=InterfaceConfigDict(cMinimumVelocity=0))
+        self.calc = Calculator(engine=loaded_engine_instance, config=BaseEngineConfigDict(cMinimumVelocity=0))
         self.trange = Distance.Meter(1600.2437248702522)
 
     def must_fire(self, interface: Calculator, zero_shot,
@@ -74,7 +74,7 @@ class TestIssue144:
         ammo = Ammo(drag_model, Velocity.MPS(930))
         self.shot = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(13.122126582196692))
         self.range = Distance.Meter(740.8068308628336)
-        self.calc = Calculator(_engine=loaded_engine_instance)
+        self.calc = Calculator(engine=loaded_engine_instance)
 
     def teardown_method(self):
         PreferredUnits.set(**self.previous_preferred_units)

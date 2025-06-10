@@ -8,8 +8,7 @@ import warnings
 @final
 cdef Config_t config_bind(object config):
     return Config_t(
-        config.max_calc_step_size_feet,
-        config.chart_resolution,
+        config.cMaxCalcStepSizeFeet,
         config.cZeroFindingAccuracy,
         config.cMinimumVelocity,
         config.cMaximumDrop,
@@ -19,7 +18,7 @@ cdef Config_t config_bind(object config):
     )
 
 cdef double cy_get_calc_step(Config_t * config, double step = 0):
-    cdef double preferred_step = config.max_calc_step_size_feet
+    cdef double preferred_step = config.cMaxCalcStepSizeFeet
     if step == 0:
         return preferred_step / 2.0
     return min(step, preferred_step) / 2.0

@@ -1,35 +1,38 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
+from typing import Generic
 
-from typing_extensions import Union, List, Optional
+from typing_extensions import Union, List, Optional, TypeVar, Type
 
+from py_ballisticcalc import EulerIntegrationEngine, BaseEngineConfigDict
 # pylint: disable=import-error,no-name-in-module,wildcard-import
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.generics.engine import EngineProtocol
-from py_ballisticcalc.interface_config import InterfaceConfigDict, create_interface_config
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import HitResult
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
-DEFAULT_ENTRY_NAME = 'engine'
-DEFAULT_ENTRY_GROUP = 'py_ballisticcalc'
-DEFAULT_ENTRY = 'py_ballisticcalc'
+ConfigT = TypeVar('ConfigT', bound=BaseEngineConfigDict, covariant=True)
 
+
+DEFAULT_ENTRY_SUFFIX = '_engine'
+DEFAULT_ENTRY_GROUP = 'py_ballisticcalc'
+DEFAULT_ENTRY: Type[EngineProtocol[ConfigT]] = EulerIntegrationEngine
 
 @dataclass
 class _EngineLoader:
     _entry_point_group = DEFAULT_ENTRY_GROUP
-    _entry_point_name = DEFAULT_ENTRY_NAME
+    _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
     def list_entries(cls):
         all_entry_points = entry_points()
-        if hasattr(all_entry_points, 'get'):  # for importlib < 5
-            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
-        elif hasattr(all_entry_points, 'select'):  # for importlib >= 5
+        if hasattr(all_entry_points, 'select'):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
+        elif hasattr(all_entry_points, 'get'):  # for importlib < 5
+            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
         else:
             raise RuntimeError('Entry point not supported')
         return set(ballistic_entry_points)
@@ -38,13 +41,13 @@ class _EngineLoader:
     def iter_engines(cls):
         ballistic_entry_points = cls.list_entries()
         for ep in ballistic_entry_points:
-            if cls._entry_point_name == ep.name:
+            if ep.name.endswith(cls._entry_point_suffix):
                 yield ep
 
     @classmethod
-    def _load_from_entry(cls, ep: EntryPoint) -> Optional[EngineProtocol]:
+    def _load_from_entry(cls, ep: EntryPoint) -> Optional[Type[EngineProtocol[ConfigT]]]:
         try:
-            handle = ep.load()
+            handle: Type[EngineProtocol[ConfigT]] = ep.load()
             if not isinstance(handle, EngineProtocol):
                 raise TypeError(f"Unsupported engine type {ep.value}, must implements EngineProtocol")
             logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
@@ -58,41 +61,46 @@ class _EngineLoader:
         return None
 
     @classmethod
-    def load(cls, entry_point: Union[str, EngineProtocol] = DEFAULT_ENTRY) -> EngineProtocol:
+    def load(cls, entry_point: Union[str, Type[EngineProtocol[ConfigT]]] = DEFAULT_ENTRY) -> Type[EngineProtocol[ConfigT]]:
         if isinstance(entry_point, EngineProtocol):
             return entry_point
         if isinstance(entry_point, str):
             ballistic_entry_points = cls.list_entries()
-            handle: Optional[EngineProtocol] = None
+            handle: Optional[Type[EngineProtocol[ConfigT]]] = None
             for ep in ballistic_entry_points:
-                if cls._entry_point_name == ep.name and entry_point in ep.value:
-                    if handle := cls._load_from_entry(ep):
-                        return handle
+                if ep.name.endswith(cls._entry_point_suffix):
+
+                    if (ep.name.endswith(cls._entry_point_suffix)
+                            and (ep.name == entry_point or entry_point in ep.value)):
+                        if handle := cls._load_from_entry(ep):
+                            logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
+                            return handle
+
             if not handle:
-                ep = EntryPoint(cls._entry_point_name, entry_point, cls._entry_point_group)
+                ep = EntryPoint(entry_point, entry_point, cls._entry_point_group)
                 if handle := cls._load_from_entry(ep):
                     logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
                     return handle
             raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
-        raise TypeError("Invalid entry_point type, expected 'str' or 'TrajectoryCalcProtocol'")
+        raise TypeError("Invalid entry_point type, expected 'str' or 'EngineProtocol'")
 
 
 @dataclass
-class Calculator:
+class Calculator(Generic[ConfigT]):
     """Basic interface for the ballistics calculator"""
 
-    _config: Optional[InterfaceConfigDict] = field(default=None)
-    _engine: Union[str, EngineProtocol] = field(default='py_ballisticcalc')
-    _calc: EngineProtocol = field(init=False, repr=False, compare=False)
+    config: Optional[ConfigT] = field(default=None)
+    engine: Union[str, Type[EngineProtocol[ConfigT]]] = field(default=DEFAULT_ENTRY)
+    _engine_instance: EngineProtocol[ConfigT] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        entry: EngineProtocol = _EngineLoader.load(self._engine)
-        self._calc = entry(create_interface_config(self._config))
+        engine: Type[EngineProtocol[ConfigT]] = _EngineLoader.load(self.engine)
+        self._engine_instance = engine(self.config)
 
     @property
     def cdm(self) -> List[DragDataPoint]:
         """returns custom drag function based on input data"""
-        return self._calc.table_data
+        return self._engine_instance.table_data
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.
@@ -105,7 +113,7 @@ class Calculator:
                 For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         """
         target_distance = PreferredUnits.distance(target_distance)
-        total_elevation = self._calc.zero_angle(shot, target_distance)
+        total_elevation = self._engine_instance.zero_angle(shot, target_distance)
         return Angular.Radian(
             (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
         )
@@ -138,7 +146,7 @@ class Calculator:
             step: Distance = Distance.Inch(trajectory_step)
         else:
             step = PreferredUnits.distance(trajectory_step)
-        data = self._calc.trajectory(shot, trajectory_range, step, extra_data, time_step)
+        data = self._engine_instance.trajectory(shot, trajectory_range, step, extra_data, time_step)
         return HitResult(shot, data, extra_data)
 
 

@@ -207,18 +207,20 @@ reset_globals()
 ```
 
 #### 3. To change solver interface setting use _config attribute for Calculator
+
 ```python
 from py_ballisticcalc import Calculator, InterfaceConfigDict
+
 config = InterfaceConfigDict(
-    max_calc_step_size_feet=1.,
+  max_calc_step_size_feet=1.,
   # cZeroFindingAccuracy= ...,
-    cMinimumVelocity= 0,
+  cMinimumVelocity=0,
   # cMaximumDrop= ...,
   # cMaxIterations= ...,
   # cGravityConstant= ...,
   # cMinimumAltitude= ...,
 )
-calc = Calculator(_config=config)
+calc = Calculator(config=config)
 ```
 
 ## Units
@@ -328,9 +330,11 @@ engine = "my_awesome_engine_library.my_awesome_module:MyAwesomeEngine"
 ### Custom engine usage
 For `Calculator` instance definition with custom engine install your library to virtual env and use your library name as `_engine` argument
 It should load your engine class in background
+
 ```python
 from py_ballisticcalc import Calculator
-calc = Calculator(_engine="my_awesome_engine_library")
+
+calc = Calculator(engine="my_awesome_engine_library")
 ```
 
 ### Test your custom engine

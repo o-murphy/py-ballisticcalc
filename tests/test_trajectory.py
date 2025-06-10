@@ -16,7 +16,7 @@ class TestTrajectory:
         ammo = Ammo(dm, 2600)
         weapon = Weapon(Distance(3.2, Distance.Inch))
         atmosphere = Atmo.icao()
-        calc = Calculator(_engine=loaded_engine_instance)
+        calc = Calculator(engine=loaded_engine_instance)
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                                       Distance(100, Distance.Yard))
         assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-6) == 0.0016514
@@ -27,7 +27,7 @@ class TestTrajectory:
         ammo = Ammo(dm, 2750)
         weapon = Weapon(Distance(2, Distance.Inch))
         atmosphere = Atmo.icao()
-        calc = Calculator(_engine=loaded_engine_instance)
+        calc = Calculator(engine=loaded_engine_instance)
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                                       Distance(100, Distance.Yard))
         assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-6) == 0.0012286
@@ -89,7 +89,7 @@ class TestTrajectory:
         shot_info = Shot(weapon=weapon, ammo=ammo, atmo=atmosphere,
                          winds=[Wind(Velocity(5, Velocity.MPH), Angular(10.5, Angular.OClock))])
 
-        calc = Calculator(_engine=loaded_engine_instance)
+        calc = Calculator(engine=loaded_engine_instance)
         data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
         assert len(data) == 11, "Trajectory Row Count"
         self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
@@ -114,7 +114,7 @@ class TestTrajectory:
         weapon = Weapon(2, 12, zero_elevation=Angular.MOA(4.221))
         shot_info = Shot(weapon=weapon, ammo=ammo, winds=[Wind(Velocity(5, Velocity.MPH), Angular.Degree(-45))])
 
-        calc = Calculator(_engine=loaded_engine_instance)
+        calc = Calculator(engine=loaded_engine_instance)
         data = calc.fire(shot_info, Distance.Yard(1000), Distance.Yard(100)).trajectory
         assert len(data) == 11, "Trajectory Row Count"
         self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,

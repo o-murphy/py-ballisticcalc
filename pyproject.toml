@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.1.1b2"
+version = "2.1.1b3"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
@@ -39,7 +39,8 @@ dependencies = [
 ]
 
 [project.entry-points.py_ballisticcalc]
-engine = "py_ballisticcalc:TrajectoryCalc"
+euler_engine = "py_ballisticcalc:EulerIntegrationEngine"
+rk4_engine = "py_ballisticcalc:RK4IntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
@@ -64,8 +65,10 @@ testpaths = ["tests"]
 dev = [
     "build>=1.2.2.post1",
     "jupyter>=1.1.1",
-    "matplotlib-stubs>=0.2.0",
+    "matplotlib>=3.9",
     "mypy>=1.15.0",
+    "numpy>=2",
+    "pandas>=2.3.0",
     "pandas-stubs>=2.2.2.240807",
     "pylint>=3.3.4",
     "pytest>=8.3.5",
@@ -75,20 +78,21 @@ dev = [
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.1.1b2']
-charts = ['matplotlib', 'pandas']
-visualize = ['matplotlib', 'pandas']
+exts = ['py_ballisticcalc.exts==2.1.1b3']
+charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
+visualize = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 dev = [
-    'jupyter',
-    'pandas-stubs',
-    'matplotlib-stubs',
-    'pytest>=8.3.5',
-    'pylint',
-    'mypy',
-    'pytest',
-    'pytest-xdist',
-    'pytest-cov',
-    'build',
+    "build>=1.2.2.post1",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.9",
+    "mypy>=1.15.0",
+    "numpy>=2",
+    "pandas>=2.3.0",
+    "pandas-stubs>=2.2.2.240807",
+    "pylint>=3.3.4",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.1",
 ]
 docs = [
     'mkdocs',

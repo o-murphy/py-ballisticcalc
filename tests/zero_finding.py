@@ -50,7 +50,7 @@ def zero_min_velocity_calc(loaded_engine_instance):
     config = InterfaceConfigDict(
         cMinimumVelocity=0,
     )
-    return Calculator(_engine=loaded_engine_instance, _config=config)
+    return Calculator(engine=loaded_engine_instance, config=config)
 
 
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)

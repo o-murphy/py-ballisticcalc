@@ -14,7 +14,7 @@ zero = Shot(weapon=weapon,
             ammo=ammo,
             relative_angle=Angular.Degree(1.0))
 
-calc = Calculator(_config={
+calc = Calculator(config={
     "cMinimumVelocity": 0,
     # "cMinimumAltitude": -1410.748,  # have this value by default
 })
