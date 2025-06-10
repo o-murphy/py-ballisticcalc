@@ -162,18 +162,20 @@ reset_globals()
 ```
 
 #### 3. To change solver interface setting use _config attribute for Calculator
+
 ```python
 from py_ballisticcalc import Calculator, InterfaceConfigDict
+
 config = InterfaceConfigDict(
     max_calc_step_size_feet=1.,
-  # cZeroFindingAccuracy= ...,
-    cMinimumVelocity= 0,
-  # cMaximumDrop= ...,
-  # cMaxIterations= ...,
-  # cGravityConstant= ...,
-  # cMinimumAltitude= ...,
+    # cZeroFindingAccuracy= ...,
+    cMinimumVelocity=0,
+    # cMaximumDrop= ...,
+    # cMaxIterations= ...,
+    # cGravityConstant= ...,
+    # cMinimumAltitude= ...,
 )
-calc = Calculator(_config=config)
+calc = Calculator(config=config)
 ```
 
 ## Units

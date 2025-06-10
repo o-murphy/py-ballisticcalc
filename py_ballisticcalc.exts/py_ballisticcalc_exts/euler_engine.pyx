@@ -40,6 +40,7 @@ from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.constants import cMaxWindDistanceFeet
+from py_ballisticcalc.engines.base_engine import create_base_engine_config
 
 
 __all__ = (
@@ -225,7 +226,7 @@ cdef class _WindSock:
         return self._last_vector_cache
 
 
-cdef class TrajectoryCalc:
+cdef class CythonizedEulerIntegrationEngine:
     cdef:
         list[object] _table_data
         CVector gravity_vector
@@ -234,15 +235,15 @@ cdef class TrajectoryCalc:
         Config_t __config
         ShotData_t __shot
 
-    def __cinit__(TrajectoryCalc self, object _config):
-        self._config = _config
+    def __cinit__(CythonizedEulerIntegrationEngine self, object _config):
+        self._config = create_base_engine_config(_config)
         self.gravity_vector = CVector(.0, self._config.cGravityConstant, .0)
 
     # def __dealloc__(TrajectoryCalc self):
     #     free_trajectory(&self.__shot)
 
     cdef double get_calc_step(self, double step = 0):
-        cdef double preferred_step = self.__config.max_calc_step_size_feet
+        cdef double preferred_step = self.__config.cMaxCalcStepSizeFeet
         # cdef double defined_max = 0.5  # const will be better optimized with cython
         if step == 0:
             return preferred_step / 2.0
@@ -311,7 +312,7 @@ cdef class TrajectoryCalc:
         self.ws = _WindSock(shot_info.winds)
 
 
-    cdef object _zero_angle(TrajectoryCalc self, object shot_info, object distance):
+    cdef object _zero_angle(CythonizedEulerIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
         self.__config = config_bind(self._config)
         self.gravity_vector = CVector(.0, self.__config.cGravityConstant, .0)
@@ -360,8 +361,8 @@ cdef class TrajectoryCalc:
         return Angular.Radian(self.__shot.barrel_elevation)
 
 
-    cdef list[object] _integrate(TrajectoryCalc self,
-                          double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
+    cdef list[object] _integrate(CythonizedEulerIntegrationEngine self,
+                                 double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
         cdef:
             double velocity, delta_time
             double density_factor = .0

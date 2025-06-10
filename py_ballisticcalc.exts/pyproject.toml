@@ -36,7 +36,7 @@ classifiers = [
 dependencies = []
 
 [project.entry-points.py_ballisticcalc]
-engine = "py_ballisticcalc_exts:TrajectoryCalc"
+cythonized_euler_engine = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"

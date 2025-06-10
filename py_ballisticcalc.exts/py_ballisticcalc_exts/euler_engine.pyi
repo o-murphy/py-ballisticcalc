@@ -1,13 +1,13 @@
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.unit import Angular, Distance
-from py_ballisticcalc.trajectory_calc import Config
+from py_ballisticcalc.engines.base_engine import BaseEngineConfig
 from py_ballisticcalc.trajectory_data import TrajectoryData
 
-__all__ = ['TrajectoryCalc']
+__all__ = ['CythonizedEulerIntegrationEngine']
 
-class TrajectoryCalc:
-    def __init__(self, _config: Config) -> None: ...
+class CythonizedEulerIntegrationEngine:
+    def __init__(self, _config: BaseEngineConfig) -> None: ...
     @property
     def table_data(self) -> list[DragDataPoint]: ...
     def get_calc_step(self, step: float = 0) -> float: ...

@@ -143,11 +143,11 @@ config: InterfaceConfigDict = {}
 for ep in _EngineLoader.iter_engines():
     engine = ep.load()
     print("Engine: %s" % ep.value)
-    calc = Calculator(_config=config, _engine=engine)
+    calc = Calculator(config=config, engine=engine)
     run_check(calc, number)
     print()
 
 from examples.integrators.pure_on_yields import TrajectoryCalcOnYields as TCYields
 print("Engine: Pure (yields)")
-calc = Calculator(_config=config, _engine=TCYields)
+calc = Calculator(config=config, engine=TCYields)
 run_check(calc, number)

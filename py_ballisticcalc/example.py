@@ -19,7 +19,7 @@ gun = Weapon(sight_height=9, twist=12)
 current_atmo = Atmo(110, 29.8, 15, 72)
 current_winds = [Wind(2, 90)]
 shot = Shot(weapon=gun, ammo=ammo, atmo=current_atmo, winds=current_winds)
-calc = Calculator()
+calc: Calculator = Calculator()
 calc.set_weapon_zero(shot, Distance.Meter(100))
 
 shot_result = calc.fire(shot, trajectory_range=1000, trajectory_step=100)
