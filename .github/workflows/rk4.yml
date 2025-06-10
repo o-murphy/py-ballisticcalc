@@ -72,10 +72,10 @@ jobs:
 
     - name: Run tests in pure python mode
       run: |
-        pytest tests --no-header -v -n auto --engine="examples.integrators.rk4:TrajectoryCalcRK4"
+        pytest tests --no-header -v -n auto --engine=RK4IntegrationEngine
         if [ $? -ne 0 ]; then
           echo "RK4 failed, running without capture"
-          pytest tests -v --engine="examples.integrators.rk4:TrajectoryCalcRK4"
+          pytest tests -v --engine=RK4IntegrationEngine
         else
           echo RK4 succeeded.
         fi

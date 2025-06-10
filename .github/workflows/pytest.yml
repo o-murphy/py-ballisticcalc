@@ -38,10 +38,10 @@ jobs:
 
     - name: Run tests in pure python mode
       run: |
-        pytest tests --no-header -v -n auto --engine=py_ballisticcalc
+        pytest tests --no-header -v -n auto --engine=EulerIntegrationEngine
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          pytest tests -v --engine=py_ballisticcalc
+          pytest tests -v --engine=EulerIntegrationEngine
         else
           echo Pytest succeeded.
         fi
