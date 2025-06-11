@@ -139,7 +139,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             # cdef CVector f(CVector v):  # dv/dt
             #     # Bullet velocity changes due to both drag and gravity
             #     return self.gravity_vector - km * v * v.magnitude()
-
+            #
             # v1 = delta_time * f(relative_velocity)
             # v2 = delta_time * f(relative_velocity + 0.5 * v1)
             # v3 = delta_time * f(relative_velocity + 0.5 * v2)
