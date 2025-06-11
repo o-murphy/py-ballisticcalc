@@ -109,6 +109,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             # Time step is normalized by velocity so that we take smaller steps when moving faster
             delta_time = rk_calc_step / max(1.0, relative_speed)
             km = density_factor * self.drag_by_mach(relative_speed / mach)
+            drag = km * relative_speed
 
             # region RK4 integration
             def f(v):  # dv/dt
@@ -128,7 +129,6 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             # endregion RK4 integration
 
             # region for Reference: Euler integration
-            # drag = km * relative_speed
             # velocity_vector -= (relative_velocity * drag - self.gravity_vector) * delta_time
             # delta_range_vector = velocity_vector * delta_time
             # range_vector += delta_range_vector
