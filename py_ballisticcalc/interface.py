@@ -16,10 +16,10 @@ from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 ConfigT = TypeVar('ConfigT', bound=BaseEngineConfigDict, covariant=True)
 
-
 DEFAULT_ENTRY_SUFFIX = '_engine'
 DEFAULT_ENTRY_GROUP = 'py_ballisticcalc'
 DEFAULT_ENTRY: Type[EngineProtocol[ConfigT]] = EulerIntegrationEngine
+
 
 @dataclass
 class _EngineLoader:
@@ -61,7 +61,8 @@ class _EngineLoader:
         return None
 
     @classmethod
-    def load(cls, entry_point: Union[str, Type[EngineProtocol[ConfigT]]] = DEFAULT_ENTRY) -> Type[EngineProtocol[ConfigT]]:
+    def load(cls, entry_point: Union[str, Type[EngineProtocol[ConfigT]]] = DEFAULT_ENTRY) -> Type[
+        EngineProtocol[ConfigT]]:
         if isinstance(entry_point, EngineProtocol):
             return entry_point
         if isinstance(entry_point, str):

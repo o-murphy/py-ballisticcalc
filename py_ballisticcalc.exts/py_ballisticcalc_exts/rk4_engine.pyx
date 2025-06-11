@@ -35,13 +35,13 @@ from py_ballisticcalc.exceptions import RangeError
 
 
 __all__ = (
-    'CythonizedEulerIntegrationEngine'
+    'CythonizedRK4IntegrationEngine'
 )
 
 
-cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
+cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
-    cdef list[object] _integrate(CythonizedEulerIntegrationEngine self,
+    cdef list[object] _integrate(CythonizedRK4IntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
         cdef:
             double velocity, delta_time
@@ -69,21 +69,27 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             double _cMaximumDrop = self._config_s.cMaximumDrop
             double _cMinimumAltitude = self._config_s.cMinimumAltitude
 
+        # cdef:
+        #     # temp vectors
+        #     CVector _dir_vector, _temp1, _temp2, _temp3
+
         cdef:
-            # temp vectors
-            CVector _dir_vector, _temp1, _temp2, _temp3
+            double last_recorded_range, rk_calc_step
 
         # region Initialize velocity and position of projectile
-        velocity = self._shot_s.muzzle_velocity
+        velocity = self.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         range_vector = CVector(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height, -self._shot_s.cant_sine * self._shot_s.sight_height)
-        _dir_vector = CVector(cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
-                                 sin(self._shot_s.barrel_elevation),
-                                 cos(self._shot_s.barrel_elevation) * sin(self._shot_s.barrel_azimuth))
+        _dir_vector = CVector(
+            cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
+            sin(self._shot_s.barrel_elevation),
+            cos(self._shot_s.barrel_elevation) * sin(self._shot_s.barrel_azimuth)
+        )
         velocity_vector = mul_c(&_dir_vector, velocity)
         # endregion
 
-        min_step = min(calc_step, record_step)
+        rk_calc_step = 4. * calc_step
+        min_step = min(rk_calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                         initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
@@ -92,45 +98,65 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
 
-        while range_vector.x <= maximum_range + min_step:
+        last_recorded_range = 0.0
 
-            data_filter.current_flag = CTrajFlag.NONE
+        while (range_vector.x <= maximum_range + min_step) or (
+                filter_flags and last_recorded_range <= maximum_range - 1e-6):
+
+            data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self.ws.next_range:  # require check before call to improve performance
                 wind_vector = self.ws.vector_for_range(range_vector.x)
 
+            # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
             update_density_factor_and_mach_for_altitude(&self._shot_s.atmo,
                 self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
 
-            if filter_flags:
-
+            # region Check whether to record TrajectoryData row at current point
+            if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
                 data = data_filter.should_record(range_vector, velocity_vector, mach, time)
-                if data is not None:        
-                    ranges.append(create_trajectory_row(
-                        data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
-                        cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
-                        density_factor, drag, self._shot_s.weight, data_filter.current_flag
-                    ))
+                if data is not None:
+                    ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
+                                                        mag(&data.velocity), data.mach,
+                                                        cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
+                                                        density_factor, drag, self._shot_s.weight, data_filter.current_flag
+                                                        ))
+                    last_recorded_range = data.position.x
+            # endregion
 
-            #region Ballistic calculation step
-            # use just cdef methods to maximize speed
+            # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
+            relative_velocity = sub(&velocity_vector, &wind_vector)
+            relative_speed = mag(&relative_velocity)  # Velocity relative to air
+            # Time step is normalized by velocity so that we take smaller steps when moving faster
+            delta_time = rk_calc_step / max(1.0, relative_speed)
+            km = density_factor * velocity * cy_drag_by_mach(&self._shot_s, velocity / mach)
+            drag = km * relative_speed
 
-            velocity_adjusted = sub(&velocity_vector, &wind_vector)
-            velocity = mag(&velocity_adjusted)
-            delta_time = calc_step / max(1.0, velocity)
-            drag = density_factor * velocity * cy_drag_by_mach(&self._shot_s, velocity / mach)
+            # # region RK4 integration
+            # cdef CVector f(CVector v):  # dv/dt
+            #     # Bullet velocity changes due to both drag and gravity
+            #     return self.gravity_vector - km * v * v.magnitude()
 
-            _temp1 = mul_c(&velocity_adjusted, drag)
-            _temp2 = sub(&_temp1, &gravity_vector)
-            _temp3 = mul_c(&_temp2, delta_time)
-
-            velocity_vector = sub(&velocity_vector, &_temp3)
-
-            delta_range_vector = mul_c(&velocity_vector, delta_time)
-            range_vector = add(&range_vector, &delta_range_vector)
+            # v1 = delta_time * f(relative_velocity)
+            # v2 = delta_time * f(relative_velocity + 0.5 * v1)
+            # v3 = delta_time * f(relative_velocity + 0.5 * v2)
+            # v4 = delta_time * f(relative_velocity + v3)
+            # p1 = delta_time * velocity_vector
+            # p2 = delta_time * (velocity_vector + 0.5 * p1)
+            # p3 = delta_time * (velocity_vector + 0.5 * p2)
+            # p4 = delta_time * (velocity_vector + p3)
+            # velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (1 / 6.0)
+            # range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (1 / 6.0)
+            # # endregion RK4 integration
+            #
+            # # region for Reference: Euler integration
+            # # velocity_vector -= (relative_velocity * drag - self.gravity_vector) * delta_time
+            # # delta_range_vector = velocity_vector * delta_time
+            # # range_vector += delta_range_vector
+            # # endregion Euler integration
 
             velocity = mag(&velocity_vector)
             time += delta_time
@@ -154,6 +180,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                     reason = RangeError.MinimumAltitudeReached
                 raise RangeError(reason, ranges)
             #endregion
+
         #endregion
         # Ensure that we have at least two data points in trajectory
         if len(ranges) < 2:

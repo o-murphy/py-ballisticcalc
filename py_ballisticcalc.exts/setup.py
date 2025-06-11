@@ -28,7 +28,9 @@ compiler_directives = {
 
 extension_names = [
     "vector",
+    "base_engine",
     "euler_engine",
+    "rk4_engine",
     "trajectory_data",
     "cy_euler",
 ]

@@ -6,86 +6,13 @@ from typing import List
 
 from typing_extensions import Union
 
-from py_ballisticcalc import TrajFlag, Shot, logger, RangeError, ZeroFindingError, TrajectoryData
-from py_ballisticcalc.trajectory_calc import *
-from py_ballisticcalc.unit import *
+from py_ballisticcalc import (TrajFlag, Shot, logger, RangeError,
+                              TrajectoryData, Vector, _TrajectoryDataFilter,
+                              EulerIntegrationEngine, _WindSock, create_trajectory_row)
 
 
 # pylint: disable=too-many-instance-attributes
-class TrajectoryCalcOnYields(TrajectoryCalc):
-
-    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
-                   extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
-        """
-        Calculates the trajectory of a projectile.
-
-        Args:
-            shot_info (Shot): Information about the shot.
-            max_range (Distance): The maximum range of the trajectory.
-            dist_step (Distance): The distance step for calculations.
-            extra_data (bool, optional): Flag to include extra data. Defaults to False.
-            time_step (float, optional): The time step for calculations. Defaults to 0.0.
-
-        Returns:
-            List[TrajectoryData]: A list of trajectory data points.
-        """
-        filter_flags = TrajFlag.RANGE
-
-        if extra_data:
-            # dist_step = Distance.Foot(self._config.chart_resolution)
-            filter_flags = TrajFlag.ALL
-
-        self._init_trajectory(shot_info)
-        return self._integrate(shot_info, max_range >> Distance.Foot,
-                               dist_step >> Distance.Foot, filter_flags, time_step)
-
-    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
-        """
-        Iterative algorithm to find barrel elevation needed for a particular zero
-
-        Args:
-            shot_info (Shot): Shot parameters
-            distance (Distance): Zero distance
-
-        Returns:
-            Angular: Barrel elevation to hit height zero at zero distance
-        """
-        self._init_trajectory(shot_info)
-
-        _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
-        _cMaxIterations = self._config.cMaxIterations
-
-        distance_feet = distance >> Distance.Foot  # no need convert it twice
-        zero_distance = math.cos(self.look_angle) * distance_feet
-        height_at_zero = math.sin(self.look_angle) * distance_feet
-
-        iterations_count = 0
-        zero_finding_error = _cZeroFindingAccuracy * 2
-        # x = horizontal distance down range, y = drop, z = windage
-        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
-            # Check height of trajectory at the zero distance (using current self.barrel_elevation)
-            try:
-                t = next(self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE))
-                height = t.height >> Distance.Foot
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                last_distance_foot = e.last_distance >> Distance.Foot
-                proportion = (last_distance_foot) / zero_distance
-                height = (next(e.incomplete_trajectory).height >> Distance.Foot) / proportion
-
-            zero_finding_error = math.fabs(height - height_at_zero)
-
-            if zero_finding_error > _cZeroFindingAccuracy:
-                # Adjust barrel elevation to close height at zero distance
-                self.barrel_elevation -= (height - height_at_zero) / zero_distance
-            else:  # last barrel_elevation hit zero!
-                break
-            iterations_count += 1
-        if zero_finding_error > _cZeroFindingAccuracy:
-            # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
-        return Angular.Radian(self.barrel_elevation)
+class EulerIntegrationNoRec(EulerIntegrationEngine):
 
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
@@ -111,7 +38,7 @@ class TrajectoryCalcOnYields(TrajectoryCalc):
         _cMinimumAltitude = self._config.cMinimumAltitude
 
         # ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
-        ranges = 0
+        ranges = []
         time: float = .0
         drag: float = .0
 
@@ -159,17 +86,17 @@ class TrajectoryCalcOnYields(TrajectoryCalc):
             density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
-            # region Check whether to record TrajectoryData row at current point
-            if filter_flags:  # require check before call to improve performance
-
-                # Record TrajectoryData row
-                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
-                    yield create_trajectory_row(data.time, data.position, data.velocity,
-                                                data.velocity.magnitude(), data.mach,
-                                                self.spin_drift(data.time), self.look_angle,
-                                                density_factor, drag, self.weight, data_filter.current_flag
-                                                )
-            # endregion
+            # # region Check whether to record TrajectoryData row at current point
+            # if filter_flags:  # require check before call to improve performance
+            #
+            #     # Record TrajectoryData row
+            #     if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+            #         ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
+            #                                     data.velocity.magnitude(), data.mach,
+            #                                     self.spin_drift(data.time), self.look_angle,
+            #                                     density_factor, drag, self.weight, data_filter.current_flag
+            #                                     ))
+            # # endregion
 
             # region Ballistic calculation step (point-mass)
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
@@ -193,11 +120,11 @@ class TrajectoryCalcOnYields(TrajectoryCalc):
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                yield create_trajectory_row(
+                ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,
                     velocity, mach, self.spin_drift(time), self.look_angle,
                     density_factor, drag, self.weight, data_filter.current_flag
-                )
+                ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
@@ -209,15 +136,16 @@ class TrajectoryCalcOnYields(TrajectoryCalc):
             # endregion
         # endregion
         # Ensure that we have at least two data points in trajectory
-        if ranges < 2:
-            yield create_trajectory_row(
+        if len(ranges) < 2:
+            ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
                 density_factor, drag, self.weight, TrajFlag.NONE)
+            )
         logger.debug(f"euler py it {it}")
-        # return ranges
+        return ranges
 
 
 __all__ = (
-    'TrajectoryCalcOnYields',
+    'EulerIntegrationNoRec',
 )

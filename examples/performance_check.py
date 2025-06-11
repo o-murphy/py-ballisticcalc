@@ -138,7 +138,7 @@ def run_check(calc_, number):
     print()
 
 number = 120
-config: InterfaceConfigDict = {}
+config = {}
 
 for ep in _EngineLoader.iter_engines():
     engine = ep.load()
@@ -147,7 +147,7 @@ for ep in _EngineLoader.iter_engines():
     run_check(calc, number)
     print()
 
-from examples.integrators.pure_on_yields import TrajectoryCalcOnYields as TCYields
+from examples.integrators.euler_no_rec import EulerIntegrationNoRec
 print("Engine: Pure (yields)")
-calc = Calculator(config=config, engine=TCYields)
+calc = Calculator(config=config, engine=EulerIntegrationNoRec)
 run_check(calc, number)
