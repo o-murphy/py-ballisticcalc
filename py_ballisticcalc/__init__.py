@@ -131,7 +131,6 @@ __all__ = [
     'BaseEngineConfig',
     'BaseEngineConfigDict',
     'BaseIntegrationEngine',
-    'BaseIntegrationEngine',
     'EulerIntegrationEngine',
     'RK4IntegrationEngine',
     'Vector',
