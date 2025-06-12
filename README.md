@@ -10,7 +10,8 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
-[![Python package tests (uv)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml)
+[![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml)
+[![Pytest RK4](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/rk4.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/rk4.yml)
 
 [sources]:
 https://github.com/o-murphy/py-ballisticcalc
@@ -207,18 +208,20 @@ reset_globals()
 ```
 
 #### 3. To change solver interface setting use _config attribute for Calculator
+
 ```python
 from py_ballisticcalc import Calculator, InterfaceConfigDict
+
 config = InterfaceConfigDict(
-    max_calc_step_size_feet=1.,
+  max_calc_step_size_feet=1.,
   # cZeroFindingAccuracy= ...,
-    cMinimumVelocity= 0,
+  cMinimumVelocity=0,
   # cMaximumDrop= ...,
   # cMaxIterations= ...,
   # cGravityConstant= ...,
   # cMinimumAltitude= ...,
 )
-calc = Calculator(_config=config)
+calc = Calculator(config=config)
 ```
 
 ## Units
@@ -328,9 +331,11 @@ engine = "my_awesome_engine_library.my_awesome_module:MyAwesomeEngine"
 ### Custom engine usage
 For `Calculator` instance definition with custom engine install your library to virtual env and use your library name as `_engine` argument
 It should load your engine class in background
+
 ```python
 from py_ballisticcalc import Calculator
-calc = Calculator(_engine="my_awesome_engine_library")
+
+calc = Calculator(engine="my_awesome_engine_library")
 ```
 
 ### Test your custom engine

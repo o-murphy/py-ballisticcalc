@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Pytest Cythonized Euler
+name: Pytest Cythonized RK4
 
 on:
   pull_request:
@@ -40,10 +40,10 @@ jobs:
 
     - name: Run unittest tests in binary mode
       run: |
-        pytest tests --no-header -v --engine=CythonizedEulerIntegrationEngine
+        pytest tests --no-header -v --engine=CythonizedRK4IntegrationEngine
         if [ $? -ne 0 ]; then
           echo "Pytest failed, running without capture"
-          pytest tests -v --engine=CythonizedEulerIntegrationEngine
+          pytest tests -v --engine=CythonizedRK4IntegrationEngine
         else
           echo "Pytest succeeded."
         fi

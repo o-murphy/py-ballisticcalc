@@ -34,8 +34,8 @@ zero_atmo = Atmo(
 zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 zero_distance = Distance.Meter(100)
 
-config: InterfaceConfigDict = {}
-calc = Calculator(_config=config)
+config: BaseEngineConfigDict = {}
+calc = Calculator(config=config)
 calc.set_weapon_zero(zero, zero_distance)
 
 current_atmo = Atmo(

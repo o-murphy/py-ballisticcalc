@@ -16,7 +16,7 @@ class TestDangerSpace:
         ammo.calc_powder_sens(2723, 0)
         current_winds = [Wind(2, 90)]
         shot = Shot(weapon=Weapon(), ammo=ammo, winds=current_winds)
-        calc = Calculator(_engine=loaded_engine_instance)
+        calc = Calculator(engine=loaded_engine_instance)
         calc.set_weapon_zero(shot, Distance.Foot(300))
         self.shot_result = calc.fire(shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(1),
                                      extra_data=True)

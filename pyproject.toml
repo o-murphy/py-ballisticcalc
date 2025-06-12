@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.1.1b3"
+version = "2.2.0b1"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
@@ -39,7 +39,8 @@ dependencies = [
 ]
 
 [project.entry-points.py_ballisticcalc]
-engine = "py_ballisticcalc:TrajectoryCalc"
+euler_engine = "py_ballisticcalc:EulerIntegrationEngine"
+rk4_engine = "py_ballisticcalc:RK4IntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
@@ -77,7 +78,7 @@ dev = [
 
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.1.1b3']
+exts = ['py_ballisticcalc.exts==2.2.0b1']
 charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 visualize = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 dev = [

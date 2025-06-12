@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc.exts"
-version = "2.1.1b3"
+version = "2.2.0b1"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -36,7 +36,8 @@ classifiers = [
 dependencies = []
 
 [project.entry-points.py_ballisticcalc]
-engine = "py_ballisticcalc_exts:TrajectoryCalc"
+cythonized_euler_engine = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
+cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"

@@ -6,12 +6,14 @@ __copyright__ = (
 
 __credits__ = ["o-murphy", "dbookstaber"]
 
-from .trajectory_calc import TrajectoryCalc
+from .euler_engine import CythonizedEulerIntegrationEngine
+from .rk4_engine import CythonizedRK4IntegrationEngine
 from .vector import Vector
 from .trajectory_data import TrajectoryData
 
 __all__ = (
-    'TrajectoryCalc',
+    'CythonizedEulerIntegrationEngine',
+    'CythonizedRK4IntegrationEngine',
     'Vector',
     'TrajectoryData',
 )

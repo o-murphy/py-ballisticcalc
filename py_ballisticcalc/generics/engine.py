@@ -18,11 +18,10 @@ from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import Distance, Angular
 
 ConfigT = TypeVar("ConfigT", covariant=True)
-TrajectoryDataT = TypeVar("TrajectoryDataT", bound=TrajectoryData)
 
 
 @runtime_checkable
-class EngineProtocol(Protocol[ConfigT, TrajectoryDataT]):
+class EngineProtocol(Protocol[ConfigT]):
     """
     Defines the interface for a ballistic trajectory calculation engine.
 
@@ -49,7 +48,7 @@ class EngineProtocol(Protocol[ConfigT, TrajectoryDataT]):
         """
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
-                   extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryDataT]:
+                   extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
         """
         Calculates the trajectory of a projectile.
 

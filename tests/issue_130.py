@@ -43,7 +43,7 @@ class WeaponData(NamedTuple):
             cMinimumVelocity=0, cMinimumAltitude=-1, cMaximumDrop=-1
         )
 
-        calc = Calculator(_config=config)
+        calc = Calculator(config=config)
         try:
             shot_result = calc.fire(
                 shot, Distance.Meter(distance_in_meters), extra_data=extra_data

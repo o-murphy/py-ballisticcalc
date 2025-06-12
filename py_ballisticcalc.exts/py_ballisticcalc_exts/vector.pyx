@@ -1,3 +1,9 @@
+# Total Score: 1893, Possible Score: 34600
+# Total Non-Empty Lines: 346
+# Python Overhead Lines: 125
+# Cythonization Percentage: 94.53%
+# Python Overhead Lines Percentage: 36.13%
+
 from libc.math cimport sqrt, fabs
 from cython cimport final
 # from py_ballisticcalc_exts._data_repr cimport _Comparable

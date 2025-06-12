@@ -1,3 +1,9 @@
+# Total Score: 158, Possible Score: 21000
+# Total Non-Empty Lines: 210
+# Python Overhead Lines: 19
+# Cythonization Percentage: 99.25%
+# Python Overhead Lines Percentage: 9.05%
+
 # noinspection PyUnresolvedReferences
 from cython cimport final
 from libc.stdlib cimport malloc, free
@@ -8,7 +14,7 @@ import warnings
 @final
 cdef Config_t config_bind(object config):
     return Config_t(
-        config.max_calc_step_size_feet,
+        config.cMaxCalcStepSizeFeet,
         config.cZeroFindingAccuracy,
         config.cMinimumVelocity,
         config.cMaximumDrop,
@@ -18,7 +24,7 @@ cdef Config_t config_bind(object config):
     )
 
 cdef double cy_get_calc_step(Config_t * config, double step = 0):
-    cdef double preferred_step = config.max_calc_step_size_feet
+    cdef double preferred_step = config.cMaxCalcStepSizeFeet
     if step == 0:
         return preferred_step / 2.0
     return min(step, preferred_step) / 2.0
