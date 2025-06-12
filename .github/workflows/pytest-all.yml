@@ -1,0 +1,87 @@
+name: Pytest All!
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  # Job for full matrix, runs ONLY on pull_request events
+  test_full_matrix:
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Validate exts version matching
+        run: |
+          uv pip install tomli
+          python hooks/version_check.py
+
+      - name: Install the project
+        run: |
+          uv pip install -e .[dev]
+
+      - name: Run tests in pure python mode
+        run: |
+          pytest tests --no-header -v -n auto --engine=${{ matrix.engine-entry }}
+          if [ $? -ne 0 ]; then
+            echo "Pytest failed, running without capture"
+            pytest tests -v --engine=${{ matrix.engine-entry }}
+          else
+            echo Pytest succeeded.
+          fi
+        shell: bash
+
+  # Job for minimal matrix, runs ONLY on push events
+  test_minimal_matrix:
+    if: github.event_name == 'push'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]  # Fixed OS
+        python-version: [ "3.9" ] # Fixed Python version
+        engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Validate exts version matching
+        run: |
+          uv pip install tomli
+          python hooks/version_check.py
+
+      - name: Install the project
+        run: |
+          uv pip install -e .[dev]
+
+      - name: Run tests in pure python mode
+        run: |
+          pytest tests --no-header -v -n auto --engine=${{ matrix.engine-entry }}
+          if [ $? -ne 0 ]; then
+            echo "Pytest failed, running without capture"
+            pytest tests -v --engine=${{ matrix.engine-entry }}
+          else
+            echo Pytest succeeded.
+          fi
+        shell: bash
