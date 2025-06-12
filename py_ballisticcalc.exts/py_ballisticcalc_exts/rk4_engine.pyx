@@ -8,7 +8,7 @@
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
-from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmax
+from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
 # noinspection PyUnresolvedReferences
@@ -90,7 +90,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         # endregion
 
         rk_calc_step = 4. * calc_step
-        min_step = min(rk_calc_step, record_step)
+        min_step = fmin(rk_calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                         initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)

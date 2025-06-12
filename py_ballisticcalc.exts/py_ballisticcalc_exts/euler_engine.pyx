@@ -8,7 +8,7 @@
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
-from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin
+from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
 # noinspection PyUnresolvedReferences
@@ -120,7 +120,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
             velocity_adjusted = sub(&velocity_vector, &wind_vector)
             velocity = mag(&velocity_adjusted)
-            delta_time = calc_step / max(1.0, velocity)
+            delta_time = calc_step / fmax(1.0, velocity)
             drag = density_factor * velocity * cy_drag_by_mach(&self._shot_s, velocity / mach)
 
             _temp1 = mul_c(&velocity_adjusted, drag)
