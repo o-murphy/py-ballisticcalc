@@ -36,9 +36,7 @@ jobs:
 
     - name: Build cython modules
       run: |
-        cd ./py_ballisticcalc.exts
-        uv pip install -e .[dev]
-        cd ..
+        uv pip install -e ./py_ballisticcalc.exts
 
     - name: Run unittest tests in binary mode
       run: |

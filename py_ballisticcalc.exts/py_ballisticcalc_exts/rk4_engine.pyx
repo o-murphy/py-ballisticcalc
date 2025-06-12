@@ -91,7 +91,9 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         velocity_vector = mul_c(&_dir_vector, velocity)
         # endregion
 
-        rk_calc_step = 4. * calc_step
+        # rk_calc_step = 4. * calc_step
+        rk_calc_step = calc_step ** (1/2)  # NOTE: recommended by https://github.com/serhiy-yevtushenko
+
         min_step = fmin(rk_calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,

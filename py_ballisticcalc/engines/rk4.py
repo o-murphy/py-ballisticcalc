@@ -66,7 +66,9 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
 
         # RK steps can be larger than calc_step default on Euler integrator
         # min_step ensures that with small record steps the loop runs far enough to get desired points
-        rk_calc_step = 4. * self.calc_step
+        # rk_calc_step = 4. * self.calc_step
+        rk_calc_step = self.calc_step ** (1/2)  # NOTE: recommended by https://github.com/serhiy-yevtushenko
+
         min_step = min(rk_calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
