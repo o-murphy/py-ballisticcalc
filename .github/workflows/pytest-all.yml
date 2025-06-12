@@ -1,87 +1,61 @@
+# .github/workflows/pytest-all.yml
 name: Pytest All!
 
+# Define the events that will automatically trigger this workflow
 on:
   pull_request:
     branches:
-      - '*'
+      - '*' # Trigger this workflow whenever a pull request is opened or updated on any branch
   push:
     branches:
-      - '*'
-  workflow_dispatch:
+      - '*' # Trigger this workflow whenever code is pushed to any branch
+  workflow_dispatch: # Allow manual triggering from the GitHub Actions UI
 
 jobs:
-  # Job for full matrix, runs ONLY on pull_request events
+  # This job manages the 'full matrix' of tests, specifically designed for pull requests.
   test_full_matrix:
+    # A clear, human-readable name for this job group that appears in the GitHub Actions UI.
+    name: Run Full Matrix Tests (Pull Request)
+    # This job will ONLY run if the event that triggered the workflow was a 'pull_request'.
     if: github.event_name == 'pull_request'
-    runs-on: ${{ matrix.os }}
+
     strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
-        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
-        engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
-    steps:
-      - uses: actions/checkout@v4
+      fail-fast: false # Set to 'false' so that if one job in the matrix fails, the others will still complete.
+      matrix: # Define all the combinations for the 'full' test suite
+        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ] # Operating systems to test on
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ] # Python versions to test
+        # The 'engine' variable for this matrix. Make sure the name matches what you pass in 'with:' below.
+        engine: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
 
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+    # This is the key part: it tells GitHub Actions to execute the reusable workflow.
+    # The path is relative to your repository's root directory.
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      # Pass the current values from the matrix to the corresponding inputs of the reusable workflow.
+      os: ${{ matrix.os }} # Passes the current OS (e.g., 'ubuntu-latest')
+      python_version: ${{ matrix.python-version }} # Passes the current Python version (e.g., '3.9')
+      engine_name: ${{ matrix.engine }} # Passes the current engine (e.g., 'euler_engine')
 
-      - name: Validate exts version matching
-        run: |
-          uv pip install tomli
-          python hooks/version_check.py
-
-      - name: Install the project
-        run: |
-          uv pip install -e .[dev]
-
-      - name: Run tests in pure python mode
-        run: |
-          pytest tests --no-header -v -n auto --engine=${{ matrix.engine-entry }}
-          if [ $? -ne 0 ]; then
-            echo "Pytest failed, running without capture"
-            pytest tests -v --engine=${{ matrix.engine-entry }}
-          else
-            echo Pytest succeeded.
-          fi
-        shell: bash
-
-  # Job for minimal matrix, runs ONLY on push events
+  # This job manages a 'minimal matrix' of tests, typically used for push events.
   test_minimal_matrix:
+    # A clear, human-readable name for this job group.
+    name: Run Minimal Matrix Tests (Push)
+    # This job will ONLY run if the event that triggered the workflow was a 'push'.
     if: github.event_name == 'push'
-    runs-on: ${{ matrix.os }}
+
     strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest ]  # Fixed OS
-        python-version: [ "3.9" ] # Fixed Python version
+      fail-fast: false # Ensure all jobs in this minimal matrix complete even if one fails.
+      matrix: # Define the combinations for the 'minimal' test suite
+        os: [ ubuntu-latest ] # Fixed to one OS for minimal testing
+        python-version: [ "3.9" ] # Fixed to one Python version for minimal testing
+        # The 'engine-entry' variable as defined in your original minimal matrix.
         engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
-    steps:
-      - uses: actions/checkout@v4
 
-      - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Validate exts version matching
-        run: |
-          uv pip install tomli
-          python hooks/version_check.py
-
-      - name: Install the project
-        run: |
-          uv pip install -e .[dev]
-
-      - name: Run tests in pure python mode
-        run: |
-          pytest tests --no-header -v -n auto --engine=${{ matrix.engine-entry }}
-          if [ $? -ne 0 ]; then
-            echo "Pytest failed, running without capture"
-            pytest tests -v --engine=${{ matrix.engine-entry }}
-          else
-            echo Pytest succeeded.
-          fi
-        shell: bash
+    # Call the same reusable workflow for these minimal test combinations.
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      # Pass the current matrix variables as inputs to the reusable workflow.
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      # Map the 'engine-entry' variable from this matrix to the 'engine_name' input.
+      engine_name: ${{ matrix.engine-entry }}
