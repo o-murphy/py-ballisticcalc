@@ -1,10 +1,9 @@
-"""
-# Total Score: 2394, Possible Score: 45200
-# Total Non-Empty Lines: 452
-# Python Overhead Lines: 152
-# Cythonization Percentage: 94.70%
-# Python Overhead Lines Percentage: 33.63%
-"""
+# Total Score: 158, Possible Score: 12400
+# Total Non-Empty Lines: 124
+# Python Overhead Lines: 19
+# Cythonization Percentage: 98.73%
+# Python Overhead Lines Percentage: 15.32%
+
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
@@ -14,7 +13,7 @@ from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_euler cimport (
+from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     ShotData_t,
     update_density_factor_and_mach_for_altitude,
@@ -70,17 +69,17 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             double _cMinimumAltitude = self._config_s.cMinimumAltitude
 
         cdef:
-            # temp vectors
-            CVector _dir_vector, _temp1, _temp2, _temp3
+            # temp vector
+            CVector _tv
 
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         range_vector = CVector(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height, -self._shot_s.cant_sine * self._shot_s.sight_height)
-        _dir_vector = CVector(cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
+        _tv = CVector(cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
                                  sin(self._shot_s.barrel_elevation),
                                  cos(self._shot_s.barrel_elevation) * sin(self._shot_s.barrel_azimuth))
-        velocity_vector = mul_c(&_dir_vector, velocity)
+        velocity_vector = mul_c(&_tv, velocity)
         # endregion
 
         min_step = fmin(calc_step, record_step)
@@ -123,11 +122,11 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             delta_time = calc_step / fmax(1.0, velocity)
             drag = density_factor * velocity * cy_drag_by_mach(&self._shot_s, velocity / mach)
 
-            _temp1 = mul_c(&velocity_adjusted, drag)
-            _temp2 = sub(&_temp1, &gravity_vector)
-            _temp3 = mul_c(&_temp2, delta_time)
+            _tv = mul_c(&velocity_adjusted, drag)
+            _tv = sub(&_tv, &gravity_vector)
+            _tv = mul_c(&_tv, delta_time)
 
-            velocity_vector = sub(&velocity_vector, &_temp3)
+            velocity_vector = sub(&velocity_vector, &_tv)
 
             delta_range_vector = mul_c(&velocity_vector, delta_time)
             range_vector = add(&range_vector, &delta_range_vector)

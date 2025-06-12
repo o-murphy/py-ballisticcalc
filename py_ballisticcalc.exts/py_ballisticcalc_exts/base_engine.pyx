@@ -6,7 +6,7 @@ from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_euler cimport (
+from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     Wind_t,
     Atmosphere_t,

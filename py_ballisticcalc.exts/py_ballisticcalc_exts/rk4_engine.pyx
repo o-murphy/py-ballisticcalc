@@ -1,10 +1,9 @@
-"""
 # Total Score: 2394, Possible Score: 45200
 # Total Non-Empty Lines: 452
 # Python Overhead Lines: 152
 # Cythonization Percentage: 94.70%
 # Python Overhead Lines Percentage: 33.63%
-"""
+
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
@@ -14,7 +13,7 @@ from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_euler cimport (
+from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     ShotData_t,
     update_density_factor_and_mach_for_altitude,
@@ -72,10 +71,13 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         cdef:
             double last_recorded_range, rk_calc_step
 
-        # temp vectors
+        # temp variables
         cdef:
+            double relative_speed
+            CVector relative_velocity
             CVector _dir_vector, _temp_add_operand, _temp_v_result, _temp_p_result
             CVector _v_sum_intermediate, _p_sum_intermediate
+            CVector v1, v2, v3, v4, p1, p2, p3, p4
 
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity

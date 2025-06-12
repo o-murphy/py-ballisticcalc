@@ -5,7 +5,7 @@ from libc.math cimport fabs, sin, cos, tan, atan, atan2
 
 from py_ballisticcalc_exts.vector cimport CVector
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
-from py_ballisticcalc_exts.cy_euler cimport (
+from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     Wind_t,
     Atmosphere_t,

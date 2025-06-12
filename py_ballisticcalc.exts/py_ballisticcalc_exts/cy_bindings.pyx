@@ -1,3 +1,9 @@
+# Total Score: 158, Possible Score: 21000
+# Total Non-Empty Lines: 210
+# Python Overhead Lines: 19
+# Cythonization Percentage: 99.25%
+# Python Overhead Lines Percentage: 9.05%
+
 # noinspection PyUnresolvedReferences
 from cython cimport final
 from libc.stdlib cimport malloc, free
