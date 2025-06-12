@@ -7,15 +7,19 @@
 # ///
 
 import re
-from typing import Tuple, Dict
+from datetime import datetime
+import argparse # Import the argparse module
 from pathlib import Path
+from typing import Tuple, Dict
 
 from bs4 import BeautifulSoup
 
-
 PROJECT_ROOT = Path(__file__).parent.parent
-REPORTS_DIR = PROJECT_ROOT / "py_ballisticcalc.exts" / "py_ballisticcalc_exts"
+PROJECT_SRC = PROJECT_ROOT / 'py_ballisticcalc_exts'
+REPORTS_DIR = PROJECT_ROOT / "reports"
 HTML_REPORT_PATH = PROJECT_ROOT / "cythonization.html"
+MARKDOWN_REPORT_PATH = PROJECT_ROOT / "cythonization.md"
+
 
 def calculate_cythonization_percentage(html_content: str) -> (float, float, float):
     """
@@ -117,7 +121,6 @@ def compose_results(results: Dict[Path, Tuple[float, float, float]]) -> (float, 
     return (sum_col1, sum_col2, sum_col3)
 
 
-
 def print_result(name: str, result: Tuple[float, float, float]):
     result = format_result(*result)
     print(name)
@@ -140,7 +143,8 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
     Returns:
         A string containing the complete HTML report.
     """
-    html_content = """
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    html_content = f"""
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -148,79 +152,79 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Cythonization Report</title>
         <style>
-            body {
+            body {{
                 font-family: 'Inter', sans-serif; /* Using a common sans-serif font */
                 margin: 20px;
                 background-color: #f4f7f6;
                 color: #333;
                 line-height: 1.6;
-            }
-            .container {
+            }}
+            .container {{
                 max-width: 900px;
                 margin: 0 auto;
                 padding: 20px;
                 background-color: #ffffff;
                 border-radius: 12px;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }
-            h1 {
+            }}
+            h1 {{
                 color: #2c3e50;
                 text-align: center;
                 margin-bottom: 30px;
                 font-size: 2.5em;
                 border-bottom: 2px solid #e0e0e0;
                 padding-bottom: 15px;
-            }
-            h2 {
+            }}
+            h2 {{
                 color: #34495e;
                 margin-top: 40px;
                 margin-bottom: 20px;
                 font-size: 1.8em;
                 border-bottom: 1px solid #e0e0e0;
                 padding-bottom: 10px;
-            }
-            .file-section, .total-section {
+            }}
+            .file-section, .total-section {{
                 margin-bottom: 30px;
                 padding: 20px;
                 background-color: #ecf0f1;
                 border-radius: 8px;
                 box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            }
-            table {
+            }}
+            table {{
                 width: 100%;
                 border-collapse: collapse;
                 margin-top: 15px;
-            }
-            th, td {
+            }}
+            th, td {{
                 padding: 12px 15px;
                 border: 1px solid #ddd;
                 text-align: left;
-            }
-            th {
+            }}
+            th {{
                 background-color: #4a69bd;
                 color: white;
                 font-weight: bold;
-            }
-            tr:nth-child(even) {
+            }}
+            tr:nth-child(even) {{
                 background-color: #f9f9f9;
-            }
-            tr:hover {
+            }}
+            tr:hover {{
                 background-color: #f1f1f1;
-            }
-            .percentage {
+            }}
+            .percentage {{
                 font-weight: bold;
                 color: #27ae60; /* Green for good percentages */
-            }
-            .overhead-percentage {
+            }}
+            .overhead-percentage {{
                 font-weight: bold;
                 color: #e74c3c; /* Red for high overhead */
-            }
-            .footer {
+            }}
+            .footer {{
                 text-align: center;
                 margin-top: 40px;
                 font-size: 0.9em;
                 color: #7f8c8d;
-            }
+            }}
         </style>
     </head>
     <body>
@@ -251,7 +255,7 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
     # Add individual file reports
     for report_path, raw_result in results.items():
         formatted_result = format_result(*raw_result)
-        file_name = report_path.stem # Get just the file name without extension
+        file_name = report_path.stem  # Get just the file name without extension
         html_content += f"""
             <div class="file-section">
                 <h2>File: {file_name}.html</h2>
@@ -267,43 +271,138 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
             </div>
         """
 
-    html_content += """
+    html_content += f"""
             <div class="footer">
                 <p>&copy; 2023 Cythonization Reporter. Generated on {current_date}.</p>
             </div>
         </div>
     </body>
     </html>
-    """.format(current_date=Path.cwd().name) # A placeholder, replace with actual date if needed
+    """
 
     return html_content
 
 
-if __name__ == "__main__":
+def generate_markdown_report(results: Dict[Path, Tuple[float, float, float]]) -> str:
+    """
+    Generates a Markdown report summarizing Cythonization percentages for multiple files.
 
-    reports = (p for p in REPORTS_DIR.iterdir() if p.suffix == '.html')
+    Args:
+        results: A dictionary where keys are Path objects (file names) and values are
+                 tuples of (total_lines, total_score_sum, python_overhead_lines).
+
+    Returns:
+        A string containing the complete Markdown report.
+    """
+    current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    markdown_content = "# Cythonization Report\n\n"
+    markdown_content += "This report summarizes the Cythonization percentage for various source files, indicating the level of Python interaction within the compiled code.\n\n"
+
+    # Add overall summary
+    total_raw_result = compose_results(results)
+    total_formatted_result = format_result(*total_raw_result)
+
+    markdown_content += "---\n"
+    markdown_content += "## Overall Summary\n\n"
+    markdown_content += "| Metric                                 | Value       |\n"
+    markdown_content += "| :------------------------------------- | :---------- |\n"
+    markdown_content += f"| Total Score Sum                        | {total_formatted_result['total_score_sum']}      |\n"
+    markdown_content += f"| Possible Score                         | {total_formatted_result['total_lines'] * 100}      |\n"
+    markdown_content += f"| Total Non-Empty Lines                  | {total_formatted_result['total_lines']}      |\n"
+    markdown_content += f"| Python Overhead Lines                  | {total_formatted_result['python_overhead_lines']}      |\n"
+    markdown_content += f"| **Overall Cythonization Percentage** | **{total_formatted_result['cythonization_percentage']}%** |\n"
+    markdown_content += f"| **Overall Python Overhead Lines Percentage** | **{total_formatted_result['python_overhead_lines_percentage']}%** |\n\n"
+
+    # Add individual file reports
+    for report_path, raw_result in results.items():
+        formatted_result = format_result(*raw_result)
+        file_name = report_path.stem
+
+        markdown_content += "---\n"
+        markdown_content += f"## File: {file_name}.html\n\n"
+        markdown_content += "| Metric                         | Value       |\n"
+        markdown_content += "| :----------------------------- | :---------- |\n"
+        markdown_content += f"| Total Score Sum                | {formatted_result['total_score_sum']}      |\n"
+        markdown_content += f"| Possible Score                 | {formatted_result['total_lines'] * 100}      |\n"
+        markdown_content += f"| Total Non-Empty Lines          | {formatted_result['total_lines']}      |\n"
+        markdown_content += f"| Python Overhead Lines          | {formatted_result['python_overhead_lines']}      |\n"
+        markdown_content += f"| **Cythonization Percentage** | **{formatted_result['cythonization_percentage']}%** |\n"
+        markdown_content += f"| **Python Overhead Lines Percentage** | **{formatted_result['python_overhead_lines_percentage']}%** |\n\n"
+
+    markdown_content += "---\n"
+    markdown_content += f"Generated on {current_date}.\n"
+
+    return markdown_content
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate Cythonization reports from HTML annotation files.")
+    parser.add_argument(
+        "-i", "--input-dir",
+        type=str,
+        default=PROJECT_SRC.as_posix(),
+        help="Directory containing Cython HTML annotation files. Defaults to 'py_ballisticcalc.exts/py_ballisticcalc_exts' relative to script parent."
+    )
+    parser.add_argument(
+        "-o", "--output-dir",
+        type=str,
+        default=REPORTS_DIR.as_posix(),
+        help="Directory where the reports will be saved. Defaults to script's parent directory."
+    )
+    parser.add_argument(
+        "-f", "--format",
+        choices=["html", "markdown", "both"],
+        default="both",
+        help="Report format to generate: 'html', 'markdown', or 'both'. Defaults to 'both'."
+    )
+
+    args = parser.parse_args()
+
+    # Resolve paths based on arguments
+    reports_dir = Path(args.input_dir)
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True) # Ensure output directory exists
+
+    html_report_path = output_dir / "cythonization.html"
+    markdown_report_path = output_dir / "cythonization.md"
+
+    reports = (p for p in reports_dir.iterdir() if p.suffix == '.html')
     results = {}
     report: Path
     for report in reports:
-        with open(report) as html_file:
+        with open(report, 'r', encoding='utf-8') as html_file: # Added encoding
             html_content_from_file = html_file.read()
 
         results[report] = (calculate_cythonization_percentage(html_content_from_file))
+
+    if not results:
+        print("\nNo Cythonization reports found or processed to generate reports.")
+        return # Exit if no results
 
     for report, result in results.items():
         print_result(f"File: {report.stem} :", result)
 
     print_result("Total:", compose_results(results))
 
-    # Generate and save the HTML report
-    if results:
+    # Generate and save reports based on format argument
+    if args.format == "html" or args.format == "both":
         html_report_output = generate_html_report(results)
-        output_file_path = HTML_REPORT_PATH  # Save in the same directory as source htmls
         try:
-            with open(output_file_path, 'w', encoding='utf-8') as f:
+            with open(html_report_path, 'w', encoding='utf-8') as f:
                 f.write(html_report_output)
-            print(f"\nHTML report generated successfully: {output_file_path}")
+            print(f"\nHTML report generated successfully: {html_report_path}")
         except IOError as e:
-            print(f"Error saving HTML report to {output_file_path}: {e}")
-    else:
-        print("\nNo Cythonization reports found or processed to generate an HTML report.")
+            print(f"Error saving HTML report to {html_report_path}: {e}")
+
+    if args.format == "markdown" or args.format == "both":
+        markdown_report_output = generate_markdown_report(results)
+        try:
+            with open(markdown_report_path, 'w', encoding='utf-8') as f:
+                f.write(markdown_report_output)
+            print(f"Markdown report generated successfully: {markdown_report_path}")
+        except IOError as e:
+            print(f"Error saving Markdown report to {markdown_report_path}: {e}")
+
+
+if __name__ == "__main__":
+    main() # Call the main function

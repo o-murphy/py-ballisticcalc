@@ -8,6 +8,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
   [//]: # (    * [From sources]&#40;#installing-from-sources&#41;)
   [//]: # (  * [Clone and build]&#40;#clone-and-build&#41;)
 
+* **[Cythonization](https://raw.githack.com/o-murphy/py-ballisticcalc/RK4engine/py-ballisticcalc-exts/cythonization.html)**
 * **[Usage](#usage)**
   * [Simple example](#simple-zero)
   * [Plot trajectory](#plot-trajectory-with-danger-space)
