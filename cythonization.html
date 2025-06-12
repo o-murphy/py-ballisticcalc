@@ -1,0 +1,186 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Cythonization Report</title>
+        <style>
+            body {
+                font-family: 'Inter', sans-serif; /* Using a common sans-serif font */
+                margin: 20px;
+                background-color: #f4f7f6;
+                color: #333;
+                line-height: 1.6;
+            }
+            .container {
+                max-width: 900px;
+                margin: 0 auto;
+                padding: 20px;
+                background-color: #ffffff;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+            h1 {
+                color: #2c3e50;
+                text-align: center;
+                margin-bottom: 30px;
+                font-size: 2.5em;
+                border-bottom: 2px solid #e0e0e0;
+                padding-bottom: 15px;
+            }
+            h2 {
+                color: #34495e;
+                margin-top: 40px;
+                margin-bottom: 20px;
+                font-size: 1.8em;
+                border-bottom: 1px solid #e0e0e0;
+                padding-bottom: 10px;
+            }
+            .file-section, .total-section {
+                margin-bottom: 30px;
+                padding: 20px;
+                background-color: #ecf0f1;
+                border-radius: 8px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 15px;
+            }
+            th, td {
+                padding: 12px 15px;
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+            th {
+                background-color: #4a69bd;
+                color: white;
+                font-weight: bold;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            tr:hover {
+                background-color: #f1f1f1;
+            }
+            .percentage {
+                font-weight: bold;
+                color: #27ae60; /* Green for good percentages */
+            }
+            .overhead-percentage {
+                font-weight: bold;
+                color: #e74c3c; /* Red for high overhead */
+            }
+            .footer {
+                text-align: center;
+                margin-top: 40px;
+                font-size: 0.9em;
+                color: #7f8c8d;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Cythonization Report</h1>
+            <p>This report summarizes the Cythonization percentage for various source files, indicating the level of Python interaction within the compiled code.</p>
+    
+                <div class="total-section">
+                    <h2>Overall Summary</h2>
+                    <table>
+                        <tr><th>Metric</th><th>Value</th></tr>
+                        <tr><td>Total Score Sum</td><td>5701.0</td></tr>
+                        <tr><td>Possible Score</td><td>108100.0</td></tr>
+                        <tr><td>Total Non-Empty Lines</td><td>1081.0</td></tr>
+                        <tr><td>Python Overhead Lines</td><td>404.0</td></tr>
+                        <tr><td>Overall Cythonization Percentage</td><td class="percentage">94.73%</td></tr>
+                        <tr><td>Overall Python Overhead Lines Percentage</td><td class="overhead-percentage">37.37%</td></tr>
+                    </table>
+                </div>
+        
+            <div class="file-section">
+                <h2>File: base_engine.html</h2>
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Total Score Sum</td><td>2421</td></tr>
+                    <tr><td>Possible Score</td><td>36500</td></tr>
+                    <tr><td>Total Non-Empty Lines</td><td>365</td></tr>
+                    <tr><td>Python Overhead Lines</td><td>152</td></tr>
+                    <tr><td>Cythonization Percentage</td><td class="percentage">93.37%</td></tr>
+                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">41.64%</td></tr>
+                </table>
+            </div>
+        
+            <div class="file-section">
+                <h2>File: cy_bindings.html</h2>
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Total Score Sum</td><td>621</td></tr>
+                    <tr><td>Possible Score</td><td>19400</td></tr>
+                    <tr><td>Total Non-Empty Lines</td><td>194</td></tr>
+                    <tr><td>Python Overhead Lines</td><td>45</td></tr>
+                    <tr><td>Cythonization Percentage</td><td class="percentage">96.8%</td></tr>
+                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">23.2%</td></tr>
+                </table>
+            </div>
+        
+            <div class="file-section">
+                <h2>File: euler_engine.html</h2>
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Total Score Sum</td><td>205</td></tr>
+                    <tr><td>Possible Score</td><td>11100</td></tr>
+                    <tr><td>Total Non-Empty Lines</td><td>111</td></tr>
+                    <tr><td>Python Overhead Lines</td><td>22</td></tr>
+                    <tr><td>Cythonization Percentage</td><td class="percentage">98.15%</td></tr>
+                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">19.82%</td></tr>
+                </table>
+            </div>
+        
+            <div class="file-section">
+                <h2>File: rk4_engine.html</h2>
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Total Score Sum</td><td>205</td></tr>
+                    <tr><td>Possible Score</td><td>15900</td></tr>
+                    <tr><td>Total Non-Empty Lines</td><td>159</td></tr>
+                    <tr><td>Python Overhead Lines</td><td>22</td></tr>
+                    <tr><td>Cythonization Percentage</td><td class="percentage">98.71%</td></tr>
+                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">13.84%</td></tr>
+                </table>
+            </div>
+        
+            <div class="file-section">
+                <h2>File: trajectory_data.html</h2>
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Total Score Sum</td><td>1031</td></tr>
+                    <tr><td>Possible Score</td><td>10000</td></tr>
+                    <tr><td>Total Non-Empty Lines</td><td>100</td></tr>
+                    <tr><td>Python Overhead Lines</td><td>61</td></tr>
+                    <tr><td>Cythonization Percentage</td><td class="percentage">89.69%</td></tr>
+                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">61.0%</td></tr>
+                </table>
+            </div>
+        
+            <div class="file-section">
+                <h2>File: vector.html</h2>
+                <table>
+                    <tr><th>Metric</th><th>Value</th></tr>
+                    <tr><td>Total Score Sum</td><td>1218</td></tr>
+                    <tr><td>Possible Score</td><td>15200</td></tr>
+                    <tr><td>Total Non-Empty Lines</td><td>152</td></tr>
+                    <tr><td>Python Overhead Lines</td><td>102</td></tr>
+                    <tr><td>Cythonization Percentage</td><td class="percentage">91.99%</td></tr>
+                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">67.11%</td></tr>
+                </table>
+            </div>
+        
+            <div class="footer">
+                <p>&copy; 2023 Cythonization Reporter. Generated on py-ballisticcalc.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    
