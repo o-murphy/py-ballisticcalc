@@ -204,8 +204,9 @@ class HitResult:
         :return: Index of first trajectory row with .distance >= d; otherwise -1
         """
         # Get index of first trajectory point with distance >= at_range
+        epsilon = 1e-8  # small value to avoid floating point issues
         return next((i for i in range(len(self.trajectory))
-                     if self.trajectory[i].distance >= d), -1)
+                     if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)
 
     def get_at_distance(self, d: Distance) -> TrajectoryData:
         """
