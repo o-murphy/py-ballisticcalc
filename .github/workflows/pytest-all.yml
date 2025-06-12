@@ -29,7 +29,7 @@ jobs:
 
     # This is the key part: it tells GitHub Actions to execute the reusable workflow.
     # The path is relative to your repository's root directory.
-    uses: ./.github/workflows/reusable-test.yml
+    uses: ./.github/workflows/pytest-reusable.yml
     with:
       # Pass the current values from the matrix to the corresponding inputs of the reusable workflow.
       os: ${{ matrix.os }} # Passes the current OS (e.g., 'ubuntu-latest')
@@ -52,7 +52,7 @@ jobs:
         engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
 
     # Call the same reusable workflow for these minimal test combinations.
-    uses: ./.github/workflows/reusable-test.yml
+    uses: ./.github/workflows/pytest-reusable.yml
     with:
       # Pass the current matrix variables as inputs to the reusable workflow.
       os: ${{ matrix.os }}
