@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - '*'
-  workflow_dispatch:
 
 jobs:
   # Job for full matrix, runs ONLY on pull_request events
