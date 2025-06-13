@@ -13,7 +13,7 @@ jobs:
   # Job for full matrix, runs ONLY on pull_request events
   test_full_matrix:
     if: github.event_name == 'pull_request'
-    runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +30,7 @@ jobs:
   # Job for minimal matrix, runs ONLY on push events
   test_minimal_matrix:
     if: github.event_name == 'push'
-    runs-on: ${{ matrix.os }} # Fixed OS
+
     strategy:
       fail-fast: false
       matrix:

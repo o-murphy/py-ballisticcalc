@@ -10,8 +10,11 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
-[![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest.yml)
-[![Pytest RK4](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/rk4.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/rk4.yml)
+[![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
+[![Pytest RK4](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml)
+[![Pytest Euler (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml)
+[![Pytest RK4 (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml)
+[![Pytest Scipy](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml)
 
 [sources]:
 https://github.com/o-murphy/py-ballisticcalc
