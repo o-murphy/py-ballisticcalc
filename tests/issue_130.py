@@ -15,7 +15,7 @@ from py_ballisticcalc import (
     Calculator,
     Shot,
     Angular,
-    InterfaceConfigDict,
+    BaseEngineConfigDict,
     RangeError,
     HitResult,
 )
@@ -39,7 +39,7 @@ class WeaponData(NamedTuple):
             ammo=ammo,
             relative_angle=Angular.Degree(angle_in_degrees),
         )
-        config = InterfaceConfigDict(
+        config = BaseEngineConfigDict(
             cMinimumVelocity=0, cMinimumAltitude=-1, cMaximumDrop=-1
         )
 
