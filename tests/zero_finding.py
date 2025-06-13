@@ -5,7 +5,7 @@ import pytest
 
 from py_ballisticcalc import (
     Distance,
-    InterfaceConfigDict,
+    BaseEngineConfigDict,
     Calculator,
     DragModel,
     TableG1,
@@ -47,7 +47,7 @@ def create_shot():
 
 @pytest.fixture(autouse=True)
 def zero_min_velocity_calc(loaded_engine_instance):
-    config = InterfaceConfigDict(
+    config = BaseEngineConfigDict(
         cMinimumVelocity=0,
     )
     return Calculator(engine=loaded_engine_instance, config=config)
