@@ -106,7 +106,6 @@ class TrajectoryCalcRK4(TrajectoryCalc):
         data_filter.setup_seen_zero(range_vector[1], self.barrel_elevation, self.look_angle)
 
         while range_vector[0] <= maximum_range + min(self.calc_step, record_step):
-            data_filter.clear_current_flag()
 
             current_range = range_vector[0]
             if current_range >= wind_sock.next_range:
