@@ -65,7 +65,7 @@ def shot_with_relative_angle_in_degrees(angle_in_degrees: float):
 
 @pytest.fixture(autouse=True)
 def zero_min_velocity_calc(loaded_engine_instance):
-    config = InterfaceConfigDict(
+    config = BaseEngineConfigDict(
         cMinimumVelocity=0,
     )
     return Calculator(config=config, engine=loaded_engine_instance)
