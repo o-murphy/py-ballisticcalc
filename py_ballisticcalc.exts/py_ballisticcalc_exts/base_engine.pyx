@@ -68,9 +68,6 @@ cdef class _TrajectoryDataFilter:
             self.seen_zero |= CTrajFlag.ZERO_DOWN
         self.look_angle = look_angle
 
-    cdef void clear_current_flag(_TrajectoryDataFilter self):
-        self.current_flag = CTrajFlag.NONE
-
     cdef BaseTrajData should_record(_TrajectoryDataFilter self,
                             CVector position,
                             CVector velocity,
@@ -91,6 +88,7 @@ cdef class _TrajectoryDataFilter:
                 f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
             )
         #endregion
+        self.current_flag = CTrajFlag.NONE
         if (self.range_step > 0) and (position.x >= self.next_record_distance):
             while self.next_record_distance + self.range_step < position.x:
                 # Handle case where we have stepped past more than one record distance
