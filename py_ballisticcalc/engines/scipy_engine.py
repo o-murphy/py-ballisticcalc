@@ -1,12 +1,19 @@
+"""Computes trajectory using SciPy's solve_ivp; uses SciPy's root_scalar to get specific points.
+pytest tests --engine=SciPyIntegrationEngine
+TODO:
+ * Handle incomplete trajectories.
+ * Allow user to specify integration method (e.g., DOP853, RK45, etc.)
+ * Allow user to specify integration options (e.g., rtol, atol).
+"""
 import math
 import warnings
-from typing_extensions import Union, Tuple, List, Optional, override
 import numpy as np
-# from scipy.integrate import solve_ivp
-# from scipy.optimize import root_scalar
+from scipy.integrate import solve_ivp
+from scipy.optimize import root_scalar
+from typing_extensions import Union, Tuple, List, Optional, override
 
 from py_ballisticcalc.conditions import Shot, Wind
-from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, _TrajectoryDataFilter, create_trajectory_row
+from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, create_trajectory_row
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -58,12 +65,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
         """
 
-        try:
-            from scipy.integrate import solve_ivp
-            from scipy.optimize import root_scalar
-        except ImportError:
-            raise ImportError("SciPy is required for SciPyIntegrationEngine, please install it first")
-
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = self._config.cMaximumDrop
         _cMinimumAltitude = self._config.cMinimumAltitude
@@ -96,7 +97,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             x, y, z = s[:3]
             vx, vy, vz = s[3:]
             velocity_vector = Vector(vx, vy, vz)
-            
+
             wind_vector = wind_sock.wind_at_distance(x)
             if wind_vector is None:
                 relative_velocity = velocity_vector
@@ -134,7 +135,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         t_max = 50.0  # Arbitrary large time limit to ensure integration completes
 
-        sol = solve_ivp(diff_eq, (0, t_max), s0, method='RK45', dense_output=True,
+        sol = solve_ivp(diff_eq, (0, t_max), s0, method='DOP853', dense_output=True, rtol=1e-8,
                         events=[event_max_range, event_max_drop, event_min_velocity])
 
         #region Process the solution
@@ -178,7 +179,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                     # Use root_scalar to find t where x(t) == x_target
                     def x_minus_target(t):  # Function for root finding: x(t) - x_target
                         return sol.sol(t)[0] - x_target  # pylint: disable=cell-var-from-loop
-                    res = root_scalar(x_minus_target, bracket=[t_lo, t_hi], method='brentq', xtol=1e-14, rtol=1e-14)
+                    res = root_scalar(x_minus_target, bracket=[t_lo, t_hi], method='brentq')#, xtol=1e-14, rtol=1e-14)
                     # #region Newton's method to find root
                     # def dxdt(t):
                     #     return sol.sol(t)[3]  # vx(t)
@@ -230,5 +231,5 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         #         reason = RangeError.MinimumAltitudeReached
         #     raise RangeError(reason, ranges)
         #     # break
-        logger.debug(f"Done scipy integration")
+        #logger.debug(f"Done SciPy integration")
         return ranges
