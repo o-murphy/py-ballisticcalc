@@ -43,7 +43,6 @@ cdef class _TrajectoryDataFilter:
 
     # Removed "-> None" as it's not standard for pxd signatures
     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle)
-    cdef void clear_current_flag(_TrajectoryDataFilter self)
     cdef BaseTrajData should_record(_TrajectoryDataFilter self,
                             CVector position,
                             CVector velocity,

@@ -134,9 +134,6 @@ class _TrajectoryDataFilter:
             self.seen_zero |= TrajFlag.ZERO_DOWN
         self.look_angle: float = look_angle
 
-    def clear_current_flag(self):
-        self.current_flag = TrajFlag.NONE
-
     # pylint: disable=too-many-positional-arguments
     def should_record(self, position: Vector, velocity: Vector, mach: float,
                       time: float) -> Optional[BaseTrajData]:
@@ -148,6 +145,7 @@ class _TrajectoryDataFilter:
                 f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
             )
         # endregion
+        self.current_flag = TrajFlag.NONE
         data = None
         if (self.range_step > 0) and (position.x >= self.next_record_distance):
             while self.next_record_distance + self.range_step < position.x:

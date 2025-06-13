@@ -108,8 +108,6 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         while (range_vector.x <= maximum_range + min_step) or (
                 filter_flags and last_recorded_range <= maximum_range - 1e-6):
 
-            data_filter.clear_current_flag()
-
             # Update wind reading at current point in trajectory
             if range_vector.x >= self.ws.next_range:  # require check before call to improve performance
                 wind_vector = self.ws.vector_for_range(range_vector.x)
@@ -124,11 +122,11 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
                 # Record TrajectoryData row
                 data = data_filter.should_record(range_vector, velocity_vector, mach, time)
                 if data is not None:
-                    ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
-                                                        mag(&data.velocity), data.mach,
-                                                        cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
-                                                        density_factor, drag, self._shot_s.weight, data_filter.current_flag
-                                                        ))
+                    ranges.append(create_trajectory_row(
+                        data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
+                        cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
+                        density_factor, drag, self._shot_s.weight, data_filter.current_flag
+                    ))
                     last_recorded_range = data.position.x
             # endregion
 
