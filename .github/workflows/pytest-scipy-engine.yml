@@ -1,4 +1,4 @@
-name: Pytest RK4
+name: Pytest Scipy
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
-        engine: [ "rk4_engine" ]
+        engine: [ "scipy_engine" ]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:
@@ -36,7 +36,7 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         python-version: [ "3.9" ]
-        engine: [ "rk4_engine" ]
+        engine: [ "scipy_engine" ]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:

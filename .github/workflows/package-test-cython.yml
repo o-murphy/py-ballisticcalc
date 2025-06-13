@@ -10,41 +10,37 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  # Job for full matrix, runs ONLY on pull_request events
+  test_full_matrix:
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        engine: [ "cythonized_euler_engine" ]
 
-    runs-on: ${{ matrix.os }}
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+    uses: ./.github/workflows/pytest-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      engine_name: ${{ matrix.engine }}
 
-    - name: Validate exts version matching
-      run: |
-        uv pip install tomli
-        python hooks/version_check.py
+  # Job for minimal matrix, runs ONLY on push events
+  test_minimal_matrix:
+    if: github.event_name == 'push'
+    runs-on: ${{ matrix.os }} # Fixed OS
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        python-version: [ "3.9" ]
+        engine: [ "cythonized_euler_engine" ]
 
-    - name: Install the project
-      run: |
-        uv pip install -e .[dev]      
+    uses: ./.github/workflows/pytest-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      engine_name: ${{ matrix.engine }}
 
-    - name: Build cython modules
-      run: |
-        uv pip install -e ./py_ballisticcalc.exts
-
-    - name: Run unittest tests in binary mode
-      run: |
-        pytest tests --no-header -v --engine=CythonizedEulerIntegrationEngine
-        if [ $? -ne 0 ]; then
-          echo "Pytest failed, running without capture"
-          pytest tests -v --engine=CythonizedEulerIntegrationEngine
-        else
-          echo "Pytest succeeded."
-        fi
-      shell: bash
