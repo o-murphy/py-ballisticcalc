@@ -2,8 +2,8 @@ import math
 import warnings
 from typing_extensions import Union, Tuple, List, Optional, override
 import numpy as np
-from scipy.integrate import solve_ivp
-from scipy.optimize import root_scalar
+# from scipy.integrate import solve_ivp
+# from scipy.optimize import root_scalar
 
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, _TrajectoryDataFilter, create_trajectory_row
@@ -57,6 +57,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         Returns:
             List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
         """
+
+        try:
+            from scipy.integrate import solve_ivp
+            from scipy.optimize import root_scalar
+        except ImportError:
+            raise ImportError("SciPy is required for SciPyIntegrationEngine, please install it first")
 
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = self._config.cMaximumDrop
