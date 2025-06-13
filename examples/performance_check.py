@@ -140,6 +140,9 @@ def run_check(calc_, number):
 number = 120
 config = {}
 
+[print(f"Detected: {e}") for e in _EngineLoader.iter_engines()]
+print()
+
 for ep in _EngineLoader.iter_engines():
     engine = ep.load()
     print("Engine: %s" % ep.value)
@@ -148,6 +151,7 @@ for ep in _EngineLoader.iter_engines():
     print()
 
 from examples.integrators.euler_no_rec import EulerIntegrationNoRec
-print("Engine: Pure (yields)")
+print(f"Engine: {EulerIntegrationNoRec}")
 calc = Calculator(config=config, engine=EulerIntegrationNoRec)
 run_check(calc, number)
+
