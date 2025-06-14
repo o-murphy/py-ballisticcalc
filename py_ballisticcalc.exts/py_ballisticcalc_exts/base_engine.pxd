@@ -32,25 +32,41 @@ __all__ = (
 )
 
 
-@final
-cdef class _TrajectoryDataFilter:
-    cdef:
-        int filter, current_flag, seen_zero
-        # int current_item  # This variable was declared but unused in the original code. Keeping for completeness if it's meant to be used.
-        double previous_mach, previous_time, previous_v_mach, next_record_distance
-        double range_step, time_of_last_record, time_step, look_angle
-        CVector previous_position, previous_velocity
+cdef struct _TDF:
+    int filter, current_flag, seen_zero
+    double time_step, range_step
+    double time_of_last_record, next_record_distance
+    double previous_mach, previous_time
+    CVector previous_position, previous_velocity
+    double previous_v_mach
+    double look_angle
 
-    # Removed "-> None" as it's not standard for pxd signatures
-    cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle)
-    cdef BaseTrajData should_record(_TrajectoryDataFilter self,
-                            CVector position,
-                            CVector velocity,
-                            double mach,
-                            double time)
-    cdef void check_next_time(_TrajectoryDataFilter self, double time)
-    cdef void check_mach_crossing(_TrajectoryDataFilter self, double velocity, double mach)
-    cdef void check_zero_crossing(_TrajectoryDataFilter self, CVector range_vector)
+cdef _TDF newTDF(int filter_flags, double range_step,
+                  CVector initial_position, CVector initial_velocity,
+                  double time_step = ?)
+cdef void setup_seen_zero(_TDF * tdf, double height, double barrel_elevation, double look_angle)
+cdef BaseTrajData should_record(_TDF * tdf, CVector position, CVector velocity, double mach, double time)
+
+
+# @final
+# cdef class _TrajectoryDataFilter:
+#     cdef:
+#         int filter, current_flag, seen_zero
+#         # int current_item  # This variable was declared but unused in the original code. Keeping for completeness if it's meant to be used.
+#         double previous_mach, previous_time, previous_v_mach, next_record_distance
+#         double range_step, time_of_last_record, time_step, look_angle
+#         CVector previous_position, previous_velocity
+#
+#     # Removed "-> None" as it's not standard for pxd signatures
+#     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle)
+#     cdef BaseTrajData should_record(_TrajectoryDataFilter self,
+#                             CVector position,
+#                             CVector velocity,
+#                             double mach,
+#                             double time)
+#     cdef void check_next_time(_TrajectoryDataFilter self, double time)
+#     cdef void check_mach_crossing(_TrajectoryDataFilter self, double velocity, double mach)
+#     cdef void check_zero_crossing(_TrajectoryDataFilter self, CVector range_vector)
 
 
 @final
