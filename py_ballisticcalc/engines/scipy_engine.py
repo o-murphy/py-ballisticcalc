@@ -1,12 +1,14 @@
+"""Computes trajectory using SciPy's solve_ivp; uses SciPy's root_scalar to get specific points.
+pytest tests --engine=SciPyIntegrationEngine
+TODO:
+ * Handle incomplete trajectories; raise RangeErrors where appropriate.
+"""
 import math
 import warnings
 from typing_extensions import Union, Tuple, List, Optional, override
-import numpy as np
-# from scipy.integrate import solve_ivp
-# from scipy.optimize import root_scalar
 
 from py_ballisticcalc.conditions import Shot, Wind
-from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, _TrajectoryDataFilter, create_trajectory_row
+from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, create_trajectory_row
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -16,9 +18,8 @@ __all__ = ('SciPyIntegrationEngine',)
 
 
 class WindSock():
-    """Returns wind vector for an arbitrary location down-range."""
+    """Finds wind vector in effect at any distance down-range."""
     def __init__(self, winds: Union[Tuple["Wind", ...], None]):
-        # winds is a tuple of Wind objects
         # Sort winds by range, ascending
         self.winds = None
         if isinstance(winds, Wind):
@@ -37,6 +38,22 @@ class WindSock():
 
 
 class SciPyIntegrationEngine(BaseIntegrationEngine):
+
+    DEFAULT_MAX_TIME = 50.0  # Max flight time to simulate before stopping integration
+    DEFAULT_INTEGRATION_METHOD = 'DOP853'  # Default integration method for solve_ivp
+    DEFAULT_ERROR_TOLERANCE = 1e-8  # Default relative tolerance for integration
+
+    def __init__(self, config: BaseEngineConfigDict):
+        """
+        Initializes the SciPyIntegrationEngine with the given configuration and class defaults.
+
+        Args:
+            config: Configuration object containing parameters for the engine.
+        """
+        super().__init__(config)
+        self.max_time = self.DEFAULT_MAX_TIME
+        self.integration_method = self.DEFAULT_INTEGRATION_METHOD
+        self.error_tolerance = self.DEFAULT_ERROR_TOLERANCE
 
     @override
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
@@ -61,6 +78,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         try:
             from scipy.integrate import solve_ivp
             from scipy.optimize import root_scalar
+            import numpy as np
         except ImportError:
             raise ImportError("SciPy is required for SciPyIntegrationEngine, please install it first")
 
@@ -132,9 +150,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             return v - _cMinimumVelocity
         event_min_velocity.terminal = True  # type: ignore[attr-defined]
 
-        t_max = 50.0  # Arbitrary large time limit to ensure integration completes
-
-        sol = solve_ivp(diff_eq, (0, t_max), s0, method='RK45', dense_output=True,
+        sol = solve_ivp(diff_eq, (0, self.max_time), s0,
+                        method=self.integration_method, dense_output=True, rtol=self.error_tolerance,
                         events=[event_max_range, event_max_drop, event_min_velocity])
 
         #region Process the solution
@@ -178,7 +195,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                     # Use root_scalar to find t where x(t) == x_target
                     def x_minus_target(t):  # Function for root finding: x(t) - x_target
                         return sol.sol(t)[0] - x_target  # pylint: disable=cell-var-from-loop
-                    res = root_scalar(x_minus_target, bracket=[t_lo, t_hi], method='brentq', xtol=1e-14, rtol=1e-14)
+                    res = root_scalar(x_minus_target, bracket=[t_lo, t_hi], method='brentq') #, xtol=1e-14, rtol=1e-14)
                     # #region Newton's method to find root
                     # def dxdt(t):
                     #     return sol.sol(t)[3]  # vx(t)
@@ -230,5 +247,5 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         #         reason = RangeError.MinimumAltitudeReached
         #     raise RangeError(reason, ranges)
         #     # break
-        logger.debug(f"Done scipy integration")
+        #logger.debug(f"Done scipy integration")
         return ranges
