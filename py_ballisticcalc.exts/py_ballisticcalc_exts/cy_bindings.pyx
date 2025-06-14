@@ -140,7 +140,7 @@ cdef double cy_spin_drift(ShotData_t * t, double time):
     :param time: Time of flight
     :return: windage due to spin drift, in feet
     """
-    cdef int sign
+    cdef double sign
     if (t.twist != 0) and (t.stability_coefficient != 0):
         sign = 1 if t.twist > 0 else -1
         return sign * (1.25 * (t.stability_coefficient + 1.2) * pow(time, 1.83)) / 12

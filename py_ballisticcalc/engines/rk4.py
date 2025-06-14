@@ -83,7 +83,6 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
         while (range_vector.x <= maximum_range + min_step) or (
                 filter_flags and last_recorded_range <= maximum_range - 1e-6):
             it += 1
-            data_filter.clear_current_flag()
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
