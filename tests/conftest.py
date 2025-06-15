@@ -11,7 +11,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--engine",
         action="store",
-        default="py_ballisticcalc",
+        default=None,  # be sure to use the default value from _EngeneLoader
         help="Specify the engine entry point name"
     )
 
