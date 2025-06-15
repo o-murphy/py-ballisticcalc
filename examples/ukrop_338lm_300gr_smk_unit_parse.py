@@ -1,7 +1,7 @@
 """Example of library usage"""
 
 from py_ballisticcalc import *
-
+from py_ballisticcalc.unit import _parse_value, _parse_unit
 
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS
@@ -12,14 +12,14 @@ PreferredUnits.sight_height = Distance.Centimeter
 PreferredUnits.drop = Distance.Centimeter
 
 # define params with default prefer_units
-weight = Unit.parse_value('300gr', 'weight')  # using specified alias
-diameter = Unit.parse_value(0.338, 'in')  # using preferred alias of type(str)
+weight = _parse_value('300gr', 'weight')  # using specified alias
+diameter = _parse_value(0.338, 'in')  # using preferred alias of type(str)
 # or define with specified prefer_units
-length = Unit.parse_value('1.7', Unit.Inch)  # using preferred alias of type(Unit)
+length = _parse_value('1.7', Unit.Inch)  # using preferred alias of type(Unit)
 
 # by preferred alias by PreferredUnits modifier and numeric value
-weapon = Weapon(sight_height=Unit.parse_value(9, "sight_height"),
-                twist=Unit.parse_value(9, Unit.parse_unit("twist")))
+weapon = Weapon(sight_height=_parse_value(9, "sight_height"),
+                twist=_parse_value(9, _parse_unit("twist")))
 
 # no changes bellow
 dm = DragModel(0.381, TableG7, weight, diameter, length)

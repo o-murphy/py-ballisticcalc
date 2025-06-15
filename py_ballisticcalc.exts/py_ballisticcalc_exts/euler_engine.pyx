@@ -23,9 +23,14 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
-    _TrajectoryDataFilter,
+    # _TrajectoryDataFilter,
     _WindSock,
     create_trajectory_row,
+
+    _TDF,
+    newTDF,
+    should_record,
+    setup_seen_zero
 )
 
 import warnings
@@ -59,7 +64,8 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             CVector wind_vector = self.ws.current_vector()
             # endregion
 
-            _TrajectoryDataFilter data_filter
+            # _TrajectoryDataFilter data_filter
+            _TDF data_filter
             BaseTrajData data
 
         cdef:
@@ -71,6 +77,9 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         cdef:
             # temp vector
             CVector _tv
+
+        cdef:
+            double last_recorded_range
 
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity
@@ -84,35 +93,43 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
         min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
+        # data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
+        #                                     initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
+        # data_filter.setup_seen_zero(range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
+        data_filter = newTDF(filter_flags=filter_flags, range_step=record_step,
                         initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
-        data_filter.setup_seen_zero(range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
+        setup_seen_zero(&data_filter, range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
 
-        while range_vector.x <= maximum_range + min_step:
+        last_recorded_range = 0.0
 
-            data_filter.current_flag = CTrajFlag.NONE
+        while (range_vector.x <= maximum_range + min_step) or (
+                filter_flags and last_recorded_range <= maximum_range - 1e-6):
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self.ws.next_range:  # require check before call to improve performance
                 wind_vector = self.ws.vector_for_range(range_vector.x)
 
+            # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
             update_density_factor_and_mach_for_altitude(&self._shot_s.atmo,
                 self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
 
-            if filter_flags:
-
+            # region Check whether to record TrajectoryData row at current point
+            if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
-                data = data_filter.should_record(range_vector, velocity_vector, mach, time)
-                if data is not None:        
+                # data = data_filter.should_record(range_vector, velocity_vector, mach, time)
+                data = should_record(&data_filter, range_vector, velocity_vector, mach, time)
+                if data is not None:
                     ranges.append(create_trajectory_row(
                         data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
                         cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
                         density_factor, drag, self._shot_s.weight, data_filter.current_flag
                     ))
+                    last_recorded_range = data.position.x
+            # endregion
 
             #region Ballistic calculation step
             # use just cdef methods to maximize speed

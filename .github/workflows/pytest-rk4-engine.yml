@@ -1,0 +1,46 @@
+name: Pytest RK4
+
+on:
+  pull_request:
+    branches:
+      - '*'
+  push:
+    branches:
+      - '*'
+
+jobs:
+  # Job for full matrix, runs ONLY on pull_request events
+  test_full_matrix:
+    name: Run Full Matrix Tests (Pull Request)
+    if: github.event_name == 'pull_request'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
+        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ]
+        engine: [ "rk4_engine" ]
+
+    uses: ./.github/workflows/pytest-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      engine_name: ${{ matrix.engine }}
+
+  # Job for minimal matrix, runs ONLY on push events
+  test_minimal_matrix:
+    name: Run Minimal Matrix Tests (Push)
+    if: github.event_name == 'push'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest ]
+        python-version: [ "3.9" ]
+        engine: [ "rk4_engine" ]
+
+    uses: ./.github/workflows/pytest-reusable.yml
+    with:
+      os: ${{ matrix.os }}
+      python_version: ${{ matrix.python-version }}
+      engine_name: ${{ matrix.engine }}
