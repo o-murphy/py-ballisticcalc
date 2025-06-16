@@ -36,15 +36,14 @@ from py_ballisticcalc.engines.base_engine import create_base_engine_config
 __all__ = (
     'CythonizedBaseIntegrationEngine',
     '_WindSock',
-    '_TrajectoryDataFilter',
     'create_trajectory_row',
 )
 
 
-cdef _TDF newTDF(int filter_flags, double range_step,
+cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
                   CVector initial_position, CVector initial_velocity,
                   double time_step = 0.0):
-    return _TDF(
+    return _TrajectoryDataFilter(
         filter_flags, CTrajFlag.NONE, CTrajFlag.NONE,
         time_step, range_step,
         0.0, 0.0, 0.0, 0.0,
@@ -53,14 +52,14 @@ cdef _TDF newTDF(int filter_flags, double range_step,
         0.0, 0.0,
     )
 
-cdef void setup_seen_zero(_TDF * tdf, double height, double barrel_elevation, double look_angle):
+cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle):
     if height >= 0:
         tdf.seen_zero |= CTrajFlag.ZERO_UP
     elif height < 0 and barrel_elevation < look_angle:
         tdf.seen_zero |= CTrajFlag.ZERO_DOWN
     tdf.look_angle = look_angle
 
-cdef BaseTrajData should_record(_TDF * tdf, CVector position, CVector velocity, double mach, double time):
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, CVector position, CVector velocity, double mach, double time):
     cdef BaseTrajData data = None
     cdef double ratio
     cdef CVector temp_position, temp_velocity
@@ -122,18 +121,18 @@ cdef BaseTrajData should_record(_TDF * tdf, CVector position, CVector velocity, 
     # #endregion
     return data
 
-cdef void _check_next_time(_TDF * tdf, double time):
+cdef void _check_next_time(_TrajectoryDataFilter * tdf, double time):
         if time > tdf.time_of_last_record + tdf.time_step:
             tdf.current_flag |= CTrajFlag.RANGE
             tdf.time_of_last_record = time
 
-cdef void _check_mach_crossing(_TDF * tdf, double velocity, double mach):
+cdef void _check_mach_crossing(_TrajectoryDataFilter * tdf, double velocity, double mach):
     cdef double current_v_mach = velocity / mach
     if tdf.previous_v_mach > 1 >= current_v_mach:
         tdf.current_flag |= CTrajFlag.MACH
     tdf.previous_v_mach = current_v_mach
 
-cdef void _check_zero_crossing(_TDF * tdf, CVector range_vector):
+cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, CVector range_vector):
     if range_vector.x > 0:
         # Zero reference line is the sight line defined by look_angle
         reference_height = range_vector.x * tan(tdf.look_angle)
@@ -148,126 +147,6 @@ cdef void _check_zero_crossing(_TDF * tdf, CVector range_vector):
                 tdf.current_flag |= CTrajFlag.ZERO_DOWN
                 tdf.seen_zero |= CTrajFlag.ZERO_DOWN
 
-
-
-# @final
-# cdef class _TrajectoryDataFilter:
-#
-#     def __cinit__(_TrajectoryDataFilter self, int filter_flags, double range_step,
-#                   CVector initial_position, CVector initial_velocity, double time_step = 0.0) -> None:
-#         self.filter = filter_flags
-#         self.current_flag = CTrajFlag.NONE
-#         self.seen_zero = CTrajFlag.NONE
-#         self.time_step = time_step
-#         self.range_step = range_step
-#         self.time_of_last_record = 0.0
-#         self.next_record_distance = 0.0
-#         self.previous_mach = 0.0
-#         self.previous_time = 0.0
-#         self.previous_position = initial_position
-#         self.previous_velocity = initial_velocity
-#         self.previous_v_mach = 0.0
-#         self.look_angle = 0
-#
-#     cdef void setup_seen_zero(_TrajectoryDataFilter self, double height, double barrel_elevation, double look_angle):
-#         if height >= 0:
-#             self.seen_zero |= CTrajFlag.ZERO_UP
-#         elif height < 0 and barrel_elevation < look_angle:
-#             self.seen_zero |= CTrajFlag.ZERO_DOWN
-#         self.look_angle = look_angle
-#
-#     cdef BaseTrajData should_record(_TrajectoryDataFilter self,
-#                             CVector position,
-#                             CVector velocity,
-#                             double mach,
-#                             double time,
-#                             ):
-#         cdef BaseTrajData data = None
-#         cdef double ratio
-#         cdef CVector temp_position, temp_velocity
-#         cdef CVector temp_sub_position, temp_sub_velocity
-#         cdef CVector temp_mul_position, temp_mul_velocity
-#
-#         #region DEBUG
-#         if get_debug():
-#             logger.debug(
-#                 f"should_record called with time={time}, "
-#                 f"position=({position.x}, {position.y}, {position.z}), "
-#                 f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
-#             )
-#         #endregion
-#         self.current_flag = CTrajFlag.NONE
-#         if (self.range_step > 0) and (position.x >= self.next_record_distance):
-#             while self.next_record_distance + self.range_step < position.x:
-#                 # Handle case where we have stepped past more than one record distance
-#                 self.next_record_distance += self.range_step
-#             if position.x > self.previous_position.x:
-#                 # Interpolate to get BaseTrajData at the record distance
-#                 ratio = (self.next_record_distance - self.previous_position.x) / (position.x - self.previous_position.x)
-#                 temp_sub_position = sub(&position, &self.previous_position)
-#                 temp_mul_position = mul_c(&temp_sub_position, ratio)
-#                 temp_position = add(&self.previous_position, &temp_mul_position)
-#                 temp_sub_velocity = sub(&velocity, &self.previous_velocity)
-#                 temp_mul_velocity = mul_c(&temp_sub_velocity, ratio)
-#                 temp_velocity = add(&self.previous_velocity, &temp_mul_velocity)
-#                 data = BaseTrajData(
-#                     time=self.previous_time + (time - self.previous_time) * ratio,
-#                     position=temp_position,
-#                     velocity=temp_velocity,
-#                     mach=self.previous_mach + (mach - self.previous_mach) * ratio
-#                 )
-#             self.current_flag |= CTrajFlag.RANGE
-#             self.next_record_distance += self.range_step
-#             self.time_of_last_record = time
-#         elif self.time_step > 0:
-#             self.check_next_time(time)
-#         self.check_zero_crossing(position)
-#         self.check_mach_crossing(mag(&velocity), mach)
-#         if (self.current_flag & self.filter) != 0 and data is None:
-#             data = BaseTrajData(time=time, position=position,
-#                                 velocity=velocity, mach=mach)
-#         self.previous_time = time
-#         self.previous_position = position
-#         self.previous_velocity = velocity
-#         self.previous_mach = mach
-#         #region DEBUG
-#         if get_debug():
-#             if data is not None:
-#                 logger.debug(
-#                     f"should_record returning BaseTrajData time={data.time}, "
-#                     f"position=({data.position.x}, {data.position.y}, {data.position.z}), "
-#                     f"velocity=({data.velocity.x}, {data.velocity.y}, {data.velocity.z}), mach={data.mach}"
-#                 )
-#             else:
-#                 logger.debug("should_record returning None")
-#         #endregion
-#         return data
-#
-#     cdef void check_next_time(_TrajectoryDataFilter self, double time):
-#         if time > self.time_of_last_record + self.time_step:
-#             self.current_flag |= CTrajFlag.RANGE
-#             self.time_of_last_record = time
-#
-#     cdef void check_mach_crossing(_TrajectoryDataFilter self, double velocity, double mach):
-#         cdef double current_v_mach = velocity / mach
-#         if self.previous_v_mach > 1 >= current_v_mach:
-#             self.current_flag |= CTrajFlag.MACH
-#         self.previous_v_mach = current_v_mach
-#
-#     cdef void check_zero_crossing(_TrajectoryDataFilter self, CVector range_vector):
-#         if range_vector.x > 0:
-#             # Zero reference line is the sight line defined by look_angle
-#             reference_height = range_vector.x * tan(self.look_angle)
-#             # If we haven't seen ZERO_UP, we look for that first
-#             if not (self.seen_zero & CTrajFlag.ZERO_UP):
-#                 if range_vector.y >= reference_height:
-#                     self.current_flag |= CTrajFlag.ZERO_UP
-#                     self.seen_zero |= CTrajFlag.ZERO_UP
-#             # We've crossed above sight line; now look for crossing back through it
-#             elif not (self.seen_zero & CTrajFlag.ZERO_DOWN):
-#                 if range_vector.y < reference_height:
-#                     self.current_flag |= CTrajFlag.ZERO_DOWN
-#                     self.seen_zero |= CTrajFlag.ZERO_DOWN
 
 @final
 cdef class _WindSock:

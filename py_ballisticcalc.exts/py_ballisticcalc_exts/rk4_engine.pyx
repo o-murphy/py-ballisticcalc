@@ -23,12 +23,11 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
-    # _TrajectoryDataFilter,
+    _TrajectoryDataFilter,
     _WindSock,
     create_trajectory_row,
 
-    _TDF,
-    newTDF,
+    createTrajectoryDataFilter,
     should_record,
     setup_seen_zero
 )
@@ -64,8 +63,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             CVector wind_vector = self.ws.current_vector()
             # endregion
 
-            # _TrajectoryDataFilter data_filter
-            _TDF data_filter
+            _TrajectoryDataFilter data_filter
             BaseTrajData data
 
         cdef:
@@ -102,10 +100,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
         min_step = fmin(rk_calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        # data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
-        #                 initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
-        # data_filter.setup_seen_zero(range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
-        data_filter = newTDF(filter_flags=filter_flags, range_step=record_step,
+        data_filter = createTrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                         initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
         setup_seen_zero(&data_filter, range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
 
@@ -129,7 +124,6 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
-                # data = data_filter.should_record(range_vector, velocity_vector, mach, time)
                 data = should_record(&data_filter, range_vector, velocity_vector, mach, time)
                 if data is not None:
                     ranges.append(create_trajectory_row(
