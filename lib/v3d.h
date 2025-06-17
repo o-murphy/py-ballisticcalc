@@ -1,25 +1,25 @@
-// vec3.h
-#ifndef VEC3_H
-#define VEC3_H
+// V3d.h
+#ifndef V3D_H
+#define V3D_H
 
 #include <math.h> // For sqrtf (used by mag and norm)
 
-// Structure definition and typedef for Vec3
+// Structure definition and typedef for V3d
 typedef struct {
     float x;
     float y;
     float z;
-} Vec3;
+} V3d;
 
 // Function Prototypes (Declarations)
-Vec3 set(float x, float y, float z);
-Vec3 add(Vec3 v1, Vec3 v2);
-Vec3 sub(Vec3 v1, Vec3 v2);
-Vec3 mulS(Vec3 v, float scalar);
-float dot(Vec3 v1, Vec3 v2);
-float mag(Vec3 v);
-void norm(Vec3 *v);
-void print_vec(const char* name, Vec3 v);
+V3d set(float x, float y, float z);
+V3d add(V3d v1, V3d v2);
+V3d sub(V3d v1, V3d v2);
+V3d mulS(V3d v, float scalar);
+float dot(V3d v1, V3d v2);
+float mag(V3d v);
+void norm(V3d *v);
+void print_vec(const char* name, V3d v);
 
-#endif // VEC3_H
+#endif // V3D_H
 

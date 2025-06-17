@@ -3,7 +3,7 @@ import os
 
 print(os.getcwd())
 
-class Vec3(ctypes.Structure):
+class V3d(ctypes.Structure):
     _fields_ = [
         ("x", ctypes.c_float),
         ("y", ctypes.c_float),
@@ -11,7 +11,7 @@ class Vec3(ctypes.Structure):
     ]
 
     def __repr__(self):
-        return f"Vec3(x={self.x}, y={self.y}, z={self.z})"
+        return f"V3d(x={self.x}, y={self.y}, z={self.z})"
 
 if os.name == 'posix':
     if os.uname().sysname == 'Darwin':
@@ -34,43 +34,43 @@ except OSError as e:
 
 if _v3d_lib:
     _v3d_lib.set.argtypes = [ctypes.c_float, ctypes.c_float, ctypes.c_float]
-    _v3d_lib.set.restype = Vec3
-    def set(x: float, y: float, z: float) -> Vec3:
+    _v3d_lib.set.restype = V3d
+    def set(x: float, y: float, z: float) -> V3d:
         return _v3d_lib.set(x, y, z)
 
-    _v3d_lib.add.argtypes = [Vec3, Vec3]
-    _v3d_lib.add.restype = Vec3
-    def add(v1: Vec3, v2: Vec3) -> Vec3:
+    _v3d_lib.add.argtypes = [V3d, V3d]
+    _v3d_lib.add.restype = V3d
+    def add(v1: V3d, v2: V3d) -> V3d:
         return _v3d_lib.add(v1, v2)
 
-    _v3d_lib.sub.argtypes = [Vec3, Vec3]
-    _v3d_lib.sub.restype = Vec3
-    def sub(v1: Vec3, v2: Vec3) -> Vec3:
+    _v3d_lib.sub.argtypes = [V3d, V3d]
+    _v3d_lib.sub.restype = V3d
+    def sub(v1: V3d, v2: V3d) -> V3d:
         return _v3d_lib.sub(v1, v2)
 
-    _v3d_lib.mulS.argtypes = [Vec3, ctypes.c_float]
-    _v3d_lib.mulS.restype = Vec3
-    def mulS(v: Vec3, scalar: float) -> Vec3:
+    _v3d_lib.mulS.argtypes = [V3d, ctypes.c_float]
+    _v3d_lib.mulS.restype = V3d
+    def mulS(v: V3d, scalar: float) -> V3d:
         return _v3d_lib.mulS(v, scalar)
 
-    _v3d_lib.dot.argtypes = [Vec3, Vec3]
+    _v3d_lib.dot.argtypes = [V3d, V3d]
     _v3d_lib.dot.restype = ctypes.c_float
-    def dot(v1: Vec3, v2: Vec3) -> float:
+    def dot(v1: V3d, v2: V3d) -> float:
         return _v3d_lib.dot(v1, v2)
 
-    _v3d_lib.mag.argtypes = [Vec3]
+    _v3d_lib.mag.argtypes = [V3d]
     _v3d_lib.mag.restype = ctypes.c_float
-    def mag(v: Vec3) -> float:
+    def mag(v: V3d) -> float:
         return _v3d_lib.mag(v)
 
-    _v3d_lib.norm.argtypes = [ctypes.POINTER(Vec3)]
+    _v3d_lib.norm.argtypes = [ctypes.POINTER(V3d)]
     _v3d_lib.norm.restype = None
-    def norm(v: Vec3) -> None:
+    def norm(v: V3d) -> None:
         _v3d_lib.norm(ctypes.byref(v))
 
-    _v3d_lib.print_vec.argtypes = [ctypes.c_char_p, Vec3]
+    _v3d_lib.print_vec.argtypes = [ctypes.c_char_p, V3d]
     _v3d_lib.print_vec.restype = None
-    def print_vec(name: str, v: Vec3) -> None:
+    def print_vec(name: str, v: V3d) -> None:
         _v3d_lib.print_vec(name.encode('utf-8'), v)
 
 if __name__ == "__main__":

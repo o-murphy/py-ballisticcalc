@@ -5,57 +5,57 @@ typedef struct {
     float x;
     float y;
     float z;
-} Vec3; // Simplified type name
+} V3d; // Simplified type name
 
 // Function Prototypes
-Vec3 set(float x, float y, float z);
-Vec3 add(Vec3 v1, Vec3 v2);
-Vec3 sub(Vec3 v1, Vec3 v2);
-Vec3 mulS(Vec3 v, float scalar);
-float dot(Vec3 v1, Vec3 v2);
-float mag(Vec3 v);
-void norm(Vec3 *v); // Takes a pointer, modifies in place
-void print_vec(const char* name, Vec3 v);
+V3d set(float x, float y, float z);
+V3d add(V3d v1, V3d v2);
+V3d sub(V3d v1, V3d v2);
+V3d mulS(V3d v, float scalar);
+float dot(V3d v1, V3d v2);
+float mag(V3d v);
+void norm(V3d *v); // Takes a pointer, modifies in place
+void print_vec(const char* name, V3d v);
 
 // Function Implementations
-Vec3 set(float x, float y, float z) {
-    Vec3 v = {x, y, z};
+V3d set(float x, float y, float z) {
+    V3d v = {x, y, z};
     return v;
 }
 
-Vec3 add(Vec3 v1, Vec3 v2) {
-    Vec3 result;
+V3d add(V3d v1, V3d v2) {
+    V3d result;
     result.x = v1.x + v2.x;
     result.y = v1.y + v2.y;
     result.z = v1.z + v2.z;
     return result;
 }
 
-Vec3 sub(Vec3 v1, Vec3 v2) {
-    Vec3 result;
+V3d sub(V3d v1, V3d v2) {
+    V3d result;
     result.x = v1.x - v2.x;
     result.y = v1.y - v2.y;
     result.z = v1.z - v2.z;
     return result;
 }
 
-Vec3 mulS(Vec3 v, float scalar) {
-    Vec3 result;
+V3d mulS(V3d v, float scalar) {
+    V3d result;
     result.x = v.x * scalar;
     result.y = v.y * scalar;
     result.z = v.z * scalar;
     return result;
 }
 
-float dot(Vec3 v1, Vec3 v2) {
+float dot(V3d v1, V3d v2) {
     return (v1.x * v2.x) + (v1.y * v2.y) + (v1.z * v2.z);
 }
 
-float mag(Vec3 v) {
+float mag(V3d v) {
     return sqrtf((v.x * v.x) + (v.y * v.y) + (v.z * v.z));
 }
 
-void norm(Vec3 *v) {
+void norm(V3d *v) {
     float m = mag(*v);
     if (m == 0.0f) {
         printf("Warning: Cannot normalize a zero vector.\n");
@@ -69,7 +69,7 @@ void norm(Vec3 *v) {
     }
 }
 
-void print_vec(const char* name, Vec3 v) {
+void print_vec(const char* name, V3d v) {
     printf("%s = (%.2f, %.2f, %.2f)\n", name, v.x, v.y, v.z);
 }
 
@@ -77,25 +77,25 @@ void print_vec(const char* name, Vec3 v) {
 int main() {
     printf("--- 3D Vector Operations ---\n\n");
 
-    Vec3 a = set(1.0f, 2.0f, 3.0f);
-    Vec3 b = set(4.0f, -1.0f, 2.0f);
-    Vec3 c = set(0.0f, 0.0f, 0.0f);
+    V3d a = set(1.0f, 2.0f, 3.0f);
+    V3d b = set(4.0f, -1.0f, 2.0f);
+    V3d c = set(0.0f, 0.0f, 0.0f);
 
     print_vec("a", a);
     print_vec("b", b);
     print_vec("c", c);
     printf("\n");
 
-    Vec3 sum = add(a, b);
+    V3d sum = add(a, b);
     print_vec("a + b", sum);
     printf("\n");
 
-    Vec3 diff = sub(a, b);
+    V3d diff = sub(a, b);
     print_vec("a - b", diff);
     printf("\n");
 
     float s = 2.5f;
-    Vec3 scaled_a = mulS(a, s);
+    V3d scaled_a = mulS(a, s);
     printf("Scalar: %.2f\n", s);
     print_vec("a * scalar", scaled_a);
     printf("\n");
@@ -108,7 +108,7 @@ int main() {
     printf("Magnitude of a: %.2f\n", m);
     printf("\n");
 
-    Vec3 norm_a = a; // Make a copy if you want to keep 'a' unchanged
+    V3d norm_a = a; // Make a copy if you want to keep 'a' unchanged
     norm(&norm_a); // Normalize 'norm_a' in place
     print_vec("Normalized a", norm_a);
     printf("Magnitude of Normalized a: %.2f\n", mag(norm_a));
