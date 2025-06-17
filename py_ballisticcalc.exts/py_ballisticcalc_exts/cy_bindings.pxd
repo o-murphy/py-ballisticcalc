@@ -16,11 +16,11 @@ cdef struct CurvePoint_t:
 
 cdef struct Curve_t:
     CurvePoint_t * points
-    double length
+    size_t length
 
 cdef struct MachList_t:
     double * array
-    double length
+    size_t length
 
 cdef struct Atmosphere_t:
     double _t0
