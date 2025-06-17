@@ -2,6 +2,8 @@
 pytest tests --engine=SciPyIntegrationEngine
 TODO:
  * Handle incomplete trajectories; raise RangeErrors where appropriate.
+ * Implement all TrajFlags: ZERO_UP, ZERO_DOWN, MACH, APEX
+ * Use SciPy root finder for zero_angle() override
 """
 import math
 import warnings
@@ -28,11 +30,12 @@ class WindSock():
             self.winds = sorted(winds, key=lambda w: w.until_distance.raw_value)
 
     def wind_at_distance(self, distance: float) -> Optional[Vector]:
-        """Returns wind vector at specified distance."""
+        """Returns wind vector at specified distance, where distance is in feet."""
         if not self.winds:
             return None
         for wind in self.winds:  # TODO: use binary search for performance
-            if wind.until_distance.raw_value <= distance:
+            distance *= 12.0  # Convert distance to inches
+            if distance <= wind.until_distance.raw_value:
                 return wind.vector
         return self.winds[-1].vector
 
@@ -40,12 +43,13 @@ class WindSock():
 class SciPyIntegrationEngine(BaseIntegrationEngine):
 
     DEFAULT_MAX_TIME = 50.0  # Max flight time to simulate before stopping integration
-    DEFAULT_INTEGRATION_METHOD = 'DOP853'  # Default integration method for solve_ivp
     DEFAULT_ERROR_TOLERANCE = 1e-8  # Default relative tolerance for integration
+    DEFAULT_INTEGRATION_METHOD = 'DOP853'  # Default integration method for solve_ivp
+    # Other recommended methods: 'BDF', 'LSODA', 'Radau'
 
     def __init__(self, config: BaseEngineConfigDict):
         """
-        Initializes the SciPyIntegrationEngine with the given configuration and class defaults.
+        Initialize the SciPyIntegrationEngine with the given configuration and class defaults.
 
         Args:
             config: Configuration object containing parameters for the engine.
@@ -65,11 +69,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             shot_info (Shot):  Information about the shot.
             maximum_range (float): Feet down range to stop calculation
             record_step (float): Frequency (in feet down range) to record TrajectoryData
-            filter_flags (Union[TrajFlag, int]): Flags to filter trajectory data.
-            time_step (float, optional): If > 0 then record TrajectoryData after this many seconds elapse
-                since last record, as could happen when trajectory is nearly vertical
-                and there is too little movement downrange to trigger a record based on range.
-                Defaults to 0.0
+            filter_flags (Union[TrajFlag, int]): Flags for TrajectoryData points of interest.
+            time_step (float, optional): Not used in this implementation.
 
         Returns:
             List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
@@ -80,7 +81,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             from scipy.optimize import root_scalar
             import numpy as np
         except ImportError:
-            raise ImportError("SciPy is required for SciPyIntegrationEngine, please install it first")
+            raise ImportError("SciPy is required for SciPyIntegrationEngine, please install it.")
+        if time_step > 0.0:
+            warnings.warn("time_step is not used in SciPyIntegrationEngine, ignoring it.")
 
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = self._config.cMaximumDrop
@@ -114,7 +117,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             x, y, z = s[:3]
             vx, vy, vz = s[3:]
             velocity_vector = Vector(vx, vy, vz)
-            
+
             wind_vector = wind_sock.wind_at_distance(x)
             if wind_vector is None:
                 relative_velocity = velocity_vector
@@ -162,7 +165,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         t_vals = sol.t
         # Interpolate to find the time when each desired x is reached
         t_at_x = np.interp(desired_xs, x_vals, t_vals)
-        if sol.sol is not None:
+        if sol.sol is not None and sol.status != -1:
             #region Basic approach to interpolate for desired x values:
             # # This is not very good: distance from requested x varies by ~1% of max_range
             # states_at_x = sol.sol(t_at_x)  # shape: (state_dim, len(desired_xs))
@@ -219,33 +222,32 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 velocity = Vector(*states_at_x[3:6, i])
                 velocity_magnitude = velocity.magnitude()
                 density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + position[1])
+                drag = density_factor * velocity_magnitude * self.drag_by_mach(velocity_magnitude / mach)
                 ranges.append(create_trajectory_row(
                     t, position, velocity, velocity_magnitude, mach,
                     self.spin_drift(t), self.look_angle,
                     density_factor, drag, self.weight, TrajFlag.RANGE
                 ))
             #endregion Root-finding approach to interpolate for desired x values
+
+            logger.info(f"SciPy integration complete with {sol.nfev} function calls.")
+            if sol.status == 1:  # A termination event occurred
+                if len(sol.t_events) > 0:
+                    reason = None
+                    # if sol.t_events[0].size > 0:  # Typical termination event
+                    #     logger.info(f"Integration stopped at max range: {sol.t_events[0][0]}")
+                    if sol.t_events[1].size > 0:  # event_max_drop
+                        y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
+                        if y < _cMaximumDrop:
+                            reason = RangeError.MaximumDropReached
+                        else:
+                            reason = RangeError.MinimumAltitudeReached
+                    elif sol.t_events[2].size > 0:  # event_min_velocity
+                        reason = RangeError.MinimumVelocityReached
+
+                    if reason is not None:
+                        raise RangeError(reason, ranges)
         else:
             logger.warning("No solution found by SciPy integration.")
         #endregion Process the solution
-
-        # if (
-        #         velocity < _cMinimumVelocity
-        #         or range_vector.y < _cMaximumDrop
-        #         or self.alt0 + range_vector.y < _cMinimumAltitude
-        # ):
-        #     ranges.append(create_trajectory_row(
-        #         time, range_vector, velocity_vector,
-        #         velocity, mach, self.spin_drift(time), self.look_angle,
-        #         density_factor, drag, self.weight, data_filter.current_flag
-        #     ))
-        #     if velocity < _cMinimumVelocity:
-        #         reason = RangeError.MinimumVelocityReached
-        #     elif range_vector.y < _cMaximumDrop:
-        #         reason = RangeError.MaximumDropReached
-        #     else:
-        #         reason = RangeError.MinimumAltitudeReached
-        #     raise RangeError(reason, ranges)
-        #     # break
-        #logger.debug(f"Done scipy integration")
         return ranges
