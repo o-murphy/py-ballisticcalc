@@ -1124,3 +1124,35 @@ void freeMachList(MachListT *machList) {
     }
     machList->length = 0;
 }
+
+// Implementation for freeDragTable
+void freeDragTable(DragTableT *table) {
+    if (table != NULL) {
+        // Assuming 'table->table' is a dynamically allocated array of DragPointT
+        // that needs to be freed. If DragTableT has other dynamically allocated
+        // members, they should also be freed here.
+        if (table->table != NULL) {
+            free(table->table);
+            table->table = NULL; // Good practice to set to NULL after freeing
+        }
+        // If DragTableT itself was dynamically allocated, you might free 'table' here.
+        // However, based on typical usage, it's often passed as a pointer
+        // and its memory might be managed by the caller, so we only free its internal
+        // dynamically allocated members.
+    }
+}
+
+// Implementation for freeCurve
+void freeCurve(CurveT *curve) {
+    if (curve != NULL) {
+        // Assuming 'curve->points' is a dynamically allocated array of V3dT points
+        // that needs to be freed. If CurveT has other dynamically allocated
+        // members, they should also be freed here.
+        if (curve->points != NULL) {
+            free(curve->points);
+            curve->points = NULL; // Good practice to set to NULL after freeing
+        }
+        // Similar to freeDragTable, if CurveT itself was dynamically allocated,
+        // you might free 'curve' here.
+    }
+}
