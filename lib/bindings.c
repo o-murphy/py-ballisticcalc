@@ -346,15 +346,15 @@ void freeDragTable(DragTableT *table) {
     }
 }
 
-void freeTrajectory(ShotDataT *t) {
-    if (t == NULL) {
-        fprintf(stderr, "Warning: Attempted to free a NULL ShotDataT pointer.\n");
-        return;
-    }
-    freeCurve(&t->curve);
-    freeMachList(&t->machList);
-    // If DragTable was part of ShotDataT, it would be freed here as well
-}
+// void freeTrajectory(ShotDataT *t) {
+//     if (t == NULL) {
+//         fprintf(stderr, "Warning: Attempted to free a NULL ShotDataT pointer.\n");
+//         return;
+//     }
+//     freeCurve(&t->curve);
+//     freeMachList(&t->machList);
+//     // If DragTable was part of ShotDataT, it would be freed here as well
+// }
 
 double getCorrection(double distance, double offset) {
     if (distance != 0.0) {

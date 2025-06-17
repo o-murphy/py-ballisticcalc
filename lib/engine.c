@@ -4,14 +4,14 @@
 #include "trajectoryData.h"
 #include "engine.h"
 
-TrajectoryDataFilter createTrajectoryDataFilter(
+TrajectoryDataFilterT createTrajectoryDataFilterT(
     int filterFlags, double rangeStep,
     V3d initialPosition, V3d initialVelocity,
     double timeStep // Default value of 0.0 handled by caller or specific logic
 ) {
     // Initialize the struct using designated initializers
     // and your TrajFlag enum where appropriate.
-    TrajectoryDataFilter tdf = {
+    TrajectoryDataFilterT tdf = {
         .filter = filterFlags,
         .currentFlag = TRAJ_NONE,    // Using the enum member explicitly
         .seenZero = TRAJ_NONE,       // Using the enum member explicitly
@@ -30,7 +30,7 @@ TrajectoryDataFilter createTrajectoryDataFilter(
     return tdf;
 }
 
-void setupSeenZero(TrajectoryDataFilter *tdf, double height, double barrelElevation, double lookAngle) {
+void setupSeenZero(TrajectoryDataFilterT *tdf, double height, double barrelElevation, double lookAngle) {
     if (height >= 0) {
         tdf->seenZero |= TRAJ_ZERO_UP; // Use TRAJ_ZERO_UP from your C enum
     } else if (height < 0 && barrelElevation < lookAngle) {
@@ -40,7 +40,7 @@ void setupSeenZero(TrajectoryDataFilter *tdf, double height, double barrelElevat
 }
 
 // Helper to check and set the RANGE flag based on time step
-static void checkNextTime(TrajectoryDataFilter *tdf, double time) {
+static void checkNextTime(TrajectoryDataFilterT *tdf, double time) {
     if (time > tdf->timeOfLastRecord + tdf->timeStep) {
         tdf->currentFlag |= TRAJ_RANGE; // Use C enum
         tdf->timeOfLastRecord = time;
@@ -48,7 +48,7 @@ static void checkNextTime(TrajectoryDataFilter *tdf, double time) {
 }
 
 // Helper to check and set the MACH flag based on Mach crossing
-static void checkMachCrossing(TrajectoryDataFilter *tdf, double velocity, double mach) {
+static void checkMachCrossing(TrajectoryDataFilterT *tdf, double velocity, double mach) {
     double currentVMach = velocity / mach; // No need for 'cdef' in C
     if (tdf->previousVMach > 1 && 1 >= currentVMach) {
         tdf->currentFlag |= TRAJ_MACH; // Use C enum
@@ -57,7 +57,7 @@ static void checkMachCrossing(TrajectoryDataFilter *tdf, double velocity, double
 }
 
 // Helper to check and set ZERO_UP/ZERO_DOWN flags based on zero crossing
-static void checkZeroCrossing(TrajectoryDataFilter *tdf, V3d rangeVector) {
+static void checkZeroCrossing(TrajectoryDataFilterT *tdf, V3d rangeVector) {
     if (rangeVector.x > 0) {
         double referenceHeight = rangeVector.x * tan(tdf->lookAngle); // tan() from <math.h>
 
@@ -77,7 +77,7 @@ static void checkZeroCrossing(TrajectoryDataFilter *tdf, V3d rangeVector) {
     }
 }
 
-BaseTrajDataT* shouldRecord(TrajectoryDataFilter *tdf, V3d position, V3d velocity, double mach, double time) {
+BaseTrajDataT* shouldRecord(TrajectoryDataFilterT *tdf, V3d position, V3d velocity, double mach, double time) {
     // Initialize data pointer to NULL. This will be returned if no record is generated.
     BaseTrajDataT *data = NULL;
     double ratio;
@@ -159,31 +159,31 @@ BaseTrajDataT* shouldRecord(TrajectoryDataFilter *tdf, V3d position, V3d velocit
 }
 
 
-EngineT createEngine(ConfigT *config) {
-    // Check for NULL config pointer
-    if (config == NULL) {
-        fprintf(stderr, "Error: createEngine called with NULL config pointer.\n");
-        // Return a zero-initialized EngineT as an error state
-        return (EngineT){0}; // This initializes all members to 0/NULL/false
-    }
+// EngineT createEngine(ConfigT *config) {
+//     // Check for NULL config pointer
+//     if (config == NULL) {
+//         fprintf(stderr, "Error: createEngine called with NULL config pointer.\n");
+//         // Return a zero-initialized EngineT as an error state
+//         return (EngineT){0}; // This initializes all members to 0/NULL/false
+//     }
 
-    // Correct use of compound literal with designated initializers for EngineT
-    EngineT engine = {
-        .config = *config, // Correct: Dereference config pointer to copy the struct
-        .gravityVector = set(0.0, config->cGravityConstant, 0.0), // Use your set function for V3d
-        // Or if you prefer a V3d compound literal directly:
-        // .gravityVector = (V3d){0.0, config->cGravityConstant, 0.0},
-        .tableData = (DragTableT){0}, // Example: Zero-initialize if it's a struct by value
-        .ws = (WindSockT){0},         // Example: Zero-initialize if it's a struct by value
-        .sd = (ShotDataT){0}          // Example: Zero-initialize if it's a struct by value
-    };
+//     // Correct use of compound literal with designated initializers for EngineT
+//     EngineT engine = {
+//         .config = *config, // Correct: Dereference config pointer to copy the struct
+//         .gravityVector = set(0.0, config->cGravityConstant, 0.0), // Use your set function for V3d
+//         // Or if you prefer a V3d compound literal directly:
+//         // .gravityVector = (V3d){0.0, config->cGravityConstant, 0.0},
+//         .tableData = (DragTableT){0}, // Example: Zero-initialize if it's a struct by value
+//         .ws = (WindSockT){0},         // Example: Zero-initialize if it's a struct by value
+//         .sd = (ShotDataT){0}          // Example: Zero-initialize if it's a struct by value
+//     };
 
-    // If any member (like ws.winds) is a pointer that needs dynamic allocation,
-    // you would do that *after* this initialization. E.g.:
-    // engine.ws.winds = (WindT*)malloc(INITIAL_WIND_ARRAY_SIZE * sizeof(WindT));
-    // if (engine.ws.winds == NULL) { /* handle error, free other stuff */ }
-    // engine.ws.length = INITIAL_WIND_ARRAY_SIZE;
-    // engine.ws.current = 0;
+//     // If any member (like ws.winds) is a pointer that needs dynamic allocation,
+//     // you would do that *after* this initialization. E.g.:
+//     // engine.ws.winds = (WindT*)malloc(INITIAL_WIND_ARRAY_SIZE * sizeof(WindT));
+//     // if (engine.ws.winds == NULL) { /* handle error, free other stuff */ }
+//     // engine.ws.length = INITIAL_WIND_ARRAY_SIZE;
+//     // engine.ws.current = 0;
 
-    return engine;
-}
+//     return engine;
+// }

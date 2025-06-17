@@ -14,18 +14,18 @@ typedef struct {
     V3d previousPosition, previousVelocity;
     double previousVMach;
     double lookAngle;
-} TrajectoryDataFilter;
+} TrajectoryDataFilterT;
 
-TrajectoryDataFilter createTrajectoryDataFilter(
+TrajectoryDataFilterT createTrajectoryDataFilterT(
     int filterFlags, double rangeStep,
     V3d initialPosition, V3d initialVelocity,
     double timeStep
 );
-void setupSeenZero(TrajectoryDataFilter * tdf, double height, double barrelElevation, double lookAngle);
-static void checkNextTime(TrajectoryDataFilter *tdf, double time);
-static void checkMachCrossing(TrajectoryDataFilter *tdf, double velocity, double mach);
-static void checkZeroCrossing(TrajectoryDataFilter *tdf, V3d rangeVector);
-BaseTrajDataT* shouldRecord(TrajectoryDataFilter *tdf, V3d position, V3d velocity, double mach, double time);
+void setupSeenZero(TrajectoryDataFilterT * tdf, double height, double barrelElevation, double lookAngle);
+static void checkNextTime(TrajectoryDataFilterT *tdf, double time);
+static void checkMachCrossing(TrajectoryDataFilterT *tdf, double velocity, double mach);
+static void checkZeroCrossing(TrajectoryDataFilterT *tdf, V3d rangeVector);
+BaseTrajDataT* shouldRecord(TrajectoryDataFilterT *tdf, V3d position, V3d velocity, double mach, double time);
 
 typedef struct {
     WindT * winds;
@@ -38,16 +38,16 @@ V3d currentVector(WindSockT * ws);
 void updateCache(WindSockT * ws);
 V3d vectorForRange(WindSockT * ws, double nextRange);
 
-// --- EngineT Definition ---
-typedef struct {
-    ConfigT config;
-    V3d gravityVector;
-    DragTableT tableData;
-    WindSockT ws;
-    ShotDataT sd;
-} EngineT;
+// // --- EngineT Definition ---
+// typedef struct {
+//     ConfigT config;
+//     V3d gravityVector;
+//     DragTableT tableData;
+//     WindSockT ws;
+//     ShotDataT sd;
+// } EngineT;
 
-EngineT createEngine(ConfigT * config);
+// EngineT createEngine(ConfigT * config);
 
 // --- EngineT Function Prototypes ---
 // void initTrajectory(EngineT *engine);

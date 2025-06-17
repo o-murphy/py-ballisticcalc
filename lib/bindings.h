@@ -117,7 +117,6 @@ double calculateOGW(double bulletWeight, double velocity);
 void freeDragTable(DragTableT *table); // Needs semicolon here!
 void freeCurve(CurveT * curve);       // Needs semicolon here!
 void freeMachList(MachListT * machList); // Needs semicolon here!
-void freeTrajectory(ShotDataT * shotData); // Needs semicolon here!
 
 V3d windToVector(const WindT *w);
 
