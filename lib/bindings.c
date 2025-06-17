@@ -1,4 +1,5 @@
 #include "bindings.h" // Include your own header first
+#include "v3d.h"
 #include <stdlib.h>   // For malloc, free
 #include <stdio.h>    // For fprintf, stderr
 #include <math.h>     // For pow, fabs, atan2, cos, sin, sqrt
@@ -40,7 +41,7 @@ double getCalcStep(ConfigT * config, double step) {
     }
 }
 
-MachListT tableToMach(DragTable * table) {
+MachListT tableToMach(DragTableT * table) {
     MachListT machList;
     machList.length = table->length;
 
@@ -58,7 +59,7 @@ MachListT tableToMach(DragTable * table) {
     return machList;
 }
 
-CurveT calculateCurve(DragTable * table) {
+CurveT calculateCurve(DragTableT * table) {
     CurveT curve;
     CurvePointT * curve_points;
     size_t i;
@@ -334,7 +335,7 @@ void freeMachList(MachListT *machList) {
     }
 }
 
-void freeDragTable(DragTable *table) {
+void freeDragTable(DragTableT *table) {
     if (table == NULL) {
         fprintf(stderr, "Warning: Attempted to free a NULL DragTable pointer.\n");
         return;
@@ -448,8 +449,9 @@ void updateDensityFactorAndMatchForAltitude(
     }
 }
 
-V3d windToVector(WindT * w) {
+V3d windToVector(const WindT *w) { // Added const as input 'w' isn't modified
     V3d result;
+
     if (w == NULL) {
         fprintf(stderr, "Error: NULL WindT pointer passed to windToVector.\n");
         result.x = 0.0;
@@ -462,7 +464,7 @@ V3d windToVector(WindT * w) {
     double cross_component = w->velocity * sin(w->directionFrom);
 
     result.x = range_component;
-    result.y = 0.0;
+    result.y = 0.0; // Wind often acts horizontally, so Y (vertical) component is zero
     result.z = cross_component;
 
     return result;

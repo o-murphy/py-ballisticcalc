@@ -86,7 +86,7 @@ typedef struct {
     // because you're accessing `table->points[i].Mach` in tableToMach and calculateCurve.
     DragTablePoint * points;
     size_t length;
-} DragTable;
+} DragTableT;
 
 typedef struct {
     double velocity;
@@ -102,8 +102,8 @@ void updateDensityFactorAndMatchForAltitude(AtmosphereT * atmo, double altitude,
 
 double getCalcStepDefault(ConfigT * config);
 double getCalcStep(ConfigT * config, double step);
-MachListT tableToMach(DragTable * table);
-CurveT calculateCurve(DragTable * table);
+MachListT tableToMach(DragTableT * table);
+CurveT calculateCurve(DragTableT * table);
 double calculateByCurveAndMachList(MachListT * machList, CurveT * curve, double mach);
 double spinDrift(ShotDataT * shotData, double time);
 double dragByMach(ShotDataT * shotData, double mach);
@@ -114,11 +114,11 @@ double calculateEnergy(double bulletWeight, double velocity);
 double calculateOGW(double bulletWeight, double velocity);
 
 // Memory deallocation functions
-void freeDragTable(DragTable *table); // Needs semicolon here!
+void freeDragTable(DragTableT *table); // Needs semicolon here!
 void freeCurve(CurveT * curve);       // Needs semicolon here!
 void freeMachList(MachListT * machList); // Needs semicolon here!
 void freeTrajectory(ShotDataT * shotData); // Needs semicolon here!
 
-V3d windToVector(WindT * wind);
+V3d windToVector(const WindT *w);
 
 #endif // BINDINGS_H

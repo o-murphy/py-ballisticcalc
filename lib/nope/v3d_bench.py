@@ -1,7 +1,7 @@
 # Assuming 'v3d.py' contains your original code (V3d class and all function definitions)
 # Make sure v3d.py is in the same directory or on your Python path.
 import timeit
-from v3d import set, add, sub, mulS, dot, mag, norm, V3d, _v3d_lib # Import all necessary components
+from lib.nope.v3d import set, add, sub, mulS, dot, mag, norm, V3d, _v3d_lib # Import all necessary components
 from py_ballisticcalc import Vector
 
 if _v3d_lib:

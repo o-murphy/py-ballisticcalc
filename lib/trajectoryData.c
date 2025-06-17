@@ -45,6 +45,12 @@ typedef struct {
     double energy;          // Kinetic energy of the projectile
     double ogw;             // Optimal Game Weight (OGW) or similar metric
     int flag;               // Bit flags from TrajFlag enum
-} TrajectoryData; // Renamed from TrajectoryDataT for direct use.
+} TrajectoryDataPointT; // Renamed from TrajectoryDataT for direct use.
+
+typedef struct {
+    TrajectoryDataPointT * points;
+    size_t length;
+} TrajectoryDataT;
+
 
 #endif // TRAJECTORY_DATA_H

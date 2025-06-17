@@ -3,17 +3,16 @@
 
 #include "v3d.h"
 
-// Corrected TrajFlag enum
-typedef enum { // Using typedef enum for convenience
-    NONE = 0,
-    ZERO_UP = 1,
-    ZERO_DOWN = 2,
-    ZERO = ZERO_UP | ZERO_DOWN,
-    MACH = 4,
-    RANGE = 8,
-    APEX = 16,
-    ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
-} TrajFlag; // Semicolon after the closing brace is crucial
+typedef enum {
+    TRAJ_NONE = 0,
+    TRAJ_ZERO_UP = 1,
+    TRAJ_ZERO_DOWN = 2,
+    TRAJ_ZERO = TRAJ_ZERO_UP | TRAJ_ZERO_DOWN, // This is a bitwise OR operation
+    TRAJ_MACH = 4,
+    TRAJ_RANGE = 8,
+    TRAJ_APEX = 16,
+    TRAJ_ALL = TRAJ_RANGE | TRAJ_ZERO_UP | TRAJ_ZERO_DOWN | TRAJ_MACH | TRAJ_APEX
+} TrajFlag;
 
 // Corrected BaseTrajData struct (already good, just adding for completeness)
 typedef struct {
