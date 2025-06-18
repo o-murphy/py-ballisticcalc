@@ -38,7 +38,7 @@ int initDataFilter(TrajectoryDataFilterT *tdf, int filterFlags, double rangeStep
     return 0; // Success
 }
 
-static void checkNextTime(TrajectoryDataFilterT *tdf, double time) {
+void checkNextTime(TrajectoryDataFilterT *tdf, double time) {
     if (tdf == NULL) {
         fprintf(stderr, "Error: checkNextTime received a NULL TrajectoryDataFilterT pointer.\n");
         return;
@@ -50,7 +50,7 @@ static void checkNextTime(TrajectoryDataFilterT *tdf, double time) {
     }
 }
 
-static void checkMachCrossing(TrajectoryDataFilterT *tdf, double velocity, double mach) {
+void checkMachCrossing(TrajectoryDataFilterT *tdf, double velocity, double mach) {
     if (tdf == NULL) {
         fprintf(stderr, "Error: checkMachCrossing received a NULL TrajectoryDataFilterT pointer.\n");
         return;
@@ -74,7 +74,7 @@ static void checkMachCrossing(TrajectoryDataFilterT *tdf, double velocity, doubl
         tdf->previousVMach = currentVMach;
 }
 
-static void checkZeroCrossing(TrajectoryDataFilterT *tdf, V3dT rangeVector) {
+void checkZeroCrossing(TrajectoryDataFilterT *tdf, V3dT rangeVector) {
     if (tdf == NULL) {
         fprintf(stderr, "Error: checkZeroCrossing received a NULL TrajectoryDataFilterT pointer.\n");
         return;

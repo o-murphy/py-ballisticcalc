@@ -1,7 +1,9 @@
 #include <string.h> // <-- Add this line
 #include <stdio.h>  // <-- You likely already have this for fprintf
 #include "bc.h"
-
+#include "consts.h"
+#include "tData.h"        // Needed for TrajectoryTableT
+#include "tDataFilter.h"  // If TrajFlag is defined here
 
 int initEngine(EngineT *engine, ConfigT *config)
 {
@@ -38,6 +40,7 @@ int initEngine(EngineT *engine, ConfigT *config)
 
 int initTrajectory(EngineT *engine, ShotDataT *initialShotData)
 {
+
     // 1. Validate incoming pointers
     if (engine == NULL)
     {
@@ -316,9 +319,11 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
     int iterations_count = 0;
     double zero_finding_error;
 
-    TrajectoryTableT temp_trajectory; // Temporary trajectory for integrate results
-    initTrajectoryTable(&temp_trajectory);
-    int integrate_status;             // Status from integrate call
+    TrajectoryTableT tempTrajectory; // Temporary trajectory for integrate results
+    initTrajectoryTable(&tempTrajectory);
+
+
+    int integrateStatus;             // Status from integrate call
 
     double height_at_target;
     double last_distance_foot_from_integrate; // Used if integrate returns RangeError (early termination)
@@ -354,9 +359,9 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
     {
         // Call integrate. `temp_trajectory` will store the results.
         // It uses `TRAJ_NONE` filter_flags as in Cython.
-        integrate_status = integrate(engine, maximum_range, zero_distance_m, TRAJ_NONE, 0.0, &temp_trajectory);
+        integrateStatus = integrate(engine, maximum_range, zero_distance_m, TRAJ_NONE, 0.0, &tempTrajectory);
 
-        if (integrate_status >= MIN_VELOCITY_REACHED)
+        if (integrateStatus >= MIN_VELOCITY_REACHED)
         { // integrate returned an early termination reason
             // Cython's RangeError handling
             // e.g., RangeError(reason, ranges) where ranges is incomplete_trajectory
@@ -364,9 +369,9 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
             // height = (e.incomplete_trajectory[-1].height._feet) / proportion
 
             // Check if trajectory has at least one point, should always have one if integrate returns a reason
-            if (temp_trajectory.length > 0)
+            if (tempTrajectory.length > 0)
             {
-                last_distance_foot_from_integrate = temp_trajectory.ranges[temp_trajectory.length - 1].distance;
+                last_distance_foot_from_integrate = tempTrajectory.ranges[tempTrajectory.length - 1].distance;
                 // Avoid division by zero for proportion if zero_distance_m is very small
                 if (zero_distance_m != 0.0)
                 {
@@ -379,11 +384,11 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
 
                 if (proportion != 0.0)
                 { // Avoid division by zero for height calculation
-                    height_at_target = temp_trajectory.ranges[temp_trajectory.length - 1].height / proportion;
+                    height_at_target = tempTrajectory.ranges[tempTrajectory.length - 1].height / proportion;
                 }
                 else
                 {
-                    height_at_target = temp_trajectory.ranges[temp_trajectory.length - 1].height; // Fallback
+                    height_at_target = tempTrajectory.ranges[tempTrajectory.length - 1].height; // Fallback
                 }
             }
             else
@@ -393,16 +398,16 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
                 height_at_target = -9999.0; // Indicate a severe issue
             }
             freeTrajectory(engine); // Free temporary trajectory data
-            temp_trajectory.ranges = NULL;
-            temp_trajectory.length = 0; // Clear for next iteration
+            tempTrajectory.ranges = NULL;
+            tempTrajectory.length = 0; // Clear for next iteration
         }
-        else if (integrate_status != SUCCESS)
+        else if (integrateStatus != SUCCESS)
         { // integrate returned a critical error
-            fprintf(stderr, "Error: integrate failed with status %d during zeroAngle calculation.\n", integrate_status);
+            fprintf(stderr, "Error: integrate failed with status %d during zeroAngle calculation.\n", integrateStatus);
             freeTrajectory(engine); // Ensure clean up
-            temp_trajectory.ranges = NULL;
-            temp_trajectory.length = 0; // Clear for next iteration
-            return integrate_status;
+            tempTrajectory.ranges = NULL;
+            tempTrajectory.length = 0; // Clear for next iteration
+            return integrateStatus;
         }
         else
         { // integrate_status == INTEGRATE_SUCCESS
@@ -410,9 +415,9 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
             // Access the relevant data point. In C, we have the full trajectory.
             // The Cython was likely getting the height at `zero_distance`.
             // The `record_step` for integrate was `zero_distance`, so the last point should be close.
-            if (temp_trajectory.length > 0)
+            if (tempTrajectory.length > 0)
             {
-                height_at_target = temp_trajectory.ranges[temp_trajectory.length - 1].height;
+                height_at_target = tempTrajectory.ranges[tempTrajectory.length - 1].height;
             }
             else
             {
@@ -421,8 +426,8 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
                 height_at_target = -9999.0; // Indicate problem
             }
             freeTrajectory(engine); // Free temporary trajectory data
-            temp_trajectory.ranges = NULL;
-            temp_trajectory.length = 0; // Clear for next iteration
+            tempTrajectory.ranges = NULL;
+            tempTrajectory.length = 0; // Clear for next iteration
         }
 
         zero_finding_error = fabs(height_at_target - height_at_zero_m);
@@ -471,24 +476,24 @@ int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zer
 }
 
 int trajectory(EngineT *engine, ShotDataT *shotData, double maxRange, double distStep,
-               bool extraData, double timeStep, TrajectoryTableT *resultTrajectory)
+               int extraData, double timeStep, TrajectoryTableT *resultTrajectory)
 {
 
     // 1. Validate incoming pointers
     if (engine == NULL)
     {
         fprintf(stderr, "Error: trajectory received a NULL engine pointer.\n");
-        return -1;
+        return ERROR_NULL_ENGINE;
     }
     if (shotData == NULL)
     {
         fprintf(stderr, "Error: trajectory received a NULL shotData pointer.\n");
-        return -1;
+        return ERROR_NULL_SHOTDATA;
     }
     if (resultTrajectory == NULL)
     {
         fprintf(stderr, "Error: trajectory received a NULL resultTrajectory pointer.\n");
-        return -1;
+        return ERROE_NULL_TRAJECTORY;
     }
 
     initTrajectoryTable(resultTrajectory);
@@ -519,7 +524,7 @@ int trajectory(EngineT *engine, ShotDataT *shotData, double maxRange, double dis
         fprintf(stderr, "Error: Failed to initialize trajectory properties.\n");
         return -1; // Propagate error
     }
-
+    
     // 4. Run the integration (analogous to self._integrate)
     // `maxRange` and `distStep` are directly used as doubles.
     // The `_integrate` function needs to fill the `resultTrajectory` struct.
@@ -529,7 +534,7 @@ int trajectory(EngineT *engine, ShotDataT *shotData, double maxRange, double dis
         fprintf(stderr, "Error: Trajectory integration failed.\n");
         // Ensure cleanup even on integration failure
         freeTrajectory(engine);
-        return -1; // Propagate error
+        return integrateStatus; // Propagate error
     }
 
     // 5. Clean up trajectory properties (analogous to self._free_trajectory)
@@ -537,7 +542,7 @@ int trajectory(EngineT *engine, ShotDataT *shotData, double maxRange, double dis
     freeTrajectory(engine);
 
     // 6. Return success. The resultTrajectory struct has been filled.
-    return 0; // Indicate success
+    return SUCCESS; // Indicate success
 }
 
 TrajectoryDataT createTrajectoryData(double time, V3dT rangeVector, V3dT velocityVector,
@@ -618,8 +623,10 @@ TrajectoryDataT createTrajectoryData(double time, V3dT rangeVector, V3dT velocit
 
 // Re-implementation of Cython's _integrate function in C
 // CORRECTED: Added TrajectoryTableT *trajectory parameter
-int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag filterFlags, double timeStep, TrajectoryTableT *trajectory)
+int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag filterFlags, double timeStep, TrajectoryTableT *trajectoryTable)
 {
+    (void)timeStep;  // FIXME: unused
+
     // Input validation
     if (engine == NULL)
     {
@@ -682,8 +689,7 @@ int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag 
                   engine->tProps.shotData->barrelElevation, engine->tProps.shotData->lookAngle);
 
     // Initialize the output trajectory array
-    trajectory->ranges = NULL; // Initialize pointer
-    trajectory->length = 0;    // Initialize length
+    initTrajectoryTable(trajectoryTable);
 
     lastRecordedRange = 0.0;
 
@@ -711,14 +717,14 @@ int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag 
                     density_factor, drag_val, engine->tProps.shotData->weight,
                     engine->tProps.dataFilter.currentFlag);
                 // CORRECTED: Pass 'trajectory' to addTrajectoryDataPoint
-                if (addTrajectoryDataPoint(trajectory, currentRow) != 0)
+                if (addTrajectoryDataPoint(trajectoryTable, currentRow) != 0)
                 {
                     free(data_to_record);
-                    if (trajectory->ranges != NULL)
+                    if (trajectoryTable->ranges != NULL)
                     {
-                        free(trajectory->ranges);
-                        trajectory->ranges = NULL;
-                        trajectory->length = 0;
+                        free(trajectoryTable->ranges);
+                        trajectoryTable->ranges = NULL;
+                        trajectoryTable->length = 0;
                     }
                     return ERROR_REALLOC_FAILED;
                 }
@@ -766,7 +772,7 @@ int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag 
                 density_factor, drag_val, engine->tProps.shotData->weight,
                 engine->tProps.dataFilter.currentFlag);
             // CORRECTED: Pass 'trajectory' to addTrajectoryDataPoint
-            if (addTrajectoryDataPoint(trajectory, currentRow) != 0)
+            if (addTrajectoryDataPoint(trajectoryTable, currentRow) != 0)
             {
                 return ERROR_REALLOC_FAILED;
             }
@@ -787,7 +793,7 @@ int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag 
     }
 
     // CORRECTED: Use trajectory->length for the final check
-    if (trajectory->length < 2)
+    if (trajectoryTable->length < 2)
     {
         TrajectoryDataT currentRow = createTrajectoryData(
             time, range_vector, velocity_vector,
@@ -796,7 +802,7 @@ int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag 
             density_factor, drag_val, engine->tProps.shotData->weight,
             TRAJ_NONE);
         // CORRECTED: Pass 'trajectory' to addTrajectoryDataPoint
-        if (addTrajectoryDataPoint(trajectory, currentRow) != 0)
+        if (addTrajectoryDataPoint(trajectoryTable, currentRow) != 0)
         {
             return ERROR_REALLOC_FAILED;
         }
@@ -804,6 +810,7 @@ int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag 
 
     return SUCCESS;
 }
+
 
 double dragByMach(ShotDataT *shotData, double mach)
 {

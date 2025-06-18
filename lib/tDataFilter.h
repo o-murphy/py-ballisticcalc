@@ -25,9 +25,9 @@ typedef struct {
 int initDataFilter(TrajectoryDataFilterT *tdf, int filterFlags, double rangeStep,
                    V3dT initialPosition, V3dT initialVelocity, double timeStep);
 void setupSeenZero(TrajectoryDataFilterT * tdf, double height, double barrelElevation, double lookAngle);
-static void checkNextTime(TrajectoryDataFilterT *tdf, double time);
-static void checkMachCrossing(TrajectoryDataFilterT *tdf, double velocity, double mach);
-static void checkZeroCrossing(TrajectoryDataFilterT *tdf, V3dT rangeVector);
+void checkNextTime(TrajectoryDataFilterT *tdf, double time);
+void checkMachCrossing(TrajectoryDataFilterT *tdf, double velocity, double mach);
+void checkZeroCrossing(TrajectoryDataFilterT *tdf, V3dT rangeVector);
 BaseTrajDataT* shouldRecord(TrajectoryDataFilterT *tdf, V3dT position, V3dT velocity, double mach, double time);
 
 #endif // TDATAFILTER_H

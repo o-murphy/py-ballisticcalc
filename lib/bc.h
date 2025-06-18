@@ -10,19 +10,19 @@
 #include "atmo.h"
 #include "config.h"
 
-typedef enum
-{
+typedef enum{
     SUCCESS = 0,
     ERROR_NULL_ENGINE = -1,
     ERROR_NULL_SHOTDATA = -2,
     ERROR_NULL_ZEROANGLE = -3,
-    ERROR_INVALID_SHOTDATA = -4,
+    ERROE_NULL_TRAJECTORY = -4,
+    ERROR_INVALID_SHOTDATA = -5,
 
-    ERROR_MALLOC_FAILED = -5,
-    ERROR_REALLOC_FAILED = -6,
+    ERROR_MALLOC_FAILED = -6,
+    ERROR_REALLOC_FAILED = -7,
 
-    ERROR_INTEGRATE_FAILED = -5,
-    ERROR_NULL_ZEROANGLE_OUT = -6,
+    ERROR_INTEGRATE_FAILED = -8,
+    ERROR_NULL_ZEROANGLE_OUT = -9,
     MIN_VELOCITY_REACHED = 1,
     MAX_DROP_REACHED = 2,
     MIN_ALTITUDE_REACHED = 3,
@@ -78,8 +78,9 @@ int initEngine(EngineT *engine, ConfigT *config);
 int initTrajectory(EngineT *engine, ShotDataT *initialShotData);
 void freeTrajectory(EngineT *engine);
 int zeroAngle(EngineT *engine, ShotDataT *shotData, double distance, double *zeroAngle);
-int trajectory(EngineT *engine, ShotDataT *ShotData, double maxRange, double distStep, bool extraData, double timeStep, TrajectoryTableT *trajectory);
-int integrate(EngineT *engine, double maximumRange, double recordStep, TrajFlag filterFlags, double timeStep, TrajectoryTableT *trajectory);
+int trajectory(EngineT *engine, ShotDataT *shotData, double maxRange, double distStep,
+               int extraData, double timeStep, TrajectoryTableT *resultTrajectory);
+int integrate(EngineT *engine, double maxRange, double recordStep, TrajFlag filterFlags, double timeStep, TrajectoryTableT *trajectoryTable);
 
 // helpers
 double getCorrection(double distance, double offset);

@@ -3,7 +3,6 @@
 
 #include "v3d.h"
 
-extern const double C_MAX_WIND_DISTANCE_FEET;
 
 typedef struct
 {

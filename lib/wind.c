@@ -1,7 +1,7 @@
 #include "v3d.h"
 #include "wind.h"
+#include "consts.h"
 
-const double C_MAX_WIND_DISTANCE_FEET = 999999.0;
 
 V3dT windToVector(const WindT *w)
 { // Added const as input 'w' isn't modified
@@ -60,7 +60,7 @@ void updateWindCache(WindSockT *ws)
     }
 
     // Check if the current index is within the actual length of the winds.
-    if (ws->current < ws->winds->length)
+    if ((size_t)ws->current < ws->winds->length)
     {
         // Access the current wind from the array (ws->winds->winds[ws->current]).
         // Note: It's technically possible for ws->winds to be NULL here if ws->length is 0.
@@ -107,7 +107,7 @@ V3dT windVectorForRange(WindSockT *ws, double nextRange)
 
         // Check if we've moved past all defined wind segments.
         // We also need to check if `ws->winds` itself is not NULL, as `ws->winds->length` would be an invalid access.
-        if (ws->winds == NULL || ws->current >= ws->winds->length)
+        if (ws->winds == NULL || (size_t)ws->current >= ws->winds->length)
         {
             // We've exhausted all specific wind segments.
             // The wind is now considered zero, and the effective boundary is the global max distance.
