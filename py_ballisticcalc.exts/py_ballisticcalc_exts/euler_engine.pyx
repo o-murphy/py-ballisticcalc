@@ -7,9 +7,8 @@
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
-from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
+from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
@@ -30,6 +29,11 @@ from py_ballisticcalc_exts.base_engine cimport (
     createTrajectoryDataFilter,
     should_record,
     setup_seen_zero
+)
+
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT, add, sub, mag, mulS
 )
 
 import warnings
@@ -53,14 +57,14 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             list[object] ranges = []
             double time = .0
             double drag = .0
-            CVector range_vector, velocity_vector
-            CVector delta_range_vector, velocity_adjusted
-            CVector gravity_vector = CVector(.0, self._config_s.cGravityConstant, .0)
+            V3dT  range_vector, velocity_vector
+            V3dT  delta_range_vector, velocity_adjusted
+            V3dT  gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
             double min_step
             double calc_step = self._shot_s.calc_step
 
             # region Initialize wind-related variables to first wind reading (if any)
-            CVector wind_vector = self.ws.current_vector()
+            V3dT wind_vector = self.ws.current_vector()
             # endregion
 
             _TrajectoryDataFilter data_filter
@@ -74,7 +78,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
         cdef:
             # temp vector
-            CVector _tv
+            V3dT _tv
 
         cdef:
             double last_recorded_range
@@ -82,11 +86,11 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = CVector(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height, -self._shot_s.cant_sine * self._shot_s.sight_height)
-        _tv = CVector(cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
+        range_vector = V3dT(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height, -self._shot_s.cant_sine * self._shot_s.sight_height)
+        _tv = V3dT(cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
                                  sin(self._shot_s.barrel_elevation),
                                  cos(self._shot_s.barrel_elevation) * sin(self._shot_s.barrel_azimuth))
-        velocity_vector = mul_c(&_tv, velocity)
+        velocity_vector = mulS(&_tv, velocity)
         # endregion
 
         min_step = fmin(calc_step, record_step)
@@ -133,13 +137,13 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             delta_time = calc_step / fmax(1.0, velocity)
             drag = density_factor * velocity * cy_drag_by_mach(&self._shot_s, velocity / mach)
 
-            _tv = mul_c(&velocity_adjusted, drag)
+            _tv = mulS(&velocity_adjusted, drag)
             _tv = sub(&_tv, &gravity_vector)
-            _tv = mul_c(&_tv, delta_time)
+            _tv = mulS(&_tv, delta_time)
 
             velocity_vector = sub(&velocity_vector, &_tv)
 
-            delta_range_vector = mul_c(&velocity_vector, delta_time)
+            delta_range_vector = mulS(&velocity_vector, delta_time)
             range_vector = add(&range_vector, &delta_range_vector)
 
             velocity = mag(&velocity_vector)

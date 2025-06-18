@@ -1,4 +1,7 @@
-from py_ballisticcalc_exts.vector cimport CVector
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT
+)
 
 cdef struct Config_t:
     double cMaxCalcStepSizeFeet
@@ -80,4 +83,4 @@ cdef struct Wind_t:
     double until_distance
     double MAX_DISTANCE_FEET
 
-cdef CVector wind_to_c_vector(Wind_t * w)
+cdef V3dT wind_to_c_vector(Wind_t * w)

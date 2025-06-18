@@ -1,4 +1,7 @@
-from py_ballisticcalc_exts.vector cimport CVector
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT
+)
 
 cdef enum CTrajFlag:
     NONE = 0
@@ -14,8 +17,8 @@ cdef enum CTrajFlag:
 cdef class BaseTrajData:
     cdef:
         readonly double time
-        readonly CVector position
-        readonly CVector velocity
+        readonly V3dT position
+        readonly V3dT velocity
         readonly double mach
 
 

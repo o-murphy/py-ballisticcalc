@@ -161,12 +161,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         if not sol.success:  # Integration failed
             raise RangeError(f"SciPy integration failed: {sol.message}", ranges)
 
-        logger.info(f"SciPy integration complete with {sol.nfev} function calls.")
+        logger.debug(f"SciPy integration complete with {sol.nfev} function calls.")
         termination_reason = None
         if sol.status == 1:  # A termination event occurred
             if len(sol.t_events) > 0:
                 # if sol.t_events[0].size > 0:  # Typical termination event
-                #     logger.info(f"Integration stopped at max range: {sol.t_events[0][0]}")
+                #     logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
                 if sol.t_events[1].size > 0:  # event_max_drop
                     y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
                     if y < _cMaximumDrop:

@@ -6,9 +6,15 @@
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
+# noinspection PyUnresolvedReferences
 from libc.stdlib cimport malloc, free
-from libc.math cimport fabs, pow, atan2, exp, sqrt, sin, cos
-from py_ballisticcalc_exts.vector cimport CVector
+# noinspection PyUnresolvedReferences
+from libc.math cimport fabs, pow, atan2, exp, sqrt, sin, cos, fmin
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT
+)
+
 import warnings
 
 @final
@@ -27,7 +33,7 @@ cdef double cy_get_calc_step(Config_t * config, double step = 0):
     cdef double preferred_step = config.cMaxCalcStepSizeFeet
     if step == 0:
         return preferred_step / 2.0
-    return min(step, preferred_step) / 2.0
+    return fmin(step, preferred_step) / 2.0
 
 cdef MachList_t cy_table_to_mach(list[object] data):
     cdef int data_len = len(data)
@@ -353,13 +359,13 @@ cdef void update_density_factor_and_mach_for_altitude(
         #debug
         #print(f"Altitude: {altitude}, {atmo._t0}°C now {celsius}°C, pressure {atmo._p0} now {pressure}hPa >> {density_ratio[0]} from density_delta {density_delta}")
 
-cdef CVector wind_to_c_vector(Wind_t * w):
+cdef V3dT wind_to_c_vector(Wind_t * w):
     cdef:
         # Downrange (x-axis) wind velocity component:
         double range_component = w.velocity * cos(w.direction_from)
         # Downrange (x-axis) wind velocity component:
         double cross_component = w.velocity * sin(w.direction_from)
-    return CVector(range_component, 0., cross_component)
+    return V3dT(range_component, 0., cross_component)
 
 # cdef void free_trajectory(ShotData_t * t):
 #     if t.mach_list != NULL:
