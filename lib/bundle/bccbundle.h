@@ -27,6 +27,9 @@ typedef struct
     double cMinimumAltitude;
 } ConfigT;
 
+void initDefaultConfig(ConfigT *config);
+
+
 //atmo
 typedef struct
 {

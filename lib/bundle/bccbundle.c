@@ -5,6 +5,24 @@
 #include "v3d.h"
 #include "bccbundle.h"
 
+//config
+void initDefaultConfig(ConfigT *config)
+{
+    if (config == NULL)
+    {
+        fprintf(stderr, "Error: ConfigT pointer is NULL in initDefaultConfig.\\n");
+        return;
+    }
+
+    config->cMaxCalcStepSizeFeet = 1.0;
+    config->cZeroFindingAccuracy = 0.001;
+    config->cMinimumVelocity = 500.0;
+    config->cMaximumDrop = -100.0; // Use negative for drop below bore
+    config->cMaxIterations = 1000;
+    config->cGravityConstant = 32.174; // ft/s^2
+    config->cMinimumAltitude = 0.0;
+}
+
 //consts
 
 const double C_DEGREES_F_TO_R = 459.67;
