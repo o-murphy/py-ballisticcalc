@@ -34,10 +34,19 @@ class TrajectoryTableT(ctypes.Structure):
         ("capacity", ctypes.c_size_t)
     ]
 
+
+class DragTablePointT(ctypes.Structure):
+    _fields_ = [("Mach", ctypes.c_double),
+                ("CD", ctypes.c_double)]
+
+class DragTableT(ctypes.Structure):
+    _fields_ = [("table", ctypes.POINTER(DragTablePointT)),
+                ("length", ctypes.c_size_t)]
+
 class ShotDataT(ctypes.Structure):
     _fields_ = [
         ("bc", ctypes.c_double),
-        ("dragTable", ctypes.c_void_p),  # DragTableT* - складно описати, тому як void*
+        ("dragTable", ctypes.POINTER(DragTableT)),  # замість c_void_p
         ("lookAngle", ctypes.c_double),
         ("twist", ctypes.c_double),
         ("length", ctypes.c_double),
@@ -73,7 +82,6 @@ class EngineT(ctypes.Structure):
     ]
 
 
-
 lib = ctypes.CDLL("./bcc.so")
 
 lib.trajectory.argtypes = [
@@ -103,13 +111,41 @@ def test_call():
     shot = ShotDataT()
     table = TrajectoryTableT()
 
-    # Ініціалізація полів, якщо треба
-    # Приміром заповнимо gravityVector
+    # Заповнюємо gravityVector
     engine.gravityVector.x = 0.0
     engine.gravityVector.y = 0.0
     engine.gravityVector.z = -9.81
 
-    # Виклик функції
+    # Створюємо drag table
+    drag_points_array = (DragTablePointT * 3)(
+        DragTablePointT(0.0, 0.5),
+        DragTablePointT(0.5, 0.4),
+        DragTablePointT(0.8, 0.3),
+    )
+    drag_table = DragTableT()
+    drag_table.table = drag_points_array
+    drag_table.length = 3
+
+    # Прив’язуємо drag table до shot
+    shot.dragTable = ctypes.pointer(drag_table)
+
+    # Інші поля shot (мінімально)
+    shot.bc = 0.3
+    shot.muzzleVelocity = 2600.0
+    shot.sightHeight = 1.5
+    shot.twist = 1.0
+    shot.length = 2.0
+    shot.diameter = 0.308
+    shot.weight = 150.0
+    shot.alt0 = 0.0
+    shot.calcStep = 0.01
+
+    # Вказуємо null для atmo і winds для простоти, якщо це прийнятно
+    shot.atmo = None
+    shot.winds = None
+
     ret = lib.trajectory(ctypes.byref(engine), ctypes.byref(shot),
                          1000.0, 10.0, 0, 0.01, ctypes.byref(table))
     print("Return code:", ret)
+
+test_call()
