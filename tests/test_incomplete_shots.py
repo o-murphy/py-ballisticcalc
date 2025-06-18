@@ -1,5 +1,4 @@
 import time
-
 import pytest
 from py_ballisticcalc import (
     Distance,
@@ -7,7 +6,7 @@ from py_ballisticcalc import (
     HitResult,
 )
 from tests.fixtures_and_helpers import print_out_trajectory_compact, zero_height_calc, \
-    shot_with_relative_angle_in_degrees
+                                       shot_with_relative_angle_in_degrees
 
 
 def test_shot_incomplete(zero_height_calc):
@@ -23,14 +22,14 @@ def test_shot_incomplete(zero_height_calc):
         last_point_height = hit_result[-1].height >> Distance.Meter
         print(f"{ last_point_distance=} { last_point_height=}")
         assert last_point_distance > 3525.0
-        assert last_point_height < 0.0
+        assert last_point_height < 1e-10  # Basically zero; allow for rounding
 
     try:
         extra_data = False
-        hit_result= zero_height_calc.fire(shot, range, extra_data=extra_data)
+        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
 
@@ -38,10 +37,21 @@ def test_shot_incomplete(zero_height_calc):
 
     try:
         extra_data = False
-        hit_result= zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
+        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+            hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
+    print_out_trajectory_compact(hit_result)
+
+    check_end_point(hit_result)
+
+    try:
+        extra_data = True
+        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
+    except RangeError as e:
+        print(f'{e.reason} {len(e.incomplete_trajectory)=}')
+        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
 
@@ -49,21 +59,10 @@ def test_shot_incomplete(zero_height_calc):
     
     try:
         extra_data = True
-        hit_result= zero_height_calc.fire(shot, range, extra_data=extra_data)
+        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
-            hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
-    print_out_trajectory_compact(hit_result)
-
-    check_end_point(hit_result)
-    
-    try:
-        extra_data = True
-        hit_result= zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
-    except RangeError as e:
-        print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
 
@@ -72,24 +71,24 @@ def test_shot_incomplete(zero_height_calc):
 
 def test_vertical_shot(zero_height_calc):
     shot = shot_with_relative_angle_in_degrees(90)
-    range=Distance.Meter(10)
+    range = Distance.Meter(10)
     try:
-        extra_data=False
+        extra_data = False
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
     assert hit_result[-1].distance>>Distance.Meter == pytest.approx(0, abs=1e-10)
     assert hit_result[-1].height>>Distance.Meter == pytest.approx(0, abs=0.1)
 
     try:
-        extra_data=True
+        extra_data = True
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
     assert hit_result[-1].distance>>Distance.Meter == pytest.approx(0, abs=1e-10)
@@ -99,17 +98,17 @@ def test_no_duplicate_points(zero_height_calc):
     # this is a shot for point (1000, 0)
     shot = shot_with_relative_angle_in_degrees(0.46571949074059704)
     # setting up bigger distance than required by shot
-    range=Distance.Meter(1100)
+    range = Distance.Meter(1100)
     try:
-        extra_data=False
+        extra_data = False
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=Distance.Meter(100))
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in[ RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-    assert len(hit_result.trajectory)>=2
-    assert hit_result[-2]!=hit_result[-1]
+    assert len(hit_result.trajectory) >= 2
+    assert hit_result[-2] != hit_result[-1]
     assert hit_result[-2].distance>>Distance.Meter == pytest.approx(1000, abs=0.2)
     assert hit_result[-2].height>>Distance.Meter == pytest.approx(0, abs=0.01)
     assert hit_result[-1].distance>>Distance.Meter > hit_result[-2].distance>>Distance.Meter
@@ -120,7 +119,7 @@ def test_no_duplicated_point_many_trajectories(zero_height_calc):
     range = Distance.Meter(8000)
     for extra_data in [False, True]:
         angle = 0
-        while angle<=90:
+        while angle <= 90:
             shot = shot_with_relative_angle_in_degrees(angle)
             try:
                 hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
@@ -174,7 +173,7 @@ def test_end_points_are_included(distance, height, angle_in_degrees, zero_height
     last_point_extra_data = hit_result_extra_data[-1]
     distance_extra_data = last_point_extra_data.distance >> Distance.Meter
     height_extra_data = last_point_extra_data.height >> Distance.Meter
-    print(f"Extra data={extra_data_flag} Distance {distance_extra_data:.02f} Height {height_extra_data:.02f}")
+    print(f"{extra_data_flag=} Distance {distance_extra_data:.02f} Height {height_extra_data:.02f}")
     no_extra_data_flag = False
     start_time_no_extra_data = time.time()
     try:

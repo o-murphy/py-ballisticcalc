@@ -147,6 +147,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         def event_max_drop(t, s):  # Stop when y crosses max_drop
             return s[1] - max_drop
         event_max_drop.terminal = True  # type: ignore[attr-defined]
+        event_max_drop.direction = -1  # type: ignore[attr-defined]
 
         def event_min_velocity(t, s):  # Stop when velocity < _cMinimumVelocity
             v = np.linalg.norm(s[3:6])
@@ -156,6 +157,24 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         sol = solve_ivp(diff_eq, (0, self.max_time), s0,
                         method=self.integration_method, dense_output=True, rtol=self.error_tolerance,
                         events=[event_max_range, event_max_drop, event_min_velocity])
+
+        if not sol.success:  # Integration failed
+            raise RangeError(f"SciPy integration failed: {sol.message}", ranges)
+
+        logger.info(f"SciPy integration complete with {sol.nfev} function calls.")
+        termination_reason = None
+        if sol.status == 1:  # A termination event occurred
+            if len(sol.t_events) > 0:
+                # if sol.t_events[0].size > 0:  # Typical termination event
+                #     logger.info(f"Integration stopped at max range: {sol.t_events[0][0]}")
+                if sol.t_events[1].size > 0:  # event_max_drop
+                    y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
+                    if y < _cMaximumDrop:
+                        termination_reason = RangeError.MaximumDropReached
+                    else:
+                        termination_reason = RangeError.MinimumAltitudeReached
+                elif sol.t_events[2].size > 0:  # event_min_velocity
+                    termination_reason = RangeError.MinimumVelocityReached
 
         #region Process the solution
         # List of distances at which we want to record the trajectory data
@@ -213,6 +232,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 state = sol.sol(t_root)
                 t_at_x.append(t_root)
                 states_at_x.append(state)
+
+            # If we ended with an event then also grab the last point calculated
+            if termination_reason is not None and len(t_vals) > 0:
+                t_at_x.append(sol.t[-1])  # Last time point
+                states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
+
             # Convert to arrays for easier handling
             t_at_x = np.array(t_at_x)
             states_at_x = np.array(states_at_x).T  # shape: (state_dim, num_points)
@@ -230,23 +255,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 ))
             #endregion Root-finding approach to interpolate for desired x values
 
-            logger.info(f"SciPy integration complete with {sol.nfev} function calls.")
-            if sol.status == 1:  # A termination event occurred
-                if len(sol.t_events) > 0:
-                    reason = None
-                    # if sol.t_events[0].size > 0:  # Typical termination event
-                    #     logger.info(f"Integration stopped at max range: {sol.t_events[0][0]}")
-                    if sol.t_events[1].size > 0:  # event_max_drop
-                        y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
-                        if y < _cMaximumDrop:
-                            reason = RangeError.MaximumDropReached
-                        else:
-                            reason = RangeError.MinimumAltitudeReached
-                    elif sol.t_events[2].size > 0:  # event_min_velocity
-                        reason = RangeError.MinimumVelocityReached
-
-                    if reason is not None:
-                        raise RangeError(reason, ranges)
+            if termination_reason is not None:
+                raise RangeError(termination_reason, ranges)
         else:
             logger.warning("No solution found by SciPy integration.")
         #endregion Process the solution
