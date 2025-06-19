@@ -41,23 +41,31 @@ class WindSock():
 
 
 class SciPyIntegrationEngine(BaseIntegrationEngine):
+    """Integration engine using SciPy's solve_ivp for trajectory calculations."""
 
-    DEFAULT_MAX_TIME = 50.0  # Max flight time to simulate before stopping integration
-    DEFAULT_ERROR_TOLERANCE = 1e-8  # Default relative tolerance for integration
+    DEFAULT_MAX_TIME = 90.0  # Max flight time to simulate before stopping integration
+    DEFAULT_ERROR_TOLERANCE = 1e-8  # Default relative tolerance (rtol) for integration
     DEFAULT_INTEGRATION_METHOD = 'DOP853'  # Default integration method for solve_ivp
     # Other recommended methods: 'BDF', 'LSODA', 'Radau'
 
-    def __init__(self, config: BaseEngineConfigDict):
+    def __init__(self, config: BaseEngineConfigDict,
+        max_time: Optional[float] = None,
+        integration_method: Optional[str] = None,
+        error_tolerance: Optional[float] = None
+    ):
         """
-        Initialize the SciPyIntegrationEngine with the given configuration and class defaults.
+        Initializes the SciPyIntegrationEngine.
 
         Args:
-            config: Configuration object containing parameters for the engine.
+            config (BaseEngineConfigDict): Configuration dictionary for the engine.
+            max_time (float, optional): Maximum time to simulate in seconds. Defaults to DEFAULT_MAX_TIME.
+            integration_method (str, optional): Integration method to use with solve_ivp. Defaults to DEFAULT_INTEGRATION_METHOD.
+            error_tolerance (float, optional): Relative tolerance for integration. Defaults to DEFAULT_ERROR_TOLERANCE.
         """
         super().__init__(config)
-        self.max_time = self.DEFAULT_MAX_TIME
-        self.integration_method = self.DEFAULT_INTEGRATION_METHOD
-        self.error_tolerance = self.DEFAULT_ERROR_TOLERANCE
+        self.max_time = max_time if max_time is not None else self.DEFAULT_MAX_TIME
+        self.integration_method = integration_method if integration_method is not None else self.DEFAULT_INTEGRATION_METHOD
+        self.error_tolerance = error_tolerance if error_tolerance is not None else self.DEFAULT_ERROR_TOLERANCE
 
     @override
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
@@ -176,34 +184,43 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 elif sol.t_events[2].size > 0:  # event_min_velocity
                     termination_reason = RangeError.MinimumVelocityReached
 
-        #region Process the solution
-        # List of distances at which we want to record the trajectory data
-        desired_xs = np.arange(0, maximum_range + record_step, record_step)
-        # Get x and t arrays from the solution
-        x_vals = sol.y[0]
-        t_vals = sol.t
-        # Interpolate to find the time when each desired x is reached
-        t_at_x = np.interp(desired_xs, x_vals, t_vals)
+        #region Find requested TrajectoryData points
         if sol.sol is not None and sol.status != -1:
+            def make_row(t: float, state: np.ndarray, flag: Union[TrajFlag, int]) -> TrajectoryData:
+                """Helper function to create a TrajectoryData row."""
+                position = Vector(*state[0:3])
+                velocity = Vector(*state[3:6])
+                velocity_magnitude = velocity.magnitude()
+                density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + position[1])
+                drag = density_factor * velocity_magnitude * self.drag_by_mach(velocity_magnitude / mach)
+                return create_trajectory_row(t, position, velocity, velocity_magnitude, mach,
+                    self.spin_drift(t), self.look_angle, density_factor, drag, self.weight, flag
+                )
+
+            if sol.t[-1] == 0:
+                # If the last time is 0, we only have the initial state
+                ranges.append(make_row(sol.t[0], sol.y[:, 0], TrajFlag.RANGE))
+                return ranges
+
+            # List of distances at which we want to record the trajectory data
+            desired_xs = np.arange(0, maximum_range + record_step, record_step)
+            # Get x and t arrays from the solution
+            x_vals = sol.y[0]
+            t_vals = sol.t
+            # Interpolate to find the time when each desired x is reached
+            t_at_x = np.interp(desired_xs, x_vals, t_vals)
+
             #region Basic approach to interpolate for desired x values:
             # # This is not very good: distance from requested x varies by ~1% of max_range
             # states_at_x = sol.sol(t_at_x)  # shape: (state_dim, len(desired_xs))
             # for i in range(states_at_x.shape[1]):
-            #     t = t_at_x[i]
-            #     position = Vector(*states_at_x[0:3, i])  # [x, y, z]
-            #     velocity = Vector(*states_at_x[3:6, i])  # [vx, vy, vz]
-            #     velocity_magnitude = velocity.magnitude()
-            #     density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + position[1])
-            #     ranges.append(create_trajectory_row(t, position, velocity, velocity_magnitude, mach,
-            #                                         self.spin_drift(t), self.look_angle,
-            #                                         density_factor, drag, self.weight, TrajFlag.RANGE
-            #                                         )
-            #                  )
+            #     ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
             #endregion Basic approach to interpolate for desired x values
+
             #region Root-finding approach to interpolate for desired x values:
             states_at_x = []
             t_at_x = []
-            for x_target in desired_xs:
+            for x_target in desired_xs:                
                 idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
                 if idx < 0 or idx >= len(x_vals):
                     logger.warning(f"Requested distance {x_target} out of bounds computed: [{x_vals[0]}, {x_vals[-1]}]")
@@ -232,9 +249,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 state = sol.sol(t_root)
                 t_at_x.append(t_root)
                 states_at_x.append(state)
+            #region Root-finding approach to interpolate for desired x values
 
             # If we ended with an event then also grab the last point calculated
-            if termination_reason is not None and len(t_vals) > 0:
+            if termination_reason is not None and len(t_vals) > 1 and t_vals[0] != t_vals[-1]:
                 t_at_x.append(sol.t[-1])  # Last time point
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
@@ -242,22 +260,22 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             t_at_x = np.array(t_at_x)
             states_at_x = np.array(states_at_x).T  # shape: (state_dim, num_points)
             for i in range(states_at_x.shape[1]):
-                t = t_at_x[i]
-                position = Vector(*states_at_x[0:3, i])
-                velocity = Vector(*states_at_x[3:6, i])
-                velocity_magnitude = velocity.magnitude()
-                density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + position[1])
-                drag = density_factor * velocity_magnitude * self.drag_by_mach(velocity_magnitude / mach)
-                ranges.append(create_trajectory_row(
-                    t, position, velocity, velocity_magnitude, mach,
-                    self.spin_drift(t), self.look_angle,
-                    density_factor, drag, self.weight, TrajFlag.RANGE
-                ))
-            #endregion Root-finding approach to interpolate for desired x values
+                ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
+
+            # if filter_flags & TrajFlag.APEX:
+            #     def vy(t):
+            #         """Returns the vertical velocity at time t."""
+            #         return sol.sol(t)[4]
+            #     res = root_scalar(vy, bracket=[t_vals[0], t_vals[-1]])
+            #     if res.converged:
+            #         ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.APEX))
+            #         ranges.sort(key=lambda t: t.time)  # Sort by time
+
+            #endregion Find requested TrajectoryData points
 
             if termination_reason is not None:
                 raise RangeError(termination_reason, ranges)
         else:
-            logger.warning("No solution found by SciPy integration.")
+            logger.error("No solution found by SciPy integration.")
         #endregion Process the solution
         return ranges
