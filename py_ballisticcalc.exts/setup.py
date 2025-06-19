@@ -42,10 +42,15 @@ extension_names = [
 ext_base_dir = 'py_ballisticcalc_exts'
 # Тепер v3d.c знаходиться у src/
 v3d_c_source = os.path.join(ext_base_dir, 'src', 'v3d.c')
-v3d_c_dependend = [
+v3d_c_dependent = [
     "base_engine",
     "euler_engine",
-    "rk4_engine"
+    "rk4_engine",
+]
+
+helpers_c_source = os.path.join(ext_base_dir, 'src', 'helpers.c')
+helpers_c_dependent = [
+    "base_engine",
 ]
 
 # *** ЗМІНА ТУТ: Додано 'include' до include_dirs для пошуку v3d.h ***
@@ -77,8 +82,11 @@ for name in extension_names:
     sources = [os.path.join(ext_base_dir, name + '.pyx')]
 
     # Add v3d.c to the sources for any extension that directly uses V3dT C functions
-    if name in v3d_c_dependend:
+    if name in v3d_c_dependent:
         sources.append(v3d_c_source)
+
+    if name in helpers_c_dependent:
+        sources.append(helpers_c_source)
 
     extensions.append(
         Extension(

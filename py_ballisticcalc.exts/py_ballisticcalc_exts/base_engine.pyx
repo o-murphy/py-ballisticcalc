@@ -17,13 +17,18 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     cy_calculate_by_curve_and_mach_list,
     cy_spin_drift,
     cy_drag_by_mach,
-    cy_get_correction,
-    cy_calculate_energy,
-    cy_calculate_ogw,
     cy_update_stability_coefficient,
     free_trajectory,
     wind_to_c_vector,
 )
+
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.helpers cimport (
+    getCorrection,
+    calculateEnergy,
+    calculateOgw,
+)
+
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport (
     V3dT, add, sub, mag, mulS
@@ -334,8 +339,8 @@ cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_
 
     cdef:
         double windage = range_vector.z + spin_drift
-        double drop_adjustment = cy_get_correction(range_vector.x, range_vector.y)
-        double windage_adjustment = cy_get_correction(range_vector.x, windage)
+        double drop_adjustment = getCorrection(range_vector.x, range_vector.y)
+        double windage_adjustment = getCorrection(range_vector.x, windage)
         double trajectory_angle = atan2(velocity_vector.y, velocity_vector.x);
 
     return TrajectoryData(
@@ -354,8 +359,8 @@ cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_
         angle=_new_rad(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,
-        energy=_new_ft_lb(cy_calculate_energy(weight, velocity)),
-        ogw=_new_lb(cy_calculate_ogw(weight, velocity)),
+        energy=_new_ft_lb(calculateEnergy(weight, velocity)),
+        ogw=_new_lb(calculateOgw(weight, velocity)),
         flag=flag
     )
 

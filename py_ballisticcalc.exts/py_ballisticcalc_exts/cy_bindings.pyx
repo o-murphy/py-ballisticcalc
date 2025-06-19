@@ -300,17 +300,6 @@ cdef void free_trajectory(ShotData_t *t):
     free_curve(&t.curve)
     free_mach_list(&t.mach_list)
 
-cdef double cy_get_correction(double distance, double offset):
-    if distance != 0:
-        return atan2(offset, distance)
-    return 0  # better None
-
-cdef double cy_calculate_energy(double bullet_weight, double velocity):
-    return bullet_weight * pow(velocity, 2) / 450400
-
-cdef double cy_calculate_ogw(double bullet_weight, double velocity):
-    return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
-
 cdef double cDegreesFtoR = 459.67
 cdef double cDegreesCtoK = 273.15
 cdef double cSpeedOfSoundImperial = 49.0223

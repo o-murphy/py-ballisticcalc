@@ -11,19 +11,7 @@ from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, Traj
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     Wind_t,
-    Atmosphere_t,
     ShotData_t,
-    config_bind,
-    cy_calculate_curve,
-    cy_table_to_mach,
-    cy_spin_drift,
-    cy_drag_by_mach,
-    cy_get_correction,
-    cy_calculate_energy,
-    cy_calculate_ogw,
-    cy_update_stability_coefficient,
-    free_trajectory,
-    wind_to_c_vector,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport (

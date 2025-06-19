@@ -65,10 +65,6 @@ cdef double cy_spin_drift(ShotData_t * t, double time)
 cdef double cy_drag_by_mach(ShotData_t * t, double mach)
 cdef void cy_update_stability_coefficient(ShotData_t * t)
 
-cdef double cy_get_correction(double distance, double offset)
-cdef double cy_calculate_energy(double bullet_weight, double velocity)
-cdef double cy_calculate_ogw(double bullet_weight, double velocity)
-
 cdef void free_curve(Curve_t *curve)
 cdef void free_mach_list(MachList_t *mach_list)
 cdef void free_trajectory(ShotData_t *t)
