@@ -5,16 +5,22 @@
 # Python Overhead Lines Percentage: 56.00%
 
 
+# noinspection PyUnresolvedReferences
 from cython cimport final
 
 from py_ballisticcalc.unit import PreferredUnits
-from py_ballisticcalc_exts.vector cimport CVector
+
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT
+)
+
 
 @final
 cdef class BaseTrajData:
     __slots__ = ('time', 'position', 'velocity', 'mach')
 
-    def __cinit__(BaseTrajData self, double time, CVector position, CVector velocity, double mach):
+    def __cinit__(BaseTrajData self, double time, V3dT position, V3dT velocity, double mach):
         self.time = time
         self.position = position
         self.velocity = velocity

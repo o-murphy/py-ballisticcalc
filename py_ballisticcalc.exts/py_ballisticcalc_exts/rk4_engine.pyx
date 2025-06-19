@@ -7,9 +7,8 @@
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
-from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
+from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax, pow
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
@@ -19,6 +18,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     update_density_factor_and_mach_for_altitude,
     cy_spin_drift,
     cy_drag_by_mach,
+    cy_get_calc_step,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
@@ -30,6 +30,11 @@ from py_ballisticcalc_exts.base_engine cimport (
     createTrajectoryDataFilter,
     should_record,
     setup_seen_zero
+)
+
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT, add, sub, mag, mulS
 )
 
 import warnings
@@ -53,14 +58,14 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             list[object] ranges = []
             double time = .0
             double drag = .0
-            CVector range_vector, velocity_vector
-            CVector delta_range_vector, velocity_adjusted
-            CVector gravity_vector = CVector(.0, self._config_s.cGravityConstant, .0)
+            V3dT range_vector, velocity_vector
+            V3dT delta_range_vector, velocity_adjusted
+            V3dT gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
             double min_step
             double calc_step = self._shot_s.calc_step
 
             # region Initialize wind-related variables to first wind reading (if any)
-            CVector wind_vector = self.ws.current_vector()
+            V3dT wind_vector = self.ws.current_vector()
             # endregion
 
             _TrajectoryDataFilter data_filter
@@ -78,27 +83,28 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         # temp variables
         cdef:
             double relative_speed
-            CVector relative_velocity
-            CVector _dir_vector, _temp_add_operand, _temp_v_result, _temp_p_result
-            CVector _v_sum_intermediate, _p_sum_intermediate
-            CVector v1, v2, v3, v4, p1, p2, p3, p4
+            V3dT relative_velocity
+            V3dT _dir_vector, _temp_add_operand, _temp_v_result, _temp_p_result
+            V3dT _v_sum_intermediate, _p_sum_intermediate
+            V3dT v1, v2, v3, v4, p1, p2, p3, p4
 
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = CVector(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height, -self._shot_s.cant_sine * self._shot_s.sight_height)
-        _dir_vector = CVector(
+        range_vector = V3dT(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height, -self._shot_s.cant_sine * self._shot_s.sight_height)
+        _dir_vector = V3dT(
             cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
             sin(self._shot_s.barrel_elevation),
             cos(self._shot_s.barrel_elevation) * sin(self._shot_s.barrel_azimuth)
         )
-        velocity_vector = mul_c(&_dir_vector, velocity)
+        velocity_vector = mulS(&_dir_vector, velocity)
         # endregion
 
         # rk_calc_step = 4. * calc_step
-        rk_calc_step = calc_step ** (1/2)  # NOTE: recommended by https://github.com/serhiy-yevtushenko
+        # rk_calc_step = calc_step ** (1/2)  # FIXME: (1/2) allowed only with compiler directive: cdivision=False
+        rk_calc_step = pow(calc_step, 0.5)  # NOTE: recommended by https://github.com/serhiy-yevtushenko
 
-        min_step = fmin(rk_calc_step, record_step)
+        min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = createTrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                         initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
@@ -146,7 +152,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             # # region RK4 integration
 
             # region for Reference:
-            # cdef CVector f(CVector v):  # dv/dt
+            # cdef V3dT f(V3dT v):  # dv/dt
             #     # Bullet velocity changes due to both drag and gravity
             #     return self.gravity_vector - km * v * v.magnitude()
             #
@@ -164,64 +170,64 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
             # v1 = delta_time * f(relative_velocity)
             _temp_v_result = _f_dvdt(&relative_velocity, &gravity_vector, km)
-            v1 = mul_c(&_temp_v_result, delta_time)
+            v1 = mulS(&_temp_v_result, delta_time)
 
             # v2 = delta_time * f(relative_velocity + 0.5 * v1)
-            _temp_add_operand = mul_c(&v1, 0.5)  # Store temporary result
+            _temp_add_operand = mulS(&v1, 0.5)  # Store temporary result
             _temp_v_result = add(&relative_velocity, &_temp_add_operand)
             _temp_v_result = _f_dvdt(&_temp_v_result, &gravity_vector, km)
-            v2 = mul_c(&_temp_v_result, delta_time)
+            v2 = mulS(&_temp_v_result, delta_time)
 
             # v3 = delta_time * f(relative_velocity + 0.5 * v2)
-            _temp_add_operand = mul_c(&v2, 0.5)  # Store temporary result
+            _temp_add_operand = mulS(&v2, 0.5)  # Store temporary result
             _temp_v_result = add(&relative_velocity, &_temp_add_operand)
             _temp_v_result = _f_dvdt(&_temp_v_result, &gravity_vector, km)
-            v3 = mul_c(&_temp_v_result, delta_time)
+            v3 = mulS(&_temp_v_result, delta_time)
 
             # v4 = delta_time * f(relative_velocity + v3)
             _temp_v_result = add(&relative_velocity, &v3)
             _temp_v_result = _f_dvdt(&_temp_v_result, &gravity_vector, km)
-            v4 = mul_c(&_temp_v_result, delta_time)
+            v4 = mulS(&_temp_v_result, delta_time)
 
             # p1 = delta_time * velocity_vector
-            p1 = mul_c(&velocity_vector, delta_time)
+            p1 = mulS(&velocity_vector, delta_time)
 
             # p2 = delta_time * (velocity_vector + 0.5 * p1)
-            _temp_add_operand = mul_c(&p1, 0.5)  # Store temporary result
+            _temp_add_operand = mulS(&p1, 0.5)  # Store temporary result
             _temp_p_result = add(&velocity_vector, &_temp_add_operand)
-            p2 = mul_c(&_temp_p_result, delta_time)
+            p2 = mulS(&_temp_p_result, delta_time)
 
             # p3 = delta_time * (velocity_vector + 0.5 * p2)
-            _temp_add_operand = mul_c(&p2, 0.5)  # Store temporary result
+            _temp_add_operand = mulS(&p2, 0.5)  # Store temporary result
             _temp_p_result = add(&velocity_vector, &_temp_add_operand)
-            p3 = mul_c(&_temp_p_result, delta_time)
+            p3 = mulS(&_temp_p_result, delta_time)
 
             # p4 = delta_time * (velocity_vector + p3)
             _temp_p_result = add(&velocity_vector, &p3)
-            p4 = mul_c(&_temp_p_result, delta_time)
+            p4 = mulS(&_temp_p_result, delta_time)
 
             # velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (1 / 6.0)
             # Break down the sum and scalar multiplication to avoid "non-lvalue" errors
-            _temp_add_operand = mul_c(&v2, 2.0)
+            _temp_add_operand = mulS(&v2, 2.0)
             _v_sum_intermediate = add(&v1, &_temp_add_operand)
 
-            _temp_add_operand = mul_c(&v3, 2.0)
+            _temp_add_operand = mulS(&v3, 2.0)
             _v_sum_intermediate = add(&_v_sum_intermediate, &_temp_add_operand)
 
             _v_sum_intermediate = add(&_v_sum_intermediate, &v4)
-            _v_sum_intermediate = mul_c(&_v_sum_intermediate, (1.0 / 6.0))
+            _v_sum_intermediate = mulS(&_v_sum_intermediate, (1.0 / 6.0))
             velocity_vector = add(&velocity_vector, &_v_sum_intermediate)
 
             # range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (1 / 6.0)
             # Break down the sum and scalar multiplication
-            _temp_add_operand = mul_c(&p2, 2.0)
+            _temp_add_operand = mulS(&p2, 2.0)
             _p_sum_intermediate = add(&p1, &_temp_add_operand)
 
-            _temp_add_operand = mul_c(&p3, 2.0)
+            _temp_add_operand = mulS(&p3, 2.0)
             _p_sum_intermediate = add(&_p_sum_intermediate, &_temp_add_operand)
 
             _p_sum_intermediate = add(&_p_sum_intermediate, &p4)
-            _p_sum_intermediate = mul_c(&_p_sum_intermediate, (1.0 / 6.0))
+            _p_sum_intermediate = mulS(&_p_sum_intermediate, (1.0 / 6.0))
             range_vector = add(&range_vector, &_p_sum_intermediate)
 
             # region for Reference: Euler integration
@@ -266,9 +272,9 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
 # This function calculates dv/dt for velocity (v) affected by gravity and drag.
 # It now takes gravity_vector and km as explicit arguments.
-cdef CVector _f_dvdt(CVector *v_ptr, CVector *gravity_vector_ptr, double km_coeff):
-    cdef CVector drag_force_component
+cdef V3dT _f_dvdt(V3dT *v_ptr, V3dT *gravity_vector_ptr, double km_coeff):
+    cdef V3dT drag_force_component
     # Bullet velocity changes due to both drag and gravity
     # Original: return self.gravity_vector - km * v * v.magnitude()
-    drag_force_component = mul_c(v_ptr, km_coeff * mag(v_ptr))
+    drag_force_component = mulS(v_ptr, km_coeff * mag(v_ptr))
     return sub(gravity_vector_ptr, &drag_force_component)

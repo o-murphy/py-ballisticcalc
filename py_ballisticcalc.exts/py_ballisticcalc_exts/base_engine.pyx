@@ -1,8 +1,7 @@
 # noinspection PyUnresolvedReferences
 from cython cimport final
-from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.vector cimport CVector, add, sub, mag, mul_c, mul_v, neg, norm, mag
+from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
@@ -25,6 +24,10 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     free_trajectory,
     wind_to_c_vector,
 )
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT, add, sub, mag, mulS
+)
 
 from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
@@ -41,7 +44,7 @@ __all__ = (
 
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                  CVector initial_position, CVector initial_velocity,
+                  V3dT initial_position, V3dT initial_velocity,
                   double time_step = 0.0):
     return _TrajectoryDataFilter(
         filter_flags, CTrajFlag.NONE, CTrajFlag.NONE,
@@ -59,12 +62,12 @@ cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double bar
         tdf.seen_zero |= CTrajFlag.ZERO_DOWN
     tdf.look_angle = look_angle
 
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, CVector position, CVector velocity, double mach, double time):
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time):
     cdef BaseTrajData data = None
     cdef double ratio
-    cdef CVector temp_position, temp_velocity
-    cdef CVector temp_sub_position, temp_sub_velocity
-    cdef CVector temp_mul_position, temp_mul_velocity
+    cdef V3dT temp_position, temp_velocity
+    cdef V3dT temp_sub_position, temp_sub_velocity
+    cdef V3dT temp_mul_position, temp_mul_velocity
 
     # #region DEBUG
     # if get_debug():
@@ -83,10 +86,10 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, CVector position, C
             # Interpolate to get BaseTrajData at the record distance
             ratio = (tdf.next_record_distance - tdf.previous_position.x) / (position.x - tdf.previous_position.x)
             temp_sub_position = sub(&position, &tdf.previous_position)
-            temp_mul_position = mul_c(&temp_sub_position, ratio)
+            temp_mul_position = mulS(&temp_sub_position, ratio)
             temp_position = add(&tdf.previous_position, &temp_mul_position)
             temp_sub_velocity = sub(&velocity, &tdf.previous_velocity)
-            temp_mul_velocity = mul_c(&temp_sub_velocity, ratio)
+            temp_mul_velocity = mulS(&temp_sub_velocity, ratio)
             temp_velocity = add(&tdf.previous_velocity, &temp_mul_velocity)
             data = BaseTrajData(
                 time=tdf.previous_time + (time - tdf.previous_time) * ratio,
@@ -132,7 +135,7 @@ cdef void _check_mach_crossing(_TrajectoryDataFilter * tdf, double velocity, dou
         tdf.current_flag |= CTrajFlag.MACH
     tdf.previous_v_mach = current_v_mach
 
-cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, CVector range_vector):
+cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, V3dT range_vector):
     if range_vector.x > 0:
         # Zero reference line is the sight line defined by look_angle
         reference_height = range_vector.x * tan(tdf.look_angle)
@@ -162,13 +165,13 @@ cdef class _WindSock:
         ]
         self.current = 0
         self.next_range = cMaxWindDistanceFeet
-        self._last_vector_cache = CVector(0.0, 0.0, 0.0)
+        self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
         self._length = len(self.winds)
 
         # Initialize cache correctly
         self.update_cache()
 
-    cdef CVector current_vector(_WindSock self):
+    cdef V3dT current_vector(_WindSock self):
         return self._last_vector_cache
 
     cdef void update_cache(_WindSock self):
@@ -178,15 +181,15 @@ cdef class _WindSock:
             self._last_vector_cache = wind_to_c_vector(&cur_wind)
             self.next_range = cur_wind.until_distance
         else:
-            self._last_vector_cache = CVector(0.0, 0.0, 0.0)
+            self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
             self.next_range = cMaxWindDistanceFeet
 
-    cdef CVector vector_for_range(_WindSock self, double next_range):
+    cdef V3dT vector_for_range(_WindSock self, double next_range):
         if next_range >= self.next_range:
         # if next_range + 1e-6 >= self.next_range:
             self.current += 1
             if self.current >= self._length:
-                self._last_vector_cache = CVector(0.0, 0.0, 0.0)
+                self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
                 self.next_range = cMaxWindDistanceFeet
             else:
                 self.update_cache()  # This will trigger cache updates.
@@ -197,7 +200,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     def __cinit__(CythonizedBaseIntegrationEngine self, object _config):
         self._config = create_base_engine_config(_config)
-        self.gravity_vector = CVector(.0, self._config.cGravityConstant, .0)
+        self.gravity_vector = V3dT(.0, self._config.cGravityConstant, .0)
 
     # def __dealloc__(TrajectoryCalc self):
     #     free_trajectory(&self._shot_s)
@@ -220,7 +223,7 @@ cdef class CythonizedBaseIntegrationEngine:
                    bint extra_data = False, double time_step = 0.0) -> object:
         # hack to reload config if it was changed explicit on existed instance
         self._config_s = config_bind(self._config)
-        self.gravity_vector = CVector(.0, self._config_s.cGravityConstant, .0)
+        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         cdef:
             CTrajFlag filter_flags = CTrajFlag.RANGE
@@ -274,7 +277,7 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
         self._config_s = config_bind(self._config)
-        self.gravity_vector = CVector(.0, self._config_s.cGravityConstant, .0)
+        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         cdef:
             # early bindings
@@ -325,7 +328,7 @@ cdef class CythonizedBaseIntegrationEngine:
         raise NotImplementedError
 
 
-cdef object create_trajectory_row(double time, CVector range_vector, CVector velocity_vector,
+cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, int flag):
 

@@ -1,10 +1,13 @@
-# pxd for py_ballisticcalc_exts.trajectory_calc_engine
+# pxd for py_ballisticcalc_exts.base_engine
 
+# noinspection PyUnresolvedReferences
 from cython cimport final
+# noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan, atan2
 
-from py_ballisticcalc_exts.vector cimport CVector
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     Wind_t,
@@ -22,7 +25,10 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     free_trajectory,
     wind_to_c_vector,
 )
-
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT
+)
 
 __all__ = (
     'CythonizedBaseIntegrationEngine',
@@ -36,15 +42,15 @@ cdef struct _TrajectoryDataFilter:
     double time_step, range_step
     double time_of_last_record, next_record_distance
     double previous_mach, previous_time
-    CVector previous_position, previous_velocity
+    V3dT previous_position, previous_velocity
     double previous_v_mach
     double look_angle
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                                                      CVector initial_position, CVector initial_velocity,
+                                                      V3dT initial_position, V3dT initial_velocity,
                                                       double time_step = ?)
 cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle)
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, CVector position, CVector velocity, double mach, double time)
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time)
 
 
 @final
@@ -53,18 +59,18 @@ cdef class _WindSock:
         list winds # list[Wind_t]
         int current
         double next_range
-        CVector _last_vector_cache
+        V3dT _last_vector_cache
         int _length
 
-    cdef CVector current_vector(_WindSock self)
+    cdef V3dT current_vector(_WindSock self)
     cdef void update_cache(_WindSock self)
-    cdef CVector vector_for_range(_WindSock self, double next_range)
+    cdef V3dT vector_for_range(_WindSock self, double next_range)
 
 
 cdef class CythonizedBaseIntegrationEngine:
     cdef:
         list _table_data # list[object]
-        CVector gravity_vector
+        V3dT gravity_vector
         public object _config
         _WindSock ws
         Config_t _config_s # Declared here
@@ -86,7 +92,7 @@ cdef class CythonizedBaseIntegrationEngine:
                                  double maximum_range, double record_step, int filter_flags, double time_step = ?)
 
 
-cdef object create_trajectory_row(double time, CVector range_vector, CVector velocity_vector,
+cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, int flag)
 
