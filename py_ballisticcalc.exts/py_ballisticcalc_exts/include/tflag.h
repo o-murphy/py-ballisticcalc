@@ -1,0 +1,15 @@
+#ifndef TFLAG_H
+#define TFLAG_H
+
+typedef enum {
+    TRAJ_NONE = 0,
+    TRAJ_ZERO_UP = 1,
+    TRAJ_ZERO_DOWN = 2,
+    TRAJ_ZERO = TRAJ_ZERO_UP | TRAJ_ZERO_DOWN,
+    TRAJ_MACH = 4,
+    TRAJ_RANGE = 8,
+    TRAJ_APEX = 16,
+    TRAJ_ALL = TRAJ_RANGE | TRAJ_ZERO_UP | TRAJ_ZERO_DOWN | TRAJ_MACH | TRAJ_APEX
+} TFlag;
+
+#endif // TFLAG_H

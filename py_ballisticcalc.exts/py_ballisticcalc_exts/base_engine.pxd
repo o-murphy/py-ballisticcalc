@@ -6,7 +6,7 @@ from cython cimport final
 from libc.math cimport fabs, sin, cos, tan, atan, atan2
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
@@ -17,6 +17,8 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 from py_ballisticcalc_exts.v3d cimport (
     V3dT
 )
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.tflag cimport TFlag
 
 __all__ = (
     'CythonizedBaseIntegrationEngine',
@@ -26,7 +28,7 @@ __all__ = (
 
 
 cdef struct _TrajectoryDataFilter:
-    int filter, current_flag, seen_zero
+    TFlag filter, current_flag, seen_zero
     double time_step, range_step
     double time_of_last_record, next_record_distance
     double previous_mach, previous_time
@@ -34,7 +36,7 @@ cdef struct _TrajectoryDataFilter:
     double previous_v_mach
     double look_angle
 
-cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
+cdef _TrajectoryDataFilter createTrajectoryDataFilter(TFlag filter_flags, double range_step,
                                                       V3dT initial_position, V3dT initial_velocity,
                                                       double time_step = ?)
 cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle)
@@ -77,12 +79,12 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef void _init_trajectory(self, object shot_info)
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
     cdef list _integrate(CythonizedBaseIntegrationEngine self,
-                                 double maximum_range, double record_step, int filter_flags, double time_step = ?)
+                                 double maximum_range, double record_step, TFlag filter_flags, double time_step = ?)
 
 
 cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, int flag)
+                           double density_factor, double drag, double weight, TFlag flag)
 
 cdef object _new_feet(double v)
 cdef object _new_fps(double v)

@@ -10,7 +10,10 @@ from cython cimport final
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax, pow
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
+# from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.tflag cimport TFlag
+
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
@@ -50,7 +53,7 @@ __all__ = (
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
     cdef list[object] _integrate(CythonizedRK4IntegrationEngine self,
-                                 double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
+                                 double maximum_range, double record_step, TFlag filter_flags, double time_step = 0.0):
         cdef:
             double velocity, delta_time
             double density_factor = .0
@@ -106,7 +109,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
         min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = createTrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
+        data_filter = createTrajectoryDataFilter(filter_flags=<TFlag>filter_flags, range_step=record_step,
                         initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
         setup_seen_zero(&data_filter, range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
 
@@ -265,7 +268,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
-                density_factor, drag, self._shot_s.weight, CTrajFlag.NONE))
+                density_factor, drag, self._shot_s.weight, TFlag.TRAJ_NONE))
 
         return ranges
 

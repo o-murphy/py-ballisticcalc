@@ -14,6 +14,8 @@ from py_ballisticcalc.unit import PreferredUnits
 from py_ballisticcalc_exts.v3d cimport (
     V3dT
 )
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.tflag cimport TFlag
 
 
 @final
@@ -51,7 +53,7 @@ cdef class TrajectoryData:
                     double drag,
                     object energy,
                     object ogw,
-                    int flag,
+                    TFlag flag,
                     ):
         self.time = time
         self.distance = distance

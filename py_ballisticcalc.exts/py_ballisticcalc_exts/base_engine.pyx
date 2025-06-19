@@ -3,7 +3,9 @@ from cython cimport final
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.tflag cimport TFlag
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
@@ -48,11 +50,11 @@ __all__ = (
 )
 
 
-cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
+cdef _TrajectoryDataFilter createTrajectoryDataFilter(TFlag filter_flags, double range_step,
                   V3dT initial_position, V3dT initial_velocity,
                   double time_step = 0.0):
     return _TrajectoryDataFilter(
-        filter_flags, CTrajFlag.NONE, CTrajFlag.NONE,
+        filter_flags, TFlag.TRAJ_NONE, TFlag.TRAJ_NONE,
         time_step, range_step,
         0.0, 0.0, 0.0, 0.0,
         initial_position,
@@ -62,9 +64,9 @@ cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double r
 
 cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle):
     if height >= 0:
-        tdf.seen_zero |= CTrajFlag.ZERO_UP
+        tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_UP) # Явне приведення до TFlag
     elif height < 0 and barrel_elevation < look_angle:
-        tdf.seen_zero |= CTrajFlag.ZERO_DOWN
+        tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_DOWN) # Явне приведення до TFlag
     tdf.look_angle = look_angle
 
 cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time):
@@ -82,7 +84,7 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
     #         f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
     #     )
     # #endregion
-    tdf.current_flag = CTrajFlag.NONE
+    tdf.current_flag = <TFlag>TFlag.TRAJ_NONE
     if (tdf.range_step > 0) and (position.x >= tdf.next_record_distance):
         while tdf.next_record_distance + tdf.range_step < position.x:
             # Handle case where we have stepped past more than one record distance
@@ -102,7 +104,7 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
                 velocity=temp_velocity,
                 mach=tdf.previous_mach + (mach - tdf.previous_mach) * ratio
             )
-        tdf.current_flag |= CTrajFlag.RANGE
+        tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_RANGE)
         tdf.next_record_distance += tdf.range_step
         tdf.time_of_last_record = time
     elif tdf.time_step > 0:
@@ -131,13 +133,13 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
 
 cdef void _check_next_time(_TrajectoryDataFilter * tdf, double time):
         if time > tdf.time_of_last_record + tdf.time_step:
-            tdf.current_flag |= CTrajFlag.RANGE
+            tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_RANGE)
             tdf.time_of_last_record = time
 
 cdef void _check_mach_crossing(_TrajectoryDataFilter * tdf, double velocity, double mach):
     cdef double current_v_mach = velocity / mach
     if tdf.previous_v_mach > 1 >= current_v_mach:
-        tdf.current_flag |= CTrajFlag.MACH
+        tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_MACH)
     tdf.previous_v_mach = current_v_mach
 
 cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, V3dT range_vector):
@@ -145,15 +147,15 @@ cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, V3dT range_vector):
         # Zero reference line is the sight line defined by look_angle
         reference_height = range_vector.x * tan(tdf.look_angle)
         # If we haven't seen ZERO_UP, we look for that first
-        if not (tdf.seen_zero & CTrajFlag.ZERO_UP):
+        if not (tdf.seen_zero & TFlag.TRAJ_ZERO_UP):
             if range_vector.y >= reference_height:
-                tdf.current_flag |= CTrajFlag.ZERO_UP
-                tdf.seen_zero |= CTrajFlag.ZERO_UP
+                tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_ZERO_UP)
+                tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_UP)
         # We've crossed above sight line; now look for crossing back through it
-        elif not (tdf.seen_zero & CTrajFlag.ZERO_DOWN):
+        elif not (tdf.seen_zero & TFlag.TRAJ_ZERO_DOWN):
             if range_vector.y < reference_height:
-                tdf.current_flag |= CTrajFlag.ZERO_DOWN
-                tdf.seen_zero |= CTrajFlag.ZERO_DOWN
+                tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_ZERO_DOWN)
+                tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_DOWN)
 
 
 @final
@@ -231,10 +233,10 @@ cdef class CythonizedBaseIntegrationEngine:
         self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         cdef:
-            CTrajFlag filter_flags = CTrajFlag.RANGE
+            TFlag filter_flags = TFlag.TRAJ_RANGE
 
         if extra_data:
-            filter_flags = CTrajFlag.ALL
+            filter_flags = TFlag.TRAJ_ALL
 
         self._init_trajectory(shot_info)
         cdef list[object] t = self._integrate(max_range._feet, dist_step._feet, filter_flags, time_step)
@@ -308,7 +310,7 @@ cdef class CythonizedBaseIntegrationEngine:
         # x = horizontal distance down range, y = drop, z = windage
         while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             try:
-                t = self._integrate(maximum_range, zero_distance, CTrajFlag.NONE)[0]
+                t = self._integrate(maximum_range, zero_distance, TFlag.TRAJ_NONE)[0]
                 height = t.height._feet  # use internal shortcut instead of (t.height >> Distance.Foot)
             except RangeError as e:
                 last_distance_foot = e.last_distance._feet
@@ -329,13 +331,13 @@ cdef class CythonizedBaseIntegrationEngine:
 
 
     cdef list[object] _integrate(CythonizedBaseIntegrationEngine self,
-                                 double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
+                                 double maximum_range, double record_step, TFlag filter_flags, double time_step = 0.0):
         raise NotImplementedError
 
 
 cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, int flag):
+                           double density_factor, double drag, double weight, TFlag flag):
 
     cdef:
         double windage = range_vector.z + spin_drift

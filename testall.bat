@@ -1,0 +1,5 @@
+pytest tests --engine="euler_engine"
+pytest tests --engine="rk4_engine"
+pytest tests --engine="cythonized_euler_engine"
+pytest tests --engine="cythonized_rk4_engine"
+pytest tests --engine="scipy_engine"

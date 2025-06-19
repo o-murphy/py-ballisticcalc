@@ -53,6 +53,17 @@ helpers_c_dependent = [
     "base_engine",
 ]
 
+traj_c_sources = [
+    # os.path.join(ext_base_dir, 'src', 'tflag.c'),
+    # os.path.join(ext_base_dir, 'src', 'tdatafilter.c'),
+]
+traj_c_dependent = [
+    "base_engine",
+    "euler_engine",
+    "rk4_engine",
+    "trajectory_data",
+]
+
 # *** ЗМІНА ТУТ: Додано 'include' до include_dirs для пошуку v3d.h ***
 include_dirs = [
     ext_base_dir,  # Для .pxd файлів
@@ -87,6 +98,9 @@ for name in extension_names:
 
     if name in helpers_c_dependent:
         sources.append(helpers_c_source)
+
+    if name in traj_c_dependent:
+        sources.extend(traj_c_sources)
 
     extensions.append(
         Extension(
