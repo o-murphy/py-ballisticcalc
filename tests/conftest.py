@@ -18,7 +18,7 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope="class")
 def loaded_engine_instance(request):
-    engine_name = request.config.getoption("--engine")
+    engine_name = request.config.getoption("--engine", None)
     print(f"\nAttempting to load engine: '{engine_name}'")
 
     try:

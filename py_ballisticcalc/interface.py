@@ -63,7 +63,7 @@ class _EngineLoader:
     @classmethod
     def load(cls, entry_point: Union[str, Type[EngineProtocol[ConfigT]], None] = DEFAULT_ENTRY) -> Type[
         EngineProtocol[ConfigT]]:
-        if DEFAULT_ENTRY is None:
+        if entry_point is None:
             entry_point = DEFAULT_ENTRY
         if isinstance(entry_point, EngineProtocol):
             return entry_point
