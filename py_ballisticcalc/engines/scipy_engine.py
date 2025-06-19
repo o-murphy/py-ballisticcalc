@@ -1,8 +1,6 @@
 """Computes trajectory using SciPy's solve_ivp; uses SciPy's root_scalar to get specific points.
 pytest tests --engine=SciPyIntegrationEngine
 TODO:
- * Handle incomplete trajectories; raise RangeErrors where appropriate.
- * Implement all TrajFlags: ZERO_UP, ZERO_DOWN, MACH, APEX
  * Use SciPy root finder for zero_angle() override
 """
 import math
@@ -124,6 +122,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             """
             x, y, z = s[:3]
             vx, vy, vz = s[3:]
+            # TODO: Faster to avoid using Vector class here?
             velocity_vector = Vector(vx, vy, vz)
 
             wind_vector = wind_sock.wind_at_distance(x)
@@ -162,9 +161,19 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             return v - _cMinimumVelocity
         event_min_velocity.terminal = True  # type: ignore[attr-defined]
 
+        traj_events = [event_max_range, event_max_drop, event_min_velocity]
+
+        if filter_flags & TrajFlag.ZERO:
+            def zero_crossing(t, s):  # Look for trajectory crossing sight line
+                # Solve for y = x * tan(look_angle)
+                return s[1] - s[0] * math.tan(self.look_angle)
+            zero_crossing.terminal = False  # type: ignore[attr-defined]
+            zero_crossing.direction = 0  # type: ignore[attr-defined]
+            traj_events.append(zero_crossing)
+
         sol = solve_ivp(diff_eq, (0, self.max_time), s0,
                         method=self.integration_method, dense_output=True, rtol=self.error_tolerance,
-                        events=[event_max_range, event_max_drop, event_min_velocity])
+                        events=traj_events)
 
         if not sol.success:  # Integration failed
             raise RangeError(f"SciPy integration failed: {sol.message}", ranges)
@@ -262,15 +271,53 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             for i in range(states_at_x.shape[1]):
                 ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
 
-            # if filter_flags & TrajFlag.APEX:
-            #     def vy(t):
-            #         """Returns the vertical velocity at time t."""
-            #         return sol.sol(t)[4]
-            #     res = root_scalar(vy, bracket=[t_vals[0], t_vals[-1]])
-            #     if res.converged:
-            #         ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.APEX))
-            #         ranges.sort(key=lambda t: t.time)  # Sort by time
+            #region Find TrajectoryData points requested by filter_flags
+            if filter_flags:
+                if filter_flags & TrajFlag.MACH and ranges[0].mach > 1.0 and ranges[-1].mach < 1.0:
+                    def mach_minus_one(t):
+                        """Returns the Mach number at time t minus 1."""
+                        state = sol.sol(t)
+                        x, y = state[:2]
+                        relative_velocity = Vector(*state[3:])
+                        if (wind_vector := wind_sock.wind_at_distance(x)) is not None:
+                            relative_velocity = relative_velocity - wind_vector
+                        relative_speed = relative_velocity.magnitude()
+                        density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + y)
+                        return (relative_speed / mach) - 1.0
+                    try:
+                        res = root_scalar(mach_minus_one, bracket=[t_vals[0], t_vals[-1]])
+                        if res.converged:
+                            ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.MACH))
+                    except ValueError:
+                        logger.debug(f"No Mach crossing found")
 
+                if filter_flags & TrajFlag.ZERO and len(sol.t_events) > 3 and sol.t_events[-1].size > 0:
+                    tan_look_angle = math.tan(self.look_angle)
+                    for t_cross in sol.t_events[-1]:
+                        state = sol.sol(t_cross)
+                        # To determine crossing direction, sample after the crossing
+                        dt = 1e-8  # Small time offset
+                        state_after = sol.sol(t_cross + dt)
+                        y_after = state_after[1] - state_after[0] * tan_look_angle
+                        if y_after > 0:
+                            direction = TrajFlag.ZERO_UP
+                        else:
+                            direction = TrajFlag.ZERO_DOWN
+                        ranges.append(make_row(t_cross, state, direction))
+
+                if filter_flags & TrajFlag.APEX:
+                    def vy(t):
+                        """Returns the vertical velocity at time t."""
+                        return sol.sol(t)[4]
+                    try:
+                        res = root_scalar(vy, bracket=[t_vals[0], t_vals[-1]])
+                        if res.converged:
+                            ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.APEX))
+                    except ValueError:
+                        logger.debug(f"No apex found for trajectory")
+
+                ranges.sort(key=lambda t: t.time)  # Sort by time
+                #endregion Find TrajectoryData points requested by filter_flags
             #endregion Find requested TrajectoryData points
 
             if termination_reason is not None:
