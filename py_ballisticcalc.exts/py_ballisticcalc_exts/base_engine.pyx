@@ -51,14 +51,14 @@ __all__ = (
 
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(TFlag filter_flags, double range_step,
-                  V3dT initial_position, V3dT initial_velocity,
+                  const V3dT *initial_position, const V3dT *initial_velocity,
                   double time_step = 0.0):
     return _TrajectoryDataFilter(
         filter_flags, TFlag.TRAJ_NONE, TFlag.TRAJ_NONE,
         time_step, range_step,
         0.0, 0.0, 0.0, 0.0,
-        initial_position,
-        initial_velocity,
+        initial_position[0],  # same as *initial_position
+        initial_velocity[0],  # same as *initial_velocity
         0.0, 0.0,
     )
 
@@ -69,7 +69,7 @@ cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double bar
         tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_DOWN) # Явне приведення до TFlag
     tdf.look_angle = look_angle
 
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time):
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time):
     cdef BaseTrajData data = None
     cdef double ratio
     cdef V3dT temp_position, temp_velocity
@@ -92,10 +92,10 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
         if position.x > tdf.previous_position.x:
             # Interpolate to get BaseTrajData at the record distance
             ratio = (tdf.next_record_distance - tdf.previous_position.x) / (position.x - tdf.previous_position.x)
-            temp_sub_position = sub(&position, &tdf.previous_position)
+            temp_sub_position = sub(position, &tdf.previous_position)
             temp_mul_position = mulS(&temp_sub_position, ratio)
             temp_position = add(&tdf.previous_position, &temp_mul_position)
-            temp_sub_velocity = sub(&velocity, &tdf.previous_velocity)
+            temp_sub_velocity = sub(velocity, &tdf.previous_velocity)
             temp_mul_velocity = mulS(&temp_sub_velocity, ratio)
             temp_velocity = add(&tdf.previous_velocity, &temp_mul_velocity)
             data = BaseTrajData(
@@ -110,13 +110,13 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
     elif tdf.time_step > 0:
         _check_next_time(tdf, time)
     _check_zero_crossing(tdf, position)
-    _check_mach_crossing(tdf, mag(&velocity), mach)
+    _check_mach_crossing(tdf, mag(velocity), mach)
     if (tdf.current_flag & tdf.filter) != 0 and data is None:
-        data = BaseTrajData(time=time, position=position,
-                            velocity=velocity, mach=mach)
+        data = BaseTrajData(time=time, position=position[0],
+                            velocity=velocity[0], mach=mach)
     tdf.previous_time = time
-    tdf.previous_position = position
-    tdf.previous_velocity = velocity
+    tdf.previous_position = position[0]  # same as *position
+    tdf.previous_velocity = velocity[0]  # same as *velocity
     tdf.previous_mach = mach
     #region DEBUG
     # if get_debug():
@@ -142,7 +142,7 @@ cdef void _check_mach_crossing(_TrajectoryDataFilter * tdf, double velocity, dou
         tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_MACH)
     tdf.previous_v_mach = current_v_mach
 
-cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, V3dT range_vector):
+cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, const V3dT *range_vector):
     if range_vector.x > 0:
         # Zero reference line is the sight line defined by look_angle
         reference_height = range_vector.x * tan(tdf.look_angle)

@@ -110,7 +110,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = createTrajectoryDataFilter(filter_flags=<TFlag>filter_flags, range_step=record_step,
-                        initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
+                        initial_position=&range_vector, initial_velocity=&velocity_vector, time_step=time_step)
         setup_seen_zero(&data_filter, range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
 
         #region Trajectory Loop
@@ -133,7 +133,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
-                data = should_record(&data_filter, range_vector, velocity_vector, mach, time)
+                data = should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
                 if data is not None:
                     ranges.append(create_trajectory_row(
                         data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
