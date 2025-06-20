@@ -2,6 +2,7 @@
 pytest tests --engine=SciPyIntegrationEngine
 TODO:
  * Use SciPy root finder for zero_angle() override
+ * Implement time_step for recording TrajectoryData at specific time intervals
 """
 import math
 import warnings
@@ -72,11 +73,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         Calculate trajectory for specified shot
 
         Args:
-            shot_info (Shot):  Information about the shot.
+            shot_info (Shot):  Information about the shot
             maximum_range (float): Feet down range to stop calculation
             record_step (float): Frequency (in feet down range) to record TrajectoryData
-            filter_flags (Union[TrajFlag, int]): Flags for TrajectoryData points of interest.
-            time_step (float, optional): Not used in this implementation.
+            filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points
+            time_step (float, optional): Not used in this implementation
 
         Returns:
             List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
@@ -119,9 +120,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             """
             x, y, z = s[:3]
             vx, vy, vz = s[3:]
-            # TODO: Faster to avoid using Vector class here?
             velocity_vector = Vector(vx, vy, vz)
-
             wind_vector = wind_sock.wind_at_distance(x)
             if wind_vector is None:
                 relative_velocity = velocity_vector
@@ -133,6 +132,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             drag = km * relative_speed
 
             # Derivatives
+            # TODO: What if we use the drag-adjusted velocity for dx/dt?
             dxdt = vx
             dydt = vy
             dzdt = vz
