@@ -1,7 +1,7 @@
 import pytest
 
-from py_ballisticcalc import HitResult, Distance, BaseEngineConfigDict, Calculator, DragModel, TableG1, Weight, Ammo, \
-    Velocity, Weapon, Shot, Angular
+from py_ballisticcalc import HitResult, Distance, BaseEngineConfigDict, Calculator, DragModel, TableG1, Weight, \
+                             Velocity, Ammo, Weapon, Shot, Angular
 
 
 def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit: Distance = Distance.Meter,
@@ -32,9 +32,9 @@ def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit:
 @pytest.fixture(autouse=True)
 def zero_height_calc(loaded_engine_instance):
     config = BaseEngineConfigDict(
-        cMinimumVelocity=0,
-        cMinimumAltitude=Distance.Meter(0),
-        cMaximumDrop=Distance.Meter(0),
+        cMinimumVelocity=0.0,
+        cMinimumAltitude=0.0,
+        cMaximumDrop=0.0,
     )
     calc = Calculator(config=config, engine=loaded_engine_instance)
     return calc

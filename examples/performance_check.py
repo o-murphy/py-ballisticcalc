@@ -140,7 +140,12 @@ def run_check(calc_, number):
 number = 120
 config = {}
 
+[print(f"Detected: {e}") for e in _EngineLoader.iter_engines()]
+print()
+
 for ep in _EngineLoader.iter_engines():
+    # if not ep.name.startswith("cy"):
+    #     continue
     engine = ep.load()
     print("Engine: %s" % ep.value)
     calc = Calculator(config=config, engine=engine)
@@ -148,6 +153,53 @@ for ep in _EngineLoader.iter_engines():
     print()
 
 from examples.integrators.euler_no_rec import EulerIntegrationNoRec
-print("Engine: Pure (yields)")
+print(f"Engine: {EulerIntegrationNoRec}")
 calc = Calculator(config=config, engine=EulerIntegrationNoRec)
 run_check(calc, number)
+
+# Engine: py_ballisticcalc_exts:CythonizedEulerIntegrationEngine
+# Calculate barrel elevation at distance 100.0m 120 times:
+# Total time: 0.066933 seconds
+# Execution rate: 1792.83 calls per second
+# Calculate trajectory to distance 1000.0m 120 times:
+# Total time: 0.227643 seconds
+# Execution rate: 527.14 calls per second
+# Calculate trajectory to distance + extra 1000.0m 120 times:
+# Total time: 0.227960 seconds
+# Execution rate: 526.41 calls per second
+#
+#
+# Engine: py_ballisticcalc_exts:CythonizedRK4IntegrationEngine
+# Calculate barrel elevation at distance 100.0m 120 times:
+# Total time: 0.060389 seconds
+# Execution rate: 1987.11 calls per second
+# Calculate trajectory to distance 1000.0m 120 times:
+# Total time: 0.180230 seconds
+# Execution rate: 665.82 calls per second
+# Calculate trajectory to distance + extra 1000.0m 120 times:
+# Total time: 0.179801 seconds
+# Execution rate: 667.40 calls per second
+
+
+# Engine: py_ballisticcalc_exts:CythonizedEulerIntegrationEngine
+# Calculate barrel elevation at distance 100.0m 120 times:
+# Total time: 0.042595 seconds
+# Execution rate: 2817.23 calls per second
+# Calculate trajectory to distance 1000.0m 120 times:
+# Total time: 0.147596 seconds
+# Execution rate: 813.03 calls per second
+# Calculate trajectory to distance + extra 1000.0m 120 times:
+# Total time: 0.151805 seconds
+# Execution rate: 790.49 calls per second
+#
+#
+# Engine: py_ballisticcalc_exts:CythonizedRK4IntegrationEngine
+# Calculate barrel elevation at distance 100.0m 120 times:
+# Total time: 0.037839 seconds
+# Execution rate: 3171.34 calls per second
+# Calculate trajectory to distance 1000.0m 120 times:
+# Total time: 0.117954 seconds
+# Execution rate: 1017.34 calls per second
+# Calculate trajectory to distance + extra 1000.0m 120 times:
+# Total time: 0.119256 seconds
+# Execution rate: 1006.24 calls per second

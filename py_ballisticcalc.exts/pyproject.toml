@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc.exts"
-version = "2.2.0b1"
+version = "2.2.0b2"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -18,7 +18,7 @@ description = "LGPL library for small arms ballistic calculations (Python 3)"
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "python3"]
-license = {file = "LICENSE"}
+#license = {file = "LICENSE"}
 classifiers = [
     "Intended Audience :: Developers",
     "Natural Language :: English",
@@ -43,6 +43,7 @@ cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
 "Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
 "Source" = "https://github.com/o-murphy/py_ballisticcalc"
+
 
 [tool.setuptools]
 py-modules = ["py_ballisticcalc_exts"]

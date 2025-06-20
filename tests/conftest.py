@@ -11,14 +11,14 @@ def pytest_addoption(parser):
     parser.addoption(
         "--engine",
         action="store",
-        default="py_ballisticcalc",
+        default=None,  # be sure to use the default value from _EngeneLoader
         help="Specify the engine entry point name"
     )
 
 
 @pytest.fixture(scope="class")
 def loaded_engine_instance(request):
-    engine_name = request.config.getoption("--engine")
+    engine_name = request.config.getoption("--engine", None)
     print(f"\nAttempting to load engine: '{engine_name}'")
 
     try:

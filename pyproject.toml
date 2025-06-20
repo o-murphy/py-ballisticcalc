@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.2.0b1"
+version = "2.2.0b2"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
@@ -41,6 +41,7 @@ dependencies = [
 [project.entry-points.py_ballisticcalc]
 euler_engine = "py_ballisticcalc:EulerIntegrationEngine"
 rk4_engine = "py_ballisticcalc:RK4IntegrationEngine"
+scipy_engine = "py_ballisticcalc:SciPyIntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
@@ -68,6 +69,7 @@ dev = [
     "matplotlib>=3.9",
     "mypy>=1.15.0",
     "numpy>=2",
+    "scipy>=1.13.1",  # maybe should be in othger dependency group (40+Mb zipped size)
     "pandas>=2.3.0",
     "pandas-stubs>=2.2.2.240807",
     "pylint>=3.3.4",
@@ -76,17 +78,21 @@ dev = [
     "pytest-xdist>=3.6.1",
 ]
 
+[tool.uv.sources]
+"py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.2.0b1']
+exts = ['py_ballisticcalc.exts==2.2.0b2']
 charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 visualize = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
+scipy = []
 dev = [
     "build>=1.2.2.post1",
     "jupyter>=1.1.1",
     "matplotlib>=3.9",
     "mypy>=1.15.0",
     "numpy>=2",
+    "scipy>=1.13.1",  # maybe should be in othger dependency group (40+Mb zipped size)
     "pandas>=2.3.0",
     "pandas-stubs>=2.2.2.240807",
     "pylint>=3.3.4",

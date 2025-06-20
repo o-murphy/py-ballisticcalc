@@ -6,9 +6,15 @@
 
 # noinspection PyUnresolvedReferences
 from cython cimport final
+# noinspection PyUnresolvedReferences
 from libc.stdlib cimport malloc, free
-from libc.math cimport fabs, pow, atan2, exp, sqrt, sin, cos
-from py_ballisticcalc_exts.vector cimport CVector
+# noinspection PyUnresolvedReferences
+from libc.math cimport fabs, pow, atan2, exp, sqrt, sin, cos, fmin
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT
+)
+
 import warnings
 
 @final
@@ -27,7 +33,7 @@ cdef double cy_get_calc_step(Config_t * config, double step = 0):
     cdef double preferred_step = config.cMaxCalcStepSizeFeet
     if step == 0:
         return preferred_step / 2.0
-    return min(step, preferred_step) / 2.0
+    return fmin(step, preferred_step) / 2.0
 
 cdef MachList_t cy_table_to_mach(list[object] data):
     cdef int data_len = len(data)
@@ -88,17 +94,133 @@ cdef Curve_t cy_calculate_curve(list[object] data_points):
         num_points - 2].Mach * rate)
 
     # Set the length of the curve
-    curve.length = len_data_points
+    curve.length = <size_t>len_data_points
     curve.points = curve_points
 
     return curve
+
+# TODO: try malloc there
+# # curve_calculations.pyx (or your Cython file name)
+#
+# # Import necessary C standard library functions
+# # We need malloc for dynamic memory allocation
+# cdef extern from "stdlib.h":
+#     void *malloc(size_t size)
+#     void free(void *ptr) # It's good practice to have free available for later use
+#
+# # Define the CurvePoint_t struct
+# # Assuming data_points have 'Mach' and 'CD' attributes.
+# # The CurvePoint_t struct should define 'a', 'b', and 'c' for the quadratic/linear segments.
+# cdef struct CurvePoint_t:
+#     double a
+#     double b
+#     double c
+#
+# # Define the Curve_t struct
+# # This struct holds a pointer to an array of CurvePoint_t and its length.
+# cdef struct Curve_t:
+#     CurvePoint_t * points
+#     size_t length
+#
+# # This is an example of what your data_points object might look like.
+# # In a real scenario, this would likely be a Python class or a Cython cdef class
+# # that 'data_points' are instances of.
+# # For demonstration purposes, we'll assume data_points elements have .Mach and .CD attributes.
+# # You would define your actual data point structure or class separately.
+# # For example, if it's a Python class:
+# # class DataPoint:
+# #     def __init__(self, mach, cd):
+# #         self.Mach = mach
+# #         self.CD = cd
+#
+#
+# cdef Curve_t cy_calculate_curve(list[object] data_points):
+#     cdef double rate, x1, x2, x3, y1, y2, y3, a, b, c
+#     cdef Curve_t curve
+#     cdef CurvePoint_t * curve_points
+#     # Declare variables for lengths and loop counter as size_t where appropriate
+#     cdef size_t i, num_points, len_data_points, len_data_range
+#
+#     # Get the length of the input data_points list and cast to size_t
+#     len_data_points = <size_t>len(data_points)
+#     # len_data_range is used for the loop upper bound, so it should also be size_t
+#     len_data_range = len_data_points - 1
+#
+#     # Basic validation: ensure we have enough points to form a curve
+#     if len_data_points < 2:
+#         # A single point doesn't form a segment, and at least 2 are needed for the first rate calc.
+#         # If you need quadratic segments, you'll need at least 3 points for the middle section.
+#         # Adjust this check based on your curve fitting logic.
+#         raise ValueError("Not enough data points to calculate a curve. At least 2 are required.")
+#
+#     # Allocate memory for the curve_points array
+#     # The size of allocation should be based on len_data_points (the total number of points)
+#     curve_points = <CurvePoint_t *> malloc(len_data_points * sizeof(CurvePoint_t))
+#     if curve_points is NULL:
+#         raise MemoryError("Unable to allocate memory for curve points")
+#
+#     # --- First Point Calculation (Linear Segment) ---
+#     # This assumes data_points[0] and data_points[1] exist.
+#     # The first curve point is based on a linear interpolation between the first two data points.
+#     rate = (data_points[1].CD - data_points[0].CD) / (data_points[1].Mach - data_points[0].Mach)
+#     curve_points[0] = CurvePoint_t(0, rate, data_points[0].CD - data_points[0].Mach * rate)
+#
+#     # --- Middle Points Calculation (Quadratic Segments) ---
+#     # This loop calculates quadratic segments for points where you have a preceding and succeeding point.
+#     # It iterates from the second point (index 1) up to the second-to-last point (index len_data_points - 2).
+#     # This ensures data_points[i-1], data_points[i], and data_points[i+1] are always valid.
+#     for i in range(<size_t>1, len_data_range): # Iterate with size_t, casting range arguments
+#         x1 = data_points[i - 1].Mach
+#         x2 = data_points[i].Mach
+#         x3 = data_points[i + 1].Mach
+#         y1 = data_points[i - 1].CD
+#         y2 = data_points[i].CD
+#         y3 = data_points[i + 1].CD
+#
+#         # Denominator check to prevent division by zero for identical Mach values
+#         denominator = ((x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
+#         if denominator == 0:
+#             # Handle cases where points are collinear or identical in Mach values
+#             # This is a simplified error handling; you might want more sophisticated methods
+#             # like falling back to linear interpolation or raising a more specific error.
+#             # For now, let's raise an error.
+#             raise ValueError(f"Degenerate Mach points around index {i} preventing quadratic fit.")
+#
+#         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / denominator
+#         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
+#         c = y1 - (a * x1 * x1 + b * x1)
+#         curve_points[i] = CurvePoint_t(a, b, c)
+#
+#     # --- Last Point Calculation (Linear Segment) ---
+#     # This handles the very last point in the curve, again using a linear segment.
+#     # It assumes data_points[num_points - 1] and data_points[num_points - 2] exist.
+#     num_points = len_data_points # num_points is already size_t from declaration
+#     if num_points > 1: # Only calculate if there are at least two points
+#         rate = (data_points[num_points - 1].CD - data_points[num_points - 2].CD) / \
+#                (data_points[num_points - 1].Mach - data_points[num_points - 2].Mach)
+#         curve_points[num_points - 1] = CurvePoint_t(0, rate, data_points[num_points - 1].CD - \
+#             data_points[num_points - 2].Mach * rate)
+#     else:
+#         # Handle the case of only one point (if allowed by initial validation)
+#         # In this specific implementation, it means len_data_points was 1,
+#         # and the above 'if len_data_points < 2' would have caught it.
+#         # But if that check were looser, you'd need a fallback for curve_points[0].
+#         # For a single point, 'a' and 'b' would typically be 0, and 'c' would be the CD value.
+#         pass # The initial check handles this scenario.
+#
+#
+#     # Set the length of the curve and assign the allocated points
+#     curve.length = len_data_points
+#     curve.points = curve_points
+#
+#     return curve
 
 cdef double cy_calculate_by_curve_and_mach_list(MachList_t *mach_list, Curve_t *curve, double mach):
     cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint_t curve_m
 
     # Get the number of points in the curve
-    num_points = int(curve.length)
+    num_points = <int>curve.length
 
     # Set the initial range for binary search
     mlo = 0
@@ -140,7 +262,7 @@ cdef double cy_spin_drift(ShotData_t * t, double time):
     :param time: Time of flight
     :return: windage due to spin drift, in feet
     """
-    cdef int sign
+    cdef double sign
     if (t.twist != 0) and (t.stability_coefficient != 0):
         sign = 1 if t.twist > 0 else -1
         return sign * (1.25 * (t.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
@@ -177,17 +299,6 @@ cdef void free_trajectory(ShotData_t *t):
     # Free memory for curve and mach_list
     free_curve(&t.curve)
     free_mach_list(&t.mach_list)
-
-cdef double cy_get_correction(double distance, double offset):
-    if distance != 0:
-        return atan2(offset, distance)
-    return 0  # better None
-
-cdef double cy_calculate_energy(double bullet_weight, double velocity):
-    return bullet_weight * pow(velocity, 2) / 450400
-
-cdef double cy_calculate_ogw(double bullet_weight, double velocity):
-    return pow(bullet_weight, 2) * pow(velocity, 3) * 1.5e-12
 
 cdef double cDegreesFtoR = 459.67
 cdef double cDegreesCtoK = 273.15
@@ -237,13 +348,13 @@ cdef void update_density_factor_and_mach_for_altitude(
         #debug
         #print(f"Altitude: {altitude}, {atmo._t0}°C now {celsius}°C, pressure {atmo._p0} now {pressure}hPa >> {density_ratio[0]} from density_delta {density_delta}")
 
-cdef CVector wind_to_c_vector(Wind_t * w):
+cdef V3dT wind_to_c_vector(Wind_t * w):
     cdef:
         # Downrange (x-axis) wind velocity component:
         double range_component = w.velocity * cos(w.direction_from)
         # Downrange (x-axis) wind velocity component:
         double cross_component = w.velocity * sin(w.direction_from)
-    return CVector(range_component, 0., cross_component)
+    return V3dT(range_component, 0., cross_component)
 
 # cdef void free_trajectory(ShotData_t * t):
 #     if t.mach_list != NULL:

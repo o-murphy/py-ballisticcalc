@@ -8,8 +8,8 @@ from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, G
 
 __all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
 
-DataFrame: Any
-Axes: Any
+DataFrame: Any  # Disable type-checking for DataFrames
+Axes: Any       # Disable type-checking for Axes
 
 _TrajFlagNames = {
     0: 'NONE',
@@ -24,8 +24,8 @@ _TrajFlagNames = {
 
 
 class TrajFlag(int):
-    """Flags for marking trajectory row if Zero or Mach crossing
-    Also uses to set a filters for a trajectory calculation loop
+    """Flags for marking trajectory row if Zero or Mach crossing.
+    Also used to set filters for a trajectory calculation loop.
     """
     NONE: Final[int] = 0
     ZERO_UP: Final[int] = 1
@@ -51,26 +51,25 @@ class TrajFlag(int):
 
 class TrajectoryData(NamedTuple):
     """
-    Data for one point in ballistic trajectory
+    Data for one point in ballistic trajectory.
 
     Attributes:
-        time (float): bullet flight time
-        distance (Distance): x-axis coordinate
-        velocity (Velocity): velocity
-        mach (float): velocity in Mach prefer_units
-        height (Distance): y-axis coordinate
-        target_drop (Distance): drop relative to sight-line
-        drop_adj (Angular): sight adjustment to zero target_drop at this distance
-        windage (Distance):
-        windage_adj (Angular):
-        look_distance (Distance): sight-line distance = .distance/cosine(look_angle)
-        # look_height (Distance): y-coordinate of sight-line = .distance*tan(look_angle)
-        angle (Angular): Angle of velocity vector relative to x-axis
-        density_factor (float): Ratio of air density here to standard density
-        drag (float): Current drag coefficient
-        energy (Energy):
-        ogw (Weight): optimal game weight
-        flag (Union[TrajFlag, int]): row type
+        time (float): Bullet flight time in seconds.
+        distance (Distance): Down-range (x-axis) coordinate of this point.
+        velocity (Velocity): Velocity.
+        mach (float): Velocity in Mach terms.
+        height (Distance): Vertical (y-axis) coordinate of this point.
+        target_drop (Distance): Drop relative to sight-line.
+        drop_adj (Angular): Sight adjustment to zero target_drop at this distance.
+        windage (Distance): Windage (z-axis) coordinate of this point.
+        windage_adj (Angular): Windage adjustment.
+        look_distance (Distance): Sight-line distance = .distance/cosine(look_angle).
+        angle (Angular): Angle of velocity vector relative to x-axis.
+        density_factor (float): Ratio of air density here to standard density.
+        drag (float): Current drag coefficient.
+        energy (Energy): Energy of bullet at this point.
+        ogw (Weight): Optimal game weight, given .energy.
+        flag (Union[TrajFlag, int]): Row type.
     """
 
     time: float
@@ -92,7 +91,8 @@ class TrajectoryData(NamedTuple):
 
     def formatted(self) -> Tuple[str, ...]:
         """
-        :return: matrix of formatted strings for each value of trajectory in default prefer_units
+        Returns:
+            Tuple[str, ...]: Matrix of formatted strings for this point, in PreferredUnits.
         """
 
         def _fmt(v: GenericDimension, u: Unit) -> str:
@@ -115,13 +115,13 @@ class TrajectoryData(NamedTuple):
             f'{self.drag:.3f}',
             _fmt(self.energy, PreferredUnits.energy),
             _fmt(self.ogw, PreferredUnits.ogw),
-
             TrajFlag.name(self.flag)
         )
 
     def in_def_units(self) -> Tuple[float, ...]:
         """
-        :return: matrix of floats of the trajectory in default prefer_units
+        Returns:
+            Tuple[float, ...]: Matrix of floats of this point, in PreferredUnits.
         """
         return (
             self.time,
@@ -144,7 +144,15 @@ class TrajectoryData(NamedTuple):
 
 
 class DangerSpace(NamedTuple):
-    """Stores the danger space data for distance specified"""
+    """Stores the danger space data for distance specified.
+
+    Attributes:
+        at_range (TrajectoryData): Trajectory data at the specified range.
+        target_height (Distance): Target height.
+        begin (TrajectoryData): Beginning of danger space.
+        end (TrajectoryData): End of danger space.
+        look_angle (Angular): Look-angle (sight-line).
+    """
     at_range: TrajectoryData
     target_height: Distance
     begin: TrajectoryData
@@ -160,9 +168,17 @@ class DangerSpace(NamedTuple):
 
     # pylint: disable=import-outside-toplevel
     def overlay(self, ax: 'Axes', label: Optional[str] = None):  # type: ignore
-        """Highlights danger-space region on plot"""
+        """Highlights danger-space region on plot.
+
+        Args:
+            ax (Axes): The axes to overlay on.
+            label (Optional[str], optional): Label for the overlay. Defaults to None.
+
+        Raises:
+            ImportError: If plotting dependencies are not installed.
+        """
         try:
-            from py_ballisticcalc.visualize.plot import add_danger_space_overlay  # type: ignore
+            from py_ballisticcalc.visualize.plot import add_danger_space_overlay
             add_danger_space_overlay(self, ax, label)
         except ImportError as err:
             raise ImportError(
@@ -170,9 +186,16 @@ class DangerSpace(NamedTuple):
             ) from err
 
 
+# pylint: disable=import-outside-toplevel
 @dataclass(frozen=True)
 class HitResult:
-    """Results of the shot"""
+    """Computed trajectory data of the shot.
+
+    Attributes:
+        shot (Shot): The shot conditions.
+        trajectory (list[TrajectoryData]): The trajectory data.
+        extra (bool): Whether special points (TrajFlag.ALL) were requested.
+    """
     shot: Shot
     trajectory: list[TrajectoryData] = field(repr=False)
     extra: bool = False
@@ -191,7 +214,14 @@ class HitResult:
             )
 
     def zeros(self) -> list[TrajectoryData]:
-        """:return: zero crossing points"""
+        """
+        Returns:
+            list[TrajectoryData]: Zero crossing points.
+
+        Raises:
+            AttributeError: If extra_data was not requested.
+            ArithmeticError: If zero crossing points are not found.
+        """
         self.__check_extra__()
         data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
         if len(data) < 1:
@@ -200,17 +230,27 @@ class HitResult:
 
     def index_at_distance(self, d: Distance) -> int:
         """
-        :param d: Distance for which we want Trajectory Data
-        :return: Index of first trajectory row with .distance >= d; otherwise -1
+        Args:
+            d (Distance): Distance for which we want Trajectory Data.
+
+        Returns:
+            int: Index of first trajectory row with .distance >= d; otherwise -1.
         """
         # Get index of first trajectory point with distance >= at_range
+        epsilon = 1e-8  # small value to avoid floating point issues
         return next((i for i in range(len(self.trajectory))
-                     if self.trajectory[i].distance >= d), -1)
+                     if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)
 
     def get_at_distance(self, d: Distance) -> TrajectoryData:
         """
-        :param d: Distance for which we want Trajectory Data
-        :return: First trajectory row with .distance >= d
+        Args:
+            d (Distance): Distance for which we want Trajectory Data.
+
+        Returns:
+            TrajectoryData: First trajectory row with .distance >= d.
+
+        Raises:
+            ArithmeticError: If trajectory doesn't reach requested distance.
         """
         if (i := self.index_at_distance(d)) < 0:
             raise ArithmeticError(
@@ -218,22 +258,31 @@ class HitResult:
             )
         return self.trajectory[i]
 
-    # pylint: disable=import-outside-toplevel
     def danger_space(self,
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],
                      look_angle: Optional[Union[float, Angular]] = None
                      ) -> DangerSpace:
         """
-        Assume that the trajectory hits the center of a target at any distance.
-        Now we want to know how much ranging error we can tolerate if the critical region
-        of the target has height *h*.  I.e., we want to know how far forward and backward
-        along the line of sight we can move a target such that the trajectory is still
-        within *h*/2 of the original drop.
+        Calculates the danger space for a given range and target height.
 
-        :param at_range: Danger space is calculated for a target centered at this sight distance
-        :param target_height: Target height (*h*) determines danger space
-        :param look_angle: Ranging errors occur along the look angle to the target
+        Assumes that the trajectory hits the center of a target at any distance.
+        Determines how much ranging error can be tolerated if the critical region
+        of the target has height *h*. Finds how far forward and backward along the
+        line of sight a target can move such that the trajectory is still within *h*/2
+        of the original drop.
+
+        Args:
+            at_range (Union[float, Distance]): Danger space is calculated for a target centered at this sight distance.
+            target_height (Union[float, Distance]): Target height (*h*) determines danger space.
+            look_angle (Optional[Union[float, Angular]], optional): Ranging errors occur along the look angle to the target.
+
+        Returns:
+            DangerSpace: The calculated danger space.
+
+        Raises:
+            AttributeError: If extra_data wasn't requested.
+            ArithmeticError: If trajectory doesn't reach requested distance.
         """
         self.__check_extra__()
 
@@ -257,8 +306,12 @@ class HitResult:
             """
             Beginning of danger space is last .distance' < .distance where
                 (.drop' - target_center) >= target_height/2
-            :param row_num: Index of the trajectory point for which we are calculating danger space
-            :return: Distance marking beginning of danger space
+
+            Args:
+                row_num (int): Index of the trajectory point for which we are calculating danger space.
+
+            Returns:
+                TrajectoryData: Distance marking beginning of danger space.
             """
             center_row = self.trajectory[row_num]
             for prime_row in reversed(self.trajectory[:row_num]):
@@ -270,8 +323,12 @@ class HitResult:
             """
             End of danger space is first .distance' > .distance where
                 (target_center - .drop') >= target_height/2
-            :param row_num: Index of the trajectory point for which we are calculating danger space
-            :return: Distance marking end of danger space
+
+            Args:
+                row_num (int): Index of the trajectory point for which we are calculating danger space.
+
+            Returns:
+                TrajectoryData: Distance marking end of danger space.
             """
             center_row = self.trajectory[row_num]
             for prime_row in self.trajectory[row_num + 1:]:
@@ -285,11 +342,18 @@ class HitResult:
                            find_end_danger(index),
                            _look_angle)
 
-    # pylint: disable=import-outside-toplevel
     def dataframe(self, formatted: bool = False) -> 'DataFrame':  # type: ignore
         """
-        :param formatted: False for values as floats; True for strings with prefer_units
-        :return: the trajectory table as a DataFrame
+        Returns the trajectory table as a DataFrame.
+
+        Args:
+            formatted (bool, optional): False for values as floats; True for strings with prefer_units. Defaults to False.
+
+        Returns:
+            DataFrame: The trajectory table as a DataFrame.
+
+        Raises:
+            ImportError: If pandas or plotting dependencies are not installed.
         """
         try:
             from py_ballisticcalc.visualize.dataframe import hit_result_as_dataframe
@@ -297,13 +361,23 @@ class HitResult:
         except ImportError as err:
             raise ImportError(
                 "Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame"
-            )from err
+            ) from err
 
-    # pylint: disable=import-outside-toplevel
     def plot(self, look_angle: Optional[Angular] = None) -> 'Axes':  # type: ignore
-        """:return: graph of the trajectory"""
+        """
+        Returns a graph of the trajectory.
+
+        Args:
+            look_angle (Optional[Angular], optional): Look angle for the plot. Defaults to None.
+
+        Returns:
+            Axes: The plot axes.
+
+        Raises:
+            ImportError: If plotting dependencies are not installed.
+        """
         try:
-            from py_ballisticcalc.visualize.plot import hit_result_as_plot  # type: ignore
+            from py_ballisticcalc.visualize.plot import hit_result_as_plot
             return hit_result_as_plot(self, look_angle)
         except ImportError as err:
             raise ImportError(

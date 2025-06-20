@@ -1,7 +1,6 @@
 """Unittests for the py_ballisticcalc library"""
 
 import copy
-
 import pytest
 
 from py_ballisticcalc import (
@@ -15,8 +14,8 @@ class TestComputerPytest:
 
     @pytest.fixture(autouse=True)
     def setup_method(self, loaded_engine_instance):
-        self.range = 1000
-        self.step = 100
+        self.range = Distance.Yard(1000)
+        self.step = Distance.Yard(100)
         self.dm = DragModel(0.22, TableG7, 168, 0.308, 1.22)
         self.ammo = Ammo(self.dm, Velocity.FPS(2600))
         self.weapon = Weapon(4, 12)

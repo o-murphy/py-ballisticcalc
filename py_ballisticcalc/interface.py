@@ -27,7 +27,7 @@ class _EngineLoader:
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
-    def list_entries(cls):
+    def _get_entries_by_group(cls):
         all_entry_points = entry_points()
         if hasattr(all_entry_points, 'select'):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
@@ -39,7 +39,7 @@ class _EngineLoader:
 
     @classmethod
     def iter_engines(cls):
-        ballistic_entry_points = cls.list_entries()
+        ballistic_entry_points = cls._get_entries_by_group()
         for ep in ballistic_entry_points:
             if ep.name.endswith(cls._entry_point_suffix):
                 yield ep
@@ -61,21 +61,19 @@ class _EngineLoader:
         return None
 
     @classmethod
-    def load(cls, entry_point: Union[str, Type[EngineProtocol[ConfigT]]] = DEFAULT_ENTRY) -> Type[
+    def load(cls, entry_point: Union[str, Type[EngineProtocol[ConfigT]], None] = DEFAULT_ENTRY) -> Type[
         EngineProtocol[ConfigT]]:
+        if entry_point is None:
+            entry_point = DEFAULT_ENTRY
         if isinstance(entry_point, EngineProtocol):
             return entry_point
         if isinstance(entry_point, str):
-            ballistic_entry_points = cls.list_entries()
             handle: Optional[Type[EngineProtocol[ConfigT]]] = None
-            for ep in ballistic_entry_points:
-                if ep.name.endswith(cls._entry_point_suffix):
-
-                    if (ep.name.endswith(cls._entry_point_suffix)
-                            and (ep.name == entry_point or entry_point in ep.value)):
-                        if handle := cls._load_from_entry(ep):
-                            logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
-                            return handle
+            for ep in cls.iter_engines():
+                if ep.name == entry_point or entry_point in ep.value:
+                    if handle := cls._load_from_entry(ep):
+                        logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
+                        return handle
 
             if not handle:
                 ep = EntryPoint(entry_point, entry_point, cls._entry_point_group)
@@ -149,6 +147,10 @@ class Calculator(Generic[ConfigT]):
             step = PreferredUnits.distance(trajectory_step)
         data = self._engine_instance.trajectory(shot, trajectory_range, step, extra_data, time_step)
         return HitResult(shot, data, extra_data)
+
+    @staticmethod
+    def iter_engines():
+        yield from _EngineLoader.iter_engines()
 
 
 __all__ = ('Calculator', '_EngineLoader',)

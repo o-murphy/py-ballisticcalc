@@ -44,7 +44,7 @@ def leapfrog_pure_python_integrator(engine_instance, shot_info: Shot, maximum_ra
     it = 0
     while range_vector.x <= maximum_range + min_step:
         it += 1
-        data_filter.clear_current_flag()
+
         if range_vector.x >= wind_sock.next_range:
             wind_vector = wind_sock.vector_for_range(range_vector.x)
         density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
@@ -161,7 +161,7 @@ class PurePythonLeapfrogEngine:
         it = 0
         while range_vector.x <= maximum_range + min(self.calc_step, record_step):
             it += 1
-            data_filter.clear_current_flag()
+
             if range_vector.x >= wind_sock.next_range:
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
             range_vector += velocity_vector_half * dt

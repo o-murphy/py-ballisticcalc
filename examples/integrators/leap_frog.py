@@ -173,7 +173,6 @@ class LeapFrogEngine(TrajectoryCalc):
         it = 0
         while range_vector.x <= maximum_range + min(self.calc_step, record_step):
             it += 1
-            data_filter.clear_current_flag()
 
             current_range = range_vector.x
             if current_range >= wind_sock.next_range:

@@ -1,4 +1,7 @@
-from py_ballisticcalc_exts.vector cimport CVector
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport (
+    V3dT
+)
 
 cdef struct Config_t:
     double cMaxCalcStepSizeFeet
@@ -16,11 +19,11 @@ cdef struct CurvePoint_t:
 
 cdef struct Curve_t:
     CurvePoint_t * points
-    double length
+    size_t length
 
 cdef struct MachList_t:
     double * array
-    double length
+    size_t length
 
 cdef struct Atmosphere_t:
     double _t0
@@ -62,10 +65,6 @@ cdef double cy_spin_drift(ShotData_t * t, double time)
 cdef double cy_drag_by_mach(ShotData_t * t, double mach)
 cdef void cy_update_stability_coefficient(ShotData_t * t)
 
-cdef double cy_get_correction(double distance, double offset)
-cdef double cy_calculate_energy(double bullet_weight, double velocity)
-cdef double cy_calculate_ogw(double bullet_weight, double velocity)
-
 cdef void free_curve(Curve_t *curve)
 cdef void free_mach_list(MachList_t *mach_list)
 cdef void free_trajectory(ShotData_t *t)
@@ -80,4 +79,4 @@ cdef struct Wind_t:
     double until_distance
     double MAX_DISTANCE_FEET
 
-cdef CVector wind_to_c_vector(Wind_t * w)
+cdef V3dT wind_to_c_vector(Wind_t * w)
