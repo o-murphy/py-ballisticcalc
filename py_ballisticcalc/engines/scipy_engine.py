@@ -1,8 +1,6 @@
 """Computes trajectory using SciPy's solve_ivp; uses SciPy's root_scalar to get specific points.
-pytest tests --engine=SciPyIntegrationEngine
 TODO:
  * Use SciPy root finder for zero_angle() override
- * Implement time_step for recording TrajectoryData at specific time intervals
 """
 import math
 import warnings
@@ -13,10 +11,14 @@ from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngi
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
+from py_ballisticcalc.unit import Distance, PreferredUnits
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('SciPyIntegrationEngine',)
 
+def custom_warning_format(message, category, filename, lineno, file=None, line=None):
+    return f"{category.__name__}: {message}\n"
+warnings.formatwarning = custom_warning_format
 
 class WindSock():
     """Finds wind vector in effect at any distance down-range."""
@@ -39,6 +41,7 @@ class WindSock():
         return self.winds[-1].vector
 
 
+#pylint: disable=import-outside-toplevel,unused-argument,too-many-statements
 class SciPyIntegrationEngine(BaseIntegrationEngine):
     """Integration engine using SciPy's solve_ivp for trajectory calculations."""
 
@@ -77,7 +80,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             maximum_range (float): Feet down range to stop calculation
             record_step (float): Frequency (in feet down range) to record TrajectoryData
             filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points
-            time_step (float, optional): Not used in this implementation
+            time_step (float, optional): Maximum time (in seconds) between TrajectoryData records
 
         Returns:
             List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
@@ -87,10 +90,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             from scipy.integrate import solve_ivp
             from scipy.optimize import root_scalar
             import numpy as np
-        except ImportError:
-            raise ImportError("SciPy is required for SciPyIntegrationEngine, please install it.")
-        if time_step > 0.0:
-            warnings.warn("time_step is not used in SciPyIntegrationEngine, ignoring it.")
+        except ImportError as e:
+            raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = self._config.cMaximumDrop
@@ -118,7 +119,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             :param y: State vector [x, y, z, vx, vy, vz]
             :return: Derivative of state vector
             """
-            x, y, z = s[:3]
+            x, y, z = s[:3]         #pylint: disable=unused-variable
             vx, vy, vz = s[3:]
             velocity_vector = Vector(vx, vy, vz)
             wind_vector = wind_sock.wind_at_distance(x)
@@ -132,14 +133,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             drag = km * relative_speed
 
             # Derivatives
-            # TODO: What if we use the drag-adjusted velocity for dx/dt?
             dxdt = vx
             dydt = vy
             dzdt = vz
             dvxdt = -drag * relative_velocity.x
             dvydt = self.gravity_vector.y - drag * relative_velocity.y
             dvzdt = -drag * relative_velocity.z
-
             return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
         #endregion SciPy integration
 
@@ -224,12 +223,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             #endregion Basic approach to interpolate for desired x values
 
             #region Root-finding approach to interpolate for desired x values:
+            warnings.simplefilter("once")  # Only issue one warning
             states_at_x = []
             t_at_x = []
-            for x_target in desired_xs:                
+            for x_target in desired_xs:
                 idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
                 if idx < 0 or idx >= len(x_vals):
-                    logger.warning(f"Requested distance {x_target} out of bounds computed: [{x_vals[0]}, {x_vals[-1]}]")
+                    warnings.warn(f"Requested range exceeds computed trajectory, which only reaches {PreferredUnits.distance(Distance.Feet(x_vals[-1]))}",
+                                  RuntimeWarning)
                     continue
                 if idx == 0:
                     if filter_flags == TrajFlag.NONE:
@@ -262,11 +263,19 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 t_at_x.append(sol.t[-1])  # Last time point
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
-            # Convert to arrays for easier handling
-            t_at_x = np.array(t_at_x)
+            t_at_x = np.array(t_at_x)  # Convert to arrays for easier handling
             states_at_x = np.array(states_at_x).T  # shape: (state_dim, num_points)
             for i in range(states_at_x.shape[1]):
                 ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
+            ranges.sort(key=lambda t: t.time)  # Sort by time
+
+            if time_step > 0.0:
+                time_of_last_record = 0.0
+                for next_record in range(1, len(ranges)):
+                    while ranges[next_record].time - time_of_last_record > time_step:
+                        time_of_last_record += time_step
+                        ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
+                ranges.sort(key=lambda t: t.time)  # Sort by time
 
             #region Find TrajectoryData points requested by filter_flags
             if filter_flags:
@@ -279,14 +288,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                         if (wind_vector := wind_sock.wind_at_distance(x)) is not None:
                             relative_velocity = relative_velocity - wind_vector
                         relative_speed = relative_velocity.magnitude()
-                        density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + y)
+                        _, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + y)
                         return (relative_speed / mach) - 1.0
                     try:
                         res = root_scalar(mach_minus_one, bracket=[t_vals[0], t_vals[-1]])
                         if res.converged:
                             ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.MACH))
                     except ValueError:
-                        logger.debug(f"No Mach crossing found")
+                        logger.debug("No Mach crossing found")
 
                 if filter_flags & TrajFlag.ZERO and len(sol.t_events) > 3 and sol.t_events[-1].size > 0:
                     tan_look_angle = math.tan(self.look_angle)
@@ -311,7 +320,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                         if res.converged:
                             ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.APEX))
                     except ValueError:
-                        logger.debug(f"No apex found for trajectory")
+                        logger.debug("No apex found for trajectory")
 
                 ranges.sort(key=lambda t: t.time)  # Sort by time
                 #endregion Find TrajectoryData points requested by filter_flags
