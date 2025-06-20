@@ -9,7 +9,7 @@ cdef extern from "include/tflag.h":
     # Using 'int' as the underlying type for the enum
     # Cython can typically handle C enums directly.
     # The actual integer values are important for bitwise operations.
-    enum TFlag:
+    ctypedef enum TFlag:
         TRAJ_NONE = 0
         TRAJ_ZERO_UP = 1
         TRAJ_ZERO_DOWN = 2
