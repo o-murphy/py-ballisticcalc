@@ -130,7 +130,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                 # if data is not None:
                 if data is not NULL:
                     ranges.append(create_trajectory_row(
-                        data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
+                        data.time, &data.position, &data.velocity, mag(&data.velocity), data.mach,
                         cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
                         density_factor, drag, self._shot_s.weight, data_filter.current_flag
                     ))
@@ -163,7 +163,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                     or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
             ):
                 ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
+                    time, &range_vector, &velocity_vector,
                     velocity, mach, cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
                     density_factor, drag, self._shot_s.weight, data_filter.current_flag
                 ))
@@ -183,7 +183,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         # Ensure that we have at least two data points in trajectory
         if len(ranges) < 2:
             ranges.append(create_trajectory_row(
-                time, range_vector, velocity_vector,
+                time, &range_vector, &velocity_vector,
                 velocity, mach, cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
                 density_factor, drag, self._shot_s.weight, TFlag.TRAJ_NONE))
         destroyTrajectoryDataFilter(&data_filter)

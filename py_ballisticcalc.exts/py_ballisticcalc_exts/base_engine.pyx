@@ -39,9 +39,6 @@ from py_ballisticcalc_exts.v3d cimport (
     V3dT, add, sub, mag, mulS
 )
 
-from py_ballisticcalc_exts.base_engine cimport BaseTrajData
-
-from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.constants import cMaxWindDistanceFeet
@@ -430,7 +427,7 @@ cdef class CythonizedBaseIntegrationEngine:
         raise NotImplementedError
 
 
-cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
+cdef object create_trajectory_row(double time, const V3dT *range_vector, const V3dT *velocity_vector,
                            double velocity, double mach, double spin_drift, double look_angle,
                            double density_factor, double drag, double weight, TFlag flag):
 
