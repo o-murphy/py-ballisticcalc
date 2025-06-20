@@ -6,7 +6,8 @@ from cython cimport final
 from libc.math cimport fabs, sin, cos, tan, atan, atan2
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+# from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
@@ -26,6 +27,13 @@ __all__ = (
     'create_trajectory_row',
 )
 
+cdef extern from "include/tdata.h":
+    ctypedef struct BaseTrajData:
+        double time
+        V3dT position
+        V3dT velocity
+        double mach
+
 
 cdef struct _TrajectoryDataFilter:
     TFlag filter, current_flag, seen_zero
@@ -36,11 +44,14 @@ cdef struct _TrajectoryDataFilter:
     double previous_v_mach
     double look_angle
 
+    BaseTrajData *data
+
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(TFlag filter_flags, double range_step,
                                                       const V3dT *initial_position, const V3dT *initial_velocity,
                                                       double time_step = ?)
+cdef void destroyTrajectoryDataFilter(_TrajectoryDataFilter * tdf)
 cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle)
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time)
+cdef BaseTrajData *should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time)
 
 
 @final

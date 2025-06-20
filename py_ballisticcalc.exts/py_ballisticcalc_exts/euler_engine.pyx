@@ -11,7 +11,8 @@ from cython cimport final
 from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax
 # noinspection PyUnresolvedReferences
 # from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+# from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.tflag cimport TFlag
 
@@ -30,7 +31,9 @@ from py_ballisticcalc_exts.base_engine cimport (
     _WindSock,
     create_trajectory_row,
 
+    BaseTrajData,
     createTrajectoryDataFilter,
+    destroyTrajectoryDataFilter,
     should_record,
     setup_seen_zero
 )
@@ -72,7 +75,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             # endregion
 
             _TrajectoryDataFilter data_filter
-            BaseTrajData data
+            BaseTrajData *data
 
         cdef:
             # early bindings
@@ -124,7 +127,8 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
                 data = should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
-                if data is not None:
+                # if data is not None:
+                if data is not NULL:
                     ranges.append(create_trajectory_row(
                         data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
                         cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
@@ -170,6 +174,9 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                     reason = RangeError.MaximumDropReached
                 else:
                     reason = RangeError.MinimumAltitudeReached
+
+                destroyTrajectoryDataFilter(&data_filter)
+
                 raise RangeError(reason, ranges)
             #endregion
         #endregion
@@ -179,5 +186,5 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                 time, range_vector, velocity_vector,
                 velocity, mach, cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
                 density_factor, drag, self._shot_s.weight, TFlag.TRAJ_NONE))
-
+        destroyTrajectoryDataFilter(&data_filter)
         return ranges

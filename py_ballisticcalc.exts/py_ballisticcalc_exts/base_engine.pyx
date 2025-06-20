@@ -1,9 +1,12 @@
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
+from libc.stdlib cimport malloc, free
+# noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+# from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport TrajectoryData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.tflag cimport TFlag
 # noinspection PyUnresolvedReferences
@@ -36,6 +39,8 @@ from py_ballisticcalc_exts.v3d cimport (
     V3dT, add, sub, mag, mulS
 )
 
+from py_ballisticcalc_exts.base_engine cimport BaseTrajData
+
 from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
@@ -49,48 +54,76 @@ __all__ = (
     'create_trajectory_row',
 )
 
+# cdef _TrajectoryDataFilter createTrajectoryDataFilter(TFlag filter_flags, double range_step,
+#                   const V3dT *initial_position, const V3dT *initial_velocity,
+#                   double time_step = 0.0):
+#     return _TrajectoryDataFilter(
+#         filter_flags, TFlag.TRAJ_NONE, TFlag.TRAJ_NONE,
+#         time_step, range_step,
+#         0.0, 0.0, 0.0, 0.0,
+#         initial_position[0],  # same as *initial_position
+#         initial_velocity[0],  # same as *initial_velocity
+#         0.0, 0.0,
+#     )
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(TFlag filter_flags, double range_step,
                   const V3dT *initial_position, const V3dT *initial_velocity,
                   double time_step = 0.0):
-    return _TrajectoryDataFilter(
-        filter_flags, TFlag.TRAJ_NONE, TFlag.TRAJ_NONE,
-        time_step, range_step,
-        0.0, 0.0, 0.0, 0.0,
-        initial_position[0],  # same as *initial_position
-        initial_velocity[0],  # same as *initial_velocity
-        0.0, 0.0,
-    )
+    cdef _TrajectoryDataFilter tdf
+
+    tdf.filter = filter_flags
+    tdf.current_flag = TFlag.TRAJ_NONE
+    tdf.seen_zero = TFlag.TRAJ_NONE
+    tdf.time_step = time_step
+    tdf.range_step = range_step
+    tdf.time_of_last_record = 0.0
+    tdf.next_record_distance = 0.0
+    tdf.previous_mach = 0.0
+    tdf.previous_time = 0.0
+    tdf.previous_position = initial_position[0]
+    tdf.previous_velocity = initial_velocity[0]
+    tdf.previous_v_mach = 0.0
+    tdf.look_angle = 0.0
+
+    tdf.data = <BaseTrajData *>malloc(sizeof(BaseTrajData))
+    if tdf.data == NULL:
+        raise MemoryError("Failed to allocate BaseTrajData for _TrajectoryDataFilter")
+
+    # *** ВИПРАВЛЕНО: Ініціалізація BaseTrajData за допомогою початкових значень ***
+    tdf.data.time = 0.0 # Можливо, тут теж має бути initial_time, якщо це має сенс?
+                        # Або 0.0, якщо це час початку відстеження.
+    tdf.data.position = initial_position[0] # Копіюємо початкову позицію
+    tdf.data.velocity = initial_velocity[0] # Копіюємо початкову швидкість
+    tdf.data.mach = 0.0 # Можливо, тут теж initial_mach?
+
+    return tdf
+
+cdef void destroyTrajectoryDataFilter(_TrajectoryDataFilter * tdf):
+    """
+    Звільняє пам'ять, виділену для поля 'data' у _TrajectoryDataFilter.
+    """
+    if tdf != NULL and tdf.data != NULL:
+        free(tdf.data)
+        tdf.data = NULL
 
 cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle):
     if height >= 0:
-        tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_UP) # Явне приведення до TFlag
+        tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_UP)
     elif height < 0 and barrel_elevation < look_angle:
-        tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_DOWN) # Явне приведення до TFlag
+        tdf.seen_zero = <TFlag>(tdf.seen_zero | TFlag.TRAJ_ZERO_DOWN)
     tdf.look_angle = look_angle
 
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time):
-    cdef BaseTrajData data = None
+cdef BaseTrajData *should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time):
     cdef double ratio
     cdef V3dT temp_position, temp_velocity
-    cdef V3dT temp_sub_position, temp_sub_velocity
-    cdef V3dT temp_mul_position, temp_mul_velocity
+    cdef V3dT temp_sub_position, temp_mul_position
+    cdef V3dT temp_sub_velocity, temp_mul_velocity
 
-    # #region DEBUG
-    # if get_debug():
-    #     logger.debug(
-    #         f"should_record called with time={time}, "
-    #         f"position=({position.x}, {position.y}, {position.z}), "
-    #         f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
-    #     )
-    # #endregion
     tdf.current_flag = <TFlag>TFlag.TRAJ_NONE
     if (tdf.range_step > 0) and (position.x >= tdf.next_record_distance):
         while tdf.next_record_distance + tdf.range_step < position.x:
-            # Handle case where we have stepped past more than one record distance
             tdf.next_record_distance += tdf.range_step
         if position.x > tdf.previous_position.x:
-            # Interpolate to get BaseTrajData at the record distance
             ratio = (tdf.next_record_distance - tdf.previous_position.x) / (position.x - tdf.previous_position.x)
             temp_sub_position = sub(position, &tdf.previous_position)
             temp_mul_position = mulS(&temp_sub_position, ratio)
@@ -98,38 +131,100 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *positio
             temp_sub_velocity = sub(velocity, &tdf.previous_velocity)
             temp_mul_velocity = mulS(&temp_sub_velocity, ratio)
             temp_velocity = add(&tdf.previous_velocity, &temp_mul_velocity)
-            data = BaseTrajData(
-                time=tdf.previous_time + (time - tdf.previous_time) * ratio,
-                position=temp_position,
-                velocity=temp_velocity,
-                mach=tdf.previous_mach + (mach - tdf.previous_mach) * ratio
-            )
-        tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_RANGE)
-        tdf.next_record_distance += tdf.range_step
-        tdf.time_of_last_record = time
+
+            # Заповнюємо поля tdf.data інтерпольованими значеннями
+            tdf.data.time = tdf.previous_time + (time - tdf.previous_time) * ratio
+            tdf.data.position = temp_position
+            tdf.data.velocity = temp_velocity
+            tdf.data.mach = tdf.previous_mach + (mach - tdf.previous_mach) * ratio
+
+            tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_RANGE)
+            tdf.next_record_distance += tdf.range_step
+            tdf.time_of_last_record = time
     elif tdf.time_step > 0:
         _check_next_time(tdf, time)
+
     _check_zero_crossing(tdf, position)
     _check_mach_crossing(tdf, mag(velocity), mach)
-    if (tdf.current_flag & tdf.filter) != 0 and data is None:
-        data = BaseTrajData(time=time, position=position[0],
-                            velocity=velocity[0], mach=mach)
+
     tdf.previous_time = time
-    tdf.previous_position = position[0]  # same as *position
-    tdf.previous_velocity = velocity[0]  # same as *velocity
+    tdf.previous_position = position[0]
+    tdf.previous_velocity = velocity[0]
     tdf.previous_mach = mach
-    #region DEBUG
-    # if get_debug():
-    #     if data is not None:
-    #         logger.debug(
-    #             f"should_record returning BaseTrajData time={data.time}, "
-    #             f"position=({data.position.x}, {data.position.y}, {data.position.z}), "
-    #             f"velocity=({data.velocity.x}, {data.velocity.y}, {data.velocity.z}), mach={data.mach}"
-    #         )
-    #     else:
-    #         logger.debug("should_record returning None")
-    # #endregion
-    return data
+
+    # Повертаємо вказівник на tdf.data, якщо потрібен запис, інакше NULL
+    if (tdf.current_flag & tdf.filter) != 0:
+        if not (tdf.current_flag & TFlag.TRAJ_RANGE):
+            tdf.data.time = time
+            tdf.data.position = position[0]
+            tdf.data.velocity = velocity[0]
+            tdf.data.mach = mach
+        return tdf.data
+    else:
+        return NULL
+
+
+# cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time):
+#     cdef BaseTrajData data = None
+#     cdef double ratio
+#     cdef V3dT temp_position, temp_velocity
+#     cdef V3dT temp_sub_position, temp_sub_velocity
+#     cdef V3dT temp_mul_position, temp_mul_velocity
+#
+#     # #region DEBUG
+#     # if get_debug():
+#     #     logger.debug(
+#     #         f"should_record called with time={time}, "
+#     #         f"position=({position.x}, {position.y}, {position.z}), "
+#     #         f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
+#     #     )
+#     # #endregion
+#     tdf.current_flag = <TFlag>TFlag.TRAJ_NONE
+#     if (tdf.range_step > 0) and (position.x >= tdf.next_record_distance):
+#         while tdf.next_record_distance + tdf.range_step < position.x:
+#             # Handle case where we have stepped past more than one record distance
+#             tdf.next_record_distance += tdf.range_step
+#         if position.x > tdf.previous_position.x:
+#             # Interpolate to get BaseTrajData at the record distance
+#             ratio = (tdf.next_record_distance - tdf.previous_position.x) / (position.x - tdf.previous_position.x)
+#             temp_sub_position = sub(position, &tdf.previous_position)
+#             temp_mul_position = mulS(&temp_sub_position, ratio)
+#             temp_position = add(&tdf.previous_position, &temp_mul_position)
+#             temp_sub_velocity = sub(velocity, &tdf.previous_velocity)
+#             temp_mul_velocity = mulS(&temp_sub_velocity, ratio)
+#             temp_velocity = add(&tdf.previous_velocity, &temp_mul_velocity)
+#             data = BaseTrajData(
+#                 time=tdf.previous_time + (time - tdf.previous_time) * ratio,
+#                 position=temp_position,
+#                 velocity=temp_velocity,
+#                 mach=tdf.previous_mach + (mach - tdf.previous_mach) * ratio
+#             )
+#         tdf.current_flag = <TFlag>(tdf.current_flag | TFlag.TRAJ_RANGE)
+#         tdf.next_record_distance += tdf.range_step
+#         tdf.time_of_last_record = time
+#     elif tdf.time_step > 0:
+#         _check_next_time(tdf, time)
+#     _check_zero_crossing(tdf, position)
+#     _check_mach_crossing(tdf, mag(velocity), mach)
+#     if (tdf.current_flag & tdf.filter) != 0 and data is None:
+#         data = BaseTrajData(time=time, position=position[0],
+#                             velocity=velocity[0], mach=mach)
+#     tdf.previous_time = time
+#     tdf.previous_position = position[0]  # same as *position
+#     tdf.previous_velocity = velocity[0]  # same as *velocity
+#     tdf.previous_mach = mach
+#     #region DEBUG
+#     # if get_debug():
+#     #     if data is not None:
+#     #         logger.debug(
+#     #             f"should_record returning BaseTrajData time={data.time}, "
+#     #             f"position=({data.position.x}, {data.position.y}, {data.position.z}), "
+#     #             f"velocity=({data.velocity.x}, {data.velocity.y}, {data.velocity.z}), mach={data.mach}"
+#     #         )
+#     #     else:
+#     #         logger.debug("should_record returning None")
+#     # #endregion
+#     return data
 
 cdef void _check_next_time(_TrajectoryDataFilter * tdf, double time):
         if time > tdf.time_of_last_record + tdf.time_step:

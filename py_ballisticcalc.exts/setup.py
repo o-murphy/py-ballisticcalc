@@ -74,7 +74,7 @@ for name in extension_names_to_build:
             include_dirs=include_dirs,
             extra_compile_args=[
                 # "-std=c99",
-                "-Wall"
+                # "-Wall"
             ], # Uncomment if needed
             # libraries=['m'] # Uncomment if needed for math functions
         )

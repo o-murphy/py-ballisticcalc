@@ -5,13 +5,12 @@ from py_ballisticcalc_exts.v3d cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.tflag cimport TFlag
 
-
-cdef class BaseTrajData:
-    cdef:
-        readonly double time
-        readonly V3dT position
-        readonly V3dT velocity
-        readonly double mach
+# cdef class BaseTrajData:
+#     cdef:
+#         readonly double time
+#         readonly V3dT position
+#         readonly V3dT velocity
+#         readonly double mach
 
 
 cdef class TrajectoryData:
