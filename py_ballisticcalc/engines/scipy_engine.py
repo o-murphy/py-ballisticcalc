@@ -97,9 +97,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
 
-        mach: float = .0
-        drag: float = .0
-        density_factor: float = .0
         wind_sock = WindSock(shot_info.winds)
 
         #region Initialize velocity and position of projectile
