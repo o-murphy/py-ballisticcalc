@@ -8,17 +8,14 @@ try:
     from Cython.Build import cythonize
 except ImportError:
     import sys
-
-    # use this command to skip building wheel and compiling modules on unsupported platforms
-    # pip install --no-build-isolation --no-binary :all: py-ballisticcalc.exts
     setup()
-    sys.exit(0)  # Stop installation
+    sys.exit(0)
 
 compiler_directives = {
     "language_level": 3,
     "embedsignature": True,
-    "cdivision": True, # use with caution! can affect on "/" operator
-    "binding": False,  # Keep as False unless you explicitly want Python-level binding methods
+    "cdivision": True,
+    "binding": False,
     "c_api_binop_methods": True,
     "warn.undeclared": True,
     "warn.unreachable": True,
@@ -29,89 +26,57 @@ compiler_directives = {
     "show_performance_hints": True,
 }
 
-extension_names = [
-    # "vector", # Temporary disabled
-    # "v3d", not needed, there are just pxd header
-    "cy_bindings",
-    "base_engine",
-    "euler_engine",
-    "rk4_engine",  # Commented out as in your previous setup.py
-    "trajectory_data",
-]
-
 ext_base_dir = 'py_ballisticcalc_exts'
-# Тепер v3d.c знаходиться у src/
-v3d_c_source = os.path.join(ext_base_dir, 'src', 'v3d.c')
-v3d_c_dependent = [
-    "base_engine",
-    "euler_engine",
-    "rk4_engine",
-]
 
-helpers_c_source = os.path.join(ext_base_dir, 'src', 'helpers.c')
-helpers_c_dependent = [
-    "base_engine",
-]
+# Define paths for common C source files
+V3D_C_SOURCE = os.path.join(ext_base_dir, 'src', 'v3d.c')
+HELPERS_C_SOURCE = os.path.join(ext_base_dir, 'src', 'helpers.c')
+# If you add tflag.c or tdatafilter.c, define them here:
+# TFLAG_C_SOURCE = os.path.join(ext_base_dir, 'src', 'tflag.c')
+# TDATAFILTER_C_SOURCE = os.path.join(ext_base_dir, 'src', 'tdatafilter.c')
 
-traj_c_sources = [
-    # os.path.join(ext_base_dir, 'src', 'tflag.c'),
-    # os.path.join(ext_base_dir, 'src', 'tdatafilter.c'),
-]
-traj_c_dependent = [
-    "base_engine",
-    "euler_engine",
-    "rk4_engine",
-    "trajectory_data",
-]
+# *** NEW: Define dependencies using a dictionary ***
+# Keys are the extension names (without 'py_ballisticcalc_exts.'),
+# values are lists of additional C source files they depend on.
+extension_dependencies = {
+    "cy_bindings": [],
+    "base_engine": [V3D_C_SOURCE, HELPERS_C_SOURCE],
+    "euler_engine": [V3D_C_SOURCE],
+    "rk4_engine": [V3D_C_SOURCE],
+    "trajectory_data": [], # Add relevant C sources here if trajectory_data needs them
+}
 
-# *** ЗМІНА ТУТ: Додано 'include' до include_dirs для пошуку v3d.h ***
+# The overall list of extension names to build (keys from the dictionary)
+extension_names_to_build = list(extension_dependencies.keys())
+
+# Include directories
 include_dirs = [
-    ext_base_dir,  # Для .pxd файлів
-    os.path.join(ext_base_dir, 'src'),  # Для .h файлів, якщо вони є у src/ (або якщо .pxd там)
-    os.path.join(ext_base_dir, 'include'),  # Це головне: для v3d.h та інших C-заголовків
+    ext_base_dir,
+    os.path.join(ext_base_dir, 'src'),
+    os.path.join(ext_base_dir, 'include'),
 ]
 
 # Initialize extensions list
 extensions = []
 
-# FIXME: the explicit v3dw.pyx realisation not needed for cimport from v3dw.pxd
-# Add the v3dw extension first, as it's a core dependency
-# extensions.append(
-#     Extension(
-#         "py_ballisticcalc_exts.v3dw",  # Full module path: py_ballisticcalc_exts.v3dw
-#         sources=[os.path.join(ext_base_dir, "include", "v3dw.pyx"), v3d_c_source],
-#         # Include the directory where v3d.h and v3dw.pxd are located
-#         include_dirs=[ext_base_dir],
-#         extra_compile_args=["-std=c99"],
-#         libraries=[],  # No explicit libraries needed here for v3d.c beyond default system libs (e.g., math)
-#         extra_link_args=[]
-#     )
-# )
-
-# Dynamically create extensions for names in extension_names
-for name in extension_names:
+# Dynamically create extensions based on the dependency dictionary
+for name in extension_names_to_build:
+    # Start with the primary Cython source file
     sources = [os.path.join(ext_base_dir, name + '.pyx')]
 
-    # Add v3d.c to the sources for any extension that directly uses V3dT C functions
-    if name in v3d_c_dependent:
-        sources.append(v3d_c_source)
-
-    if name in helpers_c_dependent:
-        sources.append(helpers_c_source)
-
-    if name in traj_c_dependent:
-        sources.extend(traj_c_sources)
+    # Add C dependencies from the dictionary
+    sources.extend(extension_dependencies[name])
 
     extensions.append(
         Extension(
             'py_ballisticcalc_exts.' + name,
             sources=sources,
-            # Ensure include_dirs is set for all extensions that use v3d.h
-            include_dirs=include_dirs,  # Використовуємо оновлений include_dirs
-            # extra_compile_args=["-std=c99"],
-            # If these modules link to other specific libraries (e.g., -lm for math),
-            # they should be added here.
-            # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
+            include_dirs=include_dirs,
+            extra_compile_args=[
+                # "-std=c99",
+                "-Wall"
+            ], # Uncomment if needed
+            # libraries=['m'] # Uncomment if needed for math functions
         )
     )
 
