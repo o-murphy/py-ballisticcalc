@@ -148,5 +148,9 @@ class Calculator(Generic[ConfigT]):
         data = self._engine_instance.trajectory(shot, trajectory_range, step, extra_data, time_step)
         return HitResult(shot, data, extra_data)
 
+    @staticmethod
+    def iter_engines():
+        yield from _EngineLoader.iter_engines()
+
 
 __all__ = ('Calculator', '_EngineLoader',)
