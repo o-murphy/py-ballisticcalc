@@ -34,7 +34,7 @@ class WindSock():
         """Returns wind vector at specified distance, where distance is in feet."""
         if not self.winds:
             return None
-        distance *= 12.0  # Convert distance to inches
+        distance *= 12.0  # Convert distance to inches (distance.raw_value)
         for wind in self.winds:  # TODO: use binary search for performance
             if distance <= wind.until_distance.raw_value:
                 return wind.vector
