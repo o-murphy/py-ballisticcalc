@@ -44,13 +44,15 @@ cythonized:
         Total time: 11.458543 seconds
         Execution rate: 10.47 calls per second
 """
-import logging
 # import RKballistic
 from timeit import timeit
-
 from py_ballisticcalc import *
-from py_ballisticcalc.interface import _EngineLoader
 from py_ballisticcalc.logger import logger
+import logging
+
+from py_ballisticcalc.interface import _EngineLoader
+
+
 
 logger.setLevel(logging.DEBUG)
 
@@ -85,6 +87,7 @@ zero_atmo = Atmo(
 )
 
 
+
 def init_zero_shot():
     weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
     dm = DragModel(0.381, TableG7, weight, diameter, length)
@@ -93,8 +96,8 @@ def init_zero_shot():
 
     zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 
-    return zero
 
+    return zero
 
 def use_zero_shot(calc_):
     zero = init_zero_shot()
@@ -130,8 +133,8 @@ def run_check(calc_, number):
 
     print("Calculate trajectory to distance + extra {} {} times:".format(shot_distance, number))
     print(f"Total time: {total_time:.6f} seconds")
-    print(f"Execution rate: {rate:.2f} calls per second\n")
-
+    print(f"Execution rate: {rate:.2f} calls per second")
+    print()
 
 number = 120
 config = {}
@@ -140,8 +143,8 @@ config = {}
 print()
 
 for ep in _EngineLoader.iter_engines():
-    if not ep.name.startswith("cy"):
-        continue
+    # if not ep.name.startswith("cy"):
+    #     continue
     engine = ep.load()
     print("Engine: %s" % ep.value)
     calc = Calculator(config=config, engine=engine)
