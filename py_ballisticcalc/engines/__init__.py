@@ -18,5 +18,6 @@ __all__ = (
     'create_trajectory_row',
     '_TrajectoryDataFilter',
     '_WindSock',
+    'WindSock',
     'CurvePoint',
 )
