@@ -16,7 +16,5 @@ __all__ = (
     'calculate_ogw',
     'get_correction',
     'create_trajectory_row',
-    '_TrajectoryDataFilter',
-    '_WindSock',
     'CurvePoint',
 )

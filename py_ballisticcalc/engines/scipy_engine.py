@@ -14,7 +14,8 @@ from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, PreferredUnits
 from py_ballisticcalc.vector import Vector
 
-__all__ = ('SciPyIntegrationEngine',)
+__all__ = ('SciPyIntegrationEngine', 'WindSock')
+
 
 def custom_warning_format(message, category, filename, lineno, file=None, line=None):
     return f"{category.__name__}: {message}\n"
@@ -34,11 +35,11 @@ class WindSock():
         """Returns wind vector at specified distance, where distance is in feet."""
         if not self.winds:
             return None
+        distance *= 12.0  # Convert distance to inches (distance.raw_value)
         for wind in self.winds:  # TODO: use binary search for performance
-            distance *= 12.0  # Convert distance to inches
             if distance <= wind.until_distance.raw_value:
                 return wind.vector
-        return self.winds[-1].vector
+        return None
 
 
 #pylint: disable=import-outside-toplevel,unused-argument,too-many-statements
