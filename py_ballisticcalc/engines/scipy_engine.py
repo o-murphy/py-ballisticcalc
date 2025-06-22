@@ -16,6 +16,7 @@ from py_ballisticcalc.vector import Vector
 
 __all__ = ('SciPyIntegrationEngine', 'WindSock')
 
+
 def custom_warning_format(message, category, filename, lineno, file=None, line=None):
     return f"{category.__name__}: {message}\n"
 warnings.formatwarning = custom_warning_format
