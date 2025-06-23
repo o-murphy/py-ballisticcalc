@@ -5,7 +5,7 @@ from typing import Generator, Tuple
 from typing_extensions import override
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, _WindSock
+from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, _WindSock, BaseIntegrationEngineShotSource
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('RK4IntegrationEngine',)
@@ -20,7 +20,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
         return super().get_calc_step(step) ** 0.5
 
     @override
-    def _integration_generator(self, shot_info: Shot) -> Generator[
+    def _integration_generator(self, shot_info: Shot, shot_source: BaseIntegrationEngineShotSource) -> Generator[
         Tuple[float, Vector, Vector, float, float, float, float], None, None]:
         """
         Generate trajectory data for a specified shot.
@@ -64,13 +64,13 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
         # endregion
 
         # region Initialize velocity and position of projectile
-        velocity = self.muzzle_velocity
+        velocity = shot_source.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
+        range_vector = Vector(.0, -shot_source.cant_cosine * shot_source.sight_height, -shot_source.cant_sine * shot_source.sight_height)
         velocity_vector: Vector = Vector(
-            math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
-            math.sin(self.barrel_elevation),
-            math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)
+            math.cos(shot_source.barrel_elevation) * math.cos(shot_source.barrel_azimuth),
+            math.sin(shot_source.barrel_elevation),
+            math.cos(shot_source.barrel_elevation) * math.sin(shot_source.barrel_azimuth)
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
@@ -84,7 +84,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
 
             # Update air density at current point in trajectory
             density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
-                self.alt0 + range_vector.y)
+                shot_source.alt0 + range_vector.y)
 
             yield (
                 time, range_vector, velocity_vector, velocity,
@@ -95,8 +95,8 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = self.calc_step / max(1.0, relative_speed)
-            km = density_factor * self.drag_by_mach(relative_speed / mach)
+            delta_time = shot_source.calc_step / max(1.0, relative_speed)
+            km = density_factor * shot_source.drag_by_mach(relative_speed / mach)
             drag = km * relative_speed
 
             # region RK4 integration

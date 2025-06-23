@@ -9,7 +9,8 @@ from typing import Generator
 from typing_extensions import Union, Tuple, List, Optional, override
 
 from py_ballisticcalc.conditions import Shot, Wind
-from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict
+from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, \
+    BaseIntegrationEngineShotSource
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -84,7 +85,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         raise NotImplementedError("Not needed for SciPy based integrator")
 
     @override
-    def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
+    def _integrate(self, shot_info: Shot,
+                   shot_source: BaseIntegrationEngineShotSource,
+                   maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """
         Calculate trajectory for specified shot
@@ -116,13 +119,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         wind_sock = WindSock(shot_info.winds)
 
         # region Initialize velocity and position of projectile
-        velocity = self.muzzle_velocity
+        velocity = shot_source.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         # s = [x, y, z, vx, vy, vz]
-        s0 = [.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height,
-              math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth) * velocity,
-              math.sin(self.barrel_elevation) * velocity,
-              math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth) * velocity]
+        s0 = [.0, -shot_source.cant_cosine * shot_source.sight_height, -shot_source.cant_sine * shot_source.sight_height,
+              math.cos(shot_source.barrel_elevation) * math.cos(shot_source.barrel_azimuth) * velocity,
+              math.sin(shot_source.barrel_elevation) * velocity,
+              math.cos(shot_source.barrel_elevation) * math.sin(shot_source.barrel_azimuth) * velocity]
 
         # endregion
 
@@ -143,8 +146,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             else:
                 relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()
-            density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + y)
-            km = density_factor * self.drag_by_mach(relative_speed / mach)
+            density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(shot_source.alt0 + y)
+            km = density_factor * shot_source.drag_by_mach(relative_speed / mach)
             drag = km * relative_speed
 
             # Derivatives
@@ -163,7 +166,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
         event_max_range.terminal = True  # type: ignore[attr-defined]
 
-        max_drop = max(_cMaximumDrop, _cMinimumAltitude - self.alt0)
+        max_drop = max(_cMaximumDrop, _cMinimumAltitude - shot_source.alt0)
 
         def event_max_drop(t, s):  # Stop when y crosses max_drop
             return s[1] - max_drop
@@ -182,7 +185,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
         if filter_flags & TrajFlag.ZERO:
             def zero_crossing(t, s):  # Look for trajectory crossing sight line
                 # Solve for y = x * tan(look_angle)
-                return s[1] - s[0] * math.tan(self.look_angle)
+                return s[1] - s[0] * math.tan(shot_source.look_angle)
 
             zero_crossing.terminal = False  # type: ignore[attr-defined]
             zero_crossing.direction = 0  # type: ignore[attr-defined]
@@ -217,12 +220,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                 position = Vector(*state[0:3])
                 velocity = Vector(*state[3:6])
                 velocity_magnitude = velocity.magnitude()
-                density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + position[1])
-                drag = density_factor * velocity_magnitude * self.drag_by_mach(velocity_magnitude / mach)
+                density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(shot_source.alt0 + position[1])
+                drag = density_factor * velocity_magnitude * shot_source.drag_by_mach(velocity_magnitude / mach)
 
                 return self.create_trajectory_row(
                     t, position, velocity, velocity_magnitude,
-                    mach, density_factor, drag, flag
+                    mach, density_factor, drag, flag, shot_source
                 )
 
             if sol.t[-1] == 0:
@@ -326,7 +329,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
                         logger.debug("No Mach crossing found")
 
                 if filter_flags & TrajFlag.ZERO and len(sol.t_events) > 3 and sol.t_events[-1].size > 0:
-                    tan_look_angle = math.tan(self.look_angle)
+                    tan_look_angle = math.tan(shot_source.look_angle)
                     for t_cross in sol.t_events[-1]:
                         state = sol.sol(t_cross)
                         # To determine crossing direction, sample after the crossing

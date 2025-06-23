@@ -143,7 +143,7 @@ config = {}
 print()
 
 for ep in _EngineLoader.iter_engines():
-    if not ep.name.startswith("cy"):
+    if ep.name.startswith("cy"):
         continue
     engine = ep.load()
     print("Engine: %s" % ep.value)
