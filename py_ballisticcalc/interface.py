@@ -90,16 +90,15 @@ class Calculator(Generic[ConfigT]):
 
     config: Optional[ConfigT] = field(default=None)
     engine: Union[str, Type[EngineProtocol[ConfigT]]] = field(default=DEFAULT_ENTRY)
-    _engine_instance: EngineProtocol[ConfigT] = field(init=False, repr=False, compare=False)
+    _engine_class: Type[EngineProtocol[ConfigT]] = field(init=False)
 
     def __post_init__(self):
-        engine: Type[EngineProtocol[ConfigT]] = _EngineLoader.load(self.engine)
-        self._engine_instance = engine(self.config)
+        self._engine_class: Type[EngineProtocol[ConfigT]] = _EngineLoader.load(self.engine)
 
-    @property
-    def cdm(self) -> List[DragDataPoint]:
-        """returns custom drag function based on input data"""
-        return self._engine_instance.table_data
+    # @property  # was not threadsafe, use DragModel.drag_table
+    # def cdm(self) -> List[DragDataPoint]:
+    #    """returns custom drag function based on input data"""
+    #    return self._engine_instance.table_data
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.
@@ -111,8 +110,10 @@ class Calculator(Generic[ConfigT]):
                 on ballistic trajectory of shooting uphill or downhill.  Therefore:
                 For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         """
+
         target_distance = PreferredUnits.distance(target_distance)
-        total_elevation = self._engine_instance.zero_angle(shot, target_distance)
+        _engine_instance: EngineProtocol[ConfigT] = self._engine_class(self.config)
+        total_elevation = _engine_instance.zero_angle(shot, target_distance)
         return Angular.Radian(
             (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
         )
@@ -145,7 +146,8 @@ class Calculator(Generic[ConfigT]):
             step: Distance = Distance.Inch(trajectory_step)
         else:
             step = PreferredUnits.distance(trajectory_step)
-        data = self._engine_instance.trajectory(shot, trajectory_range, step, extra_data, time_step)
+        _engine_instance: EngineProtocol[ConfigT] = self._engine_class(self.config)
+        data = _engine_instance.trajectory(shot, trajectory_range, step, extra_data, time_step)
         return HitResult(shot, data, extra_data)
 
     @staticmethod
