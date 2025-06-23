@@ -55,6 +55,17 @@ cdef class _WindSock:
     cdef V3dT vector_for_range(_WindSock self, double next_range)
 
 
+cdef struct CythonizedBaseIntegrationState:
+    double time
+    V3dT wind_vector
+    V3dT range_vector
+    V3dT velocity_vector
+    double velocity
+    double mach
+    double density_factor
+    double drag
+
+
 cdef class CythonizedBaseIntegrationEngine:
     cdef:
         list _table_data # list[object]
@@ -78,11 +89,18 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
     cdef list _integrate(CythonizedBaseIntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = ?)
+    cdef void _generate_next_state(CythonizedBaseIntegrationEngine self, CythonizedBaseIntegrationState *state)
 
-
-cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
-                           double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, int flag)
+    cdef object create_trajectory_row(CythonizedBaseIntegrationEngine self,
+                                      double time,
+                                      const V3dT *range_vector,
+                                      const V3dT *velocity_vector,
+                                      double velocity,
+                                      double mach,
+                                      double density_factor,
+                                      double drag,
+                                      int flag,
+                                      )
 
 cdef object _new_feet(double v)
 cdef object _new_fps(double v)

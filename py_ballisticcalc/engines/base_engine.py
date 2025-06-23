@@ -467,7 +467,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         min_step = min(self.calc_step, record_step)
         last_recorded_range = 0.0
 
-        data_point = None
         range_error_reason = None
 
         def is_done():
@@ -487,7 +486,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         data_point = next(gen)
         (time, range_vector, velocity_vector, velocity, mach, density_factor, drag) = data_point
         it = 1
-        # for it, data_point in enumerate(gen := self._generate(shot_info)):
+
         while True:
             if is_done():
                 break

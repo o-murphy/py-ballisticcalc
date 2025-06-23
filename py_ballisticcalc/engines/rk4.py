@@ -16,6 +16,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
     @override
     def get_calc_step(self, step: float = 0) -> float:
         # adjust Euler default step to RK4 algorythm
+        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko
         return super().get_calc_step(step) ** 0.5
 
     @override

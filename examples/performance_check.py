@@ -140,8 +140,8 @@ config = {}
 print()
 
 for ep in _EngineLoader.iter_engines():
-    # if not ep.name.startswith("cy"):
-    #     continue
+    if not ep.name.startswith("cy"):
+        continue
     engine = ep.load()
     print("Engine: %s" % ep.value)
     calc = Calculator(config=config, engine=engine)
