@@ -19,13 +19,18 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
-    CythonizedBaseIntegrationState,
 )
 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport (
     V3dT, add, sub, mag, mulS
 )
+
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.state cimport (
+    CythonizedBaseIntegrationState
+)
+
 
 
 __all__ = (
@@ -39,7 +44,8 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                                    CythonizedBaseIntegrationState *state):
 
         cdef:
-            V3dT _tv
+            V3dT _tv, velocity_adjusted, delta_range_vector
+            double velocity, delta_time
 
         #region Ballistic calculation step
         # use just cdef methods to maximize speed

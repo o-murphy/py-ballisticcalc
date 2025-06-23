@@ -19,12 +19,16 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
-    CythonizedBaseIntegrationState,
 )
 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport (
     V3dT, add, sub, mag, mulS
+)
+
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.state cimport (
+    CythonizedBaseIntegrationState
 )
 
 
