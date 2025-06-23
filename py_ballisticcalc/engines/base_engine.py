@@ -4,6 +4,7 @@
 
 import math
 from abc import ABC, abstractmethod
+from typing import Generator
 
 from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Final, TypedDict
 
@@ -25,7 +26,6 @@ __all__ = (
     'calculate_energy',
     'calculate_ogw',
     'get_correction',
-    'create_trajectory_row',
     '_TrajectoryDataFilter',
     '_WindSock',
     'CurvePoint'
@@ -437,7 +437,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    @abstractmethod
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """
@@ -456,6 +455,117 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         Returns:
             List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
         """
+        _cMinimumVelocity = self._config.cMinimumVelocity
+        _cMaximumDrop = self._config.cMaximumDrop
+        _cMinimumAltitude = self._config.cMinimumAltitude
+
+        ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
+        data_filter: Optional[_TrajectoryDataFilter] = None
+
+        # min_step is used to handle situation, when record step is smaller than calc_step
+        # in order to prevent range breaking too early
+        min_step = min(self.calc_step, record_step)
+        last_recorded_range = 0.0
+
+        data_point = None
+        range_error_reason = None
+
+        def is_done():
+            nonlocal min_step
+            return (range_vector.x > maximum_range + min_step) or (
+                    filter_flags and last_recorded_range > maximum_range - 1e-6)
+
+        def is_range_error():
+            if velocity < _cMinimumVelocity:
+                return RangeError.MinimumVelocityReached
+            elif range_vector.y < _cMaximumDrop:
+                return RangeError.MaximumDropReached
+            elif self.alt0 + range_vector.y < _cMinimumAltitude:
+                return RangeError.MinimumAltitudeReached
+
+        gen = self._integration_generator(shot_info)
+        data_point = next(gen)
+        (time, range_vector, velocity_vector, velocity, mach, density_factor, drag) = data_point
+        it = 1
+        # for it, data_point in enumerate(gen := self._generate(shot_info)):
+        while True:
+            if is_done():
+                break
+
+            if range_error_reason := is_range_error():
+                break
+
+            if filter_flags:  # require check before call to improve performance
+
+                if not data_filter:
+                    # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
+                    data_filter = _TrajectoryDataFilter(
+                        filter_flags=filter_flags, range_step=record_step,
+                        initial_position=range_vector,
+                        initial_velocity=velocity_vector,
+                        time_step=time_step)
+                    data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
+
+                # region Check whether to record TrajectoryData row at current point
+
+                # Record TrajectoryData row
+                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+                    ranges.append(self.create_trajectory_row(
+                        data.time, data.position, data.velocity, data.velocity.magnitude(),
+                        data.mach, density_factor, drag, data_filter.current_flag
+                    ))
+                    last_recorded_range = data.position.x
+                # endregion
+
+            data_point = next(gen)
+            (time, range_vector, velocity_vector, velocity, mach, density_factor, drag) = data_point
+
+        # Ensure that we have at least two data points in trajectory
+        if range_error_reason or len(ranges) < 2:
+            (time, range_vector, velocity_vector, velocity, mach, density_factor, drag) = data_point
+            ranges.append(self.create_trajectory_row(
+                time, range_vector, velocity_vector, velocity,
+                mach, density_factor, drag, TrajFlag.NONE
+            ))
+
+        if range_error_reason:
+            raise RangeError(range_error_reason, ranges)
+
+        logger.debug(f"euler py it {it}")
+        return ranges
+
+    @abstractmethod
+    def _integration_generator(self, shot_info: Shot) -> Generator[
+        Tuple[float, Vector, Vector, float, float, float, float], None, None]:
+        """
+                Generate trajectory data for a specified shot.
+
+                This method calculates the trajectory step by step and yields
+                'GENERATOR_RETURN_TYPE' objects containing various ballistic parameters
+                at each step.
+
+                Args:
+                    shot_info (Shot): An object containing all necessary information about the shot,
+                                      such as projectile characteristics, initial velocity, and environmental conditions.
+
+                Yields:
+                    Tuple[float, Vector, Vector, float, float, float, float]: A tuple representing a single
+                    point in the trajectory, with elements in the following order:
+                    1.  **time** (float): The time elapsed since the shot was fired (in seconds).
+                    2.  **range_vector** (Vector): The current position of the projectile as a vector (e.g., in feet).
+                    3.  **velocity_vector** (Vector): The current velocity of the projectile as a vector (e.g., in feet per second).
+                    4.  **velocity** (float): The current velocity magnitude (e.g., in feet per second).
+                    5.  **mach** (float): The current Mach number of the projectile.
+                    6.  **density_factor** (float): A factor representing the air density at the current altitude.
+                    7.  **drag** (float): The drag force acting on the projectile at the current state.
+
+                Note:
+                    This is a generator function, meaning it yields data points iteratively
+                    rather than returning a complete list. This is useful for processing
+                    large trajectories efficiently. The exact stopping conditions and step
+                    logic are implemented within the method's body.
+                """
+
         raise NotImplementedError
 
     def drag_by_mach(self, mach: float) -> float:
@@ -527,54 +637,102 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
             return sd * fv * ftp
         return 0
 
+    def create_trajectory_row(self, time: float, range_vector: Vector, velocity_vector: Vector,
+                              velocity: float,
+                              mach: float,
+                              density_factor: float, drag: float,
+                              flag: Union[TrajFlag, int]) -> TrajectoryData:
 
-# pylint: disable=too-many-positional-arguments
-def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
-                          velocity: float, mach: float, spin_drift: float, look_angle: float,
-                          density_factor: float, drag: float, weight: float,
-                          flag: Union[TrajFlag, int]) -> TrajectoryData:
-    """
-    Creates a TrajectoryData object representing a single row of trajectory data.
+        """
+        Creates a TrajectoryData object representing a single row of trajectory data.
 
-    Args:
-        time (float): Time of flight.
-        range_vector (Vector): Position vector.
-        velocity_vector (Vector): Velocity vector.
-        velocity (float): Velocity magnitude.
-        mach (float): Mach number.
-        spin_drift (float): Spin drift value.
-        look_angle (float): Look angle value.
-        density_factor (float): Density factor.
-        drag (float): Drag value.
-        weight (float): Weight value.
-        flag (Union[TrajFlag, int]): Flag value.
+        Args:
+            time (float): Time of flight.
+            range_vector (Vector): Position vector.
+            velocity_vector (Vector): Velocity vector.
+            velocity (float): Velocity magnitude.
+            mach (float): Mach number.
+            density_factor (float): Density factor.
+            drag (float): Drag value.
+            flag (Union[TrajFlag, int]): Flag value.
 
-    Returns:
-        TrajectoryData: A TrajectoryData object representing the trajectory data.
-    """
-    windage = range_vector.z + spin_drift
-    drop_adjustment = get_correction(range_vector.x, range_vector.y)
-    windage_adjustment = get_correction(range_vector.x, windage)
-    trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
+        Returns:
+            TrajectoryData: A TrajectoryData object representing the trajectory data.
+        """
+        spin_drift = self.spin_drift(time)
+        windage = range_vector.z + spin_drift
+        drop_adjustment = get_correction(range_vector.x, range_vector.y)
+        windage_adjustment = get_correction(range_vector.x, windage)
+        trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
 
-    return TrajectoryData(
-        time=time,
-        distance=_new_feet(range_vector.x),
-        velocity=_new_fps(velocity),
-        mach=velocity / mach,
-        height=_new_feet(range_vector.y),
-        target_drop=_new_feet((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
-        drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
-        windage=_new_feet(windage),
-        windage_adj=_new_rad(windage_adjustment),
-        look_distance=_new_feet(range_vector.x / math.cos(look_angle)),
-        angle=_new_rad(trajectory_angle),
-        density_factor=density_factor - 1,
-        drag=drag,
-        energy=_new_ft_lb(calculate_energy(weight, velocity)),
-        ogw=_new_lb(calculate_ogw(weight, velocity)),
-        flag=flag
-    )
+        return TrajectoryData(
+            time=time,
+            distance=_new_feet(range_vector.x),
+            velocity=_new_fps(velocity),
+            mach=velocity / mach,
+            height=_new_feet(range_vector.y),
+            target_drop=_new_feet(
+                (range_vector.y - range_vector.x * math.tan(self.look_angle)) * math.cos(self.look_angle)),
+            drop_adj=_new_rad(drop_adjustment - (self.look_angle if range_vector.x else 0)),
+            windage=_new_feet(windage),
+            windage_adj=_new_rad(windage_adjustment),
+            look_distance=_new_feet(range_vector.x / math.cos(self.look_angle)),
+            angle=_new_rad(trajectory_angle),
+            density_factor=density_factor - 1,
+            drag=drag,
+            energy=_new_ft_lb(calculate_energy(self.weight, velocity)),
+            ogw=_new_lb(calculate_ogw(self.weight, velocity)),
+            flag=flag
+        )
+
+
+# # pylint: disable=too-many-positional-arguments
+# def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
+#                           velocity: float, mach: float, spin_drift: float, look_angle: float,
+#                           density_factor: float, drag: float, weight: float,
+#                           flag: Union[TrajFlag, int]) -> TrajectoryData:
+#     """
+#     Creates a TrajectoryData object representing a single row of trajectory data.
+#
+#     Args:
+#         time (float): Time of flight.
+#         range_vector (Vector): Position vector.
+#         velocity_vector (Vector): Velocity vector.
+#         velocity (float): Velocity magnitude.
+#         mach (float): Mach number.
+#         spin_drift (float): Spin drift value.
+#         look_angle (float): Look angle value.
+#         density_factor (float): Density factor.
+#         drag (float): Drag value.
+#         weight (float): Weight value.
+#         flag (Union[TrajFlag, int]): Flag value.
+#
+#     Returns:
+#         TrajectoryData: A TrajectoryData object representing the trajectory data.
+#     """
+#     windage = range_vector.z + spin_drift
+#     drop_adjustment = get_correction(range_vector.x, range_vector.y)
+#     windage_adjustment = get_correction(range_vector.x, windage)
+#     trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
+#
+#     return TrajectoryData(
+#         time=time,
+#         distance=_new_feet(range_vector.x),
+#         velocity=_new_fps(velocity),
+#         mach=velocity / mach,
+#         height=_new_feet(range_vector.y),
+#         target_drop=_new_feet((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
+#         drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
+#         windage=_new_feet(windage),
+#         windage_adj=_new_rad(windage_adjustment),
+#         look_distance=_new_feet(range_vector.x / math.cos(look_angle)),
+#         angle=_new_rad(trajectory_angle),
+#         density_factor=density_factor - 1,
+#         drag=drag,
+#         energy=_new_ft_lb(calculate_energy(weight, velocity)),
+#         ogw=_new_lb(calculate_ogw(weight, velocity)),
+#         flag=flag
+#     )
 
 
 def _new_feet(v: float):
