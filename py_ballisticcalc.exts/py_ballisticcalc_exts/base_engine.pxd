@@ -59,6 +59,17 @@ cdef class _WindSock:
     cdef V3dT vector_for_range(_WindSock self, double next_range)
 
 
+cdef struct CythonizedBaseIntegrationState:
+    double time
+    V3dT wind_vector
+    V3dT range_vector
+    V3dT velocity_vector
+    double velocity
+    double mach
+    double density_factor
+    double drag
+
+
 cdef class CythonizedBaseIntegrationEngine:
     cdef:
         list _table_data # list[object]
