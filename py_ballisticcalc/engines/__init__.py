@@ -15,6 +15,5 @@ __all__ = (
     'calculate_energy',
     'calculate_ogw',
     'get_correction',
-    'create_trajectory_row',
     'CurvePoint',
 )
