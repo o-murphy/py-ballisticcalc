@@ -152,15 +152,6 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         state.velocity = mag(&state.velocity_vector)
         state.time += delta_time
 
-        # Update wind reading at current point in trajectory
-        if state.range_vector.x >= self.ws.next_range:  # require check before call to improve performance
-            state.wind_vector = self.ws.vector_for_range(state.range_vector.x)
-
-        # Update air density at current point in trajectory
-        # overwrite density_factor and mach by pointer
-        update_density_factor_and_mach_for_altitude(&self._shot_s.atmo,
-            self._shot_s.alt0 + state.range_vector.y, &state.density_factor, &state.mach)
-
 
 # This function calculates dv/dt for velocity (v) affected by gravity and drag.
 # It now takes gravity_vector and km as explicit arguments.

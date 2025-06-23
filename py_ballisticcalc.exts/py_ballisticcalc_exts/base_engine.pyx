@@ -45,19 +45,18 @@ from py_ballisticcalc.engines.base_engine import create_base_engine_config
 __all__ = (
     'CythonizedBaseIntegrationEngine',
     '_WindSock',
-    'create_trajectory_row',
 )
 
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                  V3dT initial_position, V3dT initial_velocity,
+                  const V3dT *initial_position, const V3dT *initial_velocity,
                   double time_step = 0.0):
     return _TrajectoryDataFilter(
         filter_flags, CTrajFlag.NONE, CTrajFlag.NONE,
         time_step, range_step,
         0.0, 0.0, 0.0, 0.0,
-        initial_position,
-        initial_velocity,
+        initial_position[0],
+        initial_velocity[0],
         0.0, 0.0,
     )
 
@@ -68,21 +67,13 @@ cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double bar
         tdf.seen_zero |= CTrajFlag.ZERO_DOWN
     tdf.look_angle = look_angle
 
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time):
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time):
     cdef BaseTrajData data = None
     cdef double ratio
     cdef V3dT temp_position, temp_velocity
     cdef V3dT temp_sub_position, temp_sub_velocity
     cdef V3dT temp_mul_position, temp_mul_velocity
 
-    # #region DEBUG
-    # if get_debug():
-    #     logger.debug(
-    #         f"should_record called with time={time}, "
-    #         f"position=({position.x}, {position.y}, {position.z}), "
-    #         f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
-    #     )
-    # #endregion
     tdf.current_flag = CTrajFlag.NONE
     if (tdf.range_step > 0) and (position.x >= tdf.next_record_distance):
         while tdf.next_record_distance + tdf.range_step < position.x:
@@ -91,10 +82,10 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
         if position.x > tdf.previous_position.x:
             # Interpolate to get BaseTrajData at the record distance
             ratio = (tdf.next_record_distance - tdf.previous_position.x) / (position.x - tdf.previous_position.x)
-            temp_sub_position = sub(&position, &tdf.previous_position)
+            temp_sub_position = sub(position, &tdf.previous_position)
             temp_mul_position = mulS(&temp_sub_position, ratio)
             temp_position = add(&tdf.previous_position, &temp_mul_position)
-            temp_sub_velocity = sub(&velocity, &tdf.previous_velocity)
+            temp_sub_velocity = sub(velocity, &tdf.previous_velocity)
             temp_mul_velocity = mulS(&temp_sub_velocity, ratio)
             temp_velocity = add(&tdf.previous_velocity, &temp_mul_velocity)
             data = BaseTrajData(
@@ -109,25 +100,19 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
     elif tdf.time_step > 0:
         _check_next_time(tdf, time)
     _check_zero_crossing(tdf, position)
-    _check_mach_crossing(tdf, mag(&velocity), mach)
+    _check_mach_crossing(tdf, mag(velocity), mach)
     if (tdf.current_flag & tdf.filter) != 0 and data is None:
-        data = BaseTrajData(time=time, position=position,
-                            velocity=velocity, mach=mach)
+        data = BaseTrajData(
+            time=time,
+            position=position[0],
+            velocity=velocity[0],
+            mach=mach
+        )
     tdf.previous_time = time
-    tdf.previous_position = position
-    tdf.previous_velocity = velocity
+    tdf.previous_position = position[0]
+    tdf.previous_velocity = velocity[0]
     tdf.previous_mach = mach
-    #region DEBUG
-    # if get_debug():
-    #     if data is not None:
-    #         logger.debug(
-    #             f"should_record returning BaseTrajData time={data.time}, "
-    #             f"position=({data.position.x}, {data.position.y}, {data.position.z}), "
-    #             f"velocity=({data.velocity.x}, {data.velocity.y}, {data.velocity.z}), mach={data.mach}"
-    #         )
-    #     else:
-    #         logger.debug("should_record returning None")
-    # #endregion
+
     return data
 
 cdef void _check_next_time(_TrajectoryDataFilter * tdf, double time):
@@ -141,7 +126,7 @@ cdef void _check_mach_crossing(_TrajectoryDataFilter * tdf, double velocity, dou
         tdf.current_flag |= CTrajFlag.MACH
     tdf.previous_v_mach = current_v_mach
 
-cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, V3dT range_vector):
+cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, const V3dT *range_vector):
     if range_vector.x > 0:
         # Zero reference line is the sight line defined by look_angle
         reference_height = range_vector.x * tan(tdf.look_angle)
@@ -278,7 +263,7 @@ cdef class CythonizedBaseIntegrationEngine:
         self._shot_s.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         cy_update_stability_coefficient(&self._shot_s)
 
-        self.ws = _WindSock(shot_info.winds)
+        # self.ws = _WindSock(shot_info.winds)
 
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
@@ -409,8 +394,8 @@ cdef class CythonizedBaseIntegrationEngine:
         data_filter = createTrajectoryDataFilter(
             filter_flags=filter_flags,
              range_step=record_step,
-             initial_position=state.range_vector,
-             initial_velocity=state.velocity_vector,
+             initial_position=&state.range_vector,
+             initial_velocity=&state.velocity_vector,
              time_step=time_step
         )
         setup_seen_zero(&data_filter, state.range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
@@ -445,7 +430,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 break
 
             if filter_flags:
-                data = should_record(&data_filter, state.range_vector, state.velocity_vector, state.mach, state.time)
+                data = should_record(&data_filter, &state.range_vector, &state.velocity_vector, state.mach, state.time)
                 if data is not None:
                     ranges.append(self.create_trajectory_row(
                         data.time, &data.position, &data.velocity, mag(&data.velocity),
@@ -454,6 +439,16 @@ cdef class CythonizedBaseIntegrationEngine:
                     last_recorded_range = data.position.x
 
             self._generate_next_state(&state)
+
+            # Update wind reading at current point in trajectory
+            if state.range_vector.x >= self.ws.next_range:  # require check before call to improve performance
+                state.wind_vector = self.ws.vector_for_range(state.range_vector.x)
+
+            # Update air density at current point in trajectory
+            # overwrite density_factor and mach by pointer
+            update_density_factor_and_mach_for_altitude(&self._shot_s.atmo,
+                                                        self._shot_s.alt0 + state.range_vector.y, &state.density_factor,
+                                                        &state.mach)
 
         if range_error_reason or len(ranges) < 2:
             ranges.append(self.create_trajectory_row(

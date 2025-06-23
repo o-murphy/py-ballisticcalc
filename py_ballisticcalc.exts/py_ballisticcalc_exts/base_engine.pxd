@@ -21,7 +21,6 @@ from py_ballisticcalc_exts.v3d cimport (
 __all__ = (
     'CythonizedBaseIntegrationEngine',
     '_WindSock',
-    'create_trajectory_row',
 )
 
 
@@ -35,10 +34,10 @@ cdef struct _TrajectoryDataFilter:
     double look_angle
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                                                      V3dT initial_position, V3dT initial_velocity,
+                                                      const V3dT *initial_position, const V3dT *initial_velocity,
                                                       double time_step = ?)
 cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle)
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time)
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time)
 
 
 @final
