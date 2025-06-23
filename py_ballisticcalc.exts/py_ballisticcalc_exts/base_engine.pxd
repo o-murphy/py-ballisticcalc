@@ -18,6 +18,11 @@ from py_ballisticcalc_exts.v3d cimport (
     V3dT
 )
 
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.state cimport (
+    CythonizedBaseIntegrationState
+)
+
 __all__ = (
     'CythonizedBaseIntegrationEngine',
     '_WindSock',
@@ -52,17 +57,6 @@ cdef class _WindSock:
     cdef V3dT current_vector(_WindSock self)
     cdef void update_cache(_WindSock self)
     cdef V3dT vector_for_range(_WindSock self, double next_range)
-
-
-cdef struct CythonizedBaseIntegrationState:
-    double time
-    V3dT wind_vector
-    V3dT range_vector
-    V3dT velocity_vector
-    double velocity
-    double mach
-    double density_factor
-    double drag
 
 
 cdef class CythonizedBaseIntegrationEngine:

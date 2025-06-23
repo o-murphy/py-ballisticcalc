@@ -34,6 +34,11 @@ from py_ballisticcalc_exts.v3d cimport (
     V3dT, add, sub, mag, mulS
 )
 
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.state cimport (
+    BaseIntegrationStateT
+)
+
 import warnings
 
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
@@ -263,7 +268,7 @@ cdef class CythonizedBaseIntegrationEngine:
         self._shot_s.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         cy_update_stability_coefficient(&self._shot_s)
 
-        # self.ws = _WindSock(shot_info.winds)
+        self.ws = _WindSock(shot_info.winds)
 
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
@@ -362,7 +367,7 @@ cdef class CythonizedBaseIntegrationEngine:
             double _cMinimumAltitude = self._config_s.cMinimumAltitude
 
         cdef:
-            CythonizedBaseIntegrationState state
+            BaseIntegrationStateT state
 
         cdef:
             # temp vector
@@ -393,10 +398,10 @@ cdef class CythonizedBaseIntegrationEngine:
 
         data_filter = createTrajectoryDataFilter(
             filter_flags=filter_flags,
-             range_step=record_step,
-             initial_position=&state.range_vector,
-             initial_velocity=&state.velocity_vector,
-             time_step=time_step
+            range_step=record_step,
+            initial_position=&state.range_vector,
+            initial_velocity=&state.velocity_vector,
+            time_step=time_step
         )
         setup_seen_zero(&data_filter, state.range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
 
@@ -461,7 +466,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         return ranges
 
-    cdef void _generate_next_state(CythonizedBaseIntegrationEngine self, CythonizedBaseIntegrationState *state):
+    cdef void _generate_next_state(CythonizedBaseIntegrationEngine self, BaseIntegrationStateT *state):
         raise NotImplementedError
 
 
