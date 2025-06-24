@@ -34,7 +34,6 @@ from py_ballisticcalc_exts.v3d cimport (
     V3dT, add, sub, mag, mulS
 )
 
-from py_ballisticcalc.logger import logger, get_debug
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.constants import cMaxWindDistanceFeet
@@ -74,14 +73,6 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
     cdef V3dT temp_sub_position, temp_sub_velocity
     cdef V3dT temp_mul_position, temp_mul_velocity
 
-    # #region DEBUG
-    # if get_debug():
-    #     logger.debug(
-    #         f"should_record called with time={time}, "
-    #         f"position=({position.x}, {position.y}, {position.z}), "
-    #         f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
-    #     )
-    # #endregion
     tdf.current_flag = CTrajFlag.NONE
     if (tdf.range_step > 0) and (position.x >= tdf.next_record_distance):
         while tdf.next_record_distance + tdf.range_step < position.x:
@@ -116,17 +107,7 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
     tdf.previous_position = position
     tdf.previous_velocity = velocity
     tdf.previous_mach = mach
-    #region DEBUG
-    # if get_debug():
-    #     if data is not None:
-    #         logger.debug(
-    #             f"should_record returning BaseTrajData time={data.time}, "
-    #             f"position=({data.position.x}, {data.position.y}, {data.position.z}), "
-    #             f"velocity=({data.velocity.x}, {data.velocity.y}, {data.velocity.z}), mach={data.mach}"
-    #         )
-    #     else:
-    #         logger.debug("should_record returning None")
-    # #endregion
+
     return data
 
 cdef void _check_next_time(_TrajectoryDataFilter * tdf, double time):

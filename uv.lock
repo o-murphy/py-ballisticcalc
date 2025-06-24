@@ -2611,7 +2611,7 @@ wheels = [
 
 [[package]]
 name = "py-ballisticcalc"
-version = "2.2.0b1"
+version = "2.2.0b2"
 source = { editable = "." }
 dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },
@@ -2743,7 +2743,7 @@ dev = [
 
 [[package]]
 name = "py-ballisticcalc-exts"
-version = "2.2.0b1"
+version = "2.2.0b2"
 source = { directory = "py_ballisticcalc.exts" }
 
 [package.metadata]
