@@ -18,10 +18,14 @@ from py_ballisticcalc_exts.v3d cimport (
     V3dT
 )
 
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.state cimport (
+    CythonizedBaseIntegrationState
+)
+
 __all__ = (
     'CythonizedBaseIntegrationEngine',
     '_WindSock',
-    'create_trajectory_row',
 )
 
 
@@ -35,10 +39,10 @@ cdef struct _TrajectoryDataFilter:
     double look_angle
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                                                      V3dT initial_position, V3dT initial_velocity,
+                                                      const V3dT *initial_position, const V3dT *initial_velocity,
                                                       double time_step = ?)
 cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle)
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time)
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position, const V3dT *velocity, double mach, double time)
 
 
 @final
@@ -78,11 +82,18 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
     cdef list _integrate(CythonizedBaseIntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = ?)
+    cdef void _generate_next_state(CythonizedBaseIntegrationEngine self, CythonizedBaseIntegrationState *state)
 
-
-cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
-                           double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, int flag)
+    cdef object create_trajectory_row(CythonizedBaseIntegrationEngine self,
+                                      double time,
+                                      const V3dT *range_vector,
+                                      const V3dT *velocity_vector,
+                                      double velocity,
+                                      double mach,
+                                      double density_factor,
+                                      double drag,
+                                      int flag,
+                                      )
 
 cdef object _new_feet(double v)
 cdef object _new_fps(double v)

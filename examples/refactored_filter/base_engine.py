@@ -3,8 +3,9 @@
 """pure python trajectory calculation backend"""
 
 import math
-from abc import ABC, abstractmethod
-from typing import Generator
+import warnings
+from abc import ABC
+from dataclasses import dataclass
 
 from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Final, TypedDict
 
@@ -283,6 +284,20 @@ class _WindSock:
         return self.current_vector()
 
 
+@dataclass
+class BaseIntegrationState:
+    time: float
+    wind_vector: Vector
+    range_vector: Vector
+    velocity_vector: Vector
+    velocity: float
+    mach: float
+    density_factor: float
+    drag: float
+    wind_sock: _WindSock
+    shot_info: Shot
+
+
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
     """
@@ -460,7 +475,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         _cMinimumAltitude = self._config.cMinimumAltitude
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
-        data_filter: Optional[_TrajectoryDataFilter] = None
+        data_filter: _TrajectoryDataFilter
 
         # min_step is used to handle situation, when record step is smaller than calc_step
         # in order to prevent range breaking too early
@@ -469,23 +484,51 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
 
         range_error_reason = None
 
+        wind_sock = _WindSock(shot_info.winds)
+
+        state = BaseIntegrationState(
+            time=0.0,
+            mach=0.0,
+            density_factor=0.0,
+            drag=0.0,
+            velocity=self.muzzle_velocity,
+            range_vector=Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height),
+            velocity_vector=Vector(
+                math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
+                math.sin(self.barrel_elevation),
+                math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)
+            ).mul_by_const(self.muzzle_velocity),  # type: ignore
+            wind_vector=wind_sock.current_vector(),
+            wind_sock=wind_sock,
+            shot_info=shot_info,
+        )
+
+        data_filter = _TrajectoryDataFilter(
+            filter_flags=filter_flags, range_step=record_step,
+            initial_position=state.range_vector,
+            initial_velocity=state.velocity_vector,
+            time_step=time_step)
+        data_filter.setup_seen_zero(state.range_vector.y, self.barrel_elevation, self.look_angle)
+
+        # Update air density at current point in trajectory
+        state.density_factor, state.mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
+            self.alt0 + state.range_vector.y)
+
         def is_done():
             nonlocal min_step
-            return (range_vector.x > maximum_range + min_step) or (
+            return (state.range_vector.x > maximum_range + min_step) or (
                     filter_flags and last_recorded_range > maximum_range - 1e-6)
 
         def is_range_error():
-            if velocity < _cMinimumVelocity:
+            if state.velocity < _cMinimumVelocity:
                 return RangeError.MinimumVelocityReached
-            elif range_vector.y < _cMaximumDrop:
+            elif state.range_vector.y < _cMaximumDrop:
                 return RangeError.MaximumDropReached
-            elif self.alt0 + range_vector.y < _cMinimumAltitude:
+            elif self.alt0 + state.range_vector.y < _cMinimumAltitude:
                 return RangeError.MinimumAltitudeReached
 
-        gen = self._integration_generator(shot_info)
-        data_point = next(gen)
-        (time, range_vector, velocity_vector, velocity, mach, density_factor, drag) = data_point
-        it = 1
+        it = 0
+        warnings.simplefilter("once")
 
         while True:
             if is_done():
@@ -496,35 +539,23 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
 
             if filter_flags:  # require check before call to improve performance
 
-                if not data_filter:
-                    # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-                    data_filter = _TrajectoryDataFilter(
-                        filter_flags=filter_flags, range_step=record_step,
-                        initial_position=range_vector,
-                        initial_velocity=velocity_vector,
-                        time_step=time_step)
-                    data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
-
-                # region Check whether to record TrajectoryData row at current point
-
                 # Record TrajectoryData row
-                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+                if (data := data_filter.should_record(state.range_vector, state.velocity_vector, state.mach,
+                                                      state.time)) is not None:
                     ranges.append(self.create_trajectory_row(
                         data.time, data.position, data.velocity, data.velocity.magnitude(),
-                        data.mach, density_factor, drag, data_filter.current_flag
+                        data.mach, state.density_factor, state.drag, data_filter.current_flag
                     ))
                     last_recorded_range = data.position.x
                 # endregion
 
-            data_point = next(gen)
-            (time, range_vector, velocity_vector, velocity, mach, density_factor, drag) = data_point
+            self._generate_next_state(state)
 
         # Ensure that we have at least two data points in trajectory
         if range_error_reason or len(ranges) < 2:
-            (time, range_vector, velocity_vector, velocity, mach, density_factor, drag) = data_point
             ranges.append(self.create_trajectory_row(
-                time, range_vector, velocity_vector, velocity,
-                mach, density_factor, drag, TrajFlag.NONE
+                state.time, state.range_vector, state.velocity_vector, state.velocity,
+                state.mach, state.density_factor, state.drag, TrajFlag.NONE
             ))
 
         if range_error_reason:
@@ -533,39 +564,42 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         logger.debug(f"euler py it {it}")
         return ranges
 
-    @abstractmethod
-    def _integration_generator(self, shot_info: Shot) -> Generator[
-        Tuple[float, Vector, Vector, float, float, float, float], None, None]:
-        """
-                Generate trajectory data for a specified shot.
-
-                This method calculates the trajectory step by step and yields
-                'GENERATOR_RETURN_TYPE' objects containing various ballistic parameters
-                at each step.
-
-                Args:
-                    shot_info (Shot): An object containing all necessary information about the shot,
-                                      such as projectile characteristics, initial velocity, and environmental conditions.
-
-                Yields:
-                    Tuple[float, Vector, Vector, float, float, float, float]: A tuple representing a single
-                    point in the trajectory, with elements in the following order:
-                    1.  **time** (float): The time elapsed since the shot was fired (in seconds).
-                    2.  **range_vector** (Vector): The current position of the projectile as a vector (e.g., in feet).
-                    3.  **velocity_vector** (Vector): The current velocity of the projectile as a vector (e.g., in feet per second).
-                    4.  **velocity** (float): The current velocity magnitude (e.g., in feet per second).
-                    5.  **mach** (float): The current Mach number of the projectile.
-                    6.  **density_factor** (float): A factor representing the air density at the current altitude.
-                    7.  **drag** (float): The drag force acting on the projectile at the current state.
-
-                Note:
-                    This is a generator function, meaning it yields data points iteratively
-                    rather than returning a complete list. This is useful for processing
-                    large trajectories efficiently. The exact stopping conditions and step
-                    logic are implemented within the method's body.
-                """
-
+    def _generate_next_state(self, state: BaseIntegrationState) -> None:
         raise NotImplementedError
+
+    # @abstractmethod
+    # def _integration_generator(self, shot_info: Shot) -> Generator[
+    #     Tuple[float, Vector, Vector, float, float, float, float], None, None]:
+    #     """
+    #             Generate trajectory data for a specified shot.
+    #
+    #             This method calculates the trajectory step by step and yields
+    #             'GENERATOR_RETURN_TYPE' objects containing various ballistic parameters
+    #             at each step.
+    #
+    #             Args:
+    #                 shot_info (Shot): An object containing all necessary information about the shot,
+    #                                   such as projectile characteristics, initial velocity, and environmental conditions.
+    #
+    #             Yields:
+    #                 Tuple[float, Vector, Vector, float, float, float, float]: A tuple representing a single
+    #                 point in the trajectory, with elements in the following order:
+    #                 1.  **time** (float): The time elapsed since the shot was fired (in seconds).
+    #                 2.  **range_vector** (Vector): The current position of the projectile as a vector (e.g., in feet).
+    #                 3.  **velocity_vector** (Vector): The current velocity of the projectile as a vector (e.g., in feet per second).
+    #                 4.  **velocity** (float): The current velocity magnitude (e.g., in feet per second).
+    #                 5.  **mach** (float): The current Mach number of the projectile.
+    #                 6.  **density_factor** (float): A factor representing the air density at the current altitude.
+    #                 7.  **drag** (float): The drag force acting on the projectile at the current state.
+    #
+    #             Note:
+    #                 This is a generator function, meaning it yields data points iteratively
+    #                 rather than returning a complete list. This is useful for processing
+    #                 large trajectories efficiently. The exact stopping conditions and step
+    #                 logic are implemented within the method's body.
+    #             """
+    #
+    #     raise NotImplementedError
 
     def drag_by_mach(self, mach: float) -> float:
         """

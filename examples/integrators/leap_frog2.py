@@ -7,7 +7,7 @@ import logging
 from py_ballisticcalc.trajectory_data import TrajFlag, TrajectoryData
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.vector import Vector
-from py_ballisticcalc.trajectory_calc import _WindSock, _TrajectoryDataFilter, Config
+from py_ballisticcalc.engines.base_engine import _WindSock, _TrajectoryDataFilter, BaseEngineConfig
 from py_ballisticcalc.conditions import Shot
 
 logger = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ def leapfrog_pure_python_integrator(engine_instance, shot_info: Shot, maximum_ra
     return ranges
 
 class PurePythonLeapfrogEngine:
-    def __init__(self, config: Config, muzzle_velocity: float, sight_height: float,
+    def __init__(self, config: BaseEngineConfig, muzzle_velocity: float, sight_height: float,
                  cant_angle: float, barrel_elevation: float, barrel_azimuth: float,
                  look_angle: float, alt0: float, calc_step: float, weight: float):
         self._config = config
