@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.2.0b3"
+version = "2.2.0b3.post1"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
@@ -30,6 +30,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
@@ -82,7 +83,7 @@ dev = [
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 
 [project.optional-dependencies]
-exts = ['py_ballisticcalc.exts==2.2.0b3']
+exts = ['py_ballisticcalc.exts==2.2.0b3.post1']
 charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 visualize = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 scipy = []
