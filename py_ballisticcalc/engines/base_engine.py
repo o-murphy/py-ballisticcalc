@@ -408,7 +408,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
         height_at_zero = math.sin(self.look_angle) * distance_feet
-
         iterations_count = 0
         zero_finding_error = _cZeroFindingAccuracy * 2
         # x = horizontal distance down range, y = drop, z = windage
@@ -423,12 +422,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
                 last_distance_foot = e.last_distance >> Distance.Foot
                 proportion = last_distance_foot / zero_distance
                 height = (e.incomplete_trajectory[-1].height >> Distance.Foot) / proportion
-
-            zero_finding_error = math.fabs(height - height_at_zero)
-
+            signed_zero_finding_error = height - height_at_zero
+            zero_finding_error = math.fabs(signed_zero_finding_error)
             if zero_finding_error > _cZeroFindingAccuracy:
                 # Adjust barrel elevation to close height at zero distance
-                self.barrel_elevation -= (height - height_at_zero) / zero_distance
+                look_angle_hit = math.atan2(height, zero_distance)
+                angle_correction_radians = look_angle_hit-self.look_angle
+                self.barrel_elevation -= angle_correction_radians
             else:  # last barrel_elevation hit zero!
                 break
             iterations_count += 1
