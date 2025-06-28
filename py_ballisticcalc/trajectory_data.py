@@ -228,6 +228,20 @@ class HitResult:
             raise ArithmeticError("Can't find zero crossing points")
         return data
 
+    def flag(self, flag: Union[TrajFlag, int]) -> Optional[TrajectoryData]:
+        """
+        Returns:
+            TrajectoryData: Trajectory row with the specified flag.
+
+        Raises:
+            AttributeError: If extra_data was not requested.
+        """
+        self.__check_extra__()
+        for row in self.trajectory:
+            if row.flag & flag:
+                return row
+        return None
+
     def index_at_distance(self, d: Distance) -> int:
         """
         Args:
@@ -236,7 +250,6 @@ class HitResult:
         Returns:
             int: Index of first trajectory row with .distance >= d; otherwise -1.
         """
-
         epsilon = 1e-8  # small value to avoid floating point issues
         return next((i for i in range(len(self.trajectory))
                      if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)

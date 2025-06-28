@@ -39,6 +39,7 @@ class _EngineLoader:
 
     @classmethod
     def iter_engines(cls):
+        """Iterates over all available engines in the entry points."""
         ballistic_entry_points = cls._get_entries_by_group()
         for ep in ballistic_entry_points:
             if ep.name.endswith(cls._entry_point_suffix):
@@ -72,7 +73,6 @@ class _EngineLoader:
             for ep in cls.iter_engines():
                 if ep.name == entry_point or entry_point in ep.value:
                     if handle := cls._load_from_entry(ep):
-                        logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
                         return handle
 
             if not handle:
@@ -98,7 +98,7 @@ class Calculator(Generic[ConfigT]):
 
     @property
     def cdm(self) -> List[DragDataPoint]:
-        """returns custom drag function based on input data"""
+        """Returns custom drag function based on input data"""
         return self._engine_instance.table_data
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:

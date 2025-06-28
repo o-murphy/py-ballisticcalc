@@ -1,6 +1,6 @@
 """Computes trajectory using SciPy's solve_ivp; uses SciPy's root_scalar to get specific points.
 TODO:
- * Use SciPy root finder for zero_angle() override
+ * Use SciPy.optimize for zero_angle() override
 """
 import math
 import warnings
@@ -48,13 +48,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
 
     DEFAULT_MAX_TIME = 90.0  # Max flight time to simulate before stopping integration
     DEFAULT_ERROR_TOLERANCE = 1e-8  # Default relative tolerance (rtol) for integration
-    DEFAULT_INTEGRATION_METHOD = 'DOP853'  # Default integration method for solve_ivp
-    # Other recommended methods: 'BDF', 'LSODA', 'Radau'
+    DEFAULT_INTEGRATION_METHOD = 'LSODA'  # Default integration method for solve_ivp
+    # Other recommended methods: 'DOP853', 'BDF', 'LSODA'
 
     def __init__(self, config: BaseEngineConfigDict,
         max_time: Optional[float] = None,
         integration_method: Optional[str] = None,
-        error_tolerance: Optional[float] = None
+        rtol: Optional[float] = None,
+        atol: Optional[float] = None
     ):
         """
         Initializes the SciPyIntegrationEngine.
@@ -63,12 +64,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             config (BaseEngineConfigDict): Configuration dictionary for the engine.
             max_time (float, optional): Maximum time to simulate in seconds. Defaults to DEFAULT_MAX_TIME.
             integration_method (str, optional): Integration method to use with solve_ivp. Defaults to DEFAULT_INTEGRATION_METHOD.
-            error_tolerance (float, optional): Relative tolerance for integration. Defaults to DEFAULT_ERROR_TOLERANCE.
+            rtol (float, optional): Relative tolerance for integration. Defaults to DEFAULT_ERROR_TOLERANCE.
+            atol (float, optional): Absolute tolerance for integration. Defaults to None, which uses the default from solve_ivp.
         """
         super().__init__(config)
         self.max_time = max_time if max_time is not None else self.DEFAULT_MAX_TIME
         self.integration_method = integration_method if integration_method is not None else self.DEFAULT_INTEGRATION_METHOD
-        self.error_tolerance = error_tolerance if error_tolerance is not None else self.DEFAULT_ERROR_TOLERANCE
+        self.rtol = rtol if rtol is not None else self.DEFAULT_ERROR_TOLERANCE
+        self.atol = atol
 
     @override
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
@@ -169,7 +172,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine):
             traj_events.append(zero_crossing)
 
         sol = solve_ivp(diff_eq, (0, self.max_time), s0,
-                        method=self.integration_method, dense_output=True, rtol=self.error_tolerance,
+                        method=self.integration_method, dense_output=True,
+                        rtol=self.rtol, atol=self.atol if self.atol else 1e-6,
                         events=traj_events)
 
         if not sol.success:  # Integration failed
