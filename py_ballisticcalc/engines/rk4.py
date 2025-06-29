@@ -17,6 +17,14 @@ __all__ = ('RK4IntegrationEngine',)
 class RK4IntegrationEngine(BaseIntegrationEngine):
 
     @override
+    def get_calc_step(self, step: float = 0) -> float:
+        # RK steps can be larger than calc_step default on Euler integrator
+        # min_step ensures that with small record steps the loop runs far enough to get desired points
+        # adjust Euler default step to RK4 algorythm
+        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko
+        return super().get_calc_step(step) ** 0.5
+
+    @override
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """
@@ -64,12 +72,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
-        # RK steps can be larger than calc_step default on Euler integrator
-        # min_step ensures that with small record steps the loop runs far enough to get desired points
-        # rk_calc_step = 4. * self.calc_step
-        rk_calc_step = self.calc_step ** (1/2)  # NOTE: recommended by https://github.com/serhiy-yevtushenko
-
-        min_step = min(rk_calc_step, record_step)
+        min_step = min(self.calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
@@ -108,7 +111,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = rk_calc_step / max(1.0, relative_speed)
+            delta_time = self.calc_step / max(1.0, relative_speed)
             km = density_factor * self.drag_by_mach(relative_speed / mach)
             drag = km * relative_speed
 
