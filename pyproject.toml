@@ -70,13 +70,14 @@ dev = [
     "matplotlib>=3.9",
     "mypy>=1.15.0",
     "numpy>=2",
-    "scipy>=1.13.1",  # maybe should be in othger dependency group (40+Mb zipped size)
+    "scipy>=1.13.1", # maybe should be in othger dependency group (40+Mb zipped size)
     "pandas>=2.3.0",
     "pandas-stubs>=2.2.2.240807",
     "pylint>=3.3.4",
     "pytest>=8.3.5",
     "pytest-cov>=6.0.0",
     "pytest-xdist>=3.6.1",
+    "scipy-stubs; python_version>='3.11'",
 ]
 
 [tool.uv.sources]

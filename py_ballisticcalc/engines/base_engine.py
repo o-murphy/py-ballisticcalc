@@ -4,6 +4,7 @@
 
 import math
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, asdict
 
 from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Final, TypedDict
 
@@ -21,6 +22,7 @@ __all__ = (
     'create_base_engine_config',
     'BaseEngineConfig',
     'BaseEngineConfigDict',
+    'DEFAULT_BASE_ENGINE_CONFIG',
     'BaseIntegrationEngine',
     'calculate_energy',
     'calculate_ogw',
@@ -31,25 +33,27 @@ __all__ = (
     'CurvePoint'
 )
 
-cZeroFindingAccuracy: Final[float] = 0.000005
-cMinimumVelocity: Final[float] = 50.0
-cMaximumDrop: Final[float] = -15000
-cMaxIterations: Final[int] = 60
-cGravityConstant: Final[float] = -32.17405
-cMinimumAltitude: Final[float] = -1410.748  # ft
+cZeroFindingAccuracy: float = 0.000005
+cMinimumVelocity: float = 50.0
+cMaximumDrop: float = -15000
+cMaxIterations: int = 60
+cGravityConstant: float = -32.17405
+cMinimumAltitude: float = -1410.748  # ft
 cMaxCalcStepSizeFeet: float = 0.5
 
 
-# Define the NamedTuple to match the config structure
-class BaseEngineConfig(NamedTuple):
-    cMaxCalcStepSizeFeet: float
-    cZeroFindingAccuracy: float
-    cMinimumVelocity: float
-    cMaximumDrop: float
-    cMaxIterations: int
-    cGravityConstant: float
-    cMinimumAltitude: float
+@dataclass
+class BaseEngineConfig:
+    cMaxCalcStepSizeFeet: Optional[float] = cMaxCalcStepSizeFeet
+    cZeroFindingAccuracy: Optional[float] = cZeroFindingAccuracy
+    cMinimumVelocity: Optional[float] = cMinimumVelocity
+    cMaximumDrop: Optional[float] = cMaximumDrop
+    cMaxIterations: Optional[int] = cMaxIterations
+    cGravityConstant: Optional[float] = cGravityConstant
+    cMinimumAltitude: Optional[float] = cMinimumAltitude
 
+
+DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
 
 class BaseEngineConfigDict(TypedDict, total=False):
     cMaxCalcStepSizeFeet: float
@@ -62,15 +66,7 @@ class BaseEngineConfigDict(TypedDict, total=False):
 
 
 def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] = None) -> BaseEngineConfig:
-    config = BaseEngineConfigDict(
-        cMaxCalcStepSizeFeet=cMaxCalcStepSizeFeet,
-        cZeroFindingAccuracy=cZeroFindingAccuracy,
-        cMinimumVelocity=cMinimumVelocity,
-        cMaximumDrop=cMaximumDrop,
-        cMaxIterations=cMaxIterations,
-        cGravityConstant=cGravityConstant,
-        cMinimumAltitude=cMinimumAltitude,
-    )
+    config = asdict(DEFAULT_BASE_ENGINE_CONFIG)
     if interface_config is not None and isinstance(interface_config, dict):
         config.update(interface_config)
     return BaseEngineConfig(**config)
@@ -300,6 +296,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
     twist: float
     gravity_vector: Vector
 
+    # TODO:
     def __init__(self, _config: BaseEngineConfigDict):
         """
         Initializes the TrajectoryCalc class.

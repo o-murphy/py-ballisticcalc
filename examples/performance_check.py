@@ -152,10 +152,6 @@ for ep in _EngineLoader.iter_engines():
     run_check(calc, number)
     print()
 
-from examples.integrators.euler_no_rec import EulerIntegrationNoRec
-print(f"Engine: {EulerIntegrationNoRec}")
-calc = Calculator(config=config, engine=EulerIntegrationNoRec)
-run_check(calc, number)
 
 # Engine: py_ballisticcalc_exts:CythonizedEulerIntegrationEngine
 # Calculate barrel elevation at distance 100.0m 120 times:
