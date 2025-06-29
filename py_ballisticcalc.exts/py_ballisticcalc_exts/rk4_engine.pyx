@@ -41,13 +41,17 @@ import warnings
 
 from py_ballisticcalc.exceptions import RangeError
 
-
 __all__ = (
     'CythonizedRK4IntegrationEngine'
 )
 
-
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
+
+    cdef double get_calc_step(CythonizedRK4IntegrationEngine self, double step = 0.0):
+        step = CythonizedBaseIntegrationEngine.get_calc_step(self, step)  # likely a super().get_calc_step(step)
+        # adjust Euler default step to RK4 algorythm
+        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko
+        return pow(step, 0.5)
 
     cdef list[object] _integrate(CythonizedRK4IntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
@@ -91,7 +95,8 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = V3dT(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height, -self._shot_s.cant_sine * self._shot_s.sight_height)
+        range_vector = V3dT(.0, -self._shot_s.cant_cosine * self._shot_s.sight_height,
+                            -self._shot_s.cant_sine * self._shot_s.sight_height)
         _dir_vector = V3dT(
             cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth),
             sin(self._shot_s.barrel_elevation),
@@ -100,14 +105,11 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         velocity_vector = mulS(&_dir_vector, velocity)
         # endregion
 
-        # rk_calc_step = 4. * calc_step
-        # rk_calc_step = calc_step ** (1/2)  # FIXME: (1/2) allowed only with compiler directive: cdivision=False
-        rk_calc_step = pow(calc_step, 0.5)  # NOTE: recommended by https://github.com/serhiy-yevtushenko
-
         min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = createTrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
-                        initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
+                                                 initial_position=range_vector, initial_velocity=velocity_vector,
+                                                 time_step=time_step)
         setup_seen_zero(&data_filter, range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
 
         #region Trajectory Loop
@@ -125,7 +127,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
             update_density_factor_and_mach_for_altitude(&self._shot_s.atmo,
-                self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
+                                                        self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
 
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:  # require check before call to improve performance
@@ -145,7 +147,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             relative_speed = mag(&relative_velocity)
 
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = rk_calc_step / fmax(1.0, relative_speed)
+            delta_time = calc_step / fmax(1.0, relative_speed)
             km = density_factor * cy_drag_by_mach(&self._shot_s, relative_speed / mach)
             drag = km * relative_speed
 
@@ -268,7 +270,6 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
                 density_factor, drag, self._shot_s.weight, CTrajFlag.NONE))
 
         return ranges
-
 
 # This function calculates dv/dt for velocity (v) affected by gravity and drag.
 # It now takes gravity_vector and km as explicit arguments.
