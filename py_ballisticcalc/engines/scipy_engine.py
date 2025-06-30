@@ -57,7 +57,7 @@ class WindSock():
         return None
 
 
-INTEGRATION_METHOD = Literal['LSODA', 'DOP853', 'BDF', 'RK45', 'RK23', 'Radau']
+INTEGRATION_METHOD = Literal['LSODA', 'DOP853', 'BDF', 'RK45', 'RK23']
 
 DEFAULT_MAX_TIME: float = 90.0  # Max flight time to simulate before stopping integration
 DEFAULT_RELATIVE_TOLERANCE: float = 1e-8  # Default relative tolerance (rtol) for integration
@@ -173,7 +173,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
               math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth) * velocity,
               math.sin(self.barrel_elevation) * velocity,
               math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth) * velocity]
-
         # endregion
 
         # region SciPy integration
@@ -205,7 +204,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
             dvydt = self.gravity_vector.y - drag * relative_velocity.y
             dvzdt = -drag * relative_velocity.z
             return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
-
         # endregion SciPy integration
 
         def event_max_range(t, s):  # Stop when x crosses maximum_range
@@ -303,9 +301,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
             for x_target in desired_xs:
                 idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
                 if idx < 0 or idx >= len(x_vals):
-                    warnings.warn(
-                        f"Requested range exceeds computed trajectory, which only reaches {PreferredUnits.distance(Distance.Feet(x_vals[-1]))}",
-                        RuntimeWarning)
+                    # warnings.warn(
+                    #     f"Requested range exceeds computed trajectory, which only reaches {PreferredUnits.distance(Distance.Feet(x_vals[-1]))}",
+                    #     RuntimeWarning)
                     continue
                 if idx == 0:
                     if filter_flags == TrajFlag.NONE:

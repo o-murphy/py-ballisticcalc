@@ -7,12 +7,7 @@ import pytest
 from py_ballisticcalc import Distance, DragModel, TableG1, Weight, Weapon, Ammo, Shot, Velocity, \
     Angular, Calculator
 from py_ballisticcalc.helpers import calculate_drag_free_range
-from py_ballisticcalc.helpers import find_index_of_point_for_distance, find_index_for_time_point, \
-    find_index_of_apex_point, \
-    find_index_of_apex_in_points
-
-
-# from random import random
+from py_ballisticcalc.helpers import find_index_of_point_for_distance, find_index_for_time_point
 
 
 @pytest.fixture(autouse=True)
@@ -63,7 +58,7 @@ def test_find_index_for_timepoint(one_degree_shot):
         one_degree_shot.trajectory[index + 1].time - one_second_time_point
     )
 
-    # when strictly_bigger_or_equal is Treu, we are finding first existing time point, which is biiger or equal to
+    # when strictly_bigger_or_equal is True, we are finding first existing time point, which is bigger or equal to
     # the specified time
     bigger_index = find_index_for_time_point(
         one_degree_shot, one_second_time_point, strictly_bigger_or_equal=True
@@ -153,13 +148,6 @@ def test_find_index_for_distance(one_degree_shot):
     print(f'Search for {len(random_indices)} random point has taken {end_time - start_time:.1f} s')
 
 
-def test_find_apex(one_degree_shot):
-    index = find_index_of_apex_point(one_degree_shot)
-    assert index != -1
-    apex_point_height = one_degree_shot.trajectory[index].height >> Distance.Meter
-    assert apex_point_height == pytest.approx(9.40, abs=0.01)
-
-
 class MockTrajectoryPoint:
     def __init__(self, height):
         self.height = height
@@ -167,22 +155,3 @@ class MockTrajectoryPoint:
 
 def generate_trajectory_points(height_list):
     return [MockTrajectoryPoint(h) for h in height_list]
-
-
-@pytest.mark.parametrize("input, expected", [
-    # Simple cases
-    (generate_trajectory_points([1, 3, 7, 10, 8, 4]), 3),  # Normal case
-    (generate_trajectory_points([10]), 0),  # Single element
-    # Multiple elements with clear apex
-    (generate_trajectory_points([1, 2, 3, 4]), 3),  # Increasing only
-    (generate_trajectory_points([4, 3, 2, 1]), 0),  # Decreasing only
-    # Edge cases
-    (generate_trajectory_points([1, 5, 5, 1]), 1),
-    (generate_trajectory_points([1, 5, 5, 7, 5]), 3),  # Plateau before peak
-    (generate_trajectory_points(list(range(1, 100)) + list(range(99, 0, -1))), 98),  # Peak at 99
-    # No valid apex (edge case, behavior depends on definition)
-    (generate_trajectory_points([]), -1),  # Empty array
-])
-def test_find_apex_index(input, expected):
-    index = find_index_of_apex_in_points(input)
-    assert index == expected

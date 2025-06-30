@@ -15,7 +15,6 @@ from py_ballisticcalc import (
     Weapon,
     Shot,
 )
-from py_ballisticcalc.helpers import find_index_of_apex_point
 
 DISTANCES_FOR_CHECKING = (
     # list(range(100, 1000, 100)) +
@@ -65,13 +64,5 @@ def test_set_weapon_zero(distance, zero_min_velocity_calc):
     #     f"{hit_result[-1].distance >> Distance.Meter=} "
     #     f"{hit_result[-1].time=} "
     #     f"{hit_result[-1].velocity >> Velocity.MPS=}"
-    # )
-    # index_of_apex_point = find_index_of_apex_point(hit_result)
-    # apex_point = hit_result.trajectory[index_of_apex_point]
-    # print(
-    #     f"{apex_point.height >> Distance.Meter=} "
-    #     f"{apex_point.distance >> Distance.Meter=} "
-    #     f"{apex_point.time=} "
-    #     f"{apex_point.velocity >> Velocity.MPS=}"
     # )
     assert abs((hit_result[-1].distance >> Distance.Meter) - distance) <= 1.0
