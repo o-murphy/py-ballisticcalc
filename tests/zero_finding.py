@@ -1,12 +1,10 @@
 """Unit test for zero finding in ballistic calculator."""
 # mypy: ignore - mypy overhead is not worth it for test code
-import math
 import pytest
 
 from py_ballisticcalc import (
+    Angular,
     Distance,
-    BaseEngineConfigDict,
-    Calculator,
     DragModel,
     TableG1,
     Weight,
@@ -15,14 +13,14 @@ from py_ballisticcalc import (
     Weapon,
     Shot,
 )
+from .fixtures_and_helpers import zero_min_velocity_calc
 
 DISTANCES_FOR_CHECKING = (
-    # list(range(100, 1000, 100)) +
-    # list(range(1000, 3000, 1000)) +
-    # list(range(3000, 4000, 100)) +
-    # list(range(4000, 7000, 500)) +
-    # list(range(6600, 7100, 100)) +
-    #list(range(7000, 7100, 100)) +
+    list(range(100, 1000, 100)) +
+    list(range(1000, 3000, 1000)) +
+    list(range(3000, 4000, 100)) +
+    list(range(4000, 7000, 500)) +
+    list(range(6600, 7100, 100)) +
     [7126.05]
 )
 
@@ -44,19 +42,11 @@ def create_shot():
     return shot
 
 
-@pytest.fixture(autouse=True)
-def zero_min_velocity_calc(loaded_engine_instance):
-    config = BaseEngineConfigDict(
-        cMinimumVelocity=0,
-    )
-    return Calculator(engine=loaded_engine_instance, config=config)
-
-
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
 def test_set_weapon_zero(distance, zero_min_velocity_calc):
     shot = create_shot()
     zero_min_velocity_calc.set_weapon_zero(shot, Distance.Meter(distance))
-    print(f"{math.degrees(shot.barrel_elevation)=}")
+    print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree}")
     hit_result = zero_min_velocity_calc.fire(
         shot, Distance.Meter(distance), extra_data=True
     )

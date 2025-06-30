@@ -12,6 +12,7 @@ __all__ = (
     'EulerIntegrationEngine',
     'RK4IntegrationEngine',
     'SciPyIntegrationEngine',
+    'SciPyEngineConfigDict',
     'calculate_energy',
     'calculate_ogw',
     'get_correction',

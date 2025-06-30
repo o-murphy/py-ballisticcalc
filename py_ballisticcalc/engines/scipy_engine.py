@@ -10,13 +10,13 @@ from typing import Literal
 from typing_extensions import Union, Tuple, List, Optional, override
 
 from py_ballisticcalc.conditions import Shot, Wind
-from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, create_trajectory_row, \
-    BaseEngineConfig
-from py_ballisticcalc.exceptions import RangeError
+from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, BaseEngineConfig
+from py_ballisticcalc.engines.base_engine import create_trajectory_row
+from py_ballisticcalc.exceptions import RangeError, ZeroFindingError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
-from py_ballisticcalc.unit import Distance, PreferredUnits
+from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('SciPyIntegrationEngine',
@@ -27,12 +27,9 @@ __all__ = ('SciPyIntegrationEngine',
 
 
 # TODO: don't recomended to update warning format globally for the lib, use logging.warning instead
-
-def custom_warning_format(message, category, filename, lineno, file=None, line=None):
-    return f"{category.__name__}: {message}\n"
-
-
-warnings.formatwarning = custom_warning_format
+# def custom_warning_format(message, category, filename, lineno, file=None, line=None):
+#     return f"{category.__name__}: {message}\n"
+# warnings.formatwarning = custom_warning_format
 
 
 class WindSock():
@@ -120,8 +117,6 @@ def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] 
 class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineConfigDict]):
     """Integration engine using SciPy's solve_ivp for trajectory calculations."""
 
-    # Other recommended methods: 'DOP853', 'BDF', 'LSODA'
-
     def __init__(self, _config: SciPyEngineConfigDict):
         """
         Initializes the SciPyIntegrationEngine.
@@ -132,6 +127,93 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
+
+    @override
+    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+        """
+        Iterative algorithm to find barrel elevation needed for a particular zero.
+
+        Args:
+            shot_info (Shot): Shot parameters
+            distance (Distance): Zero distance
+
+        Returns:
+            Angular: Barrel elevation to hit height zero at zero distance
+        """
+        self._init_trajectory(shot_info)
+
+        _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
+        _cMaxIterations = self._config.cMaxIterations
+        _rtol = self._config.relative_error_tolerance
+        _atol = self._config.absolute_error_tolerance
+
+        distance_feet = distance >> Distance.Foot  # no need convert it twice
+        zero_distance = math.cos(self.look_angle) * distance_feet
+        height_at_zero = math.sin(self.look_angle) * distance_feet
+
+        iterations_count = 0
+        previous_distance = 0.0
+        previous_error = 1e+10  # Very large number
+        zero_finding_error = _cZeroFindingAccuracy * 2
+        # x = horizontal distance down range, y = drop, z = windage
+        while zero_finding_error > _cZeroFindingAccuracy:
+            # Check height of trajectory at the zero distance (using current self.barrel_elevation)
+            try:
+                t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
+                height = t.height >> Distance.Foot
+                current_distance = zero_distance
+            except RangeError as e:
+                if e.last_distance is None:
+                    raise e
+                last_distance_foot = e.last_distance >> Distance.Foot
+                proportion = last_distance_foot / zero_distance
+                current_distance = e.incomplete_trajectory[-1].look_distance >> Distance.Foot
+                height = (e.incomplete_trajectory[-1].height >> Distance.Foot) / proportion
+
+            signed_error = height - height_at_zero
+
+            #print(f"Zero finding iteration {iterations_count}: error={signed_error}\t{self.barrel_elevation} radians \tat {current_distance} feet.")
+
+            if math.fabs(previous_error) < math.fabs(signed_error) and \
+               (self._config.relative_error_tolerance > 1e-13 or self._config.absolute_error_tolerance > 1e-13):
+                # This seems to occur when we need less error tolerance in the integrator
+                if self._config.relative_error_tolerance > 1e-13:
+                    self._config.relative_error_tolerance *= 0.1
+                if self._config.absolute_error_tolerance > 1e-13:
+                    self._config.absolute_error_tolerance *= 0.1
+                #print(f"Reducing error tolerances: rtol={self._config.relative_error_tolerance}\t atol={self._config.absolute_error_tolerance}")
+                previous_error = 1e+10  # Reset previous error to a large value
+                continue  # Recompute with new tolerances
+
+            zero_finding_error = math.fabs(signed_error)
+            if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
+                if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:
+                    raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation),
+                                           'Distance non-convergent. ')
+            elif zero_finding_error > math.fabs(previous_error):
+                # If error is increasing, we are diverging; stop to avoid infinite loop
+                raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation),
+                                       'Error non-convergent. ')
+            previous_distance = current_distance
+            previous_error = signed_error
+
+            if zero_finding_error > _cZeroFindingAccuracy:
+                # Adjust barrel elevation to close height at zero distance
+                self.barrel_elevation -= math.atan2(height - height_at_zero, zero_distance)
+            else:  # last barrel_elevation hit zero!
+                break
+            iterations_count += 1
+            # if iterations_count >= _cMaxIterations:
+            #     break
+        if zero_finding_error > _cZeroFindingAccuracy:
+            # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
+            raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
+
+        # Restore values that may have been changed during zero finding
+        self._config.relative_error_tolerance = _rtol
+        self._config.absolute_error_tolerance = _atol
+
+        return Angular.Radian(self.barrel_elevation)
 
     @override
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
