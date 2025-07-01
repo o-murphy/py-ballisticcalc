@@ -144,8 +144,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
 
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
-        _rtol = self._config.relative_error_tolerance
-        _atol = self._config.absolute_error_tolerance
 
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
@@ -208,10 +206,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
         if zero_finding_error > _cZeroFindingAccuracy:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
-
-        # Restore values that may have been changed during zero finding
-        self._config.relative_error_tolerance = _rtol
-        self._config.absolute_error_tolerance = _atol
 
         return Angular.Radian(self.barrel_elevation)
 
