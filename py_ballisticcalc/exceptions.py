@@ -38,7 +38,8 @@ class ZeroFindingError(RuntimeError):
     def __init__(self,
                  zero_finding_error: float,
                  iterations_count: int,
-                 last_barrel_elevation: 'Angular'):
+                 last_barrel_elevation: 'Angular',
+                 note: str = ""):
         """
         Parameters:
         - zero_finding_error: The error magnitude (float)
@@ -48,8 +49,9 @@ class ZeroFindingError(RuntimeError):
         self.zero_finding_error: float = zero_finding_error
         self.iterations_count: int = iterations_count
         self.last_barrel_elevation: 'Angular' = last_barrel_elevation
-        super().__init__(f'Zero vertical error {zero_finding_error} '
-                         f'feet, after {iterations_count} iterations.')
+        self.note: str = note
+        super().__init__(note + f' Vertical error {zero_finding_error} '
+                         f'feet with {last_barrel_elevation} elevation, after {iterations_count} iterations.')
 
 
 class RangeError(RuntimeError):
