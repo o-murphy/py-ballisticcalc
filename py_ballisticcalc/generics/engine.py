@@ -38,15 +38,6 @@ class EngineProtocol(Protocol[ConfigT]):
             _config (Config): The configuration object.
         """
 
-    @property
-    def table_data(self) -> List[DragDataPoint]:
-        """
-        Gets the drag model table data.
-
-        Returns:
-            List[DragDataPoint]: A list of drag data points.
-        """
-
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
         """

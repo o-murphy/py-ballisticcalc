@@ -307,16 +307,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
 
-    @property
-    def table_data(self) -> List[DragDataPoint]:
-        """
-        Gets the drag model table data.
-
-        Returns:
-            List[DragDataPoint]: A list of drag data points.
-        """
-        return self._table_data
-
     def get_calc_step(self, step: float = 0) -> float:
         """
         Keep step under max_calc_step_size
