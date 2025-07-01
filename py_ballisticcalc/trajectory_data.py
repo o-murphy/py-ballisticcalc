@@ -1,15 +1,17 @@
 """Implements a point of trajectory class in applicable data types"""
+import typing
 from dataclasses import dataclass, field
 
-from typing_extensions import NamedTuple, Optional, Union, Any, Tuple, Final
+from typing_extensions import NamedTuple, Optional, Union, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.unit import Angular, Distance, Weight, Velocity, Energy, GenericDimension, Unit, PreferredUnits
 
-__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
+if typing.TYPE_CHECKING:
+    from pandas import DataFrame
+    from matplotlib.axes import Axes
 
-DataFrame: Any  # Disable type-checking for DataFrames
-Axes: Any       # Disable type-checking for Axes
+__all__ = ('TrajectoryData', 'HitResult', 'TrajFlag', 'DangerSpace')
 
 _TrajFlagNames = {
     0: 'NONE',

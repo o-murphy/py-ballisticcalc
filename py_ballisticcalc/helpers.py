@@ -159,10 +159,13 @@ def find_index_of_point_for_distance(
             Index of point, where distance >= distance of point.
             -1 if no such point was found.
     """
-    distance_is_bigger_or_equal = lambda p: (p.distance >> distance_unit) >= distance
+
+    def distance_ge(p: TrajectoryData) -> bool:
+        return (p.distance >> distance_unit) >= distance
+
     # return find_first_index_matching_condition(shot, distance_is_bigger_or_equal)
     return find_first_index_satisfying_monotonic_condition(
-        shot.trajectory, distance_is_bigger_or_equal
+        shot.trajectory, distance_ge
     )
 
 

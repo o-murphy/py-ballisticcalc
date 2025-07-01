@@ -6,7 +6,7 @@ from typing import Generic
 from deprecated import deprecated
 from typing_extensions import Union, List, Optional, TypeVar, Type
 
-from py_ballisticcalc import EulerIntegrationEngine, BaseEngineConfigDict
+from py_ballisticcalc import EulerIntegrationEngine
 # pylint: disable=import-error,no-name-in-module,wildcard-import
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
@@ -15,11 +15,11 @@ from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import HitResult
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
-ConfigT = TypeVar('ConfigT', bound=BaseEngineConfigDict, covariant=True)
+ConfigT = TypeVar('ConfigT', covariant=True)
 
 DEFAULT_ENTRY_SUFFIX = '_engine'
 DEFAULT_ENTRY_GROUP = 'py_ballisticcalc'
-DEFAULT_ENTRY: Type[EngineProtocol[ConfigT]] = EulerIntegrationEngine
+DEFAULT_ENTRY: Type[EngineProtocol] = EulerIntegrationEngine
 
 
 @dataclass

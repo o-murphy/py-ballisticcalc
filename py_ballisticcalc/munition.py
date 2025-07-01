@@ -1,13 +1,15 @@
 """Module for Weapon and Ammo properties definitions"""
 import math
+import typing
 from dataclasses import dataclass
 
-from typing_extensions import NamedTuple, Union, Optional, Any, Literal, get_args
+from typing_extensions import NamedTuple, Union, Optional, Literal, get_args
 
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits
 
-TrajectoryData: Any
+if typing.TYPE_CHECKING:
+    from py_ballisticcalc.trajectory_data import TrajectoryData
 
 SightFocalPlane = Literal['FFP', 'SFP', 'LWIR']
 

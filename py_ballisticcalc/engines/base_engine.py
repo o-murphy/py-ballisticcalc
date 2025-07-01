@@ -6,7 +6,7 @@ import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 
-from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Final, TypedDict
+from typing_extensions import Optional, NamedTuple, Union, List, Tuple, TypedDict
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
@@ -44,25 +44,25 @@ cMaxCalcStepSizeFeet: float = 0.5
 
 @dataclass
 class BaseEngineConfig:
-    cMaxCalcStepSizeFeet: Optional[float] = cMaxCalcStepSizeFeet
-    cZeroFindingAccuracy: Optional[float] = cZeroFindingAccuracy
-    cMinimumVelocity: Optional[float] = cMinimumVelocity
-    cMaximumDrop: Optional[float] = cMaximumDrop
-    cMaxIterations: Optional[int] = cMaxIterations
-    cGravityConstant: Optional[float] = cGravityConstant
-    cMinimumAltitude: Optional[float] = cMinimumAltitude
+    cMaxCalcStepSizeFeet: float = cMaxCalcStepSizeFeet
+    cZeroFindingAccuracy: float = cZeroFindingAccuracy
+    cMinimumVelocity: float = cMinimumVelocity
+    cMaximumDrop: float = cMaximumDrop
+    cMaxIterations: int = cMaxIterations
+    cGravityConstant: float = cGravityConstant
+    cMinimumAltitude: float = cMinimumAltitude
 
 
 DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
 
 class BaseEngineConfigDict(TypedDict, total=False):
-    cMaxCalcStepSizeFeet: float
-    cZeroFindingAccuracy: float
-    cMinimumVelocity: float
-    cMaximumDrop: float
-    cMaxIterations: int
-    cGravityConstant: float
-    cMinimumAltitude: float
+    cMaxCalcStepSizeFeet: Optional[float]
+    cZeroFindingAccuracy: Optional[float]
+    cMinimumVelocity: Optional[float]
+    cMaximumDrop: Optional[float]
+    cMaxIterations: Optional[int]
+    cGravityConstant: Optional[float]
+    cMinimumAltitude: Optional[float]
 
 
 def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] = None) -> BaseEngineConfig:
@@ -149,11 +149,14 @@ class _TrajectoryDataFilter:
                 self.next_record_distance += self.range_step
             if position.x > self.previous_position.x:
                 # Interpolate to get BaseTrajData at the record distance
-                ratio = (self.next_record_distance - self.previous_position.x) / (position.x - self.previous_position.x)
+                ratio = (self.next_record_distance - self.previous_position.x) / (
+                        position.x - self.previous_position.x)
                 data = BaseTrajData(
                     time=self.previous_time + (time - self.previous_time) * ratio,
-                    position=self.previous_position + (position - self.previous_position) * ratio,
-                    velocity=self.previous_velocity + (velocity - self.previous_velocity) * ratio,
+                    position=self.previous_position + (
+                            position - self.previous_position) * ratio,
+                    velocity=self.previous_velocity + (
+                            velocity - self.previous_velocity) * ratio,
                     mach=self.previous_mach + (mach - self.previous_mach) * ratio
                 )
             self.current_flag |= TrajFlag.RANGE
