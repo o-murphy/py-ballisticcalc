@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
 from typing import Generic
 
-from deprecated import deprecated
+from deprecated import deprecated  # type: ignore[import-untyped]
 from typing_extensions import Union, List, Optional, TypeVar, Type
 
 from py_ballisticcalc import EulerIntegrationEngine
@@ -20,6 +20,9 @@ ConfigT = TypeVar('ConfigT', covariant=True)
 DEFAULT_ENTRY_SUFFIX = '_engine'
 DEFAULT_ENTRY_GROUP = 'py_ballisticcalc'
 DEFAULT_ENTRY: Type[EngineProtocol] = EulerIntegrationEngine
+
+EngineProtocolType = Type[EngineProtocol[ConfigT]]
+EngineProtocolEntry = Union[str, EngineProtocolType, None]
 
 
 @dataclass
@@ -47,9 +50,9 @@ class _EngineLoader:
                 yield ep
 
     @classmethod
-    def _load_from_entry(cls, ep: EntryPoint) -> Optional[Type[EngineProtocol[ConfigT]]]:
+    def _load_from_entry(cls, ep: EntryPoint) -> Optional[EngineProtocolType]:
         try:
-            handle: Type[EngineProtocol[ConfigT]] = ep.load()
+            handle: EngineProtocolType = ep.load()
             if not isinstance(handle, EngineProtocol):
                 raise TypeError(f"Unsupported engine type {ep.value}, must implements EngineProtocol")
             logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
@@ -63,14 +66,14 @@ class _EngineLoader:
         return None
 
     @classmethod
-    def load(cls, entry_point: Union[str, Type[EngineProtocol[ConfigT]], None] = DEFAULT_ENTRY) -> Type[
+    def load(cls, entry_point: EngineProtocolEntry = DEFAULT_ENTRY) -> Type[
         EngineProtocol[ConfigT]]:
         if entry_point is None:
             entry_point = DEFAULT_ENTRY
         if isinstance(entry_point, EngineProtocol):
             return entry_point
         if isinstance(entry_point, str):
-            handle: Optional[Type[EngineProtocol[ConfigT]]] = None
+            handle: Optional[EngineProtocolType] = None
             for ep in cls.iter_engines():
                 if ep.name == entry_point or entry_point in ep.value:
                     if handle := cls._load_from_entry(ep):
@@ -90,12 +93,11 @@ class Calculator(Generic[ConfigT]):
     """Basic interface for the ballistics calculator"""
 
     config: Optional[ConfigT] = field(default=None)
-    engine: Union[str, Type[EngineProtocol[ConfigT]]] = field(default=DEFAULT_ENTRY)
+    engine: EngineProtocolEntry = field(default=DEFAULT_ENTRY)
     _engine_instance: EngineProtocol[ConfigT] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
-        engine: Type[EngineProtocol[ConfigT]] = _EngineLoader.load(self.engine)
-        self._engine_instance = engine(self.config)
+        self._engine_instance = _EngineLoader.load(self.engine)(self.config)
 
     @property
     @deprecated(reason="`Calculator.cdm` is no longer supported by EngineProtocol. "

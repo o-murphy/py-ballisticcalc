@@ -6,7 +6,7 @@ import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 
-from typing_extensions import Optional, NamedTuple, Union, List, Tuple, TypedDict
+from typing_extensions import Optional, NamedTuple, Union, List, Tuple, TypedDict, TypeVar
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
@@ -54,6 +54,7 @@ class BaseEngineConfig:
 
 
 DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
+
 
 class BaseEngineConfigDict(TypedDict, total=False):
     cMaxCalcStepSizeFeet: Optional[float]
@@ -153,9 +154,9 @@ class _TrajectoryDataFilter:
                         position.x - self.previous_position.x)
                 data = BaseTrajData(
                     time=self.previous_time + (time - self.previous_time) * ratio,
-                    position=self.previous_position + (
+                    position=self.previous_position + (  # type: ignore[operator]
                             position - self.previous_position) * ratio,
-                    velocity=self.previous_velocity + (
+                    velocity=self.previous_velocity + (  # type: ignore[operator]
                             velocity - self.previous_velocity) * ratio,
                     mach=self.previous_mach + (mach - self.previous_mach) * ratio
                 )
@@ -282,8 +283,10 @@ class _WindSock:
         return self.current_vector()
 
 
+_BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConfigDict', covariant=True)
+
 # pylint: disable=too-many-instance-attributes
-class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
+class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     """
     All calculations are done in units of feet and fps.
 
@@ -298,8 +301,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
     barrel_elevation: float
     twist: float
     gravity_vector: Vector
+    _table_data: List[DragDataPoint]
 
-    def __init__(self, _config: BaseEngineConfigDict):
+    def __init__(self, _config: _BaseEngineConfigDictT):
         """
         Initializes the TrajectoryCalc class.
 
@@ -357,7 +361,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
             shot_info (Shot): Information about the shot.
         """
         self._bc: float = shot_info.ammo.dm.BC
-        self._table_data: List[DragDataPoint] = shot_info.ammo.dm.drag_table
+        self._table_data = shot_info.ammo.dm.drag_table
         self._curve: List[CurvePoint] = calculate_curve(self._table_data)
 
         # use calculation over list[double] instead of list[DragDataPoint]

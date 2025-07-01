@@ -5,7 +5,7 @@ TODO:
 import math
 import warnings
 from dataclasses import dataclass, asdict
-from typing import Literal
+from typing import Literal, Any
 
 from typing_extensions import Union, Tuple, List, Optional, override
 
@@ -13,7 +13,6 @@ from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, BaseEngineConfig
 from py_ballisticcalc.engines.base_engine import create_trajectory_row
 from py_ballisticcalc.exceptions import RangeError, ZeroFindingError
-from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
@@ -54,7 +53,7 @@ class WindSock:
         return None
 
 
-INTEGRATION_METHOD = Literal['LSODA', 'DOP853', 'BDF', 'RK45', 'RK23']
+INTEGRATION_METHOD = Literal["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"]
 
 DEFAULT_MAX_TIME: float = 90.0  # Max flight time to simulate before stopping integration
 DEFAULT_RELATIVE_TOLERANCE: float = 1e-8  # Default relative tolerance (rtol) for integration
@@ -114,15 +113,16 @@ def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] 
 
 
 # pylint: disable=import-outside-toplevel,unused-argument,too-many-statements
-class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineConfigDict]):
+class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     """Integration engine using SciPy's solve_ivp for trajectory calculations."""
 
+    @override
     def __init__(self, _config: SciPyEngineConfigDict):
         """
         Initializes the SciPyIntegrationEngine.
 
         Args:
-            config (SciPyEngineConfigDict): Configuration dictionary for the engine.
+            _config (SciPyEngineConfigDict): Configuration dictionary for the engine.
         """
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
@@ -170,21 +170,22 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
 
             signed_error = height - height_at_zero
 
-            #print(f"Zero finding iteration {iterations_count}: error={signed_error}\t{self.barrel_elevation} radians \tat {current_distance} feet.")
+            # print(f"Zero finding iteration {iterations_count}: error={signed_error}\t{self.barrel_elevation} radians \tat {current_distance} feet.")
 
             if math.fabs(previous_error) < math.fabs(signed_error) and \
-               (self._config.relative_error_tolerance > 1e-13 or self._config.absolute_error_tolerance > 1e-13):
+                    (self._config.relative_error_tolerance > 1e-13 or self._config.absolute_error_tolerance > 1e-13):
                 # This seems to occur when we need less error tolerance in the integrator
                 if self._config.relative_error_tolerance > 1e-13:
                     self._config.relative_error_tolerance *= 0.1
                 if self._config.absolute_error_tolerance > 1e-13:
                     self._config.absolute_error_tolerance *= 0.1
-                #print(f"Reducing error tolerances: rtol={self._config.relative_error_tolerance}\t atol={self._config.absolute_error_tolerance}")
+                # print(f"Reducing error tolerances: rtol={self._config.relative_error_tolerance}\t atol={self._config.absolute_error_tolerance}")
                 previous_error = 1e+10  # Reset previous error to a large value
                 continue  # Recompute with new tolerances
 
             zero_finding_error = math.fabs(signed_error)
-            if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
+            if (prev_range := math.fabs(
+                    previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
                 if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:
                     raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation),
                                            'Distance non-convergent. ')
@@ -227,11 +228,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
         """
 
         try:
-            from scipy.integrate import solve_ivp
-            from scipy.optimize import root_scalar
+            from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
+            from scipy.optimize import root_scalar  # type: ignore[import-untyped]
             import numpy as np
         except ImportError as e:
-            raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
+            raise ImportError("SciPy and numpy is required for SciPyIntegrationEngine.") from e
 
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = self._config.cMaximumDrop
@@ -249,6 +250,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
               math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth) * velocity,
               math.sin(self.barrel_elevation) * velocity,
               math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth) * velocity]
+
         # endregion
 
         # region SciPy integration
@@ -280,6 +282,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
             dvydt = self.gravity_vector.y - drag * relative_velocity.y
             dvzdt = -drag * relative_velocity.z
             return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
+
         # endregion SciPy integration
 
         def event_max_range(t, s):  # Stop when x crosses maximum_range
@@ -321,6 +324,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
         if not sol.success:  # Integration failed
             raise RangeError(f"SciPy integration failed: {sol.message}", ranges)
 
+        if sol.sol is None:
+            logger.error("No solution found by SciPy integration.")
+            raise RuntimeError(f"No solution found by SciPy integration: {sol.message}", sol.message)
+
+        if sol.t_events is None:
+            raise RuntimeError("SciPy integration solution have not t_events")
+
         logger.debug(f"SciPy integration complete with {sol.nfev} function calls.")
         termination_reason = None
         if sol.status == 1:  # A termination event occurred
@@ -361,7 +371,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
             x_vals = sol.y[0]
             t_vals = sol.t
             # Interpolate to find the time when each desired x is reached
-            t_at_x = np.interp(desired_xs, x_vals, t_vals)
+            # t_at_x: np.ndarray = np.interp(desired_xs, x_vals, t_vals)  # FIX: accidentally not commented
 
             # region Basic approach to interpolate for desired x values:
             # # This is not very good: distance from requested x varies by ~1% of max_range
@@ -372,8 +382,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
 
             # region Root-finding approach to interpolate for desired x values:
             warnings.simplefilter("once")  # Only issue one warning
-            states_at_x = []
-            t_at_x = []
+            states_at_x: List[np.ndarray] = []
+            t_at_x: List[float] = []
             for x_target in desired_xs:
                 idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
                 if idx < 0 or idx >= len(x_vals):
@@ -392,7 +402,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
                     def x_minus_target(t):  # Function for root finding: x(t) - x_target
                         return sol.sol(t)[0] - x_target  # pylint: disable=cell-var-from-loop
 
-                    res = root_scalar(x_minus_target, bracket=[t_lo, t_hi],
+                    res = root_scalar(x_minus_target, bracket=(t_lo, t_hi),
                                       method='brentq')  # , xtol=1e-14, rtol=1e-14)
                     # #region Newton's method to find root
                     # def dxdt(t):
@@ -415,10 +425,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
                 t_at_x.append(sol.t[-1])  # Last time point
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
-            t_at_x = np.array(t_at_x)  # Convert to arrays for easier handling
-            states_at_x = np.array(states_at_x).T  # shape: (state_dim, num_points)
-            for i in range(states_at_x.shape[1]):
-                ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
+            # don't implicit change the states_at_x type from List[float] to ndarray
+            states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
+                                                                                dtype=np.float64).T  # shape: (state_dim, num_points)
+            for i in range(states_at_x_arr_t.shape[1]):
+                ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
             ranges.sort(key=lambda t: t.time)  # Sort by time
 
             if time_step > 0.0:
@@ -444,7 +455,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
                         return (relative_speed / mach) - 1.0
 
                     try:
-                        res = root_scalar(mach_minus_one, bracket=[t_vals[0], t_vals[-1]])
+                        res = root_scalar(mach_minus_one, bracket=(t_vals[0], t_vals[-1]))
                         if res.converged:
                             ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.MACH))
                     except ValueError:
@@ -470,7 +481,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
                         return sol.sol(t)[4]
 
                     try:
-                        res = root_scalar(vy, bracket=[t_vals[0], t_vals[-1]])
+                        res = root_scalar(vy, bracket=(t_vals[0], t_vals[-1]))
                         if res.converged:
                             ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.APEX))
                     except ValueError:
@@ -482,7 +493,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine, EngineProtocol[SciPyEngineCo
 
             if termination_reason is not None:
                 raise RangeError(termination_reason, ranges)
-        else:
-            logger.error("No solution found by SciPy integration.")
+
         # endregion Process the solution
         return ranges

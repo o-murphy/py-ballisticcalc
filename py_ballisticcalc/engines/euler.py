@@ -8,8 +8,11 @@ import warnings
 from typing_extensions import Union, List, override
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.engines.base_engine import (BaseIntegrationEngine, _TrajectoryDataFilter,
-                                                  _WindSock, create_trajectory_row)
+from py_ballisticcalc.engines.base_engine import (BaseIntegrationEngine,
+                                                  _TrajectoryDataFilter,
+                                                  _WindSock,
+                                                  create_trajectory_row,
+                                                  BaseEngineConfigDict)
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -19,7 +22,7 @@ __all__ = ('EulerIntegrationEngine',)
 
 
 # pylint: disable=too-many-instance-attributes
-class EulerIntegrationEngine(BaseIntegrationEngine):
+class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """
     All calculations are done in units of feet and fps.
 
