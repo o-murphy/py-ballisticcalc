@@ -6,7 +6,11 @@ from dataclasses import dataclass
 
 from typing_extensions import List, Union, Optional, Tuple
 
-from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from py_ballisticcalc.constants import cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric, \
+    cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric, \
+    cLapseRateMetric, cStandardTemperatureC, cStandardHumidity, cSpeedOfSoundImperial, cDegreesFtoR, \
+    cSpeedOfSoundMetric, cMaxWindDistanceFeet
+# from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 from py_ballisticcalc.munition import Weapon, Ammo
 from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
 from py_ballisticcalc.vector import Vector

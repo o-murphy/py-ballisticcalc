@@ -4,10 +4,11 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 
 [![license]][LGPL-3]
 [![pypi]][PyPiUrl]
-[![coverage]][coverage]
+[![pypi-pre]][pypi-pre-url]
 [![downloads]][pepy]
 [![downloads/month]][pepy]
-[![versions]][sources]
+[![coverage]][coverage]
+[![py-versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
 [![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
@@ -31,8 +32,14 @@ https://img.shields.io/pypi/v/py-ballisticcalc?style=flat-square&logo=pypi
 [PyPiUrl]:
 https://pypi.org/project/py-ballisticcalc/
 
+[pypi-pre]:
+https://img.shields.io/github/v/release/o-murphy/py-ballisticcalc?include_prereleases&style=flat-square&logo=pypi&label=pypi%20pre
+
+[pypi-pre-url]:
+https://pypi.org/project/py-ballisticcalc/#history
+
 [coverage]:
-coverage.svg
+./coverage.svg
 
 [downloads]:
 https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
@@ -43,7 +50,7 @@ https://static.pepy.tech/personalized-badge/py-ballisticcalc?style=flat-square&p
 [pepy]:
 https://pepy.tech/project/py-ballisticcalc
 
-[versions]:
+[py-versions]:
 https://img.shields.io/pypi/pyversions/py-ballisticcalc?style=flat-square
 
 [Made in Ukraine]:

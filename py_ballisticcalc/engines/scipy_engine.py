@@ -32,7 +32,7 @@ __all__ = ('SciPyIntegrationEngine',
 # warnings.formatwarning = custom_warning_format
 
 
-class WindSock():
+class WindSock:
     """Finds wind vector in effect at any distance down-range."""
 
     def __init__(self, winds: Union[Tuple["Wind", ...], None]):

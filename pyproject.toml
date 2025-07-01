@@ -36,8 +36,8 @@ classifiers = [
 ]
 dependencies = [
     "typing_extensions>= 4.12.2",
-    "tomli; python_version<'3.11'",
-    "deprecated>=1.2.18",
+    "tomli>=2.2.1; python_version<'3.11'",
+    "Deprecated>=1.2.18",
 ]
 
 [project.entry-points.py_ballisticcalc]
@@ -79,6 +79,8 @@ dev = [
     "pytest-cov>=6.0.0",
     "pytest-xdist>=3.6.1",
     "scipy-stubs; python_version>='3.11'",
+    "types-deprecated>=1.2.15.20250304",
+    "ruff>=0.12.1",
 ]
 
 [tool.uv.sources]
@@ -102,6 +104,9 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.0.0",
     "pytest-xdist>=3.6.1",
+    "scipy-stubs; python_version>='3.11'",
+    "types-Deprecated>=1.2.15.20250304",
+    "ruff>=0.12.1",
 ]
 docs = [
     'mkdocs',

@@ -16,7 +16,8 @@ try:
     from matplotlib.patches import Polygon
     from matplotlib.axes import Axes
     from matplotlib import pyplot, ticker
-except ImportError as error:
+    assert matplotlib
+except (ImportError, AssertionError) as error:
     warnings.warn("Install matplotlib to get results as a plot", UserWarning)
     raise error
 

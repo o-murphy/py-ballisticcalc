@@ -116,20 +116,20 @@ class RK4IntegrationEngine(BaseIntegrationEngine):
             drag = km * relative_speed
 
             # region RK4 integration
-            def f(v):  # dv/dt
+            def f(v: Vector) -> Vector:  # dv/dt
                 # Bullet velocity changes due to both drag and gravity
-                return self.gravity_vector - km * v * v.magnitude()
+                return self.gravity_vector - km * v * v.magnitude()  # type: ignore[operator]
 
             v1 = delta_time * f(relative_velocity)
-            v2 = delta_time * f(relative_velocity + 0.5 * v1)
-            v3 = delta_time * f(relative_velocity + 0.5 * v2)
-            v4 = delta_time * f(relative_velocity + v3)
+            v2 = delta_time * f(relative_velocity + 0.5 * v1)  # type: ignore[operator]
+            v3 = delta_time * f(relative_velocity + 0.5 * v2)  # type: ignore[operator]
+            v4 = delta_time * f(relative_velocity + v3)  # type: ignore[operator]
             p1 = delta_time * velocity_vector
-            p2 = delta_time * (velocity_vector + 0.5 * p1)
-            p3 = delta_time * (velocity_vector + 0.5 * p2)
-            p4 = delta_time * (velocity_vector + p3)
-            velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (1 / 6.0)
-            range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (1 / 6.0)
+            p2 = delta_time * (velocity_vector + 0.5 * p1)  # type: ignore[operator]
+            p3 = delta_time * (velocity_vector + 0.5 * p2)  # type: ignore[operator]
+            p4 = delta_time * (velocity_vector + p3)  # type: ignore[operator]
+            velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (1 / 6.0)  # type: ignore[operator]
+            range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (1 / 6.0)  # type: ignore[operator]
             # endregion RK4 integration
 
             # region for Reference: Euler integration

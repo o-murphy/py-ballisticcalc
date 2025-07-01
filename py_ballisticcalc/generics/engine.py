@@ -13,7 +13,6 @@ from typing import TypeVar
 from typing_extensions import List, Protocol, runtime_checkable
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import Distance, Angular
 

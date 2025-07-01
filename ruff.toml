@@ -28,6 +28,8 @@ exclude = [
     "venv",
 ]
 
+extend-exclude = ["__init__.py"]
+
 # Same as Black.
 line-length = 88
 indent-width = 4
