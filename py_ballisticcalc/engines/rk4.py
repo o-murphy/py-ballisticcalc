@@ -4,8 +4,11 @@ import warnings
 from typing_extensions import Union, List, override
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, _TrajectoryDataFilter, _WindSock, \
-    create_trajectory_row
+from py_ballisticcalc.engines.base_engine import (BaseIntegrationEngine,
+                                                  BaseEngineConfigDict,
+                                                  _TrajectoryDataFilter,
+                                                  _WindSock,
+                                                  create_trajectory_row)
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -14,7 +17,7 @@ from py_ballisticcalc.vector import Vector
 __all__ = ('RK4IntegrationEngine',)
 
 
-class RK4IntegrationEngine(BaseIntegrationEngine):
+class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
     @override
     def get_calc_step(self, step: float = 0) -> float:

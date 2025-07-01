@@ -180,7 +180,7 @@ class DangerSpace(NamedTuple):
             ImportError: If plotting dependencies are not installed.
         """
         try:
-            from py_ballisticcalc.visualize.plot import add_danger_space_overlay
+            from py_ballisticcalc.visualize.plot import add_danger_space_overlay  # type: ignore[attr-defined]
             add_danger_space_overlay(self, ax, label)
         except ImportError as err:
             raise ImportError(
@@ -392,7 +392,7 @@ class HitResult:
             ImportError: If plotting dependencies are not installed.
         """
         try:
-            from py_ballisticcalc.visualize.plot import hit_result_as_plot
+            from py_ballisticcalc.visualize.plot import hit_result_as_plot  # type: ignore[attr-defined]
             return hit_result_as_plot(self, look_angle)
         except ImportError as err:
             raise ImportError(

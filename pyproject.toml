@@ -78,7 +78,8 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.0.0",
     "pytest-xdist>=3.6.1",
-    "scipy-stubs; python_version>='3.11'",
+    "scipy-stubs>=1.4.1a3,<1.16.0.1; python_version=='3.10'",
+    "scipy-stubs>=1.16.0.1; python_version>='3.11'",
     "types-deprecated>=1.2.15.20250304",
     "ruff>=0.12.1",
 ]
@@ -104,7 +105,8 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.0.0",
     "pytest-xdist>=3.6.1",
-    "scipy-stubs; python_version>='3.11'",
+    "scipy-stubs>=1.4.1a3,<1.16.0.1; python_version=='3.10'",
+    "scipy-stubs>=1.16.0.1; python_version>='3.11'",
     "types-Deprecated>=1.2.15.20250304",
     "ruff>=0.12.1",
 ]
