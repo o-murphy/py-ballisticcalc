@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
 from typing import Generic
 
+from deprecated import deprecated
 from typing_extensions import Union, List, Optional, TypeVar, Type
 
 from py_ballisticcalc import EulerIntegrationEngine, BaseEngineConfigDict
@@ -97,9 +98,12 @@ class Calculator(Generic[ConfigT]):
         self._engine_instance = engine(self.config)
 
     @property
+    @deprecated(reason="`Calculator.cdm` is no longer supported by EngineProtocol. "
+                       "Please use `DragModel.drag_table` instead.")
     def cdm(self) -> List[DragDataPoint]:
         """Returns custom drag function based on input data"""
-        return self._engine_instance.table_data
+        raise NotImplementedError("`Calculator.cdm` is no longer supported by EngineProtocol. "
+                                  "Please use `DragModel.drag_table` instead.")
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.

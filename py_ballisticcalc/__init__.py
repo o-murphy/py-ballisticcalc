@@ -133,6 +133,8 @@ __all__ = [
     'BaseIntegrationEngine',
     'EulerIntegrationEngine',
     'RK4IntegrationEngine',
+    'SciPyIntegrationEngine',
+    'SciPyEngineConfigDict',
     'Vector',
     'DragModel',
     'DragDataPoint',

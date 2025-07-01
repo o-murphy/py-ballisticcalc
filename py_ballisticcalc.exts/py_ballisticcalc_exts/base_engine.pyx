@@ -198,10 +198,6 @@ cdef class CythonizedBaseIntegrationEngine:
             return preferred_step / 2.0
         return min(step, preferred_step) / 2.0
 
-    @property
-    def table_data(self) -> list[object]:
-        return self._table_data
-
     def zero_angle(self, object shot_info, object distance) -> Angular:
         return self._zero_angle(shot_info, distance)
 
@@ -243,7 +239,6 @@ cdef class CythonizedBaseIntegrationEngine:
             cant_sine=sin(shot_info.cant_angle._rad),
             alt0=shot_info.atmo.altitude._feet,
             calc_step=self.get_calc_step(),
-            # calc_step=cy_get_calc_step(self._config_s),
             diameter=shot_info.ammo.dm.diameter._inch,
             stability_coefficient=0.0,
             atmo=Atmosphere_t(

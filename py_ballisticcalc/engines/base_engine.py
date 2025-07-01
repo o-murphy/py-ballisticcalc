@@ -296,7 +296,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
     twist: float
     gravity_vector: Vector
 
-    # TODO:
     def __init__(self, _config: BaseEngineConfigDict):
         """
         Initializes the TrajectoryCalc class.
@@ -307,16 +306,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         self._config: BaseEngineConfig = create_base_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
-
-    @property
-    def table_data(self) -> List[DragDataPoint]:
-        """
-        Gets the drag model table data.
-
-        Returns:
-            List[DragDataPoint]: A list of drag data points.
-        """
-        return self._table_data
 
     def get_calc_step(self, step: float = 0) -> float:
         """
@@ -402,7 +391,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[BaseEngineConfigDict]):
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
-        distance_feet = distance >> Distance.Foot  # no need convert it twice
+        distance_feet = distance >> Distance.Foot
         zero_distance = math.cos(self.look_angle) * distance_feet
         height_at_zero = math.sin(self.look_angle) * distance_feet
 

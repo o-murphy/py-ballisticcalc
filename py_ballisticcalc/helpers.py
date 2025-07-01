@@ -216,38 +216,6 @@ def find_index_for_time_point(
     # return -1
 
 
-def find_index_of_apex_point(shot: HitResult) -> int:
-    """Find index of the highest point in the trajectory.
-      This method assumes that trajectory is uni-modal."""
-    return find_index_of_apex_in_points(shot.trajectory)
-
-
-def find_index_of_apex_in_points(trajectory_points: List) -> int:
-    """
-    Finds the index of the apex in the uni-modal trajectory.
-    :param trajectory_points: The array of objects with a 'height' field, where the height increases
-    up to the apex and decreases thereafter.
-    :return: int - The index of the apex, or -1 if no valid apex exists (this will happen only if
-    trajectory_points is empty.
-    """
-    points_count = len(trajectory_points)
-    if points_count == 0:
-        return -1
-    left, right = 0, points_count - 1
-    while left < right:
-        mid = (left + right) // 2
-        # Compare mid and mid+1 to decide which side to search
-        if trajectory_points[mid].height < trajectory_points[mid + 1].height:
-            # Move right to the increasing side
-            left = mid + 1
-        else:
-            # Move left to the decreasing side (possible apex)
-            right = mid
-
-    # Left and right converge to the apex
-    return left
-
-
 def find_time_for_distance_in_shot(
         shot: HitResult, distance_in_unit: float, distance_unit=Distance.Meter
 ) -> float:
