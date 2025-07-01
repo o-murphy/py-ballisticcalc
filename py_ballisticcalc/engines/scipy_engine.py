@@ -329,7 +329,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             raise RuntimeError(f"No solution found by SciPy integration: {sol.message}", sol.message)
 
         if sol.t_events is None:
-            raise RuntimeError("")
+            raise RuntimeError("SciPy integration solution have not t_events")
 
         logger.debug(f"SciPy integration complete with {sol.nfev} function calls.")
         termination_reason = None
