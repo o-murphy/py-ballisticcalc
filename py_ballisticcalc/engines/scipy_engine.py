@@ -151,6 +151,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         previous_elevation = self.barrel_elevation
         previous_distance = 0.0
         previous_error = 1e+10  # Very large number
+        range_limit = False  # Flag to use tangent corrections when instability detected
         zero_error = _cZeroFindingAccuracy * 2  # Absolute value of vertical error in feet
         # TODO: Ensure there is adequate altitude drop allowed to get some distance from shooter:
         # Check _cMaximumDrop and _cMinimumAltitude; record and reset at end if necessary
@@ -170,16 +171,20 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             trajectory_angle = t.angle >> Angular.Radian    # Flight angle at current distance
             #signed_error = height - height_at_zero
             signed_error = height - math.tan(self.look_angle) * current_distance
-            correction = -signed_error / (current_distance * (1 + math.tan(self.barrel_elevation)
-                                                        * math.tan(trajectory_angle)))
+            sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
+            if (-1.2 < sensitivity < -0.8) or range_limit:
+                range_limit = True  # Scenario too unstable for Newton-Raphson 
+                correction = -math.atan2(signed_error, math.cos(self.look_angle) * current_distance)
+            else:
+                correction = -signed_error / (current_distance * (1 + sensitivity))  # Newton-Raphson method
 
-            print(f"Zero step {iterations_count}: error={signed_error} \t{self.barrel_elevation} radians\t at {current_distance} feet. Correction = {correction} radians")
+            #print(f"Zero step {iterations_count}: error={signed_error} \t{self.barrel_elevation}rad\t at {current_distance}ft. Correction={correction}rads")
 
             zero_error = math.fabs(signed_error)
             if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
                 if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:
                     raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                           'Distance non-convergent. ')
+                                           'Distance non-convergent.')
             elif zero_error > math.fabs(previous_error):  # Error is increasing, we are diverging
                 if self._config.relative_error_tolerance > 1.1e-13 or self._config.absolute_error_tolerance > 1.1e-13:
                     # Tighten the error tolerance in the integrator and let's try again
@@ -187,13 +192,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         self._config.relative_error_tolerance *= 0.1
                     if self._config.absolute_error_tolerance > 1.1e-13:
                         self._config.absolute_error_tolerance *= 0.1
-                    print(f"Reducing error tolerances: rtol={self._config.relative_error_tolerance}\t atol={self._config.absolute_error_tolerance}")
+                    #print(f"Reducing error tolerances: rtol={self._config.relative_error_tolerance}\t atol={self._config.absolute_error_tolerance}")
                     previous_error = 1e+10  # Reset previous error to a large value
                     self.barrel_elevation = previous_elevation  # Keep the elevation that's closer to zero
                     continue  # Recompute with new tolerances
                 # If error is increasing, we are diverging; stop to avoid infinite loop
                 raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                       'Error non-convergent. ')
+                                       'Error non-convergent.')
             previous_distance = current_distance
             previous_error = signed_error
             previous_elevation = self.barrel_elevation
