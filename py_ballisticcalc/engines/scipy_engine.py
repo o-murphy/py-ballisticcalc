@@ -1,6 +1,6 @@
 """Computes trajectory using SciPy's solve_ivp; uses SciPy's root_scalar to get specific points.
 TODO:
- * Use SciPy.optimize for zero_angle() override
+ * Use SciPy.optimize.root_scalar for zero_angle() when range_limit==True
 """
 import math
 import warnings
@@ -25,7 +25,7 @@ __all__ = ('SciPyIntegrationEngine',
            'DEFAULT_SCIPY_ENGINE_CONFIG')
 
 
-# TODO: don't recomended to update warning format globally for the lib, use logging.warning instead
+# This block would update warning format globally for the lib; use logging.warning instead
 # def custom_warning_format(message, category, filename, lineno, file=None, line=None):
 #     return f"{category.__name__}: {message}\n"
 # warnings.formatwarning = custom_warning_format
@@ -143,7 +143,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self._init_trajectory(shot_info)
 
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
-        #_cMaxIterations = self._config.cMaxIterations
+        _cMaxIterations = self._config.cMaxIterations
 
         zero_distance = (distance >> Distance.Foot) * math.cos(self.look_angle)  # Horizontal distance
 
@@ -151,13 +151,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         previous_elevation = self.barrel_elevation
         previous_distance = 0.0
         previous_error = 1e+10  # Very large number
-        range_limit = False  # Flag to use tangent corrections when instability detected
+        range_limit = False  # Flag to avoid 1st-order correction when instability detected
         zero_error = _cZeroFindingAccuracy * 2  # Absolute value of vertical error in feet
-        # TODO: Ensure there is adequate altitude drop allowed to get some distance from shooter:
-        # Check _cMaximumDrop and _cMinimumAltitude; record and reset at end if necessary
 
-        # x = horizontal distance down range, y = drop, z = windage
-        while zero_error > _cZeroFindingAccuracy:
+        while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
                 t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
@@ -166,23 +163,29 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     raise e
                 t = e.incomplete_trajectory[-1]
 
-            height = t.height >> Distance.Foot
             current_distance = t.distance >> Distance.Foot  # Horizontal distance
+            if current_distance < 1 and self.barrel_elevation == 0.0:
+                # Degenerate case: little distance and zero elevation; try with some elevation
+                self.barrel_elevation = 0.01
+                continue
+
+            height = t.height >> Distance.Foot
             trajectory_angle = t.angle >> Angular.Radian    # Flight angle at current distance
             #signed_error = height - height_at_zero
             signed_error = height - math.tan(self.look_angle) * current_distance
             sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
-            if (-1.2 < sensitivity < -0.8) or range_limit:
-                range_limit = True  # Scenario too unstable for Newton-Raphson 
-                correction = -math.atan2(signed_error, math.cos(self.look_angle) * current_distance)
+            if (-1.5 < sensitivity < -0.5) or range_limit:
+                range_limit = True  # Scenario too unstable for 1st order correction
+                correction = -signed_error / (math.cos(self.look_angle) * current_distance)
             else:
-                correction = -signed_error / (current_distance * (1 + sensitivity))  # Newton-Raphson method
+                correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st order correction
 
-            #print(f"Zero step {iterations_count}: error={signed_error} \t{self.barrel_elevation}rad\t at {current_distance}ft. Correction={correction}rads")
+            #print(f'Zero step {iterations_count}: error={signed_error} '
+            #      f'\t{self.barrel_elevation}rad\t at {current_distance}ft. Correction={correction}rads')
 
             zero_error = math.fabs(signed_error)
             if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
-                if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:
+                if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:  # We're not getting closer to zero_distance
                     raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
                                            'Distance non-convergent.')
             elif zero_error > math.fabs(previous_error):  # Error is increasing, we are diverging
@@ -199,18 +202,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 # If error is increasing, we are diverging; stop to avoid infinite loop
                 raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
                                        'Error non-convergent.')
+
             previous_distance = current_distance
             previous_error = signed_error
             previous_elevation = self.barrel_elevation
 
-            if zero_error > _cZeroFindingAccuracy:
+            if zero_error > _cZeroFindingAccuracy or math.fabs(current_distance - zero_distance) > 1:
                 # Adjust barrel elevation to close height at zero distance
                 self.barrel_elevation += correction
             else:  # Current barrel_elevation hit zero!
                 break
             iterations_count += 1
-            # if iterations_count >= _cMaxIterations:
-            #     break
         if zero_error > _cZeroFindingAccuracy:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
@@ -342,7 +344,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         termination_reason = None
         if sol.status == 1:  # A termination event occurred
             if len(sol.t_events) > 0:
-                # if sol.t_events[0].size > 0:  # Typical termination event
+                # if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range
                 #     logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
                 if sol.t_events[1].size > 0:  # event_max_drop
                     y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
@@ -428,13 +430,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # region Root-finding approach to interpolate for desired x values
 
             # If we ended with an event then also grab the last point calculated
-            if termination_reason is not None and len(t_vals) > 1 and t_vals[0] != t_vals[-1]:
+            if termination_reason is not None and len(t_vals) > 1 and t_vals[0] != t_vals[-1] \
+                and (filter_flags != TrajFlag.NONE or len(t_at_x) == 0):  # ... unless we already got one and don't want others
                 t_at_x.append(sol.t[-1])  # Last time point
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
-            # don't implicit change the states_at_x type from List[float] to ndarray
             states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
-                                                                                dtype=np.float64).T  # shape: (state_dim, num_points)
+                                                dtype=np.float64).T  # shape: (state_dim, num_points)
             for i in range(states_at_x_arr_t.shape[1]):
                 ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
             ranges.sort(key=lambda t: t.time)  # Sort by time

@@ -4,6 +4,10 @@ import pytest
 
 from py_ballisticcalc import (
     Angular,
+    Atmo,
+    Calculator,
+    BaseEngineConfigDict,
+    RangeError,
     Distance,
     DragModel,
     TableG1,
@@ -14,7 +18,6 @@ from py_ballisticcalc import (
     Shot,
 )
 from py_ballisticcalc.trajectory_data import TrajFlag
-from .fixtures_and_helpers import zero_min_velocity_calc
 
 DISTANCES_FOR_CHECKING = (
     # list(range(100, 1000, 100)) +
@@ -42,12 +45,15 @@ def create_shot():
     return shot
 
 
+@pytest.mark.usefixtures("loaded_engine_instance")
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
-def test_set_weapon_zero(distance, zero_min_velocity_calc):
+def test_set_weapon_zero(distance, loaded_engine_instance):
     shot = create_shot()
-    zero_min_velocity_calc.set_weapon_zero(shot, Distance.Meter(distance))
+    config = BaseEngineConfigDict(cMinimumVelocity=0, cMaxIterations=200)
+    calc = Calculator(config=config, engine=loaded_engine_instance)
+    calc.set_weapon_zero(shot, Distance.Meter(distance))
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree}")
-    hit_result = zero_min_velocity_calc.fire(shot, Distance.Meter(distance))
+    hit_result = calc.fire(shot, Distance.Meter(distance))
     # print(
     #     f"{hit_result[-1].distance >> Distance.Meter=} "
     #     f"{hit_result[-1].time=} "
@@ -55,13 +61,35 @@ def test_set_weapon_zero(distance, zero_min_velocity_calc):
     # )
     assert abs(hit_result[-1].height.raw_value) < 1e+1
 
-def test_zero_with_look_angle(zero_min_velocity_calc):
+@pytest.mark.usefixtures("loaded_engine_instance")
+def test_zero_with_look_angle(loaded_engine_instance):
     """Test zero finding with a high look angle."""
     distance = Distance.Meter(1000)
     shot = create_shot()
     shot.look_angle = Angular.Degree(30)
-    zero_min_velocity_calc.set_weapon_zero(shot, distance)
+    config = BaseEngineConfigDict(cMinimumVelocity=0, cMaxIterations=200)
+    calc = Calculator(config=config, engine=loaded_engine_instance)
+    calc.set_weapon_zero(shot, distance)
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree} degrees")
-    hit_result = zero_min_velocity_calc.fire(shot, trajectory_range=distance, extra_data=True)
+    hit_result = calc.fire(shot, trajectory_range=distance, extra_data=True)
     # TrajFlag.ZERO_DOWN marks the point at which bullet crosses down through sight line
     assert abs(hit_result.flag(TrajFlag.ZERO_DOWN).look_distance.raw_value - distance.raw_value) < 1e+1
+
+@pytest.mark.usefixtures("loaded_engine_instance")
+def test_zero_degenerate(loaded_engine_instance):
+    """Test zero finding when initial shot hits minimum altitude immediately."""
+    distance = Distance.Meter(300)
+    shot = create_shot()
+    shot.atmo = Atmo(altitude=0)
+    config = BaseEngineConfigDict(cMinimumVelocity=0, cMinimumAltitude=0)
+    calc = Calculator(config=config, engine=loaded_engine_instance)
+    calc.set_weapon_zero(shot, distance)
+    print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree} degrees")
+    try:
+        hit_result = calc.fire(shot, trajectory_range=distance)
+    except RangeError as e:
+        if e.last_distance is None:
+            raise e
+        hit_result = e.incomplete_trajectory
+    assert abs(hit_result[-1].height.raw_value) < 1
+    assert abs(hit_result[-1].distance.raw_value - distance.raw_value) < 1e-2
