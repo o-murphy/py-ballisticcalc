@@ -23,7 +23,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     def get_calc_step(self, step: float = 0) -> float:
         # RK steps can be larger than calc_step default on Euler integrator
         # min_step ensures that with small record steps the loop runs far enough to get desired points
-        # adjust Euler default step to RK4 algorythm
+        # adjust Euler default step to RK4 algorithm
         # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko
         return super().get_calc_step(step) ** 0.5
 
@@ -84,10 +84,11 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
+        termination_reason = None
         last_recorded_range = 0.0
         it = 0  # iteration counter
         while (range_vector.x <= maximum_range + min_step) or (
-                filter_flags and last_recorded_range <= maximum_range - 1e-6):
+                last_recorded_range <= maximum_range - 1e-6):
             it += 1
 
             # Update wind reading at current point in trajectory
@@ -99,15 +100,13 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 self.alt0 + range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
-            if filter_flags:  # require check before call to improve performance
-                # Record TrajectoryData row
-                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
-                    ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
-                                                        data.velocity.magnitude(), data.mach,
-                                                        self.spin_drift(data.time), self.look_angle,
-                                                        density_factor, drag, self.weight, data_filter.current_flag
-                                                        ))
-                    last_recorded_range = data.position.x
+            if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+                ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
+                                                    data.velocity.magnitude(), data.mach,
+                                                    self.spin_drift(data.time), self.look_angle,
+                                                    density_factor, drag, self.weight, data_filter.current_flag
+                                                    ))
+                last_recorded_range = data.position.x
             # endregion
 
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
@@ -149,26 +148,28 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
-                    velocity, mach, self.spin_drift(time), self.look_angle,
-                    density_factor, drag, self.weight, data_filter.current_flag
-                ))
                 if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
+                    termination_reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
+                    termination_reason = RangeError.MaximumDropReached
                 else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
-                # break
+                    termination_reason = RangeError.MinimumAltitudeReached
+                break
         # endregion Trajectory Loop
-
-        # Ensure that we have at least two data points in trajectory
-        if len(ranges) < 2:
+        if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+            ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
+                                                data.velocity.magnitude(), data.mach,
+                                                self.spin_drift(data.time), self.look_angle,
+                                                density_factor, drag, self.weight, data_filter.current_flag
+                                                ))
+        # Ensure that we have at least two data points in trajectory, or 1 if no filter_flags==NONE
+        # ... as well as last point if we had an incomplete trajectory
+        if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
                 density_factor, drag, self.weight, TrajFlag.NONE))
         logger.debug(f"RK4 ran {it} iterations")
+        if termination_reason is not None:
+            raise RangeError(termination_reason, ranges)
         return ranges

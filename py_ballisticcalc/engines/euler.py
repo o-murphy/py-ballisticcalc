@@ -92,10 +92,11 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
+        termination_reason = None
         last_recorded_range = 0.0
         it = 0  # iteration counter
         while (range_vector.x <= maximum_range + min_step) or (
-                filter_flags and last_recorded_range <= maximum_range - 1e-6):
+                last_recorded_range <= maximum_range - 1e-6):
             it += 1
 
             # Update wind reading at current point in trajectory
@@ -107,16 +108,13 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 self.alt0 + range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
-            if filter_flags:  # require check before call to improve performance
-
-                # Record TrajectoryData row
-                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
-                    ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
-                                                        data.velocity.magnitude(), data.mach,
-                                                        self.spin_drift(data.time), self.look_angle,
-                                                        density_factor, drag, self.weight, data_filter.current_flag
-                                                        ))
-                    last_recorded_range = data.position.x
+            if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+                ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
+                                                    data.velocity.magnitude(), data.mach,
+                                                    self.spin_drift(data.time), self.look_angle,
+                                                    density_factor, drag, self.weight, data_filter.current_flag
+                                                    ))
+                last_recorded_range = data.position.x
             # endregion
 
             # region Ballistic calculation step (point-mass)
@@ -135,32 +133,35 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             range_vector += delta_range_vector  # type: ignore
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
+            # endregion
 
             if (
                     velocity < _cMinimumVelocity
                     or range_vector.y < _cMaximumDrop
                     or self.alt0 + range_vector.y < _cMinimumAltitude
             ):
-                ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
-                    velocity, mach, self.spin_drift(time), self.look_angle,
-                    density_factor, drag, self.weight, data_filter.current_flag
-                ))
                 if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
+                    termination_reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
+                    termination_reason = RangeError.MaximumDropReached
                 else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
-                # break
-            # endregion
+                    termination_reason = RangeError.MinimumAltitudeReached
+                break
         # endregion
-        # Ensure that we have at least two data points in trajectory
-        if len(ranges) < 2:
+        if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+            ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
+                                                data.velocity.magnitude(), data.mach,
+                                                self.spin_drift(data.time), self.look_angle,
+                                                density_factor, drag, self.weight, data_filter.current_flag
+                                                ))
+        # Ensure that we have at least two data points in trajectory, or 1 if no filter_flags==NONE
+        # ... as well as last point if we had an incomplete trajectory
+        if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle,
                 density_factor, drag, self.weight, TrajFlag.NONE))
-        logger.debug(f"euler py it {it}")
+        logger.debug(f"Euler ran {it} iterations")
+        if termination_reason is not None:
+            raise RangeError(termination_reason, ranges)
         return ranges

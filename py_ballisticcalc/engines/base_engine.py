@@ -409,16 +409,14 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
-                # TODO: We need to interpolate for the requested zero distance.
                 t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
-                # TODO: In this case, most engines do not interpolate for the requested zero distance.
                 t = e.incomplete_trajectory[-1]
 
             current_distance = t.distance >> Distance.Foot  # Horizontal distance
-            if current_distance < 1 and self.barrel_elevation == 0.0:
+            if 2 * current_distance < zero_distance and self.barrel_elevation == 0.0:
                 # Degenerate case: little distance and zero elevation; try with some elevation
                 self.barrel_elevation = 0.01
                 continue
@@ -430,6 +428,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
             if (-1.5 < sensitivity < -0.5) or range_limit:
                 range_limit = True  # Scenario too unstable for 1st-order correction
+                # TODO: This can be very slow to converge.  Consider using root-finder here.
                 correction = -signed_error / (math.cos(self.look_angle) * current_distance)
             else:
                 correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st-order correction

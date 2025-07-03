@@ -56,7 +56,7 @@ def test_shot_incomplete(zero_height_calc):
     print_out_trajectory_compact(hit_result)
 
     check_end_point(hit_result)
-    
+
     try:
         extra_data = True
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
@@ -67,7 +67,7 @@ def test_shot_incomplete(zero_height_calc):
     print_out_trajectory_compact(hit_result)
 
     check_end_point(hit_result)
-    
+
 
 def test_vertical_shot(zero_height_calc):
     shot = shot_with_relative_angle_in_degrees(90)
@@ -97,6 +97,7 @@ def test_vertical_shot(zero_height_calc):
 def test_no_duplicate_points(zero_height_calc):
     # this is a shot for point (1000, 0)
     shot = shot_with_relative_angle_in_degrees(0.46571949074059704)
+    zero_distance = Distance.Meter(1000)
     # setting up bigger distance than required by shot
     range = Distance.Meter(1100)
     try:
@@ -109,8 +110,10 @@ def test_no_duplicate_points(zero_height_calc):
     print_out_trajectory_compact(hit_result)
     assert len(hit_result.trajectory) >= 2
     assert hit_result[-2] != hit_result[-1]
-    assert hit_result[-2].distance>>Distance.Meter == pytest.approx(1000, abs=0.2)
-    assert hit_result[-2].height>>Distance.Meter == pytest.approx(0, abs=0.01)
+    result_at_zero = hit_result.get_at_distance(zero_distance)
+    assert result_at_zero is not None
+    assert result_at_zero.distance>>Distance.Meter == pytest.approx(1000, abs=0.2)
+    assert result_at_zero.height>>Distance.Meter == pytest.approx(0, abs=0.01)
     assert hit_result[-1].distance>>Distance.Meter > hit_result[-2].distance>>Distance.Meter
     assert hit_result[-1].height>>Distance.Meter < hit_result[-2].height>>Distance.Meter
 
