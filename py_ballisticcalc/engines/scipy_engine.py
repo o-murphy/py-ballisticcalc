@@ -128,6 +128,110 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
 
+    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.1, 89.9)) -> Tuple[float, float]:
+        """
+        Finds the maximum horizontal range and the launch angle to reach it.
+
+        Args:
+            shot_info (Shot): The shot information: gun, ammo, environment, look_angle.
+            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
+                                                               Defaults to (0.1, 89.9).
+
+        Returns:
+            Tuple[float, float]: The maximum range in feet and the launch angle in radians to reach it.
+        """
+        try:
+            from scipy.optimize import minimize_scalar  # type: ignore[import-untyped]
+        except ImportError as e:
+            raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
+
+        restore_cMaximumDrop = None
+        if self._config.cMaximumDrop:
+            restore_cMaximumDrop = self._config.cMaximumDrop
+            self._config.cMaximumDrop = 0  # We want to run trajectory until it returns to horizontal
+        self._init_trajectory(shot_info)
+        def range_for_angle(angle_rad: float) -> float:
+            """Returns range to zero (in feet) for given launch angle in radians."""
+            self.barrel_elevation = angle_rad
+            try:
+                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE)[0]
+            except RangeError as e:
+                if e.last_distance is None:
+                    raise e
+                t = e.incomplete_trajectory[-1]
+            return t.distance >> Distance.Foot  # Horizontal distance
+
+        res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
+                               bounds=(math.radians(angle_bracket_deg[0]), math.radians(angle_bracket_deg[1])),
+                               method='bounded')
+
+        if restore_cMaximumDrop is not None:
+            self._config.cMaximumDrop = restore_cMaximumDrop
+
+        if not res.success:
+            raise ZeroFindingError(note=f"Could not find maximum range: {res.message}")
+
+        angle_at_max_rad = res.x
+        max_range_ft = -res.fun  # Negate because we minimized the negative range
+        return max_range_ft, angle_at_max_rad
+
+    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool=False) -> Angular:
+        """
+        Finds the barrel elevation needed to hit sight line at a specific distance,
+            using SciPy's root_scalar.
+
+        Args:
+            shot_info (Shot): The shot information.
+            distance (Distance): The distance to the target.
+            lofted (bool, optional): If True, find the higher angle that hits the zero point.
+
+        Returns:
+            Angular: The required barrel elevation.
+        """
+        try:
+            from scipy.optimize import root_scalar  # type: ignore[import-untyped]
+        except ImportError as e:
+            raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
+
+        self._init_trajectory(shot_info)
+
+        target_slant_dist_ft = distance >> Distance.Foot
+        target_x_ft = target_slant_dist_ft * math.cos(self.look_angle)
+        target_y_ft = target_slant_dist_ft * math.sin(self.look_angle)
+
+        def error_at_distance(angle_rad: float) -> float:
+            """
+            Vertical error (in feet) at the target's horizontal distance.
+            (= projectile's height minus the line-of-sight's height at that distance.)
+            """
+            self.barrel_elevation = angle_rad
+            try:
+                # Integrate to find the projectile's state at the target's horizontal distance.
+                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[0]
+                return (t.height >> Distance.Foot) - target_y_ft
+            except RangeError:
+                # If the projectile doesn't reach the target, it's a very large negative error.
+                return -1e6
+
+        max_range_ft, angle_at_max_rad = self.find_max_range(shot_info)
+        if target_x_ft > max_range_ft:
+            raise ZeroFindingError(note=f"Target distance {target_x_ft:.1f} ft is beyond max range {max_range_ft:.1f} ft.")
+
+        if lofted:
+            angle_bracket = (angle_at_max_rad, math.radians(89.9))
+        else:
+            angle_bracket = (self.look_angle, angle_at_max_rad)
+
+        try:
+            sol = root_scalar(error_at_distance, bracket=angle_bracket, method='brentq')
+        except ValueError as e:
+            raise ZeroFindingError(note=f"Could find {'lofted' if lofted else 'low'} trajectory to zero. Details: {e}")
+        if not sol.converged:
+            raise ZeroFindingError(note=f"Root-finder failed to converge: {sol.flag}")
+
+        return Angular.Radian(sol.root)
+
+
     @override
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """
@@ -151,7 +255,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         previous_elevation = self.barrel_elevation
         previous_distance = 0.0
         previous_error = 1e+10  # Very large number
-        range_limit = False  # Flag to avoid 1st-order correction when instability detected
         zero_error = _cZeroFindingAccuracy * 2  # Absolute value of vertical error in feet
 
         while iterations_count < _cMaxIterations:
@@ -174,9 +277,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             #signed_error = height - height_at_zero
             signed_error = height - math.tan(self.look_angle) * current_distance
             sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
-            if (-1.5 < sensitivity < -0.5) or range_limit:
-                range_limit = True  # Scenario too unstable for 1st order correction
-                correction = -signed_error / (math.cos(self.look_angle) * current_distance)
+            if (-1.5 < sensitivity < -0.5):
+                # Scenario too unstable for 1st order iteration
+                return self.find_zero_angle(shot_info, distance)
             else:
                 correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st order correction
 
@@ -241,7 +344,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             from scipy.optimize import root_scalar  # type: ignore[import-untyped]
             import numpy as np
         except ImportError as e:
-            raise ImportError("SciPy and numpy is required for SciPyIntegrationEngine.") from e
+            raise ImportError("SciPy and numpy are required for SciPyIntegrationEngine.") from e
 
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = self._config.cMaximumDrop
