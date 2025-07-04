@@ -144,10 +144,26 @@ config = {}
 print()
 
 for ep in _EngineLoader.iter_engines():
-    # if not ep.name.startswith("cy"):
-    #     continue
+    config = {}
+
+    if ep.name in {"euler_engine", "rk4_engine"}:
+        continue  # skip pure ones
+    elif ep.name in {"cythonized_euler_engine", "cythonized_rk_engine"}:
+        ...
+    elif ep.name in {"scipy"}:
+        config: SciPyEngineConfigDict = {
+            "relative_tolerance": 1e-6,
+            "absolute_tolerance": 1e-5,
+        }
+
     engine = ep.load()
     print("Engine: %s" % ep.value)
+    if ep.name.startswith("scipy"):
+        config: SciPyEngineConfigDict = {
+            "relative_tolerance": 1e-4,
+            "absolute_tolerance": 1e-3,
+            "integration_method": "LSODA"
+        }
     calc = Calculator(config=config, engine=engine)
     run_check(calc, number)
     print()

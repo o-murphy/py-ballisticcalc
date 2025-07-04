@@ -69,16 +69,16 @@ class SciPyEngineConfig(BaseEngineConfig):
     Attributes:
         max_time (float, optional): Maximum time to simulate in seconds.
                                     Defaults to DEFAULT_MAX_TIME.
-        relative_error_tolerance (float, optional): Relative tolerance for integration (rtol).
+        relative_tolerance (float, optional): Relative tolerance for integration (rtol).
                                                     Defaults to DEFAULT_RELATIVE_ERROR_TOLERANCE.
-        absolute_error_tolerance (float, optional): Absolute tolerance for integration (atol).
+        absolute_tolerance (float, optional): Absolute tolerance for integration (atol).
                                                     Defaults to DEFAULT_ABSOLUTE_ERROR_TOLERANCE.
         integration_method (Literal): Integration method to use with solve_ivp.
                                       Defaults to DEFAULT_INTEGRATION_METHOD.
     """
     max_time: float = DEFAULT_MAX_TIME
-    relative_error_tolerance: float = DEFAULT_RELATIVE_TOLERANCE
-    absolute_error_tolerance: float = DEFAULT_ABSOLUTE_TOLERANCE
+    relative_tolerance: float = DEFAULT_RELATIVE_TOLERANCE
+    absolute_tolerance: float = DEFAULT_ABSOLUTE_TOLERANCE
     integration_method: INTEGRATION_METHOD = DEFAULT_INTEGRATION_METHOD
 
 
@@ -173,13 +173,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # print(f"Zero finding iteration {iterations_count}: error={signed_error}\t{self.barrel_elevation} radians \tat {current_distance} feet.")
 
             if math.fabs(previous_error) < math.fabs(signed_error) and \
-                    (self._config.relative_error_tolerance > 1e-13 or self._config.absolute_error_tolerance > 1e-13):
+                    (self._config.relative_tolerance > 1e-13 or self._config.absolute_tolerance > 1e-13):
                 # This seems to occur when we need less error tolerance in the integrator
-                if self._config.relative_error_tolerance > 1e-13:
-                    self._config.relative_error_tolerance *= 0.1
-                if self._config.absolute_error_tolerance > 1e-13:
-                    self._config.absolute_error_tolerance *= 0.1
-                # print(f"Reducing error tolerances: rtol={self._config.relative_error_tolerance}\t atol={self._config.absolute_error_tolerance}")
+                if self._config.relative_tolerance > 1e-13:
+                    self._config.relative_tolerance *= 0.1
+                if self._config.absolute_tolerance > 1e-13:
+                    self._config.absolute_tolerance *= 0.1
+                # print(f"Reducing error tolerances: rtol={self._config.relative_tolerance}\t atol={self._config.absolute_tolerance}")
                 previous_error = 1e+10  # Reset previous error to a large value
                 continue  # Recompute with new tolerances
 
@@ -317,8 +317,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         sol = solve_ivp(diff_eq, (0, self._config.max_time), s0,
                         method=self._config.integration_method, dense_output=True,
-                        rtol=self._config.relative_error_tolerance,
-                        atol=self._config.absolute_error_tolerance,
+                        rtol=self._config.relative_tolerance,
+                        atol=self._config.absolute_tolerance,
                         events=traj_events)
 
         if not sol.success:  # Integration failed
