@@ -68,6 +68,10 @@ testpaths = ["tests"]
 packages = ["py_ballisticcalc"]
 
 [tool.ruff]
+include = [
+    "pyproject.toml",
+    "py_ballisticcalc/**/*.py"
+]
 extend-exclude = ["__init__.py"]
 
 [dependency-groups]
