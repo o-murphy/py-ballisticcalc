@@ -1,7 +1,7 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
-from typing import Generic, Any, Literal, overload
+from typing import Generic, Any
 
 from deprecated import deprecated  # type: ignore[import-untyped]
 from typing_extensions import Union, List, Optional, TypeVar, Type

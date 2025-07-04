@@ -64,6 +64,12 @@ minversion = "8.0"
 addopts = "-rf"
 testpaths = ["tests"]
 
+[tool.mypy]
+packages = ["py_ballisticcalc"]
+
+[tool.ruff]
+extend-exclude = ["__init__.py"]
+
 [dependency-groups]
 dev = [
     "build>=1.2.2.post1",
