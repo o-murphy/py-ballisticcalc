@@ -25,6 +25,7 @@ DISTANCES_FOR_CHECKING = (
     [7126.05]
 )
 
+
 def create_shot():
     drag_model = DragModel(
         bc=0.759,
@@ -54,6 +55,7 @@ def test_set_weapon_zero(distance, zero_min_velocity_calc):
     #     f"{hit_result[-1].velocity >> Velocity.MPS=}"
     # )
     assert abs(hit_result[-1].height.raw_value) < 1e+1
+
 
 def test_zero_with_look_angle(zero_min_velocity_calc):
     """Test zero finding with a high look angle."""

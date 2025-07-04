@@ -1,7 +1,7 @@
 """Implements basic interface for the ballistics calculator"""
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
-from typing import Generic
+from typing import Generic, Any
 
 from deprecated import deprecated  # type: ignore[import-untyped]
 from typing_extensions import Union, List, Optional, TypeVar, Type
@@ -98,6 +98,43 @@ class Calculator(Generic[ConfigT]):
 
     def __post_init__(self):
         self._engine_instance = _EngineLoader.load(self.engine)(self.config)
+
+    def __getattr__(self, item: str) -> Any:
+        """Delegates attribute access to the underlying engine instance.
+
+        This method is called when an attribute is requested on the `Calculator`
+        instance that is not found through normal attribute lookup (i.e., it's
+        not a direct attribute of `Calculator` or its class). It then attempts
+        to retrieve the attribute from the `_engine_instance`.
+
+        Args:
+            item (str): The name of the attribute to retrieve.
+
+        Returns:
+            Any: The value of the attribute from `_engine_instance`.
+
+        Raises:
+            AttributeError: If the attribute is not found on either the
+                `Calculator` object or its `_engine_instance`.
+
+        Examples:
+            >>> calc = Calculator(engine=DEFAULT_ENTRY) # Assuming DEFAULT_ENTRY loads an engine
+            >>> calc_step = calc.get_calc_step()
+            >>> print(calc_step)
+            0.5
+            >>> try:
+            ...     calc.unknown_method()
+            ... except AttributeError as e:
+            ...     print(e)
+            'Calculator' object or its underlying engine 'EngineProtocol' has no attribute 'unknown_method'
+        """
+        if hasattr(self._engine_instance, item):
+            return getattr(self._engine_instance, item)
+        # It's good practice to raise an AttributeError if the attribute is not found
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object or its underlying engine "
+            f"'{self._engine_instance.__class__.__name__}' has no attribute '{item}'"
+        )
 
     @property
     @deprecated(reason="`Calculator.cdm` is no longer supported by EngineProtocol. "
