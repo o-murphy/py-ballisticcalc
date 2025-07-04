@@ -1,6 +1,11 @@
-"""Computes trajectory using SciPy's solve_ivp; uses SciPy's root_scalar to get specific points.
+"""Computes trajectory using SciPy's solve_ivp.
+Uses SciPy's root_scalar to get specific (TrajFlag) trajectory points,
+    and for .find_zero_angle(), which can find both the flat and lofted trajectories.
+Uses SciPy's minimize_scalar to .find_max_range() for any shot.
+
 TODO:
- * Use SciPy.optimize.root_scalar for zero_angle() when range_limit==True
+ * Preserve/cache find_max_range value for multiple find_zero_angle() calls
+    ... but have to determine whether any relevant shot parameters changed.
 """
 import math
 import warnings
@@ -151,7 +156,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             self._config.cMaximumDrop = 0  # We want to run trajectory until it returns to horizontal
         self._init_trajectory(shot_info)
         def range_for_angle(angle_rad: float) -> float:
-            """Returns range to zero (in feet) for given launch angle in radians."""
+            """Returns horizontal range to zero (in feet) for given launch angle in radians."""
             self.barrel_elevation = angle_rad
             try:
                 t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE)[0]
@@ -159,7 +164,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 if e.last_distance is None:
                     raise e
                 t = e.incomplete_trajectory[-1]
-            return t.distance >> Distance.Foot  # Horizontal distance
+            return t.distance >> Distance.Foot
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
                                bounds=(math.radians(angle_bracket_deg[0]), math.radians(angle_bracket_deg[1])),
@@ -236,6 +241,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """
         Iterative algorithm to find barrel elevation needed for a particular zero.
+            Falls back on .find_zero_angle().
 
         Args:
             shot_info (Shot): Shot parameters
@@ -277,9 +283,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             #signed_error = height - height_at_zero
             signed_error = height - math.tan(self.look_angle) * current_distance
             sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
-            if (-1.5 < sensitivity < -0.5):
+            if -1.5 < sensitivity < -0.5:
                 # Scenario too unstable for 1st order iteration
-                return self.find_zero_angle(shot_info, distance)
+                break
             else:
                 correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st order correction
 
@@ -289,8 +295,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             zero_error = math.fabs(signed_error)
             if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
                 if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:  # We're not getting closer to zero_distance
-                    raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                           'Distance non-convergent.')
+                    # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation), 'Distance non-convergent.')
+                    break
             elif zero_error > math.fabs(previous_error):  # Error is increasing, we are diverging
                 if self._config.relative_error_tolerance > 1.1e-13 or self._config.absolute_error_tolerance > 1.1e-13:
                     # Tighten the error tolerance in the integrator and let's try again
@@ -303,8 +309,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     self.barrel_elevation = previous_elevation  # Keep the elevation that's closer to zero
                     continue  # Recompute with new tolerances
                 # If error is increasing, we are diverging; stop to avoid infinite loop
-                raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                       'Error non-convergent.')
+                # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation), 'Error non-convergent.')
+                break
 
             previous_distance = current_distance
             previous_error = signed_error
@@ -317,9 +323,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 break
             iterations_count += 1
         if zero_error > _cZeroFindingAccuracy:
-            # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
-
+            return self.find_zero_angle(shot_info, distance)
+            # # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
+            # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
     @override
