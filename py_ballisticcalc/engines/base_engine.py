@@ -6,7 +6,7 @@ import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 
-from typing_extensions import Optional, NamedTuple, Union, List, Tuple, TypedDict, TypeVar
+from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Dict, TypedDict, TypeVar
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
@@ -381,6 +381,74 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         self.calc_step = self.get_calc_step()
         self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
+
+    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.1, 89.9)) -> Tuple[float, float]:
+        """
+        Finds the maximum horizontal range and the launch angle to reach it, via golden-section search.
+
+        Args:
+            shot_info (Shot): The shot information: gun, ammo, environment, look_angle.
+            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
+                                                               Defaults to (0.1, 89.9).
+
+        Returns:
+            Tuple[float, float]: The maximum range in feet and the launch angle in radians to reach it.
+        """
+        restore_cMaximumDrop = None
+        if self._config.cMaximumDrop:
+            restore_cMaximumDrop = self._config.cMaximumDrop
+            self._config.cMaximumDrop = 0  # We want to run trajectory until it returns to horizontal
+        self._init_trajectory(shot_info)
+
+        t_calls = 0
+        cache: Dict[float, float] = {}
+        def range_for_angle(angle_rad: float) -> float:
+            """Horizontal range to zero (in feet) for given launch angle in radians."""
+            if angle_rad in cache:
+                return cache[angle_rad]
+            self.barrel_elevation = angle_rad
+            nonlocal t_calls
+            t_calls += 1
+            logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
+            try:
+                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE)[0]
+            except RangeError as e:
+                if e.last_distance is None:
+                    raise e
+                t = e.incomplete_trajectory[-1]
+            cache[angle_rad] = t.distance >> Distance.Foot
+            return cache[angle_rad]
+
+        #region Golden-section search
+        inv_phi = (math.sqrt(5) - 1) / 2  # 0.618...
+        inv_phi_sq = inv_phi**2
+        a, b = (math.radians(deg) for deg in angle_bracket_deg)
+        h = b - a
+        c = a + inv_phi_sq * h
+        d = a + inv_phi * h
+        yc = range_for_angle(c)
+        yd = range_for_angle(d)
+        for _ in range(100): # 100 iterations is more than enough for high precision
+            if h < 1e-5: # Angle tolerance in radians
+                break
+            if yc > yd:
+                b, d, yd = d, c, yc
+                h = b - a
+                c = a + inv_phi_sq * h
+                yc = range_for_angle(c)
+            else:
+                a, c, yc = c, d, yd
+                h = b - a
+                d = a + inv_phi * h
+                yd = range_for_angle(d)
+        angle_at_max_rad = (a + b) / 2
+        #endregion
+        max_range_ft = range_for_angle(angle_at_max_rad)
+
+        if restore_cMaximumDrop is not None:
+            self._config.cMaximumDrop = restore_cMaximumDrop
+        logger.debug(f".find_max_range required {t_calls} trajectory calculations")
+        return max_range_ft, angle_at_max_rad
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """

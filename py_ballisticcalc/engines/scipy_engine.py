@@ -175,7 +175,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         if not res.success:
             raise ZeroFindingError(note=f"Could not find maximum range: {res.message}")
-
+        logger.debug(f".find_max_range required {res.nfev} trajectory calculations")
         angle_at_max_rad = res.x
         max_range_ft = -res.fun  # Negate because we minimized the negative range
         return max_range_ft, angle_at_max_rad
