@@ -79,4 +79,5 @@ cdef struct Wind_t:
     double until_distance
     double MAX_DISTANCE_FEET
 
+cdef Wind_t wind_from_python(object w)
 cdef V3dT wind_to_c_vector(const Wind_t * wind_ptr)

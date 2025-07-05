@@ -348,6 +348,17 @@ cdef void update_density_factor_and_mach_for_altitude(
         #debug
         #print(f"Altitude: {altitude}, {atmo_ptr._t0}°C now {celsius}°C, pressure {atmo_ptr._p0} now {pressure}hPa >> {density_ratio[0]} from density_delta {density_delta}")
 
+# We still need a way to get data from Python objects into Wind_t structs.
+# This internal helper function is used by create_wind_sock.
+# It assumes 'w' is a Python object that conforms to the interface needed.
+cdef Wind_t wind_from_python(object w):
+    return Wind_t(
+        w.velocity._fps,
+        w.direction_from._rad,
+        w.until_distance._feet,
+        w.MAX_DISTANCE_FEET
+    )
+
 cdef V3dT wind_to_c_vector(const Wind_t * wind_ptr):
     cdef:
         # Downrange (x-axis) wind velocity component:

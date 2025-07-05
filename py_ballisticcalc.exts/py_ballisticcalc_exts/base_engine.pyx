@@ -1,6 +1,10 @@
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
+from cython.cimports.cpython cimport exc
+# noinspection PyUnresolvedReferences
+from libc.stdlib cimport malloc, free
+# noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan, atan2
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
@@ -19,6 +23,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     cy_drag_by_mach,
     cy_update_stability_coefficient,
     free_trajectory,
+    wind_from_python,
     wind_to_c_vector,
 )
 
@@ -42,7 +47,6 @@ from py_ballisticcalc.engines.base_engine import create_base_engine_config
 
 __all__ = (
     'CythonizedBaseIntegrationEngine',
-    '_WindSock',
     'create_trajectory_row',
 )
 
@@ -137,49 +141,105 @@ cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, const V3dT *range_ve
                 tdf.seen_zero |= CTrajFlag.ZERO_DOWN
 
 
-@final
-cdef class _WindSock:
+cdef WindSock_t * create_wind_sock(object winds_py_list):
+    """
+    Creates and initializes a WindSock_t struct from a Python list of wind objects.
+    This function handles the allocation of the struct and its internal Wind_t array.
+    """
+    cdef WindSock_t * ws = <WindSock_t *>malloc(sizeof(WindSock_t))
+    if ws is NULL:
+        # Handle memory allocation failure (e.g., raise a MemoryError)
+        # Since this is pure Cython, you might opt for error codes or propagate exceptions.
+        # For now, let's print and return NULL.
+        exc.PyErr_NoMemory() # Set Python's MemoryError
+        return NULL
 
-    def __cinit__(_WindSock self, object winds):
-        self.winds = [
-            Wind_t(
-                w.velocity.get_in(Unit.FPS),
-                w.direction_from.get_in(Unit.Radian),
-                w.until_distance.get_in(Unit.Foot),
-                w.MAX_DISTANCE_FEET
-            ) for w in winds
-        ]
-        self.current = 0
-        self.next_range = cMaxWindDistanceFeet
-        self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
-        self._length = len(self.winds)
+    ws.length = len(winds_py_list)
+    ws.winds = <Wind_t *>malloc(ws.length * sizeof(Wind_t))
 
-        # Initialize cache correctly
-        self.update_cache()
+    if ws.winds is NULL:
+        # Handle memory allocation failure for winds array
+        free(ws) # Free the outer struct as well
+        exc.PyErr_NoMemory()
+        return NULL
 
-    cdef V3dT current_vector(_WindSock self):
-        return self._last_vector_cache
+    cdef int i
+    for i in range(ws.length):
+        ws.winds[i] = wind_from_python(winds_py_list[i])
 
-    cdef void update_cache(_WindSock self):
-        cdef Wind_t cur_wind
-        if self.current < self._length:
-            cur_wind = self.winds[self.current]
-            self._last_vector_cache = wind_to_c_vector(&cur_wind)
-            self.next_range = cur_wind.until_distance
+    ws.current = 0
+    ws.next_range = cMaxWindDistanceFeet
+    ws.last_vector_cache.x = 0.0
+    ws.last_vector_cache.y = 0.0
+    ws.last_vector_cache.z = 0.0
+
+    # Initialize cache correctly
+    update_wind_cache(ws)
+
+    return ws
+
+
+# --- destroy_wind_sock (Remains the same) ---
+cdef void free_wind_sock(WindSock_t * ws):
+    """
+    Frees the memory allocated for a WindSock_t struct and its internal wind array.
+    """
+    if ws is not NULL:
+        if ws.winds is not NULL:
+            free(ws.winds)
+        free(ws)
+
+# --- Updated functions based on your provided logic ---
+
+cdef V3dT current_wind_vector(WindSock_t * wind_sock):
+    """
+    Returns the currently active wind vector from the cached value.
+    """
+    if wind_sock is NULL: # Added safety check for NULL pointer
+        return V3dT(0.0, 0.0, 0.0)
+    return wind_sock.last_vector_cache
+
+cdef void update_wind_cache(WindSock_t * ws):
+    """
+    Updates the cached wind vector and next_range based on the current wind segment.
+    Corresponds to _WindSock.update_cache.
+    """
+    if ws is NULL: # Added safety check for NULL pointer
+        return
+
+    cdef Wind_t cur_wind
+    if ws.current < ws.length: # self.current < self._length
+        cur_wind = ws.winds[ws.current]
+        ws.last_vector_cache = wind_to_c_vector(&cur_wind) # self._last_vector_cache = wind_to_c_vector(&cur_wind)
+        ws.next_range = cur_wind.until_distance # self.next_range = cur_wind.until_distance
+    else:
+        # If current index is out of bounds, set to zero vector and max range
+        ws.last_vector_cache.x = 0.0 # self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
+        ws.last_vector_cache.y = 0.0
+        ws.last_vector_cache.z = 0.0
+        ws.next_range = cMaxWindDistanceFeet # self.next_range = cMaxWindDistanceFeet
+
+cdef V3dT wind_vector_for_range(WindSock_t * ws, double next_range_param): # Renamed parameter to avoid clash
+    """
+    Determines the wind vector for a given range. Advances the current wind segment
+    if the range exceeds the current segment's boundary.
+    Corresponds to _WindSock.vector_for_range.
+    """
+    cdef V3dT zero_vector
+    if ws is NULL: # Added safety check for NULL pointer
+        return V3dT(0.0, 0.0, 0.0)
+
+    # Use 'next_range_param' to avoid confusion with struct member 'next_range'
+    if next_range_param >= ws.next_range:
+        ws.current += 1
+        if ws.current >= ws.length: # self.current >= self._length
+            ws.last_vector_cache.x = 0.0 # self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
+            ws.last_vector_cache.y = 0.0
+            ws.last_vector_cache.z = 0.0
+            ws.next_range = cMaxWindDistanceFeet # self.next_range = cMaxWindDistanceFeet
         else:
-            self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
-            self.next_range = cMaxWindDistanceFeet
-
-    cdef V3dT vector_for_range(_WindSock self, double next_range):
-        if next_range >= self.next_range:
-        # if next_range + 1e-6 >= self.next_range:
-            self.current += 1
-            if self.current >= self._length:
-                self._last_vector_cache = V3dT(0.0, 0.0, 0.0)
-                self.next_range = cMaxWindDistanceFeet
-            else:
-                self.update_cache()  # This will trigger cache updates.
-        return self._last_vector_cache
+            update_wind_cache(ws)  # This will trigger cache updates.
+    return ws.last_vector_cache
 
 
 cdef class CythonizedBaseIntegrationEngine:
@@ -188,8 +248,8 @@ cdef class CythonizedBaseIntegrationEngine:
         self._config = create_base_engine_config(_config)
         self.gravity_vector = V3dT(.0, self._config.cGravityConstant, .0)
 
-    # def __dealloc__(TrajectoryCalc self):
-    #     free_trajectory(&self._shot_s)
+    def __dealloc__(CythonizedBaseIntegrationEngine self):
+        self._free_trajectory()
 
     cdef double get_calc_step(self, double step = 0):
         cdef double preferred_step = self._config_s.cMaxCalcStepSizeFeet
@@ -219,7 +279,20 @@ cdef class CythonizedBaseIntegrationEngine:
         return t
 
     cdef void _free_trajectory(self):
+        if self._wind_sock is not NULL:
+            free_wind_sock(self._wind_sock)
+            self._wind_sock = NULL
         free_trajectory(&self._shot_s)
+
+        # After free_trajectory(&self._shot_s), it's good practice to ensure
+        # the internal pointers within _shot_s are indeed NULLIFIED for future checks,
+        # even if free_trajectory is supposed to do it. This prevents issues if
+        # free_trajectory itself doesn't nullify, or if it's called multiple times.
+        # (Though your free_curve/free_mach_list don't nullify, so this is important here)
+        self._shot_s.mach_list.array = NULL
+        self._shot_s.mach_list.length = 0
+        self._shot_s.curve.points = NULL
+        self._shot_s.curve.length = 0
 
     cdef void _init_trajectory(self, object shot_info):
         self._table_data = shot_info.ammo.dm.drag_table
@@ -253,7 +326,9 @@ cdef class CythonizedBaseIntegrationEngine:
         self._shot_s.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         cy_update_stability_coefficient(&self._shot_s)
 
-        self._wind_sock = _WindSock(shot_info.winds)
+        self._wind_sock = create_wind_sock(shot_info.winds)
+        if self._wind_sock is NULL:
+            raise MemoryError("Can't allocate memory for wind_sock")
 
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
