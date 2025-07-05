@@ -145,15 +145,16 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         Returns:
             Tuple[Distance, Angular]: The maximum range and the launch angle to reach it.
+
+        TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
+            ... and check for weird situations, like backward-bending trajectories,
+            where the max range occurs with launch angle less than the look angle.
         """
         try:
             from scipy.optimize import minimize_scalar  # type: ignore[import-untyped]
         except ImportError as e:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
-        # TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
-        # ... and check for weird situations like backward-bending trajectory where the max angle
-        #     range occurs with launch angle less than the look angle.
         self._init_trajectory(shot_info)
         def range_for_angle(angle_rad: float) -> float:
             """Returns range to zero (in feet) for given launch angle in radians."""
@@ -368,7 +369,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
               math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth) * velocity,
               math.sin(self.barrel_elevation) * velocity,
               math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth) * velocity]
-
         # endregion
 
         # region SciPy integration
@@ -400,7 +400,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             dvydt = self.gravity_vector.y - drag * relative_velocity.y
             dvzdt = -drag * relative_velocity.z
             return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
-
         # endregion SciPy integration
 
         def event_max_range(t, s):  # Stop when x crosses maximum_range
@@ -520,21 +519,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         continue  # Don't record first point
                     t_root = t_vals[0]
                 else:
-                    t_lo, t_hi = t_vals[idx - 1], t_vals[idx]
-
                     # Use root_scalar to find t where x(t) == x_target
                     def x_minus_target(t):  # Function for root finding: x(t) - x_target
                         return sol.sol(t)[0] - x_target  # pylint: disable=cell-var-from-loop
 
-                    res = root_scalar(x_minus_target, bracket=(t_lo, t_hi),
-                                      method='brentq')  # , xtol=1e-14, rtol=1e-14)
-                    # #region Newton's method to find root
-                    # def dxdt(t):
-                    #     return sol.sol(t)[3]  # vx(t)
-                    # res = root_scalar(x_minus_target, fprime=dxdt, bracket=[t_lo, t_hi],
-                    #                   x0=0.5 * (t_lo + t_hi),  # Initial guess for Newton's method
-                    #                   method='newton', xtol=1e-14, rtol=1e-14)
-                    # #endregion Newton's method to find root
+                    t_lo, t_hi = t_vals[idx - 1], t_vals[idx]
+                    res = root_scalar(x_minus_target, bracket=(t_lo, t_hi), method='brentq')
                     if not res.converged:
                         logger.warning(f"Could not find root for requested distance {x_target}")
                         continue
@@ -542,11 +532,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 state = sol.sol(t_root)
                 t_at_x.append(t_root)
                 states_at_x.append(state)
-            # region Root-finding approach to interpolate for desired x values
+            # endregion Root-finding approach to interpolate for desired x values
 
-            # If we ended with an exceptional event then also grab the last point calculated
+            # If we ended with an exceptional event then also record the last point calculated
             if (termination_reason not in (None, self.HitZero) and len(t_vals) > 1 and t_vals[0] != t_vals[-1]) \
-                or (filter_flags == TrajFlag.NONE and len(t_at_x) == 0):  # also if we don't have any points
+                or (len(t_at_x) == 0):  # Also record last point if we don't have any others
                 t_at_x.append(sol.t[-1])  # Last time point
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
@@ -612,11 +602,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         logger.debug("No apex found for trajectory")
 
                 ranges.sort(key=lambda t: t.time)  # Sort by time
-                # endregion Find TrajectoryData points requested by filter_flags
-            # endregion Find requested TrajectoryData points
+            # endregion Find TrajectoryData points requested by filter_flags
+        # endregion Find requested TrajectoryData points
 
-            if termination_reason not in (None, self.HitZero):
-                raise RangeError(termination_reason, ranges)
+        if termination_reason not in (None, self.HitZero):
+            raise RangeError(termination_reason, ranges)
 
-        # endregion Process the solution
         return ranges
