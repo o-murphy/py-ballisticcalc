@@ -19,7 +19,7 @@ from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngi
 from py_ballisticcalc.engines.base_engine import create_trajectory_row
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
+from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.vector import Vector
 
@@ -121,6 +121,7 @@ def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] 
 class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     """Integration engine using SciPy's solve_ivp for trajectory calculations."""
     HitZero: str = "Hit Zero"  # Special non-exceptional termination reason
+    VERTICAL_ANGLE_EPSILON_DEGREES: float = 1e-6  # If look-angle is within this of 90 degrees, use vertical shot logic
 
     @override
     def __init__(self, _config: SciPyEngineConfigDict):
@@ -134,17 +135,22 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
 
-    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.1, 89.9)) -> Tuple[Distance, Angular]:
+    @override
+    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[Distance, Angular]:
         """
         Finds the maximum range along the look_angle and the launch angle to reach it.
 
         Args:
             shot_info (Shot): The shot information: gun, ammo, environment, look_angle.
             angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
-                                                               Defaults to (0.1, 89.9).
+                                                               Defaults to (0, 90).
 
         Returns:
             Tuple[Distance, Angular]: The maximum range and the launch angle to reach it.
+
+        Raises:
+            ValueError: If the angle bracket excludes the look_angle.
+            ImportError: If SciPy is not installed.
 
         TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
             ... and check for weird situations, like backward-bending trajectories,
@@ -156,6 +162,20 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
         self._init_trajectory(shot_info)
+
+        #region Virtually vertical shot
+        if abs(self.look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
+            self.barrel_elevation = self.look_angle
+            try:
+                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX, stop_at_zero=True)
+            except RangeError as e:
+                if e.last_distance is None:
+                    raise e
+                t = HitResult(shot_info, e.incomplete_trajectory,extra=True)
+            max_range = t.flag(TrajFlag.APEX).look_distance
+            return max_range, Angular.Radian(self.look_angle)
+        #endregion Virtually vertical shot
+
         def range_for_angle(angle_rad: float) -> float:
             """Returns range to zero (in feet) for given launch angle in radians."""
             self.barrel_elevation = angle_rad
@@ -191,6 +211,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         Returns:
             Angular: The required barrel elevation.
+
+        Raises:
+            ImportError: If SciPy is not installed.
+            OutOfRangeError: If distance exceeds max range at Shot.look_angle.
+            ZeroFindingError
         """
         try:
             from scipy.optimize import root_scalar  # type: ignore[import-untyped]
@@ -199,9 +224,26 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         self._init_trajectory(shot_info)
 
-        target_slant_dist_ft = distance >> Distance.Foot
-        target_x_ft = target_slant_dist_ft * math.cos(self.look_angle)
-        target_y_ft = target_slant_dist_ft * math.sin(self.look_angle)
+        target_look_dist_ft = distance >> Distance.Foot
+        target_x_ft = target_look_dist_ft * math.cos(self.look_angle)
+        target_y_ft = target_look_dist_ft * math.sin(self.look_angle)
+
+        #region Edge cases
+        if abs(target_look_dist_ft) < self.calc_step:
+            raise ZeroFindingError(0, 0, Angular.Radian(self.look_angle),
+                    note=f"Target distance {target_look_dist_ft}ft too small for zeroing.")
+        if abs(self.look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
+            # Virtually vertical shot
+            return Angular.Radian(self.look_angle)
+        #endregion Edge cases
+
+        max_range, angle_at_max = self.find_max_range(shot_info)
+        max_range_ft = max_range >> Distance.Foot
+
+        if target_look_dist_ft > max_range_ft:
+            raise OutOfRangeError(distance, max_range, Angular.Radian(self.look_angle))
+        if abs(target_look_dist_ft - max_range_ft) < 1e-6:
+            return angle_at_max
 
         def error_at_distance(angle_rad: float) -> float:
             """
@@ -217,12 +259,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 # If the projectile doesn't reach the target, it's a very large negative error.
                 return -1e6
 
-        max_range, angle_at_max = self.find_max_range(shot_info)
-        if target_x_ft > (max_range >> Distance.Foot):
-            raise OutOfRangeError(distance, max_range, Angular.Radian(self.look_angle))
-
         if lofted:
-            angle_bracket = (angle_at_max >> Angular.Radian, math.radians(89.9))
+            angle_bracket = (angle_at_max >> Angular.Radian, math.radians(90.0))
         else:
             angle_bracket = (self.look_angle, angle_at_max >> Angular.Radian)
 
@@ -230,13 +268,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             sol = root_scalar(error_at_distance, bracket=angle_bracket, method='brentq')
         except ValueError as e:
             raise ZeroFindingError(target_y_ft, 0, Angular.Radian(self.barrel_elevation),
-                    note=f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range {angle_bracket}. {e}")
+                note=f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range "+
+                     f"({Angular.Degree(angle_bracket[0])}, {Angular.Degree(angle_bracket[1])} degrees. {e}")
         if not sol.converged:
             raise ZeroFindingError(target_y_ft, 0, Angular.Radian(self.barrel_elevation),
-                    note=f"Root-finder failed to converge: {sol.flag}")
-
+                    note=f"Root-finder failed to converge: {sol.flag} with {sol}")
         return Angular.Radian(sol.root)
-
 
     @override
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
@@ -493,11 +530,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # Get x and t arrays from the solution
             x_vals = sol.y[0]
             t_vals = sol.t
-            # Interpolate to find the time when each desired x is reached
-            # t_at_x: np.ndarray = np.interp(desired_xs, x_vals, t_vals)  # FIX: accidentally not commented
 
             # region Basic approach to interpolate for desired x values:
             # # This is not very good: distance from requested x varies by ~1% of max_range
+            # t_at_x: np.ndarray = np.interp(desired_xs, x_vals, t_vals)
             # states_at_x = sol.sol(t_at_x)  # shape: (state_dim, len(desired_xs))
             # for i in range(states_at_x.shape[1]):
             #     ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
