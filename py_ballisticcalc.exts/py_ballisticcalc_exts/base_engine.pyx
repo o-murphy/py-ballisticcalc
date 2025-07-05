@@ -48,25 +48,25 @@ __all__ = (
 
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                  V3dT initial_position, V3dT initial_velocity,
+                  const V3dT *initial_position_ptr, const V3dT *initial_velocity_ptr,
                   double time_step = 0.0):
     return _TrajectoryDataFilter(
         filter_flags, CTrajFlag.NONE, CTrajFlag.NONE,
         time_step, range_step,
         0.0, 0.0, 0.0, 0.0,
-        initial_position,
-        initial_velocity,
+        initial_position_ptr[0],
+        initial_velocity_ptr[0],
         0.0, 0.0,
     )
 
-cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle):
+cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, const ShotData_t *shot_data_ptr):
     if height >= 0:
         tdf.seen_zero |= CTrajFlag.ZERO_UP
-    elif height < 0 and barrel_elevation < look_angle:
+    elif height < 0 and shot_data_ptr.barrel_elevation < shot_data_ptr.look_angle:
         tdf.seen_zero |= CTrajFlag.ZERO_DOWN
-    tdf.look_angle = look_angle
+    tdf.look_angle = shot_data_ptr.look_angle
 
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time):
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, const V3dT *position_ptr, const V3dT *velocity_ptr, double mach, double time):
     cdef BaseTrajData data = None
     cdef double ratio
     cdef V3dT temp_position, temp_velocity
@@ -74,17 +74,17 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
     cdef V3dT temp_mul_position, temp_mul_velocity
 
     tdf.current_flag = CTrajFlag.NONE
-    if (tdf.range_step > 0) and (position.x >= tdf.next_record_distance):
-        while tdf.next_record_distance + tdf.range_step < position.x:
+    if (tdf.range_step > 0) and (position_ptr.x >= tdf.next_record_distance):
+        while tdf.next_record_distance + tdf.range_step < position_ptr.x:
             # Handle case where we have stepped past more than one record distance
             tdf.next_record_distance += tdf.range_step
-        if position.x > tdf.previous_position.x:
+        if position_ptr.x > tdf.previous_position.x:
             # Interpolate to get BaseTrajData at the record distance
-            ratio = (tdf.next_record_distance - tdf.previous_position.x) / (position.x - tdf.previous_position.x)
-            temp_sub_position = sub(&position, &tdf.previous_position)
+            ratio = (tdf.next_record_distance - tdf.previous_position.x) / (position_ptr.x - tdf.previous_position.x)
+            temp_sub_position = sub(position_ptr, &tdf.previous_position)
             temp_mul_position = mulS(&temp_sub_position, ratio)
             temp_position = add(&tdf.previous_position, &temp_mul_position)
-            temp_sub_velocity = sub(&velocity, &tdf.previous_velocity)
+            temp_sub_velocity = sub(velocity_ptr, &tdf.previous_velocity)
             temp_mul_velocity = mulS(&temp_sub_velocity, ratio)
             temp_velocity = add(&tdf.previous_velocity, &temp_mul_velocity)
             data = BaseTrajData(
@@ -98,14 +98,14 @@ cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT
         tdf.time_of_last_record = time
     elif tdf.time_step > 0:
         _check_next_time(tdf, time)
-    _check_zero_crossing(tdf, position)
-    _check_mach_crossing(tdf, mag(&velocity), mach)
+    _check_zero_crossing(tdf, position_ptr)
+    _check_mach_crossing(tdf, mag(velocity_ptr), mach)
     if (tdf.current_flag & tdf.filter) != 0 and data is None:
-        data = BaseTrajData(time=time, position=position,
-                            velocity=velocity, mach=mach)
+        data = BaseTrajData(time=time, position=position_ptr[0],
+                            velocity=velocity_ptr[0], mach=mach)
     tdf.previous_time = time
-    tdf.previous_position = position
-    tdf.previous_velocity = velocity
+    tdf.previous_position = position_ptr[0]
+    tdf.previous_velocity = velocity_ptr[0]
     tdf.previous_mach = mach
 
     return data
@@ -121,18 +121,18 @@ cdef void _check_mach_crossing(_TrajectoryDataFilter * tdf, double velocity, dou
         tdf.current_flag |= CTrajFlag.MACH
     tdf.previous_v_mach = current_v_mach
 
-cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, V3dT range_vector):
-    if range_vector.x > 0:
+cdef void _check_zero_crossing(_TrajectoryDataFilter * tdf, const V3dT *range_vector_ptr):
+    if range_vector_ptr.x > 0:
         # Zero reference line is the sight line defined by look_angle
-        reference_height = range_vector.x * tan(tdf.look_angle)
+        reference_height = range_vector_ptr.x * tan(tdf.look_angle)
         # If we haven't seen ZERO_UP, we look for that first
         if not (tdf.seen_zero & CTrajFlag.ZERO_UP):
-            if range_vector.y >= reference_height:
+            if range_vector_ptr.y >= reference_height:
                 tdf.current_flag |= CTrajFlag.ZERO_UP
                 tdf.seen_zero |= CTrajFlag.ZERO_UP
         # We've crossed above sight line; now look for crossing back through it
         elif not (tdf.seen_zero & CTrajFlag.ZERO_DOWN):
-            if range_vector.y < reference_height:
+            if range_vector_ptr.y < reference_height:
                 tdf.current_flag |= CTrajFlag.ZERO_DOWN
                 tdf.seen_zero |= CTrajFlag.ZERO_DOWN
 
@@ -253,7 +253,7 @@ cdef class CythonizedBaseIntegrationEngine:
         self._shot_s.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
         cy_update_stability_coefficient(&self._shot_s)
 
-        self.ws = _WindSock(shot_info.winds)
+        self._wind_sock = _WindSock(shot_info.winds)
 
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
@@ -309,34 +309,39 @@ cdef class CythonizedBaseIntegrationEngine:
         raise NotImplementedError
 
 
-cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
-                           double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, int flag):
+cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
+                                  double mach, const ShotData_t * shot_data_ptr,
+                                  double density_factor, double drag, int flag):
 
     cdef:
-        double windage = range_vector.z + spin_drift
-        double drop_adjustment = getCorrection(range_vector.x, range_vector.y)
-        double windage_adjustment = getCorrection(range_vector.x, windage)
-        double trajectory_angle = atan2(velocity_vector.y, velocity_vector.x);
+        double look_angle = shot_data_ptr.look_angle
+        double spin_drift = cy_spin_drift(shot_data_ptr, time)
+        double velocity = mag(velocity_vector_ptr)
+        double windage = range_vector_ptr.z + spin_drift
+        double drop_adjustment = getCorrection(range_vector_ptr.x, range_vector_ptr.y)
+        double windage_adjustment = getCorrection(range_vector_ptr.x, windage)
+        double trajectory_angle = atan2(velocity_vector_ptr.y, velocity_vector_ptr.x);
+
+    drop_adjustment -= (look_angle if range_vector_ptr.x else 0)
 
     return TrajectoryData(
         time=time,
-        distance=_new_feet(range_vector.x),
+        distance=_new_feet(range_vector_ptr.x),
         velocity=_new_fps(velocity),
         mach=velocity / mach,
-        height=_new_feet(range_vector.y),
+        height=_new_feet(range_vector_ptr.y),
         target_drop=_new_feet(
-            (range_vector.y - range_vector.x * tan(look_angle)) * cos(look_angle)
+            (range_vector_ptr.y - range_vector_ptr.x * tan(look_angle)) * cos(look_angle)
         ),
-        drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
+        drop_adj=_new_rad(drop_adjustment),
         windage=_new_feet(windage),
         windage_adj=_new_rad(windage_adjustment),
-        look_distance=_new_feet(range_vector.x / cos(look_angle)),
+        look_distance=_new_feet(range_vector_ptr.x / cos(look_angle)),
         angle=_new_rad(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,
-        energy=_new_ft_lb(calculateEnergy(weight, velocity)),
-        ogw=_new_lb(calculateOgw(weight, velocity)),
+        energy=_new_ft_lb(calculateEnergy(shot_data_ptr.weight, velocity)),
+        ogw=_new_lb(calculateOgw(shot_data_ptr.weight, velocity)),
         flag=flag
     )
 

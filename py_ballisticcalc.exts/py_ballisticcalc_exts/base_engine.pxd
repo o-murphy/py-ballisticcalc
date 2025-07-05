@@ -35,10 +35,14 @@ cdef struct _TrajectoryDataFilter:
     double look_angle
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                                                      V3dT initial_position, V3dT initial_velocity,
+                                                      const V3dT *initial_position_ptr,
+                                                      const V3dT *initial_velocity_ptr,
                                                       double time_step = ?)
-cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle)
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time)
+cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, const ShotData_t *shot_data_ptr)
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf,
+                                const V3dT *position_ptr,
+                                const V3dT *velocity_ptr,
+                                double mach, double time)
 
 
 @final
@@ -60,7 +64,7 @@ cdef class CythonizedBaseIntegrationEngine:
         list _table_data # list[object]
         V3dT gravity_vector
         public object _config
-        _WindSock ws
+        _WindSock _wind_sock
         Config_t _config_s # Declared here
         ShotData_t _shot_s # Declared here
 
@@ -77,12 +81,12 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef void _init_trajectory(self, object shot_info)
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
     cdef list _integrate(CythonizedBaseIntegrationEngine self,
-                                 double maximum_range, double record_step, int filter_flags, double time_step = ?)
+                         double maximum_range, double record_step, int filter_flags, double time_step = ?)
 
 
-cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
-                           double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, int flag)
+cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
+                                  double mach, const ShotData_t * shot_data_ptr,
+                                  double density_factor, double drag, int flag)
 
 cdef object _new_feet(double v)
 cdef object _new_fps(double v)

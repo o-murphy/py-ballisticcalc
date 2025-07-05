@@ -20,10 +20,10 @@ cdef class Vector:
 
 
 
-cdef double mag(CVector * v)
-cdef CVector mul_c(CVector * v, double a)
-cdef double mul_v(CVector * v, CVector * b)
-cdef CVector add(CVector * v, CVector * b)
-cdef CVector sub(CVector * v, CVector * b)
-cdef CVector neg(CVector * v)
-cdef CVector norm(CVector * v)
+cdef double mag(const CVector * v)
+cdef CVector mul_c(const CVector * v, double a)
+cdef double mul_v(const CVector * v, const CVector * b)
+cdef CVector add(const CVector * v, const CVector * b)
+cdef CVector sub(const CVector * v, const CVector * b)
+cdef CVector neg(const CVector * v)
+cdef CVector norm(const CVector * v)

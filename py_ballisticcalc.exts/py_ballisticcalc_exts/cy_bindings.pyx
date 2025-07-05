@@ -29,8 +29,8 @@ cdef Config_t config_bind(object config):
         config.cMinimumAltitude,
     )
 
-cdef double cy_get_calc_step(Config_t * config, double step = 0):
-    cdef double preferred_step = config.cMaxCalcStepSizeFeet
+cdef double cy_get_calc_step(const Config_t * config_ptr, double step = 0):
+    cdef double preferred_step = config_ptr.cMaxCalcStepSizeFeet
     if step == 0:
         return preferred_step / 2.0
     return fmin(step, preferred_step) / 2.0
@@ -215,12 +215,12 @@ cdef Curve_t cy_calculate_curve(list[object] data_points):
 #
 #     return curve
 
-cdef double cy_calculate_by_curve_and_mach_list(MachList_t *mach_list, Curve_t *curve, double mach):
+cdef double cy_calculate_by_curve_and_mach_list(const MachList_t *mach_list_ptr, const Curve_t *curve_ptr, double mach):
     cdef int num_points, mlo, mhi, mid, m
     cdef CurvePoint_t curve_m
 
     # Get the number of points in the curve
-    num_points = <int>curve.length
+    num_points = <int>curve_ptr.length
 
     # Set the initial range for binary search
     mlo = 0
@@ -229,24 +229,24 @@ cdef double cy_calculate_by_curve_and_mach_list(MachList_t *mach_list, Curve_t *
     # Perform binary search to find the closest Mach values
     while mhi - mlo > 1:
         mid = (mhi + mlo) // 2
-        if mach_list.array[mid] < mach:
+        if mach_list_ptr.array[mid] < mach:
             mlo = mid
         else:
             mhi = mid
 
     # Determine the closest point to `mach`
-    if mach_list.array[mhi] - mach > mach - mach_list.array[mlo]:
+    if mach_list_ptr.array[mhi] - mach > mach - mach_list_ptr.array[mlo]:
         m = mlo
     else:
         m = mhi
 
     # Retrieve the corresponding CurvePoint_t from the curve
-    curve_m = curve.points[m]
+    curve_m = curve_ptr.points[m]
 
     # Return the calculated value using the curve coefficients
     return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
 
-cdef double cy_drag_by_mach(ShotData_t * t, double mach):
+cdef double cy_drag_by_mach(const ShotData_t * shot_data_ptr, double mach):
     """ Drag force = V^2 * Cd * AirDensity * S / 2m where:
         cStandardDensity of Air = 0.076474 lb/ft^3
         S is cross-section = d^2 pi/4, where d is bullet diameter in inches
@@ -254,51 +254,51 @@ cdef double cy_drag_by_mach(ShotData_t * t, double mach):
     bc contains m/d^2 in units lb/in^2, which we multiply by 144 to convert to lb/ft^2
     Thus: The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
     """
-    cdef double cd = cy_calculate_by_curve_and_mach_list(&t.mach_list, &t.curve, mach)
-    return cd * 2.08551e-04 / t.bc
+    cdef double cd = cy_calculate_by_curve_and_mach_list(&shot_data_ptr.mach_list, &shot_data_ptr.curve, mach)
+    return cd * 2.08551e-04 / shot_data_ptr.bc
 
-cdef double cy_spin_drift(ShotData_t * t, double time):
+cdef double cy_spin_drift(const ShotData_t * shot_data_ptr, double time):
     """Litz spin-drift approximation
     :param time: Time of flight
     :return: windage due to spin drift, in feet
     """
     cdef double sign
-    if (t.twist != 0) and (t.stability_coefficient != 0):
-        sign = 1 if t.twist > 0 else -1
-        return sign * (1.25 * (t.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
+    if (shot_data_ptr.twist != 0) and (shot_data_ptr.stability_coefficient != 0):
+        sign = 1 if shot_data_ptr.twist > 0 else -1
+        return sign * (1.25 * (shot_data_ptr.stability_coefficient + 1.2) * pow(time, 1.83)) / 12
     return 0
 
-cdef void cy_update_stability_coefficient(ShotData_t * t):
+cdef void cy_update_stability_coefficient(ShotData_t * shot_data_ptr):
     """Miller stability coefficient"""
     cdef:
         double twist_rate, length, sd, fv, ft, pt, ftp
-    if t.twist and t.length and t.diameter and t.atmo._p0:
-        twist_rate = fabs(t.twist) / t.diameter
-        length = t.length / t.diameter
-        sd = 30.0 * t.weight / (pow(twist_rate, 2) * pow(t.diameter, 3) * length * (1 + pow(length, 2)))
-        fv = pow(t.muzzle_velocity / 2800, 1.0 / 3.0)
-        ft = (t.atmo._t0 * 9.0 / 5.0) + 32.0  # Convert from Celsius to Fahrenheit
-        pt = t.atmo._p0 / 33.8639  # Convert hPa to inHg
+    if shot_data_ptr.twist and shot_data_ptr.length and shot_data_ptr.diameter and shot_data_ptr.atmo._p0:
+        twist_rate = fabs(shot_data_ptr.twist) / shot_data_ptr.diameter
+        length = shot_data_ptr.length / shot_data_ptr.diameter
+        sd = 30.0 * shot_data_ptr.weight / (pow(twist_rate, 2) * pow(shot_data_ptr.diameter, 3) * length * (1 + pow(length, 2)))
+        fv = pow(shot_data_ptr.muzzle_velocity / 2800, 1.0 / 3.0)
+        ft = (shot_data_ptr.atmo._t0 * 9.0 / 5.0) + 32.0  # Convert from Celsius to Fahrenheit
+        pt = shot_data_ptr.atmo._p0 / 33.8639  # Convert hPa to inHg
         ftp = ((ft + 460.0) / (59.0 + 460.0)) * (29.92 / pt)
-        t.stability_coefficient = sd * fv * ftp
+        shot_data_ptr.stability_coefficient = sd * fv * ftp
     else:
-        t.stability_coefficient = 0.0
+        shot_data_ptr.stability_coefficient = 0.0
 
 # Function to free memory for Curve_t
-cdef void free_curve(Curve_t *curve):
-    if curve.points is not NULL:
-        free(curve.points)
+cdef void free_curve(Curve_t *curve_ptr):
+    if curve_ptr.points is not NULL:
+        free(curve_ptr.points)
 
 # Function to free memory for MachList_t
-cdef void free_mach_list(MachList_t *mach_list):
-    if mach_list.array is not NULL:
-        free(<void *> mach_list.array)
+cdef void free_mach_list(MachList_t *mach_list_ptr):
+    if mach_list_ptr.array is not NULL:
+        free(<void *> mach_list_ptr.array)
 
 # Function to free memory for ShotData_t
-cdef void free_trajectory(ShotData_t *t):
+cdef void free_trajectory(ShotData_t *shot_data_ptr):
     # Free memory for curve and mach_list
-    free_curve(&t.curve)
-    free_mach_list(&t.mach_list)
+    free_curve(&shot_data_ptr.curve)
+    free_mach_list(&shot_data_ptr.mach_list)
 
 cdef double cDegreesFtoR = 459.67
 cdef double cDegreesCtoK = 273.15
@@ -312,18 +312,18 @@ cdef double mToFeet = 3.28084
 
 # Function to calculate density ratio and Mach speed at altitude
 cdef void update_density_factor_and_mach_for_altitude(
-        Atmosphere_t * atmo, double altitude, double * density_ratio, double * mach
+    const Atmosphere_t * atmo_ptr, double altitude, double * density_ratio_ptr, double * mach_ptr
 ):
     """
     :param altitude: ASL in units of feet
     :return: density ratio and Mach 1 (fps) for the specified altitude
     """
     cdef double celsius, kelvin, pressure, density_delta
-    if fabs(atmo._a0 - altitude) < 30:
-        density_ratio[0] = atmo.density_ratio
-        mach[0] = atmo._mach
+    if fabs(atmo_ptr._a0 - altitude) < 30:
+        density_ratio_ptr[0] = atmo_ptr.density_ratio
+        mach_ptr[0] = atmo_ptr._mach
     else:
-        celsius = (altitude - atmo._a0) * cLapseRateKperFoot + atmo._t0
+        celsius = (altitude - atmo_ptr._a0) * cLapseRateKperFoot + atmo_ptr._t0
 
         if altitude > 36089:
             warnings.warn("Density request for altitude above troposphere."
@@ -332,28 +332,28 @@ cdef void update_density_factor_and_mach_for_altitude(
             warnings.warn(f"Invalid temperature: {celsius}°C. Adjusted to absolute zero "
                           f"It must be >= {-cDegreesFtoR} to avoid a domain error.", RuntimeWarning)
             celsius = -cDegreesCtoK
-        elif celsius < atmo.cLowestTempC:
-            celsius = atmo.cLowestTempC
+        elif celsius < atmo_ptr.cLowestTempC:
+            celsius = atmo_ptr.cLowestTempC
             warnings.warn(f"Reached minimum temperature limit. Adjusted to {celsius}°C "
                           "redefine 'cLowestTempF' constant to increase it ", RuntimeWarning)
 
         kelvin = celsius + cDegreesCtoK
-        pressure = atmo._p0 * pow(1 + cLapseRateKperFoot * (altitude - atmo._a0) / (atmo._t0 + cDegreesCtoK),
+        pressure = atmo_ptr._p0 * pow(1 + cLapseRateKperFoot * (altitude - atmo_ptr._a0) / (atmo_ptr._t0 + cDegreesCtoK),
                             cPressureExponent)
-        density_delta = ((atmo._t0 + cDegreesCtoK) * pressure) / (atmo._p0 * kelvin)
-        density_ratio[0] = atmo.density_ratio * density_delta
+        density_delta = ((atmo_ptr._t0 + cDegreesCtoK) * pressure) / (atmo_ptr._p0 * kelvin)
+        density_ratio_ptr[0] = atmo_ptr.density_ratio * density_delta
         # Alternative exponential approximation to density:
-        #density_ratio[0] = atmo.density_ratio * exp(-(altitude - atmo._a0) / 34112.0)
-        mach[0] = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet
+        #density_ratio[0] = atmo_ptr.density_ratio * exp(-(altitude - atmo._a0) / 34112.0)
+        mach_ptr[0] = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet
         #debug
-        #print(f"Altitude: {altitude}, {atmo._t0}°C now {celsius}°C, pressure {atmo._p0} now {pressure}hPa >> {density_ratio[0]} from density_delta {density_delta}")
+        #print(f"Altitude: {altitude}, {atmo_ptr._t0}°C now {celsius}°C, pressure {atmo_ptr._p0} now {pressure}hPa >> {density_ratio[0]} from density_delta {density_delta}")
 
-cdef V3dT wind_to_c_vector(Wind_t * w):
+cdef V3dT wind_to_c_vector(const Wind_t * wind_ptr):
     cdef:
         # Downrange (x-axis) wind velocity component:
-        double range_component = w.velocity * cos(w.direction_from)
+        double range_component = wind_ptr.velocity * cos(wind_ptr.direction_from)
         # Downrange (x-axis) wind velocity component:
-        double cross_component = w.velocity * sin(w.direction_from)
+        double cross_component = wind_ptr.velocity * sin(wind_ptr.direction_from)
     return V3dT(range_component, 0., cross_component)
 
 # cdef void free_trajectory(ShotData_t * t):
