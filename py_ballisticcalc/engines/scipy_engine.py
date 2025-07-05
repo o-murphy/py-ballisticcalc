@@ -17,7 +17,7 @@ from typing_extensions import Union, Tuple, List, Optional, override
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, BaseEngineConfig
 from py_ballisticcalc.engines.base_engine import create_trajectory_row
-from py_ballisticcalc.exceptions import RangeError, ZeroFindingError
+from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
@@ -120,6 +120,7 @@ def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] 
 # pylint: disable=import-outside-toplevel,unused-argument,too-many-statements
 class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     """Integration engine using SciPy's solve_ivp for trajectory calculations."""
+    HitZero: str = "Hit Zero"  # Special non-exceptional termination reason
 
     @override
     def __init__(self, _config: SciPyEngineConfigDict):
@@ -133,9 +134,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
 
-    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.1, 89.9)) -> Tuple[float, float]:
+    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.1, 89.9)) -> Tuple[Distance, Angular]:
         """
-        Finds the maximum horizontal range and the launch angle to reach it.
+        Finds the maximum range along the look_angle and the launch angle to reach it.
 
         Args:
             shot_info (Shot): The shot information: gun, ammo, environment, look_angle.
@@ -143,42 +144,39 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                                                                Defaults to (0.1, 89.9).
 
         Returns:
-            Tuple[float, float]: The maximum range in feet and the launch angle in radians to reach it.
+            Tuple[Distance, Angular]: The maximum range and the launch angle to reach it.
         """
         try:
             from scipy.optimize import minimize_scalar  # type: ignore[import-untyped]
         except ImportError as e:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
-        restore_cMaximumDrop = None
-        if self._config.cMaximumDrop:
-            restore_cMaximumDrop = self._config.cMaximumDrop
-            self._config.cMaximumDrop = 0  # We want to run trajectory until it returns to horizontal
+        # TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
+        # ... and check for weird situations like backward-bending trajectory where the max angle
+        #     range occurs with launch angle less than the look angle.
         self._init_trajectory(shot_info)
         def range_for_angle(angle_rad: float) -> float:
-            """Returns horizontal range to zero (in feet) for given launch angle in radians."""
+            """Returns range to zero (in feet) for given launch angle in radians."""
             self.barrel_elevation = angle_rad
             try:
-                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE)[0]
+                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[0]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
                 t = e.incomplete_trajectory[-1]
-            return t.distance >> Distance.Foot
+            return t.look_distance >> Distance.Foot
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
-                               bounds=(math.radians(angle_bracket_deg[0]), math.radians(angle_bracket_deg[1])),
+                               bounds=(max(self.look_angle, math.radians(angle_bracket_deg[0])),
+                                       math.radians(angle_bracket_deg[1])),
                                method='bounded')
-
-        if restore_cMaximumDrop is not None:
-            self._config.cMaximumDrop = restore_cMaximumDrop
 
         if not res.success:
             raise ZeroFindingError(note=f"Could not find maximum range: {res.message}")
         logger.debug(f".find_max_range required {res.nfev} trajectory calculations")
         angle_at_max_rad = res.x
         max_range_ft = -res.fun  # Negate because we minimized the negative range
-        return max_range_ft, angle_at_max_rad
+        return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool=False) -> Angular:
         """
@@ -218,21 +216,23 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 # If the projectile doesn't reach the target, it's a very large negative error.
                 return -1e6
 
-        max_range_ft, angle_at_max_rad = self.find_max_range(shot_info)
-        if target_x_ft > max_range_ft:
-            raise ZeroFindingError(note=f"Target distance {target_x_ft:.1f} ft is beyond max range {max_range_ft:.1f} ft.")
+        max_range, angle_at_max = self.find_max_range(shot_info)
+        if target_x_ft > (max_range >> Distance.Foot):
+            raise OutOfRangeError(distance, max_range, Angular.Radian(self.look_angle))
 
         if lofted:
-            angle_bracket = (angle_at_max_rad, math.radians(89.9))
+            angle_bracket = (angle_at_max >> Angular.Radian, math.radians(89.9))
         else:
-            angle_bracket = (self.look_angle, angle_at_max_rad)
+            angle_bracket = (self.look_angle, angle_at_max >> Angular.Radian)
 
         try:
             sol = root_scalar(error_at_distance, bracket=angle_bracket, method='brentq')
         except ValueError as e:
-            raise ZeroFindingError(note=f"Could find {'lofted' if lofted else 'low'} trajectory to zero. Details: {e}")
+            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(self.barrel_elevation),
+                    note=f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range {angle_bracket}. {e}")
         if not sol.converged:
-            raise ZeroFindingError(note=f"Root-finder failed to converge: {sol.flag}")
+            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(self.barrel_elevation),
+                    note=f"Root-finder failed to converge: {sol.flag}")
 
         return Angular.Radian(sol.root)
 
@@ -330,7 +330,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
     @override
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
-                   filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
+            filter_flags: Union[TrajFlag, int], time_step: float = 0.0, stop_at_zero: bool = False) -> List[TrajectoryData]:
         """
         Calculate trajectory for specified shot
 
@@ -424,13 +424,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         traj_events = [event_max_range, event_max_drop, event_min_velocity]
 
-        if filter_flags & TrajFlag.ZERO:
-            def zero_crossing(t, s):  # Look for trajectory crossing sight line
-                # Solve for y = x * tan(look_angle)
-                return s[1] - s[0] * math.tan(self.look_angle)
+        def zero_crossing(t, s):  # Look for trajectory crossing sight line
+            # Solve for y = x * tan(look_angle)
+            return s[1] - s[0] * math.tan(self.look_angle)
 
+        if filter_flags & TrajFlag.ZERO:
             zero_crossing.terminal = False  # type: ignore[attr-defined]
             zero_crossing.direction = 0  # type: ignore[attr-defined]
+            traj_events.append(zero_crossing)
+        elif filter_flags==TrajFlag.NONE and stop_at_zero:
+            zero_crossing.terminal = True  # type: ignore[attr-defined]
+            zero_crossing.direction = -1  # type: ignore[attr-defined]
             traj_events.append(zero_crossing)
 
         sol = solve_ivp(diff_eq, (0, self._config.max_time), s0,
@@ -463,6 +467,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         termination_reason = RangeError.MinimumAltitudeReached
                 elif sol.t_events[2].size > 0:  # event_min_velocity
                     termination_reason = RangeError.MinimumVelocityReached
+                elif len(traj_events) > 3 and sol.t_events[3].size > 0:  # zero_crossing
+                    termination_reason = self.HitZero
 
         # region Find requested TrajectoryData points
         if sol.sol is not None and sol.status != -1:
@@ -538,9 +544,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 states_at_x.append(state)
             # region Root-finding approach to interpolate for desired x values
 
-            # If we ended with an event then also grab the last point calculated
-            if termination_reason is not None and len(t_vals) > 1 and t_vals[0] != t_vals[-1] \
-                and (filter_flags != TrajFlag.NONE or len(t_at_x) == 0):  # ... unless we already got one and don't want others
+            # If we ended with an exceptional event then also grab the last point calculated
+            if (termination_reason not in (None, self.HitZero) and len(t_vals) > 1 and t_vals[0] != t_vals[-1]) \
+                or (filter_flags == TrajFlag.NONE and len(t_at_x) == 0):  # also if we don't have any points
                 t_at_x.append(sol.t[-1])  # Last time point
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
@@ -609,7 +615,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 # endregion Find TrajectoryData points requested by filter_flags
             # endregion Find requested TrajectoryData points
 
-            if termination_reason is not None:
+            if termination_reason not in (None, self.HitZero):
                 raise RangeError(termination_reason, ranges)
 
         # endregion Process the solution

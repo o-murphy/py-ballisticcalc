@@ -174,6 +174,7 @@ __all__ = [
     'UnitTypeError',
     'UnitConversionError',
     'ZeroFindingError',
+    'OutOfRangeError',
     'RangeError',
     'logger',
     'enable_file_logging',

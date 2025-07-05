@@ -1,4 +1,4 @@
-from typing_extensions import Union
+from typing_extensions import Optional, Tuple
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
                               Angular, Calculator, RangeError, HitResult, logger)
 
@@ -22,7 +22,7 @@ calc = Calculator(config={
 
 # wrapper function to resolve RangeError and get HitResult
 def must_fire(interface: Calculator, zero_shot, trajectory_range, extra_data,
-              **kwargs) -> (HitResult, Union[RangeError, None]):
+              **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
     """wrapper function to resolve RangeError and get HitResult"""
     try:
         # try to get valid result
