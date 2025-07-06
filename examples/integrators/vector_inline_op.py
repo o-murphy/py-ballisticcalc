@@ -1,11 +1,10 @@
 import math
 from dataclasses import dataclass
 from typing import Union
+
 from typing_extensions import Self
 
 __all__ = ('Vector',)
-
-
 
 Number = Union[int, float]
 
@@ -108,6 +107,9 @@ class Vector:
         """
         return Vector(-self.x, -self.y, -self.z)
 
+    def __copy__(self):
+        return Vector(self.x, self.y, self.z)
+
     def __iter__(self):
         """
         Makes the Vector object iterable.
@@ -135,6 +137,9 @@ class Vector:
             return components[index]
         else:
             raise TypeError("Vector indices must be integers or slices")
+
+    def copy(self) -> 'Vector':
+        return self.__copy__()
 
     def magnitude(self) -> Number:
         """
@@ -222,3 +227,71 @@ class Vector:
         """
         return self.__neg__()
 
+    # extra
+    def __truediv__(self, other: Union[Number, 'Vector']) -> Union['Vector', Number]:
+        """Division operation for Vector"""
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("Cannot divide vector by zero")
+            return self.mul_by_const(1.0 / other)
+        elif isinstance(other, Vector):
+            # Element-wise division
+            if other.x == 0 or other.y == 0 or other.z == 0:
+                raise ZeroDivisionError("Cannot divide by vector with zero components")
+            return Vector(self.x / other.x, self.y / other.y, self.z / other.z)
+        else:
+            raise TypeError(f"Cannot divide Vector by {type(other)}")
+
+    def __rtruediv__(self, other: Union[Number, 'Vector']) -> Union['Vector', Number]:
+        """Reverse division operation for Vector"""
+        if isinstance(other, (int, float)):
+            if self.x == 0 or self.y == 0 or self.z == 0:
+                raise ZeroDivisionError("Cannot divide by vector with zero components")
+            return Vector(other / self.x, other / self.y, other / self.z)
+        elif isinstance(other, Vector):
+            return other.__truediv__(self)
+        else:
+            raise TypeError(f"Cannot divide {type(other)} by Vector")
+
+    def __itruediv__(self, other: Union[Number, 'Vector']) -> 'Vector':
+        """In-place division operation for Vector"""
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("Cannot divide vector by zero")
+            self.x /= other
+            self.y /= other
+            self.z /= other
+            return self
+        elif isinstance(other, Vector):
+            if other.x == 0 or other.y == 0 or other.z == 0:
+                raise ZeroDivisionError("Cannot divide by vector with zero components")
+            self.x /= other.x
+            self.y /= other.y
+            self.z /= other.z
+            return self
+        else:
+            raise TypeError(f"Cannot divide Vector by {type(other)}")
+
+    def div_by_const(self, a: Number) -> 'Vector':
+        """
+        Divide vector by constant (backward compatibility method)
+        Args:
+            a: float constant
+        Returns:
+            Vector instance
+        """
+        if a == 0:
+            raise ZeroDivisionError("Cannot divide vector by zero")
+        return self.mul_by_const(1.0 / a)
+
+    def idiv_by_const(self, a: Number) -> 'Vector':
+        """
+        In-place divide vector by constant
+        Args:
+            a: float constant
+        Returns:
+            Self
+        """
+        if a == 0:
+            raise ZeroDivisionError("Cannot divide vector by zero")
+        return self.imul_by_const(1.0 / a)
