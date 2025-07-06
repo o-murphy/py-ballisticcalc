@@ -92,5 +92,5 @@ cdef double cDegreesFtoR
 cdef double cSpeedOfSoundImperial
 cdef double cLapseRateImperial
 
-cdef Wind_t wind_from_python(object w)
-cdef V3dT wind_to_c_vector(const Wind_t * wind_ptr)
+cdef Wind_t WindT_from_python(object w)
+cdef V3dT WindT_to_V3dT(const Wind_t * wind_ptr)

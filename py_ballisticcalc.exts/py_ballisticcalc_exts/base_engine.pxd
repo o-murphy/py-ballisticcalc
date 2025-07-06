@@ -53,13 +53,13 @@ cdef struct WindSock_t:
     V3dT last_vector_cache
 
 # Function to create and initialize a WindSock_t
-cdef WindSock_t * create_wind_sock(object winds_py_list)
+cdef WindSock_t * WindSockT_create(object winds_py_list)
 # # Function to destroy (free memory) a WindSock_t
-cdef void free_wind_sock(WindSock_t * wind_sock)
+cdef void WindSockT_free(WindSock_t * wind_sock)
 # # Helper functions that operate on WindSock_t
-cdef V3dT current_wind_vector(WindSock_t * wind_sock)
-cdef void update_wind_cache(WindSock_t * wind_sock)
-cdef V3dT wind_vector_for_range(WindSock_t * wind_sock, double next_range)
+cdef V3dT WindSockT_current_vector(WindSock_t * wind_sock)
+cdef void WindSockT_update_cache(WindSock_t * wind_sock)
+cdef V3dT WindSockT_vector_for_range(WindSock_t * wind_sock, double next_range)
 
 
 cdef class CythonizedBaseIntegrationEngine:
