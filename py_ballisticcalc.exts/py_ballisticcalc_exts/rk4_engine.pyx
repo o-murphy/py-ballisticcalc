@@ -25,8 +25,8 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     _TrajectoryDataFilter,
 
-    current_wind_vector,
-    wind_vector_for_range,
+    WindSockT_current_vector,
+    WindSockT_vector_for_range,
 
     create_trajectory_row,
 
@@ -72,7 +72,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             double calc_step = self._shot_s.calc_step
 
             # region Initialize wind-related variables to first wind reading (if any)
-            V3dT wind_vector = current_wind_vector(self._wind_sock)
+            V3dT wind_vector = WindSockT_current_vector(self._wind_sock)
             # endregion
 
             _TrajectoryDataFilter data_filter
@@ -126,7 +126,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance
-                wind_vector = wind_vector_for_range(self._wind_sock, range_vector.x)
+                wind_vector = WindSockT_vector_for_range(self._wind_sock, range_vector.x)
 
             # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
