@@ -34,7 +34,7 @@ cdef struct Atmosphere_t:
     double cLowestTempC
 
 cdef void update_density_factor_and_mach_for_altitude(
-        Atmosphere_t * atmo, double altitude, double * density_ratio, double * mach
+    const Atmosphere_t * atmo_ptr, double altitude, double * density_ratio_ptr, double * mach_ptr
 )
 
 cdef struct ShotData_t:
@@ -57,17 +57,17 @@ cdef struct ShotData_t:
     double stability_coefficient
     Atmosphere_t atmo
 
-cdef double cy_get_calc_step(Config_t * config, double step = ?)
+cdef double cy_get_calc_step(const Config_t * config_ptr, double step = ?)
 cdef MachList_t cy_table_to_mach(list[object] data)
 cdef Curve_t cy_calculate_curve(list[object] data_points)
-cdef double cy_calculate_by_curve_and_mach_list(MachList_t *mach_list, Curve_t *curve, double mach)
-cdef double cy_spin_drift(ShotData_t * t, double time)
-cdef double cy_drag_by_mach(ShotData_t * t, double mach)
-cdef void cy_update_stability_coefficient(ShotData_t * t)
+cdef double cy_calculate_by_curve_and_mach_list(const MachList_t *mach_list_ptr, const Curve_t *curve_ptr, double mach)
+cdef double cy_spin_drift(const ShotData_t * shot_data_ptr, double time)
+cdef double cy_drag_by_mach(const ShotData_t * shot_data_ptr, double mach)
+cdef void cy_update_stability_coefficient(ShotData_t * shot_data_ptr)
 
-cdef void free_curve(Curve_t *curve)
-cdef void free_mach_list(MachList_t *mach_list)
-cdef void free_trajectory(ShotData_t *t)
+cdef void free_curve(Curve_t *curve_ptr)
+cdef void free_mach_list(MachList_t *mach_list_ptr)
+cdef void free_trajectory(ShotData_t *shot_data_ptr)
 
 cdef double cDegreesFtoR
 cdef double cSpeedOfSoundImperial
@@ -79,4 +79,5 @@ cdef struct Wind_t:
     double until_distance
     double MAX_DISTANCE_FEET
 
-cdef V3dT wind_to_c_vector(Wind_t * w)
+cdef Wind_t wind_from_python(object w)
+cdef V3dT wind_to_c_vector(const Wind_t * wind_ptr)

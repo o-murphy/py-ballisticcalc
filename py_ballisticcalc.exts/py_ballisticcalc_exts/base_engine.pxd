@@ -20,7 +20,6 @@ from py_ballisticcalc_exts.v3d cimport (
 
 __all__ = (
     'CythonizedBaseIntegrationEngine',
-    '_WindSock',
     'create_trajectory_row',
 )
 
@@ -35,24 +34,32 @@ cdef struct _TrajectoryDataFilter:
     double look_angle
 
 cdef _TrajectoryDataFilter createTrajectoryDataFilter(int filter_flags, double range_step,
-                                                      V3dT initial_position, V3dT initial_velocity,
+                                                      const V3dT *initial_position_ptr,
+                                                      const V3dT *initial_velocity_ptr,
                                                       double time_step = ?)
-cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, double barrel_elevation, double look_angle)
-cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf, V3dT position, V3dT velocity, double mach, double time)
+cdef void setup_seen_zero(_TrajectoryDataFilter * tdf, double height, const ShotData_t *shot_data_ptr)
+cdef BaseTrajData should_record(_TrajectoryDataFilter * tdf,
+                                const V3dT *position_ptr,
+                                const V3dT *velocity_ptr,
+                                double mach, double time)
 
 
-@final
-cdef class _WindSock:
-    cdef:
-        list winds # list[Wind_t]
-        int current
-        double next_range
-        V3dT _last_vector_cache
-        int _length
 
-    cdef V3dT current_vector(_WindSock self)
-    cdef void update_cache(_WindSock self)
-    cdef V3dT vector_for_range(_WindSock self, double next_range)
+cdef struct WindSock_t:
+    Wind_t * winds
+    int current
+    int length
+    double next_range
+    V3dT last_vector_cache
+
+# Function to create and initialize a WindSock_t
+cdef WindSock_t * create_wind_sock(object winds_py_list)
+# # Function to destroy (free memory) a WindSock_t
+cdef void free_wind_sock(WindSock_t * wind_sock)
+# # Helper functions that operate on WindSock_t
+cdef V3dT current_wind_vector(WindSock_t * wind_sock)
+cdef void update_wind_cache(WindSock_t * wind_sock)
+cdef V3dT wind_vector_for_range(WindSock_t * wind_sock, double next_range)
 
 
 cdef class CythonizedBaseIntegrationEngine:
@@ -60,7 +67,7 @@ cdef class CythonizedBaseIntegrationEngine:
         list _table_data # list[object]
         V3dT gravity_vector
         public object _config
-        _WindSock ws
+        WindSock_t * _wind_sock
         Config_t _config_s # Declared here
         ShotData_t _shot_s # Declared here
 
@@ -77,12 +84,12 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef void _init_trajectory(self, object shot_info)
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
     cdef list _integrate(CythonizedBaseIntegrationEngine self,
-                                 double maximum_range, double record_step, int filter_flags, double time_step = ?)
+                         double maximum_range, double record_step, int filter_flags, double time_step = ?)
 
 
-cdef object create_trajectory_row(double time, V3dT range_vector, V3dT velocity_vector,
-                           double velocity, double mach, double spin_drift, double look_angle,
-                           double density_factor, double drag, double weight, int flag)
+cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
+                                  double mach, const ShotData_t * shot_data_ptr,
+                                  double density_factor, double drag, int flag)
 
 cdef object _new_feet(double v)
 cdef object _new_fps(double v)

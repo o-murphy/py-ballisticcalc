@@ -23,7 +23,10 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     _TrajectoryDataFilter,
-    _WindSock,
+
+    current_wind_vector,
+    wind_vector_for_range,
+
     create_trajectory_row,
 
     createTrajectoryDataFilter,
@@ -64,7 +67,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             double calc_step = self._shot_s.calc_step
 
             # region Initialize wind-related variables to first wind reading (if any)
-            V3dT wind_vector = self.ws.current_vector()
+            V3dT wind_vector = current_wind_vector(self._wind_sock)
             # endregion
 
             _TrajectoryDataFilter data_filter
@@ -96,8 +99,10 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
         data_filter = createTrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
-                        initial_position=range_vector, initial_velocity=velocity_vector, time_step=time_step)
-        setup_seen_zero(&data_filter, range_vector.y, self._shot_s.barrel_elevation, self._shot_s.look_angle)
+                                                 initial_position_ptr=&range_vector,
+                                                 initial_velocity_ptr=&velocity_vector,
+                                                 time_step=time_step)
+        setup_seen_zero(&data_filter, range_vector.y, &self._shot_s)
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
@@ -108,8 +113,8 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                 filter_flags and last_recorded_range <= maximum_range - 1e-6):
 
             # Update wind reading at current point in trajectory
-            if range_vector.x >= self.ws.next_range:  # require check before call to improve performance
-                wind_vector = self.ws.vector_for_range(range_vector.x)
+            if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance
+                wind_vector = wind_vector_for_range(self._wind_sock, range_vector.x)
 
             # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
@@ -119,12 +124,12 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
-                data = should_record(&data_filter, range_vector, velocity_vector, mach, time)
+                data = should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
                 if data is not None:
                     ranges.append(create_trajectory_row(
-                        data.time, data.position, data.velocity, mag(&data.velocity), data.mach,
-                        cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
-                        density_factor, drag, self._shot_s.weight, data_filter.current_flag
+                        data.time, &data.position, &data.velocity, data.mach,
+                        &self._shot_s,
+                        density_factor, drag, data_filter.current_flag
                     ))
                     last_recorded_range = data.position.x
             # endregion
@@ -155,9 +160,9 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                     or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
             ):
                 ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
-                    velocity, mach, cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
-                    density_factor, drag, self._shot_s.weight, data_filter.current_flag
+                    time, &range_vector, &velocity_vector, mach,
+                    &self._shot_s,
+                    density_factor, drag, data_filter.current_flag
                 ))
 
                 if velocity < _cMinimumVelocity:
@@ -172,8 +177,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         # Ensure that we have at least two data points in trajectory
         if len(ranges) < 2:
             ranges.append(create_trajectory_row(
-                time, range_vector, velocity_vector,
-                velocity, mach, cy_spin_drift(&self._shot_s, time), self._shot_s.look_angle,
-                density_factor, drag, self._shot_s.weight, CTrajFlag.NONE))
+                time, &range_vector, &velocity_vector, mach, &self._shot_s,
+                density_factor, drag, CTrajFlag.NONE))
 
         return ranges
