@@ -1,14 +1,15 @@
 """py_ballisticcalc exception types"""
-from typing_extensions import List, TYPE_CHECKING, Union
+from typing_extensions import List, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
-    from py_ballisticcalc.unit import Angular, Distance  # Only for type checking
     from py_ballisticcalc.trajectory_data import TrajectoryData
+    from py_ballisticcalc.unit import Angular, Distance
 
 __all__ = (
     'UnitTypeError',
     'UnitConversionError',
     'UnitAliasError',
+    'OutOfRangeError',
     'ZeroFindingError',
     'RangeError',
 )
@@ -51,21 +52,20 @@ class ZeroFindingError(RuntimeError):
         self.last_barrel_elevation: 'Angular' = last_barrel_elevation
         self.note: str = note
         super().__init__(note + f' Vertical error {zero_finding_error} '
-                         f'feet with {last_barrel_elevation} elevation, after {iterations_count} iterations.')
+            f'feet with {last_barrel_elevation} elevation, after {iterations_count} iterations.')
 
 
 class RangeError(RuntimeError):
     """
-    Exception for zero-finding issues.
+    Exception for trajectories that don't reach requested distance.
     Contains:
     - The error reason
     - The trajectory data before the exception occurred
     - Last distance before the exception occurred
     """
-
     reason: str
     incomplete_trajectory: List['TrajectoryData']
-    last_distance: Union['Distance', None]
+    last_distance: Optional['Distance']
 
     MinimumVelocityReached: str = "Minimum velocity reached"
     MaximumDropReached: str = "Maximum drop reached"
@@ -89,3 +89,25 @@ class RangeError(RuntimeError):
         else:
             self.last_distance = None
         super().__init__(message)
+
+
+class OutOfRangeError(RuntimeError):
+    """
+    Exception raised when the requested distance is outside the possible range for the shot.
+    Contains:
+    - The requested distance
+    - Optionally, the maximum achievable range
+    - Optionally, the look-angle
+    """
+    def __init__(self, requested_distance: 'Distance', max_range: Optional['Distance'] = None, look_angle: Optional['Angular'] = None,
+                 note: str = ""):
+        from py_ballisticcalc.unit import PreferredUnits
+        self.requested_distance = requested_distance
+        self.max_range = max_range
+        self.look_angle = look_angle
+        msg = (f"Requested distance {requested_distance << PreferredUnits.distance}"
+            + (f" exceeds maximum possible range {max_range << PreferredUnits.distance}" if max_range is not None else "")
+            + (f" with look-angle {look_angle << PreferredUnits.angular}" if (look_angle is not None and look_angle.raw_value) else "")
+            + (f". {note}" if note else "")
+        )
+        super().__init__(msg)

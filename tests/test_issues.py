@@ -3,7 +3,7 @@
 from typing import Any
 
 import pytest
-from typing_extensions import Union, Tuple
+from typing_extensions import Optional, Tuple
 
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
                               Angular, Calculator, RangeError, HitResult, BaseEngineConfigDict,
@@ -33,7 +33,7 @@ class TestIssue96_97:
 
     def must_fire(self, interface: Calculator, zero_shot,
                   trajectory_range, extra_data,
-                  **kwargs) -> Tuple[HitResult, Union[RangeError, None]]:
+                  **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
         """wrapper function to resolve RangeError and get HitResult"""
         try:
             # try to get valid result
