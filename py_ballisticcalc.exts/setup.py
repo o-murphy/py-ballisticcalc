@@ -27,11 +27,12 @@ compiler_directives = {
     "warn.unused_arg": True,
     "warn.multiple_declarators": True,
     "show_performance_hints": True,
+    # "emit_code_comments": False
 }
 
 extension_names = [
     # "vector", # Temporary disabled
-    # "v3d", not needed, there are just pxd header
+    # "v3d", not needed, there is just pxd header
     "cy_bindings",
     "base_engine",
     "euler_engine",
@@ -40,7 +41,7 @@ extension_names = [
 ]
 
 ext_base_dir = 'py_ballisticcalc_exts'
-# Тепер v3d.c знаходиться у src/
+# Now v3d.c is in у src/
 v3d_c_source = os.path.join(ext_base_dir, 'src', 'v3d.c')
 v3d_c_dependent = [
     "base_engine",
@@ -53,11 +54,11 @@ helpers_c_dependent = [
     "base_engine",
 ]
 
-# *** ЗМІНА ТУТ: Додано 'include' до include_dirs для пошуку v3d.h ***
+# added 'include' to include_dirs for searching headers ***
 include_dirs = [
     ext_base_dir,  # Для .pxd файлів
-    os.path.join(ext_base_dir, 'src'),  # Для .h файлів, якщо вони є у src/ (або якщо .pxd там)
-    os.path.join(ext_base_dir, 'include'),  # Це головне: для v3d.h та інших C-заголовків
+    os.path.join(ext_base_dir, 'src'),
+    os.path.join(ext_base_dir, 'include'),
 ]
 
 # Initialize extensions list

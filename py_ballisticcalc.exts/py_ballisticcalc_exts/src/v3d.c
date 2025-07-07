@@ -82,3 +82,64 @@ V3dT norm(const V3dT *v) {
 void print_vec(const char* name, const V3dT *v) {
     printf("%s = (%.2f, %.2f, %.2f)\n", name, v->x, v->y, v->z);
 }
+
+//// --- New In-place Functions ---
+//
+//// Adds v2 to v1 in-place (modifies v1)
+//void iadd(V3dT *v1, const V3dT *v2) {
+//    v1->x += v2->x;
+//    v1->y += v2->y;
+//    v1->z += v2->z;
+//}
+//
+//// Subtracts v2 from v1 in-place (modifies v1)
+//void isub(V3dT *v1, const V3dT *v2) {
+//    v1->x -= v2->x;
+//    v1->y -= v2->y;
+//    v1->z -= v2->z;
+//}
+//
+//// Multiplies v by scalar in-place (modifies v)
+//void imulS(V3dT *v, double scalar) {
+//    v->x *= scalar;
+//    v->y *= scalar;
+//    v->z *= scalar;
+//}
+//
+//// --- New chainable In-place Functions ---
+//
+//// Adds v2 to v1 in-place (modifies v1)
+//V3dT* iaddc(V3dT *v1, const V3dT *v2) {
+//    v1->x += v2->x;
+//    v1->y += v2->y;
+//    v1->z += v2->z;
+//    return v1;
+//}
+//
+//// Subtracts v2 from v1 in-place (modifies v1)
+//V3dT* isubc(V3dT *v1, const V3dT *v2) {
+//    v1->x -= v2->x;
+//    v1->y -= v2->y;
+//    v1->z -= v2->z;
+//    return v1;
+//}
+//
+//// Multiplies v by scalar in-place (modifies v)
+//V3dT* imulSc(V3dT *v, double scalar) {
+//    v->x *= scalar;
+//    v->y *= scalar;
+//    v->z *= scalar;
+//    return v;
+//}
+//
+//// Normalizes a V3dT vector in place (modifies the original vector)
+//V3dT* iNormc(V3dT *v) {
+//    double m = mag(v);
+//
+//    if (fabs(m) < 1e-10) {
+//        return v; // Do nothing if magnitude is near zero (matching Cython behavior)
+//    } else {
+//        *v = mulS(v, 1.0 / m); // Reuse mulS for in-place normalization
+//        return v;
+//    }
+//}
