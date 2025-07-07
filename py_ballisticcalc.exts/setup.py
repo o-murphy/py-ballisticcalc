@@ -54,6 +54,14 @@ helpers_c_dependent = [
     "base_engine",
 ]
 
+types_c_source = os.path.join(ext_base_dir, 'src', 'types.c')
+types_c_dependent = [
+    "cy_bindings",
+    "base_engine",
+    "euler_engine",
+    "rk4_engine",
+]
+
 # added 'include' to include_dirs for searching headers ***
 include_dirs = [
     ext_base_dir,  # Для .pxd файлів
@@ -88,6 +96,9 @@ for name in extension_names:
 
     if name in helpers_c_dependent:
         sources.append(helpers_c_source)
+
+    if name in types_c_dependent:
+        sources.append(types_c_source)
 
     extensions.append(
         Extension(

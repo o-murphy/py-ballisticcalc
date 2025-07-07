@@ -26,6 +26,9 @@ cdef extern from "include/types.h" nogil:
         double * array
         size_t length
 
+    double drag_by_mach(const ShotData_t *shot_data_ptr, double mach)
+    double calculate_by_curve_and_mach_list(const MachList_t *mach_list_ptr, const Curve_t *curve_ptr, double mach)
+
     ctypedef struct Atmosphere_t:
         double _t0
         double _a0

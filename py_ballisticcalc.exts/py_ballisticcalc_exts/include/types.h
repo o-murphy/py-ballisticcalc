@@ -67,4 +67,7 @@ typedef struct {
     double MAX_DISTANCE_FEET;
 } Wind_t;
 
+double drag_by_mach(const ShotData_t *shot_data_ptr, double mach);
+double calculate_by_curve_and_mach_list(const MachList_t *mach_list_ptr, const Curve_t *curve_ptr, double mach);
+
 #endif // TYPES_H
