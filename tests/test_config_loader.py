@@ -17,8 +17,8 @@ class TestConfigLoader:
         [
             ("env", basicConfig, Unit.Yard, None),
             (
-            "manual", lambda: basicConfig(preferred_units={'distance': Unit.Meter}),
-            Unit.Meter, None),
+                    "manual", lambda: basicConfig(preferred_units={'distance': Unit.Meter}),
+                    Unit.Meter, None),
             ("imperial", loadImperialUnits, Unit.Foot, None),
             ("metric", loadMetricUnits, Unit.Meter, None),
             ("mixed", loadMixedUnits, None, Unit.MPS),

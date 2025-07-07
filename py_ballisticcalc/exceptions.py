@@ -52,7 +52,7 @@ class ZeroFindingError(RuntimeError):
         self.last_barrel_elevation: 'Angular' = last_barrel_elevation
         self.note: str = note
         super().__init__(note + f' Vertical error {zero_finding_error} '
-            f'feet with {last_barrel_elevation} elevation, after {iterations_count} iterations.')
+                                f'feet with {last_barrel_elevation} elevation, after {iterations_count} iterations.')
 
 
 class RangeError(RuntimeError):
@@ -99,15 +99,19 @@ class OutOfRangeError(RuntimeError):
     - Optionally, the maximum achievable range
     - Optionally, the look-angle
     """
-    def __init__(self, requested_distance: 'Distance', max_range: Optional['Distance'] = None, look_angle: Optional['Angular'] = None,
+
+    def __init__(self, requested_distance: 'Distance', max_range: Optional['Distance'] = None,
+                 look_angle: Optional['Angular'] = None,
                  note: str = ""):
         from py_ballisticcalc.unit import PreferredUnits
         self.requested_distance = requested_distance
         self.max_range = max_range
         self.look_angle = look_angle
         msg = (f"Requested distance {requested_distance << PreferredUnits.distance}"
-            + (f" exceeds maximum possible range {max_range << PreferredUnits.distance}" if max_range is not None else "")
-            + (f" with look-angle {look_angle << PreferredUnits.angular}" if (look_angle is not None and look_angle.raw_value) else "")
-            + (f". {note}" if note else "")
-        )
+               + (
+                   f" exceeds maximum possible range {max_range << PreferredUnits.distance}" if max_range is not None else "")
+               + (f" with look-angle {look_angle << PreferredUnits.angular}" if (
+                        look_angle is not None and look_angle.raw_value) else "")
+               + (f". {note}" if note else "")
+               )
         super().__init__(msg)

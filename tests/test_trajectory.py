@@ -101,7 +101,8 @@ class TestTrajectory:
             (lambda trajectory: trajectory[0], 0, 2750, 2.46, 2821, -2.0, 0.0, 0.0, 0.00, 0.000, 880, Angular.Mil),
             (lambda trajectory: trajectory[1], 100, 2545, 2.28, 2416, 0.0, 0.0, -0.2, -0.06, 0.113, 698, Angular.Mil),
             (
-            lambda trajectory: trajectory[5], 500, 1814, 1.62, 1227, -56.2, -3.2, -6.3, -0.36, 0.672, 252, Angular.Mil),
+                    lambda trajectory: trajectory[5], 500, 1814, 1.62, 1227, -56.2, -3.2, -6.3, -0.36, 0.672, 252,
+                    Angular.Mil),
             (lambda trajectory: trajectory[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54,
              Angular.Mil)
         ],

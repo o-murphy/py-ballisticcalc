@@ -64,6 +64,7 @@ def test_set_weapon_zero(distance, loaded_engine_instance):
     # )
     assert abs(hit_result[-1].height.raw_value) < 1e+1
 
+
 @pytest.mark.usefixtures("loaded_engine_instance")
 def test_zero_with_look_angle(loaded_engine_instance):
     """Test zero finding with a high look angle."""
@@ -77,6 +78,7 @@ def test_zero_with_look_angle(loaded_engine_instance):
     hit_result = calc.fire(shot, trajectory_range=distance, extra_data=True)
     # TrajFlag.ZERO_DOWN marks the point at which bullet crosses down through sight line
     assert abs(hit_result.flag(TrajFlag.ZERO_DOWN).look_distance.raw_value - distance.raw_value) < 1e+1
+
 
 @pytest.mark.usefixtures("loaded_engine_instance")
 def test_zero_degenerate(loaded_engine_instance):
@@ -98,6 +100,7 @@ def test_zero_degenerate(loaded_engine_instance):
     assert result_at_zero is not None
     assert result_at_zero.distance.raw_value == pytest.approx(distance.raw_value, abs=1e-2)
     assert result_at_zero.height >> Distance.Meter == pytest.approx(0, abs=1e-2)
+
 
 @pytest.mark.usefixtures("loaded_engine_instance")
 def test_zero_too_close(loaded_engine_instance):

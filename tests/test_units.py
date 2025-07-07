@@ -1,4 +1,5 @@
 import pytest
+
 from py_ballisticcalc.unit import *
 
 
@@ -204,7 +205,7 @@ class TestUnitConversionSyntax:
         # the return value or a new instance.
         # However, for direct assignment like this, it's usually fine
         # as each parameterized test run is a fresh call.
-        temp_low = Distance.Yard(10) # Use a temporary variable for clarity
+        temp_low = Distance.Yard(10)  # Use a temporary variable for clarity
         temp_low >>= Distance.Meter
         assert isinstance(temp_low, (int, float))
 
@@ -214,6 +215,6 @@ class TestUnitConversionSyntax:
         converted = self.low << desired_units
         assert isinstance(converted, desired_unit_type)
         assert converted.units == desired_units
-        temp_low = Distance.Yard(10) # Use a temporary variable for clarity
+        temp_low = Distance.Yard(10)  # Use a temporary variable for clarity
         temp_low <<= desired_units
         assert temp_low.units == desired_units
