@@ -84,7 +84,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # min_step is used to handle situation, when record step is smaller than calc_step
         # in order to prevent range breaking too early
         min_step = min(self.calc_step, record_step)
-        # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
+
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
                                             barrel_angle_rad=self.barrel_elevation, look_angle_rad=self.look_angle,
