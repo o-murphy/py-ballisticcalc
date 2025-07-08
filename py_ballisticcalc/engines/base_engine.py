@@ -90,7 +90,9 @@ class BaseTrajData(NamedTuple):
 class _TrajectoryDataFilter:
     """
     Determines when to record trajectory data points based on range and time.
-    For specific points of interest, interpolates between integration steps to get the exact point.
+    For range steps, interpolates between integration steps to get the exact point.
+    There is no interpolation for other points of interest (APEX, MACH, ZERO), unless
+        they correspond to a range step, in which case they are interpolated to the range step.
     """
     filter: Union[TrajFlag, int]
     current_flag: Union[TrajFlag, int]
@@ -107,7 +109,9 @@ class _TrajectoryDataFilter:
     look_angle: float
 
     def __init__(self, filter_flags: Union[TrajFlag, int], range_step: float,
-                 initial_position: Vector, initial_velocity: Vector, time_step: float = 0.0):
+                 initial_position: Vector, initial_velocity: Vector,
+                 barrel_angle_rad: float, look_angle_rad: float = 0.0,
+                 time_step: float = 0.0):
         """If a time_step is indicated, then we will record a row at least that often in the trajectory"""
         self.filter: Union[TrajFlag, int] = filter_flags
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
@@ -121,14 +125,12 @@ class _TrajectoryDataFilter:
         self.previous_position: Vector = initial_position
         self.previous_velocity: Vector = initial_velocity
         self.previous_v_mach: float = 0.0  # Previous velocity in Mach terms
-        self.look_angle: float = 0.0
-
-    def setup_seen_zero(self, height: float, barrel_elevation: float, look_angle: float) -> None:
-        if height >= 0:
-            self.seen_zero |= TrajFlag.ZERO_UP
-        elif height < 0 and barrel_elevation < look_angle:
-            self.seen_zero |= TrajFlag.ZERO_DOWN
-        self.look_angle: float = look_angle
+        self.look_angle: float = look_angle_rad
+        if self.filter & TrajFlag.ZERO:
+            if initial_position.y >= 0:
+                self.seen_zero |= TrajFlag.ZERO_UP
+            elif initial_position.y < 0 and barrel_angle_rad < self.look_angle:
+                self.seen_zero |= TrajFlag.ZERO_DOWN
 
     # pylint: disable=too-many-positional-arguments
     def should_record(self, position: Vector, velocity: Vector, mach: float,
@@ -156,8 +158,12 @@ class _TrajectoryDataFilter:
             self.time_of_last_record = time
         elif self.time_step > 0:
             self.check_next_time(time)
-        self.check_zero_crossing(position)
-        self.check_mach_crossing(velocity.magnitude(), mach)
+        if self.filter & TrajFlag.ZERO:
+            self.check_zero_crossing(position)
+        if self.filter & TrajFlag.MACH:
+            self.check_mach_crossing(velocity.magnitude(), mach)
+        if self.filter & TrajFlag.APEX:
+            self.check_apex(velocity)
         if bool(self.current_flag & self.filter) and data is None:
             data = BaseTrajData(time=time, position=position,
                                 velocity=velocity, mach=mach)
@@ -179,6 +185,8 @@ class _TrajectoryDataFilter:
         self.previous_v_mach = current_v_mach
 
     def check_zero_crossing(self, range_vector: Vector):
+        # Especially with non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
+        #   self.seen_zero prevents recording more than one.
         if range_vector.x > 0:
             # Zero reference line is the sight line defined by look_angle
             reference_height = range_vector.x * math.tan(self.look_angle)
@@ -192,6 +200,14 @@ class _TrajectoryDataFilter:
                 if range_vector.y < reference_height:
                     self.current_flag |= TrajFlag.ZERO_DOWN
                     self.seen_zero |= TrajFlag.ZERO_DOWN
+
+    def check_apex(self, velocity_vector: Vector):
+        """
+        The apex is defined as the point, after launch, where the vertical component of velocity
+            goes from positive to negative.
+        """
+        if velocity_vector.y <= 0 and self.previous_velocity.y > 0:
+            self.current_flag |= TrajFlag.APEX
 
 
 class _WindSock:
@@ -539,7 +555,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """
-        Calculate trajectory for specified shot
+        Calculate trajectory for specified shot.  Requirements:
+        - If filter_flags==TrajFlag.NONE, then must return a list of exactly one TrajectoryData where:
+            - .distance = maximum_range if reached, else last calculated point.
+        - If filter_flags & TrajFlag.RANGE, then return must include a RANGE entry for each record_step reached,
+            starting at zero (initial conditions).  If time_step > 0, must also include RANGE entries per that spec.
+        - For each other filter_flag: Return list must include a row with the flag if it exists in the trajectory.
 
         Args:
             shot_info (Shot):  Information about the shot.
