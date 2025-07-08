@@ -1,7 +1,7 @@
 import pytest
 
 from py_ballisticcalc import HitResult, Distance, BaseEngineConfigDict, Calculator, DragModel, TableG1, Weight, \
-                             Velocity, Ammo, Weapon, Shot, Angular
+    Velocity, Ammo, Weapon, Shot, Angular
 
 
 def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit: Distance = Distance.Meter,
@@ -13,20 +13,20 @@ def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit:
         print(f'Length of trajectory: { trajectory_length=}')
 
     trajectory = hit_result.trajectory
-    if top_k<trajectory_length:
+    if top_k < trajectory_length:
         end_start_top_k = top_k
-        start_end_top_k = trajectory_length - top_k-1
-        if end_start_top_k<start_end_top_k:
-            trajectory = trajectory[:end_start_top_k]+trajectory[start_end_top_k:]
+        start_end_top_k = trajectory_length - top_k - 1
+        if end_start_top_k < start_end_top_k:
+            trajectory = trajectory[:end_start_top_k] + trajectory[start_end_top_k:]
 
     for i, p in enumerate(trajectory):
-        if i<top_k:
-            index_to_print = i+1
+        if i < top_k:
+            index_to_print = i + 1
         else:
-            index_to_print = (trajectory_length-top_k)+i-top_k
-        if i==top_k and i!=trajectory_length-(top_k+1):
+            index_to_print = (trajectory_length - top_k) + i - top_k
+        if i == top_k and i != trajectory_length - (top_k + 1):
             print("...")
-        print(f'{index_to_print}. ({p.distance>>distance_unit}, {p.height>>distance_unit})')
+        print(f'{index_to_print}. ({p.distance >> distance_unit}, {p.height >> distance_unit})')
 
 
 @pytest.fixture(autouse=True)

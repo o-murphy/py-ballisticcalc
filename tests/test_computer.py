@@ -1,6 +1,7 @@
 """Unittests for the py_ballisticcalc library"""
 
 import copy
+
 import pytest
 
 from py_ballisticcalc import (
@@ -94,17 +95,17 @@ class TestComputerPytest:
         """Multiple winds should be applied in order of distance"""
         no_spin_weapon = Weapon(twist=0)
         shot_right_wind = Shot(weapon=no_spin_weapon, ammo=self.ammo, atmo=self.atmosphere,
-                              winds=[Wind(Velocity.MPS(4), Angular.OClock(9))])  # wind from right
+                               winds=[Wind(Velocity.MPS(4), Angular.OClock(9))])  # wind from right
         t_right = self.calc.fire(shot_right_wind, trajectory_range=self.range, trajectory_step=self.step)
         # List multiple winds, but out of order:
         shot_multi = Shot(weapon=no_spin_weapon, ammo=self.ammo, atmo=self.atmosphere,
-                    winds=[Wind(Velocity.MPS(4), Angular.OClock(3), until_distance=Distance.Yard(700)),
-                           Wind(Velocity.MPS(4), Angular.OClock(9), until_distance=Distance.Yard(550))])
+                          winds=[Wind(Velocity.MPS(4), Angular.OClock(3), until_distance=Distance.Yard(700)),
+                                 Wind(Velocity.MPS(4), Angular.OClock(9), until_distance=Distance.Yard(550))])
         t_multi = self.calc.fire(shot_multi, trajectory_range=self.range, trajectory_step=self.step)
         # Multiple winds, but last wind has no range limit:
         shot_multi_more = Shot(weapon=no_spin_weapon, ammo=self.ammo, atmo=self.atmosphere,
-                    winds=[Wind(Velocity.MPS(4), Angular.OClock(9), until_distance=Distance.Yard(550)),
-                           Wind(Velocity.MPS(4), Angular.OClock(3))])
+                               winds=[Wind(Velocity.MPS(4), Angular.OClock(9), until_distance=Distance.Yard(550)),
+                                      Wind(Velocity.MPS(4), Angular.OClock(3))])
         t_multi_more = self.calc.fire(shot_multi_more, trajectory_range=self.range, trajectory_step=self.step)
         # Winds are the same to 500 yards:
         assert pytest.approx(t_multi.trajectory[5].windage.raw_value) == t_right.trajectory[5].windage.raw_value

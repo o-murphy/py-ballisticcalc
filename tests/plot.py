@@ -1,4 +1,5 @@
 import matplotlib
+
 from py_ballisticcalc import *
 from py_ballisticcalc.visualize.plot import show_hit_result_plot
 
@@ -25,4 +26,3 @@ print(
 
 matplotlib.use('TkAgg')
 show_hit_result_plot()
-
