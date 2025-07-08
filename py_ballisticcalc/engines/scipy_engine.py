@@ -188,11 +188,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
                 if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:
                     raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                           'Distance non-convergent. ')
+                                           ZeroFindingError.DISTANCE_NON_CONVERGENT)
             elif zero_finding_error > math.fabs(previous_error):
                 # If error is increasing, we are diverging; stop to avoid infinite loop
                 raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                       'Error non-convergent. ')
+                                       ZeroFindingError.ERROR_NON_CONVERGENT)
             previous_distance = current_distance
             previous_error = signed_error
 
