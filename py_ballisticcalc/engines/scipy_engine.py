@@ -66,7 +66,7 @@ INTEGRATION_METHOD = Literal["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"]
 DEFAULT_MAX_TIME: float = 90.0  # Max flight time to simulate before stopping integration
 DEFAULT_RELATIVE_TOLERANCE: float = 1e-8  # Default relative tolerance (rtol) for integration
 DEFAULT_ABSOLUTE_TOLERANCE: float = 1e-6  # Default absolute tolerance (atol) for integration
-DEFAULT_INTEGRATION_METHOD: INTEGRATION_METHOD = 'LSODA'  # Default integration method for solve_ivp
+DEFAULT_INTEGRATION_METHOD: INTEGRATION_METHOD = 'RK45'  # Default integration method for solve_ivp
 
 
 @dataclass
@@ -339,12 +339,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             else:
                 correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st order correction
 
-            #print(f'Zero step {iterations_count}: error={signed_error} '
+            # print(f'Zero step {iterations_count}: error={signed_error} '
             #      f'\t{self.barrel_elevation}rad\t at {current_distance}ft. Correction={correction}rads')
 
             zero_error = math.fabs(signed_error)
-            if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
-                if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:  # We're not getting closer to zero_distance
+            if (prev_range := math.fabs(previous_distance - zero_distance)) > self.ALLOWED_HORIZONTAL_ZERO_ERROR_FEET:
+                # We're still trying to reach zero_distance
+                if math.fabs(current_distance - zero_distance) > prev_range - 1e-6:  # We're not getting closer to zero_distance
                     # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation), 'Distance non-convergent.')
                     break
             elif zero_error > math.fabs(previous_error):  # Error is increasing, we are diverging
@@ -354,13 +355,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             previous_distance = current_distance
             previous_error = signed_error
 
-            if zero_error > _cZeroFindingAccuracy or math.fabs(current_distance - zero_distance) > 1:
+            if zero_error > _cZeroFindingAccuracy or math.fabs(current_distance - zero_distance) > self.ALLOWED_HORIZONTAL_ZERO_ERROR_FEET:
                 # Adjust barrel elevation to close height at zero distance
                 self.barrel_elevation += correction
             else:  # Current barrel_elevation hit zero!
                 break
             iterations_count += 1
-        if zero_error > _cZeroFindingAccuracy:
+        if zero_error > _cZeroFindingAccuracy or math.fabs(previous_distance - zero_distance) > self.ALLOWED_HORIZONTAL_ZERO_ERROR_FEET:
             return self.find_zero_angle(shot_info, distance)
             # # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
@@ -571,7 +572,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # endregion Root-finding approach to interpolate for desired x values
 
             # If we ended with an exceptional event then also record the last point calculated
-            if (termination_reason not in (None, self.HitZero) and len(t_vals) > 1 and t_vals[0] != t_vals[-1]) \
+            if (filter_flags != TrajFlag.NONE and termination_reason not in (None, self.HitZero) and len(t_vals) > 1 and t_vals[0] != t_vals[-1]) \
                 or (len(t_at_x) == 0):  # Also record last point if we don't have any others
                 t_at_x.append(sol.t[-1])  # Last time point
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration

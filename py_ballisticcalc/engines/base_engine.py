@@ -277,6 +277,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         gravity_vector (Vector): The gravity vector.
     """
     VERTICAL_ANGLE_EPSILON_DEGREES: float = 1e-5  # Deviation from 90 degree look-angle to consider vertical
+    ALLOWED_HORIZONTAL_ZERO_ERROR_FEET: float = 1e-2  # Allowed horizontal zero error in feet
 
     barrel_azimuth: float
     barrel_elevation: float
