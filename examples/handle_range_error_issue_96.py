@@ -1,6 +1,6 @@
+from typing_extensions import Optional, Tuple
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
-                              Angular, Calculator, logger)
-from py_ballisticcalc.helpers import must_fire
+                              Angular, Calculator, RangeError, HitResult, logger)
 
 drag_model = DragModel(bc=0.03,
                        drag_table=TableG1,
@@ -16,8 +16,21 @@ zero = Shot(weapon=weapon,
 
 calc = Calculator(config={
     "cMinimumVelocity": 0,
-    # "cMinimumAltitude": -1410.748, # have this value by default
+    # "cMinimumAltitude": -1410.748,  # have this value by default
 })
+
+
+# wrapper function to resolve RangeError and get HitResult
+def must_fire(interface: Calculator, zero_shot, trajectory_range, extra_data,
+              **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
+    """wrapper function to resolve RangeError and get HitResult"""
+    try:
+        # try to get valid result
+        return interface.fire(zero_shot, trajectory_range, **kwargs, extra_data=extra_data), None
+    except RangeError as err:
+        # directly init hit result with incomplete data before exception occurred
+        return HitResult(zero_shot, err.incomplete_trajectory, extra=extra_data), err
+
 
 hit_result, err = must_fire(calc, zero, Distance.Meter(1600.2437248702522), extra_data=True)
 

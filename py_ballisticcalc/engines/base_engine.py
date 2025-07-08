@@ -6,7 +6,7 @@ import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 
-from typing_extensions import Optional, NamedTuple, Union, List, Tuple, TypedDict, TypeVar
+from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Dict, TypedDict, TypeVar
 
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
@@ -265,7 +265,6 @@ class _WindSock:
 
 _BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConfigDict', covariant=True)
 
-
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     """
@@ -277,6 +276,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         twist (float): The twist rate of the barrel.
         gravity_vector (Vector): The gravity vector.
     """
+    VERTICAL_ANGLE_EPSILON_DEGREES: float = 1e-5  # Deviation from 90 degree look-angle to consider vertical
 
     barrel_azimuth: float
     barrel_elevation: float
@@ -363,6 +363,92 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
+    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[Distance, Angular]:
+        """
+        Finds the maximum horizontal range and the launch angle to reach it, via golden-section search.
+
+        Args:
+            shot_info (Shot): The shot information: gun, ammo, environment, look_angle.
+            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
+                                                               Defaults to (0, 90).
+
+        Returns:
+            Tuple[Distance, Angular]: The maximum range and the launch angle to reach it.
+
+        Raises:
+            ValueError: If the angle bracket excludes the look_angle.
+        """
+        restore_cMaximumDrop = None
+        if self._config.cMaximumDrop:
+            restore_cMaximumDrop = self._config.cMaximumDrop
+            self._config.cMaximumDrop = 0  # We want to run trajectory until it returns to horizontal
+        self._init_trajectory(shot_info)
+
+        t_calls = 0
+        cache: Dict[float, float] = {}
+        def range_for_angle(angle_rad: float) -> float:
+            """Horizontal range to zero (in feet) for given launch angle in radians."""
+            if angle_rad in cache:
+                return cache[angle_rad]
+            self.barrel_elevation = angle_rad
+            nonlocal t_calls
+            t_calls += 1
+            logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
+            try:
+                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE)[0]
+            except RangeError as e:
+                if e.last_distance is None:
+                    raise e
+                t = e.incomplete_trajectory[-1]
+            cache[angle_rad] = t.distance >> Distance.Foot
+            return cache[angle_rad]
+
+        #region Golden-section search
+        inv_phi = (math.sqrt(5) - 1) / 2  # 0.618...
+        inv_phi_sq = inv_phi**2
+        a, b = (math.radians(deg) for deg in angle_bracket_deg)
+        h = b - a
+        c = a + inv_phi_sq * h
+        d = a + inv_phi * h
+        yc = range_for_angle(c)
+        yd = range_for_angle(d)
+        for _ in range(100): # 100 iterations is more than enough for high precision
+            if h < 1e-5: # Angle tolerance in radians
+                break
+            if yc > yd:
+                b, d, yd = d, c, yc
+                h = b - a
+                c = a + inv_phi_sq * h
+                yc = range_for_angle(c)
+            else:
+                a, c, yc = c, d, yd
+                h = b - a
+                d = a + inv_phi * h
+                yd = range_for_angle(d)
+        angle_at_max_rad = (a + b) / 2
+        #endregion
+        max_range_ft = range_for_angle(angle_at_max_rad)
+
+        if restore_cMaximumDrop is not None:
+            self._config.cMaximumDrop = restore_cMaximumDrop
+        logger.debug(f".find_max_range required {t_calls} trajectory calculations")
+        return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
+
+    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool=False) -> Angular:
+        """
+        Finds the barrel elevation needed to hit sight line at a specific distance,
+            using Ridder's method.
+
+        Args:
+            shot_info (Shot): The shot information.
+            distance (Distance): The distance to the target.
+            lofted (bool, optional): If True, find the higher angle that hits the zero point.
+
+        Returns:
+            Angular: The required barrel elevation.
+        """
+        raise NotImplementedError("find_zero_angle not yet implemented in BaseIntegrationEngine.")
+
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """
         Iterative algorithm to find barrel elevation needed for a particular zero
@@ -376,39 +462,76 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         """
         self._init_trajectory(shot_info)
 
+        target_look_dist_ft = distance >> Distance.Foot
+
+        #region Edge cases
+        if abs(target_look_dist_ft) < self.calc_step:
+            raise ZeroFindingError(0, 0, Angular.Radian(self.look_angle),
+                    reason=f"Target distance {target_look_dist_ft}ft too small for zeroing.")
+        if abs(self.look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
+            # Virtually vertical shot
+            return Angular.Radian(self.look_angle)
+        #endregion Edge cases
+
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
-        distance_feet = distance >> Distance.Foot
-        zero_distance = math.cos(self.look_angle) * distance_feet
-        height_at_zero = math.sin(self.look_angle) * distance_feet
+        zero_distance = (distance >> Distance.Foot) * math.cos(self.look_angle)  # Horizontal distance
 
         iterations_count = 0
-        zero_finding_error = _cZeroFindingAccuracy * 2
-        # x = horizontal distance down range, y = drop, z = windage
-        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
+        previous_distance = 0.0
+        previous_error = 9e9
+        range_limit = False  # Flag to avoid 1st-order correction when instability detected
+        zero_error = _cZeroFindingAccuracy * 2
+
+        while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
                 t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]
-                height = t.height >> Distance.Foot
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
-                last_distance_foot = e.last_distance >> Distance.Foot
-                proportion = last_distance_foot / zero_distance
-                height = (e.incomplete_trajectory[-1].height >> Distance.Foot) / proportion
+                t = e.incomplete_trajectory[-1]
 
-            zero_finding_error = math.fabs(height - height_at_zero)
+            current_distance = t.distance >> Distance.Foot  # Horizontal distance
+            if 2 * current_distance < zero_distance and self.barrel_elevation == 0.0:
+                # Degenerate case: little distance and zero elevation; try with some elevation
+                self.barrel_elevation = 0.01
+                continue
 
-            if zero_finding_error > _cZeroFindingAccuracy:
+            height = t.height >> Distance.Foot
+            trajectory_angle = t.angle >> Angular.Radian    # Flight angle at current distance
+            #signed_error = height - height_at_zero
+            signed_error = height - math.tan(self.look_angle) * current_distance
+            sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
+            if (-1.5 < sensitivity < -0.5) or range_limit:
+                range_limit = True  # Scenario too unstable for 1st-order correction
+                # TODO: This can be very slow to converge.  Consider using root-finder here.
+                correction = -signed_error / (math.cos(self.look_angle) * current_distance)
+            else:
+                correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st-order correction
+
+            zero_error = math.fabs(signed_error)
+            if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
+                if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:  # We're not getting closer to zero_distance
+                    raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
+                                            'Distance non-convergent.')
+            elif zero_error > math.fabs(previous_error):  # Error is increasing, we are diverging
+                raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
+                                        'Error non-convergent.')
+
+            previous_distance = current_distance
+            previous_error = signed_error
+
+            if zero_error > _cZeroFindingAccuracy or math.fabs(current_distance - zero_distance) > 1:
                 # Adjust barrel elevation to close height at zero distance
-                self.barrel_elevation -= (height - height_at_zero) / zero_distance
-            else:  # last barrel_elevation hit zero!
+                self.barrel_elevation += correction
+            else:  # Current barrel_elevation hit zero!
                 break
             iterations_count += 1
-        if zero_finding_error > _cZeroFindingAccuracy:
+        if zero_error > _cZeroFindingAccuracy:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
+            raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
     @abstractmethod
