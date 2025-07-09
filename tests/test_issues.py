@@ -3,11 +3,11 @@
 from typing import Any
 
 import pytest
-from typing_extensions import Union, Tuple
 
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
                               Angular, Calculator, RangeError, HitResult, BaseEngineConfigDict,
                               loadImperialUnits, loadMetricUnits, PreferredUnits)
+from py_ballisticcalc.helpers import must_fire
 
 
 def get_object_attribute_values_as_dict(obj: Any) -> dict[str, Any]:
@@ -30,23 +30,12 @@ class TestIssue96_97:
         self.calc = Calculator(engine=loaded_engine_instance, config=BaseEngineConfigDict(cMinimumVelocity=0))
         self.trange = Distance.Meter(1600.2437248702522)
 
-    def must_fire(self, interface: Calculator, zero_shot,
-                  trajectory_range, extra_data,
-                  **kwargs) -> Tuple[HitResult, Union[RangeError, None]]:
-        """wrapper function to resolve RangeError and get HitResult"""
-        try:
-            # try to get valid result
-            return interface.fire(zero_shot, trajectory_range, **kwargs, extra_data=extra_data), None
-        except RangeError as err:
-            # directly init hit result with incomplete data before exception occurred
-            return HitResult(zero_shot, err.incomplete_trajectory, extra=extra_data), err
-
     def test_must_return_hit_result(self):
         """Return results even when desired trajectory_range isn't reached."""
         with pytest.raises(RangeError, match="Max range not reached"):
             self.calc.fire(self.zero, self.trange, extra_data=True)
 
-        hit_result, err = self.must_fire(self.calc, self.zero, self.trange, extra_data=True)
+        hit_result, err = must_fire(self.calc, self.zero, self.trange, extra_data=True)
 
         # should return error
         assert isinstance(err, RangeError)

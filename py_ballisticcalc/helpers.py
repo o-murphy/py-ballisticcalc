@@ -1,10 +1,25 @@
 import bisect
 import math
-from typing import Callable, Any, Final, List
+from typing import Callable, Any, Final, List, Tuple, Optional
 
-from py_ballisticcalc import HitResult, TrajFlag, TrajectoryData, Velocity, Distance
+from py_ballisticcalc.conditions import Shot
+from py_ballisticcalc.exceptions import RangeError
+from py_ballisticcalc.interface import Calculator
+from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
+from py_ballisticcalc.unit import Velocity, Distance
 
 EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81  # Acceleration due to gravity (m/s^2)
+
+
+def must_fire(interface: Calculator, zero_shot: Shot, trajectory_range: Distance, extra_data: bool,
+              **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
+    """wrapper function to resolve RangeError and get HitResult"""
+    try:
+        # try to get valid result
+        return interface.fire(zero_shot, trajectory_range, **kwargs, extra_data=extra_data), None
+    except RangeError as err:
+        # directly init hit result with incomplete data before exception occurred
+        return HitResult(zero_shot, err.incomplete_trajectory, extra=extra_data), err
 
 
 def calculate_drag_free_range(

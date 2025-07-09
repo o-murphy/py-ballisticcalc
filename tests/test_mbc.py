@@ -45,12 +45,13 @@ class TestMBC:
         dm_multi = DragModelMultiBC(
             [BCPoint(.5, V=self.baseline_trajectory[3].velocity),
              BCPoint(.22, V=self.baseline_trajectory[2].velocity)],
-             TableG7)
+            TableG7)
         multi_shot = Shot(weapon=self.weapon, ammo=Ammo(dm_multi, self.ammo.mv))
         multi_trajectory = self.calc.fire(shot=multi_shot, trajectory_range=self.range,
                                           trajectory_step=self.step).trajectory
         # Should show no change before 200 yards
-        assert pytest.approx(multi_trajectory[1].velocity.raw_value, abs=1e-3) == self.baseline_trajectory[1].velocity.raw_value
+        assert pytest.approx(multi_trajectory[1].velocity.raw_value, abs=1e-3) == self.baseline_trajectory[
+            1].velocity.raw_value
         # Should be faster at any point after 200 yards
         assert multi_trajectory[4].velocity.raw_value > self.baseline_trajectory[4].velocity.raw_value
 
@@ -58,7 +59,7 @@ class TestMBC:
         dm = DragModelMultiBC([BCPoint(0.275, V=Velocity.MPS(800)),
                                BCPoint(0.255, V=Velocity.MPS(500)),
                                BCPoint(0.26, V=Velocity.MPS(700))],
-                               TableG7, weight=178, diameter=.308)
+                              TableG7, weight=178, diameter=.308)
         assert pytest.approx(dm.drag_table[0].CD, abs=1e-8) == 0.1259323091692403
         assert pytest.approx(dm.drag_table[-1].CD, abs=1e-8) == 0.1577125859466895
 
