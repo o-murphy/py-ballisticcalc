@@ -151,8 +151,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             Tuple[Distance, Angular]: The maximum range and the launch angle to reach it.
 
         Raises:
-            ValueError: If the angle bracket excludes the look_angle.
             ImportError: If SciPy is not installed.
+            ValueError: If the angle bracket excludes the look_angle.
+            OutOfRangeError: If we fail to find a max range.
 
         TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
             ... and check for weird situations, like backward-bending trajectories,

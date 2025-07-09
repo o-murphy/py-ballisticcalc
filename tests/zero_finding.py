@@ -48,11 +48,10 @@ def create_shot():
     return shot
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
 def test_set_weapon_zero(distance, loaded_engine_instance):
     shot = create_shot()
-    config = BaseEngineConfigDict(cMinimumVelocity=0, cMaxIterations=200)
+    config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     calc.set_weapon_zero(shot, Distance.Meter(distance))
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree}")
@@ -65,13 +64,12 @@ def test_set_weapon_zero(distance, loaded_engine_instance):
     assert abs(hit_result[-1].height.raw_value) < 1e+1
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 def test_zero_with_look_angle(loaded_engine_instance):
     """Test zero finding with a high look angle."""
     distance = Distance.Meter(1000)
     shot = create_shot()
     shot.look_angle = Angular.Degree(30)
-    config = BaseEngineConfigDict(cMinimumVelocity=0, cMaxIterations=200)
+    config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     calc.set_weapon_zero(shot, distance)
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree} degrees")
@@ -80,7 +78,17 @@ def test_zero_with_look_angle(loaded_engine_instance):
     assert abs(hit_result.flag(TrajFlag.ZERO_DOWN).look_distance.raw_value - distance.raw_value) < 1e+1
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
+def test_vertical_shot_zero(loaded_engine_instance):
+    """Test zero finding for a vertical shot."""
+    distance = Distance.Meter(1000)
+    shot = create_shot()
+    shot.look_angle = Angular.Degree(90)
+    config = BaseEngineConfigDict(cMinimumVelocity=0)
+    calc = Calculator(config=config, engine=loaded_engine_instance)
+    zero_angle = calc.set_weapon_zero(shot, distance)
+    assert abs(zero_angle >> Angular.Radian) < calc.VERTICAL_ANGLE_EPSILON_DEGREES
+
+
 def test_zero_degenerate(loaded_engine_instance):
     """Test zero finding when initial shot hits minimum altitude immediately."""
     distance = Distance.Meter(300)
@@ -102,7 +110,6 @@ def test_zero_degenerate(loaded_engine_instance):
     assert result_at_zero.height >> Distance.Meter == pytest.approx(0, abs=1e-2)
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 def test_zero_too_close(loaded_engine_instance):
     """Test zero finding when initial shot is too close to make sense."""
     distance = Distance.Meter(0)
