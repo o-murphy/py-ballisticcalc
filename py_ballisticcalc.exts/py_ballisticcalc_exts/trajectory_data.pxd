@@ -3,7 +3,7 @@ from py_ballisticcalc_exts.v3d cimport (
     V3dT
 )
 
-cdef extern from "include/tdata.h":
+cdef extern from "include/bclib.h":
     # Using 'int' as the underlying type for the enum
     # Cython can typically handle C enums directly.
     # The actual integer values are important for bitwise operations.
@@ -24,7 +24,6 @@ cdef extern from "include/tdata.h":
         double mach
 
 # aliases
-ctypedef TrajFlag_t CTrajFlag
 # ctypedef BaseTrajDataT BaseTrajData # temporary undeclared
 
 cdef class BaseTrajData:

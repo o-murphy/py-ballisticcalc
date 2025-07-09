@@ -8,6 +8,7 @@ from dataclasses import dataclass, asdict
 
 from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Dict, TypedDict, TypeVar
 
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError

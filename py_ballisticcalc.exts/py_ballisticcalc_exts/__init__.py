@@ -8,12 +8,10 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
-# from .vector import Vector
 from .trajectory_data import TrajectoryData
 
 __all__ = (
     'CythonizedEulerIntegrationEngine',
     'CythonizedRK4IntegrationEngine',
-    # 'Vector',
     'TrajectoryData',
 )

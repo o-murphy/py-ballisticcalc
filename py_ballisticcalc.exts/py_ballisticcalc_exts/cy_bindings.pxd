@@ -1,10 +1,26 @@
 # noinspection PyUnresolvedReferences
+from cpython.object cimport PyObject
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport (
     V3dT
 )
 
+cdef extern from "include/bind.h" nogil:
+    MachList_t MachList_t_fromPylist(PyObject *pylist)
+    Curve_t Curve_t_fromPylist(PyObject *data_points)
+
 # Declare the C header file
-cdef extern from "include/types.h" nogil:
+cdef extern from "include/bclib.h" nogil:
+    cdef const double cDegreesFtoR
+    cdef const double cDegreesCtoK
+    cdef const double cSpeedOfSoundImperial
+    cdef const double cSpeedOfSoundMetric
+    cdef const double cLapseRateKperFoot
+    cdef const double cLapseRateImperial
+    cdef const double cPressureExponent
+    cdef const double cLowestTempF
+    cdef const double mToFeet
+
     # Declare the V3dT structure
     ctypedef struct Config_t:
         double cMaxCalcStepSizeFeet
@@ -22,9 +38,13 @@ cdef extern from "include/types.h" nogil:
         CurvePoint_t * points
         size_t length
 
+    void Curve_t_free(Curve_t *curve_ptr)
+
     ctypedef struct MachList_t:
         double * array
         size_t length
+
+    void MachList_t_free(MachList_t *mach_list_ptr)
 
     ctypedef struct Atmosphere_t:
         double _t0
@@ -33,6 +53,13 @@ cdef extern from "include/types.h" nogil:
         double _mach
         double density_ratio
         double cLowestTempC
+
+    void Atmosphere_t_updateDensityFactorAndMachForAltitude(
+        const Atmosphere_t *atmo_ptr,
+        double altitude,
+        double *density_ratio_ptr,
+        double *mach_ptr
+    )
 
     ctypedef struct ShotData_t:
         double bc
@@ -54,34 +81,28 @@ cdef extern from "include/types.h" nogil:
         double stability_coefficient
         Atmosphere_t atmo
 
+    void ShotData_t_free(ShotData_t *shot_data_ptr)
+    double ShotData_t_spinDrift(const ShotData_t *shot_data_ptr, double time)
+    int ShotData_t_updateStabilityCoefficient(ShotData_t *shot_data_ptr)
+    double ShotData_t_dragByMach(const ShotData_t *shot_data_ptr, double mach)
+    double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
+                                       const Curve_t *curve_ptr,
+                                       double mach)
+
     ctypedef struct Wind_t:
         double velocity
         double direction_from
         double until_distance
         double MAX_DISTANCE_FEET
 
+    V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
+    # Wind_t Wind_t_fromPythonObj(PyObject *w)
 
+
+# python to C objects conversion
 cdef Config_t config_bind(object config)
 
-cdef void update_density_factor_and_mach_for_altitude(
-    const Atmosphere_t * atmo_ptr, double altitude, double * density_ratio_ptr, double * mach_ptr
-)
-
-cdef double cy_get_calc_step(const Config_t * config_ptr, double step = ?)
 cdef MachList_t cy_table_to_mach(list[object] data)
 cdef Curve_t cy_calculate_curve(list[object] data_points)
-cdef double cy_calculate_by_curve_and_mach_list(const MachList_t *mach_list_ptr, const Curve_t *curve_ptr, double mach)
-cdef double cy_spin_drift(const ShotData_t * shot_data_ptr, double time)
-cdef double cy_drag_by_mach(const ShotData_t * shot_data_ptr, double mach)
-cdef void cy_update_stability_coefficient(ShotData_t * shot_data_ptr)
 
-cdef void free_curve(Curve_t *curve_ptr)
-cdef void free_mach_list(MachList_t *mach_list_ptr)
-cdef void free_trajectory(ShotData_t *shot_data_ptr)
-
-cdef double cDegreesFtoR
-cdef double cSpeedOfSoundImperial
-cdef double cLapseRateImperial
-
-cdef Wind_t WindT_from_python(object w)
-cdef V3dT WindT_to_V3dT(const Wind_t * wind_ptr)
+cdef Wind_t Wind_t_from_python(object w)
