@@ -12,7 +12,7 @@ from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.generics.engine import EngineProtocol
-from py_ballisticcalc.logger import logger, get_debug
+from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import (Distance, Angular, Velocity, Weight,
                                    Energy, Pressure, Temperature, Unit)
@@ -134,14 +134,6 @@ class _TrajectoryDataFilter:
     # pylint: disable=too-many-positional-arguments
     def should_record(self, position: Vector, velocity: Vector, mach: float,
                       time: float) -> Optional[BaseTrajData]:
-        # region DEBUG
-        if get_debug():
-            logger.debug(
-                f"should_record called with time={time}, "
-                f"position=({position.x}, {position.y}, {position.z}), "
-                f"velocity=({velocity.x}, {velocity.y}, {velocity.z}), mach={mach}"
-            )
-        # endregion
         self.current_flag = TrajFlag.NONE
         data = None
         if (self.range_step > 0) and (position.x >= self.next_record_distance):
@@ -174,17 +166,6 @@ class _TrajectoryDataFilter:
         self.previous_position = position
         self.previous_velocity = velocity
         self.previous_mach = mach
-        # region DEBUG
-        if get_debug():
-            if data is not None:
-                logger.debug(
-                    f"should_record returning BaseTrajData time={data.time}, "
-                    f"position=({data.position.x}, {data.position.y}, {data.position.z}), "
-                    f"velocity=({data.velocity.x}, {data.velocity.y}, {data.velocity.z}), mach={data.mach}"
-                )
-            else:
-                logger.debug("should_record returning None")
-        # endregion
         return data
 
     def check_next_time(self, time: float):

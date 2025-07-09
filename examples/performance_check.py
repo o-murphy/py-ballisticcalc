@@ -148,7 +148,7 @@ for ep in _EngineLoader.iter_engines():
 
     if ep.name in {"euler_engine", "rk4_engine"}:
         continue  # skip pure ones
-    elif ep.name in {"cythonized_euler_engine", "cythonized_rk_engine"}:
+    elif ep.name in {"cythonized_euler_engine", "cythonized_rk4_engine"}:
         ...
     elif ep.name in {"scipy"}:
         config: SciPyEngineConfigDict = {
