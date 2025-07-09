@@ -25,7 +25,7 @@ jobs:
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ] # Operating systems to test on
         python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13" ] # Python versions to test
         # The 'engine' variable for this matrix. Make sure the name matches what you pass in 'with:' below.
-        engine: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
+        engine: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk4_engine" ]
 
     # This is the key part: it tells GitHub Actions to execute the reusable workflow.
     # The path is relative to your repository's root directory.
@@ -49,7 +49,7 @@ jobs:
         os: [ ubuntu-latest ] # Fixed to one OS for minimal testing
         python-version: [ "3.9" ] # Fixed to one Python version for minimal testing
         # The 'engine-entry' variable as defined in your original minimal matrix.
-        engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk_engine" ]
+        engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk4_engine" ]
 
     # Call the same reusable workflow for these minimal test combinations.
     uses: ./.github/workflows/pytest-reusable.yml

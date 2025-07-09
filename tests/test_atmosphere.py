@@ -3,7 +3,6 @@ import pytest
 from py_ballisticcalc import *
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 class TestAtmosphere:
     """Unittests of the Atmosphere class"""
 

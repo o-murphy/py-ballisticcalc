@@ -180,8 +180,6 @@ __all__ = [
     'logger',
     'enable_file_logging',
     'disable_file_logging',
-    'get_debug',
-    'set_debug',
 ]
 
 # __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S', 'RA4')]

@@ -14,8 +14,6 @@ def get_object_attribute_values_as_dict(obj: Any) -> dict[str, Any]:
     """Returns the attributes of an object as a dictionary."""
     return {attr: getattr(obj, attr) for attr in dir(obj) if not attr.startswith(("_", "defaults", "set"))}
 
-
-@pytest.mark.usefixtures("loaded_engine_instance")
 class TestIssue96_97:
     """Scenario where velocity.x approaches zero."""
 
@@ -44,7 +42,6 @@ class TestIssue96_97:
         assert isinstance(hit_result, HitResult), f"Expected HitResult but got {type(hit_result)}"
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 class TestIssue144:
     """Changing the preferred unit should not affect the results"""
 

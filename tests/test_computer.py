@@ -10,7 +10,6 @@ from py_ballisticcalc import (
 from py_ballisticcalc.unit import *
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 class TestComputerPytest:
 
     @pytest.fixture(autouse=True)
