@@ -7,10 +7,8 @@ import pytest
 from py_ballisticcalc import *
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 class TestTrajectory:
 
-    @pytest.fixture
     def test_zero1(self, loaded_engine_instance):
         dm = DragModel(0.365, TableG1, 69, 0.223, 0.9)
         ammo = Ammo(dm, 2600)
@@ -21,7 +19,6 @@ class TestTrajectory:
                                                       Distance(100, Distance.Yard))
         assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-6) == 0.0016514
 
-    @pytest.fixture
     def test_zero2(self, loaded_engine_instance):
         dm = DragModel(0.223, TableG7, 69, 0.223, 0.9)
         ammo = Ammo(dm, 2750)
@@ -73,10 +70,8 @@ class TestTrajectory:
         [
             (lambda trajectory: trajectory[0], 0, 2750, 2.463, 2820.6, -2, 0, 0, 0, 0, 880, Angular.MOA),
             (lambda trajectory: trajectory[1], 100, 2351.2, 2.106, 2061, 0, 0, -0.6, -0.6, 0.118, 550, Angular.MOA),
-            (lambda trajectory: trajectory[5], 500, 1169.1, 1.047, 509.8, -87.9, -16.8, -19.5, -3.7, 0.857, 67,
-             Angular.MOA),
-            (lambda trajectory: trajectory[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20,
-             Angular.MOA),
+            (lambda trajectory: trajectory[5], 500, 1169.1, 1.047, 509.8, -87.9, -16.8, -19.5, -3.7, 0.857, 67, Angular.MOA),
+            (lambda trajectory: trajectory[10], 1000, 776.4, 0.695, 224.9, -823.9, -78.7, -87.5, -8.4, 2.495, 20, Angular.MOA),
         ],
         ids=["0_yards", "100_yards", "500_yards", "1000_yards"]
     )
@@ -100,10 +95,8 @@ class TestTrajectory:
         [
             (lambda trajectory: trajectory[0], 0, 2750, 2.46, 2821, -2.0, 0.0, 0.0, 0.00, 0.000, 880, Angular.Mil),
             (lambda trajectory: trajectory[1], 100, 2545, 2.28, 2416, 0.0, 0.0, -0.2, -0.06, 0.113, 698, Angular.Mil),
-            (
-            lambda trajectory: trajectory[5], 500, 1814, 1.62, 1227, -56.2, -3.2, -6.3, -0.36, 0.672, 252, Angular.Mil),
-            (lambda trajectory: trajectory[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54,
-             Angular.Mil)
+            (lambda trajectory: trajectory[5], 500, 1814, 1.62, 1227, -56.2, -3.2, -6.3, -0.36, 0.672, 252, Angular.Mil),
+            (lambda trajectory: trajectory[10], 1000, 1086, 0.97, 440, -399.9, -11.3, -31.6, -0.90, 1.748, 54, Angular.Mil)
         ],
         ids=["0_yards", "100_yards", "500_yards", "1000_yards"]
     )

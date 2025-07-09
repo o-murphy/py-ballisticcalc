@@ -5,7 +5,6 @@ import pytest
 from py_ballisticcalc import *
 
 
-@pytest.mark.usefixtures("loaded_engine_instance")
 class TestMBC:
 
     @pytest.fixture(autouse=True)
