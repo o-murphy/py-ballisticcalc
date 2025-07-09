@@ -480,20 +480,21 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         self._init_trajectory(shot_info)
 
         target_look_dist_ft = distance >> Distance.Foot
+        look_angle = shot_info.look_angle >> Angular.Radian
 
         #region Edge cases
         if abs(target_look_dist_ft) < self.calc_step:
-            raise ZeroFindingError(0, 0, Angular.Radian(shot.look_angle),
+            raise ZeroFindingError(0, 0, shot_info.look_angle,
                     reason=f"Target distance {target_look_dist_ft}ft too small for zeroing.")
-        if abs(shot.look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
+        if abs(look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
             # Virtually vertical shot
-            return Angular.Radian(self.look_angle)
+            return shot_info.look_angle
         #endregion Edge cases
 
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
-        zero_distance = (distance >> Distance.Foot) * math.cos(shot.look_angle)  # Horizontal distance
+        zero_distance = (distance >> Distance.Foot) * math.cos(look_angle)  # Horizontal distance
 
         iterations_count = 0
         previous_distance = 0.0
@@ -519,12 +520,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             height = t.height >> Distance.Foot
             trajectory_angle = t.angle >> Angular.Radian    # Flight angle at current distance
             #signed_error = height - height_at_zero
-            signed_error = height - math.tan(shot.look_angle) * current_distance
+            signed_error = height - math.tan(look_angle) * current_distance
             sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
             if (-1.5 < sensitivity < -0.5) or range_limit:
                 range_limit = True  # Scenario too unstable for 1st-order correction
                 # TODO: This can be very slow to converge.  Consider using root-finder here.
-                correction = -signed_error / (math.cos(shot.look_angle) * current_distance)
+                correction = -signed_error / (math.cos(look_angle) * current_distance)
             else:
                 correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st-order correction
 

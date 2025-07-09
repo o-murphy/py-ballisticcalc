@@ -294,20 +294,21 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self._init_trajectory(shot_info)
 
         target_look_dist_ft = distance >> Distance.Foot
+        look_angle = shot_info.look_angle >> Angular.Radian
 
         #region Edge cases
         if abs(target_look_dist_ft) < self.calc_step:
-            raise ZeroFindingError(0, 0, Angular.Radian(self.look_angle),
+            raise ZeroFindingError(0, 0, shot_info.look_angle,
                     reason=f"Target distance {target_look_dist_ft}ft too small for zeroing.")
-        if abs(self.look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
+        if abs(look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
             # Virtually vertical shot
-            return Angular.Radian(self.look_angle)
+            return shot_info.look_angle
         #endregion Edge cases
 
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
-        zero_distance = target_look_dist_ft * math.cos(self.look_angle)  # Horizontal distance
+        zero_distance = target_look_dist_ft * math.cos(look_angle)  # Horizontal distance
 
         iterations_count = 0
         previous_distance = 0.0
@@ -332,16 +333,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             height = t.height >> Distance.Foot
             trajectory_angle = t.angle >> Angular.Radian    # Flight angle at current distance
             #signed_error = height - height_at_zero
-            signed_error = height - math.tan(self.look_angle) * current_distance
+            signed_error = height - math.tan(look_angle) * current_distance
             sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
             if -1.5 < sensitivity < -0.5:
                 # Scenario too unstable for 1st order iteration
+                logger.debug("Unstable scenario detected in zero_angle(); calling find_zero_angle()")
                 break
             else:
                 correction = -signed_error / (current_distance * (1 + sensitivity))  # 1st order correction
 
-            # print(f'Zero step {iterations_count}: error={signed_error} '
-            #      f'\t{self.barrel_elevation}rad\t at {current_distance}ft. Correction={correction}rads')
+            logger.debug(f'Zero step {iterations_count}: error={signed_error} '
+                f'\t{self.barrel_elevation}rad\t at {current_distance}ft. Correction={correction}rads')
 
             zero_error = math.fabs(signed_error)
             if (prev_range := math.fabs(previous_distance - zero_distance)) > self.ALLOWED_HORIZONTAL_ZERO_ERROR_FEET:
