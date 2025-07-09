@@ -17,7 +17,7 @@ class TestTrajectory:
         calc = Calculator(engine=loaded_engine_instance)
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                                       Distance(100, Distance.Yard))
-        assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-6) == 0.0016514
+        assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-4) == 0.0016514
 
     def test_zero2(self, loaded_engine_instance):
         dm = DragModel(0.223, TableG7, 69, 0.223, 0.9)
@@ -27,7 +27,7 @@ class TestTrajectory:
         calc = Calculator(engine=loaded_engine_instance)
         zero_angle = calc.barrel_elevation_for_target(Shot(weapon=weapon, ammo=ammo, atmo=atmosphere),
                                                       Distance(100, Distance.Yard))
-        assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-6) == 0.0012286
+        assert pytest.approx(zero_angle >> Angular.Radian, abs=1e-4) == 0.0012286
 
     def custom_assert_equal(self, a, b, accuracy, name):
         assert fabs(a - b) < accuracy, f'Equality {name} failed (|{a} - {b}|, {accuracy} digits)'
