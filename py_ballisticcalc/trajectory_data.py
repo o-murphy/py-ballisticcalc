@@ -202,6 +202,9 @@ class HitResult:
     trajectory: list[TrajectoryData] = field(repr=False)
     extra: bool = False
 
+    def __len__(self) -> int:
+        return len(self.trajectory)
+
     def __iter__(self):
         yield from self.trajectory
 
