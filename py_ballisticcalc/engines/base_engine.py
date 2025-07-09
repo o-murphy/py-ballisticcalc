@@ -12,7 +12,6 @@ from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError
 from py_ballisticcalc.generics.engine import EngineProtocol
-from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import (Distance, Angular, Velocity, Weight,
                                    Energy, Pressure, Temperature, Unit)
