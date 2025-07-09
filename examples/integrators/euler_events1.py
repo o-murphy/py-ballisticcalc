@@ -15,7 +15,7 @@ from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.vector import Vector
 
 
-class BaseTrajData(NamedTuple):
+class TrajectoryState(NamedTuple):
     """Minimal data for one point in ballistic trajectory"""
     time: float
     position: Vector
@@ -130,14 +130,6 @@ def time_step_event(time: float, position: Vector, velocity: Vector, mach_fps: f
 
 time_step_event.terminal = False
 time_step_event.flag = TrajFlag.RANGE  # Using RANGE flag for time-based recording
-
-
-class TrajectoryState:
-    def __init__(self, time: float, position: Vector, velocity: Vector, mach: float):
-        self.time = time
-        self.position = position
-        self.velocity = velocity
-        self.mach_fps = mach
 
 
 class EventHandler:
@@ -304,7 +296,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
     def _interpolate_event_point(self, t0: float, r0: Vector, v0: Vector, m0: float,
                                  t1: float, r1: Vector, v1: Vector, m1: float,
-                                 event_func: IntegratorEventFunc, event_args: Dict[str, Any]) -> Optional[BaseTrajData]:
+                                 event_func: IntegratorEventFunc, event_args: Dict[str, Any]) -> Optional[TrajectoryState]:
         """
         Helper function for event point interpolation using a bisection method.
         Finds the exact time and state where the event function crosses zero between t0 and t1.
@@ -361,7 +353,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
             if abs(mid_val) < tolerance:
                 # Found the event point within tolerance
-                return BaseTrajData(time=mid_t, position=mid_r, velocity=mid_v, mach_fps=mid_m)
+                return TrajectoryState(time=mid_t, position=mid_r, velocity=mid_v, mach_fps=mid_m)
             elif low_val * mid_val < 0:  # Event is in the first half [low_t, mid_t]
                 high_t = mid_t
                 high_val = mid_val  # Update high_val for next iteration
@@ -377,4 +369,4 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         mid_r = r0 + (r1 - r0) * ratio
         mid_v = v0 + (v1 - v0) * ratio
         mid_m = m0 + (m1 - m0) * ratio
-        return BaseTrajData(time=mid_t, position=mid_r, velocity=mid_v, mach_fps=mid_m)
+        return TrajectoryState(time=mid_t, position=mid_r, velocity=mid_v, mach_fps=mid_m)
