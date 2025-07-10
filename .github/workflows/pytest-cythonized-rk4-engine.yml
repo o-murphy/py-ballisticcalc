@@ -11,6 +11,10 @@ on:
     branches:
       - '*'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # Job for full matrix, runs ONLY on pull_request events
   test_full_matrix:
