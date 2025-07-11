@@ -28,7 +28,12 @@ def one_degree_shot(loaded_engine_instance):
         muzzle_velocity >> Velocity.MPS, angle_in_degrees
     )
     calc = Calculator(engine=loaded_engine_instance)
-    hit_result = calc.fire(shot, Distance.Meter(max_drag_free_range), extra_data=True)
+    hit_result = calc.fire(
+        shot,
+        Distance.Meter(max_drag_free_range),
+        Distance.Meter(max_drag_free_range / 10),
+        extra_data=True
+    )
     return hit_result
 
 

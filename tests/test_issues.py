@@ -61,6 +61,7 @@ class TestIssue144:
         ammo = Ammo(drag_model, Velocity.MPS(930))
         self.shot = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(13.122126582196692))
         self.range = Distance.Meter(740.8068308628336)
+        self.step = Distance.Meter(740.8068308628336 / 10)
         self.calc = Calculator(engine=loaded_engine_instance)
 
     def teardown_method(self):
@@ -75,35 +76,47 @@ class TestIssue144:
 
     def testResultsWithImperialUnits(self):
         loadImperialUnits()
-        hit_result = self.calc.fire(self.shot, self.range, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range, self.step, extra_data=False)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithImperialUnits_FloatInput(self):
         loadImperialUnits()
-        hit_result = self.calc.fire(self.shot, self.range >> PreferredUnits.distance, extra_data=False)
+        hit_result = self.calc.fire(
+            self.shot,
+            self.range >> PreferredUnits.distance,
+            self.step >> PreferredUnits.distance,
+            extra_data=False
+        )
         self.check_expected_last_point(hit_result)
 
     def testResultsWithMetricUnits(self):
         loadMetricUnits()
-        hit_result = self.calc.fire(self.shot, self.range, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range, self.step, extra_data=False)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithMetricUnits_FloatInput(self):
         loadMetricUnits()
-        hit_result = self.calc.fire(self.shot, self.range >> PreferredUnits.distance, extra_data=False)
+        hit_result = self.calc.fire(
+            self.shot,
+            self.range >> PreferredUnits.distance,
+            self.step >> PreferredUnits.distance,
+            extra_data=False
+        )
         self.check_expected_last_point(hit_result)
 
     def testResultsWithMetricUnits_FloatTrajectoryStep(self):
         loadMetricUnits()
-        hit_result = self.calc.fire(self.shot, self.range,
-                                    trajectory_step=Distance.Inch(2916.5623262316285) >> PreferredUnits.distance,
-                                    extra_data=False)
+        hit_result = self.calc.fire(
+            self.shot,
+            self.range,
+            trajectory_step=Distance.Inch(2916.5623262316285) >> PreferredUnits.distance,
+            extra_data=False)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithImperialUnitsAndYards(self):
         loadImperialUnits()
         PreferredUnits.distance = Distance.Yard
-        hit_result = self.calc.fire(self.shot, self.range, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range, self.step, extra_data=False)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithImperialUnitAndYards_UnitTrajectoryStep(self):
@@ -116,5 +129,10 @@ class TestIssue144:
     def testResultWithImperialUnits_FloatRange(self):
         loadImperialUnits()
         assert PreferredUnits.distance == Distance.Foot
-        hit_result = self.calc.fire(self.shot, self.range >> Distance.Foot, extra_data=False)
+        hit_result = self.calc.fire(
+            self.shot,
+            self.range >> Distance.Foot,
+            self.step >> Distance.Foot,
+            extra_data=False
+        )
         self.check_expected_last_point(hit_result)
