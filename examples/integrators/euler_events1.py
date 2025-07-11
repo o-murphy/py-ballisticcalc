@@ -4,7 +4,6 @@ import math
 from dataclasses import dataclass
 from typing import Optional, List, NamedTuple, Any, Union, Callable, Literal
 
-from mypy.semanal_main import MAX_ITERATIONS
 from typing_extensions import override
 
 from py_ballisticcalc import logger
