@@ -1,14 +1,18 @@
 # Refactored EulerIntegrationEngine with scipy-like event logic
 
 import math
-from typing import Optional, List, Dict, NamedTuple, Protocol, TypedDict, Any, Union
+from dataclasses import dataclass
+from typing import Optional, List, NamedTuple, Any, Union, Callable, Literal
 
+from mypy.semanal_main import MAX_ITERATIONS
 from typing_extensions import override
 
 from py_ballisticcalc import logger
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.engines.base_engine import (
-    BaseIntegrationEngine, create_trajectory_row, BaseEngineConfigDict, _WindSock
+    BaseIntegrationEngine, BaseEngineConfigDict, _WindSock,
+    _new_feet, _new_fps, _new_rad, _new_ft_lb, _new_lb,
+    calculate_energy, calculate_ogw, get_correction
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -23,126 +27,114 @@ class TrajectoryState(NamedTuple):
     mach_fps: float
 
 
-class IntegratorEventFunc(Protocol):
+IntegratorEventFunc = Callable[[TrajectoryState, Any], float]
+
+
+MAX_ITERATIONS_LIMIT = 1000000
+
+@dataclass(unsafe_hash=True)
+class IntegratorEvent:
     """
     Protocol for event functions.
     Event functions should return a scalar value, where a zero-crossing indicates an event.
     """
-    terminal: bool  # If True, the integration stops when this event occurs.
-    flag: TrajFlag  # Trajectory flag to associate with the event.
-
-    def __call__(self, time: float, position: Vector, velocity: Vector, mach_fps: float, **kwargs: Any) -> float: ...
-
-
-class IntegratorEvent(TypedDict):
-    """
-    Typed dictionary to store information about an integrator event.
-    """
     func: IntegratorEventFunc
-    args: Dict[str, Any]
-    # next_threshold is used for events that trigger at regular intervals (e.g., range_step, time_step)
-    next_threshold: Optional[float]
+    terminal: bool = False
+    direction: Literal[-1, 0, 1] = 0
+    flag: Union[TrajFlag, int] = TrajFlag.NONE
+
+    def __call__(self, s: TrajectoryState, **kwargs) -> float:  # possibly s: np.ndarray
+        return self.func(s, **kwargs)
+
+
+def integrator_event(
+        terminal: bool = False,
+        direction: Literal[-1, 0, 1] = 0,
+        flag: Union[TrajFlag, int] = TrajFlag.NONE
+) -> Callable[[IntegratorEventFunc], IntegratorEvent]:
+    def decorator(func: IntegratorEventFunc) -> IntegratorEvent:
+        return IntegratorEvent(func, terminal, direction, flag)
+
+    return decorator
 
 
 # --- Event Functions ---
 # These functions define the conditions for various events.
 # They should return a value that crosses zero when the event occurs.
 
-def zero_crossing_event(time: float, position: Vector, velocity: Vector, mach: float, look_angle: float) -> float:
+@integrator_event(terminal=False, flag=TrajFlag.ZERO)
+def zero_crossing_event(state: TrajectoryState, look_angle=float) -> float:
     """Returns the elevation relative to the line of sight. The event occurs when the value is 0."""
-    reference_height = position.x * math.tan(look_angle)
-    return position.y - reference_height
+    reference_height = state.position.x * math.tan(look_angle)
+    return state.position.y - reference_height
 
 
-zero_crossing_event.terminal = False
-zero_crossing_event.flag = TrajFlag.ZERO
-
-
-def mach_crossing_event(time: float, position: Vector, velocity: Vector, mach_fps: float) -> float:
+@integrator_event(terminal=False, flag=TrajFlag.MACH)
+def mach_crossing_event(state: TrajectoryState) -> float:
     """Returns (speed - Mach). The event occurs when the value is 0 (passing Mach 1)."""
-    # Use velocity.magnitude() for the actual speed relative to the ground
-    return velocity.magnitude() - mach_fps
+    return state.velocity.magnitude() - state.mach_fps
 
 
-mach_crossing_event.terminal = False
-mach_crossing_event.flag = TrajFlag.MACH
-
-
-def apex_event(time: float, position: Vector, velocity: Vector, mach_fps: float) -> float:
+@integrator_event(terminal=False, direction=-1, flag=TrajFlag.APEX)
+def apex_event(state: TrajectoryState) -> float:
     """Returns the vertical component of the velocity. The event occurs when the value is 0 (vertex)."""
-    return velocity.y
+    return state.velocity.y
 
 
-apex_event.terminal = False
-apex_event.flag = TrajFlag.APEX
-
-
-def min_velocity_event(time: float, position: Vector, velocity: Vector, mach_fps: float,
+@integrator_event(terminal=True, direction=-1, flag=TrajFlag.NONE)
+def min_velocity_event(state: TrajectoryState,
                        min_velocity_threshold: float) -> float:
     """Returns (speed - threshold). The event occurs when the value is 0."""
-    return velocity.magnitude() - min_velocity_threshold
+    return state.velocity.magnitude() - min_velocity_threshold
 
 
-min_velocity_event.terminal = True
-min_velocity_event.flag = TrajFlag.NONE
-
-
-def max_drop_event(time: float, position: Vector, velocity: Vector, mach_fps: float,
+@integrator_event(terminal=True, direction=-1, flag=TrajFlag.NONE)
+def max_drop_event(state: TrajectoryState,
                    max_drop_threshold: float) -> float:
     """
     Returns (current decline - maximum decline). The event occurs when the value is 0.
     Assumes max_drop_threshold is an absolute negative Y coordinate.
     """
-    return position.y - max_drop_threshold
+    return state.position.y - max_drop_threshold
 
 
-max_drop_event.terminal = True
-max_drop_event.flag = TrajFlag.NONE
-
-
-def min_altitude_event(time: float, position: Vector, velocity: Vector, mach_fps: float, initial_altitude: float,
+@integrator_event(terminal=True, direction=-1, flag=TrajFlag.NONE)
+def min_altitude_event(state: TrajectoryState, initial_altitude: float,
                        min_altitude_threshold: float) -> float:
     """
     Returns (current_altitude - minimum_altitude). The event occurs when the value is 0.
     Current altitude is initial_altitude + position.y (where position.y is change in altitude).
     """
-    return (initial_altitude + position.y) - min_altitude_threshold
+    return (initial_altitude + state.position.y) - min_altitude_threshold
 
 
-min_altitude_event.terminal = True
-min_altitude_event.flag = TrajFlag.NONE
-
-
-def range_step_event(time: float, position: Vector, velocity: Vector, mach_fps: float,
+@integrator_event(terminal=False, direction=1, flag=TrajFlag.RANGE)
+def range_step_event(state: TrajectoryState,
                      next_record_distance: float) -> float:
     """Returns (current_x_distance - next_record_distance)."""
-    return position.x - next_record_distance
+    return state.position.x - next_record_distance
 
 
-range_step_event.terminal = False
-range_step_event.flag = TrajFlag.RANGE
-
-
-def time_step_event(time: float, position: Vector, velocity: Vector, mach_fps: float, next_record_time: float) -> float:
+@integrator_event(terminal=False, direction=1, flag=TrajFlag.RANGE)
+def time_step_event(state: TrajectoryState, next_record_time: float) -> float:
     """Returns (current_time - next_record_time)."""
-    return time - next_record_time
+    return state.time - next_record_time
 
 
-time_step_event.terminal = False
-time_step_event.flag = TrajFlag.RANGE  # Using RANGE flag for time-based recording
+@integrator_event(terminal=True, direction=0, flag=TrajFlag.RANGE)
+def max_range_event(state: TrajectoryState, max_range_threshold: float) -> float:
+    """Returns (current_time - next_record_time)."""
+    return state.position.x - (max_range_threshold + 1)
 
 
 class EventHandler:
-    def __init__(self, func, args: dict, flag: Union[TrajFlag, int], terminal: bool):
+    def __init__(self, func: IntegratorEvent, **kwargs):
         self.func = func
-        self.args = args
-        self.flag = flag
-        self.terminal = terminal
+        self.kwargs = kwargs
         self.last_val: Optional[float] = None
 
-    def evaluate(self, state: TrajectoryState) -> float:
-        val = self.func(state.time, state.position, state.velocity, state.mach_fps, **self.args)
-        return val
+    def __call__(self, state: TrajectoryState) -> float:
+        return self.func(state, **self.kwargs)
 
     def check_event(self, current_val: float) -> bool:
         if self.last_val is None:
@@ -153,82 +145,124 @@ class EventHandler:
         return triggered
 
 
+# temporary trick
+RangeError.MaximumRangeExceeded = "MaximumRangeExceeded"
+MAP_EVENT_TO_ERR = {
+    min_velocity_event: RangeError.MinimumVelocityReached,
+    min_altitude_event: RangeError.MinimumAltitudeReached,
+    max_drop_event: RangeError.MaximumDropReached,
+    # max_range_event: RangeError.MaximumRangeExceeded  # is not error
+    max_range_event: None  # is not error
+}
+
+
 class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     def __init__(self, config: BaseEngineConfigDict) -> None:
         super().__init__(config)
         self._event_handlers: List[EventHandler] = []
 
-    def _setup_events(self, record_step, time_step, initial_state: TrajectoryState, filter_flags):
+    def _add_event_handler(self, event_func_proto: IntegratorEvent, **kwargs):
+        # Check if an EventHandler for this specific function and kwargs already exists
+        for handler in self._event_handlers:
+            if handler.func is event_func_proto and handler.kwargs == kwargs:
+                # logger.debug(f"Event handler {event_func_proto.func.__name__} with kwargs {kwargs} already exists, skipping addition.")
+                return  # Already exists, do nothing
+
+        self._event_handlers.append(EventHandler(event_func_proto, **kwargs))
+        # logger.debug(f"Added event handler: {event_func_proto.
+
+    def _setup_events(self, maximum_range, record_step, time_step, initial_state: TrajectoryState, filter_flags):
         # Standard events
+
         if filter_flags & TrajFlag.ZERO:
-            self._event_handlers.append(
-                EventHandler(zero_crossing_event, {"look_angle": self.look_angle_rad}, TrajFlag.ZERO, False))
+            self._add_event_handler(zero_crossing_event, look_angle=self.look_angle_rad)
         if filter_flags & TrajFlag.MACH:
-            self._event_handlers.append(EventHandler(mach_crossing_event, {}, TrajFlag.MACH, False))
+            self._add_event_handler(mach_crossing_event)
         if filter_flags & TrajFlag.APEX:
-            self._event_handlers.append(EventHandler(apex_event, {}, TrajFlag.APEX, False))
+            self._add_event_handler(apex_event)
+
+        self._add_event_handler(max_range_event, max_range_threshold=maximum_range)
 
         # Terminal events
-        self._event_handlers.extend([
-            EventHandler(min_velocity_event, {"min_velocity_threshold": self._config.cMinimumVelocity}, TrajFlag.NONE,
-                         True),
-            EventHandler(max_drop_event, {"max_drop_threshold": self._config.cMaximumDrop}, TrajFlag.NONE, True),
-            EventHandler(min_altitude_event, {
-                "initial_altitude": self.alt0,
-                "min_altitude_threshold": self._config.cMinimumAltitude
-            }, TrajFlag.NONE, True)
-        ])
+        self._add_event_handler(min_velocity_event,
+                                min_velocity_threshold=self._config.cMinimumVelocity)
+        max_drop = max(self._config.cMaximumDrop, self._config.cMinimumAltitude - self.alt0)
+        self._add_event_handler(max_drop_event,
+                                max_drop_threshold=max_drop)
+        self._add_event_handler(min_altitude_event,
+                                initial_altitude=self.alt0,
+                                min_altitude_threshold=self._config.cMinimumAltitude)
 
         # POI events
         if record_step > 0:
-            self._event_handlers.append(EventHandler(range_step_event, {
-                "next_record_distance": initial_state.position.x + record_step
-            }, TrajFlag.RANGE, False))
+            self._add_event_handler(range_step_event,
+                                    next_record_distance=initial_state.position.x + record_step)
         if time_step > 0:
-            self._event_handlers.append(EventHandler(time_step_event, {
-                "next_record_time": initial_state.time + time_step
-            }, TrajFlag.RANGE, False))
+            self._add_event_handler(time_step_event,
+                                    next_record_time=initial_state.time + time_step)
 
     def _clear_events(self):
         self._event_handlers = []
 
-    def _process_events(self, prev_state: TrajectoryState, curr_state: TrajectoryState) -> Optional[str]:
+    def _process_events(self, prev_state: TrajectoryState, curr_state: TrajectoryState) -> Optional[EventHandler]:
+
         for handler in self._event_handlers:
             try:
-                prev_val = handler.evaluate(prev_state)
-                curr_val = handler.evaluate(curr_state)
-            except Exception:
+                prev_val = handler(prev_state)
+                curr_val = handler(curr_state)
+            except Exception as e: # Added e for logging
+                logger.warning(f"Error evaluating event function {handler.func.__name__}: {e}") # Log error details
                 continue
 
             if handler.check_event(curr_val):
+                # --- THIS IS THE CRUCIAL PART TO UNCOMMENT AND USE ---
+                if handler.func.direction != 0:
+                    # If direction is 1, it must go from prev_val < 0 to curr_val >= 0 (increasing)
+                    # If direction is -1, it must go from prev_val > 0 to curr_val <= 0 (decreasing)
+                    if handler.func.direction == 1 and prev_val > curr_val: # Was decreasing, but wanted increasing
+                        continue
+                    if handler.func.direction == -1 and prev_val < curr_val: # Was increasing, but wanted decreasing
+                        continue
+                # --- END OF CRUCIAL PART ---
+
                 interp = self._interpolate_event_point(
-                    prev_state.time, prev_state.position, prev_state.velocity, prev_state.mach_fps,
-                    curr_state.time, curr_state.position, curr_state.velocity, curr_state.mach_fps,
-                    handler.func, handler.args
+                    prev_state, curr_state, handler
                 )
+
                 if interp:
-                    self._ranges.append(create_trajectory_row(
-                        interp.time, interp.position, interp.velocity,
-                        interp.velocity.magnitude(), interp.mach_fps,
-                        self.spin_drift(interp.time), self.look_angle_rad,
-                        self._density_factor, self._drag, self.weight, handler.flag))
+
                     # Advance next thresholds if needed
+                    if not handler.func == max_range_event:
+                        self._ranges.append(self.create_trajectory_row(interp, handler.func.flag))
                     if handler.func == range_step_event:
-                        handler.args["next_record_distance"] += self._record_step
+                        handler.kwargs["next_record_distance"] += self._record_step
                     elif handler.func == time_step_event:
-                        handler.args["next_record_time"] += self._time_step
-                    if handler.terminal:
-                        return self._map_event_to_error(handler.func)
+                        handler.kwargs["next_record_time"] += self._time_step
+                    if handler.func.terminal:
+                        return handler
         return None
 
-    def _map_event_to_error(self, func) -> str:
-        if func == min_velocity_event:
-            return RangeError.MinimumVelocityReached
-        elif func == max_drop_event:
-            return RangeError.MaximumDropReached
-        elif func == min_altitude_event:
-            return RangeError.MinimumAltitudeReached
-        return "RangeError.UnknownTermination"
+    def _step(self, state: TrajectoryState) -> Optional[TrajectoryState]:
+
+        if state.position.x >= self.wind_sock.next_range:
+            wind_vector = self._wind_sock.vector_for_range(state.position.x)
+        else:
+            wind_vector = self._wind_sock.current_vector()
+
+        vel_rel_air = state.velocity - wind_vector
+        vel_mag = vel_rel_air.magnitude()
+
+        delta_time = self.calc_step / max(1.0, vel_mag)
+        density_factor, mach_fps = self._shot_info.atmo.get_density_and_mach_for_altitude(
+            self.alt0 + state.position.y)
+        drag = density_factor * vel_mag * self.drag_by_mach(vel_mag / max(mach_fps, 1e-6))
+        accel = self.gravity_vector - vel_rel_air * drag
+
+        new_velocity = state.velocity + accel * delta_time
+        new_position = state.position + new_velocity * delta_time
+        new_time = state.time + delta_time
+
+        return TrajectoryState(new_time, new_position, new_velocity, mach_fps)
 
     @override
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
@@ -237,8 +271,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         self._record_step = record_step
         self._time_step = time_step
 
-        wind_sock = _WindSock(shot_info.winds)
-        wind_vector = wind_sock.current_vector()
+        self._shot_info = shot_info
+        self._wind_sock = _WindSock(shot_info.winds)
 
         velocity = self.muzzle_velocity
         position = Vector(0.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
@@ -249,58 +283,53 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         ).mul_by_const(velocity)
 
         time = 0.0
-        self._density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + position.y)
+        density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + position.y)
         state = TrajectoryState(time, position, velocity_vector, mach)
-        self._ranges.append(create_trajectory_row(
-            time, position, velocity_vector, velocity_vector.magnitude(), mach,
-            self.spin_drift(time), self.look_angle_rad,
-            self._density_factor, 0.0, self.weight, TrajFlag.RANGE))
+        self._ranges.append(self.create_trajectory_row(state, TrajFlag.RANGE))
 
-        self._setup_events(record_step, time_step, state, filter_flags)
+        self._setup_events(maximum_range, record_step, time_step, state, filter_flags)
 
         it = 0
         termination_reason = None
-        while state.position.x <= maximum_range and it < 100000:
+        # while state.position.x <= maximum_range and it < 100000:
+        while it < MAX_ITERATIONS_LIMIT:
             it += 1
-
-            if state.position.x >= wind_sock.next_range:
-                wind_vector = wind_sock.vector_for_range(state.position.x)
-
-            vel_rel_air = state.velocity - wind_vector
-            vel_mag = vel_rel_air.magnitude()
-            if vel_mag < 1e-6:
-                termination_reason = RangeError.MinimumVelocityReached
-                break
-
-            delta_time = self.calc_step / max(1.0, vel_mag)
-            self._density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
-                self.alt0 + state.position.y)
-            self._drag = self._density_factor * vel_mag * self.drag_by_mach(vel_mag / max(mach, 1e-6))
-            accel = self.gravity_vector - vel_rel_air * self._drag
-
-            new_velocity = state.velocity + accel * delta_time
-            new_position = state.position + new_velocity * delta_time
-            new_time = state.time + delta_time
-
-            next_state = TrajectoryState(new_time, new_position, new_velocity, mach)
-
-            if termination_reason := self._process_events(state, next_state):
+            next_state = self._step(state)
+            if terminator := self._process_events(state, next_state):
+                termination_reason = MAP_EVENT_TO_ERR.get(terminator.func, "UnknownTermination")
                 break
 
             state = next_state
 
         self._clear_events()
+
+        # if (filter_flags and ((len(self._ranges) < 2) or termination_reason)) or len(self._ranges) == 0:
+        #     self._ranges.append(self.create_trajectory_row(next_state, TrajFlag.NONE))
+        # logger.debug(f"Euler ran {it} iterations")
+
         if termination_reason is not None:
             raise RangeError(termination_reason, self._ranges)
+        if it >= MAX_ITERATIONS_LIMIT:
+            raise RangeError("MaximumIterationLimitReached", self._ranges)
+
+        # temp
+        if (filter_flags and ((len(self._ranges) < 2) or termination_reason)) or len(self._ranges) == 0:
+            self._ranges.append(self.create_trajectory_row(state, TrajFlag.NONE))
+
         return self._ranges
 
-    def _interpolate_event_point(self, t0: float, r0: Vector, v0: Vector, m0: float,
-                                 t1: float, r1: Vector, v1: Vector, m1: float,
-                                 event_func: IntegratorEventFunc, event_args: Dict[str, Any]) -> Optional[TrajectoryState]:
+    def _interpolate_event_point(self,
+                                 prev_state: TrajectoryState,
+                                 current_state: TrajectoryState,
+                                 handler: EventHandler) -> Optional[TrajectoryState]:
         """
         Helper function for event point interpolation using a bisection method.
         Finds the exact time and state where the event function crosses zero between t0 and t1.
         """
+        t0, r0, v0, m0 = prev_state
+        t1, r1, v1, m1 = current_state
+        event_func, event_args = handler.func, handler.kwargs
+
         tolerance = 1e-7  # Increased tolerance for more precision
         max_iterations = 50  # Increased iterations for better convergence
 
@@ -310,8 +339,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         low_t, high_t = t0, t1
         # Calculate initial event values
         try:
-            low_val = event_func(t0, r0, v0, m0, **event_args)
-            high_val = event_func(t1, r1, v1, m1, **event_args)
+            low_val = event_func(prev_state, **event_args)
+            high_val = event_func(current_state, **event_args)
         except (ZeroDivisionError, ValueError) as e:
             logger.warning(f"Error calculating event function during interpolation: {e}")
             return None
@@ -346,14 +375,14 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             mid_m = m0 + (m1 - m0) * ratio
 
             try:
-                mid_val = event_func(mid_t, mid_r, mid_v, mid_m, **event_args)
+                mid_val = event_func(TrajectoryState(mid_t, mid_r, mid_v, mid_m), **event_args)
             except (ZeroDivisionError, ValueError) as e:
                 logger.warning(f"Error calculating event function at mid-point during interpolation: {e}")
                 return None
 
             if abs(mid_val) < tolerance:
                 # Found the event point within tolerance
-                return TrajectoryState(time=mid_t, position=mid_r, velocity=mid_v, mach_fps=mid_m)
+                return TrajectoryState(mid_t, mid_r, mid_v, mid_m)
             elif low_val * mid_val < 0:  # Event is in the first half [low_t, mid_t]
                 high_t = mid_t
                 high_val = mid_val  # Update high_val for next iteration
@@ -369,4 +398,50 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         mid_r = r0 + (r1 - r0) * ratio
         mid_v = v0 + (v1 - v0) * ratio
         mid_m = m0 + (m1 - m0) * ratio
-        return TrajectoryState(time=mid_t, position=mid_r, velocity=mid_v, mach_fps=mid_m)
+        return TrajectoryState(mid_t, mid_r, mid_v, mid_m)
+
+    def create_trajectory_row(self, state: TrajectoryState,
+                              flag: Union[TrajFlag, int]) -> TrajectoryData:
+        """
+        Creates a TrajectoryData object representing a single row of trajectory data.
+
+        Args:
+            state (TrajectoryState):
+            flag (Union[TrajFlag, int]): Flag value.
+
+        Returns:
+            TrajectoryData: A TrajectoryData object representing the trajectory data.
+        """
+
+        velocity_vector = state.velocity
+        range_vector = state.position
+
+        spin_drift = self.spin_drift(state.time)
+        velocity = velocity_vector.magnitude()
+        windage = range_vector.z + spin_drift
+        drop_adjustment = get_correction(range_vector.x, range_vector.y)
+        windage_adjustment = get_correction(range_vector.x, windage)
+        trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
+
+        density_factor, mach_fps = self.shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + range_vector.y)
+        drag = density_factor * velocity * self.drag_by_mach(velocity / mach_fps)
+
+        return TrajectoryData(
+            time=state.time,
+            distance=_new_feet(range_vector.x),
+            velocity=_new_fps(velocity),
+            mach=velocity / mach_fps,
+            height=_new_feet(range_vector.y),
+            target_drop=_new_feet(
+                (range_vector.y - range_vector.x * math.tan(self.look_angle_rad)) * math.cos(self.look_angle_rad)),
+            drop_adj=_new_rad(drop_adjustment - (self.look_angle_rad if range_vector.x else 0)),
+            windage=_new_feet(windage),
+            windage_adj=_new_rad(windage_adjustment),
+            look_distance=_new_feet(range_vector.x / math.cos(self.look_angle_rad)),
+            angle=_new_rad(trajectory_angle),
+            density_factor=density_factor - 1,
+            drag=drag,
+            energy=_new_ft_lb(calculate_energy(self.weight, velocity)),
+            ogw=_new_lb(calculate_ogw(self.weight, velocity)),
+            flag=flag
+        )
