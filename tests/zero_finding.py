@@ -2,19 +2,16 @@
 # mypy: ignore - mypy overhead is not worth it for test code
 import pytest
 
+from py_ballisticcalc.unit import *
 from py_ballisticcalc import (
-    Angular,
     Atmo,
     Calculator,
+    SciPyEngineConfigDict,
     BaseEngineConfigDict,
     RangeError,
-    ZeroFindingError,
     HitResult,
-    Distance,
     DragModel,
     TableG1,
-    Weight,
-    Velocity,
     Ammo,
     Weapon,
     Shot,
@@ -30,8 +27,20 @@ DISTANCES_FOR_CHECKING = (
     [7126.05]
 )
 
+def create_zero_velocity_zero_min_altitude_calc(engine_name, method, max_iteration:int=60):
+    config = SciPyEngineConfigDict(
+        cMinimumVelocity=0,
+        cMinimumAltitude=0,
+        integration_method=method,
+        cMaxIterations=max_iteration
+    )
+    return Calculator(config, engine=engine_name)
 
-def create_shot():
+@pytest.fixture(scope="session")
+def scipy_calc():
+    return create_zero_velocity_zero_min_altitude_calc("scipy_engine", "RK45")
+
+def create_23_mm_shot():
     drag_model = DragModel(
         bc=0.759,
         drag_table=TableG1,
@@ -48,9 +57,26 @@ def create_shot():
     return shot
 
 
+def create_7_62_mm_shot():
+    diameter = Distance.Millimeter(7.62)
+    length: Distance = Distance.Millimeter(32.5628)
+    weight = Weight.Grain(180)
+    dm = DragModel(bc=0.2860,
+                   drag_table=TableG1,
+                   weight=weight,
+                   diameter=diameter,
+                   length=length)
+    ammo = Ammo(dm, mv=Velocity.MPS(800), powder_temp=Temperature.Celsius(20), use_powder_sensitivity=False)
+    ammo.calc_powder_sens(other_velocity=Velocity.MPS(805), other_temperature=Temperature.Celsius(15))
+    current_atmo = Atmo(altitude=Distance.Meter(400), pressure=Pressure.hPa(967.24), temperature=Temperature.Celsius(20),
+                        humidity=60)
+    gun = Weapon(sight_height=Distance.Millimeter(-100), twist=Distance.Millimeter(300))
+    return Shot(weapon=gun, ammo=ammo, atmo=current_atmo)
+
+
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
 def test_set_weapon_zero(distance, loaded_engine_instance):
-    shot = create_shot()
+    shot = create_23_mm_shot()
     config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     calc.set_weapon_zero(shot, Distance.Meter(distance))
@@ -67,7 +93,7 @@ def test_set_weapon_zero(distance, loaded_engine_instance):
 def test_zero_with_look_angle(loaded_engine_instance):
     """Test zero finding with a high look angle."""
     distance = Distance.Meter(1000)
-    shot = create_shot()
+    shot = create_23_mm_shot()
     shot.look_angle = Angular.Degree(30)
     config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
@@ -81,7 +107,7 @@ def test_zero_with_look_angle(loaded_engine_instance):
 def test_vertical_shot_zero(loaded_engine_instance):
     """Test zero finding for a vertical shot."""
     distance = Distance.Meter(1000)
-    shot = create_shot()
+    shot = create_23_mm_shot()
     shot.look_angle = Angular.Degree(90)
     config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
@@ -92,7 +118,7 @@ def test_vertical_shot_zero(loaded_engine_instance):
 def test_zero_degenerate(loaded_engine_instance):
     """Test zero finding when initial shot hits minimum altitude immediately."""
     distance = Distance.Meter(300)
-    shot = create_shot()
+    shot = create_23_mm_shot()
     shot.atmo = Atmo(altitude=0)
     config = BaseEngineConfigDict(cMinimumVelocity=0, cMinimumAltitude=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
@@ -111,9 +137,18 @@ def test_zero_degenerate(loaded_engine_instance):
 
 
 def test_zero_too_close(loaded_engine_instance):
-    """Test zero finding when initial shot is too close to make sense."""
+    """When initial shot is too close to make sense, return look_angle."""
     distance = Distance.Meter(0)
-    shot = create_shot()
+    shot = create_23_mm_shot()
     calc = Calculator(engine=loaded_engine_instance)
-    with pytest.raises(ZeroFindingError) as e:
-        calc.set_weapon_zero(shot, distance)
+    zero_angle = calc.set_weapon_zero(shot, distance)
+    assert zero_angle.raw_value == shot.look_angle.raw_value
+
+
+def test_negative_sight_height(loaded_engine_instance):
+    """Test zero finding with negative sight height."""
+    shot = create_23_mm_shot()
+    shot.weapon.sight_height = Distance.Millimeter(-100)
+    calc = Calculator(engine=loaded_engine_instance)
+    zero_angle = calc.set_weapon_zero(shot, Distance.Millimeter(100))
+    assert (zero_angle >> Angular.Degree) == pytest.approx(45.0, abs=1e-4)

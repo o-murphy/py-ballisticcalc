@@ -112,7 +112,7 @@ class TrajectoryCalcRK4(TrajectoryCalc):
                 wind_vector_np = wind_sock.vector_for_range(current_range).to_numpy()
 
             altitude = self.alt0 + range_vector[1]
-            density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(altitude)
+            density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(altitude)
 
             # RK4 steps
             k1_v = self._acceleration(velocity_vector, density_factor, mach, wind_vector_np)

@@ -61,7 +61,7 @@ class TrajectoryData(NamedTuple):
         velocity (Velocity): Velocity.
         mach (float): Velocity in Mach terms.
         height (Distance): Vertical (y-axis) coordinate of this point.
-        target_drop (Distance): Drop relative to sight-line.
+        target_drop (Distance): Drop relative to sight-line (a.k.a. slant error).
         drop_adj (Angular): Sight adjustment to zero target_drop at this distance.
         windage (Distance): Windage (z-axis) coordinate of this point.
         windage_adj (Angular): Windage adjustment.

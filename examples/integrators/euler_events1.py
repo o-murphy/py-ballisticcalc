@@ -162,7 +162,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # Standard events
         if filter_flags & TrajFlag.ZERO:
             self._event_handlers.append(
-                EventHandler(zero_crossing_event, {"look_angle": self.look_angle}, TrajFlag.ZERO, False))
+                EventHandler(zero_crossing_event, {"look_angle": self.look_angle_rad}, TrajFlag.ZERO, False))
         if filter_flags & TrajFlag.MACH:
             self._event_handlers.append(EventHandler(mach_crossing_event, {}, TrajFlag.MACH, False))
         if filter_flags & TrajFlag.APEX:
@@ -210,7 +210,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                     self._ranges.append(create_trajectory_row(
                         interp.time, interp.position, interp.velocity,
                         interp.velocity.magnitude(), interp.mach_fps,
-                        self.spin_drift(interp.time), self.look_angle,
+                        self.spin_drift(interp.time), self.look_angle_rad,
                         self._density_factor, self._drag, self.weight, handler.flag))
                     # Advance next thresholds if needed
                     if handler.func == range_step_event:
@@ -243,17 +243,17 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         velocity = self.muzzle_velocity
         position = Vector(0.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
         velocity_vector = Vector(
-            math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
-            math.sin(self.barrel_elevation),
-            math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)
+            math.cos(self.barrel_elevation_rad) * math.cos(self.barrel_azimuth_rad),
+            math.sin(self.barrel_elevation_rad),
+            math.cos(self.barrel_elevation_rad) * math.sin(self.barrel_azimuth_rad)
         ).mul_by_const(velocity)
 
         time = 0.0
-        self._density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(self.alt0 + position.y)
+        self._density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + position.y)
         state = TrajectoryState(time, position, velocity_vector, mach)
         self._ranges.append(create_trajectory_row(
             time, position, velocity_vector, velocity_vector.magnitude(), mach,
-            self.spin_drift(time), self.look_angle,
+            self.spin_drift(time), self.look_angle_rad,
             self._density_factor, 0.0, self.weight, TrajFlag.RANGE))
 
         self._setup_events(record_step, time_step, state, filter_flags)
@@ -273,7 +273,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 break
 
             delta_time = self.calc_step / max(1.0, vel_mag)
-            self._density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
+            self._density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + state.position.y)
             self._drag = self._density_factor * vel_mag * self.drag_by_mach(vel_mag / max(mach, 1e-6))
             accel = self.gravity_vector - vel_rel_air * self._drag

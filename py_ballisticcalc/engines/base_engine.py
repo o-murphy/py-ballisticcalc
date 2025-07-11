@@ -294,10 +294,10 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         gravity_vector (Vector): The gravity vector.
     """
     VERTICAL_ANGLE_EPSILON_DEGREES: float = 1e-5  # Deviation from 90 degree look-angle to consider vertical
-    ALLOWED_HORIZONTAL_ZERO_ERROR_FEET: float = 1e-2  # Allowed horizontal zero error in feet
+    ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
 
-    barrel_azimuth: float
-    barrel_elevation: float
+    barrel_azimuth_rad: float
+    barrel_elevation_rad: float
     twist: float
     gravity_vector: Vector
     _table_data: List[DragDataPoint]
@@ -366,13 +366,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         # use calculation over list[double] instead of list[DragDataPoint]
         self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
 
-        self.look_angle = shot_info.look_angle >> Angular.Radian
+        self.look_angle_rad = shot_info.look_angle >> Angular.Radian
         self.twist = shot_info.weapon.twist >> Distance.Inch
         self.length = shot_info.ammo.dm.length >> Distance.Inch
         self.diameter = shot_info.ammo.dm.diameter >> Distance.Inch
         self.weight = shot_info.ammo.dm.weight >> Weight.Grain
-        self.barrel_elevation = shot_info.barrel_elevation >> Angular.Radian
-        self.barrel_azimuth = shot_info.barrel_azimuth >> Angular.Radian
+        self.barrel_elevation_rad = shot_info.barrel_elevation >> Angular.Radian
+        self.barrel_azimuth_rad = shot_info.barrel_azimuth >> Angular.Radian
         self.sight_height = shot_info.weapon.sight_height >> Distance.Foot
         self.cant_cosine = math.cos(shot_info.cant_angle >> Angular.Radian)
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
@@ -408,7 +408,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             """Horizontal range to zero (in feet) for given launch angle in radians."""
             if angle_rad in cache:
                 return cache[angle_rad]
-            self.barrel_elevation = angle_rad
+            self.barrel_elevation_rad = angle_rad
             nonlocal t_calls
             t_calls += 1
             logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
@@ -485,9 +485,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         #region Edge cases
         if abs(target_look_dist_ft) < self.calc_step:
-            raise ZeroFindingError(0, 0, shot_info.look_angle,
-                    reason=f"Target distance {target_look_dist_ft}ft too small for zeroing.")
-        if abs(look_angle - math.radians(90)) < self.VERTICAL_ANGLE_EPSILON_DEGREES:
+            # At very short distances return look_angle as zero angle
+            return shot_info.look_angle
+        if abs(look_angle - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
             # Virtually vertical shot
             return shot_info.look_angle
         #endregion Edge cases
@@ -513,16 +513,16 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
                 t = e.incomplete_trajectory[-1]
 
             current_distance = t.distance >> Distance.Foot  # Horizontal distance
-            if 2 * current_distance < zero_distance and self.barrel_elevation == 0.0:
+            if 2 * current_distance < zero_distance and self.barrel_elevation_rad == 0.0:
                 # Degenerate case: little distance and zero elevation; try with some elevation
-                self.barrel_elevation = 0.01
+                self.barrel_elevation_rad = 0.01
                 continue
 
             height = t.height >> Distance.Foot
             trajectory_angle = t.angle >> Angular.Radian    # Flight angle at current distance
             #signed_error = height - height_at_zero
             signed_error = height - math.tan(look_angle) * current_distance
-            sensitivity = math.tan(self.barrel_elevation) * math.tan(trajectory_angle)
+            sensitivity = math.tan(self.barrel_elevation_rad) * math.tan(trajectory_angle)
             if (-1.5 < sensitivity < -0.5) or range_limit:
                 range_limit = True  # Scenario too unstable for 1st-order correction
                 # TODO: This can be very slow to converge.  Consider using root-finder here.
@@ -533,25 +533,25 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             zero_error = math.fabs(signed_error)
             if (prev_range := math.fabs(previous_distance - zero_distance)) > 1e-2:  # We're still trying to reach zero_distance
                 if math.fabs(current_distance - zero_distance) > prev_range + 1e-2:  # We're not getting closer to zero_distance
-                    raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                            'Distance non-convergent.')
+                    raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation_rad),
+                                           'Distance non-convergent.')
             elif zero_error > math.fabs(previous_error):  # Error is increasing, we are diverging
-                raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
-                                        'Error non-convergent.')
+                raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation_rad),
+                                       'Error non-convergent.')
 
             previous_distance = current_distance
             previous_error = signed_error
 
             if zero_error > _cZeroFindingAccuracy or math.fabs(current_distance - zero_distance) > 1:
                 # Adjust barrel elevation to close height at zero distance
-                self.barrel_elevation += correction
+                self.barrel_elevation_rad += correction
             else:  # Current barrel_elevation hit zero!
                 break
             iterations_count += 1
         if zero_error > _cZeroFindingAccuracy:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
-        return Angular.Radian(self.barrel_elevation)
+            raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation_rad))
+        return Angular.Radian(self.barrel_elevation_rad)
 
     @abstractmethod
     def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
@@ -652,20 +652,20 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 # pylint: disable=too-many-positional-arguments
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
-                          density_factor: float, drag: float, weight: float,
+                          density_ratio: float, drag: float, weight: float,
                           flag: Union[TrajFlag, int]) -> TrajectoryData:
     """
     Creates a TrajectoryData object representing a single row of trajectory data.
 
     Args:
-        time (float): Time of flight.
-        range_vector (Vector): Position vector.
-        velocity_vector (Vector): Velocity vector.
-        velocity (float): Velocity magnitude.
+        time (float): Time of flight in seconds.
+        range_vector (Vector): Position vector in feet.
+        velocity_vector (Vector): Velocity vector in fps.
+        velocity (float): Velocity magnitude in fps.
         mach (float): Mach number.
-        spin_drift (float): Spin drift value.
-        look_angle (float): Look angle value.
-        density_factor (float): Density factor.
+        spin_drift (float): Spin drift in feet.
+        look_angle (float): Look angle in radians.
+        density_ratio (float): Density ratio (rho / rho_0).
         drag (float): Drag value.
         weight (float): Weight value.
         flag (Union[TrajFlag, int]): Flag value.
@@ -684,14 +684,13 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         velocity=_new_fps(velocity),
         mach=velocity / mach,
         height=_new_feet(range_vector.y),
-        target_drop=_new_feet((range_vector.y - range_vector.x * math.tan(look_angle)) * math.cos(look_angle)),
+        target_drop=_new_feet(range_vector.y * math.cos(look_angle) - range_vector.x * math.sin(look_angle)),
         drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
         windage=_new_feet(windage),
         windage_adj=_new_rad(windage_adjustment),
-        look_distance=_new_feet(range_vector.y) if abs(look_angle - math.radians(90)) < BaseIntegrationEngine.VERTICAL_ANGLE_EPSILON_DEGREES
-                 else _new_feet(range_vector.x / math.cos(look_angle)),
+        look_distance=_new_feet(range_vector.x * math.cos(look_angle) + range_vector.y * math.sin(look_angle)),
         angle=_new_rad(trajectory_angle),
-        density_factor=density_factor - 1,
+        density_factor=density_ratio - 1,
         drag=drag,
         energy=_new_ft_lb(calculate_energy(weight, velocity)),
         ogw=_new_lb(calculate_ogw(weight, velocity)),
