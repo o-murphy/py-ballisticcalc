@@ -21,9 +21,9 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Wind_t_from_python,
     Wind_t_to_V3dT,
     # factory funcs
-    config_bind,
-    cy_table_to_mach,
-    cy_calculate_curve,
+    Config_t_from_pyobject,
+    MachList_t_from_pylist,
+    Curve_t_from_pylist,
 )
 
 # noinspection PyUnresolvedReferences
@@ -42,7 +42,7 @@ __all__ = (
 )
 
 
-cdef TrajDataFilter_t createTrajectoryDataFilter(int filter_flags, double range_step,
+cdef TrajDataFilter_t TrajDataFilter_t_create(int filter_flags, double range_step,
                   const V3dT *initial_position_ptr, const V3dT *initial_velocity_ptr,
                   double time_step = 0.0):
     return TrajDataFilter_t(
@@ -54,14 +54,14 @@ cdef TrajDataFilter_t createTrajectoryDataFilter(int filter_flags, double range_
         0.0, 0.0,
     )
 
-cdef void setup_seen_zero(TrajDataFilter_t * tdf, double height, const ShotData_t *shot_data_ptr):
+cdef void TrajDataFilter_t_setup_seen_zero(TrajDataFilter_t * tdf, double height, const ShotData_t *shot_data_ptr):
     if height >= 0:
         tdf.seen_zero |= TrajFlag_t.ZERO_UP
     elif height < 0 and shot_data_ptr.barrel_elevation < shot_data_ptr.look_angle:
         tdf.seen_zero |= TrajFlag_t.ZERO_DOWN
     tdf.look_angle = shot_data_ptr.look_angle
 
-cdef BaseTrajData should_record(TrajDataFilter_t * tdf, const V3dT *position_ptr, const V3dT *velocity_ptr, double mach, double time):
+cdef BaseTrajData TrajDataFilter_t_should_record(TrajDataFilter_t * tdf, const V3dT *position_ptr, const V3dT *velocity_ptr, double mach, double time):
     cdef BaseTrajData data = None
     cdef double ratio
     cdef V3dT temp_position, temp_velocity
@@ -192,7 +192,7 @@ cdef class CythonizedBaseIntegrationEngine:
     def trajectory(CythonizedBaseIntegrationEngine self, object shot_info, object max_range, object dist_step,
                    bint extra_data = False, double time_step = 0.0) -> object:
         # hack to reload config if it was changed explicit on existed instance
-        self._config_s = config_bind(self._config)
+        self._config_s = Config_t_from_pyobject(self._config)
         self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         cdef:
@@ -226,8 +226,8 @@ cdef class CythonizedBaseIntegrationEngine:
         self._table_data = shot_info.ammo.dm.drag_table
         self._shot_s = ShotData_t(
             bc=shot_info.ammo.dm.BC,
-            curve=cy_calculate_curve(self._table_data),
-            mach_list=cy_table_to_mach(self._table_data),
+            curve=Curve_t_from_pylist(self._table_data),
+            mach_list=MachList_t_from_pylist(self._table_data),
             look_angle=shot_info.look_angle._rad,
             twist=shot_info.weapon.twist._inch,
             length=shot_info.ammo.dm.length._inch,
@@ -261,7 +261,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
-        self._config_s = config_bind(self._config)
+        self._config_s = Config_t_from_pyobject(self._config)
         self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         cdef:

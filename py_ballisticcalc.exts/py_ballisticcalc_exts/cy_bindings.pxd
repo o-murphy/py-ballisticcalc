@@ -1,13 +1,13 @@
 # noinspection PyUnresolvedReferences
 from cpython.object cimport PyObject
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport (
-    V3dT
-)
+from py_ballisticcalc_exts.v3d cimport V3dT
+
 
 cdef extern from "include/bind.h" nogil:
     MachList_t MachList_t_fromPylist(PyObject *pylist)
     Curve_t Curve_t_fromPylist(PyObject *data_points)
+
 
 # Declare the C header file
 cdef extern from "include/bclib.h" nogil:
@@ -30,6 +30,8 @@ cdef extern from "include/bclib.h" nogil:
         int cMaxIterations
         double cGravityConstant
         double cMinimumAltitude
+
+    Config_t Config_t_fromPyObject(PyObject * config)
 
     ctypedef struct CurvePoint_t:
         double a, b, c
@@ -100,9 +102,9 @@ cdef extern from "include/bclib.h" nogil:
 
 
 # python to C objects conversion
-cdef Config_t config_bind(object config)
+cdef Config_t Config_t_from_pyobject(object config)
 
-cdef MachList_t cy_table_to_mach(list[object] data)
-cdef Curve_t cy_calculate_curve(list[object] data_points)
+cdef MachList_t MachList_t_from_pylist(list[object] data)
+cdef Curve_t Curve_t_from_pylist(list[object] data_points)
 
 cdef Wind_t Wind_t_from_python(object w)

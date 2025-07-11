@@ -1,9 +1,3 @@
-# Total Score: 158, Possible Score: 21000
-# Total Non-Empty Lines: 210
-# Python Overhead Lines: 19
-# Cythonization Percentage: 99.25%
-# Python Overhead Lines Percentage: 9.05%
-
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
@@ -13,29 +7,19 @@ from libc.stdlib cimport malloc, free
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, pow, atan2, exp, sqrt, sin, cos, fmin
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport (
-    V3dT
-)
+from py_ballisticcalc_exts.v3d cimport V3dT
 
 @final
-cdef Config_t config_bind(object config):
-    return Config_t(
-        config.cMaxCalcStepSizeFeet,
-        config.cZeroFindingAccuracy,
-        config.cMinimumVelocity,
-        config.cMaximumDrop,
-        config.cMaxIterations,
-        config.cGravityConstant,
-        config.cMinimumAltitude,
-    )
+cdef Config_t Config_t_from_pyobject(object config):
+    return Config_t_fromPyObject(<PyObject *>config)
 
-cdef MachList_t cy_table_to_mach(list[object] data):
+cdef MachList_t MachList_t_from_pylist(list[object] data):
     cdef MachList_t ml = MachList_t_fromPylist(<PyObject *>data)
     if ml.array == NULL:
         raise MemoryError("Failed to create MachList_t from Python list")
     return ml
 
-cdef Curve_t cy_calculate_curve(list[object] data_points):
+cdef Curve_t Curve_t_from_pylist(list[object] data_points):
     return Curve_t_fromPylist(<PyObject *>data_points)
 
 

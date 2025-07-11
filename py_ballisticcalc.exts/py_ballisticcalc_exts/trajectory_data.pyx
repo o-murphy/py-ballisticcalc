@@ -1,19 +1,10 @@
-# Total Score: 765, Possible Score: 10000
-# Total Non-Empty Lines: 100
-# Python Overhead Lines: 56
-# Cythonization Percentage: 92.35%
-# Python Overhead Lines Percentage: 56.00%
-
-
 # noinspection PyUnresolvedReferences
 from cython cimport final
 
 from py_ballisticcalc.unit import PreferredUnits
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport (
-    V3dT
-)
+from py_ballisticcalc_exts.v3d cimport V3dT
 
 
 @final

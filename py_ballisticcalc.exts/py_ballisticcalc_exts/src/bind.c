@@ -7,6 +7,43 @@
 #include "bind.h"
 
 
+Config_t Config_t_fromPyObject(PyObject* config) {
+    Config_t c;
+
+    PyObject* tmp;
+
+    tmp = PyObject_GetAttrString(config, "cMaxCalcStepSizeFeet");
+    c.cMaxCalcStepSizeFeet = PyFloat_AsDouble(tmp);
+    Py_XDECREF(tmp);
+
+    tmp = PyObject_GetAttrString(config, "cZeroFindingAccuracy");
+    c.cZeroFindingAccuracy = PyFloat_AsDouble(tmp);
+    Py_XDECREF(tmp);
+
+    tmp = PyObject_GetAttrString(config, "cMinimumVelocity");
+    c.cMinimumVelocity = PyFloat_AsDouble(tmp);
+    Py_XDECREF(tmp);
+
+    tmp = PyObject_GetAttrString(config, "cMaximumDrop");
+    c.cMaximumDrop = PyFloat_AsDouble(tmp);
+    Py_XDECREF(tmp);
+
+    tmp = PyObject_GetAttrString(config, "cMaxIterations");
+    c.cMaxIterations = (int)PyLong_AsLong(tmp);
+    Py_XDECREF(tmp);
+
+    tmp = PyObject_GetAttrString(config, "cGravityConstant");
+    c.cGravityConstant = PyFloat_AsDouble(tmp);
+    Py_XDECREF(tmp);
+
+    tmp = PyObject_GetAttrString(config, "cMinimumAltitude");
+    c.cMinimumAltitude = PyFloat_AsDouble(tmp);
+    Py_XDECREF(tmp);
+
+    return c;
+}
+
+
 /**
  * Create MachList_t from a Python list of objects with `.Mach` attribute.
  * Returns MachList_t with allocated array or with array==NULL on error.

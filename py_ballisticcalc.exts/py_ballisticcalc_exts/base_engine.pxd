@@ -53,15 +53,15 @@ cdef extern from "include/bclib.h" nogil:
     double calculateOgw(double bulletWeight, double velocity)
 
 
-cdef TrajDataFilter_t createTrajectoryDataFilter(int filter_flags, double range_step,
-                                                      const V3dT *initial_position_ptr,
-                                                      const V3dT *initial_velocity_ptr,
-                                                      double time_step = ?)
-cdef void setup_seen_zero(TrajDataFilter_t * tdf, double height, const ShotData_t *shot_data_ptr)
-cdef BaseTrajData should_record(TrajDataFilter_t * tdf,
-                                const V3dT *position_ptr,
-                                const V3dT *velocity_ptr,
-                                double mach, double time)
+cdef TrajDataFilter_t TrajDataFilter_t_create(int filter_flags, double range_step,
+                                              const V3dT *initial_position_ptr,
+                                              const V3dT *initial_velocity_ptr,
+                                              double time_step = ?)
+cdef void TrajDataFilter_t_setup_seen_zero(TrajDataFilter_t * tdf, double height, const ShotData_t *shot_data_ptr)
+cdef BaseTrajData TrajDataFilter_t_should_record(TrajDataFilter_t * tdf,
+                                                 const V3dT *position_ptr,
+                                                 const V3dT *velocity_ptr,
+                                                 double mach, double time)
 
 
 # Function to create and initialize a WindSock_t
