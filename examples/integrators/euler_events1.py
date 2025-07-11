@@ -244,7 +244,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
     def _step(self, state: TrajectoryState) -> Optional[TrajectoryState]:
 
-        if state.position.x >= self.wind_sock.next_range:
+        if state.position.x >= self._wind_sock.next_range:
             wind_vector = self._wind_sock.vector_for_range(state.position.x)
         else:
             wind_vector = self._wind_sock.current_vector()
@@ -423,7 +423,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         windage_adjustment = get_correction(range_vector.x, windage)
         trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
 
-        density_factor, mach_fps = self.shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + range_vector.y)
+        density_factor, mach_fps = self._shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + range_vector.y)
         drag = density_factor * velocity * self.drag_by_mach(velocity / mach_fps)
 
         return TrajectoryData(
