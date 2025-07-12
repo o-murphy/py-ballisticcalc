@@ -413,7 +413,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             t_calls += 1
             logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
             try:
-                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE)[0]
+                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE)[-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
@@ -528,7 +528,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
-                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[0]
+                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
