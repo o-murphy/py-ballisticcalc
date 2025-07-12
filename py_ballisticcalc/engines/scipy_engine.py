@@ -701,6 +701,24 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
             # region Find TrajectoryData points requested by filter_flags
             if filter_flags:
+                def add_row(time, state, flag):
+                    """Add a row to ranges, keeping it sorted by time.
+                       If row this time already exists then add this flag to it."""
+                    # Binary search for time index
+                    lo, hi = 0, len(ranges)
+                    while lo < hi:
+                        mid = (lo + hi) // 2
+                        if ranges[mid].time < time:
+                            lo = mid + 1
+                        else:
+                            hi = mid
+                    # Now lo is the insertion point
+                    if lo < len(ranges) and ranges[lo].time == time:
+                        ranges[lo] = make_row(time, state, ranges[lo].flag | flag)  # Update flag if time matches
+                    else:
+                        ranges.insert(lo, make_row(time, state, flag))  # Insert at correct position
+
+                # Make sure ranges are sorted by time before this check:
                 if filter_flags & TrajFlag.MACH and ranges[0].mach > 1.0 and ranges[-1].mach < 1.0:
                     def mach_minus_one(t):
                         """Returns the Mach number at time t minus 1."""
@@ -716,7 +734,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     try:
                         res = root_scalar(mach_minus_one, bracket=(t_vals[0], t_vals[-1]))
                         if res.converged:
-                            ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.MACH))
+                            add_row(res.root, sol.sol(res.root), TrajFlag.MACH)
                     except ValueError:
                         logger.debug("No Mach crossing found")
 
@@ -732,7 +750,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                             direction = TrajFlag.ZERO_UP
                         else:
                             direction = TrajFlag.ZERO_DOWN
-                        ranges.append(make_row(t_cross, state, direction))
+                        add_row(t_cross, state, direction)
 
                 if filter_flags & TrajFlag.APEX:
                     def vy(t):
@@ -742,7 +760,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     try:
                         res = root_scalar(vy, bracket=(t_vals[0], t_vals[-1]))
                         if res.converged:
-                            ranges.append(make_row(res.root, sol.sol(res.root), TrajFlag.APEX))
+                            add_row(res.root, sol.sol(res.root), TrajFlag.APEX)
                     except ValueError:
                         logger.debug("No apex found for trajectory")
 

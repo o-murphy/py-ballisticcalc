@@ -501,13 +501,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             try:
                 #t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX, stop_at_zero=True)
                 # Simulating stop_at_zero by temporarily overriding cMinimumAltitude
-                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX)
+                hit = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX)
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
-                t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
+                hit = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
             self._config.cMinimumAltitude = prev_min_altitude
-            max_range = t.flag(TrajFlag.APEX).look_distance  # type: ignore[attr-defined]
+            max_range = hit.flag(TrajFlag.APEX).look_distance  # type: ignore[attr-defined]
             if (max_range >> Distance.Foot) < target_look_dist_ft:
                 raise OutOfRangeError(distance, max_range, shot_info.look_angle)
             return shot_info.look_angle
@@ -604,6 +604,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         - If filter_flags & TrajFlag.RANGE, then return must include a RANGE entry for each record_step reached,
             starting at zero (initial conditions).  If time_step > 0, must also include RANGE entries per that spec.
         - For each other filter_flag: Return list must include a row with the flag if it exists in the trajectory.
+            Do not duplicate rows: If two flags occur at the exact same time, mark the row with both flags.
 
         Args:
             shot_info (Shot):  Information about the shot.
