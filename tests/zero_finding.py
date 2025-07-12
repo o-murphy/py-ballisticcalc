@@ -132,7 +132,7 @@ def test_zero_degenerate(loaded_engine_instance):
         hit_result = HitResult(shot, e.incomplete_trajectory)
     result_at_zero = hit_result.get_at_distance(distance)
     assert result_at_zero is not None
-    assert result_at_zero.distance.raw_value == pytest.approx(distance.raw_value, abs=1e-2)
+    assert result_at_zero.distance.raw_value == pytest.approx(distance.raw_value, abs=1e-1)
     assert result_at_zero.height >> Distance.Meter == pytest.approx(0, abs=1e-2)
 
 

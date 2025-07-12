@@ -293,7 +293,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         twist (float): The twist rate of the barrel.
         gravity_vector (Vector): The gravity vector.
     """
-    VERTICAL_ANGLE_EPSILON_DEGREES: float = 1e-5  # Deviation from 90 degree look-angle to consider vertical
+    VERTICAL_ANGLE_EPSILON_DEGREES: float = 1e-2  # Deviation from 90 degree look-angle to consider vertical
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
 
     barrel_azimuth_rad: float

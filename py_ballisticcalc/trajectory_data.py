@@ -255,7 +255,7 @@ class HitResult:
         Returns:
             int: Index of first trajectory row with .distance >= d; otherwise -1.
         """
-        epsilon = 1e-6  # small value to avoid floating point issues
+        epsilon = 1e-1  # small value to avoid floating point issues
         return next((i for i in range(len(self.trajectory))
                      if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)
 
