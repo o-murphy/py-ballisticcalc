@@ -471,28 +471,27 @@ class Shot:
         relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
         cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
             from the vertical plane into the horizontal plane by sine(cant_angle)
-        weapon: Weapon instance uses for making shot
-        ammo: Ammo instance uses for making shot
-        atmo: Atmo instance uses for making shot
+        ammo: Ammo instance used for making shot
+        weapon: Weapon instance used for making shot
+        atmo: Atmo instance used for making shot
     """
 
     look_angle: Angular
     relative_angle: Angular
     cant_angle: Angular
 
-    weapon: Weapon
     ammo: Ammo
+    weapon: Weapon
     atmo: Atmo
     _winds: List[Wind]  # use property Shot.winds to get sorted winds
 
     # pylint: disable=too-many-positional-arguments
     def __init__(self,
-                 weapon: Weapon,
                  ammo: Ammo,
+                 weapon: Weapon = Weapon(),
                  look_angle: Optional[Union[float, Angular]] = None,
                  relative_angle: Optional[Union[float, Angular]] = None,
                  cant_angle: Optional[Union[float, Angular]] = None,
-
                  atmo: Optional[Atmo] = None,
                  winds: Optional[List[Wind]] = None
                  ):
