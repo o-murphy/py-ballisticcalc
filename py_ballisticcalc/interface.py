@@ -169,26 +169,33 @@ class Calculator(Generic[ConfigT]):
         return shot.weapon.zero_elevation
 
     def fire(self, shot: Shot, trajectory_range: Union[float, Distance],
-             trajectory_step: Union[float, Distance] = 0,
+             trajectory_step: Union[float, Distance, None] = None,
              extra_data: bool = False,
              time_step: float = 0.0) -> HitResult:
-        """Calculates trajectory
-        :param shot: shot parameters (initial position and barrel angle)
-        :param trajectory_range: Downrange distance at which to stop computing trajectory
-        :param trajectory_step: step between trajectory points to record
-        :param extra_data: True => store TrajectoryData for every calculation step;
-            False => store TrajectoryData only for each trajectory_step
-        :param time_step: (seconds) If > 0 then record TrajectoryData at least this frequently
+        """Calculates the trajectory for the given shot parameters.
+
+        Args:
+            shot (Shot): Initial shot parameters, including position and barrel angle.
+            trajectory_range (float | Distance): Distance at which to stop computing the trajectory.
+            trajectory_step (float | Distance | None, optional): Step between recorded trajectory points.
+                If 0 or None, defaults to `trajectory_range`. Defaults to 0.
+            extra_data (bool, optional): If True, stores trajectory data for every internal step;
+                if False, stores only at intervals of `trajectory_step`. Defaults to False.
+            time_step (float, optional): Minimum time sampling interval in seconds. If > 0, data is
+                recorded at least this frequently. Defaults to 0.0.
+
+        Returns:
+            HitResult: Object containing computed trajectory and hit information.
         """
         trajectory_range = PreferredUnits.distance(trajectory_range)
-        if not trajectory_step:
-            # need to use raw value in order to avoid unit conversion
-            trajectory_step = trajectory_range.raw_value / 10.0
-            # default unit for distance is Inch, therefore, specifying value directly in it
-            step: Distance = Distance.Inch(trajectory_step)
-        else:
-            step = PreferredUnits.distance(trajectory_step)
-        data = self._engine_instance.trajectory(shot, trajectory_range, step, extra_data, time_step)
+        step = PreferredUnits.distance(trajectory_step or trajectory_range)
+
+        if step.raw_value > trajectory_range.raw_value:
+            step = trajectory_range
+
+        data = self._engine_instance.trajectory(
+            shot, trajectory_range, step, extra_data, time_step
+        )
         return HitResult(shot, data, extra_data)
 
     @staticmethod

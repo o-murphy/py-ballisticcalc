@@ -36,7 +36,7 @@ class TestAtmosphere:
     def test_altitude(self):
         # Altitude adjustment not valid above troposphere
         with pytest.warns(RuntimeWarning):
-            Atmo().get_density_factor_and_mach_for_altitude(100_000)
+            Atmo().get_density_and_mach_for_altitude(100_000)
 
     def test_density(self):
         assert pytest.approx(Atmo.calculate_air_density(20, 1013, 0), abs=1e-4) == 1.20383
@@ -46,7 +46,7 @@ class TestAtmosphere:
         # Increasing altitude should decrease temperature, pressure, air density, and mach 1 speed
         assert self.standard.temperature_at_altitude(5000) < (self.standard.temperature >> Temperature.Celsius)
         assert self.standard.pressure_at_altitude(5000) < (self.standard.pressure >> Pressure.hPa)
-        density_ratio, mach = self.standard.get_density_factor_and_mach_for_altitude(5000)
+        density_ratio, mach = self.standard.get_density_and_mach_for_altitude(5000)
         assert density_ratio < self.standard.density_ratio
         assert mach < (self.standard.mach >> Velocity.FPS)
 

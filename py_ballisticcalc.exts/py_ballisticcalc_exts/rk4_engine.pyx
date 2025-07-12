@@ -1,44 +1,34 @@
-# Total Score: 2394, Possible Score: 45200
-# Total Non-Empty Lines: 452
-# Python Overhead Lines: 152
-# Cythonization Percentage: 94.70%
-# Python Overhead Lines Percentage: 33.63%
-
-
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax, pow
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     ShotData_t,
-    update_density_factor_and_mach_for_altitude,
-    cy_spin_drift,
-    cy_drag_by_mach,
-    cy_get_calc_step,
+    ShotData_t_dragByMach,
+    Atmosphere_t_updateDensityFactorAndMachForAltitude,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
-    _TrajectoryDataFilter,
+    TrajDataFilter_t,
 
-    WindSockT_current_vector,
-    WindSockT_vector_for_range,
+    WindSock_t_currentVector,
+    WindSock_t_vectorForRange,
 
     create_trajectory_row,
 
-    createTrajectoryDataFilter,
-    should_record,
-    setup_seen_zero
+    TrajDataFilter_t_create,
+    TrajDataFilter_t_setup_seen_zero,
+    TrajDataFilter_t_should_record,
 )
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport (
-    V3dT, add, sub, mag, mulS
-)
+from py_ballisticcalc_exts.v3d cimport V3dT, add, sub, mag, mulS
+
 
 import warnings
 
@@ -72,10 +62,10 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             double calc_step = self._shot_s.calc_step
 
             # region Initialize wind-related variables to first wind reading (if any)
-            V3dT wind_vector = WindSockT_current_vector(self._wind_sock)
+            V3dT wind_vector = WindSock_t_currentVector(self._wind_sock)
             # endregion
 
-            _TrajectoryDataFilter data_filter
+            TrajDataFilter_t data_filter
             BaseTrajData data
 
         cdef:
@@ -110,11 +100,11 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
         min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = createTrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
-                                                 initial_position_ptr=&range_vector,
-                                                 initial_velocity_ptr=&velocity_vector,
-                                                 time_step=time_step)
-        setup_seen_zero(&data_filter, range_vector.y, &self._shot_s)
+        data_filter = TrajDataFilter_t_create(filter_flags=filter_flags, range_step=record_step,
+                                                initial_position_ptr=&range_vector,
+                                                initial_velocity_ptr=&velocity_vector,
+                                                time_step=time_step)
+        TrajDataFilter_t_setup_seen_zero(&data_filter, range_vector.y, &self._shot_s)
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
@@ -126,17 +116,17 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance
-                wind_vector = WindSockT_vector_for_range(self._wind_sock, range_vector.x)
+                wind_vector = WindSock_t_vectorForRange(self._wind_sock, range_vector.x)
 
             # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
-            update_density_factor_and_mach_for_altitude(&self._shot_s.atmo,
+            Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._shot_s.atmo,
                                                         self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
 
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
-                data = should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
+                data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
                 if data is not None:
                     ranges.append(create_trajectory_row(
                         data.time, &data.position, &data.velocity, data.mach,
@@ -152,7 +142,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
             # Time step is normalized by velocity so that we take smaller steps when moving faster
             delta_time = calc_step / fmax(1.0, relative_speed)
-            km = density_factor * cy_drag_by_mach(&self._shot_s, relative_speed / mach)
+            km = density_factor * ShotData_t_dragByMach(&self._shot_s, relative_speed / mach)
             drag = km * relative_speed
 
             # # region RK4 integration
@@ -271,7 +261,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             ranges.append(create_trajectory_row(
                 time, &range_vector, &velocity_vector, mach,
                 &self._shot_s,
-                density_factor, drag, CTrajFlag.NONE))
+                density_factor, drag, TrajFlag_t.NONE))
 
         return ranges
 

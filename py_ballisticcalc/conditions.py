@@ -184,7 +184,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                                 cPressureExponent)
         return p
 
-    def get_density_factor_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
+    def get_density_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
         """
         Ref: https://en.wikipedia.org/wiki/Barometric_formula#Density_equations
         Args:

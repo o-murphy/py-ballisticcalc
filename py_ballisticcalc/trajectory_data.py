@@ -61,7 +61,7 @@ class TrajectoryData(NamedTuple):
         velocity (Velocity): Velocity.
         mach (float): Velocity in Mach terms.
         height (Distance): Vertical (y-axis) coordinate of this point.
-        target_drop (Distance): Drop relative to sight-line.
+        target_drop (Distance): Drop relative to sight-line (a.k.a. slant error).
         drop_adj (Angular): Sight adjustment to zero target_drop at this distance.
         windage (Distance): Windage (z-axis) coordinate of this point.
         windage_adj (Angular): Windage adjustment.
@@ -202,6 +202,9 @@ class HitResult:
     trajectory: list[TrajectoryData] = field(repr=False)
     extra: bool = False
 
+    def __len__(self) -> int:
+        return len(self.trajectory)
+
     def __iter__(self):
         yield from self.trajectory
 
@@ -252,7 +255,7 @@ class HitResult:
         Returns:
             int: Index of first trajectory row with .distance >= d; otherwise -1.
         """
-        epsilon = 1e-8  # small value to avoid floating point issues
+        epsilon = 1e-1  # small value to avoid floating point issues
         return next((i for i in range(len(self.trajectory))
                      if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)
 
