@@ -22,7 +22,7 @@ import numpy as np
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, BaseEngineConfig
 from py_ballisticcalc.engines.base_engine import create_trajectory_row
-from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
+from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError, SolverRuntimeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.unit import Distance, Angular
@@ -191,6 +191,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
+        from py_ballisticcalc.helpers import get_bisect_left_key_func
+        self.bisect_left_key_func = get_bisect_left_key_func()  # Bisect function for compatibility with Python < 3.10
 
     def get_vertical_apex(self, shot_info: Shot) -> TrajectoryData:
         """Returns the TrajectoryData at the trajectory's apex.
@@ -209,7 +211,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
         if restoreMinVelocity is not None:
             self._config.cMinimumVelocity = restoreMinVelocity
-        return t.flag(TrajFlag.APEX)
+        apex = t.flag(TrajFlag.APEX)
+        if not apex:
+            raise SolverRuntimeError("No apex flagged in trajectory data")
+        return apex
 
     @override
     def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
@@ -710,20 +715,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 def add_row(time, state, flag):
                     """Add a row to ranges, keeping it sorted by time.
                        If row this time already exists then add this flag to it."""
-                    # TODO: Replace with built-in bisect
-                    # Binary search for time index
-                    lo, hi = 0, len(ranges)
-                    while lo < hi:
-                        mid = (lo + hi) // 2
-                        if ranges[mid].time < time:
-                            lo = mid + 1
-                        else:
-                            hi = mid
-                    # Now lo is the insertion point
-                    if lo < len(ranges) and ranges[lo].time == time:
-                        ranges[lo] = make_row(time, state, ranges[lo].flag | flag)  # Update flag if time matches
+                    idx = self.bisect_left_key_func(ranges, time, key=lambda r: r.time)
+                    if idx < len(ranges) and ranges[idx].time == time:
+                        ranges[idx] = make_row(time, state, ranges[idx].flag | flag)  # Update flag if time matches
                     else:
-                        ranges.insert(lo, make_row(time, state, flag))  # Insert at correct position
+                        ranges.insert(idx, make_row(time, state, flag))  # Insert at sorted position
 
                 # Make sure ranges are sorted by time before this check:
                 if filter_flags & TrajFlag.MACH and ranges[0].mach > 1.0 and ranges[-1].mach < 1.0:

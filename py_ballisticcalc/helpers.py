@@ -1,5 +1,6 @@
 import bisect
 import math
+import sys
 from typing import Callable, Any, Final, List, Tuple, Optional
 
 from py_ballisticcalc.conditions import Shot
@@ -23,14 +24,63 @@ def must_fire(interface: Calculator, zero_shot: Shot, trajectory_range: Distance
 
 
 def calculate_drag_free_range(
-        velocity_in_mps: float, angle_in_degrees: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+        velocity_mps: float, angle_in_degrees: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
 ) -> float:
-    """Compute the maximal range for the projectile launched with `velocity_mps` with angle `angle_in_degrees`.
-       The result assumes absence of drag force - so this distance will definitely overestimate (ca 4 times)
-       the range in presence of drag force.
+    """Compute the max horizontal range for a projectile launched with `velocity_mps` at `angle_in_degrees`.
+       Vacuum means projectile flies with no drag force, so this distance will overestimate
+       range in presence of atmospheric drag force.
+
+       Returns:
+            The horizontal range in meters.
     """
     angle_rad = math.radians(angle_in_degrees)
-    return (velocity_in_mps ** 2 * math.sin(2 * angle_rad)) / gravity
+    return (velocity_mps ** 2 * math.sin(2 * angle_rad)) / gravity
+
+
+def get_bisect_left_key_func():
+    """Get a function that runs bisect_left on a list with a key lambda.  For compatibility with Python < 3.10."""
+    if sys.version_info >= (3, 10):
+        return bisect.bisect_left
+    else:  # For Python < 3.10, we need to extract keys manually
+        def bisect_left_key(a, x, key):
+            keys = [key(item) for item in a]
+            return bisect.bisect_left(keys, key(x))
+        return bisect_left_key
+
+
+class BisectWrapper:
+    """Wrapper for usage with bisect_for_condition."""
+
+    def __init__(self, array: List, callable: Callable) -> None:
+        self.array = array
+        self.callable = callable
+
+    def __getitem__(self, index: int) -> Any:
+        return self.callable(self.array[index])
+
+    def check_condition(self, index: int) -> bool:
+        return self.callable(self.array[index])
+
+    def __len__(self) -> int:
+        return len(self.array)
+
+
+def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
+    """ Perform search in the ordered array for the first point, satisfying monotonic condition.
+
+        Monotonic condition is a condition, which is consistently increases or decreases.
+        For a bisection algorithm, a monotonic condition means the function maintains a consistent direction:
+        Monotonically increasing: Each subsequent value is greater than or equal to the previous
+        Monotonically decreasing: Each subsequent value is less than or equal to the previous
+        WARNING: if condition for which you are searching is not monotonic, use
+        `find_first_index_matching_condition`.
+    """
+    idx = bisect.bisect_left(wrapper, True, 0, len(arr))
+    if idx >= len(arr):
+        return -1
+    if wrapper.check_condition(idx):
+        return idx
+    return -1
 
 
 def find_first_index_matching_condition(
@@ -87,41 +137,6 @@ def find_velocity_less_than_index(
     return find_first_index_matching_condition(
         shot, lambda p: (p.velocity >> velocity_unit) < velocity_in_units
     )
-
-
-class BisectWrapper:
-    """Wrapper for usage with bisect_for_condition."""
-
-    def __init__(self, array: List, callable: Callable) -> None:
-        self.array = array
-        self.callable = callable
-
-    def __getitem__(self, index: int) -> Any:
-        return self.callable(self.array[index])
-
-    def check_condition(self, index: int) -> bool:
-        return self.callable(self.array[index])
-
-    def __len__(self) -> int:
-        return len(self.array)
-
-
-def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
-    """ Perform search in the ordered array for the first point, satisfying monotonic condition.
-
-        Monotonic condition is a condition, which is consistently increases or decreases.
-        For a bisection algorithm, a monotonic condition means the function maintains a consistent direction:
-        Monotonically increasing: Each subsequent value is greater than or equal to the previous
-        Monotonically decreasing: Each subsequent value is less than or equal to the previous
-        WARNING: if condition for which you are searching is not monotonic, use
-        `find_first_index_matching_condition`.
-    """
-    idx = bisect.bisect_left(wrapper, True, 0, len(arr))
-    if idx >= len(arr):
-        return -1
-    if wrapper.check_condition(idx):
-        return idx
-    return -1
 
 
 def find_first_index_satisfying_monotonic_condition(
