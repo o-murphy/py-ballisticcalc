@@ -44,7 +44,7 @@ def get_bisect_left_key_func():
     else:  # For Python < 3.10, we need to extract keys manually
         def bisect_left_key(a, x, key):
             keys = [key(item) for item in a]
-            return bisect.bisect_left(keys, key(x))
+            return bisect.bisect_left(keys, x)
         return bisect_left_key
 
 
