@@ -252,7 +252,7 @@ UnitAliases: UnitAliasesType = {
 
 
 @runtime_checkable
-class Measured(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
+class Measurable(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
     _value: Number
     _defined_units: Unit
     __slots__ = ('_value', '_defined_units')
@@ -935,6 +935,7 @@ def _parse_value(input_: Union[str, Number],
 
 __all__ = (
     'Unit',
+    'Measurable',
     'GenericDimension',
     'UnitProps',
     'UnitAliases',

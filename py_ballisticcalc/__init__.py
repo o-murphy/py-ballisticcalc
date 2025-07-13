@@ -156,6 +156,7 @@ __all__ = [
     'SightReticleStep',
     'Unit',
     'UnitAliases',
+    'Measurable',
     'GenericDimension',
     'UnitProps',
     'UnitPropsDict',
