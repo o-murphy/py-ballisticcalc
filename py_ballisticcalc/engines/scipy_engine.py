@@ -192,9 +192,28 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
 
+    def get_vertical_apex(self, shot_info: Shot) -> TrajectoryData:
+        """Returns the TrajectoryData at the trajectory's apex.
+            Have to ensure cMinimumVelocity is 0 for this to work."""
+        restoreMinVelocity = None
+        if self._config.cMinimumVelocity > 0:
+            restoreMinVelocity = self._config.cMinimumVelocity
+            self._config.cMinimumVelocity = 0.
+        self.barrel_elevation_rad = self.look_angle_rad
+        try:
+            t = HitResult(shot_info,
+                          self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX), extra=True)
+        except RangeError as e:
+            if e.last_distance is None:
+                raise e
+            t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
+        if restoreMinVelocity is not None:
+            self._config.cMinimumVelocity = restoreMinVelocity
+        return t.flag(TrajFlag.APEX)
+
     @override
     def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
-        Distance, Angular]:
+            Distance, Angular]:
         """
         Finds the maximum range along the look_angle and the launch angle to reach it.
 
@@ -224,26 +243,22 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         # region Virtually vertical shot
         if abs(self.look_angle_rad - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
-            self.barrel_elevation_rad = self.look_angle_rad
-            try:
-                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX, stop_at_zero=True)
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
-            max_range = t.flag(TrajFlag.APEX).look_distance  # type: ignore[attr-defined]
+            max_range = self.get_vertical_apex(shot_info).look_distance  # type: ignore[attr-defined]
             return max_range, Angular.Radian(self.look_angle_rad)
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
             """Returns range to zero (in feet) for given launch angle in radians."""
+            if abs(angle_rad - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
+                return self.get_vertical_apex(shot_info).look_distance >> Distance.Foot
             self.barrel_elevation_rad = angle_rad
             try:
-                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[0]
+                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
                 t = e.incomplete_trajectory[-1]
+            print(f"range_for_angle: angle={angle_rad}, t={t.time}, range={t.look_distance >> Distance.Foot} ft")
             return t.look_distance >> Distance.Foot
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
@@ -291,14 +306,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             return self._ZeroCalcStatus.DONE, Angular.Radian(math.atan2(target_y_ft + start_height, target_x_ft))
         if abs(self.look_angle_rad - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
             # Virtually vertical shot; just make sure it reaches the target
-            self.barrel_elevation_rad = look_angle
-            try:
-                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX, stop_at_zero=True)
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
-            max_range = t.flag(TrajFlag.APEX).look_distance  # type: ignore[attr-defined]
+            max_range = self.get_vertical_apex(shot_info).look_distance  # type: ignore[attr-defined]
             if (max_range >> Distance.Foot) < target_look_dist_ft:
                 raise OutOfRangeError(distance, max_range, shot_info.look_angle)
             return self._ZeroCalcStatus.DONE, shot_info.look_angle
@@ -352,7 +360,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             self.barrel_elevation_rad = angle_rad
             try:
                 # Integrate to find the projectile's state at the target's horizontal distance.
-                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[0]
+                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
                 if t.time == 0.0:
                     logger.warning("Integrator returned initial point. Consider removing constraints.")
                     return -1e6  # Large negative error to discourage this angle.
@@ -417,7 +425,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
-                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[0]
+                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
@@ -577,9 +585,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         if filter_flags & TrajFlag.ZERO:
             zero_crossing = scipy_event(terminal=False, direction=0)(event_zero_crossing)
             traj_events.append(zero_crossing)
-        elif filter_flags == TrajFlag.NONE and stop_at_zero:
-            zero_crossing = scipy_event(terminal=True, direction=-1)(event_zero_crossing)
-            traj_events.append(zero_crossing)
+        if stop_at_zero:
+            zero_crossing_stop = scipy_event(terminal=True, direction=-1)(event_zero_crossing)
+            traj_events.append(zero_crossing_stop)
 
         sol = solve_ivp(diff_eq, (0, self._config.max_time), s0,
                         method=self._config.integration_method, dense_output=True,
@@ -601,9 +609,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         termination_reason = None
         if sol.status == 1:  # A termination event occurred
             if len(sol.t_events) > 0:
-                # if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range
-                #     logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
-                if sol.t_events[1].size > 0:  # event_max_drop
+                if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range
+                    #logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
+                    pass
+                elif sol.t_events[1].size > 0:  # event_max_drop
                     y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
                     if y < _cMaximumDrop:
                         termination_reason = RangeError.MaximumDropReached
@@ -611,7 +620,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         termination_reason = RangeError.MinimumAltitudeReached
                 elif sol.t_events[2].size > 0:  # event_min_velocity
                     termination_reason = RangeError.MinimumVelocityReached
-                elif len(traj_events) > 3 and sol.t_events[3].size > 0:  # zero_crossing
+                elif (stop_at_zero and len(traj_events) > 3 and sol.t_events[-1].size > 0 and
+                      traj_events[-1].func is event_zero_crossing):
                     termination_reason = self.HitZero
 
         # region Find requested TrajectoryData points
@@ -623,10 +633,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 velocity_magnitude = velocity.magnitude()
                 density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + position[1])
                 drag = density_factor * velocity_magnitude * self.drag_by_mach(velocity_magnitude / mach)
-                return create_trajectory_row(t, position, velocity, velocity_magnitude, mach,
-                                             self.spin_drift(t), self.look_angle_rad, density_factor, drag, self.weight,
-                                             flag
-                                             )
+                return create_trajectory_row(t, position, velocity, velocity_magnitude, mach, self.spin_drift(t),
+                                             self.look_angle_rad, density_factor, drag, self.weight, flag
+                )
 
             if sol.t[-1] == 0:
                 # If the last time is 0, we only have the initial state
@@ -654,13 +663,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             for x_target in desired_xs:
                 idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
                 if idx < 0 or idx >= len(x_vals):
-                    # warnings.warn(
-                    #     f"Requested range exceeds computed trajectory, which only reaches {PreferredUnits.distance(Distance.Feet(x_vals[-1]))}",
-                    #     RuntimeWarning)
+                    # warnings.warn("Requested range exceeds computed trajectory" +
+                    #                f", which only reaches {PreferredUnits.distance(Distance.Feet(x_vals[-1]))}",
+                    #                RuntimeWarning)
                     continue
                 if idx == 0:
-                    if filter_flags == TrajFlag.NONE:
-                        continue  # Don't record first point
                     t_root = t_vals[0]
                 else:
                     # Use root_scalar to find t where x(t) == x_target
@@ -679,14 +686,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # endregion Root-finding approach to interpolate for desired x values
 
             # If we ended with an exceptional event then also record the last point calculated
-            if (filter_flags != TrajFlag.NONE and termination_reason not in (None, self.HitZero) and len(t_vals) > 1 and
-                t_vals[0] != t_vals[-1]) \
-                    or (len(t_at_x) == 0):  # Also record last point if we don't have any others
-                t_at_x.append(sol.t[-1])  # Last time point
+            #   (if it is not already recorded).
+            if termination_reason and t_at_x and t_at_x[-1] < sol.t[-1]:
+                t_at_x.append(sol.t[-1])
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
             states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
-                                                                                dtype=np.float64).T  # shape: (state_dim, num_points)
+                                                  dtype=np.float64).T  # shape: (state_dim, num_points)
             for i in range(states_at_x_arr_t.shape[1]):
                 ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
             ranges.sort(key=lambda t: t.time)  # Sort by time
@@ -704,6 +710,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 def add_row(time, state, flag):
                     """Add a row to ranges, keeping it sorted by time.
                        If row this time already exists then add this flag to it."""
+                    # TODO: Replace with built-in bisect
                     # Binary search for time index
                     lo, hi = 0, len(ranges)
                     while lo < hi:
