@@ -58,7 +58,7 @@ def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -
                 current += step
         else:  # step < 0
             if start < end:
-                raise ValueError("For a decrementing step (step < 0) 'start' cannot be less than 'end'.")
+                raise ValueError("For a decrementing step (step < 0), 'start' cannot be less than 'end'.")
             while current > end:
                 yield current
                 current += step

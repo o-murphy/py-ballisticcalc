@@ -308,10 +308,10 @@ class TestIterator:
 
     def test_counter_inconsistent_step_direction(self):
         # Matches your exact error message for incremental step
-        with pytest.raises(ValueError, match="For an incremental step \(step > 0\), 'start' cannot be greater than 'end'."):
+        with pytest.raises(ValueError, match=r"For an incremental step \(step > 0\), 'start' cannot be greater than 'end'."):
             list(Unit.Meter.counter(0, 10, -100)) # start > end with positive step
         # Matches your exact error message for decrementing step
-        with pytest.raises(ValueError, match="For a decrementing step \(step < 0\) 'start' cannot be less than 'end'."):
+        with pytest.raises(ValueError, match=r"For a decrementing step \(step < 0\), 'start' cannot be less than 'end'."):
             list(Unit.Meter.counter(-100, -10, 0)) # start < end with negative step
 
 
