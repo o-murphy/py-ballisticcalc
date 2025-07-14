@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import IntEnum
 from math import pi, atan, tan
 from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
-    SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Any
+    SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
 
 from typing_extensions import Self, TypeAlias
 
@@ -15,6 +15,63 @@ from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, Unit
 from py_ballisticcalc.logger import logger
 
 Number: TypeAlias = Union[float, int]
+MAX_ITERATIONS = 1e6
+
+
+def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -> Iterable[Number]:
+    """Generates a sequence of numbers starting at 'start',
+    with a step of 'step', up to (but not including) 'end', or infinitely.
+
+    Args:
+        start (int | float): Initial value.
+        step (int | float): Increment/decrement step. Cannot be 0 for infinite iteration.
+        end (int | float, optional): The final value (not including).
+                                   If None, the iteration will be infinite.
+
+    Yields:
+        int | float: The next value in the sequence.
+
+    Raises:
+        ValueError:
+            If 'step' is 0 for infinite iteration, or if 'step' has the wrong
+            direction for the given 'start' and 'end' range.
+    """
+    if step == 0:
+        if end is None:
+            raise ValueError("For infinite iteration, 'step' cannot be zero.")
+        else:
+            if (end > start and start <= end) or (end < start and start >= end) or (start == end):
+                yield start
+            return
+
+    current = start
+    if end is None:
+        while True:
+            yield current
+            current += step
+    else:
+        if step > 0:
+            if start > end:
+                raise ValueError("For an incremental step (step > 0), 'start' cannot be greater than 'end'.")
+            while current < end:
+                yield current
+                current += step
+        else:  # step < 0
+            if start < end:
+                raise ValueError("For a decrementing step (step < 0) 'start' cannot be less than 'end'.")
+            while current > end:
+                yield current
+                current += step
+
+
+def iterator(items: Sequence[Number], /, *,
+             sort: bool = False,
+             key: Optional[Callable[[Number], Any]] = None,
+             reverse: bool = False) -> Generator[Number, None, None]:
+    if sort:
+        items = sorted(items, key=key, reverse=reverse)
+    for v in items:
+        yield v
 
 
 @runtime_checkable
@@ -87,6 +144,13 @@ class Unit(IntEnum):
     Kilogram = 74
     Newton = 75
 
+    Minute = 80
+    Second = 81
+    Millisecond = 82
+    Microsecond = 83
+    Nanosecond = 84
+    Picosecond = 85
+
     @property
     def key(self) -> str:
         """
@@ -135,9 +199,91 @@ class Unit(IntEnum):
             obj = Velocity(value, self)
         elif 70 <= self < 80:
             obj = Weight(value, self)
+        elif 80 <= self < 90:
+            obj = Time(value, self)
         else:
             raise UnitTypeError(f"{self} Unit is not supported")
         return obj  # type: ignore
+
+    def counter(self, start: Number, step: Number,
+                end: Optional[Number] = None, include_end: bool = True) -> Generator[_GenericDimensionType, None, None]:
+        """Generates a finite or infinite sequence of `GenericDimension` objects.
+
+        This function acts as a counter for measurements, yielding `GenericDimension`
+        instances at specified intervals, defined by `start`, `step`, and `end`.
+        The underlying numeric values are handled as raw values of the given unit.
+
+        Args:
+            self (Unit): The unit to apply to each generated numeric value (e.g., `Unit.Meter`, `Unit.Second`).
+                It is assumed that calling `Unit.<member>(value)` returns an instance of the
+                specific `GenericDimension` type desired.
+            start (int | float): The starting raw value for the sequence. Defaults to 0.
+            step (int | float): The increment/decrement step for the sequence.
+                               Must not be 0 for an infinite sequence. Defaults to 0.
+            end (int | float, optional): The raw value at which the sequence should stop (exclusive by default).
+                                       If `None`, the sequence is infinite. Defaults to `None`.
+            include_end (bool): If `True` and `end` is provided, the `end` value will be
+                                included in the sequence. Defaults to `True`.
+
+        Yields:
+            _GenericDimensionType: A `GenericDimension` object of the specific type implied by `u`, representing the current
+                measurement in the sequence.
+
+        Raises:
+            ValueError:
+                If `step` is 0 for an infinite sequence, or if `step` has the wrong
+                direction for the given `start` and `end` range.
+            StopIteration:
+                If the maximum iteration limit (`MAX_ITERATIONS`) is reached during
+                an infinite sequence.
+
+        Examples:
+            >>> from py_ballisticcalc import Distance, Unit
+            >>> list(Unit.Meter.counter(start=0, step=100, end=300)) # Inferred as Generator[Distance]
+            [Distance(0), Distance(100), Distance(200)]
+        """
+        _start: _GenericDimensionType = self(start)
+        _step: _GenericDimensionType = self(step)
+        _end: Optional[_GenericDimensionType] = self(end) if end is not None else None
+
+        _start_raw: Number = _start.raw_value
+        _step_raw: Number = _step.raw_value
+        _end_raw: Optional[Number] = _end.raw_value if _end is not None else None
+
+        if _end_raw is not None and include_end:
+            _end_raw += _step_raw
+        for i, raw_value in enumerate(counter(_start_raw, _step_raw, _end_raw)):
+            value: _GenericDimensionType = self(0)
+            value._value = raw_value
+            yield value
+            if i == MAX_ITERATIONS:
+                raise StopIteration("Max counter iterations limit is %d" % MAX_ITERATIONS)
+
+    def iterator(self, items: Sequence[Number], /, *,
+                 sort: bool = False,
+                 reverse: bool = False) -> Generator[_GenericDimensionType, None, None]:
+        """Creates a sorted sequence of `GenericDimension` objects from raw numeric values.
+
+        Args:
+            self (Unit): The unit to apply to each numeric value (e.g., `Unit.Meter`, `Unit.FPS`).
+                It is assumed that calling `Unit.<member>(value)` returns an instance of the
+                specific `GenericDimension` type desired.
+            items (Sequence[int | float]): A sequence of raw numeric values (integers or floats).
+            sort: (bool): If set to `True`, the elements will be sorted before yield
+            reverse (bool): If set to `True`, the elements are sorted in descending order.
+                Defaults to `False`.
+
+        Yields:
+            _GenericDimensionType: A `GenericDimension` object of the specific type implied by `u`, in sorted order.
+
+        Examples:
+            >>> from py_ballisticcalc import Distance, Unit
+            >>> list(Unit.Meter.iterator([300, 100, 200])) # Inferred as Iterable[Distance]
+            [Distance(100), Distance(200), Distance(300)]
+        """
+        iter_ = iterator(items, sort=sort, reverse=reverse)
+        for v in iter_:
+            yield self(v)
 
 
 class UnitProps(NamedTuple):
@@ -195,6 +341,13 @@ UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Pound: UnitProps('pound', 0, 'lb'),
     Unit.Kilogram: UnitProps('kilogram', 3, 'kg'),
     Unit.Newton: UnitProps('newton', 3, 'N'),
+
+    Unit.Minute: UnitProps('minute', 0, 'min', ),
+    Unit.Second: UnitProps('second', 1, 's'),
+    Unit.Millisecond: UnitProps('millisecond', 3, 'ms', ),
+    Unit.Microsecond: UnitProps('microsecond', 6, 'µs'),
+    Unit.Nanosecond: UnitProps('nanosecond', 9, 'ns'),
+    Unit.Picosecond: UnitProps('picosecond', 12, 'ps')
 }
 
 UnitAliasesType: TypeAlias = Mapping[Tuple[str, ...], Unit]
@@ -248,6 +401,13 @@ UnitAliases: UnitAliasesType = {
     ('pound', 'lb'): Unit.Pound,
     ('kilogram', 'kilogramme', 'kg'): Unit.Kilogram,
     ('newton', 'N'): Unit.Newton,
+
+    ('minute', 'min'): Unit.Minute,
+    ('second', 's', 'sec'): Unit.Second,
+    ('millisecond', 'ms'): Unit.Millisecond,
+    ('microsecond', 'us', 'µs'): Unit.Microsecond,
+    ('nanosecond', 'ns'): Unit.Nanosecond,
+    ('picosecond', 'ps'): Unit.Picosecond,
 }
 
 
@@ -807,6 +967,84 @@ class Energy(GenericDimension):
     Joule: Final = Unit.Joule
 
 
+class Time(GenericDimension):
+    """Time unit"""
+
+    @property
+    def _seconds(self) -> Number:
+        """
+        Internal shortcut for Time() >> Time.Seconds
+
+        Returns:
+            Number: The calculated value in seconds.
+        """
+        return self._value
+
+    def to_raw(self, value: Number, units: Unit) -> Number:
+        """
+        Converts a value from the specified units to the raw internal unit (seconds).
+
+        Args:
+            value (Number): The value to convert.
+            units (Unit): The unit of the provided value.
+
+        Returns:
+            Number: The calculated value in seconds.
+        """
+        if units == Time.Second:
+            return value
+        elif units == Time.Minute:
+            result = value * 60
+        elif units == Time.Millisecond:
+            result = value / 1_000
+        elif units == Time.Microsecond:
+            result = value / 1_000_000
+        elif units == Time.Nanosecond:
+            result = value / 1_000_000_000
+        elif units == Time.Picosecond:
+            result = value / 1_000_000_000_000
+        else:
+            # Fallback to parent if unit is not handled here
+            return super().to_raw(value, units)
+        return result
+
+    def from_raw(self, value: Number, units: Unit) -> Number:
+        """
+        Converts a raw internal value (in seconds) to the specified units.
+
+        Args:
+            value (Number): The raw value in seconds.
+            units (Unit): The target unit for conversion.
+
+        Returns:
+            Number: The calculated value in the target unit.
+        """
+        if units == Time.Second:
+            return value
+        elif units == Time.Minute:
+            result = value / 60
+        elif units == Time.Millisecond:
+            result = value * 1_000
+        elif units == Time.Microsecond:
+            result = value * 1_000_000
+        elif units == Time.Nanosecond:
+            result = value * 1_000_000_000
+        elif units == Time.Picosecond:
+            result = value * 1_000_000_000_000
+        else:
+            # Fallback to parent if unit is not handled here
+            return super().from_raw(value, units)
+        return result
+
+    # Define the Unit constants for Time
+    Minute: Final[Unit] = Unit.Minute
+    Second: Final[Unit] = Unit.Second
+    Millisecond: Final[Unit] = Unit.Millisecond
+    Microsecond: Final[Unit] = Unit.Microsecond
+    Nanosecond: Final[Unit] = Unit.Nanosecond
+    Picosecond: Final[Unit] = Unit.Picosecond
+
+
 class PreferredUnitsMeta(type):
     """Provide representation method for static dataclasses."""
 
@@ -834,6 +1072,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
     sight_height: Unit = Unit.Inch
     target_height: Unit = Unit.Inch
     twist: Unit = Unit.Inch
+    time: Unit = Unit.Second
 
     @classmethod
     def defaults(cls):
@@ -853,6 +1092,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
         cls.sight_height = Unit.Inch
         cls.target_height = Unit.Inch
         cls.twist = Unit.Inch
+        cls.time = Unit.Second
 
     @classmethod
     def set(cls, **kwargs):
@@ -935,6 +1175,8 @@ def _parse_value(input_: Union[str, Number],
 
 __all__ = (
     'Unit',
+    'counter',
+    'iterator',
     'Measurable',
     'GenericDimension',
     'UnitProps',
@@ -947,6 +1189,7 @@ __all__ = (
     'Pressure',
     'Energy',
     'Weight',
+    'Time',
     'PreferredUnits',
     'UnitAliasError',
     'UnitTypeError',

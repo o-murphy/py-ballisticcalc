@@ -19,6 +19,7 @@ ogw = 'Kilogram'
 sight_height = 'Inch'
 target_height = 'Meter'
 twist = 'Inch'
+time = 'Second'
 
 #[pybc.calculator]
 #
