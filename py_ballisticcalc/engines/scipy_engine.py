@@ -13,7 +13,6 @@ TODO:
 import math
 import warnings
 from dataclasses import dataclass, asdict
-from enum import Enum, auto
 from typing import Literal, Any, Callable
 from typing_extensions import Union, Tuple, List, Optional, override
 
@@ -22,9 +21,9 @@ import numpy as np
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, BaseEngineConfig
 from py_ballisticcalc.engines.base_engine import create_trajectory_row
-from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError, SolverRuntimeError
+from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag, HitResult
+from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.vector import Vector
 
@@ -194,28 +193,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         from py_ballisticcalc.helpers import get_bisect_left_key_func
         self.bisect_left_key_func = get_bisect_left_key_func()  # Bisect function for compatibility with Python < 3.10
 
-    def get_vertical_apex(self, shot_info: Shot) -> TrajectoryData:
-        """Returns the TrajectoryData at the trajectory's apex.
-            Have to ensure cMinimumVelocity is 0 for this to work."""
-        restoreMinVelocity = None
-        if self._config.cMinimumVelocity > 0:
-            restoreMinVelocity = self._config.cMinimumVelocity
-            self._config.cMinimumVelocity = 0.
-        self.barrel_elevation_rad = self.look_angle_rad
-        try:
-            t = HitResult(shot_info,
-                          self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX), extra=True)
-        except RangeError as e:
-            if e.last_distance is None:
-                raise e
-            t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
-        if restoreMinVelocity is not None:
-            self._config.cMinimumVelocity = restoreMinVelocity
-        apex = t.flag(TrajFlag.APEX)
-        if not apex:
-            raise SolverRuntimeError("No apex flagged in trajectory data")
-        return apex
-
     @override
     def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
             Distance, Angular]:
@@ -247,14 +224,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self._init_trajectory(shot_info)
 
         # region Virtually vertical shot
-        if abs(self.look_angle_rad - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
+        if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
             max_range = self.get_vertical_apex(shot_info).look_distance  # type: ignore[attr-defined]
             return max_range, Angular.Radian(self.look_angle_rad)
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
             """Returns range to zero (in feet) for given launch angle in radians."""
-            if abs(angle_rad - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
+            if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self.get_vertical_apex(shot_info).look_distance >> Distance.Foot
             self.barrel_elevation_rad = angle_rad
             try:
@@ -263,7 +240,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 if e.last_distance is None:
                     raise e
                 t = e.incomplete_trajectory[-1]
-            print(f"range_for_angle: angle={angle_rad}, t={t.time}, range={t.look_distance >> Distance.Foot} ft")
+            #print(f"range_for_angle: angle={angle_rad}, t={t.time}, range={t.look_distance >> Distance.Foot} ft")
             return t.look_distance >> Distance.Foot
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
@@ -277,49 +254,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         angle_at_max_rad = res.x
         max_range_ft = -res.fun  # Negate because we minimized the negative range
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
-
-    class _ZeroCalcStatus(Enum):
-        DONE = auto()  # Zero angle found, just return it
-        CONTINUE = auto()  # Continue searching for zero angle
-
-    def _init_zero_calculation(self, shot_info: Shot, distance: Distance) -> Tuple[_ZeroCalcStatus, Any]:
-        """
-        Initializes the zero calculation for the given shot and distance.
-        Handles edge cases.
-
-        Args:
-            shot_info (Shot): The shot information.
-            distance (Distance): The distance to the target.
-
-        Returns:
-            Tuple[_ZeroCalcStatus, Any]: If _ZeroCalcStatus.DONE, second value is Angular.Radian zero angle.
-                Otherwise, it is a tuple of the variables.
-        """
-        self._init_trajectory(shot_info)
-
-        look_angle = shot_info.look_angle >> Angular.Radian
-        target_look_dist_ft = distance >> Distance.Foot
-        target_x_ft = target_look_dist_ft * math.cos(look_angle)
-        target_y_ft = target_look_dist_ft * math.sin(look_angle)
-        start_height = -self.sight_height * self.cant_cosine
-
-        # region Edge cases
-        if abs(target_look_dist_ft) < self.ALLOWED_ZERO_ERROR_FEET:
-            return self._ZeroCalcStatus.DONE, shot_info.look_angle
-        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height), self.calc_step):
-            # Very close shot; ignore gravity and drag
-            return self._ZeroCalcStatus.DONE, Angular.Radian(math.atan2(target_y_ft + start_height, target_x_ft))
-        if abs(self.look_angle_rad - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
-            # Virtually vertical shot; just make sure it reaches the target
-            max_range = self.get_vertical_apex(shot_info).look_distance  # type: ignore[attr-defined]
-            if (max_range >> Distance.Foot) < target_look_dist_ft:
-                raise OutOfRangeError(distance, max_range, shot_info.look_angle)
-            return self._ZeroCalcStatus.DONE, shot_info.look_angle
-        # endregion Edge cases
-
-        return self._ZeroCalcStatus.CONTINUE, (
-            look_angle, target_look_dist_ft, target_x_ft, target_y_ft, start_height
-        )
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
         """

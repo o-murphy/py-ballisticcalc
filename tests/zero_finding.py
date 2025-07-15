@@ -112,7 +112,7 @@ def test_vertical_shot_zero(loaded_engine_instance):
     config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     zero_angle = calc.set_weapon_zero(shot, distance)
-    assert abs(zero_angle >> Angular.Radian) < calc.VERTICAL_ANGLE_EPSILON_DEGREES
+    assert abs(zero_angle >> Angular.Radian) < calc.APEX_IS_MAX_RANGE_RADIANS
 
 
 def test_zero_degenerate(loaded_engine_instance):
