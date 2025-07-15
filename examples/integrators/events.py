@@ -201,16 +201,16 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         # Terminal events
         self._add_event_handler(
-            min_velocity_event, min_velocity_threshold=self._config.cMinimumVelocity
+            min_velocity_event, min_velocity_threshold=self._config.cMinimumVelocity_fps
         )
         max_drop = max(
-            self._config.cMaximumDrop, self._config.cMinimumAltitude - self.alt0
+            self._config.cMaximumDrop_ft, self._config.cMinimumAltitude_ft - self.alt0_ft
         )
         self._add_event_handler(max_drop_event, max_drop_threshold=max_drop)
         self._add_event_handler(
             min_altitude_event,
-            initial_altitude=self.alt0,
-            min_altitude_threshold=self._config.cMinimumAltitude,
+            initial_altitude=self.alt0_ft,
+            min_altitude_threshold=self._config.cMinimumAltitude_ft,
         )
 
         # POI events
@@ -288,11 +288,11 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         self._shot_info = shot_info
         self._wind_sock = _WindSock(shot_info.winds)
 
-        velocity = self.muzzle_velocity
+        velocity = self.muzzle_velocity_fps
         position = Vector(
             0.0,
-            -self.cant_cosine * self.sight_height,
-            -self.cant_sine * self.sight_height,
+            -self.cant_cosine * self.sight_height_ft,
+            -self.cant_sine * self.sight_height_ft,
         )
         velocity_vector = Vector(
             math.cos(self.barrel_elevation_rad) * math.cos(self.barrel_azimuth_rad),
@@ -302,7 +302,7 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         time = 0.0
         density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
-            self.alt0 + position.y
+            self.alt0_ft + position.y
         )
         state = TrajectoryState(time, position, velocity_vector, mach)
         self.create_trajectory_row(state, TrajFlag.RANGE)
@@ -454,7 +454,7 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         density_factor, mach_fps = (
             self._shot_info.atmo.get_density_and_mach_for_altitude(
-                self.alt0 + range_vector.y
+                self.alt0_ft + range_vector.y
             )
         )
         drag = density_factor * velocity * self.drag_by_mach(velocity / mach_fps)
@@ -487,7 +487,7 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 class EulerIntegrationEngine(EventBasedIntegrationEngine):
     @override
     def _step(self, state: TrajectoryState) -> TrajectoryState:
-        if state.position.x >= self._wind_sock.next_range:
+        if state.position.x >= self._wind_sock.next_range_ft:
             wind_vector = self._wind_sock.vector_for_range(state.position.x)
         else:
             wind_vector = self._wind_sock.current_vector()
@@ -498,7 +498,7 @@ class EulerIntegrationEngine(EventBasedIntegrationEngine):
         delta_time = self.calc_step / max(1.0, vel_mag)
         density_factor, mach_fps = (
             self._shot_info.atmo.get_density_and_mach_for_altitude(
-                self.alt0 + state.position.y
+                self.alt0_ft + state.position.y
             )
         )
         drag = (
@@ -524,7 +524,7 @@ class RK4IntegrationEngine(EventBasedIntegrationEngine):
 
     @override
     def _step(self, state: TrajectoryState) -> TrajectoryState:
-        if state.position.x >= self._wind_sock.next_range:
+        if state.position.x >= self._wind_sock.next_range_ft:
             wind_vector = self._wind_sock.vector_for_range(state.position.x)
         else:
             wind_vector = self._wind_sock.current_vector()
@@ -537,7 +537,7 @@ class RK4IntegrationEngine(EventBasedIntegrationEngine):
         delta_time = self.calc_step / max(1.0, relative_speed)
         density_factor, mach_fps = (
             self._shot_info.atmo.get_density_and_mach_for_altitude(
-                self.alt0 + state.position.y
+                self.alt0_ft + state.position.y
             )
         )
         km = density_factor * self.drag_by_mach(relative_speed / mach_fps)

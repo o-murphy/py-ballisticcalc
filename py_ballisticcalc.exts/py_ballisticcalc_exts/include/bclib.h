@@ -18,12 +18,12 @@ extern const double cMaxWindDistanceFeet;
 
 typedef struct {
     double cMaxCalcStepSizeFeet;
-    double cZeroFindingAccuracy;
-    double cMinimumVelocity;
-    double cMaximumDrop;
-    int cMaxIterations;
-    double cGravityConstant;
-    double cMinimumAltitude;
+    double cZeroFindingAccuracy_ft;
+    double cMinimumVelocity_fps;
+    double cMaximumDrop_ft;
+    int cZeroMaxIterations;
+    double cGravityConstant_imperial;
+    double cMinimumAltitude_ft;
 } Config_t;
 
 typedef struct {

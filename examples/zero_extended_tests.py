@@ -47,10 +47,10 @@ class PreferredUnitsContextManager:
 
 def create_zero_velocity_zero_min_altitude_calc(engine_name, method, max_iteration:int=60):
     config = SciPyEngineConfigDict(
-        cMinimumVelocity=0,
-        cMinimumAltitude=0,
+        cMinimumVelocity_fps=0,
+        cMinimumAltitude_ft=0,
         integration_method=method,
-        cMaxIterations=max_iteration
+        cZeroMaxIterations=max_iteration
     )
     return Calculator(config, engine=engine_name)
 

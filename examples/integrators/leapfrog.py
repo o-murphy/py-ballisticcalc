@@ -69,9 +69,9 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
         """
 
-        _cMinimumVelocity = self._config.cMinimumVelocity
-        _cMaximumDrop = self._config.cMaximumDrop
-        _cMinimumAltitude = self._config.cMinimumAltitude
+        _cMinimumVelocity = self._config.cMinimumVelocity_fps
+        _cMaximumDrop = self._config.cMaximumDrop_ft
+        _cMinimumAltitude = self._config.cMinimumAltitude_ft
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         time: float = .0
@@ -87,9 +87,9 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # endregion
 
         # region Initialize velocity and position of projectile
-        velocity = self.muzzle_velocity
+        velocity = self.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
+        range_vector = Vector(.0, -self.cant_cosine * self.sight_height_ft, -self.cant_sine * self.sight_height_ft)
         velocity_vector: Vector = Vector(
             math.cos(self.barrel_elevation_rad) * math.cos(self.barrel_azimuth_rad),
             math.sin(self.barrel_elevation_rad),
@@ -107,7 +107,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # For Leap Frog, we need to compute initial acceleration and do a half-step velocity update
         # Update air density at current point in trajectory
         density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
-            self.alt0 + range_vector.y)
+            self.alt0_ft + range_vector.y)
 
         # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
         relative_velocity = velocity_vector - wind_vector
@@ -133,12 +133,12 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             it += 1
 
             # Update wind reading at current point in trajectory
-            if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
+            if range_vector.x >= wind_sock.next_range_ft:  # require check before call to improve performance
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory
             density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
-                self.alt0 + range_vector.y)
+                self.alt0_ft + range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:  # require check before call to improve performance
@@ -167,10 +167,10 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # Step 2: Compute acceleration at new position
             # Need to update atmospheric conditions at new position
             density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
-                self.alt0 + range_vector.y)
+                self.alt0_ft + range_vector.y)
 
             # Update wind vector if needed
-            if range_vector.x >= wind_sock.next_range:
+            if range_vector.x >= wind_sock.next_range_ft:
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Compute new relative velocity and acceleration
@@ -189,7 +189,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             if (
                     velocity < _cMinimumVelocity
                     or range_vector.y < _cMaximumDrop
-                    or self.alt0 + range_vector.y < _cMinimumAltitude
+                    or self.alt0_ft + range_vector.y < _cMinimumAltitude
             ):
                 ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,

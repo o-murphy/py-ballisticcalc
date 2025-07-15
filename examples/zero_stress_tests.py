@@ -9,8 +9,8 @@ from py_ballisticcalc import Calculator, SciPyEngineConfigDict, Distance, Veloci
 
 def create_zero_velocity_zero_min_altitude_calc(engine_name, method):
     config = SciPyEngineConfigDict(
-        cMinimumVelocity=0,
-        cMinimumAltitude=0,
+        cMinimumVelocity_fps=0,
+        cMinimumAltitude_ft=0,
         integration_method=method
     )
     calc = Calculator(config, engine=engine_name)
