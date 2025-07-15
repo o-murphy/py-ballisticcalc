@@ -57,7 +57,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             double drag = .0
             V3dT range_vector, velocity_vector
             V3dT delta_range_vector, velocity_adjusted
-            V3dT gravity_vector = V3dT(.0, self._config_s.cGravityConstant_imperial, .0)
+            V3dT gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
             double min_step
             double calc_step = self._shot_s.calc_step
 
@@ -70,9 +70,9 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
         cdef:
             # early bindings
-            double _cMinimumVelocity = self._config_s.cMinimumVelocity_fps
-            double _cMaximumDrop = self._config_s.cMaximumDrop_ft
-            double _cMinimumAltitude = self._config_s.cMinimumAltitude_ft
+            double _cMinimumVelocity = self._config_s.cMinimumVelocity
+            double _cMaximumDrop = self._config_s.cMaximumDrop
+            double _cMinimumAltitude = self._config_s.cMinimumAltitude
 
         cdef:
             double last_recorded_range, rk_calc_step

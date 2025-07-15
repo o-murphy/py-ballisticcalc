@@ -170,11 +170,11 @@ from py_ballisticcalc import Calculator, InterfaceConfigDict
 config = InterfaceConfigDict(
     max_calc_step_size_feet=1.,
     # cZeroFindingAccuracy= ...,
-    cMinimumVelocity_fps=0,
-    # cMaximumDrop_ft= ...,
-    # cZeroMaxIterations= ...,
+    cMinimumVelocity=0,
+    # cMaximumDrop= ...,
+    # cMaxIterations= ...,
     # cGravityConstant= ...,
-    # cMinimumAltitude_ft= ...,
+    # cMinimumAltitude= ...,
 )
 calc = Calculator(config=config)
 ```

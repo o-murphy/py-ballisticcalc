@@ -27,7 +27,7 @@ class TestIssue96_97:
         ammo = Ammo(drag_model, Velocity.MPS(930))
         weapon = Weapon()
         self.zero = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(1.0))
-        self.calc = Calculator(engine=loaded_engine_instance, config=BaseEngineConfigDict(cMinimumVelocity_fps=0))
+        self.calc = Calculator(engine=loaded_engine_instance, config=BaseEngineConfigDict(cMinimumVelocity=0))
         self.trange = Distance.Meter(1600.2437248702522)
 
     def test_must_return_hit_result(self):

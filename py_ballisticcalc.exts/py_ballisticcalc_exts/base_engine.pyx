@@ -174,7 +174,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     def __cinit__(CythonizedBaseIntegrationEngine self, object _config):
         self._config = create_base_engine_config(_config)
-        self.gravity_vector = V3dT(.0, self._config.cGravityConstant_imperial, .0)
+        self.gravity_vector = V3dT(.0, self._config.cGravityConstant, .0)
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         self._free_trajectory()
@@ -193,7 +193,7 @@ cdef class CythonizedBaseIntegrationEngine:
                    bint extra_data = False, double time_step = 0.0) -> object:
         # hack to reload config if it was changed explicit on existed instance
         self._config_s = Config_t_from_pyobject(self._config)
-        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant_imperial, .0)
+        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         cdef:
             TrajFlag_t filter_flags = TrajFlag_t.RANGE
@@ -262,12 +262,12 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
         # hack to reload config if it was changed explicit on existed instance
         self._config_s = Config_t_from_pyobject(self._config)
-        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant_imperial, .0)
+        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         cdef:
             # early bindings
-            double _cZeroFindingAccuracy = self._config_s.cZeroFindingAccuracy_ft
-            double _cZeroMaxIterations = self._config_s.cZeroMaxIterations
+            double _cZeroFindingAccuracy = self._config_s.cZeroFindingAccuracy
+            double _cMaxIterations = self._config_s.cMaxIterations
 
         cdef:
             double zero_distance = cos(shot_info.look_angle._rad) * distance._feet
@@ -286,7 +286,7 @@ cdef class CythonizedBaseIntegrationEngine:
         maximum_range -= 1.5 * self._shot_s.calc_step
 
         # x = horizontal distance down range, y = drop, z = windage
-        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cZeroMaxIterations:
+        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             try:
                 t = self._integrate(maximum_range, zero_distance, TrajFlag_t.NONE)[0]
                 height = t.height._feet  # use internal shortcut instead of (t.height >> Distance.Foot)

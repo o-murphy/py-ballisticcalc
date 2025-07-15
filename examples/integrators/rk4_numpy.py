@@ -32,7 +32,7 @@ class TrajectoryCalcRK4(TrajectoryCalc):
         self._init_trajectory(shot_info)
 
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
-        _cZeroMaxIterations = self._config.cZeroMaxIterations
+        _cMaxIterations = self._config.cMaxIterations
 
         distance_feet = distance >> Distance.Foot  # no need convert it twice
         zero_distance = math.cos(self.look_angle) * distance_feet
@@ -41,7 +41,7 @@ class TrajectoryCalcRK4(TrajectoryCalc):
         iterations_count = 0
         zero_finding_error = _cZeroFindingAccuracy * 2
         # x = horizontal distance down range, y = drop, z = windage
-        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cZeroMaxIterations:
+        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
                 t = self._integrate(shot_info, zero_distance, zero_distance, TrajFlag.NONE)[0]

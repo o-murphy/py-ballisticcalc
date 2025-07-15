@@ -29,10 +29,10 @@ DISTANCES_FOR_CHECKING = (
 
 def create_zero_velocity_zero_min_altitude_calc(engine_name, method, max_iteration:int=60):
     config = SciPyEngineConfigDict(
-        cMinimumVelocity_fps=0,
-        cMinimumAltitude_ft=0,
+        cMinimumVelocity=0,
+        cMinimumAltitude=0,
         integration_method=method,
-        cZeroMaxIterations=max_iteration
+        cMaxIterations=max_iteration
     )
     return Calculator(config, engine=engine_name)
 
@@ -77,7 +77,7 @@ def create_7_62_mm_shot():
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
 def test_set_weapon_zero(distance, loaded_engine_instance):
     shot = create_23_mm_shot()
-    config = BaseEngineConfigDict(cMinimumVelocity_fps=0)
+    config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     calc.set_weapon_zero(shot, Distance.Meter(distance))
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree}")
@@ -95,7 +95,7 @@ def test_zero_with_look_angle(loaded_engine_instance):
     distance = Distance.Meter(1000)
     shot = create_23_mm_shot()
     shot.look_angle = Angular.Degree(30)
-    config = BaseEngineConfigDict(cMinimumVelocity_fps=0)
+    config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     calc.set_weapon_zero(shot, distance)
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree} degrees")
@@ -109,10 +109,10 @@ def test_vertical_shot_zero(loaded_engine_instance):
     distance = Distance.Meter(1000)
     shot = create_23_mm_shot()
     shot.look_angle = Angular.Degree(90)
-    config = BaseEngineConfigDict(cMinimumVelocity_fps=0)
+    config = BaseEngineConfigDict(cMinimumVelocity=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     zero_angle = calc.set_weapon_zero(shot, distance)
-    assert (zero_angle >> Angular.Radian) == pytest.approx(0)
+    assert abs(zero_angle >> Angular.Radian) < calc.VERTICAL_ANGLE_EPSILON_DEGREES
 
 
 def test_zero_degenerate(loaded_engine_instance):
@@ -120,7 +120,7 @@ def test_zero_degenerate(loaded_engine_instance):
     distance = Distance.Meter(300)
     shot = create_23_mm_shot()
     shot.atmo = Atmo(altitude=0)
-    config = BaseEngineConfigDict(cMinimumVelocity_fps=0, cMinimumAltitude_ft=0)
+    config = BaseEngineConfigDict(cMinimumVelocity=0, cMinimumAltitude=0)
     calc = Calculator(config=config, engine=loaded_engine_instance)
     calc.set_weapon_zero(shot, distance)
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree} degrees")

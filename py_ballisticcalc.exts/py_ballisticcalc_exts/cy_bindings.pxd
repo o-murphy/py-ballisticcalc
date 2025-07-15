@@ -24,12 +24,12 @@ cdef extern from "include/bclib.h" nogil:
     # Declare the V3dT structure
     ctypedef struct Config_t:
         double cMaxCalcStepSizeFeet
-        double cZeroFindingAccuracy_ft
-        double cMinimumVelocity_fps
-        double cMaximumDrop_ft
-        int cZeroMaxIterations
-        double cGravityConstant_imperial
-        double cMinimumAltitude_ft
+        double cZeroFindingAccuracy
+        double cMinimumVelocity
+        double cMaximumDrop
+        int cMaxIterations
+        double cGravityConstant
+        double cMinimumAltitude
 
     Config_t Config_t_fromPyObject(PyObject * config)
 

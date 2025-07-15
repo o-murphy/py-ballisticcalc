@@ -5,14 +5,13 @@
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
-from enum import Enum, auto
 
-from typing_extensions import Optional, Any, NamedTuple, Union, List, Tuple, Dict, TypedDict, TypeVar
+from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Dict, TypedDict, TypeVar
 
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.conditions import Atmo, Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
-from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
+from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.unit import (Distance, Angular, Velocity, Weight,
@@ -34,36 +33,37 @@ __all__ = (
     'CurvePoint'
 )
 
-cZeroFindingAccuracy_ft: float = 0.000005
-cZeroMaxIterations: int = 60
-cMinimumAltitude_ft: float = -1500.0
-cMaximumDrop_ft: float = -15000
-cMinimumVelocity_fps: float = 0.0
-cGravityConstant_imperial: float = -32.17405
+cZeroFindingAccuracy: float = 0.000005
+cMinimumVelocity: float = 50.0
+cMaximumDrop: float = -15000
+cMaxIterations: int = 60
+cGravityConstant: float = -32.17405
+cMinimumAltitude: float = -1410.748  # ft
 cMaxCalcStepSizeFeet: float = 0.5
+
 
 @dataclass
 class BaseEngineConfig:
-    cZeroFindingAccuracy_ft: float = cZeroFindingAccuracy_ft
-    cZeroMaxIterations: int = cZeroMaxIterations
-    cMinimumAltitude_ft: float = cMinimumAltitude_ft
-    cMaximumDrop_ft: float = cMaximumDrop_ft
-    cMinimumVelocity_fps: float = cMinimumVelocity_fps
-    cGravityConstant_imperial: float = cGravityConstant_imperial
     cMaxCalcStepSizeFeet: float = cMaxCalcStepSizeFeet
+    cZeroFindingAccuracy: float = cZeroFindingAccuracy
+    cMinimumVelocity: float = cMinimumVelocity
+    cMaximumDrop: float = cMaximumDrop
+    cMaxIterations: int = cMaxIterations
+    cGravityConstant: float = cGravityConstant
+    cMinimumAltitude: float = cMinimumAltitude
 
 
 DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
 
 
 class BaseEngineConfigDict(TypedDict, total=False):
-    cZeroFindingAccuracy_ft: Optional[float]
-    cZeroMaxIterations: Optional[int]
-    cMinimumAltitude_ft: Optional[float]
-    cMaximumDrop_ft: Optional[float]
-    cMinimumVelocity_fps: Optional[float]
-    cGravityConstant_imperial: Optional[float]
     cMaxCalcStepSizeFeet: Optional[float]
+    cZeroFindingAccuracy: Optional[float]
+    cMinimumVelocity: Optional[float]
+    cMaximumDrop: Optional[float]
+    cMaxIterations: Optional[int]
+    cGravityConstant: Optional[float]
+    cMinimumAltitude: Optional[float]
 
 
 def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] = None) -> BaseEngineConfig:
@@ -100,14 +100,14 @@ class _TrajectoryDataFilter:
     seen_zero: Union[TrajFlag, int]
     time_of_last_record: float
     time_step: float
-    range_step_ft: float
+    range_step: float
     previous_mach: float
     previous_time: float
-    previous_position_ft: Vector
-    previous_velocity_fps: Vector
+    previous_position: Vector
+    previous_velocity: Vector
     previous_v_mach: float
-    next_record_distance_ft: float
-    look_angle_rad: float
+    next_record_distance: float
+    look_angle: float
 
     def __init__(self, filter_flags: Union[TrajFlag, int], range_step: float,
                  initial_position: Vector, initial_velocity: Vector,
@@ -118,19 +118,19 @@ class _TrajectoryDataFilter:
         self.current_flag: Union[TrajFlag, int] = TrajFlag.NONE
         self.seen_zero: Union[TrajFlag, int] = TrajFlag.NONE
         self.time_step: float = time_step
-        self.range_step_ft: float = range_step
+        self.range_step: float = range_step
         self.time_of_last_record: float = 0.0
-        self.next_record_distance_ft: float = 0.0
+        self.next_record_distance: float = 0.0
         self.previous_mach: float = 0.0
         self.previous_time: float = 0.0
-        self.previous_position_ft: Vector = initial_position
-        self.previous_velocity_fps: Vector = initial_velocity
+        self.previous_position: Vector = initial_position
+        self.previous_velocity: Vector = initial_velocity
         self.previous_v_mach: float = 0.0  # Previous velocity in Mach terms
-        self.look_angle_rad: float = look_angle_rad
+        self.look_angle: float = look_angle_rad
         if self.filter & TrajFlag.ZERO:
             if initial_position.y >= 0:
                 self.seen_zero |= TrajFlag.ZERO_UP
-            elif initial_position.y < 0 and barrel_angle_rad < self.look_angle_rad:
+            elif initial_position.y < 0 and barrel_angle_rad < self.look_angle:
                 self.seen_zero |= TrajFlag.ZERO_DOWN
 
     # pylint: disable=too-many-positional-arguments
@@ -138,24 +138,24 @@ class _TrajectoryDataFilter:
                       time: float) -> Optional[BaseTrajData]:
         self.current_flag = TrajFlag.NONE
         data = None
-        if (self.range_step_ft > 0) and (position.x >= self.next_record_distance_ft):
-            while self.next_record_distance_ft + self.range_step_ft < position.x:
+        if (self.range_step > 0) and (position.x >= self.next_record_distance):
+            while self.next_record_distance + self.range_step < position.x:
                 # Handle case where we have stepped past more than one record distance
-                self.next_record_distance_ft += self.range_step_ft
-            if position.x > self.previous_position_ft.x:
+                self.next_record_distance += self.range_step
+            if position.x > self.previous_position.x:
                 # Interpolate to get BaseTrajData at the record distance
-                ratio = (self.next_record_distance_ft - self.previous_position_ft.x) / (
-                        position.x - self.previous_position_ft.x)
+                ratio = (self.next_record_distance - self.previous_position.x) / (
+                        position.x - self.previous_position.x)
                 data = BaseTrajData(
                     time=self.previous_time + (time - self.previous_time) * ratio,
-                    position=self.previous_position_ft + (  # type: ignore[operator]
-                            position - self.previous_position_ft) * ratio,
-                    velocity=self.previous_velocity_fps + (  # type: ignore[operator]
-                            velocity - self.previous_velocity_fps) * ratio,
+                    position=self.previous_position + (  # type: ignore[operator]
+                            position - self.previous_position) * ratio,
+                    velocity=self.previous_velocity + (  # type: ignore[operator]
+                            velocity - self.previous_velocity) * ratio,
                     mach=self.previous_mach + (mach - self.previous_mach) * ratio
                 )
             self.current_flag |= TrajFlag.RANGE
-            self.next_record_distance_ft += self.range_step_ft
+            self.next_record_distance += self.range_step
             self.time_of_last_record = time
         elif self.time_step > 0:
             self.check_next_time(time)
@@ -169,8 +169,8 @@ class _TrajectoryDataFilter:
             data = BaseTrajData(time=time, position=position,
                                 velocity=velocity, mach=mach)
         self.previous_time = time
-        self.previous_position_ft = position
-        self.previous_velocity_fps = velocity
+        self.previous_position = position
+        self.previous_velocity = velocity
         self.previous_mach = mach
         return data
 
@@ -190,7 +190,7 @@ class _TrajectoryDataFilter:
         #   self.seen_zero prevents recording more than one.
         if range_vector.x > 0:
             # Zero reference line is the sight line defined by look_angle
-            reference_height = range_vector.x * math.tan(self.look_angle_rad)
+            reference_height = range_vector.x * math.tan(self.look_angle)
             # If we haven't seen ZERO_UP, we look for that first
             if not (self.seen_zero & TrajFlag.ZERO_UP):  # pylint: disable=superfluous-parens
                 if range_vector.y >= reference_height:
@@ -207,7 +207,7 @@ class _TrajectoryDataFilter:
         The apex is defined as the point, after launch, where the vertical component of velocity
             goes from positive to negative.
         """
-        if velocity_vector.y <= 0 and self.previous_velocity_fps.y > 0:
+        if velocity_vector.y <= 0 and self.previous_velocity.y > 0:
             self.current_flag |= TrajFlag.APEX
 
 
@@ -217,8 +217,8 @@ class _WindSock:
     This assumption is violated if the projectile is blown or otherwise moves backwards.
     """
     winds: tuple['Wind', ...]
-    current_index: int
-    next_range_ft: float
+    current: int
+    next_range: float
 
     def __init__(self, winds: Union[Tuple["Wind", ...], None]):
         """
@@ -228,8 +228,8 @@ class _WindSock:
             winds (Union[Tuple[Wind, ...], None], optional): A tuple of Wind objects. Defaults to None.
         """
         self.winds: Tuple["Wind", ...] = winds or tuple()
-        self.current_index: int = 0
-        self.next_range_ft: float = Wind.MAX_DISTANCE_FEET
+        self.current: int = 0
+        self.next_range: float = Wind.MAX_DISTANCE_FEET
         self._last_vector_cache: Union["Vector", None] = None
         self._length = len(self.winds)
 
@@ -252,15 +252,15 @@ class _WindSock:
 
     def update_cache(self) -> None:
         """Updates the cache only if needed or if forced during initialization."""
-        if self.current_index < self._length:
-            cur_wind = self.winds[self.current_index]
+        if self.current < self._length:
+            cur_wind = self.winds[self.current]
             self._last_vector_cache = cur_wind.vector
-            self.next_range_ft = cur_wind.until_distance >> Distance.Foot
+            self.next_range = cur_wind.until_distance >> Distance.Foot
         else:
             self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-            self.next_range_ft = Wind.MAX_DISTANCE_FEET
+            self.next_range = Wind.MAX_DISTANCE_FEET
 
-    def vector_for_range(self, next_range_ft: float) -> "Vector":
+    def vector_for_range(self, next_range: float) -> "Vector":
         """
         Updates the wind vector if `next_range` surpasses `self.next_range`.
 
@@ -270,11 +270,11 @@ class _WindSock:
         Returns:
             Vector: The wind vector for the given range.
         """
-        if next_range_ft >= self.next_range_ft:
-            self.current_index += 1
-            if self.current_index >= self._length:
+        if next_range >= self.next_range:
+            self.current += 1
+            if self.current >= self._length:
                 self._last_vector_cache = Vector(0.0, 0.0, 0.0)
-                self.next_range_ft = Wind.MAX_DISTANCE_FEET
+                self.next_range = Wind.MAX_DISTANCE_FEET
             else:
                 self.update_cache()  # This will trigger cache updates.
         return self.current_vector()
@@ -285,20 +285,20 @@ _BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConf
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     """
-    All calculations are done in imperial units of feet and fps.
+    All calculations are done in units of feet and fps.
 
     Attributes:
-        barrel_azimuth_rad (float): The azimuth angle of the barrel.
-        barrel_elevation_rad (float): The elevation angle of the barrel.
-        twist_inches (float): The twist rate of barrel rifling, in inches of length to make one full rotation.
+        barrel_azimuth (float): The azimuth angle of the barrel.
+        barrel_elevation (float): The elevation angle of the barrel.
+        twist (float): The twist rate of the barrel.
         gravity_vector (Vector): The gravity vector.
     """
-    APEX_IS_MAX_RANGE_RADIANS: float = 0.17  # Radians from vertical where the apex is max range
+    VERTICAL_ANGLE_EPSILON_DEGREES: float = 1e-2  # Deviation from 90 degree look-angle to consider vertical
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
 
     barrel_azimuth_rad: float
     barrel_elevation_rad: float
-    twist_inches: float
+    twist: float
     gravity_vector: Vector
     _table_data: List[DragDataPoint]
 
@@ -310,7 +310,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             _config (BaseEngineConfig): The configuration object.
         """
         self._config: BaseEngineConfig = create_base_engine_config(_config)
-        self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant_imperial, .0)
+        self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self._table_data = []
 
     def get_calc_step(self, step: float = 0) -> float:
@@ -367,18 +367,18 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         self.__mach_list: List[float] = _get_only_mach_data(self._table_data)
 
         self.look_angle_rad = shot_info.look_angle >> Angular.Radian
-        self.twist_inches = shot_info.weapon.twist >> Distance.Inch
+        self.twist = shot_info.weapon.twist >> Distance.Inch
         self.length = shot_info.ammo.dm.length >> Distance.Inch
         self.diameter = shot_info.ammo.dm.diameter >> Distance.Inch
         self.weight = shot_info.ammo.dm.weight >> Weight.Grain
         self.barrel_elevation_rad = shot_info.barrel_elevation >> Angular.Radian
         self.barrel_azimuth_rad = shot_info.barrel_azimuth >> Angular.Radian
-        self.sight_height_ft = shot_info.weapon.sight_height >> Distance.Foot
+        self.sight_height = shot_info.weapon.sight_height >> Distance.Foot
         self.cant_cosine = math.cos(shot_info.cant_angle >> Angular.Radian)
         self.cant_sine = math.sin(shot_info.cant_angle >> Angular.Radian)
-        self.alt0_ft = shot_info.atmo.altitude >> Distance.Foot
+        self.alt0 = shot_info.atmo.altitude >> Distance.Foot
         self.calc_step = self.get_calc_step()
-        self.muzzle_velocity_fps = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
+        self.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS
         self.stability_coefficient = self.calc_stability_coefficient(shot_info.atmo)
 
     def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[Distance, Angular]:
@@ -397,9 +397,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             ValueError: If the angle bracket excludes the look_angle.
         """
         restore_cMaximumDrop = None
-        if self._config.cMaximumDrop_ft:
-            restore_cMaximumDrop = self._config.cMaximumDrop_ft
-            self._config.cMaximumDrop_ft = 0  # We want to run trajectory until it returns to horizontal
+        if self._config.cMaximumDrop:
+            restore_cMaximumDrop = self._config.cMaximumDrop
+            self._config.cMaximumDrop = 0  # We want to run trajectory until it returns to horizontal
         self._init_trajectory(shot_info)
 
         t_calls = 0
@@ -448,74 +448,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         max_range_ft = range_for_angle(angle_at_max_rad)
 
         if restore_cMaximumDrop is not None:
-            self._config.cMaximumDrop_ft = restore_cMaximumDrop
+            self._config.cMaximumDrop = restore_cMaximumDrop
         logger.debug(f".find_max_range required {t_calls} trajectory calculations")
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
-
-    def get_vertical_apex(self, shot_info: Shot) -> TrajectoryData:
-        """Returns the TrajectoryData at the trajectory's apex.
-            Have to ensure cMinimumVelocity is 0 for this to work."""
-        restoreMinVelocity = None
-        if self._config.cMinimumVelocity_fps > 0:
-            restoreMinVelocity = self._config.cMinimumVelocity_fps
-            self._config.cMinimumVelocity_fps = 0.
-        self._init_trajectory(shot_info)
-        self.barrel_elevation_rad = self.look_angle_rad
-        try:
-            t = HitResult(shot_info, self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX), extra=True)
-        except RangeError as e:
-            if e.last_distance is None:
-                raise e
-            t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
-        if restoreMinVelocity is not None:
-            self._config.cMinimumVelocity_fps = restoreMinVelocity
-        apex = t.flag(TrajFlag.APEX)
-        if not apex:
-            raise SolverRuntimeError("No apex flagged in trajectory data")
-        return apex
-
-    class _ZeroCalcStatus(Enum):
-        DONE = auto()  # Zero angle found, just return it
-        CONTINUE = auto()  # Continue searching for zero angle
-
-    def _init_zero_calculation(self, shot_info: Shot, distance: Distance) -> Tuple[_ZeroCalcStatus, Any]:
-        """
-        Initializes the zero calculation for the given shot and distance.
-        Handles edge cases.
-
-        Args:
-            shot_info (Shot): The shot information.
-            distance (Distance): The distance to the target.
-
-        Returns:
-            Tuple[_ZeroCalcStatus, Any]: If _ZeroCalcStatus.DONE, second value is Angular.Radian zero angle.
-                Otherwise, it is a tuple of the variables.
-        """
-        self._init_trajectory(shot_info)
-
-        look_angle_rad = shot_info.look_angle >> Angular.Radian
-        target_look_dist_ft = distance >> Distance.Foot
-        target_x_ft = target_look_dist_ft * math.cos(look_angle_rad)
-        target_y_ft = target_look_dist_ft * math.sin(look_angle_rad)
-        start_height_ft = -self.sight_height_ft * self.cant_cosine
-
-        # region Edge cases
-        if abs(target_look_dist_ft) < self.ALLOWED_ZERO_ERROR_FEET:
-            return self._ZeroCalcStatus.DONE, shot_info.look_angle
-        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height_ft), self.calc_step):
-            # Very close shot; ignore gravity and drag
-            return self._ZeroCalcStatus.DONE, Angular.Radian(math.atan2(target_y_ft + start_height_ft, target_x_ft))
-        if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
-            # Virtually vertical shot; just check if it can reach the target distance
-            max_range = self.get_vertical_apex(shot_info).look_distance  # type: ignore[attr-defined]
-            if (max_range >> Distance.Foot) < target_look_dist_ft:
-                raise OutOfRangeError(distance, max_range, shot_info.look_angle)
-            return self._ZeroCalcStatus.DONE, shot_info.look_angle
-        # endregion Edge cases
-
-        return self._ZeroCalcStatus.CONTINUE, (
-            look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft
-        )
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool=False) -> Angular:
         """
@@ -544,15 +479,44 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        status, result = self._init_zero_calculation(shot_info, distance)
-        if status is self._ZeroCalcStatus.DONE:
-            return result
-        look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft = result
+        self._init_trajectory(shot_info)
 
-        _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy_ft
-        _cZeroMaxIterations = self._config.cZeroMaxIterations
+        look_angle = shot_info.look_angle >> Angular.Radian
+        target_look_dist_ft = distance >> Distance.Foot
+        target_x_ft = target_look_dist_ft * math.cos(look_angle)
+        target_y_ft = target_look_dist_ft * math.sin(look_angle)
+        start_height = -self.sight_height * self.cant_cosine
 
-        zero_distance = (distance >> Distance.Foot) * math.cos(look_angle_rad)  # Horizontal distance
+        # region Edge cases
+        if abs(target_look_dist_ft) < self.ALLOWED_ZERO_ERROR_FEET:
+            return shot_info.look_angle
+        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height), self.calc_step):
+            # Very close shot; ignore gravity and drag
+            return Angular.Radian(math.atan2(target_y_ft + start_height, target_x_ft))
+        if abs(self.look_angle_rad - math.radians(90)) < (self.VERTICAL_ANGLE_EPSILON_DEGREES * 0.0174533):
+            # Virtually vertical shot; just make sure it reaches the target
+            self.barrel_elevation_rad = look_angle
+            prev_min_altitude = self._config.cMinimumAltitude
+            self._config.cMinimumAltitude = self.alt0
+            try:
+                #t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX, stop_at_zero=True)
+                # Simulating stop_at_zero by temporarily overriding cMinimumAltitude
+                hit = self._integrate(shot_info, 9e9, 9e9, TrajFlag.APEX)
+            except RangeError as e:
+                if e.last_distance is None:
+                    raise e
+                hit = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
+            self._config.cMinimumAltitude = prev_min_altitude
+            max_range = hit.flag(TrajFlag.APEX).look_distance  # type: ignore[attr-defined]
+            if (max_range >> Distance.Foot) < target_look_dist_ft:
+                raise OutOfRangeError(distance, max_range, shot_info.look_angle)
+            return shot_info.look_angle
+        # endregion Edge cases
+
+        _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
+        _cMaxIterations = self._config.cMaxIterations
+
+        zero_distance = (distance >> Distance.Foot) * math.cos(look_angle)  # Horizontal distance
 
         iterations_count = 0
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
@@ -561,7 +525,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         slant_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
         range_limit = False  # Flag to avoid 1st-order correction when instability detected
 
-        while iterations_count < _cZeroMaxIterations:
+        while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
                 t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
@@ -694,8 +658,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             windage due to spin drift, in feet
         """
-        if (self.stability_coefficient != 0) and (self.twist_inches != 0):
-            sign = 1 if self.twist_inches > 0 else -1
+        if (self.stability_coefficient != 0) and (self.twist != 0):
+            sign = 1 if self.twist > 0 else -1
             return sign * (1.25 * (self.stability_coefficient + 1.2)
                            * math.pow(time, 1.83)) / 12
         return 0
@@ -710,15 +674,15 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             float: The Miller stability coefficient.
         """
-        if self.twist_inches and self.length and self.diameter and atmo.pressure.raw_value:
-            twist_rate = math.fabs(self.twist_inches) / self.diameter
+        if self.twist and self.length and self.diameter and atmo.pressure.raw_value:
+            twist_rate = math.fabs(self.twist) / self.diameter
             length = self.length / self.diameter
             # Miller stability formula
             sd = 30 * self.weight / (
                     math.pow(twist_rate, 2) * math.pow(self.diameter, 3) * length * (1 + math.pow(length, 2))
             )
             # Velocity correction factor
-            fv = math.pow(self.muzzle_velocity_fps / 2800, 1.0 / 3.0)
+            fv = math.pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
             # Atmospheric correction
             ft = atmo.temperature >> Temperature.Fahrenheit
             pt = atmo.pressure >> Pressure.InHg

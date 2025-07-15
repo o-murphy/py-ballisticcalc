@@ -32,9 +32,9 @@ def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit:
 @pytest.fixture(autouse=True)
 def zero_height_calc(loaded_engine_instance):
     config = BaseEngineConfigDict(
-        cMinimumVelocity_fps=0.0,
-        cMinimumAltitude_ft=0.0,
-        cMaximumDrop_ft=0.0,
+        cMinimumVelocity=0.0,
+        cMinimumAltitude=0.0,
+        cMaximumDrop=0.0,
     )
     calc = Calculator(config=config, engine=loaded_engine_instance)
     return calc
@@ -66,6 +66,6 @@ def shot_with_relative_angle_in_degrees(angle_in_degrees: float):
 @pytest.fixture(autouse=True)
 def zero_min_velocity_calc(loaded_engine_instance):
     config = BaseEngineConfigDict(
-        cMinimumVelocity_fps=0,
+        cMinimumVelocity=0,
     )
     return Calculator(config=config, engine=loaded_engine_instance)

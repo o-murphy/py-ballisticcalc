@@ -227,6 +227,14 @@ class TestComputerPytest:
 
         self.ammo.use_powder_sensitivity = False
 
+    def test_zero_velocity(self):
+        """Test that firing with zero muzzle velocity raises a RangeError"""
+        tdm = DragModel(self.dm.BC + 0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
+        slick = Ammo(tdm, 0)
+        shot = Shot(weapon=self.weapon, ammo=slick, atmo=self.atmosphere)
+        with pytest.raises(RangeError):
+            self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
+
     def test_very_short_shot(self):
         """Ensure we always get at least two points in the trajectory"""
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere, winds=[])

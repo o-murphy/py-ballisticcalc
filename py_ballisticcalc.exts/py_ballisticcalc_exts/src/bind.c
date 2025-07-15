@@ -16,28 +16,28 @@ Config_t Config_t_fromPyObject(PyObject* config) {
     c.cMaxCalcStepSizeFeet = PyFloat_AsDouble(tmp);
     Py_XDECREF(tmp);
 
-    tmp = PyObject_GetAttrString(config, "cZeroFindingAccuracy_ft");
-    c.cZeroFindingAccuracy_ft = PyFloat_AsDouble(tmp);
+    tmp = PyObject_GetAttrString(config, "cZeroFindingAccuracy");
+    c.cZeroFindingAccuracy = PyFloat_AsDouble(tmp);
     Py_XDECREF(tmp);
 
-    tmp = PyObject_GetAttrString(config, "cMinimumVelocity_fps");
-    c.cMinimumVelocity_fps = PyFloat_AsDouble(tmp);
+    tmp = PyObject_GetAttrString(config, "cMinimumVelocity");
+    c.cMinimumVelocity = PyFloat_AsDouble(tmp);
     Py_XDECREF(tmp);
 
-    tmp = PyObject_GetAttrString(config, "cMaximumDrop_ft");
-    c.cMaximumDrop_ft = PyFloat_AsDouble(tmp);
+    tmp = PyObject_GetAttrString(config, "cMaximumDrop");
+    c.cMaximumDrop = PyFloat_AsDouble(tmp);
     Py_XDECREF(tmp);
 
-    tmp = PyObject_GetAttrString(config, "cZeroMaxIterations");
-    c.cZeroMaxIterations = (int)PyLong_AsLong(tmp);
+    tmp = PyObject_GetAttrString(config, "cMaxIterations");
+    c.cMaxIterations = (int)PyLong_AsLong(tmp);
     Py_XDECREF(tmp);
 
-    tmp = PyObject_GetAttrString(config, "cGravityConstant_imperial");
-    c.cGravityConstant_imperial = PyFloat_AsDouble(tmp);
+    tmp = PyObject_GetAttrString(config, "cGravityConstant");
+    c.cGravityConstant = PyFloat_AsDouble(tmp);
     Py_XDECREF(tmp);
 
-    tmp = PyObject_GetAttrString(config, "cMinimumAltitude_ft");
-    c.cMinimumAltitude_ft = PyFloat_AsDouble(tmp);
+    tmp = PyObject_GetAttrString(config, "cMinimumAltitude");
+    c.cMinimumAltitude = PyFloat_AsDouble(tmp);
     Py_XDECREF(tmp);
 
     return c;
