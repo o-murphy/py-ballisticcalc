@@ -65,7 +65,7 @@ class TrajectoryData(NamedTuple):
         drop_adj (Angular): Sight adjustment to zero target_drop at this distance.
         windage (Distance): Windage (z-axis) coordinate of this point.
         windage_adj (Angular): Windage adjustment.
-        look_distance (Distance): Sight-line distance = .distance/cosine(look_angle).
+        look_distance (Distance): Distance along sight line that is closest to this point (a.k.a. slant range).
         angle (Angular): Angle of velocity vector relative to x-axis.
         density_factor (float): Ratio of air density here to standard density.
         drag (float): Current drag coefficient.

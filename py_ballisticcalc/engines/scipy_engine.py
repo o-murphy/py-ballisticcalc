@@ -9,6 +9,8 @@ TODO:
     * Store max_range, zero_angle, and even full cache in the shot_info?
         * Confirm cache is valid with a single ._integrate check?
         ... or handle any breaking change to Shot values to clear the cache?
+    * Or define hash code of all relevant Shot parameters, and use that to check
+        whether integrator cache and _init_trajectory is valid?
 """
 import math
 import warnings
@@ -54,7 +56,7 @@ class SciPyEvent:
         return self.func(t, s)
 
 # decorator that simply wraps SciPyEventFunctionT to SciPyEvent
-#   to ensure that event object have expected attrs
+#   to ensure that event object has expected attrs
 def scipy_event(
         terminal: bool = False,
         direction: Literal[-1, 0, 1] = 0
@@ -78,16 +80,17 @@ def scipy_event(
     """
 
     def wrapper(func: SciPyEventFunctionT) -> SciPyEvent:
-        # These lines dynamically add attributes to the function object.
-        # Type checkers (like MyPy) might complain that 'func' doesn't inherently
-        # have 'terminal' or 'direction' attributes defined in its type signature
-        # (SciPyEventFunction). This is a common pattern for how SciPy's solve_ivp
-        # expects event functions to be configured.
-        # You might see 'type: ignore[attr-defined]' in very strict environments
-        # to suppress these warnings, but for this specific SciPy idiom,
-        # it's often understood.
-        # func.terminal = terminal  # type: ignore[attr-defined]
-        # func.direction = direction  # type: ignore[attr-defined]
+        """These lines dynamically add attributes to the function object.
+        Type checkers (like MyPy) might complain that 'func' doesn't inherently
+        have 'terminal' or 'direction' attributes defined in its type signature
+        (SciPyEventFunction). This is a common pattern for how SciPy's solve_ivp
+        expects event functions to be configured.
+        You might see 'type: ignore[attr-defined]' in very strict environments
+        to suppress these warnings, but for this specific SciPy idiom,
+        it's often understood.
+        func.terminal = terminal  # type: ignore[attr-defined]
+        func.direction = direction  # type: ignore[attr-defined]
+        """
         return SciPyEvent(func, terminal, direction)
 
     return wrapper
@@ -225,14 +228,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         # region Virtually vertical shot
         if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
-            max_range = self.get_vertical_apex(shot_info).look_distance  # type: ignore[attr-defined]
+            max_range = self.find_apex(shot_info).look_distance
             return max_range, Angular.Radian(self.look_angle_rad)
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
             """Returns range to zero (in feet) for given launch angle in radians."""
             if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
-                return self.get_vertical_apex(shot_info).look_distance >> Distance.Foot
+                return self.find_apex(shot_info).look_distance >> Distance.Foot
             self.barrel_elevation_rad = angle_rad
             try:
                 t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[-1]
@@ -240,8 +243,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 if e.last_distance is None:
                     raise e
                 t = e.incomplete_trajectory[-1]
-            #print(f"range_for_angle: angle={angle_rad}, t={t.time}, range={t.look_distance >> Distance.Foot} ft")
-            return t.look_distance >> Distance.Foot
+            return (t.look_distance >> Distance.Foot) - (t.target_drop >> Distance.Foot)
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
                               bounds=(float(max(self.look_angle_rad, math.radians(angle_bracket_deg[0]))),
@@ -539,14 +541,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         if sol.sol is None:
             logger.error("No solution found by SciPy integration.")
-            raise RuntimeError(f"No solution found by SciPy integration: {sol.message}", sol.message)
-
-        if sol.t_events is None:
-            raise RuntimeError("SciPy integration solution have not t_events")
+            raise RuntimeError(f"No solution found by SciPy integration: {sol.message}")
 
         logger.debug(f"SciPy integration complete with {sol.nfev} function calls.")
         termination_reason = None
-        if sol.status == 1:  # A termination event occurred
+        if sol.status == 1 and sol.t_events:  # A termination event occurred
             if len(sol.t_events) > 0:
                 if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range
                     #logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
@@ -675,7 +674,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     except ValueError:
                         logger.debug("No Mach crossing found")
 
-                if filter_flags & TrajFlag.ZERO and len(sol.t_events) > 3 and sol.t_events[-1].size > 0:
+                if (filter_flags & TrajFlag.ZERO and sol.t_events and len(sol.t_events) > 3
+                                                 and sol.t_events[-1].size > 0):
                     tan_look_angle = math.tan(self.look_angle_rad)
                     for t_cross in sol.t_events[-1]:
                         state = sol.sol(t_cross)

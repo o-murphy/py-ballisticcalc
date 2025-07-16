@@ -217,7 +217,7 @@ class _WindSock:
     This assumption is violated if the projectile is blown or otherwise moves backwards.
     """
     winds: tuple['Wind', ...]
-    current: int
+    current_index: int
     next_range: float
 
     def __init__(self, winds: Union[Tuple["Wind", ...], None]):
@@ -228,7 +228,7 @@ class _WindSock:
             winds (Union[Tuple[Wind, ...], None], optional): A tuple of Wind objects. Defaults to None.
         """
         self.winds: Tuple["Wind", ...] = winds or tuple()
-        self.current: int = 0
+        self.current_index: int = 0
         self.next_range: float = Wind.MAX_DISTANCE_FEET
         self._last_vector_cache: Union["Vector", None] = None
         self._length = len(self.winds)
@@ -252,8 +252,8 @@ class _WindSock:
 
     def update_cache(self) -> None:
         """Updates the cache only if needed or if forced during initialization."""
-        if self.current < self._length:
-            cur_wind = self.winds[self.current]
+        if self.current_index < self._length:
+            cur_wind = self.winds[self.current_index]
             self._last_vector_cache = cur_wind.vector
             self.next_range = cur_wind.until_distance >> Distance.Foot
         else:
@@ -271,8 +271,8 @@ class _WindSock:
             Vector: The wind vector for the given range.
         """
         if next_range >= self.next_range:
-            self.current += 1
-            if self.current >= self._length:
+            self.current_index += 1
+            if self.current_index >= self._length:
                 self._last_vector_cache = Vector(0.0, 0.0, 0.0)
                 self.next_range = Wind.MAX_DISTANCE_FEET
             else:
@@ -293,7 +293,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         twist (float): The twist rate of barrel rifling, in inches of length to make one full rotation.
         gravity_vector (Vector): The gravity vector.
     """
-    APEX_IS_MAX_RANGE_RADIANS: float = 0.17  # Radians from vertical where the apex is max range
+    APEX_IS_MAX_RANGE_RADIANS: float = 0.02  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
 
     barrel_azimuth_rad: float
@@ -452,9 +452,10 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         logger.debug(f".find_max_range required {t_calls} trajectory calculations")
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
-    def get_vertical_apex(self, shot_info: Shot) -> TrajectoryData:
-        """Returns the TrajectoryData at the trajectory's apex.
+    def find_apex(self, shot_info: Shot) -> TrajectoryData:
+        """Returns the TrajectoryData at the trajectory's apex (where velocity.y goes from positive to negative).
             Have to ensure cMinimumVelocity is 0 for this to work."""
+        self._init_trajectory(shot_info)
         restoreMinVelocity = None
         if self._config.cMinimumVelocity > 0:
             restoreMinVelocity = self._config.cMinimumVelocity
@@ -466,7 +467,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         except RangeError as e:
             if e.last_distance is None:
                 raise e
-            t = HitResult(shot_info, e.incomplete_trajectory, extra=True)  # type: ignore[assignment]
+            t = HitResult(shot_info, e.incomplete_trajectory, extra=True)
         if restoreMinVelocity is not None:
             self._config.cMinimumVelocity = restoreMinVelocity
         apex = t.flag(TrajFlag.APEX)
@@ -507,7 +508,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             return self._ZeroCalcStatus.DONE, Angular.Radian(math.atan2(target_y_ft + start_height, target_x_ft))
         if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
             # Virtually vertical shot; just check if it can reach the target
-            max_range = self.get_vertical_apex(shot_info).look_distance  # type: ignore[attr-defined]
+            max_range = self.find_apex(shot_info).look_distance
             if (max_range >> Distance.Foot) < target_look_dist_ft:
                 raise OutOfRangeError(distance, max_range, shot_info.look_angle)
             return self._ZeroCalcStatus.DONE, shot_info.look_angle
@@ -520,7 +521,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool=False) -> Angular:
         """
         Finds the barrel elevation needed to hit sight line at a specific distance,
-            using Ridder's method.
+            using unimodal root-finding that is guaranteed to succeed if a solution exists (e.g., Ridder's method).
 
         Args:
             shot_info (Shot): The shot information.
@@ -641,17 +642,17 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             Do not duplicate rows: If two flags occur at the exact same time, mark the row with both flags.
 
         Args:
-            shot_info (Shot):  Information about the shot.
-            maximum_range (float): Feet down range to stop calculation
-            record_step (float): Frequency (in feet down range) to record TrajectoryData
-            filter_flags (Union[TrajFlag, int]): Flags to filter trajectory data.
+            shot_info (Shot): Information specific to the shot.
+            maximum_range (float): Feet down-range to stop calculation
+            record_step (float): Frequency (in feet down-range) to record TrajectoryData
+            filter_flags (Union[TrajFlag, int]): Bitfield for trajectory points of interest to record.
             time_step (float, optional): If > 0 then record TrajectoryData after this many seconds elapse
                 since last record, as could happen when trajectory is nearly vertical
-                and there is too little movement downrange to trigger a record based on range.
+                and there is too little movement down-range to trigger a record based on range.
                 Defaults to 0.0
 
         Returns:
-            List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
+            List[TrajectoryData]: list of TrajectoryData
         """
         raise NotImplementedError
 
