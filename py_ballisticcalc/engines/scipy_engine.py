@@ -1,10 +1,10 @@
 """Computes trajectory using SciPy's solve_ivp.
 Uses SciPy's root_scalar to get specific (TrajFlag) trajectory points,
-    and for .find_zero_angle(), which can find both the flat and lofted trajectories.
-Uses SciPy's minimize_scalar to .find_max_range() for any shot.
+    and for ._find_zero_angle(), which can find both the flat and lofted trajectories.
+Uses SciPy's minimize_scalar to ._find_max_range() for any shot.
 
 TODO:
- * Cache ._integrate() results across .find_zero_angle() and .find_max_range() calls.
+ * Cache ._integrate() results across ._find_zero_angle() and ._find_max_range() calls.
     ... but between calls would have to determine whether any relevant shot parameters changed.
     * Store max_range, zero_angle, and even full cache in the shot_info?
         * Confirm cache is valid with a single ._integrate check?
@@ -16,13 +16,17 @@ import math
 import warnings
 from dataclasses import dataclass, asdict
 from typing import Literal, Any, Callable
-from typing_extensions import Union, Tuple, List, Optional, override
 
 import numpy as np
+from typing_extensions import Union, Tuple, List, Optional, override
 
-from py_ballisticcalc.conditions import Shot, Wind
-from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine, BaseEngineConfigDict, BaseEngineConfig
-from py_ballisticcalc.engines.base_engine import create_trajectory_row
+from py_ballisticcalc._compat import bisect_left_key
+from py_ballisticcalc.conditions import Wind
+from py_ballisticcalc.engines.base_engine import (
+    BaseIntegrationEngine,
+    BaseEngineConfigDict,
+    BaseEngineConfig, _ShotProps, _ZeroCalcStatus
+)
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -43,6 +47,8 @@ __all__ = ('SciPyIntegrationEngine',
 
 # type of event callback
 SciPyEventFunctionT = Callable[[float, Any], np.floating]  # possibly Callable[[float, np.ndarray], np.floating]
+
+
 # SciPyEventFunctionWithArgsT = Callable[[float, np.ndarray, float, float], np.floating]
 
 # typed scipy event with expected attributes
@@ -54,6 +60,7 @@ class SciPyEvent:
 
     def __call__(self, t: float, s: Any) -> np.floating:  # possibly s: np.ndarray
         return self.func(t, s)
+
 
 # decorator that simply wraps SciPyEventFunctionT to SciPyEvent
 #   to ensure that event object has expected attrs
@@ -192,18 +199,16 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         """
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
-        self._table_data = []
-        from py_ballisticcalc.helpers import get_bisect_left_key_func
-        self.bisect_left_key_func = get_bisect_left_key_func()  # Bisect function for compatibility with Python < 3.10
 
     @override
-    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
-            Distance, Angular]:
+    def _find_max_range(self, props: _ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
+        Distance, Angular]:
         """
+        Internal only
         Finds the maximum range along the look_angle and the launch angle to reach it.
 
         Args:
-            shot_info (Shot): The shot information: gun, ammo, environment, look_angle.
+            props (_ShotProps): The shot information: gun, ammo, environment, look_angle.
             angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
                                                                Defaults to (0, 90).
 
@@ -224,21 +229,20 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         except ImportError as e:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
-        self._init_trajectory(shot_info)
-
         # region Virtually vertical shot
-        if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
-            max_range = self.find_apex(shot_info).look_distance
-            return max_range, Angular.Radian(self.look_angle_rad)
+        if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
+            max_range = self._find_apex(props).look_distance
+            return max_range, Angular.Radian(props.look_angle_rad)
+
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
             """Returns range to zero (in feet) for given launch angle in radians."""
-            if abs(self.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
-                return self.find_apex(shot_info).look_distance >> Distance.Foot
-            self.barrel_elevation_rad = angle_rad
+            if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
+                return self._find_apex(props).look_distance >> Distance.Foot
+            props.barrel_elevation_rad = angle_rad
             try:
-                t = self._integrate(shot_info, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[-1]
+                t = self._integrate(props, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
@@ -246,24 +250,25 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             return (t.look_distance >> Distance.Foot) - (t.target_drop >> Distance.Foot)
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
-                              bounds=(float(max(self.look_angle_rad, math.radians(angle_bracket_deg[0]))),
+                              bounds=(float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),
                                       math.radians(angle_bracket_deg[1])),
                               method='bounded')  # type: ignore
 
         if not res.success:
             raise OutOfRangeError(Distance.Foot(0), note=res.message)
-        logger.debug(f"SciPy.find_max_range required {res.nfev} trajectory calculations")
+        logger.debug(f"SciPy._find_max_range required {res.nfev} trajectory calculations")
         angle_at_max_rad = res.x
         max_range_ft = -res.fun  # Negate because we minimized the negative range
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
-    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
+    def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
+        Internal only
         Finds the barrel elevation needed to hit sight line at a specific distance,
             using SciPy's root_scalar.
 
         Args:
-            shot_info (Shot): The shot information.
+            props (_ShotProps): The shot information.
             distance (Distance): The distance to the target.
             lofted (bool, optional): If True, find the higher angle that hits the zero point.
 
@@ -280,12 +285,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         except ImportError as e:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
-        status, result = self._init_zero_calculation(shot_info, distance)
-        if status is self._ZeroCalcStatus.DONE:
-            return result
-        look_angle, target_look_dist_ft, target_x_ft, target_y_ft, start_height = result
+        status, result, target_look_dist_ft, target_x_ft, target_y_ft, start_height = self._init_zero_calculation(props,
+                                                                                                                  distance)
+        if status is _ZeroCalcStatus.DONE:
+            return Angular.Radian(result)
+        look_angle = result
 
-        max_range, angle_at_max = self.find_max_range(shot_info)
+        max_range, angle_at_max = self._find_max_range(props)
         max_range_ft = max_range >> Distance.Foot
 
         if target_look_dist_ft > max_range_ft:
@@ -298,10 +304,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             Vertical error (in feet) at the target's horizontal distance.
             (= projectile's height minus the line-of-sight's height at that distance.)
             """
-            self.barrel_elevation_rad = angle_rad
+            props.barrel_elevation_rad = angle_rad
             try:
                 # Integrate to find the projectile's state at the target's horizontal distance.
-                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
+                t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
                 if t.time == 0.0:
                     logger.warning("Integrator returned initial point. Consider removing constraints.")
                     return -1e6  # Large negative error to discourage this angle.
@@ -313,7 +319,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 if t.time == 0.0:
                     logger.warning("Integrator returned initial point. Consider removing constraints.")
                     return -1e6  # Large negative error to discourage this angle.
-                return -abs(t.target_drop >> Distance.Foot) - abs((t.look_distance >> Distance.Foot) - target_look_dist_ft)
+                return -abs(t.target_drop >> Distance.Foot) - abs(
+                    (t.look_distance >> Distance.Foot) - target_look_dist_ft)
 
         if lofted:
             angle_bracket = (angle_at_max >> Angular.Radian, math.radians(90.0))
@@ -321,28 +328,29 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             sight_height_adjust = 0.0
             if start_height > 0:  # Lower bound can be less than look angle
                 sight_height_adjust = math.atan2(start_height, target_x_ft)
-            angle_bracket = (self.look_angle_rad - sight_height_adjust, angle_at_max >> Angular.Radian)
+            angle_bracket = (props.look_angle_rad - sight_height_adjust, angle_at_max >> Angular.Radian)
 
         try:
             sol = root_scalar(error_at_distance, bracket=angle_bracket, method='brentq')
         except ValueError as e:
-            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(self.barrel_elevation_rad),
+            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad),
                                    reason=f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range " +
-                                          f"({Angular.Radian(angle_bracket[0])>>Angular.Degree}," +
-                                          f" {Angular.Radian(angle_bracket[1])>>Angular.Degree} degrees. {e}")
+                                          f"({Angular.Radian(angle_bracket[0]) >> Angular.Degree}," +
+                                          f" {Angular.Radian(angle_bracket[1]) >> Angular.Degree} degrees. {e}")
         if not sol.converged:
-            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(self.barrel_elevation_rad),
+            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad),
                                    reason=f"Root-finder failed to converge: {sol.flag} with {sol}")
         return Angular.Radian(sol.root)
 
     @override
-    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+    def _zero_angle(self, props: _ShotProps, distance: Distance) -> Angular:
         """
+        Internal only
         Iterative algorithm to find barrel elevation needed for a particular zero.
-            Falls back on .find_zero_angle().
+            Falls back on ._find_zero_angle().
 
         Args:
-            shot_info (Shot): Shot parameters
+            props (_ShotProps): Shot parameters
             distance (Distance): Sight distance to zero (i.e., along Shot.look_angle),
                                  a.k.a. slant range to target.
 
@@ -350,10 +358,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             Angular: Barrel elevation to hit height zero at zero distance
         """
 
-        status, result = self._init_zero_calculation(shot_info, distance)
-        if status is self._ZeroCalcStatus.DONE:
-            return result
-        look_angle, target_look_dist_ft, target_x_ft, target_y_ft, start_height = result
+        status, look_angle, target_look_dist_ft, target_x_ft, target_y_ft, start_height = self._init_zero_calculation(
+            props,
+            distance)
+        if status is _ZeroCalcStatus.DONE:
+            return Angular.Radian(look_angle)
 
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
@@ -366,7 +375,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
             try:
-                t = self._integrate(shot_info, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
+                t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
@@ -379,10 +388,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             look_dist_ft = t.look_distance >> Distance.Foot
             horizontal_ft = t.distance >> Distance.Foot  # Horizontal distance
             trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
-            sensitivity = math.tan(self.barrel_elevation_rad) * math.tan(trajectory_angle)
+            sensitivity = math.tan(props.barrel_elevation_rad) * math.tan(trajectory_angle)
             if -1.5 < sensitivity < -0.5:  # TODO: Find good bounds for this
                 # Scenario too unstable for 1st order iteration
-                logger.debug("Unstable scenario detected in zero_angle(); calling find_zero_angle()")
+                logger.debug("Unstable scenario detected in zero_angle(); calling _find_zero_angle()")
                 break
             elif abs(sensitivity) > 1000:  # TODO: Find good bounds for this
                 logger.debug("High sensitivity; using slant correction")
@@ -400,7 +409,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             slant_error_ft = math.fabs(slant_diff_ft)
 
             logger.debug(f'Zero step {iterations_count}: slant_error={slant_diff_ft}\t range_error={range_diff_ft} '
-                         f'\t{self.barrel_elevation_rad}rad\t at {look_dist_ft}ft. Correction={correction}rads')
+                         f'\t{props.barrel_elevation_rad}rad\t at {look_dist_ft}ft. Correction={correction}rads')
 
             if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # We're still trying to reach zero_distance
@@ -416,26 +425,26 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
             if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # Adjust barrel elevation to close height at zero distance
-                self.barrel_elevation_rad += correction
+                props.barrel_elevation_rad += correction
             else:  # Current barrel_elevation hit zero!
                 break
             iterations_count += 1
 
         if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
-            return self.find_zero_angle(shot_info, distance)
+            return self._find_zero_angle(props, distance)
             # # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
-        return Angular.Radian(self.barrel_elevation_rad)
+        return Angular.Radian(props.barrel_elevation_rad)
 
     @override
-    def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
+    def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0, stop_at_zero: bool = False) -> List[
         TrajectoryData]:
         """
         Calculate trajectory for specified shot
 
         Args:
-            shot_info (Shot):  Information about the shot
+            shot_info (_ShotProps):  Information about the shot
             maximum_range (float): Feet down range to stop calculation
             record_step (float): Frequency (in feet down range) to record TrajectoryData
             filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points
@@ -457,16 +466,16 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
 
-        wind_sock = WindSock(shot_info.winds)
+        wind_sock = WindSock(props.winds)
 
         # region Initialize velocity and position of projectile
-        velocity = self.muzzle_velocity
+        velocity = props.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
         # s = [x, y, z, vx, vy, vz]
-        s0 = [.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height,
-              math.cos(self.barrel_elevation_rad) * math.cos(self.barrel_azimuth_rad) * velocity,
-              math.sin(self.barrel_elevation_rad) * velocity,
-              math.cos(self.barrel_elevation_rad) * math.sin(self.barrel_azimuth_rad) * velocity]
+        s0 = [.0, -props.cant_cosine * props.sight_height, -props.cant_sine * props.sight_height,
+              math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
+              math.sin(props.barrel_elevation_rad) * velocity,
+              math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity]
 
         # endregion
 
@@ -487,8 +496,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             else:
                 relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()
-            density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + y)
-            km = density_factor * self.drag_by_mach(relative_speed / mach)
+            density_factor, mach = props.get_density_and_mach_for_altitude(y)
+            km = density_factor * props.drag_by_mach(relative_speed / mach)
             drag = km * relative_speed
 
             # Derivatives
@@ -506,7 +515,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         def event_max_range(t: float, s: Any) -> np.floating:  # Stop when x crosses maximum_range
             return s[0] - (maximum_range + 1)  # +1 to ensure we cross the threshold
 
-        max_drop = max(_cMaximumDrop, _cMinimumAltitude - self.alt0)
+        max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0)
 
         @scipy_event(terminal=True, direction=-1)
         def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses max_drop
@@ -521,7 +530,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         def event_zero_crossing(t: float, s: Any) -> np.floating:  # Look for trajectory crossing sight line
             # Solve for y = x * tan(look_angle)
-            return s[1] - s[0] * math.tan(self.look_angle_rad)
+            return s[1] - s[0] * math.tan(props.look_angle_rad)
 
         if filter_flags & TrajFlag.ZERO:
             zero_crossing = scipy_event(terminal=False, direction=0)(event_zero_crossing)
@@ -548,7 +557,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         if sol.status == 1 and sol.t_events:  # A termination event occurred
             if len(sol.t_events) > 0:
                 if sol.t_events[0].size > 0:  # Expected termination event: we reached requested range
-                    #logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
+                    # logger.debug(f"Integration stopped at max range: {sol.t_events[0][0]}")
                     pass
                 elif sol.t_events[1].size > 0:  # event_max_drop
                     y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
@@ -568,12 +577,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 """Helper function to create a TrajectoryData row."""
                 position = Vector(*state[0:3])
                 velocity = Vector(*state[3:6])
-                velocity_magnitude = velocity.magnitude()
-                density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + position[1])
-                drag = density_factor * velocity_magnitude * self.drag_by_mach(velocity_magnitude / mach)
-                return create_trajectory_row(t, position, velocity, velocity_magnitude, mach, self.spin_drift(t),
-                                             self.look_angle_rad, density_factor, drag, self.weight, flag
-                )
+                density_factor, mach = props.get_density_and_mach_for_altitude(position[1])
+                return self._make_row(props, t, position, velocity, mach, flag)
 
             if sol.t[-1] == 0:
                 # If the last time is 0, we only have the initial state
@@ -630,7 +635,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
             states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
-                                                  dtype=np.float64).T  # shape: (state_dim, num_points)
+                                                                                dtype=np.float64).T  # shape: (state_dim, num_points)
             for i in range(states_at_x_arr_t.shape[1]):
                 ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
             ranges.sort(key=lambda t: t.time)  # Sort by time
@@ -648,7 +653,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 def add_row(time, state, flag):
                     """Add a row to ranges, keeping it sorted by time.
                        If row this time already exists then add this flag to it."""
-                    idx = self.bisect_left_key_func(ranges, time, key=lambda r: r.time)
+                    idx = bisect_left_key(ranges, time, key=lambda r: r.time)
                     if idx < len(ranges) and ranges[idx].time == time:
                         ranges[idx] = make_row(time, state, ranges[idx].flag | flag)  # Update flag if time matches
                     else:
@@ -664,7 +669,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         if (wind_vector := wind_sock.wind_at_distance(x)) is not None:
                             relative_velocity = relative_velocity - wind_vector
                         relative_speed = relative_velocity.magnitude()
-                        _, mach = shot_info.atmo.get_density_and_mach_for_altitude(self.alt0 + y)
+                        _, mach = props.get_density_and_mach_for_altitude(y)
                         return (relative_speed / mach) - 1.0
 
                     try:
@@ -675,8 +680,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         logger.debug("No Mach crossing found")
 
                 if (filter_flags & TrajFlag.ZERO and sol.t_events and len(sol.t_events) > 3
-                                                 and sol.t_events[-1].size > 0):
-                    tan_look_angle = math.tan(self.look_angle_rad)
+                        and sol.t_events[-1].size > 0):
+                    tan_look_angle = math.tan(props.look_angle_rad)
                     for t_cross in sol.t_events[-1]:
                         state = sol.sol(t_cross)
                         # To determine crossing direction, sample after the crossing
