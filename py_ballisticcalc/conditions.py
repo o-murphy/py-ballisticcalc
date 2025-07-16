@@ -555,7 +555,8 @@ class Shot:
     @property
     def barrel_elevation(self) -> Angular:
         """
-        Barrel elevation in vertical plane from horizontal
+        Total barrel elevation in vertical plane from horizontal
+            = look_angle + cos(cant_angle) * zero_elevation + relative_angle
 
         Returns:
             Angle of barrel elevation in vertical plane from horizontal
@@ -564,6 +565,18 @@ class Shot:
                               + math.cos(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
+
+    @barrel_elevation.setter
+    def barrel_elevation(self, value: Angular) -> None:
+        """
+        Setter for barrel_elevation.  Sets the relative_angle to achieve the desired elevation.
+        Note: This does not change the weapon.zero_elevation.
+
+        Args:
+            value: Desired barrel elevation in vertical plane from horizontal
+        """
+        self.relative_angle = Angular.Radian((value >> Angular.Radian) - (self.look_angle >> Angular.Radian) \
+                             - math.cos(self.cant_angle >> Angular.Radian) * (self.weapon.zero_elevation >> Angular.Radian))
 
     @property
     def barrel_azimuth(self) -> Angular:
