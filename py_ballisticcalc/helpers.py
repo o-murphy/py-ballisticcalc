@@ -1,6 +1,5 @@
 import bisect
 import math
-import sys
 from typing import Callable, Any, Final, List, Tuple, Optional
 
 from py_ballisticcalc.conditions import Shot
@@ -35,17 +34,6 @@ def calculate_drag_free_range(
     """
     angle_rad = math.radians(angle_in_degrees)
     return (velocity_mps ** 2 * math.sin(2 * angle_rad)) / gravity
-
-
-def get_bisect_left_key_func():
-    """Get a function that runs bisect_left on a list with a key lambda.  For compatibility with Python < 3.10."""
-    if sys.version_info >= (3, 10):
-        return bisect.bisect_left
-    else:  # For Python < 3.10, we need to extract keys manually
-        def bisect_left_key(a, x, key):
-            keys = [key(item) for item in a]
-            return bisect.bisect_left(keys, x)
-        return bisect_left_key
 
 
 class BisectWrapper:

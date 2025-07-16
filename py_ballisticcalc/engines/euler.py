@@ -7,12 +7,12 @@ import warnings
 
 from typing_extensions import Union, List, override
 
-from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.engines.base_engine import (BaseIntegrationEngine,
-                                                  _TrajectoryDataFilter,
-                                                  _WindSock,
-                                                  create_trajectory_row,
-                                                  BaseEngineConfigDict)
+from py_ballisticcalc.engines.base_engine import (
+    BaseIntegrationEngine,
+    _TrajectoryDataFilter,
+    _WindSock,
+    BaseEngineConfigDict, _ShotProps
+)
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -34,7 +34,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """
 
     @override
-    def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
+    def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """
         Calculate trajectory for specified shot
@@ -66,28 +66,29 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         density_factor: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
-        wind_sock = _WindSock(shot_info.winds)
+        wind_sock = _WindSock(props.winds)
         wind_vector = wind_sock.current_vector()
         # endregion
 
         # region Initialize velocity and position of projectile
-        velocity = self.muzzle_velocity
+        velocity = props.muzzle_velocity
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
+        range_vector = Vector(.0, -props.cant_cosine * props.sight_height, -props.cant_sine * props.sight_height)
         velocity_vector: Vector = Vector(
-            math.cos(self.barrel_elevation_rad) * math.cos(self.barrel_azimuth_rad),
-            math.sin(self.barrel_elevation_rad),
-            math.cos(self.barrel_elevation_rad) * math.sin(self.barrel_azimuth_rad)
+            math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
+            math.sin(props.barrel_elevation_rad),
+            math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
         # min_step is used to handle situation, when record step is smaller than calc_step
         # in order to prevent range breaking too early
-        min_step = min(self.calc_step, record_step)
+        min_step = min(props.calc_step, record_step)
 
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
-                                            barrel_angle_rad=self.barrel_elevation_rad, look_angle_rad=self.look_angle_rad,
+                                            barrel_angle_rad=props.barrel_elevation_rad,
+                                            look_angle_rad=props.look_angle_rad,
                                             time_step=time_step)
 
         # region Trajectory Loop
@@ -104,16 +105,13 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory
-            density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
-                self.alt0 + range_vector.y)
+            density_factor, mach = props.get_density_and_mach_for_altitude(range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
             if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
-                ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
-                                                    data.velocity.magnitude(), data.mach,
-                                                    self.spin_drift(data.time), self.look_angle_rad,
-                                                    density_factor, drag, self.weight, data_filter.current_flag
-                                                    ))
+                ranges.append(self._make_row(
+                    props, data.time, data.position, data.velocity, data.mach, data_filter.current_flag)
+                )
                 last_recorded_range = data.position.x
             # endregion
 
@@ -122,9 +120,9 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = self.calc_step / max(1.0, velocity)
+            delta_time = props.calc_step / max(1.0, velocity)
             # Drag is a function of air density and velocity relative to the air
-            drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
+            drag = density_factor * velocity * props.drag_by_mach(velocity / mach)
             # Bullet velocity changes due to both drag and gravity
             velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time  # type: ignore
             # Bullet position changes by velocity time_deltas the time step
@@ -138,7 +136,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             if (
                     velocity < _cMinimumVelocity
                     or range_vector.y < _cMaximumDrop
-                    or self.alt0 + range_vector.y < _cMinimumAltitude
+                    or props.alt0 + range_vector.y < _cMinimumAltitude
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached
@@ -149,18 +147,15 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 break
         # endregion
         if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
-            ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
-                                                data.velocity.magnitude(), data.mach,
-                                                self.spin_drift(data.time), self.look_angle_rad,
-                                                density_factor, drag, self.weight, data_filter.current_flag
-                                                ))
+            ranges.append(self._make_row(
+                props, data.time, data.position, data.velocity, data.mach, data_filter.current_flag)
+            )
         # Ensure that we have at least two data points in trajectory, or 1 if no filter_flags==NONE
         # ... as well as last point if we had an incomplete trajectory
         if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
-            ranges.append(create_trajectory_row(
-                time, range_vector, velocity_vector,
-                velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                density_factor, drag, self.weight, TrajFlag.NONE))
+            ranges.append(self._make_row(
+                props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
+            )
         logger.debug(f"Euler ran {it} iterations")
         if termination_reason is not None:
             raise RangeError(termination_reason, ranges)
