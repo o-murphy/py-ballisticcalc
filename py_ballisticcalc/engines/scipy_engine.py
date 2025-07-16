@@ -48,7 +48,6 @@ __all__ = ('SciPyIntegrationEngine',
 # type of event callback
 SciPyEventFunctionT = Callable[[float, Any], np.floating]  # possibly Callable[[float, np.ndarray], np.floating]
 
-
 # SciPyEventFunctionWithArgsT = Callable[[float, np.ndarray, float, float], np.floating]
 
 # typed scipy event with expected attributes
@@ -60,7 +59,6 @@ class SciPyEvent:
 
     def __call__(self, t: float, s: Any) -> np.floating:  # possibly s: np.ndarray
         return self.func(t, s)
-
 
 # decorator that simply wraps SciPyEventFunctionT to SciPyEvent
 #   to ensure that event object has expected attrs
@@ -285,12 +283,18 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         except ImportError as e:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
-        status, result, target_look_dist_ft, target_x_ft, target_y_ft, start_height = self._init_zero_calculation(props,
+        status, result, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(props,
                                                                                                                   distance)
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(result)
-        look_angle = result
 
+        #region Make mypy happy
+        assert start_height_ft is not None
+        assert target_x_ft is not None
+        assert target_y_ft is not None
+        assert target_look_dist_ft is not None
+        #endregion Make mypy happy
+        look_angle = result
         max_range, angle_at_max = self._find_max_range(props)
         max_range_ft = max_range >> Distance.Foot
 
@@ -326,8 +330,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             angle_bracket = (angle_at_max >> Angular.Radian, math.radians(90.0))
         else:
             sight_height_adjust = 0.0
-            if start_height > 0:  # Lower bound can be less than look angle
-                sight_height_adjust = math.atan2(start_height, target_x_ft)
+            if start_height_ft > 0:  # Lower bound can be less than look angle
+                sight_height_adjust = math.atan2(start_height_ft, target_x_ft)
             angle_bracket = (props.look_angle_rad - sight_height_adjust, angle_at_max >> Angular.Radian)
 
         try:
@@ -364,6 +368,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle)
 
+        assert target_x_ft is not None  # Make mypy happy
+        assert target_look_dist_ft is not None  # Make mypy happy
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
         iterations_count = 0

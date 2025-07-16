@@ -393,7 +393,7 @@ class ZeroFindingProps(NamedTuple):
     target_look_dist_ft: Optional[float] = None
     target_x_ft: Optional[float] = None
     target_y_ft: Optional[float] = None
-    start_height: Optional[float] = None
+    start_height_ft: Optional[float] = None
 
 
 _BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConfigDict', covariant=True)
@@ -410,7 +410,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         twist (float): The twist rate of barrel rifling, in inches of length to make one full rotation.
         gravity_vector (Vector): The gravity vector.
     """
-    APEX_IS_MAX_RANGE_RADIANS: float = 0.02  # Radians from vertical where the apex is max range
+    APEX_IS_MAX_RANGE_RADIANS: float = 0.01  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
 
     barrel_azimuth_rad: float
@@ -633,15 +633,15 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         target_look_dist_ft = distance >> Distance.Foot
         target_x_ft = target_look_dist_ft * math.cos(props.look_angle_rad)
         target_y_ft = target_look_dist_ft * math.sin(props.look_angle_rad)
-        start_height = -props.sight_height * props.cant_cosine
+        start_height_ft = -props.sight_height * props.cant_cosine
 
         # region Edge cases
         if abs(target_look_dist_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
-        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height), props.calc_step):
+        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height_ft), props.calc_step):
             # Very close shot; ignore gravity and drag
             return ZeroFindingProps(_ZeroCalcStatus.DONE,
-                                    look_angle_rad=math.atan2(target_y_ft + start_height, target_x_ft))
+                                    look_angle_rad=math.atan2(target_y_ft + start_height_ft, target_x_ft))
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
             # Virtually vertical shot; just check if it can reach the target
             max_range = self._find_apex(props).look_distance
@@ -651,7 +651,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         # endregion Edge cases
 
         return ZeroFindingProps(_ZeroCalcStatus.CONTINUE,
-                                props.look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height)
+                                props.look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft)
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
         """
@@ -701,10 +701,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        status, look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(props, distance)
+        status, look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
+                                                                                                             props, distance)
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
 
+        assert target_x_ft is not None  # Make mypy happy
+        assert target_look_dist_ft is not None  # Make mypy happy
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
@@ -1004,7 +1007,7 @@ def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
         y2 = data_points[i].CD
         y3 = data_points[i + 1].CD
         a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
-                (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
+            (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
         b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
         c = y1 - (a * x1 * x1 + b * x1)
         curve_point = CurvePoint(a, b, c)
