@@ -425,6 +425,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # Adjust barrel elevation to close height at zero distance
                 props.barrel_elevation_rad += correction
+                # #region temporary debugging checks TODO: Remove after debugging
+                # print(f'Correction {correction=} {math.degrees(correction)=} {math.degrees(props.barrel_elevation_rad)=}')
+                # assert -props.barrel_elevation_rad <= correction <= (math.pi / 2)-props.barrel_elevation_rad, f"Correction incorrect value"
+                # props.barrel_elevation_rad += correction
+                # assert 0<=props.barrel_elevation_rad<=math.pi/2, f"Barrel elevation is outside of sensible range {props.barrel_azimuth_rad}"
+                # #endregion temporary debugging checks
             else:  # Current barrel_elevation hit zero!
                 break
             iterations_count += 1
@@ -467,10 +473,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         wind_sock = WindSock(props.winds)
 
         # region Initialize velocity and position of projectile
-        velocity = props.muzzle_velocity
+        velocity = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
         # s = [x, y, z, vx, vy, vz]
-        s0 = [.0, -props.cant_cosine * props.sight_height, -props.cant_sine * props.sight_height,
+        s0 = [.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft,
               math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
               math.sin(props.barrel_elevation_rad) * velocity,
               math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity]
@@ -513,7 +519,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         def event_max_range(t: float, s: Any) -> np.floating:  # Stop when x crosses maximum_range
             return s[0] - (maximum_range + 1)  # +1 to ensure we cross the threshold
 
-        max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0)
+        max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0_ft)
 
         @scipy_event(terminal=True, direction=-1)
         def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses max_drop

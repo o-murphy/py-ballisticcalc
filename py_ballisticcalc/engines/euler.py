@@ -71,9 +71,9 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # endregion
 
         # region Initialize velocity and position of projectile
-        velocity = props.muzzle_velocity
+        velocity = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -props.cant_cosine * props.sight_height, -props.cant_sine * props.sight_height)
+        range_vector = Vector(.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
         velocity_vector: Vector = Vector(
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
@@ -83,7 +83,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         # min_step is used to handle situation, when record step is smaller than calc_step
         # in order to prevent range breaking too early
-        min_step = min(props.calc_step, record_step)
+        min_step = min(props.calc_step_ft, record_step)
 
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
@@ -120,7 +120,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             velocity_adjusted = velocity_vector - wind_vector
             velocity = velocity_adjusted.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = props.calc_step / max(1.0, velocity)
+            delta_time = props.calc_step_ft / max(1.0, velocity)
             # Drag is a function of air density and velocity relative to the air
             drag = density_factor * velocity * props.drag_by_mach(velocity / mach)
             # Bullet velocity changes due to both drag and gravity
@@ -136,7 +136,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             if (
                     velocity < _cMinimumVelocity
                     or range_vector.y < _cMaximumDrop
-                    or props.alt0 + range_vector.y < _cMinimumAltitude
+                    or props.alt0_ft + range_vector.y < _cMinimumAltitude
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

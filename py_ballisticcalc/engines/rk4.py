@@ -66,9 +66,9 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # endregion
 
         # region Initialize velocity and position of projectile
-        velocity = props.muzzle_velocity
+        velocity = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -props.cant_cosine * props.sight_height, -props.cant_sine * props.sight_height)
+        range_vector = Vector(.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
         velocity_vector: Vector = Vector(
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
@@ -76,7 +76,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
-        min_step = min(props.calc_step, record_step)
+        min_step = min(props.calc_step_ft, record_step)
 
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
@@ -112,7 +112,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = props.calc_step / max(1.0, relative_speed)
+            delta_time = props.calc_step_ft / max(1.0, relative_speed)
             km = density_factor * props.drag_by_mach(relative_speed / mach)
             # drag = km * relative_speed
 
@@ -145,7 +145,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             if (
                     velocity < _cMinimumVelocity
                     or range_vector.y < _cMaximumDrop
-                    or props.alt0 + range_vector.y < _cMinimumAltitude
+                    or props.alt0_ft + range_vector.y < _cMinimumAltitude
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

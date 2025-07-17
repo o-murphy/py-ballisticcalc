@@ -292,18 +292,18 @@ class _ShotProps:
     mach_list: List[float]
 
     look_angle_rad: float
-    twist: float  # Twist rate of barrel rifling, in inches of length to make one full rotation.
-    length: float  # Length of the bullet in inches
-    diameter: float  # Diameter of the bullet in inches
-    weight: float  # Weight of the bullet in grains
+    twist_inch: float  # Twist rate of barrel rifling, in inches of length to make one full rotation.
+    length_inch: float  # Length of the bullet in inches
+    diameter_inch: float  # Diameter of the bullet in inches
+    weight_grains: float  # Weight of the bullet in grains
     barrel_elevation_rad: float  # Barrel elevation angle in radians
     barrel_azimuth_rad: float  # Barrel azimuth angle in radians
-    sight_height: float  # Height of the sight above the bore in feet
+    sight_height_ft: float  # Height of the sight above the bore in feet
     cant_cosine: float  # Cosine of the cant angle
     cant_sine: float  # Sine of the cant angle
-    alt0: float  # Initial altitude in feet
-    calc_step: float  # Calculation step size in feet
-    muzzle_velocity: float  # Muzzle velocity in feet per second
+    alt0_ft: float  # Initial altitude in feet
+    calc_step_ft: float  # Calculation step size in feet
+    muzzle_velocity_fps: float  # Muzzle velocity in feet per second
     stability_coefficient: float = field(init=False)
 
     def __post_init__(self):
@@ -350,8 +350,8 @@ class _ShotProps:
         Returns:
             windage due to spin drift, in feet
         """
-        if (self.stability_coefficient != 0) and (self.twist != 0):
-            sign = 1 if self.twist > 0 else -1
+        if (self.stability_coefficient != 0) and (self.twist_inch != 0):
+            sign = 1 if self.twist_inch > 0 else -1
             return sign * (1.25 * (self.stability_coefficient + 1.2)
                            * math.pow(time, 1.83)) / 12
         return 0
@@ -363,15 +363,15 @@ class _ShotProps:
         Returns:
             float: The Miller stability coefficient.
         """
-        if self.twist and self.length and self.diameter and self.shot.atmo.pressure.raw_value:
-            twist_rate = math.fabs(self.twist) / self.diameter
-            length = self.length / self.diameter
+        if self.twist_inch and self.length_inch and self.diameter_inch and self.shot.atmo.pressure.raw_value:
+            twist_rate = math.fabs(self.twist_inch) / self.diameter_inch
+            length = self.length_inch / self.diameter_inch
             # Miller stability formula
-            sd = 30 * self.weight / (
-                    math.pow(twist_rate, 2) * math.pow(self.diameter, 3) * length * (1 + math.pow(length, 2))
+            sd = 30 * self.weight_grains / (
+                    math.pow(twist_rate, 2) * math.pow(self.diameter_inch, 3) * length * (1 + math.pow(length, 2))
             )
             # Velocity correction factor
-            fv = math.pow(self.muzzle_velocity / 2800, 1.0 / 3.0)
+            fv = math.pow(self.muzzle_velocity_fps / 2800, 1.0 / 3.0)
             # Atmospheric correction
             ft = self.shot.atmo.temperature >> Temperature.Fahrenheit
             pt = self.shot.atmo.pressure >> Pressure.InHg
@@ -380,7 +380,7 @@ class _ShotProps:
         return 0
 
     def get_density_and_mach_for_altitude(self, drop: float):
-        return self.shot.atmo.get_density_and_mach_for_altitude(self.alt0 + drop)
+        return self.shot.atmo.get_density_and_mach_for_altitude(self.alt0_ft + drop)
 
 
 class _ZeroCalcStatus(Enum):
@@ -470,18 +470,18 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             curve=calculate_curve(shot_info.ammo.dm.drag_table),
             mach_list=_get_only_mach_data(shot_info.ammo.dm.drag_table),
             look_angle_rad=shot_info.look_angle >> Angular.Radian,
-            twist=shot_info.weapon.twist >> Distance.Inch,
-            length=shot_info.ammo.dm.length >> Distance.Inch,
-            diameter=shot_info.ammo.dm.diameter >> Distance.Inch,
-            weight=shot_info.ammo.dm.weight >> Weight.Grain,
+            twist_inch=shot_info.weapon.twist >> Distance.Inch,
+            length_inch=shot_info.ammo.dm.length >> Distance.Inch,
+            diameter_inch=shot_info.ammo.dm.diameter >> Distance.Inch,
+            weight_grains=shot_info.ammo.dm.weight >> Weight.Grain,
             barrel_elevation_rad=shot_info.barrel_elevation >> Angular.Radian,
             barrel_azimuth_rad=shot_info.barrel_azimuth >> Angular.Radian,
-            sight_height=shot_info.weapon.sight_height >> Distance.Foot,
+            sight_height_ft=shot_info.weapon.sight_height >> Distance.Foot,
             cant_cosine=math.cos(shot_info.cant_angle >> Angular.Radian),
             cant_sine=math.sin(shot_info.cant_angle >> Angular.Radian),
-            alt0=shot_info.atmo.altitude >> Distance.Foot,
-            calc_step=self.get_calc_step(),
-            muzzle_velocity=shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS,
+            alt0_ft=shot_info.atmo.altitude >> Distance.Foot,
+            calc_step_ft=self.get_calc_step(),
+            muzzle_velocity_fps=shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS,
         )
 
     def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
@@ -650,12 +650,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         target_look_dist_ft = distance >> Distance.Foot
         target_x_ft = target_look_dist_ft * math.cos(props.look_angle_rad)
         target_y_ft = target_look_dist_ft * math.sin(props.look_angle_rad)
-        start_height_ft = -props.sight_height * props.cant_cosine
+        start_height_ft = -props.sight_height_ft * props.cant_cosine
 
         # region Edge cases
         if abs(target_look_dist_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
-        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height_ft), props.calc_step):
+        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height_ft), props.calc_step_ft):
             # Very close shot; ignore gravity and drag
             return ZeroFindingProps(_ZeroCalcStatus.DONE,
                                     look_angle_rad=math.atan2(target_y_ft + start_height_ft, target_x_ft))
@@ -864,8 +864,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             angle=_new_rad(trajectory_angle),
             density_factor=density_factor - 1,
             drag=drag,
-            energy=_new_ft_lb(calculate_energy(props.weight, velocity)),
-            ogw=_new_lb(calculate_ogw(props.weight, velocity)),
+            energy=_new_ft_lb(calculate_energy(props.weight_grains, velocity)),
+            ogw=_new_lb(calculate_ogw(props.weight_grains, velocity)),
             flag=flag
         )
 
