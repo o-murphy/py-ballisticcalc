@@ -285,24 +285,25 @@ class _WindSock:
 
 @dataclass
 class _ShotProps:
+    """Properties for a Shot used in trajectory calculations, converted to internal units."""
     shot: Shot
-    bc: float
+    bc: float  # Ballistic coefficient
     curve: List[CurvePoint]
     mach_list: List[float]
 
     look_angle_rad: float
-    twist: float
-    length: float
-    diameter: float
-    weight: float
-    barrel_elevation_rad: float
-    barrel_azimuth_rad: float
-    sight_height: float
-    cant_cosine: float
-    cant_sine: float
-    alt0: float
-    calc_step: float
-    muzzle_velocity: float
+    twist: float  # Twist rate of barrel rifling, in inches of length to make one full rotation.
+    length: float  # Length of the bullet in inches
+    diameter: float  # Diameter of the bullet in inches
+    weight: float  # Weight of the bullet in grains
+    barrel_elevation_rad: float  # Barrel elevation angle in radians
+    barrel_azimuth_rad: float  # Barrel azimuth angle in radians
+    sight_height: float  # Height of the sight above the bore in feet
+    cant_cosine: float  # Cosine of the cant angle
+    cant_sine: float  # Sine of the cant angle
+    alt0: float  # Initial altitude in feet
+    calc_step: float  # Calculation step size in feet
+    muzzle_velocity: float  # Muzzle velocity in feet per second
     stability_coefficient: float = field(init=False)
 
     def __post_init__(self):
@@ -403,24 +404,13 @@ _BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConf
 class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     """
     All calculations are done in imperial units of feet and fps.
-
-    Attributes:
-        # barrel_azimuth (float): The azimuth angle of the barrel.
-        # barrel_elevation (float): The elevation angle of the barrel.
-        twist (float): The twist rate of barrel rifling, in inches of length to make one full rotation.
-        gravity_vector (Vector): The gravity vector.
     """
-    APEX_IS_MAX_RANGE_RADIANS: float = 0.01  # Radians from vertical where the apex is max range
+    APEX_IS_MAX_RANGE_RADIANS: float = 0.0003  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
-
-    barrel_azimuth_rad: float
-    barrel_elevation_rad: float
-    twist: float
-    gravity_vector: Vector
 
     def __init__(self, _config: _BaseEngineConfigDictT):
         """
-        Initializes the TrajectoryCalc class.
+        Initializes the class.
 
         Args:
             _config (BaseEngineConfig): The configuration object.
@@ -469,7 +459,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
     def _init_trajectory(self, shot_info: Shot) -> _ShotProps:
         """
-        Initializes the trajectory calculation.
+        Converts Shot properties into floats dimensioned in internal units.
 
         Args:
             shot_info (Shot): Information about the shot.
@@ -497,18 +487,22 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
         Distance, Angular]:
         """
-        Finds the maximum horizontal range and the launch angle to reach it, via golden-section search.
+        Finds the maximum range along shot_info.look_angle, and the launch angle to reach it.
 
         Args:
             shot_info (Shot): The shot information: gun, ammo, environment, look_angle.
-            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
+            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for max range.
                                                                Defaults to (0, 90).
 
         Returns:
-            Tuple[Distance, Angular]: The maximum range and the launch angle to reach it.
+            Tuple[Distance, Angular]: The maximum slantrange and the launch angle to reach it.
 
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
+
+        TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
+            ... and check for weird situations, like backward-bending trajectories,
+            where the max range occurs with launch angle less than the look angle.
         """
         props = self._init_trajectory(shot_info)
         return self._find_max_range(props, angle_bracket_deg)
@@ -516,19 +510,20 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     def _find_max_range(self, props: _ShotProps, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
         Distance, Angular]:
         """
-        Internal only
-        Finds the maximum horizontal range and the launch angle to reach it, via golden-section search.
+        Internal function to find the maximum slant range via golden-section search.
 
         Args:
             props (_ShotProps): The shot information: gun, ammo, environment, look_angle.
-            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
+            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for max range.
                                                                Defaults to (0, 90).
 
         Returns:
-            Tuple[Distance, Angular]: The maximum range and the launch angle to reach it.
+            Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
 
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
+
+        TODO: Presently assumes horizontal look-angle.  Needs to work for any look-angle.
         """
         restore_cMaximumDrop = None
         if self._config.cMaximumDrop:
@@ -587,24 +582,47 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
+        """
+        Finds the apex of the trajectory, where apex is defined as the point
+            where the vertical component of velocity goes from positive to negative.
+
+        Args:
+            shot_info (Shot): The shot information.
+        
+        Returns:
+            TrajectoryData: The trajectory data at the apex of the trajectory.
+        
+        Raises:
+            SolverRuntimeError: If no apex is found in the trajectory data.
+            ValueError: If barrel elevation is not > 0.
+        """
         props = self._init_trajectory(shot_info)
         return self._find_apex(props)
 
     def _find_apex(self, props: _ShotProps) -> TrajectoryData:
         """
-        Internal only
+        Internal implementation to find the apex of the trajectory.
 
-        Returns the TrajectoryData at the trajectory's apex (where velocity.y goes from positive to negative).
-            Have to ensure cMinimumVelocity is 0 for this to work.
+        Args:
+            props (_ShotProps): The shot properties.
+
+        Returns:
+            TrajectoryData at the trajectory's apex (where velocity.y goes from positive to negative).            
+
+        Raises:
+            SolverRuntimeError: If no apex is found in the trajectory data.
+            ValueError: If barrel elevation is not > 0.
         """
+        if props.barrel_elevation_rad <= 0:
+            raise ValueError("Barrel elevation must be greater than 0 to find apex.")
+        # Have to ensure cMinimumVelocity is 0 for this to work.
         restoreMinVelocity = None
         if self._config.cMinimumVelocity > 0:
             restoreMinVelocity = self._config.cMinimumVelocity
             self._config.cMinimumVelocity = 0.
-        props.barrel_elevation_rad = props.look_angle_rad
+        #props.barrel_elevation_rad = props.look_angle_rad
         try:
-            t = HitResult(props.shot,
-                          self._integrate(props, 9e9, 9e9, TrajFlag.APEX), extra=True)
+            t = HitResult(props.shot, self._integrate(props, 9e9, 9e9, TrajFlag.APEX), extra=True)
         except RangeError as e:
             if e.last_distance is None:
                 raise e
@@ -619,15 +637,14 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     def _init_zero_calculation(self, props: _ShotProps, distance: Distance) -> ZeroFindingProps:
         """
         Initializes the zero calculation for the given shot and distance.
-        Handles edge cases.
+            Handles edge cases.
 
         Args:
-            props (_ShotProps): The shot information.
-            distance (Distance): The distance to the target.
+            props (_ShotProps): The shot information, with look_angle to the target.
+            distance (Distance): The slant distance to the target.
 
         Returns:
-            Tuple[_ZeroCalcStatus, Any]: If _ZeroCalcStatus.DONE, second value is Angular.Radian zero angle.
-                Otherwise, it is a tuple of the variables.
+            ZeroFindingProps
         """
 
         target_look_dist_ft = distance >> Distance.Foot
@@ -660,20 +677,18 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Args:
             shot_info (Shot): The shot information.
-            distance (Distance): The distance to the target.
+            distance (Distance): Slant distance to the target.
             lofted (bool, optional): If True, find the higher angle that hits the zero point.
 
         Returns:
-            Angular: The required barrel elevation.
+            Angular: Barrel elevation needed to hit the zero point.
         """
         props = self._init_trajectory(shot_info)
         return self._find_zero_angle(props, distance, lofted)
 
     def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
-        Internal only
-        Finds the barrel elevation needed to hit sight line at a specific distance,
-            using unimodal root-finding that is guaranteed to succeed if a solution exists (e.g., Ridder's method).
+        Internal implementation to find the barrel elevation needed to hit sight line at a specific distance.
 
         Args:
             props (_ShotProps): The shot information.
@@ -681,7 +696,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             lofted (bool, optional): If True, find the higher angle that hits the zero point.
 
         Returns:
-            Angular: The required barrel elevation.
+            Angular: Barrel elevation needed to hit the zero point.
         """
         raise NotImplementedError("_find_zero_angle not yet implemented in BaseIntegrationEngine.")
 

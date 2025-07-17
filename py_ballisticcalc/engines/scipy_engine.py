@@ -202,12 +202,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     def _find_max_range(self, props: _ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
         Distance, Angular]:
         """
-        Internal only
         Finds the maximum range along the look_angle and the launch angle to reach it.
 
         Args:
             props (_ShotProps): The shot information: gun, ammo, environment, look_angle.
-            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for the maximum range.
+            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for max range.
                                                                Defaults to (0, 90).
 
         Returns:
@@ -217,10 +216,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             ImportError: If SciPy is not installed.
             ValueError: If the angle bracket excludes the look_angle.
             OutOfRangeError: If we fail to find a max range.
-
-        TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
-            ... and check for weird situations, like backward-bending trajectories,
-            where the max range occurs with launch angle less than the look angle.
         """
         try:
             from scipy.optimize import minimize_scalar  # type: ignore[import-untyped]
@@ -231,7 +226,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
             max_range = self._find_apex(props).look_distance
             return max_range, Angular.Radian(props.look_angle_rad)
-
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
@@ -261,17 +255,16 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
     def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
-        Internal only
-        Finds the barrel elevation needed to hit sight line at a specific distance,
+        Internal method to find the barrel elevation needed to hit sight line at a specific distance,
             using SciPy's root_scalar.
 
         Args:
             props (_ShotProps): The shot information.
-            distance (Distance): The distance to the target.
+            distance (Distance): Slant distance to the target.
             lofted (bool, optional): If True, find the higher angle that hits the zero point.
 
         Returns:
-            Angular: The required barrel elevation.
+            Angular: Barrel elevation needed to hit the zero point.
 
         Raises:
             ImportError: If SciPy is not installed.
@@ -349,7 +342,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     @override
     def _zero_angle(self, props: _ShotProps, distance: Distance) -> Angular:
         """
-        Internal only
         Iterative algorithm to find barrel elevation needed for a particular zero.
             Falls back on ._find_zero_angle().
 
@@ -363,8 +355,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         """
 
         status, look_angle, target_look_dist_ft, target_x_ft, target_y_ft, start_height = self._init_zero_calculation(
-            props,
-            distance)
+            props, distance)
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle)
 
@@ -420,10 +411,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # We're still trying to reach zero_distance
                 if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
-                    # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation), 'Distance non-convergent.')
+                    # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
+                    #       'Distance non-convergent.')
                     break
             elif slant_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
-                # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation), 'Error non-convergent.')
+                # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
+                #       'Error non-convergent.')
                 break
 
             prev_range_error_ft = range_error_ft
@@ -438,8 +431,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
             return self._find_zero_angle(props, distance)
-            # # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation))
+
         return Angular.Radian(props.barrel_elevation_rad)
 
     @override
@@ -716,8 +708,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # endregion Find TrajectoryData points requested by filter_flags
         # endregion Find requested TrajectoryData points
 
-        if termination_reason not in (None, self.HitZero):
-            assert termination_reason is not None  # for mypy
+        if termination_reason is not None and termination_reason is not self.HitZero:
             raise RangeError(termination_reason, ranges)
 
         return ranges
