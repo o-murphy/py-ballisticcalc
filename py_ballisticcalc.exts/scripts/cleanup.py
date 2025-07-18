@@ -19,6 +19,7 @@ cleanup_patterns = [
     # "/*.html",
 
     "build/",          # Recursive directory (matches 'build' in root or any subdir)
+    "dist/",          # Recursive directory (matches 'build' in root or any subdir)
     "*.egg-info/",     # Recursive directory
     # Fixed: Each pattern must be a separate string in the list, separated by a comma.
     "py_ballisticcalc_exts/*.c",    # Specific recursive file pattern for generated C files

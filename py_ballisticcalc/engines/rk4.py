@@ -3,12 +3,13 @@ import warnings
 
 from typing_extensions import Union, List, override
 
-from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.engines.base_engine import (BaseIntegrationEngine,
-                                                  BaseEngineConfigDict,
-                                                  _TrajectoryDataFilter,
-                                                  _WindSock,
-                                                  create_trajectory_row)
+from py_ballisticcalc.engines.base_engine import (
+    BaseIntegrationEngine,
+    BaseEngineConfigDict,
+    _TrajectoryDataFilter,
+    _WindSock,
+    _ShotProps
+)
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
@@ -23,18 +24,18 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     def get_calc_step(self, step: float = 0) -> float:
         # RK steps can be larger than calc_step default on Euler integrator
         # min_step ensures that with small record steps the loop runs far enough to get desired points
-        # adjust Euler default step to RK4 algorythm
+        # adjust Euler default step to RK4 algorithm
         # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko
         return super().get_calc_step(step) ** 0.5
 
     @override
-    def _integrate(self, shot_info: Shot, maximum_range: float, record_step: float,
+    def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
         """
         Calculate trajectory for specified shot
 
         Args:
-            shot_info (Shot):  Information about the shot.
+            props (_ShotProps):  Information about the shot.
             maximum_range (float): Feet down range to stop calculation
             record_step (float): Frequency (in feet down range) to record TrajectoryData
             filter_flags (Union[TrajFlag, int]): Flags to filter trajectory data.
@@ -53,41 +54,43 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         time: float = .0
-        drag: float = .0
+        # drag: float = .0
 
         # guarantee that mach and density_factor would be referenced before assignment
         mach: float = .0
         density_factor: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
-        wind_sock = _WindSock(shot_info.winds)
+        wind_sock = _WindSock(props.winds)
         wind_vector = wind_sock.current_vector()
         # endregion
 
         # region Initialize velocity and position of projectile
-        velocity = self.muzzle_velocity
+        velocity = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -self.cant_cosine * self.sight_height, -self.cant_sine * self.sight_height)
+        range_vector = Vector(.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
         velocity_vector: Vector = Vector(
-            math.cos(self.barrel_elevation) * math.cos(self.barrel_azimuth),
-            math.sin(self.barrel_elevation),
-            math.cos(self.barrel_elevation) * math.sin(self.barrel_azimuth)
+            math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
+            math.sin(props.barrel_elevation_rad),
+            math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
-        min_step = min(self.calc_step, record_step)
-        # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
+        min_step = min(props.calc_step_ft, record_step)
+
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
+                                            barrel_angle_rad=props.barrel_elevation_rad,
+                                            look_angle_rad=props.look_angle_rad,
                                             time_step=time_step)
-        data_filter.setup_seen_zero(range_vector.y, self.barrel_elevation, self.look_angle)
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
+        termination_reason = None
         last_recorded_range = 0.0
         it = 0  # iteration counter
         while (range_vector.x <= maximum_range + min_step) or (
-                filter_flags and last_recorded_range <= maximum_range - 1e-6):
+                last_recorded_range <= maximum_range - 1e-6):
             it += 1
 
             # Update wind reading at current point in trajectory
@@ -95,28 +98,23 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory
-            density_factor, mach = shot_info.atmo.get_density_factor_and_mach_for_altitude(
-                self.alt0 + range_vector.y)
+            density_factor, mach = props.get_density_and_mach_for_altitude(range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
-            if filter_flags:  # require check before call to improve performance
-                # Record TrajectoryData row
-                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
-                    ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
-                                                        data.velocity.magnitude(), data.mach,
-                                                        self.spin_drift(data.time), self.look_angle,
-                                                        density_factor, drag, self.weight, data_filter.current_flag
-                                                        ))
-                    last_recorded_range = data.position.x
+            if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+                ranges.append(self._make_row(
+                    props, data.time, data.position, data.velocity, data.mach, data_filter.current_flag)
+                )
+                last_recorded_range = data.position.x
             # endregion
 
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = self.calc_step / max(1.0, relative_speed)
-            km = density_factor * self.drag_by_mach(relative_speed / mach)
-            drag = km * relative_speed
+            delta_time = props.calc_step_ft / max(1.0, relative_speed)
+            km = density_factor * props.drag_by_mach(relative_speed / mach)
+            # drag = km * relative_speed
 
             # region RK4 integration
             def f(v: Vector) -> Vector:  # dv/dt
@@ -147,28 +145,27 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             if (
                     velocity < _cMinimumVelocity
                     or range_vector.y < _cMaximumDrop
-                    or self.alt0 + range_vector.y < _cMinimumAltitude
+                    or props.alt0_ft + range_vector.y < _cMinimumAltitude
             ):
-                ranges.append(create_trajectory_row(
-                    time, range_vector, velocity_vector,
-                    velocity, mach, self.spin_drift(time), self.look_angle,
-                    density_factor, drag, self.weight, data_filter.current_flag
-                ))
                 if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
+                    termination_reason = RangeError.MinimumVelocityReached
                 elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
+                    termination_reason = RangeError.MaximumDropReached
                 else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
-                # break
+                    termination_reason = RangeError.MinimumAltitudeReached
+                break
         # endregion Trajectory Loop
-
-        # Ensure that we have at least two data points in trajectory
-        if len(ranges) < 2:
-            ranges.append(create_trajectory_row(
-                time, range_vector, velocity_vector,
-                velocity, mach, self.spin_drift(time), self.look_angle,
-                density_factor, drag, self.weight, TrajFlag.NONE))
+        if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+            ranges.append(self._make_row(
+                props, data.time, data.position, data.velocity, data.mach, data_filter.current_flag)
+            )
+        # Ensure that we have at least two data points in trajectory, or 1 if no filter_flags==NONE
+        # ... as well as last point if we had an incomplete trajectory
+        if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
+            ranges.append(self._make_row(
+                props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
+            )
         logger.debug(f"RK4 ran {it} iterations")
+        if termination_reason is not None:
+            raise RangeError(termination_reason, ranges)
         return ranges

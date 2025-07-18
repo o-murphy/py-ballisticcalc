@@ -218,3 +218,107 @@ class TestUnitConversionSyntax:
         temp_low = Distance.Yard(10)  # Use a temporary variable for clarity
         temp_low <<= desired_units
         assert temp_low.units == desired_units
+
+
+class TestIterator:
+
+    @pytest.mark.parametrize(
+        "start, step, end, include_end, expected_count, expected_values",
+        [
+            (0, 100, 1000, True, 11, [i * 100 for i in range(11)]),
+            (0, 100, 1000, False, 10, [i * 100 for i in range(10)]),
+        ]
+    )
+    def test_finite_counter(self, start, step, end, include_end, expected_count, expected_values):
+        counter = Unit.Meter.counter(start, step, end, include_end=include_end)
+        items = list(counter) # Convert to list to check all at once and count
+
+        assert len(items) == expected_count
+        for i, item in enumerate(items):
+            assert isinstance(item, Distance)
+            # Use pytest.approx for robust float comparison
+            assert (item >> Distance.Meter) == pytest.approx(expected_values[i])
+
+    def test_infinite_counter(self):
+        counter = Unit.Meter.counter(0, 100)
+        for i in range(10):
+            item = next(counter)
+            assert isinstance(item, Distance)
+            assert (item >> Distance.Meter) == pytest.approx(i * 100)
+
+    @pytest.mark.parametrize(
+        "start, step, end, include_end, expected_count, expected_values",
+        [
+            (-100, -50, -500, True, 9, [-100 - i * 50 for i in range(9)]),
+            (-100, -50, -500, False, 8, [-100 - i * 50 for i in range(8)]),
+        ]
+    )
+    def test_backward_finite_counter(self, start, step, end, include_end, expected_count, expected_values):
+        counter = Unit.Meter.counter(start, step, end, include_end=include_end)
+        items = list(counter)
+
+        assert len(items) == expected_count
+        for i, item in enumerate(items):
+            assert isinstance(item, Distance)
+            assert (item >> Distance.Meter) == pytest.approx(expected_values[i])
+
+    def test_backward_infinite_counter(self):
+        counter = Unit.Meter.counter(-100, -50)
+        for i in range(10):
+            item = next(counter)
+            assert isinstance(item, Distance)
+            assert (item >> Distance.Meter) == pytest.approx(-100 - i * 50)
+
+    @pytest.mark.parametrize(
+        "input_items, sort, reverse, expected_values",
+        [
+            ([0, 200, 100], False, False, [0, 200, 100]),
+            ([0, 200, 100], True, False, [0, 100, 200]),
+            ([0, 200, 100], True, True, [200, 100, 0]),
+            ([], False, False, []), # Test empty list
+            ([50], False, False, [50]), # Test single item list
+        ]
+    )
+    def test_iterable_generic(self, input_items, sort, reverse, expected_values):
+        iterable = Unit.Meter.iterator(input_items, sort=sort, reverse=reverse)
+        items = list(iterable) # Convert to list to check all at once
+
+        assert len(items) == len(expected_values)
+        for i, item in enumerate(items):
+            assert isinstance(item, Distance)
+            assert (item >> Unit.Meter) == pytest.approx(expected_values[i])
+
+    def test_counter_infinite_invalid_step(self):
+        with pytest.raises(ValueError, match="For infinite iteration, 'step' cannot be zero."):
+            list(Unit.Meter.counter(0, 0, ))
+
+    # Test for finite counter with step = 0
+    def test_counter_finite_zero_step(self):
+        # As per your counter logic, for step=0 and finite end, it yields 'start' once.
+        counter = Unit.Meter.counter(10, 0, 20)
+        items = list(counter)
+        assert len(items) == 1
+        assert (items[0] >> Distance.Meter) == pytest.approx(10)
+
+        counter_equal_start_end = Unit.Meter.counter(10, 0, 10)
+        items_equal_start_end = list(counter_equal_start_end)
+        assert len(items_equal_start_end) == 1
+        assert (items_equal_start_end[0] >> Distance.Meter) == pytest.approx(10)
+
+
+    def test_counter_inconsistent_step_direction(self):
+        # Matches your exact error message for incremental step
+        with pytest.raises(ValueError, match=r"For an incremental step \(step > 0\), 'start' cannot be greater than 'end'."):
+            list(Unit.Meter.counter(0, 10, -100)) # start > end with positive step
+        # Matches your exact error message for decrementing step
+        with pytest.raises(ValueError, match=r"For a decrementing step \(step < 0\), 'start' cannot be less than 'end'."):
+            list(Unit.Meter.counter(-100, -10, 0)) # start < end with negative step
+
+
+    def test_counter_non_numeric_input(self):
+        with pytest.raises(TypeError): # Or ValueError, depending on implementation
+            list(Unit.Meter.counter("a", 1, 10))
+
+    def test_iterator_non_numeric_input(self):
+        with pytest.raises(TypeError): # Or ValueError
+            list(Unit.Meter.iterator([1, "b", 3]))

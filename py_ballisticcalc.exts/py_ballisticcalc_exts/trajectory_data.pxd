@@ -1,9 +1,8 @@
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport (
-    V3dT
-)
+from py_ballisticcalc_exts.v3d cimport V3dT
 
-cdef extern from "include/tdata.h":
+
+cdef extern from "include/bclib.h":
     # Using 'int' as the underlying type for the enum
     # Cython can typically handle C enums directly.
     # The actual integer values are important for bitwise operations.
@@ -15,7 +14,7 @@ cdef extern from "include/tdata.h":
         MACH = 4
         RANGE = 8
         APEX = 16
-        ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
+        ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX  # 31
 
     ctypedef struct BaseTrajData_t:
         double time
@@ -24,7 +23,6 @@ cdef extern from "include/tdata.h":
         double mach
 
 # aliases
-ctypedef TrajFlag_t CTrajFlag
 # ctypedef BaseTrajDataT BaseTrajData # temporary undeclared
 
 cdef class BaseTrajData:
@@ -42,11 +40,11 @@ cdef class TrajectoryData:
         readonly object velocity
         readonly double mach
         readonly object height
-        readonly object target_drop
+        readonly object slant_height
         readonly object drop_adj
         readonly object windage
         readonly object windage_adj
-        readonly object look_distance
+        readonly object slant_distance
         readonly object angle
         readonly double density_factor
         readonly double drag
