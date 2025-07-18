@@ -11,7 +11,7 @@ from py_ballisticcalc.unit import Velocity, Distance
 EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81  # Acceleration due to gravity (m/s^2)
 
 
-def must_fire(interface: Calculator, zero_shot: Shot, trajectory_range: Distance, extra_data: bool,
+def must_fire(interface: Calculator, zero_shot: Shot, trajectory_range: Distance, extra_data: bool = False,
               **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
     """wrapper function to resolve RangeError and get HitResult"""
     try:

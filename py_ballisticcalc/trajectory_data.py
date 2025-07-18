@@ -21,7 +21,8 @@ _TrajFlagNames = {
     4: 'MACH',
     8: 'RANGE',
     16: 'APEX',
-    31: 'ALL',
+    32: 'MRT',  # Mid-Range Trajectory (a.k.a. Maximum Ordinate): highest point of trajectory over the sight line
+    63: 'ALL',
 }
 
 
@@ -36,7 +37,8 @@ class TrajFlag(int):
     MACH: Final[int] = 4
     RANGE: Final[int] = 8
     APEX: Final[int] = 16
-    ALL: Final[int] = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
+    MRT: Final[int] = 32
+    ALL: Final[int] = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX | MRT
 
     @staticmethod
     def name(value: Union[int, 'TrajFlag']) -> str:

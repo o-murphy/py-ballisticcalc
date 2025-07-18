@@ -407,6 +407,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     """
     APEX_IS_MAX_RANGE_RADIANS: float = 0.0003  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
+    SEPARATE_ROW_TIME_DELTA: float = 1e-5  # Difference in seconds required for a TrajFlag to generate separate rows
 
     def __init__(self, _config: _BaseEngineConfigDictT):
         """
@@ -758,7 +759,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             horizontal_ft = t.distance >> Distance.Foot  # Horizontal distance
             trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
             sensitivity = math.tan(props.barrel_elevation_rad) * math.tan(trajectory_angle)
-            if -1.5 < sensitivity < -0.5 and not range_limit:  # TODO: Find good bounds for this
+            if -1.8 < sensitivity < -0.5 and not range_limit:  # TODO: Find good bounds for this
                 # Scenario too unstable for 1st order iteration
                 logger.warning("Unstable scenario detected in zero_angle(); probably won't converge...")
                 range_limit = True  # Scenario too unstable for 1st-order correction
@@ -801,6 +802,28 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(slant_error_ft, iterations_count, _new_rad(props.barrel_elevation_rad))
         return _new_rad(props.barrel_elevation_rad)
+
+    def integrate(self, shot_info: Shot, max_range: Union[Distance, float] = 9e9, dist_step: Union[Distance, float] = 0.,
+                  filter_flags: Union[TrajFlag, int] = TrajFlag.RANGE, time_step: float = 0.0) -> List[TrajectoryData]:
+        """
+        Integrates the trajectory for the given shot.
+
+        Args:
+            shot_info (Shot): The shot information.
+            max_range (Union[Distance, float], optional): Maximum range of the trajectory.
+            dist_step (Union[Distance, float], optional): Distance step for recording RANGE TrajectoryData rows.
+            filter_flags (Union[TrajFlag, int], optional): Flags to filter trajectory data. Defaults to TrajFlag.RANGE.
+            time_step (float, optional): Time step for recording trajectory data. Defaults to 0.0.
+
+        Returns:
+            List[TrajectoryData]: A list of trajectory data points.
+        """
+        props = self._init_trajectory(shot_info)
+        if isinstance(max_range, Distance):
+            max_range = max_range >> Distance.Foot
+        if isinstance(dist_step, Distance):
+            dist_step = dist_step >> Distance.Foot
+        return self._integrate(props, max_range, dist_step, filter_flags, time_step)
 
     @abstractmethod
     def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,

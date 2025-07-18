@@ -386,7 +386,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             horizontal_ft = t.distance >> Distance.Foot  # Horizontal distance
             trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
             sensitivity = math.tan(props.barrel_elevation_rad) * math.tan(trajectory_angle)
-            if -1.5 < sensitivity < -0.5:  # TODO: Find good bounds for this
+            if -1.8 < sensitivity < -0.5:  # TODO: Find good bounds for this
                 # Scenario too unstable for 1st order iteration
                 logger.debug("Unstable scenario detected in zero_angle(); calling _find_zero_angle()")
                 break
@@ -587,70 +587,69 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             if sol.t[-1] == 0:
                 # If the last time is 0, we only have the initial state
                 ranges.append(make_row(sol.t[0], sol.y[:, 0], TrajFlag.RANGE))
-                return ranges
+            else:
+                # List of distances at which we want to record the trajectory data
+                desired_xs = np.arange(0, maximum_range + record_step, record_step)
+                # Get x and t arrays from the solution
+                x_vals = sol.y[0]
+                t_vals = sol.t
 
-            # List of distances at which we want to record the trajectory data
-            desired_xs = np.arange(0, maximum_range + record_step, record_step)
-            # Get x and t arrays from the solution
-            x_vals = sol.y[0]
-            t_vals = sol.t
+                # region Basic approach to interpolate for desired x values:
+                # # This is not very good: distance from requested x varies by ~1% of max_range
+                # t_at_x: np.ndarray = np.interp(desired_xs, x_vals, t_vals)
+                # states_at_x = sol.sol(t_at_x)  # shape: (state_dim, len(desired_xs))
+                # for i in range(states_at_x.shape[1]):
+                #     ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
+                # endregion Basic approach to interpolate for desired x values
 
-            # region Basic approach to interpolate for desired x values:
-            # # This is not very good: distance from requested x varies by ~1% of max_range
-            # t_at_x: np.ndarray = np.interp(desired_xs, x_vals, t_vals)
-            # states_at_x = sol.sol(t_at_x)  # shape: (state_dim, len(desired_xs))
-            # for i in range(states_at_x.shape[1]):
-            #     ranges.append(make_row(t_at_x[i], states_at_x[:, i], TrajFlag.RANGE))
-            # endregion Basic approach to interpolate for desired x values
-
-            # region Root-finding approach to interpolate for desired x values:
-            warnings.simplefilter("once")  # Only issue one warning
-            states_at_x: List[np.ndarray] = []
-            t_at_x: List[float] = []
-            for x_target in desired_xs:
-                idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
-                if idx < 0 or idx >= len(x_vals):
-                    # warnings.warn("Requested range exceeds computed trajectory" +
-                    #                f", which only reaches {PreferredUnits.distance(Distance.Feet(x_vals[-1]))}",
-                    #                RuntimeWarning)
-                    continue
-                if idx == 0:
-                    t_root = t_vals[0]
-                else:
-                    # Use root_scalar to find t where x(t) == x_target
-                    def x_minus_target(t):  # Function for root finding: x(t) - x_target
-                        return sol.sol(t)[0] - x_target  # pylint: disable=cell-var-from-loop
-
-                    t_lo, t_hi = t_vals[idx - 1], t_vals[idx]
-                    res = root_scalar(x_minus_target, bracket=(t_lo, t_hi), method='brentq')
-                    if not res.converged:
-                        logger.warning(f"Could not find root for requested distance {x_target}")
+                # region Root-finding approach to interpolate for desired x values:
+                warnings.simplefilter("once")  # Only issue one warning
+                states_at_x: List[np.ndarray] = []
+                t_at_x: List[float] = []
+                for x_target in desired_xs:
+                    idx = np.searchsorted(x_vals, x_target)  # Find bracketing indices for x_target
+                    if idx < 0 or idx >= len(x_vals):
+                        # warnings.warn("Requested range exceeds computed trajectory" +
+                        #                f", which only reaches {PreferredUnits.distance(Distance.Feet(x_vals[-1]))}",
+                        #                RuntimeWarning)
                         continue
-                    t_root = res.root
-                state = sol.sol(t_root)
-                t_at_x.append(t_root)
-                states_at_x.append(state)
-            # endregion Root-finding approach to interpolate for desired x values
+                    if idx == 0:
+                        t_root = t_vals[0]
+                    else:
+                        # Use root_scalar to find t where x(t) == x_target
+                        def x_minus_target(t):  # Function for root finding: x(t) - x_target
+                            return sol.sol(t)[0] - x_target  # pylint: disable=cell-var-from-loop
 
-            # If we ended with an exceptional event then also record the last point calculated
-            #   (if it is not already recorded).
-            if termination_reason and t_at_x and t_at_x[-1] < sol.t[-1]:
-                t_at_x.append(sol.t[-1])
-                states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
+                        t_lo, t_hi = t_vals[idx - 1], t_vals[idx]
+                        res = root_scalar(x_minus_target, bracket=(t_lo, t_hi), method='brentq')
+                        if not res.converged:
+                            logger.warning(f"Could not find root for requested distance {x_target}")
+                            continue
+                        t_root = res.root
+                    state = sol.sol(t_root)
+                    t_at_x.append(t_root)
+                    states_at_x.append(state)
+                # endregion Root-finding approach to interpolate for desired x values
 
-            states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
-                                                                                dtype=np.float64).T  # shape: (state_dim, num_points)
-            for i in range(states_at_x_arr_t.shape[1]):
-                ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
-            ranges.sort(key=lambda t: t.time)  # Sort by time
+                # If we ended with an exceptional event then also record the last point calculated
+                #   (if it is not already recorded).
+                if termination_reason and t_at_x and t_at_x[-1] < sol.t[-1]:
+                    t_at_x.append(sol.t[-1])
+                    states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
-            if time_step > 0.0:
-                time_of_last_record = 0.0
-                for next_record in range(1, len(ranges)):
-                    while ranges[next_record].time - time_of_last_record > time_step:
-                        time_of_last_record += time_step
-                        ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
+                states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
+                                                                                    dtype=np.float64).T  # shape: (state_dim, num_points)
+                for i in range(states_at_x_arr_t.shape[1]):
+                    ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
                 ranges.sort(key=lambda t: t.time)  # Sort by time
+
+                if time_step > 0.0:
+                    time_of_last_record = 0.0
+                    for next_record in range(1, len(ranges)):
+                        while ranges[next_record].time - time_of_last_record > time_step:
+                            time_of_last_record += time_step
+                            ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
+                    ranges.sort(key=lambda t: t.time)  # Sort by time
 
             # region Find TrajectoryData points requested by filter_flags
             if filter_flags:
@@ -658,10 +657,15 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     """Add a row to ranges, keeping it sorted by time.
                        If row this time already exists then add this flag to it."""
                     idx = bisect_left_key(ranges, time, key=lambda r: r.time)
-                    if idx < len(ranges) and ranges[idx].time == time:
-                        ranges[idx] = make_row(time, state, ranges[idx].flag | flag)  # Update flag if time matches
-                    else:
-                        ranges.insert(idx, make_row(time, state, flag))  # Insert at sorted position
+                    if idx < len(ranges):
+                        # If we match existing row's time then just add this flag to the row
+                        if abs(ranges[idx].time - time) < self.SEPARATE_ROW_TIME_DELTA:
+                            ranges[idx] = make_row(time, state, ranges[idx].flag | flag)
+                            return
+                        elif idx > 0 and abs(ranges[idx - 1].time - time) < self.SEPARATE_ROW_TIME_DELTA:
+                            ranges[idx - 1] = make_row(time, state, ranges[idx - 1].flag | flag)
+                            return
+                    ranges.insert(idx, make_row(time, state, flag))  # Insert at sorted position
 
                 # Make sure ranges are sorted by time before this check:
                 if filter_flags & TrajFlag.MACH and ranges[0].mach > 1.0 and ranges[-1].mach < 1.0:
@@ -677,6 +681,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         return (relative_speed / mach) - 1.0
 
                     try:
+                        t_vals = sol.t
                         res = root_scalar(mach_minus_one, bracket=(t_vals[0], t_vals[-1]))
                         if res.converged:
                             add_row(res.root, sol.sol(res.root), TrajFlag.MACH)
@@ -704,6 +709,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         return sol.sol(t)[4]
 
                     try:
+                        t_vals = sol.t
                         res = root_scalar(vy, bracket=(t_vals[0], t_vals[-1]))
                         if res.converged:
                             add_row(res.root, sol.sol(res.root), TrajFlag.APEX)
