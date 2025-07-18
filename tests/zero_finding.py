@@ -101,7 +101,7 @@ def test_zero_with_look_angle(loaded_engine_instance):
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree} degrees")
     hit_result = calc.fire(shot, trajectory_range=distance, extra_data=True)
     # TrajFlag.ZERO_DOWN marks the point at which bullet crosses down through sight line
-    assert abs(hit_result.flag(TrajFlag.ZERO_DOWN).look_distance.raw_value - distance.raw_value) < 1e+1
+    assert abs(hit_result.flag(TrajFlag.ZERO_DOWN).slant_distance.raw_value - distance.raw_value) < 1e+1
 
 
 def test_vertical_shot_zero(loaded_engine_instance):

@@ -334,13 +334,13 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         velocity=_new_fps(velocity),
         mach=velocity / mach,
         height=_new_feet(range_vector_ptr.y),
-        target_drop=_new_feet(
+        slant_height=_new_feet(
             (range_vector_ptr.y - range_vector_ptr.x * tan(look_angle)) * cos(look_angle)
         ),
         drop_adj=_new_rad(drop_adjustment),
         windage=_new_feet(windage),
         windage_adj=_new_rad(windage_adjustment),
-        look_distance=_new_feet(range_vector_ptr.x / cos(look_angle)),
+        slant_distance=_new_feet(range_vector_ptr.x / cos(look_angle)),
         angle=_new_rad(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,

@@ -224,14 +224,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         # region Virtually vertical shot
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
-            max_range = self._find_apex(props).look_distance
+            max_range = self._find_apex(props).slant_distance
             return max_range, Angular.Radian(props.look_angle_rad)
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
             """Returns range to zero (in feet) for given launch angle in radians."""
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
-                return self._find_apex(props).look_distance >> Distance.Foot
+                return self._find_apex(props).slant_distance >> Distance.Foot
             props.barrel_elevation_rad = angle_rad
             try:
                 t = self._integrate(props, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[-1]
@@ -239,7 +239,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 if e.last_distance is None:
                     raise e
                 t = e.incomplete_trajectory[-1]
-            return (t.look_distance >> Distance.Foot) - (t.target_drop >> Distance.Foot)
+            return (t.slant_distance >> Distance.Foot) - (t.slant_height >> Distance.Foot)
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
                               bounds=(float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),
@@ -276,48 +276,41 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         except ImportError as e:
             raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
-        status, result, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(props,
-                                                                                                                  distance)
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
+            self._init_zero_calculation(props, distance)
+        )
         if status is _ZeroCalcStatus.DONE:
-            return Angular.Radian(result)
+            return Angular.Radian(look_angle_rad)
 
         #region Make mypy happy
         assert start_height_ft is not None
         assert target_x_ft is not None
         assert target_y_ft is not None
-        assert target_look_dist_ft is not None
+        assert slant_range_ft is not None
         #endregion Make mypy happy
-        look_angle = result
         max_range, angle_at_max = self._find_max_range(props)
         max_range_ft = max_range >> Distance.Foot
 
-        if target_look_dist_ft > max_range_ft:
-            raise OutOfRangeError(distance, max_range, Angular.Radian(look_angle))
-        if abs(target_look_dist_ft - max_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
+        if slant_range_ft > max_range_ft:
+            raise OutOfRangeError(distance, max_range, Angular.Radian(look_angle_rad))
+        if abs(slant_range_ft - max_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return angle_at_max
 
         def error_at_distance(angle_rad: float) -> float:
-            """
-            Vertical error (in feet) at the target's horizontal distance.
-            (= projectile's height minus the line-of-sight's height at that distance.)
-            """
+            """Target miss (in feet) for launch at <angle_rad>."""
             props.barrel_elevation_rad = angle_rad
             try:
                 # Integrate to find the projectile's state at the target's horizontal distance.
                 t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
-                if t.time == 0.0:
-                    logger.warning("Integrator returned initial point. Consider removing constraints.")
-                    return -1e6  # Large negative error to discourage this angle.
-                return (t.height >> Distance.Foot) - target_y_ft
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
                 t = e.incomplete_trajectory[-1]
-                if t.time == 0.0:
-                    logger.warning("Integrator returned initial point. Consider removing constraints.")
-                    return -1e6  # Large negative error to discourage this angle.
-                return -abs(t.target_drop >> Distance.Foot) - abs(
-                    (t.look_distance >> Distance.Foot) - target_look_dist_ft)
+            if t.time == 0.0:
+                logger.warning("Integrator returned initial point. Consider removing constraints.")
+                return -1e6  # Large negative error to discourage this angle.
+            # return -abs(t.slant_height >> Distance.Foot) - abs((t.slant_distance >> Distance.Foot) - slant_range_ft)
+            return (t.height >> Distance.Foot) - target_y_ft - abs((t.distance >> Distance.Foot) - target_x_ft)
 
         if lofted:
             angle_bracket = (angle_at_max >> Angular.Radian, math.radians(90.0))
@@ -354,20 +347,21 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             Angular: Barrel elevation to hit height zero at zero distance
         """
 
-        status, look_angle, target_look_dist_ft, target_x_ft, target_y_ft, start_height = self._init_zero_calculation(
-            props, distance)
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
+            self._init_zero_calculation(props, distance)
+        )
         if status is _ZeroCalcStatus.DONE:
-            return Angular.Radian(look_angle)
+            return Angular.Radian(look_angle_rad)
 
         assert target_x_ft is not None  # Make mypy happy
-        assert target_look_dist_ft is not None  # Make mypy happy
+        assert slant_range_ft is not None  # Make mypy happy
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
         iterations_count = 0
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
         prev_range_error_ft = 9e9
         prev_height_error_ft = 9e9
-        slant_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
+        height_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
 
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current self.barrel_elevation)
@@ -381,31 +375,31 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 break
 
-            slant_diff_ft = t.target_drop >> Distance.Foot
-            look_dist_ft = t.look_distance >> Distance.Foot
+            height_diff_ft = t.slant_height >> Distance.Foot
+            look_dist_ft = t.slant_distance >> Distance.Foot
             horizontal_ft = t.distance >> Distance.Foot  # Horizontal distance
             trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
             sensitivity = math.tan(props.barrel_elevation_rad) * math.tan(trajectory_angle)
-            if -1.8 < sensitivity < -0.5:  # TODO: Find good bounds for this
+            if -2.0 < sensitivity < -0.5:  # TODO: Find good bounds for this
                 # Scenario too unstable for 1st order iteration
                 logger.debug("Unstable scenario detected in zero_angle(); calling _find_zero_angle()")
                 break
             elif abs(sensitivity) > 1000:  # TODO: Find good bounds for this
                 logger.debug("High sensitivity; using slant correction")
                 if abs(look_dist_ft) > 1e-6:
-                    correction = -slant_diff_ft / look_dist_ft
+                    correction = -height_diff_ft / look_dist_ft
                 else:
-                    correction = -slant_diff_ft  # Avoid division by zero; or maybe should break?
+                    correction = -height_diff_ft  # Avoid division by zero; or maybe should break?
             elif horizontal_ft != 0:  # TODO: Use vertical difference instead of slant difference?
-                correction = -slant_diff_ft / (horizontal_ft * (1 + sensitivity))  # 1st order correction
+                correction = -height_diff_ft / (horizontal_ft * (1 + sensitivity))  # 1st order correction
             else:
                 break
 
-            range_diff_ft = look_dist_ft - target_look_dist_ft
+            range_diff_ft = look_dist_ft - slant_range_ft
             range_error_ft = math.fabs(range_diff_ft)
-            slant_error_ft = math.fabs(slant_diff_ft)
+            height_error_ft = math.fabs(height_diff_ft)
 
-            logger.debug(f'Zero step {iterations_count}: slant_error={slant_diff_ft}\t range_error={range_diff_ft} '
+            logger.debug(f'Zero step {iterations_count}: height_error={height_diff_ft}\t range_error={range_diff_ft} '
                          f'\t{props.barrel_elevation_rad}rad\t at {look_dist_ft}ft. Correction={correction}rads')
 
             if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
@@ -414,15 +408,15 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
                     #       'Distance non-convergent.')
                     break
-            elif slant_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
+            elif height_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
                 # raise ZeroFindingError(zero_error, iterations_count, Angular.Radian(self.barrel_elevation),
                 #       'Error non-convergent.')
                 break
 
             prev_range_error_ft = range_error_ft
-            prev_height_error_ft = slant_error_ft
+            prev_height_error_ft = height_error_ft
 
-            if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+            if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # Adjust barrel elevation to close height at zero distance
                 props.barrel_elevation_rad += correction
                 # #region temporary debugging checks TODO: Remove after debugging
@@ -435,7 +429,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 break
             iterations_count += 1
 
-        if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+        if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
             return self._find_zero_angle(props, distance)
 
         return Angular.Radian(props.barrel_elevation_rad)

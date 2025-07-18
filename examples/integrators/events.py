@@ -465,7 +465,7 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             velocity=_new_fps(velocity),
             mach=velocity / mach_fps,
             height=_new_feet(range_vector.y),
-            target_drop=_new_feet(
+            slant_height=_new_feet(
                 (range_vector.y - range_vector.x * math.tan(self.look_angle_rad))
                 * math.cos(self.look_angle_rad)
             ),
@@ -474,7 +474,7 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ),
             windage=_new_feet(windage),
             windage_adj=_new_rad(windage_adjustment),
-            look_distance=_new_feet(range_vector.x / math.cos(self.look_angle_rad)),
+            slant_distance=_new_feet(range_vector.x / math.cos(self.look_angle_rad)),
             angle=_new_rad(trajectory_angle),
             density_factor=density_factor - 1,
             drag=drag,

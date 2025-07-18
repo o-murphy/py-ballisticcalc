@@ -40,11 +40,11 @@ cdef class TrajectoryData:
         readonly object velocity
         readonly double mach
         readonly object height
-        readonly object target_drop
+        readonly object slant_height
         readonly object drop_adj
         readonly object windage
         readonly object windage_adj
-        readonly object look_distance
+        readonly object slant_distance
         readonly object angle
         readonly double density_factor
         readonly double drag

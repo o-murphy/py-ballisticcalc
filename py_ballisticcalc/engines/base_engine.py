@@ -1,4 +1,4 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-class-docstring,missing-function-docstring,too-many-lines
 # pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
 """pure python trajectory calculation backend"""
 
@@ -7,6 +7,7 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict, field
 from enum import Enum, auto
+from deprecated import deprecated
 
 from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Dict, TypedDict, TypeVar
 
@@ -391,7 +392,7 @@ class _ZeroCalcStatus(Enum):
 class ZeroFindingProps(NamedTuple):
     status: _ZeroCalcStatus
     look_angle_rad: float
-    target_look_dist_ft: Optional[float] = None
+    slant_range_ft: Optional[float] = None
     target_x_ft: Optional[float] = None
     target_y_ft: Optional[float] = None
     start_height_ft: Optional[float] = None
@@ -648,28 +649,28 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             ZeroFindingProps
         """
 
-        target_look_dist_ft = distance >> Distance.Foot
-        target_x_ft = target_look_dist_ft * math.cos(props.look_angle_rad)
-        target_y_ft = target_look_dist_ft * math.sin(props.look_angle_rad)
+        slant_range_ft = distance >> Distance.Foot
+        target_x_ft = slant_range_ft * math.cos(props.look_angle_rad)
+        target_y_ft = slant_range_ft * math.sin(props.look_angle_rad)
         start_height_ft = -props.sight_height_ft * props.cant_cosine
 
         # region Edge cases
-        if abs(target_look_dist_ft) < self.ALLOWED_ZERO_ERROR_FEET:
+        if abs(slant_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
-        if abs(target_look_dist_ft) < 2.0 * max(abs(start_height_ft), props.calc_step_ft):
+        if abs(slant_range_ft) < 2.0 * max(abs(start_height_ft), props.calc_step_ft):
             # Very close shot; ignore gravity and drag
             return ZeroFindingProps(_ZeroCalcStatus.DONE,
                                     look_angle_rad=math.atan2(target_y_ft + start_height_ft, target_x_ft))
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
             # Virtually vertical shot; just check if it can reach the target
-            max_range = self._find_apex(props).look_distance
-            if (max_range >> Distance.Foot) < target_look_dist_ft:
+            max_range = self._find_apex(props).slant_distance
+            if (max_range >> Distance.Foot) < slant_range_ft:
                 raise OutOfRangeError(distance, max_range, _new_rad(props.look_angle_rad))
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
         # endregion Edge cases
 
         return ZeroFindingProps(_ZeroCalcStatus.CONTINUE,
-                                props.look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft)
+                                props.look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
         """
@@ -717,13 +718,14 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        status, look_angle_rad, target_look_dist_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
-                                                                                                             props, distance)
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
+            self._init_zero_calculation(props, distance)
+        )
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
 
         assert target_x_ft is not None  # Make mypy happy
-        assert target_look_dist_ft is not None  # Make mypy happy
+        assert slant_range_ft is not None  # Make mypy happy
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
@@ -733,7 +735,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
         prev_range_error_ft = 9e9
         prev_height_error_ft = 9e9
-        slant_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
+        height_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
         range_limit = False  # Flag to avoid 1st-order correction when instability detected
 
         while iterations_count < _cMaxIterations:
@@ -754,12 +756,12 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
                 props.barrel_elevation_rad = 0.01
                 continue
 
-            slant_diff_ft = t.target_drop >> Distance.Foot
-            look_dist_ft = t.look_distance >> Distance.Foot
+            height_diff_ft = t.slant_height >> Distance.Foot
+            look_dist_ft = t.slant_distance >> Distance.Foot
             horizontal_ft = t.distance >> Distance.Foot  # Horizontal distance
             trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
             sensitivity = math.tan(props.barrel_elevation_rad) * math.tan(trajectory_angle)
-            if -1.8 < sensitivity < -0.5 and not range_limit:  # TODO: Find good bounds for this
+            if -2.0 < sensitivity < -0.5 and not range_limit:  # TODO: Find good bounds for this
                 # Scenario too unstable for 1st order iteration
                 logger.warning("Unstable scenario detected in zero_angle(); probably won't converge...")
                 range_limit = True  # Scenario too unstable for 1st-order correction
@@ -769,38 +771,38 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
             if range_limit or horizontal_ft == 0:
                 if abs(look_dist_ft) > 1e-6:
-                    correction = -slant_diff_ft / look_dist_ft
+                    correction = -height_diff_ft / look_dist_ft
                 else:
-                    correction = -slant_diff_ft  # Avoid division by zero
+                    correction = -height_diff_ft  # Avoid division by zero
             else:
-                correction = -slant_diff_ft / (horizontal_ft * (1 + sensitivity))  # 1st order correction
+                correction = -height_diff_ft / (horizontal_ft * (1 + sensitivity))  # 1st order correction
 
-            range_diff_ft = look_dist_ft - target_look_dist_ft
+            range_diff_ft = look_dist_ft - slant_range_ft
             range_error_ft = math.fabs(range_diff_ft)
-            slant_error_ft = math.fabs(slant_diff_ft)
+            height_error_ft = math.fabs(height_diff_ft)
 
             if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # We're still trying to reach zero_distance
                 if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
-                    raise ZeroFindingError(slant_diff_ft, iterations_count, _new_rad(props.barrel_elevation_rad),
+                    raise ZeroFindingError(height_diff_ft, iterations_count, _new_rad(props.barrel_elevation_rad),
                                            'Distance non-convergent.')
-            elif slant_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
-                raise ZeroFindingError(slant_diff_ft, iterations_count, _new_rad(props.barrel_elevation_rad),
+            elif height_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
+                raise ZeroFindingError(height_diff_ft, iterations_count, _new_rad(props.barrel_elevation_rad),
                                        'Error non-convergent.')
 
             prev_range_error_ft = range_error_ft
-            prev_height_error_ft = slant_error_ft
+            prev_height_error_ft = height_error_ft
 
-            if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+            if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # Adjust barrel elevation to close height at zero distance
                 props.barrel_elevation_rad += correction
             else:  # Current barrel_elevation hit zero!
                 break
             iterations_count += 1
 
-        if slant_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+        if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            raise ZeroFindingError(slant_error_ft, iterations_count, _new_rad(props.barrel_elevation_rad))
+            raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(props.barrel_elevation_rad))
         return _new_rad(props.barrel_elevation_rad)
 
     def integrate(self, shot_info: Shot, max_range: Union[Distance, float] = 9e9, dist_step: Union[Distance, float] = 0.,
@@ -879,11 +881,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             velocity=_new_fps(velocity),
             mach=velocity / mach,
             height=_new_feet(range_vector.y),
-            target_drop=_new_feet(range_vector.y * look_angle_cos - range_vector.x * look_angle_sin),
+            slant_height=_new_feet(range_vector.y * look_angle_cos - range_vector.x * look_angle_sin),
             drop_adj=_new_rad(drop_adjustment - (props.look_angle_rad if range_vector.x else 0)),
             windage=_new_feet(windage),
             windage_adj=_new_rad(windage_adjustment),
-            look_distance=_new_feet(range_vector.x * look_angle_cos + range_vector.y * look_angle_sin),
+            slant_distance=_new_feet(range_vector.x * look_angle_cos + range_vector.y * look_angle_sin),
             angle=_new_rad(trajectory_angle),
             density_factor=density_factor - 1,
             drag=drag,
@@ -894,11 +896,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
 
 # pylint: disable=too-many-positional-arguments
+@deprecated(reason="Use BaseIntegrationEngine._make_row instead.")
 def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Vector,
                           velocity: float, mach: float, spin_drift: float, look_angle: float,
                           density_ratio: float, drag: float, weight: float,
                           flag: Union[TrajFlag, int]) -> TrajectoryData:
-    warnings.warn("This method is deprecated", DeprecationWarning)
     """
     Creates a TrajectoryData object representing a single row of trajectory data.
 
@@ -909,7 +911,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         velocity (float): Velocity magnitude in fps.
         mach (float): Mach number.
         spin_drift (float): Spin drift in feet.
-        look_angle (float): Look angle in radians.
+        look_angle (float): Slant angle in radians.
         density_ratio (float): Density ratio (rho / rho_0).
         drag (float): Drag value.
         weight (float): Weight value.
@@ -918,6 +920,8 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
     Returns:
         TrajectoryData: A TrajectoryData object representing the trajectory data.
     """
+    warnings.warn("This method is deprecated", DeprecationWarning)
+
     windage = range_vector.z + spin_drift
     drop_adjustment = get_correction(range_vector.x, range_vector.y)
     windage_adjustment = get_correction(range_vector.x, windage)
@@ -929,11 +933,11 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         velocity=_new_fps(velocity),
         mach=velocity / mach,
         height=_new_feet(range_vector.y),
-        target_drop=_new_feet(range_vector.y * math.cos(look_angle) - range_vector.x * math.sin(look_angle)),
+        slant_height=_new_feet(range_vector.y * math.cos(look_angle) - range_vector.x * math.sin(look_angle)),
         drop_adj=_new_rad(drop_adjustment - (look_angle if range_vector.x else 0)),
         windage=_new_feet(windage),
         windage_adj=_new_rad(windage_adjustment),
-        look_distance=_new_feet(range_vector.x * math.cos(look_angle) + range_vector.y * math.sin(look_angle)),
+        slant_distance=_new_feet(range_vector.x * math.cos(look_angle) + range_vector.y * math.sin(look_angle)),
         angle=_new_rad(trajectory_angle),
         density_factor=density_ratio - 1,
         drag=drag,

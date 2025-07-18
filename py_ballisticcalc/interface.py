@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
 from typing import Generic, Any
 
-from deprecated import deprecated  # type: ignore[import-untyped]
+from deprecated import deprecated
 from typing_extensions import Union, List, Optional, TypeVar, Type
 
 from py_ballisticcalc import EulerIntegrationEngine
