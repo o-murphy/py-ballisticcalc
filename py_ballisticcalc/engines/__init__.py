@@ -2,6 +2,7 @@ from .base_engine import *
 from .euler import *
 from .rk4 import *
 from .scipy_engine import *
+from .velocity_verlet import *
 
 __all__ = (
     'create_base_engine_config',
@@ -11,6 +12,7 @@ __all__ = (
     'BaseIntegrationEngine',
     'EulerIntegrationEngine',
     'RK4IntegrationEngine',
+    'VelocityVerletIntegrationEngine',
     'SciPyIntegrationEngine',
     'SciPyEngineConfigDict',
     'calculate_energy',

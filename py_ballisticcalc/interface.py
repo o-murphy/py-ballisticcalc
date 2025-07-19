@@ -7,7 +7,7 @@ from deprecated import deprecated
 from typing_extensions import Union, List, Optional, TypeVar, Type
 
 from py_ballisticcalc import EulerIntegrationEngine
-# pylint: disable=import-error,no-name-in-module,wildcard-import
+# pylint: disable=import-error,no-name-in-module
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.generics.engine import EngineProtocol
@@ -169,7 +169,7 @@ class Calculator(Generic[ConfigT]):
         return shot.weapon.zero_elevation
 
     def fire(self, shot: Shot, trajectory_range: Union[float, Distance],
-             trajectory_step: Union[float, Distance, None] = None,
+             trajectory_step: Optional[Union[float, Distance]] = None,
              extra_data: bool = False,
              time_step: float = 0.0) -> HitResult:
         """Calculates the trajectory for the given shot parameters.
@@ -200,6 +200,7 @@ class Calculator(Generic[ConfigT]):
 
     @staticmethod
     def iter_engines():
+        """Iterates over all available engines in the entry points."""
         yield from _EngineLoader.iter_engines()
 
 

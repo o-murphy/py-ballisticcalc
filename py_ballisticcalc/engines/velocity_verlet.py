@@ -18,11 +18,15 @@ from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
 from py_ballisticcalc.vector import Vector
 
-__all__ = ('EulerIntegrationEngine',)
+__all__ = ('VelocityVerletIntegrationEngine',)
 
 
-class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
-    """Euler integration engine for ballistic calculations."""
+class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
+    """Velocity Verlet integration engine for ballistic calculations."""
+
+    @override
+    def get_calc_step(self, step: float = 0) -> float:
+        return super().get_calc_step(step)**0.5
 
     @override
     def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
@@ -57,14 +61,15 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # endregion
 
         # region Initialize velocity and position of projectile
-        velocity = props.muzzle_velocity_fps
+        relative_speed = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
         range_vector = Vector(.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
         velocity_vector: Vector = Vector(
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
-        ).mul_by_const(velocity)  # type: ignore
+        ).mul_by_const(relative_speed)  # type: ignore
+        acceleration_vector = Vector(0, 0, 0)
         # endregion
 
         # Ensure one iteration when record step is smaller than calc_step
@@ -108,15 +113,18 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             delta_time = props.calc_step_ft / max(1.0, relative_speed)
             # Drag is a function of air density and velocity relative to the air
             drag = density_factor * relative_speed * props.drag_by_mach(relative_speed / mach)
-            # Bullet velocity changes due to both drag and gravity
-            velocity_vector -= (relative_velocity * drag - self.gravity_vector) * delta_time  # type: ignore[operator]
-            # Bullet position changes by velocity time_deltas the time step
-            delta_range_vector = velocity_vector * delta_time
-            # Update the bullet position
-            range_vector += delta_range_vector  # type: ignore[operator]
+
+            # region Verlet integration
+            # Compute acceleration at current position
+            new_acceleration_vector = self.gravity_vector - drag * relative_velocity  # type: ignore[operator]
+            range_vector += (velocity_vector * delta_time +                           # type: ignore[operator]
+                             acceleration_vector * delta_time * delta_time * 0.5)     # type: ignore[operator]
+            velocity_vector += (acceleration_vector + new_acceleration_vector) * 0.5 * delta_time  # type: ignore
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
+            acceleration_vector = new_acceleration_vector
             time += delta_time
-            # endregion
+            # endregion Verlet integration
+            # endregion ballistic calculation step
 
             if (velocity < _cMinimumVelocity
                 or range_vector.y < _cMaximumDrop
@@ -140,7 +148,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(self._make_row(
                 props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
             )
-        logger.debug(f"Euler ran {it} iterations")
+        logger.debug(f"Velocity Verlet ran {it} iterations")
         if termination_reason is not None:
             raise RangeError(termination_reason, ranges)
         return ranges

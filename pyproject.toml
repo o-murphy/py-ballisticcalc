@@ -47,6 +47,7 @@ dependencies = [
 euler_engine = "py_ballisticcalc:EulerIntegrationEngine"
 rk4_engine = "py_ballisticcalc:RK4IntegrationEngine"
 scipy_engine = "py_ballisticcalc:SciPyIntegrationEngine"
+verlet_engine = "py_ballisticcalc:VelocityVerletIntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"

@@ -134,6 +134,7 @@ __all__ = [
     'EulerIntegrationEngine',
     'RK4IntegrationEngine',
     'SciPyIntegrationEngine',
+    'VelocityVerletIntegrationEngine',
     'SciPyEngineConfigDict',
     'Vector',
     'DragModel',
