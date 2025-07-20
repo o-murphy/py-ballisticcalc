@@ -86,10 +86,10 @@ plt.show()
 zero.winds = [Wind(Velocity.MPH(5), Angular.OClock(3))]
 range_card = calc.fire(zero, trajectory_range=1000)
 range_card.dataframe().to_clipboard()
-range_card.dataframe(True)[['distance', 'velocity', 'mach', 'time', 'target_drop', 'drop_adj', 'windage', 'windage_adj']].set_index('distance')
+range_card.dataframe(True)[['distance', 'velocity', 'mach', 'time', 'slant_height', 'drop_adj', 'windage', 'windage_adj']].set_index('distance')
 ```
 
-| distance | velocity | mach | time | target_drop | drop_adj | windage | windage_adj |
+| distance | velocity | mach | time | slant_height | drop_adj | windage | windage_adj |
 | -------- | -------- | ---- | ---- | ----------- | -------- | ------- | ----------- |
 | 0.0 yd | 2600.0 ft/s | 2.33 mach | 0.000 s | -2.0 inch | 0.00 mil | -0.0 inch | 0.00 mil |
 | 100.0 yd | 2398.1 ft/s | 2.15 mach | 0.120 s | -0.0 inch | -0.00 mil | 0.4 inch | 0.12 mil |
