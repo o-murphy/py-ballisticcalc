@@ -432,8 +432,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         """
         preferred_step = self._config.cMaxCalcStepSizeFeet
         if step == 0:
-            return preferred_step / 2.0
-        return min(step, preferred_step) / 2.0
+            return preferred_step
+        return min(step, preferred_step)
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:

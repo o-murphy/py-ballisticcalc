@@ -23,6 +23,14 @@ __all__ = ('EulerIntegrationEngine',)
 
 class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """Euler integration engine for ballistic calculations."""
+    def __init__(self, config: BaseEngineConfigDict):
+        super().__init__(config)
+        self.integration_step_count = 0
+
+    @override
+    def get_calc_step(self, step: float = 0) -> float:
+        """Euler steps have to be smaller to pass the same accuracy tests as other engines."""
+        return super().get_calc_step(step) / 2.0
 
     @override
     def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
@@ -80,10 +88,10 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
         last_recorded_range = 0.0
-        it = 0  # iteration counter
+        start_integration_step_count = self.integration_step_count
         while (range_vector.x <= maximum_range + min_step) or (
                 last_recorded_range <= maximum_range - 1e-6):
-            it += 1
+            self.integration_step_count += 1
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
@@ -140,7 +148,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(self._make_row(
                 props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
             )
-        logger.debug(f"Euler ran {it} iterations")
+        logger.debug(f"Euler ran {self.integration_step_count - start_integration_step_count} iterations")
         if termination_reason is not None:
             raise RangeError(termination_reason, ranges)
         return ranges

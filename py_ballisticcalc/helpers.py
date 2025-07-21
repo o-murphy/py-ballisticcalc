@@ -22,18 +22,70 @@ def must_fire(interface: Calculator, zero_shot: Shot, trajectory_range: Distance
         return HitResult(zero_shot, err.incomplete_trajectory, extra=extra_data), err
 
 
-def calculate_drag_free_range(
-        velocity_mps: float, angle_in_degrees: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+def vacuum_range(
+        velocity: float,
+        angle_in_degrees: float,
+        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
 ) -> float:
-    """Compute the max horizontal range for a projectile launched with `velocity_mps` at `angle_in_degrees`.
+    """
+    Distance for a vacuum ballistic trajectory to return to its starting height.
        Vacuum means projectile flies with no drag force, so this distance will overestimate
        range in presence of atmospheric drag force.
 
-       Returns:
-            The horizontal range in meters.
+    Args:
+        velocity: Launch velocity in units of gravity*seconds.
+        launch_angle_deg: Launch angle in degrees above horizontal.
+        gravity: Acceleration due to gravity (default: EARTH_GRAVITY_CONSTANT_IN_SI).
+
+    Returns:
+        The horizontal range in units of velocity*seconds.
     """
     angle_rad = math.radians(angle_in_degrees)
-    return (velocity_mps ** 2 * math.sin(2 * angle_rad)) / gravity
+    if gravity < 0:
+        gravity = -gravity
+    return (velocity ** 2 * math.sin(2 * angle_rad)) / gravity
+
+def vacuum_time_to_zero(
+        velocity: float,
+        launch_angle_deg: float,
+        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+) -> float:
+    """
+    Time for a ballistic trajectory (in a vacuum) to return to its starting height.
+
+    Args:
+        velocity: Launch velocity in units of gravity*seconds.
+        launch_angle_deg: Launch angle in degrees above horizontal.
+        gravity: Acceleration due to gravity (default: EARTH_GRAVITY_CONSTANT_IN_SI).
+
+    Returns:
+        Time in seconds to return to starting height.
+    """
+    angle_rad = math.radians(launch_angle_deg)
+    if gravity < 0:
+        gravity = -gravity
+    return 2 * velocity * math.sin(angle_rad) / gravity
+
+def solve_velocity_for_vacuum_time_to_zero(
+        time_to_zero: float,
+        launch_angle_deg: float,
+        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+) -> float:
+    """
+    Solves for the launch velocity (m/s) needed for vacuum_time_to_zero to equal time_to_zero.
+
+    Args:
+        time_to_zero: Desired time to return to starting height (seconds).
+        launch_angle_deg: Launch angle in degrees above horizontal.
+        gravity: Acceleration due to gravity (default: EARTH_GRAVITY_CONSTANT_IN_SI).
+
+    Returns:
+        Launch velocity in units of gravity*seconds.
+    """
+    angle_rad = math.radians(launch_angle_deg)
+    if gravity < 0:
+        gravity = -gravity
+    return (time_to_zero * gravity) / (2 * math.sin(angle_rad))
 
 
 class BisectWrapper:
@@ -142,6 +194,7 @@ def find_nearest_index_satisfying_monotonic_condition(arr: List[TrajectoryData],
     This performs bisect search for target value, and then compares differences from target value
     to previous and next index, and select index with the smallest difference.
     In case of tie, the smaller index is returned.
+
     Args:
         arr: The sorted array of trajectory data (always true for time, and almost always
                true for distances (except for extreme cases)).
@@ -216,25 +269,6 @@ def find_index_for_time_point(
         if abs(shot.trajectory[index].time - time) <= max_time_deviation_in_seconds:
             return index
         return -1
-    # This is original sequential code for search of index for time point
-
-    # min_time_diff = None
-    # min_index = -1
-    # for i, e in enumerate(shot.trajectory):
-    #     t_diff = abs(e.time - t)
-    #     if min_time_diff is None or t_diff < min_time_diff:
-    #         min_time_diff = t_diff
-    #         min_index = i
-    # if min_time_diff <= max_time_deviation_in_seconds:
-    #     if strictly_bigger_or_equal:
-    #         if shot.trajectory[min_index].time>=t:
-    #             return min_index
-    #         if min_index+1<len(shot.trajectory):
-    #             if shot.trajectory[min_index+1].time>=t:
-    #                 return min_index +1
-    #         return -1
-    #     return min_index
-    # return -1
 
 
 def find_time_for_distance_in_shot(

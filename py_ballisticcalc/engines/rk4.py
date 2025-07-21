@@ -19,14 +19,17 @@ __all__ = ('RK4IntegrationEngine',)
 
 
 class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
+    """Runge-Kutta 4th order integration engine for ballistic calculations."""
+    def __init__(self, config: BaseEngineConfigDict):
+        super().__init__(config)
+        self.integration_step_count = 0
 
     @override
     def get_calc_step(self, step: float = 0) -> float:
-        # RK steps can be larger than calc_step default on Euler integrator
-        # min_step ensures that with small record steps the loop runs far enough to get desired points
-        # adjust Euler default step to RK4 algorithm
-        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko
-        return super().get_calc_step(step) ** 0.5
+        # RK4 steps should be at least 4x larger than calc_step default on Euler integrator
+        #   because RK4 uses 4 evaluations of the function per step.
+        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko but beware step < 1!
+        return super().get_calc_step(step) * 4.0
 
     @override
     def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
@@ -35,17 +38,14 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         Calculate trajectory for specified shot
 
         Args:
-            props (_ShotProps):  Information about the shot.
-            maximum_range (float): Feet down range to stop calculation
-            record_step (float): Frequency (in feet down range) to record TrajectoryData
-            filter_flags (Union[TrajFlag, int]): Flags to filter trajectory data.
-            time_step (float, optional): If > 0 then record TrajectoryData after this many seconds elapse
-                since last record, as could happen when trajectory is nearly vertical
-                and there is too little movement downrange to trigger a record based on range.
-                Defaults to 0.0
+            shot_info (_ShotProps): Information about the shot.
+            maximum_range (float): Feet down range to stop calculation.
+            record_step (float): Frequency (in feet down range) to record TrajectoryData.
+            filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points.
+            time_step (float, optional): Maximum time (in seconds) between TrajectoryData records.
 
         Returns:
-            List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
+            List[TrajectoryData]: list of TrajectoryData
         """
 
         _cMinimumVelocity = self._config.cMinimumVelocity
@@ -54,9 +54,6 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         time: float = .0
-        # drag: float = .0
-
-        # guarantee that mach and density_factor would be referenced before assignment
         mach: float = .0
         density_factor: float = .0
 
@@ -82,16 +79,17 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                                             initial_position=range_vector, initial_velocity=velocity_vector,
                                             barrel_angle_rad=props.barrel_elevation_rad,
                                             look_angle_rad=props.look_angle_rad,
-                                            time_step=time_step)
+                                            time_step=time_step
+        )
 
         # region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
         last_recorded_range = 0.0
-        it = 0  # iteration counter
+        start_integration_step_count = self.integration_step_count
         while (range_vector.x <= maximum_range + min_step) or (
                 last_recorded_range <= maximum_range - 1e-6):
-            it += 1
+            self.integration_step_count += 1
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= wind_sock.next_range:  # require check before call to improve performance
@@ -112,25 +110,25 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = props.calc_step_ft / max(1.0, relative_speed)
+            delta_time = props.calc_step_ft / max(4.0, relative_speed)
             km = density_factor * props.drag_by_mach(relative_speed / mach)
             # drag = km * relative_speed
 
             # region RK4 integration
-            def f(v: Vector) -> Vector:  # dv/dt
+            def f(v: Vector) -> Vector:  # dv/dt (acceleration)
                 # Bullet velocity changes due to both drag and gravity
                 return self.gravity_vector - km * v * v.magnitude()  # type: ignore[operator]
 
-            v1 = delta_time * f(relative_velocity)
-            v2 = delta_time * f(relative_velocity + 0.5 * v1)  # type: ignore[operator]
-            v3 = delta_time * f(relative_velocity + 0.5 * v2)  # type: ignore[operator]
-            v4 = delta_time * f(relative_velocity + v3)  # type: ignore[operator]
-            p1 = delta_time * velocity_vector
-            p2 = delta_time * (velocity_vector + 0.5 * p1)  # type: ignore[operator]
-            p3 = delta_time * (velocity_vector + 0.5 * p2)  # type: ignore[operator]
-            p4 = delta_time * (velocity_vector + p3)  # type: ignore[operator]
-            velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (1 / 6.0)  # type: ignore[operator]
-            range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (1 / 6.0)  # type: ignore[operator]
+            v1 = f(relative_velocity)
+            v2 = f(relative_velocity + 0.5 * delta_time * v1)  # type: ignore[operator]
+            v3 = f(relative_velocity + 0.5 * delta_time * v2)  # type: ignore[operator]
+            v4 = f(relative_velocity + delta_time * v3)  # type: ignore[operator]
+            p1 = velocity_vector
+            p2 = velocity_vector + 0.5 * delta_time * v1  # type: ignore[operator]
+            p3 = velocity_vector + 0.5 * delta_time * v2  # type: ignore[operator]
+            p4 = velocity_vector + delta_time * v3  # type: ignore[operator]
+            velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)  # type: ignore[operator]
+            range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (delta_time / 6.0)  # type: ignore[operator]
             # endregion RK4 integration
 
             # region for Reference: Euler integration
@@ -142,10 +140,9 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
 
-            if (
-                    velocity < _cMinimumVelocity
-                    or range_vector.y < _cMaximumDrop
-                    or props.alt0_ft + range_vector.y < _cMinimumAltitude
+            if (velocity < _cMinimumVelocity
+                or range_vector.y < _cMaximumDrop
+                or props.alt0_ft + range_vector.y < _cMinimumAltitude
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached
@@ -165,7 +162,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(self._make_row(
                 props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
             )
-        logger.debug(f"RK4 ran {it} iterations")
+        logger.debug(f"RK4 ran {self.integration_step_count - start_integration_step_count} iterations")
         if termination_reason is not None:
             raise RangeError(termination_reason, ranges)
         return ranges

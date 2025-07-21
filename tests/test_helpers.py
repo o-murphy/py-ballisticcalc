@@ -6,7 +6,7 @@ import pytest
 
 from py_ballisticcalc import Distance, DragModel, TableG1, Weight, Weapon, Ammo, Shot, Velocity, \
     Angular, Calculator
-from py_ballisticcalc.helpers import calculate_drag_free_range
+from py_ballisticcalc.helpers import vacuum_range
 from py_ballisticcalc.helpers import find_index_of_point_for_distance, find_index_for_time_point
 
 
@@ -19,12 +19,11 @@ def one_degree_shot(loaded_engine_instance):
         diameter=Distance.Millimeter(23),
         length=Distance.Millimeter(108.2),
     )
-    weapon = Weapon()
     muzzle_velocity = Velocity.MPS(930)
     ammo = Ammo(drag_model, muzzle_velocity)
     angle_in_degrees = 1
-    shot = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(angle_in_degrees))
-    max_drag_free_range = calculate_drag_free_range(
+    shot = Shot(ammo=ammo, relative_angle=Angular.Degree(angle_in_degrees))
+    max_drag_free_range = vacuum_range(
         muzzle_velocity >> Velocity.MPS, angle_in_degrees
     )
     calc = Calculator(engine=loaded_engine_instance)
@@ -48,7 +47,7 @@ def one_degree_shot(loaded_engine_instance):
 def test_calculate_drag_free_range(
         velocity, angle, expected_range
 ):
-    range = calculate_drag_free_range(velocity, angle)
+    range = vacuum_range(velocity, angle)
     assert pytest.approx(range, 0.01) == expected_range
 
 

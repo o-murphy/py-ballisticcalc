@@ -29,7 +29,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
+from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.vector import Vector
 
@@ -197,6 +197,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         """
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
+        self.integration_step_count = 0
+        self.eval_points: List[float] = []  # Points at which diff_eq is called
 
     @override
     def _find_max_range(self, props: _ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
@@ -233,13 +235,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self._find_apex(props).slant_distance >> Distance.Foot
             props.barrel_elevation_rad = angle_rad
-            try:
-                t = self._integrate(props, 9e9, 9e9, TrajFlag.NONE, stop_at_zero=True)[-1]
+            try:  # TODO: We really need to get the max point, not just take whatever happens at the end(?)
+                t = self._integrate(props, 9e9, 9e9, TrajFlag.ZERO_DOWN, stop_at_zero=True)
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
-                t = e.incomplete_trajectory[-1]
-            return (t.slant_distance >> Distance.Foot) - (t.slant_height >> Distance.Foot)
+                t = e.incomplete_trajectory
+            hit = HitResult(props.shot, t, True)
+            cross = hit.flag(TrajFlag.ZERO_DOWN)
+            if cross is None:
+                cross = t[-1]  # Fallback to the last point if no zero crossing found
+            return (cross.slant_distance >> Distance.Foot) - (cross.slant_height >> Distance.Foot)
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
                               bounds=(float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),
@@ -439,17 +445,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                    filter_flags: Union[TrajFlag, int], time_step: float = 0.0, stop_at_zero: bool = False) -> List[
         TrajectoryData]:
         """
-        Calculate trajectory for specified shot
+        Calculate trajectory for specified shot.
 
         Args:
-            shot_info (_ShotProps):  Information about the shot
-            maximum_range (float): Feet down range to stop calculation
-            record_step (float): Frequency (in feet down range) to record TrajectoryData
-            filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points
-            time_step (float, optional): Maximum time (in seconds) between TrajectoryData records
+            shot_info (_ShotProps): Information about the shot.
+            maximum_range (float): Feet down range to stop calculation.
+            record_step (float): Frequency (in feet down range) to record TrajectoryData.
+            filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points.
+            time_step (float, optional): Maximum time (in seconds) between TrajectoryData records.
 
         Returns:
-            List[TrajectoryData]: list of TrajectoryData, one for each dist_step, out to max_range
+            List[TrajectoryData]: list of TrajectoryData
         """
 
         try:
@@ -474,7 +480,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
               math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
               math.sin(props.barrel_elevation_rad) * velocity,
               math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity]
-
         # endregion
 
         # region SciPy integration
@@ -485,6 +490,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             :param y: State vector [x, y, z, vx, vy, vz]
             :return: Derivative of state vector
             """
+            self.integration_step_count += 1
+            # self.eval_points.append(t)  # For inspection/debug
             x, y, z = s[:3]  # pylint: disable=unused-variable
             vx, vy, vz = s[3:]
             velocity_vector = Vector(vx, vy, vz)
@@ -506,7 +513,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             dvydt = self.gravity_vector.y - drag * relative_velocity.y
             dvzdt = -drag * relative_velocity.z
             return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
-
         # endregion SciPy integration
 
         @scipy_event(terminal=True)
@@ -526,9 +532,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         traj_events: List[SciPyEvent] = [event_max_range, event_max_drop, event_min_velocity]
 
+        slant_sine = math.sin(props.look_angle_rad)
+        slant_cosine = math.cos(props.look_angle_rad)
         def event_zero_crossing(t: float, s: Any) -> np.floating:  # Look for trajectory crossing sight line
-            # Solve for y = x * tan(look_angle)
-            return s[1] - s[0] * math.tan(props.look_angle_rad)
+            return s[1] * slant_cosine - s[0] * slant_sine  # Compute slant_height
 
         if filter_flags & TrajFlag.ZERO:
             zero_crossing = scipy_event(terminal=False, direction=0)(event_zero_crossing)
@@ -550,7 +557,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             logger.error("No solution found by SciPy integration.")
             raise RuntimeError(f"No solution found by SciPy integration: {sol.message}")
 
-        logger.debug(f"SciPy integration complete with {sol.nfev} function calls.")
+        logger.debug(f"SciPy integration via {self._config.integration_method} done with {sol.nfev} function calls.")
         termination_reason = None
         if sol.status == 1 and sol.t_events:  # A termination event occurred
             if len(sol.t_events) > 0:
@@ -627,7 +634,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
                 # If we ended with an exceptional event then also record the last point calculated
                 #   (if it is not already recorded).
-                if termination_reason and t_at_x and t_at_x[-1] < sol.t[-1]:
+                if termination_reason and ((len(t_at_x) == 0) or (t_at_x and t_at_x[-1] < sol.t[-1])):
                     t_at_x.append(sol.t[-1])
                     states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
@@ -640,7 +647,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 if time_step > 0.0:
                     time_of_last_record = 0.0
                     for next_record in range(1, len(ranges)):
-                        while ranges[next_record].time - time_of_last_record > time_step:
+                        while ranges[next_record].time - time_of_last_record > time_step + self.SEPARATE_ROW_TIME_DELTA:
                             time_of_last_record += time_step
                             ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
                     ranges.sort(key=lambda t: t.time)  # Sort by time
@@ -684,13 +691,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
                 if (filter_flags & TrajFlag.ZERO and sol.t_events and len(sol.t_events) > 3
                         and sol.t_events[-1].size > 0):
-                    tan_look_angle = math.tan(props.look_angle_rad)
                     for t_cross in sol.t_events[-1]:
                         state = sol.sol(t_cross)
                         # To determine crossing direction, sample after the crossing
                         dt = 1e-8  # Small time offset
                         state_after = sol.sol(t_cross + dt)
-                        y_after = state_after[1] - state_after[0] * tan_look_angle
+                        y_after = event_zero_crossing(t_cross + dt, state_after)
                         if y_after > 0:
                             direction = TrajFlag.ZERO_UP
                         else:

@@ -6,17 +6,12 @@ from py_ballisticcalc.unit import *
 from py_ballisticcalc import (
     Atmo,
     Calculator,
-    SciPyEngineConfigDict,
     BaseEngineConfigDict,
     RangeError,
     HitResult,
-    DragModel,
-    TableG1,
-    Ammo,
-    Weapon,
-    Shot,
 )
 from py_ballisticcalc.trajectory_data import TrajFlag
+from tests.fixtures_and_helpers import create_23_mm_shot
 
 DISTANCES_FOR_CHECKING = (
     # list(range(100, 1000, 100)) +
@@ -26,53 +21,6 @@ DISTANCES_FOR_CHECKING = (
     # list(range(6600, 7100, 100)) +
     [7126.05]
 )
-
-def create_zero_velocity_zero_min_altitude_calc(engine_name, method, max_iteration:int=60):
-    config = SciPyEngineConfigDict(
-        cMinimumVelocity=0,
-        cMinimumAltitude=0,
-        integration_method=method,
-        cMaxIterations=max_iteration
-    )
-    return Calculator(config, engine=engine_name)
-
-@pytest.fixture(scope="session")
-def scipy_calc():
-    return create_zero_velocity_zero_min_altitude_calc("scipy_engine", "RK45")
-
-def create_23_mm_shot():
-    drag_model = DragModel(
-        bc=0.759,
-        drag_table=TableG1,
-        weight=Weight.Gram(108),
-        diameter=Distance.Millimeter(23),
-        length=Distance.Millimeter(108.2),
-    )
-    ammo = Ammo(drag_model, Velocity.MPS(930))
-    gun = Weapon()
-    shot = Shot(
-        weapon=gun,
-        ammo=ammo,
-    )
-    return shot
-
-
-def create_7_62_mm_shot():
-    diameter = Distance.Millimeter(7.62)
-    length: Distance = Distance.Millimeter(32.5628)
-    weight = Weight.Grain(180)
-    dm = DragModel(bc=0.2860,
-                   drag_table=TableG1,
-                   weight=weight,
-                   diameter=diameter,
-                   length=length)
-    ammo = Ammo(dm, mv=Velocity.MPS(800), powder_temp=Temperature.Celsius(20), use_powder_sensitivity=False)
-    ammo.calc_powder_sens(other_velocity=Velocity.MPS(805), other_temperature=Temperature.Celsius(15))
-    current_atmo = Atmo(altitude=Distance.Meter(400), pressure=Pressure.hPa(967.24), temperature=Temperature.Celsius(20),
-                        humidity=60)
-    gun = Weapon(sight_height=Distance.Millimeter(-100), twist=Distance.Millimeter(300))
-    return Shot(weapon=gun, ammo=ammo, atmo=current_atmo)
-
 
 @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
 def test_set_weapon_zero(distance, loaded_engine_instance):
