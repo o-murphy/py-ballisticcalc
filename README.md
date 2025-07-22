@@ -80,9 +80,6 @@ https://stand-with-ukraine.pp.ua
 * **[Integration Engines](#integration-engines)**
   * [Modifying Presets](#modifying-presets)
   * [Custom integration engines](#custom-integration-engines)
-    * [Create custom engine](#create-custom-engine-module)
-    * [Custom engine usage](#custom-engine-usage)
-    * [Test custom engine](#test-your-custom-engine)
 
 * **[Concepts](#concepts)**
   * [Coordinates](#coordinates)
@@ -265,7 +262,7 @@ print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
 print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
 ```
 
-### Use new method to set preferred units/settings globally for the venv or the user
+**Use new method to set preferred units/settings globally for the venv or the user:**
 
 Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
 Or place this file in user's home directory. _(The file in project root has priority.)_
@@ -293,7 +290,7 @@ max_calc_step_size = { value = 0.5, units = "Foot" }
 # ...
 ```
 
-#### Load .pybc.toml presets
+**Load .pybc.toml presets**
 
 ```python
 from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
@@ -305,7 +302,7 @@ loadMixedUnits()
 
 (Use just one of these three methods – only the last one called counts).
 
-#### Custom .pybc.toml
+**Custom .pybc.toml**
 
 ```python
 from py_ballisticcalc import basicConfig
@@ -326,6 +323,8 @@ basicConfig("path/to/your_config.toml")
 | `cythonized_rk4_engine`   |  :red_circle:  | 50x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Runge-Kutta 4th-order integration.                                                                          |
 | `cythonized_euler_engine` |  :red_circle:  | 40x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                                                                                          |
 | `scipy_engine` **(BETA)** |  :red_circle:  | 10x faster                           | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.                                                                       |
+
+[Benchmark Vacuum Trajectory](examples/BenchmarkVacuumTraj.ipynb) contains a detailed analysis and comparison of the engines.
 
 ## Modifying presets
 
@@ -348,7 +347,7 @@ calc = Calculator(config=config)
 
 ## Custom integration engines
 
-### Create custom engine module
+**Create custom engine module**
 
 To define custom integrator engine you can create separate module that should have class that implements
 `py_ballisticcalc.generics.EngineProtocol`. Also you have to add entry point `py_ballisticcalc.my_awesome_engine` in your module `pyproject.toml`/`setup.py`.  Entry point name should end with `_engine`.
@@ -358,7 +357,7 @@ To define custom integrator engine you can create separate module that should ha
 my_awesome_engine = "my_awesome_engine_library.my_awesome_module:MyAwesomeEngine"
 ```
 
-### Custom engine usage
+**Custom engine usage**
 
 For `Calculator` instance definition with custom engine, install your library to virtual env and use your library name as `_engine` argument.  It should load your engine class in background.
 
@@ -370,7 +369,7 @@ calc = Calculator(engine="my_awesome_engine")
 calc = Calculator(engine="my_awesome_engine_library.my_awesome_module:MyAwesomeEngine")
 ```
 
-### Test your custom engine
+**Test your custom engine**
 
 To test your custom engine compatibility you can use predefined tests from `py_ballisticcalc`
 
