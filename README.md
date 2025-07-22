@@ -62,22 +62,24 @@ https://stand-with-ukraine.pp.ua
 ### Table of contents
 
 * **[Installation](#installation)**
-    * [Latest stable](#latest-stable-release-from-pypi)
+    * [Latest stable](https://pypi.org/project/py-ballisticcalc/)
 
   [//]: # (  * [From sources]&#40;#installing-from-sources&#41;)
   [//]: # (  * [Clone and build]&#40;#clone-and-build&#41;)
 
 * **[Usage](#usage)**
-    * [Simple example](#simple-zero)
-    * [Plot trajectory](#plot-trajectory-with-danger-space)
-    * [Range card](#plot-trajectory-with-danger-space)
-    * [Complex example](#complex-example)
-    * [Preferences](#preferences)
-    * [Units of measure](#units)
+  * [Simple example](#simple-zero)
+  * [Plot trajectory](#plot-trajectory-with-danger-space)
+  * [Range card](#plot-trajectory-with-danger-space)
+  * [Complex example](#complex-example)
+
+* [**Units** of measure](#units)
+  * [Examples](#examples)
+  * [Preferences](#preferences)
 
 * **[Integration Engines](#integration-engines)**
-
-* [Custom integration engines](#custom-integration-engines)
+  * [Modifying Presets](#modifying-presets)
+  * [Custom integration engines](#custom-integration-engines)
     * [Create custom engine](#create-custom-engine-module)
     * [Custom engine usage](#custom-engine-usage)
     * [Test custom engine](#test-your-custom-engine)
@@ -92,9 +94,7 @@ https://stand-with-ukraine.pp.ua
 
 # Installation
 
-[//]: # (```python setup.py build_ext --inplace```)
-
-[//]: # (## Latest stable release from pypi)
+## pip
 
 ```shell
 pip install py-ballisticcalc
@@ -104,6 +104,14 @@ pip install py-ballisticcalc[exts]
 
 # Using matplotlib and pandas uses additional dependencies
 pip install py-ballisticcalc[charts]
+```
+
+## uv
+
+```shell
+uv sync
+
+uv sync --dev --extra exts
 ```
 
 # Usage
@@ -188,97 +196,9 @@ print(
     Barrel elevation for 500.0m zero: 4.69mil
     Muzzle velocity at zero temperature 5.0°C is 830.0m/s
 
-## Preferences
+# Units
 
-#### 1. To change library default units directly from code: use `PreferredUnits` object
-
-```python
-from py_ballisticcalc import PreferredUnits, Velocity, Angular, Temperature, Distance
-
-# Change default library units
-PreferredUnits.velocity = Velocity.MPS
-PreferredUnits.adjustment = Angular.Mil
-PreferredUnits.temperature = Temperature.Celsius
-PreferredUnits.distance = Distance.Meter
-PreferredUnits.sight_height = Distance.Centimeter
-PreferredUnits.drop = Distance.Centimeter
-
-print(f'PreferredUnits: {str(PreferredUnits)}')
-print(f'Default distance unit: {PreferredUnits.distance.name}')
-
-# Can create value in default unit with either float or another unit of same type
-print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
-print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
-```
-
-#### 2. Use `BaseEngineConfigDict`:
-
-```python
-from py_ballisticcalc import Calculator, InterfaceConfigDict
-
-config = InterfaceConfigDict(
-    max_calc_step_size_feet=1.,
-    # cZeroFindingAccuracy= ...,
-    cMinimumVelocity=0,
-    # cMaximumDrop= ...,
-    # cMaxIterations= ...,
-    # cGravityConstant= ...,
-    # cMinimumAltitude= ...,
-)
-calc = Calculator(config=config)
-```
-
-## Units
-
-#### Use new method to set preferred units/settings globally for the venv or the user
-
-Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
-Or place this file in user's home directory. _(The file in project root has priority.)_
-Use `loadMetricUnits()`, `loadImperialUnits()` or `loadMixedUnits()` to manualy load one of presets.
-You can use `basicConfig()` function to load your custom `.toml` file
-
-The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
-and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets). They include settings for [metric](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-imperial.toml) and [mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-mixed.toml) mode.
-Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for diameter, length, weight and adjustment units.
-
-```toml
-# Config template for py_ballisticcalc
-
-title = "standard py_ballisticcalc config template"
-version = "2.0.0b4"
-
-[pybc.preferred_units]
-angular = 'Degree'
-distance = 'Yard'
-velocity = 'FPS'
-# ... other there
-
-[pybc.calculator]
-max_calc_step_size = { value = 0.5, units = "Foot" }
-# ...
-```
-
-##### Load .pybc.toml presets
-
-```python
-from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
-
-loadImperialUnits()
-loadMetricUnits()
-loadMixedUnits()
-```
-
-(Use just one of these three methods – only the last one called counts).
-
-##### Custom .pybc.toml
-
-```python
-from py_ballisticcalc import basicConfig
-
-basicConfig("path/to/your_config.toml")
-```
-
-#### Available manipulations with units
+## Examples
 
 ```python
 from py_ballisticcalc.unit import *
@@ -322,6 +242,78 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1 * 
 # >>> True, compare unit with float by raw value
 ```
 
+## Preferences
+
+To change default units directly from code: use `PreferredUnits` object
+
+```python
+from py_ballisticcalc import PreferredUnits, Velocity, Angular, Temperature, Distance
+
+# Change default library units
+PreferredUnits.velocity = Velocity.MPS
+PreferredUnits.adjustment = Angular.Mil
+PreferredUnits.temperature = Temperature.Celsius
+PreferredUnits.distance = Distance.Meter
+PreferredUnits.sight_height = Distance.Centimeter
+PreferredUnits.drop = Distance.Centimeter
+
+print(f'PreferredUnits: {str(PreferredUnits)}')
+print(f'Default distance unit: {PreferredUnits.distance.name}')
+
+# Can create value in default unit with either float or another unit of same type
+print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
+print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
+```
+
+### Use new method to set preferred units/settings globally for the venv or the user
+
+Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
+Or place this file in user's home directory. _(The file in project root has priority.)_
+Use `loadMetricUnits()`, `loadImperialUnits()` or `loadMixedUnits()` to manualy load one of presets.
+You can use `basicConfig()` function to load your custom `.toml` file
+
+The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
+and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets). They include settings for [metric](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-imperial.toml) and [mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-mixed.toml) mode.
+Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for diameter, length, weight and adjustment units.
+
+```toml
+# Config template for py_ballisticcalc
+
+title = "standard py_ballisticcalc config template"
+version = "2.0.0b4"
+
+[pybc.preferred_units]
+angular = 'Degree'
+distance = 'Yard'
+velocity = 'FPS'
+# ... other there
+
+[pybc.calculator]
+max_calc_step_size = { value = 0.5, units = "Foot" }
+# ...
+```
+
+#### Load .pybc.toml presets
+
+```python
+from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
+
+loadImperialUnits()
+loadMetricUnits()
+loadMixedUnits()
+```
+
+(Use just one of these three methods – only the last one called counts).
+
+#### Custom .pybc.toml
+
+```python
+from py_ballisticcalc import basicConfig
+
+basicConfig("path/to/your_config.toml")
+```
+
+
 # Integration Engines
 
 ## Comparison
@@ -335,7 +327,26 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1 * 
 | `cythonized_euler_engine` |  :red_circle:  | 40x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                                                                                          |
 | `scipy_engine` **(BETA)** |  :red_circle:  | 10x faster                           | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.                                                                       |
 
-# Custom integration engines
+## Modifying presets
+
+Using `BaseEngineConfigDict`:
+
+```python
+from py_ballisticcalc import Calculator, BaseEngineConfigDict
+
+config = BaseEngineConfigDict(
+    max_calc_step_size_feet=1.,
+    # cZeroFindingAccuracy= ...,
+    cMinimumVelocity=0,
+    # cMaximumDrop= ...,
+    # cMaxIterations= ...,
+    # cGravityConstant= ...,
+    # cMinimumAltitude= ...,
+)
+calc = Calculator(config=config)
+```
+
+## Custom integration engines
 
 ### Create custom engine module
 
@@ -380,6 +391,8 @@ To test your custom engine compatibility you can use predefined tests from `py_b
 
 ## Coordinates
 
+![Ballistic coordinates](doc/ballistics_coordinates.svg)
+
 **Gravity gives $y$:** In ballistics, everything is referenced to the direction of gravity. The gravity vector points "down," and this defines the vertical direction. In 3D Cartesian coordinates $(x, y, z)$, the gravity vector is $(0, -g, 0)$, where $g$ is acceleration due to gravity (typically 32 feet/second² or 9.8 meters/second²). The $y$ coordinate describes vertical (up/down) position.
 
 **Horizontal:** Having defined the vertical axis using the gravity vector, we can then define *horizontal* as any vector perpendicular (or *orthogonal*) to the direction of gravity.
@@ -387,8 +400,6 @@ To test your custom engine compatibility you can use predefined tests from `py_b
 **Sight gives $x$:** The second key reference in ballistics is the **sight line**. We set the origin of our coordinate system $(0, 0, 0)$ at the sight, which is usually either the shooter’s eye or the center of a sighting device like a scope. The *sight line* is the ray starting at the origin and pointing in the exact direction of the sight.  The $x$ coordinate measures distance from the sight along a horizontal sight line.
 
 The $z$ coordinate describes position orthogonal to both the direction of gravity and the sight line. From the perspective of the sight, this is lateral position, also known as windage.
-
-![Ballistic coordinates](doc/ballistics_coordinates.svg)
 
 ## Look angle
 
