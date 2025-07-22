@@ -55,7 +55,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             V3dT  delta_range_vector, velocity_adjusted
             V3dT  gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
             double min_step
-            double calc_step = self._shot_s.calc_step
+            double calc_step = self._shot_s.calc_step / 2.0
 
             # region Initialize wind-related variables to first wind reading (if any)
             V3dT wind_vector = WindSock_t_currentVector(self._wind_sock)
@@ -76,6 +76,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
         cdef:
             double last_recorded_range
+            str termination_reason
 
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity
@@ -97,11 +98,11 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
-
+        termination_reason = None
         last_recorded_range = 0.0
 
         while (range_vector.x <= maximum_range + min_step) or (
-                filter_flags and last_recorded_range <= maximum_range - 1e-6):
+                last_recorded_range <= maximum_range - 1e-6):
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance
@@ -113,16 +114,13 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                 self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
 
             # region Check whether to record TrajectoryData row at current point
-            if filter_flags:  # require check before call to improve performance
-                # Record TrajectoryData row
-                data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
-                if data is not None:
-                    ranges.append(create_trajectory_row(
-                        data.time, &data.position, &data.velocity, data.mach,
-                        &self._shot_s,
-                        density_factor, drag, data_filter.current_flag
-                    ))
-                    last_recorded_range = data.position.x
+            data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
+            if data is not None:
+                ranges.append(create_trajectory_row(
+                    data.time, &data.position, &data.velocity, data.mach,
+                    &self._shot_s, density_factor, drag, data_filter.current_flag
+                ))
+                last_recorded_range = data.position.x
             # endregion
 
             #region Ballistic calculation step
@@ -145,30 +143,36 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             velocity = mag(&velocity_vector)
             time += delta_time
 
-            if (
-                    velocity < _cMinimumVelocity
-                    or range_vector.y < _cMaximumDrop
-                    or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
+            if (velocity < _cMinimumVelocity
+                or range_vector.y < _cMaximumDrop
+                or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
             ):
+                if velocity < _cMinimumVelocity:
+                    termination_reason = RangeError.MinimumVelocityReached
+                elif range_vector.y < _cMaximumDrop:
+                    termination_reason = RangeError.MaximumDropReached
+                else:
+                    termination_reason = RangeError.MinimumAltitudeReached
+                break
+            #endregion Ballistic calculation step
+        #endregion Trajectory Loop
+        data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
+        if data is not None:
+            ranges.append(create_trajectory_row(
+                data.time, &data.position, &data.velocity, data.mach,
+                &self._shot_s, density_factor, drag, data_filter.current_flag
+            ))
+        # Ensure that we have at least two data points in trajectory, or 1 if filter_flags==NONE
+        # ... as well as last point if we had an incomplete trajectory
+        if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
+            if len(ranges) > 0 and ranges[-1].time == time:  # But don't duplicate the last point.
+                pass
+            else:
                 ranges.append(create_trajectory_row(
                     time, &range_vector, &velocity_vector, mach,
-                    &self._shot_s,
-                    density_factor, drag, data_filter.current_flag
+                    &self._shot_s, density_factor, drag, TrajFlag_t.NONE
                 ))
 
-                if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
-                elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
-                else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
-            #endregion
-        #endregion
-        # Ensure that we have at least two data points in trajectory
-        if len(ranges) < 2:
-            ranges.append(create_trajectory_row(
-                time, &range_vector, &velocity_vector, mach, &self._shot_s,
-                density_factor, drag, TrajFlag_t.NONE))
-
+        if termination_reason is not None:
+            raise RangeError(termination_reason, ranges)
         return ranges

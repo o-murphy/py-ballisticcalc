@@ -41,10 +41,11 @@ __all__ = (
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self, double step = 0.0):
-        step = CythonizedBaseIntegrationEngine.get_calc_step(self, step)  # likely a super().get_calc_step(step)
-        # adjust Euler default step to RK4 algorythm
-        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko
-        return pow(step, 0.5)
+        # RK4 steps should be at least 4x larger than calc_step default on Euler integrator
+        #   because RK4 uses 4 evaluations of the function per step.
+        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko but beware step < 1!
+        step = CythonizedBaseIntegrationEngine.get_calc_step(self, step)  # like super().get_calc_step(step)
+        return 4.0 * step
 
     cdef list[object] _integrate(CythonizedRK4IntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
@@ -56,7 +57,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             double time = .0
             double drag = .0
             V3dT range_vector, velocity_vector
-            V3dT delta_range_vector, velocity_adjusted
+            V3dT relative_velocity
             V3dT gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
             double min_step
             double calc_step = self._shot_s.calc_step
@@ -75,13 +76,13 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             double _cMinimumAltitude = self._config_s.cMinimumAltitude
 
         cdef:
-            double last_recorded_range, rk_calc_step
+            double last_recorded_range
+            str termination_reason
 
         # temp variables
         cdef:
             double relative_speed
-            V3dT relative_velocity
-            V3dT _dir_vector, _temp_add_operand, _temp_v_result, _temp_p_result
+            V3dT _dir_vector, _temp_add_operand, _temp_v_result
             V3dT _v_sum_intermediate, _p_sum_intermediate
             V3dT v1, v2, v3, v4, p1, p2, p3, p4
 
@@ -108,11 +109,11 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
-
+        termination_reason = None
         last_recorded_range = 0.0
 
         while (range_vector.x <= maximum_range + min_step) or (
-                filter_flags and last_recorded_range <= maximum_range - 1e-6):
+                last_recorded_range <= maximum_range - 1e-6):
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance
@@ -121,19 +122,16 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
             Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._shot_s.atmo,
-                                                        self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
+                self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
 
             # region Check whether to record TrajectoryData row at current point
-            if filter_flags:  # require check before call to improve performance
-                # Record TrajectoryData row
-                data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
-                if data is not None:
-                    ranges.append(create_trajectory_row(
-                        data.time, &data.position, &data.velocity, data.mach,
-                        &self._shot_s,
-                        density_factor, drag, data_filter.current_flag
-                    ))
-                    last_recorded_range = data.position.x
+            data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
+            if data is not None:
+                ranges.append(create_trajectory_row(
+                    data.time, &data.position, &data.velocity, data.mach,
+                    &self._shot_s, density_factor, drag, data_filter.current_flag
+                ))
+                last_recorded_range = data.position.x
             # endregion
 
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
@@ -141,7 +139,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             relative_speed = mag(&relative_velocity)
 
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = calc_step / fmax(1.0, relative_speed)
+            delta_time = calc_step / fmax(4.0, relative_speed)
             km = density_factor * ShotData_t_dragByMach(&self._shot_s, relative_speed / mach)
             drag = km * relative_speed
 
@@ -152,79 +150,71 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             #     # Bullet velocity changes due to both drag and gravity
             #     return self.gravity_vector - km * v * v.magnitude()
             #
-            # v1 = delta_time * f(relative_velocity)
-            # v2 = delta_time * f(relative_velocity + 0.5 * v1)
-            # v3 = delta_time * f(relative_velocity + 0.5 * v2)
-            # v4 = delta_time * f(relative_velocity + v3)
-            # p1 = delta_time * velocity_vector
-            # p2 = delta_time * (velocity_vector + 0.5 * p1)
-            # p3 = delta_time * (velocity_vector + 0.5 * p2)
-            # p4 = delta_time * (velocity_vector + p3)
-            # velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (1 / 6.0)
-            # range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (1 / 6.0)
-            # # endregion RK4 integration
+            # v1 = f(relative_velocity)
+            # v2 = f(relative_velocity + 0.5 * delta_time * v1)
+            # v3 = f(relative_velocity + 0.5 * delta_time * v2)
+            # v4 = f(relative_velocity + delta_time * v3)
+            # p1 = velocity_vector
+            # p2 = (velocity_vector + 0.5 * delta_time * v1)
+            # p3 = (velocity_vector + 0.5 * delta_time * v2)
+            # p4 = (velocity_vector + delta_time * v3)
+            # velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)
+            # range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (delta_time / 6.0)
+            # # endregion for Reference
 
-            # v1 = delta_time * f(relative_velocity)
-            _temp_v_result = _f_dvdt(&relative_velocity, &gravity_vector, km)
-            v1 = mulS(&_temp_v_result, delta_time)
+            # v1 = f(relative_velocity)
+            v1 = _f_dvdt(&relative_velocity, &gravity_vector, km)
 
-            # v2 = delta_time * f(relative_velocity + 0.5 * v1)
-            _temp_add_operand = mulS(&v1, 0.5)  # Store temporary result
+            # v2 = f(relative_velocity + 0.5 * delta_time * v1)
+            _temp_add_operand = mulS(&v1, 0.5 * delta_time)
             _temp_v_result = add(&relative_velocity, &_temp_add_operand)
-            _temp_v_result = _f_dvdt(&_temp_v_result, &gravity_vector, km)
-            v2 = mulS(&_temp_v_result, delta_time)
+            v2 = _f_dvdt(&_temp_v_result, &gravity_vector, km)
 
-            # v3 = delta_time * f(relative_velocity + 0.5 * v2)
-            _temp_add_operand = mulS(&v2, 0.5)  # Store temporary result
+            # v3 = f(relative_velocity + 0.5 * delta_time * v2)
+            _temp_add_operand = mulS(&v2, 0.5 * delta_time)
             _temp_v_result = add(&relative_velocity, &_temp_add_operand)
-            _temp_v_result = _f_dvdt(&_temp_v_result, &gravity_vector, km)
-            v3 = mulS(&_temp_v_result, delta_time)
+            v3 = _f_dvdt(&_temp_v_result, &gravity_vector, km)
 
-            # v4 = delta_time * f(relative_velocity + v3)
-            _temp_v_result = add(&relative_velocity, &v3)
-            _temp_v_result = _f_dvdt(&_temp_v_result, &gravity_vector, km)
-            v4 = mulS(&_temp_v_result, delta_time)
+            # v4 = f(relative_velocity + delta_time * v3)
+            _temp_add_operand = mulS(&v3, delta_time)
+            _temp_v_result = add(&relative_velocity, &_temp_add_operand)
+            v4 = _f_dvdt(&_temp_v_result, &gravity_vector, km)
 
-            # p1 = delta_time * velocity_vector
-            p1 = mulS(&velocity_vector, delta_time)
+            # p1 = velocity_vector
+            p1 = velocity_vector
 
-            # p2 = delta_time * (velocity_vector + 0.5 * p1)
-            _temp_add_operand = mulS(&p1, 0.5)  # Store temporary result
-            _temp_p_result = add(&velocity_vector, &_temp_add_operand)
-            p2 = mulS(&_temp_p_result, delta_time)
+            # p2 = (velocity_vector + 0.5 * delta_time * v1)
+            _temp_add_operand = mulS(&v1, 0.5 * delta_time)
+            p2 = add(&velocity_vector, &_temp_add_operand)
 
-            # p3 = delta_time * (velocity_vector + 0.5 * p2)
-            _temp_add_operand = mulS(&p2, 0.5)  # Store temporary result
-            _temp_p_result = add(&velocity_vector, &_temp_add_operand)
-            p3 = mulS(&_temp_p_result, delta_time)
+            # p3 = (velocity_vector + 0.5 * delta_time * v2)
+            _temp_add_operand = mulS(&v2, 0.5 * delta_time)
+            p3 = add(&velocity_vector, &_temp_add_operand)
 
-            # p4 = delta_time * (velocity_vector + p3)
-            _temp_p_result = add(&velocity_vector, &p3)
-            p4 = mulS(&_temp_p_result, delta_time)
+            # p4 = (velocity_vector + delta_time * v3)
+            _temp_add_operand = mulS(&v3, delta_time)
+            p4 = add(&velocity_vector, &_temp_add_operand)
 
-            # velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (1 / 6.0)
+            # velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)
             # Break down the sum and scalar multiplication to avoid "non-lvalue" errors
             _temp_add_operand = mulS(&v2, 2.0)
             _v_sum_intermediate = add(&v1, &_temp_add_operand)
-
             _temp_add_operand = mulS(&v3, 2.0)
             _v_sum_intermediate = add(&_v_sum_intermediate, &_temp_add_operand)
-
             _v_sum_intermediate = add(&_v_sum_intermediate, &v4)
-            _v_sum_intermediate = mulS(&_v_sum_intermediate, (1.0 / 6.0))
+            _v_sum_intermediate = mulS(&_v_sum_intermediate, (delta_time / 6.0))
             velocity_vector = add(&velocity_vector, &_v_sum_intermediate)
 
-            # range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (1 / 6.0)
+            # range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (delta_time / 6.0)
             # Break down the sum and scalar multiplication
             _temp_add_operand = mulS(&p2, 2.0)
             _p_sum_intermediate = add(&p1, &_temp_add_operand)
-
             _temp_add_operand = mulS(&p3, 2.0)
             _p_sum_intermediate = add(&_p_sum_intermediate, &_temp_add_operand)
-
             _p_sum_intermediate = add(&_p_sum_intermediate, &p4)
-            _p_sum_intermediate = mulS(&_p_sum_intermediate, (1.0 / 6.0))
+            _p_sum_intermediate = mulS(&_p_sum_intermediate, (delta_time / 6.0))
             range_vector = add(&range_vector, &_p_sum_intermediate)
+            # endregion RK4 integration
 
             # region for Reference: Euler integration
             # velocity_vector -= (relative_velocity * drag - self.gravity_vector) * delta_time
@@ -235,34 +225,37 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             velocity = mag(&velocity_vector)
             time += delta_time
 
-            if (
-                    velocity < _cMinimumVelocity
-                    or range_vector.y < _cMaximumDrop
-                    or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
+            if (velocity < _cMinimumVelocity
+                or range_vector.y < _cMaximumDrop
+                or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
             ):
+                if velocity < _cMinimumVelocity:
+                    termination_reason = RangeError.MinimumVelocityReached
+                elif range_vector.y < _cMaximumDrop:
+                    termination_reason = RangeError.MaximumDropReached
+                else:
+                    termination_reason = RangeError.MinimumAltitudeReached
+                break
+        #endregion Trajectory Loop
+        data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
+        if data is not None:
+            ranges.append(create_trajectory_row(
+                data.time, &data.position, &data.velocity, data.mach,
+                &self._shot_s, density_factor, drag, data_filter.current_flag
+            ))
+        # Ensure that we have at least two data points in trajectory, or 1 if filter_flags==NONE
+        # ... as well as last point if we had an incomplete trajectory
+        if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
+            if len(ranges) > 0 and ranges[-1].time == time:  # But don't duplicate the last point.
+                pass
+            else:
                 ranges.append(create_trajectory_row(
                     time, &range_vector, &velocity_vector, mach,
-                    &self._shot_s,
-                    density_factor, drag, data_filter.current_flag
+                    &self._shot_s, density_factor, drag, TrajFlag_t.NONE
                 ))
 
-                if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
-                elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
-                else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
-            #endregion
-
-        #endregion
-        # Ensure that we have at least two data points in trajectory
-        if len(ranges) < 2:
-            ranges.append(create_trajectory_row(
-                time, &range_vector, &velocity_vector, mach,
-                &self._shot_s,
-                density_factor, drag, TrajFlag_t.NONE))
-
+        if termination_reason is not None:
+            raise RangeError(termination_reason, ranges)
         return ranges
 
 # This function calculates dv/dt for velocity (v) affected by gravity and drag.

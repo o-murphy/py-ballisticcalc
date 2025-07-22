@@ -156,12 +156,15 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(self._make_row(
                 props, data.time, data.position, data.velocity, data.mach, data_filter.current_flag)
             )
-        # Ensure that we have at least two data points in trajectory, or 1 if no filter_flags==NONE
+        # Ensure that we have at least two data points in trajectory, or 1 if filter_flags==NONE
         # ... as well as last point if we had an incomplete trajectory
         if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
-            ranges.append(self._make_row(
-                props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
-            )
+            if len(ranges) > 0 and ranges[-1].time == time:  # But don't duplicate the last point.
+                pass
+            else:
+                ranges.append(self._make_row(
+                    props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
+                )
         logger.debug(f"RK4 ran {self.integration_step_count - start_integration_step_count} iterations")
         if termination_reason is not None:
             raise RangeError(termination_reason, ranges)

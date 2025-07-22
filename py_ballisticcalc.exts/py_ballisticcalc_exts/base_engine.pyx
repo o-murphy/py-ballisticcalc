@@ -93,8 +93,12 @@ cdef BaseTrajData TrajDataFilter_t_should_record(TrajDataFilter_t * tdf, const V
         tdf.time_of_last_record = time
     elif tdf.time_step > 0:
         _check_next_time(tdf, time)
-    _check_zero_crossing(tdf, position_ptr)
-    _check_mach_crossing(tdf, mag(velocity_ptr), mach)
+    if tdf.filter & TrajFlag_t.ZERO:
+        _check_zero_crossing(tdf, position_ptr)
+    if tdf.filter & TrajFlag_t.MACH:
+        _check_mach_crossing(tdf, mag(velocity_ptr), mach)
+    if tdf.filter & TrajFlag_t.APEX:
+        _check_apex(tdf, velocity_ptr)
     if (tdf.current_flag & tdf.filter) != 0 and data is None:
         data = BaseTrajData(time=time, position=position_ptr[0],
                             velocity=velocity_ptr[0], mach=mach)
@@ -102,13 +106,12 @@ cdef BaseTrajData TrajDataFilter_t_should_record(TrajDataFilter_t * tdf, const V
     tdf.previous_position = position_ptr[0]
     tdf.previous_velocity = velocity_ptr[0]
     tdf.previous_mach = mach
-
     return data
 
 cdef void _check_next_time(TrajDataFilter_t * tdf, double time):
-        if time > tdf.time_of_last_record + tdf.time_step:
-            tdf.current_flag |= TrajFlag_t.RANGE
-            tdf.time_of_last_record = time
+    if time > tdf.time_of_last_record + tdf.time_step:
+        tdf.current_flag |= TrajFlag_t.RANGE
+        tdf.time_of_last_record = time
 
 cdef void _check_mach_crossing(TrajDataFilter_t * tdf, double velocity, double mach):
     cdef double current_v_mach = velocity / mach
@@ -130,6 +133,11 @@ cdef void _check_zero_crossing(TrajDataFilter_t * tdf, const V3dT *range_vector_
             if range_vector_ptr.y < reference_height:
                 tdf.current_flag |= TrajFlag_t.ZERO_DOWN
                 tdf.seen_zero |= TrajFlag_t.ZERO_DOWN
+
+cdef void _check_apex(TrajDataFilter_t * tdf, const V3dT *velocity_vector_ptr):
+    if velocity_vector_ptr.y <= 0 and tdf.previous_velocity.y > 0:
+        # We have crossed the apex
+        tdf.current_flag |= TrajFlag_t.APEX
 
 
 cdef WindSock_t * WindSock_t_create(object winds_py_list):
@@ -181,10 +189,9 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self, double step = 0):
         cdef double preferred_step = self._config_s.cMaxCalcStepSizeFeet
-        # cdef double defined_max = 0.5  # const will be better optimized with cython
         if step == 0:
-            return preferred_step / 2.0
-        return min(step, preferred_step) / 2.0
+            return preferred_step
+        return min(step, preferred_step)
 
     def zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance) -> Angular:
         return self._zero_angle(shot_info, distance)
@@ -325,6 +332,8 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         double drop_adjustment = getCorrection(range_vector_ptr.x, range_vector_ptr.y)
         double windage_adjustment = getCorrection(range_vector_ptr.x, windage)
         double trajectory_angle = atan2(velocity_vector_ptr.y, velocity_vector_ptr.x);
+        double look_angle_cos = cos(look_angle)
+        double look_angle_sin = sin(look_angle)
 
     drop_adjustment -= (look_angle if range_vector_ptr.x else 0)
 
@@ -334,13 +343,11 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         velocity=_new_fps(velocity),
         mach=velocity / mach,
         height=_new_feet(range_vector_ptr.y),
-        slant_height=_new_feet(
-            (range_vector_ptr.y - range_vector_ptr.x * tan(look_angle)) * cos(look_angle)
-        ),
+        slant_height=_new_feet(range_vector_ptr.y * look_angle_cos - range_vector_ptr.x * look_angle_sin),
         drop_adj=_new_rad(drop_adjustment),
         windage=_new_feet(windage),
         windage_adj=_new_rad(windage_adjustment),
-        slant_distance=_new_feet(range_vector_ptr.x / cos(look_angle)),
+        slant_distance=_new_feet(range_vector_ptr.x * look_angle_cos + range_vector_ptr.y * look_angle_sin),
         angle=_new_rad(trajectory_angle),
         density_factor=density_factor - 1,
         drag=drag,

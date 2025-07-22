@@ -14,7 +14,8 @@ cdef extern from "include/bclib.h":
         MACH = 4
         RANGE = 8
         APEX = 16
-        ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX  # 31
+        MRT = 32
+        ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX | MRT  # 63
 
     ctypedef struct BaseTrajData_t:
         double time
