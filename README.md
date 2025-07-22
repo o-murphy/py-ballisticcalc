@@ -64,8 +64,7 @@ https://stand-with-ukraine.pp.ua
 * **[Installation](#installation)**
     * [Latest stable](#latest-stable-release-from-pypi)
 
-  [//]: # (    * [From sources]&#40;#installing-from-sources&#41;)
-
+  [//]: # (  * [From sources]&#40;#installing-from-sources&#41;)
   [//]: # (  * [Clone and build]&#40;#clone-and-build&#41;)
 
 * **[Usage](#usage)**
@@ -73,30 +72,21 @@ https://stand-with-ukraine.pp.ua
     * [Plot trajectory](#plot-trajectory-with-danger-space)
     * [Range card](#plot-trajectory-with-danger-space)
     * [Complex example](#complex-example)
-    * [Jupyter notebook](Example.ipynb)
     * [Preferences](#preferences)
     * [Units of measure](#units)
 
-    * **[Custom integrator engines](#custom-integrator-engines)**
-        * [Create custom engine](#create-custom-engine-module)
-        * [Custom engine usage](#custom-engine-usage)
-        * [Test custom engine](#test-your-custom-engine)
+* **[Integration Engines](#integration-engines)**
 
-      [//]: # (  * Compatible open-source integrators)
-
-      [//]: # (    * [CyEulerBallistic]&#40;https://github.com/o-murphy/CyEulerBallistic&#41; - Cythonized Euler method integrator)
-
-      [//]: # (    * [RKballistic]&#40;https://github.com/dbookstaber/RKballistic&#41; - Runge-Kutta 4th order method integrator)
-        * [Integrator engines comparison](#integrator-engines-comparison)
-
-          [//]: # (  * [An example of calculations]&#40;#an-example-of-calculations&#41;)
-
-          [//]: # (  * [Output example]&#40;#example-of-the-formatted-output&#41;)
+* [Custom integration engines](#custom-integration-engines)
+    * [Create custom engine](#create-custom-engine-module)
+    * [Custom engine usage](#custom-engine-usage)
+    * [Test custom engine](#test-your-custom-engine)
 
 * **[Concepts](#concepts)**
-* **[Older versions]()**
-    * [v1.1.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.1.4)
-    * [v1.0.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.0.12)
+  * [Coordinates](#coordinates)
+  * [Slant / Look Angle](#look-angle)
+  * [Danger Space](#danger-space)
+
 * **[Contributors](#contributors)**
 * **[About project](#about-project)**
 
@@ -332,12 +322,20 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1 * 
 # >>> True, compare unit with float by raw value
 ```
 
-# Custom integrator engines
+# Integration Engines
 
-Since version `2.1.1b1`
+## Comparison
 
-* The `py_ballisticcalc.exts` module is deprecated, we recommend to use [CyEulerBallistic](CyEulerBallistic)
-* The library switch to explicit setup custom integrator engines using entry_points instead of direct import
+| Entry Name                |  Is Default?   | Relative Performance to Euler Engine | Additional dependencies  | Description                                                                                                                  |
+|:--------------------------|:--------------:|:-------------------------------------|:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
+| `rk4_engine`              | :green_circle: | Baseline (1x)                        | None                     | Runge-Kutta 4th-order integration.                                                                                           |
+| `verlet_engine`           |  :red_circle:  |  0.7x (slower)                       | None                     | Velocity Verlet 2nd-order integration.                                                                                       |
+| `euler_engine`            |  :red_circle:  |  0.5x (slower)                       | None                     | Basic Euler integration: 1st-order but easiest to understand.                                                                |
+| `cythonized_rk4_engine`   |  :red_circle:  | 50x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Runge-Kutta 4th-order integration.                                                                          |
+| `cythonized_euler_engine` |  :red_circle:  | 40x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                                                                                          |
+| `scipy_engine` **(BETA)** |  :red_circle:  | 10x faster                           | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.                                                                       |
+
+# Custom integration engines
 
 ### Create custom engine module
 
@@ -377,15 +375,6 @@ To test your custom engine compatibility you can use predefined tests from `py_b
   pytest ./tests --engine="my_awesome_engine_library.my_awesome_module:MyAwesomeEngine" 
   ```
 
-### Integrator Engine Comparison
-
-| Entry Name                |  Is Default?   | Relative Performance to Euler Engine | Additional dependencies  | Description                                                                                                                  |
-|:--------------------------|:--------------:|:-------------------------------------|:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
-| `euler_engine`            | :green_circle: | Baseline (1x)                        | None                     | Standard Euler integration. A basic and generally lower-performing method.                                                   |
-| `rk4_engine`              |  :red_circle:  | 0.54x (slower)                       | None                     | Standard Runge-Kutta 4th order integration. Typically more accurate than Euler, but slower in pure Python.                   |
-| `cythonized_euler_engine` |  :red_circle:  | 35.48x faster                        | `py-ballisticcalc[exts]` | Cython-optimized Euler integration. Offers high performance due to Cython compilation.                                       |
-| `cythonized_rk4_engine`   |  :red_circle:  | 59.54x faster                        | None                     | Cython-optimized Runge-Kutta 4th order integration. Provides very high performance.                                          |
-| `scipy_engine` **(BETA)** |  :red_circle:  | 29.11x faster                        | `scipy`                  | Utilizes SciPy's numerical integration capabilities. Performance benefits from SciPy's optimized underlying implementations. |
 
 # Concepts
 
