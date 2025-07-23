@@ -55,8 +55,6 @@ verlet_engine = "py_ballisticcalc:VelocityVerletIntegrationEngine"
 "Source" = "https://github.com/o-murphy/py_ballisticcalc"
 
 
-[tool.setuptools]
-py-modules = ["py_ballisticcalc"]
 
 [tool.setuptools.packages.find]
 where = ["."]

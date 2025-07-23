@@ -25,51 +25,45 @@ def test_shot_incomplete(zero_height_calc):
         last_point_distance = hit_result[-1].distance >> Distance.Meter
         last_point_height = hit_result[-1].height >> Distance.Meter
         print(f"{ last_point_distance=} { last_point_height=}")
-        assert last_point_distance > 3525.0
+        assert last_point_distance > 3524.0
         assert last_point_height < 1e-10  # Basically zero; allow for rounding
 
+    extra_data = False
     try:
-        extra_data = False
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
     try:
-        extra_data = False
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
+    extra_data = True
     try:
-        extra_data = True
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
     try:
-        extra_data = True
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
 

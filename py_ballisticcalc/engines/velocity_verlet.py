@@ -59,7 +59,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         wind_vector = wind_sock.current_vector()
         # endregion
 
-        # region Initialize velocity and position of projectile
+        # region Initialize position, velocity, and acceleration
         relative_speed = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
         range_vector = Vector(.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
@@ -68,7 +68,12 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(relative_speed)  # type: ignore
-        acceleration_vector = Vector(0, 0, 0)
+        # Acceleration:
+        density_factor, mach = props.get_density_and_mach_for_altitude(range_vector.y)
+        relative_velocity = velocity_vector - wind_vector
+        relative_speed = relative_velocity.magnitude()
+        drag = density_factor * relative_speed * props.drag_by_mach(relative_speed / mach)
+        acceleration_vector = self.gravity_vector - drag * relative_velocity # type: ignore[operator]
         # endregion
 
         # Ensure one iteration when record step is smaller than calc_step
@@ -115,13 +120,15 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             drag = density_factor * relative_speed * props.drag_by_mach(relative_speed / mach)
 
             # region Verlet integration
-            # Compute acceleration at current position
-            new_acceleration_vector = self.gravity_vector - drag * relative_velocity  # type: ignore[operator]
+            # 1. Update position using acceleration from the current step
             range_vector += (velocity_vector * delta_time +                           # type: ignore[operator]
                              acceleration_vector * delta_time * delta_time * 0.5)     # type: ignore[operator]
+            # 2. Calculate the new acceleration a(t+Δt) at the new position
+            new_acceleration_vector = self.gravity_vector - drag * relative_velocity  # type: ignore[operator]
+            # 3. Update velocity using the average of the old a(t) and new a(t+Δt) accelerations
             velocity_vector += (acceleration_vector + new_acceleration_vector) * 0.5 * delta_time  # type: ignore
-            velocity = velocity_vector.magnitude()  # Velocity relative to ground
             acceleration_vector = new_acceleration_vector
+            velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
             # endregion Verlet integration
             # endregion ballistic calculation step
