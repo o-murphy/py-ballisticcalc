@@ -42,6 +42,9 @@ __all__ = (
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
+    cdef double get_calc_step(CythonizedEulerIntegrationEngine self):
+        return 0.5 * CythonizedBaseIntegrationEngine.get_calc_step(self)  # like super().get_calc_step()
+
     cdef list[object] _integrate(CythonizedEulerIntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
         cdef:

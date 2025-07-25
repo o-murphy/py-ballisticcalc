@@ -20,16 +20,18 @@ __all__ = ('RK4IntegrationEngine',)
 
 class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """Runge-Kutta 4th order integration engine for ballistic calculations."""
+    # TODO: This can be increased as soon as TrajectoryDataFilter can interpolate for more than
+    #   one point between .should_record() calls.  At DEFAULT_TIME_STEP=0.005 it doesn't generate
+    #   a RANGE record for every yard and this fails test_danger_space.py::test_danger_space.
+    DEFAULT_TIME_STEP = 0.0015
+
     def __init__(self, config: BaseEngineConfigDict):
         super().__init__(config)
         self.integration_step_count = 0
 
     @override
-    def get_calc_step(self, step: float = 0) -> float:
-        # RK4 steps should be at least 4x larger than calc_step default on Euler integrator
-        #   because RK4 uses 4 evaluations of the function per step.
-        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko but beware step < 1!
-        return super().get_calc_step(step) * 4.0
+    def get_calc_step(self) -> float:
+        return super().get_calc_step() * self.DEFAULT_TIME_STEP
 
     @override
     def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
@@ -73,7 +75,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         ).mul_by_const(velocity)  # type: ignore
         # endregion
 
-        min_step = min(props.calc_step_ft, record_step)
+        min_step = min(props.calc_step, record_step)
 
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
@@ -110,7 +112,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = props.calc_step_ft / max(4.0, relative_speed)
+            delta_time = props.calc_step
             km = density_factor * props.drag_by_mach(relative_speed / mach)
             # drag = km * relative_speed
 

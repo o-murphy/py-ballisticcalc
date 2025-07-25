@@ -17,7 +17,7 @@ extern const double mToFeet;
 extern const double cMaxWindDistanceFeet;
 
 typedef struct {
-    double cMaxCalcStepSizeFeet;
+    double cStepMultiplier;
     double cZeroFindingAccuracy;
     double cMinimumVelocity;
     double cMaximumDrop;

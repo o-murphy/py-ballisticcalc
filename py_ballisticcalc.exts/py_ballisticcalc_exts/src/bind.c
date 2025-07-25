@@ -12,8 +12,8 @@ Config_t Config_t_fromPyObject(PyObject* config) {
 
     PyObject* tmp;
 
-    tmp = PyObject_GetAttrString(config, "cMaxCalcStepSizeFeet");
-    c.cMaxCalcStepSizeFeet = PyFloat_AsDouble(tmp);
+    tmp = PyObject_GetAttrString(config, "cStepMultiplier");
+    c.cStepMultiplier = PyFloat_AsDouble(tmp);
     Py_XDECREF(tmp);
 
     tmp = PyObject_GetAttrString(config, "cZeroFindingAccuracy");

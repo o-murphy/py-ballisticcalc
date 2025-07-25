@@ -23,7 +23,7 @@ cdef extern from "include/bclib.h" nogil:
 
     # Declare the V3dT structure
     ctypedef struct Config_t:
-        double cMaxCalcStepSizeFeet
+        double cStepMultiplier
         double cZeroFindingAccuracy
         double cMinimumVelocity
         double cMaximumDrop

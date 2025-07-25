@@ -278,6 +278,26 @@ class HitResult:
             )
         return self.trajectory[i]
 
+    def get_at_time(self, t: float) -> TrajectoryData:
+        """
+        Args:
+            t (float): Time for which we want Trajectory Data.
+
+        Returns:
+            TrajectoryData: First trajectory row with .time >= t.
+
+        Raises:
+            ArithmeticError: If trajectory doesn't reach requested time.
+        """
+        epsilon = 1e-6  # small value to avoid floating point issues
+        idx = next((i for i in range(len(self.trajectory))
+                     if self.trajectory[i].time >= t - epsilon), -1)
+        if idx < 0:
+            raise ArithmeticError(
+                f"Calculated trajectory doesn't reach requested time {t}"
+            )
+        return self.trajectory[idx]
+
     def danger_space(self,
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],

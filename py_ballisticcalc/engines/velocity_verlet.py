@@ -23,9 +23,15 @@ __all__ = ('VelocityVerletIntegrationEngine',)
 
 class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """Velocity Verlet integration engine for ballistic calculations."""
+    DEFAULT_TIME_STEP = 0.001
+
     def __init__(self, config: BaseEngineConfigDict):
         super().__init__(config)
         self.integration_step_count = 0
+
+    @override
+    def get_calc_step(self) -> float:
+        return super().get_calc_step() * self.DEFAULT_TIME_STEP
 
     @override
     def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
@@ -77,7 +83,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         # endregion
 
         # Ensure one iteration when record step is smaller than calc_step
-        min_step = min(props.calc_step_ft, record_step)
+        min_step = min(props.calc_step, record_step)
 
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
@@ -115,7 +121,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = props.calc_step_ft / max(1.0, relative_speed)
+            delta_time = props.calc_step
             # Drag is a function of air density and velocity relative to the air
             drag = density_factor * relative_speed * props.drag_by_mach(relative_speed / mach)
 

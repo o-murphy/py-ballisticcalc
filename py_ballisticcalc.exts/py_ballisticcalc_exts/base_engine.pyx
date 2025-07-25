@@ -187,11 +187,8 @@ cdef class CythonizedBaseIntegrationEngine:
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         self._free_trajectory()
 
-    cdef double get_calc_step(CythonizedBaseIntegrationEngine self, double step = 0):
-        cdef double preferred_step = self._config_s.cMaxCalcStepSizeFeet
-        if step == 0:
-            return preferred_step
-        return min(step, preferred_step)
+    cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
+        return self._config_s.cStepMultiplier
 
     def zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance) -> Angular:
         return self._zero_angle(shot_info, distance)

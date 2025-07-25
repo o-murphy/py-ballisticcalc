@@ -43,7 +43,7 @@ cMinimumAltitude: float = -1500  # feet, below sea level
 cMaximumDrop: float = -15000  # feet, maximum drop from the muzzle to continue trajectory
 cMinimumVelocity: float = 50.0  # fps, minimum velocity to continue trajectory
 cGravityConstant: float = -32.17405  # feet per second squared
-cMaxCalcStepSizeFeet: float = 0.5
+cStepMultiplier: float = 1.0  # Multiplier for engine's default step, for changing integration speed & precision
 
 
 @dataclass
@@ -54,7 +54,7 @@ class BaseEngineConfig:
     cMaximumDrop: float = cMaximumDrop
     cMinimumVelocity: float = cMinimumVelocity
     cGravityConstant: float = cGravityConstant
-    cMaxCalcStepSizeFeet: float = cMaxCalcStepSizeFeet
+    cStepMultiplier: float = cStepMultiplier
 
 
 DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
@@ -67,7 +67,7 @@ class BaseEngineConfigDict(TypedDict, total=False):
     cMaximumDrop: Optional[float]
     cMinimumVelocity: Optional[float]
     cGravityConstant: Optional[float]
-    cMaxCalcStepSizeFeet: Optional[float]
+    cStepMultiplier: Optional[float]
 
 
 def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] = None) -> BaseEngineConfig:
@@ -303,7 +303,7 @@ class _ShotProps:
     cant_cosine: float  # Cosine of the cant angle
     cant_sine: float  # Sine of the cant angle
     alt0_ft: float  # Initial altitude in feet
-    calc_step_ft: float  # Calculation step size in feet
+    calc_step: float  # Calculation step size
     muzzle_velocity_fps: float  # Muzzle velocity in feet per second
     stability_coefficient: float = field(init=False)
 
@@ -420,20 +420,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         self._config: BaseEngineConfig = create_base_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
 
-    def get_calc_step(self, step: float = 0) -> float:
-        """
-        Keep step under max_calc_step_size
-
-        Args:
-            step (float, optional): proposed step size. Defaults to 0.
-
-        Returns:
-            float: step size for calculations (in feet)
-        """
-        preferred_step = self._config.cMaxCalcStepSizeFeet
-        if step == 0:
-            return preferred_step
-        return min(step, preferred_step)
+    def get_calc_step(self) -> float:
+        """Get step size for integration."""
+        return self._config.cStepMultiplier
 
     def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
                    extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
@@ -482,7 +471,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             cant_cosine=math.cos(shot_info.cant_angle >> Angular.Radian),
             cant_sine=math.sin(shot_info.cant_angle >> Angular.Radian),
             alt0_ft=shot_info.atmo.altitude >> Distance.Foot,
-            calc_step_ft=self.get_calc_step(),
+            calc_step=self.get_calc_step(),
             muzzle_velocity_fps=shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp) >> Velocity.FPS,
         )
 
@@ -657,7 +646,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         # region Edge cases
         if abs(slant_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
-        if abs(slant_range_ft) < 2.0 * max(abs(start_height_ft), props.calc_step_ft):
+        if abs(slant_range_ft) < 2.0 * max(abs(start_height_ft), props.calc_step):
             # Very close shot; ignore gravity and drag
             return ZeroFindingProps(_ZeroCalcStatus.DONE,
                                     look_angle_rad=math.atan2(target_y_ft + start_height_ft, target_x_ft))

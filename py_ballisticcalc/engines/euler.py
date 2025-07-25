@@ -23,14 +23,19 @@ __all__ = ('EulerIntegrationEngine',)
 
 class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """Euler integration engine for ballistic calculations."""
+    DEFAULT_STEP = 0.5
+
     def __init__(self, config: BaseEngineConfigDict):
         super().__init__(config)
         self.integration_step_count = 0
 
     @override
-    def get_calc_step(self, step: float = 0) -> float:
-        """Euler steps have to be smaller to pass the same accuracy tests as other engines."""
-        return super().get_calc_step(step) / 2.0
+    def get_calc_step(self) -> float:
+        return super().get_calc_step() * self.DEFAULT_STEP
+
+    def time_step(self, base_step: float, velocity: float) -> float:
+        """Calculate time step based on current projectile speed."""
+        return base_step / max(1.0, velocity)
 
     @override
     def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
@@ -76,7 +81,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # endregion
 
         # Ensure one iteration when record step is smaller than calc_step
-        min_step = min(props.calc_step_ft, record_step)
+        min_step = min(props.calc_step, record_step)
 
         data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
@@ -113,7 +118,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = props.calc_step_ft / max(1.0, relative_speed)
+            delta_time = self.time_step(props.calc_step, relative_speed)
             # Drag is a function of air density and velocity relative to the air
             drag = density_factor * relative_speed * props.drag_by_mach(relative_speed / mach)
             # Bullet velocity changes due to both drag and gravity

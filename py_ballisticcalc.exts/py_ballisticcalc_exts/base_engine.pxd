@@ -78,7 +78,7 @@ cdef class CythonizedBaseIntegrationEngine:
         ShotData_t _shot_s # Declared here
 
     # cdef void __dealloc__(CythonizedBaseIntegrationEngine self) # Uncomment if you want to declare __dealloc__
-    cdef double get_calc_step(CythonizedBaseIntegrationEngine self, double step = ?)
+    cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
 
     # Note: Properties are Python-level constructs and are not typically declared in .pxd files
     # unless you are exposing the underlying cdef attribute directly.

@@ -40,12 +40,8 @@ __all__ = (
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
-    cdef double get_calc_step(CythonizedRK4IntegrationEngine self, double step = 0.0):
-        # RK4 steps should be at least 4x larger than calc_step default on Euler integrator
-        #   because RK4 uses 4 evaluations of the function per step.
-        # NOTE: pow(step, 0.5) recommended by https://github.com/serhiy-yevtushenko but beware step < 1!
-        step = CythonizedBaseIntegrationEngine.get_calc_step(self, step)  # like super().get_calc_step(step)
-        return 4.0 * step
+    cdef double get_calc_step(CythonizedRK4IntegrationEngine self):
+        return 0.0015 * CythonizedBaseIntegrationEngine.get_calc_step(self)  # like super().get_calc_step()
 
     cdef list[object] _integrate(CythonizedRK4IntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
@@ -139,7 +135,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             relative_speed = mag(&relative_velocity)
 
             # Time step is normalized by velocity so that we take smaller steps when moving faster
-            delta_time = calc_step / fmax(4.0, relative_speed)
+            delta_time = calc_step
             km = density_factor * ShotData_t_dragByMach(&self._shot_s, relative_speed / mach)
             drag = km * relative_speed
 

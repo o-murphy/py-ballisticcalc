@@ -108,15 +108,21 @@ def test_vertical_shot(zero_height_calc, loaded_engine_instance):
     assert hit_result[-1].time != hit_result[-2].time, "Don't duplicate points"
 
 
-def test_no_duplicate_points(zero_height_calc):
+def test_no_duplicate_points(loaded_engine_instance):
     # this is a shot for point (1000, 0)
     shot = shot_with_relative_angle_in_degrees(0.46571949074059704)
     zero_distance = Distance.Meter(1000)
     # setting up bigger distance than required by shot
     range = Distance.Meter(1100)
+    config = BaseEngineConfigDict(
+        cMinimumVelocity=0.0,
+        cMinimumAltitude=-10.0,
+        cMaximumDrop=-10.0,
+    )
+    calc = Calculator(config=config, engine=loaded_engine_instance)
     try:
         extra_data = False
-        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=Distance.Meter(100))
+        hit_result = calc.fire(shot, range, extra_data=extra_data, trajectory_step=Distance.Meter(100))
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
