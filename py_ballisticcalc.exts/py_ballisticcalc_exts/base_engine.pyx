@@ -183,6 +183,7 @@ cdef class CythonizedBaseIntegrationEngine:
     def __cinit__(CythonizedBaseIntegrationEngine self, object _config):
         self._config = create_base_engine_config(_config)
         self.gravity_vector = V3dT(.0, self._config.cGravityConstant, .0)
+        self.integration_step_count = 0
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         self._free_trajectory()

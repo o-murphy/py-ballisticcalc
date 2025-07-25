@@ -106,6 +106,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
         while (range_vector.x <= maximum_range + min_step) or (
                 last_recorded_range <= maximum_range - 1e-6):
+            self.integration_step_count += 1
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance

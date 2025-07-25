@@ -70,9 +70,10 @@ cdef WindSock_t * WindSock_t_create(object winds_py_list)
 
 cdef class CythonizedBaseIntegrationEngine:
     cdef:
+        public int integration_step_count
+        public object _config
         list _table_data # list[object]
         V3dT gravity_vector
-        public object _config
         WindSock_t * _wind_sock
         Config_t _config_s # Declared here
         ShotData_t _shot_s # Declared here

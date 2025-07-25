@@ -110,6 +110,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
         while (range_vector.x <= maximum_range + min_step) or (
                 last_recorded_range <= maximum_range - 1e-6):
+            self.integration_step_count += 1
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance
@@ -134,13 +135,11 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             relative_velocity = sub(&velocity_vector, &wind_vector)
             relative_speed = mag(&relative_velocity)
 
-            # Time step is normalized by velocity so that we take smaller steps when moving faster
             delta_time = calc_step
             km = density_factor * ShotData_t_dragByMach(&self._shot_s, relative_speed / mach)
             drag = km * relative_speed
 
             # # region RK4 integration
-
             # region for Reference:
             # cdef V3dT f(V3dT v):  # dv/dt
             #     # Bullet velocity changes due to both drag and gravity
