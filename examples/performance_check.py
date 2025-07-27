@@ -44,14 +44,12 @@ cythonized:
         Total time: 11.458543 seconds
         Execution rate: 10.47 calls per second
 """
-# import RKballistic
 from timeit import timeit
 from py_ballisticcalc import *
 from py_ballisticcalc.logger import logger
 import logging
 
 from py_ballisticcalc.interface import _EngineLoader
-
 
 
 logger.setLevel(logging.INFO)
@@ -87,7 +85,6 @@ zero_atmo = Atmo(
 )
 
 
-
 def init_zero_shot():
 
     weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
@@ -96,7 +93,6 @@ def init_zero_shot():
                 use_powder_sensitivity=True)
 
     zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
-
 
     return zero
 
@@ -146,24 +142,19 @@ print()
 for ep in _EngineLoader.iter_engines():
     config = {}
 
-    if ep.name in {"euler_engine", "rk4_engine"}:
-        continue  # skip pure ones
-    elif ep.name in {"cythonized_euler_engine", "cythonized_rk4_engine"}:
-        ...
-    elif ep.name in {"scipy"}:
-        config: SciPyEngineConfigDict = {
-            "relative_tolerance": 1e-6,
-            "absolute_tolerance": 1e-5,
-        }
+    # if ep.name in {"euler_engine", "rk4_engine"}:
+    #     continue  # skip pure ones
+    # elif ep.name in {"cythonized_euler_engine", "cythonized_rk4_engine"}:
+    #     ...
+    # elif ep.name in {"scipy"}:
+    #     config: SciPyEngineConfigDict = {
+    #         "relative_tolerance": 1e-6,
+    #         "absolute_tolerance": 1e-5,
+    #         "integration_method": "LSODA"
+    #     }
 
     engine = ep.load()
     print("Engine: %s" % ep.value)
-    if ep.name.startswith("scipy"):
-        config: SciPyEngineConfigDict = {
-            "relative_tolerance": 1e-4,
-            "absolute_tolerance": 1e-3,
-            "integration_method": "LSODA"
-        }
     calc = Calculator(config=config, engine=engine)
     run_check(calc, number)
     print()

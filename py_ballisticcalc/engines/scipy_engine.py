@@ -491,7 +491,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             :return: Derivative of state vector
             """
             self.integration_step_count += 1
-            # self.eval_points.append(t)  # For inspection/debug
+            self.eval_points.append(t)  # For inspection/debug
             x, y, z = s[:3]  # pylint: disable=unused-variable
             vx, vy, vz = s[3:]
             velocity_vector = Vector(vx, vy, vz)

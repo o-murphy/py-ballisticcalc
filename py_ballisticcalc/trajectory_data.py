@@ -1,7 +1,7 @@
 """Implements a point of trajectory class in applicable data types"""
 import typing
 from dataclasses import dataclass, field
-
+from deprecated import deprecated
 from typing_extensions import NamedTuple, Optional, Union, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
@@ -190,6 +190,13 @@ class DangerSpace(NamedTuple):
             ) from err
 
 
+def _lagrange_quadratic(x, x0, y0, x1, y1, x2, y2):
+    """Quadratic Lagrange interpolation at x given three points."""
+    L0 = ((x - x1) * (x - x2)) / ((x0 - x1) * (x0 - x2))
+    L1 = ((x - x0) * (x - x2)) / ((x1 - x0) * (x1 - x2))
+    L2 = ((x - x0) * (x - x1)) / ((x2 - x0) * (x2 - x1))
+    return y0 * L0 + y1 * L1 + y2 * L2
+
 # pylint: disable=import-outside-toplevel
 @dataclass(frozen=True)
 class HitResult:
@@ -238,7 +245,7 @@ class HitResult:
     def flag(self, flag: Union[TrajFlag, int]) -> Optional[TrajectoryData]:
         """
         Returns:
-            TrajectoryData: Trajectory row with the specified flag.
+            TrajectoryData: First TrajectoryData row with the specified flag.
 
         Raises:
             AttributeError: If extra_data was not requested.
@@ -249,6 +256,97 @@ class HitResult:
                 return row
         return None
 
+    def get_at(self, key_attribute: str, value: Union[float, GenericDimension]) -> 'TrajectoryData':
+        """
+        Interpolates the trajectory to find the data at a specific point,
+        preserving the units of the original trajectory data.
+
+        Args:
+            key_attribute (str): The name of the TrajectoryData attribute to key on (e.g., 'time', 'distance').
+            value (Union[float, GenericDimension]): The value of the key attribute to find. If a float is provided
+                                                 for a dimensioned attribute, it's assumed to be in the same
+                                                 units as the existing trajectory data.
+
+        Returns:
+            TrajectoryData: An interpolated trajectory data point.
+        """
+        if not hasattr(TrajectoryData, key_attribute):
+            raise AttributeError(f"TrajectoryData has no attribute '{key_attribute}'")
+        if key_attribute == 'flag':
+            raise ValueError("Cannot interpolate based on 'flag' attribute")
+
+        traj = self.trajectory
+        n = len(traj)
+        if n < 3:
+            raise ValueError("Interpolation requires at least 3 trajectory points.")
+
+        key_value = value.raw_value if isinstance(value, GenericDimension) else value
+
+        # Helper to get the raw value of the key attribute from a TrajectoryData point
+        def get_key_val(td):
+            val = getattr(td, key_attribute)
+            return val.raw_value if hasattr(val, 'raw_value') else val
+
+        # Find the index of the point just after the key_value.
+        # This assumes the key_attribute is monotonically increasing.
+        idx = next((i for i, td in enumerate(traj) if get_key_val(td) >= key_value), -1)
+
+        if idx == -1:
+            raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {value}")
+        if idx == 0:  # Before the first point
+            idx = 1
+
+        # Choose three bracketing points (p0, p1, p2)
+        if idx >= n - 1:  # At or after the last point
+            p0, p1, p2 = traj[n - 3], traj[n - 2], traj[n - 1]
+        else:
+            p0, p1, p2 = traj[idx - 1], traj[idx], traj[idx + 1]
+
+        # The independent variable for interpolation (x-axis)
+        x_val = key_value
+        x0, x1, x2 = get_key_val(p0), get_key_val(p1), get_key_val(p2)
+
+        # Use reflection to build the new TrajectoryData object
+        interpolated_fields = {}
+        for field_name in TrajectoryData._fields:
+            if field_name == 'flag':
+                interpolated_fields[field_name] = TrajFlag.NONE
+                continue
+
+            p0_field = getattr(p0, field_name)
+            field_type = type(p0_field)
+
+            if field_name == key_attribute:
+                if isinstance(value, GenericDimension):
+                    interpolated_fields[field_name] = value
+                else:  # value is a float, assume it's in the same unit as the original data
+                    if isinstance(p0_field, GenericDimension):
+                        interpolated_fields[field_name] = field_type(value, p0_field.units)
+                    else:
+                        interpolated_fields[field_name] = value
+                continue
+
+            # Interpolate all other fields
+            y0_val = p0_field
+            y1_val = getattr(p1, field_name)
+            y2_val = getattr(p2, field_name)
+
+            if isinstance(y0_val, GenericDimension):
+                y0, y1, y2 = y0_val.raw_value, y1_val.raw_value, y2_val.raw_value
+                interpolated_raw = _lagrange_quadratic(x_val, x0, y0, x1, y1, x2, y2)
+                
+                original_unit = y0_val.units
+                value_in_original_unit = y0_val.from_raw(interpolated_raw, original_unit)
+                interpolated_fields[field_name] = field_type(value_in_original_unit, original_unit)
+
+            elif isinstance(y0_val, (float, int)):
+                interpolated_fields[field_name] = _lagrange_quadratic(x_val, x0, y0_val, x1, y1_val, x2, y2_val)
+            else:
+                raise TypeError(f"Cannot interpolate field '{field_name}' of type {field_type}")
+
+        return TrajectoryData(**interpolated_fields)
+
+    @deprecated(reason="Use get_at() instead for better flexibility.")
     def index_at_distance(self, d: Distance) -> int:
         """
         Args:
@@ -261,6 +359,7 @@ class HitResult:
         return next((i for i in range(len(self.trajectory))
                      if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)
 
+    @deprecated(reason="Use get_at('distance', d)")
     def get_at_distance(self, d: Distance) -> TrajectoryData:
         """
         Args:
@@ -272,12 +371,9 @@ class HitResult:
         Raises:
             ArithmeticError: If trajectory doesn't reach requested distance.
         """
-        if (i := self.index_at_distance(d)) < 0:
-            raise ArithmeticError(
-                f"Calculated trajectory doesn't reach requested distance {d}"
-            )
-        return self.trajectory[i]
+        return self.get_at('distance', d)
 
+    @deprecated(reason="Use get_at('time', t)")
     def get_at_time(self, t: float) -> TrajectoryData:
         """
         Args:
@@ -289,15 +385,9 @@ class HitResult:
         Raises:
             ArithmeticError: If trajectory doesn't reach requested time.
         """
-        epsilon = 1e-6  # small value to avoid floating point issues
-        idx = next((i for i in range(len(self.trajectory))
-                     if self.trajectory[i].time >= t - epsilon), -1)
-        if idx < 0:
-            raise ArithmeticError(
-                f"Calculated trajectory doesn't reach requested time {t}"
-            )
-        return self.trajectory[idx]
+        return self.get_at('time', t)
 
+    # TODO: Refactor this method to use get_at() for consistency
     def danger_space(self,
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],

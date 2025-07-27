@@ -130,7 +130,7 @@ def test_no_duplicate_points(loaded_engine_instance):
     print_out_trajectory_compact(hit_result)
     assert len(hit_result.trajectory) >= 2
     assert hit_result[-2] != hit_result[-1]
-    result_at_zero = hit_result.get_at_distance(zero_distance)
+    result_at_zero = hit_result.get_at('distance', zero_distance)
     assert result_at_zero is not None
     assert result_at_zero.distance >> Distance.Meter == pytest.approx(1000, abs=0.2)
     assert result_at_zero.height >> Distance.Meter == pytest.approx(0, abs=0.01)
