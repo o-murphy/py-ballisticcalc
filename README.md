@@ -315,16 +315,16 @@ basicConfig("path/to/your_config.toml")
 
 ## Comparison
 
-| Entry Name                |  Is Default?   | Relative Performance to Euler Engine | Additional dependencies  | Description                                                                                                                  |
+**See [Engine Benchmarks](doc/BenchmarkEngines.md) for more detailed analysis and comparison of the engines.**
+
+| Engine Name                |  Is Default?   | Relative Performance | Dependencies  | Description                                                                                                                  |
 |:--------------------------|:--------------:|:-------------------------------------|:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
 | `rk4_engine`              | :green_circle: | Baseline (1x)                        | None                     | Runge-Kutta 4th-order integration.                                                                                           |
 | `verlet_engine`           |  :red_circle:  |  0.7x (slower)                       | None                     | Velocity Verlet 2nd-order integration.                                                                                       |
 | `euler_engine`            |  :red_circle:  |  0.5x (slower)                       | None                     | Basic Euler integration: 1st-order but easiest to understand.                                                                |
 | `cythonized_rk4_engine`   |  :red_circle:  | 50x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Runge-Kutta 4th-order integration.                                                                          |
 | `cythonized_euler_engine` |  :red_circle:  | 40x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                                                                                          |
-| `scipy_engine` **(BETA)** |  :red_circle:  | 10x faster                           | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.                                                                       |
-
-[Benchmark Vacuum Trajectory](examples/BenchmarkVacuumTraj.ipynb) contains a detailed analysis and comparison of the engines.
+| `scipy_engine`            |  :red_circle:  | 10x faster                           | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.                                                                       |
 
 ## Modifying presets
 
