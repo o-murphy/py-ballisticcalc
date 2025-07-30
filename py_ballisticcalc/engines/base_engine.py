@@ -38,7 +38,7 @@ __all__ = (
 )
 
 cZeroFindingAccuracy: float = 0.000005  # Max allowed slant-error in feet to end zero search
-cMaxIterations: int = 60  # maximum number of iterations for zero search
+cMaxIterations: int = 40  # maximum number of iterations for zero search
 cMinimumAltitude: float = -1500  # feet, below sea level
 cMaximumDrop: float = -15000  # feet, maximum drop from the muzzle to continue trajectory
 cMinimumVelocity: float = 50.0  # fps, minimum velocity to continue trajectory
@@ -718,17 +718,21 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
+        # TODO: Allow for a drop of at least half the horizontal distance to the target.
+        # (Algorithm works best if it can see the drop at the target distance.)
         zero_distance = (distance >> Distance.Foot) * math.cos(look_angle_rad)  # Horizontal distance
 
         iterations_count = 0
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
         prev_range_error_ft = 9e9
         prev_height_error_ft = 9e9
+        damping_factor = 1.0  # Start with no damping
+        damping_rate = 0.7  # Damping rate for correction
+        last_correction = 0.0
         height_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line in feet at zero distance
-        range_limit = False  # Flag to avoid 1st-order correction when instability detected
 
         while iterations_count < _cMaxIterations:
-            # Check height of trajectory at the zero distance (using current self.barrel_elevation)
+            # Check height of trajectory at the zero distance (using current props.barrel_elevation)
             try:
                 t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
             except RangeError as e:
@@ -747,45 +751,47 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
             height_diff_ft = t.slant_height >> Distance.Foot
             look_dist_ft = t.slant_distance >> Distance.Foot
-            horizontal_ft = t.distance >> Distance.Foot  # Horizontal distance
-            trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
-            sensitivity = math.tan(props.barrel_elevation_rad) * math.tan(trajectory_angle)
-            if -2.0 < sensitivity < -0.5 and not range_limit:  # TODO: Find good bounds for this
-                # Scenario too unstable for 1st order iteration
-                logger.warning("Unstable scenario detected in zero_angle(); probably won't converge...")
-                range_limit = True  # Scenario too unstable for 1st-order correction
-            elif abs(sensitivity) > 1000 and not range_limit:  # TODO: Find good bounds for this
-                logger.debug("High sensitivity; using slant correction")
-                range_limit = True  # Scenario too unstable for 1st-order correction
-
-            if range_limit or horizontal_ft == 0:
-                if abs(look_dist_ft) > 1e-6:
-                    correction = -height_diff_ft / look_dist_ft
-                else:
-                    correction = -height_diff_ft  # Avoid division by zero
-            else:
-                correction = -height_diff_ft / (horizontal_ft * (1 + sensitivity))  # 1st order correction
-
             range_diff_ft = look_dist_ft - slant_range_ft
             range_error_ft = math.fabs(range_diff_ft)
             height_error_ft = math.fabs(height_diff_ft)
+            trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
+            sensitivity = math.tan(props.barrel_elevation_rad - look_angle_rad) * math.tan(trajectory_angle - look_angle_rad)
+            if sensitivity < -0.5:
+                denominator = look_dist_ft
+            else:
+                denominator = look_dist_ft * (1 + sensitivity)
+            if abs(denominator) > 1e-9:
+                correction = -height_diff_ft / denominator
+            else:
+                raise ZeroFindingError(height_error_ft, iterations_count, Angular.Radian(props.barrel_elevation_rad),
+                      'Correction denominator is zero')
 
             if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # We're still trying to reach zero_distance
                 if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
-                    raise ZeroFindingError(height_diff_ft, iterations_count, _new_rad(props.barrel_elevation_rad),
-                                           'Distance non-convergent.')
+                    raise ZeroFindingError(range_error_ft, iterations_count, Angular.Radian(props.barrel_elevation_rad),
+                          'Distance non-convergent')
             elif height_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
-                raise ZeroFindingError(height_diff_ft, iterations_count, _new_rad(props.barrel_elevation_rad),
-                                       'Error non-convergent.')
+                damping_factor *= damping_rate  # Apply damping to prevent overcorrection
+                if damping_factor < 0.3:
+                    raise ZeroFindingError(height_error_ft, iterations_count, Angular.Radian(props.barrel_elevation_rad),
+                          'Error non-convergent')
+                logger.debug(f'Tightened damping to {damping_factor:.2f} after {iterations_count} iterations')
+                props.barrel_elevation_rad -= last_correction # Revert previous adjustment
+                correction = last_correction
+            elif damping_factor < 1.0:
+                logger.debug('Resetting damping factor to 1.0')
+                damping_factor = 1.0
 
             prev_range_error_ft = range_error_ft
             prev_height_error_ft = height_error_ft
 
-            if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
+            if height_error_ft > cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # Adjust barrel elevation to close height at zero distance
-                props.barrel_elevation_rad += correction
-            else:  # Current barrel_elevation hit zero!
+                applied_correction = correction * damping_factor
+                props.barrel_elevation_rad += applied_correction
+                last_correction = applied_correction
+            else:  # Current barrel_elevation hit zero: success!
                 break
             iterations_count += 1
 

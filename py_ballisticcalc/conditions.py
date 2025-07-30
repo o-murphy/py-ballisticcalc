@@ -589,3 +589,11 @@ class Shot:
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
+
+    @property
+    def slant_angle(self) -> Angular:
+        """Synonym for look_angle."""
+        return self.look_angle
+    @slant_angle.setter
+    def slant_angle(self, value: Angular) -> None:
+        self.look_angle = value
