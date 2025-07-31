@@ -679,7 +679,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
     def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
-        Internal implementation to find the barrel elevation needed to hit sight line at a specific distance.
+        Internal implementation to find the barrel elevation needed to hit sight line at a specific distance,
+            using Ridder's method for guaranteed convergence.
 
         Args:
             props (_ShotProps): The shot information.
@@ -689,11 +690,105 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             Angular: Barrel elevation needed to hit the zero point.
         """
-        raise NotImplementedError("_find_zero_angle not yet implemented in BaseIntegrationEngine.")
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
+            self._init_zero_calculation(props, distance)
+        )
+        if status is _ZeroCalcStatus.DONE:
+            return Angular.Radian(look_angle_rad)
+
+        # Make mypy happy
+        assert start_height_ft is not None
+        assert target_x_ft is not None
+        assert target_y_ft is not None
+        assert slant_range_ft is not None
+
+        # 1. Find the maximum possible range to establish a search bracket.
+        max_range, angle_at_max = self._find_max_range(props)
+        max_range_ft = max_range >> Distance.Foot
+        angle_at_max_rad = angle_at_max >> Angular.Radian
+
+        # 2. Handle edge cases based on max range.
+        if slant_range_ft > max_range_ft:
+            raise OutOfRangeError(distance, max_range, Angular.Radian(look_angle_rad))
+        if abs(slant_range_ft - max_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
+            return angle_at_max
+
+        def error_at_distance(angle_rad: float) -> float:
+            """Target miss (in feet) for given launch angle."""
+            props.barrel_elevation_rad = angle_rad
+            try:
+                t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
+            except RangeError as e:
+                if e.last_distance is None:
+                    raise e
+                t = e.incomplete_trajectory[-1]
+            if t.time == 0.0:
+                logger.warning("Integrator returned initial point. Consider removing constraints.")
+                return 9e9
+            return (t.height >> Distance.Foot) - target_y_ft - abs((t.distance >> Distance.Foot) - target_x_ft)
+
+        # 3. Establish search bracket for the zero angle.
+        if lofted:
+            low_angle, high_angle = angle_at_max_rad, math.radians(89.9)
+        else:
+            sight_height_adjust = 0.0
+            if start_height_ft > 0:
+                sight_height_adjust = math.atan2(start_height_ft, target_x_ft)
+            low_angle, high_angle = look_angle_rad - sight_height_adjust, angle_at_max_rad
+
+        f_low = error_at_distance(low_angle)
+        f_high = error_at_distance(high_angle)
+
+        if f_low * f_high >= 0:
+            reason = f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range "
+            reason += f"({Angular.Radian(low_angle) >> Angular.Degree:.2f}, "
+            reason += f"{Angular.Radian(high_angle) >> Angular.Degree:.2f} deg). "
+            reason += f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
+            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad), reason=reason)
+
+        # 4. Ridder's method implementation.  Absent bugs, this method is guaranteed to converge in
+        #    log₂(range / accuracy) = log₂(π/2 / cZeroFindingAccuracy) iterations.
+        for i in range(self._config.cMaxIterations):
+            mid_angle = (low_angle + high_angle) / 2
+            f_mid = error_at_distance(mid_angle)
+
+            # s is the updated point using the root of the linear function through (low_angle, f_low) and (high_angle, f_high)
+            # and the quadratic function that passes through those points and (mid_angle, f_mid)
+            s = math.sqrt(f_mid**2 - f_low * f_high)
+            if s == 0.0:
+                break  # Should not happen if f_low and f_high have opposite signs
+
+            next_angle = mid_angle + (mid_angle - low_angle) * (math.copysign(1, f_low - f_high) * f_mid / s)
+            if abs(next_angle - mid_angle) < self._config.cZeroFindingAccuracy:
+                return Angular.Radian(next_angle)
+
+            f_next = error_at_distance(next_angle)
+            # Update the bracket
+            if f_mid * f_next < 0:
+                low_angle, f_low = mid_angle, f_mid
+                high_angle, f_high = next_angle, f_next
+            elif f_low * f_next < 0:
+                high_angle, f_high = next_angle, f_next
+            elif f_high * f_next < 0:
+                low_angle, f_low = next_angle, f_next
+            else:
+                break  # If we are here, something is wrong, the root is not bracketed anymore
+
+            if abs(high_angle - low_angle) < self._config.cZeroFindingAccuracy:
+                return Angular.Radian((low_angle + high_angle) / 2)
+
+        raise ZeroFindingError(target_y_ft, self._config.cMaxIterations, Angular.Radian((low_angle + high_angle) / 2),
+                               reason="Ridder's method failed to converge."
+        )
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         props = self._init_trajectory(shot_info)
-        return self._zero_angle(props, distance)
+        try:
+            return self._zero_angle(props, distance)
+        except ZeroFindingError as e:
+            logger.warning(f"Failed to find zero angle using base iterative method: {e}")
+            # Fallback to guaranteed method
+            return self._find_zero_angle(props, distance)
 
     def _zero_angle(self, props: _ShotProps, distance: Distance) -> Angular:
         """

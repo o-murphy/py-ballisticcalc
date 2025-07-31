@@ -260,6 +260,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         max_range_ft = -res.fun  # Negate because we minimized the negative range
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
+    @override
     def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
         Internal method to find the barrel elevation needed to hit sight line at a specific distance,
@@ -295,16 +296,19 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         assert target_y_ft is not None
         assert slant_range_ft is not None
         #endregion Make mypy happy
+
+        # 1. Find the maximum possible range to establish a search bracket.
         max_range, angle_at_max = self._find_max_range(props)
         max_range_ft = max_range >> Distance.Foot
 
+        # 2. Handle edge cases based on max range.
         if slant_range_ft > max_range_ft:
             raise OutOfRangeError(distance, max_range, Angular.Radian(look_angle_rad))
         if abs(slant_range_ft - max_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return angle_at_max
 
         def error_at_distance(angle_rad: float) -> float:
-            """Target miss (in feet) for launch at <angle_rad>."""
+            """Target miss (in feet) for given launch angle."""
             props.barrel_elevation_rad = angle_rad
             try:
                 # Integrate to find the projectile's state at the target's horizontal distance.
@@ -319,6 +323,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # return -abs(t.slant_height >> Distance.Foot) - abs((t.slant_distance >> Distance.Foot) - slant_range_ft)
             return (t.height >> Distance.Foot) - target_y_ft - abs((t.distance >> Distance.Foot) - target_x_ft)
 
+        # 3. Establish search bracket for the zero angle.
         if lofted:
             angle_bracket = (angle_at_max >> Angular.Radian, math.radians(90.0))
         else:
