@@ -68,8 +68,8 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         cdef:
             # early bindings
             double _cMinimumVelocity = self._config_s.cMinimumVelocity
-            double _cMaximumDrop = self._config_s.cMaximumDrop
             double _cMinimumAltitude = self._config_s.cMinimumAltitude
+            double _cMaximumDrop = -abs(self._config_s.cMaximumDrop)  # Ensure it's negative
 
         cdef:
             double last_recorded_range

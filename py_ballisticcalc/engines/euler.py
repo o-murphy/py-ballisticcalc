@@ -55,7 +55,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         """
 
         _cMinimumVelocity = self._config.cMinimumVelocity
-        _cMaximumDrop = self._config.cMaximumDrop
+        _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return

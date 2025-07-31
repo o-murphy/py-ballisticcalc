@@ -720,7 +720,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         # TODO: Allow for a drop of at least half the horizontal distance to the target.
         # (Algorithm works best if it can see the drop at the target distance.)
-        zero_distance = (distance >> Distance.Foot) * math.cos(look_angle_rad)  # Horizontal distance
 
         iterations_count = 0
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
@@ -744,7 +743,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
                 break
 
             current_distance = t.distance >> Distance.Foot  # Horizontal distance
-            if 2 * current_distance < zero_distance and props.barrel_elevation_rad == 0.0 and look_angle_rad < 1.5:
+            if 2 * current_distance < target_x_ft and props.barrel_elevation_rad == 0.0 and look_angle_rad < 1.5:
                 # Degenerate case: little distance and zero elevation; try with some elevation
                 props.barrel_elevation_rad = 0.01
                 continue

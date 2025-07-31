@@ -197,7 +197,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         """
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
-        self.integration_step_count = 0
+        self.integration_step_count = 0  # Number of evaluations of diff_eq during ._integrate()
+        self.trajectory_count = 0  # Number of trajectories calculated
         self.eval_points: List[float] = []  # Points at which diff_eq is called
 
     @override
@@ -376,7 +377,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         Returns:
             List[TrajectoryData]: list of TrajectoryData
         """
-
+        self.trajectory_count += 1
         try:
             from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
             from scipy.optimize import root_scalar  # type: ignore[import-untyped]
@@ -384,7 +385,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             raise ImportError("SciPy and numpy are required for SciPyIntegrationEngine.") from e
 
         _cMinimumVelocity = self._config.cMinimumVelocity
-        _cMaximumDrop = self._config.cMaximumDrop
+        _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
@@ -438,7 +439,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         def event_max_range(t: float, s: Any) -> np.floating:  # Stop when x crosses maximum_range
             return s[0] - (maximum_range + 1)  # +1 to ensure we cross the threshold
 
-        max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0_ft)
+        max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0_ft)  # Smallest allowed y coordinate (ft)
 
         @scipy_event(terminal=True, direction=-1)
         def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses max_drop
