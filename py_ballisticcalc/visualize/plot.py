@@ -25,6 +25,7 @@ except (ImportError, AssertionError) as error:
 __all__ = (
     'show_hit_result_plot',
     'add_danger_space_overlay',
+    'trajectory_as_plot',
     'hit_result_as_plot',
 )
 
@@ -111,21 +112,15 @@ def add_time_of_flight_axis(ax: 'Axes', hit_result: HitResult, time_precision: i
     return ax
 
 
-def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None,
-                       show_time_axis: bool = True) -> 'Axes':  # type: ignore
+def trajectory_as_plot(hit_result: HitResult, look_angle: Optional[Angular] = None) -> 'Axes':  # type: ignore
     """
+    Plots only trajectory, barrel, and sight lines.  No time axis or velocity, as in `hit_result_as_plot`.
     :param hit_result: HitResult object
     :param look_angle: look_angle
-    :param show_time_axis: whether time of flight axis should be added to plot
     :return: graph of the trajectory
     """
-
     if look_angle is None:
         look_angle = hit_result.shot.look_angle
-
-    if not hit_result.extra:
-        warnings.warn("HitResult.plot: To show extended data"
-                      "Use Calculator.fire(..., extra_data=True)")
 
     font_size = PLOT_FONT_SIZE
     df = hit_result.dataframe()
@@ -133,29 +128,12 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None,
 
     ax = df.plot(x='distance', y=['height'], ylabel=PreferredUnits.drop.symbol,
                  color=PLOT_COLORS['trajectory'], linewidth=2, ax=ax)
-    # max_range = hit_result.trajectory[-1].distance >> PreferredUnits.distance  # This doesn't correctly handle backward-bending trajectories
-    max_range = df.distance.max()
-    backward_bending_trajectory = (hit_result[-1].distance >> PreferredUnits.distance) != max_range
-
-    for p in hit_result.trajectory:
-        if TrajFlag(p.flag) & TrajFlag.ZERO:
-            ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-                    [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':',
-                    color=PLOT_COLORS[TrajFlag(p.flag) & TrajFlag.ZERO])
-            ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
-                    f"{TrajFlag.name(TrajFlag(p.flag) & TrajFlag.ZERO)}",
-                    fontsize=font_size, rotation=90, color=PLOT_COLORS[TrajFlag(p.flag) & TrajFlag.ZERO])
-        if TrajFlag(p.flag) & TrajFlag.MACH:
-            ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
-                    [df['height'].min(), p.height >> PreferredUnits.drop],
-                    linestyle=':', color=PLOT_COLORS[TrajFlag.MACH])
-            ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
-                    "Mach 1", fontsize=font_size, rotation=90, color=PLOT_COLORS[TrajFlag.MACH])
 
     # Transparent figure and axes background
     fig.patch.set_alpha(0.0)  # Set the figure (background) to transparent
     ax.patch.set_alpha(0.0)  # Set the axis background to transparent
 
+    max_range = df.distance.max()
     max_range_in_drop_units = PreferredUnits.distance(df.distance.max()) >> PreferredUnits.drop
     # Sight line
     x_sight = [0, max_range]
@@ -184,11 +162,48 @@ def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None,
             math.atan((y_bbl[1] - y_bbl[0]) / (x_bbl[1] - x_bbl[0]))
         )
     ax.text(x_bbl[1], y_bbl[1],
-            "Barrel pointing", linespacing=1.2,
+            "Launch angle", linespacing=1.2,
             rotation=angle, rotation_mode='anchor',
             transform_rotates_text=True,
             fontsize=font_size, color=PLOT_COLORS['barrel'],
             ha='right', va='top' if sight_above_bbl else 'bottom')
+    return ax
+
+
+def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None,
+                       show_time_axis: bool = True) -> 'Axes':  # type: ignore
+    """
+    :param hit_result: HitResult object
+    :param look_angle: look_angle
+    :param show_time_axis: whether time of flight axis should be added to plot
+    :return: graph of the trajectory
+    """
+    if not hit_result.extra:
+        warnings.warn("HitResult.plot: To show extended data"
+                      "Use Calculator.fire(..., extra_data=True)")
+
+    ax = trajectory_as_plot(hit_result, look_angle)
+
+    font_size = PLOT_FONT_SIZE
+    df = hit_result.dataframe()
+    max_range = df.distance.max()
+    backward_bending_trajectory = (hit_result[-1].distance >> PreferredUnits.distance) != max_range
+
+    for p in hit_result.trajectory:
+        if TrajFlag(p.flag) & TrajFlag.ZERO:
+            ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
+                    [df['height'].min(), p.height >> PreferredUnits.drop], linestyle=':',
+                    color=PLOT_COLORS[TrajFlag(p.flag) & TrajFlag.ZERO])
+            ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
+                    f"{TrajFlag.name(TrajFlag(p.flag) & TrajFlag.ZERO)}",
+                    fontsize=font_size, rotation=90, color=PLOT_COLORS[TrajFlag(p.flag) & TrajFlag.ZERO])
+        if TrajFlag(p.flag) & TrajFlag.MACH:
+            ax.plot([p.distance >> PreferredUnits.distance, p.distance >> PreferredUnits.distance],
+                    [df['height'].min(), p.height >> PreferredUnits.drop],
+                    linestyle=':', color=PLOT_COLORS[TrajFlag.MACH])
+            ax.text((p.distance >> PreferredUnits.distance) + max_range / 100, df['height'].min(),
+                    "Mach 1", fontsize=font_size, rotation=90, color=PLOT_COLORS[TrajFlag.MACH])
+
     # Plot velocity (on secondary axis)
     df.plot(x='distance', xlabel=PreferredUnits.distance.symbol,
             y=['velocity'], ylabel=PreferredUnits.velocity.symbol,

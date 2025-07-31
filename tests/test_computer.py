@@ -1,12 +1,12 @@
 """Unittests for the py_ballisticcalc library"""
 
 import copy
-
 import pytest
 
-from py_ballisticcalc import (
-    DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError,
+from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError, TrajFlag,
+                              BaseEngineConfigDict
 )
+from py_ballisticcalc.helpers import must_fire
 from py_ballisticcalc.unit import *
 
 
@@ -241,6 +241,18 @@ class TestComputerPytest:
         hit_result = self.calc.fire(shot=shot, trajectory_range=Distance.Centimeter(5))
         assert len(hit_result.trajectory) > 1
 
+    def test_limit_start(self, loaded_engine_instance):
+        """Ensure that a shot that violates config limits instantly still returns at least initial state"""
+        conf = BaseEngineConfigDict(
+            cMinimumAltitude=0,
+        )
+        calc = Calculator(config=conf, engine=loaded_engine_instance)
+        shot = Shot(ammo=self.ammo)
+        shot.relative_angle = Angular.Radian(-0.1)
+        t, r = must_fire(calc, shot, trajectory_range=Distance.Meter(100))
+        assert len(t.trajectory) >= 1
+        assert isinstance(r, RangeError)
+
     def test_winds_sort(self):
         """Test that the winds are sorted by until_distance"""
         winds = [
@@ -250,7 +262,7 @@ class TestComputerPytest:
             Wind(Unit.MPS(2), Unit.Degree(30), Unit.Meter(50)),
         ]
         shot = Shot(
-            None, None, 0, 0, 0, None,
+            self.ammo, None, 0, 0, 0, None,
             winds
         )
         sorted_winds = shot.winds
@@ -258,3 +270,13 @@ class TestComputerPytest:
         assert sorted_winds[1] is winds[0]
         assert sorted_winds[2] is winds[2]
         assert sorted_winds[3] is winds[1]
+
+    def test_combined_flags(self):
+        """Test that combined flags are correctly set in the trajectory"""
+        dm = DragModel(bc=0.243, drag_table=TableG7)
+        shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
+        self.calc.set_weapon_zero(shot, zero_distance=Distance.Meter(200))
+        hit_result = self.calc.fire(shot, trajectory_range=Distance.Meter(300),
+                                    trajectory_step=Distance.Meter(100),extra_data=True)
+        assert hit_result.flag(TrajFlag.ZERO_DOWN).flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, \
+            'ZERO_DOWN should occur on a RANGE row'

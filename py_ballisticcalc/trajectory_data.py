@@ -21,7 +21,8 @@ _TrajFlagNames = {
     4: 'MACH',
     8: 'RANGE',
     16: 'APEX',
-    31: 'ALL',
+    32: 'MRT',  # Mid-Range Trajectory (a.k.a. Maximum Ordinate): highest point of trajectory over the sight line
+    63: 'ALL',
 }
 
 
@@ -36,7 +37,8 @@ class TrajFlag(int):
     MACH: Final[int] = 4
     RANGE: Final[int] = 8
     APEX: Final[int] = 16
-    ALL: Final[int] = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
+    MRT: Final[int] = 32
+    ALL: Final[int] = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX | MRT
 
     @staticmethod
     def name(value: Union[int, 'TrajFlag']) -> str:
@@ -61,11 +63,11 @@ class TrajectoryData(NamedTuple):
         velocity (Velocity): Velocity.
         mach (float): Velocity in Mach terms.
         height (Distance): Vertical (y-axis) coordinate of this point.
-        target_drop (Distance): Drop relative to sight-line.
-        drop_adj (Angular): Sight adjustment to zero target_drop at this distance.
+        slant_height (Distance): Distance orthogonal to sight-line
+        drop_adj (Angular): Sight adjustment to zero slant_height at this distance.
         windage (Distance): Windage (z-axis) coordinate of this point.
         windage_adj (Angular): Windage adjustment.
-        look_distance (Distance): Sight-line distance = .distance/cosine(look_angle).
+        slant_distance (Distance): Distance along sight line that is closest to this point.
         angle (Angular): Angle of velocity vector relative to x-axis.
         density_factor (float): Ratio of air density here to standard density.
         drag (float): Current drag coefficient.
@@ -79,11 +81,11 @@ class TrajectoryData(NamedTuple):
     velocity: Velocity
     mach: float
     height: Distance
-    target_drop: Distance
+    slant_height: Distance
     drop_adj: Angular
     windage: Distance
     windage_adj: Angular
-    look_distance: Distance
+    slant_distance: Distance
     angle: Angular
     density_factor: float
     drag: float
@@ -107,11 +109,11 @@ class TrajectoryData(NamedTuple):
             _fmt(self.velocity, PreferredUnits.velocity),
             f'{self.mach:.2f} mach',
             _fmt(self.height, PreferredUnits.drop),
-            _fmt(self.target_drop, PreferredUnits.drop),
+            _fmt(self.slant_height, PreferredUnits.drop),
             _fmt(self.drop_adj, PreferredUnits.adjustment),
             _fmt(self.windage, PreferredUnits.drop),
             _fmt(self.windage_adj, PreferredUnits.adjustment),
-            _fmt(self.look_distance, PreferredUnits.distance),
+            _fmt(self.slant_distance, PreferredUnits.distance),
             _fmt(self.angle, PreferredUnits.angular),
             f'{self.density_factor:.3e}',
             f'{self.drag:.3f}',
@@ -131,11 +133,11 @@ class TrajectoryData(NamedTuple):
             self.velocity >> PreferredUnits.velocity,
             self.mach,
             self.height >> PreferredUnits.drop,
-            self.target_drop >> PreferredUnits.drop,
+            self.slant_height >> PreferredUnits.drop,
             self.drop_adj >> PreferredUnits.adjustment,
             self.windage >> PreferredUnits.drop,
             self.windage_adj >> PreferredUnits.adjustment,
-            self.look_distance >> PreferredUnits.distance,
+            self.slant_distance >> PreferredUnits.distance,
             self.angle >> PreferredUnits.angular,
             self.density_factor,
             self.drag,
@@ -153,7 +155,7 @@ class DangerSpace(NamedTuple):
         target_height (Distance): Target height.
         begin (TrajectoryData): Beginning of danger space.
         end (TrajectoryData): End of danger space.
-        look_angle (Angular): Look-angle (sight-line).
+        look_angle (Angular): Slant angle.
     """
     at_range: TrajectoryData
     target_height: Distance
@@ -201,6 +203,9 @@ class HitResult:
     shot: Shot
     trajectory: list[TrajectoryData] = field(repr=False)
     extra: bool = False
+
+    def __len__(self) -> int:
+        return len(self.trajectory)
 
     def __iter__(self):
         yield from self.trajectory
@@ -252,7 +257,7 @@ class HitResult:
         Returns:
             int: Index of first trajectory row with .distance >= d; otherwise -1.
         """
-        epsilon = 1e-8  # small value to avoid floating point issues
+        epsilon = 1e-1  # small value to avoid floating point issues
         return next((i for i in range(len(self.trajectory))
                      if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)
 
@@ -272,6 +277,26 @@ class HitResult:
                 f"Calculated trajectory doesn't reach requested distance {d}"
             )
         return self.trajectory[i]
+
+    def get_at_time(self, t: float) -> TrajectoryData:
+        """
+        Args:
+            t (float): Time for which we want Trajectory Data.
+
+        Returns:
+            TrajectoryData: First trajectory row with .time >= t.
+
+        Raises:
+            ArithmeticError: If trajectory doesn't reach requested time.
+        """
+        epsilon = 1e-6  # small value to avoid floating point issues
+        idx = next((i for i in range(len(self.trajectory))
+                     if self.trajectory[i].time >= t - epsilon), -1)
+        if idx < 0:
+            raise ArithmeticError(
+                f"Calculated trajectory doesn't reach requested time {t}"
+            )
+        return self.trajectory[idx]
 
     def danger_space(self,
                      at_range: Union[float, Distance],
@@ -330,7 +355,7 @@ class HitResult:
             """
             center_row = self.trajectory[row_num]
             for prime_row in reversed(self.trajectory[:row_num]):
-                if (prime_row.target_drop.raw_value - center_row.target_drop.raw_value) >= target_height_half:
+                if (prime_row.slant_height.raw_value - center_row.slant_height.raw_value) >= target_height_half:
                     return prime_row
             return self.trajectory[0]
 
@@ -347,7 +372,7 @@ class HitResult:
             """
             center_row = self.trajectory[row_num]
             for prime_row in self.trajectory[row_num + 1:]:
-                if (center_row.target_drop.raw_value - prime_row.target_drop.raw_value) >= target_height_half:
+                if (center_row.slant_height.raw_value - prime_row.slant_height.raw_value) >= target_height_half:
                     return prime_row
             return self.trajectory[-1]
 

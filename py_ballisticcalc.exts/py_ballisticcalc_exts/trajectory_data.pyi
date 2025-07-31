@@ -12,11 +12,11 @@ class TrajectoryData(NamedTuple):
     velocity: Velocity
     mach: float
     height: Distance
-    target_drop: Distance
+    slant_height: Distance
     drop_adj: Angular
     windage: Distance
     windage_adj: Angular
-    look_distance: Distance
+    slant_distance: Distance
     angle: Angular
     density_factor: float
     drag: float

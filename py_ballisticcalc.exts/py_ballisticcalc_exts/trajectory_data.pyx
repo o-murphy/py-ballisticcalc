@@ -1,19 +1,10 @@
-# Total Score: 765, Possible Score: 10000
-# Total Non-Empty Lines: 100
-# Python Overhead Lines: 56
-# Cythonization Percentage: 92.35%
-# Python Overhead Lines Percentage: 56.00%
-
-
 # noinspection PyUnresolvedReferences
 from cython cimport final
 
 from py_ballisticcalc.unit import PreferredUnits
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport (
-    V3dT
-)
+from py_ballisticcalc_exts.v3d cimport V3dT
 
 
 @final
@@ -29,8 +20,8 @@ cdef class BaseTrajData:
 @final
 cdef class TrajectoryData:
     __slots__ = ('time', 'distance', 'velocity',
-                 'mach', 'height', 'target_drop', 'drop_adj',
-                 'windage', 'windage_adj', 'look_distance',
+                 'mach', 'height', 'slant_height', 'drop_adj',
+                 'windage', 'windage_adj', 'slant_distance',
                  'angle', 'density_factor', 'drag', 'energy', 'ogw', 'flag')
 
     _fields = __slots__
@@ -41,11 +32,11 @@ cdef class TrajectoryData:
                     object velocity,
                     double mach,
                     object height,
-                    object target_drop,
+                    object slant_height,
                     object drop_adj,
                     object windage,
                     object windage_adj,
-                    object look_distance,
+                    object slant_distance,
                     object angle,
                     double density_factor,
                     double drag,
@@ -58,11 +49,11 @@ cdef class TrajectoryData:
         self.velocity = velocity
         self.mach = mach
         self.height = height
-        self.target_drop = target_drop
+        self.slant_height = slant_height
         self.drop_adj = drop_adj
         self.windage = windage
         self.windage_adj = windage_adj
-        self.look_distance = look_distance
+        self.slant_distance = slant_distance
         self.angle = angle
         self.density_factor = density_factor
         self.drag = drag
@@ -85,11 +76,11 @@ cdef class TrajectoryData:
             _fmt(self.velocity, PreferredUnits.velocity),
             f'{self.mach:.2f} mach',
             _fmt(self.height, PreferredUnits.drop),
-            _fmt(self.target_drop, PreferredUnits.drop),
+            _fmt(self.slant_height, PreferredUnits.drop),
             _fmt(self.drop_adj, PreferredUnits.adjustment),
             _fmt(self.windage, PreferredUnits.drop),
             _fmt(self.windage_adj, PreferredUnits.adjustment),
-            _fmt(self.look_distance, PreferredUnits.distance),
+            _fmt(self.slant_distance, PreferredUnits.distance),
             _fmt(self.angle, PreferredUnits.angular),
             f'{self.density_factor:.3e}',
             f'{self.drag:.3f}',
@@ -110,11 +101,11 @@ cdef class TrajectoryData:
             self.velocity >> PreferredUnits.velocity,
             self.mach,
             self.height >> PreferredUnits.drop,
-            self.target_drop >> PreferredUnits.drop,
+            self.slant_height >> PreferredUnits.drop,
             self.drop_adj >> PreferredUnits.adjustment,
             self.windage >> PreferredUnits.drop,
             self.windage_adj >> PreferredUnits.adjustment,
-            self.look_distance >> PreferredUnits.distance,
+            self.slant_distance >> PreferredUnits.distance,
             self.angle >> PreferredUnits.angular,
             self.density_factor,
             self.drag,

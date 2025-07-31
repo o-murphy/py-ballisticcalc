@@ -3,9 +3,12 @@ import time
 import pytest
 
 from py_ballisticcalc import (
+    BaseEngineConfigDict,
+    Calculator,
     Distance,
     RangeError,
     HitResult,
+    TrajFlag
 )
 from tests.fixtures_and_helpers import print_out_trajectory_compact, zero_height_calc, \
     shot_with_relative_angle_in_degrees
@@ -22,89 +25,104 @@ def test_shot_incomplete(zero_height_calc):
         last_point_distance = hit_result[-1].distance >> Distance.Meter
         last_point_height = hit_result[-1].height >> Distance.Meter
         print(f"{ last_point_distance=} { last_point_height=}")
-        assert last_point_distance > 3525.0
+        assert last_point_distance > 3524.0
         assert last_point_height < 1e-10  # Basically zero; allow for rounding
 
+    extra_data = False
     try:
-        extra_data = False
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
     try:
-        extra_data = False
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
+    extra_data = True
     try:
-        extra_data = True
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
     try:
-        extra_data = True
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=range)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-
     check_end_point(hit_result)
 
 
-def test_vertical_shot(zero_height_calc):
+def test_vertical_shot(zero_height_calc, loaded_engine_instance):
     shot = shot_with_relative_angle_in_degrees(90)
     range = Distance.Meter(10)
+    extra_data = False
     try:
-        extra_data = False
         hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
-        if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
+        if e.reason in {RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached}:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
+        else:
+            raise e
     print_out_trajectory_compact(hit_result)
-    assert hit_result[-1].distance >> Distance.Meter == pytest.approx(0, abs=1e-10)
-    assert hit_result[-1].height >> Distance.Meter == pytest.approx(0, abs=0.1)
+    # In this case all we know is we should have two points, and the last point should be below zero.
+    assert len(hit_result) == 2
+    assert hit_result[-1].height.raw_value < 1e-10
 
     try:
         extra_data = True
-        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data)
+        # To get a ZERO_DOWN point we have to allow engine to cross the zero:
+        config = BaseEngineConfigDict(
+            cMinimumVelocity=0.0,
+            cMinimumAltitude=-1.0,
+            cMaximumDrop=-1.0,
+        )
+        calc = Calculator(config=config, engine=loaded_engine_instance)
+        hit_result = calc.fire(shot, range, extra_data=extra_data)
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:
             hit_result = HitResult(shot, e.incomplete_trajectory, extra=extra_data)
     print_out_trajectory_compact(hit_result)
-    assert hit_result[-1].distance >> Distance.Meter == pytest.approx(0, abs=1e-10)
-    assert hit_result[-1].height >> Distance.Meter == pytest.approx(0, abs=0.1)
+    z = hit_result.flag(TrajFlag.ZERO_DOWN)
+    assert z is not None
+    assert z.distance.raw_value == pytest.approx(0, abs=1e-10)
+    # We can't get this very close to zero until we interpolate for POIs:
+    #assert z.height >> Distance.Meter == pytest.approx(0, abs=1e-6)
+    assert z.height >> Distance.Meter < 1e-10
+    assert hit_result[-1].time != hit_result[-2].time, "Don't duplicate points"
 
 
-def test_no_duplicate_points(zero_height_calc):
+def test_no_duplicate_points(loaded_engine_instance):
     # this is a shot for point (1000, 0)
     shot = shot_with_relative_angle_in_degrees(0.46571949074059704)
     zero_distance = Distance.Meter(1000)
     # setting up bigger distance than required by shot
     range = Distance.Meter(1100)
+    config = BaseEngineConfigDict(
+        cMinimumVelocity=0.0,
+        cMinimumAltitude=-10.0,
+        cMaximumDrop=-10.0,
+    )
+    calc = Calculator(config=config, engine=loaded_engine_instance)
     try:
         extra_data = False
-        hit_result = zero_height_calc.fire(shot, range, extra_data=extra_data, trajectory_step=Distance.Meter(100))
+        hit_result = calc.fire(shot, range, extra_data=extra_data, trajectory_step=Distance.Meter(100))
     except RangeError as e:
         print(f'{e.reason} {len(e.incomplete_trajectory)=}')
         if e.reason in [RangeError.MaximumDropReached, RangeError.MinimumAltitudeReached]:

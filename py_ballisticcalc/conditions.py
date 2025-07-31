@@ -167,8 +167,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         if t < Atmo.cLowestTempC:
             t = Atmo.cLowestTempC
             warnings.warn(f"Temperature interpolated from altitude fell below minimum temperature limit.  "
-                          f"Model not accurate here.  Temperature bounded at cLowestTempF: {cLowestTempF}°F."
-                          , RuntimeWarning)
+                          f"Model not accurate here.  Temperature bounded at cLowestTempF: {cLowestTempF}°F.",
+                          RuntimeWarning)
         return t
 
     def pressure_at_altitude(self, altitude: float) -> float:
@@ -184,7 +184,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                                 cPressureExponent)
         return p
 
-    def get_density_factor_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
+    def get_density_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
         """
         Ref: https://en.wikipedia.org/wiki/Barometric_formula#Density_equations
         Args:
@@ -242,9 +242,9 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             ICAO standard pressure for altitude
         """
         return Pressure.hPa(cStandardPressureMetric
-                            * math.pow(
-            1 + cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
-            cPressureExponent))
+                            * math.pow(1 + cLapseRateMetric * (altitude >> Distance.Meter) /
+                                           (cStandardTemperatureC + cDegreesCtoK),
+                                       cPressureExponent))
 
     @staticmethod
     def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None,
@@ -278,8 +278,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         """
         if fahrenheit < -cDegreesFtoR:
             fahrenheit = cLowestTempF
-            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to ({cLowestTempF}°F)."
-                          , RuntimeWarning)
+            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to ({cLowestTempF}°F).", RuntimeWarning)
         return math.sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
 
     @staticmethod
@@ -293,8 +292,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         if celsius < -cDegreesCtoK:
             bad_temp = celsius
             celsius = Atmo.cLowestTempC
-            warnings.warn(f"Invalid temperature: {bad_temp}°C. Adjusted to ({celsius}°C)."
-                          , RuntimeWarning)
+            warnings.warn(f"Invalid temperature: {bad_temp}°C. Adjusted to ({celsius}°C).", RuntimeWarning)
         return Atmo.machK(celsius + cDegreesCtoK)
 
     @staticmethod
@@ -471,28 +469,27 @@ class Shot:
         relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
         cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
             from the vertical plane into the horizontal plane by sine(cant_angle)
-        weapon: Weapon instance uses for making shot
-        ammo: Ammo instance uses for making shot
-        atmo: Atmo instance uses for making shot
+        ammo: Ammo instance used for making shot
+        weapon: Weapon instance used for making shot
+        atmo: Atmo instance used for making shot
     """
 
     look_angle: Angular
     relative_angle: Angular
     cant_angle: Angular
 
-    weapon: Weapon
     ammo: Ammo
+    weapon: Weapon
     atmo: Atmo
-    _winds: List[Wind]  # use property Shot.winds to get sorted winds
+    _winds: List[Wind]  # Stored sorted by .until_distance
 
     # pylint: disable=too-many-positional-arguments
     def __init__(self,
-                 weapon: Weapon,
                  ammo: Ammo,
+                 weapon: Optional[Weapon] = None,
                  look_angle: Optional[Union[float, Angular]] = None,
                  relative_angle: Optional[Union[float, Angular]] = None,
                  cant_angle: Optional[Union[float, Angular]] = None,
-
                  atmo: Optional[Atmo] = None,
                  winds: Optional[List[Wind]] = None
                  ):
@@ -501,6 +498,8 @@ class Shot:
         Stores shot parameters for the trajectory calculation.
 
         Args:
+            ammo: Ammo instance used for making shot
+            weapon: Weapon instance used for making shot
             look_angle: Angle of sight line relative to horizontal.
                 If the look_angle != 0 then any target in sight crosshairs will be at a different altitude:
                     With target_distance = sight distance to a target (i.e., as through a rangefinder):
@@ -509,8 +508,6 @@ class Shot:
             relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
             cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
                 from the vertical plane into the horizontal plane by sine(cant_angle)
-            weapon: Weapon instance used for making shot
-            ammo: Ammo instance used for making shot
             atmo: Atmo instance used for making shot
             winds: list of winds used for making shot
 
@@ -519,8 +516,8 @@ class Shot:
             ```python
             from py_ballisticcalc import Weapon, Ammo, Atmo, Wind
             shot = Shot(
-                weapon=Weapon(...),
                 ammo=Ammo(...),
+                weapon=Weapon(...),
                 look_angle=Unit.Degree(5),
                 relative_angle=Unit.Degree(0),
                 cant_angle=Unit.Degree(0),
@@ -529,39 +526,37 @@ class Shot:
             )
             ```
         """
+        self.ammo = ammo
+        self.weapon = weapon or Weapon()
         self.look_angle = PreferredUnits.angular(look_angle or 0)
         self.relative_angle = PreferredUnits.angular(relative_angle or 0)
         self.cant_angle = PreferredUnits.angular(cant_angle or 0)
-        self.weapon = weapon
-        self.ammo = ammo
         self.atmo = atmo or Atmo.icao()
-        self._winds = winds or [Wind()]
+        self.winds = winds
 
     @property
     def winds(self) -> Tuple[Wind, ...]:
         """
-        Property that returns winds sorted by until distance
-
         Returns:
-            Tuple[Wind, ...] sorted by until distance
+            Tuple[Wind, ...] sorted by until_distance
         """
-        # guarantee that winds returns sorted by Wind.until distance
-        return tuple(sorted(self._winds, key=lambda wind: wind.until_distance.raw_value))
+        return tuple(self._winds)
 
     @winds.setter
     def winds(self, winds: Optional[List[Wind]]):
         """
-        Property that allows set list of winds for the shot
+        Property setter.  Ensures .winds is sorted by until_distance.
 
         Args:
             winds: list of the winds for the shot
         """
-        self._winds = winds or [Wind()]
+        self._winds = sorted(winds or [Wind()], key=lambda wind: wind.until_distance.raw_value)
 
     @property
     def barrel_elevation(self) -> Angular:
         """
-        Barrel elevation in vertical plane from horizontal
+        Total barrel elevation in vertical plane from horizontal
+            = look_angle + cos(cant_angle) * zero_elevation + relative_angle
 
         Returns:
             Angle of barrel elevation in vertical plane from horizontal
@@ -570,6 +565,18 @@ class Shot:
                               + math.cos(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
+
+    @barrel_elevation.setter
+    def barrel_elevation(self, value: Angular) -> None:
+        """
+        Setter for barrel_elevation.  Sets the relative_angle to achieve the desired elevation.
+        Note: This does not change the weapon.zero_elevation.
+
+        Args:
+            value: Desired barrel elevation in vertical plane from horizontal
+        """
+        self.relative_angle = Angular.Radian((value >> Angular.Radian) - (self.look_angle >> Angular.Radian) \
+                             - math.cos(self.cant_angle >> Angular.Radian) * (self.weapon.zero_elevation >> Angular.Radian))
 
     @property
     def barrel_azimuth(self) -> Angular:
@@ -582,3 +589,11 @@ class Shot:
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
+
+    @property
+    def slant_angle(self) -> Angular:
+        """Synonym for look_angle."""
+        return self.look_angle
+    @slant_angle.setter
+    def slant_angle(self, value: Angular) -> None:
+        self.look_angle = value

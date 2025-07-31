@@ -1,43 +1,34 @@
-# Total Score: 158, Possible Score: 12400
-# Total Non-Empty Lines: 124
-# Python Overhead Lines: 19
-# Cythonization Percentage: 98.73%
-# Python Overhead Lines Percentage: 15.32%
-
-
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport CTrajFlag, BaseTrajData, TrajectoryData
+from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t, BaseTrajData, TrajectoryData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
     ShotData_t,
-    update_density_factor_and_mach_for_altitude,
-    cy_spin_drift,
-    cy_drag_by_mach,
+    ShotData_t_dragByMach,
+    Atmosphere_t_updateDensityFactorAndMachForAltitude,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
-    _TrajectoryDataFilter,
+    TrajDataFilter_t,
 
-    WindSockT_current_vector,
-    WindSockT_vector_for_range,
+    WindSock_t_currentVector,
+    WindSock_t_vectorForRange,
 
     create_trajectory_row,
 
-    createTrajectoryDataFilter,
-    should_record,
-    setup_seen_zero
+    TrajDataFilter_t_create,
+    TrajDataFilter_t_setup_seen_zero,
+    TrajDataFilter_t_should_record,
 )
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport (
-    V3dT, add, sub, mag, mulS
-)
+from py_ballisticcalc_exts.v3d cimport V3dT, add, sub, mag, mulS
+
 
 import warnings
 
@@ -50,6 +41,9 @@ __all__ = (
 
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
+
+    cdef double get_calc_step(CythonizedEulerIntegrationEngine self):
+        return 0.5 * CythonizedBaseIntegrationEngine.get_calc_step(self)  # like super().get_calc_step()
 
     cdef list[object] _integrate(CythonizedEulerIntegrationEngine self,
                                  double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
@@ -64,20 +58,20 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             V3dT  delta_range_vector, velocity_adjusted
             V3dT  gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
             double min_step
-            double calc_step = self._shot_s.calc_step
+            double calc_step = self._shot_s.calc_step / 2.0
 
             # region Initialize wind-related variables to first wind reading (if any)
-            V3dT wind_vector = WindSockT_current_vector(self._wind_sock)
+            V3dT wind_vector = WindSock_t_currentVector(self._wind_sock)
             # endregion
 
-            _TrajectoryDataFilter data_filter
+            TrajDataFilter_t data_filter
             BaseTrajData data
 
         cdef:
             # early bindings
             double _cMinimumVelocity = self._config_s.cMinimumVelocity
-            double _cMaximumDrop = self._config_s.cMaximumDrop
             double _cMinimumAltitude = self._config_s.cMinimumAltitude
+            double _cMaximumDrop = -abs(self._config_s.cMaximumDrop)  # Ensure it's negative
 
         cdef:
             # temp vector
@@ -85,6 +79,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
         cdef:
             double last_recorded_range
+            str termination_reason
 
         # region Initialize velocity and position of projectile
         velocity = self._shot_s.muzzle_velocity
@@ -98,40 +93,38 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
         min_step = fmin(calc_step, record_step)
         # With non-zero look_angle, rounding can suggest multiple adjacent zero-crossings
-        data_filter = createTrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
+        data_filter = TrajDataFilter_t_create(filter_flags=filter_flags, range_step=record_step,
                                                  initial_position_ptr=&range_vector,
                                                  initial_velocity_ptr=&velocity_vector,
                                                  time_step=time_step)
-        setup_seen_zero(&data_filter, range_vector.y, &self._shot_s)
+        TrajDataFilter_t_setup_seen_zero(&data_filter, range_vector.y, &self._shot_s)
 
         #region Trajectory Loop
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
-
+        termination_reason = None
         last_recorded_range = 0.0
 
         while (range_vector.x <= maximum_range + min_step) or (
-                filter_flags and last_recorded_range <= maximum_range - 1e-6):
+                last_recorded_range <= maximum_range - 1e-6):
+            self.integration_step_count += 1
 
             # Update wind reading at current point in trajectory
             if range_vector.x >= self._wind_sock.next_range:  # require check before call to improve performance
-                wind_vector = WindSockT_vector_for_range(self._wind_sock, range_vector.x)
+                wind_vector = WindSock_t_vectorForRange(self._wind_sock, range_vector.x)
 
             # Update air density at current point in trajectory
             # overwrite density_factor and mach by pointer
-            update_density_factor_and_mach_for_altitude(&self._shot_s.atmo,
+            Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._shot_s.atmo,
                 self._shot_s.alt0 + range_vector.y, &density_factor, &mach)
 
             # region Check whether to record TrajectoryData row at current point
-            if filter_flags:  # require check before call to improve performance
-                # Record TrajectoryData row
-                data = should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
-                if data is not None:
-                    ranges.append(create_trajectory_row(
-                        data.time, &data.position, &data.velocity, data.mach,
-                        &self._shot_s,
-                        density_factor, drag, data_filter.current_flag
-                    ))
-                    last_recorded_range = data.position.x
+            data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
+            if data is not None:
+                ranges.append(create_trajectory_row(
+                    data.time, &data.position, &data.velocity, data.mach,
+                    &self._shot_s, density_factor, drag, data_filter.current_flag
+                ))
+                last_recorded_range = data.position.x
             # endregion
 
             #region Ballistic calculation step
@@ -140,7 +133,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             velocity_adjusted = sub(&velocity_vector, &wind_vector)
             velocity = mag(&velocity_adjusted)
             delta_time = calc_step / fmax(1.0, velocity)
-            drag = density_factor * velocity * cy_drag_by_mach(&self._shot_s, velocity / mach)
+            drag = density_factor * velocity * ShotData_t_dragByMach(&self._shot_s, velocity / mach)
 
             _tv = mulS(&velocity_adjusted, drag)
             _tv = sub(&_tv, &gravity_vector)
@@ -154,30 +147,36 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             velocity = mag(&velocity_vector)
             time += delta_time
 
-            if (
-                    velocity < _cMinimumVelocity
-                    or range_vector.y < _cMaximumDrop
-                    or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
+            if (velocity < _cMinimumVelocity
+                or range_vector.y < _cMaximumDrop
+                or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
             ):
+                if velocity < _cMinimumVelocity:
+                    termination_reason = RangeError.MinimumVelocityReached
+                elif range_vector.y < _cMaximumDrop:
+                    termination_reason = RangeError.MaximumDropReached
+                else:
+                    termination_reason = RangeError.MinimumAltitudeReached
+                break
+            #endregion Ballistic calculation step
+        #endregion Trajectory Loop
+        data = TrajDataFilter_t_should_record(&data_filter, &range_vector, &velocity_vector, mach, time)
+        if data is not None:
+            ranges.append(create_trajectory_row(
+                data.time, &data.position, &data.velocity, data.mach,
+                &self._shot_s, density_factor, drag, data_filter.current_flag
+            ))
+        # Ensure that we have at least two data points in trajectory, or 1 if filter_flags==NONE
+        # ... as well as last point if we had an incomplete trajectory
+        if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 0:
+            if len(ranges) > 0 and ranges[-1].time == time:  # But don't duplicate the last point.
+                pass
+            else:
                 ranges.append(create_trajectory_row(
                     time, &range_vector, &velocity_vector, mach,
-                    &self._shot_s,
-                    density_factor, drag, data_filter.current_flag
+                    &self._shot_s, density_factor, drag, TrajFlag_t.NONE
                 ))
 
-                if velocity < _cMinimumVelocity:
-                    reason = RangeError.MinimumVelocityReached
-                elif range_vector.y < _cMaximumDrop:
-                    reason = RangeError.MaximumDropReached
-                else:
-                    reason = RangeError.MinimumAltitudeReached
-                raise RangeError(reason, ranges)
-            #endregion
-        #endregion
-        # Ensure that we have at least two data points in trajectory
-        if len(ranges) < 2:
-            ranges.append(create_trajectory_row(
-                time, &range_vector, &velocity_vector, mach, &self._shot_s,
-                density_factor, drag, CTrajFlag.NONE))
-
+        if termination_reason is not None:
+            raise RangeError(termination_reason, ranges)
         return ranges

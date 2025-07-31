@@ -54,7 +54,7 @@ from py_ballisticcalc.interface import _EngineLoader
 
 
 
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 # set global library settings
 PreferredUnits.velocity = Velocity.MPS

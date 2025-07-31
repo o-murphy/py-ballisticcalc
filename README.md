@@ -62,49 +62,36 @@ https://stand-with-ukraine.pp.ua
 ### Table of contents
 
 * **[Installation](#installation)**
-    * [Latest stable](#latest-stable-release-from-pypi)
+    * [Latest stable](https://pypi.org/project/py-ballisticcalc/)
 
-  [//]: # (    * [From sources]&#40;#installing-from-sources&#41;)
-
+  [//]: # (  * [From sources]&#40;#installing-from-sources&#41;)
   [//]: # (  * [Clone and build]&#40;#clone-and-build&#41;)
 
 * **[Usage](#usage)**
-    * [Simple example](#simple-zero)
-    * [Plot trajectory](#plot-trajectory-with-danger-space)
-    * [Range card](#plot-trajectory-with-danger-space)
-    * [Complex example](#complex-example)
-    * [Jupyter notebook](Example.ipynb)
-    * [Preferences](#preferences)
-    * [Units of measure](#units)
+  * [Simple example](#simple-zero)
+  * [Plot trajectory](#plot-trajectory-with-danger-space)
+  * [Range card](#plot-trajectory-with-danger-space)
+  * [Complex example](#complex-example)
 
-    * **[Custom integrator engines](#custom-integrator-engines)**
-        * [Create custom engine](#create-custom-engine-module)
-        * [Custom engine usage](#custom-engine-usage)
-        * [Test custom engine](#test-your-custom-engine)
+* [**Units** of measure](#units)
+  * [Examples](#examples)
+  * [Preferences](#preferences)
 
-      [//]: # (  * Compatible open-source integrators)
-
-      [//]: # (    * [CyEulerBallistic]&#40;https://github.com/o-murphy/CyEulerBallistic&#41; - Cythonized Euler method integrator)
-
-      [//]: # (    * [RKballistic]&#40;https://github.com/dbookstaber/RKballistic&#41; - Runge-Kutta 4th order method integrator)
-        * [Integrator engines comparison](#integrator-engines-comparison)
-
-          [//]: # (  * [An example of calculations]&#40;#an-example-of-calculations&#41;)
-
-          [//]: # (  * [Output example]&#40;#example-of-the-formatted-output&#41;)
+* **[Integration Engines](#integration-engines)**
+  * [Modifying Presets](#modifying-presets)
+  * [Custom integration engines](#custom-integration-engines)
 
 * **[Concepts](#concepts)**
-* **[Older versions]()**
-    * [v1.1.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.1.4)
-    * [v1.0.x](https://github.com/o-murphy/py_ballisticcalc/tree/v1.0.12)
+  * [Coordinates](#coordinates)
+  * [Slant / Look Angle](#look-angle)
+  * [Danger Space](#danger-space)
+
 * **[Contributors](#contributors)**
 * **[About project](#about-project)**
 
 # Installation
 
-[//]: # (```python setup.py build_ext --inplace```)
-
-[//]: # (## Latest stable release from pypi)
+## pip
 
 ```shell
 pip install py-ballisticcalc
@@ -116,21 +103,23 @@ pip install py-ballisticcalc[exts]
 pip install py-ballisticcalc[charts]
 ```
 
+## uv
+
+```shell
+uv sync
+
+uv sync --dev --extra exts
+```
+
 # Usage
 
-**See [Example.ipynb](Example.ipynb) for detailed illustrations of all features and usage.**
-
-```python
-# Uncomment pyximport to compile instead of running pure python
-# import pyximport; pyximport.install(language_level=3)
-
-from py_ballisticcalc import *
-```
+**See [Example.ipynb](Example.ipynb) and [ExtremeExamples.ipynb](ExtremeExamples.ipynb) for detailed illustrations of all features and usage.**
 
 ## Simple Zero
 
 ```python
 # Establish 100-yard zero for a standard .308, G7 bc=0.22, muzzle velocity 2600fps
+from py_ballisticcalc import *
 zero = Shot(weapon=Weapon(sight_height=2), ammo=Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(2600)))
 calc = Calculator()
 zero_distance = Distance.Yard(100)
@@ -144,7 +133,7 @@ print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << PreferredU
 
 ```python
 # Plot trajectory out to 500 yards
-shot_result = calc.fire(zero, trajectory_range=500, extra_data=True)
+shot_result = calc.fire(zero, trajectory_range=500, trajectory_step=Distance.Yard(1), extra_data=True)
 ax = shot_result.plot()
 # Find danger space for a half-meter tall target at 300 yards
 danger_space = shot_result.danger_space(Distance.Yard(300), Distance.Meter(.5))
@@ -162,13 +151,13 @@ plt.show()
 ```python
 # Range card for this zero with 5mph cross-wind from left to right
 zero.winds = [Wind(Velocity.MPH(5), Angular.OClock(3))]
-range_card = calc.fire(zero, trajectory_range=1000)
+range_card = calc.fire(zero, trajectory_range=1000, trajectory_step=100)
 range_card.dataframe().to_clipboard()
 range_card.dataframe(True)[
-    ['distance', 'velocity', 'mach', 'time', 'target_drop', 'drop_adj', 'windage', 'windage_adj']].set_index('distance')
+    ['distance', 'velocity', 'mach', 'time', 'slant_height', 'drop_adj', 'windage', 'windage_adj']].set_index('distance')
 ```
 
-| distance  | velocity    | mach      | time    | target_drop | drop_adj   | windage   | windage_adj |
+| distance  | velocity    | mach      | time    | slant_height | drop_adj   | windage   | windage_adj |
 |-----------|-------------|-----------|---------|-------------|------------|-----------|-------------|
 | 0.0 yd    | 2600.0 ft/s | 2.33 mach | 0.000 s | -2.0 inch   | 0.00 mil   | -0.0 inch | 0.00 mil    |
 | 100.0 yd  | 2398.1 ft/s | 2.15 mach | 0.120 s | -0.0 inch   | -0.00 mil  | 0.4 inch  | 0.12 mil    |
@@ -184,8 +173,7 @@ range_card.dataframe(True)[
 
 ## Complex Example
 
-Here we define a standard .50BMG, enable powder temperature sensitivity, and zero for a distance of 500 meters, in a 5°C
-atmosphere at altitude 1000ft ASL.
+Here we define a standard .50BMG, enable powder temperature sensitivity, and zero for a distance of 500 meters, in a 5°C atmosphere at altitude 1000ft ASL.
 
 ```python
 dm = DragModel(0.62, TableG1, 661, 0.51, 2.3)
@@ -205,123 +193,9 @@ print(
     Barrel elevation for 500.0m zero: 4.69mil
     Muzzle velocity at zero temperature 5.0°C is 830.0m/s
 
-## Preferences
+# Units
 
-In version 2.x.x we changed concepts of settings, there are 2 ways to set preferences
-
-#### 1. To change library default units directly from code use `PreferredUnits` object
-
-```python
-from py_ballisticcalc import PreferredUnits, Velocity, Angular, Temperature, Distance
-
-# Change default library units
-PreferredUnits.velocity = Velocity.MPS
-PreferredUnits.adjustment = Angular.Mil
-PreferredUnits.temperature = Temperature.Celsius
-PreferredUnits.distance = Distance.Meter
-PreferredUnits.sight_height = Distance.Centimeter
-PreferredUnits.drop = Distance.Centimeter
-
-print(f'PreferredUnits: {str(PreferredUnits)}')
-print(f'Default distance unit: {PreferredUnits.distance.name}')
-
-# Can create value in default unit with either float or another unit of same type
-print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
-print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
-```
-
-#### 2. To change solver global setting use global flags setters
-
-> [!IMPORTANT]
-> This way is deprecated and will be removed in a future version,
-> use [InterfaceConfigDict](#3-to-change-solver-interface-setting-use-_config-attribute-for-calculator)
-> _globalUsePowderSensitivity no more supports, use Ammo.use_powder_sens instead and Atmo.powder_t
-
-```python
-from py_ballisticcalc import *
-
-set_global_max_calc_step_size(Unit.Meter(1))
-step = get_global_max_calc_step_size()
-
-# reset global flags to defaults
-reset_globals()
-```
-
-#### 3. To change solver interface setting use _config attribute for Calculator
-
-```python
-from py_ballisticcalc import Calculator, InterfaceConfigDict
-
-config = InterfaceConfigDict(
-    max_calc_step_size_feet=1.,
-    # cZeroFindingAccuracy= ...,
-    cMinimumVelocity=0,
-    # cMaximumDrop= ...,
-    # cMaxIterations= ...,
-    # cGravityConstant= ...,
-    # cMinimumAltitude= ...,
-)
-calc = Calculator(config=config)
-```
-
-## Units
-
-#### Use new method to set preferred units/settings globally for the venv or the user
-
-Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
-Or place this file in user's home directory. _(The file in project root have priority.)_
-Use `loadMetricUnits()`, `loadImperialUnits()` or `loadMixedUnits()` to manualy load one of preinstalled pressets.
-You can use `basicConfig()` function to load your custom `.toml` file
-
-The references of `.pybc.toml` settings file you can [**get there
-**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
-and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets). They include settings
-for [metric]
-(https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-imperial.toml)
-and
-[mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-mixed.toml) mode.
-Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for
-diameter,
-length, weight and adjustment units.
-
-```toml
-# Config template for py_ballisticcalc
-
-title = "standard py_ballisticcalc config template"
-version = "2.0.0b4"
-
-[pybc.preferred_units]
-angular = 'Degree'
-distance = 'Yard'
-velocity = 'FPS'
-# ... other there
-
-[pybc.calculator]
-max_calc_step_size = { value = 0.5, units = "Foot" }
-# ...
-```
-
-##### Load .pybc.toml presets
-
-```python
-from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
-
-loadImperialUnits()
-loadMetricUnits()
-loadMixedUnits()
-```
-
-(Use just one of these three methods - only the last one called counts).
-
-##### Custom .pybc.toml
-
-```python
-from py_ballisticcalc import basicConfig
-
-basicConfig("path/to/your_config.toml")
-```
-
-#### Available manipulations with units
+## Examples
 
 ```python
 from py_ballisticcalc.unit import *
@@ -365,30 +239,127 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1 * 
 # >>> True, compare unit with float by raw value
 ```
 
-# Custom integrator engines
+## Preferences
 
-Since version `2.1.1b1`
+To change default units directly from code: use `PreferredUnits` object
 
-* The `py_ballisticcalc.exts` module is deprecated, we recommend to use [CyEulerBallistic](CyEulerBallistic)
-* The library switch to explicit setup custom integrator engines using entry_points instead of direct import
+```python
+from py_ballisticcalc import PreferredUnits, Velocity, Angular, Temperature, Distance
 
-### Create custom engine module
+# Change default library units
+PreferredUnits.velocity = Velocity.MPS
+PreferredUnits.adjustment = Angular.Mil
+PreferredUnits.temperature = Temperature.Celsius
+PreferredUnits.distance = Distance.Meter
+PreferredUnits.sight_height = Distance.Centimeter
+PreferredUnits.drop = Distance.Centimeter
+
+print(f'PreferredUnits: {str(PreferredUnits)}')
+print(f'Default distance unit: {PreferredUnits.distance.name}')
+
+# Can create value in default unit with either float or another unit of same type
+print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
+print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
+```
+
+**Use new method to set preferred units/settings globally for the venv or the user:**
+
+Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
+Or place this file in user's home directory. _(The file in project root has priority.)_
+Use `loadMetricUnits()`, `loadImperialUnits()` or `loadMixedUnits()` to manualy load one of presets.
+You can use `basicConfig()` function to load your custom `.toml` file
+
+The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
+and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets). They include settings for [metric](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-imperial.toml) and [mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-mixed.toml) mode.
+Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for diameter, length, weight and adjustment units.
+
+```toml
+# Config template for py_ballisticcalc
+
+title = "standard py_ballisticcalc config template"
+version = "2.0.0b4"
+
+[pybc.preferred_units]
+angular = 'Degree'
+distance = 'Yard'
+velocity = 'FPS'
+# ... other there
+
+[pybc.calculator]
+max_calc_step_size = { value = 0.5, units = "Foot" }
+# ...
+```
+
+**Load .pybc.toml presets**
+
+```python
+from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
+
+loadImperialUnits()
+loadMetricUnits()
+loadMixedUnits()
+```
+
+(Use just one of these three methods – only the last one called counts).
+
+**Custom .pybc.toml**
+
+```python
+from py_ballisticcalc import basicConfig
+
+basicConfig("path/to/your_config.toml")
+```
+
+
+# Integration Engines
+
+## Comparison
+
+**See [Engine Benchmarks](doc/BenchmarkEngines.md) for more detailed analysis and comparison of the engines.**
+
+| Engine Name                |  Is Default?   | Relative Performance | Dependencies  | Description                                                                                                                  |
+|:--------------------------|:--------------:|:-------------------------------------|:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
+| `rk4_engine`              | :green_circle: | Baseline (1x)                        | None                     | Runge-Kutta 4th-order integration.                                                                                           |
+| `verlet_engine`           |  :red_circle:  |  0.7x (slower)                       | None                     | Velocity Verlet 2nd-order integration.                                                                                       |
+| `euler_engine`            |  :red_circle:  |  0.5x (slower)                       | None                     | Basic Euler integration: 1st-order but easiest to understand.                                                                |
+| `cythonized_rk4_engine`   |  :red_circle:  | 50x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Runge-Kutta 4th-order integration.                                                                          |
+| `cythonized_euler_engine` |  :red_circle:  | 40x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                                                                                          |
+| `scipy_engine`            |  :red_circle:  | 10x faster                           | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.                                                                       |
+
+## Modifying presets
+
+Using `BaseEngineConfigDict`:
+
+```python
+from py_ballisticcalc import Calculator, BaseEngineConfigDict
+
+config = BaseEngineConfigDict(
+    max_calc_step_size_feet=1.,
+    # cZeroFindingAccuracy= ...,
+    cMinimumVelocity=0,
+    # cMaximumDrop= ...,
+    # cMaxIterations= ...,
+    # cGravityConstant= ...,
+    # cMinimumAltitude= ...,
+)
+calc = Calculator(config=config)
+```
+
+## Custom integration engines
+
+**Create custom engine module**
 
 To define custom integrator engine you can create separate module that should have class that implements
-`py_ballisticcalc.generics.EngineProtocol`
-Also you have to add entry point `py_ballisticcalc.my_awesome_engine` in your module `pyproject.toml`/`setup.py`
-Entry point name should ends with `_engine`
+`py_ballisticcalc.generics.EngineProtocol`. Also you have to add entry point `py_ballisticcalc.my_awesome_engine` in your module `pyproject.toml`/`setup.py`.  Entry point name should end with `_engine`.
 
 ```toml
 [project.entry-points.py_ballisticcalc]
 my_awesome_engine = "my_awesome_engine_library.my_awesome_module:MyAwesomeEngine"
 ```
 
-### Custom engine usage
+**Custom engine usage**
 
-For `Calculator` instance definition with custom engine install your library to virtual env and use your library name as
-`_engine` argument
-It should load your engine class in background
+For `Calculator` instance definition with custom engine, install your library to virtual env and use your library name as `_engine` argument.  It should load your engine class in background.
 
 ```python
 from py_ballisticcalc import Calculator
@@ -398,7 +369,7 @@ calc = Calculator(engine="my_awesome_engine")
 calc = Calculator(engine="my_awesome_engine_library.my_awesome_module:MyAwesomeEngine")
 ```
 
-### Test your custom engine
+**Test your custom engine**
 
 To test your custom engine compatibility you can use predefined tests from `py_ballisticcalc`
 
@@ -414,40 +385,37 @@ To test your custom engine compatibility you can use predefined tests from `py_b
   pytest ./tests --engine="my_awesome_engine_library.my_awesome_module:MyAwesomeEngine" 
   ```
 
-### Integrator engines comparison
-
-| Entry Name                |  Is Default?   | Relative Performance to Euler Engine | Additional dependencies  | Description                                                                                                                  |
-|:--------------------------|:--------------:|:-------------------------------------|:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
-| `euler_engine`            | :green_circle: | Baseline (1x)                        | None                     | Standard Euler integration. A basic and generally lower-performing method.                                                   |
-| `rk4_engine`              |  :red_circle:  | 0.54x (slower)                       | None                     | Standard Runge-Kutta 4th order integration. Typically more accurate than Euler, but slower in pure Python.                   |
-| `cythonized_euler_engine` |  :red_circle:  | 35.48x faster                        | `py-ballisticcalc[exts]` | Cython-optimized Euler integration. Offers high performance due to Cython compilation.                                       |
-| `cythonized_rk4_engine`   |  :red_circle:  | 59.54x faster                        | None                     | Cython-optimized Runge-Kutta 4th order integration. Provides very high performance.                                          |
-| `scipy_engine` **(BETA)** |  :red_circle:  | 29.11x faster                        | `scipy`                  | Utilizes SciPy's numerical integration capabilities. Performance benefits from SciPy's optimized underlying implementations. |
 
 # Concepts
 
+## Coordinates
+
+![Ballistic coordinates](doc/ballistics_coordinates.svg)
+
+**Gravity gives $y$:** In ballistics, everything is referenced to the direction of gravity. The gravity vector points "down," and this defines the vertical direction. In 3D Cartesian coordinates $(x, y, z)$, the gravity vector is $(0, -g, 0)$, where $g$ is acceleration due to gravity (typically 32 feet/second² or 9.8 meters/second²). The $y$ coordinate describes vertical (up/down) position.
+
+**Horizontal:** Having defined the vertical axis using the gravity vector, we can then define *horizontal* as any vector perpendicular (or *orthogonal*) to the direction of gravity.
+
+**Sight gives $x$:** The second key reference in ballistics is the **sight line**. We set the origin of our coordinate system $(0, 0, 0)$ at the sight, which is usually either the shooter’s eye or the center of a sighting device like a scope. The *sight line* is the ray starting at the origin and pointing in the exact direction of the sight.  The $x$ coordinate measures distance from the sight along a horizontal sight line.
+
+The $z$ coordinate describes position orthogonal to both the direction of gravity and the sight line. From the perspective of the sight, this is lateral position, also known as windage.
+
 ## Look angle
 
-*Look angle* is the elevation of the sight line (a.k.a., _Line of Sight_, or _LoS_) relative to the horizon. For flat
-fire at angles close to horizontal this does not make a significant difference. When the look angle is significantly
-above or below the horizon the trajectory will be different because:
+*Look angle*, a.k.a. *slant angle*, is the elevation of the sight line (a.k.a., _Line of Sight_, or _LoS_) relative to the horizon. For  angles close to horizontal (_flat fire_) this does not make a significant difference. When the look angle is significantly above or below the horizon the trajectory will be different because:
 
 1. Gravity is not orthogonal to the velocity
 2. Air density changes with altitude, so the drag effects will vary across an arcing trajectory.
 
-The shooter typically cares about the line of sight (LoS): Sight adjustments (_drop_ in the following figure) are made
-relative to LoS, and ranging errors – and hence [danger space](#danger-space) – follow the line of sight, not the
-horizon.
+The shooter typically cares about the line of sight (LoS): Sight adjustments are made relative to LoS.  Ranging errors – and hence [danger space](#danger-space) – follow the _slant-height_, not the horizontal height.
 
-The following diagram shows how _look distance_ and _drop_ relate by _look angle_ to the underlying (distance _x_,
-height _y_) trajectory data.
+The following diagram shows how _slant distance_ and _slant height_ relate by _look angle_ to the underlying (distance _x_, height _y_) trajectory data.  [Understanding Slant Angle](examples/Understanding_Slant_Angle.ipynb) covers these concepts in more detail.
 ![Look-angle trigonometry](doc/BallisticTrig.svg)
 
 ## Danger Space
 
 Danger space is a practical measure of sensitivity to ranging error. It is defined for a target of height *h* and
-distance *d*, and it indicates how far forward and backward along the line of sight the target can move such that the
-trajectory will still hit somewhere (vertically) on the target.
+distance *d*, and it indicates how far forward and backward along the line of sight the target can move such that the trajectory will still hit somewhere (vertically) on the target.
 
 ![Danger Space](doc/DangerSpace.svg)
 
@@ -464,12 +432,10 @@ Alexandre Trofimov and then ported to Go.
 This Python3 implementation has been expanded to support multiple ballistic coefficients and custom drag functions, such
 as those derived from Doppler radar data.
 
-**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)
-**.
+**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)**.
 
 **[C# version of the package is located here](https://github.com/gehtsoft-usa/BallisticCalculator1),
-and [the online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)
-**.
+and [the online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)**.
 
 ## Contributors
 
@@ -502,11 +468,8 @@ Special thanks to:
 
 The library performs very limited simulation of a complex physical process and so it performs a lot of approximations.
 Therefore, the calculation results MUST NOT be considered as completely and reliably reflecting actual behavior or
-characteristics of projectiles. While these results may be used for educational purpose, they must NOT be considered as
-reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human
-life at risk.
+characteristics of projectiles. While these results may be used for educational purpose, they must NOT be considered as reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human life at risk.
 
 THE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.

@@ -42,7 +42,7 @@ class ZeroFindingError(SolverRuntimeError):
     - Last barrel elevation (Angular instance)
     """
 
-    DISTANCE_NON_CONVERGENT = 'Distance non-convergent'
+    DISTANCE_NON_CONVERGENT = "Distance non-convergent"
     ERROR_NON_CONVERGENT = "Error non-convergent"
 
     def __init__(self,

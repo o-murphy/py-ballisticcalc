@@ -1,7 +1,7 @@
 import pytest
 
-from py_ballisticcalc import HitResult, Distance, BaseEngineConfigDict, Calculator, DragModel, TableG1, Weight, \
-    Velocity, Ammo, Weapon, Shot, Angular
+from py_ballisticcalc import (HitResult, Distance, BaseEngineConfigDict, Calculator, DragModel, TableG1, TableG7,
+                              Weight, Velocity, Ammo, Shot, Angular)
 
 
 def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit: Distance = Distance.Meter,
@@ -39,33 +39,37 @@ def zero_height_calc(loaded_engine_instance):
     calc = Calculator(config=config, engine=loaded_engine_instance)
     return calc
 
-
-def create_shot():
-    drag_model = DragModel(
-        bc=0.759,
-        drag_table=TableG1,
-        weight=Weight.Gram(108),
-        diameter=Distance.Millimeter(23),
-        length=Distance.Millimeter(108.2),
-    )
-    ammo = Ammo(drag_model, Velocity.MPS(930))
-    gun = Weapon()
-    shot = Shot(
-        weapon=gun,
-        ammo=ammo,
-    )
-    return shot
-
-
-def shot_with_relative_angle_in_degrees(angle_in_degrees: float):
-    shot = create_shot()
-    shot.relative_angle = Angular.Degree(angle_in_degrees)
-    return shot
-
-
 @pytest.fixture(autouse=True)
 def zero_min_velocity_calc(loaded_engine_instance):
     config = BaseEngineConfigDict(
         cMinimumVelocity=0,
     )
     return Calculator(config=config, engine=loaded_engine_instance)
+
+
+def create_23_mm_shot():
+    dm = DragModel(bc=0.759, drag_table=TableG1,
+                   weight=Weight.Gram(108), diameter=Distance.Millimeter(23), length=Distance.Millimeter(108.2))
+    return Shot(ammo=Ammo(dm, Velocity.MPS(930)))
+
+def create_7_62_mm_shot():
+    """7.62x51mm NATO M118"""
+    dm = DragModel(bc=0.243, drag_table=TableG7,
+                   weight=Weight.Grain(175), diameter=Distance.Millimeter(7.62), length=Distance.Millimeter(32.0))
+    return Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
+
+def create_5_56_mm_shot():
+    """5.56x45mm NATO SS109"""
+    dm = DragModel(bc=0.151, drag_table=TableG7,
+                   weight=Weight.Grain(62), diameter=Distance.Millimeter(5.56), length=Distance.Millimeter(21.0))
+    return Shot(ammo=Ammo(dm, mv=Velocity.MPS(900)))
+
+def create_0_308_caliber_shot():
+    dm = DragModel(bc=0.233, drag_table=TableG7,
+                   weight=Weight.Grain(155), diameter=Distance.Inch(0.308), length=Distance.Inch(1.2))
+    return Shot(ammo=Ammo(dm, mv=Velocity.MPS(914.6)))
+
+def shot_with_relative_angle_in_degrees(angle_in_degrees: float):
+    shot = create_23_mm_shot()
+    shot.relative_angle = Angular.Degree(angle_in_degrees)
+    return shot

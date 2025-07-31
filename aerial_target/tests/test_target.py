@@ -69,7 +69,7 @@ class TestTarget(TestCase):
                 self.assert_deltas(target, pos)
 
     def assert_deltas(self, target, pos):
-        delta_look = (target.look_distance_ft >> Unit.Meter) - (pos.look_distance_ft >> Unit.Meter)
+        delta_look = (target.slant_distance_ft >> Unit.Meter) - (pos.slant_distance_ft >> Unit.Meter)
         print(delta_look)
 
     def test_shot(self):
@@ -93,21 +93,21 @@ class TestTarget(TestCase):
             direction_angle_rad = math.radians(30)
             velocity_fps = 164
             look_angle_rad = math.radians(20)
-            look_distance_foot = 1640
+            slant_distance_foot = 1640
 
             velocity_vector = Vector(
                 math.sin(direction_angle_rad), math.cos(direction_angle_rad), 0
             ) * -velocity_fps
 
-            distance_vector = Vector(0, math.cos(look_angle_rad), math.sin(look_angle_rad)) * look_distance_foot
+            distance_vector = Vector(0, math.cos(look_angle_rad), math.sin(look_angle_rad)) * slant_distance_foot
 
             expected_distance_vector = distance_vector + (velocity_vector * time)
 
             horizontal_preemption_angle_rad = math.atan(expected_distance_vector.x / expected_distance_vector.y)
             new_look_angle_rad = math.atan(expected_distance_vector.z / expected_distance_vector.y)
             vertical_preemption_angle_rad = new_look_angle_rad - look_angle_rad
-            look_distance_foot = (expected_distance_vector.y / math.cos(new_look_angle_rad)) * math.cos(
+            slant_distance_foot = (expected_distance_vector.y / math.cos(new_look_angle_rad)) * math.cos(
                 horizontal_preemption_angle_rad)
-            print(look_distance_foot, math.degrees(horizontal_preemption_angle_rad), math.degrees(new_look_angle_rad))
+            print(slant_distance_foot, math.degrees(horizontal_preemption_angle_rad), math.degrees(new_look_angle_rad))
             print(Unit.Radian(-horizontal_preemption_angle_rad) >> Unit.Thousandth,
                   Unit.Radian(-vertical_preemption_angle_rad) >> Unit.Thousandth)
