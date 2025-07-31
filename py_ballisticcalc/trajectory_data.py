@@ -1,7 +1,7 @@
 """Implements a point of trajectory class in applicable data types"""
 import typing
 from dataclasses import dataclass, field
-
+from deprecated import deprecated
 from typing_extensions import NamedTuple, Optional, Union, Tuple, Final
 
 from py_ballisticcalc.conditions import Shot
@@ -92,6 +92,18 @@ class TrajectoryData(NamedTuple):
     energy: Energy
     ogw: Weight
     flag: Union[TrajFlag, int]
+
+    @property
+    @deprecated(reason="Use .slant_distance instead of .look_distance", version="2.2.0")
+    def look_distance(self) -> Distance:
+        """Synonym for slant_distance."""
+        return self.slant_distance
+
+    @property
+    @deprecated(reason="Use .slant_height instead of .target_drop", version="2.2.0")
+    def target_drop(self) -> Distance:
+        """Synonym for slant_height."""
+        return self.slant_height
 
     def formatted(self) -> Tuple[str, ...]:
         """

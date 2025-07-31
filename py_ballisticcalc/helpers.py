@@ -45,6 +45,26 @@ def vacuum_range(
         gravity = -gravity
     return (velocity ** 2 * math.sin(2 * angle_rad)) / gravity
 
+def vacuum_angle_to_zero(
+        velocity: float,
+        distance: float,
+        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+) -> float:
+    """
+    Launch angle needed to hit zero at specified distance in a vacuum.
+
+    Args:
+        velocity: Launch velocity in units of gravity*seconds.
+        distance: Horizontal distance to zero (units of velocity*seconds).
+        gravity: Acceleration due to gravity (default: EARTH_GRAVITY_CONSTANT_IN_SI).
+
+    Returns:
+        Launch angle in degrees above horizontal.
+    """
+    if gravity < 0:
+        gravity = -gravity
+    return math.degrees(0.5 * math.asin((distance * gravity) / (velocity ** 2)))
+
 def vacuum_time_to_zero(
         velocity: float,
         launch_angle_deg: float,
@@ -66,7 +86,7 @@ def vacuum_time_to_zero(
         gravity = -gravity
     return 2 * velocity * math.sin(angle_rad) / gravity
 
-def solve_velocity_for_vacuum_time_to_zero(
+def vacuum_velocity_to_zero(
         time_to_zero: float,
         launch_angle_deg: float,
         gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
