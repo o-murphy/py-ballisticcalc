@@ -232,11 +232,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
-            """Returns range to zero (in feet) for given launch angle in radians."""
+            """Returns slant-distance minus slant-error (in feet) for given launch angle in radians."""
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self._find_apex(props).slant_distance >> Distance.Foot
             props.barrel_elevation_rad = angle_rad
-            try:  # TODO: We really need to get the max point, not just take whatever happens at the end(?)
+            try:  # TODO: We really want to stop at ZERO_DOWN; stop_at_zero might not let it register that crossing.
                 t = self._integrate(props, 9e9, 9e9, TrajFlag.ZERO_DOWN, stop_at_zero=True)
             except RangeError as e:
                 if e.last_distance is None:
@@ -246,7 +246,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             cross = hit.flag(TrajFlag.ZERO_DOWN)
             if cross is None:
                 cross = t[-1]  # Fallback to the last point if no zero crossing found
-            return (cross.slant_distance >> Distance.Foot) - (cross.slant_height >> Distance.Foot)
+            # Return value penalizes distance by slant height, which we want to be zero.
+            return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
                               bounds=(float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),

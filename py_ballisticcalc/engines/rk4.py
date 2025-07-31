@@ -28,6 +28,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     def __init__(self, config: BaseEngineConfigDict):
         super().__init__(config)
         self.integration_step_count = 0
+        self.trajectory_count = 0  # Number of trajectories calculated
 
     @override
     def get_calc_step(self) -> float:
@@ -49,7 +50,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         Returns:
             List[TrajectoryData]: list of TrajectoryData
         """
-
+        self.trajectory_count += 1
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude

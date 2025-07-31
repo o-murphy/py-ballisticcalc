@@ -514,8 +514,20 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
 
-        TODO: Presently assumes horizontal look-angle.  Needs to work for any look-angle.
+        TODO: Presently this only (barely) works for horizontal look-angle because:
+                1. We have no way to stop integrator when it hits ZERO_DOWN, and
+                2. Integrator doesn't interpolate for that flag value.
+            Here what we get is the distance of the first point computed by integrator after return to horizontal.
         """
+        # region Virtually vertical shot
+        if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
+            max_range = self._find_apex(props).slant_distance
+            return max_range, Angular.Radian(props.look_angle_rad)
+        # endregion Virtually vertical shot
+
+        if props.look_angle_rad > 0:
+            warnings.warn("Code does not yet support non-horizontal look angles.", UserWarning)
+
         restore_cMaximumDrop = None
         if self._config.cMaximumDrop:
             restore_cMaximumDrop = self._config.cMaximumDrop
@@ -809,12 +821,22 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             return Angular.Radian(look_angle_rad)
 
         assert target_x_ft is not None  # Make mypy happy
+        assert target_y_ft is not None  # Make mypy happy
         assert slant_range_ft is not None  # Make mypy happy
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
-        # TODO: Allow for a drop of at least half the horizontal distance to the target.
-        # (Algorithm works best if it can see the drop at the target distance.)
+        #region Ensure we can see drop at the target distance when launching along slant angle.
+        required_drop_ft = target_x_ft / 2.0 - target_y_ft
+        restore_cMaximumDrop = None
+        if abs(self._config.cMaximumDrop) < required_drop_ft:
+            restore_cMaximumDrop = self._config.cMaximumDrop
+            self._config.cMaximumDrop = required_drop_ft
+        restore_cMinimumAltitude = None
+        if (self._config.cMinimumAltitude - props.alt0_ft) > required_drop_ft:
+            restore_cMinimumAltitude = self._config.cMinimumAltitude
+            self._config.cMinimumAltitude = props.alt0_ft - required_drop_ft
+        #endregion
 
         iterations_count = 0
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
@@ -871,7 +893,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
                     raise ZeroFindingError(height_error_ft, iterations_count, Angular.Radian(props.barrel_elevation_rad),
                           'Error non-convergent')
                 logger.debug(f'Tightened damping to {damping_factor:.2f} after {iterations_count} iterations')
-                props.barrel_elevation_rad -= last_correction # Revert previous adjustment
+                props.barrel_elevation_rad -= last_correction  # Revert previous adjustment
                 correction = last_correction
             elif damping_factor < 1.0:
                 logger.debug('Resetting damping factor to 1.0')
@@ -888,6 +910,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             else:  # Current barrel_elevation hit zero: success!
                 break
             iterations_count += 1
+
+        if restore_cMaximumDrop is not None:
+            self._config.cMaximumDrop = restore_cMaximumDrop
+        if restore_cMinimumAltitude is not None:
+            self._config.cMinimumAltitude = restore_cMinimumAltitude
 
         if height_error_ft > _cZeroFindingAccuracy or range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
