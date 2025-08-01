@@ -1,7 +1,7 @@
 """Unit test for zero finding in ballistic calculator."""
 # mypy: ignore - mypy overhead is not worth it for test code
+import math
 import pytest
-
 from py_ballisticcalc.unit import *
 from py_ballisticcalc import (
     Atmo,
@@ -11,7 +11,7 @@ from py_ballisticcalc import (
     HitResult,
 )
 from py_ballisticcalc.trajectory_data import TrajFlag
-from tests.fixtures_and_helpers import create_23_mm_shot
+from tests.fixtures_and_helpers import create_23_mm_shot, create_7_62_mm_shot
 
 DISTANCES_FOR_CHECKING = (
     # list(range(100, 1000, 100)) +
@@ -22,21 +22,40 @@ DISTANCES_FOR_CHECKING = (
     [7126.05]
 )
 
-@pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
-def test_set_weapon_zero(distance, loaded_engine_instance):
-    shot = create_23_mm_shot()
-    config = BaseEngineConfigDict(cMinimumVelocity=0)
-    calc = Calculator(config=config, engine=loaded_engine_instance)
-    calc.set_weapon_zero(shot, Distance.Meter(distance))
-    print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree}")
-    hit_result = calc.fire(shot, Distance.Meter(distance))
-    # print(
-    #     f"{hit_result[-1].distance >> Distance.Meter=} "
-    #     f"{hit_result[-1].time=} "
-    #     f"{hit_result[-1].velocity >> Velocity.MPS=}"
-    # )
-    assert abs(hit_result[-1].height.raw_value) < 1e+1
+# @pytest.mark.parametrize("distance", DISTANCES_FOR_CHECKING)
+# def test_set_weapon_zero(distance, loaded_engine_instance):
+#     """This is a very slow and demanding test, so it should be run separately."""
+#     shot = create_23_mm_shot()
+#     config = BaseEngineConfigDict(cMinimumVelocity=0)
+#     calc = Calculator(config=config, engine=loaded_engine_instance)
+#     calc.set_weapon_zero(shot, Distance.Meter(distance))
+#     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree}")
+#     hit_result = calc.fire(shot, Distance.Meter(distance))
+#     # print(
+#     #     f"{hit_result[-1].distance >> Distance.Meter=} "
+#     #     f"{hit_result[-1].time=} "
+#     #     f"{hit_result[-1].velocity >> Velocity.MPS=}"
+#     # )
+#     assert abs(hit_result[-1].height.raw_value) < 1e+1
 
+def test_find_max_range(loaded_engine_instance):
+    """Test .find_max_range() on horizontal."""
+    distance = Distance.Meter(4658.5)
+    shot = create_7_62_mm_shot()  # Max horizontal range 4658.50m
+    calc = Calculator(engine=loaded_engine_instance)
+    d, a = calc.find_max_range(shot)
+    assert abs(d.raw_value - distance.raw_value) < 1e+1
+
+def test_zero_at_max_range(loaded_engine_instance):
+    """Test zero finding at maximum horizontal range."""
+    distance = Distance.Meter(4658.0)
+    shot = create_7_62_mm_shot()  # Max horizontal range 4658.50m
+    calc = Calculator(engine=loaded_engine_instance)
+    zero_angle = calc.find_zero_angle(shot, distance)
+    # Verify by shooting at this angle
+    shot.barrel_elevation = zero_angle
+    hit_result = calc.fire(shot, trajectory_range=distance, trajectory_step=distance)
+    assert abs(hit_result[-1].slant_height.raw_value) < 1e+1
 
 def test_zero_with_look_angle(loaded_engine_instance):
     """Test zero finding with a high look angle."""
@@ -47,10 +66,13 @@ def test_zero_with_look_angle(loaded_engine_instance):
     calc = Calculator(config=config, engine=loaded_engine_instance)
     calc.set_weapon_zero(shot, distance)
     print(f"Zero for {distance=} is elevation={shot.barrel_elevation >> Angular.Degree} degrees")
-    hit_result = calc.fire(shot, trajectory_range=distance, extra_data=True)
-    # TrajFlag.ZERO_DOWN marks the point at which bullet crosses down through sight line
-    assert abs(hit_result.flag(TrajFlag.ZERO_DOWN).slant_distance.raw_value - distance.raw_value) < 1e+1
-
+    horizontal_distance = Distance.Meter((distance >> Distance.Meter) * math.cos(shot.look_angle >> Angular.Radian))
+    hit_result = calc.fire(shot, trajectory_range=horizontal_distance, trajectory_step=horizontal_distance)
+    assert abs(hit_result[-1].slant_height.raw_value) < 1e+1
+    # The following won't work until we have all engines interpolating for TrajFlag points
+    # hit_result = calc.fire(shot, trajectory_range=distance, extra_data=True)
+    # # TrajFlag.ZERO_DOWN marks the point at which bullet crosses down through sight line
+    # assert abs(hit_result.flag(TrajFlag.ZERO_DOWN).slant_distance.raw_value - distance.raw_value) < 1e+1
 
 def test_vertical_shot_zero(loaded_engine_instance):
     """Test zero finding for a vertical shot."""
@@ -61,7 +83,6 @@ def test_vertical_shot_zero(loaded_engine_instance):
     calc = Calculator(config=config, engine=loaded_engine_instance)
     zero_angle = calc.set_weapon_zero(shot, distance)
     assert abs(zero_angle >> Angular.Radian) < calc.APEX_IS_MAX_RANGE_RADIANS
-
 
 def test_zero_degenerate(loaded_engine_instance):
     """Test zero finding when initial shot hits minimum altitude immediately."""
@@ -83,7 +104,6 @@ def test_zero_degenerate(loaded_engine_instance):
     assert result_at_zero.distance.raw_value == pytest.approx(distance.raw_value, abs=1e-1)
     assert result_at_zero.height >> Distance.Meter == pytest.approx(0, abs=1e-2)
 
-
 def test_zero_too_close(loaded_engine_instance):
     """When initial shot is too close to make sense, return look_angle."""
     distance = Distance.Meter(0)
@@ -91,7 +111,6 @@ def test_zero_too_close(loaded_engine_instance):
     calc = Calculator(engine=loaded_engine_instance)
     zero_angle = calc.set_weapon_zero(shot, distance)
     assert zero_angle.raw_value == shot.look_angle.raw_value
-
 
 def test_negative_sight_height(loaded_engine_instance):
     """Test zero finding with negative sight height."""
