@@ -701,6 +701,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Returns:
             Angular: Barrel elevation needed to hit the zero point.
+
+        TODO: Cache the trajectory calculations in _find_max_range to apply in Ridder's method.
         """
         status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
             self._init_zero_calculation(props, distance)
