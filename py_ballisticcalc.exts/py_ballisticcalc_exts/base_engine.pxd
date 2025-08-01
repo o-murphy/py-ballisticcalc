@@ -89,6 +89,8 @@ cdef class CythonizedBaseIntegrationEngine:
     # Only 'cdef' or 'cpdef' methods are declared here.
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self)
     cdef void _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info)
+    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
+    cdef object _find_zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance, bint lofted)
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
     cdef list _integrate(CythonizedBaseIntegrationEngine self,
                          double maximum_range, double record_step, int filter_flags, double time_step = ?)

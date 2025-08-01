@@ -486,7 +486,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
                                                                Defaults to (0, 90).
 
         Returns:
-            Tuple[Distance, Angular]: The maximum slantrange and the launch angle to reach it.
+            Tuple[Distance, Angular]: The maximum slant-range and the launch angle to reach it.
 
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
@@ -760,13 +760,13 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         # 4. Ridder's method implementation.  Absent bugs, this method is guaranteed to converge in
         #    log₂(range / accuracy) = log₂(π/2 / cZeroFindingAccuracy) iterations.
-        for i in range(self._config.cMaxIterations):
-            mid_angle = (low_angle + high_angle) / 2
+        for _ in range(self._config.cMaxIterations):
+            mid_angle = (low_angle + high_angle) / 2.0
             f_mid = error_at_distance(mid_angle)
 
             # s is the updated point using the root of the linear function through (low_angle, f_low) and (high_angle, f_high)
             # and the quadratic function that passes through those points and (mid_angle, f_mid)
-            s = math.sqrt(f_mid**2 - f_low * f_high)
+            s = math.sqrt(f_mid**2.0 - f_low * f_high)
             if s == 0.0:
                 break  # Should not happen if f_low and f_high have opposite signs
 

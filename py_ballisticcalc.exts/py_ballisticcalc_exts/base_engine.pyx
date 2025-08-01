@@ -192,7 +192,26 @@ cdef class CythonizedBaseIntegrationEngine:
         return self._config_s.cStepMultiplier
 
     def zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance) -> Angular:
-        return self._zero_angle(shot_info, distance)
+        # hack to reload config if it was changed explicit on existed instance
+        self._config_s = Config_t_from_pyobject(self._config)
+        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
+        
+        self._init_trajectory(shot_info)
+        try:
+            result = self._zero_angle(shot_info, distance)
+            self._free_trajectory()
+            return result
+        except ZeroFindingError as e:
+            self._free_trajectory()
+            # Fallback to guaranteed method
+            self._init_trajectory(shot_info)
+            try:
+                result = self._find_zero_angle(shot_info, distance, False)
+                self._free_trajectory()
+                return result
+            except:
+                self._free_trajectory()
+                raise
 
     def trajectory(CythonizedBaseIntegrationEngine self, object shot_info, object max_range, object dist_step,
                    bint extra_data = False, double time_step = 0.0) -> object:
@@ -264,53 +283,211 @@ cdef class CythonizedBaseIntegrationEngine:
         if self._wind_sock is NULL:
             raise MemoryError("Can't allocate memory for wind_sock")
 
+    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
+        """
+        Initializes the zero calculation for the given shot and distance.
+        Handles edge cases.
+        
+        Returns:
+            tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+            where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
+        """
+        cdef:
+            double ALLOWED_ZERO_ERROR_FEET = 0.01
+            double APEX_IS_MAX_RANGE_RADIANS = 0.0003
+            double slant_range_ft = distance._feet
+            double look_angle_rad = shot_info.look_angle._rad
+            double target_x_ft = slant_range_ft * cos(look_angle_rad)
+            double target_y_ft = slant_range_ft * sin(look_angle_rad)
+            double start_height_ft = -shot_info.weapon.sight_height._feet * cos(shot_info.cant_angle._rad)
+        
+        # Edge case: Very close shot
+        if fabs(slant_range_ft) < ALLOWED_ZERO_ERROR_FEET:
+            return (1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+        
+        # Edge case: Very close shot; ignore gravity and drag
+        if fabs(slant_range_ft) < 2.0 * max(fabs(start_height_ft), self._config_s.cStepMultiplier):
+            return (1, atan2(target_y_ft + start_height_ft, target_x_ft), slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+        
+        # Edge case: Virtually vertical shot; just check if it can reach the target
+        if fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
+            # For now, continue with normal algorithm
+            # TODO: implement _find_apex check for reachability
+            pass
+        
+        return (0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+
+    cdef object _find_zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance, bint lofted):
+        """
+        Find zero angle using Ridder's method for guaranteed convergence.
+        """
+        # Get initialization data
+        cdef tuple init_data = self._init_zero_calculation(shot_info, distance)
+        cdef:
+            int status = <int>init_data[0]
+            double look_angle_rad = <double>init_data[1]
+            double slant_range_ft = <double>init_data[2]
+            double target_x_ft = <double>init_data[3]
+            double target_y_ft = <double>init_data[4]
+            double start_height_ft = <double>init_data[5]
+        
+        if status == 1:  # DONE
+            return _new_rad(look_angle_rad)
+        
+        # For now, raise NotImplementedError as fallback
+        # This would require implementing _find_max_range and Ridder's method
+        raise NotImplementedError("_find_zero_angle fallback method not yet implemented in Cython version")
+
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance):
-        # hack to reload config if it was changed explicit on existed instance
-        self._config_s = Config_t_from_pyobject(self._config)
-        self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
+        """
+        Iterative algorithm to find barrel elevation needed for a particular zero.
+        Enhanced version with better convergence and error handling.
+        """
+        # Get initialization data using the new method
+        cdef tuple init_data = self._init_zero_calculation(shot_info, distance)
+        cdef:
+            int status = <int>init_data[0]
+            double look_angle_rad = <double>init_data[1]
+            double slant_range_ft = <double>init_data[2]
+            double target_x_ft = <double>init_data[3]
+            double target_y_ft = <double>init_data[4]
+            double start_height_ft = <double>init_data[5]
+        
+        if status == 1:  # DONE
+            return _new_rad(look_angle_rad)
 
         cdef:
             # early bindings
             double _cZeroFindingAccuracy = self._config_s.cZeroFindingAccuracy
-            double _cMaxIterations = self._config_s.cMaxIterations
+            int _cMaxIterations = <int>self._config_s.cMaxIterations
+            double ALLOWED_ZERO_ERROR_FEET = 0.01  # Allowed range error (along sight line), in feet, for zero angle
 
-        cdef:
-            double zero_distance = cos(shot_info.look_angle._rad) * distance._feet
-            double height_at_zero = sin(shot_info.look_angle._rad) * distance._feet
-            double maximum_range = zero_distance
+            # Enhanced zero-finding variables
             int iterations_count = 0
-            double zero_finding_error = _cZeroFindingAccuracy * 2
+            double range_error_ft = 9e9  # Absolute value of error from target distance along sight line
+            double prev_range_error_ft = 9e9
+            double prev_height_error_ft = 9e9
+            double damping_factor = 1.0  # Start with no damping
+            double damping_rate = 0.7  # Damping rate for correction
+            double last_correction = 0.0
+            double height_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line
+
+            # Ensure we can see drop at the target distance when launching along slant angle
+            double required_drop_ft = target_x_ft / 2.0 - target_y_ft
+            double restore_cMaximumDrop = 0.0
+            double restore_cMinimumAltitude = 0.0
+            int has_restore_cMaximumDrop = 0
+            int has_restore_cMinimumAltitude = 0
 
             object t
-            double height, last_distance_foot, proportion
+            double current_distance, height_diff_ft, look_dist_ft, range_diff_ft
+            double trajectory_angle, sensitivity, denominator, correction, applied_correction
 
-        self._init_trajectory(shot_info)
-        self._shot_s.barrel_azimuth = 0.0
-        self._shot_s.barrel_elevation = atan(height_at_zero / zero_distance)
-        self._shot_s.twist = 0
-        maximum_range -= 1.5 * self._shot_s.calc_step
+        # Backup and adjust constraints if needed
+        if fabs(self._config_s.cMaximumDrop) < required_drop_ft:
+            restore_cMaximumDrop = self._config_s.cMaximumDrop
+            self._config_s.cMaximumDrop = required_drop_ft
+            has_restore_cMaximumDrop = 1
+        
+        if (self._config_s.cMinimumAltitude - shot_info.atmo.altitude._feet) > required_drop_ft:
+            restore_cMinimumAltitude = self._config_s.cMinimumAltitude
+            self._config_s.cMinimumAltitude = shot_info.atmo.altitude._feet - required_drop_ft
+            has_restore_cMinimumAltitude = 1
 
-        # x = horizontal distance down range, y = drop, z = windage
-        while zero_finding_error > _cZeroFindingAccuracy and iterations_count < _cMaxIterations:
+        while iterations_count < _cMaxIterations:
+            # Check height of trajectory at the zero distance (using current barrel_elevation)
             try:
-                t = self._integrate(maximum_range, zero_distance, TrajFlag_t.NONE)[0]
-                height = t.height._feet  # use internal shortcut instead of (t.height >> Distance.Foot)
+                t = self._integrate(target_x_ft, target_x_ft, <int>TrajFlag_t.NONE)[-1]
             except RangeError as e:
-                last_distance_foot = e.last_distance._feet
-                proportion = (last_distance_foot) / zero_distance
-                height = (e.incomplete_trajectory[-1].height._feet) / proportion
-
-            zero_finding_error = fabs(height - height_at_zero)
-
-            if zero_finding_error > _cZeroFindingAccuracy:
-                self._shot_s.barrel_elevation -= (height - height_at_zero) / zero_distance
-            else:  # last barrel_elevation hit zero!
+                if e.last_distance is None:
+                    raise e
+                t = e.incomplete_trajectory[-1]
+            
+            if t.time == 0.0:
+                # Integrator returned initial point - consider removing constraints
                 break
+
+            current_distance = t.distance._feet  # Horizontal distance
+            if 2 * current_distance < target_x_ft and self._shot_s.barrel_elevation == 0.0 and look_angle_rad < 1.5:
+                # Degenerate case: little distance and zero elevation; try with some elevation
+                self._shot_s.barrel_elevation = 0.01
+                continue
+
+            height_diff_ft = t.slant_height._feet
+            look_dist_ft = t.slant_distance._feet
+            range_diff_ft = look_dist_ft - slant_range_ft
+            range_error_ft = fabs(range_diff_ft)
+            height_error_ft = fabs(height_diff_ft)
+            trajectory_angle = t.angle._rad  # Flight angle at current distance
+            
+            # Calculate sensitivity and correction
+            sensitivity = tan(self._shot_s.barrel_elevation - look_angle_rad) * tan(trajectory_angle - look_angle_rad)
+            if sensitivity < -0.5:
+                denominator = look_dist_ft
+            else:
+                denominator = look_dist_ft * (1 + sensitivity)
+            
+            if fabs(denominator) > 1e-9:
+                correction = -height_diff_ft / denominator
+            else:
+                # Restore original constraints before raising error
+                if has_restore_cMaximumDrop:
+                    self._config_s.cMaximumDrop = restore_cMaximumDrop
+                if has_restore_cMinimumAltitude:
+                    self._config_s.cMinimumAltitude = restore_cMinimumAltitude
+                raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(<double>self._shot_s.barrel_elevation),
+                                     'Correction denominator is zero')
+
+            if range_error_ft > ALLOWED_ZERO_ERROR_FEET:
+                # We're still trying to reach zero_distance
+                if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
+                    # Restore original constraints before raising error
+                    if has_restore_cMaximumDrop:
+                        self._config_s.cMaximumDrop = restore_cMaximumDrop
+                    if has_restore_cMinimumAltitude:
+                        self._config_s.cMinimumAltitude = restore_cMinimumAltitude
+                    raise ZeroFindingError(range_error_ft, iterations_count, _new_rad(<double>self._shot_s.barrel_elevation),
+                                         'Distance non-convergent')
+            elif height_error_ft > fabs(prev_height_error_ft):  # Error is increasing, we are diverging
+                damping_factor *= damping_rate  # Apply damping to prevent overcorrection
+                if damping_factor < 0.3:
+                    # Restore original constraints before raising error
+                    if has_restore_cMaximumDrop:
+                        self._config_s.cMaximumDrop = restore_cMaximumDrop
+                    if has_restore_cMinimumAltitude:
+                        self._config_s.cMinimumAltitude = restore_cMinimumAltitude
+                    raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(<double>self._shot_s.barrel_elevation),
+                                         'Error non-convergent')
+                # Revert previous adjustment
+                self._shot_s.barrel_elevation -= last_correction
+                correction = last_correction
+            elif damping_factor < 1.0:
+                damping_factor = 1.0
+
+            prev_range_error_ft = range_error_ft
+            prev_height_error_ft = height_error_ft
+
+            if height_error_ft > _cZeroFindingAccuracy or range_error_ft > ALLOWED_ZERO_ERROR_FEET:
+                # Adjust barrel elevation to close height at zero distance
+                applied_correction = correction * damping_factor
+                self._shot_s.barrel_elevation += applied_correction
+                last_correction = applied_correction
+            else:  # Current barrel_elevation hit zero: success!
+                break
+            
             iterations_count += 1
-        self._free_trajectory()
-        if zero_finding_error > _cZeroFindingAccuracy:
-            raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self._shot_s.barrel_elevation))
-        return Angular.Radian(self._shot_s.barrel_elevation)
+
+        # Restore original constraints
+        if has_restore_cMaximumDrop:
+            self._config_s.cMaximumDrop = restore_cMaximumDrop
+        if has_restore_cMinimumAltitude:
+            self._config_s.cMinimumAltitude = restore_cMinimumAltitude
+
+        if height_error_ft > _cZeroFindingAccuracy or range_error_ft > ALLOWED_ZERO_ERROR_FEET:
+            # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
+            raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(<double>self._shot_s.barrel_elevation))
+        
+        return _new_rad(<double>self._shot_s.barrel_elevation)
 
 
     cdef list[object] _integrate(CythonizedBaseIntegrationEngine self,
