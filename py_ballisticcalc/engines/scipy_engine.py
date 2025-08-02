@@ -232,11 +232,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
-            """Returns range to zero (in feet) for given launch angle in radians."""
+            """Returns slant-distance minus slant-error (in feet) for given launch angle in radians."""
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self._find_apex(props).slant_distance >> Distance.Foot
             props.barrel_elevation_rad = angle_rad
-            try:  # TODO: We really need to get the max point, not just take whatever happens at the end(?)
+            try:  # TODO: We really want to stop at ZERO_DOWN; stop_at_zero might not let it register that crossing.
                 t = self._integrate(props, 9e9, 9e9, TrajFlag.ZERO_DOWN, stop_at_zero=True)
             except RangeError as e:
                 if e.last_distance is None:
@@ -246,7 +246,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             cross = hit.flag(TrajFlag.ZERO_DOWN)
             if cross is None:
                 cross = t[-1]  # Fallback to the last point if no zero crossing found
-            return (cross.slant_distance >> Distance.Foot) - (cross.slant_height >> Distance.Foot)
+            # Return value penalizes distance by slant height, which we want to be zero.
+            return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
         res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
                               bounds=(float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),
@@ -260,6 +261,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         max_range_ft = -res.fun  # Negate because we minimized the negative range
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
+    @override
     def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
         Internal method to find the barrel elevation needed to hit sight line at a specific distance,
@@ -295,16 +297,19 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         assert target_y_ft is not None
         assert slant_range_ft is not None
         #endregion Make mypy happy
+
+        # 1. Find the maximum possible range to establish a search bracket.
         max_range, angle_at_max = self._find_max_range(props)
         max_range_ft = max_range >> Distance.Foot
 
+        # 2. Handle edge cases based on max range.
         if slant_range_ft > max_range_ft:
             raise OutOfRangeError(distance, max_range, Angular.Radian(look_angle_rad))
         if abs(slant_range_ft - max_range_ft) < self.ALLOWED_ZERO_ERROR_FEET:
             return angle_at_max
 
         def error_at_distance(angle_rad: float) -> float:
-            """Target miss (in feet) for launch at <angle_rad>."""
+            """Target miss (in feet) for given launch angle."""
             props.barrel_elevation_rad = angle_rad
             try:
                 # Integrate to find the projectile's state at the target's horizontal distance.
@@ -319,6 +324,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             # return -abs(t.slant_height >> Distance.Foot) - abs((t.slant_distance >> Distance.Foot) - slant_range_ft)
             return (t.height >> Distance.Foot) - target_y_ft - abs((t.distance >> Distance.Foot) - target_x_ft)
 
+        # 3. Establish search bracket for the zero angle.
         if lofted:
             angle_bracket = (angle_at_max >> Angular.Radian, math.radians(90.0))
         else:

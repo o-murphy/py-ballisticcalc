@@ -313,6 +313,8 @@ basicConfig("path/to/your_config.toml")
 
 # Integration Engines
 
+Default engine is RK4.  Recommended for speed: `cythonized_rk4_engine` or `scipy_engine`.
+
 ## Comparison
 
 **See [Engine Benchmarks](doc/BenchmarkEngines.md) for more detailed analysis and comparison of the engines.**
@@ -334,13 +336,13 @@ Using `BaseEngineConfigDict`:
 from py_ballisticcalc import Calculator, BaseEngineConfigDict
 
 config = BaseEngineConfigDict(
-    max_calc_step_size_feet=1.,
-    # cZeroFindingAccuracy= ...,
-    cMinimumVelocity=0,
-    # cMaximumDrop= ...,
-    # cMaxIterations= ...,
-    # cGravityConstant= ...,
-    # cMinimumAltitude= ...,
+    # cZeroFindingAccuracy= ...,  # Max allowed slant-error (in feet) to end zero search
+    # cMaxIterations= ...,        # Maximum number of iterations for zero search
+    cMinimumVelocity=0,           # Min velocity (fps) to continue computing trajectory
+    # cMaximumDrop= ...,          # Max drop (feet) from muzzle to continue computing trajectory
+    # cMinimumAltitude= ...,      # Min altitude (feet, above sea level) to continue computing trajectory
+    # cGravityConstant= ...,      # Gravitational acceleration in fps^2
+    # cStepMultiplier= ...,       # Multiplier of integration step, to change calculation speed & precision
 )
 calc = Calculator(config=config)
 ```
