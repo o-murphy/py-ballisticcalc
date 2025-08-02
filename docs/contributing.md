@@ -83,10 +83,10 @@ Run tests and linting locally to make sure everything is working as expected.
 
 ```bash
 # Run automated code linting
-pylint ./py_ballisticcalc 
+ruff check
 
 # Run mypy static analysing 
-mypy ./py_ballisticcalc
+mypy
 
 # Run automated tests
 pytest
@@ -203,4 +203,4 @@ You may include example code in docstrings.
 
 In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
 
-Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
+Code examples are encouraged but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
