@@ -94,6 +94,20 @@ class TrajectoryData(NamedTuple):
     flag: Union[TrajFlag, int]
 
     @property
+    def x(self) -> Distance:
+        """Synonym for .distance."""
+        return self.distance
+
+    @property
+    def y(self) -> Distance:
+        """Synonym for .height."""
+        return self.height
+
+    @property
+    def z(self) -> Distance:
+        """Synonym for .windage."""
+        return self.windage
+
     @deprecated(reason="Use .slant_distance instead of .look_distance", version="2.2.0")
     def look_distance(self) -> Distance:
         """Synonym for slant_distance."""

@@ -45,7 +45,7 @@ To provide a fair comparison, a standardized testing methodology was established
 1.  **Highest Precision: `scipy_engine`**. The adaptive SciPy engine can deliver the most accurate results, and do so with an order of magnitude less compute than the (pure) Python engines.
 2.  **Highest Speed: `cythonized_rk4_engine`.** The compiled RK4 engine is an order of magnitude faster than the SciPy engine.  It can't achieve the same micron-level precision when pushed to its limit, but it easily delivers results with error measured in millimeters at a distance of 2km, which is more than adequate for practical purposes.
 
-This chart shows the range of performance and speed observed for each engine:
+This chart shows the range of performance and speed observed for each engine.  Smaller values are better.  For each engine we can see that if we give it more calculation time we get results with smaller error.
 
 ![Error vs compute speed for each engine](Error_v_Speed_by_Engine.svg)
 
