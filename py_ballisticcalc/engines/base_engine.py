@@ -13,7 +13,7 @@ from typing_extensions import Optional, NamedTuple, Union, List, Tuple, Dict, Ty
 
 from py_ballisticcalc.conditions import Shot, Wind
 from py_ballisticcalc.drag_model import DragDataPoint
-from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
+from py_ballisticcalc.exceptions import ZeroFindingError, OutOfRangeError, SolverRuntimeError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag, HitResult

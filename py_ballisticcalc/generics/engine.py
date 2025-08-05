@@ -8,7 +8,7 @@ to perform trajectory calculations, access drag model data, and determine
 zeroing angles for firearms.
 """
 
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, Union
 
 from typing_extensions import Protocol, runtime_checkable
 
@@ -41,7 +41,7 @@ class EngineProtocol(Protocol[ConfigT]):
                   max_range: Distance,
                   dist_step: Optional[Distance] = None,
                   time_step: float = 0.0,
-                  filter_flags: TrajFlag = TrajFlag.NONE,
+                  filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
                   dense_output: bool = False,
                   **kwargs) -> HitResult:
         """
