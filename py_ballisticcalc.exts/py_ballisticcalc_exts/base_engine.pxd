@@ -94,13 +94,15 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance)
     cdef tuple _find_max_range(CythonizedBaseIntegrationEngine self, object shot_info, tuple angle_bracket_deg = *)
     cdef object _find_apex(CythonizedBaseIntegrationEngine self, object shot_info)
-    cdef list _integrate(CythonizedBaseIntegrationEngine self,
-                         double maximum_range, double record_step, int filter_flags, double time_step = ?)
+    # In contrast to Python engines, _integrate here returns (list[TrajectoryData], Optional[RangeError])
+    cdef object _integrate(CythonizedBaseIntegrationEngine self,
+                           double range_limit_ft, double range_step_ft, double time_step,
+                           int filter_flags, bint dense_output)
 
 
 cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
                                   double mach, const ShotData_t * shot_data_ptr,
-                                  double density_factor, double drag, int flag)
+                                  double density_ratio, double drag, int flag)
 
 cdef object _new_feet(double v)
 cdef object _new_fps(double v)

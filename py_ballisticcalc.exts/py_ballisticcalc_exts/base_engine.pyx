@@ -251,18 +251,21 @@ cdef class CythonizedBaseIntegrationEngine:
                 self._free_trajectory()
                 raise
 
-    def trajectory(CythonizedBaseIntegrationEngine self, object shot_info, object max_range, object dist_step,
-                   bint extra_data = False, double time_step = 0.0) -> object:
-        cdef:
-            TrajFlag_t filter_flags = TrajFlag_t.RANGE
-
-        if extra_data:
-            filter_flags = TrajFlag_t.ALL
+    def integrate(CythonizedBaseIntegrationEngine self,
+                  object shot_info,
+                  object max_range,
+                  object dist_step = None,
+                  double time_step = 0.0,
+                  TrajFlag_t filter_flags = TrajFlag_t.NONE,
+                  bint dense_output = False,
+                  **kwargs) -> object:
+        range_limit_ft = max_range._feet
+        range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
 
         self._init_trajectory(shot_info)
-        cdef list[object] t = self._integrate(max_range._feet, dist_step._feet, filter_flags, time_step)
+        object = self._integrate(range_limit_ft, range_step_ft, time_step, filter_flags, dense_output)
         self._free_trajectory()
-        return t
+        return HitResult(shot_info, object[0], filter_flags > 0, object[1])
 
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self):
         if self._wind_sock is not NULL:
@@ -391,7 +394,7 @@ cdef class CythonizedBaseIntegrationEngine:
             """Target miss (in feet) for given launch angle."""
             self._shot_s.barrel_elevation = angle_rad
             try:
-                t = self._integrate(<double>(9e9), <double>(9e9), <int>TrajFlag_t.NONE)[-1]
+                t = self._integrate(<double>(9e9), <double>(9e9), <double>(0.0), <int>TrajFlag_t.NONE, <bint>False)[0][-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
@@ -520,7 +523,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._shot_s.barrel_elevation = angle_rad
             
             try:
-                t = self._integrate(<double>9e9, <double>9e9, <int>TrajFlag_t.NONE)[-1]
+                t = self._integrate(<double>(9e9), <double>(9e9), <double>(0.0), <int>TrajFlag_t.NONE, <bint>False)[0][-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
@@ -575,13 +578,13 @@ cdef class CythonizedBaseIntegrationEngine:
             has_restore_min_velocity = 1
         
         try:
-            trajectory = self._integrate(<double>9e9, <double>9e9, <int>TrajFlag.APEX)
+            trajectory = self._integrate(<double>9e9, <double>9e9, <double>0.0, <int>TrajFlag.APEX, <bint>False)[0]
             hit_result = HitResult(shot_info, trajectory, extra=True)
         except RangeError as e:
             if e.last_distance is None:
                 raise e
             hit_result = HitResult(shot_info, e.incomplete_trajectory, extra=True)
-        
+
         if has_restore_min_velocity:
             self._config_s.cMinimumVelocity = restore_min_velocity
         
@@ -650,7 +653,7 @@ cdef class CythonizedBaseIntegrationEngine:
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current barrel_elevation)
             try:
-                t = self._integrate(target_x_ft, target_x_ft, <int>TrajFlag_t.NONE)[-1]
+                t = self._integrate(target_x_ft, target_x_ft, <double>0.0, <int>TrajFlag_t.NONE, <bint>False)[0][-1]
             except RangeError as e:
                 if e.last_distance is None:
                     raise e
@@ -743,14 +746,15 @@ cdef class CythonizedBaseIntegrationEngine:
         return _new_rad(<double>self._shot_s.barrel_elevation)
 
 
-    cdef list[object] _integrate(CythonizedBaseIntegrationEngine self,
-                                 double maximum_range, double record_step, int filter_flags, double time_step = 0.0):
+    cdef object _integrate(CythonizedBaseIntegrationEngine self,
+                           double range_limit_ft, double range_step_ft,
+                           double time_step, int filter_flags, bint dense_output):
         raise NotImplementedError
 
 
 cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
                                   double mach, const ShotData_t *shot_data_ptr,
-                                  double density_factor, double drag, int flag):
+                                  double density_ratio, double drag, int flag):
 
     cdef:
         double look_angle = shot_data_ptr.look_angle
@@ -777,7 +781,7 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         windage_adj=_new_rad(windage_adjustment),
         slant_distance=_new_feet(range_vector_ptr.x * look_angle_cos + range_vector_ptr.y * look_angle_sin),
         angle=_new_rad(trajectory_angle),
-        density_factor=density_factor - 1,
+        density_ratio=density_ratio,
         drag=drag,
         energy=_new_ft_lb(calculateEnergy(shot_data_ptr.weight, velocity)),
         ogw=_new_lb(calculateOgw(shot_data_ptr.weight, velocity)),

@@ -66,11 +66,11 @@ class TrajectoryCalcRK4(TrajectoryCalc):
             raise ZeroFindingError(zero_finding_error, iterations_count, Angular.Radian(self.barrel_elevation))
         return Angular.Radian(self.barrel_elevation)
 
-    def _acceleration(self, velocity_vector: np.ndarray, density_factor: float, mach: float,
+    def _acceleration(self, velocity_vector: np.ndarray, density_ratio: float, mach: float,
                       wind_vector: np.ndarray) -> np.ndarray:
         velocity_adjusted = velocity_vector - wind_vector
         velocity_mag = np.linalg.norm(velocity_adjusted)
-        drag_force = density_factor * velocity_mag * self.drag_by_mach(velocity_mag / mach)
+        drag_force = density_ratio * velocity_mag * self.drag_by_mach(velocity_mag / mach)
         gravity_np = self.gravity_vector.to_numpy()
         return (velocity_adjusted * (
             -drag_force) + gravity_np) / self.weight  # a = F/m (implicitly using weight as mass proxy)
@@ -112,19 +112,19 @@ class TrajectoryCalcRK4(TrajectoryCalc):
                 wind_vector_np = wind_sock.vector_for_range(current_range).to_numpy()
 
             altitude = self.alt0 + range_vector[1]
-            density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(altitude)
+            density_ratio, mach = shot_info.atmo.get_density_and_mach_for_altitude(altitude)
 
             # RK4 steps
-            k1_v = self._acceleration(velocity_vector, density_factor, mach, wind_vector_np)
+            k1_v = self._acceleration(velocity_vector, density_ratio, mach, wind_vector_np)
             k1_r = velocity_vector
 
-            k2_v = self._acceleration(velocity_vector + 0.5 * dt * k1_v, density_factor, mach, wind_vector_np)
+            k2_v = self._acceleration(velocity_vector + 0.5 * dt * k1_v, density_ratio, mach, wind_vector_np)
             k2_r = velocity_vector + 0.5 * dt * k1_r
 
-            k3_v = self._acceleration(velocity_vector + 0.5 * dt * k2_v, density_factor, mach, wind_vector_np)
+            k3_v = self._acceleration(velocity_vector + 0.5 * dt * k2_v, density_ratio, mach, wind_vector_np)
             k3_r = velocity_vector + 0.5 * dt * k2_r
 
-            k4_v = self._acceleration(velocity_vector + dt * k3_v, density_factor, mach, wind_vector_np)
+            k4_v = self._acceleration(velocity_vector + dt * k3_v, density_ratio, mach, wind_vector_np)
             k4_r = velocity_vector + dt * k3_r
 
             velocity_vector += (dt / 6.0) * (k1_v + 2 * k2_v + 2 * k3_v + k4_v)
@@ -139,7 +139,7 @@ class TrajectoryCalcRK4(TrajectoryCalc):
                     ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
                                                         velocity_mag, data.mach,
                                                         self.spin_drift(data.time), self.look_angle,
-                                                        density_factor, 0.0, self.weight,
+                                                        density_ratio, 0.0, self.weight,
                                                         data_filter.current_flag))  # Drag is part of acceleration
 
             if (velocity_mag < _cMinimumVelocity or range_vector[1] < _cMaximumDrop or
@@ -147,7 +147,7 @@ class TrajectoryCalcRK4(TrajectoryCalc):
                 ranges.append(create_trajectory_row(
                     time, Vector(*range_vector), Vector(*velocity_vector),
                     velocity_mag, mach, self.spin_drift(time), self.look_angle,
-                    density_factor, 0.0, self.weight, data_filter.current_flag
+                    density_ratio, 0.0, self.weight, data_filter.current_flag
                 ))
                 reason = RangeError.MinimumVelocityReached if velocity_mag < _cMinimumVelocity else \
                     RangeError.MaximumDropReached if range_vector[1] < _cMaximumDrop else \
@@ -160,7 +160,7 @@ class TrajectoryCalcRK4(TrajectoryCalc):
             ranges.append(create_trajectory_row(
                 time, Vector(*range_vector), Vector(*velocity_vector),
                 velocity_mag, mach, self.spin_drift(time), self.look_angle,
-                density_factor, 0.0, self.weight, TrajFlag.NONE))
+                density_ratio, 0.0, self.weight, TrajFlag.NONE))
 
         logger.debug(f"euler rk4 it (time-based)")
         return ranges

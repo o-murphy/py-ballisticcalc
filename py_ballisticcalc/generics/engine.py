@@ -8,12 +8,12 @@ to perform trajectory calculations, access drag model data, and determine
 zeroing angles for firearms.
 """
 
-from typing import TypeVar
+from typing import TypeVar, Optional
 
-from typing_extensions import List, Protocol, runtime_checkable
+from typing_extensions import Protocol, runtime_checkable
 
 from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.trajectory_data import TrajectoryData
+from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
 
 ConfigT = TypeVar("ConfigT", covariant=True)
@@ -37,20 +37,33 @@ class EngineProtocol(Protocol[ConfigT]):
             _config (Config): The configuration object.
         """
 
-    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
-                   extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
+    def integrate(self, shot_info: Shot,
+                  max_range: Distance,
+                  dist_step: Optional[Distance] = None,
+                  time_step: float = 0.0,
+                  filter_flags: TrajFlag = TrajFlag.NONE,
+                  dense_output: bool = False,
+                  **kwargs) -> HitResult:
         """
-        Calculates the trajectory of a projectile.
+        Calculate trajectory for specified shot.  Requirements for the return List:
+        - Starts with the initial conditions of the shot.
+        - If filter_flags==TrajFlag.NONE, then the last List element must be TrajectoryData where:
+            - .distance = maximum_range if reached, else last calculated point.
+        - If filter_flags & TrajFlag.RANGE, then return must include a RANGE entry for each record_step reached.
+        - If time_step > 0, must also include RANGE entries per that spec.
+        - For each other filter_flag: Return list must include a row with the flag if it exists in the trajectory.
+            Do not duplicate rows: If two flags occur at the exact same time, mark the row with both flags.
 
         Args:
             shot_info (Shot): Information about the shot.
             max_range (Distance): The maximum range of the trajectory.
-            dist_step (Distance): The distance step for calculations.
+            dist_step (Distance, optional): The distance step for calculations. Defaults to None.
             extra_data (bool, optional): Flag to include extra data. Defaults to False.
             time_step (float, optional): The time step for calculations. Defaults to 0.0.
+            dense_output (bool, optional): If True, HitResult will save BaseTrajData for interpolating TrajectoryData.
 
         Returns:
-            List[TrajectoryData]: A list of trajectory data points.
+            HitResult: Object for describing the trajectory.
         """
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:

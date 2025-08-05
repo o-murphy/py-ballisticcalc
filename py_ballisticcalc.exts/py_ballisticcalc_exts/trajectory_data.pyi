@@ -18,7 +18,7 @@ class TrajectoryData(NamedTuple):
     windage_adj: Angular
     slant_distance: Distance
     angle: Angular
-    density_factor: float
+    density_ratio: float
     drag: float
     energy: Energy
     ogw: Weight

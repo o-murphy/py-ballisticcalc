@@ -35,6 +35,7 @@ __all__ = (
     'CurvePoint',
     '_ShotProps',
     '_ZeroCalcStatus',
+    'with_no_minimum_velocity',
 )
 
 cZeroFindingAccuracy: float = 0.000005  # Max allowed slant-error in feet to end zero search
@@ -316,13 +317,12 @@ class _ShotProps:
 
     def drag_by_mach(self, mach: float) -> float:
         """
-        Calculates the drag coefficient at a given Mach number.
-
-        The drag force is calculated using the following formula:
-        Drag force = V^2 * Cd * AirDensity * S / 2m
-
+        Calculates a standard drag factor (SDF) for the given Mach number.  Where:
+            Drag force = V^2 * AirDensity * C_d * S / 2m
+                       = V^2 * density_ratio * SDF
         Where:
-            - cStandardDensity of Air = 0.076474 lb/ft^3
+            - density_ratio = LocalAirDensity / StandardDensity = rho / rho_0
+            - StandardDensity of Air = rho_0 = 0.076474 lb/ft^3
             - S is cross-section = d^2 pi/4, where d is bullet diameter in inches
             - m is bullet mass in pounds
             - bc contains m/d^2 in units lb/in^2, which is multiplied by 144 to convert to lb/ft^2
@@ -334,7 +334,7 @@ class _ShotProps:
             mach (float): The Mach number.
 
         Returns:
-            float: The drag coefficient at the given Mach number.
+            float: The standard drag factor at the given Mach number.
         """
         # cd = calculate_by_curve(self._table_data, self._curve, mach)
         # use calculation over list[double] instead of list[DragDataPoint]
@@ -398,6 +398,20 @@ class ZeroFindingProps(NamedTuple):
     start_height_ft: Optional[float] = None
 
 
+def with_no_minimum_velocity(method):
+    def wrapper(self, *args, **kwargs):
+        restore = None
+        if getattr(self._config, "cMinimumVelocity", None) != 0:
+            restore = self._config.cMinimumVelocity
+            self._config.cMinimumVelocity = 0
+        try:
+            return method(self, *args, **kwargs)
+        finally:
+            if restore is not None:
+                self._config.cMinimumVelocity = restore
+    return wrapper
+
+
 _BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConfigDict', covariant=True)
 
 
@@ -423,30 +437,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     def get_calc_step(self) -> float:
         """Get step size for integration."""
         return self._config.cStepMultiplier
-
-    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance,
-                   extra_data: bool = False, time_step: float = 0.0) -> List[TrajectoryData]:
-        """
-        Calculates the trajectory of a projectile.
-
-        Args:
-            shot_info (Shot): Information about the shot.
-            max_range (Distance): The maximum range of the trajectory.
-            dist_step (Distance): The distance step for calculations.
-            extra_data (bool, optional): Flag to include extra data. Defaults to False.
-            time_step (float, optional): The time step for calculations. Defaults to 0.0.
-
-        Returns:
-            List[TrajectoryData]: A list of trajectory data points.
-        """
-        filter_flags = TrajFlag.RANGE
-
-        if extra_data:
-            filter_flags = TrajFlag.ALL
-
-        props = self._init_trajectory(shot_info)
-        return self._integrate(props, max_range >> Distance.Foot,
-                               dist_step >> Distance.Foot, filter_flags, time_step)
 
     def _init_trajectory(self, shot_info: Shot) -> _ShotProps:
         """
@@ -498,6 +488,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         props = self._init_trajectory(shot_info)
         return self._find_max_range(props, angle_bracket_deg)
 
+    @with_no_minimum_velocity
     def _find_max_range(self, props: _ShotProps, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
         Distance, Angular]:
         """
@@ -544,12 +535,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             nonlocal t_calls
             t_calls += 1
             logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
-            try:
-                t = self._integrate(props, 9e9, 9e9, TrajFlag.NONE)[-1]
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                t = e.incomplete_trajectory[-1]
+            t = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.NONE)[-1]
             cache[angle_rad] = t.distance >> Distance.Foot
             return cache[angle_rad]
 
@@ -602,6 +588,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         props = self._init_trajectory(shot_info)
         return self._find_apex(props)
 
+    @with_no_minimum_velocity
     def _find_apex(self, props: _ShotProps) -> TrajectoryData:
         """
         Internal implementation to find the apex of the trajectory.
@@ -618,21 +605,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         """
         if props.barrel_elevation_rad <= 0:
             raise ValueError("Barrel elevation must be greater than 0 to find apex.")
-        # Have to ensure cMinimumVelocity is 0 for this to work.
-        restoreMinVelocity = None
-        if self._config.cMinimumVelocity > 0:
-            restoreMinVelocity = self._config.cMinimumVelocity
-            self._config.cMinimumVelocity = 0.
-        #props.barrel_elevation_rad = props.look_angle_rad
-        try:
-            t = HitResult(props.shot, self._integrate(props, 9e9, 9e9, TrajFlag.APEX), extra=True)
-        except RangeError as e:
-            if e.last_distance is None:
-                raise e
-            t = HitResult(props.shot, e.incomplete_trajectory, extra=True)
-        if restoreMinVelocity is not None:
-            self._config.cMinimumVelocity = restoreMinVelocity
-        apex = t.flag(TrajFlag.APEX)
+        hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.APEX)
+        apex = hit.flag(TrajFlag.APEX)
         if not apex:
             raise SolverRuntimeError("No apex flagged in trajectory data")
         return apex
@@ -689,6 +663,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         props = self._init_trajectory(shot_info)
         return self._find_zero_angle(props, distance, lofted)
 
+    @with_no_minimum_velocity
     def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
         Internal implementation to find the barrel elevation needed to hit sight line at a specific distance,
@@ -717,6 +692,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         assert slant_range_ft is not None
 
         # 1. Find the maximum possible range to establish a search bracket.
+        # TODO: In many scenarios this is unnecessarily expensive: We can confirm that the target is within
+        #      range without precisely determining the max range at the look angle, and Ridder's method on
+        #      the full interval 0-90° would be faster.
         max_range, angle_at_max = self._find_max_range(props)
         max_range_ft = max_range >> Distance.Foot
         angle_at_max_rad = angle_at_max >> Angular.Radian
@@ -730,12 +708,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
             props.barrel_elevation_rad = angle_rad
-            try:
-                t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                t = e.incomplete_trajectory[-1]
+            t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 return 9e9
@@ -851,12 +824,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         while iterations_count < _cMaxIterations:
             # Check height of trajectory at the zero distance (using current props.barrel_elevation)
-            try:
-                t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                t = e.incomplete_trajectory[-1]
+            t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 break
@@ -923,52 +891,55 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(props.barrel_elevation_rad))
         return _new_rad(props.barrel_elevation_rad)
 
-    def integrate(self, shot_info: Shot, max_range: Union[Distance, float] = 9e9, dist_step: Union[Distance, float] = 0.,
-                  filter_flags: Union[TrajFlag, int] = TrajFlag.RANGE, time_step: float = 0.0) -> List[TrajectoryData]:
+    def integrate(self, shot_info: Shot,
+                        max_range: Distance,
+                        dist_step: Optional[Distance] = None,
+                        time_step: float = 0.0,
+                        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+                        dense_output: bool = False,
+                        **kwargs) -> HitResult:
         """
         Integrates the trajectory for the given shot.
 
         Args:
             shot_info (Shot): The shot information.
-            max_range (Union[Distance, float], optional): Maximum range of the trajectory.
-            dist_step (Union[Distance, float], optional): Distance step for recording RANGE TrajectoryData rows.
+            max_range (Distance): Maximum range of the trajectory (if float then treated as feet).
+            dist_step (Optional[Distance]): Distance step for recording RANGE TrajectoryData rows.
             filter_flags (Union[TrajFlag, int], optional): Flags to filter trajectory data. Defaults to TrajFlag.RANGE.
             time_step (float, optional): Time step for recording trajectory data. Defaults to 0.0.
+            dense_output (bool, optional): If True, HitResult will save BaseTrajData for interpolating TrajectoryData.
 
         Returns:
-            List[TrajectoryData]: A list of trajectory data points.
+            HitResult: Object for describing the trajectory.
         """
         props = self._init_trajectory(shot_info)
-        if isinstance(max_range, Distance):
-            max_range = max_range >> Distance.Foot
-        if isinstance(dist_step, Distance):
-            dist_step = dist_step >> Distance.Foot
-        return self._integrate(props, max_range, dist_step, filter_flags, time_step)
+        range_limit_ft = max_range >> Distance.Foot
+        if dist_step is None:
+            range_step_ft = range_limit_ft
+        else:
+            range_step_ft = dist_step >> Distance.Foot
+        return self._integrate(props, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output)
 
     @abstractmethod
-    def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
-                   filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
+    def _integrate(self, props: _ShotProps, range_limit_ft: float, range_step_ft: float,
+                   time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+                   dense_output: bool = False, **kwargs) -> HitResult:
         """
-        Calculate trajectory for specified shot.  Requirements:
-        - If filter_flags==TrajFlag.NONE, then must return a list of exactly one TrajectoryData where:
-            - .distance = maximum_range if reached, else last calculated point.
-        - If filter_flags & TrajFlag.RANGE, then return must include a RANGE entry for each record_step reached,
-            starting at zero (initial conditions).  If time_step > 0, must also include RANGE entries per that spec.
-        - For each other filter_flag: Return list must include a row with the flag if it exists in the trajectory.
-            Do not duplicate rows: If two flags occur at the exact same time, mark the row with both flags.
+        Creates HitResult for the specified shot.
 
         Args:
             props (Shot): Information specific to the shot.
-            maximum_range (float): Feet down-range to stop calculation
-            record_step (float): Frequency (in feet down-range) to record TrajectoryData
+            range_limit_ft (float): Feet down-range to stop calculation.
+            range_step_ft (float): Frequency (in feet down-range) to record TrajectoryData.
             filter_flags (Union[TrajFlag, int]): Bitfield for trajectory points of interest to record.
             time_step (float, optional): If > 0 then record TrajectoryData after this many seconds elapse
-                since last record, as could happen when trajectory is nearly vertical
-                and there is too little movement down-range to trigger a record based on range.
-                Defaults to 0.0
+                since last record, as could happen when trajectory is nearly vertical and there is too little
+                movement down-range to trigger a record based on range.  (Defaults to 0.0)
+            dense_output (bool, optional): If True, HitResult will save BaseTrajData at each integration step,
+                for interpolating TrajectoryData.
 
         Returns:
-            List[TrajectoryData]: list of TrajectoryData
+            HitResult: Object describing the trajectory.
         """
         raise NotImplementedError
 
@@ -990,8 +961,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         look_angle_cos = math.cos(props.look_angle_rad)
         look_angle_sin = math.sin(props.look_angle_rad)
 
-        density_factor, _ = props.get_density_and_mach_for_altitude(range_vector.y)
-        drag = density_factor * velocity * props.drag_by_mach(velocity / mach)
+        density_ratio, _ = props.get_density_and_mach_for_altitude(range_vector.y)
+        drag = props.drag_by_mach(velocity / mach)
 
         return TrajectoryData(
             time=time,
@@ -1005,7 +976,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             windage_adj=_new_rad(windage_adjustment),
             slant_distance=_new_feet(range_vector.x * look_angle_cos + range_vector.y * look_angle_sin),
             angle=_new_rad(trajectory_angle),
-            density_factor=density_factor - 1,
+            density_ratio=density_ratio,
             drag=drag,
             energy=_new_ft_lb(calculate_energy(props.weight_grains, velocity)),
             ogw=_new_lb(calculate_ogw(props.weight_grains, velocity)),
@@ -1057,7 +1028,7 @@ def create_trajectory_row(time: float, range_vector: Vector, velocity_vector: Ve
         windage_adj=_new_rad(windage_adjustment),
         slant_distance=_new_feet(range_vector.x * math.cos(look_angle) + range_vector.y * math.sin(look_angle)),
         angle=_new_rad(trajectory_angle),
-        density_factor=density_ratio - 1,
+        density_ratio=density_ratio - 1,
         drag=drag,
         energy=_new_ft_lb(calculate_energy(weight, velocity)),
         ogw=_new_lb(calculate_ogw(weight, velocity)),

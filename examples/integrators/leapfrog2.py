@@ -89,9 +89,9 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         time: float = .0
         drag: float = .0
 
-        # guarantee that mach and density_factor would be referenced before assignment
+        # guarantee that mach and density_ratio would be referenced before assignment
         mach: float = .0
-        density_factor: float = .0
+        density_ratio: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(shot_info.winds)
@@ -118,7 +118,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # region Leap Frog initialization
         # For Leap Frog, we need to compute initial acceleration and do a half-step velocity update
         # Update air density at current point in trajectory
-        density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
+        density_ratio, mach = shot_info.atmo.get_density_and_mach_for_altitude(
             self.alt0 + range_vector.y)
 
         # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
@@ -126,7 +126,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         relative_speed = relative_velocity.magnitude()  # Velocity relative to air
         # Time step is normalized by velocity so that we take smaller steps when moving faster
         delta_time = self.calc_step / max(1.0, relative_speed)
-        km = density_factor * self.drag_by_mach(relative_speed / mach)
+        km = density_ratio * self.drag_by_mach(relative_speed / mach)
         drag = km * relative_speed
 
         # Compute initial acceleration
@@ -155,7 +155,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                     ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
                                                         data.velocity.magnitude(), data.mach,
                                                         self.spin_drift(data.time), self.look_angle_rad,
-                                                        density_factor, drag, self.weight, data_filter.current_flag
+                                                        density_ratio, drag, self.weight, data_filter.current_flag
                                                         ))
                     last_recorded_range = data.position.x
             # endregion
@@ -172,7 +172,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
             # Step 2: Compute atmospheric conditions at new position ONCE
             # This is the key optimization - calculate density and mach only once per step
-            new_density_factor, new_mach = shot_info.atmo.get_density_and_mach_for_altitude(
+            new_density_ratio, new_mach = shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
             # Update wind vector if needed at new position
@@ -182,14 +182,14 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # Step 3: Compute new relative velocity and acceleration using new atmospheric conditions
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()
-            km = new_density_factor * self.drag_by_mach(relative_speed / new_mach)
+            km = new_density_ratio * self.drag_by_mach(relative_speed / new_mach)
             acceleration = self.gravity_vector - km * relative_velocity * relative_velocity.magnitude()  # type: ignore[operator]
 
             # Step 4: Update velocity using new acceleration (full step)
             velocity_vector += acceleration * delta_time  # type: ignore[operator]
 
             # Update cached values for next iteration and recording
-            density_factor = new_density_factor
+            density_ratio = new_density_ratio
             mach = new_mach
             drag = km * relative_speed
             # endregion Leap Frog integration
@@ -205,7 +205,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,
                     velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                    density_factor, drag, self.weight, data_filter.current_flag
+                    density_ratio, drag, self.weight, data_filter.current_flag
                 ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
@@ -222,6 +222,6 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                density_factor, drag, self.weight, TrajFlag.NONE))
+                density_ratio, drag, self.weight, TrajFlag.NONE))
         logger.debug(f"LeapFrog ran {it} iterations")
         return ranges

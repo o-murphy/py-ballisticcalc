@@ -61,9 +61,9 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         time: float = .0
         drag: float = .0
 
-        # guarantee that mach and density_factor would be referenced before assignment
+        # guarantee that mach and density_ratio would be referenced before assignment
         mach: float = .0
-        density_factor: float = .0
+        density_ratio: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(shot_info.winds)
@@ -108,7 +108,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory
-            density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
+            density_ratio, mach = shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
@@ -119,7 +119,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                     ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
                                                         data.velocity.magnitude(), data.mach,
                                                         self.spin_drift(data.time), self.look_angle_rad,
-                                                        density_factor, drag, self.weight, data_filter.current_flag
+                                                        density_ratio, drag, self.weight, data_filter.current_flag
                                                         ))
                     last_recorded_range = data.position.x
             # endregion
@@ -140,7 +140,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 delta_time = self.calc_step / velocity
 
             # Drag is a function of air density and velocity relative to the air
-            drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
+            drag = density_ratio * velocity * self.drag_by_mach(velocity / mach)
 
             # Bullet velocity changes due to both drag and gravity
             # IMPORTANT: crucial place that increase performance!
@@ -178,7 +178,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # # Time step is normalized by velocity so that we take smaller steps when moving faster
             # delta_time = self.calc_step / max(1.0, velocity)
             # # Drag is a function of air density and velocity relative to the air
-            # drag = density_factor * velocity * self.drag_by_mach(velocity / mach)
+            # drag = density_ratio * velocity * self.drag_by_mach(velocity / mach)
             # # Bullet velocity changes due to both drag and gravity
             # velocity_vector -= (velocity_adjusted * drag - self.gravity_vector) * delta_time  # type: ignore
             # # Bullet position changes by velocity time_deltas the time step
@@ -196,7 +196,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,
                     velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                    density_factor, drag, self.weight, data_filter.current_flag
+                    density_ratio, drag, self.weight, data_filter.current_flag
                 ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
@@ -213,6 +213,6 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                density_factor, drag, self.weight, TrajFlag.NONE))
+                density_ratio, drag, self.weight, TrajFlag.NONE))
         logger.debug(f"euler py it {it}")
         return ranges

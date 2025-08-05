@@ -113,7 +113,7 @@ uv sync --dev --extra exts
 
 # Usage
 
-**See [Example.ipynb](Example.ipynb) and [ExtremeExamples.ipynb](ExtremeExamples.ipynb) for detailed illustrations of all features and usage.**
+**See [Example.ipynb](examples/Examples.ipynb) and [ExtremeExamples.ipynb](examples/ExtremeExamples.ipynb) for detailed illustrations of all features and usage.**
 
 ## Simple Zero
 
@@ -157,7 +157,7 @@ range_card.dataframe(True)[
     ['distance', 'velocity', 'mach', 'time', 'slant_height', 'drop_adj', 'windage', 'windage_adj']].set_index('distance')
 ```
 
-| distance  | velocity    | mach      | time    | slant_height | drop_adj   | windage   | windage_adj |
+| distance  | velocity    | mach      | time    | slant_height| drop_adj   | windage   | windage_adj |
 |-----------|-------------|-----------|---------|-------------|------------|-----------|-------------|
 | 0.0 yd    | 2600.0 ft/s | 2.33 mach | 0.000 s | -2.0 inch   | 0.00 mil   | -0.0 inch | 0.00 mil    |
 | 100.0 yd  | 2398.1 ft/s | 2.15 mach | 0.120 s | -0.0 inch   | -0.00 mil  | 0.4 inch  | 0.12 mil    |
@@ -266,31 +266,7 @@ print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distanc
 
 Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
 Or place this file in user's home directory. _(The file in project root has priority.)_
-Use `loadMetricUnits()`, `loadImperialUnits()` or `loadMixedUnits()` to manualy load one of presets.
-You can use `basicConfig()` function to load your custom `.toml` file
-
-The references of `.pybc.toml` settings file you can [**get there**](https://github.com/o-murphy/py-ballisticcalc/blob/master/.pybc.toml)
-and [**there**](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets). They include settings for [metric](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-metrics.toml), [imperial](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-imperial.toml) and [mixed](https://github.com/o-murphy/py-ballisticcalc/tree/master/py_ballisticcalc/assets/.pybc-mixed.toml) mode.
-Mixed mode is using metric settings for angular, distance, velocity, pressure, and temperature units, and imperial for diameter, length, weight and adjustment units.
-
-```toml
-# Config template for py_ballisticcalc
-
-title = "standard py_ballisticcalc config template"
-version = "2.0.0b4"
-
-[pybc.preferred_units]
-angular = 'Degree'
-distance = 'Yard'
-velocity = 'FPS'
-# ... other there
-
-[pybc.calculator]
-max_calc_step_size = { value = 0.5, units = "Foot" }
-# ...
-```
-
-**Load .pybc.toml presets**
+Use [`loadMetricUnits()`](py_ballisticcalc/assets/.pybc-metrics.toml), [`loadImperialUnits()`](py_ballisticcalc/assets/.pybc-imperial.toml) or [`loadMixedUnits()`](py_ballisticcalc/assets/.pybc-mixed.toml) to manualy load one of the presets from [assets](py_ballisticcalc/assets/) as follows:
 
 ```python
 from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
@@ -300,7 +276,7 @@ loadMetricUnits()
 loadMixedUnits()
 ```
 
-(Use just one of these three methods – only the last one called counts).
+(Use just one of these methods – only the last one called counts.)
 
 **Custom .pybc.toml**
 
@@ -319,14 +295,14 @@ Default engine is RK4.  Recommended for speed: `cythonized_rk4_engine` or `scipy
 
 **See [Engine Benchmarks](doc/BenchmarkEngines.md) for more detailed analysis and comparison of the engines.**
 
-| Engine Name                |  Is Default?   | Relative Performance | Dependencies  | Description                                                                                                                  |
-|:--------------------------|:--------------:|:-------------------------------------|:-------------------------|:-----------------------------------------------------------------------------------------------------------------------------|
-| `rk4_engine`              | :green_circle: | Baseline (1x)                        | None                     | Runge-Kutta 4th-order integration.                                                                                           |
-| `verlet_engine`           |  :red_circle:  |  0.7x (slower)                       | None                     | Velocity Verlet 2nd-order integration.                                                                                       |
-| `euler_engine`            |  :red_circle:  |  0.5x (slower)                       | None                     | Basic Euler integration: 1st-order but easiest to understand.                                                                |
-| `cythonized_rk4_engine`   |  :red_circle:  | 50x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Runge-Kutta 4th-order integration.                                                                          |
-| `cythonized_euler_engine` |  :red_circle:  | 40x faster                           | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                                                                                          |
-| `scipy_engine`            |  :red_circle:  | 10x faster                           | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.                                                                       |
+| Engine Name               |  Is Default?   | Relative Speed | Dependencies             | Description                                                   |
+|:--------------------------|:--------------:|:---------------|:-------------------------|:--------------------------------------------------------------|
+| `rk4_engine`              | :green_circle: | Baseline (1x)  | None                     | Runge-Kutta 4th-order integration.                            |
+| `verlet_engine`           |  :red_circle:  |  0.7x (slower) | None                     | Velocity Verlet 2nd-order integration.                        |
+| `euler_engine`            |  :red_circle:  |  0.5x (slower) | None                     | Basic Euler integration: 1st-order but easiest to understand. |
+| `cythonized_rk4_engine`   |  :red_circle:  | 50x faster     | `py-ballisticcalc[exts]` | Cython-optimized Runge-Kutta 4th-order integration.           |
+| `cythonized_euler_engine` |  :red_circle:  | 40x faster     | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                           |
+| `scipy_engine`            |  :red_circle:  | 10x faster     | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.        |
 
 ## Modifying presets
 

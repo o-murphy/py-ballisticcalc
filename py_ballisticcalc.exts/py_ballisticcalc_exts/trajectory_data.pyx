@@ -22,7 +22,7 @@ cdef class TrajectoryData:
     __slots__ = ('time', 'distance', 'velocity',
                  'mach', 'height', 'slant_height', 'drop_adj',
                  'windage', 'windage_adj', 'slant_distance',
-                 'angle', 'density_factor', 'drag', 'energy', 'ogw', 'flag')
+                 'angle', 'density_ratio', 'drag', 'energy', 'ogw', 'flag')
 
     _fields = __slots__
 
@@ -38,7 +38,7 @@ cdef class TrajectoryData:
                     object windage_adj,
                     object slant_distance,
                     object angle,
-                    double density_factor,
+                    double density_ratio,
                     double drag,
                     object energy,
                     object ogw,
@@ -55,7 +55,7 @@ cdef class TrajectoryData:
         self.windage_adj = windage_adj
         self.slant_distance = slant_distance
         self.angle = angle
-        self.density_factor = density_factor
+        self.density_ratio = density_ratio
         self.drag = drag
         self.energy = energy
         self.ogw = ogw
@@ -82,7 +82,7 @@ cdef class TrajectoryData:
             _fmt(self.windage_adj, PreferredUnits.adjustment),
             _fmt(self.slant_distance, PreferredUnits.distance),
             _fmt(self.angle, PreferredUnits.angular),
-            f'{self.density_factor:.3e}',
+            f'{self.density_ratio:.3e}',
             f'{self.drag:.3f}',
             _fmt(self.energy, PreferredUnits.energy),
             _fmt(self.ogw, PreferredUnits.ogw),
@@ -107,7 +107,7 @@ cdef class TrajectoryData:
             self.windage_adj >> PreferredUnits.adjustment,
             self.slant_distance >> PreferredUnits.distance,
             self.angle >> PreferredUnits.angular,
-            self.density_factor,
+            self.density_ratio,
             self.drag,
             self.energy >> PreferredUnits.energy,
             self.ogw >> PreferredUnits.ogw,

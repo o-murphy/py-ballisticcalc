@@ -12,7 +12,7 @@ from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import HitResult
+from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 ConfigT = TypeVar('ConfigT', covariant=True)
@@ -54,7 +54,7 @@ class _EngineLoader:
         try:
             handle: EngineProtocolType = ep.load()
             if not isinstance(handle, EngineProtocol):
-                raise TypeError(f"Unsupported engine type {ep.value}, must implements EngineProtocol")
+                raise TypeError(f"Unsupported engine {ep.value} does not implement EngineProtocol")
             logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
             return handle
         except ImportError as e:
@@ -188,15 +188,21 @@ class Calculator(Generic[ConfigT]):
             HitResult: Object containing computed trajectory and hit information.
         """
         trajectory_range = PreferredUnits.distance(trajectory_range)
-        step = PreferredUnits.distance(trajectory_step or trajectory_range)
+        dist_step = trajectory_range
+        filter_flags = TrajFlag.RANGE
+        if trajectory_step:
+            dist_step = PreferredUnits.distance(trajectory_step)
+            filter_flags = TrajFlag.RANGE
+            if dist_step.raw_value > trajectory_range.raw_value:
+                dist_step = trajectory_range
 
-        if step.raw_value > trajectory_range.raw_value:
-            step = trajectory_range
+        if extra_data:
+            filter_flags = TrajFlag.ALL
 
-        data = self._engine_instance.trajectory(
-            shot, trajectory_range, step, extra_data, time_step
-        )
-        return HitResult(shot, data, extra_data)
+        result = self._engine_instance.integrate(shot, trajectory_range, dist_step, time_step, filter_flags)
+        if result.error:
+            raise result.error
+        return result
 
     @staticmethod
     def iter_engines():

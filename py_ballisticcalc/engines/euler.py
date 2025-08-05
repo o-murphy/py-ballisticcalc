@@ -15,7 +15,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag
+from py_ballisticcalc.trajectory_data import TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('EulerIntegrationEngine',)
@@ -38,22 +38,26 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         return base_step / max(1.0, velocity)
 
     @override
-    def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
-                   filter_flags: Union[TrajFlag, int], time_step: float = 0.0) -> List[TrajectoryData]:
+    def _integrate(self, props: _ShotProps, range_limit_ft: float, range_step_ft: float,
+                   time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+                   dense_output: bool = False, **kwargs) -> HitResult:
         """
-        Calculate trajectory for specified shot.
+        Creates HitResult for the specified shot.
 
         Args:
-            shot_info (_ShotProps): Information about the shot.
-            maximum_range (float): Feet down range to stop calculation.
-            record_step (float): Frequency (in feet down range) to record TrajectoryData.
-            filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points.
-            time_step (float, optional): Maximum time (in seconds) between TrajectoryData records.
+            props (Shot): Information specific to the shot.
+            range_limit_ft (float): Feet down-range to stop calculation.
+            range_step_ft (float): Frequency (in feet down-range) to record TrajectoryData.
+            filter_flags (Union[TrajFlag, int]): Bitfield for trajectory points of interest to record.
+            time_step (float, optional): If > 0 then record TrajectoryData after this many seconds elapse
+                since last record, as could happen when trajectory is nearly vertical and there is too little
+                movement down-range to trigger a record based on range.  (Defaults to 0.0)
+            dense_output (bool, optional): If True, HitResult will save BaseTrajData at each integration step,
+                for interpolating TrajectoryData.
 
         Returns:
-            List[TrajectoryData]: list of TrajectoryData
+            HitResult: Object describing the trajectory.
         """
-
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude
@@ -62,7 +66,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         time: float = .0
         drag: float = .0
         mach: float = .0
-        density_factor: float = .0
+        density_ratio: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(props.winds)
@@ -81,9 +85,9 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # endregion
 
         # Ensure one iteration when record step is smaller than calc_step
-        min_step = min(props.calc_step, record_step)
+        min_step = min(props.calc_step, range_step_ft)
 
-        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=record_step,
+        data_filter = _TrajectoryDataFilter(filter_flags=filter_flags, range_step=range_step_ft,
                                             initial_position=range_vector, initial_velocity=velocity_vector,
                                             barrel_angle_rad=props.barrel_elevation_rad,
                                             look_angle_rad=props.look_angle_rad,
@@ -94,8 +98,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         termination_reason = None
         last_recorded_range = 0.0
         start_integration_step_count = self.integration_step_count
-        while (range_vector.x <= maximum_range + min_step) or (
-                last_recorded_range <= maximum_range - 1e-6):
+        while (range_vector.x <= range_limit_ft + min_step) or (
+                last_recorded_range <= range_limit_ft - 1e-6):
             self.integration_step_count += 1
 
             # Update wind reading at current point in trajectory
@@ -103,7 +107,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory
-            density_factor, mach = props.get_density_and_mach_for_altitude(range_vector.y)
+            density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
             if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
@@ -120,7 +124,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # Time step is normalized by velocity so that we take smaller steps when moving faster
             delta_time = self.time_step(props.calc_step, relative_speed)
             # Drag is a function of air density and velocity relative to the air
-            drag = density_factor * relative_speed * props.drag_by_mach(relative_speed / mach)
+            drag = density_ratio * relative_speed * props.drag_by_mach(relative_speed / mach)
             # Bullet velocity changes due to both drag and gravity
             velocity_vector -= (relative_velocity * drag - self.gravity_vector) * delta_time  # type: ignore[operator]
             # Bullet position changes by velocity time_deltas the time step
@@ -157,6 +161,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                     props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
                 )
         logger.debug(f"Euler ran {self.integration_step_count - start_integration_step_count} iterations")
+        error = None
         if termination_reason is not None:
-            raise RangeError(termination_reason, ranges)
-        return ranges
+            error = RangeError(termination_reason, ranges)
+        return HitResult(props.shot, ranges, filter_flags > 0, error)

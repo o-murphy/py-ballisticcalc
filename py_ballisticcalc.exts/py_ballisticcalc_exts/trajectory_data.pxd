@@ -47,7 +47,7 @@ cdef class TrajectoryData:
         readonly object windage_adj
         readonly object slant_distance
         readonly object angle
-        readonly double density_factor
+        readonly double density_ratio
         readonly double drag
         readonly object energy
         readonly object ogw
