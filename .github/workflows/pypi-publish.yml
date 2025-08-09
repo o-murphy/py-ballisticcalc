@@ -34,7 +34,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install build cibuildwheel twine 
+          python -m pip install build cibuildwheel==2.20.0 twine 
 
       - name: Build pure python package
         run: python -m build
