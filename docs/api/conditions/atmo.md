@@ -15,7 +15,7 @@ Atmo
         - temperature_at_altitude
         - update_density_ratio
         - pressure_at_altitude
-        - get_density_factor_and_mach_for_altitude
+        - get_density_and_mach_for_altitude
         - standard_temperature
         - standard_pressure
         - icao

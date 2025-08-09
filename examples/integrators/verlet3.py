@@ -76,9 +76,9 @@ class VerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         time: float = .0
         drag: float = .0
 
-        # guarantee that mach and density_factor would be referenced before assignment
+        # guarantee that mach and density_ratio would be referenced before assignment
         mach: float = .0
-        density_factor: float = .0
+        density_ratio: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(shot_info.winds)
@@ -121,7 +121,7 @@ class VerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory
-            density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
+            density_ratio, mach = shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
@@ -131,7 +131,7 @@ class VerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                     ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
                                                         data.velocity.magnitude(), data.mach,
                                                         self.spin_drift(data.time), self.look_angle_rad,
-                                                        density_factor, drag, self.weight, data_filter.current_flag
+                                                        density_ratio, drag, self.weight, data_filter.current_flag
                                                         ))
                     last_recorded_range = data.position.x
             # endregion
@@ -141,7 +141,7 @@ class VerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             # Time step is normalized by velocity so that we take smaller steps when moving faster
             delta_time = self.calc_step / max(1.0, relative_speed)
-            km = density_factor * self.drag_by_mach(relative_speed / mach)
+            km = density_ratio * self.drag_by_mach(relative_speed / mach)
             drag = km * relative_speed
 
             # region Verlet integration
@@ -178,7 +178,7 @@ class VerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,
                     velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                    density_factor, drag, self.weight, data_filter.current_flag
+                    density_ratio, drag, self.weight, data_filter.current_flag
                 ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
@@ -195,6 +195,6 @@ class VerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                density_factor, drag, self.weight, TrajFlag.NONE))
+                density_ratio, drag, self.weight, TrajFlag.NONE))
         logger.debug(f"Verlet ran {it} iterations")
         return ranges

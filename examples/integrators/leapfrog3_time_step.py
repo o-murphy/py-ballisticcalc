@@ -77,9 +77,9 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         time: float = .0
         drag: float = .0
 
-        # guarantee that mach and density_factor would be referenced before assignment
+        # guarantee that mach and density_ratio would be referenced before assignment
         mach: float = .0
-        density_factor: float = .0
+        density_ratio: float = .0
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(shot_info.winds)
@@ -117,11 +117,11 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         # print(delta_time)
         # Update air density at current point in trajectory
-        density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
+        density_ratio, mach = shot_info.atmo.get_density_and_mach_for_altitude(
             self.alt0 + range_vector.y)
 
         # Compute initial drag coefficient and acceleration
-        km = density_factor * self.drag_by_mach(initial_relative_speed / mach)
+        km = density_ratio * self.drag_by_mach(initial_relative_speed / mach)
         drag = km * initial_relative_speed
         acceleration = self.gravity_vector - km * initial_relative_velocity * initial_relative_velocity.magnitude()  # type: ignore[operator]
 
@@ -144,7 +144,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 wind_vector = wind_sock.vector_for_range(range_vector.x)
 
             # Update air density at current point in trajectory
-            density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
+            density_ratio, mach = shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
             # region Check whether to record TrajectoryData row at current point
@@ -154,7 +154,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                     ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
                                                         data.velocity.magnitude(), data.mach,
                                                         self.spin_drift(data.time), self.look_angle_rad,
-                                                        density_factor, drag, self.weight, data_filter.current_flag
+                                                        density_ratio, drag, self.weight, data_filter.current_flag
                                                         ))
                     last_recorded_range = data.position.x
             # endregion
@@ -166,7 +166,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
             # Step 2: Compute forces at new position
             # Update atmospheric conditions at new position
-            new_density_factor, new_mach = shot_info.atmo.get_density_and_mach_for_altitude(
+            new_density_ratio, new_mach = shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + range_vector.y)
 
             # Update wind vector if needed at new position
@@ -176,7 +176,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # Compute acceleration at new position
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()
-            km = new_density_factor * self.drag_by_mach(relative_speed / new_mach)
+            km = new_density_ratio * self.drag_by_mach(relative_speed / new_mach)
             acceleration = self.gravity_vector - km * relative_velocity * relative_velocity.magnitude()  # type: ignore[operator]
 
             # Step 3: Update velocity using acceleration at new position (full step)
@@ -184,7 +184,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             velocity_vector += acceleration * delta_time  # type: ignore[operator]
 
             # Update cached values for recording
-            density_factor = new_density_factor
+            density_ratio = new_density_ratio
             mach = new_mach
             drag = km * relative_speed
             # endregion LeapFrog integration
@@ -201,7 +201,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 ranges.append(create_trajectory_row(
                     time, range_vector, velocity_vector,
                     velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                    density_factor, drag, self.weight, data_filter.current_flag
+                    density_ratio, drag, self.weight, data_filter.current_flag
                 ))
                 if velocity < _cMinimumVelocity:
                     reason = RangeError.MinimumVelocityReached
@@ -217,7 +217,7 @@ class LeapFrogIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             ranges.append(create_trajectory_row(
                 time, range_vector, velocity_vector,
                 velocity, mach, self.spin_drift(time), self.look_angle_rad,
-                density_factor, drag, self.weight, TrajFlag.NONE))
+                density_ratio, drag, self.weight, TrajFlag.NONE))
 
         logger.debug(f"LeapFrog (fixed time step) ran {it} iterations with dt={delta_time:.6f}")
         return ranges

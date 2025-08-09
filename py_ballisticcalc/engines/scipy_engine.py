@@ -25,7 +25,7 @@ from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.engines.base_engine import (
     BaseIntegrationEngine,
     BaseEngineConfigDict,
-    BaseEngineConfig, _ShotProps, _ZeroCalcStatus
+    BaseEngineConfig, _ShotProps, _ZeroCalcStatus, with_no_minimum_velocity
 )
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
@@ -202,6 +202,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         self.eval_points: List[float] = []  # Points at which diff_eq is called
 
     @override
+    @with_no_minimum_velocity
     def _find_max_range(self, props: _ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
         Distance, Angular]:
         """
@@ -236,16 +237,11 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self._find_apex(props).slant_distance >> Distance.Foot
             props.barrel_elevation_rad = angle_rad
-            try:  # TODO: We really want to stop at ZERO_DOWN; stop_at_zero might not let it register that crossing.
-                t = self._integrate(props, 9e9, 9e9, TrajFlag.ZERO_DOWN, stop_at_zero=True)
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                t = e.incomplete_trajectory
-            hit = HitResult(props.shot, t, True)
+            hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, stop_at_zero=True)
             cross = hit.flag(TrajFlag.ZERO_DOWN)
             if cross is None:
-                cross = t[-1]  # Fallback to the last point if no zero crossing found
+                warnings.warn(f'No ZERO_DOWN found for launch angle {angle_rad} rad.')
+                return -9e9
             # Return value penalizes distance by slant height, which we want to be zero.
             return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
@@ -262,6 +258,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
     @override
+    @with_no_minimum_velocity
     def _find_zero_angle(self, props: _ShotProps, distance: Distance, lofted: bool = False) -> Angular:
         """
         Internal method to find the barrel elevation needed to hit sight line at a specific distance,
@@ -311,13 +308,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
             props.barrel_elevation_rad = angle_rad
-            try:
-                # Integrate to find the projectile's state at the target's horizontal distance.
-                t = self._integrate(props, target_x_ft, target_x_ft, TrajFlag.NONE)[-1]
-            except RangeError as e:
-                if e.last_distance is None:
-                    raise e
-                t = e.incomplete_trajectory[-1]
+            # Integrate to find the projectile's state at the target's horizontal distance.
+            t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 return -1e6  # Large negative error to discourage this angle.
@@ -367,21 +359,26 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             return self._find_zero_angle(props, distance)
 
     @override
-    def _integrate(self, props: _ShotProps, maximum_range: float, record_step: float,
-                   filter_flags: Union[TrajFlag, int], time_step: float = 0.0, stop_at_zero: bool = False) -> List[
-        TrajectoryData]:
+    def _integrate(self, props: _ShotProps, range_limit_ft: float, range_step_ft: float,
+                   time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+                   dense_output: bool = False, stop_at_zero: bool = False, **kwargs) -> HitResult:
         """
-        Calculate trajectory for specified shot.
+        Creates HitResult for the specified shot.
 
         Args:
-            shot_info (_ShotProps): Information about the shot.
-            maximum_range (float): Feet down range to stop calculation.
-            record_step (float): Frequency (in feet down range) to record TrajectoryData.
-            filter_flags (Union[TrajFlag, int]): Bitfield for requesting special trajectory points.
-            time_step (float, optional): Maximum time (in seconds) between TrajectoryData records.
+            props (Shot): Information specific to the shot.
+            maximum_range (float): Feet down-range to stop calculation.
+            record_step (float): Frequency (in feet down-range) to record TrajectoryData.
+            filter_flags (Union[TrajFlag, int]): Bitfield for trajectory points of interest to record.
+            time_step (float, optional): If > 0 then record TrajectoryData after this many seconds elapse
+                since last record, as could happen when trajectory is nearly vertical and there is too little
+                movement down-range to trigger a record based on range.  (Defaults to 0.0)
+            dense_output (bool, optional): If True, HitResult will save BaseTrajData at each integration step,
+                for interpolating TrajectoryData.
+            stop_at_zero (bool, optional): If True, stop integration when trajectory crosses the sight line.
 
         Returns:
-            List[TrajectoryData]: list of TrajectoryData
+            HitResult: Object describing the trajectory.
         """
         self.trajectory_count += 1
         try:
@@ -427,9 +424,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             else:
                 relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()
-            density_factor, mach = props.get_density_and_mach_for_altitude(y)
-            km = density_factor * props.drag_by_mach(relative_speed / mach)
-            drag = km * relative_speed
+            density_ratio, mach = props.get_density_and_mach_for_altitude(y)
+            k_m = density_ratio * props.drag_by_mach(relative_speed / mach)
+            drag = k_m * relative_speed  # This is the "drag rate"
 
             # Derivatives
             dxdt = vx
@@ -443,7 +440,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         @scipy_event(terminal=True)
         def event_max_range(t: float, s: Any) -> np.floating:  # Stop when x crosses maximum_range
-            return s[0] - (maximum_range + 1)  # +1 to ensure we cross the threshold
+            return s[0] - (range_limit_ft + 1)  # +1 to ensure we cross the threshold
 
         max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0_ft)  # Smallest allowed y coordinate (ft)
 
@@ -455,7 +452,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         def event_min_velocity(t: float, s: Any) -> np.floating:  # Stop when velocity < _cMinimumVelocity
             v = np.linalg.norm(s[3:6])
             return v - _cMinimumVelocity
-
+        #TODO: Either don't add this event, or always return 0 if _cMinimumVelocity<=0.
         traj_events: List[SciPyEvent] = [event_max_range, event_max_drop, event_min_velocity]
 
         slant_sine = math.sin(props.look_angle_rad)
@@ -508,7 +505,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 """Helper function to create a TrajectoryData row."""
                 position = Vector(*state[0:3])
                 velocity = Vector(*state[3:6])
-                density_factor, mach = props.get_density_and_mach_for_altitude(position[1])
+                density_ratio, mach = props.get_density_and_mach_for_altitude(position[1])
                 return self._make_row(props, t, position, velocity, mach, flag)
 
             if sol.t[-1] == 0:
@@ -516,7 +513,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 ranges.append(make_row(sol.t[0], sol.y[:, 0], TrajFlag.RANGE))
             else:
                 # List of distances at which we want to record the trajectory data
-                desired_xs = np.arange(0, maximum_range + record_step, record_step)
+                desired_xs = np.arange(0, range_limit_ft + range_step_ft, range_step_ft)
                 # Get x and t arrays from the solution
                 x_vals = sol.y[0]
                 t_vals = sol.t
@@ -645,8 +642,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 ranges.sort(key=lambda t: t.time)  # Sort by time
             # endregion Find TrajectoryData points requested by filter_flags
         # endregion Find requested TrajectoryData points
-
+        error = None
         if termination_reason is not None and termination_reason is not self.HitZero:
-            raise RangeError(termination_reason, ranges)
-
-        return ranges
+            error = RangeError(termination_reason, ranges)
+        return HitResult(props.shot, ranges, filter_flags > 0, error)

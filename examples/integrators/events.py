@@ -301,7 +301,7 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         ).mul_by_const(velocity)
 
         time = 0.0
-        density_factor, mach = shot_info.atmo.get_density_and_mach_for_altitude(
+        density_ratio, mach = shot_info.atmo.get_density_and_mach_for_altitude(
             self.alt0 + position.y
         )
         state = TrajectoryState(time, position, velocity_vector, mach)
@@ -452,12 +452,12 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         windage_adjustment = get_correction(range_vector.x, windage)
         trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
 
-        density_factor, mach_fps = (
+        density_ratio, mach_fps = (
             self._shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + range_vector.y
             )
         )
-        drag = density_factor * velocity * self.drag_by_mach(velocity / mach_fps)
+        drag = density_ratio * velocity * self.drag_by_mach(velocity / mach_fps)
 
         self._ranges.append(TrajectoryData(
             time=state.time,
@@ -476,7 +476,7 @@ class EventBasedIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             windage_adj=_new_rad(windage_adjustment),
             slant_distance=_new_feet(range_vector.x / math.cos(self.look_angle_rad)),
             angle=_new_rad(trajectory_angle),
-            density_factor=density_factor - 1,
+            density_ratio=density_ratio - 1,
             drag=drag,
             energy=_new_ft_lb(calculate_energy(self.weight, velocity)),
             ogw=_new_lb(calculate_ogw(self.weight, velocity)),
@@ -496,13 +496,13 @@ class EulerIntegrationEngine(EventBasedIntegrationEngine):
         vel_mag = vel_rel_air.magnitude()
 
         delta_time = self.calc_step / max(1.0, vel_mag)
-        density_factor, mach_fps = (
+        density_ratio, mach_fps = (
             self._shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + state.position.y
             )
         )
         drag = (
-            density_factor * vel_mag * self.drag_by_mach(vel_mag / max(mach_fps, 1e-6))
+            density_ratio * vel_mag * self.drag_by_mach(vel_mag / max(mach_fps, 1e-6))
         )
         accel = self.gravity_vector - vel_rel_air * drag
 
@@ -535,12 +535,12 @@ class RK4IntegrationEngine(EventBasedIntegrationEngine):
         relative_speed = relative_velocity.magnitude()  # Velocity relative to air
         # Time step is normalized by velocity so that we take smaller steps when moving faster
         delta_time = self.calc_step / max(1.0, relative_speed)
-        density_factor, mach_fps = (
+        density_ratio, mach_fps = (
             self._shot_info.atmo.get_density_and_mach_for_altitude(
                 self.alt0 + state.position.y
             )
         )
-        km = density_factor * self.drag_by_mach(relative_speed / mach_fps)
+        km = density_ratio * self.drag_by_mach(relative_speed / mach_fps)
 
         # region RK4 integration
         def f(v: Vector) -> Vector:  # dv/dt

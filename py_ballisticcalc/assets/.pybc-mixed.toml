@@ -1,7 +1,9 @@
-# Config template for py_ballisticcalc
+# Mixed Unit configuration for py_ballisticcalc:
+# Metric units for distance, velocity, target, atmosphere;
+# Imperial for bullet and gun dimensions.
 
 title = "py_ballisticcalc config"
-version = "2.1.1b1"
+version = "2.2.0"
 
 [pybc.preferred_units]
 angular = 'Degree'
@@ -20,9 +22,3 @@ sight_height = 'Inch'
 target_height = 'Meter'
 twist = 'Inch'
 time = 'Second'
-
-#[pybc.calculator]
-#
-#[pybc.calculator.max_calc_step_size]
-#value = 0.5
-#units = "Foot"
