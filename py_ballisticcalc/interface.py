@@ -46,7 +46,7 @@ class _EngineLoader:
         if hasattr(all_entry_points, 'select'):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
         elif hasattr(all_entry_points, 'get'):  # for importlib < 5
-            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])
+            ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])  # type: ignore[arg-type]
         else:
             raise RuntimeError('Entry point not supported')
         return set(ballistic_entry_points)
@@ -66,7 +66,7 @@ class _EngineLoader:
             if not isinstance(handle, EngineProtocol):
                 raise TypeError(f"Unsupported engine {ep.value} does not implement EngineProtocol")
             logger.info(f"Loaded calculator from: {ep.value} (Class: {handle})")
-            return handle
+            return handle  # type: ignore
         except ImportError as e:
             logger.error(f"Error loading engine from {ep.value}: {e}")
         except AttributeError as e:
@@ -80,7 +80,7 @@ class _EngineLoader:
         if entry_point is None:
             entry_point = DEFAULT_ENTRY
         if isinstance(entry_point, EngineProtocol):
-            return entry_point
+            return entry_point  # type: ignore
         if isinstance(entry_point, str):
             handle: Optional[EngineProtocolType] = None
             for ep in cls.iter_engines():
