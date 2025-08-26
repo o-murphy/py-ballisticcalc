@@ -1,10 +1,11 @@
 """Classes to define zeroing or current environmental conditions"""
+from __future__ import annotations
 
 import math
 import warnings
 from dataclasses import dataclass
 
-from typing_extensions import List, Union, Optional, Tuple
+from typing_extensions import List, Optional, Sequence, Tuple, Union
 
 from py_ballisticcalc.constants import cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric, \
     cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric, \
@@ -134,9 +135,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             self.update_density_ratio()
 
     def update_density_ratio(self) -> None:
-        """
-        Updates the density ratio based on current conditions
-        """
+        """Updates the density ratio based on current conditions."""
         self._density_ratio = Atmo.calculate_air_density(self._t0, self._p0, self.humidity) / cStandardDensityMetric
 
     @property
@@ -156,10 +155,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         return self._density_ratio * cStandardDensity
 
     def temperature_at_altitude(self, altitude: float) -> float:
-        """
-        Temperature at altitude interpolated from zero conditions using lapse rate.
+        """Temperature at altitude interpolated from zero conditions using lapse rate.
+        
         Args:
             altitude: ASL in ft
+            
         Returns:
             temperature in °C
         """
@@ -172,11 +172,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         return t
 
     def pressure_at_altitude(self, altitude: float) -> float:
-        """
-        Pressure at altitude interpolated from zero conditions using lapse rate.
+        """Pressure at altitude interpolated from zero conditions using lapse rate.
+        
         Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations
+        
         Args:
             altitude: ASL in ft
+            
         Returns:
             pressure in hPa
         """
@@ -185,11 +187,14 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         return p
 
     def get_density_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
-        """
+        """Calculate density ratio and Mach 1 for the specified altitude.
+        
         Ref: https://en.wikipedia.org/wiki/Barometric_formula#Density_equations
+        
         Args:
             altitude: ASL in units of feet.
                 Note: Altitude above 36,000 ft not modelled this way.
+                
         Returns:
             density ratio and Mach 1 (fps) for the specified altitude
         """
@@ -212,7 +217,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             # density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
         return density_ratio, mach
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Atmo(altitude={self.altitude}, pressure={self.pressure}, "
             f"temperature={self.temperature}, humidity={self.humidity}, "
@@ -221,10 +226,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
-        """
+        """Calculate ICAO standard temperature for altitude.
+        
         Note: This model only valid up to troposphere (~36,000 ft).
+        
         Args:
             altitude: ASL in units of feet.
+            
         Returns:
             ICAO standard temperature for altitude
         """
@@ -233,11 +241,14 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def standard_pressure(altitude: Distance) -> Pressure:
-        """
+        """Calculate ICAO standard pressure for altitude.
+        
         Note: This model only valid up to troposphere (~36,000 ft).
-            Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations
+        Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations
+        
         Args:
             altitude: Distance above sea level (ASL)
+            
         Returns:
             ICAO standard pressure for altitude
         """
@@ -248,12 +259,15 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None,
-             humidity: float = cStandardHumidity) -> 'Atmo':
-        """
+             humidity: float = cStandardHumidity) -> Atmo:
+        """Create Atmo instance of standard ICAO atmosphere at given altitude.
+        
         Note: This model only valid up to troposphere (~36,000 ft).
+        
         Args:
             altitude: relative to sea level
             temperature: air temperature
+            
         Returns:
             Atmo instance of standard ICAO atmosphere at given altitude.
             If temperature not specified uses standard temperature.
@@ -270,9 +284,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machF(fahrenheit: float) -> float:
-        """
+        """Calculate Mach 1 in fps for given Fahrenheit temperature.
+        
         Args:
             fahrenheit: Fahrenheit temperature
+            
         Returns:
             Mach 1 in fps for given temperature
         """
@@ -283,11 +299,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machC(celsius: float) -> float:
-        """
+        """Calculate Mach 1 in mps for given Celsius temperature.
+        
         Args:
             celsius: Celsius temperature
+            
         Returns:
-            Mach 1 in m/s for Celsius temperature
+            Mach 1 in mps for given temperature
         """
         if celsius < -cDegreesCtoK:
             bad_temp = celsius
@@ -297,30 +315,31 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machK(kelvin: float) -> float:
-        """
+        """Calculate Mach 1 in mps for given Kelvin temperature.
+        
         Args:
             kelvin: Kelvin temperature
+            
         Returns:
-            Mach 1 in m/s for Kelvin temperature
+            Mach 1 in mps for given temperature
         """
         return math.sqrt(kelvin) * cSpeedOfSoundMetric
 
     @staticmethod
     def calculate_air_density(t: float, p: float, humidity: float) -> float:
-        """
-        Calculate the air density given temperature, pressure, and humidity.
-
-        Parameters:
-        t (float): Temperature in degrees Celsius.
-        p (float): Pressure in hPa.
-        humidity (float): The relative humidity as a fraction of max [0%-100%]
+        """Calculate air density from temperature, pressure, and humidity.
+        
+        Args:
+            t: Temperature in degrees Celsius.
+            p: Pressure in hPa.
+            humidity: The relative humidity as a fraction of max [0%-100%]
 
         Returns:
-            float: Air density in kg/m^3.
+            Air density in kg/m³.
 
         Notes:
-        - Divide result by cDensityImperialToMetric to get density in lb/ft^3
-        - Source: https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf
+            - Divide result by cDensityImperialToMetric to get density in lb/ft³
+            - Source: https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf
         """
         R = 8.314472  # J/(mol·K), universal gas constant
         M_a = 28.96546e-3  # kg/mol, molar mass of dry air
@@ -384,7 +403,7 @@ class Vacuum(Atmo):
         self._pressure = PreferredUnits.pressure(0)
         self._density_ratio = 0
 
-    def update_density_ratio(self):
+    def update_density_ratio(self) -> None:
         pass
 
 
@@ -491,7 +510,7 @@ class Shot:
                  relative_angle: Optional[Union[float, Angular]] = None,
                  cant_angle: Optional[Union[float, Angular]] = None,
                  atmo: Optional[Atmo] = None,
-                 winds: Optional[List[Wind]] = None
+                 winds: Optional[Sequence[Wind]] = None
                  ):
         """
         A base class for creating Shot.
@@ -532,18 +551,18 @@ class Shot:
         self.relative_angle = PreferredUnits.angular(relative_angle or 0)
         self.cant_angle = PreferredUnits.angular(cant_angle or 0)
         self.atmo = atmo or Atmo.icao()
-        self.winds = winds
+        self.winds = winds or [Wind()]
 
     @property
-    def winds(self) -> Tuple[Wind, ...]:
+    def winds(self) -> Sequence[Wind]:
         """
         Returns:
-            Tuple[Wind, ...] sorted by until_distance
+            Sequence[Wind] sorted by until_distance
         """
         return tuple(self._winds)
 
     @winds.setter
-    def winds(self, winds: Optional[List[Wind]]):
+    def winds(self, winds: Optional[Sequence[Wind]]):
         """
         Property setter.  Ensures .winds is sorted by until_distance.
 

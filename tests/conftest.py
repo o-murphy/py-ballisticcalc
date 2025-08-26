@@ -1,3 +1,33 @@
+import os
+import sys
+from pathlib import Path
+
+
+def _ensure_dev_env_for_tests():
+    os.environ.setdefault("PYTHONNOUSERSITE", "1")
+
+    root = Path(__file__).resolve().parents[1]
+    venv = root / ".venv"
+    in_venv = getattr(sys, "base_prefix", sys.prefix) != sys.prefix
+
+    if venv.exists():
+        try:
+            active = Path(sys.prefix).resolve()
+            if not (in_venv and str(active).startswith(str(venv.resolve()))):
+                print(
+                    (
+                        "Warning: Tests are not running under repo .venv.\n"
+                        f"Active: {active}\nExpected under: {venv}\n"
+                        "Activate with .\\.venv\\Scripts\\activate or run via .venv\\Scripts\\python.exe -m pytest"
+                    ),
+                    file=sys.stderr,
+                )
+        except Exception:
+            pass
+
+
+_ensure_dev_env_for_tests()
+
 import logging
 
 import pytest

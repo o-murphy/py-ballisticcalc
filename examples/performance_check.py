@@ -44,15 +44,12 @@ cythonized:
         Total time: 11.458543 seconds
         Execution rate: 10.47 calls per second
 """
-# import RKballistic
 from timeit import timeit
 from py_ballisticcalc import *
 from py_ballisticcalc.logger import logger
 import logging
 
 from py_ballisticcalc.interface import _EngineLoader
-
-
 
 logger.setLevel(logging.INFO)
 
@@ -87,7 +84,6 @@ zero_atmo = Atmo(
 )
 
 
-
 def init_zero_shot():
 
     weapon = Weapon(sight_height=Unit.Centimeter(9), twist=10)
@@ -97,7 +93,6 @@ def init_zero_shot():
 
     zero = Shot(weapon=weapon, ammo=ammo, atmo=zero_atmo)
 
-
     return zero
 
 def use_zero_shot(calc_):
@@ -105,7 +100,7 @@ def use_zero_shot(calc_):
     calc_.set_weapon_zero(zero, zero_distance)
 
     shot = Shot(weapon=zero.weapon, ammo=zero.ammo, atmo=current_atmo)
-    calc_.fire(shot, shot_distance, extra_data=True)
+    calc_.fire(shot, shot_distance, flags=TrajFlag.ALL)
     return shot
 
 
@@ -122,14 +117,14 @@ def run_check(calc_, number):
     calc_.set_weapon_zero(zero_shot, zero_distance)
     shot = Shot(weapon=zero_shot.weapon, ammo=zero_shot.ammo, atmo=current_atmo)
 
-    total_time = timeit(lambda: calc_.fire(shot, shot_distance, extra_data=False), number=number)
+    total_time = timeit(lambda: calc_.fire(shot, shot_distance), number=number)
     rate = number / total_time  # executions per second
 
     print("Calculate trajectory to distance {} {} times:".format(shot_distance, number))
     print(f"Total time: {total_time:.6f} seconds")
     print(f"Execution rate: {rate:.2f} calls per second")
 
-    total_time = timeit(lambda: calc_.fire(shot, shot_distance, extra_data=True), number=number)
+    total_time = timeit(lambda: calc_.fire(shot, shot_distance, flags=TrajFlag.ALL), number=number)
     rate = number / total_time  # executions per second
 
     print("Calculate trajectory to distance + extra {} {} times:".format(shot_distance, number))
@@ -146,24 +141,25 @@ print()
 for ep in _EngineLoader.iter_engines():
     config = {}
 
-    if ep.name in {"euler_engine", "rk4_engine"}:
+    if ep.name in {"verlet_engine"}:
+    # if ep.name in {"euler_engine", "rk4_engine"}:
         continue  # skip pure ones
     elif ep.name in {"cythonized_euler_engine", "cythonized_rk4_engine"}:
         ...
-    elif ep.name in {"scipy"}:
-        config: SciPyEngineConfigDict = {
-            "relative_tolerance": 1e-6,
-            "absolute_tolerance": 1e-5,
-        }
+    # elif ep.name in {"scipy"}:
+    #     config: SciPyEngineConfigDict = {
+    #         "relative_tolerance": 1e-6,
+    #         "absolute_tolerance": 1e-5,
+    #     }
 
     engine = ep.load()
     print("Engine: %s" % ep.value)
-    if ep.name.startswith("scipy"):
-        config: SciPyEngineConfigDict = {
-            "relative_tolerance": 1e-4,
-            "absolute_tolerance": 1e-3,
-            "integration_method": "LSODA"
-        }
+    # if ep.name.startswith("scipy"):
+    #     config: SciPyEngineConfigDict = {
+    #         "relative_tolerance": 1e-4,
+    #         "absolute_tolerance": 1e-3,
+    #         "integration_method": "LSODA"
+    #     }
     calc = Calculator(config=config, engine=engine)
     run_check(calc, number)
     print()

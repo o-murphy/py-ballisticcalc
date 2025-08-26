@@ -37,8 +37,8 @@ classifiers = [
 dependencies = []
 
 [project.entry-points.py_ballisticcalc]
-cythonized_euler_engine = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
-cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
+cythonized_euler_engine = "py_ballisticcalc_exts.euler_engine:CythonizedEulerIntegrationEngine"
+cythonized_rk4_engine = "py_ballisticcalc_exts.rk4_engine:CythonizedRK4IntegrationEngine"
 
 [project.urls]
 "Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
@@ -53,6 +53,7 @@ py-modules = ["py_ballisticcalc_exts"]
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["py_ballisticcalc_exts*"]
+exclude = ["py_ballisticcalc_exts.include*"]
 
 [project.optional-dependencies]
 dev = ['cython', 'build', 'setuptools', 'cibuildwheel']

@@ -5,7 +5,6 @@
 requires = ["setuptools", "wheel", "tomli; python_version<'3.11'"]
 build-backend = "setuptools.build_meta"
 
-
 [project]
 name = "py_ballisticcalc"
 version = "2.2.0b7"
@@ -39,8 +38,6 @@ dependencies = [
     "tomli>=2.2.1; python_version<'3.11'",
     "Deprecated>=1.2.18",
     "pandas>=2.3.1",
-    "pandas-stubs>=2.2.2.240807",
-    "ruff>=0.12.3",
 ]
 
 [project.entry-points.py_ballisticcalc]
@@ -77,26 +74,6 @@ include = [
 extend-exclude = ["__init__.py"]
 line-length = 120
 
-[dependency-groups]
-dev = [
-    "build>=1.2.2.post1",
-    "jupyter>=1.1.1",
-    "matplotlib>=3.9",
-    "mypy>=1.15.0",
-    "numpy>=2",
-    "scipy>=1.13.1", # maybe should be in othger dependency group (40+Mb zipped size)
-    "pandas>=2.3.1",
-    "pandas-stubs>=2.2.2.240807",
-    "pylint>=3.3.4",
-    "pytest>=8.3.5",
-    "pytest-cov>=6.0.0",
-    "pytest-xdist>=3.6.1",
-    "scipy-stubs>=1.4.1a3,<1.16.0.1; python_version=='3.10'",
-    "scipy-stubs>=1.16.0.1; python_version>='3.11'",
-    "types-deprecated>=1.2.15.20250304",
-    "ruff>=0.12.3",
-]
-
 [tool.uv.sources]
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 
@@ -111,7 +88,7 @@ dev = [
     "matplotlib>=3.9",
     "mypy>=1.15.0",
     "numpy>=2",
-    "scipy>=1.13.1", # maybe should be in othger dependency group (40+Mb zipped size)
+    "scipy>=1.13.1", # maybe should be in separate dependency group (40+Mb zipped size)
     "pandas>=2.3.1",
     "pandas-stubs>=2.2.2.240807",
     "pylint>=3.3.4",
@@ -133,4 +110,26 @@ docs = [
     'mkdocs-autorefs',
     'mike',
     'pydocstyle',
+]
+
+[dependency-groups]
+# Duplication of "dev" group here is required to support `uv sync --dev`
+# Previous declaration sufficient if we standardize on `uv pip install -e .[dev]`
+dev = [
+    "build>=1.2.2.post1",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.9",
+    "mypy>=1.15.0",
+    "numpy>=2",
+    "scipy>=1.13.1",
+    "pandas>=2.3.1",
+    "pandas-stubs>=2.2.2.240807",
+    "pylint>=3.3.4",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.0.0",
+    "pytest-xdist>=3.6.1",
+    "scipy-stubs>=1.4.1a3,<1.16.0.1; python_version=='3.10'",
+    "scipy-stubs>=1.16.0.1; python_version>='3.11'",
+    "types-deprecated>=1.2.15.20250304",
+    "ruff>=0.12.3",
 ]

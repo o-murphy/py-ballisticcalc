@@ -4,7 +4,7 @@ from py_ballisticcalc import (HitResult, Distance, BaseEngineConfigDict, Calcula
                               Weight, Velocity, Ammo, Shot, Angular)
 
 
-def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit: Distance = Distance.Meter,
+def print_out_trajectory_compact(hit_result: HitResult, label="", distance_unit = Distance.Meter,
                                  top_k: int = 5):
     trajectory_length = len(hit_result.trajectory)
     if label:
@@ -67,7 +67,7 @@ def create_5_56_mm_shot():
 def create_0_308_caliber_shot():
     dm = DragModel(bc=0.233, drag_table=TableG7,
                    weight=Weight.Grain(155), diameter=Distance.Inch(0.308), length=Distance.Inch(1.2))
-    return Shot(ammo=Ammo(dm, mv=Velocity.MPS(914.6)))
+    return Shot(ammo=Ammo(dm, mv=Velocity.MPS(900)))
 
 def shot_with_relative_angle_in_degrees(angle_in_degrees: float):
     shot = create_23_mm_shot()

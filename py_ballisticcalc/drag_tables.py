@@ -1,8 +1,46 @@
-"""Templates of the common used drag tables"""
-from typing_extensions import TypedDict, List
+"""Drag tables for common projectile profiles.
 
+Drag tables define the relationship between Mach number and drag coefficient
+for specific projectile shapes, allowing accurate ballistic calculations across
+the full velocity range from subsonic to supersonic.
+
+This module provides standardized drag coefficient tables (CD vs Mach number)
+for different projectile shapes and profiles commonly used in ballistics.
+The profiles for models G1-G8 are shown in docs/DragModelProjectiles.jpg
+
+Standard Tables:
+    TableG1: Flat-base bullet (most common sporting ammunition)
+    TableG7: Boat-tail, spitzer (long-range match bullets)
+    TableG2: Conical, banded, boat-tail artillery projectile
+    TableG5: Round-nose, boat-tail
+    TableG6: Flat-base, spire-point
+    TableG8: Flat-base, 10 caliber secant ogive
+    TableGI: Ingalls G1
+    TableGS: 9/16" smooth sphere
+    TableRA4: .22LR 40gr
+    
+Types:
+    DragTablePointDictType: TypedDict for drag table data points
+
+Functions:
+    get_drag_tables_names: Returns list of available drag table names
+
+Note:
+    Drag coefficients are dimensionless and vary with velocity.
+    Mach numbers typically range from 0.0 to 4.0+ for ballistic applications.
+"""
+
+# Standard library imports
+from typing import List
+
+# Third-party imports
+from typing_extensions import TypedDict
+
+
+# Type definitions
 DragTablePointDictType = TypedDict('DragTablePointDictType', {'Mach': float, 'CD': float})
 
+# Standard drag tables with complete type annotations
 TableG1: List[DragTablePointDictType] = [
     {'Mach': 0.00, 'CD': 0.2629},
     {'Mach': 0.05, 'CD': 0.2558},
@@ -761,8 +799,17 @@ TableRA4: List[DragTablePointDictType] = [
 ]
 
 
-def get_drag_tables_names():
-    """Return a list of drag table names"""
+def get_drag_tables_names() -> List[str]:
+    """List all available drag table names.
+    
+    Returns:
+        List of drag table names as strings (e.g., ['TableG1', 'TableG7', ...])
+        
+    Example:
+        >>> tables = get_drag_tables_names()
+        >>> 'TableG1' in tables
+        True
+    """
     return [f"TableG{n}" for n in (1, 7, 2, 5, 6, 8, 'I', 'S', 'RA4')]
 
 

@@ -374,7 +374,11 @@ To test your custom engine compatibility you can use predefined tests from `py_b
 
 **Horizontal:** Having defined the vertical axis using the gravity vector, we can then define *horizontal* as any vector perpendicular (or *orthogonal*) to the direction of gravity.
 
-**Sight gives $x$:** The second key reference in ballistics is the **sight line**. We set the origin of our coordinate system $(0, 0, 0)$ at the sight, which is usually either the shooter’s eye or the center of a sighting device like a scope. The *sight line* is the ray starting at the origin and pointing in the exact direction of the sight.  The $x$ coordinate measures distance from the sight along a horizontal sight line.
+**Sight gives $x$ axis:** The second key reference in ballistics is the **sight line**. We set the horizontal axis to the sight line, which is typically a ray from the shooter's eye through the center of a sighting device like a scope.
+
+**Muzzle gives origin:** The origin of our 3D coordinate system $(0, 0, 0)$ is the point on the sight line directly above the point that the projectile begins free flight. For a typical gun, free flight begins at the muzzle, which is vertically offset from the sight line by a `sight_height`, so the launch point is actually $(0, -sight_height, 0)$.  See [this image illustrating the correct measurement of sight height](doc/SightHeight.png)
+
+The $x$ coordinate measures distance from launch along a horizontal sight line.
 
 The $z$ coordinate describes position orthogonal to both the direction of gravity and the sight line. From the perspective of the sight, this is lateral position, also known as windage.
 

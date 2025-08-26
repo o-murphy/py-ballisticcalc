@@ -127,7 +127,7 @@ class VerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # region Check whether to record TrajectoryData row at current point
             if filter_flags:  # require check before call to improve performance
                 # Record TrajectoryData row
-                if (data := data_filter.should_record(range_vector, velocity_vector, mach, time)) is not None:
+                if (data := data_filter.record(range_vector, velocity_vector, mach, time)) is not None:
                     ranges.append(create_trajectory_row(data.time, data.position, data.velocity,
                                                         data.velocity.magnitude(), data.mach,
                                                         self.spin_drift(data.time), self.look_angle_rad,

@@ -4,8 +4,8 @@ import time
 
 import pytest
 
-from py_ballisticcalc import Distance, DragModel, TableG1, Weight, Weapon, Ammo, Shot, Velocity, \
-    Angular, Calculator
+from py_ballisticcalc import Distance, DragModel, TableG1, Weight, Ammo, Shot, Velocity, \
+    Angular, Calculator, TrajFlag
 from py_ballisticcalc.helpers import vacuum_range
 from py_ballisticcalc.helpers import find_index_of_point_for_distance, find_index_for_time_point
 
@@ -31,7 +31,7 @@ def one_degree_shot(loaded_engine_instance):
         shot,
         Distance.Meter(max_drag_free_range),
         Distance.Meter(max_drag_free_range / 10),
-        extra_data=True
+        flags=TrajFlag.ALL
     )
     return hit_result
 

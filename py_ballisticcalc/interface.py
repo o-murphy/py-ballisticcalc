@@ -1,13 +1,23 @@
-"""Implements basic interface for the ballistics calculator"""
+"""Ballistics calculator interface and engine loading system.
+
+This module provides the main `Calculator` class that serves as the primary interface
+for ballistic trajectory calculations. It implements a plugin-based architecture
+that can dynamically load different integration engines through Python entry points.
+The module relies on the EngineProtocol to ensure that engines offer the necessary methods.
+
+Key Classes:
+    Calculator: Main ballistics calculator with pluggable engine support
+    _EngineLoader: Internal utility for discovering and loading engine plugins
+"""
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
 from typing import Generic, Any
+import warnings
 
 from deprecated import deprecated
-from typing_extensions import Union, List, Optional, TypeVar, Type
+from typing_extensions import Union, List, Optional, TypeVar, Type, Generator
 
 from py_ballisticcalc import RK4IntegrationEngine
-# pylint: disable=import-error,no-name-in-module
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.generics.engine import EngineProtocol
@@ -31,7 +41,7 @@ class _EngineLoader:
     _entry_point_suffix = DEFAULT_ENTRY_SUFFIX
 
     @classmethod
-    def _get_entries_by_group(cls):
+    def _get_entries_by_group(cls) -> set:
         all_entry_points = entry_points()
         if hasattr(all_entry_points, 'select'):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
@@ -42,7 +52,7 @@ class _EngineLoader:
         return set(ballistic_entry_points)
 
     @classmethod
-    def iter_engines(cls):
+    def iter_engines(cls) -> Generator[EntryPoint, None, None]:
         """Iterates over all available engines in the entry points."""
         ballistic_entry_points = cls._get_entries_by_group()
         for ep in ballistic_entry_points:
@@ -66,8 +76,7 @@ class _EngineLoader:
         return None
 
     @classmethod
-    def load(cls, entry_point: EngineProtocolEntry = DEFAULT_ENTRY) -> Type[
-        EngineProtocol[ConfigT]]:
+    def load(cls, entry_point: EngineProtocolEntry = DEFAULT_ENTRY) -> Type[EngineProtocol[Any]]:
         if entry_point is None:
             entry_point = DEFAULT_ENTRY
         if isinstance(entry_point, EngineProtocol):
@@ -94,9 +103,9 @@ class Calculator(Generic[ConfigT]):
 
     config: Optional[ConfigT] = field(default=None)
     engine: EngineProtocolEntry = field(default=DEFAULT_ENTRY)
-    _engine_instance: EngineProtocol[ConfigT] = field(init=False, repr=False, compare=False)
+    _engine_instance: EngineProtocol[Any] = field(init=False, repr=False, compare=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self._engine_instance = _EngineLoader.load(self.engine)(self.config)
 
     def __getattr__(self, item: str) -> Any:
@@ -108,7 +117,7 @@ class Calculator(Generic[ConfigT]):
         to retrieve the attribute from the `_engine_instance`.
 
         Args:
-            item (str): The name of the attribute to retrieve.
+            item: The name of the attribute to retrieve.
 
         Returns:
             Any: The value of the attribute from `_engine_instance`.
@@ -146,13 +155,17 @@ class Calculator(Generic[ConfigT]):
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculates barrel elevation to hit target at zero_distance.
-        :param shot: Shot instance for which calculate barrel elevation is
-        :param target_distance: Look-distance to "zero," which is point we want to hit.
-            This is the distance that a rangefinder would return with no ballistic adjustment.
-            NB: Some rangefinders offer an adjusted distance based on inclinometer measurement.
-                However, without a complete ballistic model these can only approximate the effects
-                on ballistic trajectory of shooting uphill or downhill.  Therefore:
-                For maximum accuracy, use the raw sight distance and look_angle as inputs here.
+        
+        Args:
+            shot: Shot instance for which calculate barrel elevation is
+            target_distance: Look-distance to "zero," which is point we want to hit.
+                This is the distance that a rangefinder would return with no ballistic adjustment.
+                
+        Note:
+            Some rangefinders offer an adjusted distance based on inclinometer measurement.
+            However, without a complete ballistic model these can only approximate the effects
+            on ballistic trajectory of shooting uphill or downhill. Therefore:
+            For maximum accuracy, use the raw sight distance and look_angle as inputs here.
         """
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
@@ -162,50 +175,65 @@ class Calculator(Generic[ConfigT]):
 
     def set_weapon_zero(self, shot: Shot, zero_distance: Union[float, Distance]) -> Angular:
         """Sets shot.weapon.zero_elevation so that it hits a target at zero_distance.
-        :param shot: Shot instance from which we take a zero
-        :param zero_distance: Look-distance to "zero," which is point we want to hit.
+        
+        Args:
+            shot: Shot instance from which we take a zero
+            zero_distance: Look-distance to "zero," which is point we want to hit.
         """
         shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
         return shot.weapon.zero_elevation
 
-    def fire(self, shot: Shot, trajectory_range: Union[float, Distance],
-             trajectory_step: Optional[Union[float, Distance]] = None,
+    def fire(self, shot: Shot,
+             trajectory_range: Union[float, Distance],
+             trajectory_step: Optional[Union[float, Distance]] = None, *,
              extra_data: bool = False,
-             time_step: float = 0.0) -> HitResult:
+             dense_output: bool = False,
+             time_step: float = 0.0,
+             flags: Union[TrajFlag, int] = TrajFlag.NONE,
+             raise_range_error: bool = True) -> HitResult:
         """Calculates the trajectory for the given shot parameters.
 
         Args:
-            shot (Shot): Initial shot parameters, including position and barrel angle.
+            shot: Shot parameters, including position and barrel angle.
             trajectory_range (float | Distance): Distance at which to stop computing the trajectory.
-            trajectory_step (float | Distance | None, optional): Step between recorded trajectory points.
-                If 0 or None, defaults to `trajectory_range`. Defaults to 0.
-            extra_data (bool, optional): If True, stores trajectory data for every internal step;
-                if False, stores only at intervals of `trajectory_step`. Defaults to False.
+            trajectory_step (float | Distance | None, optional): Distance between recorded trajectory points.
+                                                                 If 0 or None, defaults to `trajectory_range`.
+            extra_data (bool, optional): [DEPRECATED] Requests flags=TrajFlags.ALL
+                                         and trajectory_step=PreferredUnits.distance(1).
+            dense_output (bool, optional): HitResult stores all calculation steps so it can interpolate any point.
             time_step (float, optional): Minimum time sampling interval in seconds. If > 0, data is
-                recorded at least this frequently. Defaults to 0.0.
+                                         recorded at least this frequently. Defaults to 0.0.
+            flags (TrajFlag, optional): Flags for specific points of interest. Defaults to TrajFlag.NONE.
+            raise_range_error (bool, optional): If True, raises RangeError if returned by integration.
 
         Returns:
-            HitResult: Object containing computed trajectory and hit information.
+            HitResult: Object containing computed trajectory.
         """
         trajectory_range = PreferredUnits.distance(trajectory_range)
         dist_step = trajectory_range
-        filter_flags = TrajFlag.RANGE
+        filter_flags = flags
         if trajectory_step:
             dist_step = PreferredUnits.distance(trajectory_step)
-            filter_flags = TrajFlag.RANGE
+            filter_flags |= TrajFlag.RANGE
             if dist_step.raw_value > trajectory_range.raw_value:
                 dist_step = trajectory_range
 
         if extra_data:
+            warnings.warn("extra_data is deprecated and will be removed in future versions. "
+                "Explicitly specify desired TrajectoryData frequency and flags.",
+                DeprecationWarning
+            )
+            #dist_step = PreferredUnits.distance(1.0)  # << For compatibility with v2.1
             filter_flags = TrajFlag.ALL
 
-        result = self._engine_instance.integrate(shot, trajectory_range, dist_step, time_step, filter_flags)
-        if result.error:
+        result = self._engine_instance.integrate(shot, trajectory_range, dist_step, time_step,
+                                                 filter_flags, dense_output=dense_output)
+        if result.error and raise_range_error:
             raise result.error
         return result
 
     @staticmethod
-    def iter_engines():
+    def iter_engines() -> Generator[EntryPoint, None, None]:
         """Iterates over all available engines in the entry points."""
         yield from _EngineLoader.iter_engines()
 
