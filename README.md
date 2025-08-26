@@ -73,6 +73,11 @@ https://stand-with-ukraine.pp.ua
   * [Range card](#plot-trajectory-with-danger-space)
   * [Complex example](#complex-example)
 
+* **[Concepts](#concepts)**
+  * [Coordinates](#coordinates)
+  * [Slant / Look Angle](#look-angle)
+  * [Danger Space](#danger-space)
+
 * [**Units** of measure](#units)
   * [Examples](#examples)
   * [Preferences](#preferences)
@@ -80,11 +85,6 @@ https://stand-with-ukraine.pp.ua
 * **[Integration Engines](#integration-engines)**
   * [Modifying Presets](#modifying-presets)
   * [Custom integration engines](#custom-integration-engines)
-
-* **[Concepts](#concepts)**
-  * [Coordinates](#coordinates)
-  * [Slant / Look Angle](#look-angle)
-  * [Danger Space](#danger-space)
 
 * **[Contributors](#contributors)**
 * **[About project](#about-project)**
@@ -193,6 +193,45 @@ print(
     Barrel elevation for 500.0m zero: 4.69mil
     Muzzle velocity at zero temperature 5.0°C is 830.0m/s
 
+
+# Concepts
+
+## Coordinates
+
+![Ballistic coordinates](doc/ballistics_coordinates.svg)
+
+**Gravity gives $\boldsymbol{y}$:** In ballistics, everything is referenced to the direction of gravity. The gravity vector points "down," and this defines the vertical direction. In 3D Cartesian coordinates $(x, y, z)$, the gravity vector is $(0, -g, 0)$, where $g$ is acceleration due to gravity (typically 32 feet/second² or 9.8 meters/second²). The $y$ coordinate describes vertical (up/down) position.
+
+**Horizontal:** Having defined the vertical axis using the gravity vector, we can then define *horizontal* as any vector perpendicular (or *orthogonal*) to the direction of gravity.
+
+**Sight gives $\boldsymbol{x}$ axis:** The second key reference in ballistics is the **sight line**. We set the horizontal axis to the sight line, which is typically a ray from the shooter's eye through the center of a sighting device like a scope.
+
+**Muzzle gives origin:** The origin of our 3D coordinate system $(0, 0, 0)$ is the point on the sight line directly above the point that the projectile begins free flight. For a typical gun, free flight begins at the muzzle, which is vertically offset from the sight line by a `sight_height`, so the launch point is actually $(0, - \text{sight\_height}, 0)$.  (See [this image illustrating the correct measurement of sight height](doc/SightHeight.png).)
+
+* **The $\boldsymbol{x}$ coordinate** measures distance from launch along a horizontal sight line.
+
+* **The $\boldsymbol{z}$ coordinate** describes position orthogonal to both the direction of gravity and the sight line. From the perspective of the sight, this is lateral position, also known as windage.
+
+## Look angle
+
+*Look angle*, a.k.a. *slant angle*, is the elevation of the sight line (a.k.a., _Line of Sight_, or _LoS_) relative to the horizon. For  angles close to horizontal (_flat fire_) this does not make a significant difference. When the look angle is significantly above or below the horizon the trajectory will be different because:
+
+1. Gravity is not orthogonal to the velocity
+2. Air density changes with altitude, so the drag effects will vary across an arcing trajectory.
+
+The shooter typically cares about the line of sight (LoS): Sight adjustments are made relative to LoS.  Ranging errors – and hence [danger space](#danger-space) – follow the _slant-height_, not the horizontal height.
+
+The following diagram shows how _slant distance_ and _slant height_ relate by _look angle_ to the underlying (distance _x_, height _y_) trajectory data.  [Understanding Slant Angle](examples/Understanding_Slant_Angle.ipynb) covers these concepts in more detail.
+![Look-angle trigonometry](doc/BallisticTrig.svg)
+
+## Danger Space
+
+Danger space is a practical measure of sensitivity to ranging error. It is defined for a target of height *h* and
+distance *d*, and it indicates how far forward and backward along the line of sight the target can move such that the trajectory will still hit somewhere (vertically) on the target.
+
+![Danger Space](doc/DangerSpace.svg)
+
+
 # Units
 
 ## Examples
@@ -241,7 +280,7 @@ print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1 * 
 
 ## Preferences
 
-To change default units directly from code: use `PreferredUnits` object
+To change default units directly from code use the static `PreferredUnits` object.
 
 ```python
 from py_ballisticcalc import PreferredUnits, Velocity, Angular, Temperature, Distance
@@ -262,7 +301,7 @@ print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
 print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
 ```
 
-**Use new method to set preferred units/settings globally for the venv or the user:**
+Or, use the **new method to set preferred units/settings globally for the venv or the user:**
 
 Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
 Or place this file in user's home directory. _(The file in project root has priority.)_
@@ -364,60 +403,14 @@ To test your custom engine compatibility you can use predefined tests from `py_b
   ```
 
 
-# Concepts
-
-## Coordinates
-
-![Ballistic coordinates](doc/ballistics_coordinates.svg)
-
-**Gravity gives $y$:** In ballistics, everything is referenced to the direction of gravity. The gravity vector points "down," and this defines the vertical direction. In 3D Cartesian coordinates $(x, y, z)$, the gravity vector is $(0, -g, 0)$, where $g$ is acceleration due to gravity (typically 32 feet/second² or 9.8 meters/second²). The $y$ coordinate describes vertical (up/down) position.
-
-**Horizontal:** Having defined the vertical axis using the gravity vector, we can then define *horizontal* as any vector perpendicular (or *orthogonal*) to the direction of gravity.
-
-**Sight gives $x$ axis:** The second key reference in ballistics is the **sight line**. We set the horizontal axis to the sight line, which is typically a ray from the shooter's eye through the center of a sighting device like a scope.
-
-**Muzzle gives origin:** The origin of our 3D coordinate system $(0, 0, 0)$ is the point on the sight line directly above the point that the projectile begins free flight. For a typical gun, free flight begins at the muzzle, which is vertically offset from the sight line by a `sight_height`, so the launch point is actually $(0, -sight_height, 0)$.  See [this image illustrating the correct measurement of sight height](doc/SightHeight.png)
-
-The $x$ coordinate measures distance from launch along a horizontal sight line.
-
-The $z$ coordinate describes position orthogonal to both the direction of gravity and the sight line. From the perspective of the sight, this is lateral position, also known as windage.
-
-## Look angle
-
-*Look angle*, a.k.a. *slant angle*, is the elevation of the sight line (a.k.a., _Line of Sight_, or _LoS_) relative to the horizon. For  angles close to horizontal (_flat fire_) this does not make a significant difference. When the look angle is significantly above or below the horizon the trajectory will be different because:
-
-1. Gravity is not orthogonal to the velocity
-2. Air density changes with altitude, so the drag effects will vary across an arcing trajectory.
-
-The shooter typically cares about the line of sight (LoS): Sight adjustments are made relative to LoS.  Ranging errors – and hence [danger space](#danger-space) – follow the _slant-height_, not the horizontal height.
-
-The following diagram shows how _slant distance_ and _slant height_ relate by _look angle_ to the underlying (distance _x_, height _y_) trajectory data.  [Understanding Slant Angle](examples/Understanding_Slant_Angle.ipynb) covers these concepts in more detail.
-![Look-angle trigonometry](doc/BallisticTrig.svg)
-
-## Danger Space
-
-Danger space is a practical measure of sensitivity to ranging error. It is defined for a target of height *h* and
-distance *d*, and it indicates how far forward and backward along the line of sight the target can move such that the trajectory will still hit somewhere (vertically) on the target.
-
-![Danger Space](doc/DangerSpace.svg)
-
 # About project
 
-The library provides trajectory calculation for ballistic projectiles including air rifles, bows, firearms, artillery,
-and so on.
+The library provides trajectory calculation for ballistic projectiles launched by airguns, bows, firearms, artillery, etc.
 
-The 3DoF model that is used in this calculator is rooted in public C code
-of [JBM's calculator](https://jbmballistics.com/ballistics/calculators/calculators.shtml), ported to C#, optimized,
-fixed and extended with elements described in Litz's _Applied Ballistics_ book and from the friendly project of
-Alexandre Trofimov and then ported to Go.
+The core point-mass (3DoF) ballistic model underlying this project was used on the earliest digital computers.  Robert McCoy (author of *Modern Exterior Ballistics*) implemented one in BASIC.  [JBM published code in C](https://www.jbmballistics.com/ballistics/downloads/downloads.shtml). Nikolay Gekht ported that to [C#](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html), extended it with formulas from Bryan Litz's _Applied Ballistics_, and ported it to [Go](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc), while
+Alexandre Trofimov implemented a calculator in [JavaScript](https://ptosis.ch/ebalka/ebalka.html).
 
-This Python3 implementation has been expanded to support multiple ballistic coefficients and custom drag functions, such
-as those derived from Doppler radar data.
-
-**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)**.
-
-**[C# version of the package is located here](https://github.com/gehtsoft-usa/BallisticCalculator1),
-and [the online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)**.
+This Python3 implementation has been expanded to support multiple ballistic coefficients and custom drag functions, such as those derived from Doppler radar data.
 
 ## Contributors
 
@@ -430,7 +423,7 @@ Special thanks to:
 - **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert\
   *For help understanding and improving the functionality*
 - **[Nikolay Gekht](https://github.com/nikolaygekht)** \
-  *For the sources code on C# and GO-lang from which this project firstly was forked*
+  *For the source code in C# and GO-lang from which this project first was forked*
 
 [//]: # (## Sister projects)
 
