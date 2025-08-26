@@ -27,7 +27,7 @@ class TestConfigLoader:
     def test_preferred_units_load(self, test_name, config_func, expected_distance, expected_velocity):
         with pytest.MonkeyPatch.context() as monkeypatch:
             # Ensure a clean state for each subtest if needed
-            PreferredUnits.defaults()
+            PreferredUnits.restore_defaults()
 
             config_func()
 
@@ -37,7 +37,7 @@ class TestConfigLoader:
                 assert PreferredUnits.velocity == expected_velocity
 
         basicConfig()
-        PreferredUnits.defaults()
+        PreferredUnits.restore_defaults()
 
     def test_preferred_units_load_manual_checks(self):
         basicConfig(preferred_units={
@@ -46,4 +46,4 @@ class TestConfigLoader:
         assert PreferredUnits.distance == Unit.Meter
 
         basicConfig()
-        PreferredUnits.defaults()
+        PreferredUnits.restore_defaults()

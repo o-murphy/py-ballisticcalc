@@ -1,7 +1,7 @@
 # Config template for py_ballisticcalc
 
 title = "py_ballisticcalc config"
-version = "2.1.1b1"
+version = "2.2.0"
 
 [pybc.preferred_units]
 angular = 'Degree'
@@ -12,7 +12,7 @@ temperature = 'Celsius'
 diameter = 'Centimeter'
 length = 'Centimeter'
 weight = 'Gram'
-adjustment = 'CmPer100m'
+adjustment = 'Mil'
 drop = 'Centimeter'
 energy = 'Joule'
 ogw = 'Kilogram'
@@ -20,6 +20,3 @@ sight_height = 'Centimeter'
 target_height = 'Meter'
 twist = 'Centimeter'
 time = 'Second'
-
-#[pybc.calculator]
-#max_calc_step_size = { value = 0.5, units = "Foot" }

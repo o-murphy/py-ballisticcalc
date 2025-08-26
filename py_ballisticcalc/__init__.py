@@ -8,23 +8,17 @@ __copyright__ = (
 
 __credits__ = ["o-murphy", "dbookstaber"]
 
+# Standard library imports
 import importlib.resources
 import os
 import sys
 
+# Third-party imports
 from typing_extensions import Dict, Optional
 
-from .conditions import *
-from .drag_model import *
-from .drag_tables import *
-from .engines import *
-from .exceptions import *
-from .interface import *
-from .logger import *
-from .munition import *
-from .trajectory_data import *
-from .unit import *
-from .vector import *
+# Local imports
+from .logger import logger
+from .unit import Unit, PreferredUnits
 
 if sys.version_info[:2] < (3, 11):
     import tomli as tomllib
@@ -32,12 +26,21 @@ else:
     import tomllib
 
 
-def _load_config(filepath=None, suppress_warnings=False):
-    def find_pybc_toml(start_dir=os.getcwd()):
-        """
-        Search for the pyproject.toml file starting from the specified directory.
-        :param start_dir: (str) The directory to start searching from. Default is the current working directory.
-        :return: str: The absolute path to the pyproject.toml file if found, otherwise None.
+def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False) -> None:
+    """Load configuration from a .pybc.toml file.
+    
+    Args:
+        filepath: Path to configuration file. If None, searches for .pybc.toml or pybc.toml
+        suppress_warnings: If True, suppress warning messages
+    """
+    def find_pybc_toml(start_dir: str = os.getcwd()) -> Optional[str]:
+        """Search for the pyproject.toml file starting from the specified directory.
+        
+        Args:
+            start_dir: The directory to start searching from. Default is the current working directory.
+            
+        Returns:
+            The absolute path to the pyproject.toml file if found, otherwise None.
         """
         current_dir = os.path.abspath(start_dir)
         while True:
@@ -56,7 +59,6 @@ def _load_config(filepath=None, suppress_warnings=False):
             # If we have reached the root directory, stop searching
             if parent_dir == current_dir:
                 return None
-
             current_dir = parent_dir
 
     if filepath is None:
@@ -82,10 +84,18 @@ def _load_config(filepath=None, suppress_warnings=False):
     logger.debug("Calculator globals and PreferredUnits load success")
 
 
-def _basic_config(filename=None,
-                  preferred_units: Optional[Dict[str, Unit]] = None, suppress_warnings=False):
-    """
-    Method to load preferred units from file or Mapping
+def _basic_config(filename: Optional[str] = None,
+                  preferred_units: Optional[Dict[str, Unit]] = None, 
+                  suppress_warnings: bool = False) -> None:
+    """Method to load preferred units from file or Mapping.
+    
+    Args:
+        filename: Configuration file path
+        preferred_units: Dictionary of preferred units
+        suppress_warnings: If True, suppress warning messages
+        
+    Raises:
+        ValueError: If both filename and preferred_units are provided
     """
     if filename and preferred_units:
         raise ValueError("Can't use preferred_units and config file at same time")
@@ -96,19 +106,30 @@ def _basic_config(filename=None,
         _load_config(filename, suppress_warnings)
 
 
-def _resolve_resource_path(path: str):
-    return importlib.resources.files('py_ballisticcalc').joinpath(path)
+def _resolve_resource_path(path: str) -> str:
+    """Resolve a resource path relative to the package.
+    
+    Args:
+        path: Resource path relative to package
+        
+    Returns:
+        Resolved path
+    """
+    return str(importlib.resources.files('py_ballisticcalc').joinpath(path))
 
 
-def _load_imperial_units():
+def _load_imperial_units() -> None:
+    """Load imperial unit preferences."""
     _basic_config(_resolve_resource_path('assets/.pybc-imperial.toml'), suppress_warnings=True)
 
 
-def _load_metric_units():
+def _load_metric_units() -> None:
+    """Load metric unit preferences."""
     _basic_config(_resolve_resource_path('assets/.pybc-metrics.toml'), suppress_warnings=True)
 
 
-def _load_mixed_units():
+def _load_mixed_units() -> None:
+    """Load mixed unit preferences."""
     _basic_config(_resolve_resource_path('assets/.pybc-mixed.toml'), suppress_warnings=True)
 
 
@@ -120,82 +141,43 @@ basicConfig = _basic_config
 
 basicConfig()
 
-# pylint: disable=duplicate-code
-__all__ = [
-    'Calculator',
-    'basicConfig',
-    'loadImperialUnits',
-    'loadMetricUnits',
-    'loadMixedUnits',
-    'create_base_engine_config',
-    'BaseEngineConfig',
-    'BaseEngineConfigDict',
-    'BaseIntegrationEngine',
-    'EulerIntegrationEngine',
-    'RK4IntegrationEngine',
-    'SciPyIntegrationEngine',
-    'VelocityVerletIntegrationEngine',
-    'SciPyEngineConfigDict',
-    'Vector',
-    'DragModel',
-    'DragDataPoint',
-    'BCPoint',
-    'DragModelMultiBC',
-    'TrajectoryData',
-    'HitResult',
-    'DangerSpace',
-    'TrajFlag',
-    'Atmo',
-    'Vacuum',
-    'Wind',
-    'Shot',
-    'Weapon',
-    'Ammo',
-    'Sight',
-    'SightFocalPlane',
-    'SightClicks',
-    'SightReticleStep',
-    'Unit',
-    'counter',
-    'iterator',
-    'UnitAliases',
-    'Measurable',
-    'GenericDimension',
-    'UnitProps',
-    'UnitPropsDict',
-    'Distance',
-    'Velocity',
-    'Angular',
-    'Temperature',
-    'Pressure',
-    'Energy',
-    'Weight',
-    'Time',
-    'PreferredUnits',
-    'get_drag_tables_names',
-    'constants',
-    'exceptions',
-    'UnitTypeError',
-    'UnitConversionError',
-    'UnitAliasError',
-    'SolverRuntimeError',
-    'OutOfRangeError',
-    'ZeroFindingError',
-    'RangeError',
-    'logger',
-    'enable_file_logging',
-    'disable_file_logging',
-]
 
-# __all__ += ["TableG%s" % n for n in (1, 7, 2, 5, 6, 8, 'I', 'S', 'RA4')]
-__all__ += [
-    'TableG1',
-    'TableG7',
-    'TableG2',
-    'TableG5',
-    'TableG6',
-    'TableG8',
-    'TableGI',
-    'TableGS',
-    'TableRA4',
+from .conditions import Atmo, Vacuum, Wind, Shot
+from .drag_model import DragModel, DragDataPoint, BCPoint, DragModelMultiBC
+from .drag_tables import (TableG1, TableG7, TableG2, TableG5, TableG6, TableG8, 
+                         TableGI, TableGS, TableRA4, get_drag_tables_names)
+from .engines import (create_base_engine_config, BaseEngineConfig, BaseEngineConfigDict, 
+                     BaseIntegrationEngine, EulerIntegrationEngine, RK4IntegrationEngine,
+                     SciPyIntegrationEngine, VelocityVerletIntegrationEngine, SciPyEngineConfigDict)
+from .exceptions import (UnitTypeError, UnitConversionError, UnitAliasError, 
+                        SolverRuntimeError, OutOfRangeError, ZeroFindingError, RangeError)
+from .interface import Calculator, _EngineLoader
+from .interpolation import InterpolationMethod, InterpolationMethodEnum, interpolate_2_pt, interpolate_3_pt
+from .logger import logger, enable_file_logging, disable_file_logging
+from .munition import Weapon, Ammo, Sight, SightFocalPlane, SightClicks, SightReticleStep
+from .trajectory_data import (BaseTrajData, TrajectoryData, HitResult, DangerSpace, TrajFlag,
+                             ShotProps, CurvePoint, create_trajectory_row, calculate_energy,
+                             calculate_ogw, get_correction, calculate_curve)
+from .unit import (Unit, counter, iterator, UnitAliases, Measurable, GenericDimension,
+                  UnitProps, UnitPropsDict, Distance, Velocity, Angular, Temperature,
+                  Pressure, Energy, Weight, Time, PreferredUnits)
+from .vector import Vector
+
+# DRY: build __all__ from global symbols
+_SKIP_GLOBALS = {
+    # Skip Python builtins
+    "__name__", "__doc__", "__package__", "__loader__", "__spec__", 
+    "__file__", "__cached__", "__builtins__",
+    # Skip imported modules
+    "tomllib", "sys", "os", "importlib",
+    # Skip private/internal symbols
+    "_load_config", "_basic_config", "_resolve_resource_path",
+    "_load_imperial_units", "_load_metric_units", "_load_mixed_units"
+}
+# Build __all__ from the module's global namespace
+__all__ = [
+    name for name in globals()
+    if not name.startswith("_") and name not in _SKIP_GLOBALS
 ]
+# Add the public aliases for private functions
+__all__.extend(["basicConfig", "loadImperialUnits", "loadMetricUnits", "loadMixedUnits"])

@@ -1,25 +1,22 @@
 import bisect
 import math
+from deprecated import deprecated
 from typing import Callable, Any, Final, List, Tuple, Optional
 
 from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.interface import Calculator
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
-from py_ballisticcalc.unit import Velocity, Distance
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
+from py_ballisticcalc.unit import Distance, Unit
 
 EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81  # Acceleration due to gravity (m/s^2)
 
-
+@deprecated("Just call `Calculator.fire` directly with `raise_range_error=False`")
 def must_fire(interface: Calculator, shot: Shot, trajectory_range: Distance, extra_data: bool = False,
               **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
-    """wrapper function to resolve RangeError and get HitResult"""
-    try:
-        # try to get valid result
-        return interface.fire(shot, trajectory_range, **kwargs, extra_data=extra_data), None
-    except RangeError as err:
-        # directly init hit result with incomplete data before exception occurred
-        return HitResult(shot, err.incomplete_trajectory, extra=extra_data), err
+    """Wrapper function to resolve RangeError and get HitResult"""
+    t = interface.fire(shot, trajectory_range, **kwargs, extra_data=extra_data, raise_range_error=False)
+    return t, t.error
 
 
 def vacuum_range(
@@ -126,14 +123,23 @@ class BisectWrapper:
 
 
 def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
-    """ Perform search in the ordered array for the first point, satisfying monotonic condition.
+    """Perform search in the ordered array for the first point, satisfying monotonic condition.
 
-        Monotonic condition is a condition, which is consistently increases or decreases.
-        For a bisection algorithm, a monotonic condition means the function maintains a consistent direction:
-        Monotonically increasing: Each subsequent value is greater than or equal to the previous
-        Monotonically decreasing: Each subsequent value is less than or equal to the previous
-        WARNING: if condition for which you are searching is not monotonic, use
+    A monotonic condition is a condition, which is consistently increasing or decreasing.
+    For a bisection algorithm, a monotonic condition means the function maintains a consistent direction:
+    - Monotonically increasing: Each subsequent value is greater than or equal to the previous
+    - Monotonically decreasing: Each subsequent value is less than or equal to the previous
+    
+    Warning:
+        If the condition for which you are searching is not monotonic, use
         `find_first_index_matching_condition`.
+    
+    Args:
+        arr: List of items to search through.
+        wrapper: BisectWrapper instance that provides condition checking functionality.
+        
+    Returns:
+        Index of first element satisfying the condition, or -1 if no element satisfies it.
     """
     idx = bisect.bisect_left(wrapper, True, 0, len(arr))
     if idx >= len(arr):
@@ -141,62 +147,6 @@ def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
     if wrapper.check_condition(idx):
         return idx
     return -1
-
-
-def find_first_index_matching_condition(
-        shot: HitResult, condition: Callable[[TrajectoryData], int]
-) -> int:
-    """Search sequentially for the index of first point in the trajectory, which matches condition.
-       Returns:
-            Index of the first point, matching condition, and 1 if no such point was found.
-    """
-    for i, e in enumerate(shot.trajectory):
-        if condition(e):
-            return i
-    return -1
-
-
-def find_index_of_point_with_flag(shot: HitResult, flag: int = TrajFlag.ZERO_DOWN) -> int:
-    """Find index of first point, for which `flag` is set.
-       Returns:
-            Index of first point with TrajFlag.ZERO_DOWN `.
-            -1 if no such point was found.
-     """
-    return find_first_index_matching_condition(shot, lambda p: p.flag & flag)
-
-
-def find_mach_point_index(shot: HitResult) -> int:
-    """Find index of point for which TrjFlag.MACH was set.
-       Note - this requires calling calculator with extra_data=True.
-       Returns:
-            Index of first point with TrajFlag.ZERO_DOWN `.
-            -1 if no such point was found.
-    """
-    return find_index_of_point_with_flag(shot, TrajFlag.MACH)
-
-
-def find_touch_point_index(shot: HitResult) -> int:
-    """Find index of point when earth was hit by the bullet.
-       Note - this requires calling calculator with extra_data=True.
-       Returns:
-            Index of first point with TrajFlag.ZERO_DOWN `.
-            -1 if no such point was found.
-    """
-    return find_index_of_point_with_flag(shot, TrajFlag.ZERO_DOWN)
-
-
-def find_velocity_less_than_index(
-        shot: HitResult, velocity_in_units: float, velocity_unit=Velocity.MPS
-) -> int:
-    """Find index of point where velocity became less than provided velocity.
-       Note - this requires calling calculator with extra_data=True.
-       Returns:
-            Index of first point with velocity less  than `velocity_in_units`.
-            -1  if no such point was found.
-    """
-    return find_first_index_matching_condition(
-        shot, lambda p: (p.velocity >> velocity_unit) < velocity_in_units
-    )
 
 
 def find_first_index_satisfying_monotonic_condition(
@@ -207,8 +157,11 @@ def find_first_index_satisfying_monotonic_condition(
     return bisect_for_monotonic_condition(arr, BisectWrapper(arr, monotonic_condition))
 
 
-def find_nearest_index_satisfying_monotonic_condition(arr: List[TrajectoryData], target_value: float,
-                                                      value_getter: Callable[[TrajectoryData], float]):
+def find_nearest_index_satisfying_monotonic_condition(
+        arr: List[TrajectoryData], 
+        target_value: float,
+        value_getter: Callable[[TrajectoryData], float]
+) -> int:
     """
     Finds the index of the object with the nearest value to the target value.
     This performs bisect search for target value, and then compares differences from target value
@@ -243,12 +196,17 @@ def find_nearest_index_satisfying_monotonic_condition(arr: List[TrajectoryData],
 
 
 def find_index_of_point_for_distance(
-        shot: HitResult, distance: float, distance_unit=Distance.Meter
+        shot: HitResult, distance: float, distance_unit: Unit = Distance.Meter
 ) -> int:
     """Find index of point, for which distance is bigger or equal to given `distance`.
-       Returns:
-            Index of point, where distance >= distance of point.
-            -1 if no such point was found.
+    
+    Args:
+        shot: HitResult instance containing trajectory data.
+        distance: Distance threshold value.
+        distance_unit: Unit of distance measurement (default: Distance.Meter).
+        
+    Returns:
+        Index of point where distance >= distance threshold, or -1 if no such point was found.
     """
 
     def distance_ge(p: TrajectoryData) -> bool:
@@ -267,10 +225,20 @@ def find_index_for_time_point(
         max_time_deviation_in_seconds: float = 1,
 ) -> int:
     """Find index of time point with nearest time to provided `time`.
-       If `strictly_bigger_or_equal` is set, then the first point with time equal to bigger than time is returned.
-       Otherwise, the index with smaller deviation will be returned.
-       Returns -1 if no such time point exists, or if points with existing time in shot.trajectory have deviation
-       bigger than `max_time_deviation_in_seconds`.
+    
+    Args:
+        shot: HitResult instance containing trajectory data.
+        time: Time value to search for.
+        strictly_bigger_or_equal: If True, return the first point with time >= time.
+                                 If False, return the index with smallest deviation.
+        max_time_deviation_in_seconds: Maximum allowed time deviation for matches.
+        
+    Returns:
+        Index of matching time point, or -1 if no such time point exists or if points
+        have deviation bigger than max_time_deviation_in_seconds.
+        
+    Raises:
+        ValueError: If max_time_deviation_in_seconds < 0 or time < 0.
     """
     if max_time_deviation_in_seconds < 0:
         raise ValueError(
@@ -292,11 +260,18 @@ def find_index_for_time_point(
 
 
 def find_time_for_distance_in_shot(
-        shot: HitResult, distance_in_unit: float, distance_unit=Distance.Meter
+        shot: HitResult, distance_in_unit: float, distance_unit: Unit = Distance.Meter
 ) -> float:
     """Finds time corresponding to certain distance being reached in shot.
-    Distance exceed maximal distance in shoot (i.e., no information is available),
-    then float('NaN') is returned.
+    
+    Args:
+        shot: HitResult instance containing trajectory data.
+        distance_in_unit: Distance value to search for.
+        distance_unit: Unit of distance measurement (default: Distance.Meter).
+        
+    Returns:
+        Time when distance is reached, or NaN if distance exceeds maximum distance in shot
+        (i.e., no information is available).
     """
     point_index = find_index_of_point_for_distance(
         shot, distance_in_unit, distance_unit

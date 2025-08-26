@@ -9,7 +9,6 @@ cdef extern from "include/bind.h" nogil:
     Curve_t Curve_t_fromPylist(PyObject *data_points)
 
 
-# Declare the C header file
 cdef extern from "include/bclib.h" nogil:
     cdef const double cDegreesFtoR
     cdef const double cDegreesCtoK
@@ -21,7 +20,6 @@ cdef extern from "include/bclib.h" nogil:
     cdef const double cLowestTempF
     cdef const double mToFeet
 
-    # Declare the V3dT structure
     ctypedef struct Config_t:
         double cStepMultiplier
         double cZeroFindingAccuracy
@@ -63,7 +61,7 @@ cdef extern from "include/bclib.h" nogil:
         double *mach_ptr
     )
 
-    ctypedef struct ShotData_t:
+    ctypedef struct ShotProps_t:
         double bc
         Curve_t curve
         MachList_t mach_list
@@ -81,12 +79,13 @@ cdef extern from "include/bclib.h" nogil:
         double calc_step
         double muzzle_velocity
         double stability_coefficient
+        int filter_flags
         Atmosphere_t atmo
 
-    void ShotData_t_free(ShotData_t *shot_data_ptr)
-    double ShotData_t_spinDrift(const ShotData_t *shot_data_ptr, double time)
-    int ShotData_t_updateStabilityCoefficient(ShotData_t *shot_data_ptr)
-    double ShotData_t_dragByMach(const ShotData_t *shot_data_ptr, double mach)
+    void ShotProps_t_free(ShotProps_t *shot_props_ptr)
+    double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
+    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
+    double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach)
     double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
                                        const Curve_t *curve_ptr,
                                        double mach)

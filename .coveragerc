@@ -1,0 +1,32 @@
+[run]
+branch = True
+plugins = Cython.Coverage
+omit = 
+    */site-packages/*
+    */.venv/*
+disable_warnings = couldnt-parse
+source =
+    py_ballisticcalc
+    py_ballisticcalc_exts
+    py_ballisticcalc.exts
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.
+omit =
+    **/*.pxd
+
+[paths]
+# Alias Cython-reported file paths to the real source tree locations
+source =
+    .
+    py_ballisticcalc_exts
+    py_ballisticcalc.exts
+    py_ballisticcalc.exts/py_ballisticcalc_exts
+
+[run:plugins]
+# Ensure the Cython plugin claims .pyx files for reporting
+Cython.Coverage: file_tracers = 
+    .pyx
+

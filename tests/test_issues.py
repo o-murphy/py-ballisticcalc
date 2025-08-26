@@ -7,7 +7,6 @@ import pytest
 from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Velocity, Weapon, Shot,
                               Angular, Calculator, RangeError, HitResult, BaseEngineConfigDict,
                               loadImperialUnits, loadMetricUnits, PreferredUnits)
-from py_ballisticcalc.helpers import must_fire
 
 
 def get_object_attribute_values_as_dict(obj: Any) -> dict[str, Any]:
@@ -25,20 +24,19 @@ class TestIssue96_97:
                                weight=Weight.Gram(188.5),
                                length=Distance.Millimeter(108.2))
         ammo = Ammo(drag_model, Velocity.MPS(930))
-        weapon = Weapon()
-        self.zero = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(1.0))
+        self.zero = Shot(ammo=ammo, relative_angle=Angular.Degree(1.0))
         self.calc = Calculator(engine=loaded_engine_instance, config=BaseEngineConfigDict(cMinimumVelocity=0))
         self.trange = Distance.Meter(1600.2437248702522)
 
     def test_must_return_hit_result(self):
         """Return results even when desired trajectory_range isn't reached."""
         with pytest.raises(RangeError, match="Max range not reached"):
-            self.calc.fire(self.zero, self.trange, extra_data=True)
+            self.calc.fire(self.zero, self.trange)
 
-        hit_result, err = must_fire(self.calc, self.zero, self.trange, extra_data=True)
+        hit_result = self.calc.fire(self.zero, self.trange, raise_range_error=False)
 
         # should return error
-        assert isinstance(err, RangeError)
+        assert isinstance(hit_result.error, RangeError)
         assert isinstance(hit_result, HitResult), f"Expected HitResult but got {type(hit_result)}"
 
 
@@ -57,9 +55,8 @@ class TestIssue144:
             diameter=Distance.Millimeter(23),
             length=Distance.Millimeter(108.2),
         )
-        weapon = Weapon()
         ammo = Ammo(drag_model, Velocity.MPS(930))
-        self.shot = Shot(weapon=weapon, ammo=ammo, relative_angle=Angular.Degree(13.122126582196692))
+        self.shot = Shot(ammo=ammo, relative_angle=Angular.Degree(13.122126582196692))
         self.range = Distance.Meter(740.8068308628336)
         self.step = Distance.Meter(740.8068308628336 / 10)
         self.calc = Calculator(engine=loaded_engine_instance)
@@ -76,7 +73,7 @@ class TestIssue144:
 
     def testResultsWithImperialUnits(self):
         loadImperialUnits()
-        hit_result = self.calc.fire(self.shot, self.range, self.step, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range, self.step)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithImperialUnits_FloatInput(self):
@@ -91,7 +88,7 @@ class TestIssue144:
 
     def testResultsWithMetricUnits(self):
         loadMetricUnits()
-        hit_result = self.calc.fire(self.shot, self.range, self.step, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range, self.step)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithMetricUnits_FloatInput(self):
@@ -116,23 +113,20 @@ class TestIssue144:
     def testResultsWithImperialUnitsAndYards(self):
         loadImperialUnits()
         PreferredUnits.distance = Distance.Yard
-        hit_result = self.calc.fire(self.shot, self.range, self.step, extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range, self.step)
         self.check_expected_last_point(hit_result)
 
     def testResultsWithImperialUnitAndYards_UnitTrajectoryStep(self):
         loadImperialUnits()
         PreferredUnits.distance = Distance.Yard
-        hit_result = self.calc.fire(self.shot, self.range, trajectory_step=Distance.Inch(2916.5623262316285),
-                                    extra_data=False)
+        hit_result = self.calc.fire(self.shot, self.range, trajectory_step=Distance.Inch(2916.5623262316285))
         self.check_expected_last_point(hit_result)
 
     def testResultWithImperialUnits_FloatRange(self):
         loadImperialUnits()
         assert PreferredUnits.distance == Distance.Foot
-        hit_result = self.calc.fire(
-            self.shot,
+        hit_result = self.calc.fire(self.shot,
             self.range >> Distance.Foot,
-            self.step >> Distance.Foot,
-            extra_data=False
+            self.step >> Distance.Foot
         )
         self.check_expected_last_point(hit_result)

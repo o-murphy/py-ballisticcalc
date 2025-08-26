@@ -80,13 +80,14 @@ typedef struct {
     double calc_step;
     double muzzle_velocity;
     double stability_coefficient;
+    int filter_flags;
     Atmosphere_t atmo;
-} ShotData_t;
+} ShotProps_t;
 
-void ShotData_t_free(ShotData_t *shot_data_ptr);
-double ShotData_t_spinDrift(const ShotData_t *shot_data_ptr, double time);
-int ShotData_t_updateStabilityCoefficient(ShotData_t *shot_data_ptr);
-double ShotData_t_dragByMach(const ShotData_t *shot_data_ptr, double mach);
+void ShotProps_t_free(ShotProps_t *shot_props_ptr);
+double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
+int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
+double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
 
 double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
                                    const Curve_t *curve_ptr,
