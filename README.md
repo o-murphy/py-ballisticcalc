@@ -206,7 +206,7 @@ print(
 
 **Sight gives $\boldsymbol{x}$ axis:** The second key reference in ballistics is the **sight line**. We set the horizontal axis to the sight line, which is typically a ray from the shooter's eye through the center of a sighting device like a scope.
 
-**Muzzle gives origin:** The origin of our 3D coordinate system $(0, 0, 0)$ is the point on the sight line directly above the point that the projectile begins free flight. For a typical gun, free flight begins at the muzzle, which is vertically offset from the sight line by a `sight_height`, so the launch point is actually $(0, - \text{sight\_height}, 0)$.  (See [this image illustrating the correct measurement of sight height](doc/SightHeight.png).)
+**Muzzle gives origin:** The origin of our 3D coordinate system `(0, 0, 0)` is the point on the sight line directly above the point that the projectile begins free flight. For a typical gun, free flight begins at the muzzle, which is vertically offset from the sight line by a `sight_height`, so the launch point is actually `(0, -sight_height, 0)`.  (See [this image illustrating the correct measurement of sight height](doc/SightHeight.png).)
 
 * **The $\boldsymbol{x}$ coordinate** measures distance from launch along a horizontal sight line.
 
