@@ -163,3 +163,26 @@ def test_end_points_are_included(distance, height, angle_in_degrees, zero_height
           f'Height {height_difference :.02f}')
 
     assert distance_difference <= (PreferredUnits.distance(1.0) >> Distance.Meter)
+
+
+def test_time_step_recording_and_range_steps(loaded_engine_instance):
+    calc = Calculator(engine=loaded_engine_instance)
+    shot = create_5_56_mm_shot()
+    # tiny range; request time sampling so we get RANGE flags even if dist_step not set
+    res = calc.integrate(shot, Distance.Yard(5), None, time_step=0.001)
+    assert len(res.trajectory) >= 2
+    assert res.trajectory[1].flag & TrajFlag.RANGE
+
+
+def test_mach_and_zero_flags_found(loaded_engine_instance):
+    calc = Calculator(engine=loaded_engine_instance)
+    shot = create_5_56_mm_shot()
+    shot.weapon.sight_height = Distance.Inch(1.5)
+    shot.relative_angle = Angular.Degree(0.5)
+    res = calc.fire(shot, Distance.Yard(1000), flags=TrajFlag.ALL)
+    z = res.flag(TrajFlag.ZERO)
+    assert z is not None and z.flag & TrajFlag.ZERO
+    m = res.flag(TrajFlag.MACH)
+    assert m is not None and m.flag & TrajFlag.MACH
+    a = res.flag(TrajFlag.APEX)
+    assert a is not None and a.flag & TrajFlag.APEX

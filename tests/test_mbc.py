@@ -3,6 +3,7 @@
 import pytest
 
 from py_ballisticcalc import *
+from py_ballisticcalc.drag_model import BCPoint, make_data_points
 
 
 class TestMBC:
@@ -19,6 +20,34 @@ class TestMBC:
         self.baseline_shot = Shot(weapon=self.weapon, ammo=self.ammo)
         self.baseline_trajectory = self.calc.fire(shot=self.baseline_shot, trajectory_range=self.range,
                                                   trajectory_step=self.step).trajectory
+
+    def test_bcpoint_validation_errors(self):
+        with pytest.raises(ValueError):
+            BCPoint(BC=0.0, Mach=1.0)
+        with pytest.raises(ValueError):
+            BCPoint(BC=0.1, Mach=1.0, V=Unit.MPS(300))
+        with pytest.raises(ValueError):
+            BCPoint(BC=0.1)
+
+    def test_make_data_points_type_errors(self):
+        with pytest.raises(TypeError):
+            make_data_points([{"Mach": 1.0}])  # type: ignore[arg-type]
+        with pytest.raises(TypeError):
+            make_data_points([{"CD": 0.1}])  # type: ignore[arg-type]
+        with pytest.raises(TypeError):
+            make_data_points(["bad"])  # type: ignore[arg-type]
+
+    def test_drag_model_repr_and_multibc_minimal(self):
+        dm = DragModel(0.2, [DragDataPoint(0.5, 0.3), DragDataPoint(1.5, 0.2)])
+        s = repr(dm)
+        assert s.startswith("DragModel(")
+
+        # Multi-BC with V specified exercises conversion path; weight/diameter default to 0
+        m = DragModelMultiBC(
+            [BCPoint(BC=0.2, V=Unit.MPS(300)), BCPoint(BC=0.25, V=Unit.MPS(600))],
+            [DragDataPoint(0.5, 0.3), DragDataPoint(1.5, 0.2)],
+        )
+        assert isinstance(m, DragModel)
 
     def test_mbc1(self):
         """We should get the same trajectory whether we give single bc or use multi-bc with single value"""

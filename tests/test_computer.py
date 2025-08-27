@@ -1,6 +1,7 @@
 """Unittests for the py_ballisticcalc library"""
 
 import copy
+import math
 import pytest
 
 from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError, TrajFlag,
@@ -277,5 +278,22 @@ class TestComputerPytest:
         self.calc.set_weapon_zero(shot, zero_distance=Distance.Meter(200))
         hit_result = self.calc.fire(shot, trajectory_range=Distance.Meter(300),
                                     trajectory_step=Distance.Meter(100), flags=TrajFlag.ALL)
-        assert hit_result.flag(TrajFlag.ZERO_DOWN).flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, \
-            'ZERO_DOWN should occur on a RANGE row'
+        td = hit_result.flag(TrajFlag.ZERO_DOWN)
+        assert td is not None, 'Expected to find a ZERO_DOWN flag in trajectory'
+        assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'
+
+    def test_find_apex_uses_no_min_velocity_and_restores(self, loaded_engine_instance):
+        # Start with a very high minimum velocity so normal integrate would stop early
+        shot = copy.copy(self.baseline_shot)
+        mv_fps = shot.ammo.mv >> Velocity.FPS
+        calc = Calculator(config={'cMinimumVelocity': mv_fps * 0.99}, engine=loaded_engine_instance)
+
+        # Give some elevation to allow apex finding; should succeed due to decorator
+        shot.relative_angle = Angular.Degree(5)
+        apex = calc.find_apex(shot)
+        assert apex is not None
+
+        # After returning, the high minimum velocity should still apply in normal fire
+        res = calc.fire(shot, Distance.Yard(1000), Distance.Yard(50), raise_range_error=False)
+        assert res.error is not None, "Expected integrate to terminate due to MinimumVelocity"
+        assert res.error.reason == RangeError.MinimumVelocityReached
