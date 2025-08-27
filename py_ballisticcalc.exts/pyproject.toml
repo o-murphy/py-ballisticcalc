@@ -61,3 +61,8 @@ dev = ['cython', 'build', 'setuptools', 'cibuildwheel']
 [tool.cibuildwheel]
 # Use uv and build
 build-frontend = "build[uv]"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = '-m "not stress"'
+markers = ["stress: long-running or resource-intensive tests, opt-in only"]
