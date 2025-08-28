@@ -5,6 +5,7 @@ import pytest
 from py_ballisticcalc import *
 from py_ballisticcalc.drag_model import BCPoint, make_data_points
 
+pytestmark = pytest.mark.engine
 
 class TestMBC:
 

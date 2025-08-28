@@ -62,6 +62,11 @@ include = ["py_ballisticcalc*"]
 minversion = "8.0"
 addopts = "-rf"
 testpaths = ["tests"]
+markers = [
+    "extended: rarely-modified logic",
+    "engine: functionality that varies with engine",
+    "stress: long-running or resource-intensive tests, opt-in only"
+]
 
 [tool.mypy]
 packages = ["py_ballisticcalc"]

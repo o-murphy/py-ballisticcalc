@@ -11,6 +11,7 @@ from py_ballisticcalc.unit import Angular, PreferredUnits
 from tests.fixtures_and_helpers import print_out_trajectory_compact, zero_height_calc, \
     shot_with_relative_angle_in_degrees, create_5_56_mm_shot
 
+pytestmark = pytest.mark.engine
 
 def test_shot_incomplete(zero_height_calc):
     angle_in_degrees = 5.219710693607955

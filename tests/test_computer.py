@@ -9,6 +9,7 @@ from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, A
 )
 from py_ballisticcalc.unit import *
 
+pytestmark = pytest.mark.engine
 
 class TestComputerPytest:
 
