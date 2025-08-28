@@ -78,7 +78,7 @@ line-length = 120
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 
 [project.optional-dependencies]
-exts = ["py_ballisticcalc.exts==2.2.0b7"]
+exts = ["py_ballisticcalc.exts==2.2.0rc1"]
 charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 visualize = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 scipy = ["numpy>=2", "scipy>=1.13.1"]
