@@ -295,6 +295,39 @@ class TestComputerPytest:
         assert apex is not None
 
         # After returning, the high minimum velocity should still apply in normal fire
-        res = calc.fire(shot, Distance.Yard(1000), Distance.Yard(50), raise_range_error=False)
+        res = calc.fire(shot, Distance.Yard(200), Distance.Yard(50), raise_range_error=False)
         assert res.error is not None, "Expected integrate to terminate due to MinimumVelocity"
         assert res.error.reason == RangeError.MinimumVelocityReached
+
+    def test_maximum_drop(self, loaded_engine_instance):
+        # cMaximumDrop should be adjusted downward it start-height is negative
+        dm = DragModel(bc=0.243, drag_table=TableG7)
+        # Projectile starts at y=-sight_height
+        sight_height = Distance.Inch(4)  # This needs to be a positive value
+        shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)), weapon=Weapon(sight_height=sight_height))
+        shot.relative_angle = Angular.Degree(0.05)
+        calc = Calculator(config={'cMaximumDrop': 0}, engine=loaded_engine_instance)
+        res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
+        assert res.error is not None and res.error.reason == RangeError.MaximumDropReached
+        assert pytest.approx(res.trajectory[0].height.raw_value) == -sight_height.raw_value
+        assert res.trajectory[-1].height.raw_value <= -sight_height.raw_value
+        assert res.trajectory[-1].time > 0.0
+
+        # cMaximumDrop should not be adjusted for positive start-height
+        shot.weapon.sight_height = Distance.Inch(-3)
+        res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
+        assert res.error is not None and res.error.reason == RangeError.MaximumDropReached
+        assert pytest.approx(res.trajectory[0].height.raw_value) == -shot.weapon.sight_height.raw_value
+        assert res.trajectory[-1].height.raw_value <= 0.0 + 1e-9
+        assert res.trajectory[-1].time > 0.0
+
+    def test_min_altitude_downward_only(self, loaded_engine_instance):
+        # cMinimumAltitude should only apply once velocity is not positive
+        dm = DragModel(bc=0.243, drag_table=TableG7)
+        shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
+        shot.relative_angle = Angular.Degree(0.02)
+        calc = Calculator(config={'cMinimumAltitude': 1_000}, engine=loaded_engine_instance)
+        res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
+        assert res.error is not None and res.error.reason == RangeError.MinimumAltitudeReached
+        assert res.trajectory[-1].angle.raw_value <= 0.0 + 1e-9
+        assert res.trajectory[-1].time > 0.0

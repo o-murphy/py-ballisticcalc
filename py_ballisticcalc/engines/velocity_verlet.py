@@ -176,6 +176,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(relative_speed)  # type: ignore
+        # Projectile starts at y=-sight_height
+        _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
         # Acceleration:
         density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
         relative_velocity = velocity_vector - wind_vector

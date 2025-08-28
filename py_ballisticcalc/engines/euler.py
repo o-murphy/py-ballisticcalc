@@ -183,6 +183,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(velocity)  # type: ignore
+        # Projectile starts at y=-sight_height
+        _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
         # endregion
 
         data_filter = TrajectoryDataFilter(props=props, filter_flags=filter_flags,

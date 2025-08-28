@@ -680,6 +680,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
               math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
               math.sin(props.barrel_elevation_rad) * velocity,
               math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity]
+        # Projectile starts at y=-sight_height
+        _cMaximumDrop += min(0, s0[1])  # Adjust max drop downward (only) for muzzle height
         # endregion
 
         # region SciPy integration
@@ -721,8 +723,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0_ft)  # Smallest allowed y coordinate (ft)
 
         @scipy_event(terminal=True, direction=-1)
-        def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses max_drop
-            return s[1] - max_drop
+        def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses down through max_drop
+            if s[4] > 0:  # Don't apply condition while v.y>0
+                return np.float64(1.0)
+            return s[1] - max_drop + 1e-9  # +epsilon so that we actually cross
 
         @scipy_event(terminal=True)
         def event_min_velocity(t: float, s: Any) -> np.floating:  # Stop when velocity < _cMinimumVelocity
@@ -765,7 +769,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     pass
                 elif sol.t_events[1].size > 0:  # event_max_drop
                     y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
-                    if y < _cMaximumDrop:
+                    if y < _cMaximumDrop + 1e-9:
                         termination_reason = RangeError.MaximumDropReached
                     else:
                         termination_reason = RangeError.MinimumAltitudeReached

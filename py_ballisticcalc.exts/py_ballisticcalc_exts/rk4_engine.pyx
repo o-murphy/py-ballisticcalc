@@ -6,7 +6,7 @@ Because storing each step in a CBaseTrajSeq is practically costless, we always r
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from libc.math cimport sin, cos
+from libc.math cimport sin, cos, fmin
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
@@ -104,6 +104,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         range_vector.x = <double>0.0
         range_vector.y = -shot_props_ptr[0].cant_cosine * shot_props_ptr[0].sight_height
         range_vector.z = -shot_props_ptr[0].cant_sine * shot_props_ptr[0].sight_height
+        _cMaximumDrop += fmin(<double>0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
         
         # Set direction vector components
         _dir_vector.x = cos(shot_props_ptr[0].barrel_elevation) * cos(shot_props_ptr[0].barrel_azimuth)

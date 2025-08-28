@@ -1,7 +1,11 @@
+"""
+Cythonized Euler Integration Engine
+
+Because storing each step in a CBaseTrajSeq is practically costless, we always run with "dense_output=True".
+"""
 from cython cimport final
-from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax, pow
+from libc.math cimport fabs, sin, cos, fmin, fmax
 from py_ballisticcalc_exts.cy_bindings cimport (
-    Config_t,
     ShotProps_t,
     ShotProps_t_dragByMach,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
@@ -97,6 +101,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         range_vector.x = <double>0.0
         range_vector.y = -self._shot_s.cant_cosine * self._shot_s.sight_height
         range_vector.z = -self._shot_s.cant_sine * self._shot_s.sight_height
+        _cMaximumDrop += fmin(<double>0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
         
         # Set direction vector components
         _dir_vector.x = cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth)
