@@ -84,7 +84,7 @@ class _EngineLoader:
         if isinstance(entry_point, str):
             handle: Optional[EngineProtocolType] = None
             for ep in cls.iter_engines():
-                if ep.name == entry_point or entry_point in ep.value:
+                if ep.name == entry_point:
                     if handle := cls._load_from_entry(ep):
                         return handle
 
