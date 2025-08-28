@@ -640,7 +640,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         props = self._init_trajectory(shot_info)
         return self._find_apex(props)
 
-    @with_max_drop_zero
     @with_no_minimum_velocity
     def _find_apex(self, props: ShotProps) -> TrajectoryData:
         """

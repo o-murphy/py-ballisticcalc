@@ -114,8 +114,8 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         
         # Update air density and mach at initial altitude
         Atmosphere_t_updateDensityFactorAndMachForAltitude(
-            &self._shot_s.atmo,
-            self._shot_s.alt0 + range_vector.y,
+            &shot_props_ptr[0].atmo,
+            shot_props_ptr[0].alt0 + range_vector.y,
             &density_ratio,
             &mach
         )
@@ -150,7 +150,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             delta_time = self.time_step(calc_step, relative_speed)
             
             # 3. Calculate drag coefficient and drag force
-            km = density_ratio * ShotProps_t_dragByMach(&self._shot_s, relative_speed / mach)
+            km = density_ratio * ShotProps_t_dragByMach(shot_props_ptr, relative_speed / mach)
             drag = km * relative_speed
             
             # 4. Apply drag and gravity to velocity
@@ -169,8 +169,8 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
             # Check termination conditions
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and shot_props_ptr[0].alt0 + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

@@ -29,15 +29,15 @@ class TestVacuumCalcs:
         v = 100.0
         angle = 30.0
         g = 9.81
-        r = vacuum_range(v, angle, gravity=g)
+        r = vacuum_range(v, angle, gravity=-g)
         t = vacuum_time_to_zero(v, angle, gravity=-g)
         expected_r = (v * math.cos(math.radians(angle))) * t
         assert r == pytest.approx(expected_r, rel=1e-12)
 
         # Solve inverse problems
-        angle2 = vacuum_angle_to_zero(v, r, gravity=g)
+        angle2 = vacuum_angle_to_zero(v, r, gravity=-g)
         assert angle2 == pytest.approx(angle)
-        v2 = vacuum_velocity_to_zero(t, angle, gravity=g)
+        v2 = vacuum_velocity_to_zero(t, angle, gravity=-g)
         assert v2 == pytest.approx(v)
 
 

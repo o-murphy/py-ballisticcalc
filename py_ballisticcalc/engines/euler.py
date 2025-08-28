@@ -232,8 +232,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # endregion
 
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or props.alt0_ft + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

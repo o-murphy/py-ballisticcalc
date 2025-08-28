@@ -213,8 +213,8 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             
             # Check termination conditions
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or shot_props_ptr[0].alt0 + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and shot_props_ptr[0].alt0 + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached
