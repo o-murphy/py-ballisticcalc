@@ -49,12 +49,13 @@ Supported Dimensions:
 
 # Standard library imports
 from __future__ import annotations
-import re
 from dataclasses import dataclass, fields, MISSING
 from enum import IntEnum
 from math import pi
+import re
 from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
-    SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
+    SupportsFloat, SupportsInt, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
+from collections.abc import Hashable
 try:
     # Python 3.10+ provides NotImplementedType in types
     from types import NotImplementedType  # type: ignore[attr-defined]

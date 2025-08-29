@@ -557,8 +557,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
-
-        TODO: Check whether the cache is ever being hit
         """
         # region Virtually vertical shot
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
@@ -567,27 +565,19 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         # endregion Virtually vertical shot
 
         t_calls = 0
-        cache_hits = 0
-        cache: Dict[float, float] = {}
-
         def range_for_angle(angle_rad: float) -> float:
             """Returns slant-distance minus slant-error (in feet) for given launch angle in radians."""
-            if angle_rad in cache:
-                nonlocal cache_hits
-                cache_hits += 1
-                return cache[angle_rad]
             props.barrel_elevation_rad = angle_rad
             nonlocal t_calls
             t_calls += 1
-            logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
+            #logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
             hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN)
             cross = hit.flag(TrajFlag.ZERO_DOWN)
             if cross is None:
                 warnings.warn(f'No ZERO_DOWN found for launch angle {angle_rad} rad.')
-                cache[angle_rad] = -9e9
-            else:  # Return value penalizes distance by slant height, which we want to be zero.
-                cache[angle_rad] = (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
-            return cache[angle_rad]
+                return -9e9
+            # Return value penalizes distance by slant height, which we want to be zero.
+            return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
         # region Golden-section search
         inv_phi = (math.sqrt(5) - 1) / 2  # 0.618...
@@ -598,7 +588,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         d = a + inv_phi * h
         yc = range_for_angle(c)
         yd = range_for_angle(d)
-        for _ in range(100):  # 100 iterations is more than enough for high precision
+        for _ in range(self._config.cMaxIterations):
             if h < 1e-6:  # Angle tolerance in radians
                 break
             if yc > yd:
@@ -724,8 +714,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Returns:
             Barrel elevation needed to hit the zero point.
-
-        TODO: Cache the trajectory calculations in _find_max_range to apply in Ridder's method.
         """
         status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
             self._init_zero_calculation(props, distance)

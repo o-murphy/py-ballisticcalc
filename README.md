@@ -232,50 +232,42 @@ distance *d*, and it indicates how far forward and backward along the line of si
 ![Danger Space](doc/DangerSpace.svg)
 
 
-# Units
+# [Units](py_ballisticcalc/unit.py)
+
+Work in your preferred terms with easy conversions for the following dimensions and units:
+* **Angular**: radian, degree, MOA, mil, mrad, thousandth, inch/100yd, cm/100m, o'clock
+* **Distance**: inch, foot, yard, mile, nautical mile, mm, cm, m, km, line
+* **Energy**: foot-pound, joule
+* **Pressure**: mmHg, inHg, bar, hPa, PSI
+* **Temperature**: Fahrenheit, Celsius, Kelvin, Rankine
+* **Time**: second, minute, millisecond, microsecond, nanosecond, picosecond
+* **Velocity**: m/s, km/h, ft/s, mph, knots
+* **Weight**: grain, ounce, gram, pound, kilogram, newton
+
 
 ## Examples
 
 ```python
 from py_ballisticcalc.unit import *
 
-# Ways to define value in units
-# 1. old syntax
-unit_in_meter = Distance(100, Distance.Meter)
-# 2. short syntax by Unit type class
-unit_in_meter = Distance.Meter(100)
-# 3. by Unit enum class
-unit_in_meter = Unit.Meter(100)
-print(f'100 meters: {unit_in_meter}')
-# >>> 100 meters: 100.0m
+# Creation
+unit_in_meters = Distance.Meter(100)
+unit_in_meters = Unit.Meter(100)  # Equivalent to previous expression
 
-# Convert unit
-# 1. by .convert()
-unit_in_yards = unit_in_meter.convert(Distance.Yard)
-# 2. using shift syntax
-unit_in_yards = unit_in_meter << Distance.Yard  # '<<=' operator also supports
-print(f'100 meters in {unit_in_yards.units.key}: {unit_in_yards}')
-# >>> 100 meters in yard: 109.4yd
+# Conversion to instance with different units
+unit_in_yards = unit_in_meters.convert(Distance.Yard)
+unit_in_yards = unit_in_meters << Distance.Yard  # Equivalent to previous expression
+print(str(unit_in_meters) + " = " + str(unit_in_yards))  # "100.0m = 109.4yd"
 
-# Get value in specified units (as float)
-# 1. by .get_in()
+# Conversion to float in compatible units
 value_in_km = unit_in_yards.get_in(Distance.Kilometer)
-# 2. by shift syntax
-value_in_km = unit_in_yards >> Distance.Kilometer  # '>>=' operator also supports
-print(f'100 meters, value in km: {value_in_km}  (value type is {type(value_in_km)})')
-# >>> 100 meters, value in km: 0.1  (value type is <class 'float'>)
-
-# Getting unit raw value (a float)
-rvalue = Distance.Meter(100).raw_value
-rvalue = float(Distance.Meter(100))
-print(f'100 meters in raw value: {rvalue}  (raw type is {type(rvalue)})')
-# >>> 100 meters in raw value: 3937.0078740157483  (raw type is <class 'float'>)
+value_in_km = unit_in_yards >> Distance.Kilometer  # Equivalent to previous expression
+assert isinstance(value_in_km, float) and math.isclose(value_in_km, 0.1)
 
 # Comparison operators supported: < > <= >= == !=
-print(f'Comparison: {unit_in_meter} == {Distance.Centimeter(100)}: {unit_in_meter == Distance.Centimeter(100)}')
-# >>> False, compare two units by raw value
-print(f'Comparison: {unit_in_meter} > .1*{unit_in_meter}: {unit_in_meter > .1 * unit_in_meter.raw_value}')
-# >>> True, compare unit with float by raw value
+assert unit_in_meters == unit_in_yards
+# Arithmetic operators supported (with some restrictions): +, -, *, /
+assert 2 * unit_in_meters == unit_in_meters + 100
 ```
 
 ## Preferences
