@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
-# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
 """Velocity Verlet integration engine for ballistic trajectory calculations.
 
 The Velocity Verlet algorithm is a symplectic integrator that conserves energy in physical systems.
@@ -8,15 +6,8 @@ Classes:
     VelocityVerletIntegrationEngine: Concrete implementation using Velocity Verlet method
 
 Example:
-    >>> from py_ballisticcalc.engines.velocity_verlet import VelocityVerletIntegrationEngine
-    >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
-    >>> 
-    >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)
-    >>> engine = VelocityVerletIntegrationEngine(config)
-    >>> 
-    >>> # Use with Calculator
     >>> from py_ballisticcalc import Calculator
-    >>> calc = Calculator(engine="verlet_engine")
+    >>> calc = Calculator(engine="py_ballisticcalc:VelocityVerletIntegrationEngine")
 
 Mathematical Background:
     The Velocity Verlet method updates position and velocity using:
@@ -78,11 +69,6 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         - Energy-conserving: Total energy fluctuates around constant value
         - Second-order: Local truncation error is O(h³)
         
-    Example:
-        >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)
-        >>> engine = VelocityVerletIntegrationEngine(config)
-        >>> result = engine.integrate(shot_info, Distance(1000, Distance.Yard))
-        
     See Also:
         py_ballisticcalc.engines.rk4.RK4IntegrationEngine: Higher accuracy alternative
         py_ballisticcalc.engines.euler.EulerIntegrationEngine: Simpler alternative
@@ -103,7 +89,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             ...     cMinimumVelocity=50.0
             ... )
             >>> engine = VelocityVerletIntegrationEngine(config)
-            
+        
         Note:
             The integration_step_count tracks the number of Verlet steps computed.
         """
@@ -176,14 +162,13 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(relative_speed)  # type: ignore
-        # Projectile starts at y=-sight_height
-        _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
+        _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # Acceleration:
         density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
         relative_velocity = velocity_vector - wind_vector
         relative_speed = relative_velocity.magnitude()
         drag = density_ratio * relative_speed * props.drag_by_mach(relative_speed / mach)
-        acceleration_vector = self.gravity_vector - drag * relative_velocity # type: ignore[operator]
+        acceleration_vector = self.gravity_vector - drag * relative_velocity  # type: ignore[operator]
         # endregion
 
         data_filter = TrajectoryDataFilter(props=props, filter_flags=filter_flags,
@@ -196,7 +181,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
         integration_step_count = 0
-        # Quadratic interpolation requires 3 points, so we will need at least 3 steps
+        # Cubic interpolation requires 3 points, so we will need at least 3 steps
         while (range_vector.x <= range_limit_ft) or integration_step_count < 3:
             integration_step_count += 1
 

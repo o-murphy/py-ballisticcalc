@@ -127,19 +127,18 @@ class Calculator(Generic[ConfigT]):
                 `Calculator` object or its `_engine_instance`.
 
         Examples:
-            >>> calc = Calculator(engine=DEFAULT_ENTRY) # Assuming DEFAULT_ENTRY loads an engine
+            >>> calc = Calculator(engine=DEFAULT_ENTRY)
             >>> calc_step = calc.get_calc_step()
             >>> print(calc_step)
-            0.5
+            0.0025
             >>> try:
             ...     calc.unknown_method()
             ... except AttributeError as e:
             ...     print(e)
-            'Calculator' object or its underlying engine 'EngineProtocol' has no attribute 'unknown_method'
+            'Calculator' object or its underlying engine 'RK4IntegrationEngine' has no attribute 'unknown_method'
         """
         if hasattr(self._engine_instance, item):
             return getattr(self._engine_instance, item)
-        # It's good practice to raise an AttributeError if the attribute is not found
         raise AttributeError(
             f"'{self.__class__.__name__}' object or its underlying engine "
             f"'{self._engine_instance.__class__.__name__}' has no attribute '{item}'"

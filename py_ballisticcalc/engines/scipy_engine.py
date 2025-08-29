@@ -225,7 +225,7 @@ def scipy_event(
     def wrapper(func: SciPyEventFunctionT) -> SciPyEvent:
         """Wrapper function that creates the SciPyEvent object."""
         return SciPyEvent(func, terminal, direction)
-    
+
     return wrapper
 
 
@@ -240,19 +240,17 @@ class WindSock:
     
     Example:
         >>> from py_ballisticcalc.conditions import Wind
-        >>> from py_ballisticcalc.unit import Distance, Velocity
-        >>> 
+        >>> from py_ballisticcalc.unit import Distance, Velocity, Angular
         >>> # Define wind conditions at different ranges
         >>> winds = [
-        ...     Wind(velocity=Velocity.MPH(10), direction=Angular.Degree(45), 
-        ...          at_distance=Distance.Yard(0)),
-        ...     Wind(velocity=Velocity.MPH(15), direction=Angular.Degree(30),
-        ...          at_distance=Distance.Yard(500))
+        ...     Wind(velocity=Velocity.MPH(10), direction_from=Angular.Degree(45),
+        ...          until_distance=Distance.Yard(0)),
+        ...     Wind(velocity=Velocity.MPH(15), direction_from=Angular.Degree(30),
+        ...          until_distance=Distance.Yard(500))
         ... ]
         >>> wind_sock = WindSock(winds)
-        >>> 
-        >>> # Get wind vector at any range
-        >>> wind_vector = wind_sock.get_wind_vector(Distance.Yard(250))
+        >>> # Get wind vector at 250 yards (pass feet)
+        >>> wind_vector = wind_sock.wind_at_distance(250 * 3.0)
         
     Note:
         Wind measurements should be provided in order of increasing range for
@@ -411,10 +409,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         ... )
         >>> engine = SciPyIntegrationEngine(config)
         
-        >>> # Using with Calculator
-        >>> from py_ballisticcalc import Calculator
-        >>> calc = Calculator(engine='scipy_engine')
-        >>> result = calc.fire(shot_info, max_range)
+    >>> # Using with Calculator
+    >>> from py_ballisticcalc import Calculator
+    >>> calc = Calculator(engine='scipy_engine')
     
     Note:
         Requires scipy and numpy packages. Install with:
@@ -680,8 +677,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
               math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
               math.sin(props.barrel_elevation_rad) * velocity,
               math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity]
-        # Projectile starts at y=-sight_height
-        _cMaximumDrop += min(0, s0[1])  # Adjust max drop downward (only) for muzzle height
+        _cMaximumDrop += min(0, s0[1])  # Adjust max drop downward if above muzzle height
         # endregion
 
         # region SciPy integration

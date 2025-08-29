@@ -88,7 +88,7 @@ __all__ = (
     'get_correction',
     'calculate_curve',
 )
- 
+
 
 class TrajFlag(int):
     """Trajectory point classification flags for marking special trajectory events.
@@ -498,7 +498,7 @@ class TrajectoryData(NamedTuple):
         if key_attribute == 'flag':
             raise KeyError("Cannot interpolate based on 'flag' attribute")
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
-        
+
         def get_key_val(td):
             """Helper to get the raw value of the key attribute from a TrajectoryData point"""
             val = getattr(td, key_attribute)
@@ -640,7 +640,7 @@ class ShotProps:
     @property
     def winds(self) -> Sequence[Wind]:
         return self.shot.winds
-    
+
     @property
     def look_angle(self) -> Angular:
         return Angular.Radian(self.look_angle_rad)
@@ -666,7 +666,7 @@ class ShotProps:
             alt0_ft=shot.atmo.altitude >> Distance.Foot,
             muzzle_velocity_fps=shot.ammo.get_velocity_for_temp(shot.atmo.powder_temp) >> Velocity.FPS,
         )
-    
+
     def drag_by_mach(self, mach: float) -> float:
         """Calculates a standard drag factor (SDF) for the given Mach number:
             Drag force = V^2 * AirDensity * C_d * S / 2m
@@ -728,7 +728,15 @@ class ShotProps:
             return sd * fv * ftp
         return 0
 
-    def get_density_and_mach_for_altitude(self, drop: float):
+    def get_density_and_mach_for_altitude(self, drop: float) -> Tuple[float, float]:
+        """Gets the air density and Mach number for a given altitude.
+
+        Args:
+            drop: The change in feet from the initial altitude.
+
+        Returns:
+            A tuple containing the air density (in lb/ft³) and Mach number at the specified altitude.
+        """
         return self.shot.atmo.get_density_and_mach_for_altitude(self.alt0_ft + drop)
 
 
@@ -1121,7 +1129,7 @@ class HitResult:
         n = len(traj)
         epsilon = 1e-9  # Very small tolerance for floating point comparison
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
-        
+
         def get_key_val(td):
             """Helper to get the raw value of the key attribute from a TrajectoryData point"""
             val = getattr(td, key_attribute)
@@ -1145,7 +1153,7 @@ class HitResult:
         search_forward = True  # Default to forward search
         if start_idx == n - 1:  # We're at the last point, search backwards            
             search_forward = False
-        if start_idx > 0 and start_idx < n - 1:
+        if 0 < start_idx < n - 1:
             # We're in the middle of the trajectory, determine local direction towards key_value
             next_val = get_key_val(traj[start_idx + 1])
             if (next_val > curr_val and key_value > curr_val) or (next_val < curr_val and key_value < curr_val):

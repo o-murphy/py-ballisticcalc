@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring,too-many-lines
-# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
 """Base integration engine for ballistic trajectory calculations.
 
 The module serves as the core framework for the engine system, providing:
@@ -115,7 +113,6 @@ class BaseEngineConfig:
         ...     cMinimumVelocity=100.0,
         ...     cStepMultiplier=0.5  # Higher precision
         ... )
-        >>> engine = RK4IntegrationEngine(config)
         
     Note:
         This dataclass is primarily used internally. For flexible configuration
@@ -424,14 +421,13 @@ class _WindSock:
             self.next_range = Wind.MAX_DISTANCE_FEET
 
     def vector_for_range(self, next_range: float) -> Vector:
-        """
-        Updates the wind vector if `next_range` surpasses `self.next_range`.
+        """Updates the wind vector if `next_range` surpasses `self.next_range`.
 
         Args:
             next_range: The range to check against the current wind segment.
 
         Returns:
-            Vector: The wind vector for the given range.
+            The wind vector for the given range.
         """
         if next_range >= self.next_range:
             self.current_index += 1
@@ -761,11 +757,10 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
             props.barrel_elevation_rad = angle_rad
-            #TODO: This is not the correct way to get the trajectory point at the target distance
-            # ... or is it?  It's interpolating?  Should we at least check interpolation to ensure
-            # we aren't extrapolating (too far) beyond the computed trajectory points?  Or check
-            # HitResult for an error and handle it appropriately.
-            t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
+            _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
+            if _res.error is not None:
+                logger.warning(f"Integrator error in error_at_distance({angle_rad}): {_res.error}")
+            t = _res.trajectory[-1]
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 return 9e9
