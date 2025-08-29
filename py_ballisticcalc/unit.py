@@ -62,12 +62,14 @@ Examples:
 """
 
 # Standard library imports
+from __future__ import annotations
 import re
 from dataclasses import dataclass, fields, MISSING
 from enum import IntEnum
 from math import pi
 from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
     SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
+from types import NotImplementedType
 
 from typing_extensions import Self, TypeAlias, override
 
@@ -351,7 +353,7 @@ class Unit(IntEnum):
         return obj  # type: ignore
 
     def counter(self, start: Number, step: Number,
-            end: Optional[Number] = None, include_end: bool = True) -> Generator[_GenericDimensionType, None, None]:
+            end: Optional[Number] = None, include_end: bool = True) -> Generator[GenericDimension, None, None]:
         """Generates a finite or infinite sequence of `GenericDimension` objects.
 
         This function acts as a counter for measurements, yielding `GenericDimension`
@@ -369,8 +371,7 @@ class Unit(IntEnum):
                                 included in the sequence. Defaults to `True`.
 
         Yields:
-            _GenericDimensionType: A `GenericDimension` object of the specific type implied by `u`,
-                                   representing the current measurement in the sequence.
+            GenericDimension[Any]: A `GenericDimension` object representing the current measurement in the sequence.
 
         Raises:
             ValueError:
@@ -381,12 +382,12 @@ class Unit(IntEnum):
 
         Examples:
             >>> from py_ballisticcalc import Distance, Unit
-            >>> list(Unit.Meter.counter(start=0, step=100, end=300)) # Inferred as Generator[Distance]
+            >>> list(Unit.Meter.counter(start=0, step=100, end=300))
             [Distance(0), Distance(100), Distance(200)]
         """
-        _start: _GenericDimensionType = self(start)
-        _step: _GenericDimensionType = self(step)
-        _end: Optional[_GenericDimensionType] = self(end) if end is not None else None
+        _start: GenericDimension = self(start)
+        _step: GenericDimension = self(step)
+        _end: Optional[GenericDimension] = self(end) if end is not None else None
 
         _start_raw: Number = _start.raw_value
         _step_raw: Number = _step.raw_value
@@ -395,7 +396,7 @@ class Unit(IntEnum):
         if _end_raw is not None and include_end:
             _end_raw += _step_raw
         for i, raw_value in enumerate(counter(_start_raw, _step_raw, _end_raw)):
-            value: _GenericDimensionType = self(0)
+            value: GenericDimension = self(0)
             value._value = raw_value
             yield value
             if i == MAX_ITERATIONS:
@@ -403,7 +404,7 @@ class Unit(IntEnum):
 
     def iterator(self, items: Sequence[Number], /, *,
                  sort: bool = False,
-                 reverse: bool = False) -> Generator[_GenericDimensionType, None, None]:
+                 reverse: bool = False) -> Generator["GenericDimension[Any]", None, None]:
         """Creates a sorted sequence of `GenericDimension` objects from raw numeric values.
 
         Args:
@@ -833,6 +834,146 @@ class GenericDimension(Generic[_GenericDimensionType]):
     __rlshift__ = convert
     __lshift__ = convert
 
+    #region GenericDimension arithmetic operators
+    def _units_to_raw_delta(self) -> float:
+        """Return raw_value delta that corresponds to a +1 step in the current units.
+
+        By default this is the conversion factor for `self.units`. Dimensions with
+        affine conversions (e.g., Temperature) should override this to map unit deltas
+        correctly in their raw space.
+
+        Returns:
+            float: raw_value delta for a +1 change in the current unit.
+        """
+        return self.__class__._get_conversion_factor(self.units)
+
+    def __mul__(self, other: Number) -> Self | NotImplementedType:
+        """Multiply this measurement by a number: `this * other`.
+
+        Args:
+            other: Numeric scalar.
+
+        Returns:
+            A new instance of the same dimension and units, scaled by `other`.
+        """
+        if isinstance(other, (int, float)):
+            return self.__class__.new_from_raw(self._value * other, self.units)
+        return NotImplemented
+
+    def __rmul__(self, other: Number) -> Self | NotImplementedType:
+        """Right-hand multiplication by a number (commutative): `other * this`."""
+        if isinstance(other, (int, float)):
+            return self.__class__.new_from_raw(self._value * other, self.units)
+        return NotImplemented
+
+    def __truediv__(self, other: Union[Number, Self]) -> Self | float | NotImplementedType:
+        """Divide this measurement: `this / other`.
+
+        Returns:
+            - By a number: returns same dimension/units scaled by 1/other.
+            - By same dimension: returns float ratio of raw values.
+
+        Raises:
+            ZeroDivisionError: If dividing by zero (number) or by zero-valued measure.
+        """
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("division by zero")
+            return self.__class__.new_from_raw(self._value / other, self.units)
+        if isinstance(other, self.__class__):
+            if other._value == 0:
+                raise ZeroDivisionError("division by zero")
+            return float(self._value) / float(other.raw_value)
+        return NotImplemented
+
+    def __itruediv__(self, other: Union[Number, Self]) -> Self | float | NotImplementedType:
+        """In-place division by a number: `this /= other`.
+
+        Returns:
+            - By a number: returns same dimension/units scaled by 1/other.
+            - By same dimension: returns float ratio of raw values.
+
+        Raises:
+            ZeroDivisionError: If dividing by zero.
+        """
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("division by zero")
+            self._value = self._value / float(other)
+            return self
+        if isinstance(other, self.__class__):
+            if other._value == 0:
+                raise ZeroDivisionError("division by zero")
+            return float(self._value) / float(other.raw_value)
+        return NotImplemented
+
+    def __add__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """Add a number (interpreted in current units) or same dimension value: `this + other`.
+
+        Returns:
+            - Number: Unit value incremented by `other`.
+            - Same dimension: adds raw values, preserving left operand's units.
+        """
+        if isinstance(other, (int, float)):
+            raw = self._value + float(other) * self._units_to_raw_delta()
+            return self.__class__.new_from_raw(raw, self.units)
+        if isinstance(other, self.__class__):
+            raw = self._value + other._value
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __radd__(self, other: Number) -> Self | NotImplementedType:
+        """Right-hand number addition: `other + this`."""
+        if isinstance(other, (int, float)):
+            raw = self._value + float(other) * self._units_to_raw_delta()
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __sub__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """Subtract a number (interpreted in current units) or same dimension value: `this - other`."""
+        if isinstance(other, (int, float)):
+            raw = self._value - float(other) * self._units_to_raw_delta()
+            return self.__class__.new_from_raw(raw, self.units)
+        if isinstance(other, self.__class__):
+            raw = self._value - other._value
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __rsub__(self, other: Number) -> Self | NotImplementedType:
+        """Right-hand subtraction: `other - this`."""
+        if isinstance(other, (int, float)):
+            raw = float(other) * self._units_to_raw_delta() - self._value
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __iadd__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """In-place addition with number or same-dimension value: `this += other`."""
+        if isinstance(other, (int, float)):
+            self._value = self._value + float(other) * self._units_to_raw_delta()
+            return self
+        if isinstance(other, self.__class__):
+            self._value = self._value + other.raw_value
+            return self
+        return NotImplemented
+
+    def __isub__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """In-place subtraction with number or same-dimension value: `this -= other`."""
+        if isinstance(other, (int, float)):
+            self._value = self._value - float(other) * self._units_to_raw_delta()
+            return self
+        if isinstance(other, self.__class__):
+            self._value = self._value - other.raw_value
+            return self
+        return NotImplemented
+
+    def __imul__(self, other: Number) -> Self | NotImplementedType:
+        """In-place multiplication by a number: `this *= other`."""
+        if isinstance(other, (int, float)):
+            self._value = self._value * float(other)
+            return self
+        return NotImplemented
+    #endregion GenericDimension arithmetic operators
+
 
 class Distance(GenericDimension):
     """Distance measurements.  Raw value is inches."""
@@ -963,6 +1104,107 @@ class Temperature(GenericDimension):
         else:
             raise UnitConversionError(f"Temperature does not support {unit}")
         return result
+
+    @override
+    @classmethod
+    def new_from_raw(cls, raw_value: float, to_units: Unit) -> "Temperature":
+        """Create Temperature from raw Fahrenheit value into target units.
+
+        Unlike other dimensions, Temperature uses affine conversions; this method
+        relies on ``from_raw`` instead of dividing by a scale factor.
+        """
+        # Temperature conversion uses affine transforms; do not divide by a factor.
+        value_in_units = cls.from_raw(raw_value, to_units)
+        return cls(value_in_units, to_units)
+
+    # Convert a +1 delta in the object's unit to raw (Fahrenheit) delta
+    def _units_to_raw_delta(self) -> float:  # type: ignore[override]
+        """Map a +1 delta in current temperature unit to a Fahrenheit raw delta.
+
+        Returns:
+            float: 1.0 for Fahrenheit/Rankin; 9/5 for Celsius/Kelvin.
+        """
+        if self.units in (Temperature.Fahrenheit, Temperature.Rankin):
+            return 1.0
+        if self.units in (Temperature.Celsius, Temperature.Kelvin):
+            return 9.0 / 5.0
+        return 1.0
+
+    def __mul__(self, other: object):  # type: ignore[override]
+        """Disallow multiplication for Temperature."""
+        raise TypeError("Temperature does not support multiplication")
+
+    def __rmul__(self, other: object):  # type: ignore[override]
+        """Disallow multiplication for Temperature."""
+        raise TypeError("Temperature does not support multiplication")
+
+    def __truediv__(self, other: object):  # type: ignore[override]
+        """Disallow division for Temperature."""
+        raise TypeError("Temperature does not support division")
+
+    def __rtruediv__(self, other: object):  # type: ignore[override]
+        """Disallow division for Temperature."""
+        raise TypeError("Temperature does not support division")
+
+    def __imul__(self, other: object):  # type: ignore[override]
+        """Disallow in-place multiplication for Temperature."""
+        raise TypeError("Temperature does not support multiplication")
+
+    def __itruediv__(self, other: object):  # type: ignore[override]
+        """Disallow in-place division for Temperature."""
+        raise TypeError("Temperature does not support division")
+
+    # Absolute zero clamp in raw Fahrenheit
+    __ABS_ZERO_F: float = -459.67
+
+    def __add__(self, other: Number):  # type: ignore[override]
+        """Add a number of this object's units; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            raw = self._value + float(other) * self._units_to_raw_delta()
+            if raw < self.__ABS_ZERO_F:
+                raw = self.__ABS_ZERO_F
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __radd__(self, other: Number):  # type: ignore[override]
+        """Right-hand numeric addition; clamp at absolute zero."""
+        return self.__add__(other)
+
+    def __sub__(self, other: Number):  # type: ignore[override]
+        """Subtract a numeric delta in the object's unit; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            raw = self._value - float(other) * self._units_to_raw_delta()
+            if raw < self.__ABS_ZERO_F:
+                raw = self.__ABS_ZERO_F
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __rsub__(self, other: Number):  # type: ignore[override]
+        """Right-hand numeric subtraction; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            raw = float(other) * self._units_to_raw_delta() - self._value
+            if raw < self.__ABS_ZERO_F:
+                raw = self.__ABS_ZERO_F
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __iadd__(self, other: Number):  # type: ignore[override]
+        """In-place numeric addition; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            self._value = self._value + float(other) * self._units_to_raw_delta()
+            if self._value < self.__ABS_ZERO_F:
+                self._value = self.__ABS_ZERO_F
+            return self
+        return NotImplemented
+
+    def __isub__(self, other: Number):  # type: ignore[override]
+        """In-place numeric subtraction; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            self._value = self._value - float(other) * self._units_to_raw_delta()
+            if self._value < self.__ABS_ZERO_F:
+                self._value = self.__ABS_ZERO_F
+            return self
+        return NotImplemented
 
     # Temperature.* unit aliases
     Fahrenheit: Final[Unit] = Unit.Fahrenheit
@@ -1162,7 +1404,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
             if f.default is not MISSING:
                 setattr(cls, f.name, f.default)
             elif getattr(f, "default_factory", MISSING) is not MISSING:
-                setattr(cls, f.name, f.default_factory())
+                setattr(cls, f.name, f.default_factory())  # type: ignore
 
     @classmethod
     def set(cls, **kwargs):
