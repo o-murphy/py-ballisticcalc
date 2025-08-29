@@ -30,6 +30,7 @@ import warnings
 
 from typing_extensions import Union, List, override
 
+from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
     BaseIntegrationEngine,
@@ -38,7 +39,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, ShotProps, HitResult
+from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('VelocityVerletIntegrationEngine',)

@@ -82,7 +82,7 @@ from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
 from py_ballisticcalc._compat import bisect_left_key
-from py_ballisticcalc.conditions import Wind
+from py_ballisticcalc.conditions import ShotProps, Wind
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfig,
     BaseEngineConfigDict,
@@ -92,7 +92,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import HitResult, ShotProps, TrajFlag, TrajectoryData
+from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
 
@@ -271,7 +271,7 @@ class WindSock:
         if not self.winds:
             return None
         distance *= 12.0  # Convert distance to inches (distance.raw_value)
-        for wind in self.winds:  # TODO: use binary search for performance
+        for wind in self.winds:  # For long lists: use binary search for performance
             if distance <= wind.until_distance.raw_value:
                 return wind.vector
         return None
