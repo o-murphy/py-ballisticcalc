@@ -69,7 +69,12 @@ from enum import IntEnum
 from math import pi
 from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
     SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
-from types import NotImplementedType
+try:
+    # Python 3.10+ provides NotImplementedType in types
+    from types import NotImplementedType  # type: ignore[attr-defined]
+except Exception:  # pragma: no cover - fallback for Python 3.9
+    # On older Python, derive the type from the singleton
+    NotImplementedType = type(NotImplemented)  # type: ignore[misc,assignment]
 
 from typing_extensions import Self, TypeAlias, override
 
