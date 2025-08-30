@@ -751,7 +751,7 @@ class HitResult:
 
         traj = self.trajectory
         n = len(traj)
-        epsilon = 1e-9  # Very small tolerance for floating point comparison
+        epsilon = 1e-8  # Very small tolerance for floating point comparison
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
 
         def get_key_val(td):
