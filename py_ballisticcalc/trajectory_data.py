@@ -422,11 +422,15 @@ class TrajectoryData(NamedTuple):
         """Calculates the kinetic energy of a projectile.
 
         Args:
-            bullet_weight: The weight of the bullet in pounds.
-            velocity: The velocity of the bullet in feet per second.
+            bullet_weight: Projectile weight in grains.
+            velocity: Projectile velocity in feet per second.
 
         Returns:
-            The kinetic energy of the projectile in foot-pounds.
+            Kinetic energy in foot-pounds (ft·lbf).
+
+        Notes:
+            Uses the standard small-arms approximation:
+            E(ft·lbf) = weight(grains) * v(fps)^2 / 450400.
         """
         return bullet_weight * math.pow(velocity, 2) / 450400
 
@@ -435,8 +439,8 @@ class TrajectoryData(NamedTuple):
         """Calculates the optimal game weight for a projectile.
 
         Args:
-            bullet_weight: The weight of the bullet in pounds.
-            velocity: The velocity of the bullet in feet per second.
+            bullet_weight: Bullet weight in grains (per common OGW formula).
+            velocity: Projectile velocity in feet per second.
 
         Returns:
             The optimal game weight in pounds.
