@@ -1,5 +1,3 @@
-"""Unittests for the specific issues library"""
-# mypy: ignore - mypy overhead is not worth it for test code
 from typing import Any
 
 import pytest
@@ -8,6 +6,7 @@ from py_ballisticcalc import (DragModel, TableG1, Distance, Weight, Ammo, Veloci
                               Angular, Calculator, RangeError, HitResult, BaseEngineConfigDict,
                               loadImperialUnits, loadMetricUnits, PreferredUnits)
 
+pytestmark = pytest.mark.engine
 
 def get_object_attribute_values_as_dict(obj: Any) -> dict[str, Any]:
     """Returns the attributes of an object as a dictionary."""

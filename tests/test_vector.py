@@ -47,3 +47,35 @@ class TestVector:
         zero_vector = Vector(0, 0, 0)
         zero_normalized = zero_vector.normalize()
         assert zero_vector == zero_normalized
+
+    def test_vector_mul_type_error(self):
+        v = Vector(1.0, 2.0, 3.0)
+        with pytest.raises(TypeError):
+            _ = v * "x"  # type: ignore[operator]
+
+    def test_vector_right_ops_and_inplace_aliases(self):
+        v1 = Vector(1.0, 2.0, 3.0)
+        # __rmul__ path
+        scaled = 2 * v1
+        assert scaled == Vector(2.0, 4.0, 6.0)
+
+        # __imul__ returns new value (immutability) and uses __mul__ logic
+        res = v1.__imul__(2)
+        assert res == Vector(2.0, 4.0, 6.0)
+
+        # __radd__ and __iadd__ delegate to add
+        sum1 = v1.__radd__(Vector(1.0, 1.0, 1.0))
+        assert sum1 == Vector(2.0, 3.0, 4.0)
+        sum2 = v1.__iadd__(Vector(0.0, -1.0, 1.0))
+        assert sum2 == Vector(1.0, 1.0, 4.0)
+
+        # __rsub__ and __isub__ paths
+        # Current implementation delegates to subtract(self, other) => self - other
+        # so __rsub__ behaves like regular __sub__ with swapped args not applied
+        diff1 = v1.__rsub__(Vector(0.0, 0.0, 0.0))
+        assert diff1 == Vector(1.0, 2.0, 3.0)
+        diff2 = v1.__isub__(Vector(1.0, 1.0, 1.0))
+        assert diff2 == Vector(0.0, 1.0, 2.0)
+
+        # __neg__ delegates to negate
+        assert (-v1) == Vector(-1.0, -2.0, -3.0)
