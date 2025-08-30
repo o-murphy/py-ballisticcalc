@@ -1,4 +1,8 @@
+import gc
 import pytest
+
+pytestmark = pytest.mark.stress
+
 
 from py_ballisticcalc import (
     BaseEngineConfigDict,
@@ -78,3 +82,49 @@ def test_empty_winds_and_small_zero_distance(loaded_engine_instance):
     look = shot.look_angle
     ang = calc.find_zero_angle(shot, Distance.Inch(1))
     assert ang >> Angular.Degree == pytest.approx(look >> Angular.Degree, abs=0.5)
+
+
+def test_integrate_dense_output_repeated(loaded_engine_instance):
+    calc = Calculator(config=_base_config(), engine=loaded_engine_instance)
+    shot = create_7_62_mm_shot()
+
+    # Exercise dense_output path multiple times and ensure objects are released
+    for _ in range(25):
+        res = calc.integrate(shot, Distance.Yard(300), Distance.Yard(25), dense_output=True)
+        # Touch a few fields to ensure trajectory buffer is used
+        traj = res.trajectory
+        if traj is not None:
+            _ = len(traj)
+            if len(traj) >= 3:
+                _ = traj.get_at('time', traj[-1].time * 0.5)
+        # Drop references and collect
+        del res
+        gc.collect()
+
+
+def test_invalid_wind_entry_cleanup(loaded_engine_instance):
+    class _AD:
+        def __init__(self, raw_value: float):
+            self.raw_value = raw_value
+
+    class BadWind:
+        # Provide until_distance.raw_value so Shot.winds sorting works,
+        # but omit attributes required by Wind_t_from_python to force failure later.
+        def __init__(self):
+            self.until_distance = _AD(0.0)  # Intentionally missing '_feet'
+
+    calc = Calculator(config=_base_config(), engine=loaded_engine_instance)
+    shot = create_7_62_mm_shot()
+
+    # Inject an invalid wind to trigger cleanup in WindSock_t_create
+    winds = list(shot.winds)
+    winds.append(BadWind())  # type: ignore[arg-type]
+    shot.winds = winds  # type: ignore[assignment]
+    # Fails when converting Python winds to C Wind_t (AttributeError) or raises RuntimeError wrapper
+    with pytest.raises((RuntimeError, AttributeError)):
+        _ = calc.integrate(shot, Distance.Yard(50), Distance.Yard(25))
+
+    # After failure, a valid run should still succeed repeatedly
+    shot.winds = []
+    for _ in range(10):
+        _ = calc.integrate(shot, Distance.Yard(200), Distance.Yard(50))

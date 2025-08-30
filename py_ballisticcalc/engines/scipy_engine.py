@@ -82,7 +82,7 @@ from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
 from py_ballisticcalc._compat import bisect_left_key
-from py_ballisticcalc.conditions import Wind
+from py_ballisticcalc.conditions import ShotProps, Wind
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfig,
     BaseEngineConfigDict,
@@ -92,7 +92,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import HitResult, ShotProps, TrajFlag, TrajectoryData
+from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector
 
@@ -225,7 +225,7 @@ def scipy_event(
     def wrapper(func: SciPyEventFunctionT) -> SciPyEvent:
         """Wrapper function that creates the SciPyEvent object."""
         return SciPyEvent(func, terminal, direction)
-    
+
     return wrapper
 
 
@@ -240,19 +240,17 @@ class WindSock:
     
     Example:
         >>> from py_ballisticcalc.conditions import Wind
-        >>> from py_ballisticcalc.unit import Distance, Velocity
-        >>> 
+        >>> from py_ballisticcalc.unit import Distance, Velocity, Angular
         >>> # Define wind conditions at different ranges
         >>> winds = [
-        ...     Wind(velocity=Velocity.MPH(10), direction=Angular.Degree(45), 
-        ...          at_distance=Distance.Yard(0)),
-        ...     Wind(velocity=Velocity.MPH(15), direction=Angular.Degree(30),
-        ...          at_distance=Distance.Yard(500))
+        ...     Wind(velocity=Velocity.MPH(10), direction_from=Angular.Degree(45),
+        ...          until_distance=Distance.Yard(0)),
+        ...     Wind(velocity=Velocity.MPH(15), direction_from=Angular.Degree(30),
+        ...          until_distance=Distance.Yard(500))
         ... ]
         >>> wind_sock = WindSock(winds)
-        >>> 
-        >>> # Get wind vector at any range
-        >>> wind_vector = wind_sock.get_wind_vector(Distance.Yard(250))
+        >>> # Get wind vector at 250 yards (pass feet)
+        >>> wind_vector = wind_sock.wind_at_distance(250 * 3.0)
         
     Note:
         Wind measurements should be provided in order of increasing range for
@@ -273,7 +271,7 @@ class WindSock:
         if not self.winds:
             return None
         distance *= 12.0  # Convert distance to inches (distance.raw_value)
-        for wind in self.winds:  # TODO: use binary search for performance
+        for wind in self.winds:  # For long lists: use binary search for performance
             if distance <= wind.until_distance.raw_value:
                 return wind.vector
         return None
@@ -411,10 +409,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         ... )
         >>> engine = SciPyIntegrationEngine(config)
         
-        >>> # Using with Calculator
-        >>> from py_ballisticcalc import Calculator
-        >>> calc = Calculator(engine='scipy_engine')
-        >>> result = calc.fire(shot_info, max_range)
+    >>> # Using with Calculator
+    >>> from py_ballisticcalc import Calculator
+    >>> calc = Calculator(engine='scipy_engine')
     
     Note:
         Requires scipy and numpy packages. Install with:
@@ -680,6 +677,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
               math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
               math.sin(props.barrel_elevation_rad) * velocity,
               math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity]
+        _cMaximumDrop += min(0, s0[1])  # Adjust max drop downward if above muzzle height
         # endregion
 
         # region SciPy integration
@@ -721,8 +719,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         max_drop = max(_cMaximumDrop, _cMinimumAltitude - props.alt0_ft)  # Smallest allowed y coordinate (ft)
 
         @scipy_event(terminal=True, direction=-1)
-        def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses max_drop
-            return s[1] - max_drop
+        def event_max_drop(t: float, s: Any) -> np.floating:  # Stop when y crosses down through max_drop
+            if s[4] > 0:  # Don't apply condition while v.y>0
+                return np.float64(1.0)
+            return s[1] - max_drop + 1e-9  # +epsilon so that we actually cross
 
         @scipy_event(terminal=True)
         def event_min_velocity(t: float, s: Any) -> np.floating:  # Stop when velocity < _cMinimumVelocity
@@ -765,7 +765,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     pass
                 elif sol.t_events[1].size > 0:  # event_max_drop
                     y = sol.sol(sol.t_events[1][0])[1]  # Get y at max drop event
-                    if y < _cMaximumDrop:
+                    if y < _cMaximumDrop + 1e-9:
                         termination_reason = RangeError.MaximumDropReached
                     else:
                         termination_reason = RangeError.MinimumAltitudeReached

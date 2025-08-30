@@ -1,11 +1,10 @@
-"""Unittests for the py_ballisticcalc library"""
-
 from math import fabs
 
 import pytest
 
 from py_ballisticcalc import *
 
+pytestmark = pytest.mark.engine
 
 class TestTrajectory:
 

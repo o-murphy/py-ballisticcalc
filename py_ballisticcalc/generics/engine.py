@@ -74,11 +74,10 @@ class EngineProtocol(Protocol[ConfigT]):
         ...     def zero_angle(self, shot_info, distance):
         ...         # Implementation here  
         ...         pass
-    
-    >>> # Runtime type checking
-    >>> engine = MyEngine(config)
-    >>> isinstance(engine, EngineProtocol)
-    True
+        >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)
+        >>> engine = MyEngine(config)
+        >>> isinstance(engine, EngineProtocol)
+        True
 
     Algorithm Details:
         Different engine implementations may employ various computational strategies:

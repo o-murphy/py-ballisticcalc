@@ -2,6 +2,7 @@ import pytest
 
 from py_ballisticcalc import *
 
+pytestmark = pytest.mark.engine
 
 class TestHitResult:
 

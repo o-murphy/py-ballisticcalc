@@ -25,7 +25,7 @@ import warnings
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
 
-# Third-party imports  
+# Third-party imports
 from typing_extensions import TypeAlias
 
 # Local imports
@@ -133,7 +133,7 @@ class DragModel:
         For basic trajectory calculations, only BC and drag_table are needed.
     """
 
-    def __init__(self, 
+    def __init__(self,
                  bc: float,
                  drag_table: DragTableDataType,
                  weight: Union[float, Weight] = 0,

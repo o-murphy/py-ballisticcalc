@@ -1,6 +1,7 @@
 """Unittests for the py_ballisticcalc library"""
 
 import copy
+import math
 import pytest
 
 from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError, TrajFlag,
@@ -8,6 +9,7 @@ from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, A
 )
 from py_ballisticcalc.unit import *
 
+pytestmark = pytest.mark.engine
 
 class TestComputerPytest:
 
@@ -277,5 +279,55 @@ class TestComputerPytest:
         self.calc.set_weapon_zero(shot, zero_distance=Distance.Meter(200))
         hit_result = self.calc.fire(shot, trajectory_range=Distance.Meter(300),
                                     trajectory_step=Distance.Meter(100), flags=TrajFlag.ALL)
-        assert hit_result.flag(TrajFlag.ZERO_DOWN).flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, \
-            'ZERO_DOWN should occur on a RANGE row'
+        td = hit_result.flag(TrajFlag.ZERO_DOWN)
+        assert td is not None, 'Expected to find a ZERO_DOWN flag in trajectory'
+        assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'
+
+    def test_find_apex_uses_no_min_velocity_and_restores(self, loaded_engine_instance):
+        # Start with a very high minimum velocity so normal integrate would stop early
+        shot = copy.copy(self.baseline_shot)
+        mv_fps = shot.ammo.mv >> Velocity.FPS
+        calc = Calculator(config={'cMinimumVelocity': mv_fps * 0.99}, engine=loaded_engine_instance)
+
+        # Give some elevation to allow apex finding; should succeed due to decorator
+        shot.relative_angle = Angular.Degree(5)
+        apex = calc.find_apex(shot)
+        assert apex is not None
+
+        # After returning, the high minimum velocity should still apply in normal fire
+        res = calc.fire(shot, Distance.Yard(200), Distance.Yard(50), raise_range_error=False)
+        assert res.error is not None, "Expected integrate to terminate due to MinimumVelocity"
+        assert res.error.reason == RangeError.MinimumVelocityReached
+
+    def test_maximum_drop(self, loaded_engine_instance):
+        # cMaximumDrop should be adjusted downward it start-height is negative
+        dm = DragModel(bc=0.243, drag_table=TableG7)
+        # Projectile starts at y=-sight_height
+        sight_height = Distance.Inch(4)  # This needs to be a positive value
+        shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)), weapon=Weapon(sight_height=sight_height))
+        shot.relative_angle = Angular.Degree(0.05)
+        calc = Calculator(config={'cMaximumDrop': 0}, engine=loaded_engine_instance)
+        res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
+        assert res.error is not None and res.error.reason == RangeError.MaximumDropReached
+        assert pytest.approx(res.trajectory[0].height.raw_value) == -sight_height.raw_value
+        assert res.trajectory[-1].height.raw_value <= -sight_height.raw_value
+        assert res.trajectory[-1].time > 0.0
+
+        # cMaximumDrop should not be adjusted for positive start-height
+        shot.weapon.sight_height = Distance.Inch(-3)
+        res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
+        assert res.error is not None and res.error.reason == RangeError.MaximumDropReached
+        assert pytest.approx(res.trajectory[0].height.raw_value) == -shot.weapon.sight_height.raw_value
+        assert res.trajectory[-1].height.raw_value <= 0.0 + 1e-9
+        assert res.trajectory[-1].time > 0.0
+
+    def test_min_altitude_downward_only(self, loaded_engine_instance):
+        # cMinimumAltitude should only apply once velocity is not positive
+        dm = DragModel(bc=0.243, drag_table=TableG7)
+        shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
+        shot.relative_angle = Angular.Degree(0.02)
+        calc = Calculator(config={'cMinimumAltitude': 1_000}, engine=loaded_engine_instance)
+        res = calc.fire(shot, trajectory_range=Distance.Meter(500), raise_range_error=False)
+        assert res.error is not None and res.error.reason == RangeError.MinimumAltitudeReached
+        assert res.trajectory[-1].angle.raw_value <= 0.0 + 1e-9
+        assert res.trajectory[-1].time > 0.0

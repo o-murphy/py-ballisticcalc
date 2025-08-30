@@ -7,12 +7,6 @@ Classes:
     RK4IntegrationEngine: Concrete implementation using 4th-order Runge-Kutta
 
 Example:
-    >>> from py_ballisticcalc.engines.rk4 import RK4IntegrationEngine
-    >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
-    >>> 
-    >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)  # Standard accuracy
-    >>> engine = RK4IntegrationEngine(config)
-    >>> 
     >>> # Use with Calculator (default engine)
     >>> from py_ballisticcalc import Calculator
     >>> calc = Calculator()  # Uses RK4 by default
@@ -48,6 +42,7 @@ import warnings
 
 from typing_extensions import Union, List, override
 
+from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import (
     BaseIntegrationEngine,
     BaseEngineConfigDict,
@@ -56,7 +51,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, ShotProps, HitResult
+from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('RK4IntegrationEngine',)
@@ -69,12 +64,8 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         integration_step_count: Number of integration steps performed.
         
     Example:
-        >>> config = BaseEngineConfigDict(cStepMultiplier=0.2)  # Higher precision
+        >>> config = BaseEngineConfigDict(cMinimumVelocity=0.0)
         >>> engine = RK4IntegrationEngine(config)
-        >>> result = engine.integrate(shot_info, Distance(1200, Distance.Yard))
-        
-        >>> # Compare accuracy vs. step size
-        >>> fast_config = BaseEngineConfigDict(cStepMultiplier=5.0)
     """
     DEFAULT_TIME_STEP = 0.0025
 
@@ -88,7 +79,6 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                    and cMinimumVelocity for termination conditions.
                    
         Example:
-            >>> # High precision configuration
             >>> precise_config = BaseEngineConfigDict(
             ...     cStepMultiplier=0.5,  # Smaller steps
             ...     cMinimumVelocity=20.0  # Continue to lower velocities
@@ -115,7 +105,8 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         Example:
             >>> config = BaseEngineConfigDict(cStepMultiplier=0.5)
             >>> engine = RK4IntegrationEngine(config)
-            >>> step = engine.get_calc_step()  # Returns 0.5
+            >>> engine.get_calc_step()
+            0.00125
             
         Note:
             For RK4, the relationship between step size and accuracy is:
@@ -170,6 +161,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(velocity)  # type: ignore
+        _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # endregion
 
         data_filter = TrajectoryDataFilter(props=props, filter_flags=filter_flags,
@@ -182,7 +174,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
         integration_step_count = 0
-        # Quadratic interpolation requires 3 points, so we will need at least 3 steps
+        # Cubic interpolation requires 3 points, so we will need at least 3 steps
         while (range_vector.x <= range_limit_ft) or integration_step_count < 3:
             integration_step_count += 1
 
@@ -234,8 +226,8 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             time += delta_time
 
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or props.alt0_ft + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

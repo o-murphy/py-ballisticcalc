@@ -142,7 +142,7 @@ basicConfig = _basic_config
 basicConfig()
 
 
-from .conditions import Atmo, Vacuum, Wind, Shot
+from .conditions import Atmo, Vacuum, Wind, Shot, ShotProps
 from .drag_model import DragModel, DragDataPoint, BCPoint, DragModelMultiBC
 from .drag_tables import (TableG1, TableG7, TableG2, TableG5, TableG6, TableG8, 
                          TableGI, TableGS, TableRA4, get_drag_tables_names)
@@ -155,9 +155,7 @@ from .interface import Calculator, _EngineLoader
 from .interpolation import InterpolationMethod, InterpolationMethodEnum, interpolate_2_pt, interpolate_3_pt
 from .logger import logger, enable_file_logging, disable_file_logging
 from .munition import Weapon, Ammo, Sight, SightFocalPlane, SightClicks, SightReticleStep
-from .trajectory_data import (BaseTrajData, TrajectoryData, HitResult, DangerSpace, TrajFlag,
-                             ShotProps, CurvePoint, create_trajectory_row, calculate_energy,
-                             calculate_ogw, get_correction, calculate_curve)
+from .trajectory_data import BaseTrajData, TrajectoryData, HitResult, DangerSpace, TrajFlag
 from .unit import (Unit, counter, iterator, UnitAliases, Measurable, GenericDimension,
                   UnitProps, UnitPropsDict, Distance, Velocity, Angular, Temperature,
                   Pressure, Energy, Weight, Time, PreferredUnits)

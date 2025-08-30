@@ -33,10 +33,25 @@ class TestAtmosphere:
         assert pytest.approx(Atmo.machC(-20), abs=1e-1) == 318.94
         assert pytest.approx(self.highISA.mach >> Velocity.MPS, abs=1e-1) == 336.4
 
-    def test_altitude(self):
-        # Altitude adjustment not valid above troposphere
+    def test_atmo_mach_warning_paths(self):
+        # Request sound speed for temperatures below absolute zero
         with pytest.warns(RuntimeWarning):
-            Atmo().get_density_and_mach_for_altitude(100_000)
+            _ = Atmo.machF(-1000.0)
+        with pytest.warns(RuntimeWarning):
+            _ = Atmo.machC(-1000.0)
+
+    def test_altitude_limit(self):
+        with pytest.warns(RuntimeWarning):
+            # Altitude adjustment not valid above troposphere
+            d, m = Atmo().get_density_and_mach_for_altitude(100_000)
+            assert d > 0 and m > 0
+
+    def test_temperature_limit(self):
+        a = Atmo.icao()
+        with pytest.warns(RuntimeWarning):
+            # Very low temperature via interpolation to extreme altitude
+            t = a.temperature_at_altitude(1e9)
+            assert t > -273.15
 
     def test_density(self):
         assert pytest.approx(Atmo.calculate_air_density(20, 1013, 0), abs=1e-4) == 1.20383
@@ -49,6 +64,33 @@ class TestAtmosphere:
         density_ratio, mach = self.standard.get_density_and_mach_for_altitude(5000)
         assert density_ratio < self.standard.density_ratio
         assert mach < (self.standard.mach >> Velocity.FPS)
+
+    def test_vacuum(self):
+        vac = Vacuum(altitude=Distance.Foot(0))
+        assert vac.density_ratio == 0
+        assert vac.mach.raw_value > 0
+
+    def test_atmo_density_and_mach_accessors(self):
+        atmo = Atmo.icao(altitude=Distance.Foot(1000))
+        dr, m = atmo.get_density_and_mach_for_altitude(1500.0)
+        assert 0 < dr <= 2
+        assert m > 0
+        # Set humidity and verify update
+        atmo.humidity = 50
+        assert pytest.approx(atmo.humidity, abs=1e-9) == 0.5
+
+    def test_wind_vector_and_shot_winds_sorting(self):
+        w1 = Wind(velocity=Velocity.FPS(10), direction_from=Angular.Degree(90), until_distance=Distance.Foot(10))
+        w2 = Wind(velocity=Velocity.FPS(5), direction_from=Angular.Degree(0), until_distance=Distance.Foot(5))
+        dm = DragModel(bc=0.2, drag_table=TableG7, diameter=Distance.Millimeter(7.0), length=Distance.Millimeter(30.0), weight=Weight.Grain(150))
+        ammo = Ammo(dm, mv=Velocity.FPS(2500))
+        shot = Shot(ammo=ammo)
+        shot.winds = [w1, w2]
+        # Winds are sorted by until_distance
+        assert shot.winds[0].until_distance.raw_value <= shot.winds[1].until_distance.raw_value
+        # Vector basic sanity
+        v = w1.vector
+        assert isinstance(v.x, float) and isinstance(v.z, float)
 
     def test_trajectory_effects(self, loaded_engine_instance):
         check_distance = Distance.Yard(1000)

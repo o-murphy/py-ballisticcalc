@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
-# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
 """Euler integration engine for ballistic trajectory calculations.
 
 The Euler method is a first-order numerical integration technique.  While
@@ -14,15 +12,8 @@ Key Features:
     - Adaptive time stepping based on projectile velocity
 
 Example:
-    >>> from py_ballisticcalc.engines.euler import EulerIntegrationEngine
-    >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
-    >>> 
-    >>> config = BaseEngineConfigDict(cStepMultiplier=0.5)  # Smaller steps for better accuracy
-    >>> engine = EulerIntegrationEngine(config)
-    >>> 
-    >>> # Use with Calculator
     >>> from py_ballisticcalc import Calculator
-    >>> calc = Calculator(engine="euler_engine")
+    >>> calc = Calculator(engine="py_ballisticcalc:EulerIntegrationEngine")
 
 Mathematical Background:
     The Euler method approximates the solution to the differential equation
@@ -44,6 +35,7 @@ import warnings
 
 from typing_extensions import Union, List, override
 
+from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
     BaseIntegrationEngine,
@@ -52,7 +44,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, ShotProps, HitResult
+from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('EulerIntegrationEngine',)
@@ -68,7 +60,6 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     Example:
         >>> config = BaseEngineConfigDict(cMinimumVelocity=100.0)
         >>> engine = EulerIntegrationEngine(config)
-        >>> result = engine.integrate(shot_info, Distance(1000, Distance.Yard))
     """
     DEFAULT_STEP = 0.5
 
@@ -78,10 +69,6 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         Args:
             config: Configuration dictionary containing engine parameters.
                    See BaseEngineConfigDict for available options.
-                   
-        Example:
-            >>> config = BaseEngineConfigDict(cMinimumVelocity=75.0)
-            >>> engine = EulerIntegrationEngine(config)
         """
         super().__init__(config)
         self.integration_step_count: int = 0
@@ -124,12 +111,13 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             time_step = base_step / max(1.0, velocity)
             
         Example:
+            >>> config = BaseEngineConfigDict(cStepMultiplier=0.5)
             >>> engine = EulerIntegrationEngine(config)
-            >>> # High velocity -> smaller time step
-            >>> step_high = engine.time_step(0.5, 2800.0)  # ≈ 0.000179
-            >>> # Low velocity -> larger time step  
-            >>> step_low = engine.time_step(0.5, 100.0)    # = 0.005
-            
+            >>> engine.time_step(0.5, 2000.0)
+            0.00025
+            >>> engine.time_step(0.5, 100.0)
+            0.005
+
         Note:
             The max(1.0, velocity) ensures that the time step never becomes
             excessively large, maintaining numerical stability even at very
@@ -183,6 +171,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(velocity)  # type: ignore
+        _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # endregion
 
         data_filter = TrajectoryDataFilter(props=props, filter_flags=filter_flags,
@@ -195,7 +184,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
         integration_step_count = 0
-        # Quadratic interpolation requires 3 points, so we will need at least 3 steps
+        # Cubic interpolation requires 3 points, so we will need at least 3 steps
         while (range_vector.x <= range_limit_ft) or integration_step_count < 3:
             integration_step_count += 1
 
@@ -232,8 +221,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             # endregion
 
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or props.alt0_ft + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring,too-many-lines
-# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
 """Base integration engine for ballistic trajectory calculations.
 
 The module serves as the core framework for the engine system, providing:
@@ -46,14 +44,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
 
-from typing_extensions import Dict, List, NamedTuple, Optional, Tuple, TypedDict, TypeVar, Union
+from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, TypeVar, Union
 
 from py_ballisticcalc._compat import bisect_left_key
-from py_ballisticcalc.conditions import Shot, Wind
+from py_ballisticcalc.conditions import Shot, ShotProps, Wind
 from py_ballisticcalc.exceptions import ZeroFindingError, OutOfRangeError, SolverRuntimeError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, ShotProps, TrajectoryData, TrajFlag
+from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.vector import Vector
 
@@ -115,7 +113,6 @@ class BaseEngineConfig:
         ...     cMinimumVelocity=100.0,
         ...     cStepMultiplier=0.5  # Higher precision
         ... )
-        >>> engine = RK4IntegrationEngine(config)
         
     Note:
         This dataclass is primarily used internally. For flexible configuration
@@ -424,14 +421,13 @@ class _WindSock:
             self.next_range = Wind.MAX_DISTANCE_FEET
 
     def vector_for_range(self, next_range: float) -> Vector:
-        """
-        Updates the wind vector if `next_range` surpasses `self.next_range`.
+        """Updates the wind vector if `next_range` surpasses `self.next_range`.
 
         Args:
             next_range: The range to check against the current wind segment.
 
         Returns:
-            Vector: The wind vector for the given range.
+            The wind vector for the given range.
         """
         if next_range >= self.next_range:
             self.current_index += 1
@@ -561,8 +557,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
-
-        TODO: Check whether the cache is ever being hit
         """
         # region Virtually vertical shot
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
@@ -571,27 +565,19 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         # endregion Virtually vertical shot
 
         t_calls = 0
-        cache_hits = 0
-        cache: Dict[float, float] = {}
-
         def range_for_angle(angle_rad: float) -> float:
             """Returns slant-distance minus slant-error (in feet) for given launch angle in radians."""
-            if angle_rad in cache:
-                nonlocal cache_hits
-                cache_hits += 1
-                return cache[angle_rad]
             props.barrel_elevation_rad = angle_rad
             nonlocal t_calls
             t_calls += 1
-            logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
+            #logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
             hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN)
             cross = hit.flag(TrajFlag.ZERO_DOWN)
             if cross is None:
                 warnings.warn(f'No ZERO_DOWN found for launch angle {angle_rad} rad.')
-                cache[angle_rad] = -9e9
-            else:  # Return value penalizes distance by slant height, which we want to be zero.
-                cache[angle_rad] = (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
-            return cache[angle_rad]
+                return -9e9
+            # Return value penalizes distance by slant height, which we want to be zero.
+            return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
         # region Golden-section search
         inv_phi = (math.sqrt(5) - 1) / 2  # 0.618...
@@ -602,7 +588,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         d = a + inv_phi * h
         yc = range_for_angle(c)
         yd = range_for_angle(d)
-        for _ in range(100):  # 100 iterations is more than enough for high precision
+        for _ in range(self._config.cMaxIterations):
             if h < 1e-6:  # Angle tolerance in radians
                 break
             if yc > yd:
@@ -640,7 +626,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         props = self._init_trajectory(shot_info)
         return self._find_apex(props)
 
-    @with_max_drop_zero
     @with_no_minimum_velocity
     def _find_apex(self, props: ShotProps) -> TrajectoryData:
         """
@@ -729,8 +714,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Returns:
             Barrel elevation needed to hit the zero point.
-
-        TODO: Cache the trajectory calculations in _find_max_range to apply in Ridder's method.
         """
         status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
             self._init_zero_calculation(props, distance)
@@ -762,11 +745,10 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         def error_at_distance(angle_rad: float) -> float:
             """Target miss (in feet) for given launch angle."""
             props.barrel_elevation_rad = angle_rad
-            #TODO: This is not the correct way to get the trajectory point at the target distance
-            # ... or is it?  It's interpolating?  Should we at least check interpolation to ensure
-            # we aren't extrapolating (too far) beyond the computed trajectory points?  Or check
-            # HitResult for an error and handle it appropriately.
-            t = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)[-1]
+            _res = self._integrate(props, target_x_ft, target_x_ft, filter_flags=TrajFlag.NONE)
+            if _res.error is not None:
+                logger.warning(f"Integrator error in error_at_distance({angle_rad}): {_res.error}")
+            t = _res.trajectory[-1]
             if t.time == 0.0:
                 logger.warning("Integrator returned initial point. Consider removing constraints.")
                 return 9e9

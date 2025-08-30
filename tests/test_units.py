@@ -1,14 +1,28 @@
 import pytest
 
+from py_ballisticcalc import loadImperialUnits, loadMixedUnits, loadMetricUnits
 from py_ballisticcalc.unit import *
 
 
 # Helper function adapted for direct use in parameterized tests
-# It no longer needs 'test' as an argument, as 'unit_class' is passed directly
 def back_n_forth_pytest(value, units, unit_class):
     u = unit_class(value, units)
     v = u >> units
     assert pytest.approx(v, abs=1e-7) == value
+
+
+class TestUnitLoaders:
+    def test_loaders(self):
+        PreferredUnits.restore_defaults()
+        assert PreferredUnits.temperature == Unit.Fahrenheit
+        loadMixedUnits()
+        assert PreferredUnits.temperature == Unit.Celsius
+        loadImperialUnits()
+        assert PreferredUnits.temperature == Unit.Fahrenheit
+        loadMetricUnits()
+        assert PreferredUnits.temperature == Unit.Celsius
+        PreferredUnits.restore_defaults()
+        assert PreferredUnits.temperature == Unit.Fahrenheit
 
 
 class TestUnitsParser:
@@ -220,6 +234,95 @@ class TestUnitConversionSyntax:
         assert temp_low.units == desired_units
 
 
+class TestArithmetic:
+
+    def test_mul_div_with_numbers(self):
+        d = Distance.Yard(3)
+        c = 2
+        assert isinstance(d * c, Distance)
+        assert pytest.approx((d * c).raw_value) == c * d.raw_value
+        assert pytest.approx((c * d).raw_value) == c * d.raw_value
+        assert isinstance(d / c, Distance)
+        assert pytest.approx((d / c).raw_value) == d.raw_value / c
+
+    def test_same_dimension_div(self):
+        a = Distance.Meter(2)
+        b = Distance.Inch(5)
+        assert isinstance(a / b, float)
+        assert pytest.approx(a / b) == a.raw_value / b.raw_value
+        assert isinstance(b / a, float)
+        assert pytest.approx(b / a) == b.raw_value / a.raw_value
+
+    def test_same_dimension_add_sub(self):
+        a = Distance.Meter(2)
+        b = Distance.Yard(1)
+        c = a + b
+        assert isinstance(c, Distance)
+        # raw values should add, preserving left units
+        assert pytest.approx(c.raw_value) == a.raw_value + b.raw_value
+        assert c.units == a.units
+        c = a - b
+        assert pytest.approx(c.raw_value) == a.raw_value - b.raw_value
+        assert c.units == a.units
+
+    def test_add_sub_with_numbers(self):
+        a = Distance.Meter(2)
+        # +5 meters
+        c = a + 5
+        assert isinstance(c, Distance)
+        assert pytest.approx(c >> Distance.Meter) == pytest.approx(7)
+        # radd
+        c2 = 5 + a
+        assert pytest.approx(c2 >> Distance.Meter) == pytest.approx(7)
+        # subtraction
+        c3 = a - 5
+        assert pytest.approx(c3 >> Distance.Meter) == pytest.approx(-3)
+        c4 = 5 - a
+        # interpret as 5 meters minus a
+        assert pytest.approx(c4 >> Distance.Meter) == pytest.approx(3)
+
+    def test_inplace_with_numbers(self):
+        a = Distance.Meter(2)
+        a += 5
+        assert pytest.approx(a >> Distance.Meter) == 7
+        a -= 2
+        assert pytest.approx(a >> Distance.Meter) == 5
+        a *= 2
+        assert pytest.approx(a >> Distance.Meter) == 10
+        a /= 2
+        assert pytest.approx(a >> Distance.Meter) == 5
+
+    def test_inplace_with_same_dimension(self):
+        a = Distance.Meter(2)
+        a += Distance.Meter(5)
+        assert pytest.approx(a >> Distance.Meter) == 7
+        a -= Distance.Meter(2)
+        assert pytest.approx(a >> Distance.Meter) == 5
+        a /= Distance.Meter(2)
+        assert pytest.approx(a) == 2.5
+
+    def test_temperature_rules(self):
+        tC = Temperature.Celsius(20)
+        # addition/subtraction in current unit
+        t2 = tC + 5
+        assert isinstance(t2, Temperature)
+        assert pytest.approx(t2 >> Temperature.Celsius) == 25
+        t3 = tC - 10
+        assert pytest.approx(t3 >> Temperature.Celsius) == 10
+        # absolute zero clamp
+        t4 = Temperature.Celsius(-270) - 10
+        assert pytest.approx(t4 >> Temperature.Celsius) == -273.15
+        # no multiplication or division
+        with pytest.raises(TypeError):
+            _ = tC * 2
+        with pytest.raises(TypeError):
+            _ = 2 * tC
+        with pytest.raises(TypeError):
+            _ = tC / 2
+        with pytest.raises(TypeError):
+            _ = 2 / tC
+
+
 class TestIterator:
 
     @pytest.mark.parametrize(
@@ -317,8 +420,8 @@ class TestIterator:
 
     def test_counter_non_numeric_input(self):
         with pytest.raises(TypeError): # Or ValueError, depending on implementation
-            list(Unit.Meter.counter("a", 1, 10))
+            list(Unit.Meter.counter("a", 1, 10))  # type: ignore
 
     def test_iterator_non_numeric_input(self):
         with pytest.raises(TypeError): # Or ValueError
-            list(Unit.Meter.iterator([1, "b", 3]))
+            list(Unit.Meter.iterator([1, "b", 3]))  # type: ignore

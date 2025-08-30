@@ -1,22 +1,60 @@
-"""Classes to define zeroing or current environmental conditions"""
+"""Environmental and firing condition primitives used by ballistic engines.
+
+What this module provides
+- Atmo: Atmosphere model (actual or ICAO) with density ratio and Mach (speed of sound)
+    calculations. Inputs are units-aware and can be provided as raw numbers or Unit-wrapped
+    values; conversions are handled via PreferredUnits. Supports humidity and altitude
+    lapse-rate formulas and exposes helpers for standard temperature/pressure.
+- Vacuum: An Atmo subclass that models a vacuum (zero pressure/density) for dragless
+    trajectories and benchmarks.
+- Wind: Piecewise-constant wind segments described by speed, direction-from, and
+    distance limit, with a 3D vector representation used by integrators.
+- Shot: A container aggregating ammo, weapon, angles (look/relative/cant), atmosphere,
+    and winds; computes derived barrel_elevation and barrel_azimuth used by engines.
+- ShotProps: A dataclass translating a Shot into engine-ready scalars in internal units
+    (feet/seconds/grains), including precomputed drag curves and trigonometric terms
+    for efficient numeric integration.
+
+Design notes
+- Units: All public constructors accept either raw numbers or Unit instances; inputs
+    are coerced to PreferredUnits to keep APIs ergonomic and strict. Use the Unit helpers
+    (e.g., Unit.Foot, Unit.hPa, Unit.Celsius, Unit.FPS) for clarity in examples.
+- Atmosphere: Use Atmo.icao(...) for standard atmosphere at an altitude; humidity is relative
+    (0-100%). Changing temperature/pressure/humidity updates density_ratio and Mach.
+- Wind.direction_from: 0° is from behind the shooter; 90° is from the shooter's left.
+- Shot vs ShotProps: End users typically work with Shot objects; engines construct ShotProps
+    internally to avoid per-step unit conversions and repeated lookups. HitResult objects
+    include the ShotProps instance used to calculate a trajectory.
+
+Quick examples
+>>> # Standard atmosphere at sea level:
+>>> atmo = Atmo.icao()
+>>> # Crosswind from left to right at 10 fps, in effect over the entire trajectory:
+>>> breeze = Wind(velocity=Unit.FPS(10), direction_from=Unit.Degree(90))
+
+See also
+- Engines consuming these types: py_ballisticcalc.engines.*
+- Units and conversions: py_ballisticcalc.unit
+"""
 from __future__ import annotations
 
 import math
 import warnings
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
-from typing_extensions import List, Optional, Sequence, Tuple, Union
+from typing_extensions import List, NamedTuple, Optional, Sequence, Tuple, Union
 
-from py_ballisticcalc.constants import cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric, \
-    cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric, \
-    cLapseRateMetric, cStandardTemperatureC, cStandardHumidity, cSpeedOfSoundImperial, cDegreesFtoR, \
-    cSpeedOfSoundMetric, cMaxWindDistanceFeet
-# from py_ballisticcalc.constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from py_ballisticcalc.constants import (cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric,
+    cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric,
+    cLapseRateMetric, cStandardTemperatureC, cStandardHumidity, cSpeedOfSoundImperial, cDegreesFtoR,
+    cSpeedOfSoundMetric, cMaxWindDistanceFeet)
+from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.munition import Weapon, Ammo
-from py_ballisticcalc.unit import Distance, Velocity, Temperature, Pressure, Angular, PreferredUnits
+from py_ballisticcalc.trajectory_data import TrajFlag
+from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Pressure, Temperature, Velocity, Weight
 from py_ballisticcalc.vector import Vector
 
-__all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot')
+__all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot', 'ShotProps')
 
 
 class Atmo:  # pylint: disable=too-many-instance-attributes
@@ -90,7 +128,6 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                 Used when Ammo.use_powder_sensitivity is True
 
         Example:
-            This is how you can create an Atmo
             ```python
             from py_ballisticcalc import Atmo
             atmo = Atmo(
@@ -563,8 +600,7 @@ class Shot:
 
     @winds.setter
     def winds(self, winds: Optional[Sequence[Wind]]):
-        """
-        Property setter.  Ensures .winds is sorted by until_distance.
+        """Property setter.  Ensures .winds is sorted by until_distance.
 
         Args:
             winds: list of the winds for the shot
@@ -573,8 +609,7 @@ class Shot:
 
     @property
     def barrel_elevation(self) -> Angular:
-        """
-        Total barrel elevation in vertical plane from horizontal
+        """Total barrel elevation (in vertical plane) from horizontal
             = look_angle + cos(cant_angle) * zero_elevation + relative_angle
 
         Returns:
@@ -587,9 +622,8 @@ class Shot:
 
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
-        """
-        Setter for barrel_elevation.  Sets the relative_angle to achieve the desired elevation.
-        Note: This does not change the weapon.zero_elevation.
+        """Setter for barrel_elevation.  Sets the relative_angle to achieve the desired elevation.
+            Note: This does not change the weapon.zero_elevation.
 
         Args:
             value: Desired barrel elevation in vertical plane from horizontal
@@ -599,8 +633,7 @@ class Shot:
 
     @property
     def barrel_azimuth(self) -> Angular:
-        """
-        Horizontal angle of barrel relative to sight line
+        """Horizontal angle of barrel relative to sight line
 
         Returns:
             Horizontal angle of barrel relative to sight line
@@ -616,3 +649,285 @@ class Shot:
     @slant_angle.setter
     def slant_angle(self, value: Angular) -> None:
         self.look_angle = value
+
+
+class CurvePoint(NamedTuple):
+    """Coefficients for quadratic curve fitting.
+    
+    Attributes:
+        a: Quadratic coefficient (x² term) in the equation y = ax² + bx + c.
+        b: Linear coefficient (x term) in the equation y = ax² + bx + c.
+        c: Constant coefficient (constant term) in the equation y = ax² + bx + c.
+    """
+    a: float
+    b: float
+    c: float
+
+@dataclass
+class ShotProps:
+    """Shot configuration and parameters for ballistic trajectory calculations.
+    
+    Contains all shot-specific data converted to internal units for high-performance
+    ballistic calculations. This class serves as the computational interface between
+    user-friendly Shot objects and the numerical integration engines.
+    
+    The class pre-computes expensive calculations (ballistic coefficient curves,
+    atmospheric data, projectile properties) and stores them in optimized formats
+    for repeated use during trajectory integration. All values are converted to
+    internal units (feet, seconds, grains) for computational efficiency.
+        
+    Examples:
+        Create ShotProps from Shot object:
+        
+        ```python
+        from py_ballisticcalc import Shot, ShotProps
+        
+        # Create shot configuration
+        shot = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
+
+        # Convert to ShotProps
+        shot_props = ShotProps.from_shot(shot)
+        
+        # Access pre-computed values
+        print(f"Stability coefficient: {shot_props.stability_coefficient}")
+
+        # Get drag coefficient at specific Mach number
+        drag = shot_props.drag_by_mach(1.5)
+        
+        # Calculate spin drift at flight time
+        time = 1.2  # seconds
+        drift = shot_props.spin_drift(time)  # inches
+        
+        # Get atmospheric conditions at altitude
+        altitude = shot_props.alt0_ft + 100  # 100 feet above initial altitude
+        density_ratio, mach_fps = shot_props.get_density_and_mach_for_altitude(altitude)
+        ```
+        
+    Computational Optimizations:
+        - Drag coefficient curves pre-computed for fast interpolation
+        - Trigonometric values (cant_cosine, cant_sine) pre-calculated
+        - Atmospheric parameters cached for repeated altitude lookups
+        - Miller stability coefficient computed once during initialization
+        
+    Note:
+        This class is designed for internal use by ballistic calculation engines.
+        User code should typically work with Shot objects and let the Calculator
+        handle the conversion to ShotProps automatically.
+        
+        The original Shot object is retained for reference, but modifications
+        to it after ShotProps creation will not affect the stored calculations.
+        Create a new ShotProps instance if Shot parameters change.
+
+    TODO: The Shot member object should either be a copy or immutable so that subsequent changes to its
+          properties do not invalidate the calculations and data associated with this ShotProps instance.
+    """
+    shot: Shot  # Reference to the original Shot object
+    bc: float  # Ballistic coefficient
+    curve: List[CurvePoint]  # Pre-computed drag curve points
+    mach_list: List[float]  # List of Mach numbers for interpolation
+
+    look_angle_rad: float  # Slant angle in radians
+    twist_inch: float  # Twist rate of barrel rifling, in inches of length to make one full rotation
+    length_inch: float  # Length of the bullet in inches
+    diameter_inch: float  # Diameter of the bullet in inches
+    weight_grains: float  # Weight of the bullet in grains
+    barrel_elevation_rad: float  # Barrel elevation angle in radians
+    barrel_azimuth_rad: float  # Barrel azimuth angle in radians
+    sight_height_ft: float  # Height of the sight above the bore in feet
+    cant_cosine: float  # Cosine of the cant angle
+    cant_sine: float  # Sine of the cant angle
+    alt0_ft: float  # Initial altitude in feet
+    muzzle_velocity_fps: float  # Muzzle velocity in feet per second
+    stability_coefficient: float = field(init=False)  # Miller stability coefficient
+    calc_step: float = field(init=False)  # Calculation step size
+    filter_flags: Union[TrajFlag, int] = field(init=False)  # Flags for special ballistic trajectory points
+
+    def __post_init__(self):
+        self.stability_coefficient = self._calc_stability_coefficient()
+
+    @property
+    def winds(self) -> Sequence[Wind]:
+        return self.shot.winds
+
+    @property
+    def look_angle(self) -> Angular:
+        return Angular.Radian(self.look_angle_rad)
+
+    @classmethod
+    def from_shot(cls, shot: Shot) -> ShotProps:
+        """Initializes a ShotProps instance from a Shot instance."""
+        return cls(
+            shot=shot,
+            bc=shot.ammo.dm.BC,
+            curve=cls.calculate_curve(shot.ammo.dm.drag_table),
+            mach_list=cls._get_only_mach_data(shot.ammo.dm.drag_table),
+            look_angle_rad=shot.look_angle >> Angular.Radian,
+            twist_inch=shot.weapon.twist >> Distance.Inch,
+            length_inch=shot.ammo.dm.length >> Distance.Inch,
+            diameter_inch=shot.ammo.dm.diameter >> Distance.Inch,
+            weight_grains=shot.ammo.dm.weight >> Weight.Grain,
+            barrel_elevation_rad=shot.barrel_elevation >> Angular.Radian,
+            barrel_azimuth_rad=shot.barrel_azimuth >> Angular.Radian,
+            sight_height_ft=shot.weapon.sight_height >> Distance.Foot,
+            cant_cosine=math.cos(shot.cant_angle >> Angular.Radian),
+            cant_sine=math.sin(shot.cant_angle >> Angular.Radian),
+            alt0_ft=shot.atmo.altitude >> Distance.Foot,
+            muzzle_velocity_fps=shot.ammo.get_velocity_for_temp(shot.atmo.powder_temp) >> Velocity.FPS,
+        )
+
+    def get_density_and_mach_for_altitude(self, drop: float) -> Tuple[float, float]:
+        """Gets the air density and Mach number for a given altitude.
+
+        Args:
+            drop: The change in feet from the initial altitude.
+
+        Returns:
+            A tuple containing the air density (in lb/ft³) and Mach number at the specified altitude.
+        """
+        return self.shot.atmo.get_density_and_mach_for_altitude(self.alt0_ft + drop)
+
+    def drag_by_mach(self, mach: float) -> float:
+        """Calculates a standard drag factor (SDF) for the given Mach number:
+            Drag force = V^2 * AirDensity * C_d * S / 2m
+                       = V^2 * density_ratio * SDF
+        Where:
+            - density_ratio = LocalAirDensity / StandardDensity = rho / rho_0
+            - StandardDensity of Air = rho_0 = 0.076474 lb/ft^3
+            - S is cross-section = d^2 pi/4, where d is bullet diameter in inches
+            - m is bullet mass in pounds
+            - bc contains m/d^2 in units lb/in^2, which is multiplied by 144 to convert to lb/ft^2
+        Thus:
+            - The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
+
+        Args:
+            mach: The Mach number.
+
+        Returns:
+            The standard drag factor at the given Mach number.
+        """
+        # cd = calculate_by_curve(self._table_data, self._curve, mach)
+        # use calculation over list[double] instead of list[DragDataPoint]
+        cd = self._calculate_by_curve_and_mach_list(self.mach_list, self.curve, mach)
+        return cd * 2.08551e-04 / self.bc
+
+    def spin_drift(self, time) -> float:
+        """Litz spin-drift approximation
+
+        Args:
+            time: Time of flight
+
+        Returns:
+            float: Windage due to spin drift, in inches
+        """
+        if (self.stability_coefficient != 0) and (self.twist_inch != 0):
+            sign = 1 if self.twist_inch > 0 else -1
+            return sign * (1.25 * (self.stability_coefficient + 1.2)
+                           * math.pow(time, 1.83)) / 12
+        return 0
+
+    def _calc_stability_coefficient(self) -> float:
+        """Calculates the Miller stability coefficient.
+
+        Returns:
+            float: The Miller stability coefficient.
+        """
+        if self.twist_inch and self.length_inch and self.diameter_inch and self.shot.atmo.pressure.raw_value:
+            twist_rate = math.fabs(self.twist_inch) / self.diameter_inch
+            length = self.length_inch / self.diameter_inch
+            # Miller stability formula
+            sd = 30 * self.weight_grains / (
+                    math.pow(twist_rate, 2) * math.pow(self.diameter_inch, 3) * length * (1 + math.pow(length, 2))
+            )
+            # Velocity correction factor
+            fv = math.pow(self.muzzle_velocity_fps / 2800, 1.0 / 3.0)
+            # Atmospheric correction
+            ft = self.shot.atmo.temperature >> Temperature.Fahrenheit
+            pt = self.shot.atmo.pressure >> Pressure.InHg
+            ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
+            return sd * fv * ftp
+        return 0
+
+    @staticmethod
+    def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
+        """Piecewise quadratic interpolation of drag curve
+
+        Args:
+            data_points: List[{Mach, CD}] data_points in ascending Mach order
+
+        Returns:
+            List[CurvePoints] to interpolate drag coefficient
+        """
+        rate = (data_points[1].CD - data_points[0].CD) / (data_points[1].Mach - data_points[0].Mach)
+        curve = [CurvePoint(0, rate, data_points[0].CD - data_points[0].Mach * rate)]
+        len_data_points = int(len(data_points))
+        len_data_range = len_data_points - 1
+
+        for i in range(1, len_data_range):
+            x1 = data_points[i - 1].Mach
+            x2 = data_points[i].Mach
+            x3 = data_points[i + 1].Mach
+            y1 = data_points[i - 1].CD
+            y2 = data_points[i].CD
+            y3 = data_points[i + 1].CD
+            a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
+                (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
+            b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
+            c = y1 - (a * x1 * x1 + b * x1)
+            curve_point = CurvePoint(a, b, c)
+            curve.append(curve_point)
+
+        num_points = len_data_points
+        rate = (data_points[num_points - 1].CD - data_points[num_points - 2].CD) / \
+            (data_points[num_points - 1].Mach - data_points[num_points - 2].Mach)
+        curve_point = CurvePoint(
+            0, rate, data_points[num_points - 1].CD - data_points[num_points - 2].Mach * rate
+        )
+        curve.append(curve_point)
+        return curve
+
+    @staticmethod
+    def _get_only_mach_data(data: List[DragDataPoint]) -> List[float]:
+        """Extracts Mach values from a list of DragDataPoint objects.
+
+        Args:
+            data: A list of DragDataPoint objects.
+
+        Returns:
+            A list containing only the Mach values from the input data.
+        """
+        return [dp.Mach for dp in data]
+
+    @staticmethod
+    def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurvePoint], mach: float) -> float:
+        """Calculates a value based on a piecewise quadratic curve and a list of Mach values.
+
+        This function performs a binary search on the `mach_list` to find the segment
+        of the `curve` relevant to the input `mach` number and then interpolates
+        the value using the quadratic coefficients of that curve segment.
+
+        Args:
+            mach_list: A sorted list of Mach values corresponding to the `curve` points.
+            curve: A list of CurvePoint objects, where each object
+                contains quadratic coefficients (a, b, c) for a Mach number segment.
+            mach: The Mach number at which to calculate the value.
+
+        Returns:
+            The calculated value based on the interpolated curve at the given Mach number.
+        """
+        num_points = len(curve)
+        mlo = 0
+        mhi = num_points - 2
+
+        while mhi - mlo > 1:
+            mid = (mhi + mlo) // 2
+            if mach_list[mid] < mach:
+                mlo = mid
+            else:
+                mhi = mid
+
+        if mach_list[mhi] - mach > mach - mach_list[mlo]:
+            m = mlo
+        else:
+            m = mhi
+        curve_m = curve[m]
+        return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
