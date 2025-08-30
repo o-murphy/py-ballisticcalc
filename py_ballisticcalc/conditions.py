@@ -173,6 +173,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     def update_density_ratio(self) -> None:
         """Updates the density ratio based on current conditions."""
+        # self.humidity is stored as a fraction [0..1]; calculate_air_density accepts fraction or percent.
         self._density_ratio = Atmo.calculate_air_density(self._t0, self._p0, self.humidity) / cStandardDensityMetric
 
     @property
@@ -330,8 +331,9 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             Mach 1 in fps for given temperature
         """
         if fahrenheit < -cDegreesFtoR:
+            bad_temp = fahrenheit
             fahrenheit = cLowestTempF
-            warnings.warn(f"Invalid temperature: {fahrenheit}°F. Adjusted to ({cLowestTempF}°F).", RuntimeWarning)
+            warnings.warn(f"Invalid temperature: {bad_temp}°F. Adjusted to ({cLowestTempF}°F).", RuntimeWarning)
         return math.sqrt(fahrenheit + cDegreesFtoR) * cSpeedOfSoundImperial
 
     @staticmethod
@@ -363,13 +365,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         return math.sqrt(kelvin) * cSpeedOfSoundMetric
 
     @staticmethod
-    def calculate_air_density(t: float, p: float, humidity: float) -> float:
+    def calculate_air_density(t: float, p_hpa: float, humidity: float) -> float:
         """Calculate air density from temperature, pressure, and humidity.
         
         Args:
             t: Temperature in degrees Celsius.
-            p: Pressure in hPa.
-            humidity: The relative humidity as a fraction of max [0%-100%]
+            p_hpa: Pressure in hPa (hectopascals). Internally converted to Pa.
+            humidity: Relative humidity. Accepts either fraction [0..1] or percent [0..100].
 
         Returns:
             Air density in kg/m³.
@@ -411,22 +413,29 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                 + (p / T) ** 2 * (d + e * x_v ** 2)
             return Z
 
-        # Temperature in Kelvin
-        T_K = t + cDegreesCtoK
+        # Normalize humidity to fraction [0..1]
+        rh = float(humidity)
+        rh_frac = rh / 100.0 if rh > 1.0 else rh
+        rh_frac = max(0.0, min(1.0, rh_frac))
+
+        # Convert inputs for CIPM equations
+        T_K = t + cDegreesCtoK           # Kelvin
+        p = float(p_hpa) * 100.0         # hPa -> Pa
 
         # Calculation of saturated vapor pressure and enhancement factor
-        p_sv = saturation_vapor_pressure(T_K)
-        f = enhancement_factor(p, t)
+        p_sv = saturation_vapor_pressure(T_K)  # Pa (saturated vapor pressure)
+        f = enhancement_factor(p, t)          # Enhancement factor (p in Pa, t in °C)
 
-        # Calculation of partial pressure and mole fraction of water vapor
-        p_v = humidity / 100 * f * p_sv
-        x_v = p_v / p
+        # Partial pressure of water vapor and mole fraction
+        p_v = rh_frac * f * p_sv               # Pa
+        x_v = p_v / p                          # Mole fraction of water vapor
 
-        # Calculation of compressibility factor
+        # Calculation of compressibility factor (strict CIPM uses Pa)
         Z = compressibility_factor(p, T_K, x_v)
 
-        density = (p * M_a) / (Z * R * T_K) * (1 - x_v * (1 - M_v / M_a))
-        return 100 * density
+        # Density (kg/m^3) using moist air composition and compressibility factor
+        density = (p * M_a) / (Z * R * T_K) * (1.0 - x_v * (1.0 - M_v / M_a))
+        return density
 
 
 class Vacuum(Atmo):

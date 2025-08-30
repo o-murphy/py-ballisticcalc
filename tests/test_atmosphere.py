@@ -23,7 +23,7 @@ class TestAtmosphere:
         assert pytest.approx(self.highICAO.density_ratio, abs=1e-3) == 0.7387
         # Ref https://www.engineeringtoolbox.com/international-standard-atmosphere-d_985.html
         assert pytest.approx(self.highISA.pressure >> Pressure.hPa, abs=1e-0) == 899
-        assert pytest.approx(self.highISA.density_ratio, abs=1e-4) == 0.9075
+        assert pytest.approx(self.highISA.density_ratio, abs=1e-4) == 0.9078658
 
     def test_mach(self):
         # Ref https://www.omnicalculator.com/physics/speed-of-sound
@@ -54,8 +54,8 @@ class TestAtmosphere:
             assert t > -273.15
 
     def test_density(self):
-        assert pytest.approx(Atmo.calculate_air_density(20, 1013, 0), abs=1e-4) == 1.20383
-        assert pytest.approx(Atmo.calculate_air_density(20, 1013, 1), abs=1e-4) == 1.19332
+        assert pytest.approx(Atmo.calculate_air_density(20, 1013, 0), abs=1e-4) == 1.20426
+        assert pytest.approx(Atmo.calculate_air_density(20, 1013, 1), abs=1e-4) == 1.1937899
 
     def test_changes(self):
         # Increasing altitude should decrease temperature, pressure, air density, and mach 1 speed
