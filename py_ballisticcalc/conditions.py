@@ -164,7 +164,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     @humidity.setter
     def humidity(self, value: float) -> None:
         if value < 0 or value > 100:
-            raise ValueError("Humidity must be between 0% and 100%.")
+            raise ValueError(r"Humidity must be between 0% and 100%.")
         if value > 1:
             value = value / 100.0  # Convert to percentage terms
         self._humidity = value
@@ -173,7 +173,6 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     def update_density_ratio(self) -> None:
         """Updates the density ratio based on current conditions."""
-        # self.humidity is stored as a fraction [0..1]; calculate_air_density accepts fraction or percent.
         self._density_ratio = Atmo.calculate_air_density(self._t0, self._p0, self.humidity) / cStandardDensityMetric
 
     @property
@@ -424,13 +423,13 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
         # Calculation of saturated vapor pressure and enhancement factor
         p_sv = saturation_vapor_pressure(T_K)  # Pa (saturated vapor pressure)
-        f = enhancement_factor(p, t)          # Enhancement factor (p in Pa, t in °C)
+        f = enhancement_factor(p, t)           # Enhancement factor (p in Pa, t in °C)
 
         # Partial pressure of water vapor and mole fraction
         p_v = rh_frac * f * p_sv               # Pa
         x_v = p_v / p                          # Mole fraction of water vapor
 
-        # Calculation of compressibility factor (strict CIPM uses Pa)
+        # Calculation of compressibility factor
         Z = compressibility_factor(p, T_K, x_v)
 
         # Density (kg/m^3) using moist air composition and compressibility factor

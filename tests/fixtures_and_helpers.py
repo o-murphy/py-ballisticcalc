@@ -70,6 +70,6 @@ def create_0_308_caliber_shot():
     return Shot(ammo=Ammo(dm, mv=Velocity.MPS(900)))
 
 def shot_with_relative_angle_in_degrees(angle_in_degrees: float):
-    shot = create_23_mm_shot()
+    shot = create_5_56_mm_shot()
     shot.relative_angle = Angular.Degree(angle_in_degrees)
     return shot

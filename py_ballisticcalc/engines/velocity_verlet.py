@@ -57,18 +57,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         and conserves the total energy of the system.
     
     Attributes:
-        DEFAULT_TIME_STEP: Default time step multiplier (0.0005).
+        DEFAULT_TIME_STEP: Default time step multiplier.
         integration_step_count: Number of integration steps performed.
-        
-    Class Constants:
-        DEFAULT_TIME_STEP: Base time step multiplier for Verlet integration.
-                          Small value ensures stability and accuracy.
-                          
-    Mathematical Properties:
-        - Symplectic: Preserves phase space volume (Liouville's theorem)
-        - Time-reversible: Can recover original state by reversing time
-        - Energy-conserving: Total energy fluctuates around constant value
-        - Second-order: Local truncation error is O(h³)
         
     See Also:
         py_ballisticcalc.engines.rk4.RK4IntegrationEngine: Higher accuracy alternative
@@ -86,8 +76,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
                    
         Example:
             >>> config = BaseEngineConfigDict(
-            ...     cStepMultiplier=0.8,
-            ...     cMinimumVelocity=50.0
+            ...     cStepMultiplier=0.5,
+            ...     cMinimumVelocity=10.0
             ... )
             >>> engine = VelocityVerletIntegrationEngine(config)
         
@@ -108,10 +98,10 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             Effective step size for Velocity Verlet integration.
             
         Formula:
-            step_size = base_step_multiplier × DEFAULT_TIME_STEP (0.0005)
+            step_size = base_step_multiplier × DEFAULT_TIME_STEP
             
         Note:
-            The small DEFAULT_TIME_STEP value (0.0005) is chosen to ensure
+            The small DEFAULT_TIME_STEP value is chosen to ensure
             that this engine can pass all unit tests, despite most of them
             being highly dissipative rather than conservative of energy.
         """

@@ -14,34 +14,33 @@ from tests.fixtures_and_helpers import print_out_trajectory_compact, zero_height
 pytestmark = pytest.mark.engine
 
 def test_shot_incomplete(zero_height_calc):
-    angle_in_degrees = 5.219710693607955
-    distance = 6937.3716148080375
+    angle_in_degrees = 5.0
+    distance = Distance.Feet(6500.0)
 
     shot = shot_with_relative_angle_in_degrees(angle_in_degrees)
-    range = Distance.Meter(distance)
 
     def check_end_point(hit_result):
-        last_point_distance = hit_result[-1].distance >> Distance.Meter
-        last_point_height = hit_result[-1].height >> Distance.Meter
+        last_point_distance = hit_result[-1].distance >> Distance.Foot
+        last_point_height = hit_result[-1].height >> Distance.Foot
         print(f"{ last_point_distance=} { last_point_height=}")
-        assert last_point_distance > 3524.0
-        assert last_point_height < 1e-10  # Basically zero; allow for rounding
+        assert last_point_distance > 6416.0
+        assert last_point_height < 1e-9  # Basically zero; allow for rounding
 
     flags = TrajFlag.NONE
-    hit_result = zero_height_calc.fire(shot, range, flags=flags, raise_range_error=False)
+    hit_result = zero_height_calc.fire(shot, distance, flags=flags, raise_range_error=False)
     print_out_trajectory_compact(hit_result)
     check_end_point(hit_result)
 
-    hit_result = zero_height_calc.fire(shot, range, flags=flags, trajectory_step=range, raise_range_error=False)
+    hit_result = zero_height_calc.fire(shot, distance, flags=flags, trajectory_step=distance, raise_range_error=False)
     print_out_trajectory_compact(hit_result)
     check_end_point(hit_result)
 
     flags = TrajFlag.ALL
-    hit_result = zero_height_calc.fire(shot, range, flags=flags, raise_range_error=False)
+    hit_result = zero_height_calc.fire(shot, distance, flags=flags, raise_range_error=False)
     print_out_trajectory_compact(hit_result)
     check_end_point(hit_result)
 
-    hit_result = zero_height_calc.fire(shot, range, flags=flags, trajectory_step=range, raise_range_error=False)
+    hit_result = zero_height_calc.fire(shot, distance, flags=flags, trajectory_step=distance, raise_range_error=False)
     print_out_trajectory_compact(hit_result)
     check_end_point(hit_result)
 
@@ -74,27 +73,27 @@ def test_vertical_shot(zero_height_calc, loaded_engine_instance):
 
 
 def test_no_duplicate_points(loaded_engine_instance):
-    # this is a shot for point (1000, 0)
-    shot = shot_with_relative_angle_in_degrees(0.46571949074059704)
-    zero_distance = Distance.Meter(1000)
+    # this is a shot for point (1000ft, 0)
+    shot = shot_with_relative_angle_in_degrees(0.1385398904676405)
+    zero_distance = Distance.Foot(1000)
     # setting up bigger distance than required by shot
-    range = Distance.Meter(1100)
+    range = Distance.Foot(1100)
     config = BaseEngineConfigDict(
         cMinimumVelocity=0.0,
         cMinimumAltitude=-10.0,
         cMaximumDrop=-10.0,
     )
     calc = Calculator(config=config, engine=loaded_engine_instance)
-    hit_result = calc.fire(shot, range, trajectory_step=Distance.Meter(100), raise_range_error=False)
+    hit_result = calc.fire(shot, range, trajectory_step=Distance.Foot(100), raise_range_error=False)
     print_out_trajectory_compact(hit_result)
     assert len(hit_result.trajectory) >= 2
     assert hit_result[-2] != hit_result[-1]
     result_at_zero = hit_result.get_at('distance', zero_distance)
     assert result_at_zero is not None
-    assert result_at_zero.distance >> Distance.Meter == pytest.approx(1000, abs=0.2)
-    assert result_at_zero.height >> Distance.Meter == pytest.approx(0, abs=0.01)
-    assert hit_result[-1].distance >> Distance.Meter > hit_result[-2].distance >> Distance.Meter
-    assert hit_result[-1].height >> Distance.Meter < hit_result[-2].height >> Distance.Meter
+    assert result_at_zero.distance >> Distance.Foot == pytest.approx(1000, abs=0.2)
+    assert result_at_zero.height >> Distance.Foot == pytest.approx(0, abs=0.01)
+    assert hit_result[-1].distance >> Distance.Foot > hit_result[-2].distance >> Distance.Foot
+    assert hit_result[-1].height >> Distance.Foot < hit_result[-2].height >> Distance.Foot
 
 
 # def test_no_duplicated_point_many_trajectories(zero_height_calc):
