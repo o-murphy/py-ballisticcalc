@@ -85,15 +85,10 @@ class Vector(NamedTuple):
     z: float
 
     def magnitude(self) -> float:
-        """Calculate the Euclidean magnitude (length) of the vector.
-        
-        Computes the magnitude using the optimized math.hypot() function which
-        provides better numerical accuracy and avoids overflow/underflow issues
-        compared to naive sqrt(x²+y²+z²) implementation.
+        """Calculate the Euclidean norm (length) of the vector.
         
         Returns:
             The magnitude (length) of the vector as a non-negative float.
-            Returns 0.0 for zero vectors.
             
         Examples:
             ```python
@@ -103,7 +98,7 @@ class Vector(NamedTuple):
             
             # Velocity magnitude (speed)
             velocity = Vector(800.0, 100.0, 50.0)
-            speed = velocity.magnitude()  # ~806.5 m/s
+            speed = velocity.magnitude()  # ~806.5
             
             # Distance calculation
             position = Vector(100.0, 50.0, 25.0)
@@ -454,33 +449,6 @@ class Vector(NamedTuple):
             initial_vel = Vector(800.0, 0.0, 0.0)
             velocity_change = final_vel - initial_vel  # Vector(-50.0, -5.0, 2.0)
             ```
-        """
-        return self.subtract(other)
-
-    def __rsub__(self, other: Vector) -> Vector:  # type: ignore[override]
-        """Right subtraction operator for vector subtraction.
-        
-        Enables vector subtraction when this vector is on the right side of
-        the - operator. Note that vector subtraction is NOT commutative,
-        so this performs other - self, not self - other.
-        
-        Args:
-            other: The Vector instance to subtract this vector from.
-            
-        Returns:
-            New Vector instance representing the difference (other - self).
-            
-        Examples:
-            ```python
-            v1 = Vector(10.0, 5.0, 0.0)
-            v2 = Vector(3.0, 2.0, 1.0)
-            # When using v1 - v2, if v2.__rsub__ is called:
-            result = v1 - v2  # Actually calls v2.__rsub__(v1) = v1 - v2
-            ```
-            
-        Note:
-            The implementation delegates to subtract() which computes self - other.
-            This may need review for correct right-subtraction semantics.
         """
         return self.subtract(other)
 

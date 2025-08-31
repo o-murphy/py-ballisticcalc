@@ -69,11 +69,7 @@ class TestVector:
         sum2 = v1.__iadd__(Vector(0.0, -1.0, 1.0))
         assert sum2 == Vector(1.0, 1.0, 4.0)
 
-        # __rsub__ and __isub__ paths
-        # Current implementation delegates to subtract(self, other) => self - other
-        # so __rsub__ behaves like regular __sub__ with swapped args not applied
-        diff1 = v1.__rsub__(Vector(0.0, 0.0, 0.0))
-        assert diff1 == Vector(1.0, 2.0, 3.0)
+        # __isub__ paths
         diff2 = v1.__isub__(Vector(1.0, 1.0, 1.0))
         assert diff2 == Vector(0.0, 1.0, 2.0)
 

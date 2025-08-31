@@ -42,6 +42,7 @@ class DragDataPoint:
         Mach: Velocity in Mach units (dimensionless)
         CD: Drag coefficient (dimensionless)
     """
+    
     Mach: float  # Velocity in Mach units
     CD: float  # Drag coefficient
 
@@ -321,6 +322,10 @@ def linear_interpolation(x: Union[List[float], Tuple[float]],
         - Uses binary search for efficient interval location
     """
     assert len(xp) == len(yp), "xp and yp lists must have same length"
+    # Validate xp strictly increasing to prevent zero-division and undefined intervals
+    for i in range(1, len(xp)):
+        if not (xp[i] > xp[i - 1]):
+            raise ValueError("xp must be strictly increasing with no duplicates")
 
     y = []
     for xi in x:
