@@ -65,6 +65,9 @@ class TestUnitsParser:
         assert _parse_unit(' Ft ') == Unit.Foot
         assert _parse_unit('  m / s ') == Unit.MPS
         assert _parse_unit('\tinHg\t') == Unit.InHg
+        # inches per 100 yards variants
+        assert _parse_unit('in/100yard') == Unit.InchesPer100Yd
+        assert _parse_unit('inper100yd') == Unit.InchesPer100Yd
 
     def test_parse_unit_pluralization_and_aliases(self):
         assert _parse_unit('yards') == Unit.Yard
@@ -102,7 +105,9 @@ class TestAngular:
         back_n_forth_pytest(3, u, self.unit_class)
 
     def test_angle_truncation(self):
-        assert pytest.approx(Angular(720, Angular.Degree).raw_value) == Angular(0, Angular.Degree).raw_value
+        # Angles should be normalized to the interval (-180, 180] degrees.
+        assert pytest.approx(Angular(540, Angular.Degree).raw_value) == Angular(180, Angular.Degree).raw_value
+        assert pytest.approx(Angular(-270, Angular.Degree).raw_value) == Angular(90, Angular.Degree).raw_value
 
 
 class TestDistance:
@@ -163,6 +168,17 @@ class TestTemperature:
     @pytest.mark.parametrize("u", unit_list, ids=lambda u: f"unit_{u.name}")
     def test_temperature(self, u):
         back_n_forth_pytest(3, u, self.unit_class)
+
+    def test_temperature_addition_clamps_absolute_zero(self):
+        t = Temperature.Kelvin(10)
+        t2 = t + (-1000)
+        assert (t2 >> Temperature.Kelvin) == pytest.approx(0.0)
+
+    def test_temperature_mul_div_raise(self):
+        with pytest.raises(TypeError):
+            _ = Temperature.Celsius(10) * 2
+        with pytest.raises(TypeError):
+            _ = Temperature.Celsius(10) / 2
 
 
 class TestVelocity:

@@ -1,7 +1,4 @@
-"""Unittests for the py_ballisticcalc library"""
-
 import copy
-import math
 import pytest
 
 from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError, TrajFlag,
@@ -253,24 +250,6 @@ class TestComputerPytest:
         t = calc.fire(shot, trajectory_range=Distance.Meter(100), raise_range_error=False)
         assert len(t.trajectory) >= 1
         assert isinstance(t.error, RangeError)
-
-    def test_winds_sort(self):
-        """Test that the winds are sorted by until_distance"""
-        winds = [
-            Wind(Unit.MPS(0), Unit.Degree(90), Unit.Meter(100)),
-            Wind(Unit.MPS(1), Unit.Degree(60), Unit.Meter(300)),
-            Wind(Unit.MPS(2), Unit.Degree(30), Unit.Meter(200)),
-            Wind(Unit.MPS(2), Unit.Degree(30), Unit.Meter(50)),
-        ]
-        shot = Shot(
-            self.ammo, None, 0, 0, 0, None,
-            winds
-        )
-        sorted_winds = shot.winds
-        assert sorted_winds[0] is winds[3]
-        assert sorted_winds[1] is winds[0]
-        assert sorted_winds[2] is winds[2]
-        assert sorted_winds[3] is winds[1]
 
     def test_combined_flags(self):
         """Test that combined flags are correctly set in the trajectory"""

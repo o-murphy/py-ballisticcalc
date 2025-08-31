@@ -37,6 +37,11 @@ class TestHitResult:
         assert mach is not None, "MACH flag not found in HitResult"
         assert pytest.approx(mach.distance >> Distance.Yard, abs=0.5) == 963.0, "MACH distance"
 
+    def test_get_at_unrequested_flag(self):
+        hr = self.calc.fire(self.shot, trajectory_range=Distance.Meter(100), flags=TrajFlag.RANGE)
+        with pytest.raises(AttributeError):
+            _ = hr.flag(TrajFlag.ZERO)
+
     def test_danger_space(self):
         # Danger space on downward trajectory
         danger_space = self.shot_result.danger_space(Distance.Yard(500), Distance.Meter(1.5))

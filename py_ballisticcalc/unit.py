@@ -506,7 +506,7 @@ UnitAliases: UnitAliasesType = {
     ('mil',): Unit.Mil,
     ('mrad',): Unit.MRad,
     ('thousandth', 'ths'): Unit.Thousandth,
-    ('inch/100yd', 'in/100yd', 'inch/100yd', 'in/100yard, inper100yd'): Unit.InchesPer100Yd,
+    ('inch/100yd', 'in/100yd', 'in/100yard', 'inper100yd'): Unit.InchesPer100Yd,
     ('centimeter/100m', 'cm/100m', 'cm/100meter', 'centimeter/100meter', 'cmper100m'): Unit.CmPer100m,
     ('hour', 'h'): Unit.OClock,
 
@@ -1001,11 +1001,11 @@ class Angular(GenericDimension):
     @override
     @classmethod
     def to_raw(cls, value: Number, units: Unit) -> Number:
-        """Avoid going in circles: Truncates to [0, 2π)."""
+        """Normalize angle to (-π, π]."""
         radians = super().to_raw(value, units)
-        if radians > 2. * pi:
-            radians = radians % (2. * pi)
-        return radians
+        # Normalize to [-π, π)
+        r = (radians + pi) % (2.0 * pi) - pi
+        return r if r > -pi else pi  # move -π to +π
 
     # Angular.* unit aliases
     Radian: Final[Unit] = Unit.Radian

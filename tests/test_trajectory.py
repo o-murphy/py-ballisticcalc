@@ -111,3 +111,20 @@ class TestTrajectory:
         assert len(data) == 11, "Trajectory Row Count"
         self.validate_one(data_point(data), distance, velocity, mach, energy, path, hold, windage, wind_adjustment,
                           time, ogv, adjustment_unit)
+
+
+class TestTrajFlagName:
+
+    def test_single_and_combined_flags(self):
+        assert TrajFlag.name(TrajFlag.NONE) == 'NONE'
+        assert TrajFlag.name(TrajFlag.ZERO_UP) == 'ZERO_UP'
+        assert TrajFlag.name(TrajFlag.ZERO_DOWN) == 'ZERO_DOWN'
+        assert TrajFlag.name(TrajFlag.ZERO) == 'ZERO'
+        combo = TrajFlag.ZERO | TrajFlag.APEX | TrajFlag.MACH
+        s = TrajFlag.name(combo)
+        # Ensure ZERO compresses up/down and includes others
+        assert 'ZERO' in s and 'APEX' in s and 'MACH' in s
+        assert 'ZERO_UP' not in s and 'ZERO_DOWN' not in s
+
+    def test_unknown_flag_returns_unknown(self):
+        assert TrajFlag.name(1 << 10) == 'UNKNOWN'
