@@ -108,16 +108,16 @@ class TestAtmosphere:
         atmo.humidity = 1.0
         t_humid = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=atmo), trajectory_range=check_distance,
                             trajectory_step=check_distance)
-        assert t_humid.get_at('distance', check_distance).time < baseline.time
+        assert t_humid.get_at('distance', check_distance, epsilon=1e-8).time < baseline.time
 
         # Increasing temperature reduces air density which decreases drag
         warm = Atmo(altitude=0, temperature=Temperature.Fahrenheit(120))
         t_warm = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=warm), trajectory_range=check_distance,
                            trajectory_step=check_distance)
-        assert t_warm.get_at('distance', check_distance).time < baseline.time
+        assert t_warm.get_at('distance', check_distance, epsilon=1e-8).time < baseline.time
 
         # Increasing altitude reduces air density which decreases drag
         high = Atmo(altitude=Distance.Foot(5000))  # simulate increased altitude
         t_high = calc.fire(Shot(weapon=weapon, ammo=ammo, atmo=high), trajectory_range=check_distance,
                            trajectory_step=check_distance)
-        assert t_high.get_at('distance', check_distance).time < baseline.time
+        assert t_high.get_at('distance', check_distance, epsilon=1e-8).time < baseline.time

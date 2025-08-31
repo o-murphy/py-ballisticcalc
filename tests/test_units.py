@@ -61,6 +61,29 @@ class TestUnitsParser:
         ret = _parse_unit("newton")
         assert ret == Unit.Newton
 
+    def test_parse_unit_mixed_case_and_whitespace(self):
+        assert _parse_unit(' Ft ') == Unit.Foot
+        assert _parse_unit('  m / s ') == Unit.MPS
+        assert _parse_unit('\tinHg\t') == Unit.InHg
+
+    def test_parse_unit_pluralization_and_aliases(self):
+        assert _parse_unit('yards') == Unit.Yard
+        assert _parse_unit('feet') == Unit.Foot
+
+    def test_parse_value_with_embedded_units_and_spaces(self):
+        ret = _parse_value('  12.5  ft / s  ', Unit.MPS)
+        assert ret.units == Unit.FPS  # parsing takes embedded alias; preferred only for plain numbers
+
+        ret2 = _parse_value('1000 psi', None)
+        assert ret2.units == Unit.PSI
+
+    def test_parse_value_invalid_alias_raises(self):
+        with pytest.raises(UnitAliasError):
+            _ = _parse_value('10 foobars', None)
+
+    def test_parse_unit_unknown_returns_none(self):
+        assert _parse_unit('nonesuch') is None
+
 
 class TestAngular:
     # Define unit_class and unit_list as class attributes

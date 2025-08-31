@@ -235,6 +235,7 @@ class Unit(IntEnum):
         >>> elevation = Unit.MOA(2.5)
         >>> windage = Unit.Mil(1.2)
     """
+    
     Radian = 0
     Degree = 1
     MOA = 2
@@ -292,24 +293,24 @@ class Unit(IntEnum):
 
     @property
     def key(self) -> str:
-        """Readable name of the unit of measure"""
+        """Readable name of the unit of measure."""
         return UnitPropsDict[self].name
 
     @property
     def accuracy(self) -> int:
-        """Default accuracy of the unit of measure"""
+        """Default accuracy of the unit of measure."""
         return UnitPropsDict[self].accuracy
 
     @property
     def symbol(self) -> str:
-        """Short symbol of the unit of measure"""
+        """Short symbol of the unit of measure."""
         return UnitPropsDict[self].symbol
 
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
     def __call__(self: Self, value: Union[Number, _GenericDimensionType]) -> _GenericDimensionType:
-        """Creates a new unit instance using dot syntax.
+        """Create a new unit instance using dot syntax.
 
         Args:
             value (Union[Number, _GenericDimensionType]): Numeric value of the unit
@@ -347,7 +348,7 @@ class Unit(IntEnum):
 
     def counter(self, start: Number, step: Number,
             end: Optional[Number] = None, include_end: bool = True) -> Generator[GenericDimension, None, None]:
-        """Generates a finite or infinite sequence of `GenericDimension` objects.
+        """Generate a finite or infinite sequence of `GenericDimension` objects.
 
         This function acts as a counter for measurements, yielding `GenericDimension`
         instances at specified intervals, defined by `start`, `step`, and `end`.
@@ -397,7 +398,7 @@ class Unit(IntEnum):
     def iterator(self, items: Sequence[Number], /, *,
                  sort: bool = False,
                  reverse: bool = False) -> Generator["GenericDimension[Any]", None, None]:
-        """Creates a sorted sequence of `GenericDimension` objects from raw numeric values.
+        """Create a sorted sequence of `GenericDimension` objects from raw numeric values.
 
         Args:
             self: The unit to apply to each numeric value (e.g., `Unit.Meter`, `Unit.FPS`).
@@ -433,6 +434,7 @@ class UnitProps(NamedTuple):
         >>> print(d << Distance.Kilometer)
         0.54864 kilometers
     """
+
     name: str
     accuracy: int
     symbol: str
@@ -616,6 +618,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
         >>> print(f"100m = {yards.unit_value:.1f} yards")
         100m = 109.4 yards
     """
+
     _value: Number
     _defined_units: Unit
     __slots__ = ('_value', '_defined_units')
@@ -992,13 +995,13 @@ class Angular(GenericDimension):
 
     @property
     def _rad(self):
-        """Shortcut for `>> Angular.Radian`"""
+        """Shortcut for `>> Angular.Radian`."""
         return self._value
 
     @override
     @classmethod
     def to_raw(cls, value: Number, units: Unit) -> Number:
-        """Avoid going in circles: Truncates to [0, 2π)"""
+        """Avoid going in circles: Truncates to [0, 2π)."""
         radians = super().to_raw(value, units)
         if radians > 2. * pi:
             radians = radians % (2. * pi)
@@ -1047,12 +1050,12 @@ class Distance(GenericDimension):
 
     @property
     def _inch(self) -> Number:
-        """Shortcut for `>> Distance.Inch`"""
+        """Shortcut for `>> Distance.Inch`."""
         return self._value
 
     @property
     def _feet(self) -> Number:
-        """Shortcut for `>> Distance.Foot`"""
+        """Shortcut for `>> Distance.Foot`."""
         return self._value / 12
 
     # Distance.* unit aliases
@@ -1100,7 +1103,7 @@ class Temperature(GenericDimension):
 
     @property
     def _F(self) -> Number:
-        """Shortcut for `>> Temperature.Fahrenheit`"""
+        """Shortcut for `>> Temperature.Fahrenheit`."""
         return self._value
 
     @override
@@ -1255,7 +1258,7 @@ class Time(GenericDimension):
 
     @property
     def _seconds(self) -> Number:
-        """Shortcut for `>> Time.Second`"""
+        """Shortcut for `>> Time.Second`."""
         return self._value
 
     # Time.* unit aliases
@@ -1280,7 +1283,7 @@ class Velocity(GenericDimension):
 
     @property
     def _fps(self) -> Number:
-        """Shortcut for `>> Velocity.FPS`"""
+        """Shortcut for `>> Velocity.FPS`."""
         return self._value * 3.2808399
 
     # Velocity.* unit aliases
@@ -1305,7 +1308,7 @@ class Weight(GenericDimension):
 
     @property
     def _grain(self) -> Number:
-        """Shortcut for `>> Weight.Grain`"""
+        """Shortcut for `>> Weight.Grain`."""
         return self._value
 
     # Weight.* unit aliases
@@ -1319,6 +1322,7 @@ class Weight(GenericDimension):
 
 class PreferredUnitsMeta(type):
     """Provide representation method for static dataclasses."""
+
     def __repr__(cls):
         return '\n'.join(f'{field} = {getattr(cls, field)!r}'
                          for field in getattr(cls, '__dataclass_fields__'))
@@ -1370,6 +1374,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
     Note:
         Changing preferred units affects all subsequent unit creation and display.
     """
+
     # Defaults
     angular: Unit = Unit.Degree
     distance: Unit = Unit.Yard
@@ -1501,15 +1506,25 @@ def _parse_unit(input_: str) -> Union[Unit, None, Any]:
         'FPS'
         >>> _parse_unit('oops')      # None
     """
-    input_ = input_.strip().lower()
+    # Normalize input: trim, lowercase, and remove internal whitespace
     if not isinstance(input_, str):
-        raise TypeError(f"type str expected for 'input_', got {type(input_)}")
+        raise TypeError(f"String expected, got {type(input_)=}, {input_=}")
+    input_ = input_.strip().lower()
+    input_ = re.sub(r"\s+", "", input_)
     if hasattr(PreferredUnits, input_):
         return getattr(PreferredUnits, input_)
     try:
         return Unit[input_]
     except KeyError:
-        return _find_unit_by_alias(input_, UnitAliases)
+        # Try direct alias match
+        if (unit := _find_unit_by_alias(input_, UnitAliases)) is not None:
+            return unit
+        # Simple pluralization fallback: yard(s), meter(s), knot(s), etc.
+        if input_.endswith('s'):
+            singular = input_[:-1]
+            if (unit := _find_unit_by_alias(singular, UnitAliases)) is not None:
+                return unit
+        return None
 
 
 def _parse_value(input_: Union[str, Number],

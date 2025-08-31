@@ -9,7 +9,7 @@ Core Components:
 
 Key Features:
     - Immutable trajectory data structures for thread safety
-    - Quadratic interpolation for smooth trajectory analysis
+    - Cubic interpolation for smooth trajectory analysis
     - Support for multiple coordinate systems and unit conversions
     - Integration with visualization libraries (matplotlib)
     - Zero-crossing detection and special point identification
@@ -35,7 +35,7 @@ Typical Usage:
     zero_data = hit_result.zeros()  # Zero crossings
     max_range_point = hit_result.get_at('distance', Distance.Meter(1000))
 
-    # Quadratic interpolation for specific point
+    # Cubic interpolation for specific point
     interpolated = TrajectoryData.interpolate('time', 1.5, point1, point2, point3)
     
     # Danger space analysis
@@ -128,6 +128,7 @@ class TrajFlag(int):
         apex = next((p for p in hit_result.trajectory if p.flag & TrajFlag.APEX), None)
         ```
     """
+
     NONE: Final[int] = 0
     ZERO_UP: Final[int] = 1
     ZERO_DOWN: Final[int] = 2
@@ -220,6 +221,7 @@ class BaseTrajData(NamedTuple):
         thousands of points over a trajectory. For detailed data with units and derived quantities,
         use TrajectoryData which can be constructed from BaseTrajData using from_base_data().
     """
+
     time: float  # Units: seconds
     position: Vector  # Units: feet
     velocity: Vector  # Units: fps
@@ -346,7 +348,7 @@ class TrajectoryData(NamedTuple):
     def formatted(self) -> Tuple[str, ...]:
         """
         Returns:
-            Tuple[str, ...]: Matrix of formatted strings for this point, in PreferredUnits.
+            Tuple of formatted strings for this point, in PreferredUnits.
         """
 
         def _fmt(v: GenericDimension, u: Unit) -> str:
@@ -375,7 +377,7 @@ class TrajectoryData(NamedTuple):
     def in_def_units(self) -> Tuple[float, ...]:
         """
         Returns:
-            Tuple[float, ...]: Matrix of floats of this point, in PreferredUnits.
+            Tuple of floats describing this point, in PreferredUnits.
         """
         return (
             self.time,
@@ -397,14 +399,8 @@ class TrajectoryData(NamedTuple):
         )
 
     @staticmethod
-    def from_base_data(props: ShotProps, data: BaseTrajData,
-                       flag: Union[TrajFlag, int] = TrajFlag.NONE) -> TrajectoryData:
-        """Creates a TrajectoryData object from BaseTrajData."""
-        return TrajectoryData.from_props(props, data.time, data.position, data.velocity, data.mach, flag)
-
-    @staticmethod
     def get_correction(distance: float, offset: float) -> float:
-        """Calculates the sight adjustment in radians.
+        """Calculate the sight adjustment in radians.
 
         Args:
             distance: The distance to the target in feet.
@@ -419,7 +415,7 @@ class TrajectoryData(NamedTuple):
 
     @staticmethod
     def calculate_energy(bullet_weight: float, velocity: float) -> float:
-        """Calculates the kinetic energy of a projectile.
+        """Calculate the kinetic energy of a projectile.
 
         Args:
             bullet_weight: Projectile weight in grains.
@@ -436,7 +432,7 @@ class TrajectoryData(NamedTuple):
 
     @staticmethod
     def calculate_ogw(bullet_weight: float, velocity: float) -> float:
-        """Calculates the optimal game weight for a projectile.
+        """Calculate the optimal game weight for a projectile.
 
         Args:
             bullet_weight: Bullet weight in grains (per common OGW formula).
@@ -483,13 +479,19 @@ class TrajectoryData(NamedTuple):
         return d
 
     @staticmethod
+    def from_base_data(props: ShotProps, data: BaseTrajData,
+                       flag: Union[TrajFlag, int] = TrajFlag.NONE) -> TrajectoryData:
+        """Create a TrajectoryData object from BaseTrajData."""
+        return TrajectoryData.from_props(props, data.time, data.position, data.velocity, data.mach, flag)
+
+    @staticmethod
     def from_props(props: ShotProps,
                     time: float,
                     range_vector: Vector,
                     velocity_vector: Vector,
                     mach: float,
                     flag: Union[TrajFlag, int] = TrajFlag.NONE) -> TrajectoryData:
-        """Creates a TrajectoryData object, which corresponds to one point in the ballistic trajectory."""
+        """Create a TrajectoryData object."""
         spin_drift = props.spin_drift(time)
         velocity = velocity_vector.magnitude()
         windage = range_vector.z + spin_drift
@@ -552,7 +554,7 @@ class TrajectoryData(NamedTuple):
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
 
         def get_key_val(td):
-            """Helper to get the raw value of the key attribute from a TrajectoryData point"""
+            """Helper to get the raw value of the key attribute from a TrajectoryData point."""
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, 'raw_value') else float(val)
 
@@ -609,6 +611,7 @@ class TrajectoryData(NamedTuple):
 
 class DangerSpace(NamedTuple):
     """Stores the danger space data for distance specified."""
+
     at_range: TrajectoryData  # TrajectoryData at the target range
     target_height: Distance  # Target height
     begin: TrajectoryData  # TrajectoryData at beginning of danger space
@@ -660,6 +663,7 @@ class HitResult:
     * Implement dense_output in cythonized engines to populate base_data
     * Use base_data for interpolation if present
     """
+
     props: ShotProps
     trajectory: list[TrajectoryData] = field(repr=False)
     base_data: Optional[list[BaseTrajData]] = field(repr=False)
@@ -675,64 +679,71 @@ class HitResult:
     def __getitem__(self, item):
         return self.trajectory[item]
 
-    def __check_extra__(self):
+    def _check_extra(self):
         if not self.extra:
             raise AttributeError(
                 f"{object.__repr__(self)} has no extra data. "
                 f"Use Calculator.fire(..., extra_data=True)"
             )
 
-    def __check_flag__(self, flag: Union[TrajFlag, int]):
+    def _check_flag(self, flag: Union[TrajFlag, int]):
         if not self.props.filter_flags & flag:
             flag_name = TrajFlag.name(flag)
             raise AttributeError(f"{flag_name} was not requested in trajectory. "
                                  f"Use Calculator.fire(..., flags=TrajFlag.{flag_name}) to include it.")
 
     def zeros(self) -> list[TrajectoryData]:
-        """
+        """Get all zero crossing points.
+
         Returns:
-            list[TrajectoryData]: Zero crossing points.
+            Zero crossing points.
 
         Raises:
             AttributeError: If extra_data was not requested.
             ArithmeticError: If zero crossing points are not found.
         """
-        self.__check_flag__(TrajFlag.ZERO)
+        self._check_flag(TrajFlag.ZERO)
         data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
         if len(data) < 1:
             raise ArithmeticError("Can't find zero crossing points")
         return data
 
     def flag(self, flag: Union[TrajFlag, int]) -> Optional[TrajectoryData]:
-        """
+        """Get first TrajectoryData row with the specified flag.
+
+        Args:
+            flag: The flag to search for.
+
         Returns:
-            TrajectoryData: First TrajectoryData row with the specified flag.
+            First TrajectoryData row with the specified flag.
 
         Raises:
             AttributeError: If flag was not requested.
         """
-        self.__check_flag__(flag)
+        self._check_flag(flag)
         for row in self.trajectory:
             if row.flag & flag:
                 return row
         return None
 
     def get_at(self, key_attribute: TRAJECTORY_DATA_ATTRIBUTES,
-                     value: Union[float, GenericDimension],
+                     value: Union[float, GenericDimension], *,
+                     epsilon: float = 1e-9,
                      start_from_time: float=0.0) -> TrajectoryData:
-        """
-        Gets TrajectoryData where key_attribute==value, interpolating to create new object if necessary.
-            Preserves the units of the original trajectory data.
+        """Get TrajectoryData where key_attribute==value.
+
+        Interpolates to create new object if necessary. Preserves the units of the original trajectory data.
 
         Args:
             key_attribute: The name of the TrajectoryData attribute to key on (e.g., 'time', 'distance').
             value: The value of the key attribute to find. If a float is provided
                    for a dimensioned attribute, it's assumed to be a .raw_value.
+            epsilon: Allowed key value difference to match existing TrajectoryData object without interpolating.
             start_from_time: The time to center the search from (default is 0.0).  If the target value is
                              at a local extremum then the search will only go forward in time.
 
         Returns:
-            TrajectoryData: (where key_attribute==value)
+            TrajectoryData where key_attribute==value.
 
         Raises:
             AttributeError: If TrajectoryData doesn't have the specified attribute.
@@ -741,9 +752,9 @@ class HitResult:
             ArithmeticError: If trajectory doesn't reach the requested value.
 
         Notes:
-            * Not all attributes are monotonic.  Height typically goes up and then down.
+            * Not all attributes are monotonic: Height typically goes up and then down.
                 Velocity typically goes down, but for lofted trajectories can begin to increase.
-                Windage can wander back and forth in complex winds.  We even have (see ExtremeExamples.ipynb)
+                Windage can wander back and forth in complex winds. We even have (see ExtremeExamples.ipynb)
                 backward-bending scenarios in which distance reverses!
             * The only guarantee is that time is strictly increasing.
         """
@@ -755,11 +766,10 @@ class HitResult:
 
         traj = self.trajectory
         n = len(traj)
-        epsilon = 1e-8  # Very small tolerance for floating point comparison
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
 
         def get_key_val(td):
-            """Helper to get the raw value of the key attribute from a TrajectoryData point"""
+            """Helper to get the raw value of the key attribute from a TrajectoryData point."""
             val = getattr(td, key_attribute)
             return val.raw_value if hasattr(val, 'raw_value') else val
 
@@ -825,7 +835,8 @@ class HitResult:
 
     @deprecated(reason="Use get_at() instead for better flexibility.")
     def index_at_distance(self, d: Distance) -> int:
-        """
+        """Deprecated. Use get_at() instead.
+
         Args:
             d: Distance for which we want Trajectory Data.
 
@@ -838,7 +849,8 @@ class HitResult:
 
     @deprecated(reason="Use get_at('distance', d)")
     def get_at_distance(self, d: Distance) -> TrajectoryData:
-        """
+        """Deprecated. Use get_at('distance', d) instead.
+
         Args:
             d: Distance for which we want Trajectory Data.
 
@@ -856,7 +868,8 @@ class HitResult:
 
     @deprecated(reason="Use get_at('time', t)")
     def get_at_time(self, t: float) -> TrajectoryData:
-        """
+        """Deprecated. Use get_at('time', t) instead.
+
         Args:
             t: Time for which we want Trajectory Data.
 
@@ -879,8 +892,8 @@ class HitResult:
                      at_range: Union[float, Distance],
                      target_height: Union[float, Distance],
                      ) -> DangerSpace:
-        """
-        Calculates the danger space for a given range and target height:
+        """Calculate the danger space for a target.
+
             Assumes that the trajectory hits the center of a target at any distance.
             Determines how much ranging error can be tolerated if the critical region
             of the target has target_height *h*. Finds how far forward and backward along the
@@ -888,8 +901,8 @@ class HitResult:
             of the original drop at_range.
 
         Args:
-            at_range (Union[float, Distance]): Danger space is calculated for a target centered at this sight distance.
-            target_height (Union[float, Distance]): Target height (*h*) determines danger space.
+            at_range: Danger space is calculated for a target centered at this sight distance.
+            target_height: Target height (*h*) determines danger space.
 
         Returns:
             DangerSpace: The calculated danger space.
@@ -906,11 +919,11 @@ class HitResult:
         slant_height_begin = target_row.slant_height.raw_value + (-1 if is_climbing else 1) * target_height_half
         slant_height_end = target_row.slant_height.raw_value - (-1 if is_climbing else 1) * target_height_half
         try:
-            begin_row = self.get_at('slant_height', slant_height_begin, target_row.time)
+            begin_row = self.get_at('slant_height', slant_height_begin, start_from_time=target_row.time)
         except ArithmeticError:
             begin_row = self.trajectory[0]
         try:
-            end_row = self.get_at('slant_height', slant_height_end, target_row.time)
+            end_row = self.get_at('slant_height', slant_height_end, start_from_time=target_row.time)
         except ArithmeticError:
             end_row = self.trajectory[-1]
 
@@ -921,14 +934,13 @@ class HitResult:
                            self.props.look_angle)
 
     def dataframe(self, formatted: bool = False) -> DataFrame:
-        """
-        Returns the trajectory table as a DataFrame.
+        """Return the trajectory table as a DataFrame.
 
         Args:
-            formatted (bool, optional): False for values as floats; True for strings in PreferredUnits. Defaults to False.
+            formatted: False for values as floats; True for strings in PreferredUnits. Default is False.
 
         Returns:
-            DataFrame: The trajectory table as a DataFrame.
+            The trajectory table as a DataFrame.
 
         Raises:
             ImportError: If pandas or plotting dependencies are not installed.
@@ -942,14 +954,13 @@ class HitResult:
             ) from err
 
     def plot(self, look_angle: Optional[Angular] = None) -> Axes:
-        """
-        Returns a graph of the trajectory.
+        """Return a graph of the trajectory.
 
         Args:
             look_angle (Optional[Angular], optional): Look angle for the plot. Defaults to None.
 
         Returns:
-            Axes: The plot axes.
+            The plot Axes object.
 
         Raises:
             ImportError: If plotting dependencies are not installed.

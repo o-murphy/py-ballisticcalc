@@ -249,7 +249,7 @@ cdef class CythonizedBaseIntegrationEngine:
         shot_props_ptr[0].barrel_elevation = angle_rad
         __res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, <double>0.0, <int>TrajFlag_t.NONE)
         trajectory = <CBaseTrajSeq>__res[0]
-        # If trajectory is too short for quadratic interpolation, treat as unreachable
+        # If trajectory is too short for cubic interpolation, treat as unreachable
         n = <Py_ssize_t>len(trajectory)
         if n < <Py_ssize_t>3:
             return <double>9e9
