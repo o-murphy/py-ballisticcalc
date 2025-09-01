@@ -255,8 +255,7 @@ class BaseTrajData(NamedTuple):
                 top, component = path.split('.', 1)
                 obj = getattr(td, top)
                 return getattr(obj, component)
-            else:
-                return getattr(td, path)
+            return getattr(td, path)
 
         # independent variable values
         x0 = get_key_val(p0, key_attribute)
@@ -299,6 +298,7 @@ TRAJECTORY_DATA_SYNONYMS: dict[TRAJECTORY_DATA_ATTRIBUTES, TRAJECTORY_DATA_ATTRI
     'y': 'height',
     'z': 'windage',
 }
+# pylint: disable=too-many-instance-attributes,protected-access
 class TrajectoryData(NamedTuple):
     """Data for one point in ballistic trajectory."""
 

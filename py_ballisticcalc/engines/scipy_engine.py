@@ -728,7 +728,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         def event_min_velocity(t: float, s: Any) -> np.floating:  # Stop when velocity < _cMinimumVelocity
             v = np.linalg.norm(s[3:6])
             return v - _cMinimumVelocity
-        #TODO: Either don't add this event, or always return 0 if _cMinimumVelocity<=0.
+        #TODO: If _cMinimumVelocity<=0 then: either don't add this event, or always return 0.
         traj_events: List[SciPyEvent] = [event_max_range, event_max_drop, event_min_velocity]
 
         slant_sine = math.sin(props.look_angle_rad)
@@ -781,14 +781,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 """Helper function to create a TrajectoryData row."""
                 position = Vector(*state[0:3])
                 velocity = Vector(*state[3:6])
-                density_ratio, mach = props.get_density_and_mach_for_altitude(position[1])
+                _, mach = props.get_density_and_mach_for_altitude(position[1])
                 return TrajectoryData.from_props(props, t, position, velocity, mach, flag)
 
             if sol.t[-1] == 0:
                 # If the last time is 0, we only have the initial state
                 ranges.append(make_row(sol.t[0], sol.y[:, 0], TrajFlag.RANGE))
             else:
-                # List of distances at which we want to record the trajectory data
+                # List of distances at which we want to record the trajectory data, based on range_step
                 desired_xs = np.arange(0, range_limit_ft + range_step_ft, range_step_ft)
                 # Get x and t arrays from the solution
                 x_vals = sol.y[0]
@@ -838,7 +838,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
                 states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
-                                                                                    dtype=np.float64).T  # shape: (state_dim, num_points)
+                                                                dtype=np.float64).T  # shape: (state_dim, num_points)
                 for i in range(states_at_x_arr_t.shape[1]):
                     ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
                 ranges.sort(key=lambda t: t.time)  # Sort by time
@@ -849,6 +849,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         while ranges[next_record].time - time_of_last_record > time_step + self.SEPARATE_ROW_TIME_DELTA:
                             time_of_last_record += time_step
                             ranges.append(make_row(time_of_last_record, sol.sol(time_of_last_record), TrajFlag.RANGE))
+                        time_of_last_record = ranges[next_record].time
                     ranges.sort(key=lambda t: t.time)  # Sort by time
 
             # region Find TrajectoryData points requested by filter_flags

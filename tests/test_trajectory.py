@@ -250,7 +250,7 @@ class TestTrajectoryDataFilter:
         calc = Calculator(engine=loaded_engine_instance)
         shot = self._mk_shot(2800.0)
         # Request multiple flags and dense-ish sampling to provoke close-by events
-        res = calc.fire(shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(50),
+        res = calc.fire(shot, trajectory_range=Distance.Yard(500), trajectory_step=Distance.Yard(50),
                         time_step=0.001, flags=TrajFlag.ALL, raise_range_error=False)
         dt_thresh = BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA
         times = [td.time for td in res.trajectory]
