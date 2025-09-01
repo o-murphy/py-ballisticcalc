@@ -3,7 +3,7 @@
 import pytest
 
 from py_ballisticcalc import *
-from py_ballisticcalc.drag_model import BCPoint, make_data_points
+from py_ballisticcalc.drag_model import BCPoint, make_data_points, linear_interpolation
 
 pytestmark = pytest.mark.engine
 
@@ -120,3 +120,13 @@ class TestMBC:
             assert pytest.approx(cds[idx], abs=1e-3) == expected_cd
         except ValueError:
             pytest.fail(f"Mach number {mach} not found in drag table.")
+
+
+class TestLinearInterpolationValidation:
+    def test_xp_must_be_strictly_increasing(self):
+        with pytest.raises(ValueError, match="xp must be strictly increasing"):
+            _ = linear_interpolation([0.0, 0.5, 1.0], [0.0, 0.0, 1.0], [1.0, 2.0, 3.0])
+
+    def test_xp_unsorted_raises(self):
+        with pytest.raises(ValueError, match="xp must be strictly increasing"):
+            _ = linear_interpolation([0.0, 0.5, 1.0], [0.0, 2.0, 1.0], [1.0, 2.0, 3.0])

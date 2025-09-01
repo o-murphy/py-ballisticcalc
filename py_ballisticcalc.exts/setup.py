@@ -15,6 +15,7 @@ except ImportError:
     sys.exit(0)  # Stop installation
 
 ENABLE_CYTHON_COVERAGE = os.environ.get("CYTHON_COVERAGE", "0").lower() in {"1", "true", "yes", "on"}
+ENABLE_CYTHON_SAFETY = os.environ.get("CYTHON_SAFETY", "0").lower() in {"1", "true", "yes", "on"}
 # When coverage is requested, force Cython to regenerate C code to avoid stale builds
 CYTHON_FORCE_REGEN = os.environ.get("CYTHON_FORCE_REGEN", "0").lower() in {"1", "true", "yes", "on"}
 
@@ -44,6 +45,18 @@ compiler_directives = {
 # Enable line tracing for Cython coverage when requested
 if ENABLE_CYTHON_COVERAGE:
     compiler_directives["linetrace"] = True
+
+# When safety is requested, favor correctness checks over speed
+if ENABLE_CYTHON_SAFETY:
+    compiler_directives.update({
+        "boundscheck": True,
+        "wraparound": True,
+        "initializedcheck": True,
+        "nonecheck": True,
+        "cdivision": False,
+        "overflowcheck": True,
+        "embedsignature": True,
+    })
 
 ext_base_dir = 'py_ballisticcalc_exts'
 

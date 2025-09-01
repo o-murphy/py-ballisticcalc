@@ -128,3 +128,144 @@ class TestTrajFlagName:
 
     def test_unknown_flag_returns_unknown(self):
         assert TrajFlag.name(1 << 10) == 'UNKNOWN'
+
+
+class TestTrajectoryDataFilter:
+
+    @staticmethod
+    def _mk_shot(mv_fps=2600.0):
+        dm = DragModel(bc=0.243, drag_table=TableG7)
+        return Shot(ammo=Ammo(dm, mv=Velocity.FPS(mv_fps)), weapon=Weapon(), atmo=Atmo.icao())
+
+    def test_range_interpolation_with_sparse_history(self,loaded_engine_instance):
+        """Ensure RANGE rows are interpolated when exact hits not on step grid and only minimal history exists.
+
+        This stresses the code path that requires prev_prev_data and prev_data to interpolate when `record_distance`
+        falls between integration steps.
+        """
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(2400.0)
+        # Pick a trajectory range and a coarse step that likely doesn't align with integration steps
+        res = calc.fire(shot, trajectory_range=Distance.Yard(350), trajectory_step=Distance.Yard(137))
+        # We should have RANGE rows at 0 yd (initial), then ~137yd and ~274yd plus the end
+        ranges = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        assert len(ranges) >= 2
+        # Distances after the initial should be near multiples of 137 yd (within tolerance)
+        yards = [td.distance >> Distance.Yard for td in ranges[:-1]]
+        nonzero = [y for y in yards if y > 1.0]
+        assert pytest.approx(nonzero[0], rel=0.03) == 137
+        if len(nonzero) > 1:
+            assert pytest.approx(nonzero[1], rel=0.03) == 274
+
+
+    def test_time_step_sampling_generates_rows(self, loaded_engine_instance):
+        """With time_step set, confirm rows appear even when distance-step is large (or defaulted)."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(2400.0)
+        # No trajectory_step specified -> default equals trajectory_range, so RANGE would be at end only.
+        res = calc.fire(shot, trajectory_range=Distance.Yard(300), time_step=0.02, raise_range_error=False)
+        # Expect >2 rows due to time-based recording
+        assert len(res.trajectory) > 2
+        # And at least one has RANGE flag set via time-step sampling
+        assert any(td.flag & TrajFlag.RANGE for td in res.trajectory)
+
+
+    def test_zero_up_then_zero_down_ordering(self, loaded_engine_instance):
+        """Trajectory should mark ZERO_UP first then ZERO_DOWN when crossing line of sight."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(2700.0)
+        # Give slight positive elevation relative to look angle to ensure rise then fall across sight-line.
+        shot.weapon = Weapon(sight_height=Distance.Inch(2), zero_elevation=Angular.MOA(3.0))
+        res = calc.fire(shot, trajectory_range=Distance.Yard(400), trajectory_step=Distance.Yard(10),
+                        flags=TrajFlag.ZERO)
+        flags = [td.flag for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        # If zero crossings exist, the first should include ZERO_UP, and later one ZERO_DOWN
+        if flags:
+            # ZERO combines UP/DOWN, but during first crossing it should include UP before DOWN appears
+            assert flags[0] & TrajFlag.ZERO_UP
+            if len(flags) > 1:
+                assert flags[-1] & TrajFlag.ZERO_DOWN
+
+
+    def test_mach_crossing_detected_with_tight_steps(self, loaded_engine_instance):
+        """Ensure MACH crossing is detected even when range/time steps are relatively large by enabling flags."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(3000.0)  # clearly supersonic
+        res = calc.fire(shot, trajectory_range=Distance.Yard(1200), trajectory_step=Distance.Yard(200),
+                        time_step=0.01, flags=TrajFlag.MACH)
+        assert res.flag(TrajFlag.MACH) is not None
+
+
+    def test_zero_down_only_when_start_above(self, loaded_engine_instance):
+        """Starting above sight-line should suppress ZERO_UP and allow ZERO_DOWN only."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(2650.0)
+        # Negative sight height => initial y > 0 relative to sight line
+        shot.weapon = Weapon(sight_height=Distance.Inch(-2), zero_elevation=Angular.Degree(0.0))
+        res = calc.fire(shot, trajectory_range=Distance.Yard(400), trajectory_step=Distance.Yard(25),
+                        flags=TrajFlag.ZERO)
+        assert res.flag(TrajFlag.ZERO_UP) is None
+        assert res.flag(TrajFlag.ZERO_DOWN) is not None
+
+
+    def test_range_steps_do_not_exceed_limit(self, loaded_engine_instance):
+        """RANGE sampling should not produce samples beyond the specified range limit."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(2500.0)
+        rng = Distance.Yard(250)
+        step = Distance.Yard(60)
+        res = calc.fire(shot, trajectory_range=rng, trajectory_step=step)
+        limit_yards = rng >> Distance.Yard
+        range_rows = [td for td in res.trajectory if td.flag & TrajFlag.RANGE]
+        assert len(range_rows) >= 2
+        for row in range_rows:
+            assert (row.distance >> Distance.Yard) <= limit_yards + 1e-6
+
+
+    def test_apex_flag_once(self, loaded_engine_instance):
+        """APEX should be flagged at most once and then suppressed for the rest of the trajectory."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(800.0)
+        shot.weapon.zero_elevation = Angular.Degree(5.0)
+        res = calc.fire(shot, trajectory_range=Distance.Yard(800), trajectory_step=Distance.Yard(25),
+                        flags=TrajFlag.APEX)
+        apex_rows = [td for td in res.trajectory if td.flag & TrajFlag.APEX]
+        assert len(apex_rows) == 1
+
+
+    def test_zero_and_mach_flags_both_present(self, loaded_engine_instance):
+        """Requesting ZERO and MACH together should yield both events when physically applicable."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(3000.0)
+        shot.weapon.zero_elevation = Angular.MOA(2.0)
+        res = calc.fire(shot, trajectory_range=Distance.Yard(1200), trajectory_step=Distance.Yard(100),
+                        flags=TrajFlag.ZERO | TrajFlag.MACH)
+        assert res.flag(TrajFlag.MACH) is not None
+        zero_rows = [td for td in res.trajectory if td.flag & TrajFlag.ZERO]
+        assert len(zero_rows) >= 1
+
+
+    def test_no_rows_closer_than_merge_threshold(self, loaded_engine_instance):
+        """Ensure coalescing merges events so no two rows are within the merge time threshold."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(2800.0)
+        # Request multiple flags and dense-ish sampling to provoke close-by events
+        res = calc.fire(shot, trajectory_range=Distance.Yard(1000), trajectory_step=Distance.Yard(50),
+                        time_step=0.001, flags=TrajFlag.ALL, raise_range_error=False)
+        dt_thresh = BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA
+        times = [td.time for td in res.trajectory]
+        diffs = [t2 - t1 for t1, t2 in zip(times, times[1:])]
+        assert all(abs(d) >= dt_thresh for d in diffs)
+
+
+    def test_zero_event_coalesces_onto_range_row(self, loaded_engine_instance):
+        """A ZERO crossing should appear on a RANGE-sampled row when timestamps align closely (coalesced flags)."""
+        calc = Calculator(engine=loaded_engine_instance)
+        shot = self._mk_shot(2750.0)
+        # Set zero at 200 yd, then sample RANGE at 200 yd so ZERO and RANGE align
+        calc.set_weapon_zero(shot, Distance.Yard(200))
+        res = calc.fire(shot, trajectory_range=Distance.Yard(600), trajectory_step=Distance.Yard(200),
+                        flags=TrajFlag.ZERO)
+        # Find any ZERO row that also includes RANGE flag (coalesced)
+        coalesced = [td for td in res.trajectory if (td.flag & TrajFlag.ZERO) and (td.flag & TrajFlag.RANGE)]
+        assert len(coalesced) >= 1
