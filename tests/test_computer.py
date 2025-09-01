@@ -1,4 +1,5 @@
 import copy
+import math
 import pytest
 
 from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError, TrajFlag,
