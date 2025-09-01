@@ -237,7 +237,9 @@ class BaseTrajData(NamedTuple):
         Args:
             key_attribute: Can be 'time', 'mach', or a vector component like 'position.x' or 'velocity.z'.
             key_value: The value to interpolate for.
-            p0, p1, p2: Three points surrounding the key_value.
+            p0: First bracketing point.
+            p1: Second (middle) bracketing point.
+            p2: Third bracketing point.
             method: 'pchip' (default, monotone cubic Hermite) or 'linear'.
 
         Returns:
@@ -346,13 +348,14 @@ class TrajectoryData(NamedTuple):
         return self.slant_height
 
     def formatted(self) -> Tuple[str, ...]:
-        """
+        """Return attributes as tuple of strings, formatted per PreferredUnits.
+
         Returns:
             Tuple of formatted strings for this point, in PreferredUnits.
         """
 
         def _fmt(v: GenericDimension, u: Unit) -> str:
-            """simple formatter"""
+            """Format Dimension as a string."""
             return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 
         return (
@@ -375,7 +378,8 @@ class TrajectoryData(NamedTuple):
         )
 
     def in_def_units(self) -> Tuple[float, ...]:
-        """
+        """Return attributes as tuple of floats converting to PreferredUnits.
+
         Returns:
             Tuple of floats describing this point, in PreferredUnits.
         """
@@ -532,8 +536,10 @@ class TrajectoryData(NamedTuple):
         Args:
             key_attribute: Attribute to key on (e.g., 'time', 'distance').
             value: Target value for the key attribute. A bare float is treated as
-                   raw value for dimensioned fields.
-            p0, p1, p2: Three points surrounding the target.
+                raw value for dimensioned fields.
+            p0: First bracketing point.
+            p1: Second (middle) bracketing point.
+            p2: Third bracketing point.
             flag: Flag to assign to the new point.
             method: 'pchip' (monotone cubic Hermite) or 'linear'.
 

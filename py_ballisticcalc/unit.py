@@ -347,7 +347,7 @@ class Unit(IntEnum):
         return obj  # type: ignore
 
     def counter(self, start: Number, step: Number,
-            end: Optional[Number] = None, include_end: bool = True) -> Generator[GenericDimension, None, None]:
+        end: Optional[Number] = None, include_end: bool = True) -> Generator[GenericDimension, None, None]:
         """Generate a finite or infinite sequence of `GenericDimension` objects.
 
         This function acts as a counter for measurements, yielding `GenericDimension`
@@ -355,7 +355,6 @@ class Unit(IntEnum):
         The underlying numeric values are handled as raw values of the given unit.
 
         Args:
-            self: The unit to apply to each generated numeric value (e.g., `Unit.Meter`, `Unit.Second`).
             start: The starting raw value for the sequence. Defaults to 0.
             step: The increment/decrement step for the sequence.
                                 Must not be 0 for an infinite sequence. Defaults to 0.
@@ -401,7 +400,6 @@ class Unit(IntEnum):
         """Create a sorted sequence of `GenericDimension` objects from raw numeric values.
 
         Args:
-            self: The unit to apply to each numeric value (e.g., `Unit.Meter`, `Unit.FPS`).
             items: A sequence of raw numeric values (integers or floats).
             sort: If set to `True`, the elements will be sorted before yield.
             reverse: If set to `True`, the elements are sorted in descending order. Defaults to `False`.
@@ -1412,7 +1410,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 setattr(cls, f.name, f.default_factory())  # type: ignore
 
     @classmethod
-    def set(cls, **kwargs):
+    def set(cls, **kwargs: Union[Unit, str, bool]):
         """Set preferred units from keyword arguments.
 
         Allows bulk configuration of preferred units using either Unit enum values or string aliases.
