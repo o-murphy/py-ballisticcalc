@@ -9,11 +9,12 @@ from py_ballisticcalc.unit import Distance, Velocity, Angular, Energy, Weight
 from py_ballisticcalc.vector import Vector
 
 
-def make_base(t: float, pos: float, vel: float, mach: float) -> BaseTrajData:
-    return BaseTrajData(time=t, position=Vector(pos, 0.0, 0.0), velocity=Vector(vel, 0.0, 0.0), mach=mach)
-
-
 class TestInterpolationBasic:
+
+    @staticmethod
+    def make_base(t: float, pos: float, vel: float, mach: float) -> BaseTrajData:
+        return BaseTrajData(time=t, position=Vector(pos, 0.0, 0.0), velocity=Vector(vel, 0.0, 0.0), mach=mach)
+
     def test_pchip_monotone_preserves_shape_scalar(self):
         x0, x1, x2 = 0.0, 1.0, 2.0
         y0, y1, y2 = 0.0, 1.0, 1.5
@@ -33,9 +34,9 @@ class TestInterpolationBasic:
             assert math.isclose(y, y0 + (y1 - y0) * (x - x0) / (x1 - x0), rel_tol=0, abs_tol=1e-12)
 
     def test_basetrajdata_interpolate_method_switch(self):
-        p0 = make_base(0.0, 0.0, 3000.0, 2.5)
-        p1 = make_base(1.0, 1.0, 2800.0, 2.3)
-        p2 = make_base(2.0, 1.5, 2600.0, 2.1)
+        p0 = self.make_base(0.0, 0.0, 3000.0, 2.5)
+        p1 = self.make_base(1.0, 1.0, 2800.0, 2.3)
+        p2 = self.make_base(2.0, 1.5, 2600.0, 2.1)
         # mid-point in first interval
         res_pchip = BaseTrajData.interpolate('time', 0.5, p0, p1, p2, method='pchip')
         res_linear = BaseTrajData.interpolate('time', 0.5, p0, p1, p2, method='linear')
@@ -45,17 +46,29 @@ class TestInterpolationBasic:
 
     def test_basetrajdata_interpolate_dimension_switch_on_position(self):
         # Use position.x as key
-        p0 = make_base(0.0, 0.0, 3000.0, 2.5)
-        p1 = make_base(1.0, 100.0, 2800.0, 2.3)
-        p2 = make_base(2.0, 200.0, 2600.0, 2.1)
+        p0 = self.make_base(0.0, 0.0, 3000.0, 2.5)
+        p1 = self.make_base(1.0, 100.0, 2800.0, 2.3)
+        p2 = self.make_base(2.0, 200.0, 2600.0, 2.1)
         res_lin = BaseTrajData.interpolate('position.x', 50.0, p0, p1, p2, method='linear')
         res_pc = BaseTrajData.interpolate('position.x', 50.0, p0, p1, p2, method='pchip')
         # Ensure times are between neighbor times when keying on position.x
         assert p0.time <= res_lin.time <= p1.time
         assert p0.time <= res_pc.time <= p1.time
 
+    def test_basetraj_linear_chooses_correct_segment(self):
+        # Create non-uniform key spacing and values; request linear at key in right segment
+        p0 = self.make_base(0.0, 0.0, 0.0, 0.2)
+        p1 = self.make_base(0.1, 1.0, 0.0, 0.3)
+        p2 = self.make_base(2.0, 2.0, 0.0, 0.4)
+        # Interpolate position.x keyed by time=1.0 (right segment)
+        r = BaseTrajData.interpolate('time', 1.0, p0, p1, p2, method="linear")
+        # Expect linear between p1 and p2 positions.x
+        expected = interpolate_2_pt(1.0, 0.1, p1.position.x, 2.0, p2.position.x)
+        assert abs(r.position.x - expected) < 1e-12
+
 
 class TestInterpolationEdge:
+
     def test_pchip_no_overshoot_near_peak_and_valley(self):
         # Local peak around x=1: increasing then decreasing
         x0, x1, x2 = 0.0, 1.0, 2.0
@@ -146,17 +159,6 @@ class TestInterpolationEdge:
             # Linear reference on the correct segment
             y_ref = interpolate_2_pt(x, x0, y0, x1, y1) if x <= x1 else interpolate_2_pt(x, x1, y1, x2, y2)
             assert abs(y_p - y_ref) < 1e-12
-
-    def test_basetraj_linear_chooses_correct_segment(self):
-        # Create non-uniform key spacing and values; request linear at key in right segment
-        p0 = make_base(0.0, 0.0, 0.0, 0.2)
-        p1 = make_base(0.1, 1.0, 0.0, 0.3)
-        p2 = make_base(2.0, 2.0, 0.0, 0.4)
-        # Interpolate position.x keyed by time=1.0 (right segment)
-        r = BaseTrajData.interpolate('time', 1.0, p0, p1, p2, method="linear")
-        # Expect linear between p1 and p2 positions.x
-        expected = interpolate_2_pt(1.0, 0.1, p1.position.x, 2.0, p2.position.x)
-        assert abs(r.position.x - expected) < 1e-12
 
 
 class TestTrajectoryDataInterpolation:

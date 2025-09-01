@@ -1,6 +1,19 @@
 import pytest
 
-from py_ballisticcalc import Sight, Unit
+from py_ballisticcalc import Sight, Ammo, DragModel, TableG7, Unit
+
+
+class TestAmmoPowderSensitivity:
+    
+    def test_calc_powder_sens_disallows_zero_velocity_points(self):
+        dm = DragModel(0.3, TableG7)
+        a = Ammo(dm, Unit.MPS(0))
+        with pytest.raises(ValueError, match="positive muzzle velocities"):
+            _ = a.calc_powder_sens(Unit.MPS(300), Unit.Celsius(10))
+
+        a2 = Ammo(dm, Unit.MPS(800))
+        with pytest.raises(ValueError, match="positive muzzle velocities"):
+            _ = a2.calc_powder_sens(Unit.MPS(0), Unit.Celsius(10))
 
 
 class TestSight:
@@ -108,3 +121,30 @@ class TestSight:
                                Unit.Mil(1),
                                case['mag']).vertical
         assert pytest.approx(adj, abs=1e-7) == case['adj']
+
+
+class TestSightInvalidInputs:
+    def setup_method(self):
+        self.click = Unit.Mil(0.25)
+
+    @pytest.mark.parametrize("mag", [0.0, -1.0])
+    @pytest.mark.parametrize("fp", ["SFP", "FFP", "LWIR"]) 
+    def test_magnification_must_be_positive(self, fp, mag):
+        s = Sight(
+            focal_plane=fp,
+            scale_factor=Unit.Meter(100),
+            h_click_size=self.click,
+            v_click_size=self.click,
+        )
+        with pytest.raises(ValueError, match="magnification must be positive"):
+            _ = s.get_adjustment(Unit.Meter(100), Unit.Mil(1), Unit.Mil(1), mag)
+
+    def test_sfp_requires_positive_target_distance(self):
+        s = Sight(
+            focal_plane="SFP",
+            scale_factor=Unit.Meter(100),
+            h_click_size=self.click,
+            v_click_size=self.click,
+        )
+        with pytest.raises(ValueError, match="target_distance must be positive"):
+            _ = s.get_adjustment(Unit.Meter(0), Unit.Mil(1), Unit.Mil(1), 5.0)

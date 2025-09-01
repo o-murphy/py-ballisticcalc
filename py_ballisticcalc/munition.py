@@ -65,6 +65,7 @@ class SightReticleStep(NamedTuple):
         )
         ```
     """
+
     vertical: Angular
     horizontal: Angular
 
@@ -84,6 +85,7 @@ class SightClicks(NamedTuple):
         clicks = SightClicks(vertical=5.0, horizontal=2.5)
         ```
     """
+
     vertical: float
     horizontal: float
 
@@ -114,6 +116,7 @@ class Sight:
         )
         ```
     """
+
     focal_plane: SightFocalPlane
     scale_factor: Distance
     h_click_size: Angular
@@ -154,7 +157,6 @@ class Sight:
             )
             ```
         """
-
         if focal_plane not in get_args(SightFocalPlane):
             raise ValueError("Wrong focal plane")
 
@@ -164,14 +166,14 @@ class Sight:
         if (not isinstance(h_click_size, (Angular, float, int))
             or not isinstance(v_click_size, (Angular, float, int))
         ):
-            raise TypeError("type Angular expected for 'h_click_size' and 'v_click_size'")
+            raise TypeError("Angle expected for 'h_click_size' and 'v_click_size'")
 
         self.focal_plane = focal_plane
         self.scale_factor = PreferredUnits.distance(scale_factor or 1)
         self.h_click_size = PreferredUnits.adjustment(h_click_size)
         self.v_click_size = PreferredUnits.adjustment(v_click_size)
         if self.h_click_size.raw_value <= 0 or self.v_click_size.raw_value <= 0:
-            raise TypeError("'h_click_size' and 'v_click_size' have to be positive")
+            raise TypeError("'h_click_size' and 'v_click_size' must be positive")
 
     def _adjust_sfp_reticle_steps(self, target_distance: Union[float, Distance],
                                   magnification: float) -> SightReticleStep:
@@ -200,16 +202,14 @@ class Sight:
             ```
         """
         assert self.focal_plane == 'SFP', "SFP focal plane required"
-        # adjust reticle scale relative to target distance and magnification
-        def get_sfp_step(click_size: Angular):
-            # Don't need distances conversion because units cancel:
-            return click_size.units(
-                click_size.unit_value
-                * self.scale_factor.raw_value
-                / _td.raw_value
-                * magnification
-            )
         _td = PreferredUnits.distance(target_distance)
+        if _td.raw_value <= 0:
+            raise ValueError("target_distance must be positive")
+        def get_sfp_step(click_size: Angular):
+            """Calculate SFP reticle step size for a given click size."""
+            scale_ratio = self.scale_factor.raw_value / _td.raw_value
+            # Don't need distances conversion because units cancel:
+            return click_size.units(click_size.unit_value * scale_ratio * magnification)
         _h_step = get_sfp_step(self.h_click_size)
         _v_step = get_sfp_step(self.v_click_size)
         return SightReticleStep(_h_step, _v_step)
@@ -251,6 +251,8 @@ class Sight:
             print(f"Adjust: {clicks.vertical} up, {clicks.horizontal} right")
             ```
         """
+        if magnification <= 0:
+            raise ValueError("magnification must be positive")
         if self.focal_plane == 'SFP':
             steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
             return SightClicks(
@@ -263,8 +265,7 @@ class Sight:
                 windage_adj.raw_value / self.h_click_size.raw_value
             )
         if self.focal_plane == 'LWIR':
-            # adjust clicks to magnification
-            return SightClicks(
+            return SightClicks(  # adjust clicks to magnification
                 drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
                 windage_adj.raw_value / (self.h_click_size.raw_value / magnification)
             )
@@ -328,6 +329,7 @@ class Weapon:
         )
         ```
     """
+    
     sight_height: Distance
     twist: Distance
     zero_elevation: Angular
@@ -510,6 +512,8 @@ class Ammo:
         v1 = PreferredUnits.velocity(other_velocity) >> Velocity.MPS
         t1 = PreferredUnits.temperature(other_temperature) >> Temperature.Celsius
 
+        if v0 <= 0 or v1 <= 0:
+            raise ValueError("calc_powder_sens requires positive muzzle velocities")
         v_delta = math.fabs(v0 - v1)
         t_delta = math.fabs(t0 - t1)
         v_lower = v1 if v1 < v0 else v0

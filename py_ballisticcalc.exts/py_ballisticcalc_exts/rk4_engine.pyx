@@ -6,7 +6,7 @@ Because storing each step in a CBaseTrajSeq is practically costless, we always r
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from libc.math cimport sin, cos
+from libc.math cimport sin, cos, fmin
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
@@ -104,6 +104,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         range_vector.x = <double>0.0
         range_vector.y = -shot_props_ptr[0].cant_cosine * shot_props_ptr[0].sight_height
         range_vector.z = -shot_props_ptr[0].cant_sine * shot_props_ptr[0].sight_height
+        _cMaximumDrop += fmin(<double>0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
         
         # Set direction vector components
         _dir_vector.x = cos(shot_props_ptr[0].barrel_elevation) * cos(shot_props_ptr[0].barrel_azimuth)
@@ -123,7 +124,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         traj_seq = CBaseTrajSeq()
 
         # Trajectory Loop
-        # Quadratic interpolation requires 3 points, so we will need at least 3 steps
+        # Cubic interpolation requires 3 points, so we will need at least 3 steps
         while (range_vector.x <= range_limit_ft) or integration_step_count < 3:
             integration_step_count += 1
 
@@ -213,8 +214,8 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             
             # Check termination conditions
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or shot_props_ptr[0].alt0 + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and shot_props_ptr[0].alt0 + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

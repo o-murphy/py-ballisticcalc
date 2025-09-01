@@ -1,73 +1,67 @@
 """Unit conversion system for ballistic calculations.
 
 This module provides a comprehensive type-safe unit conversion system, supporting physical dimensions
-including distance, velocity, angular measurements, temperature, pressure, weight, energy, and time.
+including angles, distance, energy, pressure, temperature, time, velocity, and weight.
 
 The system uses a base class `GenericDimension` with specialized subclasses for each physical dimension.
 Each dimension maintains its values internally in a fixed raw unit (e.g., inches for distance, m/s for velocity)
 and provides conversion methods to any supported unit within that dimension.
 
 Key Features:
-    * Type-safe unit conversions with compile-time checking
+    * Type-safe unit conversions and arithmetic operators
     * Flexible conversion syntax with operator overloading
-    * Default preferred units configuration
     * String parsing and unit alias resolution
-    * Integration with ballistic calculation engines
-
-Typical Usage:
-    >>> from py_ballisticcalc.unit import Distance, Velocity, Unit
-    >>> # Create distance measurement
-    >>> distance = Distance(100, Distance.Meter)
-    >>> # Convert to different units
-    >>> yards = distance.convert(Distance.Yard)
-    >>> # Alternative conversion syntax
-    >>> yards = distance << Distance.Yard
-    >>> # Get numeric value in specific units
-    >>> yard_value = distance.get_in(Distance.Yard)
-    >>> print(f"100m = {yard_value:.1f} yards")
-
-Supported Dimensions:
-    * Distance: inch, foot, yard, mile, nautical mile, mm, cm, m, km, line
-    * Velocity: m/s, km/h, ft/s, mph, knots
-    * Angular: radian, degree, MOA, mil, mrad, thousandth, inch/100yd, cm/100m, o'clock
-    * Temperature: Fahrenheit, Celsius, Kelvin, Rankine
-    * Pressure: mmHg, inHg, bar, hPa, PSI
-    * Weight: grain, ounce, gram, pound, kilogram, newton
-    * Energy: foot-pound, joule
-    * Time: second, minute, millisecond, microsecond, nanosecond, picosecond
-
-The module also provides `PreferredUnits` configuration for setting default units that apply
-throughout the ballistic calculation system, and comprehensive string parsing capabilities for input processing.
+    * Default `PreferredUnits` configuration
 
 Examples:
-    Basic unit creation and conversion:
-        >>> distance = Distance.Meter(300)
-        >>> range_yards = distance.convert(Distance.Yard)
-        >>> print(f"300m = {range_yards}")
-
-    Working with velocity:
-        >>> muzzle_velocity = Velocity.FPS(2800)
-        >>> velocity_mps = muzzle_velocity >> Velocity.MPS
-        >>> print(f"2800 ft/s = {velocity_mps:.1f} m/s")
-
-    Angular measurements for ballistics:
-        >>> elevation = Angular.MOA(2.5)
-        >>> elevation_mils = elevation << Angular.Mil
-        >>> print(f"2.5 MOA = {elevation_mils:.3f} mils")
-
-    Setting preferred units:
-        >>> PreferredUnits.distance = Unit.Meter
-        >>> PreferredUnits.velocity = Unit.MPS
-        >>> # Now ballistic calculations will use metric units by default
+    >>> # ----------------- Creation and conversion -----------------
+    >>> d = Distance.Yard(100)  
+    >>> d.convert(Unit.Meter)      # Conversion method -> Distance
+    <Distance: 91.4m (3600.0)>
+    >>> d << Distance.Feet         # Conversion operator -> Distance
+    <Distance: 300.0ft (3600.0)>
+    >>> d.get_in(Distance.Foot)    # Conversion method -> float
+    300.0
+    >>> d >> Distance.Inch         # Conversion operator -> float
+    3600.0
+    >>> # ----------------------- Arithmetic -----------------------
+    >>> d - 30
+    <Distance: 70.0yd (2520.0)>
+    >>> d + Distance.Feet(2)
+    <Distance: 100.7yd (3624.0)>
+    >>> 3 * d
+    <Distance: 300.0yd (10800.0)>
+    >>> d / 2
+    <Distance: 50.0yd (1800.0)>
+    >>> d / Unit.Foot(3)
+    100.0
+    
+Supported Dimensions:
+    * Angular: radian, degree, MOA, mil, mrad, thousandth, inch/100yd, cm/100m, o'clock
+    * Distance: inch, foot, yard, mile, nautical mile, mm, cm, m, km, line
+    * Energy: foot-pound, joule
+    * Pressure: mmHg, inHg, bar, hPa, PSI
+    * Temperature: Fahrenheit, Celsius, Kelvin, Rankine
+    * Time: second, minute, millisecond, microsecond, nanosecond, picosecond
+    * Velocity: m/s, km/h, ft/s, mph, knots
+    * Weight: grain, ounce, gram, pound, kilogram, newton
 """
 
 # Standard library imports
-import re
+from __future__ import annotations
 from dataclasses import dataclass, fields, MISSING
 from enum import IntEnum
 from math import pi
+import re
 from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
-    SupportsFloat, SupportsInt, Hashable, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
+    SupportsFloat, SupportsInt, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
+from collections.abc import Hashable
+try:
+    # Python 3.10+ provides NotImplementedType in types
+    from types import NotImplementedType  # type: ignore[attr-defined]
+except Exception:  # pragma: no cover - fallback for Python 3.9
+    # On older Python, derive the type from the singleton
+    NotImplementedType = type(NotImplemented)  # type: ignore[misc,assignment]
 
 from typing_extensions import Self, TypeAlias, override
 
@@ -241,6 +235,7 @@ class Unit(IntEnum):
         >>> elevation = Unit.MOA(2.5)
         >>> windage = Unit.Mil(1.2)
     """
+    
     Radian = 0
     Degree = 1
     MOA = 2
@@ -298,24 +293,24 @@ class Unit(IntEnum):
 
     @property
     def key(self) -> str:
-        """Readable name of the unit of measure"""
+        """Readable name of the unit of measure."""
         return UnitPropsDict[self].name
 
     @property
     def accuracy(self) -> int:
-        """Default accuracy of the unit of measure"""
+        """Default accuracy of the unit of measure."""
         return UnitPropsDict[self].accuracy
 
     @property
     def symbol(self) -> str:
-        """Short symbol of the unit of measure"""
+        """Short symbol of the unit of measure."""
         return UnitPropsDict[self].symbol
 
     def __repr__(self) -> str:
         return UnitPropsDict[self].name
 
     def __call__(self: Self, value: Union[Number, _GenericDimensionType]) -> _GenericDimensionType:
-        """Creates a new unit instance using dot syntax.
+        """Create a new unit instance using dot syntax.
 
         Args:
             value (Union[Number, _GenericDimensionType]): Numeric value of the unit
@@ -329,6 +324,7 @@ class Unit(IntEnum):
         """
         obj: GenericDimension
         if isinstance(value, GenericDimension):
+            # Uses non-mutating __lshift__; returns a converted copy
             return value << self  # type: ignore
         if 0 <= self < 10:
             obj = Angular(value, self)
@@ -351,15 +347,14 @@ class Unit(IntEnum):
         return obj  # type: ignore
 
     def counter(self, start: Number, step: Number,
-            end: Optional[Number] = None, include_end: bool = True) -> Generator[_GenericDimensionType, None, None]:
-        """Generates a finite or infinite sequence of `GenericDimension` objects.
+        end: Optional[Number] = None, include_end: bool = True) -> Generator[GenericDimension, None, None]:
+        """Generate a finite or infinite sequence of `GenericDimension` objects.
 
         This function acts as a counter for measurements, yielding `GenericDimension`
         instances at specified intervals, defined by `start`, `step`, and `end`.
         The underlying numeric values are handled as raw values of the given unit.
 
         Args:
-            self: The unit to apply to each generated numeric value (e.g., `Unit.Meter`, `Unit.Second`).
             start: The starting raw value for the sequence. Defaults to 0.
             step: The increment/decrement step for the sequence.
                                 Must not be 0 for an infinite sequence. Defaults to 0.
@@ -369,8 +364,7 @@ class Unit(IntEnum):
                                 included in the sequence. Defaults to `True`.
 
         Yields:
-            _GenericDimensionType: A `GenericDimension` object of the specific type implied by `u`,
-                                   representing the current measurement in the sequence.
+            GenericDimension[Any]: A `GenericDimension` object representing the current measurement in the sequence.
 
         Raises:
             ValueError:
@@ -380,13 +374,12 @@ class Unit(IntEnum):
                 If the iteration limit (`MAX_ITERATIONS`) is reached during an infinite sequence.
 
         Examples:
-            >>> from py_ballisticcalc import Distance, Unit
-            >>> list(Unit.Meter.counter(start=0, step=100, end=300)) # Inferred as Generator[Distance]
-            [Distance(0), Distance(100), Distance(200)]
+            >>> list(Unit.Millisecond.counter(start=0, step=10, end=30))   
+            [<Time: 0.0ms (0.0)>, <Time: 10.0ms (0.01)>, <Time: 20.0ms (0.02)>, <Time: 30.0ms (0.03)>]
         """
-        _start: _GenericDimensionType = self(start)
-        _step: _GenericDimensionType = self(step)
-        _end: Optional[_GenericDimensionType] = self(end) if end is not None else None
+        _start: GenericDimension = self(start)
+        _step: GenericDimension = self(step)
+        _end: Optional[GenericDimension] = self(end) if end is not None else None
 
         _start_raw: Number = _start.raw_value
         _step_raw: Number = _step.raw_value
@@ -395,7 +388,7 @@ class Unit(IntEnum):
         if _end_raw is not None and include_end:
             _end_raw += _step_raw
         for i, raw_value in enumerate(counter(_start_raw, _step_raw, _end_raw)):
-            value: _GenericDimensionType = self(0)
+            value: GenericDimension = self(0)
             value._value = raw_value
             yield value
             if i == MAX_ITERATIONS:
@@ -403,11 +396,10 @@ class Unit(IntEnum):
 
     def iterator(self, items: Sequence[Number], /, *,
                  sort: bool = False,
-                 reverse: bool = False) -> Generator[_GenericDimensionType, None, None]:
-        """Creates a sorted sequence of `GenericDimension` objects from raw numeric values.
+                 reverse: bool = False) -> Generator["GenericDimension[Any]", None, None]:
+        """Create a sorted sequence of `GenericDimension` objects from raw numeric values.
 
         Args:
-            self: The unit to apply to each numeric value (e.g., `Unit.Meter`, `Unit.FPS`).
             items: A sequence of raw numeric values (integers or floats).
             sort: If set to `True`, the elements will be sorted before yield.
             reverse: If set to `True`, the elements are sorted in descending order. Defaults to `False`.
@@ -416,9 +408,8 @@ class Unit(IntEnum):
             _GenericDimensionType: A `GenericDimension` object of the specific type implied by `u`, in sorted order.
 
         Examples:
-            >>> from py_ballisticcalc import Distance, Unit
-            >>> list(Unit.Meter.iterator([300, 100, 200], sort=True))  # Inferred as Iterable[Distance]
-            [Distance(100), Distance(200), Distance(300)]
+            >>> list(Unit.Foot.iterator([5, 1, 2], sort=True))  # Inferred as Iterable[Distance]
+            [<Distance: 1.0ft (12.0)>, <Distance: 2.0ft (24.0)>, <Distance: 5.0ft (60.0)>]
         """
         iter_ = iterator(items, sort=sort, reverse=reverse)
         for v in iter_:
@@ -434,7 +425,6 @@ class UnitProps(NamedTuple):
         symbol: Standard symbol or abbreviation for the unit (e.g., 'm', 'ft·lb').
 
     Examples:
-        >>> from py_ballisticcalc import Distance, Unit, UnitProps, UnitPropsDict
         >>> d = Distance.Yard(600)
         >>> print(d << Distance.Kilometer)
         0.549km
@@ -442,6 +432,7 @@ class UnitProps(NamedTuple):
         >>> print(d << Distance.Kilometer)
         0.54864 kilometers
     """
+
     name: str
     accuracy: int
     symbol: str
@@ -513,7 +504,7 @@ UnitAliases: UnitAliasesType = {
     ('mil',): Unit.Mil,
     ('mrad',): Unit.MRad,
     ('thousandth', 'ths'): Unit.Thousandth,
-    ('inch/100yd', 'in/100yd', 'inch/100yd', 'in/100yard, inper100yd'): Unit.InchesPer100Yd,
+    ('inch/100yd', 'in/100yd', 'in/100yard', 'inper100yd'): Unit.InchesPer100Yd,
     ('centimeter/100m', 'cm/100m', 'cm/100meter', 'centimeter/100meter', 'cmper100m'): Unit.CmPer100m,
     ('hour', 'h'): Unit.OClock,
 
@@ -623,7 +614,9 @@ class GenericDimension(Generic[_GenericDimensionType]):
         >>> meters = Distance(100, Unit.Meter)
         >>> yards = meters.convert(Unit.Yard)
         >>> print(f"100m = {yards.unit_value:.1f} yards")
+        100m = 109.4 yards
     """
+
     _value: Number
     _defined_units: Unit
     __slots__ = ('_value', '_defined_units')
@@ -772,12 +765,11 @@ class GenericDimension(Generic[_GenericDimensionType]):
             UnitConversionError: If target units are incompatible with this dimension.
 
         Examples:
-            >>> distance = Distance(100, Distance.Meter)
-            >>> yards = distance.convert(Distance.Yard)
-            >>> print(f"100m = {yards}")  # 100m = 109.4yd
+            >>> distance = Distance.Meter(100)
+            >>> print(f"100m = {distance.convert(Distance.Yard)}")
+            100m = 109.4yd
         """
-        self._defined_units = units
-        return self
+        return self.__class__.new_from_raw(self._value, units)
 
     def get_in(self, units: Unit) -> Number:
         """Get the numeric value of this measurement in specified units.
@@ -792,9 +784,9 @@ class GenericDimension(Generic[_GenericDimensionType]):
             UnitConversionError: If target units are incompatible with this dimension.
 
         Examples:
-            >>> distance = Distance(100, Distance.Meter)
-            >>> yard_value = distance.get_in(Distance.Yard)
-            >>> print(f"100m = {yard_value:.1f} yards")  # 100m = 109.4 yards
+            >>> distance = Distance.Meter(100)
+            >>> print(f"100m = {distance.get_in(Distance.Yard):.5f} yards")
+            100m = 109.36133 yards
         """
         return self.__class__.from_raw(self._value, units)
 
@@ -828,10 +820,214 @@ class GenericDimension(Generic[_GenericDimensionType]):
         """
         return self._value
 
-    # aliases more efficient than wrappers
+    # operators: prefer non-mutating behavior
     __rshift__ = get_in
-    __rlshift__ = convert
-    __lshift__ = convert
+
+    def __lshift__(self, units: Unit) -> Self:
+        """Return a new instance converted to the given units without mutating self.
+
+        Example:
+            d2 = d << Distance.Foot  # d remains unchanged
+        """
+        return self.__class__.new_from_raw(self._value, units)
+
+    def __rlshift__(self, units: Unit) -> Self:
+        """Support Unit << GenericDimension; return a new instance without mutation."""
+        return self.__class__.new_from_raw(self._value, units)
+
+    #region GenericDimension arithmetic operators
+    def _units_to_raw_delta(self) -> float:
+        """Return raw_value delta that corresponds to a +1 step in the current units.
+
+        By default this is the conversion factor for `self.units`. Dimensions with
+        affine conversions (e.g., Temperature) should override this to map unit deltas
+        correctly in their raw space.
+
+        Returns:
+            float: raw_value delta for a +1 change in the current unit.
+        """
+        return self.__class__._get_conversion_factor(self.units)
+
+    def __mul__(self, other: Number) -> Self | NotImplementedType:
+        """Multiply this measurement by a number: `this * other`.
+
+        Args:
+            other: Numeric scalar.
+
+        Returns:
+            A new instance of the same dimension and units, scaled by `other`.
+        """
+        if isinstance(other, (int, float)):
+            return self.__class__.new_from_raw(self._value * other, self.units)
+        return NotImplemented
+
+    def __rmul__(self, other: Number) -> Self | NotImplementedType:
+        """Right-hand multiplication by a number (commutative): `other * this`."""
+        if isinstance(other, (int, float)):
+            return self.__class__.new_from_raw(self._value * other, self.units)
+        return NotImplemented
+
+    def __truediv__(self, other: Union[Number, Self]) -> Self | float | NotImplementedType:
+        """Divide this measurement: `this / other`.
+
+        Returns:
+            - By a number: returns same dimension/units scaled by 1/other.
+            - By same dimension: returns float ratio of raw values.
+
+        Raises:
+            ZeroDivisionError: If dividing by zero (number) or by zero-valued measure.
+        """
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("division by zero")
+            return self.__class__.new_from_raw(self._value / other, self.units)
+        if isinstance(other, self.__class__):
+            if other._value == 0:
+                raise ZeroDivisionError("division by zero")
+            return float(self._value) / float(other.raw_value)
+        return NotImplemented
+
+    def __itruediv__(self, other: Union[Number, Self]) -> Self | float | NotImplementedType:
+        """In-place division by a number: `this /= other`.
+
+        Returns:
+            - By a number: returns same dimension/units scaled by 1/other.
+            - By same dimension: returns float ratio of raw values.
+
+        Raises:
+            ZeroDivisionError: If dividing by zero.
+        """
+        if isinstance(other, (int, float)):
+            if other == 0:
+                raise ZeroDivisionError("division by zero")
+            self._value = self._value / float(other)
+            return self
+        if isinstance(other, self.__class__):
+            if other._value == 0:
+                raise ZeroDivisionError("division by zero")
+            return float(self._value) / float(other.raw_value)
+        return NotImplemented
+
+    def __add__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """Add a number (interpreted in current units) or same dimension value: `this + other`.
+
+        Returns:
+            - Number: Unit value incremented by `other`.
+            - Same dimension: adds raw values, preserving left operand's units.
+        """
+        if isinstance(other, (int, float)):
+            raw = self._value + float(other) * self._units_to_raw_delta()
+            return self.__class__.new_from_raw(raw, self.units)
+        if isinstance(other, self.__class__):
+            raw = self._value + other._value
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __radd__(self, other: Number) -> Self | NotImplementedType:
+        """Right-hand number addition: `other + this`."""
+        if isinstance(other, (int, float)):
+            raw = self._value + float(other) * self._units_to_raw_delta()
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __sub__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """Subtract a number (interpreted in current units) or same dimension value: `this - other`."""
+        if isinstance(other, (int, float)):
+            raw = self._value - float(other) * self._units_to_raw_delta()
+            return self.__class__.new_from_raw(raw, self.units)
+        if isinstance(other, self.__class__):
+            raw = self._value - other._value
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __rsub__(self, other: Number) -> Self | NotImplementedType:
+        """Right-hand subtraction: `other - this`."""
+        if isinstance(other, (int, float)):
+            raw = float(other) * self._units_to_raw_delta() - self._value
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __iadd__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """In-place addition with number or same-dimension value: `this += other`."""
+        if isinstance(other, (int, float)):
+            self._value = self._value + float(other) * self._units_to_raw_delta()
+            return self
+        if isinstance(other, self.__class__):
+            self._value = self._value + other.raw_value
+            return self
+        return NotImplemented
+
+    def __isub__(self, other: Union[Number, Self]) -> Self | NotImplementedType:
+        """In-place subtraction with number or same-dimension value: `this -= other`."""
+        if isinstance(other, (int, float)):
+            self._value = self._value - float(other) * self._units_to_raw_delta()
+            return self
+        if isinstance(other, self.__class__):
+            self._value = self._value - other.raw_value
+            return self
+        return NotImplemented
+
+    def __imul__(self, other: Number) -> Self | NotImplementedType:
+        """In-place multiplication by a number: `this *= other`."""
+        if isinstance(other, (int, float)):
+            self._value = self._value * float(other)
+            return self
+        return NotImplemented
+    #endregion GenericDimension arithmetic operators
+
+
+class Angular(GenericDimension):
+    """Angular measurements.  Raw value is radians."""
+
+    _conversion_factors = {
+        Unit.Radian: 1.,
+        Unit.Degree: pi / 180,
+        Unit.MOA: pi / (60 * 180),
+        Unit.Mil: pi / 3_200,
+        Unit.MRad: 1. / 1_000,
+        Unit.Thousandth: pi / 3_000,
+        Unit.InchesPer100Yd: 1. / 3_600,
+        Unit.CmPer100m: 1. / 10_000,
+        Unit.OClock: pi / 6,
+    }
+
+    @property
+    def _rad(self):
+        """Shortcut for `>> Angular.Radian`."""
+        return self._value
+
+    @override
+    @classmethod
+    def to_raw(cls, value: Number, units: Unit) -> Number:
+        """Normalize angle to (-π, π]."""
+        radians = super().to_raw(value, units)
+        # Normalize to [-π, π)
+        r = (radians + pi) % (2.0 * pi) - pi
+        return r if r > -pi else pi  # move -π to +π
+
+    # Angular.* unit aliases
+    Radian: Final[Unit] = Unit.Radian
+    Degree: Final[Unit] = Unit.Degree
+    MOA: Final[Unit] = Unit.MOA
+    Mil: Final[Unit] = Unit.Mil
+    MRad: Final[Unit] = Unit.MRad
+    Thousandth: Final[Unit] = Unit.Thousandth
+    InchesPer100Yd: Final[Unit] = Unit.InchesPer100Yd
+    CmPer100m: Final[Unit] = Unit.CmPer100m
+    OClock: Final[Unit] = Unit.OClock
+
+
+class Energy(GenericDimension):
+    """Energy measurements.  Raw unit is foot-pounds."""
+
+    _conversion_factors = {
+        Unit.FootPound: 1.,
+        Unit.Joule: 1.3558179483314,
+    }
+
+    # Energy.* unit aliases
+    FootPound: Final = Unit.FootPound
+    Joule: Final = Unit.Joule
 
 
 class Distance(GenericDimension):
@@ -852,12 +1048,12 @@ class Distance(GenericDimension):
 
     @property
     def _inch(self) -> Number:
-        """Shortcut for `>> Distance.Inch`"""
+        """Shortcut for `>> Distance.Inch`."""
         return self._value
 
     @property
     def _feet(self) -> Number:
-        """Shortcut for `>> Distance.Foot`"""
+        """Shortcut for `>> Distance.Foot`."""
         return self._value / 12
 
     # Distance.* unit aliases
@@ -893,32 +1089,6 @@ class Pressure(GenericDimension):
     PSI: Final[Unit] = Unit.PSI
 
 
-class Weight(GenericDimension):
-    """Weight unit.  Raw value is grains."""
-
-    _conversion_factors = {
-        Unit.Grain: 1.,
-        Unit.Ounce: 437.5,
-        Unit.Gram: 15.4323584,
-        Unit.Pound: 7_000.,
-        Unit.Kilogram: 15_432.3584,
-        Unit.Newton: 1_573.662597
-    }
-
-    @property
-    def _grain(self) -> Number:
-        """Shortcut for `>> Weight.Grain`"""
-        return self._value
-
-    # Weight.* unit aliases
-    Grain: Final[Unit] = Unit.Grain
-    Ounce: Final[Unit] = Unit.Ounce
-    Gram: Final[Unit] = Unit.Gram
-    Pound: Final[Unit] = Unit.Pound
-    Kilogram: Final[Unit] = Unit.Kilogram
-    Newton: Final[Unit] = Unit.Newton
-
-
 class Temperature(GenericDimension):
     """Temperature unit.  Raw value is Fahrenheit."""
 
@@ -931,7 +1101,7 @@ class Temperature(GenericDimension):
 
     @property
     def _F(self) -> Number:
-        """Shortcut for `>> Temperature.Fahrenheit`"""
+        """Shortcut for `>> Temperature.Fahrenheit`."""
         return self._value
 
     @override
@@ -964,6 +1134,107 @@ class Temperature(GenericDimension):
             raise UnitConversionError(f"Temperature does not support {unit}")
         return result
 
+    @override
+    @classmethod
+    def new_from_raw(cls, raw_value: float, to_units: Unit) -> Temperature:
+        """Create Temperature from raw Fahrenheit value into target units.
+
+        Unlike other dimensions, Temperature uses affine conversions; this method
+            relies on `from_raw` instead of dividing by a scale factor.
+        """
+        # Temperature conversion uses affine transforms; do not divide by a factor.
+        value_in_units = cls.from_raw(raw_value, to_units)
+        return cls(value_in_units, to_units)
+
+    # Convert a +1 delta in the object's unit to raw (Fahrenheit) delta
+    def _units_to_raw_delta(self) -> float:  # type: ignore[override]
+        """Map a +1 delta in current temperature unit to a Fahrenheit raw delta.
+
+        Returns:
+            float: 1.0 for Fahrenheit/Rankin; 9/5 for Celsius/Kelvin.
+        """
+        if self.units in (Temperature.Fahrenheit, Temperature.Rankin):
+            return 1.0
+        if self.units in (Temperature.Celsius, Temperature.Kelvin):
+            return 9.0 / 5.0
+        return 1.0
+
+    def __mul__(self, other: object):  # type: ignore[override]
+        """Disallow multiplication for Temperature."""
+        raise TypeError("Temperature does not support multiplication")
+
+    def __rmul__(self, other: object):  # type: ignore[override]
+        """Disallow multiplication for Temperature."""
+        raise TypeError("Temperature does not support multiplication")
+
+    def __truediv__(self, other: object):  # type: ignore[override]
+        """Disallow division for Temperature."""
+        raise TypeError("Temperature does not support division")
+
+    def __rtruediv__(self, other: object):  # type: ignore[override]
+        """Disallow division for Temperature."""
+        raise TypeError("Temperature does not support division")
+
+    def __imul__(self, other: object):  # type: ignore[override]
+        """Disallow in-place multiplication for Temperature."""
+        raise TypeError("Temperature does not support multiplication")
+
+    def __itruediv__(self, other: object):  # type: ignore[override]
+        """Disallow in-place division for Temperature."""
+        raise TypeError("Temperature does not support division")
+
+    # Absolute zero clamp in raw Fahrenheit
+    _ABS_ZERO_F: float = -459.67
+
+    def __add__(self, other: Number):  # type: ignore[override]
+        """Add a number of this object's units; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            raw = self._value + float(other) * self._units_to_raw_delta()
+            if raw < self._ABS_ZERO_F:
+                raw = self._ABS_ZERO_F
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __radd__(self, other: Number):  # type: ignore[override]
+        """Right-hand numeric addition; clamp at absolute zero."""
+        return self.__add__(other)
+
+    def __sub__(self, other: Number):  # type: ignore[override]
+        """Subtract a numeric delta in the object's unit; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            raw = self._value - float(other) * self._units_to_raw_delta()
+            if raw < self._ABS_ZERO_F:
+                raw = self._ABS_ZERO_F
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __rsub__(self, other: Number):  # type: ignore[override]
+        """Right-hand numeric subtraction; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            raw = float(other) * self._units_to_raw_delta() - self._value
+            if raw < self._ABS_ZERO_F:
+                raw = self._ABS_ZERO_F
+            return self.__class__.new_from_raw(raw, self.units)
+        return NotImplemented
+
+    def __iadd__(self, other: Number):  # type: ignore[override]
+        """In-place numeric addition; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            self._value = self._value + float(other) * self._units_to_raw_delta()
+            if self._value < self._ABS_ZERO_F:
+                self._value = self._ABS_ZERO_F
+            return self
+        return NotImplemented
+
+    def __isub__(self, other: Number):  # type: ignore[override]
+        """In-place numeric subtraction; clamp at absolute zero."""
+        if isinstance(other, (int, float)):
+            self._value = self._value - float(other) * self._units_to_raw_delta()
+            if self._value < self._ABS_ZERO_F:
+                self._value = self._ABS_ZERO_F
+            return self
+        return NotImplemented
+
     # Temperature.* unit aliases
     Fahrenheit: Final[Unit] = Unit.Fahrenheit
     Celsius: Final[Unit] = Unit.Celsius
@@ -971,45 +1242,30 @@ class Temperature(GenericDimension):
     Rankin: Final[Unit] = Unit.Rankin
 
 
-class Angular(GenericDimension):
-    """Angular measurements.  Raw value is radians."""
+class Time(GenericDimension):
+    """Time measurements.  Raw unit is seconds."""
 
     _conversion_factors = {
-        Unit.Radian: 1.,
-        Unit.Degree: pi / 180,
-        Unit.MOA: pi / (60 * 180),
-        Unit.Mil: pi / 3_200,
-        Unit.MRad: 1. / 1_000,
-        Unit.Thousandth: pi / 3_000,
-        Unit.InchesPer100Yd: 1. / 3_600,
-        Unit.CmPer100m: 1. / 10_000,
-        Unit.OClock: pi / 6,
+        Unit.Second: 1.,
+        Unit.Minute: 60.,
+        Unit.Millisecond: 1. / 1_000,
+        Unit.Microsecond: 1. / 1_000_000,
+        Unit.Nanosecond: 1. / 1_000_000_000,
+        Unit.Picosecond: 1. / 1_000_000_000_000,
     }
 
     @property
-    def _rad(self):
-        """Shortcut for `>> Angular.Radian`"""
+    def _seconds(self) -> Number:
+        """Shortcut for `>> Time.Second`."""
         return self._value
 
-    @override
-    @classmethod
-    def to_raw(cls, value: Number, units: Unit) -> Number:
-        """Avoid going in circles: Truncates to [0, 2π)"""
-        radians = super().to_raw(value, units)
-        if radians > 2. * pi:
-            radians = radians % (2. * pi)
-        return radians
-
-    # Angular.* unit aliases
-    Radian: Final[Unit] = Unit.Radian
-    Degree: Final[Unit] = Unit.Degree
-    MOA: Final[Unit] = Unit.MOA
-    Mil: Final[Unit] = Unit.Mil
-    MRad: Final[Unit] = Unit.MRad
-    Thousandth: Final[Unit] = Unit.Thousandth
-    InchesPer100Yd: Final[Unit] = Unit.InchesPer100Yd
-    CmPer100m: Final[Unit] = Unit.CmPer100m
-    OClock: Final[Unit] = Unit.OClock
+    # Time.* unit aliases
+    Minute: Final[Unit] = Unit.Minute
+    Second: Final[Unit] = Unit.Second
+    Millisecond: Final[Unit] = Unit.Millisecond
+    Microsecond: Final[Unit] = Unit.Microsecond
+    Nanosecond: Final[Unit] = Unit.Nanosecond
+    Picosecond: Final[Unit] = Unit.Picosecond
 
 
 class Velocity(GenericDimension):
@@ -1025,7 +1281,7 @@ class Velocity(GenericDimension):
 
     @property
     def _fps(self) -> Number:
-        """Shortcut for `>> Velocity.FPS`"""
+        """Shortcut for `>> Velocity.FPS`."""
         return self._value * 3.2808399
 
     # Velocity.* unit aliases
@@ -1036,47 +1292,35 @@ class Velocity(GenericDimension):
     KT: Final[Unit] = Unit.KT
 
 
-class Energy(GenericDimension):
-    """Energy measurements.  Raw unit is foot-pounds."""
+class Weight(GenericDimension):
+    """Weight unit.  Raw value is grains."""
 
     _conversion_factors = {
-        Unit.FootPound: 1.,
-        Unit.Joule: 1.3558179483314,
-    }
-
-    # Energy.* unit aliases
-    FootPound: Final = Unit.FootPound
-    Joule: Final = Unit.Joule
-
-
-class Time(GenericDimension):
-    """Time measurements.  Raw unit is seconds."""
-
-    _conversion_factors = {
-        Unit.Second: 1.,
-        Unit.Minute: 1. / 60,
-        Unit.Millisecond: 1. / 1_000,
-        Unit.Microsecond: 1. / 1_000_000,
-        Unit.Nanosecond: 1. / 1_000_000_000,
-        Unit.Picosecond: 1. / 1_000_000_000_000,
+        Unit.Grain: 1.,
+        Unit.Ounce: 437.5,
+        Unit.Gram: 15.4323584,
+        Unit.Pound: 7_000.,
+        Unit.Kilogram: 15_432.3584,
+        Unit.Newton: 1_573.662597
     }
 
     @property
-    def _seconds(self) -> Number:
-        """Shortcut for `>> Time.Second`"""
+    def _grain(self) -> Number:
+        """Shortcut for `>> Weight.Grain`."""
         return self._value
 
-    # Time.* unit aliases
-    Minute: Final[Unit] = Unit.Minute
-    Second: Final[Unit] = Unit.Second
-    Millisecond: Final[Unit] = Unit.Millisecond
-    Microsecond: Final[Unit] = Unit.Microsecond
-    Nanosecond: Final[Unit] = Unit.Nanosecond
-    Picosecond: Final[Unit] = Unit.Picosecond
+    # Weight.* unit aliases
+    Grain: Final[Unit] = Unit.Grain
+    Ounce: Final[Unit] = Unit.Ounce
+    Gram: Final[Unit] = Unit.Gram
+    Pound: Final[Unit] = Unit.Pound
+    Kilogram: Final[Unit] = Unit.Kilogram
+    Newton: Final[Unit] = Unit.Newton
 
 
 class PreferredUnitsMeta(type):
     """Provide representation method for static dataclasses."""
+
     def __repr__(cls):
         return '\n'.join(f'{field} = {getattr(cls, field)!r}'
                          for field in getattr(cls, '__dataclass_fields__'))
@@ -1128,6 +1372,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
     Note:
         Changing preferred units affects all subsequent unit creation and display.
     """
+
     # Defaults
     angular: Unit = Unit.Degree
     distance: Unit = Unit.Yard
@@ -1162,10 +1407,10 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
             if f.default is not MISSING:
                 setattr(cls, f.name, f.default)
             elif getattr(f, "default_factory", MISSING) is not MISSING:
-                setattr(cls, f.name, f.default_factory())
+                setattr(cls, f.name, f.default_factory())  # type: ignore
 
     @classmethod
-    def set(cls, **kwargs):
+    def set(cls, **kwargs: Union[Unit, str, bool]):
         """Set preferred units from keyword arguments.
 
         Allows bulk configuration of preferred units using either Unit enum values or string aliases.
@@ -1251,20 +1496,33 @@ def _parse_unit(input_: str) -> Union[Unit, None, Any]:
         TypeError: If input is not a string.
 
     Examples:
-        >>> _parse_unit('meter')  # Unit.Meter
-        >>> _parse_unit('m')      # Unit.Meter  
-        >>> _parse_unit('fps')    # Unit.FPS
-        >>> _parse_unit('MOA')    # Unit.MOA
+        >>> _parse_unit('meter')     # Unit.Meter
+        meter
+        >>> _parse_unit('m')         # Unit.Meter
+        meter
+        >>> _parse_unit('fps').name  # Unit.FPS
+        'FPS'
+        >>> _parse_unit('oops')      # None
     """
-    input_ = input_.strip().lower()
+    # Normalize input: trim, lowercase, and remove internal whitespace
     if not isinstance(input_, str):
-        raise TypeError(f"type str expected for 'input_', got {type(input_)}")
+        raise TypeError(f"String expected, got {type(input_)=}, {input_=}")
+    input_ = input_.strip().lower()
+    input_ = re.sub(r"\s+", "", input_)
     if hasattr(PreferredUnits, input_):
         return getattr(PreferredUnits, input_)
     try:
         return Unit[input_]
     except KeyError:
-        return _find_unit_by_alias(input_, UnitAliases)
+        # Try direct alias match
+        if (unit := _find_unit_by_alias(input_, UnitAliases)) is not None:
+            return unit
+        # Simple pluralization fallback: yard(s), meter(s), knot(s), etc.
+        if input_.endswith('s'):
+            singular = input_[:-1]
+            if (unit := _find_unit_by_alias(singular, UnitAliases)) is not None:
+                return unit
+        return None
 
 
 def _parse_value(input_: Union[str, Number],
@@ -1284,14 +1542,16 @@ def _parse_value(input_: Union[str, Number],
 
     Examples:
         >>> # Parse numeric value with preferred unit
-        >>> _parse_value(100, Unit.Meter)  # Distance(100, Unit.Meter)
+        >>> _parse_value(100, Unit.Meter)
+        <Distance: 100.0m (3937.0079)>
         
         >>> # Parse string with embedded unit
-        >>> _parse_value('100m', None)     # Distance(100, Unit.Meter)
-        >>> _parse_value('2800fps', None)  # Velocity(2800, Unit.FPS)
+        >>> _parse_value('2yd', None) 
+        <Distance: 2.0yd (72.0)>
         
-        >>> # Parse with string preferred unit
-        >>> _parse_value(50, 'grain')      # Weight(50, Unit.Grain)
+        >>> # Parse with PreferredUnit string
+        >>> _parse_value(50, 'grain')
+        <Weight: 50.0gr (50.0)>
     """
 
     def create_as_preferred(value_):

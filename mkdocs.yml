@@ -9,6 +9,7 @@ nav:
 #  - Why use py-balllisticcalc: why.md
   - Help: help.md
   - Installation: install.md
+  - QuickStart: QuickStart.md
 #  - Version policy: version-policy.md
   - Contributing: contributing.md
 #  - Changelog: changelog.md
@@ -43,17 +44,8 @@ nav:
 #    - Logger: concepts/logger.md
 #  - Performance:
 - API Documentation:
-#    - Units:
-#      - DSL:
-#      - Unit:
-#      - AbstractUnit:
-#      - Distance:
-#      - Velocity:
-#      - Angular:
-#      - Pressure:
-#      - Temperature:
-#      - Weight:
-#      - Energy:
+    - Units:
+      - Unit System: api/unit.md
     - Munition:
       - Weapon: api/munition/weapon.md
       - Ammo: api/munition/ammo.md
@@ -68,10 +60,10 @@ nav:
 #    - Interface:
   #    - Engines: api/engines.md
 #    - Logger: api/logger.md
-#- Examples:
-#- Error Messages:
-#- Internals:
-#  - Architecture: internals/architecture.md
+- Internals:
+  - Architecture: Architecture.md
+  - Developer Details: Details.md
+  - Cython Notes: Cython.md
 - Contributors: contributors.md
 - About: about.md
 
@@ -185,11 +177,16 @@ plugins:
     alias_type: symlink
     canonical_version: latest
 - search
-#- exclude:
-#    glob:
-#    - theme/announce.html
-#    - plugins/*
-#    - __pycache__/*
+- exclude:
+    glob:
+      - theme/announce.html
+      - plugins/*
+      - __pycache__/*
+      - why.md
+      - version-policy.md
+      - changelog.md
+      - concepts/classes.md
+      - internals/architecture.md
 - autorefs
 - mkdocstrings:
     handlers:
@@ -207,6 +204,6 @@ plugins:
           signature_crossrefs: true
 
           docstring_section_style: table
-        import:
+        inventories:
           - url: https://docs.python.org/3/objects.inv
             domains: [py, std]

@@ -110,10 +110,37 @@ python scripts\sync_cython_sources.py
 pytest --engine="cythonized_rk4_engine" --cov=py_ballisticcalc --cov=py_ballisticcalc_exts --cov-report=html
 ```
 
-### Documentation
+### Cython extensions: safety & stress
 
-If you've made any changes to the documentation (including changes to function signatures, class definitions, or
-docstrings that will appear in the API documentation), make sure it builds successfully.
+For diagnosing low-level issues (bounds, None checks, overflows) and for opt-in long-running stress tests, use the safety and stress workflows below. Commands are shown for Windows PowerShell.
+
+```powershell
+# Rebuild Cython extensions with safety checks enabled
+$env:CYTHON_SAFETY = '1'
+# Optional: force Cython to regenerate C code even if sources look unchanged
+$env:CYTHON_FORCE_REGEN = '1'
+
+# Reinstall extensions in editable mode (from project root)
+pip install -e .\py_ballisticcalc.exts
+
+# Run extension test suite (stress tests excluded by default via markers)
+pytest .\py_ballisticcalc.exts\tests -q
+
+# Run only the stress tests (opt-in). These are longer and more memory-heavy.
+pytest .\py_ballisticcalc.exts\tests -m stress -q
+
+# Clear env after testing
+Remove-Item Env:CYTHON_SAFETY; Remove-Item Env:CYTHON_FORCE_REGEN
+```
+
+Notes:
+- Safety build toggles bounds checking, wraparound, initialization checks, None checks, disables cdivision, and adds overflow checks; it trades speed for correctness to surface bugs.
+- The extension test suite enables `faulthandler` for better tracebacks on crashes.
+- Stress tests are marked with `@pytest.mark.stress` and are excluded by default.
+
+### Build Documentation
+
+If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure the documentation builds successfully.
 
 We use `mkdocs-material[imaging]` to support social previews.
 You can find directions on how to install the required
@@ -143,16 +170,18 @@ include a description of your changes.
 When your pull request is ready for review, add a comment with the message "please review" and we'll take a look as soon
 as we can.
 
-## Documentation style
+## Documentation
 
-Documentation is written in Markdown and built
-using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is build from docstrings
-using [mkdocstrings](https://mkdocstrings.github.io/).
+Documentation is written in Markdown and built using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is build from docstrings using [mkdocstrings](https://mkdocstrings.github.io/).
+
+In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
+
+Code examples are encouraged but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
+
 
 ### Code documentation
 
-When contributing to py-ballisticcalc, please make sure that all code is well documented. The following should be
-documented using properly formatted docstrings:
+When contributing to py-ballisticcalc, please make sure that all code is well documented. The following should be documented using properly formatted docstrings:
 
 - Modules
 - Class definitions
@@ -160,18 +189,19 @@ documented using properly formatted docstrings:
 - Module-level variables
 
 py-ballisticcalc
-uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) formatted
-according to [PEP 257](https://www.python.org/dev/peps/pep-0257/) guidelines. (
-See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
+uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/) guidelines. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 for further examples.)
 
-[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run
-`pydocstyle .\py_ballisticcalc\` to check your docstrings.
+[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run `pydocstyle .\py_ballisticcalc\` to check your docstrings.
 
 Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.
 
-Class attributes and function arguments should be documented in the format "name: description." When applicable, a
-return type should be documented with just a description. Types are inferred from the signature.
+Class attributes and function arguments should be documented in the format "name: description." When applicable, a return type should be documented with just a description. Types are inferred from the signature/type-hints.
+
+* Class attributes should be documented in the class docstring.
+
+* Instance attributes should be documented as "Args" in the `__init__` docstring.
+
 
 ```python
 class Foo:
@@ -198,15 +228,4 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings. 
-
-!!! note "Class and instance attributes"
-    Class attributes should be documented in the class docstring.
-
-    Instance attributes should be documented as "Args" in the `__init__` docstring.
-
-### Documentation Style
-
-In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
-
-Code examples are encouraged but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
+You may include example code in docstrings.  Ideally it should pass [doctest](https://docs.python.org/3/library/doctest.html), which you can run via `scripts\run_doctest.py`.

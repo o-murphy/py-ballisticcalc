@@ -1,4 +1,5 @@
 import logging
+import faulthandler
 
 import pytest
 
@@ -6,6 +7,9 @@ from py_ballisticcalc.interface import _EngineLoader
 from py_ballisticcalc.logger import logger
 
 logger.setLevel(logging.DEBUG)
+
+# Enable faulthandler early to get rich tracebacks on segfaults
+faulthandler.enable()
 
 
 def pytest_addoption(parser):

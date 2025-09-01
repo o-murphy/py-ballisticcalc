@@ -1,7 +1,11 @@
+"""
+Cythonized Euler Integration Engine
+
+Because storing each step in a CBaseTrajSeq is practically costless, we always run with "dense_output=True".
+"""
 from cython cimport final
-from libc.math cimport fabs, sin, cos, tan, atan, atan2, fmin, fmax, pow
+from libc.math cimport fabs, sin, cos, fmin, fmax
 from py_ballisticcalc_exts.cy_bindings cimport (
-    Config_t,
     ShotProps_t,
     ShotProps_t_dragByMach,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
@@ -97,6 +101,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         range_vector.x = <double>0.0
         range_vector.y = -self._shot_s.cant_cosine * self._shot_s.sight_height
         range_vector.z = -self._shot_s.cant_sine * self._shot_s.sight_height
+        _cMaximumDrop += fmin(<double>0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
         
         # Set direction vector components
         _dir_vector.x = cos(self._shot_s.barrel_elevation) * cos(self._shot_s.barrel_azimuth)
@@ -114,13 +119,13 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         
         # Update air density and mach at initial altitude
         Atmosphere_t_updateDensityFactorAndMachForAltitude(
-            &self._shot_s.atmo,
-            self._shot_s.alt0 + range_vector.y,
+            &shot_props_ptr[0].atmo,
+            shot_props_ptr[0].alt0 + range_vector.y,
             &density_ratio,
             &mach
         )
-        
-        # Quadratic interpolation requires 3 points, so we will need at least 3 steps
+
+        # Cubic interpolation requires 3 points, so we will need at least 3 steps
         while (range_vector.x <= range_limit_ft) or integration_step_count < 3:
             integration_step_count += 1
 
@@ -150,7 +155,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             delta_time = self.time_step(calc_step, relative_speed)
             
             # 3. Calculate drag coefficient and drag force
-            km = density_ratio * ShotProps_t_dragByMach(&self._shot_s, relative_speed / mach)
+            km = density_ratio * ShotProps_t_dragByMach(shot_props_ptr, relative_speed / mach)
             drag = km * relative_speed
             
             # 4. Apply drag and gravity to velocity
@@ -169,8 +174,8 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
             # Check termination conditions
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or self._shot_s.alt0 + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and shot_props_ptr[0].alt0 + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

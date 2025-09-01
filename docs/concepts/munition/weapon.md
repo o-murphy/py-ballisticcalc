@@ -2,9 +2,6 @@
 
     [`py_ballisticcalc.munition.Weapon`][py_ballisticcalc.munition.Weapon]
 
-The way to define `weapon` properties in **py-ballisticcalc** is via Weapon dataclass.
-Weapon instances are simply and reusable.
-
 ## Weapon initialization
 
 Import the necessary types to create a Weapon instance
@@ -37,7 +34,7 @@ Weapon instance is mutable object and field values can be changed through attrib
 
 Weapon possess the following methods and attributes:
 
-* [`sight_height`][py_ballisticcalc.munition.Weapon.sight_height]: Sight height, which is the distance between the line of sight and barrel center at the muzzle, measured perpendicular to the line of sight as shown in the following figure:![How to measure sight height](../../../doc/SightHeight.png)
+* [`sight_height`][py_ballisticcalc.munition.Weapon.sight_height]: Sight height, which is the distance between the line of sight and barrel center at the muzzle, measured perpendicular to the line of sight as shown in the following figure:![How to measure sight height](SightHeight.png)
 
 * [`twist`][py_ballisticcalc.munition.Weapon.twist]: Twist rate of barrel rifling, in terms of length to complete 1 rotation.  Positive values indicate right-hand twist, negative values indicate left-hand twist.
 * [`zero_elevation`][py_ballisticcalc.munition.Weapon.zero_elevation]: Angle of barrel centerline relative to line of sight when the sight is set to "zero." 

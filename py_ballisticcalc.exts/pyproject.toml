@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc.exts"
-version = "2.2.0b7"
+version = "2.2.0rc1"
 
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
@@ -61,3 +61,8 @@ dev = ['cython', 'build', 'setuptools', 'cibuildwheel']
 [tool.cibuildwheel]
 # Use uv and build
 build-frontend = "build[uv]"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = '-m "not stress"'
+markers = ["stress: long-running or resource-intensive tests, opt-in only"]

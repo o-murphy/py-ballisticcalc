@@ -1,5 +1,3 @@
-"""Unit test for zero finding in ballistic calculator."""
-# mypy: ignore - mypy overhead is not worth it for test code
 import math
 import pytest
 from py_ballisticcalc.conditions import Shot
@@ -10,13 +8,13 @@ from py_ballisticcalc.unit import *
 from py_ballisticcalc import (
     Calculator,
     BaseEngineConfigDict,
-    RangeError,
-    HitResult,
     RK4IntegrationEngine,
     VelocityVerletIntegrationEngine
 )
 from py_ballisticcalc.trajectory_data import TrajFlag
 from tests.fixtures_and_helpers import create_23_mm_shot, create_5_56_mm_shot
+
+pytestmark = pytest.mark.engine
 
 DISTANCES_FOR_CHECKING = (
     # list(range(100, 1000, 100)) +

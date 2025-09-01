@@ -5,10 +5,13 @@
 **/dist
 **/*.egg-info
 **/.venv
+**/*.ps1
 .vscode/settings.json
 .coverage
 htmlcov
-debug/*
+debug
+site
+.testall
 compile_flags.txt
 # Mirror of Cython sources for coverage lookup:
 /py_ballisticcalc_exts/*

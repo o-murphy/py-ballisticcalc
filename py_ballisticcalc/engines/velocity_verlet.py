@@ -1,5 +1,3 @@
-# pylint: disable=missing-class-docstring,missing-function-docstring
-# pylint: disable=line-too-long,invalid-name,attribute-defined-outside-init
 """Velocity Verlet integration engine for ballistic trajectory calculations.
 
 The Velocity Verlet algorithm is a symplectic integrator that conserves energy in physical systems.
@@ -8,15 +6,8 @@ Classes:
     VelocityVerletIntegrationEngine: Concrete implementation using Velocity Verlet method
 
 Example:
-    >>> from py_ballisticcalc.engines.velocity_verlet import VelocityVerletIntegrationEngine
-    >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
-    >>> 
-    >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)
-    >>> engine = VelocityVerletIntegrationEngine(config)
-    >>> 
-    >>> # Use with Calculator
     >>> from py_ballisticcalc import Calculator
-    >>> calc = Calculator(engine="verlet_engine")
+    >>> calc = Calculator(engine="py_ballisticcalc:VelocityVerletIntegrationEngine")
 
 Mathematical Background:
     The Velocity Verlet method updates position and velocity using:
@@ -39,6 +30,7 @@ import warnings
 
 from typing_extensions import Union, List, override
 
+from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
     BaseIntegrationEngine,
@@ -47,7 +39,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
-from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, ShotProps, HitResult
+from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector
 
 __all__ = ('VelocityVerletIntegrationEngine',)
@@ -65,23 +57,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         and conserves the total energy of the system.
     
     Attributes:
-        DEFAULT_TIME_STEP: Default time step multiplier (0.0005).
+        DEFAULT_TIME_STEP: Default time step multiplier.
         integration_step_count: Number of integration steps performed.
-        
-    Class Constants:
-        DEFAULT_TIME_STEP: Base time step multiplier for Verlet integration.
-                          Small value ensures stability and accuracy.
-                          
-    Mathematical Properties:
-        - Symplectic: Preserves phase space volume (Liouville's theorem)
-        - Time-reversible: Can recover original state by reversing time
-        - Energy-conserving: Total energy fluctuates around constant value
-        - Second-order: Local truncation error is O(h³)
-        
-    Example:
-        >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)
-        >>> engine = VelocityVerletIntegrationEngine(config)
-        >>> result = engine.integrate(shot_info, Distance(1000, Distance.Yard))
         
     See Also:
         py_ballisticcalc.engines.rk4.RK4IntegrationEngine: Higher accuracy alternative
@@ -99,11 +76,11 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
                    
         Example:
             >>> config = BaseEngineConfigDict(
-            ...     cStepMultiplier=0.8,
-            ...     cMinimumVelocity=50.0
+            ...     cStepMultiplier=0.5,
+            ...     cMinimumVelocity=10.0
             ... )
             >>> engine = VelocityVerletIntegrationEngine(config)
-            
+        
         Note:
             The integration_step_count tracks the number of Verlet steps computed.
         """
@@ -121,10 +98,10 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             Effective step size for Velocity Verlet integration.
             
         Formula:
-            step_size = base_step_multiplier × DEFAULT_TIME_STEP (0.0005)
+            step_size = base_step_multiplier × DEFAULT_TIME_STEP
             
         Note:
-            The small DEFAULT_TIME_STEP value (0.0005) is chosen to ensure
+            The small DEFAULT_TIME_STEP value is chosen to ensure
             that this engine can pass all unit tests, despite most of them
             being highly dissipative rather than conservative of energy.
         """
@@ -176,12 +153,13 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             math.sin(props.barrel_elevation_rad),
             math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
         ).mul_by_const(relative_speed)  # type: ignore
+        _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # Acceleration:
         density_ratio, mach = props.get_density_and_mach_for_altitude(range_vector.y)
         relative_velocity = velocity_vector - wind_vector
         relative_speed = relative_velocity.magnitude()
         drag = density_ratio * relative_speed * props.drag_by_mach(relative_speed / mach)
-        acceleration_vector = self.gravity_vector - drag * relative_velocity # type: ignore[operator]
+        acceleration_vector = self.gravity_vector - drag * relative_velocity  # type: ignore[operator]
         # endregion
 
         data_filter = TrajectoryDataFilter(props=props, filter_flags=filter_flags,
@@ -194,7 +172,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         warnings.simplefilter("once")  # used to avoid multiple warnings in a loop
         termination_reason = None
         integration_step_count = 0
-        # Quadratic interpolation requires 3 points, so we will need at least 3 steps
+        # Cubic interpolation requires 3 points, so we will need at least 3 steps
         while (range_vector.x <= range_limit_ft) or integration_step_count < 3:
             integration_step_count += 1
 
@@ -236,8 +214,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             # endregion ballistic calculation step
 
             if (velocity < _cMinimumVelocity
-                or range_vector.y < _cMaximumDrop
-                or props.alt0_ft + range_vector.y < _cMinimumAltitude
+                or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
+                or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
                 if velocity < _cMinimumVelocity:
                     termination_reason = RangeError.MinimumVelocityReached

@@ -810,18 +810,17 @@ def get_drag_tables_names() -> List[str]:
         >>> 'TableG1' in tables
         True
     """
-    return [f"TableG{n}" for n in (1, 7, 2, 5, 6, 8, 'I', 'S', 'RA4')]
+    names: List[str] = []
+    for attr_name, value in globals().items():
+        if not attr_name.startswith('Table'):
+            continue
+        if isinstance(value, list) and value and isinstance(value[0], dict):
+            first = value[0]
+            if 'Mach' in first and 'CD' in first:
+                names.append(attr_name)
+    names.sort()
+    return names
 
 
 __all__ = ['get_drag_tables_names', 'DragTablePointDictType']
-__all__ += [
-    'TableG1',
-    'TableG7',
-    'TableG2',
-    'TableG5',
-    'TableG6',
-    'TableG8',
-    'TableGI',
-    'TableGS',
-    'TableRA4'
-]
+__all__ += get_drag_tables_names()

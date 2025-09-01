@@ -32,11 +32,12 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Curve_t_from_pylist,
 )
 
-from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
-from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
+from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config, TrajectoryDataFilter
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, ShotProps, BaseTrajData, TrajectoryData
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
+from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
+from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, BaseTrajData, TrajectoryData
+from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
 cdef double _ALLOWED_ZERO_ERROR_FEET = <double>_PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = <double>_PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
@@ -248,7 +249,7 @@ cdef class CythonizedBaseIntegrationEngine:
         shot_props_ptr[0].barrel_elevation = angle_rad
         __res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, <double>0.0, <int>TrajFlag_t.NONE)
         trajectory = <CBaseTrajSeq>__res[0]
-        # If trajectory is too short for quadratic interpolation, treat as unreachable
+        # If trajectory is too short for cubic interpolation, treat as unreachable
         n = <Py_ssize_t>len(trajectory)
         if n < <Py_ssize_t>3:
             return <double>9e9
