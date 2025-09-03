@@ -3,7 +3,7 @@
 This module provides a comprehensive type-safe unit conversion system, supporting physical dimensions
 including angles, distance, energy, pressure, temperature, time, velocity, and weight.
 
-The system uses a base class `GenericDimension` with specialized subclasses for each physical dimension.
+The system uses a base class [`GenericDimension`][py_ballisticcalc.unit.GenericDimension] with specialized subclasses for each physical dimension.
 Each dimension maintains its values internally in a fixed raw unit (e.g., inches for distance, m/s for velocity)
 and provides conversion methods to any supported unit within that dimension.
 
@@ -37,14 +37,14 @@ Examples:
     100.0
     
 Supported Dimensions:
-    * Angular: radian, degree, MOA, mil, mrad, thousandth, inch/100yd, cm/100m, o'clock
-    * Distance: inch, foot, yard, mile, nautical mile, mm, cm, m, km, line
-    * Energy: foot-pound, joule
-    * Pressure: mmHg, inHg, bar, hPa, PSI
-    * Temperature: Fahrenheit, Celsius, Kelvin, Rankine
-    * Time: second, minute, millisecond, microsecond, nanosecond, picosecond
-    * Velocity: m/s, km/h, ft/s, mph, knots
-    * Weight: grain, ounce, gram, pound, kilogram, newton
+    * Angular: `radian`, `degree`, `MOA`, `mil`, `mrad`, `thousandth`, `inch/100yd`, `cm/100m`, `o'clock`
+    * Distance: `inch`, `foot`, `yard`, `mile`, `nautical mile`, `mm`, `cm`, `m`, `km`, `line`
+    * Energy: `foot-pound`, `joule`
+    * Pressure: `mmHg`, `inHg`, `bar`, `hPa`, `PSI`
+    * Temperature: `Fahrenheit`, `Celsius`, `Kelvin`, `Rankine`
+    * Time: `second`, `minute`, `millisecond`, `microsecond`, `nanosecond`, `picosecond`
+    * Velocity: `m/s`, `km/h`, `ft/s`, `mph`, `knots`
+    * Weight: `grain`, `ounce`, `gram`, `pound`, `kilogram`, `newton`
 """
 
 # Standard library imports

@@ -52,20 +52,37 @@ Fork the repository on GitHub and clone your fork locally.
 # Clone your fork and cd into the repo directory
 git clone git@github.com:<your username>/py-ballisticcalc.git
 cd py-ballisticcalc
-
-# Setup virtual environment (we will use `venv` there)
-python -m venv .venv
-source .venv/bin/activate
-
-# Install package in editable mode with `dev` requirements to local environment 
-pip install -e .[dev]
 ```
+
+=== "pip"
+    ```bash
+    # Setup virtual environment (we will use `venv` there)
+    python -m venv .venv
+    source .venv/bin/activate
+
+    # Install package in editable mode with `dev` requirements to local environment 
+    pip install -e .[dev]
+    ```
+
+=== "uv"
+    ```bash
+    # Sync project
+    uv sync --dev
+    # Activate `venv`
+    source .venv/bin/activate
+    ```
 
 If you want to contribute to cythonized extensions you can also install them in editable mode
 
-```bash
-pip install -e ./py_ballisticcalc.exts[dev]
-```
+=== "pip"
+    ```bash
+    pip install -e ./py_ballisticcalc.exts[dev]
+    ```
+
+=== "uv"
+    ```bash
+    uv sync --dev --extra exts
+    ```
 
 ### Check out a new branch and make your changes
 
@@ -146,10 +163,19 @@ We use `mkdocs-material[imaging]` to support social previews.
 You can find directions on how to install the required
 dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/).
 
-```bash
-# Install dependencies for docs building
-pip install -e .[docs]
+=== "pip"
+    ```bash
+    # Install dependencies for docs building
+    pip install -e .[docs]
+    ```
 
+=== "uv"
+    ```bash
+    # Install dependencies for docs building
+    uv sync --extra docs 
+    ```
+
+```bash
 # Rebuild docs locally before commiting them to the branch   
 mkdocs build
 

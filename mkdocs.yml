@@ -9,7 +9,7 @@ nav:
 #  - Why use py-balllisticcalc: why.md
   - Help: help.md
   - Installation: install.md
-  - QuickStart: QuickStart.md
+  - QuickStart: quick-start.md
 #  - Version policy: version-policy.md
   - Contributing: contributing.md
 #  - Changelog: changelog.md
@@ -61,9 +61,9 @@ nav:
   #    - Engines: api/engines.md
 #    - Logger: api/logger.md
 - Internals:
-  - Architecture: Architecture.md
-  - Developer Details: Details.md
-  - Cython Notes: Cython.md
+  - Architecture: internals/architecture.md
+  - Developer Details: internals/details.md
+  - Cython Notes: internals/cython.md
 - Contributors: contributors.md
 - About: about.md
 
@@ -186,7 +186,6 @@ plugins:
       - version-policy.md
       - changelog.md
       - concepts/classes.md
-      - internals/architecture.md
 - autorefs
 - mkdocstrings:
     handlers:

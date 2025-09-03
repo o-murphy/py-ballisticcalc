@@ -1,2 +1,2 @@
-# Why use Pydantic py-ballisticcalc?
+# Why use py-ballisticcalc?
 
