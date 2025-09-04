@@ -1,32 +1,32 @@
 site_name: py-ballisticcalc
-site_description: LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
+site_description: LGPL ballistic calculation library
 edit_uri: edit/main/docs/
 site_url: https://o-murphy.github.io/py-ballisticcalc/
 
 nav:
 - Get started:
-  - Welcome: index.md
+  - QuickStart: index.md
 #  - Why use py-balllisticcalc: why.md
-  - Help: help.md
   - Installation: install.md
-  - QuickStart: quick-start.md
-#  - Version policy: version-policy.md
+#  - Examples: examples/Examples
+  - Help: help.md
   - Contributing: contributing.md
+#  - Version policy: version-policy.md
 #  - Changelog: changelog.md
 - Concepts:
-#  - Classes: concepts/classes.md
-    - Munition:
+  - Basics: concepts/index.md
+  - Munition:
 #        - concepts/munition/index.md
-        - "🔫 Weapon": concepts/munition/weapon.md  # <-- Added a dummy sub-level
-        - "💣 Ammo": concepts/munition/ammo.md
-    - DragModel: concepts/drag_model.md
-    - Conditions:
-        - "🌡️ Atmo": concepts/conditions/atmo.md
-        - "💨 Wind": concepts/conditions/wind.md
-        - "🎯 Shot": concepts/conditions/shot.md
-    - Units and Dimensions:
+    - "🔫 Weapon": concepts/munition/weapon.md  # <-- Added a dummy sub-level
+    - "💣 Ammo": concepts/munition/ammo.md
+  - DragModel: concepts/drag_model.md
+  - Conditions:
+    - "🌡️ Atmo": concepts/conditions/atmo.md
+    - "💨 Wind": concepts/conditions/wind.md
+    - "🎯 Shot": concepts/conditions/shot.md
+  - Units and Dimensions:
 #        - DSL:
-        - "📏 Unit": concepts/unit.md
+    - "📏 Unit": concepts/unit.md
 #        - AbstractUnit:
 #        - Distance:
 #        - Velocity:
@@ -35,17 +35,20 @@ nav:
 #        - Temperature:
 #        - Weight:
 #        - Energy:
-    - TrajectoryData: concepts/trajectory_data.md
-    - Vector: concepts/vector.md
-    - Constants: concepts/constants.md
+  - TrajectoryData: concepts/trajectory_data.md
+  - Vector: concepts/vector.md
+  - Constants: concepts/constants.md
 #    - Interface:
-    - Engines:
-        - "⚙️ Engines": concepts/engines.md
+  - Engines:
+    - "⚙️ Engines": concepts/engines.md
+    - "📊 Benchmarks": concepts/benchmarks.md
 #    - Logger: concepts/logger.md
 #  - Performance:
 - API Documentation:
+    - Overview: api/index.md
     - Units:
       - Unit System: api/unit.md
+    - Interface: api/interface.md
     - Munition:
       - Weapon: api/munition/weapon.md
       - Ammo: api/munition/ammo.md
@@ -155,10 +158,13 @@ markdown_extensions:
     title: Page contents
 - admonition
 - pymdownx.details
-- pymdownx.superfences
+- pymdownx.superfences:
+    custom_fences:
+      - name: mermaid
+        class: mermaid
+        format: !!python/name:pymdownx.superfences.fence_code_format
 - pymdownx.highlight:
     pygments_lang_class: true
-- pymdownx.extra
 - pymdownx.emoji:
     emoji_index: !!python/name:material.extensions.emoji.twemoji
     emoji_generator: !!python/name:material.extensions.emoji.to_svg
@@ -172,37 +178,36 @@ markdown_extensions:
 #  - py_ballisticcalc
 
 plugins:
-#- social
-- mike:
-    alias_type: symlink
-    canonical_version: latest
-- search
-- exclude:
-    glob:
-      - theme/announce.html
-      - plugins/*
-      - __pycache__/*
-      - why.md
-      - version-policy.md
-      - changelog.md
-      - concepts/classes.md
-- autorefs
-- mkdocstrings:
-    handlers:
-      python:
-        paths: [.]
-        options:
-          show_source: true
-          members_order: source
-          separate_signature: true
-          filters: ["!^_"]
-          docstring_options:
-            ignore_init_summary: true
-          merge_init_into_class: true
-          show_signature_annotations: true
-          signature_crossrefs: true
-
-          docstring_section_style: table
-        inventories:
-          - url: https://docs.python.org/3/objects.inv
-            domains: [py, std]
+  - mike:
+      alias_type: symlink
+      canonical_version: latest
+  - search
+  - exclude:
+      glob:
+        - theme/announce.html
+        - plugins/*
+        - __pycache__/*
+        - why.md
+        - version-policy.md
+        - changelog.md
+  - autorefs
+#  - mkdocs-jupyter:
+#      execute: false
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.] 
+          options:
+            show_source: true
+            members_order: source
+            separate_signature: true
+            filters: ["!^_"]
+            docstring_options:
+              ignore_init_summary: true
+            merge_init_into_class: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            docstring_section_style: table
+          inventories:
+            - url: https://docs.python.org/3/objects.inv
+              domains: [py, std]

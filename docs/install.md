@@ -14,11 +14,7 @@ Installation is as simple as:
     uv add py-ballisticcalc 
     ```
 
-py-ballisticcalc has a few dependencies:
-
-* [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library [typing][] module.
-
-If you've got Python 3.9+ and `pip` installed, you're good to go.
+If you have Python 3.10+ and `pip` installed, you're good to go.
 
 [//]: # (py-ballisticcalc is also available on [conda]&#40;https://www.anaconda.com&#41; under the [conda-forge]&#40;https://conda-forge.org&#41;)
 
@@ -34,9 +30,7 @@ If you've got Python 3.9+ and `pip` installed, you're good to go.
 
 py-ballisticcalc has the following optional dependencies:
 
-* `py_ballisticcalc.exts`: Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
-
-[//]: # (* `RKBallistic`: Implementation of engine that uses Runge–Kutta methods to increase productivity. [py_ballisticcalc.exts]&#40;https://github.com/dbookstaber/RKBallistic&#41; repo.)
+* [`py_ballisticcalc.exts`](internals/cython.md): Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
 
 To install optional dependencies along with py-ballisticcalc:
 
@@ -64,9 +58,9 @@ To install optional dependencies along with py-ballisticcalc:
     uv add  'py-ballisticcalc[visualize]'
     ```
 
-*Of course, you can also install requirements manually with `pip install py-ballisticcalc.exts pandas matplotlib`.*
+Of course, you can also install requirements manually with `pip install py-ballisticcalc.exts pandas matplotlib`.
 
-To install latest version from sources in editable mode
+To install latest version from sources in editable mode:
 
 ```bash
 git clone github.com/o-murphy/py-ballisticcalc
