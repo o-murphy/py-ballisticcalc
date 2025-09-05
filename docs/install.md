@@ -58,14 +58,35 @@ To install optional dependencies along with py-ballisticcalc:
     uv add  'py-ballisticcalc[visualize]'
     ```
 
-Of course, you can also install requirements manually with `pip install py-ballisticcalc.exts pandas matplotlib`.
+Of course, you can also install requirements manually with:
+
+=== "pip"
+    ```
+    pip install py-ballisticcalc.exts pandas matplotlib
+    ```
+
+=== "uv"
+    ```
+    uv add py-ballisticcalc.exts pandas matplotlib
+    ```
 
 To install latest version from sources in editable mode:
 
 ```bash
 git clone github.com/o-murphy/py-ballisticcalc
 cd py-ballisticcalc
-pip install -e .[dev]
-# optionally install binary extensions
-pip install -e ./py_ballisticcalc.exts[dev]
 ```
+
+=== "pip"
+    ```bash
+    # from repo root
+    py -m pip install -e .[dev]                        # main package editable
+    py -m pip install -e ./py_ballisticcalc.exts[dev]  # build/install C extensions (optional)
+    ```
+
+=== "uv"
+    ```bash
+    # from repo root
+    uv sync --dev                        # main package editable
+    uv sync --dev --extra exts           # build/install C extensions (optional)
+    ```

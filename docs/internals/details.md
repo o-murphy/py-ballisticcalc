@@ -67,13 +67,13 @@ Development dependencies and reproducible developer/CI installs are pinned in `u
 ## Debugging tips
 - Reproduce failure with a focused pytest call (pass the test path) to avoid long runs.
 - Add temporary debug prints in Python-side filter rather than in C to avoid recompiles.
-- To iterate on Cython code rapidly: keep `pyx` edits small and incremental, run `py -m pip install -e .\py_ballisticcalc.exts` to rebuild the extension in-place.
+- To iterate on Cython code rapidly: keep `pyx` edits small and incremental, run `py -m pip install -e ./py_ballisticcalc.exts` to rebuild the extension in-place.
 
 ## Build / test commands
 
 ```bash
 # optional: install editable C extensions and main package
-py -m pip install -e .\py_ballisticcalc.exts
+py -m pip install -e ./py_ballisticcalc.exts
 py -m pip install -e .
 
 # run a single test file

@@ -122,7 +122,7 @@ pytest --cov=py_ballisticcalc --cov-report=html --engine="scipy_engine"  # for c
 To get coverage of Cython, set the environment variable `CYTHON_COVERAGE = '1'`, rebuild `py_ballisticcalc.exts` (from project root: `pip install -e py_ballisticcalc.exts`), then run:
 
 ```shell
-python scripts\sync_cython_sources.py
+python scripts/sync_cython_sources.py
 pytest --engine="cythonized_rk4_engine" --cov=py_ballisticcalc --cov=py_ballisticcalc_exts --cov-report=html
 ```
 
@@ -137,13 +137,13 @@ $env:CYTHON_SAFETY = '1'
 $env:CYTHON_FORCE_REGEN = '1'
 
 # Reinstall extensions in editable mode (from project root)
-pip install -e .\py_ballisticcalc.exts
+pip install -e ./py_ballisticcalc.exts
 
 # Run extension test suite (stress tests excluded by default via markers)
-pytest .\py_ballisticcalc.exts\tests -q
+pytest ./py_ballisticcalc.exts\tests -q
 
 # Run only the stress tests (opt-in). These are longer and more memory-heavy.
-pytest .\py_ballisticcalc.exts\tests -m stress -q
+pytest ./py_ballisticcalc.exts\tests -m stress -q
 
 # Clear env after testing
 Remove-Item Env:CYTHON_SAFETY; Remove-Item Env:CYTHON_FORCE_REGEN
@@ -215,7 +215,7 @@ py-ballisticcalc
 uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/) guidelines. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 for further examples.)
 
-[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run `pydocstyle .\py_ballisticcalc\` to check your docstrings.
+[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run `pydocstyle ./py_ballisticcalc\` to check your docstrings.
 
 Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.
 

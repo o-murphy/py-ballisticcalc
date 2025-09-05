@@ -35,8 +35,8 @@ This QuickStart gets you from a fresh environment to running basic ballistic cal
 === "pip"
     ```bash
     # from repo root
-    py -m pip install -e .                         # main package editable
-    py -m pip install -e .\py_ballisticcalc.exts   # build/install C extensions (optional)
+    py -m pip install -e .[dev]                        # main package editable
+    py -m pip install -e ./py_ballisticcalc.exts[dev]  # build/install C extensions (optional)
     ```
 
 === "uv"

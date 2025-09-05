@@ -2,8 +2,8 @@
 
 ## Learn by Example
 
-- [Examples notebook](https://github.com/o-murphy/py_ballisticcalc/blob/main/examples/Examples.ipynb)
-- [Extreme Examples](https://github.com/o-murphy/py_ballisticcalc/blob/main/examples/ExtremeExamples.ipynb)
+- [Examples notebook][Examples.ipynb]
+- [Extreme Examples][ExtremeExamples.ipynb]
 
 ## API Pointers
 
@@ -17,4 +17,10 @@
 	[`py_ballisticcalc.drag_model.DragModel`][py_ballisticcalc.drag_model.DragModel]<br>
 	[`py_ballisticcalc.trajectory_data.HitResult`][py_ballisticcalc.trajectory_data.HitResult]<br>
 	[`py_ballisticcalc.trajectory_data.TrajectoryData`][py_ballisticcalc.trajectory_data.TrajectoryData]<br>
+	[`py_ballisticcalc.unit.Unit`][py_ballisticcalc.unit.Unit]<br>
 
+[Examples.ipynb]:
+https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/Examples.ipynb
+
+[ExtremeExamples.ipynb]:
+https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/ExtremeExamples.ipynb
