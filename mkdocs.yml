@@ -148,12 +148,15 @@ validation:
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
-  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css'
+  - 'extra/katex/katex.min.css'
+#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css'
 extra_javascript:
   - 'extra/feedback.js'
   # Load KaTeX and auto-render before our init to ensure functions are available
-  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'
-  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js'
+#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'
+#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js'
+  - 'extra/katex/katex.min.js'
+  - 'extra/katex/contrib/auto-render.min.js'
   - 'extra/katex-init.js'
   #  - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
