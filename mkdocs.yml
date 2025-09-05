@@ -57,9 +57,11 @@ nav:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md
       - Shot: api/conditions/shot.md
+      - ShotProps: api/conditions/shotprops.md
     - TrajectoryData: api/trajectory_data.md
     - Constants: api/constants.md
     - Vector: api/vector.md
+    - Engine Protocol: api/generics_engine.md
 #    - Interface:
   #    - Engines: api/engines.md
 #    - Logger: api/logger.md
@@ -146,9 +148,14 @@ validation:
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
+  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css'
 extra_javascript:
   - 'extra/feedback.js'
-#  - 'extra/fluff.js'
+  # Load KaTeX and auto-render before our init to ensure functions are available
+  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'
+  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js'
+  - 'extra/katex-init.js'
+  #  - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
 markdown_extensions:
@@ -170,6 +177,8 @@ markdown_extensions:
     emoji_generator: !!python/name:material.extensions.emoji.to_svg
 - pymdownx.tabbed:
     alternate_style: true
+- pymdownx.arithmatex:
+    generic: true
 
 #hooks:
 #- 'docs/plugins/main.py'
