@@ -22,11 +22,11 @@ weapon = Weapon(
     )
 )
 ```
-In this example, we use calls to `Unit` to initialize `Weapon` fields with specific unit types.
+In this example, we use calls to [Unit][py_ballisticcalc.unit.Unit] to initialize [Weapon][py_ballisticcalc.munition.Weapon] fields with specific unit types.
 We also can do it using `float`s then fields will be initialized with unit types defined in `PreferredUnit` class,
 or we can directly specify the dimension with referencing to dimension type class.
 
-Fields of a `Weapon` can be accessed as normal attributes of `weapon` instance.
+Fields of a [Weapon][py_ballisticcalc.munition.Weapon] can be accessed as normal attributes of `weapon` instance.
 
 Weapon instance is mutable object and field values can be changed through attribute assignment.
 
@@ -41,4 +41,4 @@ Weapon possess the following methods and attributes:
 * [`sight`][py_ballisticcalc.munition.Weapon.sight]: Sight type and properties.
 
 !!! note
-    See the API documentation of [`Weapon`][py_ballisticcalc.munition.Weapon] for the class definition including a full list of methods and attributes.
+    See the API documentation of [[Weapon][py_ballisticcalc.munition.Weapon]][py_ballisticcalc.munition.Weapon] for the class definition including a full list of methods and attributes.

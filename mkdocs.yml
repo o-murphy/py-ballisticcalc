@@ -15,17 +15,7 @@ nav:
 #  - Changelog: changelog.md
 - Concepts:
   - Basics: concepts/index.md
-  - Munition:
-#        - concepts/munition/index.md
-    - "🔫 Weapon": concepts/munition/weapon.md
-    - "💣 Ammo": concepts/munition/ammo.md
-  - DragModel: concepts/drag_model.md
-  - Conditions:
-    - "🌡️ Atmo": concepts/conditions/atmo.md
-    - "💨 Wind": concepts/conditions/wind.md
-    - "🎯 Shot": concepts/conditions/shot.md
-  - Units and Dimensions:
-    - "📏 Unit": concepts/unit.md
+  - "📏 Units and Dimensions": concepts/unit.md
 #        - AbstractUnit:
 #        - Distance:
 #        - Velocity:
@@ -34,13 +24,21 @@ nav:
 #        - Temperature:
 #        - Weight:
 #        - Energy:
-  - TrajectoryData: concepts/trajectory_data.md
-  - Vector: concepts/vector.md
   - Constants: concepts/constants.md
-#    - Interface:
+  - Munitions:
+    - "🔫 Weapon": concepts/munition/weapon.md
+    - "💣 Ammo": concepts/munition/ammo.md
+    - "🎯 DragModel": concepts/drag_model.md
+  - Conditions:
+    - "🌡️ Atmo": concepts/conditions/atmo.md
+    - "💨 Wind": concepts/conditions/wind.md
+    - "🎯 Shot": concepts/conditions/shot.md
   - Engines:
     - "⚙️ Engines": concepts/engines.md
     - "📊 Benchmarks": concepts/benchmarks.md
+  - TrajectoryData: concepts/trajectory_data.md
+  - Vector: concepts/vector.md
+#    - Interface:
 #    - Logger: concepts/logger.md
 #  - Performance:
 - API Documentation:
@@ -229,7 +227,7 @@ plugins:
             summary:
               classes: true
               functions: true
-              attributes: false
+              attributes: true
             docstring_options:
               ignore_init_summary: true
             merge_init_into_class: true

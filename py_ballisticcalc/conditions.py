@@ -793,8 +793,7 @@ class ShotProps:
 
     def drag_by_mach(self, mach: float) -> float:
         """Calculate a standard drag factor (SDF) for the given Mach number.
-
-        <pre>
+        ```
         Formula:
             Drag force = V^2 * AirDensity * C_d * S / 2m
                        = V^2 * density_ratio * SDF
@@ -806,7 +805,7 @@ class ShotProps:
             - bc contains m/d^2 in units lb/in^2, which is multiplied by 144 to convert to lb/ft^2
         Thus:
             - The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
-        </pre>
+        ```
 
         Args:
             mach: The Mach number.

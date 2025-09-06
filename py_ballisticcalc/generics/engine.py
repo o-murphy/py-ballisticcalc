@@ -54,30 +54,32 @@ class EngineProtocol(Protocol[ConfigT]):
 
     Type Parameters:
         ConfigT: The configuration type used by this engine implementation.
-                Must be covariant to support configuration inheritance.
+                 Must be covariant to support configuration inheritance.
 
     Required Methods:
-        integrate: Perform ballistic trajectory calculation  
-        zero_angle: Calculate zeroing angle for given distance
+        - integrate: Perform ballistic trajectory calculation.
+        - zero_angle: Calculate zero angle for given distance.
 
     Example:
-        >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
-        >>> 
-        >>> class MyEngine(EngineProtocol[BaseEngineConfigDict]):
-        ...     def __init__(self, config: BaseEngineConfigDict):
-        ...         self.config = config
-        ...         
-        ...     def integrate(self, shot_info, max_range, **kwargs):
-        ...         # Implementation here
-        ...         pass
-        ...         
-        ...     def zero_angle(self, shot_info, distance):
-        ...         # Implementation here  
-        ...         pass
-        >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)
-        >>> engine = MyEngine(config)
-        >>> isinstance(engine, EngineProtocol)
-        True
+        ```python
+        from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
+
+        class MyEngine(EngineProtocol[BaseEngineConfigDict]):
+            def __init__(self, config: BaseEngineConfigDict):
+                self.config = config
+
+            def integrate(self, shot_info, max_range, **kwargs):
+                # Implementation here
+                pass
+
+            def zero_angle(self, shot_info, distance):
+                # Implementation here
+                pass
+
+        config = BaseEngineConfigDict(cStepMultiplier=1.0)
+        engine = MyEngine(config)
+        isinstance(engine, EngineProtocol)  # True
+        ```
 
     Algorithm Details:
         Different engine implementations may employ various computational strategies:
@@ -93,9 +95,9 @@ class EngineProtocol(Protocol[ConfigT]):
         - Secant method: Faster but no guarantee of convergence
 
     See Also:
-        py_ballisticcalc.engines.base_engine.BaseIntegrationEngine: Base implementation
-        py_ballisticcalc.interface.Calculator: Uses EngineProtocol implementations
-        py_ballisticcalc.trajectory_data: Data structures for trajectory results
+        - py_ballisticcalc.engines.base_engine.BaseIntegrationEngine: Base implementation
+        - py_ballisticcalc.interface.Calculator: Uses EngineProtocol implementations
+        - py_ballisticcalc.trajectory_data: Data structures for trajectory results
 
     Note:
         This protocol uses structural subtyping (duck typing) which means any class
@@ -167,8 +169,7 @@ class EngineProtocol(Protocol[ConfigT]):
                     projectile characteristics that include shape and mass
             - g is gravitational acceleration
 
-        Algorithm Details:
-            Typical implementation steps:
+        Typical implementation steps:
             1. Initialize state vectors from shot_info parameters
             2. Set up integration bounds and step size parameters
             3. Begin numerical integration loop using chosen method
@@ -214,8 +215,7 @@ class EngineProtocol(Protocol[ConfigT]):
             launch angle θ. This requires iterative solution since the trajectory
             equation cannot be solved analytically for arbitrary drag functions.
 
-        Algorithm Details:
-            Typical implementation approach:
+        Typical implementation approach:
             1. Establish reasonable bounds for elevation angle search
             2. Define target function: trajectory_height(distance) - target_height
             3. Use root-finding algorithm (bisection, Newton, etc.)
