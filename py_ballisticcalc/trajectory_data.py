@@ -692,8 +692,8 @@ class HitResult:
     props: ShotProps
     trajectory: list[TrajectoryData] = field(repr=False)
     base_data: Optional[list[BaseTrajData]] = field(repr=False)
-    error: Optional[RangeError] = None
     extra: bool = False
+    error: Optional[RangeError] = None
 
     def __len__(self) -> int:
         return len(self.trajectory)
