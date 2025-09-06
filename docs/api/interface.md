@@ -1,9 +1,3 @@
----
-title: Interface
----
-
-# Interface
-
 ::: py_ballisticcalc.interface
     options:
       members:

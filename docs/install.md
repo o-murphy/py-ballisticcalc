@@ -30,7 +30,9 @@ If you have Python 3.10+ and `pip` installed, you're good to go.
 
 py-ballisticcalc has the following optional dependencies:
 
-* [`py_ballisticcalc.exts`](internals/cython.md): Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
+* **[`py_ballisticcalc.exts`](internals/cython.md):** Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
+* **`visualize`:** Includes [matplotlib](https://matplotlib.org/) for creating [`charts`][py_ballisticcalc.trajectory_data.HitResult.plot] and [pandas](https://pandas.pydata.org/) for creating [`DataFrame tables`][py_ballisticcalc.trajectory_data.HitResult.dataframe].
+* **[`scipy`](https://scipy.org/):** Installs support for the `SciPyIntegrationEngine`.
 
 To install optional dependencies along with py-ballisticcalc:
 
@@ -58,7 +60,7 @@ To install optional dependencies along with py-ballisticcalc:
     uv add  'py-ballisticcalc[visualize]'
     ```
 
-Of course, you can also install requirements manually with:
+You can also install requirements manually.  For example:
 
 === "pip"
     ```

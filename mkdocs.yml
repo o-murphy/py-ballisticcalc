@@ -50,16 +50,17 @@ nav:
     - Interface: api/interface.md
     - Munition:
       - Ammo: api/munition/ammo.md
+      - DragModel: api/drag_model.md
       - Sight: api/munition/sight.md
       - Weapon: api/munition/weapon.md
-    - DragModel: api/drag_model.md
     - Conditions:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md
       - Shot: api/conditions/shot.md
       - ShotProps: api/conditions/shotprops.md
-    - TrajectoryData: api/trajectory_data.md
     - Constants: api/constants.md
+    - HitResult: api/hit_result.md
+    - TrajectoryData: api/trajectory_data.md
     - Vector: api/vector.md
     - Engine Protocol: api/generics_engine.md
 #    - Interface:
@@ -110,7 +111,6 @@ theme:
     - navigation.instant.progress
     - navigation.path
 #    - navigation.sections
-#    - navigation.path
     - navigation.expand
     - navigation.top
     - navigation.tracking
@@ -159,6 +159,7 @@ extra_javascript:
   - 'extra/katex/katex.min.js'
   - 'extra/katex/contrib/auto-render.min.js'
   - 'extra/katex-init.js'
+  - 'extra/mkdocstrings-tweaks.js'
   #  - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
@@ -208,14 +209,27 @@ plugins:
 #  - mkdocs-jupyter:
 #      execute: false
   - mkdocstrings:
+      enable_inventory: true
       handlers:
         python:
           paths: [.] 
           options:
+            group_by_category: true
+            show_category_heading: true
+            show_symbol_type_toc: true
+            show_symbol_type_heading: true
+            show_root_full_path: false
+            show_root_heading: true
+            # parameter_headings: true
+            heading_level: 3
             show_source: true
             members_order: source
             separate_signature: true
             filters: ["!^_"]
+            summary:
+              classes: true
+              functions: true
+              attributes: false
             docstring_options:
               ignore_init_summary: true
             merge_init_into_class: true
