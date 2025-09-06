@@ -24,9 +24,9 @@ Note:
 
 # Standard library imports
 from abc import abstractmethod
-from typing import TypeVar, Optional, Union
+from typing import Any, Optional, TypeVar, Union
 
-# Third-party imports  
+# Third-party imports
 from typing_extensions import Protocol, runtime_checkable
 
 # Local imports
@@ -115,7 +115,7 @@ class EngineProtocol(Protocol[ConfigT]):
         time_step: float = 0.0,
         filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
         dense_output: bool = False,
-        **kwargs
+        **kwargs: Any,
     ) -> HitResult:
         """Perform ballistic trajectory calculation from shot parameters to maximum range.
         

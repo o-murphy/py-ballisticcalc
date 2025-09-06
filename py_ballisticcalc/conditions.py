@@ -26,10 +26,11 @@ Design notes
     internally to avoid per-step unit conversions and repeated lookups. HitResult objects
     include the ShotProps instance used to calculate a trajectory.
 
-Quick examples
+Examples:
 >>> # Standard atmosphere at sea level:
 >>> atmo = Atmo.icao()
 >>> # Crosswind from left to right at 10 fps, in effect over the entire trajectory:
+>>> from py_ballisticcalc import Unit
 >>> breeze = Wind(velocity=Unit.FPS(10), direction_from=Unit.Degree(90))
 
 See also
@@ -59,9 +60,9 @@ __all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot', 'ShotProps')
 
 class Atmo:  # pylint: disable=too-many-instance-attributes
     """
-    Atmospheric conditions and density calculations
+    Atmospheric conditions and density calculations.
 
-    Properties:
+    Attributes:
         altitude: Altitude relative to sea level
         pressure: Unadjusted barometric pressure, a.k.a. station pressure
         temperature: Temperature
@@ -117,7 +118,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                  humidity: float = 0.0,
                  powder_t: Optional[Union[float, Temperature]] = None):
         """
-        Create a new Atmo instance with given parameters
+        Create a new Atmo instance.
 
         Args:
             altitude: Altitude relative to sea level
@@ -172,7 +173,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             self.update_density_ratio()
 
     def update_density_ratio(self) -> None:
-        """Updates the density ratio based on current conditions."""
+        """Update the density ratio based on current conditions."""
         self._density_ratio = Atmo.calculate_air_density(self._t0, self._p0, self.humidity) / cStandardDensityMetric
 
     @property
@@ -265,7 +266,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     def standard_temperature(altitude: Distance) -> Temperature:
         """Calculate ICAO standard temperature for altitude.
         
-        Note: This model only valid up to troposphere (~36,000 ft).
+        Note: This model is only valid up to the troposphere (~36,000 ft).
         
         Args:
             altitude: ASL in units of feet.
@@ -299,11 +300,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
              humidity: float = cStandardHumidity) -> Atmo:
         """Create Atmo instance of standard ICAO atmosphere at given altitude.
         
-        Note: This model only valid up to troposphere (~36,000 ft).
+        Note: This model is only valid up to the troposphere (~36,000 ft).
         
         Args:
-            altitude: relative to sea level
-            temperature: air temperature
+            altitude: relative to sea level.  Default is sea level (0 ft).
+            temperature: air temperature.  Default is standard temperature at altitude.
             
         Returns:
             Atmo instance of standard ICAO atmosphere at given altitude.
@@ -438,7 +439,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
 
 class Vacuum(Atmo):
-    """Vacuum atmosphere has zero drag"""
+    """Vacuum atmosphere has zero drag."""
     cLowestTempC: float = cDegreesCtoK
 
     def __init__(self,
@@ -455,8 +456,7 @@ class Vacuum(Atmo):
 @dataclass
 class Wind:
     """
-    A base class for creating Wind.
-    Wind direction and velocity by down-range distance.
+    Describe wind in effect over a particular down-range distance.
 
     Attributes:
         velocity: speed of wind
@@ -488,7 +488,6 @@ class Wind:
             max_distance_feet: Optional custom max wind distance
 
         Example:
-            This is how you can create a wind
             ```python
             from py_ballisticcalc import Wind
             wind = Wind(
@@ -521,8 +520,7 @@ class Wind:
 @dataclass
 class Shot:
     """
-    A base class for creating Shot.
-    Stores shot parameters for the trajectory calculation.
+    All information needed to compute a ballistic trajectory.
 
     Attributes:
         look_angle: Angle of sight line relative to horizontal.
@@ -558,8 +556,7 @@ class Shot:
                  winds: Optional[Sequence[Wind]] = None
                  ):
         """
-        A base class for creating Shot.
-        Stores shot parameters for the trajectory calculation.
+        Initialize shot parameters for the trajectory calculation.
 
         Args:
             ammo: Ammo instance used for making shot
@@ -576,7 +573,6 @@ class Shot:
             winds: list of winds used for making shot
 
         Example:
-            This is how you can create a shot
             ```python
             from py_ballisticcalc import Weapon, Ammo, Atmo, Wind
             shot = Shot(
@@ -725,7 +721,8 @@ class ShotProps:
         The original Shot object is retained for reference, but modifications
         to it after ShotProps creation will not affect the stored calculations.
         Create a new ShotProps instance if Shot parameters change.
-
+    """
+    """
     TODO: The Shot member object should either be a copy or immutable so that subsequent changes to its
           properties do not invalidate the calculations and data associated with this ShotProps instance.
     """
@@ -763,7 +760,7 @@ class ShotProps:
 
     @classmethod
     def from_shot(cls, shot: Shot) -> ShotProps:
-        """Initializes a ShotProps instance from a Shot instance."""
+        """Initialize a ShotProps instance from a Shot instance."""
         return cls(
             shot=shot,
             bc=shot.ammo.dm.BC,
@@ -784,7 +781,7 @@ class ShotProps:
         )
 
     def get_density_and_mach_for_altitude(self, drop: float) -> Tuple[float, float]:
-        """Gets the air density and Mach number for a given altitude.
+        """Get the air density and Mach number for a given altitude.
 
         Args:
             drop: The change in feet from the initial altitude.
@@ -795,7 +792,10 @@ class ShotProps:
         return self.shot.atmo.get_density_and_mach_for_altitude(self.alt0_ft + drop)
 
     def drag_by_mach(self, mach: float) -> float:
-        """Calculates a standard drag factor (SDF) for the given Mach number:
+        """Calculate a standard drag factor (SDF) for the given Mach number.
+
+        <pre>
+        Formula:
             Drag force = V^2 * AirDensity * C_d * S / 2m
                        = V^2 * density_ratio * SDF
         Where:
@@ -806,6 +806,7 @@ class ShotProps:
             - bc contains m/d^2 in units lb/in^2, which is multiplied by 144 to convert to lb/ft^2
         Thus:
             - The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
+        </pre>
 
         Args:
             mach: The Mach number.
@@ -818,7 +819,7 @@ class ShotProps:
         cd = self._calculate_by_curve_and_mach_list(self.mach_list, self.curve, mach)
         return cd * 2.08551e-04 / self.bc
 
-    def spin_drift(self, time) -> float:
+    def spin_drift(self, time: float) -> float:
         """Litz spin-drift approximation
 
         Args:
@@ -834,7 +835,7 @@ class ShotProps:
         return 0
 
     def _calc_stability_coefficient(self) -> float:
-        """Calculates the Miller stability coefficient.
+        """Calculate the Miller stability coefficient.
 
         Returns:
             float: The Miller stability coefficient.
@@ -857,7 +858,7 @@ class ShotProps:
 
     @staticmethod
     def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
-        """Piecewise quadratic interpolation of drag curve
+        """Piecewise quadratic interpolation of drag curve.
 
         Args:
             data_points: List[{Mach, CD}] data_points in ascending Mach order
@@ -895,7 +896,7 @@ class ShotProps:
 
     @staticmethod
     def _get_only_mach_data(data: List[DragDataPoint]) -> List[float]:
-        """Extracts Mach values from a list of DragDataPoint objects.
+        """Extract Mach values from a list of DragDataPoint objects.
 
         Args:
             data: A list of DragDataPoint objects.
@@ -907,7 +908,7 @@ class ShotProps:
 
     @staticmethod
     def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurvePoint], mach: float) -> float:
-        """Calculates a value based on a piecewise quadratic curve and a list of Mach values.
+        """Calculate a value based on a piecewise quadratic curve and a list of Mach values.
 
         This function performs a binary search on the `mach_list` to find the segment
         of the `curve` relevant to the input `mach` number and then interpolates

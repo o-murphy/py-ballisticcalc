@@ -17,7 +17,7 @@ nav:
   - Basics: concepts/index.md
   - Munition:
 #        - concepts/munition/index.md
-    - "🔫 Weapon": concepts/munition/weapon.md  # <-- Added a dummy sub-level
+    - "🔫 Weapon": concepts/munition/weapon.md
     - "💣 Ammo": concepts/munition/ammo.md
   - DragModel: concepts/drag_model.md
   - Conditions:
@@ -25,7 +25,6 @@ nav:
     - "💨 Wind": concepts/conditions/wind.md
     - "🎯 Shot": concepts/conditions/shot.md
   - Units and Dimensions:
-#        - DSL:
     - "📏 Unit": concepts/unit.md
 #        - AbstractUnit:
 #        - Distance:
@@ -50,8 +49,9 @@ nav:
       - Unit System: api/unit.md
     - Interface: api/interface.md
     - Munition:
-      - Weapon: api/munition/weapon.md
       - Ammo: api/munition/ammo.md
+      - Sight: api/munition/sight.md
+      - Weapon: api/munition/weapon.md
     - DragModel: api/drag_model.md
     - Conditions:
       - Atmo: api/conditions/atmo.md
@@ -102,6 +102,7 @@ theme:
     - content.code.annotate
     - content.code.copy
     - announce.dismiss
+    - mermaid
     - navigation.tabs
     - navigation.instant
     - navigation.instant.prefetch
@@ -190,6 +191,7 @@ markdown_extensions:
 #  - py_ballisticcalc
 
 plugins:
+  - mermaid2
   - mike:
       alias_type: symlink
       canonical_version: latest

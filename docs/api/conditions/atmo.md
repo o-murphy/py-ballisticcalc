@@ -29,5 +29,3 @@ Vacuum
 ::: py_ballisticcalc.conditions.Vacuum
     options:
       group_by_category: false
-      members:
-        - update_density_ratio

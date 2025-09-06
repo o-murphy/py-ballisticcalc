@@ -90,7 +90,6 @@ scipy = ["numpy>=2", "scipy>=1.13.1"]
 dev = [
     "build>=1.2.2.post1",
     "jupyter>=1.1.1",
-    "jupyter-core>=5.8,<6.0",
     "matplotlib>=3.9",
     "mypy>=1.15.0",
     "numpy>=2",
@@ -108,7 +107,10 @@ dev = [
 ]
 docs = [
     # Adopt Jupyter platformdirs scheme via sitecustomize; pin to latest v5 until v6 exists:
-    'jupyter-core>=5.8,<6.0',
+    #'jupyter-core>=5.8,<6.0',
+    #'nbconvert',
+    #'mkdocs-jupyter',
+    'mkdocs-mermaid2-plugin',
     'mkdocs',
     'mkdocs-exclude',
     'mkdocs-material[imaging]',
@@ -116,9 +118,7 @@ docs = [
     'mkdocstrings-python',
     'mkdocstrings',
     'mkdocs-autorefs',
-    'mkdocs-jupyter',
     'mike',
-    'nbconvert',
     'pydocstyle',
 ]
 
