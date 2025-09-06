@@ -1,6 +1,6 @@
 # Units and Dimensions
 
-This project uses a lightweight, explicit unit system with strongly-typed quantities like `Distance`, `Velocity`, and `Angular`. Preferred display/IO units are configurable via `PreferredUnits`.
+This project uses a lightweight, explicit unit system with strongly-typed quantities like `Distance`, `Velocity`, and `Angular`. Preferred display/IO units are configurable via `PreferredUnits` singleton.
 
 Common patterns:
 

@@ -2,8 +2,7 @@
 
     [`py_ballisticcalc.munition.Ammo`][py_ballisticcalc.munition.Ammo]<br>
 
-The way to define `projectile` properties in **py-ballisticcalc** is via Ammo dataclass.
-Ammo instances are simply and reusable.
+`Ammo` encapsulates projectile characteristics and muzzle velocity, including optional powder temperature sensitivity. Provide a `DragModel` (BC + table, or multi-BC) and optionally size/weight to enable spin-drift estimates.
 
 ## Ammo initialization
 
@@ -12,7 +11,7 @@ Import the necessary types to create a Weapon instance
 from py_ballisticcalc import Ammo, Unit, DragModel
 ```
 
-Then create a weapon
+Then create ammo
 ```python
 ammo = Ammo(
     dm=DragModel(
@@ -28,18 +27,14 @@ ammo = Ammo(
     use_powder_sensitivity=True,
 )
 ```
-In this example, we use calls to `Unit` to initialize `Ammo` fields with specific unit types.
-We also can do it using `float`'s then fields will be initialized with unit types defined in `PreferredUnit` class,
-or we can directly specify the dimension with referencing to dimension type class
+In this example, we use `Unit` helpers to initialize `Ammo` fields with specific units. You can also pass raw floats; they’ll be coerced to `PreferredUnits`.
 
-Fields of a `Ammo` can be accessed as normal attributes of `ammo` instance
-
-Ammo instance is mutable object and field values can be changed through attribute assignment
+Fields of an `Ammo` are accessible as attributes. `Ammo` is mutable; changing fields updates behavior accordingly.
 
 !!! warning
-    Direct values assignment to attributes of `ammo` is restricted and not recommended, it can be not reinitialized properly after that
+    Avoid bypassing property setters for complex fields; use provided attributes and helpers to ensure consistent state.
 
-Weapon possess the following methods and attributes:
+Ammo attributes and helpers:
 
 * [`dm`][py_ballisticcalc.munition.Ammo.dm]: DragModel for projectile
 * [`mv`][py_ballisticcalc.munition.Ammo.mv]: Muzzle Velocity

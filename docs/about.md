@@ -1,14 +1,15 @@
 # About project
 
-The library provides trajectory calculation for ballistic projectiles including air rifles, bows, firearms, artillery, and so on.
+This library provides trajectory calculation for ballistic projectiles launched by airguns, bows, firearms, artillery, etc.
 
-The 3DoF model that is used in this calculator is rooted in public C code of [JBM's calculator](https://jbmballistics.com/ballistics/calculators/calculators.shtml), ported to C#, optimized, fixed and extended with elements described in Litz's _Applied Ballistics_ book and from the friendly project of Alexandre Trofimov and then ported to Go.
+The core point-mass (3DoF) ballistic model underlying this project was used on the earliest digital computers.  Notable implementations that preceded this one:
+
+* Robert McCoy (author of *Modern Exterior Ballistics*) implemented one in BASIC.
+* [JBM published code in C](https://www.jbmballistics.com/ballistics/downloads/downloads.shtml).
+* Nikolay Gekht ported that to [C#](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html), extended it with formulas from Bryan Litz's _Applied Ballistics_, and ported it to [Go](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc).
+* Alexandre Trofimov implemented a calculator in [JavaScript](https://ptosis.ch/ebalka/ebalka.html).
 
 This Python3 implementation has been expanded to support multiple ballistic coefficients and custom drag functions, such as those derived from Doppler radar data.
-
-**[The online version of Go documentation is located here](https://godoc.org/github.com/gehtsoft-usa/go_ballisticcalc)**.
-
-**[C# version of the package is located here](https://github.com/gehtsoft-usa/BallisticCalculator1), and [the online version of C# API documentation is located here](https://gehtsoft-usa.github.io/BallisticCalculator/web-content.html)**.
 
 !!! note "RISK NOTICE"
     

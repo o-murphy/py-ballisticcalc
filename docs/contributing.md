@@ -1,4 +1,4 @@
-We'd love you to contribute to py_ballisticcalc!
+We'd love for you to contribute to py_ballisticcalc!
 
 ## Issues
 
@@ -33,14 +33,13 @@ py-ballisticcalc has few dependencies, and tests don't need access to databases,
 Because of this, setting up and running the tests should be very simple.
 
 !!! note
-    You should know the py-ballisticcalc requires [cython](https://cython.readthedocs.io/en/latest/src/quickstart/install.html) to compile py-ballisticcalc.exts
-    module to get high productivity calculations
+    For high performance, [the py-ballisticcalc.exts subproject](internals/cython.md) requires [cython](https://cython.readthedocs.io/en/latest/src/quickstart/install.html) to create compiled calculation engines.
 
 ### Prerequisites
 
 You'll need the following prerequisites:
 
-- Any Python version between **Python 3.9 and 3.12**
+- Any Python version >= **Python 3.10**
 - [**venv**](https://docs.python.org/3/library/venv.html) or [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
 - **git**
 
@@ -52,20 +51,37 @@ Fork the repository on GitHub and clone your fork locally.
 # Clone your fork and cd into the repo directory
 git clone git@github.com:<your username>/py-ballisticcalc.git
 cd py-ballisticcalc
-
-# Setup virtual environment (we will use `venv` there)
-python -m venv .venv
-source .venv/bin/activate
-
-# Install package in editable mode with `dev` requirements to local environment 
-pip install -e .[dev]
 ```
 
-If you want to contribute to cythonized extensions you can also install them in editable mode
+=== "pip"
+    ```bash
+    # Setup virtual environment (we will use `venv` there)
+    python -m venv .venv
+    source .venv/bin/activate
 
-```bash
-pip install -e ./py_ballisticcalc.exts[dev]
-```
+    # Install package in editable mode with `dev` requirements to local environment 
+    pip install -e .[dev]
+    ```
+
+=== "uv"
+    ```bash
+    # Sync project
+    uv sync --dev
+    # Activate `venv`
+    source .venv/bin/activate
+    ```
+
+If you want to contribute to cythonized extensions you can also install them in editable mode:
+
+=== "pip"
+    ```bash
+    pip install -e ./py_ballisticcalc.exts[dev]
+    ```
+
+=== "uv"
+    ```bash
+    uv sync --dev --extra exts
+    ```
 
 ### Check out a new branch and make your changes
 
@@ -96,7 +112,7 @@ pytest --engine="cythonized_rk4_engine"  # via project.entry-points
 pytest --engine="my_lib.my_engine:MyEngineClass"  # via entry point path 
 ```
 
-### Coverage
+#### Coverage
 We use `pytest-cov` to get coverage reports:
 ```shell
 pytest --cov=py_ballisticcalc --cov-report=html  # for default engine
@@ -106,11 +122,11 @@ pytest --cov=py_ballisticcalc --cov-report=html --engine="scipy_engine"  # for c
 To get coverage of Cython, set the environment variable `CYTHON_COVERAGE = '1'`, rebuild `py_ballisticcalc.exts` (from project root: `pip install -e py_ballisticcalc.exts`), then run:
 
 ```shell
-python scripts\sync_cython_sources.py
+python scripts/sync_cython_sources.py
 pytest --engine="cythonized_rk4_engine" --cov=py_ballisticcalc --cov=py_ballisticcalc_exts --cov-report=html
 ```
 
-### Cython extensions: safety & stress
+#### Cython extensions: safety & stress
 
 For diagnosing low-level issues (bounds, None checks, overflows) and for opt-in long-running stress tests, use the safety and stress workflows below. Commands are shown for Windows PowerShell.
 
@@ -121,35 +137,45 @@ $env:CYTHON_SAFETY = '1'
 $env:CYTHON_FORCE_REGEN = '1'
 
 # Reinstall extensions in editable mode (from project root)
-pip install -e .\py_ballisticcalc.exts
+pip install -e ./py_ballisticcalc.exts
 
 # Run extension test suite (stress tests excluded by default via markers)
-pytest .\py_ballisticcalc.exts\tests -q
+pytest ./py_ballisticcalc.exts\tests -q
 
 # Run only the stress tests (opt-in). These are longer and more memory-heavy.
-pytest .\py_ballisticcalc.exts\tests -m stress -q
+pytest ./py_ballisticcalc.exts\tests -m stress -q
 
 # Clear env after testing
 Remove-Item Env:CYTHON_SAFETY; Remove-Item Env:CYTHON_FORCE_REGEN
 ```
 
 Notes:
+
 - Safety build toggles bounds checking, wraparound, initialization checks, None checks, disables cdivision, and adds overflow checks; it trades speed for correctness to surface bugs.
 - The extension test suite enables `faulthandler` for better tracebacks on crashes.
 - Stress tests are marked with `@pytest.mark.stress` and are excluded by default.
 
 ### Build Documentation
 
-If you've made any changes to the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure the documentation builds successfully.
+If you have made any changes affecting the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure the documentation builds successfully.
 
 We use `mkdocs-material[imaging]` to support social previews.
 You can find directions on how to install the required
 dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/).
 
-```bash
-# Install dependencies for docs building
-pip install -e .[docs]
+=== "pip"
+    ```bash
+    # Install dependencies for docs building
+    pip install -e .[docs]
+    ```
 
+=== "uv"
+    ```bash
+    # Install dependencies for docs building
+    uv sync --extra docs 
+    ```
+
+```bash
 # Rebuild docs locally before commiting them to the branch   
 mkdocs build
 
@@ -176,9 +202,6 @@ Documentation is written in Markdown and built using [Material for MkDocs](https
 
 In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
 
-Code examples are encouraged but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
-
-
 ### Code documentation
 
 When contributing to py-ballisticcalc, please make sure that all code is well documented. The following should be documented using properly formatted docstrings:
@@ -192,7 +215,7 @@ py-ballisticcalc
 uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/) guidelines. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html)
 for further examples.)
 
-[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run `pydocstyle .\py_ballisticcalc\` to check your docstrings.
+[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run `pydocstyle ./py_ballisticcalc\` to check your docstrings.
 
 Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.
 
@@ -228,4 +251,25 @@ def bar(self, baz: int) -> str:
     return 'bar'
 ```
 
-You may include example code in docstrings.  Ideally it should pass [doctest](https://docs.python.org/3/library/doctest.html), which you can run via `scripts\run_doctest.py`.
+**Code examples** are encouraged but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine. Code examples should pass [doctest](https://docs.python.org/3/library/doctest.html), which you can run via `scripts\run_doctest.py`.
+
+### Mermaid
+
+We support Mermaid diagrams in Markdown using Material for MkDocs. Use triple backticks with the `mermaid` fence; no plugin installation is required beyond our existing theme config.
+
+```mermaid
+graph LR
+    A[Start] --> B{Mermaid enabled?}
+    B -- Yes --> C[Write diagrams]
+    B -- No --> D[Check mkdocs.yml]
+```
+
+Tips:
+
+- Keep fences as ```mermaid (no extra indentation).
+- Build locally to preview:
+    ```powershell
+    mkdocs build
+    mkdocs serve
+    ```
+- If a diagram renders as plain text, ensure the `mermaid` fence is exactly specified and not wrapped in another code block.
