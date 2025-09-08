@@ -1,13 +1,14 @@
 # Shot
 
-??? api "API Documentation"
+The [`Shot`][py_ballisticcalc.conditions.Shot] class contains all information required to calculate a ballistic trajectory:
+
+- [Atmosphere][py_ballisticcalc.conditions.Atmo] and [winds][py_ballisticcalc.conditions.Wind].
+- [Ammunition][py_ballisticcalc.munition.Ammo] characteristics.
+- [Gun][py_ballisticcalc.munition.Weapon] and [Sight][py_ballisticcalc.munition.Sight] characteristics.
+- `look_angle` (a.k.a. _slant angle_): sight line angle relative to horizontal.
+- `relative_angle` (a.k.a. _hold_): adjustment added by shooter to the gun's `zero_elevation`.
+- `cant_angle`: any rotation of the sight away from vertical alignment above the gun's barrel.
+
+???+ api "API Documentation"
 
     [`py_ballisticcalc.conditions.Shot`][py_ballisticcalc.conditions.Shot]<br>
-
-The scene configuration for a calculation: weapon, ammo, atmosphere, winds, and angles.
-
-- `look_angle` (a.k.a. slant angle): sight line elevation vs horizon.
-- `relative_angle`: adjustment added to the weapon’s `zero_elevation`.
-- `cant_angle`: rotates barrel elevation into an azimuth component.
-- Derived: `barrel_elevation` and `barrel_azimuth`.
-

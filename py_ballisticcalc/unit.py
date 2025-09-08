@@ -70,7 +70,7 @@ from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, Unit
 from py_ballisticcalc.logger import logger
 
 Number: TypeAlias = Union[float, int]
-MAX_ITERATIONS: int = 1e6  # Prevent runaway Unit.counter()
+MAX_ITERATIONS: int = 1_000_000  # Prevent runaway Unit.counter()
 
 
 def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -> Iterable[Number]:

@@ -15,29 +15,27 @@ nav:
 #  - Changelog: changelog.md
 - Concepts:
   - Basics: concepts/index.md
-  - "📏 Units and Dimensions": concepts/unit.md
-#        - AbstractUnit:
-#        - Distance:
-#        - Velocity:
+  - "📏 Units": concepts/unit.md
 #        - Angular:
+#        - Distance:
+#        - Energy:
 #        - Pressure:
 #        - Temperature:
+#        - Velocity:
 #        - Weight:
-#        - Energy:
-  - Constants: concepts/constants.md
-  - Munitions:
-    - "🔫 Weapon": concepts/munition/weapon.md
-    - "💣 Ammo": concepts/munition/ammo.md
-    - "🎯 DragModel": concepts/drag_model.md
+  - Calculation Engines:
+    - "⚙️ Engines": concepts/engines.md
+    - "📊 Benchmarks": concepts/benchmarks.md
   - Conditions:
     - "🌡️ Atmo": concepts/conditions/atmo.md
     - "💨 Wind": concepts/conditions/wind.md
     - "🎯 Shot": concepts/conditions/shot.md
-  - Engines:
-    - "⚙️ Engines": concepts/engines.md
-    - "📊 Benchmarks": concepts/benchmarks.md
-  - TrajectoryData: concepts/trajectory_data.md
-  - Vector: concepts/vector.md
+  - Munitions:
+    - "🔫 Weapon": concepts/munition/weapon.md
+    - "💣 Ammo": concepts/munition/ammo.md
+    - "🪂 DragModel": concepts/drag_model.md
+  - "📈 Trajectory Data": concepts/trajectory_data.md
+  - "📐 Vector": concepts/vector.md
 #    - Interface:
 #    - Logger: concepts/logger.md
 #  - Performance:

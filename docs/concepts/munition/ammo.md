@@ -2,16 +2,20 @@
 
     [`py_ballisticcalc.munition.Ammo`][py_ballisticcalc.munition.Ammo]<br>
 
-[Ammo][py_ballisticcalc.munition.Ammo] encapsulates projectile characteristics and muzzle velocity, including optional powder temperature sensitivity. Provide a [DragModel][py_ballisticcalc.drag_model.DragModel] (BC + table, or multi-BC) and optionally size/weight to enable spin-drift estimates.
+An [Ammo][py_ballisticcalc.munition.Ammo] instance describes all details of a projectile and cartridge that can affect a trajectory:
 
-## Ammo initialization
+- [Drag][py_ballisticcalc.drag_model.DragModel] curves, typically via Ballistic Coefficient referenced to a standard drag model.
+- Muzzle velocity, including (optionally) any variations in velocity caused by _powder temperature sensitivity_.
+- Size and weight, which determine spin drift and stability.
 
-Import the necessary types to create an Ammo instance:
+## Example
+
+Imports:
 ```python
 from py_ballisticcalc import Ammo, Unit, DragModel
 ```
 
-In this example, we use [Unit][py_ballisticcalc.unit.Unit] helpers to initialize [Ammo][py_ballisticcalc.munition.Ammo] fields with specific units. You can also pass raw floats; they’ll be coerced to [PreferredUnits][py_ballisticcalc.unit.PreferredUnits].
+Create an Ammo instance:
 ```python
 ammo = Ammo(
     dm=DragModel(
@@ -27,3 +31,5 @@ ammo = Ammo(
     use_powder_sensitivity=True,
 )
 ```
+In this example, we use [Unit][py_ballisticcalc.unit.Unit] helpers to initialize [Ammo][py_ballisticcalc.munition.Ammo] fields with specific units.
+We also can do it using `float` values, in which case those attributes will be initialized with unit types defined by [`PreferredUnits`][py_ballisticcalc.unit.PreferredUnits] class.

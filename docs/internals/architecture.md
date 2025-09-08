@@ -3,6 +3,7 @@
 This document orients you to the high-level structure and main components of the project so you can find where functionality is implemented.
 
 **Goals**
+
 - Keep a compact, well-tested ballistic calculator.
 - Provide multiple integration engines (pure-Python and Cython-accelerated engines).
 - Expose consistent APIs and event semantics (zero crossings, Mach crossing, apex) across engines.
@@ -10,7 +11,7 @@ This document orients you to the high-level structure and main components of the
 ## High-level layers
 
 ### 1. Public API
-- `Calculator` (in `py_ballisticcalc/interface.py`) is the top-level helper used by most clients.
+- [`Calculator`][py_ballisticcalc.interface.Calculator] is the top-level interface used by most clients.
 - Unit types and preferences are implemented in `py_ballisticcalc/unit.py` and [PreferredUnits][py_ballisticcalc.unit.PreferredUnits].
 
 ### 2. Scene / shot description
@@ -58,14 +59,11 @@ This document orients you to the high-level structure and main components of the
 - Unit tests: `tests/` include fixtures and parity tests for the extensions.
 - Notebooks: `examples/*.ipynb` provide extended examples and visualizations.
 
-## Performance note
-- Prefer Cython RK4 engine for production runs when `py-ballisticcalc[exts]` is installed; the Cython modules focus on numeric inner loops and can be recompiled independently.
-
-# Diagrams
+## Diagrams
 
 The following diagrams give a compact visual summary of the main runtime flows.
 
-## Component / Data-flow (high level)
+### Component / Data-flow (high level)
 
 ```mermaid
 graph LR
@@ -94,7 +92,7 @@ graph LR
   Hit --> Calculator
 ```
 
-## Runtime sequence (simplified)
+### Runtime sequence (simplified)
 
 ```mermaid
 sequenceDiagram
@@ -122,7 +120,7 @@ sequenceDiagram
   Calc-->>User: HitResult
 ```
 
-## Zero-finding / search (overview)
+### Zero-finding / search (overview)
 
 The zero-finding methods are implemented on top of `integrate()`. The search loop repeatedly calls `integrate()` while adjusting barrel elevation; termination constraints (minimum velocity, max drop, min altitude) may be temporarily relaxed for robust bracketing.
 
