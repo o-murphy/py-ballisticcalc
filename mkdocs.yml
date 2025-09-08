@@ -43,26 +43,27 @@ nav:
 #  - Performance:
 - API Documentation:
     - Overview: api/index.md
-    - Units:
-      - Unit System: api/unit.md
-    - Interface: api/interface.md
-    - Munition:
-      - Ammo: api/munition/ammo.md
-      - DragModel: api/drag_model.md
-      - Sight: api/munition/sight.md
-      - Weapon: api/munition/weapon.md
+    - Calculator:
+      - Engine Protocol: api/generics_engine.md
+      - Interface: api/interface.md
     - Conditions:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md
       - Shot: api/conditions/shot.md
-      - ShotProps: api/conditions/shotprops.md
     - Constants: api/constants.md
-    - HitResult: api/hit_result.md
-    - TrajectoryData: api/trajectory_data.md
-    - Vector: api/vector.md
-    - Engine Protocol: api/generics_engine.md
-#    - Interface:
-  #    - Engines: api/engines.md
+    - Munitions:
+      - Ammo: api/munition/ammo.md
+      - DragModel: api/drag_model.md
+      - Sight: api/munition/sight.md
+      - Weapon: api/munition/weapon.md
+    - Results:
+      - HitResult: api/hit_result.md
+      - TrajectoryData: api/trajectory_data.md
+    - Units:
+      - Dimensions: api/units/dimensions.md
+      - PreferredUnits: api/units/preferred_units.md
+      - Vector: api/vector.md
+#    - Engines: api/engines.md
 #    - Logger: api/logger.md
 - Internals:
   - Architecture: internals/architecture.md

@@ -43,7 +43,3 @@ The system uses a base class [`GenericDimension`][py_ballisticcalc.unit.GenericD
 >>> d / Unit.Foot(3)
 100.0
 ```    
-
-???+ api "API Reference: py_ballisticcalc.unit"
-
-    [`py_ballisticcalc.unit`][py_ballisticcalc.unit]

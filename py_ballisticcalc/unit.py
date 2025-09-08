@@ -70,7 +70,7 @@ from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, Unit
 from py_ballisticcalc.logger import logger
 
 Number: TypeAlias = Union[float, int]
-MAX_ITERATIONS = 1e6
+MAX_ITERATIONS: int = 1e6  # Prevent runaway Unit.counter()
 
 
 def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -> Iterable[Number]:
@@ -196,29 +196,14 @@ _GenericDimensionType = TypeVar('_GenericDimensionType', bound='GenericDimension
 class Unit(IntEnum):
     """Enumeration of all supported unit types.
 
-    Angular Units:
-    - Radian, Degree, MOA (Minute of Arc), Mil, MRad (Milliradian), Thousandth, InchesPer100Yd, CmPer100m, OClock
-    
-    Distance Units:
-    - Inch, Foot, Yard, Mile, NauticalMile, Millimeter, Centimeter, Meter, Kilometer, Line
-    
-    Velocity Units:
-    - MPS (meters/second), KMH (km/hour), FPS (feet/second), MPH (miles/hour), KT (knots)
-    
-    Weight Units:
-    - Grain, Ounce, Gram, Pound, Kilogram, Newton
-    
-    Pressure Units:
-    - MmHg, InHg, Bar, hPa (hectopascal), PSI
-    
-    Temperature Units:
-    - Fahrenheit, Celsius, Kelvin, Rankin
-    
-    Energy Units:
-    - FootPound, Joule
-    
-    Time Units:
-    - Second, Minute, Millisecond, Microsecond, Nanosecond, Picosecond
+    - Angular: Radian, Degree, MOA, Mil, MRad, Thousandth, InchesPer100Yd, CmPer100m, OClock
+    - Distance: Inch, Foot, Yard, Mile, NauticalMile, Millimeter, Centimeter, Meter, Kilometer, Line
+    - Velocity: MPS (meters/second), KMH (km/hour), FPS (feet/second), MPH (miles/hour), KT (knots)
+    - Weight: Grain, Ounce, Gram, Pound, Kilogram, Newton
+    - Pressure: MmHg, InHg, Bar, hPa (hectopascal), PSI
+    - Temperature: Fahrenheit, Celsius, Kelvin, Rankin
+    - Energy: FootPound, Joule
+    - Time: Second, Minute, Millisecond, Microsecond, Nanosecond, Picosecond
 
     Each unit can be used as a callable constructor for creating unit instances:
 
@@ -235,7 +220,7 @@ class Unit(IntEnum):
         >>> elevation = Unit.MOA(2.5)
         >>> windage = Unit.Mil(1.2)
     """
-    
+
     Radian = 0
     Degree = 1
     MOA = 2
@@ -369,7 +354,7 @@ class Unit(IntEnum):
         Raises:
             ValueError:
                 If `step` is 0 for an infinite sequence, or if `step` has the wrong
-                direction for the given `start` and `end` range.
+                    direction for the given `start` and `end` range.
             StopIteration:
                 If the iteration limit (`MAX_ITERATIONS`) is reached during an infinite sequence.
 
@@ -392,7 +377,7 @@ class Unit(IntEnum):
             value._value = raw_value
             yield value
             if i == MAX_ITERATIONS:
-                raise StopIteration("Max counter iterations limit is %d" % MAX_ITERATIONS)
+                raise ValueError("Reached generator limit %d" % MAX_ITERATIONS)
 
     def iterator(self, items: Sequence[Number], /, *,
                  sort: bool = False,
@@ -438,6 +423,7 @@ class UnitProps(NamedTuple):
     symbol: str
 
 
+#: Mapping from Unit -> UnitProps used for formatting/display of units.
 UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Radian: UnitProps('radian', 6, 'rad'),
     Unit.Degree: UnitProps('degree', 4, '°'),
@@ -977,7 +963,10 @@ class GenericDimension(Generic[_GenericDimensionType]):
 
 
 class Angular(GenericDimension):
-    """Angular measurements.  Raw value is radians."""
+    """Angular measurements.  Raw value is radians.
+
+    This class tries to normalize angles to the range (-π, π].
+    """
 
     _conversion_factors = {
         Unit.Radian: 1.,
@@ -1090,7 +1079,10 @@ class Pressure(GenericDimension):
 
 
 class Temperature(GenericDimension):
-    """Temperature unit.  Raw value is Fahrenheit."""
+    """Temperature unit.  Raw value is Fahrenheit.
+
+    This dimension only supports addition and subtraction operations, and tries to clamp results at absolute zero.
+    """
 
     _conversion_factors = {
         Unit.Fahrenheit: 0.,
