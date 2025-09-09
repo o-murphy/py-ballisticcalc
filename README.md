@@ -412,10 +412,12 @@ This Python3 implementation has been expanded to support multiple ballistic coef
 
 Special thanks to:
 
-- **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert\
-  *For help understanding and improving the functionality*
-- **[Nikolay Gekht](https://github.com/nikolaygekht)** \
-  *For the source code in C# and GO-lang from which this project first was forked*
+* **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert <br>
+*For help understanding and improving the functionality*
+* **[Serhiy Yevtushenko](https://github.com/serhiy-yevtushenko)** - Applied Mathematician <br>
+*For helping in consultations, testing and improving edge cases compatibility*
+* **[Nikolay Gekht](https://github.com/nikolaygekht)** <br>
+*For the sources code on C# and GO-lang from which this project firstly was forked*
 
 [//]: # (## Sister projects)
 
