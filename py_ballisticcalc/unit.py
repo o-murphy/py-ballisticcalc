@@ -424,6 +424,7 @@ class UnitProps(NamedTuple):
 
 
 #: Mapping from Unit -> UnitProps used for formatting/display of units.
+# --8<-- [start:UnitPropsDict]
 UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Radian: UnitProps('radian', 6, 'rad'),
     Unit.Degree: UnitProps('degree', 4, '°'),
@@ -480,7 +481,7 @@ UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Nanosecond: UnitProps('nanosecond', 9, 'ns'),
     Unit.Picosecond: UnitProps('picosecond', 12, 'ps')
 }
-
+# --8<-- [end:UnitPropsDict]
 UnitAliasesType: TypeAlias = Mapping[Tuple[str, ...], Unit]
 
 UnitAliases: UnitAliasesType = {

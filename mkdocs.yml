@@ -161,26 +161,31 @@ extra_javascript:
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
 markdown_extensions:
+- admonition
 - tables
 - toc:
     permalink: true
     title: Page contents
-- admonition
 - pymdownx.details
+- pymdownx.arithmatex:
+    generic: true
+- pymdownx.emoji:
+    emoji_index: !!python/name:material.extensions.emoji.twemoji
+    emoji_generator: !!python/name:material.extensions.emoji.to_svg
+- pymdownx.highlight:
+    pygments_lang_class: true
+- pymdownx.snippets:
+    base_path:
+      - .
+      - docs
+    check_paths: true
 - pymdownx.superfences:
     custom_fences:
       - name: mermaid
         class: mermaid
         format: !!python/name:pymdownx.superfences.fence_code_format
-- pymdownx.highlight:
-    pygments_lang_class: true
-- pymdownx.emoji:
-    emoji_index: !!python/name:material.extensions.emoji.twemoji
-    emoji_generator: !!python/name:material.extensions.emoji.to_svg
 - pymdownx.tabbed:
     alternate_style: true
-- pymdownx.arithmatex:
-    generic: true
 
 #hooks:
 #- 'docs/plugins/main.py'
@@ -189,11 +194,12 @@ markdown_extensions:
 #  - py_ballisticcalc
 
 plugins:
+  - autorefs
   - mermaid2
+  - search
   - mike:
       alias_type: symlink
       canonical_version: latest
-  - search
   - exclude:
       glob:
         - theme/announce.html
@@ -202,9 +208,6 @@ plugins:
         - why.md
         - version-policy.md
         - changelog.md
-  - autorefs
-#  - mkdocs-jupyter:
-#      execute: false
   - mkdocstrings:
       enable_inventory: true
       handlers:
@@ -222,6 +225,9 @@ plugins:
             show_source: true
             members_order: source
             separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            merge_init_into_class: true
             filters: ["!^_"]
             summary:
               classes: true
@@ -229,9 +235,6 @@ plugins:
               attributes: true
             docstring_options:
               ignore_init_summary: true
-            merge_init_into_class: true
-            show_signature_annotations: true
-            signature_crossrefs: true
             docstring_section_style: table
           inventories:
             - url: https://docs.python.org/3/objects.inv

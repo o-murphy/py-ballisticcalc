@@ -533,7 +533,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
-
+        """
+        """
         TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
             ... and check for weird situations, like backward-bending trajectories,
             where the max range occurs with launch angle less than the look angle.

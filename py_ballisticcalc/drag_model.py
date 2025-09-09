@@ -5,15 +5,15 @@ projectiles, including single and multi-BC (ballistic coefficient) models.
 Supports standard drag tables and custom drag data points.
 
 Key Components:
-    DragDataPoint: Individual drag coefficient at specific Mach number
-    BCPoint: Ballistic coefficient point for multi-BC models
-    DragModel: Primary drag model with ballistic coefficient and drag table
-    DragModelMultiBC: Multi-BC drag model for varying ballistic coefficients
+    - DragDataPoint: Individual drag coefficient at specific Mach number
+    - BCPoint: Ballistic coefficient point for multi-BC models
+    - DragModel: Primary drag model with ballistic coefficient and drag table
+    - DragModelMultiBC: Multi-BC drag model for varying ballistic coefficients
 
 Functions:
-    make_data_points: Convert drag table data to DragDataPoint objects
-    sectional_density: Calculate sectional density from weight and diameter
-    linear_interpolation: Linear interpolation utility function
+    - make_data_points: Convert drag table data to DragDataPoint objects
+    - sectional_density: Calculate sectional density from weight and diameter
+    - linear_interpolation: Linear interpolation utility function
 
 The drag models use standard ballistic reference tables (G1, G7, etc.) and
 allow for custom drag functions based on Mach number vs drag coefficient data.

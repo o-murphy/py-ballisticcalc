@@ -11,17 +11,19 @@ This page summarizes the primary classes you’ll use in py-ballisticcalc and ho
 - [`TrajectoryData`][py_ballisticcalc.trajectory_data.TrajectoryData]: Detailed characteristics of a point on the ballistic trajectory.
 - [`HitResult`][py_ballisticcalc.trajectory_data.HitResult]: Wrapper for accessing and displaying calculated results.
 
-## Projectile and Environment
+## Projectile & Environment
 
-- [`Ammo`][py_ballisticcalc.munition.Ammo]: Wraps projectile physical details and muzzle velocity, including optional powder temperature sensitivity.
-    - [`DragModel`][py_ballisticcalc.drag_model]: Aerodynamic drag via Ballistic Coefficient and standard drag model tables (G1, G7, etc.).
-- [`Weapon`][py_ballisticcalc.munition.Weapon]: Gun specifications (sight height, rifle twist, zero elevation).
+The classes that comprise a [`Shot`][py_ballisticcalc.conditions.Shot]:
+
 - [`Atmo`][py_ballisticcalc.conditions.Atmo]: Standard or custom atmosphere.
     - [`Wind`][py_ballisticcalc.conditions.Wind]: Piecewise-constant winds by distance.
+- [`Ammo`][py_ballisticcalc.munition.Ammo]: Wraps projectile physical details and muzzle velocity, including optional powder temperature sensitivity.
+    - [`DragModel`][py_ballisticcalc.drag_model]: Aerodynamic drag via Ballistic Coefficient and standard drag tables (G1, G7, etc.).
+- [`Weapon`][py_ballisticcalc.munition.Weapon]: Gun specifications (sight height, rifle twist rate, zero elevation).
 
 ## Engines
 
-Engines implement different algorithms for integration and targeting.
+Calculation engines implement different algorithms for integration and targeting.  All inherit from [`BaseIntegrationEngine`][py_ballisticcalc.engines.base_engine.BaseIntegrationEngine].
 
 
 ???+ api "Selected API references"
@@ -29,7 +31,6 @@ Engines implement different algorithms for integration and targeting.
 	[`py_ballisticcalc.interface.Calculator`][py_ballisticcalc.interface.Calculator]<br>
 	[`py_ballisticcalc.conditions.Shot`][py_ballisticcalc.conditions.Shot]<br>
 	[`py_ballisticcalc.munition.Ammo`][py_ballisticcalc.munition.Ammo]<br>
-	[`py_ballisticcalc.drag_model.DragModel`][py_ballisticcalc.drag_model.DragModel]<br>
 	[`py_ballisticcalc.conditions.Atmo`][py_ballisticcalc.conditions.Atmo]<br>
 	[`py_ballisticcalc.munition.Weapon`][py_ballisticcalc.munition.Weapon]<br>
 	[`py_ballisticcalc.trajectory_data.HitResult`][py_ballisticcalc.trajectory_data.HitResult]<br>

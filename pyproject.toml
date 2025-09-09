@@ -106,10 +106,6 @@ dev = [
     "ruff>=0.12.3",
 ]
 docs = [
-    # Adopt Jupyter platformdirs scheme via sitecustomize; pin to latest v5 until v6 exists:
-    #'jupyter-core>=5.8,<6.0',
-    #'nbconvert',
-    #'mkdocs-jupyter',
     'mkdocs-mermaid2-plugin',
     'mkdocs',
     'mkdocs-exclude',
