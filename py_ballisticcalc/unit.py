@@ -424,7 +424,7 @@ class UnitProps(NamedTuple):
 
 
 #: Mapping from Unit -> UnitProps used for formatting/display of units.
-# --8<-- [start:UnitPropsDict]
+# mkdocs.pymdown.snippet marker: --8<-- [start:UnitPropsDict]
 UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Radian: UnitProps('radian', 6, 'rad'),
     Unit.Degree: UnitProps('degree', 4, '°'),

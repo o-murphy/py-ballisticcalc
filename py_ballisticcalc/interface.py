@@ -99,7 +99,7 @@ class _EngineLoader:
 
 @dataclass
 class Calculator(Generic[ConfigT]):
-    """Basic interface for the ballistics calculator"""
+    """Basic interface for the ballistics calculator."""
 
     config: Optional[ConfigT] = field(default=None)
     engine: EngineProtocolEntry = field(default=DEFAULT_ENTRY)
@@ -109,7 +109,7 @@ class Calculator(Generic[ConfigT]):
         self._engine_instance = _EngineLoader.load(self.engine)(self.config)
 
     def __getattr__(self, item: str) -> Any:
-        """Delegates attribute access to the underlying engine instance.
+        """Delegate attribute access to the underlying engine instance.
 
         This method is called when an attribute is requested on the `Calculator`
         instance that is not found through normal attribute lookup (i.e., it's
@@ -148,7 +148,7 @@ class Calculator(Generic[ConfigT]):
     @deprecated(reason="`Calculator.cdm` is no longer supported by EngineProtocol. "
                        "Please use `DragModel.drag_table` instead.")
     def cdm(self) -> List[DragDataPoint]:
-        """Returns custom drag function based on input data"""
+        """Return custom drag function based on input data."""
         raise NotImplementedError("`Calculator.cdm` is no longer supported by EngineProtocol. "
                                   "Please use `DragModel.drag_table` instead.")
 

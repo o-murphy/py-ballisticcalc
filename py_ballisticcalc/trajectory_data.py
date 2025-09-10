@@ -680,8 +680,8 @@ class HitResult:
         shot: The parameters of the shot calculation.
         trajectory: Computed TrajectoryData points.
         base_data: Base trajectory data points for interpolation.
-        error: RangeError, if any.
         extra: [DEPRECATED] Whether extra_data was requested.
+        error: RangeError, if any.
     """
     """
     TODO:
@@ -716,22 +716,6 @@ class HitResult:
             flag_name = TrajFlag.name(flag)
             raise AttributeError(f"{flag_name} was not requested in trajectory. "
                                  f"Use Calculator.fire(..., flags=TrajFlag.{flag_name}) to include it.")
-
-    def zeros(self) -> list[TrajectoryData]:
-        """Get all zero crossing points.
-
-        Returns:
-            Zero crossing points.
-
-        Raises:
-            AttributeError: If extra_data was not requested.
-            ArithmeticError: If zero crossing points are not found.
-        """
-        self._check_flag(TrajFlag.ZERO)
-        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
-        if len(data) < 1:
-            raise ArithmeticError("Can't find zero crossing points")
-        return data
 
     def flag(self, flag: Union[TrajFlag, int]) -> Optional[TrajectoryData]:
         """Get first TrajectoryData row with the specified flag.
@@ -857,6 +841,22 @@ class HitResult:
         else:
             p0, p1, p2 = traj[target_idx - 1], traj[target_idx], traj[target_idx + 1]
         return TrajectoryData.interpolate(key_attribute, value, p0, p1, p2)
+
+    def zeros(self) -> list[TrajectoryData]:
+        """Get all zero crossing points.
+
+        Returns:
+            Zero crossing points.
+
+        Raises:
+            AttributeError: If extra_data was not requested.
+            ArithmeticError: If zero crossing points are not found.
+        """
+        self._check_flag(TrajFlag.ZERO)
+        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
+        if len(data) < 1:
+            raise ArithmeticError("Can't find zero crossing points")
+        return data
 
     @deprecated(reason="Use get_at() instead for better flexibility.")
     def index_at_distance(self, d: Distance) -> int:

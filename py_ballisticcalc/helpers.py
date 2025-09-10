@@ -14,7 +14,7 @@ EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81  # Acceleration due to gravity
 @deprecated("Just call `Calculator.fire` directly with `raise_range_error=False`")
 def must_fire(interface: Calculator, shot: Shot, trajectory_range: Distance, extra_data: bool = False,
               **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
-    """Wrapper function to resolve RangeError and get HitResult"""
+    """Wrapper function to resolve RangeError and get HitResult."""
     t = interface.fire(shot, trajectory_range, **kwargs, extra_data=extra_data, raise_range_error=False)
     return t, t.error
 
@@ -131,8 +131,7 @@ def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
     - Monotonically decreasing: Each subsequent value is less than or equal to the previous
     
     Warning:
-        If the condition for which you are searching is not monotonic, use
-        `find_first_index_matching_condition`.
+        If the condition for which you are searching is not monotonic, use `find_first_index_matching_condition`.
     
     Args:
         arr: List of items to search through.
@@ -158,12 +157,12 @@ def find_first_index_satisfying_monotonic_condition(
 
 
 def find_nearest_index_satisfying_monotonic_condition(
-        arr: List[TrajectoryData], 
+        arr: List[TrajectoryData],
         target_value: float,
         value_getter: Callable[[TrajectoryData], float]
 ) -> int:
-    """
-    Finds the index of the object with the nearest value to the target value.
+    """Find the index of the object with the nearest value to the target value.
+
     This performs bisect search for target value, and then compares differences from target value
     to previous and next index, and select index with the smallest difference.
     In case of tie, the smaller index is returned.
@@ -171,12 +170,11 @@ def find_nearest_index_satisfying_monotonic_condition(
     Args:
         arr: The sorted array of trajectory data (always true for time, and almost always
                true for distances (except for extreme cases)).
-        target_value: int or float - The target value to find the nearest object for.
-        value_getter: function which returns the compared value
+        target_value: The target value to find the nearest object for.
+        value_getter: Function which returns the compared value
 
     Returns:
         The index of the object with the nearest target value. In case of tie, the smaller index is returned.
-
     """
     # Find the position where target_time would fit
     pos = bisect.bisect_left(BisectWrapper(arr, value_getter), target_value)
@@ -262,7 +260,7 @@ def find_index_for_time_point(
 def find_time_for_distance_in_shot(
         shot: HitResult, distance_in_unit: float, distance_unit: Unit = Distance.Meter
 ) -> float:
-    """Finds time corresponding to certain distance being reached in shot.
+    """Find time corresponding to certain distance being reached in shot.
     
     Args:
         shot: HitResult instance containing trajectory data.

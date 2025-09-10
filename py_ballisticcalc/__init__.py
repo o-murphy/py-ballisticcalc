@@ -1,4 +1,4 @@
-"""LGPL library for small arms ballistic calculations (Python 3.9+)"""
+"""LGPL library for small arms ballistic calculations."""
 
 __author__ = "o-murphy"
 __copyright__ = (
@@ -87,7 +87,7 @@ def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False
 def _basic_config(filename: Optional[str] = None,
                   preferred_units: Optional[Dict[str, Unit]] = None, 
                   suppress_warnings: bool = False) -> None:
-    """Method to load preferred units from file or Mapping.
+    """Load preferred units from file or Mapping.
     
     Args:
         filename: Configuration file path

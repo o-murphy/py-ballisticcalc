@@ -252,7 +252,7 @@ def add_danger_space_overlay(danger_space: DangerSpace, ax: Axes, label: Optiona
 
 
 def add_time_of_flight_axis(ax: Axes, hit_result: HitResult, time_precision: int = 1) -> Axes:
-    """Adds a secondary x-axis to the top of the shot plot, representing the time of flight in seconds.
+    """Add a secondary x-axis to the top of the shot plot, representing the time of flight in seconds.
 
     The ticks on the time axis correspond to the distance ticks at the bottom of the plot, where applicable.
     Time values are formatted according to the specified precision.
@@ -292,7 +292,7 @@ def add_time_of_flight_axis(ax: Axes, hit_result: HitResult, time_precision: int
 
 
 def trajectory_as_plot(hit_result: HitResult, look_angle: Optional[Angular] = None) -> Axes:
-    """Plots only trajectory, barrel, and sight lines.
+    """Plot only trajectory, barrel, and sight lines.
 
     Args:
         hit_result: The result object containing shot trajectory data.
@@ -354,7 +354,7 @@ def trajectory_as_plot(hit_result: HitResult, look_angle: Optional[Angular] = No
 
 
 def hit_result_as_plot(hit_result, look_angle: Optional[Angular] = None, show_time_axis: bool = True) -> Axes:
-    """Plots trajectory, velocity on secondary axis, barrel and sight lines, and optional time axis.
+    """Plot trajectory, velocity on secondary axis, barrel and sight lines, and optional time axis.
 
     Args:
         hit_result: The result object containing shot trajectory data.

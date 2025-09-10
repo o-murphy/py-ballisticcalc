@@ -75,32 +75,32 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @property
     def altitude(self) -> Distance:
-        """Altitude relative to sea level"""
+        """Altitude relative to sea level."""
         return self._altitude
 
     @property
     def pressure(self) -> Pressure:
-        """Unadjusted barometric pressure, a.k.a. station pressure"""
+        """Unadjusted barometric pressure, a.k.a. station pressure."""
         return self._pressure
 
     @property
     def temperature(self) -> Temperature:
-        """Local air temperature"""
+        """Local air temperature."""
         return self._temperature
 
     @property
     def powder_temp(self) -> Temperature:
-        """Powder temperature"""
+        """Powder temperature."""
         return self._powder_temp
 
     @property
     def mach(self) -> Velocity:
-        """Velocity of sound (Mach 1) for current atmosphere"""
+        """Velocity of sound (Mach 1) for current atmosphere."""
         return Velocity.FPS(self._mach)
 
     @property
     def density_ratio(self) -> float:
-        """Ratio of current density to standard atmospheric density"""
+        """Ratio of current density to standard atmospheric density."""
         return self._density_ratio
 
     _humidity: float  # Relative humidity [0% to 100%]
@@ -156,10 +156,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @property
     def humidity(self) -> float:
-        """
-        Returns:
-            Relative humidity [0% to 100%]
-        """
+        """Relative humidity [0% to 100%]."""
         return self._humidity
 
     @humidity.setter
@@ -178,18 +175,12 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @property
     def density_metric(self) -> float:
-        """
-        Returns:
-            density in kg/m^3
-        """
+        """Air density in metric units (kg/m^3)."""
         return self._density_ratio * cStandardDensityMetric
 
     @property
     def density_imperial(self) -> float:
-        """
-        Returns:
-             density in lb/ft^3
-        """
+        """Air density in imperial units (lb/ft^3)."""
         return self._density_ratio * cStandardDensity
 
     def temperature_at_altitude(self, altitude: float) -> float:
@@ -439,7 +430,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
 
 class Vacuum(Atmo):
-    """Vacuum atmosphere has zero drag."""
+    """Vacuum atmosphere (zero drag)."""
+
     cLowestTempC: float = cDegreesCtoK
 
     def __init__(self,
@@ -478,7 +470,7 @@ class Wind:
                  *,
                  max_distance_feet: Optional[float] = cMaxWindDistanceFeet):
         """
-        Create a new wind instance with given parameters
+        Create a new wind instance with given parameters.
 
         Args:
             velocity: speed of wind
@@ -504,10 +496,7 @@ class Wind:
 
     @property
     def vector(self) -> Vector:
-        """
-        Returns:
-            vector representation of the Wind instance
-        """
+        """Vector representation of the Wind instance."""
         wind_velocity_fps = self.velocity >> Velocity.FPS
         wind_direction_rad = self.direction_from >> Angular.Radian
         # Downrange (x-axis) wind velocity component:
@@ -596,10 +585,7 @@ class Shot:
 
     @property
     def winds(self) -> Sequence[Wind]:
-        """
-        Returns:
-            Sequence[Wind] sorted by until_distance
-        """
+        """Sequence[Wind] sorted by until_distance."""
         return tuple(self._winds)
 
     @winds.setter
@@ -613,11 +599,11 @@ class Shot:
 
     @property
     def barrel_elevation(self) -> Angular:
-        """Total barrel elevation (in vertical plane) from horizontal
-            = look_angle + cos(cant_angle) * zero_elevation + relative_angle
+        """Total barrel elevation (in vertical plane) from horizontal.
 
         Returns:
             Angle of barrel elevation in vertical plane from horizontal
+                `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
         """
         return Angular.Radian((self.look_angle >> Angular.Radian)
                               + math.cos(self.cant_angle >> Angular.Radian)
@@ -626,8 +612,10 @@ class Shot:
 
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
-        """Setter for barrel_elevation.  Sets the relative_angle to achieve the desired elevation.
-            Note: This does not change the weapon.zero_elevation.
+        """Setter for barrel_elevation.
+        
+        Sets `.relative_angle` to achieve the desired elevation.
+            Note: This does not change the `.weapon.zero_elevation`.
 
         Args:
             value: Desired barrel elevation in vertical plane from horizontal
@@ -637,11 +625,7 @@ class Shot:
 
     @property
     def barrel_azimuth(self) -> Angular:
-        """Horizontal angle of barrel relative to sight line
-
-        Returns:
-            Horizontal angle of barrel relative to sight line
-        """
+        """Horizontal angle of barrel relative to sight line."""
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
@@ -663,6 +647,7 @@ class CurvePoint(NamedTuple):
         b: Linear coefficient (x term) in the equation y = ax² + bx + c.
         c: Constant coefficient (constant term) in the equation y = ax² + bx + c.
     """
+
     a: float
     b: float
     c: float
@@ -681,8 +666,6 @@ class ShotProps:
     internal units (feet, seconds, grains) for computational efficiency.
         
     Examples:
-        Create ShotProps from Shot object:
-        
         ```python
         from py_ballisticcalc import Shot, ShotProps
         
@@ -726,6 +709,7 @@ class ShotProps:
     TODO: The Shot member object should either be a copy or immutable so that subsequent changes to its
           properties do not invalidate the calculations and data associated with this ShotProps instance.
     """
+
     shot: Shot  # Reference to the original Shot object
     bc: float  # Ballistic coefficient
     curve: List[CurvePoint]  # Pre-computed drag curve points
@@ -819,7 +803,7 @@ class ShotProps:
         return cd * 2.08551e-04 / self.bc
 
     def spin_drift(self, time: float) -> float:
-        """Litz spin-drift approximation
+        """Litz spin-drift approximation.
 
         Args:
             time: Time of flight
