@@ -1,6 +1,6 @@
-# Units and Dimensions
+# Units & Dimensions
 
-This project provides a comprehensive type-safe unit conversion system for the following Dimensions and Units:
+This project provides easy management of units for the following Dimensions:
 
 * [Angle][py_ballisticcalc.unit.Angular]: `radian`, `degree`, `MOA`, `mil`, `mrad`, `thousandth`, `inch/100yd`, `cm/100m`, `o'clock`
 * [Distance][py_ballisticcalc.unit.Distance]: `inch`, `foot`, `yard`, `mile`, `nautical mile`, `mm`, `cm`, `m`, `km`, `line`
@@ -14,9 +14,11 @@ This project provides a comprehensive type-safe unit conversion system for the f
 Each Dimension derives from the [`GenericDimension`][py_ballisticcalc.unit.GenericDimension] base class. Each Dimension maintains its values internally in a fixed raw unit (e.g., inches for distance, m/s for velocity) and provides conversion methods to any other supported Unit within that Dimension.
 
 ## Features
-* Type-safe unit conversions and arithmetic operators.
-* String parsing via [UnitAliases][py_ballisticcalc.unit.UnitAliases].
+* Type-safe unit conversion, comparison, and arithmetic operators.
+* String parsing via [UnitAliases][py_ballisticcalc.unit.UnitAliases] singleton.
+* String display via [UnitPropsDict][py_ballisticcalc.unit.UnitPropsDict] singleton.
 * Default/Preferred units are configurable via the [PreferredUnits][py_ballisticcalc.unit.PreferredUnits] singleton.
+
 
 ## Examples
 ```python
@@ -35,7 +37,7 @@ distance = PreferredUnits.distance(100)
 ```
 
 #### Parsing
-We can also create `Unit` objects from strings, which will try to resolve the units by referring to [`UnitAliases`][py_ballisticcalc.unit.UnitAliases].  The following expressions all return a `Unit.Yard(2)` object:
+You can also create `Unit` objects from strings, which will try to resolve the units by referring to [`UnitAliases`][py_ballisticcalc.unit.UnitAliases].  The following expressions all return a `Unit.Yard(2)` object:
 ```python
 Unit.parse('2yd')
 Unit.parse('2 yds')
@@ -43,6 +45,7 @@ Unit.parse('2.0 yards')
 Unit.parse(2, 'yd')
 ```
 
+----
 ### Display
 
 #### `__str__`
@@ -54,7 +57,7 @@ String rendering is determined by the [UnitPropsDict][py_ballisticcalc.unit.Unit
 0.549km
 ```
 
-The default can be modified like this:
+The default precision and symbol can be modified like this:
 ```python
 >>> UnitPropsDict[Unit.Kilometer] = UnitProps("kilometer", 5, " kilometers")
 >>> print(d << Distance.Kilometer)
@@ -75,7 +78,7 @@ Example:
 <Distance: 10.0yd (360.0)>
 ```
 
-
+----
 ### Conversion
 ```python
 >>> d = Distance.Yard(100)  
