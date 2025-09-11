@@ -31,7 +31,7 @@ Configuration:
     including integration method selection and tolerance settings.
     All standard BaseEngineConfigDict options are also supported.
 
-Example:
+Examples:
     >>> from py_ballisticcalc.engines.scipy_engine import SciPyIntegrationEngine
     >>> from py_ballisticcalc.engines.scipy_engine import SciPyEngineConfigDict
     >>> 
@@ -47,28 +47,9 @@ Example:
     >>> from py_ballisticcalc import Calculator
     >>> calc = Calculator(engine='scipy_engine')
 
-See Also:
-    py_ballisticcalc.engines.base_engine: Base engine architecture
-    scipy.integrate.solve_ivp: Underlying SciPy integration function
-    doc/BenchmarkEngines.md: Performance comparison documentation
-
 Note:
     This engine requires scipy and numpy to be installed. Install with:
-    pip install py_ballisticcalc[scipy] or pip install scipy numpy
-    
-    The SciPy engine provides the highest accuracy but may be slower than
-    compiled engines for simple calculations. It excels in scenarios requiring
-    maximum precision or when dealing with challenging numerical conditions.
-
-TODO:
- * Cache ._integrate() results across ._find_zero_angle() and ._find_max_range() calls.
-    ... but between calls would have to determine whether any relevant shot parameters changed.
-    * Store max_range, zero_angle, and even full cache in the shot_info?
-        * Confirm cache is valid with a single ._integrate check?
-        ... or handle any breaking change to Shot values to clear the cache?
-    * Or define hash code of all relevant Shot parameters, and use that to check
-        whether integrator cache and _init_trajectory is valid?
-* Figure out how to implement the dense_output flag.
+    `pip install py_ballisticcalc[scipy]` or `pip install scipy numpy`
 """
 # Standard library imports
 import math
@@ -134,8 +115,8 @@ class SciPyEvent:
                   -1: Function crosses from positive to negative
                    0: Any direction (default)
                    1: Function crosses from negative to positive
-    
-    Example:
+
+    Examples:
         >>> def zero_crossing(t, y):
         ...     return y[1]  # Detect when y-position crosses zero
         >>> event = SciPyEvent(zero_crossing, terminal=True, direction=-1)
@@ -199,7 +180,7 @@ def scipy_event(
         The returned decorator preserves the original function while adding
         the necessary attributes for SciPy integration.
     
-    Example:
+    Examples:
         >>> @scipy_event(terminal=True, direction=-1)
         ... def ground_impact(t, y):
         ...     '''Detect when projectile hits ground (y=0, falling)'''
@@ -238,7 +219,7 @@ class WindSock:
     Attributes:
         winds: Sequence of Wind objects defining wind conditions at specific ranges.
     
-    Example:
+    Examples:
         >>> from py_ballisticcalc.conditions import Wind
         >>> from py_ballisticcalc.unit import Distance, Velocity, Angular
         >>> # Define wind conditions at different ranges
@@ -267,7 +248,7 @@ class WindSock:
             self.winds = sorted(winds, key=lambda w: w.until_distance.raw_value)
 
     def wind_at_distance(self, distance: float) -> Optional[Vector]:
-        """Returns wind vector at specified distance, where distance is in feet."""
+        """Return wind vector at specified distance, where distance is in feet."""
         if not self.winds:
             return None
         distance *= 12.0  # Convert distance to inches (distance.raw_value)
@@ -313,7 +294,7 @@ class SciPyEngineConfig(BaseEngineConfig):
                            - 'LSODA': Automatic stiffness detection
                            Defaults to DEFAULT_INTEGRATION_METHOD ('RK45').
     
-    Example:
+    Examples:
         >>> # High-precision configuration
         >>> config = SciPyEngineConfig(
         ...     integration_method='DOP853',
@@ -331,19 +312,19 @@ class SciPyEngineConfig(BaseEngineConfig):
     
     Error Control:
         The adaptive error control uses both relative and absolute tolerances:
-        error_estimate ≤ atol + rtol * |solution|
-        
+            `error_estimate ≤ atol + rtol * |solution|`
         Lower tolerances provide higher accuracy but increase computation time.
     
     See Also:
-        BaseEngineConfig: Base configuration with standard ballistic parameters
-        SciPyEngineConfigDict: TypedDict version for flexible configuration
-        scipy.integrate.solve_ivp: Underlying SciPy integration function
+        - BaseEngineConfig: Base configuration with standard ballistic parameters
+        - SciPyEngineConfigDict: TypedDict version for flexible configuration
+        - scipy.integrate.solve_ivp: Underlying SciPy integration function
         
     Note:
         All BaseEngineConfig parameters (cMinimumVelocity, cStepMultiplier, etc.)
         are inherited and remain available for ballistic-specific configuration.
     """
+
     max_time: float = DEFAULT_MAX_TIME
     relative_tolerance: float = DEFAULT_RELATIVE_TOLERANCE
     absolute_tolerance: float = DEFAULT_ABSOLUTE_TOLERANCE
@@ -372,12 +353,13 @@ class SciPyEngineConfigDict(BaseEngineConfigDict, total=False):
         integration_method: SciPy solve_ivp integration method selection.
                            If not specified, uses DEFAULT_INTEGRATION_METHOD ('RK45').
     
-    Example:
+    Examples:
         >>> # Minimal configuration - uses defaults for unspecified fields
         >>> config: SciPyEngineConfigDict = {
         ...     'integration_method': 'DOP853'  # High precision
         ... }
     """
+
     max_time: float
     relative_tolerance: float
     absolute_tolerance: float
@@ -398,7 +380,7 @@ def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] 
 class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     """High-performance ballistic trajectory integration engine using SciPy's solve_ivp.
     
-    Example:
+    Examples:
         >>> from py_ballisticcalc.engines.scipy_engine import SciPyIntegrationEngine, SciPyEngineConfigDict
         >>>
         >>> # High-precision configuration
@@ -408,15 +390,16 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         ...     absolute_tolerance=1e-12
         ... )
         >>> engine = SciPyIntegrationEngine(config)
-        
-    >>> # Using with Calculator
-    >>> from py_ballisticcalc import Calculator
-    >>> calc = Calculator(engine='scipy_engine')
+        >>>
+        >>> # Using with Calculator
+        >>> from py_ballisticcalc import Calculator
+        >>> calc = Calculator(engine='scipy_engine')
     
     Note:
         Requires scipy and numpy packages. Install with:
-        pip install py_ballisticcalc[scipy] or pip install scipy numpy
+        `pip install py_ballisticcalc[scipy]` or `pip install scipy numpy`
     """
+
     HitZero: str = "Hit Zero"  # Specific non-exceptional termination reason
 
     @override
@@ -450,7 +433,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             ImportError: If scipy or numpy packages are not available.
             ValueError: If configuration contains invalid parameters.
             
-        Example:
+        Examples:
             >>> config = SciPyEngineConfigDict(
             ...     integration_method='DOP853',
             ...     relative_tolerance=1e-10,
@@ -459,12 +442,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             >>> engine = SciPyIntegrationEngine(config)
             
         Attributes Initialized:
-            _config: Complete configuration with defaults applied
-            gravity_vector: Gravitational acceleration vector
-            integration_step_count: Counter for integration steps (debugging)
-            trajectory_count: Counter for calculated trajectories (debugging)
-            eval_points: List of evaluation points (debugging/analysis)
-            
+            - _config: Complete configuration with defaults applied
+            - gravity_vector: Gravitational acceleration vector
+            - integration_step_count: Counter for integration steps (debugging)
+            - trajectory_count: Counter for calculated trajectories (debugging)
+            - eval_points: List of evaluation points (debugging/analysis)
+
         Note:
             The configuration is processed through create_scipy_engine_config()
             which applies defaults for any unspecified parameters. This ensures
@@ -480,8 +463,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     @with_no_minimum_velocity
     def _find_max_range(self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
         Distance, Angular]:
-        """
-        Finds the maximum range along the look_angle and the launch angle to reach it.
+        """Find the maximum range along the look_angle and the launch angle to reach it.
 
         Args:
             props: The shot information: gun, ammo, environment, look_angle.
@@ -507,7 +489,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         # endregion Virtually vertical shot
 
         def range_for_angle(angle_rad: float) -> float:
-            """Returns slant-distance minus slant-error (in feet) for given launch angle in radians."""
+            """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
             if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
                 return self._find_apex(props).slant_distance >> Distance.Foot
             props.barrel_elevation_rad = angle_rad
@@ -534,9 +516,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     @override
     @with_no_minimum_velocity
     def _find_zero_angle(self, props: ShotProps, distance: Distance, lofted: bool = False) -> Angular:
-        """
-        Internal method to find the barrel elevation needed to hit sight line at a specific distance,
-            using SciPy's root_scalar.
+        """Find the barrel elevation needed to hit sight line at a specific distance, using SciPy's `root_scalar`.
 
         Args:
             props: The shot information.
@@ -613,9 +593,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
     @override
     def _zero_angle(self, props: ShotProps, distance: Distance) -> Angular:
-        """
-        Iterative algorithm to find barrel elevation needed for a particular zero.
-            Falls back on ._find_zero_angle().
+        """Find barrel elevation needed for a particular zero.
+
+        Falls back on ._find_zero_angle().
 
         Args:
             props: Shot parameters
@@ -636,8 +616,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
                    time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
                    dense_output: bool = False, stop_at_zero: bool = False, **kwargs) -> HitResult:
-        """
-        Creates HitResult for the specified shot.
+        """Create HitResult for the specified shot.
 
         Args:
             props: Information specific to the shot.
@@ -682,7 +661,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         # region SciPy integration
         def diff_eq(t, s):
-            """Defines the dynamics of the bullet for integration.
+            """Define the differential equations of the projectile's motion.
             :param t: Time (not used in this case, but required by solve_ivp)
             :param y: State vector [x, y, z, vx, vy, vz]
             :return: Derivative of state vector
@@ -856,7 +835,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             if filter_flags:
                 def add_row(time, state, flag):
                     """Add a row to ranges, keeping it sorted by time.
-                       If a row with (approximately) this time already exists then add this flag to it."""
+                        If a row with (approximately) this time already exists then add this flag to it.
+                    """
                     idx = bisect_left_key(ranges, time, key=lambda r: r.time)
                     if idx < len(ranges):
                         # If we match existing row's time then just add this flag to the row
@@ -871,7 +851,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                 # Make sure ranges are sorted by time before this check:
                 if filter_flags & TrajFlag.MACH and ranges[0].mach >= 1.0 and ranges[-1].mach < 1.0:
                     def mach_minus_one(t):
-                        """Returns the Mach number at time t minus 1."""
+                        """Return the Mach number at time t minus 1."""
                         state = sol.sol(t)  # type: ignore[reportOptionalMemberAccess]
                         x, y = state[:2]
                         relative_velocity = Vector(*state[3:])
@@ -905,7 +885,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
                 if filter_flags & TrajFlag.APEX:
                     def vy(t):
-                        """Returns the vertical velocity at time t."""
+                        """Return the vertical velocity at time t."""
                         return sol.sol(t)[4]  # type: ignore[reportOptionalMemberAccess]
 
                     try:

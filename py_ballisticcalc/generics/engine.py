@@ -60,7 +60,7 @@ class EngineProtocol(Protocol[ConfigT]):
         - integrate: Perform ballistic trajectory calculation.
         - zero_angle: Calculate zero angle for given distance.
 
-    Example:
+    Examples:
         ```python
         from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 
@@ -91,6 +91,7 @@ class EngineProtocol(Protocol[ConfigT]):
         it doesn't explicitly inherit from EngineProtocol. The @runtime_checkable
         decorator enables isinstance() checks at runtime.
     """
+    
     def __init__(self, config: Optional[ConfigT] = None) -> None:
         ...
 

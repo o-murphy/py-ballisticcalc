@@ -11,7 +11,7 @@ Key Features:
     - First-order numerical integration
     - Adaptive time stepping based on projectile velocity
 
-Example:
+Examples:
     >>> from py_ballisticcalc import Calculator
     >>> calc = Calculator(engine="py_ballisticcalc:EulerIntegrationEngine")
 
@@ -57,10 +57,11 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         DEFAULT_STEP: Default step size multiplier for integration (0.5).
         integration_step_count: Number of integration steps performed.
         
-    Example:
+    Examples:
         >>> config = BaseEngineConfigDict(cMinimumVelocity=100.0)
         >>> engine = EulerIntegrationEngine(config)
     """
+
     DEFAULT_STEP = 0.5
 
     def __init__(self, config: BaseEngineConfigDict) -> None:
@@ -87,7 +88,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             Base step size for integration calculations.
 
         Note:
-            The step size is calculated as:  cStepMultiplier × DEFAULT_STEP
+            The step size is calculated as: `cStepMultiplier * DEFAULT_STEP`.
             Smaller step sizes increase accuracy but require more computation.
             The DEFAULT_STEP is sufficient to pass all unit tests.
         """
@@ -110,7 +111,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         Formula:
             time_step = base_step / max(1.0, velocity)
             
-        Example:
+        Examples:
             >>> config = BaseEngineConfigDict(cStepMultiplier=0.5)
             >>> engine = EulerIntegrationEngine(config)
             >>> engine.time_step(0.5, 2000.0)
@@ -129,8 +130,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
                    time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
                    dense_output: bool = False, **kwargs) -> HitResult:
-        """
-        Creates HitResult for the specified shot.
+        """Create HitResult for the specified shot.
 
         Args:
             props: Information specific to the shot.

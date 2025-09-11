@@ -42,8 +42,9 @@ nav:
 - API Documentation:
     - Overview: api/index.md
     - Calculator:
-      - Engine Protocol: api/generics_engine.md
-      - Interface: api/interface.md
+      - Engines: api/calculator/engines.md
+      - Interface: api/calculator/interface.md
+      - Protocol: api/calculator/protocol.md
     - Conditions:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md

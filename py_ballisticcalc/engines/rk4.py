@@ -62,11 +62,12 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     
     Attributes:
         integration_step_count: Number of integration steps performed.
-        
-    Example:
+
+    Examples:
         >>> config = BaseEngineConfigDict(cMinimumVelocity=0.0)
         >>> engine = RK4IntegrationEngine(config)
     """
+
     DEFAULT_TIME_STEP = 0.0025
 
     def __init__(self, config: BaseEngineConfigDict) -> None:
@@ -77,8 +78,8 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                    See BaseEngineConfigDict for available options.
                    Common settings include cStepMultiplier for accuracy control
                    and cMinimumVelocity for termination conditions.
-                   
-        Example:
+
+        Examples:
             >>> precise_config = BaseEngineConfigDict(
             ...     cStepMultiplier=0.5,  # Smaller steps
             ...     cMinimumVelocity=20.0  # Continue to lower velocities
@@ -102,7 +103,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             - Larger steps: Lower accuracy, faster computation
             - RK4's O(h⁵) error means accuracy improves rapidly with smaller h
             
-        Example:
+        Examples:
             >>> config = BaseEngineConfigDict(cStepMultiplier=0.5)
             >>> engine = RK4IntegrationEngine(config)
             >>> engine.get_calc_step()
@@ -119,8 +120,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
                    time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
                    dense_output: bool = False, **kwargs) -> HitResult:
-        """
-        Creates HitResult for the specified shot.
+        """Create HitResult for the specified shot.
 
         Args:
             props: Information specific to the shot.
