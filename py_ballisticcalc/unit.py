@@ -400,6 +400,129 @@ class Unit(IntEnum):
         for v in iter_:
             yield self(v)
 
+    @staticmethod
+    def _find_unit_by_alias(string_to_find: str, aliases: UnitAliasesType) -> Optional[Unit]:
+        """Find a unit type by searching through a dictionary that maps strings to Units.
+
+        Args:
+            string_to_find: String to search for in the alias mappings.
+            aliases: Dictionary mapping alias tuples to Unit enum values.
+
+        Returns:
+            Unit enum if a match is found, None otherwise.
+        """
+        # Iterate over the keys of the dictionary
+        for aliases_tuple in aliases.keys():
+            # Check if the string is present in any of the tuples
+            # if any(string_to_find in alias for alias in aliases_tuple):
+            if string_to_find in (each.lower() for each in aliases_tuple):
+                return aliases[aliases_tuple]
+        return None  # If not found, return None or handle it as needed
+
+    @staticmethod
+    def _parse_unit(input_: str) -> Union[Unit, None, Any]:
+        """Parse a unit type from a string representation.
+
+        Attempts to parse a string into a Unit enum using multiple methods:
+        1. Check if it's a preferred unit attribute name
+        2. Try direct Unit enum lookup
+        3. Search through UnitAliases
+
+        Args:
+            input_: String representation of a unit to parse.
+
+        Returns:
+            Unit enum if parsing succeeds, None if no match found.
+
+        Raises:
+            TypeError: If input is not a string.
+
+        Examples:
+            >>> Unit._parse_unit('meter')     # Unit.Meter
+            meter
+            >>> Unit._parse_unit('m')         # Unit.Meter
+            meter
+            >>> Unit._parse_unit('fps').name  # Unit.FPS
+            'FPS'
+            >>> Unit._parse_unit('oops')      # None
+        """
+        # Normalize input: trim, lowercase, and remove internal whitespace
+        if not isinstance(input_, str):
+            raise TypeError(f"String expected, got {type(input_)=}, {input_=}")
+        input_ = input_.strip().lower()
+        input_ = re.sub(r"\s+", "", input_)
+        if hasattr(PreferredUnits, input_):
+            return getattr(PreferredUnits, input_)
+        try:
+            return Unit[input_]
+        except KeyError:
+            # Try direct alias match
+            if (unit := Unit._find_unit_by_alias(input_, UnitAliases)) is not None:
+                return unit
+            # Simple pluralization fallback: yard(s), meter(s), knot(s), etc.
+            if input_.endswith('s'):
+                singular = input_[:-1]
+                if (unit := Unit._find_unit_by_alias(singular, UnitAliases)) is not None:
+                    return unit
+            return None
+
+    @staticmethod
+    def parse(input_: Union[str, Number],
+              preferred: Optional[Union[Unit, str]] = None) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
+        """Parse a value with optional unit specification into a unit measurement.
+
+        Args:
+            input_: Value to parse - can be a number or string with optional unit.
+            preferred: Preferred unit to use for numeric inputs, either as Unit enum or string alias.
+
+        Returns:
+            Parsed unit measurement if successful, raises exception on failure.
+
+        Raises:
+            TypeError: If input type is not supported.
+            UnitAliasError: If unit alias cannot be parsed.
+
+        Examples:
+            >>> # Parse numeric value with preferred unit
+            >>> Unit.parse(100, Unit.Meter)
+            <Distance: 100.0m (3937.0079)>
+            
+            >>> # Parse string with embedded unit
+            >>> Unit.parse('2yd')
+            <Distance: 2.0yd (72.0)>
+            
+            >>> # Parse with PreferredUnit string
+            >>> Unit.parse(50, 'grain')
+            <Weight: 50.0gr (50.0)>
+        """
+
+        def create_as_preferred(value_):
+            if isinstance(preferred, Unit):
+                return preferred(float(value_))
+            if isinstance(preferred, str):
+                if units_ := Unit._parse_unit(preferred):
+                    return units_(float(value_))
+            raise UnitAliasError(f"Unsupported {preferred=} unit alias")
+
+        if isinstance(input_, (float, int)):
+            return create_as_preferred(input_)
+
+        if not isinstance(input_, str):
+            raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
+
+        input_string = input_.replace(" ", "")
+        if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
+            value = match.group()
+            return create_as_preferred(value)
+
+        if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
+            value, alias = match.groups()
+            if units := Unit._parse_unit(alias):
+                return units(float(value))
+            raise UnitAliasError(f"Unsupported unit {alias=}")
+
+        raise UnitAliasError(f"Can't parse unit {input_=}")
+
 
 class UnitProps(NamedTuple):
     """Properties and display characteristics for unit measurements.
@@ -482,8 +605,10 @@ UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Picosecond: UnitProps('picosecond', 12, 'ps')
 }
 # --8<-- [end:UnitPropsDict]
+
 UnitAliasesType: TypeAlias = Mapping[Tuple[str, ...], Unit]
 
+# mkdocs.pymdown.snippet marker: --8<-- [start:UnitAliases]
 UnitAliases: UnitAliasesType = {
     ('radian', 'rad'): Unit.Radian,
     ('degree', 'deg'): Unit.Degree,
@@ -540,6 +665,7 @@ UnitAliases: UnitAliasesType = {
     ('nanosecond', 'ns'): Unit.Nanosecond,
     ('picosecond', 'ps'): Unit.Picosecond,
 }
+# --8<-- [end:UnitAliases]
 
 
 @runtime_checkable
@@ -1440,7 +1566,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 if isinstance(value, Unit):
                     setattr(PreferredUnits, attribute, value)
                 elif isinstance(value, str):
-                    if _unit := _parse_unit(value):
+                    if _unit := Unit._parse_unit(value):
                         setattr(PreferredUnits, attribute, _unit)
                     else:
                         logger.warning(f"{value=} not a member of Unit")
@@ -1450,129 +1576,6 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                     logger.warning(f"type of {value=} have not been converted to a member of Unit")
             else:
                 logger.warning(f"{attribute=} not found in preferred_units")
-
-
-def _find_unit_by_alias(string_to_find: str, aliases: UnitAliasesType) -> Optional[Unit]:
-    """Find a unit type by searching through a dictionary that maps strings to Units.
-
-    Args:
-        string_to_find: String to search for in the alias mappings.
-        aliases: Dictionary mapping alias tuples to Unit enum values.
-
-    Returns:
-        Unit enum if a match is found, None otherwise.
-    """
-    # Iterate over the keys of the dictionary
-    for aliases_tuple in aliases.keys():
-        # Check if the string is present in any of the tuples
-        # if any(string_to_find in alias for alias in aliases_tuple):
-        if string_to_find in (each.lower() for each in aliases_tuple):
-            return aliases[aliases_tuple]
-    return None  # If not found, return None or handle it as needed
-
-
-def _parse_unit(input_: str) -> Union[Unit, None, Any]:
-    """Parse a unit type from a string representation.
-
-    Attempts to parse a string into a Unit enum using multiple methods:
-    1. Check if it's a preferred unit attribute name
-    2. Try direct Unit enum lookup
-    3. Search through UnitAliases
-
-    Args:
-        input_: String representation of a unit to parse.
-
-    Returns:
-        Unit enum if parsing succeeds, None if no match found.
-
-    Raises:
-        TypeError: If input is not a string.
-
-    Examples:
-        >>> _parse_unit('meter')     # Unit.Meter
-        meter
-        >>> _parse_unit('m')         # Unit.Meter
-        meter
-        >>> _parse_unit('fps').name  # Unit.FPS
-        'FPS'
-        >>> _parse_unit('oops')      # None
-    """
-    # Normalize input: trim, lowercase, and remove internal whitespace
-    if not isinstance(input_, str):
-        raise TypeError(f"String expected, got {type(input_)=}, {input_=}")
-    input_ = input_.strip().lower()
-    input_ = re.sub(r"\s+", "", input_)
-    if hasattr(PreferredUnits, input_):
-        return getattr(PreferredUnits, input_)
-    try:
-        return Unit[input_]
-    except KeyError:
-        # Try direct alias match
-        if (unit := _find_unit_by_alias(input_, UnitAliases)) is not None:
-            return unit
-        # Simple pluralization fallback: yard(s), meter(s), knot(s), etc.
-        if input_.endswith('s'):
-            singular = input_[:-1]
-            if (unit := _find_unit_by_alias(singular, UnitAliases)) is not None:
-                return unit
-        return None
-
-
-def _parse_value(input_: Union[str, Number],
-                 preferred: Optional[Union[Unit, str]]) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
-    """Parse a value with optional unit specification into a unit measurement.
-
-    Args:
-        input_: Value to parse - can be a number or string with optional unit.
-        preferred: Preferred unit to use for numeric inputs, either as Unit enum or string alias.
-
-    Returns:
-        Parsed unit measurement if successful, raises exception on failure.
-
-    Raises:
-        TypeError: If input type is not supported.
-        UnitAliasError: If unit alias cannot be parsed.
-
-    Examples:
-        >>> # Parse numeric value with preferred unit
-        >>> _parse_value(100, Unit.Meter)
-        <Distance: 100.0m (3937.0079)>
-        
-        >>> # Parse string with embedded unit
-        >>> _parse_value('2yd', None) 
-        <Distance: 2.0yd (72.0)>
-        
-        >>> # Parse with PreferredUnit string
-        >>> _parse_value(50, 'grain')
-        <Weight: 50.0gr (50.0)>
-    """
-
-    def create_as_preferred(value_):
-        if isinstance(preferred, Unit):
-            return preferred(float(value_))
-        if isinstance(preferred, str):
-            if units_ := _parse_unit(preferred):
-                return units_(float(value_))
-        raise UnitAliasError(f"Unsupported {preferred=} unit alias")
-
-    if isinstance(input_, (float, int)):
-        return create_as_preferred(input_)
-
-    if not isinstance(input_, str):
-        raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
-
-    input_string = input_.replace(" ", "")
-    if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
-        value = match.group()
-        return create_as_preferred(value)
-
-    if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
-        value, alias = match.groups()
-        if units := _parse_unit(alias):
-            return units(float(value))
-        raise UnitAliasError(f"Unsupported unit {alias=}")
-
-    raise UnitAliasError(f"Can't parse unit {input_=}")
 
 
 __all__ = (
@@ -1596,6 +1599,4 @@ __all__ = (
     'UnitAliasError',
     'UnitTypeError',
     'UnitConversionError',
-    '_parse_unit',
-    '_parse_value'
 )
