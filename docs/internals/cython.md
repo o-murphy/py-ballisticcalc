@@ -118,3 +118,13 @@ For any object in the hot path we create a C helper as follows:
 2. Implement any helper functions in `bclib.c`.  These are typically to allocate and free memory.  Example: `ShotProps_t_free()`.
 3. Copy the `struct` as a `ctypedef` to `cy_bindings.pxd`.  (This could be automated at compile time but is not at present.)
 4. Put any conversion logic in `cy_bindings.pyx`.  E.g., `cdef ShotProps_t ShotProps_t_from_pyshot(object shot_props):`
+
+## Debugging tips
+- Reproduce failure with a focused pytest call (pass the test path) to avoid long runs.
+- Add temporary debug prints in Python-side filter rather than in C to avoid recompiles.
+- To iterate on Cython code rapidly: keep `pyx` edits small and incremental, run `py -m pip install -e ./py_ballisticcalc.exts` to rebuild the extension in-place.
+
+## Contribution checklist
+- Keep parity: match Python reference implementations for event semantics unless you intentionally change behavior (document that change).
+- Add tests for any public behavioral change.
+- Keep Cython numeric code focused on inner loops and return dense samples for Python post-processing.

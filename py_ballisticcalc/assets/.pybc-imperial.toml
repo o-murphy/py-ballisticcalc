@@ -1,9 +1,10 @@
-# Config template for py_ballisticcalc
+# Imperial unit preset
 
 title = "py_ballisticcalc config"
 version = "2.2.0"
 
 [pybc.preferred_units]
+# mkdocs.pymdown.snippet marker: --8<-- [start:pybc-imperial]
 angular = 'Degree'
 distance = 'Foot'
 velocity = 'FPS'
@@ -20,3 +21,4 @@ sight_height = 'Inch'
 target_height = 'Inch'
 twist = 'Inch'
 time = 'Second'
+# --8<-- [end:pybc-imperial]

@@ -1,9 +1,10 @@
-# Config template for py_ballisticcalc
+# Metric unit preset
 
 title = "py_ballisticcalc config"
 version = "2.2.0"
 
 [pybc.preferred_units]
+# mkdocs.pymdown.snippet marker: --8<-- [start:pybc-metric]
 angular = 'Degree'
 distance = 'Meter'
 velocity = 'MPS'
@@ -20,3 +21,4 @@ sight_height = 'Centimeter'
 target_height = 'Meter'
 twist = 'Centimeter'
 time = 'Second'
+# --8<-- [end:pybc-metric]

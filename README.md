@@ -59,7 +59,7 @@ https://img.shields.io/badge/made_in-Ukraine-ffd700.svg?labelColor=0057b7&style=
 [SWUBadge]:
 https://stand-with-ukraine.pp.ua
 
-### Table of contents
+### Contents
 
 * **[Installation](#installation)**
     * [Latest stable](https://pypi.org/project/py-ballisticcalc/)
@@ -67,24 +67,12 @@ https://stand-with-ukraine.pp.ua
   [//]: # (  * [From sources]&#40;#installing-from-sources&#41;)
   [//]: # (  * [Clone and build]&#40;#clone-and-build&#41;)
 
-* **[Usage](#usage)**
-  * [Simple example](#simple-zero)
-  * [Plot trajectory](#plot-trajectory-with-danger-space)
-  * [Range card](#plot-trajectory-with-danger-space)
-  * [Complex example](#complex-example)
+* **[QuickStart](#quickstart)**
 
-* **[Concepts](#concepts)**
-  * [Coordinates](#coordinates)
-  * [Slant / Look Angle](#look-angle)
-  * [Danger Space](#danger-space)
-
-* [**Units** of measure](#units)
-  * [Examples](#examples)
-  * [Preferences](#preferences)
-
-* **[Integration Engines](#integration-engines)**
-  * [Modifying Presets](#modifying-presets)
-  * [Custom integration engines](#custom-integration-engines)
+    * [Examples](#examples)
+    * [Ballistic Concepts](#ballistic-concepts)
+    * [Units](#units)
+    * [Calculation Engines](#calculation-engines)
 
 * **[Contributors](#contributors)**
 * **[About project](#about-project)**
@@ -111,128 +99,25 @@ uv sync
 uv sync --dev --extra exts
 ```
 
-# Usage
+## Docs
 
-**See [Example.ipynb](examples/Examples.ipynb) and [ExtremeExamples.ipynb](examples/ExtremeExamples.ipynb) for detailed illustrations of all features and usage.**
+To build or serve the complete web documentation, first `pip install -e .[docs]`.  Then:
+* `mkdocs build` will populate a `./site` folder with HTML.
+* `mkdocs serve` will build and serve the HTML via local connection.
 
-## Simple Zero
+----
 
-```python
-# Establish 100-yard zero for a standard .308, G7 bc=0.22, muzzle velocity 2600fps
-from py_ballisticcalc import *
-zero = Shot(weapon=Weapon(sight_height=2), ammo=Ammo(DragModel(0.22, TableG7), mv=Velocity.FPS(2600)))
-calc = Calculator()
-zero_distance = Distance.Yard(100)
-zero_elevation = calc.set_weapon_zero(zero, zero_distance)
-print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << PreferredUnits.adjustment}')
-```
+# [QuickStart](docs/index.md)
 
-    Barrel elevation for 100.0yd zero: 1.33mil
+## [Examples](examples/Examples.ipynb)
+  * [Extreme Examples](examples/ExtremeExamples.ipynb)
 
-## Plot Trajectory with Danger Space
+## [Ballistic Concepts](docs/concepts/index.md)
+  * [Coordinates](docs/concepts/index.md#coordinates)
+  * [Slant / Look Angle](docs/concepts/index.md#look-angle)
+  * [Danger Space](docs/concepts/index.md#danger-space)
 
-```python
-# Plot trajectory out to 500 yards
-shot_result = calc.fire(zero, trajectory_range=500, trajectory_step=Distance.Yard(1), extra_data=True)
-ax = shot_result.plot()
-# Find danger space for a half-meter tall target at 300 yards
-danger_space = shot_result.danger_space(Distance.Yard(300), Distance.Meter(.5))
-print(danger_space)
-danger_space.overlay(ax)  # Highlight danger space on the plot
-plt.show()
-```
-
-    Danger space at 300.0yd for 19.7inch tall target ranges from 217.1yd to 355.7yd
-
-![plot](doc/TrajectoryPlot1.png)
-
-## Print Range Card
-
-```python
-# Range card for this zero with 5mph cross-wind from left to right
-zero.winds = [Wind(Velocity.MPH(5), Angular.OClock(3))]
-range_card = calc.fire(zero, trajectory_range=1000, trajectory_step=100)
-range_card.dataframe().to_clipboard()
-range_card.dataframe(True)[
-    ['distance', 'velocity', 'mach', 'time', 'slant_height', 'drop_adj', 'windage', 'windage_adj']].set_index('distance')
-```
-
-| distance  | velocity    | mach      | time    | slant_height| drop_adj   | windage   | windage_adj |
-|-----------|-------------|-----------|---------|-------------|------------|-----------|-------------|
-| 0.0 yd    | 2600.0 ft/s | 2.33 mach | 0.000 s | -2.0 inch   | 0.00 mil   | -0.0 inch | 0.00 mil    |
-| 100.0 yd  | 2398.1 ft/s | 2.15 mach | 0.120 s | -0.0 inch   | -0.00 mil  | 0.4 inch  | 0.12 mil    |
-| 200.0 yd  | 2205.5 ft/s | 1.98 mach | 0.251 s | -4.1 inch   | -0.57 mil  | 1.7 inch  | 0.25 mil    |
-| 300.0 yd  | 2022.3 ft/s | 1.81 mach | 0.393 s | -15.3 inch  | -1.44 mil  | 4.1 inch  | 0.39 mil    |
-| 400.0 yd  | 1847.5 ft/s | 1.65 mach | 0.548 s | -35.0 inch  | -2.48 mil  | 7.6 inch  | 0.54 mil    |
-| 500.0 yd  | 1680.1 ft/s | 1.50 mach | 0.718 s | -65.0 inch  | -3.68 mil  | 12.4 inch | 0.70 mil    |
-| 600.0 yd  | 1519.5 ft/s | 1.36 mach | 0.906 s | -107.3 inch | -5.06 mil  | 18.8 inch | 0.89 mil    |
-| 700.0 yd  | 1366.0 ft/s | 1.22 mach | 1.114 s | -164.8 inch | -6.66 mil  | 27.0 inch | 1.09 mil    |
-| 800.0 yd  | 1221.3 ft/s | 1.09 mach | 1.347 s | -240.9 inch | -8.52 mil  | 37.3 inch | 1.32 mil    |
-| 900.0 yd  | 1093.2 ft/s | 0.98 mach | 1.607 s | -340.5 inch | -10.71 mil | 50.0 inch | 1.57 mil    |
-| 1000.0 yd | 1029.8 ft/s | 0.92 mach | 1.891 s | -469.0 inch | -13.27 mil | 64.8 inch | 1.83 mil    |
-
-## Complex Example
-
-Here we define a standard .50BMG, enable powder temperature sensitivity, and zero for a distance of 500 meters, in a 5°C atmosphere at altitude 1000ft ASL.
-
-```python
-dm = DragModel(0.62, TableG1, 661, 0.51, 2.3)
-ammo = Ammo(dm, Velocity.MPS(850), Temperature.Celsius(15), use_powder_sens=True)
-ammo.calc_powder_sens(Velocity.MPS(820), Temperature.Celsius(0))
-weapon = Weapon(sight_height=Distance.Centimeter(9), twist=15)
-atmo = Atmo(altitude=Distance.Foot(1000), temperature=Unit.Celsius(5), humidity=.5)
-zero = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
-zero_distance = Distance.Meter(500)
-calc = Calculator()
-zero_elevation = calc.set_weapon_zero(zero, zero_distance)
-print(f'Barrel elevation for {zero_distance} zero: {zero_elevation << PreferredUnits.adjustment}')
-print(
-    f'Muzzle velocity at zero temperature {atmo.temperature} is {ammo.get_velocity_for_temp(atmo.temperature) << Velocity.MPS}')
-```
-
-    Barrel elevation for 500.0m zero: 4.69mil
-    Muzzle velocity at zero temperature 5.0°C is 830.0m/s
-
-
-# Concepts
-
-## Coordinates
-
-![Ballistic coordinates](doc/ballistics_coordinates.svg)
-
-**Gravity gives $\boldsymbol{y}$:** In ballistics, everything is referenced to the direction of gravity. The gravity vector points "down," and this defines the vertical direction. In 3D Cartesian coordinates $(x, y, z)$, the gravity vector is $(0, -g, 0)$, where $g$ is acceleration due to gravity (typically 32 feet/second² or 9.8 meters/second²). The $y$ coordinate describes vertical (up/down) position.
-
-**Horizontal:** Having defined the vertical axis using the gravity vector, we can then define *horizontal* as any vector perpendicular (or *orthogonal*) to the direction of gravity.
-
-**Sight gives $\boldsymbol{x}$ axis:** The second key reference in ballistics is the **sight line**. We set the horizontal axis to the sight line, which is typically a ray from the shooter's eye through the center of a sighting device like a scope.
-
-**Muzzle gives origin:** The origin of our 3D coordinate system `(0, 0, 0)` is the point on the sight line directly above the point that the projectile begins free flight. For a typical gun, free flight begins at the muzzle, which is vertically offset from the sight line by a `sight_height`, so the launch point is actually `(0, -sight_height, 0)`.  (See [this image illustrating the correct measurement of sight height](doc/SightHeight.png).)
-
-* **The $\boldsymbol{x}$ coordinate** measures distance from launch along a horizontal sight line.
-
-* **The $\boldsymbol{z}$ coordinate** describes position orthogonal to both the direction of gravity and the sight line. From the perspective of the sight, this is lateral position, also known as windage.
-
-## Look angle
-
-*Look angle*, a.k.a. *slant angle*, is the elevation of the sight line (a.k.a., _Line of Sight_, or _LoS_) relative to the horizon. For  angles close to horizontal (_flat fire_) this does not make a significant difference. When the look angle is significantly above or below the horizon the trajectory will be different because:
-
-1. Gravity is not orthogonal to the velocity
-2. Air density changes with altitude, so the drag effects will vary across an arcing trajectory.
-
-The shooter typically cares about the line of sight (LoS): Sight adjustments are made relative to LoS.  Ranging errors – and hence [danger space](#danger-space) – follow the _slant-height_, not the horizontal height.
-
-The following diagram shows how _slant distance_ and _slant height_ relate by _look angle_ to the underlying (distance _x_, height _y_) trajectory data.  [Understanding Slant Angle](examples/Understanding_Slant_Angle.ipynb) covers these concepts in more detail.
-![Look-angle trigonometry](doc/BallisticTrig.svg)
-
-## Danger Space
-
-Danger space is a practical measure of sensitivity to ranging error. It is defined for a target of height *h* and
-distance *d*, and it indicates how far forward and backward along the line of sight the target can move such that the trajectory will still hit somewhere (vertically) on the target.
-
-![Danger Space](doc/DangerSpace.svg)
-
-
-# [Units](py_ballisticcalc/unit.py)
+## [Units](docs/concepts/unit.md)
 
 Work in your preferred terms with easy conversions for the following dimensions and units:
 * **Angular**: radian, degree, MOA, mil, mrad, thousandth, inch/100yd, cm/100m, o'clock
@@ -245,154 +130,18 @@ Work in your preferred terms with easy conversions for the following dimensions 
 * **Weight**: grain, ounce, gram, pound, kilogram, newton
 
 
-## Examples
+## [Calculation Engines](docs/concepts/engines.md)
 
-```python
-from py_ballisticcalc.unit import *
+Choose between different calculation engines, or build your own.  Included engines:
 
-# Creation
-unit_in_meters = Distance.Meter(100)
-unit_in_meters = Unit.Meter(100)  # Equivalent to previous expression
-
-# Conversion to instance with different units
-unit_in_yards = unit_in_meters.convert(Distance.Yard)
-unit_in_yards = unit_in_meters << Distance.Yard  # Equivalent to previous expression
-print(str(unit_in_meters) + " = " + str(unit_in_yards))  # "100.0m = 109.4yd"
-
-# Conversion to float in compatible units
-value_in_km = unit_in_yards.get_in(Distance.Kilometer)
-value_in_km = unit_in_yards >> Distance.Kilometer  # Equivalent to previous expression
-assert isinstance(value_in_km, float) and math.isclose(value_in_km, 0.1)
-
-# Comparison operators supported: < > <= >= == !=
-assert unit_in_meters == unit_in_yards
-# Arithmetic operators supported (with some restrictions): +, -, *, /
-assert 2 * unit_in_meters == unit_in_meters + 100
-```
-
-## Preferences
-
-To change default units directly from code use the static `PreferredUnits` object.
-
-```python
-from py_ballisticcalc import PreferredUnits, Velocity, Angular, Temperature, Distance
-
-# Change default library units
-PreferredUnits.velocity = Velocity.MPS
-PreferredUnits.adjustment = Angular.Mil
-PreferredUnits.temperature = Temperature.Celsius
-PreferredUnits.distance = Distance.Meter
-PreferredUnits.sight_height = Distance.Centimeter
-PreferredUnits.drop = Distance.Centimeter
-
-print(f'PreferredUnits: {str(PreferredUnits)}')
-print(f'Default distance unit: {PreferredUnits.distance.name}')
-
-# Can create value in default unit with either float or another unit of same type
-print(f'\tInstantiated from float (5): {PreferredUnits.distance(5)}')
-print(f'\tInstantiated from Distance.Line(200): {PreferredUnits.distance(Distance.Line(200))}')
-```
-
-Or, use the **new method to set preferred units/settings globally for the venv or the user:**
-
-Create `.pybc.toml` or `pybc.toml` file in your project root directory _(where venv was placed)_.
-Or place this file in user's home directory. _(The file in project root has priority.)_
-Use [`loadMetricUnits()`](py_ballisticcalc/assets/.pybc-metrics.toml), [`loadImperialUnits()`](py_ballisticcalc/assets/.pybc-imperial.toml) or [`loadMixedUnits()`](py_ballisticcalc/assets/.pybc-mixed.toml) to manualy load one of the presets from [assets](py_ballisticcalc/assets/) as follows:
-
-```python
-from py_ballisticcalc import loadImperialUnits, loadMetricUnits, loadMixedUnits
-
-loadImperialUnits()
-loadMetricUnits()
-loadMixedUnits()
-```
-
-(Use just one of these methods – only the last one called counts.)
-
-**Custom .pybc.toml**
-
-```python
-from py_ballisticcalc import basicConfig
-
-basicConfig("path/to/your_config.toml")
-```
-
-
-# Integration Engines
-
-Default engine is RK4.  Recommended for speed: `cythonized_rk4_engine` or `scipy_engine`.
-
-## Comparison
-
-**See [Engine Benchmarks](doc/BenchmarkEngines.md) for more detailed analysis and comparison of the engines.**
-
-| Engine Name               |  Is Default?   | Relative Speed | Dependencies             | Description                                                   |
-|:--------------------------|:--------------:|:---------------|:-------------------------|:--------------------------------------------------------------|
-| `rk4_engine`              | :green_circle: | Baseline (1x)  | None                     | Runge-Kutta 4th-order integration.                            |
-| `verlet_engine`           |  :red_circle:  |  0.7x (slower) | None                     | Velocity Verlet 2nd-order integration.                        |
-| `euler_engine`            |  :red_circle:  |  0.5x (slower) | None                     | Basic Euler integration: 1st-order but easiest to understand. |
-| `cythonized_rk4_engine`   |  :red_circle:  | 50x faster     | `py-ballisticcalc[exts]` | Cython-optimized Runge-Kutta 4th-order integration.           |
-| `cythonized_euler_engine` |  :red_circle:  | 40x faster     | `py-ballisticcalc[exts]` | Cython-optimized Euler integration.                           |
-| `scipy_engine`            |  :red_circle:  | 10x faster     | `scipy`                  | Uses SciPy's advanced and optimized numerical methods.        |
-
-## Modifying presets
-
-Using `BaseEngineConfigDict`:
-
-```python
-from py_ballisticcalc import Calculator, BaseEngineConfigDict
-
-config = BaseEngineConfigDict(
-    # cZeroFindingAccuracy= ...,  # Max allowed slant-error (in feet) to end zero search
-    # cMaxIterations= ...,        # Maximum number of iterations for zero search
-    cMinimumVelocity=0,           # Min velocity (fps) to continue computing trajectory
-    # cMaximumDrop= ...,          # Max drop (feet) from muzzle to continue computing trajectory
-    # cMinimumAltitude= ...,      # Min altitude (feet, above sea level) to continue computing trajectory
-    # cGravityConstant= ...,      # Gravitational acceleration in fps^2
-    # cStepMultiplier= ...,       # Multiplier of integration step, to change calculation speed & precision
-)
-calc = Calculator(config=config)
-```
-
-## Custom integration engines
-
-**Create custom engine module**
-
-To define custom integrator engine you can create separate module that should have class that implements
-`py_ballisticcalc.generics.EngineProtocol`. Also you have to add entry point `py_ballisticcalc.my_awesome_engine` in your module `pyproject.toml`/`setup.py`.  Entry point name should end with `_engine`.
-
-```toml
-[project.entry-points.py_ballisticcalc]
-my_awesome_engine = "my_awesome_engine_library.my_awesome_module:MyAwesomeEngine"
-```
-
-**Custom engine usage**
-
-For `Calculator` instance definition with custom engine, install your library to virtual env and use your library name as `_engine` argument.  It should load your engine class in background.
-
-```python
-from py_ballisticcalc import Calculator
-
-calc = Calculator(engine="my_awesome_engine")
-# or
-calc = Calculator(engine="my_awesome_engine_library.my_awesome_module:MyAwesomeEngine")
-```
-
-**Test your custom engine**
-
-To test your custom engine compatibility you can use predefined tests from `py_ballisticcalc`
-
-* Clone `py_ballisticcalc` to your environment
-* Install `py_ballisticcalc` in editable mode with `dev` dependencies
-  ```shell
-  pip install -e .[dev]
-  ```
-* Run `pytest` with `--engine` argument
-  ```shell
-  pytest ./tests --engine="my_awesome_engine" 
-  # or
-  pytest ./tests --engine="my_awesome_engine_library.my_awesome_module:MyAwesomeEngine" 
-  ```
+| Engine Name               |   Speed        | Dependencies    | Description                    |
+|:--------------------------|:--------------:|:---------------:|:-------------------------------|
+| `rk4_engine`              | Baseline (1x)  | None, default   | Runge-Kutta 4th-order integration  |
+| `euler_engine`            |  0.5x (slower) | None            | Euler 1st-order integration |
+| `verlet_engine`           |  0.7x (slower) | None            | Verlet 2nd-order integration |
+| `cythonized_rk4_engine`   | 50x (faster)   | `[exts]`        | Compiled Runge-Kutta 4th-order |
+| `cythonized_euler_engine` | 40x (faster)   | `[exts]`        | Compiled Euler integration |
+| `scipy_engine`            | 10x (faster)   | `scipy`         | Advanced numerical methods |
 
 
 # About project

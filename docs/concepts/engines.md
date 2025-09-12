@@ -1,14 +1,24 @@
 # Engines
 
-py-ballisticcalc provides multiple integration engines with identical public semantics. Choose based on your needs for speed and dependencies:
+## Summary
 
-- `rk4_engine`: Default Python RK4 (4th order) – balanced accuracy and simplicity.
-- `euler_engine`: Simple 1st-order integrator – easiest to understand.
-- `verlet_engine`: Velocity-Verlet 2nd-order – alternative numeric behavior.
-- `scipy_engine`: High-quality ODE solvers from SciPy – fast and adaptive; requires `scipy`.
-- `cythonized_rk4_engine` / `cythonized_euler_engine`: Cython-optimized variants – very fast; requires `py-ballisticcalc[exts]`.
+py-ballisticcalc provides various calculation engines with identical public semantics.  The relative merits of the engines are detailed in [benchmarks](benchmarks.md).
 
-Select an engine when creating `Calculator`:
+| Engine Name               | Speed | Dependencies             | Description                                                   |
+|:--------------------------|:---------------:|:-------------------------:|:--------------------------------------------------------------|
+| **[`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine]** | Baseline (1x)  | None; default            | Runge-Kutta 4th-order integration |
+| [`euler_engine`][py_ballisticcalc.engines.EulerIntegrationEngine] |  0.5x (slower) | None                     | Euler 1st-order integration |
+| [`verlet_engine`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine] |  0.7x (slower) | None                     | Verlet 2nd-order symplectic integration |
+| `cythonized_rk4_engine`   | 50x (faster)   | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order |
+| <span style="white-space:nowrap;">`cythonized_euler_engine`</span> | 40x (faster)   | [`[exts]`](#cython-engines) | Compiled Euler integration |
+| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine] | 10x (faster)   | `scipy`                  | Advanced numerical methods  |
+
+
+* This project will default to the [`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine].
+* For higher speed and precision use the [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine].
+* For maximum speed use the `cythonized_rk4_engine`.
+
+To select a specific engine when creating a [`Calculator`][py_ballisticcalc.interface.Calculator], use the optional `engine` argument:
 
 ```python
 from py_ballisticcalc import Calculator
@@ -17,5 +27,48 @@ calc = Calculator(engine="rk4_engine")
 calc = Calculator(engine="my_pkg.my_mod:MyEngine")
 ```
 
-See also: [BenchmarkEngines](https://github.com/o-murphy/py_ballisticcalc/blob/main/doc/BenchmarkEngines.md) for performance comparisons.
+## Cython Engines
 
+Cythonized engines are compiled for maximum performance.  Include the `[exts]` option to install those:
+
+=== "pip"
+    ```bash
+    pip install py-ballisticcalc[exts]
+    ```
+    
+=== "uv"
+    ```bash
+    uv add py-ballisticcalc[exts]
+    ```
+
+## Custom Engines
+
+**To define a custom engine:** Create a separate module with a class that implements the [`EngineProtocol`][py_ballisticcalc.generics.engine.EngineProtocol].  You can then load it like:
+```python
+from py_ballisticcalc import Calculator
+
+calc = Calculator(engine="my_library.my_module:MyAwesomeEngine")
+```
+
+**Entry Point:** You can also give the engine a named entry point in `pyproject.toml`/`setup.py`.  The entry point name should end with `_engine`.  Example:
+
+```toml
+[project.entry-points.py_ballisticcalc]
+my_awesome_engine = "my_library.my_module:MyAwesomeEngine"
+```
+
+Then you can load the engine using the entry point name:
+```python
+from py_ballisticcalc import Calculator
+
+calc = Calculator(engine="my_awesome_engine")
+```
+
+**Test a custom engine**
+
+To test a specific engine with the project test suite, run `pytest` with `--engine` argument.  Examples:
+```shell
+pytest ./tests --engine="my_awesome_engine" 
+# or
+pytest ./tests --engine="my_library.my_module:MyAwesomeEngine" 
+```

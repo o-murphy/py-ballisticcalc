@@ -125,3 +125,32 @@ You can add and subtract numbers and `Unit` objects in the same `Dimension`.  Ex
 >>> d / Unit.Foot(3)
 100.0
 ```    
+
+## Preferences
+
+Default units are established using [`PreferredUnits`][py_ballisticcalc.unit.PreferredUnits].
+
+**To show the current defaults:**
+
+```python
+from py_ballisticcalc import PreferredUnits
+print(str(PreferredUnits))
+```
+
+**To set custom defaults:**
+
+* Create `.pybc.toml` or `pybc.toml` in your project root directory _(where venv was placed)_.
+* Or place this file in user's home directory. _(The file in project root has priority.)_
+* Or explicitly load a `toml` file like this:
+
+```python
+from py_ballisticcalc import basicConfig
+
+basicConfig("path/to/your_config.toml")
+```
+
+There are three preset unit files in `/assets`:
+
+* Imperial: `.pybc-imperial.toml`
+* Metric: `.pybc-metrics.toml`
+* Mixed: `.pybc-mixed.toml`
