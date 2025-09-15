@@ -216,7 +216,7 @@ class Sight:
 
     def get_adjustment(self, target_distance: Distance,
                        drop_adj: Angular, windage_adj: Angular,
-                       magnification: float):
+                       magnification: float) -> SightClicks:
         """Calculate sight adjustment for target distance and magnification.
         
         This method computes the required sight adjustments (in clicks) based on
@@ -329,7 +329,7 @@ class Weapon:
         )
         ```
     """
-    
+
     sight_height: Distance
     twist: Distance
     zero_elevation: Angular

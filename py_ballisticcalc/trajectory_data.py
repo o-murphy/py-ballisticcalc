@@ -85,16 +85,16 @@ class TrajFlag(int):
     ballistic trajectories. The flags can be combined using bitwise operations.
     
     Flag Values:
-        NONE (0): Standard trajectory point with no special events
-        ZERO_UP (1): Upward zero crossing (trajectory rising through sight line)
-        ZERO_DOWN (2): Downward zero crossing (trajectory falling through sight line)
-        ZERO (3): Any zero crossing (ZERO_UP | ZERO_DOWN)
-        MACH (4): Mach 1 transition point (sound barrier crossing)
-        RANGE (8): User requested point, typically by distance or time step
-        APEX (16): Trajectory apex (maximum height point)
-        ALL (31): All special points (combination of all above flags)
-        MRT (32): Mid-Range Trajectory/Maximum Ordinate (largest slant height) [PROPOSED]
-        
+        - NONE (0): Standard trajectory point with no special events
+        - ZERO_UP (1): Upward zero crossing (trajectory rising through sight line)
+        - ZERO_DOWN (2): Downward zero crossing (trajectory falling through sight line)
+        - ZERO (3): Any zero crossing (ZERO_UP | ZERO_DOWN)
+        - MACH (4): Mach 1 transition point (sound barrier crossing)
+        - RANGE (8): User requested point, typically by distance or time step
+        - APEX (16): Trajectory apex (maximum height point)
+        - ALL (31): All special points (combination of all above flags)
+        - MRT (32): Mid-Range Trajectory/Maximum Ordinate (largest slant height) [PROPOSED]
+
     Examples:
         Basic flag usage:
         
@@ -159,9 +159,8 @@ class TrajFlag(int):
             value: The TrajFlag enum value or integer flag to convert.
             
         Returns:
-            String name of the flag. For combined flags, returns names joined
-            with "|". For unknown flags, returns "UNKNOWN". Special handling
-            for ZERO flag combinations.
+            String name of the flag. For combined flags, returns names joined with "|".
+                For unknown flags, returns "UNKNOWN". Special handling for ZERO flag combinations.
             
         Examples:
             ```python
@@ -302,7 +301,26 @@ TRAJECTORY_DATA_SYNONYMS: dict[TRAJECTORY_DATA_ATTRIBUTES, TRAJECTORY_DATA_ATTRI
 }
 # pylint: disable=too-many-instance-attributes,protected-access
 class TrajectoryData(NamedTuple):
-    """Data for one point in ballistic trajectory."""
+    """Data for one point in ballistic trajectory.
+
+    Attributes:
+        time: Flight time in seconds
+        distance: Down-range (x-axis) coordinate of this point
+        velocity: Velocity vector at this point
+        mach: Velocity in Mach terms
+        height: Vertical (y-axis) coordinate of this point
+        slant_height: Distance orthogonal to sight-line
+        drop_adj: Sight adjustment to zero slant_height at this distance
+        windage: Windage (z-axis) coordinate of this point
+        windage_adj: Windage adjustment
+        slant_distance: Distance along sight line that is closest to this point
+        angle: Angle of velocity vector relative to x-axis
+        density_ratio: Ratio of air density here to standard density
+        drag: Standard Drag Factor at this point
+        energy: Energy of bullet at this point
+        ogw: Optimal game weight, given .energy
+        flag: Row type (TrajFlag)
+    """
 
     time: float  # Flight time in seconds
     distance: Distance  # Down-range (x-axis) coordinate of this point
@@ -664,7 +682,8 @@ class HitResult:
         base_data: Base trajectory data points for interpolation.
         extra: [DEPRECATED] Whether extra_data was requested.
         error: RangeError, if any.
-
+    """
+    """
     TODO:
     * Implement dense_output in cythonized engines to populate base_data
     * Use base_data for interpolation if present
@@ -697,22 +716,6 @@ class HitResult:
             flag_name = TrajFlag.name(flag)
             raise AttributeError(f"{flag_name} was not requested in trajectory. "
                                  f"Use Calculator.fire(..., flags=TrajFlag.{flag_name}) to include it.")
-
-    def zeros(self) -> list[TrajectoryData]:
-        """Get all zero crossing points.
-
-        Returns:
-            Zero crossing points.
-
-        Raises:
-            AttributeError: If extra_data was not requested.
-            ArithmeticError: If zero crossing points are not found.
-        """
-        self._check_flag(TrajFlag.ZERO)
-        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
-        if len(data) < 1:
-            raise ArithmeticError("Can't find zero crossing points")
-        return data
 
     def flag(self, flag: Union[TrajFlag, int]) -> Optional[TrajectoryData]:
         """Get first TrajectoryData row with the specified flag.
@@ -838,6 +841,22 @@ class HitResult:
         else:
             p0, p1, p2 = traj[target_idx - 1], traj[target_idx], traj[target_idx + 1]
         return TrajectoryData.interpolate(key_attribute, value, p0, p1, p2)
+
+    def zeros(self) -> list[TrajectoryData]:
+        """Get all zero crossing points.
+
+        Returns:
+            Zero crossing points.
+
+        Raises:
+            AttributeError: If extra_data was not requested.
+            ArithmeticError: If zero crossing points are not found.
+        """
+        self._check_flag(TrajFlag.ZERO)
+        data = [row for row in self.trajectory if row.flag & TrajFlag.ZERO]
+        if len(data) < 1:
+            raise ArithmeticError("Can't find zero crossing points")
+        return data
 
     @deprecated(reason="Use get_at() instead for better flexibility.")
     def index_at_distance(self, d: Distance) -> int:

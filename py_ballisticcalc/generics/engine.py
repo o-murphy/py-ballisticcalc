@@ -24,9 +24,9 @@ Note:
 
 # Standard library imports
 from abc import abstractmethod
-from typing import TypeVar, Optional, Union
+from typing import Any, Optional, TypeVar, Union
 
-# Third-party imports  
+# Third-party imports
 from typing_extensions import Protocol, runtime_checkable
 
 # Local imports
@@ -54,48 +54,36 @@ class EngineProtocol(Protocol[ConfigT]):
 
     Type Parameters:
         ConfigT: The configuration type used by this engine implementation.
-                Must be covariant to support configuration inheritance.
+                 Must be covariant to support configuration inheritance.
 
     Required Methods:
-        integrate: Perform ballistic trajectory calculation  
-        zero_angle: Calculate zeroing angle for given distance
+        - integrate: Perform ballistic trajectory calculation.
+        - zero_angle: Calculate zero angle for given distance.
 
-    Example:
-        >>> from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
-        >>> 
-        >>> class MyEngine(EngineProtocol[BaseEngineConfigDict]):
-        ...     def __init__(self, config: BaseEngineConfigDict):
-        ...         self.config = config
-        ...         
-        ...     def integrate(self, shot_info, max_range, **kwargs):
-        ...         # Implementation here
-        ...         pass
-        ...         
-        ...     def zero_angle(self, shot_info, distance):
-        ...         # Implementation here  
-        ...         pass
-        >>> config = BaseEngineConfigDict(cStepMultiplier=1.0)
-        >>> engine = MyEngine(config)
-        >>> isinstance(engine, EngineProtocol)
-        True
+    Examples:
+        ```python
+        from py_ballisticcalc.engines.base_engine import BaseEngineConfigDict
 
-    Algorithm Details:
-        Different engine implementations may employ various computational strategies:
-        
-        Integration Methods:
-        - Runge-Kutta 4th order (RK4): High accuracy with moderate computational cost
-        - Euler methods: Fast computation with lower accuracy
-        - Adaptive step-size: Dynamic precision adjustment for optimal performance
-        
-        Zero-Finding Algorithms:
-        - Bisection method: Robust convergence with guaranteed bounds
-        - Newton-Raphson: Fast convergence when derivatives are available
-        - Secant method: Faster but no guarantee of convergence
+        class MyEngine(EngineProtocol[BaseEngineConfigDict]):
+            def __init__(self, config: BaseEngineConfigDict):
+                self.config = config
+
+            def integrate(self, shot_info, max_range, **kwargs):
+                # Implementation here
+                pass
+
+            def zero_angle(self, shot_info, distance):
+                # Implementation here
+                pass
+
+        config = BaseEngineConfigDict(cStepMultiplier=1.0)
+        engine = MyEngine(config)
+        isinstance(engine, EngineProtocol)  # True
+        ```
 
     See Also:
-        py_ballisticcalc.engines.base_engine.BaseIntegrationEngine: Base implementation
-        py_ballisticcalc.interface.Calculator: Uses EngineProtocol implementations
-        py_ballisticcalc.trajectory_data: Data structures for trajectory results
+        - py_ballisticcalc.engines.base_engine.BaseIntegrationEngine: Base implementation
+        - py_ballisticcalc.interface.Calculator: Uses EngineProtocol implementations
 
     Note:
         This protocol uses structural subtyping (duck typing) which means any class
@@ -103,6 +91,7 @@ class EngineProtocol(Protocol[ConfigT]):
         it doesn't explicitly inherit from EngineProtocol. The @runtime_checkable
         decorator enables isinstance() checks at runtime.
     """
+    
     def __init__(self, config: Optional[ConfigT] = None) -> None:
         ...
 
@@ -115,7 +104,7 @@ class EngineProtocol(Protocol[ConfigT]):
         time_step: float = 0.0,
         filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
         dense_output: bool = False,
-        **kwargs
+        **kwargs: Any,
     ) -> HitResult:
         """Perform ballistic trajectory calculation from shot parameters to maximum range.
         
@@ -148,16 +137,10 @@ class EngineProtocol(Protocol[ConfigT]):
             RuntimeError: If the numerical integration fails to converge.
             OutOfRangeError: If the requested max_range exceeds computational limits.
         
-        Note:
-            The integration method should handle edge cases such as very steep
-            firing angles, extreme environmental conditions, and projectiles
-            with unusual ballistic characteristics. Results should be physically
-            reasonable and mathematically consistent.
-
         Mathematical Background:
-            The integration solves the vector differential equation for projectil
+            The integration solves the vector differential equation for projectile
             motion under the influence of gravity and atmospheric drag:
-            
+            ```
             dV/dt = D * |V| * (V - W) - g
 
             Where:
@@ -166,9 +149,9 @@ class EngineProtocol(Protocol[ConfigT]):
             - D = drag factor, which is a function of velocity, atmosphere, and
                     projectile characteristics that include shape and mass
             - g is gravitational acceleration
+            ```
 
-        Algorithm Details:
-            Typical implementation steps:
+        Typical implementation steps:
             1. Initialize state vectors from shot_info parameters
             2. Set up integration bounds and step size parameters
             3. Begin numerical integration loop using chosen method
@@ -207,15 +190,16 @@ class EngineProtocol(Protocol[ConfigT]):
             method that offers a `lofted: bool` parameter to select between the two.
 
         Mathematical Background:
-            The method solves the equation f(θ) = 0 where:
+            The method solves the equation `f(θ) = 0` where:
+            ```
             f(θ) = y(target_distance, θ) - target_height
-            
+
             Where y(x, θ) is the trajectory height function at distance x for
             launch angle θ. This requires iterative solution since the trajectory
             equation cannot be solved analytically for arbitrary drag functions.
+            ```
 
-        Algorithm Details:
-            Typical implementation approach:
+        Typical implementation approach:
             1. Establish reasonable bounds for elevation angle search
             2. Define target function: trajectory_height(distance) - target_height
             3. Use root-finding algorithm (bisection, Newton, etc.)

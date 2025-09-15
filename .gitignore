@@ -16,3 +16,4 @@ site
 compile_flags.txt
 # Mirror of Cython sources for coverage lookup:
 /py_ballisticcalc_exts/*
+**/site

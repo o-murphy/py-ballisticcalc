@@ -6,8 +6,8 @@ that can dynamically load different integration engines through Python entry poi
 The module relies on the EngineProtocol to ensure that engines offer the necessary methods.
 
 Key Classes:
-    Calculator: Main ballistics calculator with pluggable engine support
-    _EngineLoader: Internal utility for discovering and loading engine plugins
+    - Calculator: Main ballistics calculator with pluggable engine support
+    - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
@@ -53,7 +53,7 @@ class _EngineLoader:
 
     @classmethod
     def iter_engines(cls) -> Generator[EntryPoint, None, None]:
-        """Iterates over all available engines in the entry points."""
+        """Iterate over all available engines in the entry points."""
         ballistic_entry_points = cls._get_entries_by_group()
         for ep in ballistic_entry_points:
             if ep.name.endswith(cls._entry_point_suffix):
@@ -99,7 +99,7 @@ class _EngineLoader:
 
 @dataclass
 class Calculator(Generic[ConfigT]):
-    """Basic interface for the ballistics calculator"""
+    """Basic interface for the ballistics calculator."""
 
     config: Optional[ConfigT] = field(default=None)
     engine: EngineProtocolEntry = field(default=DEFAULT_ENTRY)
@@ -109,7 +109,7 @@ class Calculator(Generic[ConfigT]):
         self._engine_instance = _EngineLoader.load(self.engine)(self.config)
 
     def __getattr__(self, item: str) -> Any:
-        """Delegates attribute access to the underlying engine instance.
+        """Delegate attribute access to the underlying engine instance.
 
         This method is called when an attribute is requested on the `Calculator`
         instance that is not found through normal attribute lookup (i.e., it's
@@ -148,15 +148,15 @@ class Calculator(Generic[ConfigT]):
     @deprecated(reason="`Calculator.cdm` is no longer supported by EngineProtocol. "
                        "Please use `DragModel.drag_table` instead.")
     def cdm(self) -> List[DragDataPoint]:
-        """Returns custom drag function based on input data"""
+        """Return custom drag function based on input data."""
         raise NotImplementedError("`Calculator.cdm` is no longer supported by EngineProtocol. "
                                   "Please use `DragModel.drag_table` instead.")
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
-        """Calculates barrel elevation to hit target at zero_distance.
+        """Calculate barrel elevation to hit target at zero_distance.
         
         Args:
-            shot: Shot instance for which calculate barrel elevation is
+            shot: Shot instance we want to zero.
             target_distance: Look-distance to "zero," which is point we want to hit.
                 This is the distance that a rangefinder would return with no ballistic adjustment.
                 
@@ -173,10 +173,10 @@ class Calculator(Generic[ConfigT]):
         )
 
     def set_weapon_zero(self, shot: Shot, zero_distance: Union[float, Distance]) -> Angular:
-        """Sets shot.weapon.zero_elevation so that it hits a target at zero_distance.
+        """Set shot.weapon.zero_elevation so that it hits a target at zero_distance.
         
         Args:
-            shot: Shot instance from which we take a zero
+            shot: Shot instance to zero.
             zero_distance: Look-distance to "zero," which is point we want to hit.
         """
         shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
@@ -190,20 +190,18 @@ class Calculator(Generic[ConfigT]):
              time_step: float = 0.0,
              flags: Union[TrajFlag, int] = TrajFlag.NONE,
              raise_range_error: bool = True) -> HitResult:
-        """Calculates the trajectory for the given shot parameters.
+        """Calculate the trajectory for the given shot parameters.
 
         Args:
             shot: Shot parameters, including position and barrel angle.
-            trajectory_range (float | Distance): Distance at which to stop computing the trajectory.
-            trajectory_step (float | Distance | None, optional): Distance between recorded trajectory points.
-                                                                 If 0 or None, defaults to `trajectory_range`.
-            extra_data (bool, optional): [DEPRECATED] Requests flags=TrajFlags.ALL
-                                         and trajectory_step=PreferredUnits.distance(1).
-            dense_output (bool, optional): HitResult stores all calculation steps so it can interpolate any point.
-            time_step (float, optional): Minimum time sampling interval in seconds. If > 0, data is
-                                         recorded at least this frequently. Defaults to 0.0.
-            flags (TrajFlag, optional): Flags for specific points of interest. Defaults to TrajFlag.NONE.
-            raise_range_error (bool, optional): If True, raises RangeError if returned by integration.
+            trajectory_range: Distance at which to stop computing the trajectory.
+            trajectory_step: Distance between recorded trajectory points. Defaults to `trajectory_range`.
+            extra_data: [DEPRECATED] Requests flags=TrajFlags.ALL and trajectory_step=PreferredUnits.distance(1).
+            dense_output: HitResult stores all calculation steps so it can interpolate any point.
+            time_step: Maximum time between recorded points. If > 0, points are recorded at least this frequently.
+                       Defaults to 0.0.
+            flags: Flags for specific points of interest. Defaults to TrajFlag.NONE.
+            raise_range_error: If True, raises RangeError if returned by integration.
 
         Returns:
             HitResult: Object containing computed trajectory.
@@ -222,7 +220,7 @@ class Calculator(Generic[ConfigT]):
                 "Explicitly specify desired TrajectoryData frequency and flags.",
                 DeprecationWarning
             )
-            #dist_step = PreferredUnits.distance(1.0)  # << For compatibility with v2.1
+            dist_step = PreferredUnits.distance(1.0)  # << For compatibility with v2.1
             filter_flags = TrajFlag.ALL
 
         result = self._engine_instance.integrate(shot, trajectory_range, dist_step, time_step,
@@ -233,7 +231,7 @@ class Calculator(Generic[ConfigT]):
 
     @staticmethod
     def iter_engines() -> Generator[EntryPoint, None, None]:
-        """Iterates over all available engines in the entry points."""
+        """Iterate all available engines in the entry points."""
         yield from _EngineLoader.iter_engines()
 
 

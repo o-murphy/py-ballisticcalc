@@ -26,10 +26,11 @@ Design notes
     internally to avoid per-step unit conversions and repeated lookups. HitResult objects
     include the ShotProps instance used to calculate a trajectory.
 
-Quick examples
+Examples:
 >>> # Standard atmosphere at sea level:
 >>> atmo = Atmo.icao()
 >>> # Crosswind from left to right at 10 fps, in effect over the entire trajectory:
+>>> from py_ballisticcalc import Unit
 >>> breeze = Wind(velocity=Unit.FPS(10), direction_from=Unit.Degree(90))
 
 See also
@@ -59,9 +60,9 @@ __all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot', 'ShotProps')
 
 class Atmo:  # pylint: disable=too-many-instance-attributes
     """
-    Atmospheric conditions and density calculations
+    Atmospheric conditions and density calculations.
 
-    Properties:
+    Attributes:
         altitude: Altitude relative to sea level
         pressure: Unadjusted barometric pressure, a.k.a. station pressure
         temperature: Temperature
@@ -74,32 +75,32 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @property
     def altitude(self) -> Distance:
-        """Altitude relative to sea level"""
+        """Altitude relative to sea level."""
         return self._altitude
 
     @property
     def pressure(self) -> Pressure:
-        """Unadjusted barometric pressure, a.k.a. station pressure"""
+        """Unadjusted barometric pressure, a.k.a. station pressure."""
         return self._pressure
 
     @property
     def temperature(self) -> Temperature:
-        """Local air temperature"""
+        """Local air temperature."""
         return self._temperature
 
     @property
     def powder_temp(self) -> Temperature:
-        """Powder temperature"""
+        """Powder temperature."""
         return self._powder_temp
 
     @property
     def mach(self) -> Velocity:
-        """Velocity of sound (Mach 1) for current atmosphere"""
+        """Velocity of sound (Mach 1) for current atmosphere."""
         return Velocity.FPS(self._mach)
 
     @property
     def density_ratio(self) -> float:
-        """Ratio of current density to standard atmospheric density"""
+        """Ratio of current density to standard atmospheric density."""
         return self._density_ratio
 
     _humidity: float  # Relative humidity [0% to 100%]
@@ -117,7 +118,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                  humidity: float = 0.0,
                  powder_t: Optional[Union[float, Temperature]] = None):
         """
-        Create a new Atmo instance with given parameters
+        Create a new Atmo instance.
 
         Args:
             altitude: Altitude relative to sea level
@@ -155,10 +156,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @property
     def humidity(self) -> float:
-        """
-        Returns:
-            Relative humidity [0% to 100%]
-        """
+        """Relative humidity [0% to 100%]."""
         return self._humidity
 
     @humidity.setter
@@ -172,23 +170,17 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             self.update_density_ratio()
 
     def update_density_ratio(self) -> None:
-        """Updates the density ratio based on current conditions."""
+        """Update the density ratio based on current conditions."""
         self._density_ratio = Atmo.calculate_air_density(self._t0, self._p0, self.humidity) / cStandardDensityMetric
 
     @property
     def density_metric(self) -> float:
-        """
-        Returns:
-            density in kg/m^3
-        """
+        """Air density in metric units (kg/m^3)."""
         return self._density_ratio * cStandardDensityMetric
 
     @property
     def density_imperial(self) -> float:
-        """
-        Returns:
-             density in lb/ft^3
-        """
+        """Air density in imperial units (lb/ft^3)."""
         return self._density_ratio * cStandardDensity
 
     def temperature_at_altitude(self, altitude: float) -> float:
@@ -265,7 +257,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
     def standard_temperature(altitude: Distance) -> Temperature:
         """Calculate ICAO standard temperature for altitude.
         
-        Note: This model only valid up to troposphere (~36,000 ft).
+        Note: This model is only valid up to the troposphere (~36,000 ft).
         
         Args:
             altitude: ASL in units of feet.
@@ -299,11 +291,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
              humidity: float = cStandardHumidity) -> Atmo:
         """Create Atmo instance of standard ICAO atmosphere at given altitude.
         
-        Note: This model only valid up to troposphere (~36,000 ft).
+        Note: This model is only valid up to the troposphere (~36,000 ft).
         
         Args:
-            altitude: relative to sea level
-            temperature: air temperature
+            altitude: relative to sea level.  Default is sea level (0 ft).
+            temperature: air temperature.  Default is standard temperature at altitude.
             
         Returns:
             Atmo instance of standard ICAO atmosphere at given altitude.
@@ -438,7 +430,8 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
 
 class Vacuum(Atmo):
-    """Vacuum atmosphere has zero drag"""
+    """Vacuum atmosphere (zero drag)."""
+
     cLowestTempC: float = cDegreesCtoK
 
     def __init__(self,
@@ -455,8 +448,7 @@ class Vacuum(Atmo):
 @dataclass
 class Wind:
     """
-    A base class for creating Wind.
-    Wind direction and velocity by down-range distance.
+    Describe wind in effect over a particular down-range distance.
 
     Attributes:
         velocity: speed of wind
@@ -478,7 +470,7 @@ class Wind:
                  *,
                  max_distance_feet: Optional[float] = cMaxWindDistanceFeet):
         """
-        Create a new wind instance with given parameters
+        Create a new wind instance with given parameters.
 
         Args:
             velocity: speed of wind
@@ -488,7 +480,6 @@ class Wind:
             max_distance_feet: Optional custom max wind distance
 
         Example:
-            This is how you can create a wind
             ```python
             from py_ballisticcalc import Wind
             wind = Wind(
@@ -505,10 +496,7 @@ class Wind:
 
     @property
     def vector(self) -> Vector:
-        """
-        Returns:
-            vector representation of the Wind instance
-        """
+        """Vector representation of the Wind instance."""
         wind_velocity_fps = self.velocity >> Velocity.FPS
         wind_direction_rad = self.direction_from >> Angular.Radian
         # Downrange (x-axis) wind velocity component:
@@ -521,8 +509,7 @@ class Wind:
 @dataclass
 class Shot:
     """
-    A base class for creating Shot.
-    Stores shot parameters for the trajectory calculation.
+    All information needed to compute a ballistic trajectory.
 
     Attributes:
         look_angle: Angle of sight line relative to horizontal.
@@ -558,8 +545,7 @@ class Shot:
                  winds: Optional[Sequence[Wind]] = None
                  ):
         """
-        A base class for creating Shot.
-        Stores shot parameters for the trajectory calculation.
+        Initialize shot parameters for the trajectory calculation.
 
         Args:
             ammo: Ammo instance used for making shot
@@ -576,7 +562,6 @@ class Shot:
             winds: list of winds used for making shot
 
         Example:
-            This is how you can create a shot
             ```python
             from py_ballisticcalc import Weapon, Ammo, Atmo, Wind
             shot = Shot(
@@ -600,10 +585,7 @@ class Shot:
 
     @property
     def winds(self) -> Sequence[Wind]:
-        """
-        Returns:
-            Sequence[Wind] sorted by until_distance
-        """
+        """Sequence[Wind] sorted by until_distance."""
         return tuple(self._winds)
 
     @winds.setter
@@ -617,11 +599,11 @@ class Shot:
 
     @property
     def barrel_elevation(self) -> Angular:
-        """Total barrel elevation (in vertical plane) from horizontal
-            = look_angle + cos(cant_angle) * zero_elevation + relative_angle
+        """Total barrel elevation (in vertical plane) from horizontal.
 
         Returns:
             Angle of barrel elevation in vertical plane from horizontal
+                `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
         """
         return Angular.Radian((self.look_angle >> Angular.Radian)
                               + math.cos(self.cant_angle >> Angular.Radian)
@@ -630,8 +612,10 @@ class Shot:
 
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
-        """Setter for barrel_elevation.  Sets the relative_angle to achieve the desired elevation.
-            Note: This does not change the weapon.zero_elevation.
+        """Setter for barrel_elevation.
+        
+        Sets `.relative_angle` to achieve the desired elevation.
+            Note: This does not change the `.weapon.zero_elevation`.
 
         Args:
             value: Desired barrel elevation in vertical plane from horizontal
@@ -641,11 +625,7 @@ class Shot:
 
     @property
     def barrel_azimuth(self) -> Angular:
-        """Horizontal angle of barrel relative to sight line
-
-        Returns:
-            Horizontal angle of barrel relative to sight line
-        """
+        """Horizontal angle of barrel relative to sight line."""
         return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
@@ -667,6 +647,7 @@ class CurvePoint(NamedTuple):
         b: Linear coefficient (x term) in the equation y = ax² + bx + c.
         c: Constant coefficient (constant term) in the equation y = ax² + bx + c.
     """
+
     a: float
     b: float
     c: float
@@ -685,8 +666,6 @@ class ShotProps:
     internal units (feet, seconds, grains) for computational efficiency.
         
     Examples:
-        Create ShotProps from Shot object:
-        
         ```python
         from py_ballisticcalc import Shot, ShotProps
         
@@ -725,10 +704,12 @@ class ShotProps:
         The original Shot object is retained for reference, but modifications
         to it after ShotProps creation will not affect the stored calculations.
         Create a new ShotProps instance if Shot parameters change.
-
+    """
+    """
     TODO: The Shot member object should either be a copy or immutable so that subsequent changes to its
           properties do not invalidate the calculations and data associated with this ShotProps instance.
     """
+
     shot: Shot  # Reference to the original Shot object
     bc: float  # Ballistic coefficient
     curve: List[CurvePoint]  # Pre-computed drag curve points
@@ -763,7 +744,7 @@ class ShotProps:
 
     @classmethod
     def from_shot(cls, shot: Shot) -> ShotProps:
-        """Initializes a ShotProps instance from a Shot instance."""
+        """Initialize a ShotProps instance from a Shot instance."""
         return cls(
             shot=shot,
             bc=shot.ammo.dm.BC,
@@ -784,7 +765,7 @@ class ShotProps:
         )
 
     def get_density_and_mach_for_altitude(self, drop: float) -> Tuple[float, float]:
-        """Gets the air density and Mach number for a given altitude.
+        """Get the air density and Mach number for a given altitude.
 
         Args:
             drop: The change in feet from the initial altitude.
@@ -795,7 +776,9 @@ class ShotProps:
         return self.shot.atmo.get_density_and_mach_for_altitude(self.alt0_ft + drop)
 
     def drag_by_mach(self, mach: float) -> float:
-        """Calculates a standard drag factor (SDF) for the given Mach number:
+        """Calculate a standard drag factor (SDF) for the given Mach number.
+        ```
+        Formula:
             Drag force = V^2 * AirDensity * C_d * S / 2m
                        = V^2 * density_ratio * SDF
         Where:
@@ -806,6 +789,7 @@ class ShotProps:
             - bc contains m/d^2 in units lb/in^2, which is multiplied by 144 to convert to lb/ft^2
         Thus:
             - The magic constant found here = StandardDensity * pi / (4 * 2 * 144)
+        ```
 
         Args:
             mach: The Mach number.
@@ -818,8 +802,8 @@ class ShotProps:
         cd = self._calculate_by_curve_and_mach_list(self.mach_list, self.curve, mach)
         return cd * 2.08551e-04 / self.bc
 
-    def spin_drift(self, time) -> float:
-        """Litz spin-drift approximation
+    def spin_drift(self, time: float) -> float:
+        """Litz spin-drift approximation.
 
         Args:
             time: Time of flight
@@ -834,7 +818,7 @@ class ShotProps:
         return 0
 
     def _calc_stability_coefficient(self) -> float:
-        """Calculates the Miller stability coefficient.
+        """Calculate the Miller stability coefficient.
 
         Returns:
             float: The Miller stability coefficient.
@@ -857,7 +841,7 @@ class ShotProps:
 
     @staticmethod
     def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
-        """Piecewise quadratic interpolation of drag curve
+        """Piecewise quadratic interpolation of drag curve.
 
         Args:
             data_points: List[{Mach, CD}] data_points in ascending Mach order
@@ -895,7 +879,7 @@ class ShotProps:
 
     @staticmethod
     def _get_only_mach_data(data: List[DragDataPoint]) -> List[float]:
-        """Extracts Mach values from a list of DragDataPoint objects.
+        """Extract Mach values from a list of DragDataPoint objects.
 
         Args:
             data: A list of DragDataPoint objects.
@@ -907,7 +891,7 @@ class ShotProps:
 
     @staticmethod
     def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurvePoint], mach: float) -> float:
-        """Calculates a value based on a piecewise quadratic curve and a list of Mach values.
+        """Calculate a value based on a piecewise quadratic curve and a list of Mach values.
 
         This function performs a binary search on the `mach_list` to find the segment
         of the `curve` relevant to the input `mach` number and then interpolates

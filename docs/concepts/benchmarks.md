@@ -1,6 +1,6 @@
 # Summary of Ballistic Engine Benchmarks
 
-This document summarizes the findings from the [`BenchmarkEngines.ipynb`](../examples/BenchmarkEngines.ipynb) notebook, which compares the performance and accuracy of the different calculation engines available in the `py-ballisticcalc` library.
+This document summarizes the findings from the [`examples/BenchmarkEngines.ipynb`][BenchmarkEngines.ipynb] notebook, which compares the performance and accuracy of the different calculation engines available in the `py-ballisticcalc` library.
 
 ## Introduction
 
@@ -51,15 +51,15 @@ This chart shows the range of performance and speed observed for each engine.  S
 
 ## Notes
 
-### 1. Python Engines (RK4, Verlet, Euler)
+### Python Engines
 
-These engines are implemented from scratch in pure Python, and make it easy to see and understand exactly how the calculator works.  Their integration step size can be adjusted with the `cStepMultiplier` configuration parameter.
+These engines are implemented from scratch in pure Python, and make it easy to see and understand exactly how the calculator works.  Their integration step size can be adjusted with the [`cStepMultiplier`][py_ballisticcalc.engines.base_engine.BaseEngineConfigDict] configuration parameter.
 
 * **`rk4_engine`:**  The RK4 algorithm is the most frequently used for ballistic calculators, and we continue to recommend it.  This is the default `py_ballisticcalc` engine.
 * **`euler_engine`:**  Euler's method is the most simple integration algorithm, which will be recognizable to any calculus student.  However, it is a first-order method with well known limitations and therefore recommended only for study.
-* **`verlet_engine`**: The velocity Verlet algorithm is a second-order integrator with the distinctive property of being _symplectic_, which makes it an excellent choice for modelling physical systems that should conserve energy.  It excels in our [vacuum scenario](../examples/BenchmarkVacuumTraj.ipynb), but here its performance is similar to the simpler Euler method. A ballistic trajectory with air resistance is a _dissipative system_ because energy is lost to drag. The Verlet method's strengths are in non-dissipative, time-reversible systems, and its advantages are lost here.
+* **`verlet_engine`**: The velocity Verlet algorithm is a second-order integrator with the distinctive property of being _symplectic_, which makes it an excellent choice for modelling physical systems that should conserve energy.  It excels in a vacuum scenario ([`examples/BenchmarkVacuumTraj.ipynb`][BenchmarkVacuumTraj.ipynb]), but otherwise its performance is similar to the simpler Euler method: A ballistic trajectory with air resistance is a _dissipative system_ because energy is lost to drag. The Verlet method's strengths are in non-dissipative, time-reversible systems.
 
-### 2. SciPy Engine
+### SciPy Engine
 
 The `scipy_engine` employs the state-of-the-art numerical methods provided by the SciPy library.
 
@@ -67,6 +67,13 @@ The `scipy_engine` employs the state-of-the-art numerical methods provided by th
 *   **Adaptive Step Size**: These solvers use adaptive step sizes, dynamically adjusting their internal timestep to meet the user-specified `absolute_tolerance` and `relative_tolerance`.
 *   **Performance**: The SciPy solvers are in a class of their own. They achieve the highest accuracy with the fewest integration steps, demonstrating a superior accuracy-to-speed ratio. As the tolerance is tightened, the error decreases exponentially until it hits the limits of floating-point precision.
 
-SciPy is something of a black box: one cannot be certain exactly how it will proceed given a particular method and error tolerance.  Some illustrations of unexpected behavior can be found in [our vaccuum scenario study](../examples/BenchmarkVacuumTraj.ipynb).  However, we confirm that smaller error tolerance limits result in more iterations and smaller errors, as shown in the following chart summarizing tests on this scenario:
+SciPy is something of a black box: one cannot be certain exactly how it will proceed given a particular method and error tolerance.  Some illustrations of unexpected behavior can be found in our vacuum scenario study [`examples/BenchmarkVacuumTraj.ipynb`][BenchmarkVacuumTraj.ipynb].  However, we confirm that smaller error tolerance limits result in more iterations and smaller errors, as shown in the following chart summarizing tests on this scenario:
 
 ![SciPy realized error vs. tolerance parameter for LSODA method](SciPy_Error_v_Tolerance.svg)
+
+
+[BenchmarkEngines.ipynb]:
+https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/BenchmarkEngines.ipynb
+
+[BenchmarkVacuumTraj.ipynb]:
+https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/BenchmarkVacuumTraj.ipynb

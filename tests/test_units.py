@@ -35,57 +35,57 @@ class TestUnitsParser:
     )
     def test_parse_values(self, case):
         # Test with Unit.FootPound directly
-        ret = _parse_value(case, Unit.FootPound)
+        ret = Unit.parse(case, Unit.FootPound)
         assert isinstance(ret, Energy)
         assert ret.units == Unit.FootPound
 
         # Test with string 'footpound'
-        ret = _parse_value(case, 'footpound')
+        ret = Unit.parse(case, 'footpound')
         assert isinstance(ret, Energy)
         assert ret.units == Unit.FootPound
 
         # Test with string 'ft*lb'
-        ret = _parse_value(case, 'ft*lb')
+        ret = Unit.parse(case, 'ft*lb')
         assert isinstance(ret, Energy)
         assert ret.units == Unit.FootPound
 
         # Test with string 'energy'
-        ret = _parse_value(case, 'energy')
+        ret = Unit.parse(case, 'energy')
         assert isinstance(ret, Energy)
         assert ret.units == Unit.FootPound
 
     def test_parse_units(self):
-        ret = _parse_unit('ft*lb')
+        ret = Unit._parse_unit('ft*lb')
         assert isinstance(ret, Unit)
 
-        ret = _parse_unit("newton")
+        ret = Unit._parse_unit("newton")
         assert ret == Unit.Newton
 
     def test_parse_unit_mixed_case_and_whitespace(self):
-        assert _parse_unit(' Ft ') == Unit.Foot
-        assert _parse_unit('  m / s ') == Unit.MPS
-        assert _parse_unit('\tinHg\t') == Unit.InHg
+        assert Unit._parse_unit(' Ft ') == Unit.Foot
+        assert Unit._parse_unit('  m / s ') == Unit.MPS
+        assert Unit._parse_unit('\tinHg\t') == Unit.InHg
         # inches per 100 yards variants
-        assert _parse_unit('in/100yard') == Unit.InchesPer100Yd
-        assert _parse_unit('inper100yd') == Unit.InchesPer100Yd
+        assert Unit._parse_unit('in/100yard') == Unit.InchesPer100Yd
+        assert Unit._parse_unit('inper100yd') == Unit.InchesPer100Yd
 
     def test_parse_unit_pluralization_and_aliases(self):
-        assert _parse_unit('yards') == Unit.Yard
-        assert _parse_unit('feet') == Unit.Foot
+        assert Unit._parse_unit('yards') == Unit.Yard
+        assert Unit._parse_unit('feet') == Unit.Foot
 
     def test_parse_value_with_embedded_units_and_spaces(self):
-        ret = _parse_value('  12.5  ft / s  ', Unit.MPS)
+        ret = Unit.parse('  12.5  ft / s  ', Unit.MPS)
         assert ret.units == Unit.FPS  # parsing takes embedded alias; preferred only for plain numbers
 
-        ret2 = _parse_value('1000 psi', None)
+        ret2 = Unit.parse('1000 psi', None)
         assert ret2.units == Unit.PSI
 
     def test_parse_value_invalid_alias_raises(self):
         with pytest.raises(UnitAliasError):
-            _ = _parse_value('10 foobars', None)
+            _ = Unit.parse('10 foobars', None)
 
     def test_parse_unit_unknown_returns_none(self):
-        assert _parse_unit('nonesuch') is None
+        assert Unit._parse_unit('nonesuch') is None
 
 
 class TestAngular:

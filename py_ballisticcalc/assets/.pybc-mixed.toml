@@ -6,6 +6,7 @@ title = "py_ballisticcalc config"
 version = "2.2.0"
 
 [pybc.preferred_units]
+# mkdocs.pymdown.snippet marker: --8<-- [start:pybc-mixed]
 angular = 'Degree'
 distance = 'Meter'
 velocity = 'MPS'
@@ -22,3 +23,4 @@ sight_height = 'Inch'
 target_height = 'Meter'
 twist = 'Inch'
 time = 'Second'
+# --8<-- [end:pybc-mixed]

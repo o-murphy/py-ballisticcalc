@@ -5,15 +5,15 @@ projectiles, including single and multi-BC (ballistic coefficient) models.
 Supports standard drag tables and custom drag data points.
 
 Key Components:
-    DragDataPoint: Individual drag coefficient at specific Mach number
-    BCPoint: Ballistic coefficient point for multi-BC models
-    DragModel: Primary drag model with ballistic coefficient and drag table
-    DragModelMultiBC: Multi-BC drag model for varying ballistic coefficients
+    - DragDataPoint: Individual drag coefficient at specific Mach number
+    - BCPoint: Ballistic coefficient point for multi-BC models
+    - DragModel: Primary drag model with ballistic coefficient and drag table
+    - DragModelMultiBC: Multi-BC drag model for varying ballistic coefficients
 
 Functions:
-    make_data_points: Convert drag table data to DragDataPoint objects
-    sectional_density: Calculate sectional density from weight and diameter
-    linear_interpolation: Linear interpolation utility function
+    - make_data_points: Convert drag table data to DragDataPoint objects
+    - sectional_density: Calculate sectional density from weight and diameter
+    - linear_interpolation: Linear interpolation utility function
 
 The drag models use standard ballistic reference tables (G1, G7, etc.) and
 allow for custom drag functions based on Mach number vs drag coefficient data.
@@ -42,73 +42,13 @@ class DragDataPoint:
         Mach: Velocity in Mach units (dimensionless)
         CD: Drag coefficient (dimensionless)
     """
-    
+
     Mach: float  # Velocity in Mach units
     CD: float  # Drag coefficient
 
 
 # Type alias for drag table data formats
 DragTableDataType: TypeAlias = Union[List[DragTablePointDictType], List[DragDataPoint]]
-
-
-@dataclass(order=True)
-class BCPoint:
-    """Ballistic coefficient point for multi-BC drag models.
-    
-    Represents a single ballistic coefficient measurement at a specific
-    velocity or Mach number. Designed to be sortable by Mach number for
-    constructing multi-BC drag models.
-    
-    Attributes:
-        BC: Ballistic coefficient (dimensionless)
-        Mach: Mach number corresponding to this BC measurement (dimensionless)
-        V: Velocity corresponding to this BC measurement (optional)
-        
-    Note:
-        Either Mach or V must be specified, but not both. If V is provided,
-        Mach will be calculated automatically using standard atmospheric conditions.
-    """
-
-    BC: float = field(compare=False)
-    Mach: float = field(compare=True)
-    V: Optional[Velocity] = field(compare=False)
-
-    def __init__(self,
-                 BC: float,
-                 Mach: Optional[float] = None,
-                 V: Optional[Union[float, Velocity]] = None) -> None:
-        """Initialize a BCPoint with ballistic coefficient and velocity/Mach.
-        
-        Args:
-            BC: Ballistic coefficient (must be positive)
-            Mach: Mach number (optional, mutually exclusive with V)
-            V: Velocity (optional, mutually exclusive with Mach)
-            
-        Raises:
-            ValueError: If BC is not positive, or if both or neither of Mach and V are specified.
-        """
-        if BC <= 0:
-            raise ValueError('Ballistic coefficient must be positive')
-        if Mach and V:
-            raise ValueError("You cannot specify both 'Mach' and 'V' at the same time")
-        if not Mach and not V:
-            raise ValueError("One of 'Mach' and 'V' must be specified")
-
-        self.BC = BC
-        self.V = PreferredUnits.velocity(V or 0)
-        if V:
-            self.Mach = (self.V >> Velocity.MPS) / self._machC()
-        elif Mach:
-            self.Mach = Mach
-
-    @staticmethod
-    def _machC() -> float:
-        """Calculate Mach 1 velocity in m/s for standard Celsius temperature.
-        
-        Returns:
-            Speed of sound in m/s at standard atmospheric conditions
-        """
-        return math.sqrt(cStandardTemperatureC + cDegreesCtoK) * cSpeedOfSoundMetric
 
 
 class DragModel:
@@ -252,6 +192,78 @@ def sectional_density(weight: float, diameter: float) -> float:
     return weight / math.pow(diameter, 2) / 7000
 
 
+@dataclass(order=True)
+class BCPoint:
+    """Ballistic coefficient point for multi-BC drag models.
+    
+    Represents a single ballistic coefficient at a specific velocity or Mach number.
+        Sorts by Mach number for constructing drag models (see `DragModelMultiBC`).
+
+    Attributes:
+        BC: Ballistic coefficient
+        Mach: Mach number corresponding to this BC measurement
+        V: Velocity corresponding to this BC measurement (optional)
+
+    Examples:
+        ```python
+        # Create a BCPoint with BC=0.5 at Mach 2.0
+        point1 = BCPoint(BC=0.5, Mach=2.0)
+        
+        # Create a BCPoint with BC=0.4 at 1500fps
+        point2 = BCPoint(BC=0.4, V=Velocity.FPS(1500))
+        
+        # Sort points by Mach number
+        points = [point2, point1]
+        points.sort()  # point1 will come before point2 since Mach 2.0 < Mach at 1500fps
+        ```
+        
+    Note:
+        Either `Mach` or `V` must be specified, but not both. If `V` is provided then `Mach`
+            will be calculated automatically using standard atmospheric conditions.
+    """
+
+    BC: float = field(compare=False)
+    Mach: float = field(compare=True)
+    V: Optional[Velocity] = field(compare=False)
+
+    def __init__(self,
+                 BC: float,
+                 Mach: Optional[float] = None,
+                 V: Optional[Union[float, Velocity]] = None) -> None:
+        """Initialize a BCPoint.
+        
+        Args:
+            BC: Ballistic coefficient (must be positive)
+            Mach: Mach number (optional, mutually exclusive with `V`)
+            V: Velocity (optional, mutually exclusive with `Mach`)
+            
+        Raises:
+            ValueError: If `BC` is not positive, or if both or neither of `Mach` and `V` are specified.
+        """
+        if BC <= 0:
+            raise ValueError('Ballistic coefficient must be positive')
+        if Mach and V:
+            raise ValueError("You cannot specify both 'Mach' and 'V' at the same time")
+        if not Mach and not V:
+            raise ValueError("One of 'Mach' and 'V' must be specified")
+
+        self.BC = BC
+        self.V = PreferredUnits.velocity(V or 0)
+        if V:
+            self.Mach = (self.V >> Velocity.MPS) / self._machC()
+        elif Mach:
+            self.Mach = Mach
+
+    @staticmethod
+    def _machC() -> float:
+        """Calculate Mach 1 velocity in m/s for standard Celsius temperature.
+        
+        Returns:
+            Speed of sound in m/s at standard atmospheric conditions
+        """
+        return math.sqrt(cStandardTemperatureC + cDegreesCtoK) * cSpeedOfSoundMetric
+
+
 def DragModelMultiBC(bc_points: List[BCPoint],
                      drag_table: DragTableDataType,
                      weight: Union[float, Weight] = 0,
@@ -273,6 +285,13 @@ def DragModelMultiBC(bc_points: List[BCPoint],
     Returns:
         DragModel with interpolated drag coefficients based on multiple BCs
         
+    Example:
+        ```python
+        from py_ballisticcalc.drag_tables import TableG7
+        DragModelMultiBC([BCPoint(.21, V=Velocity.FPS(1500)), BCPoint(.22, V=Velocity.FPS(2500))],
+                         drag_table=TableG7)
+        ```
+    
     Note:
         If weight and diameter are provided, BC is set to sectional density.
         Otherwise, BC=1 and the drag_table contains final drag terms.
@@ -314,17 +333,17 @@ def linear_interpolation(x: Union[List[float], Tuple[float]],
         List of interpolated y-values corresponding to input x-values
         
     Raises:
-        AssertionError: If xp and yp lists have different lengths
+        AssertionError: If `xp` and `yp` lists have different lengths
         
     Note:
-        - For x-values below min(xp), returns yp[0]
-        - For x-values above max(xp), returns yp[-1]  
+        - For x-values below `min(xp)`, returns `yp[0]`
+        - For x-values above `max(xp)`, returns `yp[-1]`
         - Uses binary search for efficient interval location
     """
     assert len(xp) == len(yp), "xp and yp lists must have same length"
     # Validate xp strictly increasing to prevent zero-division and undefined intervals
     for i in range(1, len(xp)):
-        if not (xp[i] > xp[i - 1]):
+        if xp[i] <= xp[i - 1]:
             raise ValueError("xp must be strictly increasing with no duplicates")
 
     y = []

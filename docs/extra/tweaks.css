@@ -192,3 +192,45 @@ aside.blog img {
   font-size: 80%;
   text-align: center;
 }
+
+/* Mkdocstrings: Improve member and category heading visibility */
+.md-typeset .doc-contents h3.doc.doc-heading,
+.md-typeset .doc-contents h4.doc.doc-heading,
+.md-typeset .doc-contents h5.doc.doc-heading,
+.doc .doc-contents .doc-heading,
+/* Category headers under class blocks may be plain h3/h4 directly under .doc-children */
+.doc .doc-children > h3,
+.doc .doc-children > h4,
+.doc .doc-children > h5 {
+  font-size: 1em !important;
+  color: var(--md-typeset-color) !important;
+  margin-left: -1em !important;
+}
+.md-typeset .doc.doc-class > .doc-heading {
+  margin-left: -1em !important; /* outdent class H3 */
+}
+.doc .doc-object:not(:first-child) > .doc-heading {
+  margin-top: 1.2rem;
+  padding-top: 0.2rem;
+  border-top: .05rem solid var(--md-typeset-table-color);
+}
+
+/* Add separation before each new class block on the page */
+.md-typeset .doc-children > .doc.doc-class:not(:first-child) > .doc-heading,
+.md-typeset .doc.doc-class + .doc.doc-class > .doc-heading {
+  margin-top: 1.6rem;
+  padding-top: 0.4rem;
+  border-top: .05rem solid var(--md-typeset-table-color);
+}
+
+/* Make headings a bit more prominent than body text while theme-aware */
+.md-typeset .doc-contents h3.doc.doc-heading,
+.md-typeset .doc-contents h4.doc.doc-heading,
+.md-typeset .doc-contents h5.doc.doc-heading,
+.md-typeset .doc.doc-class > .doc-heading,
+.doc .doc-children > h3,
+.doc .doc-children > h4,
+.doc .doc-children > h5 {
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+}

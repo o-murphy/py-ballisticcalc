@@ -31,10 +31,6 @@ See Also:
     py_ballisticcalc.generics.engine.EngineProtocol: Protocol interface
     py_ballisticcalc.engines: Concrete engine implementations
     py_ballisticcalc.trajectory_data: Data structures for results
-
-Note:
-    All engines inherit from BaseIntegrationEngine and must implement the
-    abstract _integrate method for their specific numerical integration approach.
 """
 from __future__ import annotations
 import math
@@ -80,10 +76,9 @@ cStepMultiplier: float = 1.0  # Multiplier for engine's default step, for changi
 @dataclass
 class BaseEngineConfig:
     """Configuration dataclass for ballistic calculation engines.
-    
-    All parameters use imperial units (feet, fps) for internal calculations,
-    ensuring consistency across the engine system.
-    
+
+    All parameters use imperial units (feet, fps) for internal calculations.
+
     Attributes:
         cZeroFindingAccuracy: Maximum allowed slant-error (in feet) for zero-finding.
                              Smaller values increase precision but may slow calculations.
@@ -108,7 +103,7 @@ class BaseEngineConfig:
                         Values > 1.0 decrease precision but speed calculation.
                         Defaults to 1.0.
     
-    Example:
+    Examples:
         >>> config = BaseEngineConfig(
         ...     cMinimumVelocity=100.0,
         ...     cStepMultiplier=0.5  # Higher precision
@@ -118,6 +113,7 @@ class BaseEngineConfig:
         This dataclass is primarily used internally. For flexible configuration
         from dictionaries, use BaseEngineConfigDict with create_base_engine_config().
     """
+
     cZeroFindingAccuracy: float = cZeroFindingAccuracy
     cMaxIterations: int = cMaxIterations
     cMinimumAltitude: float = cMinimumAltitude
@@ -140,20 +136,19 @@ class BaseEngineConfigDict(TypedDict, total=False):
     
     When used with create_base_engine_config(), any unspecified fields will
     use their default values from DEFAULT_BASE_ENGINE_CONFIG.
-    
-    Type Parameters:
-        All fields are Optional to support partial configuration.
-        
+
+    Note: All fields are Optional to support partial configuration.
+
     Fields:
-        cZeroFindingAccuracy: Maximum slant-error in feet for zero-finding precision.
-        cMaxIterations: Maximum iterations for convergence algorithms.
-        cMinimumAltitude: Minimum altitude in feet to continue calculation.
-        cMaximumDrop: Maximum drop in feet from muzzle to continue.
-        cMinimumVelocity: Minimum velocity in fps to continue calculation.
-        cGravityConstant: Gravitational acceleration in ft/s².
-        cStepMultiplier: Integration step size multiplier.
-    
-    Example:
+        - cZeroFindingAccuracy: Maximum slant-error in feet for zero-finding precision.
+        - cMaxIterations: Maximum iterations for convergence algorithms.
+        - cMinimumAltitude: Minimum altitude in feet to continue calculation.
+        - cMaximumDrop: Maximum drop in feet from muzzle to continue.
+        - cMinimumVelocity: Minimum velocity in fps to continue calculation.
+        - cGravityConstant: Gravitational acceleration in ft/s².
+        - cStepMultiplier: Integration step size multiplier.
+
+    Examples:
         >>> config_dict: BaseEngineConfigDict = {
         ...     'cMinimumVelocity': 100.0,
         ...     'cStepMultiplier': 0.8
@@ -164,13 +159,10 @@ class BaseEngineConfigDict(TypedDict, total=False):
         >>> calc = Calculator(config=config_dict)
         
     See Also:
-        BaseEngineConfig: Type-safe dataclass version
-        create_base_engine_config: Factory function for BaseEngineConfig creation
-        
-    Note:
-        This TypedDict uses total=False to make all fields optional, enabling
-        flexible partial configuration while maintaining type safety.
+        - BaseEngineConfig: Type-safe dataclass version
+        - create_base_engine_config: Factory function for BaseEngineConfig creation
     """
+
     cZeroFindingAccuracy: Optional[float]
     cMaxIterations: Optional[int]
     cMinimumAltitude: Optional[float]
@@ -199,7 +191,7 @@ def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] =
     Raises:
         TypeError: If interface_config is not None and not a dictionary.
         
-    Example:
+    Examples:
         >>> # Using default configuration
         >>> config = create_base_engine_config()
         
@@ -216,11 +208,12 @@ def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] =
 
 
 class TrajectoryDataFilter:
+    """Record TrajectoryData rows based on TrajFlags and attribute steps.
+
+    - Interpolates for requested points.
+    - Assumes that .record() will be called sequentially in time across the trajectory.
     """
-    Determines when to record TrajectoryData rows based on TrajFlags and attribute steps.
-    Interpolates for requested points.
-    Assumes that .record() will be called sequentially in time across the trajectory.
-    """
+
     EPSILON = 1e-6  # Range difference (in feet) significant enough to justify interpolation for data
     records: List[TrajectoryData] = []
     props: ShotProps
@@ -241,7 +234,7 @@ class TrajectoryDataFilter:
                  initial_position: Vector, initial_velocity: Vector,
                  barrel_angle_rad: float, look_angle_rad: float = 0.0,
                  range_limit: float = 0.0, range_step: float = 0.0, time_step: float = 0.0):
-        """If a time_step > 0, then we will record a row at least that often in the trajectory"""
+        """If a time_step > 0, then we will record a row at least that often in the trajectory."""
         self.records = []
         self.props = props
         self.filter = filter_flags
@@ -374,16 +367,18 @@ class TrajectoryDataFilter:
 
 
 class _WindSock:
-    """
+    """Winds in effect down range.
+    
     Currently this class assumes that requests for wind readings will only be made in order of increasing range.
     This assumption is violated if the projectile is blown or otherwise moves backwards.
     """
+
     winds: Sequence[Wind]
     current_index: int
     next_range: float
 
     def __init__(self, winds: Optional[Sequence[Wind]]):
-        """Initializes the _WindSock class.
+        """Initialize the _WindSock class.
 
         Args:
             winds: A sequence of Wind objects. Defaults to None.
@@ -398,7 +393,7 @@ class _WindSock:
         self.update_cache()
 
     def current_vector(self) -> Vector:
-        """Returns the current cached wind vector.
+        """Return the current cached wind vector.
 
         Raises:
             RuntimeError: If no wind vector has been cached.
@@ -411,7 +406,7 @@ class _WindSock:
         return self._last_vector_cache
 
     def update_cache(self) -> None:
-        """Updates the cache only if needed or if forced during initialization."""
+        """Update the cache only if needed or if forced during initialization."""
         if self.current_index < self._length:
             cur_wind = self.winds[self.current_index]
             self._last_vector_cache = cur_wind.vector
@@ -421,7 +416,7 @@ class _WindSock:
             self.next_range = Wind.MAX_DISTANCE_FEET
 
     def vector_for_range(self, next_range: float) -> Vector:
-        """Updates the wind vector if `next_range` surpasses `self.next_range`.
+        """Update the wind vector if `next_range` surpasses `self.next_range`.
 
         Args:
             next_range: The range to check against the current wind segment.
@@ -487,16 +482,14 @@ _BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConf
 
 # pylint: disable=too-many-instance-attributes
 class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
-    """
-    All calculations are done in imperial units of feet and fps.
-    """
+    """All calculations are done in imperial units (feet and fps)."""
+
     APEX_IS_MAX_RANGE_RADIANS: float = 0.0003  # Radians from vertical where the apex is max range
     ALLOWED_ZERO_ERROR_FEET: float = 1e-2  # Allowed range error (along sight line), in feet, for zero angle
     SEPARATE_ROW_TIME_DELTA: float = 1e-5  # Difference in seconds required for a TrajFlag to generate separate rows
 
     def __init__(self, _config: _BaseEngineConfigDictT):
-        """
-        Initializes the class.
+        """Initialize the class.
 
         Args:
             _config: The configuration object.
@@ -509,8 +502,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         return self._config.cStepMultiplier
 
     def _init_trajectory(self, shot: Shot) -> ShotProps:
-        """
-        Converts Shot properties into floats dimensioned in internal units.
+        """Convert Shot properties into floats dimensioned in internal units.
 
         Args:
             shot: Information about the shot.
@@ -521,8 +513,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
     def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
         Distance, Angular]:
-        """
-        Finds the maximum range along shot_info.look_angle, and the launch angle to reach it.
+        """Find the maximum range along shot_info.look_angle, and the launch angle to reach it.
 
         Args:
             shot_info: The shot information: gun, ammo, environment, look_angle.
@@ -533,7 +524,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Raises:
             ValueError: If the angle bracket excludes the look_angle.
-
+        """
+        """
         TODO: Make sure user hasn't restricted angle bracket to exclude the look_angle.
             ... and check for weird situations, like backward-bending trajectories,
             where the max range occurs with launch angle less than the look angle.
@@ -545,8 +537,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     @with_no_minimum_velocity
     def _find_max_range(self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
         Distance, Angular]:
-        """
-        Internal function to find the maximum slant range via golden-section search.
+        """Find the maximum slant range via golden-section search.
 
         Args:
             props: The shot information: gun, ammo, environment, look_angle.
@@ -566,7 +557,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         t_calls = 0
         def range_for_angle(angle_rad: float) -> float:
-            """Returns slant-distance minus slant-error (in feet) for given launch angle in radians."""
+            """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
             props.barrel_elevation_rad = angle_rad
             nonlocal t_calls
             t_calls += 1
@@ -609,9 +600,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         return Distance.Feet(max_range_ft), Angular.Radian(angle_at_max_rad)
 
     def find_apex(self, shot_info: Shot) -> TrajectoryData:
-        """
-        Finds the apex of the trajectory, where apex is defined as the point
-            where the vertical component of velocity goes from positive to negative.
+        """Find the apex of the trajectory.
+
+        Apex is defined as the point where the vertical component of velocity goes from positive to negative.
 
         Args:
             shot_info: The shot information.
@@ -628,8 +619,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
     @with_no_minimum_velocity
     def _find_apex(self, props: ShotProps) -> TrajectoryData:
-        """
-        Internal implementation to find the apex of the trajectory.
+        """Find the apex of the trajectory.
 
         Args:
             props: The shot properties.
@@ -650,9 +640,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         return apex
 
     def _init_zero_calculation(self, props: ShotProps, distance: Distance) -> ZeroFindingProps:
-        """
-        Initializes the zero calculation for the given shot and distance.
-            Handles edge cases.
+        """Initialize the zero calculation for the given shot and distance, handling edge cases.
 
         Args:
             props: The shot information, with look_angle to the target.
@@ -661,7 +649,6 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             ZeroFindingProps
         """
-
         slant_range_ft = distance >> Distance.Foot
         target_x_ft = slant_range_ft * math.cos(props.look_angle_rad)
         target_y_ft = slant_range_ft * math.sin(props.look_angle_rad)
@@ -686,9 +673,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
                                 props.look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
-        """
-        Finds the barrel elevation needed to hit sight line at a specific distance,
-            using unimodal root-finding that is guaranteed to succeed if a solution exists (e.g., Ridder's method).
+        """Find the barrel elevation needed to hit sight line at a specific distance.
 
         Args:
             shot_info: The shot information.
@@ -703,9 +688,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
     @with_no_minimum_velocity
     def _find_zero_angle(self, props: ShotProps, distance: Distance, lofted: bool = False) -> Angular:
-        """
-        Internal implementation to find the barrel elevation needed to hit sight line at a specific distance,
-            using Ridder's method for guaranteed convergence.
+        """Find barrel elevation needed to hit sight line at a specific distance.
+
+        This method must use an algorithm that is guaranteed to succeed if a solution exists (e.g., ITP).
 
         Args:
             props: The shot information.
@@ -810,9 +795,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         )
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
-        """
-        Finds the barrel elevation needed to hit sight line at a specific distance.
-        First tries iterative approach; if that fails falls back on _find_zero_angle.
+        """Find the barrel elevation needed to hit sight line at a specific distance.
+
+        First tries iterative approach; if that fails then falls back on `_find_zero_angle`.
 
         Args:
             shot_info: The shot information.
@@ -830,13 +815,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             return self._find_zero_angle(props, distance)
 
     def _zero_angle(self, props: ShotProps, distance: Distance) -> Angular:
-        """
-        Iterative algorithm to find barrel elevation needed for a particular zero
+        """Find barrel elevation needed for a particular zero.
 
         Args:
             props: Shot parameters
-            distance: Sight distance to zero (i.e., along Shot.look_angle),
-                      a.k.a. slant range to target.
+            distance: Sight distance to zero (i.e., along Shot.look_angle), a.k.a. slant range to target.
 
         Returns:
             Barrel elevation to hit height zero at zero distance along sight line
@@ -951,8 +934,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
                         filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
                         dense_output: bool = False,
                         **kwargs) -> HitResult:
-        """
-        Integrates the trajectory for the given shot.
+        """Compute the trajectory for the given shot.
 
         Args:
             shot_info: The shot information.
@@ -978,8 +960,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
     def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
                    time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
                    dense_output: bool = False, **kwargs) -> HitResult:
-        """
-        Creates HitResult for the specified shot.
+        """Create HitResult for the specified shot.
 
         Args:
             props: Information specific to the shot.

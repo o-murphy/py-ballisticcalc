@@ -3,7 +3,7 @@
 This module provides a comprehensive type-safe unit conversion system, supporting physical dimensions
 including angles, distance, energy, pressure, temperature, time, velocity, and weight.
 
-The system uses a base class `GenericDimension` with specialized subclasses for each physical dimension.
+The system uses a base class [`GenericDimension`][py_ballisticcalc.unit.GenericDimension] with specialized subclasses for each physical dimension.
 Each dimension maintains its values internally in a fixed raw unit (e.g., inches for distance, m/s for velocity)
 and provides conversion methods to any supported unit within that dimension.
 
@@ -37,14 +37,14 @@ Examples:
     100.0
     
 Supported Dimensions:
-    * Angular: radian, degree, MOA, mil, mrad, thousandth, inch/100yd, cm/100m, o'clock
-    * Distance: inch, foot, yard, mile, nautical mile, mm, cm, m, km, line
-    * Energy: foot-pound, joule
-    * Pressure: mmHg, inHg, bar, hPa, PSI
-    * Temperature: Fahrenheit, Celsius, Kelvin, Rankine
-    * Time: second, minute, millisecond, microsecond, nanosecond, picosecond
-    * Velocity: m/s, km/h, ft/s, mph, knots
-    * Weight: grain, ounce, gram, pound, kilogram, newton
+    * Angular: `radian`, `degree`, `MOA`, `mil`, `mrad`, `thousandth`, `inch/100yd`, `cm/100m`, `o'clock`
+    * Distance: `inch`, `foot`, `yard`, `mile`, `nautical mile`, `mm`, `cm`, `m`, `km`, `line`
+    * Energy: `foot-pound`, `joule`
+    * Pressure: `mmHg`, `inHg`, `bar`, `hPa`, `PSI`
+    * Temperature: `Fahrenheit`, `Celsius`, `Kelvin`, `Rankine`
+    * Time: `second`, `minute`, `millisecond`, `microsecond`, `nanosecond`, `picosecond`
+    * Velocity: `m/s`, `km/h`, `ft/s`, `mph`, `knots`
+    * Weight: `grain`, `ounce`, `gram`, `pound`, `kilogram`, `newton`
 """
 
 # Standard library imports
@@ -70,7 +70,7 @@ from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, Unit
 from py_ballisticcalc.logger import logger
 
 Number: TypeAlias = Union[float, int]
-MAX_ITERATIONS = 1e6
+MAX_ITERATIONS: int = 1_000_000  # Prevent runaway Unit.counter()
 
 
 def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -> Iterable[Number]:
@@ -196,29 +196,14 @@ _GenericDimensionType = TypeVar('_GenericDimensionType', bound='GenericDimension
 class Unit(IntEnum):
     """Enumeration of all supported unit types.
 
-    Angular Units:
-    - Radian, Degree, MOA (Minute of Arc), Mil, MRad (Milliradian), Thousandth, InchesPer100Yd, CmPer100m, OClock
-    
-    Distance Units:
-    - Inch, Foot, Yard, Mile, NauticalMile, Millimeter, Centimeter, Meter, Kilometer, Line
-    
-    Velocity Units:
-    - MPS (meters/second), KMH (km/hour), FPS (feet/second), MPH (miles/hour), KT (knots)
-    
-    Weight Units:
-    - Grain, Ounce, Gram, Pound, Kilogram, Newton
-    
-    Pressure Units:
-    - MmHg, InHg, Bar, hPa (hectopascal), PSI
-    
-    Temperature Units:
-    - Fahrenheit, Celsius, Kelvin, Rankin
-    
-    Energy Units:
-    - FootPound, Joule
-    
-    Time Units:
-    - Second, Minute, Millisecond, Microsecond, Nanosecond, Picosecond
+    - Angular: Radian, Degree, MOA, Mil, MRad, Thousandth, InchesPer100Yd, CmPer100m, OClock
+    - Distance: Inch, Foot, Yard, Mile, NauticalMile, Millimeter, Centimeter, Meter, Kilometer, Line
+    - Velocity: MPS (meters/second), KMH (km/hour), FPS (feet/second), MPH (miles/hour), KT (knots)
+    - Weight: Grain, Ounce, Gram, Pound, Kilogram, Newton
+    - Pressure: MmHg, InHg, Bar, hPa (hectopascal), PSI
+    - Temperature: Fahrenheit, Celsius, Kelvin, Rankin
+    - Energy: FootPound, Joule
+    - Time: Second, Minute, Millisecond, Microsecond, Nanosecond, Picosecond
 
     Each unit can be used as a callable constructor for creating unit instances:
 
@@ -235,7 +220,7 @@ class Unit(IntEnum):
         >>> elevation = Unit.MOA(2.5)
         >>> windage = Unit.Mil(1.2)
     """
-    
+
     Radian = 0
     Degree = 1
     MOA = 2
@@ -369,7 +354,7 @@ class Unit(IntEnum):
         Raises:
             ValueError:
                 If `step` is 0 for an infinite sequence, or if `step` has the wrong
-                direction for the given `start` and `end` range.
+                    direction for the given `start` and `end` range.
             StopIteration:
                 If the iteration limit (`MAX_ITERATIONS`) is reached during an infinite sequence.
 
@@ -392,7 +377,7 @@ class Unit(IntEnum):
             value._value = raw_value
             yield value
             if i == MAX_ITERATIONS:
-                raise StopIteration("Max counter iterations limit is %d" % MAX_ITERATIONS)
+                raise ValueError("Reached generator limit %d" % MAX_ITERATIONS)
 
     def iterator(self, items: Sequence[Number], /, *,
                  sort: bool = False,
@@ -414,6 +399,129 @@ class Unit(IntEnum):
         iter_ = iterator(items, sort=sort, reverse=reverse)
         for v in iter_:
             yield self(v)
+
+    @staticmethod
+    def _find_unit_by_alias(string_to_find: str, aliases: UnitAliasesType) -> Optional[Unit]:
+        """Find a unit type by searching through a dictionary that maps strings to Units.
+
+        Args:
+            string_to_find: String to search for in the alias mappings.
+            aliases: Dictionary mapping alias tuples to Unit enum values.
+
+        Returns:
+            Unit enum if a match is found, None otherwise.
+        """
+        # Iterate over the keys of the dictionary
+        for aliases_tuple in aliases.keys():
+            # Check if the string is present in any of the tuples
+            # if any(string_to_find in alias for alias in aliases_tuple):
+            if string_to_find in (each.lower() for each in aliases_tuple):
+                return aliases[aliases_tuple]
+        return None  # If not found, return None or handle it as needed
+
+    @staticmethod
+    def _parse_unit(input_: str) -> Union[Unit, None, Any]:
+        """Parse a unit type from a string representation.
+
+        Attempts to parse a string into a Unit enum using multiple methods:
+        1. Check if it's a preferred unit attribute name
+        2. Try direct Unit enum lookup
+        3. Search through UnitAliases
+
+        Args:
+            input_: String representation of a unit to parse.
+
+        Returns:
+            Unit enum if parsing succeeds, None if no match found.
+
+        Raises:
+            TypeError: If input is not a string.
+
+        Examples:
+            >>> Unit._parse_unit('meter')     # Unit.Meter
+            meter
+            >>> Unit._parse_unit('m')         # Unit.Meter
+            meter
+            >>> Unit._parse_unit('fps').name  # Unit.FPS
+            'FPS'
+            >>> Unit._parse_unit('oops')      # None
+        """
+        # Normalize input: trim, lowercase, and remove internal whitespace
+        if not isinstance(input_, str):
+            raise TypeError(f"String expected, got {type(input_)=}, {input_=}")
+        input_ = input_.strip().lower()
+        input_ = re.sub(r"\s+", "", input_)
+        if hasattr(PreferredUnits, input_):
+            return getattr(PreferredUnits, input_)
+        try:
+            return Unit[input_]
+        except KeyError:
+            # Try direct alias match
+            if (unit := Unit._find_unit_by_alias(input_, UnitAliases)) is not None:
+                return unit
+            # Simple pluralization fallback: yard(s), meter(s), knot(s), etc.
+            if input_.endswith('s'):
+                singular = input_[:-1]
+                if (unit := Unit._find_unit_by_alias(singular, UnitAliases)) is not None:
+                    return unit
+            return None
+
+    @staticmethod
+    def parse(input_: Union[str, Number],
+              preferred: Optional[Union[Unit, str]] = None) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
+        """Parse a value with optional unit specification into a unit measurement.
+
+        Args:
+            input_: Value to parse - can be a number or string with optional unit.
+            preferred: Preferred unit to use for numeric inputs, either as Unit enum or string alias.
+
+        Returns:
+            Parsed unit measurement if successful, raises exception on failure.
+
+        Raises:
+            TypeError: If input type is not supported.
+            UnitAliasError: If unit alias cannot be parsed.
+
+        Examples:
+            >>> # Parse numeric value with preferred unit
+            >>> Unit.parse(100, Unit.Meter)
+            <Distance: 100.0m (3937.0079)>
+            
+            >>> # Parse string with embedded unit
+            >>> Unit.parse('2yd')
+            <Distance: 2.0yd (72.0)>
+            
+            >>> # Parse with PreferredUnit string
+            >>> Unit.parse(50, 'grain')
+            <Weight: 50.0gr (50.0)>
+        """
+
+        def create_as_preferred(value_):
+            if isinstance(preferred, Unit):
+                return preferred(float(value_))
+            if isinstance(preferred, str):
+                if units_ := Unit._parse_unit(preferred):
+                    return units_(float(value_))
+            raise UnitAliasError(f"Unsupported {preferred=} unit alias")
+
+        if isinstance(input_, (float, int)):
+            return create_as_preferred(input_)
+
+        if not isinstance(input_, str):
+            raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
+
+        input_string = input_.replace(" ", "")
+        if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
+            value = match.group()
+            return create_as_preferred(value)
+
+        if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
+            value, alias = match.groups()
+            if units := Unit._parse_unit(alias):
+                return units(float(value))
+            raise UnitAliasError(f"Unsupported unit {alias=}")
+
+        raise UnitAliasError(f"Can't parse unit {input_=}")
 
 
 class UnitProps(NamedTuple):
@@ -438,6 +546,8 @@ class UnitProps(NamedTuple):
     symbol: str
 
 
+#: Mapping from Unit -> UnitProps used for formatting/display of units.
+# mkdocs.pymdown.snippet marker: --8<-- [start:UnitPropsDict]
 UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Radian: UnitProps('radian', 6, 'rad'),
     Unit.Degree: UnitProps('degree', 4, '°'),
@@ -494,9 +604,11 @@ UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Nanosecond: UnitProps('nanosecond', 9, 'ns'),
     Unit.Picosecond: UnitProps('picosecond', 12, 'ps')
 }
+# --8<-- [end:UnitPropsDict]
 
 UnitAliasesType: TypeAlias = Mapping[Tuple[str, ...], Unit]
 
+# mkdocs.pymdown.snippet marker: --8<-- [start:UnitAliases]
 UnitAliases: UnitAliasesType = {
     ('radian', 'rad'): Unit.Radian,
     ('degree', 'deg'): Unit.Degree,
@@ -553,6 +665,7 @@ UnitAliases: UnitAliasesType = {
     ('nanosecond', 'ns'): Unit.Nanosecond,
     ('picosecond', 'ps'): Unit.Picosecond,
 }
+# --8<-- [end:UnitAliases]
 
 
 @runtime_checkable
@@ -977,7 +1090,10 @@ class GenericDimension(Generic[_GenericDimensionType]):
 
 
 class Angular(GenericDimension):
-    """Angular measurements.  Raw value is radians."""
+    """Angular measurements.  Raw value is radians.
+
+    This class tries to normalize angles to the range (-π, π].
+    """
 
     _conversion_factors = {
         Unit.Radian: 1.,
@@ -1090,7 +1206,10 @@ class Pressure(GenericDimension):
 
 
 class Temperature(GenericDimension):
-    """Temperature unit.  Raw value is Fahrenheit."""
+    """Temperature unit.  Raw value is Fahrenheit.
+
+    This dimension only supports addition and subtraction operations, and tries to clamp results at absolute zero.
+    """
 
     _conversion_factors = {
         Unit.Fahrenheit: 0.,
@@ -1447,7 +1566,7 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                 if isinstance(value, Unit):
                     setattr(PreferredUnits, attribute, value)
                 elif isinstance(value, str):
-                    if _unit := _parse_unit(value):
+                    if _unit := Unit._parse_unit(value):
                         setattr(PreferredUnits, attribute, _unit)
                     else:
                         logger.warning(f"{value=} not a member of Unit")
@@ -1457,129 +1576,6 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
                     logger.warning(f"type of {value=} have not been converted to a member of Unit")
             else:
                 logger.warning(f"{attribute=} not found in preferred_units")
-
-
-def _find_unit_by_alias(string_to_find: str, aliases: UnitAliasesType) -> Optional[Unit]:
-    """Find a unit type by searching through a dictionary that maps strings to Units.
-
-    Args:
-        string_to_find: String to search for in the alias mappings.
-        aliases: Dictionary mapping alias tuples to Unit enum values.
-
-    Returns:
-        Unit enum if a match is found, None otherwise.
-    """
-    # Iterate over the keys of the dictionary
-    for aliases_tuple in aliases.keys():
-        # Check if the string is present in any of the tuples
-        # if any(string_to_find in alias for alias in aliases_tuple):
-        if string_to_find in (each.lower() for each in aliases_tuple):
-            return aliases[aliases_tuple]
-    return None  # If not found, return None or handle it as needed
-
-
-def _parse_unit(input_: str) -> Union[Unit, None, Any]:
-    """Parse a unit type from a string representation.
-
-    Attempts to parse a string into a Unit enum using multiple methods:
-    1. Check if it's a preferred unit attribute name
-    2. Try direct Unit enum lookup
-    3. Search through UnitAliases
-
-    Args:
-        input_: String representation of a unit to parse.
-
-    Returns:
-        Unit enum if parsing succeeds, None if no match found.
-
-    Raises:
-        TypeError: If input is not a string.
-
-    Examples:
-        >>> _parse_unit('meter')     # Unit.Meter
-        meter
-        >>> _parse_unit('m')         # Unit.Meter
-        meter
-        >>> _parse_unit('fps').name  # Unit.FPS
-        'FPS'
-        >>> _parse_unit('oops')      # None
-    """
-    # Normalize input: trim, lowercase, and remove internal whitespace
-    if not isinstance(input_, str):
-        raise TypeError(f"String expected, got {type(input_)=}, {input_=}")
-    input_ = input_.strip().lower()
-    input_ = re.sub(r"\s+", "", input_)
-    if hasattr(PreferredUnits, input_):
-        return getattr(PreferredUnits, input_)
-    try:
-        return Unit[input_]
-    except KeyError:
-        # Try direct alias match
-        if (unit := _find_unit_by_alias(input_, UnitAliases)) is not None:
-            return unit
-        # Simple pluralization fallback: yard(s), meter(s), knot(s), etc.
-        if input_.endswith('s'):
-            singular = input_[:-1]
-            if (unit := _find_unit_by_alias(singular, UnitAliases)) is not None:
-                return unit
-        return None
-
-
-def _parse_value(input_: Union[str, Number],
-                 preferred: Optional[Union[Unit, str]]) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
-    """Parse a value with optional unit specification into a unit measurement.
-
-    Args:
-        input_: Value to parse - can be a number or string with optional unit.
-        preferred: Preferred unit to use for numeric inputs, either as Unit enum or string alias.
-
-    Returns:
-        Parsed unit measurement if successful, raises exception on failure.
-
-    Raises:
-        TypeError: If input type is not supported.
-        UnitAliasError: If unit alias cannot be parsed.
-
-    Examples:
-        >>> # Parse numeric value with preferred unit
-        >>> _parse_value(100, Unit.Meter)
-        <Distance: 100.0m (3937.0079)>
-        
-        >>> # Parse string with embedded unit
-        >>> _parse_value('2yd', None) 
-        <Distance: 2.0yd (72.0)>
-        
-        >>> # Parse with PreferredUnit string
-        >>> _parse_value(50, 'grain')
-        <Weight: 50.0gr (50.0)>
-    """
-
-    def create_as_preferred(value_):
-        if isinstance(preferred, Unit):
-            return preferred(float(value_))
-        if isinstance(preferred, str):
-            if units_ := _parse_unit(preferred):
-                return units_(float(value_))
-        raise UnitAliasError(f"Unsupported {preferred=} unit alias")
-
-    if isinstance(input_, (float, int)):
-        return create_as_preferred(input_)
-
-    if not isinstance(input_, str):
-        raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
-
-    input_string = input_.replace(" ", "")
-    if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
-        value = match.group()
-        return create_as_preferred(value)
-
-    if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
-        value, alias = match.groups()
-        if units := _parse_unit(alias):
-            return units(float(value))
-        raise UnitAliasError(f"Unsupported unit {alias=}")
-
-    raise UnitAliasError(f"Can't parse unit {input_=}")
 
 
 __all__ = (
@@ -1603,6 +1599,4 @@ __all__ = (
     'UnitAliasError',
     'UnitTypeError',
     'UnitConversionError',
-    '_parse_unit',
-    '_parse_value'
 )

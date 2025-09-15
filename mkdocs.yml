@@ -1,69 +1,73 @@
 site_name: py-ballisticcalc
-site_description: LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
+site_description: LGPL ballistic calculation library
 edit_uri: edit/main/docs/
 site_url: https://o-murphy.github.io/py-ballisticcalc/
 
 nav:
 - Get started:
-  - Welcome: index.md
+  - QuickStart: index.md
 #  - Why use py-balllisticcalc: why.md
-  - Help: help.md
   - Installation: install.md
-  - QuickStart: QuickStart.md
-#  - Version policy: version-policy.md
+#  - Examples: examples/Examples
+  - Help: help.md
   - Contributing: contributing.md
+#  - Version policy: version-policy.md
 #  - Changelog: changelog.md
 - Concepts:
-#  - Classes: concepts/classes.md
-    - Munition:
-#        - concepts/munition/index.md
-        - "🔫 Weapon": concepts/munition/weapon.md  # <-- Added a dummy sub-level
-        - "💣 Ammo": concepts/munition/ammo.md
-    - DragModel: concepts/drag_model.md
-    - Conditions:
-        - "🌡️ Atmo": concepts/conditions/atmo.md
-        - "💨 Wind": concepts/conditions/wind.md
-        - "🎯 Shot": concepts/conditions/shot.md
-    - Units and Dimensions:
-#        - DSL:
-        - "📏 Unit": concepts/unit.md
-#        - AbstractUnit:
-#        - Distance:
-#        - Velocity:
+  - Basics: concepts/index.md
+  - "📏 Units": concepts/unit.md
 #        - Angular:
+#        - Distance:
+#        - Energy:
 #        - Pressure:
 #        - Temperature:
+#        - Velocity:
 #        - Weight:
-#        - Energy:
-    - TrajectoryData: concepts/trajectory_data.md
-    - Vector: concepts/vector.md
-    - Constants: concepts/constants.md
+  - Calculation Engines:
+    - "⚙️ Engines": concepts/engines.md
+    - "📊 Benchmarks": concepts/benchmarks.md
+  - Conditions:
+    - "🌡️ Atmo": concepts/conditions/atmo.md
+    - "💨 Wind": concepts/conditions/wind.md
+    - "🎯 Shot": concepts/conditions/shot.md
+  - Munitions:
+    - "🔫 Weapon": concepts/munition/weapon.md
+    - "💣 Ammo": concepts/munition/ammo.md
+    - "🪂 DragModel": concepts/drag_model.md
+  - "📈 Trajectory Data": concepts/trajectory_data.md
+  - "📐 Vector": concepts/vector.md
 #    - Interface:
-    - Engines:
-        - "⚙️ Engines": concepts/engines.md
 #    - Logger: concepts/logger.md
 #  - Performance:
 - API Documentation:
-    - Units:
-      - Unit System: api/unit.md
-    - Munition:
-      - Weapon: api/munition/weapon.md
-      - Ammo: api/munition/ammo.md
-    - DragModel: api/drag_model.md
+    - Overview: api/index.md
+    - Calculator:
+      - Engines: api/calculator/engines.md
+      - Interface: api/calculator/interface.md
+      - Protocol: api/calculator/protocol.md
     - Conditions:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md
       - Shot: api/conditions/shot.md
-    - TrajectoryData: api/trajectory_data.md
     - Constants: api/constants.md
-    - Vector: api/vector.md
-#    - Interface:
-  #    - Engines: api/engines.md
+    - Munitions:
+      - Ammo: api/munition/ammo.md
+      - DragModel: api/drag_model.md
+      - Sight: api/munition/sight.md
+      - Weapon: api/munition/weapon.md
+    - Results:
+      - HitResult: api/hit_result.md
+      - TrajectoryData: api/trajectory_data.md
+    - Units:
+      - Dimensions: api/units/dimensions.md
+      - PreferredUnits: api/units/preferred_units.md
+      - Vector: api/vector.md
+#    - Engines: api/engines.md
 #    - Logger: api/logger.md
 - Internals:
-  - Architecture: Architecture.md
-  - Developer Details: Details.md
-  - Cython Notes: Cython.md
+  - Architecture: internals/architecture.md
+  - Developer Details: internals/details.md
+  - Cython Notes: internals/cython.md
 - Contributors: contributors.md
 - About: about.md
 
@@ -96,7 +100,8 @@ theme:
     - content.tabs.link
     - content.code.annotate
     - content.code.copy
-    - announce.dismiss
+    # - announce.dismiss
+    - mermaid
     - navigation.tabs
     - navigation.instant
     - navigation.instant.prefetch
@@ -104,7 +109,6 @@ theme:
     - navigation.instant.progress
     - navigation.path
 #    - navigation.sections
-#    - navigation.path
     - navigation.expand
     - navigation.top
     - navigation.tracking
@@ -143,25 +147,44 @@ validation:
 extra_css:
   - 'extra/terminal.css'
   - 'extra/tweaks.css'
+  - 'extra/katex/katex.min.css'
+#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css'
 extra_javascript:
   - 'extra/feedback.js'
-#  - 'extra/fluff.js'
+  # Load KaTeX and auto-render before our init to ensure functions are available
+#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'
+#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js'
+  - 'extra/katex/katex.min.js'
+  - 'extra/katex/contrib/auto-render.min.js'
+  - 'extra/katex-init.js'
+  - 'extra/mkdocstrings-tweaks.js'
+  #  - 'extra/fluff.js'
   - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
 
 markdown_extensions:
+- admonition
 - tables
 - toc:
     permalink: true
     title: Page contents
-- admonition
 - pymdownx.details
-- pymdownx.superfences
-- pymdownx.highlight:
-    pygments_lang_class: true
-- pymdownx.extra
+- pymdownx.arithmatex:
+    generic: true
 - pymdownx.emoji:
     emoji_index: !!python/name:material.extensions.emoji.twemoji
     emoji_generator: !!python/name:material.extensions.emoji.to_svg
+- pymdownx.highlight:
+    pygments_lang_class: true
+- pymdownx.snippets:
+    base_path:
+      - .
+      - docs
+    check_paths: true
+- pymdownx.superfences:
+    custom_fences:
+      - name: mermaid
+        class: mermaid
+        format: !!python/name:pymdownx.superfences.fence_code_format
 - pymdownx.tabbed:
     alternate_style: true
 
@@ -172,38 +195,48 @@ markdown_extensions:
 #  - py_ballisticcalc
 
 plugins:
-#- social
-- mike:
-    alias_type: symlink
-    canonical_version: latest
-- search
-- exclude:
-    glob:
-      - theme/announce.html
-      - plugins/*
-      - __pycache__/*
-      - why.md
-      - version-policy.md
-      - changelog.md
-      - concepts/classes.md
-      - internals/architecture.md
-- autorefs
-- mkdocstrings:
-    handlers:
-      python:
-        paths: [.]
-        options:
-          show_source: true
-          members_order: source
-          separate_signature: true
-          filters: ["!^_"]
-          docstring_options:
-            ignore_init_summary: true
-          merge_init_into_class: true
-          show_signature_annotations: true
-          signature_crossrefs: true
-
-          docstring_section_style: table
-        inventories:
-          - url: https://docs.python.org/3/objects.inv
-            domains: [py, std]
+  - autorefs
+  - mermaid2
+  - search
+  - mike:
+      alias_type: symlink
+      canonical_version: latest
+  - exclude:
+      glob:
+        - theme/announce.html
+        - plugins/*
+        - __pycache__/*
+        - why.md
+        - version-policy.md
+        - changelog.md
+  - mkdocstrings:
+      enable_inventory: true
+      handlers:
+        python:
+          paths: [.] 
+          options:
+            group_by_category: true
+            show_category_heading: true
+            show_symbol_type_toc: true
+            show_symbol_type_heading: true
+            show_root_full_path: false
+            show_root_heading: true
+            # parameter_headings: true
+            heading_level: 3
+            show_source: true
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+            signature_crossrefs: true
+            merge_init_into_class: true
+            filters: ["!^_"]
+            summary:
+              classes: true
+              functions: true
+              attributes: true
+            docstring_options:
+              ignore_init_summary: true
+            docstring_section_style: table
+          inventories:
+            - url: https://docs.python.org/3/objects.inv
+              domains: [py, std]

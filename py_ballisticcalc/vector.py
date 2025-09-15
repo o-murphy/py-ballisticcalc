@@ -153,9 +153,8 @@ class Vector(NamedTuple):
             
         Returns:
             Scalar result of the dot product (x₁·x₂ + y₁·y₂ + z₁·z₂).
-            Positive values indicate vectors pointing in similar directions,
-            negative values indicate opposite directions, zero indicates
-            perpendicular vectors.
+                Positive values indicate vectors pointing in similar directions,
+                negative values indicate opposite directions, zero indicates perpendicular vectors.
             
         Examples:
             ```python
@@ -181,8 +180,8 @@ class Vector(NamedTuple):
             ```
             
         Note:
-            The dot product is commutative: a·b = b·a
-            For unit vectors, the dot product equals the cosine of the angle between them.
+            - The dot product is commutative: a·b = b·a
+            - For unit vectors, the dot product equals the cosine of the angle between them.
         """
         return self.x * b.x + self.y * b.y + self.z * b.z
 
@@ -214,8 +213,8 @@ class Vector(NamedTuple):
             ```
             
         Note:
-            Vector addition is commutative: a + b = b + a
-            Vector addition is associative: (a + b) + c = a + (b + c)
+            - Vector addition is commutative: a + b = b + a
+            - Vector addition is associative: (a + b) + c = a + (b + c)
         """
         return Vector(self.x + b.x, self.y + b.y, self.z + b.z)
 
@@ -247,8 +246,8 @@ class Vector(NamedTuple):
             ```
             
         Note:
-            Vector subtraction is NOT commutative: a - b ≠ b - a
-            The result represents the vector from b to self.
+            - Vector subtraction is NOT commutative: a - b ≠ b - a
+            - The result represents the vector from b to self.
         """
         return Vector(self.x - b.x, self.y - b.y, self.z - b.z)
 
@@ -277,8 +276,8 @@ class Vector(NamedTuple):
             ```
             
         Note:
-            The magnitude remains unchanged: |v| = |-v|
-            Negating twice returns the original vector: -(-v) = v
+            - The magnitude remains unchanged: |v| = |-v|
+            - Negating twice returns the original vector: -(-v) = v
         """
         return Vector(-self.x, -self.y, -self.z)
 
@@ -287,8 +286,8 @@ class Vector(NamedTuple):
         
         Returns:
             New Vector instance with magnitude 1.0 and same direction.
-            For near-zero vectors (magnitude < 1e-10), returns a copy of
-            the original vector to avoid division by zero.
+                For near-zero vectors (magnitude < 1e-10), returns a copy of
+                the original vector to avoid division by zero.
             
         Examples:
             ```python

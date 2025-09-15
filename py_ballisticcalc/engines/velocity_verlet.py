@@ -5,16 +5,16 @@ The Velocity Verlet algorithm is a symplectic integrator that conserves energy i
 Classes:
     VelocityVerletIntegrationEngine: Concrete implementation using Velocity Verlet method
 
-Example:
+Examples:
     >>> from py_ballisticcalc import Calculator
     >>> calc = Calculator(engine="py_ballisticcalc:VelocityVerletIntegrationEngine")
 
 Mathematical Background:
     The Velocity Verlet method updates position and velocity using:
-    
+    ```
     x(t + dt) = x(t) + v(t)*dt + 0.5*a(t)*dt²
     v(t + dt) = v(t) + 0.5*[a(t) + a(t + dt)]*dt
-    
+    ```
     This approach ensures that position and velocity remain synchronized
     and that the total energy of the system is conserved over long periods.
 
@@ -50,9 +50,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
     
     Algorithm Details:
         The method uses a two-stage approach:
-        1. Update position using current velocity and acceleration
-        2. Update velocity using average of current and new acceleration
-        
+            1. Update position using current velocity and acceleration.
+            2. Update velocity using average of current and new acceleration.
         This ensures velocity and position remain properly synchronized
         and conserves the total energy of the system.
     
@@ -61,10 +60,11 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         integration_step_count: Number of integration steps performed.
         
     See Also:
-        py_ballisticcalc.engines.rk4.RK4IntegrationEngine: Higher accuracy alternative
-        py_ballisticcalc.engines.euler.EulerIntegrationEngine: Simpler alternative
-        py_ballisticcalc.engines.scipy_engine.SciPyIntegrationEngine: Adaptive methods
+        - RK4IntegrationEngine: Higher accuracy alternative
+        - EulerIntegrationEngine: Simpler alternative
+        - SciPyIntegrationEngine: Adaptive methods
     """
+
     DEFAULT_TIME_STEP = 0.0005
 
     def __init__(self, config: BaseEngineConfigDict) -> None:
@@ -74,15 +74,12 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             config: Configuration dictionary containing engine parameters.
                    See BaseEngineConfigDict for available options.
                    
-        Example:
+        Examples:
             >>> config = BaseEngineConfigDict(
             ...     cStepMultiplier=0.5,
             ...     cMinimumVelocity=10.0
             ... )
             >>> engine = VelocityVerletIntegrationEngine(config)
-        
-        Note:
-            The integration_step_count tracks the number of Verlet steps computed.
         """
         super().__init__(config)
         self.integration_step_count: int = 0
@@ -111,8 +108,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
     def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
                    time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
                    dense_output: bool = False, **kwargs) -> HitResult:
-        """
-        Creates HitResult for the specified shot.
+        """Create HitResult for the specified shot.
 
         Args:
             props: Information specific to the shot.

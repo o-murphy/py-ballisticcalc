@@ -1,18 +1,21 @@
-??? api "API Documentation"
+???+ api "API Documentation"
 
     [`py_ballisticcalc.munition.Ammo`][py_ballisticcalc.munition.Ammo]<br>
 
-The way to define `projectile` properties in **py-ballisticcalc** is via Ammo dataclass.
-Ammo instances are simply and reusable.
+An [Ammo][py_ballisticcalc.munition.Ammo] instance describes all details of a projectile and cartridge that can affect a trajectory:
 
-## Ammo initialization
+- [Drag][py_ballisticcalc.drag_model.DragModel] curves, typically via Ballistic Coefficient referenced to a standard drag model.
+- Muzzle velocity, including (optionally) any variations in velocity caused by _powder temperature sensitivity_.
+- Size and weight, which determine spin drift and stability.
 
-Import the necessary types to create a Weapon instance
+## Example
+
+Imports:
 ```python
 from py_ballisticcalc import Ammo, Unit, DragModel
 ```
 
-Then create a weapon
+Create an Ammo instance:
 ```python
 ammo = Ammo(
     dm=DragModel(
@@ -28,26 +31,5 @@ ammo = Ammo(
     use_powder_sensitivity=True,
 )
 ```
-In this example, we use calls to `Unit` to initialize `Ammo` fields with specific unit types.
-We also can do it using `float`'s then fields will be initialized with unit types defined in `PreferredUnit` class,
-or we can directly specify the dimension with referencing to dimension type class
-
-Fields of a `Ammo` can be accessed as normal attributes of `ammo` instance
-
-Ammo instance is mutable object and field values can be changed through attribute assignment
-
-!!! warning
-    Direct values assignment to attributes of `ammo` is restricted and not recommended, it can be not reinitialized properly after that
-
-Weapon possess the following methods and attributes:
-
-* [`dm`][py_ballisticcalc.munition.Ammo.dm]: DragModel for projectile
-* [`mv`][py_ballisticcalc.munition.Ammo.mv]: Muzzle Velocity
-* [`powder_temp`][py_ballisticcalc.munition.Ammo.powder_temp]: Baseline temperature that produces the given mv
-* [`temp_modifier`][py_ballisticcalc.munition.Ammo.temp_modifier]: Change in velocity w temperature: % per 15°C.
-* [`use_powder_sensitivity`][py_ballisticcalc.munition.Ammo.use_powder_sensitivity]: Flag to enable adjusting muzzle velocity to powder temperature
-* [`calc_powder_sens`][py_ballisticcalc.munition.Ammo.calc_powder_sens]: Method to calculate powder temperature sensitivity coefficient
-* [`get_velocity_for_temp`][py_ballisticcalc.munition.Ammo.get_velocity_for_temp]: Method to get adjusted muzzle velocity to powder sensitivity
-
-!!! note
-    See the API documentation of [`Ammo`][py_ballisticcalc.munition.Ammo] for the class definition including a full list of methods and attributes.
+In this example, we use [Unit][py_ballisticcalc.unit.Unit] helpers to initialize [Ammo][py_ballisticcalc.munition.Ammo] fields with specific units.
+We also can do it using `float` values, in which case those attributes will be initialized with unit types defined by [`PreferredUnits`][py_ballisticcalc.unit.PreferredUnits] class.

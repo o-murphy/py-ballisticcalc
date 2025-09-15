@@ -1,4 +1,4 @@
-"""py_ballisticcalc exception types
+"""py_ballisticcalc exception types.
 
 This module provides a comprehensive exception hierarchy for handling various error conditions
 that can occur during ballistic calculations.
@@ -80,24 +80,24 @@ __all__ = (
 
 
 class UnitTypeError(TypeError):
-    """Unit type error"""
+    """Unit type error."""
 
 
 class UnitConversionError(UnitTypeError):
-    """Unit conversion error"""
+    """Unit conversion error."""
 
 
 class UnitAliasError(ValueError):
-    """Unit alias error"""
+    """Unit alias error."""
 
 
 class SolverRuntimeError(RuntimeError):
-    """Solver error"""
+    """Solver error."""
 
 
 class ZeroFindingError(SolverRuntimeError):
-    """
-    Exception for zero-finding issues.
+    """Exception for zero-finding issues.
+
     Contains:
     - Zero finding error magnitude
     - Iteration count
@@ -114,9 +114,9 @@ class ZeroFindingError(SolverRuntimeError):
                  reason: str = ""):
         """
         Parameters:
-        - zero_finding_error: The error magnitude (float)
-        - iterations_count: The number of iterations performed (int)
-        - last_barrel_elevation: The last computed barrel elevation (Angular)
+        - zero_finding_error: The error magnitude
+        - iterations_count: The number of iterations performed
+        - last_barrel_elevation: The last computed barrel elevation
         """
         self.zero_finding_error: float = zero_finding_error
         self.iterations_count: int = iterations_count
@@ -131,13 +131,14 @@ class ZeroFindingError(SolverRuntimeError):
 
 
 class RangeError(SolverRuntimeError):
-    """
-    Exception for trajectories that don't reach requested distance.
+    """Exception for trajectories that don't reach requested distance.
+
     Contains:
     - The error reason
     - The trajectory data before the exception occurred
     - Last distance before the exception occurred
     """
+
     reason: str
     incomplete_trajectory: List[TrajectoryData]
     last_distance: Optional[Distance]
@@ -149,11 +150,9 @@ class RangeError(SolverRuntimeError):
     def __init__(self, reason: str, ranges: List[TrajectoryData]):
         """
         Parameters:
-        - reason: The error reason (str)
-        - ranges: The trajectory data before
-            the exception occurred (List[TrajectoryData])
+        - reason: The error reason
+        - ranges: The trajectory data before the exception occurred
         """
-
         self.reason: str = reason
         self.incomplete_trajectory = ranges
 
@@ -167,8 +166,8 @@ class RangeError(SolverRuntimeError):
 
 
 class OutOfRangeError(SolverRuntimeError):
-    """
-    Exception raised when the requested distance is outside the possible range for the shot.
+    """Exception raised when the requested distance is outside the possible range for the shot.
+
     Contains:
     - The requested distance
     - Optionally, the maximum achievable range
