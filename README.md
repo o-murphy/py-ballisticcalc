@@ -168,9 +168,9 @@ Special thanks to:
 * **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert <br>
 *For help understanding and improving the functionality*
 * **[Serhiy Yevtushenko](https://github.com/serhiy-yevtushenko)** - Applied Mathematician <br>
-*For helping in consultations, testing and improving edge cases compatibility*
+*For helping in consultations, testing, and improving edge case compatibility*
 * **[Nikolay Gekht](https://github.com/nikolaygekht)** <br>
-*For the sources code on C# and GO-lang from which this project firstly was forked*
+*For the source code in C# and GO-lang from which this project firstly was forked*
 
 [//]: # (## Sister projects)
 

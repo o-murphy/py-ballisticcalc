@@ -106,16 +106,17 @@ dev = [
     "ruff>=0.12.3",
 ]
 docs = [
-    'mkdocs-mermaid2-plugin',
-    'mkdocs',
-    'mkdocs-exclude',
-    'mkdocs-material[imaging]',
-    'mkdocs-redirects',
-    'mkdocstrings-python',
-    'mkdocstrings',
-    'mkdocs-autorefs',
-    'mike',
-    'pydocstyle',
+    "mkdocs-mermaid2-plugin",
+    "mkdocs",
+    "mkdocs-exclude",
+    "mkdocs-material[imaging]",
+    "mkdocs-redirects",
+    "mkdocstrings>=0.29.0",
+    "mkdocstrings-python>=1.16.0",
+    "mkdocs-autorefs",
+    "mike",
+    "pydocstyle",
+    "ruff",
 ]
 
 [dependency-groups]
