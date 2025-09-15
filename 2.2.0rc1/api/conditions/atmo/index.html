@@ -1,0 +1,2961 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="LGPL ballistic calculation library" name="description"/>
+<link href="https://o-murphy.github.io/py-ballisticcalc/latest/api/conditions/atmo/" rel="canonical"/>
+<link href="../../calculator/protocol/" rel="prev"/>
+<link href="../wind/" rel="next"/>
+<link href="../../../favicon.svg" rel="icon"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.15" name="generator"/>
+<title>Atmo - py-ballisticcalc</title>
+<link href="../../../assets/stylesheets/main.342714a4.min.css" rel="stylesheet"/>
+<link href="../../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+<link href="../../../assets/_mkdocstrings.css" rel="stylesheet"/>
+<link href="../../../extra/terminal.css" rel="stylesheet"/>
+<link href="../../../extra/tweaks.css" rel="stylesheet"/>
+<link href="../../../extra/katex/katex.min.css" rel="stylesheet"/>
+<script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+</head>
+<body data-md-color-accent="teal" data-md-color-primary="teal" data-md-color-scheme="default" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#py_ballisticcalc.conditions.Atmo">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<div data-md-color-scheme="default" data-md-component="outdated" hidden="">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="py-ballisticcalc" class="md-header__button md-logo" data-md-component="logo" href="../../.." title="py-ballisticcalc">
+<img alt="logo" src="../../../favicon.svg"/>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            py-ballisticcalc
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              Atmo
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme)" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_0" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"></path></svg>
+</label>
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme: light)" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_2" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"></path></svg>
+</label>
+<input aria-label="Switch to system preference" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-primary="teal" data-md-color-scheme="slate" id="__palette_2" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_0" hidden="" title="Switch to system preference">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2c3.87 0 7 3.13 7 7 0 2.38-1.19 4.47-3 5.74V17c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-2.26C3.19 13.47 2 11.38 2 9c0-3.87 3.13-7 7-7M6 21v-1h6v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1M9 4C6.24 4 4 6.24 4 9c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58 0-2.76-2.24-5-5-5m10 9h-2l-3.2 9h1.9l.7-2h3.2l.7 2h1.9zm-2.15 5.65L18 15l1.15 3.65z"></path></svg>
+</label>
+</form>
+<script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+<label class="md-header__button md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+</label>
+<div class="md-search" data-md-component="search" role="dialog">
+<label class="md-search__overlay" for="__search"></label>
+<div class="md-search__inner" role="search">
+<form class="md-search__form" name="search">
+<input aria-label="Search" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="search-query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/>
+<label class="md-search__icon md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+</label>
+<nav aria-label="Search" class="md-search__options">
+<button aria-label="Clear" class="md-search__icon md-icon" tabindex="-1" title="Clear" type="reset">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+</button>
+</nav>
+<div class="md-search__suggest" data-md-component="search-suggest"></div>
+</form>
+<div class="md-search__output">
+<div class="md-search__scrollwrap" data-md-scrollfix="" tabindex="0">
+<div class="md-search-result" data-md-component="search-result">
+<div class="md-search-result__meta">
+            Initializing search
+          </div>
+<ol class="md-search-result__list" role="presentation"></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="https://github.com/o-murphy/py_ballisticcalc" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"></path></svg>
+</div>
+<div class="md-source__repository">
+    o-murphy/py_ballisticcalc
+  </div>
+</a>
+</div>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../..">
+          
+  
+  
+  Get started
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../concepts/">
+          
+  
+  
+  Concepts
+
+        </a>
+</li>
+<li class="md-tabs__item md-tabs__item--active">
+<a class="md-tabs__link" href="../../">
+          
+  
+  
+  API Documentation
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../internals/architecture/">
+          
+  
+  
+  Internals
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../contributors/">
+        
+  
+  
+    
+  
+  Contributors
+
+      </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../../about/">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+</li>
+</ul>
+</div>
+</nav>
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="py-ballisticcalc" class="md-nav__button md-logo" data-md-component="logo" href="../../.." title="py-ballisticcalc">
+<img alt="logo" src="../../../favicon.svg"/>
+</a>
+    py-ballisticcalc
+  </label>
+<div class="md-nav__source">
+<a class="md-source" data-md-component="source" href="https://github.com/o-murphy/py_ballisticcalc" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"></path></svg>
+</div>
+<div class="md-source__repository">
+    o-murphy/py_ballisticcalc
+  </div>
+</a>
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+<span class="md-ellipsis">
+    Get started
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_1">
+<span class="md-nav__icon md-icon"></span>
+            Get started
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../..">
+<span class="md-ellipsis">
+    QuickStart
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../install/">
+<span class="md-ellipsis">
+    Installation
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../help/">
+<span class="md-ellipsis">
+    Help
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../contributing/">
+<span class="md-ellipsis">
+    Contributing
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Concepts
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/">
+<span class="md-ellipsis">
+    Basics
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/unit/">
+<span class="md-ellipsis">
+    📏 Units
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+<span class="md-ellipsis">
+    Calculation Engines
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_3">
+<span class="md-nav__icon md-icon"></span>
+            Calculation Engines
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/engines/">
+<span class="md-ellipsis">
+    ⚙️ Engines
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/benchmarks/">
+<span class="md-ellipsis">
+    📊 Benchmarks
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Conditions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_4_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_4">
+<span class="md-nav__icon md-icon"></span>
+            Conditions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/conditions/atmo/">
+<span class="md-ellipsis">
+    🌡️ Atmo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/conditions/wind/">
+<span class="md-ellipsis">
+    💨 Wind
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/conditions/shot/">
+<span class="md-ellipsis">
+    🎯 Shot
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+<span class="md-ellipsis">
+    Munitions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_5">
+<span class="md-nav__icon md-icon"></span>
+            Munitions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/munition/weapon/">
+<span class="md-ellipsis">
+    🔫 Weapon
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/munition/ammo/">
+<span class="md-ellipsis">
+    💣 Ammo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/drag_model/">
+<span class="md-ellipsis">
+    🪂 DragModel
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/trajectory_data/">
+<span class="md-ellipsis">
+    📈 Trajectory Data
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../concepts/vector/">
+<span class="md-ellipsis">
+    📐 Vector
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+<span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="true" aria-labelledby="__nav_3_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Calculator
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_2">
+<span class="md-nav__icon md-icon"></span>
+            Calculator
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../calculator/engines/">
+<span class="md-ellipsis">
+    Engines
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../calculator/interface/">
+<span class="md-ellipsis">
+    Interface
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../calculator/protocol/">
+<span class="md-ellipsis">
+    Protocol
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_3_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+<span class="md-ellipsis">
+    Conditions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="true" aria-labelledby="__nav_3_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_3">
+<span class="md-nav__icon md-icon"></span>
+            Conditions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+<span class="md-ellipsis">
+    Atmo
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<a class="md-nav__link md-nav__link--active" href="./">
+<span class="md-ellipsis">
+    Atmo
+    
+  </span>
+</a>
+<nav aria-label="Page contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> Atmo
+    </span>
+</a>
+<nav aria-label=" Atmo" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo-attributes">
+<span class="md-ellipsis">
+      Attributes
+    </span>
+</a>
+<nav aria-label="Attributes" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.pressure">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> pressure
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.temperature">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> temperature
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.powder_temp">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> powder_temp
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.mach">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> mach
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.density_ratio">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> density_ratio
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.humidity">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> humidity
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.density_metric">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> density_metric
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.density_imperial">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> density_imperial
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo-functions">
+<span class="md-ellipsis">
+      Functions
+    </span>
+</a>
+<nav aria-label="Functions" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.update_density_ratio">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> update_density_ratio
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.temperature_at_altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> temperature_at_altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.pressure_at_altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> pressure_at_altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.get_density_and_mach_for_altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_density_and_mach_for_altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.standard_temperature">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> standard_temperature
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.standard_pressure">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> standard_pressure
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.icao">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> icao
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.machF">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> machF
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.machC">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> machC
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.machK">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> machK
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.calculate_air_density">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> calculate_air_density
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Vacuum">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> Vacuum
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../wind/">
+<span class="md-ellipsis">
+    Wind
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../shot/">
+<span class="md-ellipsis">
+    Shot
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../constants/">
+<span class="md-ellipsis">
+    Constants
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+<span class="md-ellipsis">
+    Munitions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_5">
+<span class="md-nav__icon md-icon"></span>
+            Munitions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../munition/ammo/">
+<span class="md-ellipsis">
+    Ammo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../drag_model/">
+<span class="md-ellipsis">
+    DragModel
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../munition/sight/">
+<span class="md-ellipsis">
+    Sight
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../munition/weapon/">
+<span class="md-ellipsis">
+    Weapon
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_6" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+<span class="md-ellipsis">
+    Results
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_6_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_6">
+<span class="md-nav__icon md-icon"></span>
+            Results
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../hit_result/">
+<span class="md-ellipsis">
+    HitResult
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../trajectory_data/">
+<span class="md-ellipsis">
+    TrajectoryData
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_7" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+<span class="md-ellipsis">
+    Units
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_7_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_7">
+<span class="md-nav__icon md-icon"></span>
+            Units
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../units/dimensions/">
+<span class="md-ellipsis">
+    Dimensions
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../units/preferred_units/">
+<span class="md-ellipsis">
+    PreferredUnits
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../vector/">
+<span class="md-ellipsis">
+    Vector
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Internals
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+            Internals
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../internals/architecture/">
+<span class="md-ellipsis">
+    Architecture
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../internals/details/">
+<span class="md-ellipsis">
+    Developer Details
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../internals/cython/">
+<span class="md-ellipsis">
+    Cython Notes
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../contributors/">
+<span class="md-ellipsis">
+    Contributors
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../about/">
+<span class="md-ellipsis">
+    About
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Page contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> Atmo
+    </span>
+</a>
+<nav aria-label=" Atmo" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo-attributes">
+<span class="md-ellipsis">
+      Attributes
+    </span>
+</a>
+<nav aria-label="Attributes" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.pressure">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> pressure
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.temperature">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> temperature
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.powder_temp">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> powder_temp
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.mach">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> mach
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.density_ratio">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> density_ratio
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.humidity">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> humidity
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.density_metric">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> density_metric
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.density_imperial">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code> density_imperial
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo-functions">
+<span class="md-ellipsis">
+      Functions
+    </span>
+</a>
+<nav aria-label="Functions" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.update_density_ratio">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> update_density_ratio
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.temperature_at_altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> temperature_at_altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.pressure_at_altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> pressure_at_altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.get_density_and_mach_for_altitude">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_density_and_mach_for_altitude
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.standard_temperature">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> standard_temperature
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.standard_pressure">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> standard_pressure
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.icao">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> icao
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.machF">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> machF
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.machC">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> machC
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.machK">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> machK
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Atmo.calculate_air_density">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> calculate_air_density
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.conditions.Vacuum">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> Vacuum
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1>Atmo</h1>
+<div class="doc doc-object doc-class">
+<h3 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code> <span class="doc doc-object-name doc-class-name">Atmo</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo" title="Permanent link">¶</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Atmo</span><span class="p">(</span>
+    <span class="n">altitude</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pressure</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Pressure">Pressure</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">humidity</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+    <span class="n">powder_t</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="doc doc-contents first">
+<p>Atmospheric conditions and density calculations.</p>
+<p><span class="doc-section-title">Attributes:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.altitude">altitude</a></code></td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Altitude relative to sea level</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.pressure">pressure</a></code></td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Pressure">Pressure</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Unadjusted barometric pressure, a.k.a. station pressure</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.temperature">temperature</a></code></td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Temperature</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.humidity">humidity</a></code></td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Relative humidity [0% to 100%]</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.powder_temp">powder_temp</a></code></td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Temperature of powder (if different from atmosphere).
+(Used when Ammo.use_powder_sensitivity is True)</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.density_ratio">density_ratio</a></code></td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Ratio of current density to standard atmospheric density</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.mach">mach</a></code></td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Velocity">Velocity</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Velocity of sound (Mach 1) for current atmosphere</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>altitude</code>
+</td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a>]]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Altitude relative to sea level</p>
+</div>
+</td>
+<td>
+<code>None</code>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>pressure</code>
+</td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Pressure">Pressure</a>]]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Atmospheric pressure</p>
+</div>
+</td>
+<td>
+<code>None</code>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>temperature</code>
+</td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a>]]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Atmospheric temperature</p>
+</div>
+</td>
+<td>
+<code>None</code>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>humidity</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Atmospheric relative humidity [0% to 100%]</p>
+</div>
+</td>
+<td>
+<code>0.0</code>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>powder_t</code>
+</td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a>]]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Custom temperature of powder different to atmospheric.
+Used when Ammo.use_powder_sensitivity is True</p>
+</div>
+</td>
+<td>
+<code>None</code>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="example" open="">
+<summary>Example</summary>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Atmo</span>
+<span class="n">atmo</span> <span class="o">=</span> <span class="n">Atmo</span><span class="p">(</span>
+    <span class="n">altitude</span><span class="o">=</span><span class="n">Unit</span><span class="o">.</span><span class="n">Meter</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span>
+    <span class="n">pressure</span><span class="o">=</span><span class="n">Unit</span><span class="o">.</span><span class="n">hPa</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span>
+    <span class="n">temperature</span><span class="o">=</span><span class="n">Unit</span><span class="o">.</span><span class="n">Celsius</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span>
+    <span class="n">humidity</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">powder_t</span><span class="o">=</span><span class="n">Unit</span><span class="o">.</span><span class="n">Celsius</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+<span class="p">)</span>
+</code></pre></div>
+</details>
+<p><span class="doc-section-title">Methods:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.update_density_ratio">update_density_ratio</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Update the density ratio based on current conditions.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.temperature_at_altitude">temperature_at_altitude</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Temperature at altitude interpolated from zero conditions using lapse rate.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.pressure_at_altitude">pressure_at_altitude</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Pressure at altitude interpolated from zero conditions using lapse rate.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.get_density_and_mach_for_altitude">get_density_and_mach_for_altitude</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate density ratio and Mach 1 for the specified altitude.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.standard_temperature">standard_temperature</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate ICAO standard temperature for altitude.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.standard_pressure">standard_pressure</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate ICAO standard pressure for altitude.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.icao">icao</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Create Atmo instance of standard ICAO atmosphere at given altitude.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.machF">machF</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate Mach 1 in fps for given Fahrenheit temperature.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.machC">machC</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate Mach 1 in mps for given Celsius temperature.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.machK">machK</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate Mach 1 in mps for given Kelvin temperature.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo.calculate_air_density">calculate_air_density</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate air density from temperature, pressure, and humidity.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">altitude</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Distance</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">pressure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Pressure</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">temperature</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Temperature</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">humidity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+             <span class="n">powder_t</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Temperature</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Create a new Atmo instance.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        altitude: Altitude relative to sea level</span>
+<span class="sd">        pressure: Atmospheric pressure</span>
+<span class="sd">        temperature: Atmospheric temperature</span>
+<span class="sd">        humidity: Atmospheric relative humidity [0% to 100%]</span>
+<span class="sd">        powder_t: Custom temperature of powder different to atmospheric.</span>
+<span class="sd">            Used when Ammo.use_powder_sensitivity is True</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```python</span>
+<span class="sd">        from py_ballisticcalc import Atmo</span>
+<span class="sd">        atmo = Atmo(</span>
+<span class="sd">            altitude=Unit.Meter(100),</span>
+<span class="sd">            pressure=Unit.hPa(1000),</span>
+<span class="sd">            temperature=Unit.Celsius(20),</span>
+<span class="sd">            humidity=50,</span>
+<span class="sd">            powder_t=Unit.Celsius(15)</span>
+<span class="sd">        )</span>
+<span class="sd">        ```</span>
+<span class="sd">    """</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_initializing</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_altitude</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">altitude</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pressure</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">pressure</span><span class="p">(</span><span class="n">pressure</span> <span class="ow">or</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">standard_pressure</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">altitude</span><span class="p">))</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_temperature</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">temperature</span><span class="p">(</span><span class="n">temperature</span> <span class="ow">or</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">standard_temperature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">altitude</span><span class="p">))</span>
+    <span class="c1"># If powder_temperature not provided we use atmospheric temperature:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_powder_temp</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">temperature</span><span class="p">(</span><span class="n">powder_t</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">&gt;&gt;</span> <span class="n">Temperature</span><span class="o">.</span><span class="n">Celsius</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressure</span> <span class="o">&gt;&gt;</span> <span class="n">Pressure</span><span class="o">.</span><span class="n">hPa</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_a0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">altitude</span> <span class="o">&gt;&gt;</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Foot</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_mach</span> <span class="o">=</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">machF</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_temperature</span> <span class="o">&gt;&gt;</span> <span class="n">Temperature</span><span class="o">.</span><span class="n">Fahrenheit</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">humidity</span> <span class="o">=</span> <span class="n">humidity</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_initializing</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">update_density_ratio</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+</details>
+<div class="doc doc-children">
+<h4 id="py_ballisticcalc.conditions.Atmo-attributes">Attributes<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo-attributes" title="Permanent link">¶</a></h4>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.altitude">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">altitude</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.altitude" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">altitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Altitude relative to sea level.</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.pressure">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">pressure</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.pressure" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">pressure</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Pressure">Pressure</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Unadjusted barometric pressure, a.k.a. station pressure.</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.temperature">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">temperature</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.temperature" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">temperature</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Local air temperature.</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.powder_temp">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">powder_temp</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.powder_temp" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">powder_temp</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Powder temperature.</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.mach">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">mach</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.mach" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">mach</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Velocity">Velocity</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Velocity of sound (Mach 1) for current atmosphere.</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.density_ratio">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">density_ratio</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.density_ratio" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">density_ratio</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Ratio of current density to standard atmospheric density.</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.humidity">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">humidity</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+<small class="doc doc-label doc-label-writable"><code>writable</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.humidity" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">humidity</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Relative humidity [0% to 100%].</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.density_metric">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">density_metric</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.density_metric" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">density_metric</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Air density in metric units (kg/m^3).</p>
+</div>
+</div>
+<div class="doc doc-object doc-attribute">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.density_imperial">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code> <span class="doc doc-object-name doc-attribute-name">density_imperial</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-property"><code>property</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.density_imperial" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">density_imperial</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Air density in imperial units (lb/ft^3).</p>
+</div>
+</div>
+<h4 id="py_ballisticcalc.conditions.Atmo-functions">Functions<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo-functions" title="Permanent link">¶</a></h4>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.update_density_ratio">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">update_density_ratio</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.update_density_ratio" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">update_density_ratio</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Update the density ratio based on current conditions.</p>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update_density_ratio</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Update the density ratio based on current conditions."""</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_density_ratio</span> <span class="o">=</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">calculate_air_density</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">humidity</span><span class="p">)</span> <span class="o">/</span> <span class="n">cStandardDensityMetric</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.temperature_at_altitude">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">temperature_at_altitude</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.temperature_at_altitude" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">temperature_at_altitude</span><span class="p">(</span><span class="n">altitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Temperature at altitude interpolated from zero conditions using lapse rate.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>altitude</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>ASL in ft</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>temperature in °C</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">temperature_at_altitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">altitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Temperature at altitude interpolated from zero conditions using lapse rate.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        altitude: ASL in ft</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        temperature in °C</span>
+<span class="sd">    """</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="n">altitude</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_a0</span><span class="p">)</span> <span class="o">*</span> <span class="n">cLapseRateKperFoot</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t0</span>
+    <span class="k">if</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">cLowestTempC</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">cLowestTempC</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Temperature interpolated from altitude fell below minimum temperature limit.  "</span>
+                      <span class="sa">f</span><span class="s2">"Model not accurate here.  Temperature bounded at cLowestTempF: </span><span class="si">{</span><span class="n">cLowestTempF</span><span class="si">}</span><span class="s2">°F."</span><span class="p">,</span>
+                      <span class="ne">RuntimeWarning</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">t</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.pressure_at_altitude">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">pressure_at_altitude</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.pressure_at_altitude" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">pressure_at_altitude</span><span class="p">(</span><span class="n">altitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Pressure at altitude interpolated from zero conditions using lapse rate.</p>
+<p>Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>altitude</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>ASL in ft</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>pressure in hPa</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">pressure_at_altitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">altitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Pressure at altitude interpolated from zero conditions using lapse rate.</span>
+
+<span class="sd">    Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        altitude: ASL in ft</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pressure in hPa</span>
+<span class="sd">    """</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p0</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">cLapseRateKperFoot</span> <span class="o">*</span> <span class="p">(</span><span class="n">altitude</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_a0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t0</span> <span class="o">+</span> <span class="n">cDegreesCtoK</span><span class="p">),</span>
+                            <span class="n">cPressureExponent</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">p</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.get_density_and_mach_for_altitude">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">get_density_and_mach_for_altitude</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.get_density_and_mach_for_altitude" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_density_and_mach_for_altitude</span><span class="p">(</span>
+    <span class="n">altitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">]</span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate density ratio and Mach 1 for the specified altitude.</p>
+<p>Ref: https://en.wikipedia.org/wiki/Barometric_formula#Density_equations</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>altitude</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>ASL in units of feet.
+Note: Altitude above 36,000 ft not modelled this way.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><span title="typing_extensions.Tuple">Tuple</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>density ratio and Mach 1 (fps) for the specified altitude</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_density_and_mach_for_altitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">altitude</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Calculate density ratio and Mach 1 for the specified altitude.</span>
+
+<span class="sd">    Ref: https://en.wikipedia.org/wiki/Barometric_formula#Density_equations</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        altitude: ASL in units of feet.</span>
+<span class="sd">            Note: Altitude above 36,000 ft not modelled this way.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        density ratio and Mach 1 (fps) for the specified altitude</span>
+<span class="sd">    """</span>
+    <span class="c1"># Within 30 ft of initial altitude use initial values to save compute</span>
+    <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_a0</span> <span class="o">-</span> <span class="n">altitude</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">30</span><span class="p">:</span>
+        <span class="n">mach</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mach</span>
+        <span class="n">density_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density_ratio</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">altitude</span> <span class="o">&gt;</span> <span class="mi">36089</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Density request for altitude above troposphere."</span>
+                          <span class="s2">" Atmospheric model not valid here."</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature_at_altitude</span><span class="p">(</span><span class="n">altitude</span><span class="p">)</span> <span class="o">+</span> <span class="n">cDegreesCtoK</span>
+        <span class="n">mach</span> <span class="o">=</span> <span class="n">Velocity</span><span class="o">.</span><span class="n">MPS</span><span class="p">(</span><span class="n">Atmo</span><span class="o">.</span><span class="n">machK</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="o">&gt;&gt;</span> <span class="n">Velocity</span><span class="o">.</span><span class="n">FPS</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pressure_at_altitude</span><span class="p">(</span><span class="n">altitude</span><span class="p">)</span>
+        <span class="n">density_delta</span> <span class="o">=</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_t0</span> <span class="o">+</span> <span class="n">cDegreesCtoK</span><span class="p">)</span> <span class="o">*</span> <span class="n">p</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_p0</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">density_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_density_ratio</span> <span class="o">*</span> <span class="n">density_delta</span>
+        <span class="c1"># # Alternative simplified model:</span>
+        <span class="c1"># # Ref https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation</span>
+        <span class="c1"># # see doc/'Air Density Models.svg' for comparison</span>
+        <span class="c1"># density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)</span>
+    <span class="k">return</span> <span class="n">density_ratio</span><span class="p">,</span> <span class="n">mach</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.standard_temperature">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">standard_temperature</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.standard_temperature" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">standard_temperature</span><span class="p">(</span><span class="n">altitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate ICAO standard temperature for altitude.</p>
+<p>Note: This model is only valid up to the troposphere (~36,000 ft).</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>altitude</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>ASL in units of feet.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>ICAO standard temperature for altitude</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">standard_temperature</span><span class="p">(</span><span class="n">altitude</span><span class="p">:</span> <span class="n">Distance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Temperature</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calculate ICAO standard temperature for altitude.</span>
+
+<span class="sd">    Note: This model is only valid up to the troposphere (~36,000 ft).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        altitude: ASL in units of feet.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ICAO standard temperature for altitude</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Temperature</span><span class="o">.</span><span class="n">Fahrenheit</span><span class="p">(</span><span class="n">cStandardTemperatureF</span>
+                                  <span class="o">+</span> <span class="p">(</span><span class="n">altitude</span> <span class="o">&gt;&gt;</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Foot</span><span class="p">)</span> <span class="o">*</span> <span class="n">cLapseRateImperial</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.standard_pressure">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">standard_pressure</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.standard_pressure" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">standard_pressure</span><span class="p">(</span><span class="n">altitude</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Pressure">Pressure</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate ICAO standard pressure for altitude.</p>
+<p>Note: This model only valid up to troposphere (~36,000 ft).
+Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>altitude</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Distance above sea level (ASL)</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Pressure">Pressure</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>ICAO standard pressure for altitude</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">standard_pressure</span><span class="p">(</span><span class="n">altitude</span><span class="p">:</span> <span class="n">Distance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pressure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calculate ICAO standard pressure for altitude.</span>
+
+<span class="sd">    Note: This model only valid up to troposphere (~36,000 ft).</span>
+<span class="sd">    Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        altitude: Distance above sea level (ASL)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ICAO standard pressure for altitude</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Pressure</span><span class="o">.</span><span class="n">hPa</span><span class="p">(</span><span class="n">cStandardPressureMetric</span>
+                        <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pow</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">cLapseRateMetric</span> <span class="o">*</span> <span class="p">(</span><span class="n">altitude</span> <span class="o">&gt;&gt;</span> <span class="n">Distance</span><span class="o">.</span><span class="n">Meter</span><span class="p">)</span> <span class="o">/</span>
+                                       <span class="p">(</span><span class="n">cStandardTemperatureC</span> <span class="o">+</span> <span class="n">cDegreesCtoK</span><span class="p">),</span>
+                                   <span class="n">cPressureExponent</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.icao">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">icao</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.icao" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">icao</span><span class="p">(</span>
+    <span class="n">altitude</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">humidity</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" href="../../constants/#py_ballisticcalc.constants.cStandardHumidity">cStandardHumidity</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo">Atmo</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Create Atmo instance of standard ICAO atmosphere at given altitude.</p>
+<p>Note: This model is only valid up to the troposphere (~36,000 ft).</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>altitude</code>
+</td>
+<td>
+<code><span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>relative to sea level.  Default is sea level (0 ft).</p>
+</div>
+</td>
+<td>
+<code>0</code>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>temperature</code>
+</td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>air temperature.  Default is standard temperature at altitude.</p>
+</div>
+</td>
+<td>
+<code>None</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo">Atmo</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Atmo instance of standard ICAO atmosphere at given altitude.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo">Atmo</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If temperature not specified uses standard temperature.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">icao</span><span class="p">(</span><span class="n">altitude</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Distance</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">temperature</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Temperature</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+         <span class="n">humidity</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">cStandardHumidity</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Atmo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Create Atmo instance of standard ICAO atmosphere at given altitude.</span>
+
+<span class="sd">    Note: This model is only valid up to the troposphere (~36,000 ft).</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        altitude: relative to sea level.  Default is sea level (0 ft).</span>
+<span class="sd">        temperature: air temperature.  Default is standard temperature at altitude.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Atmo instance of standard ICAO atmosphere at given altitude.</span>
+<span class="sd">        If temperature not specified uses standard temperature.</span>
+<span class="sd">    """</span>
+    <span class="n">altitude</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">altitude</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">temperature</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">temperature</span> <span class="o">=</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">standard_temperature</span><span class="p">(</span><span class="n">altitude</span><span class="p">)</span>
+    <span class="n">pressure</span> <span class="o">=</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">standard_pressure</span><span class="p">(</span><span class="n">altitude</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">Atmo</span><span class="p">(</span><span class="n">altitude</span><span class="p">,</span> <span class="n">pressure</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="n">humidity</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.machF">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">machF</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.machF" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">machF</span><span class="p">(</span><span class="n">fahrenheit</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate Mach 1 in fps for given Fahrenheit temperature.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>fahrenheit</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Fahrenheit temperature</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Mach 1 in fps for given temperature</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">machF</span><span class="p">(</span><span class="n">fahrenheit</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calculate Mach 1 in fps for given Fahrenheit temperature.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fahrenheit: Fahrenheit temperature</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mach 1 in fps for given temperature</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">fahrenheit</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">cDegreesFtoR</span><span class="p">:</span>
+        <span class="n">bad_temp</span> <span class="o">=</span> <span class="n">fahrenheit</span>
+        <span class="n">fahrenheit</span> <span class="o">=</span> <span class="n">cLowestTempF</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid temperature: </span><span class="si">{</span><span class="n">bad_temp</span><span class="si">}</span><span class="s2">°F. Adjusted to (</span><span class="si">{</span><span class="n">cLowestTempF</span><span class="si">}</span><span class="s2">°F)."</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">fahrenheit</span> <span class="o">+</span> <span class="n">cDegreesFtoR</span><span class="p">)</span> <span class="o">*</span> <span class="n">cSpeedOfSoundImperial</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.machC">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">machC</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.machC" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">machC</span><span class="p">(</span><span class="n">celsius</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate Mach 1 in mps for given Celsius temperature.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>celsius</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Celsius temperature</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Mach 1 in mps for given temperature</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">machC</span><span class="p">(</span><span class="n">celsius</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calculate Mach 1 in mps for given Celsius temperature.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        celsius: Celsius temperature</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mach 1 in mps for given temperature</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">celsius</span> <span class="o">&lt;</span> <span class="o">-</span><span class="n">cDegreesCtoK</span><span class="p">:</span>
+        <span class="n">bad_temp</span> <span class="o">=</span> <span class="n">celsius</span>
+        <span class="n">celsius</span> <span class="o">=</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">cLowestTempC</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid temperature: </span><span class="si">{</span><span class="n">bad_temp</span><span class="si">}</span><span class="s2">°C. Adjusted to (</span><span class="si">{</span><span class="n">celsius</span><span class="si">}</span><span class="s2">°C)."</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Atmo</span><span class="o">.</span><span class="n">machK</span><span class="p">(</span><span class="n">celsius</span> <span class="o">+</span> <span class="n">cDegreesCtoK</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.machK">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">machK</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.machK" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">machK</span><span class="p">(</span><span class="n">kelvin</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate Mach 1 in mps for given Kelvin temperature.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>kelvin</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Kelvin temperature</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Mach 1 in mps for given temperature</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">machK</span><span class="p">(</span><span class="n">kelvin</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calculate Mach 1 in mps for given Kelvin temperature.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        kelvin: Kelvin temperature</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Mach 1 in mps for given temperature</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">kelvin</span><span class="p">)</span> <span class="o">*</span> <span class="n">cSpeedOfSoundMetric</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.conditions.Atmo.calculate_air_density">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">calculate_air_density</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Atmo.calculate_air_density" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">calculate_air_density</span><span class="p">(</span>
+    <span class="n">t</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">p_hpa</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n">humidity</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate air density from temperature, pressure, and humidity.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>t</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Temperature in degrees Celsius.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>p_hpa</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Pressure in hPa (hectopascals). Internally converted to Pa.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>humidity</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Relative humidity. Accepts either fraction [0..1] or percent [0..100].</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Air density in kg/m³.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="notes" open="">
+<summary>Notes</summary>
+<ul>
+<li>Divide result by cDensityImperialToMetric to get density in lb/ft³</li>
+<li>Source: https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf</li>
+</ul>
+</details>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_air_density</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">p_hpa</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">humidity</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calculate air density from temperature, pressure, and humidity.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        t: Temperature in degrees Celsius.</span>
+<span class="sd">        p_hpa: Pressure in hPa (hectopascals). Internally converted to Pa.</span>
+<span class="sd">        humidity: Relative humidity. Accepts either fraction [0..1] or percent [0..100].</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Air density in kg/m³.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        - Divide result by cDensityImperialToMetric to get density in lb/ft³</span>
+<span class="sd">        - Source: https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf</span>
+<span class="sd">    """</span>
+    <span class="n">R</span> <span class="o">=</span> <span class="mf">8.314472</span>  <span class="c1"># J/(mol·K), universal gas constant</span>
+    <span class="n">M_a</span> <span class="o">=</span> <span class="mf">28.96546e-3</span>  <span class="c1"># kg/mol, molar mass of dry air</span>
+    <span class="n">M_v</span> <span class="o">=</span> <span class="mf">18.01528e-3</span>  <span class="c1"># kg/mol, molar mass of water vapor</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">saturation_vapor_pressure</span><span class="p">(</span><span class="n">T</span><span class="p">):</span>
+        <span class="c1"># Calculation of saturated vapor pressure according to CIPM 2007</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.2378847e-5</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.9121316e-2</span><span class="p">,</span> <span class="mf">33.93711047</span><span class="p">,</span> <span class="o">-</span><span class="mf">6.3431645e3</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">T</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">T</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">A</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="n">T</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">enhancement_factor</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">):</span>
+        <span class="c1"># Calculation of enhancement factor according to CIPM 2007</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="mf">1.00062</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="mf">3.14e-8</span>
+        <span class="n">gamma</span> <span class="o">=</span> <span class="mf">5.6e-7</span>
+        <span class="k">return</span> <span class="n">alpha</span> <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">p</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">T</span> <span class="o">**</span> <span class="mi">2</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">compressibility_factor</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">x_v</span><span class="p">):</span>
+        <span class="c1"># Calculation of compressibility factor according to CIPM 2007</span>
+        <span class="n">a0</span> <span class="o">=</span> <span class="mf">1.58123e-6</span>
+        <span class="n">a1</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.9331e-8</span>
+        <span class="n">a2</span> <span class="o">=</span> <span class="mf">1.1043e-10</span>
+        <span class="n">b0</span> <span class="o">=</span> <span class="mf">5.707e-6</span>
+        <span class="n">b1</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.051e-8</span>
+        <span class="n">c0</span> <span class="o">=</span> <span class="mf">1.9898e-4</span>
+        <span class="n">c1</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.376e-6</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="mf">1.83e-11</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.765e-8</span>
+
+        <span class="n">t</span> <span class="o">=</span> <span class="n">T</span> <span class="o">-</span> <span class="n">cDegreesCtoK</span>
+        <span class="n">Z</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="p">(</span><span class="n">p</span> <span class="o">/</span> <span class="n">T</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">a0</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">t</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">b0</span> <span class="o">+</span> <span class="n">b1</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_v</span> <span class="o">+</span> <span class="p">(</span><span class="n">c0</span> <span class="o">+</span> <span class="n">c1</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">x_v</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="p">(</span><span class="n">p</span> <span class="o">/</span> <span class="n">T</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">d</span> <span class="o">+</span> <span class="n">e</span> <span class="o">*</span> <span class="n">x_v</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Z</span>
+
+    <span class="c1"># Normalize humidity to fraction [0..1]</span>
+    <span class="n">rh</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">humidity</span><span class="p">)</span>
+    <span class="n">rh_frac</span> <span class="o">=</span> <span class="n">rh</span> <span class="o">/</span> <span class="mf">100.0</span> <span class="k">if</span> <span class="n">rh</span> <span class="o">&gt;</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="n">rh</span>
+    <span class="n">rh_frac</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rh_frac</span><span class="p">))</span>
+
+    <span class="c1"># Convert inputs for CIPM equations</span>
+    <span class="n">T_K</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">cDegreesCtoK</span>           <span class="c1"># Kelvin</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">p_hpa</span><span class="p">)</span> <span class="o">*</span> <span class="mf">100.0</span>         <span class="c1"># hPa -&gt; Pa</span>
+
+    <span class="c1"># Calculation of saturated vapor pressure and enhancement factor</span>
+    <span class="n">p_sv</span> <span class="o">=</span> <span class="n">saturation_vapor_pressure</span><span class="p">(</span><span class="n">T_K</span><span class="p">)</span>  <span class="c1"># Pa (saturated vapor pressure)</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">enhancement_factor</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>           <span class="c1"># Enhancement factor (p in Pa, t in °C)</span>
+
+    <span class="c1"># Partial pressure of water vapor and mole fraction</span>
+    <span class="n">p_v</span> <span class="o">=</span> <span class="n">rh_frac</span> <span class="o">*</span> <span class="n">f</span> <span class="o">*</span> <span class="n">p_sv</span>               <span class="c1"># Pa</span>
+    <span class="n">x_v</span> <span class="o">=</span> <span class="n">p_v</span> <span class="o">/</span> <span class="n">p</span>                          <span class="c1"># Mole fraction of water vapor</span>
+
+    <span class="c1"># Calculation of compressibility factor</span>
+    <span class="n">Z</span> <span class="o">=</span> <span class="n">compressibility_factor</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">T_K</span><span class="p">,</span> <span class="n">x_v</span><span class="p">)</span>
+
+    <span class="c1"># Density (kg/m^3) using moist air composition and compressibility factor</span>
+    <span class="n">density</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span> <span class="o">*</span> <span class="n">M_a</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">Z</span> <span class="o">*</span> <span class="n">R</span> <span class="o">*</span> <span class="n">T_K</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">x_v</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">M_v</span> <span class="o">/</span> <span class="n">M_a</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">density</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="doc doc-object doc-class">
+<h3 class="doc doc-heading" id="py_ballisticcalc.conditions.Vacuum">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code> <span class="doc doc-object-name doc-class-name">Vacuum</span>
+<a class="headerlink" href="#py_ballisticcalc.conditions.Vacuum" title="Permanent link">¶</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Vacuum</span><span class="p">(</span>
+    <span class="n">altitude</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../units/dimensions/#py_ballisticcalc.unit.Temperature">Temperature</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="doc doc-contents first">
+<p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.conditions.Atmo">Atmo</a></code></p>
+<p>Vacuum atmosphere (zero drag).</p>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc/conditions.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+             <span class="n">altitude</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Distance</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">temperature</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Temperature</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">altitude</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">temperature</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pressure</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">pressure</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_density_ratio</span> <span class="o">=</span> <span class="mi">0</span>
+</code></pre></div></td></tr></table></div>
+</details>
+<div class="doc doc-children">
+</div>
+</div>
+</div>
+<form class="md-feedback" hidden="" name="feedback">
+<fieldset>
+<legend class="md-feedback__title">
+        Was this page helpful?
+      </legend>
+<div class="md-feedback__inner">
+<div class="md-feedback__list">
+<button class="md-feedback__icon md-icon" data-md-value="1" title="This page was helpful" type="submit">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 9v12H1V9zm4 12a2 2 0 0 1-2-2V9c0-.55.22-1.05.59-1.41L14.17 1l1.06 1.06c.27.27.44.64.44 1.05l-.03.32L14.69 8H21a2 2 0 0 1 2 2v2c0 .26-.05.5-.14.73l-3.02 7.05C19.54 20.5 18.83 21 18 21zm0-2h9.03L21 12v-2h-8.79l1.13-5.32L9 9.03z"></path></svg>
+</button>
+<button class="md-feedback__icon md-icon" data-md-value="0" title="This page could be improved" type="submit">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 15V3h4v12zM15 3a2 2 0 0 1 2 2v10c0 .55-.22 1.05-.59 1.41L9.83 23l-1.06-1.06c-.27-.27-.44-.64-.44-1.06l.03-.31.95-4.57H3a2 2 0 0 1-2-2v-2c0-.26.05-.5.14-.73l3.02-7.05C4.46 3.5 5.17 3 6 3zm0 2H5.97L3 12v2h8.78l-1.13 5.32L15 14.97z"></path></svg>
+</button>
+</div>
+<div class="md-feedback__note">
+<div data-md-value="1" hidden="">
+              
+              
+                
+              
+              
+              
+                
+                
+              
+              Thanks for your feedback!
+            </div>
+<div data-md-value="0" hidden="">
+              
+              
+                
+              
+              
+              
+                
+                
+              
+              Thanks for your feedback!
+            </div>
+</div>
+</div>
+</fieldset>
+</form>
+<script src="/flarelytics/client.js"></script>
+</article>
+</div>
+<script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+</div>
+<button class="md-top md-icon" data-md-component="top" hidden="" type="button">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+</main>
+<footer class="md-footer">
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<div class="md-progress" data-md-component="progress" role="progressbar"></div>
+<script id="__config" type="application/json">{"base": "../../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "mermaid", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.expand", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+<script src="../../../assets/javascripts/bundle.56ea9cef.min.js"></script>
+<script src="../../../extra/feedback.js"></script>
+<script src="../../../extra/katex/katex.min.js"></script>
+<script src="../../../extra/katex/contrib/auto-render.min.js"></script>
+<script src="../../../extra/katex-init.js"></script>
+<script src="../../../extra/mkdocstrings-tweaks.js"></script>
+<script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
+</body>
+</html>
