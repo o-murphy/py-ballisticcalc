@@ -100,7 +100,7 @@ theme:
     - content.tabs.link
     - content.code.annotate
     - content.code.copy
-    - announce.dismiss
+    # - announce.dismiss
     - mermaid
     - navigation.tabs
     - navigation.instant
