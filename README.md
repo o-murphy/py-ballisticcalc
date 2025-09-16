@@ -11,8 +11,8 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![py-versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
-[![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
 [![Pytest RK4](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml)
+[![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
 [![Pytest Euler (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml)
 [![Pytest RK4 (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml)
 [![Pytest Scipy](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml)
@@ -88,26 +88,15 @@ https://o-murphy.github.io/py-ballisticcalc
 ```shell
 pip install py-ballisticcalc
 
-# Using precompiled backend (improves performance)
+# Include compiled engines
 pip install py-ballisticcalc[exts]
 
-# Using matplotlib and pandas uses additional dependencies
+# Include support for charting and dataframes
 pip install py-ballisticcalc[charts]
+
+# Get everything, including the SciPy engine
+pip install pyballistic[exts,charts,scipy]
 ```
-
-## uv
-
-```shell
-uv sync
-
-uv sync --dev --extra exts
-```
-
-## Docs
-
-To build or serve the complete web documentation, first `pip install -e .[docs]`.  Then:
-* `mkdocs build` will populate a `./site` folder with HTML.
-* `mkdocs serve` will build and serve the HTML via local connection.
 
 ----
 
