@@ -9,14 +9,14 @@ file-based logging. By default, only console logging is enabled with INFO level,
 but file logging can be enabled as needed for debugging or detailed analysis.
 
 Global Variables:
-    logger: Pre-configured logger instance for the library.
-    file_handler: Global file handler reference (None when file logging disabled).
+    - logger: Pre-configured logger instance for the library.
+    - file_handler: Global file handler reference (None when file logging disabled).
 
 Functions:
     enable_file_logging: Enable logging to a file with DEBUG level.
     disable_file_logging: Disable file logging and clean up resources.
 
-Example:
+Examples:
     Basic logging usage:
     ```python
     from py_ballisticcalc.logger import logger
@@ -50,14 +50,14 @@ from typing import Optional
 __all__ = ('logger',
            'enable_file_logging',
            'disable_file_logging',
-           )
+)
 
 formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
 console_handler.setLevel(logging.DEBUG)  # Lowest level for console
 
-logger = logging.getLogger('py_balcalc')
+logger: logging.Logger = logging.getLogger('py_balcalc')
 logger.addHandler(console_handler)
 logger.setLevel(logging.INFO)
 
@@ -76,13 +76,13 @@ def enable_file_logging(filename: str = "debug.log") -> None:
         filename: Name of the log file to create. Defaults to "debug.log".
                  The file will be created in the current working directory
                  unless an absolute path is provided.
-                 
+
     Note:
         If file logging is already enabled, the existing file handler will be
         removed and replaced with a new one using the specified filename.
         The file will be opened in append mode, so existing content is preserved.
-        
-    Example:
+
+    Examples:
         ```python
         from py_ballisticcalc.logger import enable_file_logging, logger
         
@@ -116,8 +116,8 @@ def disable_file_logging() -> None:
     Note:
         If no file logging is currently enabled, this function has no effect.
         It's safe to call this function multiple times or when file logging is already disabled.
-        
-    Example:
+
+    Examples:
         ```python
         from py_ballisticcalc.logger import disable_file_logging
         

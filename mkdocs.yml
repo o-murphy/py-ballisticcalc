@@ -49,10 +49,12 @@ nav:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md
       - Shot: api/conditions/shot.md
+      - ShotProps: api/conditions/shotprops.md
     - Constants: api/constants.md
     - Munitions:
       - Ammo: api/munition/ammo.md
       - DragModel: api/drag_model.md
+      - DragTables: api/drag_tables.md
       - Sight: api/munition/sight.md
       - Weapon: api/munition/weapon.md
     - Results:
@@ -62,12 +64,11 @@ nav:
       - Dimensions: api/units/dimensions.md
       - PreferredUnits: api/units/preferred_units.md
       - Vector: api/vector.md
-#    - Engines: api/engines.md
-#    - Logger: api/logger.md
 - Internals:
   - Architecture: internals/architecture.md
   - Developer Details: internals/details.md
   - Cython Notes: internals/cython.md
+  - Logger: internals/logger.md
 - Contributors: contributors.md
 - About: about.md
 
