@@ -6,7 +6,6 @@ site_url: https://o-murphy.github.io/py-ballisticcalc/
 nav:
 - Get started:
   - QuickStart: index.md
-#  - Why use py-balllisticcalc: why.md
   - Installation: install.md
 #  - Examples: examples/Examples
   - Help: help.md
@@ -36,9 +35,6 @@ nav:
     - "🪂 DragModel": concepts/drag_model.md
   - "📈 Trajectory Data": concepts/trajectory_data.md
   - "📐 Vector": concepts/vector.md
-#    - Interface:
-#    - Logger: concepts/logger.md
-#  - Performance:
 - API Documentation:
     - Overview: api/index.md
     - Calculator:
@@ -191,9 +187,6 @@ markdown_extensions:
 
 #hooks:
 #- 'docs/plugins/main.py'
-
-#watch:
-#  - py_ballisticcalc
 
 plugins:
   - autorefs
