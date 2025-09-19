@@ -33,7 +33,7 @@ Cythonized engines are compiled for maximum performance.  Include the `[exts]` o
 
 === "pip"
     ```bash
-    pip install py-ballisticcalc[exts]
+    pip install "py-ballisticcalc[exts]"
     ```
     
 === "uv"

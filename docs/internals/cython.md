@@ -24,10 +24,10 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 ### Error handling conventions
 
 - `nogil` functions must not raise Python exceptions.
-  - Use status codes (`int` or `bint`) and/or out-parameters to signal errors.
-  - Example convention:
-    - return 1 for success, 0 for failure; or
-    - return 0 for success and negative error codes for specific failures.
+    - Use status codes (`int` or `bint`) and/or out-parameters to signal errors.
+    - Example convention:
+        - return 1 for success, 0 for failure; or
+        - return 0 for success and negative error codes for specific failures.
 - Python wrappers map status codes to Python exceptions (MemoryError, IndexError, ValueError, etc.).
 - For allocators: provide `_ensure_capacity_try_nogil` that attempts realloc and returns success/failure without raising.
 
@@ -47,32 +47,32 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 #### Examples (patterns used)
 
 - Interpolation (nogil core):
-```
-  cdef enum InterpKey: KEY_TIME, KEY_MACH, KEY_POS_X, ...
-  cdef BaseTrajC* _interpolate_nogil(self, Py_ssize_t idx, InterpKey key_kind, double key_value) nogil
+```python
+cdef enum InterpKey: KEY_TIME, KEY_MACH, KEY_POS_X, ...
+cdef BaseTrajC* _interpolate_nogil(self, Py_ssize_t idx, InterpKey key_kind, double key_value) nogil
 
-  def interpolate_at(self, idx, key_attribute, key_value):
-      # map key_attribute -> InterpKey
-      with nogil:
-          outp = self._interpolate_nogil(idx, key_kind, key_value)
-      if outp == NULL:
-          raise IndexError(...)
-      result = BaseTrajDataT_create(...)
-      free(outp)
-      return result
+def interpolate_at(self, idx, key_attribute, key_value):
+    # map key_attribute -> InterpKey
+    with nogil:
+        outp = self._interpolate_nogil(idx, key_kind, key_value)
+    if outp == NULL:
+        raise IndexError(...)
+    result = BaseTrajDataT_create(...)
+    free(outp)
+    return result
 ```
 
 - Append (nogil fast-path + GIL grow):
-```
-  cdef bint _ensure_capacity_try_nogil(self, size_t min_capacity) nogil
-  cdef void _append_nogil(self, double time, ...) nogil
+```python
+cdef bint _ensure_capacity_try_nogil(self, size_t min_capacity) nogil
+cdef void _append_nogil(self, double time, ...) nogil
 
-  def append(self, time, ...):
-      if not self._ensure_capacity_try_nogil(self._length + 1):
-          # acquire GIL and call a grow function that may raise MemoryError
-          self._ensure_capacity(self._length + 1)
-      with nogil:
-          self._append_nogil(time, ...)
+def append(self, time, ...):
+    if not self._ensure_capacity_try_nogil(self._length + 1):
+        # acquire GIL and call a grow function that may raise MemoryError
+        self._ensure_capacity(self._length + 1)
+    with nogil:
+        self._append_nogil(time, ...)
 ```
 
 ### Practical notes

@@ -88,6 +88,7 @@ charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 visualize = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 scipy = ["numpy>=2", "scipy>=1.13.1"]
 dev = [
+    "Cython>=3.0",
     "build>=1.2.2.post1",
     "jupyter>=1.1.1",
     "matplotlib>=3.9",
@@ -106,22 +107,24 @@ dev = [
     "ruff>=0.12.3",
 ]
 docs = [
-    'mkdocs-mermaid2-plugin',
-    'mkdocs',
-    'mkdocs-exclude',
-    'mkdocs-material[imaging]',
-    'mkdocs-redirects',
-    'mkdocstrings-python',
-    'mkdocstrings',
-    'mkdocs-autorefs',
-    'mike',
-    'pydocstyle',
+    "mkdocs-mermaid2-plugin",
+    "mkdocs",
+    "mkdocs-exclude",
+    "mkdocs-material[imaging]",
+    "mkdocs-redirects",
+    "mkdocstrings>=0.29.0",
+    "mkdocstrings-python>=1.16.0",
+    "mkdocs-autorefs",
+    "mike",
+    "pydocstyle",
+    "ruff",
 ]
 
 [dependency-groups]
 # Duplication of "dev" group here is required to support `uv sync --dev`
 # Previous declaration sufficient if we standardize on `uv pip install -e .[dev]`
 dev = [
+    "Cython>=3.0",
     "build>=1.2.2.post1",
     "jupyter>=1.1.1",
     "matplotlib>=3.9",

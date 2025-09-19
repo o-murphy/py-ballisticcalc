@@ -14,7 +14,7 @@ Classes:
 Type Aliases:
     SightFocalPlane: Literal type for sight focal plane options ('FFP', 'SFP', 'LWIR').
 
-Example:
+Examples:
     Basic weapon and ammunition setup:
     ```python
     from py_ballisticcalc import Weapon, Ammo, Sight, DragModel, TableG7, Unit
@@ -538,12 +538,12 @@ class Ammo:
             
         Note:
             The calculation uses the formula:
-            adjusted_velocity = baseline_velocity + (temp_modifier / (15 / baseline_velocity)) * temp_delta
+            `adjusted_velocity = baseline_velocity + (temp_modifier / (15 / baseline_velocity)) * temp_delta`
             ... where temp_delta is the difference between current_temp and powder_temp.
             
             If use_powder_sensitivity is False, returns the baseline muzzle velocity regardless of temperature.
-            
-        Example:
+
+        Examples:
             ```python
             # Get velocity for current conditions
             cold_velocity = ammo.get_velocity_for_temp(Unit.Celsius(-10))

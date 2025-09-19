@@ -81,7 +81,9 @@ __all__ = ('SciPyIntegrationEngine',
            'SciPyEngineConfig',
            'SciPyEngineConfigDict',
            'WindSock',
-           'DEFAULT_SCIPY_ENGINE_CONFIG')
+           'DEFAULT_SCIPY_ENGINE_CONFIG',
+           'create_scipy_engine_config',
+)
 
 # This block would update warning format globally for the lib; use logging.warning instead
 # def custom_warning_format(message, category, filename, lineno, file=None, line=None):

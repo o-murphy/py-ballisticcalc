@@ -1,7 +1,7 @@
 """Ballistic Trajectory Visualization and Plotting Module.
 
-This module provides matplotlib-based plotting capabilities for ballistic
-trajectory analysis and visualization.
+This module provides matplotlib-based trajectory analysis and visualization.
+It is used by HitResult.plot() and DangerSpace.overlay().
 
 Key Features:
     - Interactive trajectory plotting with customizable styling
@@ -19,7 +19,7 @@ Core Functions:
     - add_time_of_flight_axis: Temporal analysis integration
     - show_hit_result_plot: Interactive display functionality
 
-Typical Usage:
+Examples:
     ```python
     from py_ballisticcalc import Calculator, Shot
     from py_ballisticcalc.visualize.plot import hit_result_as_plot
@@ -44,10 +44,7 @@ Typical Usage:
 
 Dependencies:
     This module requires matplotlib as an optional dependency. Install via:
-    pip install py_ballisticcalc[visualize]
-    
-    If matplotlib is not available, importing functions from this module will
-    raise an informative ImportError with installation instructions.
+    `pip install py_ballisticcalc[visualize]`
 
 Visualization Components:
     - Trajectory Path: Primary projectile path with environmental corrections
@@ -62,11 +59,6 @@ Styling and Customization:
     The module uses a consistent color scheme optimized for both screen display
     and print publication. Colors are defined in PLOT_COLORS dictionary and
     can be customized for specific visualization requirements.
-    
-Integration:
-    This module is automatically used by HitResult.plot() method and
-    DangerSpace.overlay() method, providing seamless integration with the
-    core ballistic calculation workflow.
 """
 # pylint: skip-file
 from __future__ import annotations
@@ -161,7 +153,7 @@ def add_danger_space_overlay(danger_space: DangerSpace, ax: Axes, label: Optiona
               If None, uses default danger space description.
               Use empty string '' to suppress labeling.
               
-    Example:
+    Examples:
         Basic danger space overlay:
         ```python
         # Calculate trajectory and danger space
@@ -284,7 +276,7 @@ def add_time_of_flight_axis(ax: Axes, hit_result: HitResult, time_precision: int
         time_label_for_distance(x, PreferredUnits.distance, time_precision)
         for x in sensible_time_ticks
     ]
-    twin_x_axes.xaxis.set_major_locator(ticker.FixedLocator(sensible_time_ticks))
+    twin_x_axes.xaxis.set_major_locator(ticker.FixedLocator(sensible_time_ticks.tolist()))
     twin_x_axes.xaxis.set_major_formatter(ticker.FixedFormatter(sensible_top_labels))
 
     twin_x_axes.set_xlabel("s")
@@ -302,7 +294,8 @@ def trajectory_as_plot(hit_result: HitResult, look_angle: Optional[Angular] = No
         Matplotlib Axes object with the plotted trajectory, barrel, and sight lines.
 
     Note:
-        This function does not plot time axis or velocity profile. For a more comprehensive plot, use `hit_result_as_plot`.
+        This function does not plot time axis or velocity profile.
+        For a more comprehensive plot, use `hit_result_as_plot`.
     """
     if look_angle is None:
         look_angle = hit_result.props.look_angle

@@ -6,7 +6,7 @@ optimal balance of accuracy, stability, and performance.
 Classes:
     RK4IntegrationEngine: Concrete implementation using 4th-order Runge-Kutta
 
-Example:
+Examples:
     >>> # Use with Calculator (default engine)
     >>> from py_ballisticcalc import Calculator
     >>> calc = Calculator()  # Uses RK4 by default

@@ -89,10 +89,10 @@ https://o-murphy.github.io/py-ballisticcalc
 pip install py-ballisticcalc
 
 # Using precompiled backend (improves performance)
-pip install py-ballisticcalc[exts]
+pip install "py-ballisticcalc[exts]"
 
 # Using matplotlib and pandas uses additional dependencies
-pip install py-ballisticcalc[charts]
+pip install "py-ballisticcalc[charts]"
 ```
 
 ## uv
