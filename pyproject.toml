@@ -47,15 +47,17 @@ scipy_engine = "py_ballisticcalc:SciPyIntegrationEngine"
 verlet_engine = "py_ballisticcalc:VelocityVerletIntegrationEngine"
 
 [project.urls]
-"Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
-"Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
-"Source" = "https://github.com/o-murphy/py_ballisticcalc"
-
+"Homepage" = "https://github.com/o-murphy/py-ballisticcalc"
+"Bug Reports" = "https://github.com/o-murphy/py-ballisticcalc/issues"
+"Source" = "https://github.com/o-murphy/py-ballisticcalc"
 
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["py_ballisticcalc*"]
+
+[tool.setuptools.package-data]
+py_ballisticcalc = ["py.typed", "assets/*.toml"]
 
 
 [tool.pytest.ini_options]
