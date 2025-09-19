@@ -114,8 +114,8 @@ theme:
   logo: 'favicon.svg'
   favicon: 'favicon.svg'
 
-repo_name: o-murphy/py_ballisticcalc
-repo_url: https://github.com/o-murphy/py_ballisticcalc
+repo_name: o-murphy/py-ballisticcalc
+repo_url: https://github.com/o-murphy/py-ballisticcalc
 extra:
   version:
     provider: mike

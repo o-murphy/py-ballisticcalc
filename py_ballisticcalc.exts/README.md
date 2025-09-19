@@ -36,10 +36,10 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 pip install py-ballisticcalc
 
 # Using precompiled backend (improves performance)
-pip install py-ballisticcalc[exts]
+pip install "py-ballisticcalc[exts]"
 
 # Using matplotlib and pandas uses additional dependencies
-pip install py-ballisticcalc[charts]
+pip install "py-ballisticcalc[charts]"
 ```
 
 # Usage

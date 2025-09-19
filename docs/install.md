@@ -40,24 +40,24 @@ To install optional dependencies along with py-ballisticcalc:
 
     ```bash
     # with the cython extensions:
-    pip install 'py-ballisticcalc[exts]'
+    pip install "py-ballisticcalc[exts]"
     ```
 
     ```bash
     # with dependencies for charting:
-    pip install py-ballisticcalc[charts]
+    pip install "py-ballisticcalc[charts]"
     ```
 
 === "uv"
 
     ```bash
     # with the cython extensions:
-    uv add 'py-ballisticcalc[exts]'
+    uv add "py-ballisticcalc[exts]"
     ```
 
     ```bash
     # with dependencies for charting:
-    uv add 'py-ballisticcalc[charts]'
+    uv add "py-ballisticcalc[charts]"
     ```
 
 You can also install requirements manually.  For example:
@@ -75,7 +75,7 @@ You can also install requirements manually.  For example:
 To install latest version from sources in editable mode:
 
 ```bash
-git clone github.com/o-murphy/py-ballisticcalc
+git clone https://github.com/o-murphy/py-ballisticcalc
 cd py-ballisticcalc
 ```
 

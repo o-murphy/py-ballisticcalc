@@ -26,7 +26,7 @@
 
 The shooter typically cares about the line of sight (LoS): Sight adjustments are made relative to LoS.  Ranging errors – and hence [danger space](#danger-space) – follow the _slant-height_, not the horizontal height.
 
-The following diagram shows how _slant distance_ and _slant height_ relate by _look angle_ to the underlying (distance $x$, height $y$) trajectory data.  [Understanding Slant Angle](https://github.com/o-murphy/py_ballisticcalc/blob/master/examples/Understanding_Slant_Angle.ipynb) covers these concepts in more detail.
+The following diagram shows how _slant distance_ and _slant height_ relate by _look angle_ to the underlying (distance $x$, height $y$) trajectory data.  [Understanding Slant Angle](https://github.com/o-murphy/py-ballisticcalc/blob/master/examples/Understanding_Slant_Angle.ipynb) covers these concepts in more detail.
 ![Look-angle trigonometry](BallisticTrig.svg)
 
 ## Danger Space
@@ -55,7 +55,7 @@ result = calc.fire(zero, trajectory_range=Distance.Yard(500),
 ax = result.plot()
 
 # Compute and display danger space for a 10-inch target at 350 yards
-danger_space = shot_result.danger_space(Distance.Yard(350), Distance.Inch(10))
+danger_space = result.danger_space(Distance.Yard(350), Distance.Inch(10))
 danger_space.overlay(ax)
 plt.show()
 print(danger_space)
