@@ -6,11 +6,10 @@
 **/*.egg-info
 **/.venv
 **/*.ps1
+**/debug
 .vscode
 .coverage
 htmlcov
-debug
-site
 .env
 .testall
 compile_flags.txt

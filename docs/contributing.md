@@ -160,8 +160,7 @@ Notes:
 If you have made any changes affecting the documentation (including changes to function signatures, class definitions, or docstrings that will appear in the API documentation), make sure the documentation builds successfully.
 
 We use `mkdocs-material[imaging]` to support social previews.
-You can find directions on how to install the required
-dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/).
+You can find directions on how to install the required dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirements/image-processing/).
 
 === "pip"
     ```bash
@@ -175,13 +174,8 @@ dependencies [here](https://squidfunk.github.io/mkdocs-material/plugins/requirem
     uv sync --extra docs 
     ```
 
-```bash
-# Rebuild docs locally before commiting them to the branch   
-mkdocs build
-
-# Use this command to serve docs locally 
-mkdocs serve
-```
+* `mkdocs build` will populate a `./site` folder with HTML.
+* `mkdocs serve` will build and serve the HTML via local connection.
 
 If this isn't working due to issues with the imaging plugin, try commenting out the `social` plugin line in `mkdocs.yml`
 and running `mkdocs build` again.

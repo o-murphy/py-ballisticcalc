@@ -41,13 +41,16 @@ cythonized_euler_engine = "py_ballisticcalc_exts.euler_engine:CythonizedEulerInt
 cythonized_rk4_engine = "py_ballisticcalc_exts.rk4_engine:CythonizedRK4IntegrationEngine"
 
 [project.urls]
-"Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
-"Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
-"Source" = "https://github.com/o-murphy/py_ballisticcalc"
+"Homepage" = "https://github.com/o-murphy/py-ballisticcalc"
+"Bug Reports" = "https://github.com/o-murphy/py-ballisticcalc/issues"
+"Source" = "https://github.com/o-murphy/py-ballisticcalc"
 
 
 [tool.setuptools]
 py-modules = ["py_ballisticcalc_exts"]
+
+[tool.setuptools.package-data]
+py_ballisticcalc_exts = ["py.typed"]
 
 
 [tool.setuptools.packages.find]
