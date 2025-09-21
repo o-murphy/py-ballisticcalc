@@ -1,5 +1,8 @@
 """LGPL library for small arms ballistic calculations."""
 
+import importlib.metadata
+
+__version__ = importlib.metadata.version("py_ballisticcalc")
 __author__ = "o-murphy"
 __copyright__ = (
     "Copyright 2023 Dmytro Yaroshenko (https://github.com/o-murphy)",
