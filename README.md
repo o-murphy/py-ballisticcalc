@@ -11,8 +11,8 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![py-versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
-[![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
 [![Pytest RK4](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-rk4-engine.yml)
+[![Python Euler](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-euler-engine.yml)
 [![Pytest Euler (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-euler-engine.yml)
 [![Pytest RK4 (Cython)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-cythonized-rk4-engine.yml)
 [![Pytest Scipy](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml/badge.svg)](https://github.com/o-murphy/py-ballisticcalc/actions/workflows/pytest-scipy-engine.yml)
@@ -39,7 +39,7 @@ https://img.shields.io/github/v/release/o-murphy/py-ballisticcalc?include_prerel
 https://pypi.org/project/py-ballisticcalc/#history
 
 [coverage]:
-./coverage.svg
+https://github.com/o-murphy/py-ballisticcalc/coverage.svg
 
 [downloads]:
 https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
@@ -88,40 +88,29 @@ https://o-murphy.github.io/py-ballisticcalc
 ```shell
 pip install py-ballisticcalc
 
-# Using precompiled backend (improves performance)
+# Include compiled engines
 pip install py-ballisticcalc[exts]
 
-# Using matplotlib and pandas uses additional dependencies
+# Include support for charting and dataframes
 pip install py-ballisticcalc[charts]
+
+# Get everything, including the SciPy engine
+pip install pyballistic[exts,charts,scipy]
 ```
-
-## uv
-
-```shell
-uv sync
-
-uv sync --dev --extra exts
-```
-
-## Docs
-
-To build or serve the complete web documentation, first `pip install -e .[docs]`.  Then:
-* `mkdocs build` will populate a `./site` folder with HTML.
-* `mkdocs serve` will build and serve the HTML via local connection.
 
 ----
 
-# [QuickStart](docs/index.md)
+# [QuickStart](https://o-murphy.github.io/py-ballisticcalc/latest/)
 
-## [Examples](examples/Examples.ipynb)
-  * [Extreme Examples](examples/ExtremeExamples.ipynb)
+## [Examples](https://github.com/o-murphy/py-ballisticcalc/blob/master/examples/Examples.ipynb)
+  * [Extreme Examples](https://github.com/o-murphy/py-ballisticcalc/blob/master/examples/ExtremeExamples.ipynb)
 
-## [Ballistic Concepts](docs/concepts/index.md)
-  * [Coordinates](docs/concepts/index.md#coordinates)
-  * [Slant / Look Angle](docs/concepts/index.md#look-angle)
-  * [Danger Space](docs/concepts/index.md#danger-space)
+## [Ballistic Concepts](https://o-murphy.github.io/py-ballisticcalc/latest/concepts)
+  * [Coordinates](https://o-murphy.github.io/py-ballisticcalc/latest/concepts/#coordinates)
+  * [Slant / Look Angle](https://o-murphy.github.io/py-ballisticcalc/latest/concepts/#look-angle)
+  * [Danger Space](https://o-murphy.github.io/py-ballisticcalc/latest/concepts/#danger-space)
 
-## [Units](docs/concepts/unit.md)
+## [Units](https://o-murphy.github.io/py-ballisticcalc/latest/concepts/unit)
 
 Work in your preferred terms with easy conversions for the following dimensions and units:
 * **Angular**: radian, degree, MOA, mil, mrad, thousandth, inch/100yd, cm/100m, o'clock
@@ -134,7 +123,7 @@ Work in your preferred terms with easy conversions for the following dimensions 
 * **Weight**: grain, ounce, gram, pound, kilogram, newton
 
 
-## [Calculation Engines](docs/concepts/engines.md)
+## [Calculation Engines](https://o-murphy.github.io/py-ballisticcalc/latest/concepts/engines)
 
 Choose between different calculation engines, or build your own.  Included engines:
 
@@ -168,9 +157,9 @@ Special thanks to:
 * **[David Bookstaber](https://github.com/dbookstaber)** - Ballistics Expert <br>
 *For help understanding and improving the functionality*
 * **[Serhiy Yevtushenko](https://github.com/serhiy-yevtushenko)** - Applied Mathematician <br>
-*For helping in consultations, testing and improving edge cases compatibility*
+*For helping in consultations, testing, and improving edge case compatibility*
 * **[Nikolay Gekht](https://github.com/nikolaygekht)** <br>
-*For the sources code on C# and GO-lang from which this project firstly was forked*
+*For the source code in C# and GO-lang from which this project firstly was forked*
 
 [//]: # (## Sister projects)
 
@@ -188,10 +177,7 @@ Special thanks to:
 
 ## RISK NOTICE
 
-The library performs very limited simulation of a complex physical process and so it performs a lot of approximations.
-Therefore, the calculation results MUST NOT be considered as completely and reliably reflecting actual behavior or
-characteristics of projectiles. While these results may be used for educational purpose, they must NOT be considered as reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human life at risk.
+This library performs approximate simulations of complex physical processes.
+Therefore, the calculation results MUST NOT be considered as completely and reliably reflecting actual behavior of projectiles. While these results may be used for educational purpose, they must NOT be considered as reliable for the areas where incorrect calculation may cause making a wrong decision, financial harm, or can put a human life at risk.
 
-THE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.
+THE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE MATERIALS OR THE USE OR OTHER DEALINGS IN THE MATERIALS.

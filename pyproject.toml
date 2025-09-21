@@ -16,7 +16,7 @@ authors = [
 description = "LGPL library for small arms ballistic calculations (Python 3)"
 readme = "README.md"
 requires-python = ">=3.9"
-keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "python3"]
+keywords = ["py_ballisticcalc", "ballistics", "Cython", "ballistic calculator", "python", "ballistic solver"]
 license = { file = "LICENSE" }
 classifiers = [
     "Intended Audience :: Developers",
@@ -47,15 +47,17 @@ scipy_engine = "py_ballisticcalc:SciPyIntegrationEngine"
 verlet_engine = "py_ballisticcalc:VelocityVerletIntegrationEngine"
 
 [project.urls]
-"Homepage" = "https://github.com/o-murphy/py_ballisticcalc"
-"Bug Reports" = "https://github.com/o-murphy/py_ballisticcalc/issues"
-"Source" = "https://github.com/o-murphy/py_ballisticcalc"
-
+"Homepage" = "https://github.com/o-murphy/py-ballisticcalc"
+"Bug Reports" = "https://github.com/o-murphy/py-ballisticcalc/issues"
+"Source" = "https://github.com/o-murphy/py-ballisticcalc"
 
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["py_ballisticcalc*"]
+
+[tool.setuptools.package-data]
+py_ballisticcalc = ["py.typed", "assets/*.toml"]
 
 
 [tool.pytest.ini_options]
@@ -85,7 +87,6 @@ line-length = 120
 [project.optional-dependencies]
 exts = ["py_ballisticcalc.exts==2.2.0rc1"]
 charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
-visualize = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 scipy = ["numpy>=2", "scipy>=1.13.1"]
 dev = [
     "build>=1.2.2.post1",
@@ -106,16 +107,17 @@ dev = [
     "ruff>=0.12.3",
 ]
 docs = [
-    'mkdocs-mermaid2-plugin',
-    'mkdocs',
-    'mkdocs-exclude',
-    'mkdocs-material[imaging]',
-    'mkdocs-redirects',
-    'mkdocstrings-python',
-    'mkdocstrings',
-    'mkdocs-autorefs',
-    'mike',
-    'pydocstyle',
+    "mkdocs-mermaid2-plugin",
+    "mkdocs",
+    "mkdocs-exclude",
+    "mkdocs-material[imaging]",
+    "mkdocs-redirects",
+    "mkdocstrings>=0.29.0",
+    "mkdocstrings-python>=1.16.0",
+    "mkdocs-autorefs",
+    "mike",
+    "pydocstyle",
+    "ruff",
 ]
 
 [dependency-groups]
