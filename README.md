@@ -1,4 +1,7 @@
-# BallisticCalculator
+<h1 style="display: flex; align-items: center; gap: 10px;">
+  <img src="./docs/favicon.svg" alt="favicon" width="50" height="50"> 
+  BallisticCalculator
+</h1>
 
 LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
 

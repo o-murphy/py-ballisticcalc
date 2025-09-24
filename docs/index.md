@@ -1,4 +1,11 @@
-# py_ballisticcalc QuickStart
+<h1 style="display: flex; align-items: center; gap: 10px;">
+  <img src="./favicon.svg" alt="favicon" width="50" height="50"> 
+  py_ballisticcalc
+</h1>
+
+LGPL library for small arms ballistic calculations based on point-mass (3 DoF) plus spin drift.
+
+## QuickStart
 
 This QuickStart gets you from a fresh environment to running basic ballistic calculations.
 

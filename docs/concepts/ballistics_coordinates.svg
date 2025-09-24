@@ -17,8 +17,8 @@
    xmlns:dc="http://purl.org/dc/elements/1.1/">
   <sodipodi:namedview
      id="namedview114"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
+     pagecolor="transparent"
+     bordercolor="#FFAA00"
      borderopacity="0.25"
      inkscape:showpageshadow="2"
      inkscape:pageopacity="0.0"
@@ -60,7 +60,7 @@
        clipPathUnits="userSpaceOnUse"
        id="clipPath115">
       <rect
-         style="opacity:0.544036;fill:#000000;stroke-width:8.17192"
+         style="opacity:0.544036;fill:#FFAA00;stroke-width:8.17192"
          id="rect116"
          width="332.93149"
          height="248.44888"
@@ -76,14 +76,14 @@
        id="patch_1">
       <path
          d="M 0,402.48 H 402.91711 V 0 H 0 Z"
-         style="fill:#ffffff"
+         style="fill:transparent"
          id="path1" />
     </g>
     <g
        id="patch_2">
       <path
          d="M 7.637112,395.28 H 395.71711 V 7.2 H 7.637112 Z"
-         style="fill:#ffffff"
+         style="fill:transparent"
          id="path2" />
     </g>
     <g
@@ -212,7 +212,7 @@
          id="line2d_1">
         <path
            d="M 375.41319,265.67341 239.41341,363.80684"
-           style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+           style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
            id="path24" />
       </g>
       <g
@@ -221,7 +221,7 @@
            id="line2d_2">
           <path
              d="m 373.74756,265.17102 5.0017,1.50863"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path25" />
         </g>
       </g>
@@ -231,7 +231,7 @@
            id="line2d_3">
           <path
              d="m 350.76502,281.7276 5.04725,1.55674"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path26" />
         </g>
       </g>
@@ -241,7 +241,7 @@
            id="line2d_4">
           <path
              d="m 327.0442,298.81603 5.09318,1.6072"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path27" />
         </g>
       </g>
@@ -251,7 +251,7 @@
            id="line2d_5">
           <path
              d="m 302.54895,316.46237 5.13942,1.66014"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path28" />
         </g>
       </g>
@@ -261,7 +261,7 @@
            id="line2d_6">
           <path
              d="m 277.2407,334.69439 5.18597,1.71573"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path29" />
         </g>
       </g>
@@ -271,7 +271,7 @@
            id="line2d_7">
           <path
              d="m 251.07831,353.54173 5.23275,1.77417"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path30" />
         </g>
       </g>
@@ -282,7 +282,7 @@
          id="line2d_8">
         <path
            d="M 33.990256,293.2826 239.41341,363.80684"
-           style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+           style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
            id="path31" />
       </g>
       <g
@@ -291,7 +291,7 @@
            id="line2d_9">
           <path
              d="m 35.250468,292.52697 -3.78596,2.27009"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path32" />
         </g>
       </g>
@@ -301,7 +301,7 @@
            id="line2d_10">
           <path
              d="m 70.687339,304.67943 -3.75316,2.32179"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path33" />
         </g>
       </g>
@@ -311,7 +311,7 @@
            id="line2d_11">
           <path
              d="m 106.93479,317.10987 -3.71786,2.37526"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path34" />
         </g>
       </g>
@@ -321,7 +321,7 @@
            id="line2d_12">
           <path
              d="m 144.02094,329.82794 -3.6799,2.43059"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path35" />
         </g>
       </g>
@@ -331,7 +331,7 @@
            id="line2d_13">
           <path
              d="m 181.97526,342.84372 -3.63914,2.48789"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path36" />
         </g>
       </g>
@@ -341,7 +341,7 @@
            id="line2d_14">
           <path
              d="m 220.82858,356.1678 -3.5954,2.54723"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path37" />
         </g>
       </g>
@@ -352,7 +352,7 @@
          id="line2d_15">
         <path
            d="M 33.990256,293.2826 27.248396,121.69405"
-           style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+           style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
            id="path38" />
       </g>
       <g
@@ -361,7 +361,7 @@
            id="line2d_16">
           <path
              d="m 35.250468,292.52697 -3.78596,2.27009"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path39" />
         </g>
       </g>
@@ -371,7 +371,7 @@
            id="line2d_17">
           <path
              d="m 34.072057,262.30962 -3.814509,2.22145"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path40" />
         </g>
       </g>
@@ -381,7 +381,7 @@
            id="line2d_18">
           <path
              d="m 32.877357,231.67457 -3.84349,2.17123"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path41" />
         </g>
       </g>
@@ -391,7 +391,7 @@
            id="line2d_19">
           <path
              d="m 31.666026,200.61308 -3.87291,2.11939"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path42" />
         </g>
       </g>
@@ -401,7 +401,7 @@
            id="line2d_20">
           <path
              d="m 30.437716,169.11619 -3.902781,2.06587"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path43" />
         </g>
       </g>
@@ -411,7 +411,7 @@
            id="line2d_21">
           <path
              d="m 29.192066,137.17467 -3.933111,2.01064"
-             style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square"
+             style="fill:none;stroke:#FFAA00;stroke-width:0.8;stroke-linecap:square"
              id="path44" />
         </g>
       </g>
@@ -437,12 +437,12 @@
            id="path47" />
       </g>
       <g
-         id="text_1">
+         id="text_1" fill="#FFAA00">
         <g
            id="patch_6">
           <path
              d="m 183.72233,94.029421 162.15648,42.840119 4.46996,-16.9195 -162.15648,-42.840118 z"
-             style="fill:#ffffff"
+             style="fill:#FFFFFF; fill-opacity: 0.7"
              id="path48" />
         </g>
         <!-- $x$ (Horizontal sight line) -->
@@ -624,12 +624,12 @@
         </g>
       </g>
       <g
-         id="text_2">
+         id="text_2" fill="#FFAA00">
         <g
            id="patch_7">
           <path
              d="m 181.37665,111.72864 0.40897,78.81894 17.49976,-0.0908 -0.40896,-78.81894 z"
-             style="fill:#ffffff"
+             style="fill:#FFFFFF; fill-opacity: 0.7"
              id="path72" />
         </g>
         <!-- $y$ (Gravity) -->
@@ -703,12 +703,12 @@
         </g>
       </g>
       <g
-         id="text_3">
+         id="text_3" fill="#FFAA00">
         <g
            id="patch_8">
           <path
              d="M 90.567906,138.02304 168.41166,96.258167 160.13811,80.837454 82.294357,122.60233 Z"
-             style="fill:#ffffff"
+             style="fill:#FFFFFF; fill-opacity: 0.7"
              id="path83" />
         </g>
         <!-- $z$ (Windage) -->
@@ -778,12 +778,12 @@
         </g>
       </g>
       <g
-         id="text_4">
+         id="text_4" fill="#FFAA00">
         <g
            id="patch_9">
           <path
              d="m 127.80704,50.022848 h 100.16813 v -19.6275 H 127.80704 Z"
-             style="fill:#ffffff;stroke:#808080;stroke-linejoin:miter"
+             style="fill:transparent;stroke:#808080;stroke-linejoin:miter"
              id="path94" />
         </g>
         <!-- Sight (Origin) -->
@@ -901,7 +901,7 @@
           <path
              id="mf395185cef"
              d="M 0,5 C 1.326016,5 2.597899,4.473168 3.535534,3.535534 4.473168,2.597899 5,1.326016 5,0 5,-1.326016 4.473168,-2.597899 3.535534,-3.535534 2.597899,-4.473168 1.326016,-5 0,-5 -1.326016,-5 -2.597899,-4.473168 -3.535534,-3.535534 -4.473168,-2.597899 -5,-1.326016 -5,0 -5,1.326016 -4.473168,2.597899 -3.535534,3.535534 -2.597899,4.473168 -1.326016,5 0,5 Z"
-             style="stroke:#000000" />
+             style="stroke:#FFAA00" />
         </defs>
         <g
            clip-path="url(#p49f89ab178)"
@@ -910,7 +910,7 @@
              xlink:href="#mf395185cef"
              x="177.98508"
              y="61.110592"
-             style="stroke:#000000"
+             style="stroke:#FFAA00"
              id="use109" />
         </g>
       </g>
