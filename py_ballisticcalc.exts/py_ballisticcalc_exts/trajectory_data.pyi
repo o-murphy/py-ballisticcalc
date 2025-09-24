@@ -13,9 +13,9 @@ class TrajectoryData(NamedTuple):
     mach: float
     height: Distance
     slant_height: Distance
-    drop_adj: Angular
+    drop_angle: Angular
     windage: Distance
-    windage_adj: Angular
+    windage_angle: Angular
     slant_distance: Distance
     angle: Angular
     density_ratio: float
