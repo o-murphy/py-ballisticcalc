@@ -52,6 +52,7 @@ Note:
     `pip install py_ballisticcalc[scipy]` or `pip install scipy numpy`
 """
 # Standard library imports
+import bisect
 import math
 import warnings
 from dataclasses import dataclass, asdict
@@ -62,7 +63,6 @@ import numpy as np
 from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
-from py_ballisticcalc._compat import bisect_left_key
 from py_ballisticcalc.conditions import ShotProps, Wind
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfig,
@@ -839,7 +839,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     """Add a row to ranges, keeping it sorted by time.
                         If a row with (approximately) this time already exists then add this flag to it.
                     """
-                    idx = bisect_left_key(ranges, time, key=lambda r: r.time)
+                    idx = bisect.bisect_left(ranges, time, key=lambda r: r.time)
                     if idx < len(ranges):
                         # If we match existing row's time then just add this flag to the row
                         if abs(ranges[idx].time - time) < self.SEPARATE_ROW_TIME_DELTA:
