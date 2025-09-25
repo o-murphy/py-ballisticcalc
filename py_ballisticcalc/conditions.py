@@ -44,6 +44,7 @@ import warnings
 from dataclasses import dataclass, field
 
 from typing_extensions import List, NamedTuple, Optional, Sequence, Tuple, Union
+from py_ballisticcalc.interpolation import PchipPrepared, pchip_prepare, pchip_eval
 
 from py_ballisticcalc.constants import (cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric,
     cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric,
@@ -639,26 +640,13 @@ class Shot:
         self.look_angle = value
 
 
-class CurvePoint(NamedTuple):
-    """Coefficients for quadratic curve fitting.
-    
-    Attributes:
-        a: Quadratic coefficient (x² term) in the equation y = ax² + bx + c.
-        b: Linear coefficient (x term) in the equation y = ax² + bx + c.
-        c: Constant coefficient (constant term) in the equation y = ax² + bx + c.
-    """
-
-    a: float
-    b: float
-    c: float
-
 @dataclass
 class ShotProps:
     """Shot configuration and parameters for ballistic trajectory calculations.
     
     Contains all shot-specific data converted to internal units for high-performance
     ballistic calculations. This class serves as the computational interface between
-    user-friendly Shot objects and the numerical integration engines.
+    user-friendly Shot objects and the calculation engines.
     
     The class pre-computes expensive calculations (ballistic coefficient curves,
     atmospheric data, projectile properties) and stores them in optimized formats
@@ -712,8 +700,7 @@ class ShotProps:
 
     shot: Shot  # Reference to the original Shot object
     bc: float  # Ballistic coefficient
-    curve: List[CurvePoint]  # Pre-computed drag curve points
-    mach_list: List[float]  # List of Mach numbers for interpolation
+    drag_curve: PchipPrepared  # Precomputed PCHIP spline for drag vs Mach
 
     look_angle_rad: float  # Slant angle in radians
     twist_inch: float  # Twist rate of barrel rifling, in inches of length to make one full rotation
@@ -748,8 +735,7 @@ class ShotProps:
         return cls(
             shot=shot,
             bc=shot.ammo.dm.BC,
-            curve=cls.calculate_curve(shot.ammo.dm.drag_table),
-            mach_list=cls._get_only_mach_data(shot.ammo.dm.drag_table),
+            drag_curve=cls._precalc_drag_curve(shot.ammo.dm.drag_table),
             look_angle_rad=shot.look_angle >> Angular.Radian,
             twist_inch=shot.weapon.twist >> Distance.Inch,
             length_inch=shot.ammo.dm.length >> Distance.Inch,
@@ -797,9 +783,7 @@ class ShotProps:
         Returns:
             The standard drag factor at the given Mach number.
         """
-        # cd = calculate_by_curve(self._table_data, self._curve, mach)
-        # use calculation over list[double] instead of list[DragDataPoint]
-        cd = self._calculate_by_curve_and_mach_list(self.mach_list, self.curve, mach)
+        cd = pchip_eval(self.drag_curve, mach)
         return cd * 2.08551e-04 / self.bc
 
     def spin_drift(self, time: float) -> float:
@@ -838,79 +822,17 @@ class ShotProps:
             ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
             return sd * fv * ftp
         return 0
-
+    
     @staticmethod
-    def calculate_curve(data_points: List[DragDataPoint]) -> List[CurvePoint]:
-        """Piecewise quadratic interpolation of drag curve.
+    def _precalc_drag_curve(data_points: List[DragDataPoint]) -> PchipPrepared:
+        """Pre-calculate the drag curve for the shot.
 
         Args:
-            data_points: List[{Mach, CD}] data_points in ascending Mach order
+            data_points: List of DragDataPoint objects with Mach and CD values.
 
         Returns:
-            List[CurvePoints] to interpolate drag coefficient
+            PCHIP spline coefficients for interpolating $C_d$ vs Mach.
         """
-        rate = (data_points[1].CD - data_points[0].CD) / (data_points[1].Mach - data_points[0].Mach)
-        curve = [CurvePoint(0, rate, data_points[0].CD - data_points[0].Mach * rate)]
-
-        for i in range(1, int(len(data_points)) - 1):
-            x1 = data_points[i - 1].Mach
-            x2 = data_points[i].Mach
-            x3 = data_points[i + 1].Mach
-            y1 = data_points[i - 1].CD
-            y2 = data_points[i].CD
-            y3 = data_points[i + 1].CD
-            a = ((y3 - y1) * (x2 - x1) - (y2 - y1) * (x3 - x1)) / (
-                (x3 * x3 - x1 * x1) * (x2 - x1) - (x2 * x2 - x1 * x1) * (x3 - x1))
-            b = (y2 - y1 - a * (x2 * x2 - x1 * x1)) / (x2 - x1)
-            c = y1 - (a * x1 * x1 + b * x1)
-            curve_point = CurvePoint(a, b, c)
-            curve.append(curve_point)
-
-        return curve
-
-    @staticmethod
-    def _get_only_mach_data(data: List[DragDataPoint]) -> List[float]:
-        """Extract Mach values from a list of DragDataPoint objects.
-
-        Args:
-            data: A list of DragDataPoint objects.
-
-        Returns:
-            A list containing only the Mach values from the input data.
-        """
-        return [dp.Mach for dp in data]
-
-    @staticmethod
-    def _calculate_by_curve_and_mach_list(mach_list: List[float], curve: List[CurvePoint], mach: float) -> float:
-        """Calculate a value based on a piecewise quadratic curve and a list of Mach values.
-
-        This function performs a binary search on the `mach_list` to find the segment
-        of the `curve` relevant to the input `mach` number and then interpolates
-        the value using the quadratic coefficients of that curve segment.
-
-        Args:
-            mach_list: A sorted list of Mach values corresponding to the `curve` points.
-            curve: A list of CurvePoint objects, where each object
-                contains quadratic coefficients (a, b, c) for a Mach number segment.
-            mach: The Mach number at which to calculate the value.
-
-        Returns:
-            The calculated value based on the interpolated curve at the given Mach number.
-        """
-        num_points = len(curve)
-        mlo = 0
-        mhi = num_points - 2
-
-        while mhi - mlo > 1:
-            mid = (mhi + mlo) // 2
-            if mach_list[mid] < mach:
-                mlo = mid
-            else:
-                mhi = mid
-
-        if mach_list[mhi] - mach > mach - mach_list[mlo]:
-            m = mlo
-        else:
-            m = mhi
-        curve_m = curve[m]
-        return curve_m.c + mach * (curve_m.b + curve_m.a * mach)
+        xs = [dp.Mach for dp in data_points]
+        ys = [dp.CD for dp in data_points]
+        return pchip_prepare(xs, ys)
