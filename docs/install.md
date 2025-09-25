@@ -30,8 +30,8 @@ If you have Python 3.10+ and `pip` installed, you're good to go.
 
 py-ballisticcalc has the following optional dependencies:
 
-* **[`py_ballisticcalc.exts`](internals/cython.md):** Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
-* **`visualize`:** Includes [matplotlib](https://matplotlib.org/) for creating [`charts`][py_ballisticcalc.trajectory_data.HitResult.plot] and [pandas](https://pandas.pydata.org/) for creating [`DataFrame tables`][py_ballisticcalc.trajectory_data.HitResult.dataframe].
+* **[`exts`](internals/cython.md):** Cython based implementation of some classes to increase performance. [py_ballisticcalc.exts](https://pypi.org/project/py_ballisticcalc.exts) package.
+* **`charts`:** Includes [matplotlib](https://matplotlib.org/) for creating [`charts`][py_ballisticcalc.trajectory_data.HitResult.plot] and [pandas](https://pandas.pydata.org/) for creating [`DataFrame tables`][py_ballisticcalc.trajectory_data.HitResult.dataframe].
 * **[`scipy`](https://scipy.org/):** Installs support for the `SciPyIntegrationEngine`.
 
 To install optional dependencies along with py-ballisticcalc:
@@ -39,25 +39,25 @@ To install optional dependencies along with py-ballisticcalc:
 === "pip"
 
     ```bash
-    # with the `py_ballisticcalc.exts` extra:
-    pip install 'py-ballisticcalc[exts]'
+    # with the cython extensions:
+    pip install "py-ballisticcalc[exts]"
     ```
 
     ```bash
-    # with dependencies for data visualisation    
-    pip install py-ballisticcalc[visualize]
+    # with dependencies for charting:
+    pip install "py-ballisticcalc[charts]"
     ```
 
 === "uv"
 
     ```bash
-    # with the `py_ballisticcalc.exts` extra:
-    uv add 'py-ballisticcalc[exts]'
+    # with the cython extensions:
+    uv add "py-ballisticcalc[exts]"
     ```
 
     ```bash
-    # with dependencies for data visualisation    
-    uv add  'py-ballisticcalc[visualize]'
+    # with dependencies for charting:
+    uv add "py-ballisticcalc[charts]"
     ```
 
 You can also install requirements manually.  For example:
@@ -75,7 +75,7 @@ You can also install requirements manually.  For example:
 To install latest version from sources in editable mode:
 
 ```bash
-git clone github.com/o-murphy/py-ballisticcalc
+git clone https://github.com/o-murphy/py-ballisticcalc
 cd py-ballisticcalc
 ```
 

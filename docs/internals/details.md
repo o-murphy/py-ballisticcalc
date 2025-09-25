@@ -42,6 +42,7 @@ Development dependencies and reproducible developer/CI installs are pinned in `u
 
 ## How engines are wired
 Public call flow (simplified):
+
 1. `Calculator.fire()` calls `engine.integrate()`.
 2. `BaseIntegrationEngine.integrate()` converts units, calls engine `_integrate()`, which feeds `TrajectoryDataFilter`.
 3. `_integrate()` returns a `HitResult` consisting of `TrajectoryData` rows and post-processing functions.
@@ -74,5 +75,5 @@ py -m pytest tests/test_exts_basic.py
 py -m pytest
 ```
 
-# Where to ask questions
-- Open an issue on the repository with a minimal reproduction and a note about the engine(s) involved.
+## Where to ask questions
+Open an issue on the repository with a minimal reproduction and a note about the engine(s) involved.

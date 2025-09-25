@@ -20,7 +20,7 @@ import sys
 from typing_extensions import Dict, Optional
 
 # Local imports
-from .logger import logger
+from .logger import logger as log
 from .unit import Unit, PreferredUnits
 
 if sys.version_info[:2] < (3, 11):
@@ -69,7 +69,7 @@ def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False
             filepath = find_pybc_toml(os.path.dirname(__file__))
 
     if filepath is not None:
-        logger.debug(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
+        log.debug(f"Found {os.path.basename(filepath)} at {os.path.dirname(filepath)}")
 
         with open(filepath, "rb") as fp:
             _config = tomllib.load(fp)
@@ -79,12 +79,12 @@ def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False
                     PreferredUnits.set(**preferred_units)
                 else:
                     if not suppress_warnings:
-                        logger.warning("Config has no `pybc.preferred_units` section")
+                        log.warning("Config has no `pybc.preferred_units` section")
             else:
                 if not suppress_warnings:
-                    logger.warning("Config has no `pybc` section")
+                    log.warning("Config has no `pybc` section")
 
-    logger.debug("Calculator globals and PreferredUnits load success")
+    log.debug("Calculator globals and PreferredUnits load success")
 
 
 def _basic_config(filename: Optional[str] = None,

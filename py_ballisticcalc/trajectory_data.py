@@ -290,8 +290,8 @@ class BaseTrajData(NamedTuple):
 
 
 TRAJECTORY_DATA_ATTRIBUTES = Literal[
-    'time', 'distance', 'velocity', 'mach', 'height', 'slant_height', 'drop_adj',
-    'windage', 'windage_adj', 'slant_distance', 'angle', 'density_ratio', 'drag',
+    'time', 'distance', 'velocity', 'mach', 'height', 'slant_height', 'drop_angle',
+    'windage', 'windage_angle', 'slant_distance', 'angle', 'density_ratio', 'drag',
     'energy', 'ogw', 'flag', 'x', 'y', 'z'
 ]
 TRAJECTORY_DATA_SYNONYMS: dict[TRAJECTORY_DATA_ATTRIBUTES, TRAJECTORY_DATA_ATTRIBUTES] = {
@@ -310,9 +310,9 @@ class TrajectoryData(NamedTuple):
         mach: Velocity in Mach terms
         height: Vertical (y-axis) coordinate of this point
         slant_height: Distance orthogonal to sight-line
-        drop_adj: Sight adjustment to zero slant_height at this distance
+        drop_angle: Sight adjustment to zero slant_height at this distance
         windage: Windage (z-axis) coordinate of this point
-        windage_adj: Windage adjustment
+        windage_angle: Windage adjustment
         slant_distance: Distance along sight line that is closest to this point
         angle: Angle of velocity vector relative to x-axis
         density_ratio: Ratio of air density here to standard density
@@ -328,9 +328,9 @@ class TrajectoryData(NamedTuple):
     mach: float  # Velocity in Mach terms
     height: Distance  # Vertical (y-axis) coordinate of this point
     slant_height: Distance  # Distance orthogonal to sight-line
-    drop_adj: Angular  # Sight adjustment to zero slant_height at this distance
+    drop_angle: Angular  # Sight adjustment to zero slant_height at this distance
     windage: Distance  # Windage (z-axis) coordinate of this point
-    windage_adj: Angular  # Windage adjustment
+    windage_angle: Angular  # Windage adjustment
     slant_distance: Distance  # Distance along sight line that is closest to this point
     angle: Angular  # Angle of velocity vector relative to x-axis
     density_ratio: float  # Ratio of air density here to standard density
@@ -365,6 +365,18 @@ class TrajectoryData(NamedTuple):
         """Synonym for slant_height."""
         return self.slant_height
 
+    @property
+    @deprecated(reason="Use .drop_angle instead of .drop_adj", version="2.2.0")
+    def drop_adj(self) -> Angular:
+        """Synonym for drop_angle."""
+        return self.drop_angle
+
+    @property
+    @deprecated(reason="Use .windage_angle instead of .windage_adj", version="2.2.0")
+    def windage_adj(self) -> Angular:
+        """Synonym for windage_angle."""
+        return self.windage_angle
+
     def formatted(self) -> Tuple[str, ...]:
         """Return attributes as tuple of strings, formatted per PreferredUnits.
 
@@ -383,9 +395,9 @@ class TrajectoryData(NamedTuple):
             f'{self.mach:.2f} mach',
             _fmt(self.height, PreferredUnits.drop),
             _fmt(self.slant_height, PreferredUnits.drop),
-            _fmt(self.drop_adj, PreferredUnits.adjustment),
+            _fmt(self.drop_angle, PreferredUnits.adjustment),
             _fmt(self.windage, PreferredUnits.drop),
-            _fmt(self.windage_adj, PreferredUnits.adjustment),
+            _fmt(self.windage_angle, PreferredUnits.adjustment),
             _fmt(self.slant_distance, PreferredUnits.distance),
             _fmt(self.angle, PreferredUnits.angular),
             f'{self.density_ratio:.5e}',
@@ -408,9 +420,9 @@ class TrajectoryData(NamedTuple):
             self.mach,
             self.height >> PreferredUnits.drop,
             self.slant_height >> PreferredUnits.drop,
-            self.drop_adj >> PreferredUnits.adjustment,
+            self.drop_angle >> PreferredUnits.adjustment,
             self.windage >> PreferredUnits.drop,
-            self.windage_adj >> PreferredUnits.adjustment,
+            self.windage_angle >> PreferredUnits.adjustment,
             self.slant_distance >> PreferredUnits.distance,
             self.angle >> PreferredUnits.angular,
             self.density_ratio,
@@ -517,8 +529,8 @@ class TrajectoryData(NamedTuple):
         spin_drift = props.spin_drift(time)
         velocity = velocity_vector.magnitude()
         windage = range_vector.z + spin_drift
-        drop_adjustment = TrajectoryData.get_correction(range_vector.x, range_vector.y)
-        windage_adjustment = TrajectoryData.get_correction(range_vector.x, windage)
+        drop_angleustment = TrajectoryData.get_correction(range_vector.x, range_vector.y)
+        windage_angleustment = TrajectoryData.get_correction(range_vector.x, windage)
         trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
         look_angle_cos = math.cos(props.look_angle_rad)
         look_angle_sin = math.sin(props.look_angle_rad)
@@ -531,9 +543,9 @@ class TrajectoryData(NamedTuple):
             mach=velocity / mach,
             height=TrajectoryData._new_feet(range_vector.y),
             slant_height=TrajectoryData._new_feet(range_vector.y * look_angle_cos - range_vector.x * look_angle_sin),
-            drop_adj=TrajectoryData._new_rad(drop_adjustment - (props.look_angle_rad if range_vector.x else 0)),
+            drop_angle=TrajectoryData._new_rad(drop_angleustment - (props.look_angle_rad if range_vector.x else 0)),
             windage=TrajectoryData._new_feet(windage),
-            windage_adj=TrajectoryData._new_rad(windage_adjustment),
+            windage_angle=TrajectoryData._new_rad(windage_angleustment),
             slant_distance=TrajectoryData._new_feet(range_vector.x * look_angle_cos + range_vector.y * look_angle_sin),
             angle=TrajectoryData._new_rad(trajectory_angle),
             density_ratio=density_ratio,

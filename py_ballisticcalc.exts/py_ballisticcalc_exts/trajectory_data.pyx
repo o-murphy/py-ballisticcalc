@@ -251,8 +251,8 @@ def make_base_traj_data(double time, double px, double py, double pz,
 @final
 cdef class TrajectoryDataT:
     __slots__ = ('time', 'distance', 'velocity',
-                 'mach', 'height', 'slant_height', 'drop_adj',
-                 'windage', 'windage_adj', 'slant_distance',
+                 'mach', 'height', 'slant_height', 'drop_angle',
+                 'windage', 'windage_angle', 'slant_distance',
                  'angle', 'density_ratio', 'drag', 'energy', 'ogw', 'flag')
     _fields = __slots__
 
@@ -263,9 +263,9 @@ cdef class TrajectoryDataT:
                   double mach,
                   object height,
                   object slant_height,
-                  object drop_adj,
+                  object drop_angle,
                   object windage,
-                  object windage_adj,
+                  object windage_angle,
                   object slant_distance,
                   object angle,
                   double density_ratio,
@@ -279,9 +279,9 @@ cdef class TrajectoryDataT:
         self.mach = mach
         self.height = height
         self.slant_height = slant_height
-        self.drop_adj = drop_adj
+        self.drop_angle = drop_angle
         self.windage = windage
-        self.windage_adj = windage_adj
+        self.windage_angle = windage_angle
         self.slant_distance = slant_distance
         self.angle = angle
         self.density_ratio = density_ratio
@@ -303,8 +303,8 @@ cdef class TrajectoryDataT:
         cdef:
             double x0, x1, x2
             double time, mach, density_ratio, drag
-            object distance, velocity, height, slant_height, drop_adj
-            object windage, windage_adj, slant_distance, angle, energy, ogw
+            object distance, velocity, height, slant_height, drop_angle
+            object windage, windage_angle, slant_distance, angle, energy, ogw
 
         if key_attribute == 'time':
             x0, x1, x2 = t0.time, t1.time, t2.time
@@ -322,9 +322,9 @@ cdef class TrajectoryDataT:
         velocity = _new_fps(interpolate_3_pt(key_value, x0, t0.velocity._fps, x1, t1.velocity._fps, x2, t2.velocity._fps))
         height = _new_feet(interpolate_3_pt(key_value, x0, t0.height._feet, x1, t1.height._feet, x2, t2.height._feet))
         slant_height = _new_feet(interpolate_3_pt(key_value, x0, t0.slant_height._feet, x1, t1.slant_height._feet, x2, t2.slant_height._feet))
-        drop_adj = _new_moa(interpolate_3_pt(key_value, x0, t0.drop_adj._moa, x1, t1.drop_adj._moa, x2, t2.drop_adj._moa))
+        drop_angle = _new_moa(interpolate_3_pt(key_value, x0, t0.drop_angle._moa, x1, t1.drop_angle._moa, x2, t2.drop_angle._moa))
         windage = _new_feet(interpolate_3_pt(key_value, x0, t0.windage._feet, x1, t1.windage._feet, x2, t2.windage._feet))
-        windage_adj = _new_moa(interpolate_3_pt(key_value, x0, t0.windage_adj._moa, x1, t1.windage_adj._moa, x2, t2.windage_adj._moa))
+        windage_angle = _new_moa(interpolate_3_pt(key_value, x0, t0.windage_angle._moa, x1, t1.windage_angle._moa, x2, t2.windage_angle._moa))
         slant_distance = _new_feet(interpolate_3_pt(key_value, x0, t0.slant_distance._feet, x1, t1.slant_distance._feet, x2, t2.slant_distance._feet))
         angle = _new_rad(interpolate_3_pt(key_value, x0, t0.angle._rad, x1, t1.angle._rad, x2, t2.angle._rad))
         density_ratio = interpolate_3_pt(key_value, x0, t0.density_ratio, x1, t1.density_ratio, x2, t2.density_ratio)
@@ -333,6 +333,6 @@ cdef class TrajectoryDataT:
         ogw = _new_lb(interpolate_3_pt(key_value, x0, t0.ogw._lb, x1, t1.ogw._lb, x2, t2.ogw._lb))
 
         return TrajectoryDataT(time, distance, velocity, mach, height, slant_height,
-                               drop_adj, windage, windage_adj, slant_distance,
+                               drop_angle, windage, windage_angle, slant_distance,
                                angle, density_ratio, drag, energy, ogw,
                                <TrajFlag_t>flag)

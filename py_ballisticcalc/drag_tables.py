@@ -4,21 +4,20 @@ Drag tables define the relationship between Mach number and drag coefficient
 for specific projectile shapes, allowing accurate ballistic calculations across
 the full velocity range from subsonic to supersonic.
 
-This module provides standardized drag coefficient tables (CD vs Mach number)
+This module provides standardized drag coefficient tables ($C_d$ vs Mach number)
 for different projectile shapes and profiles commonly used in ballistics.
-The profiles for models G1-G8 are shown in docs/DragModelProjectiles.jpg
 
 Standard Tables:
-    TableG1: Flat-base bullet (most common sporting ammunition)
-    TableG7: Boat-tail, spitzer (long-range match bullets)
-    TableG2: Conical, banded, boat-tail artillery projectile
-    TableG5: Round-nose, boat-tail
-    TableG6: Flat-base, spire-point
-    TableG8: Flat-base, 10 caliber secant ogive
-    TableGI: Ingalls G1
-    TableGS: 9/16" smooth sphere
-    TableRA4: .22LR 40gr
-    
+    - `TableG1`: Flat-base bullet (most common sporting ammunition)
+    - `TableG7`: Boat-tail, spitzer (long-range match bullets)
+    - `TableG2`: Conical, banded, boat-tail artillery projectile
+    - `TableG5`: Round-nose, boat-tail
+    - `TableG6`: Flat-base, spire-point
+    - `TableG8`: Flat-base, 10 caliber secant ogive
+    - `TableGI`: Ingalls G1
+    - `TableGS`: 9/16" smooth sphere
+    - `TableRA4`: .22LR 40gr
+
 Types:
     DragTablePointDictType: TypedDict for drag table data points
 
@@ -26,8 +25,8 @@ Functions:
     get_drag_tables_names: Returns list of available drag table names
 
 Note:
-    Drag coefficients are dimensionless and vary with velocity.
-    Mach numbers typically range from 0.0 to 4.0+ for ballistic applications.
+    - Drag coefficients are dimensionless and vary with velocity.
+    - Mach numbers typically range from 0.0 to 4.0+ for ballistic applications.
 """
 
 # Standard library imports
@@ -805,7 +804,7 @@ def get_drag_tables_names() -> List[str]:
     Returns:
         List of drag table names as strings (e.g., ['TableG1', 'TableG7', ...])
         
-    Example:
+    Examples:
         >>> tables = get_drag_tables_names()
         >>> 'TableG1' in tables
         True

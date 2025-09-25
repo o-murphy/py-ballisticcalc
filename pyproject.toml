@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.2.0rc1"
+version = "2.2.0rc2"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
@@ -85,10 +85,11 @@ line-length = 120
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 
 [project.optional-dependencies]
-exts = ["py_ballisticcalc.exts==2.2.0rc1"]
+exts = ["py_ballisticcalc.exts==2.2.0rc2"]
 charts = ["matplotlib>=3.9", "pandas>=2.3.0", "numpy>=2"]
 scipy = ["numpy>=2", "scipy>=1.13.1"]
 dev = [
+    "Cython>=3.0",
     "build>=1.2.2.post1",
     "jupyter>=1.1.1",
     "matplotlib>=3.9",
@@ -124,6 +125,7 @@ docs = [
 # Duplication of "dev" group here is required to support `uv sync --dev`
 # Previous declaration sufficient if we standardize on `uv pip install -e .[dev]`
 dev = [
+    "Cython>=3.0",
     "build>=1.2.2.post1",
     "jupyter>=1.1.1",
     "matplotlib>=3.9",

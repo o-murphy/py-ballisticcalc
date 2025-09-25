@@ -14,7 +14,7 @@ Classes:
 Type Aliases:
     SightFocalPlane: Literal type for sight focal plane options ('FFP', 'SFP', 'LWIR').
 
-Example:
+Examples:
     Basic weapon and ammunition setup:
     ```python
     from py_ballisticcalc import Weapon, Ammo, Sight, DragModel, TableG7, Unit
@@ -215,7 +215,7 @@ class Sight:
         return SightReticleStep(_h_step, _v_step)
 
     def get_adjustment(self, target_distance: Distance,
-                       drop_adj: Angular, windage_adj: Angular,
+                       drop_angle: Angular, windage_angle: Angular,
                        magnification: float) -> SightClicks:
         """Calculate sight adjustment for target distance and magnification.
         
@@ -225,8 +225,8 @@ class Sight:
         
         Args:
             target_distance: Distance to the target.
-            drop_adj: Required vertical angular adjustment for drop compensation.
-            windage_adj: Required horizontal angular adjustment for windage.
+            drop_angle: Required vertical angular adjustment for drop compensation.
+            windage_angle: Required horizontal angular adjustment for windage.
             magnification: Current magnification setting of the sight.
             
         Returns:
@@ -244,8 +244,8 @@ class Sight:
             ```python
             clicks = sight.get_adjustment(
                 target_distance=Unit.Meter(500),
-                drop_adj=Unit.Mil(2.5),
-                windage_adj=Unit.Mil(0.8),
+                drop_angle=Unit.Mil(2.5),
+                windage_angle=Unit.Mil(0.8),
                 magnification=12.0
             )
             print(f"Adjust: {clicks.vertical} up, {clicks.horizontal} right")
@@ -256,18 +256,18 @@ class Sight:
         if self.focal_plane == 'SFP':
             steps = self._adjust_sfp_reticle_steps(target_distance, magnification)
             return SightClicks(
-                drop_adj.raw_value / steps.vertical.raw_value,
-                windage_adj.raw_value / steps.horizontal.raw_value
+                drop_angle.raw_value / steps.vertical.raw_value,
+                windage_angle.raw_value / steps.horizontal.raw_value
             )
         if self.focal_plane == 'FFP':
             return SightClicks(
-                drop_adj.raw_value / self.v_click_size.raw_value,
-                windage_adj.raw_value / self.h_click_size.raw_value
+                drop_angle.raw_value / self.v_click_size.raw_value,
+                windage_angle.raw_value / self.h_click_size.raw_value
             )
         if self.focal_plane == 'LWIR':
             return SightClicks(  # adjust clicks to magnification
-                drop_adj.raw_value / (self.v_click_size.raw_value / magnification),
-                windage_adj.raw_value / (self.h_click_size.raw_value / magnification)
+                drop_angle.raw_value / (self.v_click_size.raw_value / magnification),
+                windage_angle.raw_value / (self.h_click_size.raw_value / magnification)
             )
         raise AttributeError("Wrong focal_plane")
 
@@ -293,8 +293,8 @@ class Sight:
             ```
         """
         return self.get_adjustment(trajectory_point.distance,
-                                   trajectory_point.drop_adj,
-                                   trajectory_point.windage_adj,
+                                   trajectory_point.drop_angle,
+                                   trajectory_point.windage_angle,
                                    magnification)
 
 
@@ -538,12 +538,12 @@ class Ammo:
             
         Note:
             The calculation uses the formula:
-            adjusted_velocity = baseline_velocity + (temp_modifier / (15 / baseline_velocity)) * temp_delta
+            `adjusted_velocity = baseline_velocity + (temp_modifier / (15 / baseline_velocity)) * temp_delta`
             ... where temp_delta is the difference between current_temp and powder_temp.
             
             If use_powder_sensitivity is False, returns the baseline muzzle velocity regardless of temperature.
-            
-        Example:
+
+        Examples:
             ```python
             # Get velocity for current conditions
             cold_velocity = ammo.get_velocity_for_temp(Unit.Celsius(-10))

@@ -6,7 +6,6 @@ site_url: https://o-murphy.github.io/py-ballisticcalc/
 nav:
 - Get started:
   - QuickStart: index.md
-#  - Why use py-balllisticcalc: why.md
   - Installation: install.md
 #  - Examples: examples/Examples
   - Help: help.md
@@ -36,9 +35,6 @@ nav:
     - "🪂 DragModel": concepts/drag_model.md
   - "📈 Trajectory Data": concepts/trajectory_data.md
   - "📐 Vector": concepts/vector.md
-#    - Interface:
-#    - Logger: concepts/logger.md
-#  - Performance:
 - API Documentation:
     - Overview: api/index.md
     - Calculator:
@@ -49,10 +45,12 @@ nav:
       - Atmo: api/conditions/atmo.md
       - Wind: api/conditions/wind.md
       - Shot: api/conditions/shot.md
+      - ShotProps: api/conditions/shotprops.md
     - Constants: api/constants.md
     - Munitions:
       - Ammo: api/munition/ammo.md
       - DragModel: api/drag_model.md
+      - DragTables: api/drag_tables.md
       - Sight: api/munition/sight.md
       - Weapon: api/munition/weapon.md
     - Results:
@@ -62,12 +60,11 @@ nav:
       - Dimensions: api/units/dimensions.md
       - PreferredUnits: api/units/preferred_units.md
       - Vector: api/vector.md
-#    - Engines: api/engines.md
-#    - Logger: api/logger.md
 - Internals:
   - Architecture: internals/architecture.md
   - Developer Details: internals/details.md
   - Cython Notes: internals/cython.md
+  - Logger: internals/logger.md
 - Contributors: contributors.md
 - About: about.md
 
@@ -117,8 +114,8 @@ theme:
   logo: 'favicon.svg'
   favicon: 'favicon.svg'
 
-repo_name: o-murphy/py_ballisticcalc
-repo_url: https://github.com/o-murphy/py_ballisticcalc
+repo_name: o-murphy/py-ballisticcalc
+repo_url: https://github.com/o-murphy/py-ballisticcalc
 extra:
   version:
     provider: mike
@@ -190,9 +187,6 @@ markdown_extensions:
 
 #hooks:
 #- 'docs/plugins/main.py'
-
-#watch:
-#  - py_ballisticcalc
 
 plugins:
   - autorefs

@@ -5,6 +5,7 @@
 #   "semver", "tomlkit"
 # ]
 # ///
+import os
 import re
 import subprocess
 from argparse import ArgumentParser
@@ -80,6 +81,35 @@ def update_toml_version(file_path: Path, new_version: str, is_ext_file: bool = F
     except Exception as e:
         print(f"An error occurred while processing {file_path}: {e}")
 
+
+def update_uv_lock(file_path: Path) -> bool:
+    _cur_dir = os.getcwd()
+    _root = file_path.parent.absolute()
+    _uv_lock = _root / "uv.lock"
+    _uv_lock_posix = _uv_lock.as_posix()
+    try:
+        os.chdir(_root)
+        subprocess.run(
+            ['uv', 'sync'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        if not _uv_lock.exists():
+            raise FileNotFoundError(_uv_lock_posix)
+    except subprocess.CalledProcessError as e:
+        print(f"Error syncing {_uv_lock_posix}: {e}")
+        print(e.stderr)
+        return False
+    except OSError as e:
+        print(f"Error: Could not update {_uv_lock_posix}: {e}")
+        return False
+    finally:
+        os.chdir(_cur_dir)
+    print(f"Successfully updated uv lock: {_uv_lock_posix}")
+    return True
+
+
 def is_git_working_tree_clean() -> bool:
     """Checks if the Git working tree is clean."""
     try:
@@ -97,6 +127,7 @@ def is_git_working_tree_clean() -> bool:
     except FileNotFoundError:
         print("Git command not found. Please ensure Git is installed and in your PATH.")
         return False
+
 
 def git_commit_changes(version: str, files: list[Path]):
     """Adds specified files and commits them with a version bump message."""
@@ -133,7 +164,12 @@ def main():
     pyproject_toml = Path("pyproject.toml")
     bin_pyproject_toml = Path("py_ballisticcalc.exts", "pyproject.toml")
 
-    files_to_update = [pyproject_toml, bin_pyproject_toml]
+    files_to_update = [
+        pyproject_toml,
+        pyproject_toml.parent / 'uv.lock',
+        bin_pyproject_toml,
+        bin_pyproject_toml.parent / 'uv.lock',
+    ]
 
     try:
         if args.dry_run:
@@ -141,7 +177,7 @@ def main():
             update_toml_version(pyproject_toml, version, is_ext_file=False, dry_run=True)
             update_toml_version(bin_pyproject_toml, version, is_ext_file=True, dry_run=True)
             print("Dry run complete. No files were changed, and no commit was made.")
-            return # Exit after dry run
+            return  # Exit after dry run
 
         if not args.no_commit:
             # Case 1: no_commit is False (commit is allowed)
@@ -149,6 +185,8 @@ def main():
                 print("Working tree is clean. Proceeding to update files and commit.")
                 update_toml_version(pyproject_toml, version, is_ext_file=False, dry_run=False)
                 update_toml_version(bin_pyproject_toml, version, is_ext_file=True, dry_run=False)
+                update_uv_lock(pyproject_toml)
+                update_uv_lock(bin_pyproject_toml)
                 git_commit_changes(version, files_to_update)
             else:
                 print("Working tree is not clean. Skipping file updates and commit as --no-commit was not specified.")
@@ -158,6 +196,8 @@ def main():
             print("Due to --no-commit flag, only updating files. Skipping commit.")
             update_toml_version(pyproject_toml, version, is_ext_file=False, dry_run=False)
             update_toml_version(bin_pyproject_toml, version, is_ext_file=True, dry_run=False)
+            update_uv_lock(pyproject_toml)
+            update_uv_lock(bin_pyproject_toml)
 
     except Exception as e:
         print(f"A general error occurred: {e}")

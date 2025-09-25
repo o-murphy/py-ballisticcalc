@@ -51,7 +51,7 @@ class TestTrajectory:
             self.custom_assert_equal(path, data.height >> Distance.Inch, 0.5, 'Drop')
 
         if distance > 1:
-            self.custom_assert_equal(hold, data.drop_adj >> adjustment_unit, 0.5, 'Hold')
+            self.custom_assert_equal(hold, data.drop_angle >> adjustment_unit, 0.5, 'Hold')
 
         if distance >= 800:
             self.custom_assert_equal(windage, data.windage >> Distance.Inch, 1.5, "Windage")
@@ -62,7 +62,7 @@ class TestTrajectory:
 
         if distance > 1:
             self.custom_assert_equal(wind_adjustment,
-                                     data.windage_adj >> adjustment_unit, 0.5, "WAdj")
+                                     data.windage_angle >> adjustment_unit, 0.5, "WAdj")
 
     @pytest.mark.parametrize(
         "data_point, distance, velocity, mach, energy, path, hold, windage, wind_adjustment, time, ogv, adjustment_unit",

@@ -818,13 +818,13 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         double spin_drift = ShotProps_t_spinDrift(shot_props_ptr, time)
         double velocity = mag(velocity_vector_ptr)
         double windage = range_vector_ptr.z + spin_drift
-        double drop_adjustment = getCorrection(range_vector_ptr.x, range_vector_ptr.y)
-        double windage_adjustment = getCorrection(range_vector_ptr.x, windage)
+        double drop_angleustment = getCorrection(range_vector_ptr.x, range_vector_ptr.y)
+        double windage_angleustment = getCorrection(range_vector_ptr.x, windage)
         double trajectory_angle = atan2(velocity_vector_ptr.y, velocity_vector_ptr.x);
         double look_angle_cos = cos(look_angle)
         double look_angle_sin = sin(look_angle)
 
-    drop_adjustment -= (look_angle if range_vector_ptr.x else 0)
+    drop_angleustment -= (look_angle if range_vector_ptr.x else 0)
 
     # Note: Cython cdef class constructors don't support keyword args reliably from Cython.
     # Pass all fields positionally in the defined order.
@@ -835,9 +835,9 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         velocity / mach,
         _new_feet(range_vector_ptr.y),
         _new_feet(range_vector_ptr.y * look_angle_cos - range_vector_ptr.x * look_angle_sin),
-        _new_rad(drop_adjustment),
+        _new_rad(drop_angleustment),
         _new_feet(windage),
-        _new_rad(windage_adjustment),
+        _new_rad(windage_angleustment),
         _new_feet(range_vector_ptr.x * look_angle_cos + range_vector_ptr.y * look_angle_sin),
         _new_rad(trajectory_angle),
         density_ratio,
