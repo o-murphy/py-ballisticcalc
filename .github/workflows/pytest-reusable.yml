@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ inputs.os }} # The runner's OS is provided by the 'os' input
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         name: Checkout Repository Code # A clear name for this foundational step
 
       - name: Install uv and set the python version
