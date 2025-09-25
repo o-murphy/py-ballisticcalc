@@ -14,19 +14,16 @@ __credits__ = ["o-murphy", "dbookstaber"]
 # Standard library imports
 import importlib.resources
 import os
-import sys
-
-# Third-party imports
-from typing_extensions import Dict, Optional
+from typing import Dict, Optional
 
 # Local imports
 from .logger import logger as log
 from .unit import Unit, PreferredUnits
 
-if sys.version_info[:2] < (3, 11):
-    import tomli as tomllib
-else:
-    import tomllib
+try:  # Python 3.11+
+    import tomllib  # type: ignore[attr-defined]
+except ModuleNotFoundError:  # Python 3.10 fallback
+    import tomli as tomllib  # type: ignore[import-not-found, no-redef]
 
 
 def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False) -> None:

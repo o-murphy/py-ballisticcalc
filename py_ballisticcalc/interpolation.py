@@ -6,7 +6,7 @@ PCHIP (interpolate_3_pt) requires 3 points and produces smoother results that
 preserve monotonicity and prevent overshoot using the Fritsch–Carlson slope limiting algorithm.
 """
 from enum import Enum
-from typing_extensions import Literal
+from typing import Literal
 
 __all__ = [
     "InterpolationMethod",

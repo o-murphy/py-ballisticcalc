@@ -30,10 +30,7 @@ Note:
 """
 
 # Standard library imports
-from typing import List
-
-# Third-party imports
-from typing_extensions import TypedDict
+from typing import List, TypedDict
 
 
 # Type definitions

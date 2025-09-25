@@ -33,7 +33,8 @@ See Also:
 import math
 import warnings
 
-from typing_extensions import Union, List, override
+from typing import Union, List
+from typing_extensions import override
 
 from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import (

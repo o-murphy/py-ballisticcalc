@@ -53,7 +53,7 @@ import math
 import typing
 from dataclasses import dataclass, field
 from deprecated import deprecated
-from typing_extensions import Final, Literal, NamedTuple, Optional, Tuple, Union
+from typing import Final, Literal, NamedTuple, Optional, Tuple, Union
 
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.unit import Angular, Distance, Energy, Velocity, Weight, GenericDimension, Unit, PreferredUnits

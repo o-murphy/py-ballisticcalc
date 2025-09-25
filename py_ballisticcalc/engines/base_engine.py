@@ -35,13 +35,11 @@ See Also:
 from __future__ import annotations
 import bisect
 import math
-from typing import Sequence
+from typing import List, NamedTuple, Optional, Sequence, Tuple, TypedDict, TypeVar, Union
 import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
-
-from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, TypeVar, Union
 
 from py_ballisticcalc.conditions import Shot, ShotProps, Wind
 from py_ballisticcalc.exceptions import ZeroFindingError, OutOfRangeError, SolverRuntimeError

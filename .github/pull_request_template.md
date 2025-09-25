@@ -7,7 +7,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. Modify the `docs/changelog.md`, describing your changes as is specified by the
    guidelines in that document.
 3. Follow the `docs/contributing.md`
-4. The pull request should work for Python 3.9+ on the following platforms:
+4. The pull request should work for Python 3.10+ on the following platforms:
     - Windows 10 and greater
     - Linux distributions
     - OS X / macOS >= 13

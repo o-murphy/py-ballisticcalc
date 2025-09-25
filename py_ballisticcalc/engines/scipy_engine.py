@@ -56,11 +56,11 @@ import bisect
 import math
 import warnings
 from dataclasses import dataclass, asdict
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Callable, List, Literal, Optional, Sequence, Tuple, Union
+from typing_extensions import override
 
 # Third-party imports
 import numpy as np
-from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
 from py_ballisticcalc.conditions import ShotProps, Wind
