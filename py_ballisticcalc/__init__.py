@@ -15,18 +15,17 @@ __credits__ = ["o-murphy", "dbookstaber"]
 import importlib.resources
 import os
 import sys
-
-# Third-party imports
-from typing_extensions import Dict, Optional
+from typing import Dict, Optional
 
 # Local imports
 from .logger import logger as log
 from .unit import Unit, PreferredUnits
 
-if sys.version_info[:2] < (3, 11):
-    import tomli as tomllib
-else:
+# Use version-guarded import so mypy doesn't report missing import on Python 3.10
+if sys.version_info >= (3, 11):
     import tomllib
+else:  # Python 3.10 fallback
+    import tomli as tomllib  # type: ignore[no-redef]
 
 
 def _load_config(filepath: Optional[str] = None, suppress_warnings: bool = False) -> None:

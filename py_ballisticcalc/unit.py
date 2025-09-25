@@ -49,21 +49,15 @@ Supported Dimensions:
 
 # Standard library imports
 from __future__ import annotations
+from collections.abc import Hashable
 from dataclasses import dataclass, fields, MISSING
 from enum import IntEnum
 from math import pi
 import re
-from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
-    SupportsFloat, SupportsInt, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
-from collections.abc import Hashable
-try:
-    # Python 3.10+ provides NotImplementedType in types
-    from types import NotImplementedType  # type: ignore[attr-defined]
-except Exception:  # pragma: no cover - fallback for Python 3.9
-    # On older Python, derive the type from the singleton
-    NotImplementedType = type(NotImplemented)  # type: ignore[misc,assignment]
-
-from typing_extensions import Self, TypeAlias, override
+from typing import (Any, Callable, Final, Generator, Generic, Iterable, Mapping, NamedTuple, Optional, Protocol,
+                    Sequence, SupportsFloat, SupportsInt, Tuple, TypeAlias, TypeVar, Union, runtime_checkable)
+from typing_extensions import Self, override
+from types import NotImplementedType
 
 # Local imports
 from py_ballisticcalc.exceptions import UnitTypeError, UnitConversionError, UnitAliasError

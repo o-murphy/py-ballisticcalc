@@ -17,8 +17,7 @@ References:
     - Physical constants: NIST and other authoritative sources
 """
 
-# Third-party imports
-from typing_extensions import Final
+from typing import Final
 
 # =============================================================================
 # Global Atmosphere Constants

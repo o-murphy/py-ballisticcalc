@@ -38,12 +38,10 @@ See also
 - Units and conversions: py_ballisticcalc.unit
 """
 from __future__ import annotations
-
-import math
-import warnings
 from dataclasses import dataclass, field
-
-from typing_extensions import List, NamedTuple, Optional, Sequence, Tuple, Union
+import math
+from typing import List, NamedTuple, Optional, Sequence, Tuple, Union
+import warnings
 
 from py_ballisticcalc.constants import (cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric,
     cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric,

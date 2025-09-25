@@ -64,10 +64,8 @@ Styling and Customization:
 from __future__ import annotations
 # Standard library imports
 import math
+from typing import Any, Optional
 import warnings
-
-# Third-party imports
-from typing_extensions import Any, Optional
 
 # Local imports
 from py_ballisticcalc import HitResult

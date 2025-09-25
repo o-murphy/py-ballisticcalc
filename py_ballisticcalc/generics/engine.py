@@ -24,10 +24,7 @@ Note:
 
 # Standard library imports
 from abc import abstractmethod
-from typing import Any, Optional, TypeVar, Union
-
-# Third-party imports
-from typing_extensions import Protocol, runtime_checkable
+from typing import Any, Optional, Protocol, runtime_checkable, TypeVar, Union
 
 # Local imports
 from py_ballisticcalc.conditions import Shot

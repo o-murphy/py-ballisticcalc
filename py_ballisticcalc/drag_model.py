@@ -23,10 +23,7 @@ allow for custom drag functions based on Mach number vs drag coefficient data.
 import math
 import warnings
 from dataclasses import dataclass, field
-from typing import List, Optional, Tuple, Union
-
-# Third-party imports
-from typing_extensions import TypeAlias
+from typing import List, Optional, Tuple, TypeAlias, Union
 
 # Local imports
 from py_ballisticcalc.constants import cDegreesCtoK, cSpeedOfSoundMetric, cStandardTemperatureC

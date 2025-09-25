@@ -34,15 +34,13 @@ Examples:
     ```
 """
 import math
-import typing
 from dataclasses import dataclass
-
-from typing_extensions import NamedTuple, Union, Optional, Literal, get_args
+from typing import NamedTuple, Union, Optional, Literal, get_args, TYPE_CHECKING
 
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.unit import Velocity, Temperature, Distance, Angular, PreferredUnits
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from py_ballisticcalc.trajectory_data import TrajectoryData
 
 SightFocalPlane = Literal['FFP', 'SFP', 'LWIR']
