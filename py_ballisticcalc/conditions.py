@@ -851,10 +851,8 @@ class ShotProps:
         """
         rate = (data_points[1].CD - data_points[0].CD) / (data_points[1].Mach - data_points[0].Mach)
         curve = [CurvePoint(0, rate, data_points[0].CD - data_points[0].Mach * rate)]
-        len_data_points = int(len(data_points))
-        len_data_range = len_data_points - 1
 
-        for i in range(1, len_data_range):
+        for i in range(1, int(len(data_points)) - 1):
             x1 = data_points[i - 1].Mach
             x2 = data_points[i].Mach
             x3 = data_points[i + 1].Mach
@@ -868,13 +866,6 @@ class ShotProps:
             curve_point = CurvePoint(a, b, c)
             curve.append(curve_point)
 
-        num_points = len_data_points
-        rate = (data_points[num_points - 1].CD - data_points[num_points - 2].CD) / \
-            (data_points[num_points - 1].Mach - data_points[num_points - 2].Mach)
-        curve_point = CurvePoint(
-            0, rate, data_points[num_points - 1].CD - data_points[num_points - 2].Mach * rate
-        )
-        curve.append(curve_point)
         return curve
 
     @staticmethod

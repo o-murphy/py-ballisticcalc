@@ -310,9 +310,9 @@ class TrajectoryData(NamedTuple):
         mach: Velocity in Mach terms
         height: Vertical (y-axis) coordinate of this point
         slant_height: Distance orthogonal to sight-line
-        drop_angle: Sight adjustment to zero slant_height at this distance
+        drop_angle: Slant_height in angular term
         windage: Windage (z-axis) coordinate of this point
-        windage_angle: Windage adjustment
+        windage_angle: Windage in angular terms
         slant_distance: Distance along sight line that is closest to this point
         angle: Angle of velocity vector relative to x-axis
         density_ratio: Ratio of air density here to standard density
@@ -328,9 +328,9 @@ class TrajectoryData(NamedTuple):
     mach: float  # Velocity in Mach terms
     height: Distance  # Vertical (y-axis) coordinate of this point
     slant_height: Distance  # Distance orthogonal to sight-line
-    drop_angle: Angular  # Sight adjustment to zero slant_height at this distance
+    drop_angle: Angular  # Slant_height in angular terms
     windage: Distance  # Windage (z-axis) coordinate of this point
-    windage_angle: Angular  # Windage adjustment
+    windage_angle: Angular  # Windage in angular terms
     slant_distance: Distance  # Distance along sight line that is closest to this point
     angle: Angular  # Angle of velocity vector relative to x-axis
     density_ratio: float  # Ratio of air density here to standard density
@@ -529,8 +529,8 @@ class TrajectoryData(NamedTuple):
         spin_drift = props.spin_drift(time)
         velocity = velocity_vector.magnitude()
         windage = range_vector.z + spin_drift
-        drop_angleustment = TrajectoryData.get_correction(range_vector.x, range_vector.y)
-        windage_angleustment = TrajectoryData.get_correction(range_vector.x, windage)
+        drop_angle = TrajectoryData.get_correction(range_vector.x, range_vector.y)
+        windage_angle = TrajectoryData.get_correction(range_vector.x, windage)
         trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
         look_angle_cos = math.cos(props.look_angle_rad)
         look_angle_sin = math.sin(props.look_angle_rad)
@@ -543,9 +543,9 @@ class TrajectoryData(NamedTuple):
             mach=velocity / mach,
             height=TrajectoryData._new_feet(range_vector.y),
             slant_height=TrajectoryData._new_feet(range_vector.y * look_angle_cos - range_vector.x * look_angle_sin),
-            drop_angle=TrajectoryData._new_rad(drop_angleustment - (props.look_angle_rad if range_vector.x else 0)),
+            drop_angle=TrajectoryData._new_rad(drop_angle - (props.look_angle_rad if range_vector.x else 0)),
             windage=TrajectoryData._new_feet(windage),
-            windage_angle=TrajectoryData._new_rad(windage_angleustment),
+            windage_angle=TrajectoryData._new_rad(windage_angle),
             slant_distance=TrajectoryData._new_feet(range_vector.x * look_angle_cos + range_vector.y * look_angle_sin),
             angle=TrajectoryData._new_rad(trajectory_angle),
             density_ratio=density_ratio,
