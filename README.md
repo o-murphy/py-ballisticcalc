@@ -42,7 +42,7 @@ https://img.shields.io/github/v/release/o-murphy/py-ballisticcalc?include_prerel
 https://pypi.org/project/py-ballisticcalc/#history
 
 [coverage]:
-https://github.com/o-murphy/py-ballisticcalc/coverage.svg
+./coverage.svg
 
 [downloads]:
 https://img.shields.io/pepy/dt/py-ballisticcalc?style=flat-square
