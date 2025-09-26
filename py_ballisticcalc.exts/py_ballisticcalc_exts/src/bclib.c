@@ -13,9 +13,9 @@ const double cSpeedOfSoundImperial  = 49.0223;
 const double cSpeedOfSoundMetric    = 20.0467;
 const double cLapseRateKperFoot     = -0.0019812;
 const double cLapseRateImperial     = -0.00356616;
-const double cPressureExponent      = 5.2559;
+const double cPressureExponent      = 5.255876;
 const double cLowestTempF           = -130.0;
-const double mToFeet                = 3.28084;
+const double mToFeet                = 3.280839895;
 
 const double cMaxWindDistanceFeet   = 1e8;
 
@@ -26,24 +26,6 @@ void Curve_t_free(Curve_t *curve_ptr) {
         curve_ptr->length = 0;     // optional: reset length
     }
 }
-
-///**
-// * Allocate and initialize MachList_t from a C array of doubles.
-// * Caller must free `array` later.
-// */
-//MachList_t MachList_fromArray(const double *values, size_t length) {
-//    MachList_t ml;
-//    ml.length = length;
-//    ml.array = (double *)malloc(length * sizeof(double));
-//    if (ml.array == NULL) {
-//        ml.length = 0;
-//        return ml;  // array == NULL means allocation failed
-//    }
-//    for (size_t i = 0; i < length; i++) {
-//        ml.array[i] = values[i];
-//    }
-//    return ml;
-//}
 
 void MachList_t_free(MachList_t *mach_list_ptr) {
     if (mach_list_ptr != NULL && mach_list_ptr->array != NULL) {
@@ -119,7 +101,7 @@ int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) {
 
         fv = pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
         ft = (shot_props_ptr->atmo._t0 * 9.0 / 5.0) + 32.0;  // Convert from Celsius to Fahrenheit
-        pt = shot_props_ptr->atmo._p0 / 33.8639;  // Convert hPa to inHg
+        pt = shot_props_ptr->atmo._p0 / 33.863881565591;  // Convert hPa to inHg
 
         // Ensure pt is not zero before division
         if (pt != 0.0) {
