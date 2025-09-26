@@ -309,7 +309,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 cant_sine=sin(shot_info.cant_angle._rad),
                 alt0=shot_info.atmo.altitude._feet,
                 calc_step=self.get_calc_step(),
-                diameter=shot_info.ammo.dm.diameter._inch,
+                muzzle_velocity=shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps,
                 stability_coefficient=0.0,
                 filter_flags=0,
                 atmo=Atmosphere_t(
@@ -321,7 +321,6 @@ cdef class CythonizedBaseIntegrationEngine:
                     cLowestTempC=shot_info.atmo.cLowestTempC,
                 )
             )
-            self._shot_s.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
             if ShotProps_t_updateStabilityCoefficient(&self._shot_s) < 0:
                 raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
         except Exception:

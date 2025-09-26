@@ -119,12 +119,72 @@ For any object in the hot path we create a C helper as follows:
 3. Copy the `struct` as a `ctypedef` to `cy_bindings.pxd`.  (This could be automated at compile time but is not at present.)
 4. Put any conversion logic in `cy_bindings.pyx`.  E.g., `cdef ShotProps_t ShotProps_t_from_pyshot(object shot_props):`
 
+## Memory / leak detection strategy
+
+We intentionally avoid embedding ad‑hoc global allocation counters inside the C core. Instead we rely
+on layered techniques that scale better and keep production code minimal:
+
+1. Deterministic construction/destruction loops (stress tests)
+     - Repeatedly build and discard objects (e.g. drag curves, Mach lists, trajectory buffers) inside
+         a pytest `@pytest.mark.stress` test. If RSS or object counts trend upward unbounded, investigate.
+     - Keep the loop count high enough to amplify tiny leaks (hundreds–thousands) but bounded to keep CI fast.
+
+2. Python heap/object monitoring (snapshots and trend checks)
+     - Use `tracemalloc` inside a `@pytest.mark.stress` test to obtain a before/after snapshot across a high‑iteration drag evaluation or trajectory generation loop. Rather than asserting on raw absolute bytes (which can be noisy across allocators/platforms), we:
+         1. Warm up (one integration) to populate caches/one‑time allocations.
+         2. Start tracing, run N evaluation batches, force a `gc.collect()` between batches.
+         3. Compare snapshots; fail only if net retained size exceeds a conservative threshold (kept local to the test as a constant so CI adjustments are simple).
+     - Example idiom (trimmed):
+
+        ```python
+        import tracemalloc, gc
+        tracemalloc.start()
+        snap0 = tracemalloc.take_snapshot()
+        for _ in range(BATCHES):
+            run_drag_evals()
+            gc.collect()
+        snap1 = tracemalloc.take_snapshot()
+        total_diff = sum(stat.size_diff for stat in snap1.compare_to(snap0, 'filename'))
+        assert total_diff < LEAK_THRESHOLD_BYTES
+        ```
+     - We deliberately scope thresholds and batch counts inside the test (no env vars) to keep behavior deterministic and self‑documenting.
+
+3. Platform tools (C allocations / native leaks)
+     - Linux / WSL: `valgrind --leak-check=full python -m pytest tests -k stress` (slow but definitive)
+     - AddressSanitizer (ASan): build extension with `CFLAGS="-O2 -g -fsanitize=address"` &
+         `LDFLAGS="-fsanitize=address"` then run stress tests; reports use‑after‑free, double free, leaks.
+     - macOS: `leaks` tool or Instruments (Allocations & Leaks templates).
+     - Windows: Visual Studio Diagnostics, Dr. Memory, or Application Verifier + Debug CRT (set
+         `_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF)` inside a small harness).
+
+4. Cython boundary audits
+     - Enable Cython annotation (`CYTHON_ANNOTATE=1`) to inspect Python interaction hot spots.
+     - Review that every `malloc` / `realloc` / `calloc` has a matching `free` in normal and error paths.
+     - Ensure early returns after partial allocation free prior blocks.
+
+5. Monitoring RSS (coarse indicator)
+     - Use `psutil.Process().memory_info().rss` sampled before/after a stress loop. Accept small (<1–2%) drift
+         due to allocator fragmentation but investigate linear growth.
+
+### When to escalate
+Use lightweight Python tooling first (stress + tracemalloc). Escalate to Valgrind / ASan only when a leak
+pattern is confirmed or a corruption (crash, inconsistent data) is suspected.
+
 ## Debugging tips
 - Reproduce failure with a focused pytest call (pass the test path) to avoid long runs.
 - Add temporary debug prints in Python-side filter rather than in C to avoid recompiles.
 - To iterate on Cython code rapidly: keep `pyx` edits small and incremental, run `py -m pip install -e ./py_ballisticcalc.exts` to rebuild the extension in-place.
 
+### Troubleshooting native issues
+- Crash inside C function: rebuild with `-O0 -g` and run under `gdb --args python -m pytest ...`.
+- Sporadic NaNs in trajectory: print intermediate Mach, density, drag values for the iteration where the
+    NaN first appears; confirm inputs within expected ranges; check for division by zero in slope formulas.
+
 ## Contribution checklist
 - Keep parity: match Python reference implementations for event semantics unless you intentionally change behavior (document that change).
 - Add tests for any public behavioral change.
 - Keep Cython numeric code focused on inner loops and return dense samples for Python post-processing.
+
+### Tests
+* `pytest ./py_ballisticcalc.exts/tests` for cython-specific tests.
+* We use `@pytest.mark.stress` to keep stress tests separate.  To run those: `pytest ./py_ballisticcalc.exts/tests -m stress`

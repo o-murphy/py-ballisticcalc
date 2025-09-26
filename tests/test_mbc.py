@@ -77,7 +77,7 @@ class TestMBC:
 
     def test_mbc3(self):
         """Setting higher bc should result in higher downrange velocities"""
-        # So here we'll boost the bc for velocities lower than the baseline's velocity at 200 yards
+        # Here we'll boost the bc for velocities lower than the baseline's velocity at 200 yards
         dm_multi = DragModelMultiBC(
             [BCPoint(.5, V=self.baseline_trajectory[3].velocity),
              BCPoint(.22, V=self.baseline_trajectory[2].velocity)],
@@ -114,10 +114,8 @@ class TestMBC:
         # Litz's multi-bc table comversion to CDM, 338LM 285GR HORNADY ELD-M
         dm = DragModelMultiBC([BCPoint(0.417, V=Velocity.MPS(745)), BCPoint(0.409, V=Velocity.MPS(662)),
                                BCPoint(0.4, V=Velocity.MPS(580))],
-                              drag_table=TableG7,
-                              weight=Weight.Grain(285),
-                              diameter=Distance.Inch(0.338)
-                              )
+                              drag_table=TableG7, weight=Weight.Grain(285), diameter=Distance.Inch(0.338)
+        )
         cds = [p.CD for p in dm.drag_table]
         machs = [p.Mach for p in dm.drag_table]
 
@@ -160,9 +158,9 @@ class TestShotPropsDrag:
     @pytest.mark.parametrize(
         "shot_factory, table",
         [
-            (create_23_mm_shot, TableG1),  # G1 table
-            (create_7_62_mm_shot, TableG7),  # G7 table
-            (create_5_56_mm_shot, TableG7),  # another G7 sample
+            (create_23_mm_shot, TableG1),
+            (create_7_62_mm_shot, TableG7),
+            (create_5_56_mm_shot, TableG7),
         ],
     )
     def test_drag_exact_at_knots(self, shot_factory, table):
@@ -187,7 +185,6 @@ class TestShotPropsDrag:
     def test_drag_monotone_between_adjacent_knots(self, shot_factory, table):
         # For each adjacent pair (Mach_i, CD_i) -> (Mach_{i+1}, CD_{i+1})
         # the interpolated value at interior points should lie within [min, max] of the segment endpoints.
-        # Note: If current implementation overshoots in some segments this may fail; acceptable pre-refactor.
         shot = shot_factory()
         sp = ShotProps.from_shot(shot)
         bc = sp.bc
@@ -224,7 +221,6 @@ class TestShotPropsDrag:
             y_left = sp.drag_by_mach(x_left)
             y_mid = sp.drag_by_mach(xs[i])
             y_right = sp.drag_by_mach(x_right)
-            # small continuity tolerance; pre-refactor impl may have small kinks
             assert abs(y_left - y_mid) < 1e-4
             assert abs(y_right - y_mid) < 1e-4
 
