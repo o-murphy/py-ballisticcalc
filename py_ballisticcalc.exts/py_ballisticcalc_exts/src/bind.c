@@ -3,6 +3,7 @@
 
 #include <Python.h>
 #include <stdlib.h>
+#include <math.h>
 #include "bclib.h"
 #include "bind.h"
 
@@ -95,68 +96,108 @@ MachList_t MachList_t_fromPylist(PyObject *pylist) {
 
 Curve_t Curve_t_fromPylist(PyObject *data_points) {
     Curve_t curve = {NULL, 0};
-    Py_ssize_t len = PyList_Size(data_points);
-    if (len < 2)  // at least 2 points are required for correct interpolation
+    Py_ssize_t n = PyList_Size(data_points);
+    if (n < 2)  // need at least 2 points
         return curve;
 
-    CurvePoint_t *curve_points = (CurvePoint_t *) malloc((len - 1) * sizeof(CurvePoint_t));
-    if (!curve_points)
+    // Allocate arrays for knots and values
+    double *x = (double *)malloc((size_t)n * sizeof(double));
+    double *y = (double *)malloc((size_t)n * sizeof(double));
+    if (x == NULL || y == NULL) {
+        if (x) free(x);
+        if (y) free(y);
         return curve;
-
-    curve.length = (size_t)len;
-    curve.points = curve_points;
-
-    // Local variables for calculation
-    double rate, x1, x2, x3, y1, y2, y3, a, b, c;
-
-    // Function to get attributes from a Python object:
-    // mach = PyFloat_AsDouble(PyObject_GetAttrString(obj, "Mach"))
-    // cd = PyFloat_AsDouble(PyObject_GetAttrString(obj, "CD"))
-
-    // First point (special case)
-    PyObject *item0 = PyList_GetItem(data_points, 0); // borrowed ref
-    PyObject *item1 = PyList_GetItem(data_points, 1);
-
-    double mach0 = PyFloat_AsDouble(PyObject_GetAttrString(item0, "Mach"));
-    double cd0 = PyFloat_AsDouble(PyObject_GetAttrString(item0, "CD"));
-    double mach1 = PyFloat_AsDouble(PyObject_GetAttrString(item1, "Mach"));
-    double cd1 = PyFloat_AsDouble(PyObject_GetAttrString(item1, "CD"));
-
-    rate = (cd1 - cd0) / (mach1 - mach0);
-    curve_points[0].a = 0.0;
-    curve_points[0].b = rate;
-    curve_points[0].c = cd0 - mach0 * rate;
-
-    // Main loop, interpolation for points 1..len-2
-    for (Py_ssize_t i = 1; i < len - 1; i++) {
-        PyObject *item_m1 = PyList_GetItem(data_points, i - 1);
-        PyObject *item_i = PyList_GetItem(data_points, i);
-        PyObject *item_p1 = PyList_GetItem(data_points, i + 1);
-
-        x1 = PyFloat_AsDouble(PyObject_GetAttrString(item_m1, "Mach"));
-        x2 = PyFloat_AsDouble(PyObject_GetAttrString(item_i, "Mach"));
-        x3 = PyFloat_AsDouble(PyObject_GetAttrString(item_p1, "Mach"));
-
-        y1 = PyFloat_AsDouble(PyObject_GetAttrString(item_m1, "CD"));
-        y2 = PyFloat_AsDouble(PyObject_GetAttrString(item_i, "CD"));
-        y3 = PyFloat_AsDouble(PyObject_GetAttrString(item_p1, "CD"));
-
-        double denom = ((x3*x3 - x1*x1)*(x2 - x1) - (x2*x2 - x1*x1)*(x3 - x1));
-        if (denom == 0) {
-            // Avoid division by zero, can set default values or return an error
-            a = 0;
-            b = 0;
-            c = y2;  // Just a constant
-        } else {
-            a = ((y3 - y1)*(x2 - x1) - (y2 - y1)*(x3 - x1)) / denom;
-            b = (y2 - y1 - a*(x2*x2 - x1*x1)) / (x2 - x1);
-            c = y1 - (a*x1*x1 + b*x1);
-        }
-        curve_points[i].a = a;
-        curve_points[i].b = b;
-        curve_points[i].c = c;
     }
 
+    // Extract Mach (x) and CD (y) from Python list
+    for (Py_ssize_t i = 0; i < n; ++i) {
+        PyObject *item = PyList_GetItem(data_points, i);  // borrowed
+        if (item == NULL) { free(x); free(y); return curve; }
+        PyObject *xobj = PyObject_GetAttrString(item, "Mach");
+        PyObject *yobj = PyObject_GetAttrString(item, "CD");
+        if (xobj == NULL || yobj == NULL) { Py_XDECREF(xobj); Py_XDECREF(yobj); free(x); free(y); return curve; }
+        x[i] = PyFloat_AsDouble(xobj);
+        y[i] = PyFloat_AsDouble(yobj);
+        Py_DECREF(xobj);
+        Py_DECREF(yobj);
+        if (PyErr_Occurred()) { free(x); free(y); return curve; }
+    }
+
+    // Allocate segment coefficients (n-1 segments)
+    CurvePoint_t *curve_points = (CurvePoint_t *) malloc((size_t)(n - 1) * sizeof(CurvePoint_t));
+    if (!curve_points) { free(x); free(y); return curve; }
+
+    // Prepare PCHIP slopes using Fritsch–Carlson algorithm
+    Py_ssize_t nm1 = n - 1;
+    double *h = (double *)malloc((size_t)nm1 * sizeof(double));
+    double *d = (double *)malloc((size_t)nm1 * sizeof(double));
+    double *m = (double *)malloc((size_t)n * sizeof(double));
+    if (h == NULL || d == NULL || m == NULL) {
+        if (h) free(h);
+        if (d) free(d);
+        if (m) free(m);
+        free(curve_points);
+        free(x);
+        free(y);
+        return curve;
+    }
+
+    for (Py_ssize_t i = 0; i < nm1; ++i) {
+        h[i] = x[i+1] - x[i];
+        d[i] = (y[i+1] - y[i]) / h[i];
+    }
+
+    if (n == 2) {
+        m[0] = d[0];
+        m[1] = d[0];
+    } else {
+        // Interior slopes
+        for (Py_ssize_t i = 1; i < n - 1; ++i) {
+            if (d[i-1] == 0.0 || d[i] == 0.0 || d[i-1] * d[i] < 0.0) {
+                m[i] = 0.0;
+            } else {
+                double w1 = 2.0 * h[i] + h[i-1];
+                double w2 = h[i] + 2.0 * h[i-1];
+                m[i] = (w1 + w2) / (w1 / d[i-1] + w2 / d[i]);
+            }
+        }
+        // Endpoint m[0]
+        double m0 = ((2.0 * h[0] + h[1]) * d[0] - h[0] * d[1]) / (h[0] + h[1]);
+        if (m0 * d[0] <= 0.0) m0 = 0.0;
+        else if ((d[0] * d[1] < 0.0) && (fabs(m0) > 3.0 * fabs(d[0]))) m0 = 3.0 * d[0];
+        m[0] = m0;
+        // Endpoint m[n-1]
+        double mn = ((2.0 * h[n-2] + h[n-3]) * d[n-2] - h[n-2] * d[n-3]) / (h[n-2] + h[n-3]);
+        if (mn * d[n-2] <= 0.0) mn = 0.0;
+        else if ((d[n-2] * d[n-3] < 0.0) && (fabs(mn) > 3.0 * fabs(d[n-2]))) mn = 3.0 * d[n-2];
+        m[n-1] = mn;
+    }
+
+    // Build per-segment cubic coefficients in dx=(x-x_i):
+    for (Py_ssize_t i = 0; i < nm1; ++i) {
+        double H = h[i];
+        double yi = y[i];
+        double mi = m[i];
+        double mip1 = m[i+1];
+        // A and B helpers
+        double A = (y[i+1] - yi - mi * H) / (H * H);
+        double B = (mip1 - mi) / H;
+        double a = (B - 2.0 * A) / H;
+        double b = 3.0 * A - B;
+        curve_points[i].a = a;
+        curve_points[i].b = b;
+        curve_points[i].c = mi;
+        curve_points[i].d = yi;
+    }
+
+    // Assign to curve and free temps
+    curve.length = (size_t)n;
+    curve.points = curve_points;
+    free(x);
+    free(y);
+    free(h);
+    free(d);
+    free(m);
     return curve;
 }
 

@@ -30,6 +30,7 @@ typedef struct {
     double a;
     double b;
     double c;
+    double d;  // PCHIP cubic constant term for segment (y at left knot)
 } CurvePoint_t;
 
 typedef struct {
