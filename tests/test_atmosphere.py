@@ -102,7 +102,7 @@ class TestAtmosphere:
         calc = Calculator(engine=loaded_engine_instance)
         calc.set_weapon_zero(zero, check_distance)
         baseline_trajectory = calc.fire(shot=zero, trajectory_range=check_distance, trajectory_step=check_distance)
-        baseline = baseline_trajectory.get_at('distance', check_distance)
+        baseline = baseline_trajectory.get_at('distance', check_distance, epsilon=1e-8)
 
         # Increasing humidity reduces air density which decreases drag
         atmo.humidity = 1.0

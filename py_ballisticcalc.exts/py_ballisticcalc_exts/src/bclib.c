@@ -139,34 +139,35 @@ int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) {
 double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
                                    const Curve_t *curve_ptr,
                                    double mach) {
-    int num_points = (int)curve_ptr->length;
-    int mlo = 0;
-    int mhi = num_points - 2;  // Assuming we have at least 2 points
-    int mid, m;
-    CurvePoint_t curve_m;
-
-    // Binary search to find the closest two mach points
-    while (mhi - mlo > 1) {
-        mid = (mhi + mlo) / 2;
-        if (mach_list_ptr->array[mid] < mach) {
-            mlo = mid;
-        } else {
-            mhi = mid;
-        }
+    // PCHIP evaluation: find segment i with x in [x_i, x_{i+1}], then y = d + dx*(c + dx*(b + dx*a))
+    const double *xs = mach_list_ptr->array;
+    int n = (int)mach_list_ptr->length;     // number of knots
+    if (n < 2) {
+        // insufficient data; return 0
+        return 0.0;
     }
 
-    // Choose the closer point
-    if ((mach_list_ptr->array[mhi] - mach) > (mach - mach_list_ptr->array[mlo])) {
-        m = mlo;
+    // Clamp to range endpoints
+    int i;
+    if (mach <= xs[0]) {
+        i = 0;
+    } else if (mach >= xs[n - 1]) {
+        i = n - 2;
     } else {
-        m = mhi;
+        // lower_bound to find first j with xs[j] >= mach, then i = j - 1
+        int lo = 0, hi = n - 1;
+        while (lo < hi) {
+            int mid = lo + (hi - lo) / 2;
+            if (xs[mid] < mach) lo = mid + 1; else hi = mid;
+        }
+        i = lo - 1;
+        if (i < 0) i = 0;
+        if (i > n - 2) i = n - 2;
     }
 
-    // Lookup corresponding curve point
-    curve_m = curve_ptr->points[m];
-
-    // Calculate value using a + b*m + c formula
-    return curve_m.c + mach * (curve_m.b + curve_m.a * mach);
+    CurvePoint_t seg = curve_ptr->points[i];
+    double dx = mach - xs[i];
+    return seg.d + dx * (seg.c + dx * (seg.b + dx * seg.a));
 }
 
 /**
