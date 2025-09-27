@@ -32,10 +32,6 @@ Examples:
 >>> # Crosswind from left to right at 10 fps, in effect over the entire trajectory:
 >>> from py_ballisticcalc import Unit
 >>> breeze = Wind(velocity=Unit.FPS(10), direction_from=Unit.Degree(90))
-
-See also
-- Engines consuming these types: py_ballisticcalc.engines.*
-- Units and conversions: py_ballisticcalc.unit
 """
 from __future__ import annotations
 
@@ -43,7 +39,7 @@ import math
 import warnings
 from dataclasses import dataclass, field
 
-from typing_extensions import List, NamedTuple, Optional, Sequence, Tuple, Union
+from typing_extensions import List, Optional, Sequence, Tuple, Union
 from py_ballisticcalc.interpolation import PchipPrepared, pchip_prepare, pchip_eval
 
 from py_ballisticcalc.constants import (cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric,
@@ -60,78 +56,58 @@ __all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot', 'ShotProps')
 
 
 class Atmo:  # pylint: disable=too-many-instance-attributes
-    """
-    Atmospheric conditions and density calculations.
+    """Atmospheric conditions and density calculations.
+
+    This class encapsulates atmospheric conditions (altitude, pressure, temperature, relative humidity)
+    and provides helpers to derive air density ratio, actual densities, and local speed of sound (Mach 1).
+    The instance stores an internal "base" altitude/pressure/temperature snapshot (`_a0`, `_p0`, `_t0`)
+    used to interpolate conditions at other altitudes using lapse-rate models.
 
     Attributes:
-        altitude: Altitude relative to sea level
-        pressure: Unadjusted barometric pressure, a.k.a. station pressure
-        temperature: Temperature
-        humidity: Relative humidity [0% to 100%]
-        powder_temp: Temperature of powder (if different from atmosphere).
-            (Used when Ammo.use_powder_sensitivity is True)
-        density_ratio: Ratio of current density to standard atmospheric density
-        mach: Velocity of sound (Mach 1) for current atmosphere
+        altitude (Distance): Altitude relative to sea level.
+        pressure (Pressure): Unadjusted barometric (station) pressure.
+        temperature (Temperature): Ambient air temperature.
+        humidity (float): Relative humidity expressed either as fraction [0..1] or percent [0..100].
+        powder_temp (Temperature): Powder temperature (may differ from ambient when powder sensitivity enabled).
+        density_ratio (float): Ratio of local air density to standard density.
+        mach (Velocity): Local speed of sound (Mach 1).
+        density_metric (float): Air density in kg/m^3.
+        density_imperial (float): Air density in lb/ft^3.
     """
 
-    @property
-    def altitude(self) -> Distance:
-        """Altitude relative to sea level."""
-        return self._altitude
-
-    @property
-    def pressure(self) -> Pressure:
-        """Unadjusted barometric pressure, a.k.a. station pressure."""
-        return self._pressure
-
-    @property
-    def temperature(self) -> Temperature:
-        """Local air temperature."""
-        return self._temperature
-
-    @property
-    def powder_temp(self) -> Temperature:
-        """Powder temperature."""
-        return self._powder_temp
-
-    @property
-    def mach(self) -> Velocity:
-        """Velocity of sound (Mach 1) for current atmosphere."""
-        return Velocity.FPS(self._mach)
-
-    @property
-    def density_ratio(self) -> float:
-        """Ratio of current density to standard atmospheric density."""
-        return self._density_ratio
-
+    # ---------------------------------------------------------------------
+    # Class / instance private state annotations & class constants
+    # ---------------------------------------------------------------------
     _humidity: float  # Relative humidity [0% to 100%]
     _mach: float  # Velocity of sound (Mach 1) for current atmosphere in fps
-    _a0: float  # Zero Altitude in feet
-    _t0: float  # Zero Temperature in Celsius
-    _p0: float  # Zero Pressure in hPa
-    cLowestTempC: float = Temperature.Fahrenheit(
-        cLowestTempF) >> Temperature.Celsius  # Lowest modelled temperature in Celsius
+    _a0: float  # Base Altitude (ft)
+    _t0: float  # Base Temperature (°C)
+    _p0: float  # Base Pressure (hPa)
+    cLowestTempC: float = Temperature.Fahrenheit(cLowestTempF) >> Temperature.Celsius  # Model lower bound (°C)
 
-    def __init__(self,
-                 altitude: Optional[Union[float, Distance]] = None,
-                 pressure: Optional[Union[float, Pressure]] = None,
-                 temperature: Optional[Union[float, Temperature]] = None,
-                 humidity: float = 0.0,
-                 powder_t: Optional[Union[float, Temperature]] = None):
-        """
-        Create a new Atmo instance.
+    # ---------------------------------------------------------------------
+    # Construction / dunder methods
+    # ---------------------------------------------------------------------
+    def __init__(
+        self,
+        altitude: Optional[Union[float, Distance]] = None,
+        pressure: Optional[Union[float, Pressure]] = None,
+        temperature: Optional[Union[float, Temperature]] = None,
+        humidity: float = 0.0,
+        powder_t: Optional[Union[float, Temperature]] = None,
+    ):
+        """Initialize an `Atmo` instance.
 
         Args:
-            altitude: Altitude relative to sea level
-            pressure: Atmospheric pressure
-            temperature: Atmospheric temperature
-            humidity: Atmospheric relative humidity [0% to 100%]
-            powder_t: Custom temperature of powder different to atmospheric.
-                Used when Ammo.use_powder_sensitivity is True
+            altitude: Altitude relative to sea level. Defaults to 0.
+            pressure: Station pressure (unadjusted). Defaults to standard pressure for altitude.
+            temperature: Ambient temperature. Defaults to standard temperature for altitude.
+            humidity: Relative humidity (fraction or percent). Defaults to 0.
+            powder_t: Powder (propellant) temperature. Defaults to ambient temperature.
 
         Example:
             ```python
-            from py_ballisticcalc import Atmo
+            from py_ballisticcalc import Atmo, Unit
             atmo = Atmo(
                 altitude=Unit.Meter(100),
                 pressure=Unit.hPa(1000),
@@ -140,40 +116,87 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
                 powder_t=Unit.Celsius(15)
             )
             ```
+
+        Notes:
+            The constructor caches base conditions (`_t0` in °C, `_p0` in hPa, `_a0` in feet) and computes associated
+            `_mach` and `_density_ratio`. Subsequent changes to humidity trigger an automatic density recomputation.
         """
         self._initializing = True
         self._altitude = PreferredUnits.distance(altitude or 0)
-        self._pressure = PreferredUnits.pressure(pressure or Atmo.standard_pressure(self.altitude))
-        self._temperature = PreferredUnits.temperature(temperature or Atmo.standard_temperature(self.altitude))
+        self._pressure = PreferredUnits.pressure(pressure or Atmo.standard_pressure(self._altitude))
+        self._temperature = PreferredUnits.temperature(temperature or Atmo.standard_temperature(self._altitude))
         # If powder_temperature not provided we use atmospheric temperature:
-        self._powder_temp = PreferredUnits.temperature(powder_t or self.temperature)
-        self._t0 = self.temperature >> Temperature.Celsius
-        self._p0 = self.pressure >> Pressure.hPa
-        self._a0 = self.altitude >> Distance.Foot
+        self._powder_temp = PreferredUnits.temperature(powder_t or self._temperature)
+        self._t0 = self._temperature >> Temperature.Celsius
+        self._p0 = self._pressure >> Pressure.hPa
+        self._a0 = self._altitude >> Distance.Foot
         self._mach = Atmo.machF(self._temperature >> Temperature.Fahrenheit)
         self.humidity = humidity
         self._initializing = False
         self.update_density_ratio()
 
+    def __str__(self) -> str:  # noqa: D401 - short repr style acceptable
+        return (
+            f"Atmo(altitude={self.altitude}, pressure={self.pressure}, temperature={self.temperature}, "
+            f"humidity={self.humidity}, density_ratio={self.density_ratio}, mach={self.mach})"
+        )
+
+    # ---------------------------------------------------------------------
+    # Read-only public properties
+    # ---------------------------------------------------------------------
+    @property
+    def altitude(self) -> Distance:
+        """Altitude relative to sea level."""
+        return self._altitude
+
+    @property
+    def pressure(self) -> Pressure:
+        """Station barometric pressure (not altitude adjusted)."""
+        return self._pressure
+
+    @property
+    def temperature(self) -> Temperature:
+        """Air temperature."""
+        return self._temperature
+
+    @property
+    def powder_temp(self) -> Temperature:
+        """Powder temperature (falls back to ambient when unspecified)."""
+        return self._powder_temp
+
+    @property
+    def mach(self) -> Velocity:
+        """Local speed of sound (Mach 1)."""
+        return Velocity.FPS(self._mach)
+
+    @property
+    def density_ratio(self) -> float:
+        """Ratio of local density to standard density (dimensionless)."""
+        return self._density_ratio
+
     @property
     def humidity(self) -> float:
-        """Relative humidity [0% to 100%]."""
+        """Relative humidity as fraction [0..1]."""
         return self._humidity
 
     @humidity.setter
     def humidity(self, value: float) -> None:
+        """Set relative humidity.
+
+        Accepts either a fraction [0..1] or percent [0%..100%]. Values are clamped to valid range.
+        Setting humidity triggers a density ratio update (unless during object initialization).
+        """
         if value < 0 or value > 100:
             raise ValueError(r"Humidity must be between 0% and 100%.")
-        if value > 1:
-            value = value / 100.0  # Convert to percentage terms
+        if value > 1:  # treat as percent
+            value /= 100.0
         self._humidity = value
         if not self._initializing:
             self.update_density_ratio()
 
-    def update_density_ratio(self) -> None:
-        """Update the density ratio based on current conditions."""
-        self._density_ratio = Atmo.calculate_air_density(self._t0, self._p0, self.humidity) / cStandardDensityMetric
-
+    # ---------------------------------------------------------------------
+    # Derived densities / conversions
+    # ---------------------------------------------------------------------
     @property
     def density_metric(self) -> float:
         """Air density in metric units (kg/m^3)."""
@@ -184,129 +207,113 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         """Air density in imperial units (lb/ft^3)."""
         return self._density_ratio * cStandardDensity
 
+    # ---------------------------------------------------------------------
+    # Public computation helpers
+    # ---------------------------------------------------------------------
+    def update_density_ratio(self) -> None:
+        """Recompute density ratio for changed humidity."""
+        self._density_ratio = Atmo.calculate_air_density(self._t0, self._p0, self.humidity) / cStandardDensityMetric
+
     def temperature_at_altitude(self, altitude: float) -> float:
-        """Temperature at altitude interpolated from zero conditions using lapse rate.
-        
+        """Interpolate temperature (°C) at altitude using lapse rate.
+
         Args:
-            altitude: ASL in ft
-            
+            altitude: Altitude above mean sea level (ft).
+
         Returns:
-            temperature in °C
+            Temperature in degrees Celsius (bounded by model lower limit).
         """
         t = (altitude - self._a0) * cLapseRateKperFoot + self._t0
         if t < Atmo.cLowestTempC:
             t = Atmo.cLowestTempC
-            warnings.warn(f"Temperature interpolated from altitude fell below minimum temperature limit.  "
-                          f"Model not accurate here.  Temperature bounded at cLowestTempF: {cLowestTempF}°F.",
-                          RuntimeWarning)
+            warnings.warn(
+                "Temperature interpolated from altitude fell below minimum model limit. "
+                f"Bounded at {cLowestTempF}°F.",
+                RuntimeWarning,
+            )
         return t
 
     def pressure_at_altitude(self, altitude: float) -> float:
-        """Pressure at altitude interpolated from zero conditions using lapse rate.
-        
-        Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations
-        
-        Args:
-            altitude: ASL in ft
-            
-        Returns:
-            pressure in hPa
-        """
-        p = self._p0 * math.pow(1 + cLapseRateKperFoot * (altitude - self._a0) / (self._t0 + cDegreesCtoK),
-                                cPressureExponent)
-        return p
+        """Interpolate pressure (hPa) at altitude using barometric formula.
 
-    def get_density_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
-        """Calculate density ratio and Mach 1 for the specified altitude.
-        
-        Ref: https://en.wikipedia.org/wiki/Barometric_formula#Density_equations
-        
         Args:
-            altitude: ASL in units of feet.
-                Note: Altitude above 36,000 ft not modelled this way.
-                
-        Returns:
-            density ratio and Mach 1 (fps) for the specified altitude
-        """
-        # Within 30 ft of initial altitude use initial values to save compute
-        if math.fabs(self._a0 - altitude) < 30:
-            mach = self._mach
-            density_ratio = self._density_ratio
-        else:
-            if altitude > 36089:
-                warnings.warn("Density request for altitude above troposphere."
-                              " Atmospheric model not valid here.", RuntimeWarning)
-            t = self.temperature_at_altitude(altitude) + cDegreesCtoK
-            mach = Velocity.MPS(Atmo.machK(t)) >> Velocity.FPS
-            p = self.pressure_at_altitude(altitude)
-            density_delta = ((self._t0 + cDegreesCtoK) * p) / (self._p0 * t)
-            density_ratio = self._density_ratio * density_delta
-            # # Alternative simplified model:
-            # # Ref https://en.wikipedia.org/wiki/Density_of_air#Exponential_approximation
-            # # see doc/'Air Density Models.svg' for comparison
-            # density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
-        return density_ratio, mach
+            altitude: Altitude above mean sea level (ft).
 
-    def __str__(self) -> str:
-        return (
-            f"Atmo(altitude={self.altitude}, pressure={self.pressure}, "
-            f"temperature={self.temperature}, humidity={self.humidity}, "
-            f"density_ratio={self.density_ratio}, mach={self.mach})"
+        Returns:
+            Pressure in hPa.
+        """
+        return self._p0 * math.pow(
+            1 + cLapseRateKperFoot * (altitude - self._a0) / (self._t0 + cDegreesCtoK), cPressureExponent
         )
 
+    def get_density_and_mach_for_altitude(self, altitude: float) -> Tuple[float, float]:
+        """Compute density ratio and Mach (fps) for the specified altitude.
+
+        Uses lapse-rate interpolation unless altitude is within 30 ft of the base altitude,
+            in which case the initial cached values are used for performance.
+
+        Args:
+            altitude: Altitude above mean sea level (ft).
+
+        Returns:
+            Tuple (density_ratio, mach_fps).
+        """
+        if math.fabs(self._a0 - altitude) < 30:  # fast path near base altitude
+            return self._density_ratio, self._mach
+
+        if altitude > 36089:  # troposphere limit ~36k ft
+            warnings.warn(
+                "Density request for altitude above modeled troposphere. Atmospheric model not valid here.",
+                RuntimeWarning,
+            )
+
+        t_k = self.temperature_at_altitude(altitude) + cDegreesCtoK
+        mach = Velocity.MPS(Atmo.machK(t_k)) >> Velocity.FPS
+        p = self.pressure_at_altitude(altitude)
+        density_delta = ((self._t0 + cDegreesCtoK) * p) / (self._p0 * t_k)
+        density_ratio = self._density_ratio * density_delta
+        # Alternative simplified exponential model (retained for reference):
+        # density_ratio = self._density_ratio * math.exp(-(altitude - self._a0) / 34122)
+        return density_ratio, mach
+
+    # ---------------------------------------------------------------------
+    # Standard atmosphere helpers and Mach calculations (static methods)
+    # ---------------------------------------------------------------------
     @staticmethod
     def standard_temperature(altitude: Distance) -> Temperature:
-        """Calculate ICAO standard temperature for altitude.
-        
-        Note: This model is only valid up to the troposphere (~36,000 ft).
-        
-        Args:
-            altitude: ASL in units of feet.
-            
-        Returns:
-            ICAO standard temperature for altitude
-        """
-        return Temperature.Fahrenheit(cStandardTemperatureF
-                                      + (altitude >> Distance.Foot) * cLapseRateImperial)
+        """ICAO standard temperature for altitude (valid to ~36,000 ft)."""
+        return Temperature.Fahrenheit(cStandardTemperatureF + (altitude >> Distance.Foot) * cLapseRateImperial)
 
     @staticmethod
     def standard_pressure(altitude: Distance) -> Pressure:
-        """Calculate ICAO standard pressure for altitude.
-        
-        Note: This model only valid up to troposphere (~36,000 ft).
-        Ref: https://en.wikipedia.org/wiki/Barometric_formula#Pressure_equations
-        
-        Args:
-            altitude: Distance above sea level (ASL)
-            
-        Returns:
-            ICAO standard pressure for altitude
-        """
-        return Pressure.hPa(cStandardPressureMetric
-                            * math.pow(1 + cLapseRateMetric * (altitude >> Distance.Meter) /
-                                           (cStandardTemperatureC + cDegreesCtoK),
-                                       cPressureExponent))
+        """ICAO standard pressure for altitude (valid to ~36,000 ft)."""
+        return Pressure.hPa(
+            cStandardPressureMetric
+            * math.pow(
+                1 + cLapseRateMetric * (altitude >> Distance.Meter) / (cStandardTemperatureC + cDegreesCtoK),
+                cPressureExponent,
+            )
+        )
 
     @staticmethod
-    def icao(altitude: Union[float, Distance] = 0, temperature: Optional[Temperature] = None,
-             humidity: float = cStandardHumidity) -> Atmo:
-        """Create Atmo instance of standard ICAO atmosphere at given altitude.
-        
-        Note: This model is only valid up to the troposphere (~36,000 ft).
-        
+    def icao(
+        altitude: Union[float, Distance] = 0,
+        temperature: Optional[Temperature] = None,
+        humidity: float = cStandardHumidity,
+    ) -> Atmo:
+        """Create a standard ICAO atmosphere at altitude.
+
         Args:
-            altitude: relative to sea level.  Default is sea level (0 ft).
-            temperature: air temperature.  Default is standard temperature at altitude.
-            
+            altitude: Altitude (defaults to sea level).
+            temperature: Optional override temperature (defaults to standard at altitude).
+            humidity: Relative humidity (fraction or percent). Defaults to standard humidity.
+
         Returns:
-            Atmo instance of standard ICAO atmosphere at given altitude.
-            If temperature not specified uses standard temperature.
+            Atmo instance representing standard atmosphere at altitude.
         """
         altitude = PreferredUnits.distance(altitude)
-        if temperature is None:
-            temperature = Atmo.standard_temperature(altitude)
+        temperature = temperature or Atmo.standard_temperature(altitude)
         pressure = Atmo.standard_pressure(altitude)
-
         return Atmo(altitude, pressure, temperature, humidity)
 
     # Synonym for ICAO standard atmosphere
@@ -314,14 +321,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machF(fahrenheit: float) -> float:
-        """Calculate Mach 1 in fps for given Fahrenheit temperature.
-        
-        Args:
-            fahrenheit: Fahrenheit temperature
-            
-        Returns:
-            Mach 1 in fps for given temperature
-        """
+        """Mach 1 (fps) for given Fahrenheit temperature."""
         if fahrenheit < -cDegreesFtoR:
             bad_temp = fahrenheit
             fahrenheit = cLowestTempF
@@ -330,14 +330,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machC(celsius: float) -> float:
-        """Calculate Mach 1 in mps for given Celsius temperature.
-        
-        Args:
-            celsius: Celsius temperature
-            
-        Returns:
-            Mach 1 in mps for given temperature
-        """
+        """Mach 1 (m/s) for given Celsius temperature."""
         if celsius < -cDegreesCtoK:
             bad_temp = celsius
             celsius = Atmo.cLowestTempC
@@ -346,50 +339,44 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
     @staticmethod
     def machK(kelvin: float) -> float:
-        """Calculate Mach 1 in mps for given Kelvin temperature.
-        
-        Args:
-            kelvin: Kelvin temperature
-            
-        Returns:
-            Mach 1 in mps for given temperature
-        """
+        """Mach 1 (m/s) for given Kelvin temperature."""
+        if kelvin < 0:
+            bad_temp = kelvin
+            kelvin = Atmo.cLowestTempC + cDegreesCtoK
+            warnings.warn(f"Invalid temperature: {bad_temp}K. Adjusted to ({kelvin}K).", RuntimeWarning)
         return math.sqrt(kelvin) * cSpeedOfSoundMetric
 
     @staticmethod
     def calculate_air_density(t: float, p_hpa: float, humidity: float) -> float:
-        """Calculate air density from temperature, pressure, and humidity.
-        
+        """Air density from temperature (°C), pressure (hPa), and humidity.
+
         Args:
             t: Temperature in degrees Celsius.
             p_hpa: Pressure in hPa (hectopascals). Internally converted to Pa.
-            humidity: Relative humidity. Accepts either fraction [0..1] or percent [0..100].
+            humidity: Relative humidity (fraction or percent).
 
         Returns:
             Air density in kg/m³.
 
         Notes:
-            - Divide result by cDensityImperialToMetric to get density in lb/ft³
-            - Source: https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf
+            - Divide result by `cDensityImperialToMetric` to get density in lb/ft³.
+            - Source: CIPM-2007 (https://www.nist.gov/system/files/documents/calibrations/CIPM-2007.pdf)
         """
         R = 8.314472  # J/(mol·K), universal gas constant
         M_a = 28.96546e-3  # kg/mol, molar mass of dry air
         M_v = 18.01528e-3  # kg/mol, molar mass of water vapor
 
-        def saturation_vapor_pressure(T):
-            # Calculation of saturated vapor pressure according to CIPM 2007
+        def saturation_vapor_pressure(T):  # noqa: N802 (retain formula variable naming)
             A = [1.2378847e-5, -1.9121316e-2, 33.93711047, -6.3431645e3]
-            return math.exp(A[0] * T ** 2 + A[1] * T + A[2] + A[3] / T)
+            return math.exp(A[0] * T**2 + A[1] * T + A[2] + A[3] / T)
 
-        def enhancement_factor(p, T):
-            # Calculation of enhancement factor according to CIPM 2007
+        def enhancement_factor(p, T):  # noqa: N802
             alpha = 1.00062
             beta = 3.14e-8
             gamma = 5.6e-7
-            return alpha + beta * p + gamma * T ** 2
+            return alpha + beta * p + gamma * T**2
 
-        def compressibility_factor(p, T, x_v):
-            # Calculation of compressibility factor according to CIPM 2007
+        def compressibility_factor(p, T, x_v):  # noqa: N802
             a0 = 1.58123e-6
             a1 = -2.9331e-8
             a2 = 1.1043e-10
@@ -399,10 +386,10 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             c1 = -2.376e-6
             d = 1.83e-11
             e = -0.765e-8
-
-            t = T - cDegreesCtoK
-            Z = 1 - (p / T) * (a0 + a1 * t + a2 * t ** 2 + (b0 + b1 * t) * x_v + (c0 + c1 * t) * x_v ** 2) \
-                + (p / T) ** 2 * (d + e * x_v ** 2)
+            t_l = T - cDegreesCtoK
+            Z = 1 - (p / T) * (a0 + a1 * t_l + a2 * t_l**2 + (b0 + b1 * t_l) * x_v + (c0 + c1 * t_l) * x_v**2) + (
+                p / T
+            ) ** 2 * (d + e * x_v**2)
             return Z
 
         # Normalize humidity to fraction [0..1]
@@ -424,16 +411,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 
         # Calculation of compressibility factor
         Z = compressibility_factor(p, T_K, x_v)
-
-        # Density (kg/m^3) using moist air composition and compressibility factor
-        density = (p * M_a) / (Z * R * T_K) * (1.0 - x_v * (1.0 - M_v / M_a))
-        return density
+        return (p * M_a) / (Z * R * T_K) * (1.0 - x_v * (1.0 - M_v / M_a))
 
 
 class Vacuum(Atmo):
-    """Vacuum atmosphere (zero drag)."""
-
-    cLowestTempC: float = cDegreesCtoK
+    """Vacuum atmosphere (zero density => zero drag)."""
 
     def __init__(self,
                  altitude: Optional[Union[float, Distance]] = None,
@@ -443,7 +425,7 @@ class Vacuum(Atmo):
         self._density_ratio = 0
 
     def update_density_ratio(self) -> None:
-        pass
+        self._density_ratio = 0.0
 
 
 @dataclass
