@@ -32,7 +32,7 @@ cdef extern from "include/bclib.h" nogil:
     Config_t Config_t_fromPyObject(PyObject * config)
 
     ctypedef struct CurvePoint_t:
-        double a, b, c
+        double a, b, c, d
 
     ctypedef struct Curve_t:
         CurvePoint_t * points
