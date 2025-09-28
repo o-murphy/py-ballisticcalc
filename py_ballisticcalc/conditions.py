@@ -491,94 +491,141 @@ class Wind:
 
 @dataclass
 class Shot:
-    """
-    All information needed to compute a ballistic trajectory.
+    """All information needed to compute a ballistic trajectory.
 
     Attributes:
-        look_angle: Angle of sight line relative to horizontal.
-            If the look_angle != 0 then any target in sight crosshairs will be at a different altitude:
+        ammo: Ammo used for shot.
+        atmo: Atmosphere in effect during shot.
+        weapon: Weapon used for shot.
+        winds: List of Wind in effect during shot, sorted by `.until_distance`.
+        look_angle (slant_angle): Angle of sight line relative to horizontal.
+            If `look_angle != 0` then any target in sight crosshairs will be at a different altitude:
                 With target_distance = sight distance to a target (i.e., as through a rangefinder):
                     * Horizontal distance X to target = cos(look_angle) * target_distance
                     * Vertical distance Y to target = sin(look_angle) * target_distance
-        relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
-        cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
-            from the vertical plane into the horizontal plane by sine(cant_angle)
-        ammo: Ammo instance used for making shot
-        weapon: Weapon instance used for making shot
-        atmo: Atmo instance used for making shot
+        cant_angle: Tilt of gun from vertical. If `weapon.sight_height != 0` then this shifts any barrel elevation
+            from the vertical plane into the horizontal plane (as `barrel_azimuth`) by `sine(cant_angle)`.
+        relative_angle: Elevation adjustment (a.k.a. "hold") added to `weapon.zero_elevation`.
+        azimuth: Azimuth of the shooting direction in degrees [0, 360). Optional, for Coriolis effects.
+            Should be geographic bearing where 0 = North, 90 = East, 180 = South, 270 = West.
+            Difference from magnetic bearing is usually negligible.
+        latitude: Latitude of the shooting location in degrees [-90, 90]. Optional, for Coriolis effects.
+        barrel_elevation: Total barrel elevation (in vertical plane) from horizontal.
+            `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
+        barrel_azimuth: Horizontal angle of barrel relative to sight line.
     """
 
+    ammo: Ammo
+    atmo: Atmo
+    weapon: Weapon
+    _winds: List[Wind]  # Stored sorted by .until_distance
     look_angle: Angular
     relative_angle: Angular
     cant_angle: Angular
-
-    ammo: Ammo
-    weapon: Weapon
-    atmo: Atmo
-    _winds: List[Wind]  # Stored sorted by .until_distance
+    _azimuth: Optional[float] = field(default=None)
+    _latitude: Optional[float] = field(default=None)
 
     # pylint: disable=too-many-positional-arguments
-    def __init__(self,
+    def __init__(self, *,
                  ammo: Ammo,
+                 atmo: Optional[Atmo] = None,
                  weapon: Optional[Weapon] = None,
+                 winds: Optional[Sequence[Wind]] = None,
                  look_angle: Optional[Union[float, Angular]] = None,
                  relative_angle: Optional[Union[float, Angular]] = None,
                  cant_angle: Optional[Union[float, Angular]] = None,
-                 atmo: Optional[Atmo] = None,
-                 winds: Optional[Sequence[Wind]] = None
+                 azimuth: Optional[float] = None,
+                 latitude: Optional[float] = None,
                  ):
-        """
-        Initialize shot parameters for the trajectory calculation.
+        """Initialize `Shot` for trajectory calculations.
 
         Args:
-            ammo: Ammo instance used for making shot
-            weapon: Weapon instance used for making shot
+            ammo: Ammo instance used for shot.
+            atmo: Atmosphere in effect during shot.
+            weapon: Weapon instance used for shot.
+            winds: List of Wind in effect during shot.
             look_angle: Angle of sight line relative to horizontal.
-                If the look_angle != 0 then any target in sight crosshairs will be at a different altitude:
+                If `look_angle != 0` then any target in sight crosshairs will be at a different altitude:
                     With target_distance = sight distance to a target (i.e., as through a rangefinder):
                         * Horizontal distance X to target = cos(look_angle) * target_distance
                         * Vertical distance Y to target = sin(look_angle) * target_distance
-            relative_angle: Elevation adjustment added to weapon.zero_elevation for a particular shot.
-            cant_angle: Tilt of gun from vertical, which shifts any barrel elevation
-                from the vertical plane into the horizontal plane by sine(cant_angle)
-            atmo: Atmo instance used for making shot
-            winds: list of winds used for making shot
+            cant_angle: Tilt of gun from vertical. If `weapon.sight_height != 0` then this shifts any barrel elevation
+                from the vertical plane into the horizontal plane (as `barrel_azimuth`) by `sine(cant_angle)`.
+            relative_angle: Elevation adjustment (a.k.a. "hold") added to `weapon.zero_elevation`.
+            azimuth: Azimuth of the shooting direction in degrees [0, 360). Optional, for Coriolis effects.
+                Should be geographic bearing where 0 = North, 90 = East, 180 = South, 270 = West.
+                Difference from magnetic bearing is usually negligible.
+            latitude: Latitude of the shooting location in degrees [-90, 90]. Optional, for Coriolis effects.
 
         Example:
             ```python
-            from py_ballisticcalc import Weapon, Ammo, Atmo, Wind
+            from py_ballisticcalc import Weapon, Ammo, Atmo, Wind, Unit, Shot
             shot = Shot(
                 ammo=Ammo(...),
-                weapon=Weapon(...),
-                look_angle=Unit.Degree(5),
-                relative_angle=Unit.Degree(0),
-                cant_angle=Unit.Degree(0),
                 atmo=Atmo(...),
+                weapon=Weapon(...),
                 winds=[Wind(...), ... ]
+                look_angle=Unit.Degree(5),
+                cant_angle=Unit.Degree(0),
+                relative_angle=Unit.Degree(1),
+                azimuth=90.0,  # East
+                latitude=45.0  # 45° North
             )
             ```
         """
         self.ammo = ammo
-        self.weapon = weapon or Weapon()
-        self.look_angle = PreferredUnits.angular(look_angle or 0)
-        self.relative_angle = PreferredUnits.angular(relative_angle or 0)
-        self.cant_angle = PreferredUnits.angular(cant_angle or 0)
         self.atmo = atmo or Atmo.icao()
+        self.weapon = weapon or Weapon()
         self.winds = winds or [Wind()]
+        self.look_angle = PreferredUnits.angular(look_angle or 0)
+        self.cant_angle = PreferredUnits.angular(cant_angle or 0)
+        self.relative_angle = PreferredUnits.angular(relative_angle or 0)
+        self._azimuth = azimuth
+        self._latitude = latitude
+
+    @property
+    def azimuth(self) -> Optional[float]:
+        """Azimuth of the shooting direction in degrees [0, 360)."""
+        return self._azimuth
+    @azimuth.setter
+    def azimuth(self, value: Optional[float]) -> None:
+        if value is not None and (value < 0.0 or value >= 360.0):
+            raise ValueError("Azimuth must be in range [0, 360).")
+        if value is not None:
+            warnings.warn("Azimuth is not yet used by any calculation engine.", UserWarning)
+        self._azimuth = value
+
+    @property
+    def latitude(self) -> Optional[float]:
+        """Latitude of the shooting location in degrees [-90, 90]."""
+        return self._latitude
+    @latitude.setter
+    def latitude(self, value: Optional[float]) -> None:
+        if value is not None and (value < -90.0 or value > 90.0):
+            raise ValueError("Latitude must be in range [-90, 90].")
+        if value is not None:
+            warnings.warn("Latitude is not yet used by any calculation engine.", UserWarning)
+        self._latitude = value
 
     @property
     def winds(self) -> Sequence[Wind]:
         """Sequence[Wind] sorted by until_distance."""
         return tuple(self._winds)
-
     @winds.setter
     def winds(self, winds: Optional[Sequence[Wind]]):
         """Property setter.  Ensures .winds is sorted by until_distance.
 
         Args:
-            winds: list of the winds for the shot
+            winds: list of the winds in effect during shot
         """
         self._winds = sorted(winds or [Wind()], key=lambda wind: wind.until_distance.raw_value)
+
+    @property
+    def barrel_azimuth(self) -> Angular:
+        """Horizontal angle of barrel relative to sight line."""
+        return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
+                              * ((self.weapon.zero_elevation >> Angular.Radian)
+                                 + (self.relative_angle >> Angular.Radian)))
 
     @property
     def barrel_elevation(self) -> Angular:
@@ -592,7 +639,6 @@ class Shot:
                               + math.cos(self.cant_angle >> Angular.Radian)
                               * ((self.weapon.zero_elevation >> Angular.Radian)
                                  + (self.relative_angle >> Angular.Radian)))
-
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
         """Setter for barrel_elevation.
@@ -607,13 +653,6 @@ class Shot:
                              - math.cos(self.cant_angle >> Angular.Radian) * (self.weapon.zero_elevation >> Angular.Radian))
 
     @property
-    def barrel_azimuth(self) -> Angular:
-        """Horizontal angle of barrel relative to sight line."""
-        return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
-                              * ((self.weapon.zero_elevation >> Angular.Radian)
-                                 + (self.relative_angle >> Angular.Radian)))
-
-    @property
     def slant_angle(self) -> Angular:
         """Synonym for look_angle."""
         return self.look_angle
@@ -625,16 +664,11 @@ class Shot:
 @dataclass
 class ShotProps:
     """Shot configuration and parameters for ballistic trajectory calculations.
+
+    Contains all shot-specific parameters converted to standard internal units (feet, seconds, grains, radians)
+    used by the calculation engines. The class pre-computes expensive calculations (drag curve interpolation,
+    atmospheric data, projectile properties) for repeated use during trajectory integration.
     
-    Contains all shot-specific data converted to internal units for high-performance
-    ballistic calculations. This class serves as the computational interface between
-    user-friendly Shot objects and the calculation engines.
-    
-    The class pre-computes expensive calculations (ballistic coefficient curves,
-    atmospheric data, projectile properties) and stores them in optimized formats
-    for repeated use during trajectory integration. All values are converted to
-    internal units (feet, seconds, grains) for computational efficiency.
-        
     Examples:
         ```python
         from py_ballisticcalc import Shot, ShotProps
@@ -666,7 +700,7 @@ class ShotProps:
         - Atmospheric parameters cached for repeated altitude lookups
         - Miller stability coefficient computed once during initialization
         
-    Note:
+    Notes:
         This class is designed for internal use by ballistic calculation engines.
         User code should typically work with Shot objects and let the Calculator
         handle the conversion to ShotProps automatically.
@@ -676,7 +710,7 @@ class ShotProps:
         Create a new ShotProps instance if Shot parameters change.
     """
     """
-    TODO: The Shot member object should either be a copy or immutable so that subsequent changes to its
+    TODO: The `Shot` member object should either be a copy or immutable so that subsequent changes to its
           properties do not invalidate the calculations and data associated with this ShotProps instance.
     """
 
@@ -690,7 +724,7 @@ class ShotProps:
     diameter_inch: float  # Diameter of the bullet in inches
     weight_grains: float  # Weight of the bullet in grains
     barrel_elevation_rad: float  # Barrel elevation angle in radians
-    barrel_azimuth_rad: float  # Barrel azimuth angle in radians
+    barrel_azimuth_rad: float  # Horizontal angle of barrel relative to sight line, in radians
     sight_height_ft: float  # Height of the sight above the bore in feet
     cant_cosine: float  # Cosine of the cant angle
     cant_sine: float  # Sine of the cant angle
@@ -704,12 +738,14 @@ class ShotProps:
         self.stability_coefficient = self._calc_stability_coefficient()
 
     @property
+    def azimuth(self) -> Optional[float]:
+        return self.shot.azimuth
+    @property
+    def latitude(self) -> Optional[float]:
+        return self.shot.latitude
+    @property
     def winds(self) -> Sequence[Wind]:
         return self.shot.winds
-
-    @property
-    def look_angle(self) -> Angular:
-        return Angular.Radian(self.look_angle_rad)
 
     @classmethod
     def from_shot(cls, shot: Shot) -> ShotProps:
@@ -804,7 +840,7 @@ class ShotProps:
             ftp = ((ft + 460) / (59 + 460)) * (29.92 / pt)
             return sd * fv * ftp
         return 0
-    
+
     @staticmethod
     def _precalc_drag_curve(data_points: List[DragDataPoint]) -> PchipPrepared:
         """Pre-calculate the drag curve for the shot.

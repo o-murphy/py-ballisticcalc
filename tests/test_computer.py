@@ -1,15 +1,13 @@
 import copy
-import math
 import pytest
 
-from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError, TrajFlag,
-                              BaseEngineConfigDict
-)
+from py_ballisticcalc import (Ammo, Atmo, BaseEngineConfigDict, Calculator, DragModel, RangeError, Shot,
+                              TableG7, TrajFlag, Vacuum, Weapon, Wind)
 from py_ballisticcalc.unit import *
 
 pytestmark = pytest.mark.engine
 
-class TestComputerPytest:
+class TestComputer:
 
     @pytest.fixture(autouse=True)
     def setup_method(self, loaded_engine_instance):
@@ -88,6 +86,18 @@ class TestComputerPytest:
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(6, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         assert t.trajectory[5].height.raw_value < self.baseline_trajectory[5].height.raw_value
+
+    def test_wind_lag_rule(self):
+        """Lag rule: Windage due to crosswind v_w = t_lag * v_w"""
+        v_w = Velocity.FPS(5)  # crosswind velocity
+        crosswind = Wind(v_w, Angular(3, Angular.OClock))
+        # Use default weapon with no twist to eliminate spin drift:
+        base_shot = Shot(ammo=self.ammo, atmo=Atmo.icao(), winds=[crosswind])
+        base = self.calc.fire(base_shot, trajectory_range=self.range, trajectory_step=self.step)
+        vacuum_shot = Shot(ammo=self.ammo, atmo=Vacuum(), winds=[crosswind])
+        vac = self.calc.fire(vacuum_shot, trajectory_range=self.range, trajectory_step=self.step)
+        t_lag = base[5].time - vac[5].time
+        assert pytest.approx(base[5].windage >> Distance.Feet) == t_lag * (v_w >> Velocity.FPS)
 
     def test_multiple_wind(self):
         """Multiple winds should be applied in order of distance"""

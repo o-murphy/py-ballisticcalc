@@ -298,7 +298,7 @@ def trajectory_as_plot(hit_result: HitResult, look_angle: Optional[Angular] = No
         For a more comprehensive plot, use `hit_result_as_plot`.
     """
     if look_angle is None:
-        look_angle = hit_result.props.look_angle
+        look_angle = Angular.Radian(hit_result.props.look_angle_rad)
 
     font_size = PLOT_FONT_SIZE
     df = hit_result.dataframe()

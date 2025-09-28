@@ -952,7 +952,7 @@ class HitResult:
         target_height_half = target_height.raw_value / 2.0
 
         target_row = self.get_at('slant_distance', target_at_range)
-        is_climbing = target_row.angle.raw_value - self.props.look_angle.raw_value > 0
+        is_climbing = ((target_row.angle >> Angular.Radian) - self.props.look_angle_rad) > 0
         slant_height_begin = target_row.slant_height.raw_value + (-1 if is_climbing else 1) * target_height_half
         slant_height_end = target_row.slant_height.raw_value - (-1 if is_climbing else 1) * target_height_half
         try:
@@ -968,7 +968,7 @@ class HitResult:
                            target_height,
                            begin_row,
                            end_row,
-                           self.props.look_angle)
+                           Angular.Radian(self.props.look_angle_rad))
 
     def dataframe(self, formatted: bool = False) -> DataFrame:
         """Return the trajectory table as a DataFrame.
