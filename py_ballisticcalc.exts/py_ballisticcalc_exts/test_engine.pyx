@@ -4,14 +4,18 @@ Provides direct C-layer accessors for parity tests without modifying production
 engine modules. Not part of the public API.
 """
 from cython cimport final
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,  # retained for type reference
     calculateEnergy,
     calculateOgw,
 )
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq
 from libc.math cimport sin, cos
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     ShotProps_t_dragByMach,

@@ -19,7 +19,9 @@ from py_ballisticcalc_exts.base_engine cimport (
     WindSock_t_currentVector,
     WindSock_t_vectorForRange,
 )
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT, add, sub, mag, mulS
 
 from py_ballisticcalc.exceptions import RangeError

@@ -8,8 +8,7 @@ We deliberately keep this separate from production engine modules to avoid
 polluting hot paths or public symbols. Import only inside test code.
 """
 
-from cython cimport boundscheck, wraparound, cast
-from libc.stddef cimport size_t
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     ShotProps_t_dragByMach,
@@ -17,6 +16,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t_updateStabilityCoefficient,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
 )
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     calculateEnergy,

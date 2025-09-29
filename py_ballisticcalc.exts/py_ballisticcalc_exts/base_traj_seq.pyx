@@ -12,13 +12,14 @@ Design note: nogil helpers operate on a tiny C struct view of the sequence to av
 passing Python cdef-class instances into nogil code paths.
 """
 
-from libc.stdlib cimport realloc
-from libc.stddef cimport size_t
 from libc.math cimport cos, sin, fabs
 from libc.string cimport memcpy
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajDataT_create
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport _sort3, _pchip_slopes3, _hermite
 
 cdef extern from "include/basetraj_seq.h" nogil:

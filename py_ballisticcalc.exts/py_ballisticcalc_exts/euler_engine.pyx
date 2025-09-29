@@ -5,18 +5,21 @@ Because storing each step in a CBaseTrajSeq is practically costless, we always r
 """
 from cython cimport final
 from libc.math cimport fabs, sin, cos, fmin, fmax
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     ShotProps_t_dragByMach,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
 )
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
     WindSock_t_currentVector,
     WindSock_t_vectorForRange,
 )
-
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT, add, sub, mag, mulS
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq
 
 import warnings
@@ -76,7 +79,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             # Early binding of configuration constants
             double _cMinimumVelocity = self._config_s.cMinimumVelocity
             double _cMinimumAltitude = self._config_s.cMinimumAltitude
-            double _cMaximumDrop = -abs(self._config_s.cMaximumDrop)
+            double _cMaximumDrop = -fabs(self._config_s.cMaximumDrop)
             
             # Working variables
             object termination_reason = None

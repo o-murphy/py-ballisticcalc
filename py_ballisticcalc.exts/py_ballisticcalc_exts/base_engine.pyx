@@ -15,6 +15,7 @@ from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t, BaseTrajDataT
 import py_ballisticcalc_exts.trajectory_data as td
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT, mag
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq, BaseTrajC
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (

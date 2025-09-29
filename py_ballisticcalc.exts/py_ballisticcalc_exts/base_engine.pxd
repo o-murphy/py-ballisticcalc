@@ -1,7 +1,10 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport Config_t, Wind_t, ShotProps_t
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.

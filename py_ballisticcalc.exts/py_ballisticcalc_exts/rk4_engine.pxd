@@ -1,4 +1,5 @@
 # pxd for rk4_engine to expose CythonizedRK4IntegrationEngine
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine, ShotProps_t
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
