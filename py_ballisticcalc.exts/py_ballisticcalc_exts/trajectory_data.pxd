@@ -42,6 +42,15 @@ cdef extern from "include/interp.h":
 cpdef double interpolate_3_pt(double x, double x0, double y0, double x1, double y1, double x2, double y2)
 cpdef double interpolate_2_pt(double x, double x0, double y0, double x1, double y1)
 
+cdef object _new_feet(double val)
+cdef object _new_fps(double val)
+cdef object _new_rad(double val)
+cdef object _new_ft_lb(double val)
+cdef object _new_lb(double val)
+# Additional angular helper for MOA-based fields
+cdef object _new_moa(double val)
+
+
 cdef class BaseTrajDataT:
     cdef:
         readonly double time

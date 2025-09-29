@@ -70,9 +70,3 @@ cdef class CythonizedBaseIntegrationEngine:
 cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
                                   double mach, const ShotProps_t * shot_props_ptr,
                                   double density_ratio, double drag, int flag)
-
-cdef object _new_feet(double v)
-cdef object _new_fps(double v)
-cdef object _new_rad(double v)
-cdef object _new_ft_lb(double v)
-cdef object _new_lb(double v)

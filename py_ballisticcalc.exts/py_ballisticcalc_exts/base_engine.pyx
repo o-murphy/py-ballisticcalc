@@ -11,8 +11,16 @@ from libc.stdlib cimport malloc, free
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, copysign
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t, BaseTrajDataT
-import py_ballisticcalc_exts.trajectory_data as td
+from py_ballisticcalc_exts.trajectory_data cimport (
+    TrajFlag_t,
+    BaseTrajDataT,
+    TrajectoryDataT,
+    _new_feet,
+    _new_fps,
+    _new_rad,
+    _new_ft_lb,
+    _new_lb,
+)
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT, mag
 # noinspection PyUnresolvedReferences
@@ -827,7 +835,7 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
 
     # Note: Cython cdef class constructors don't support keyword args reliably from Cython.
     # Pass all fields positionally in the defined order.
-    return td.TrajectoryData(
+    return TrajectoryData(
         time,
         _new_feet(range_vector_ptr.x),
         _new_fps(velocity),
@@ -845,23 +853,3 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         _new_lb(calculateOgw(shot_props_ptr.weight, velocity)),
         flag
     )
-
-
-cdef object _new_feet(double v):
-    return Distance(float(v), Unit.Foot)
-
-
-cdef object _new_fps(double v):
-    return Velocity(float(v), Unit.FPS)
-
-
-cdef object _new_rad(double v):
-    return Angular(float(v), Unit.Radian)
-
-
-cdef object _new_ft_lb(double v):
-    return Energy(float(v), Unit.FootPound)
-
-
-cdef object _new_lb(double v):
-    return Weight(float(v), Unit.Pound)
