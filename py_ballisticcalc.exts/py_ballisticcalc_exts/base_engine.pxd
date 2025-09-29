@@ -17,6 +17,7 @@ cdef extern from "include/bclib.h" nogil:
         double next_range
         V3dT last_vector_cache
 
+    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     void WindSock_t_free(WindSock_t *ws)
     V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
     int WindSock_t_updateCache(WindSock_t *ws)
@@ -25,7 +26,6 @@ cdef extern from "include/bclib.h" nogil:
     double getCorrection(double distance, double offset)
     double calculateEnergy(double bulletWeight, double velocity)
     double calculateOgw(double bulletWeight, double velocity)
-
 
 # Function to create and initialize a WindSock_t
 cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL

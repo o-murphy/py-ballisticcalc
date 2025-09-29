@@ -48,37 +48,36 @@ __all__ = (
 
 cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     """
-    Creates and initializes a WindSock_t struct from a Python list of wind objects.
-    This function handles the allocation of the struct and its internal Wind_t array.
+    Creates and initializes a WindSock_t structure.
+    Processes the Python list, then delegates initialization to C.
     """
-    cdef WindSock_t * ws = <WindSock_t *>malloc(sizeof(WindSock_t))
-    if <void*>ws == NULL:
-        raise MemoryError()
+    cdef size_t length = <size_t> len(winds_py_list)
 
-    ws.length = <int>len(winds_py_list)
-    ws.winds = <Wind_t *>malloc(<size_t>ws.length * sizeof(Wind_t))
-    if <void*>ws.winds == NULL:
-        free(<void*>ws)
-        raise MemoryError()
+    # 1. Memory allocation for the struct (remains in Cython)
+    cdef WindSock_t * ws = <WindSock_t *> malloc(sizeof(WindSock_t))
+    if <void *> ws == NULL:
+        raise MemoryError("Failed to allocate WindSock_t structure.")
 
+    # 2. Memory allocation for the Wind_t array (remains in Cython)
+    cdef Wind_t * winds_array = <Wind_t *> malloc(<size_t> length * sizeof(Wind_t))
+    if <void *> winds_array == NULL:
+        free(<void *> ws)
+        raise MemoryError("Failed to allocate internal Wind_t array.")
+
+    # 3. Copying data from Python objects to C structures (must remain in Cython)
     cdef int i
     try:
-        for i in range(ws.length):
-            ws.winds[i] = Wind_t_from_python(winds_py_list[i])
+        for i in range(length):
+            # Wind_t_from_python interacts with a Python object, so it remains here
+            winds_array[i] = Wind_t_from_python(winds_py_list[i])
     except Exception:
-        free(<void*>ws.winds)
-        ws.winds = <Wind_t *>NULL
-        free(<void*>ws)
+        # Error handling
+        free(<void *> winds_array)
+        free(<void *> ws)
         raise RuntimeError("Invalid wind entry in winds list")
 
-    ws.current = 0
-    ws.next_range = cMaxWindDistanceFeet
-    ws.last_vector_cache.x = <double>0.0
-    ws.last_vector_cache.y = <double>0.0
-    ws.last_vector_cache.z = <double>0.0
-
-    # Initialize cache correctly
-    WindSock_t_updateCache(ws)
+    # 4. Structure initialization (calling the C function)
+    WindSock_t_init(ws, length, winds_array)
 
     return ws
 

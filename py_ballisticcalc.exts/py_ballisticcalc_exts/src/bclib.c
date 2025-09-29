@@ -1,7 +1,7 @@
 #include "bclib.h"
 #include "v3d.h"
 #include <math.h>
-#include <stddef.h>
+#include <stddef.h>  // For size_t
 #include <stdio.h>   // For warnings (printf used here)
 #include <float.h>   // For fabs()
 #include <stdlib.h>
@@ -255,6 +255,21 @@ V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) {
         .y=0.0,
         .z=wind_ptr->velocity * sin(wind_ptr->direction_from)
     };
+}
+
+void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) {
+
+    ws->length = length;
+    ws->winds = winds;
+
+    ws->current = 0;
+    ws->next_range = cMaxWindDistanceFeet;
+
+    ws->last_vector_cache.x = 0.0;
+    ws->last_vector_cache.y = 0.0;
+    ws->last_vector_cache.z = 0.0;
+
+    WindSock_t_updateCache(ws);
 }
 
 void WindSock_t_free(WindSock_t *ws) {
