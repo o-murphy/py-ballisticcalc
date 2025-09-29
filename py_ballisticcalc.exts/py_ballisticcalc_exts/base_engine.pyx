@@ -11,10 +11,19 @@ from libc.stdlib cimport malloc, free
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, copysign
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t, BaseTrajDataT
-import py_ballisticcalc_exts.trajectory_data as td
+from py_ballisticcalc_exts.trajectory_data cimport (
+    TrajFlag_t,
+    BaseTrajDataT,
+    TrajectoryDataT,
+    _new_feet,
+    _new_fps,
+    _new_rad,
+    _new_ft_lb,
+    _new_lb,
+)
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT, mag
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq, BaseTrajC
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
@@ -48,37 +57,36 @@ __all__ = (
 
 cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     """
-    Creates and initializes a WindSock_t struct from a Python list of wind objects.
-    This function handles the allocation of the struct and its internal Wind_t array.
+    Creates and initializes a WindSock_t structure.
+    Processes the Python list, then delegates initialization to C.
     """
-    cdef WindSock_t * ws = <WindSock_t *>malloc(sizeof(WindSock_t))
-    if <void*>ws == NULL:
-        raise MemoryError()
+    cdef size_t length = <size_t> len(winds_py_list)
 
-    ws.length = <int>len(winds_py_list)
-    ws.winds = <Wind_t *>malloc(<size_t>ws.length * sizeof(Wind_t))
-    if <void*>ws.winds == NULL:
-        free(<void*>ws)
-        raise MemoryError()
+    # 1. Memory allocation for the struct (remains in Cython)
+    cdef WindSock_t * ws = <WindSock_t *> malloc(sizeof(WindSock_t))
+    if <void *> ws == NULL:
+        raise MemoryError("Failed to allocate WindSock_t structure.")
 
+    # 2. Memory allocation for the Wind_t array (remains in Cython)
+    cdef Wind_t * winds_array = <Wind_t *> malloc(<size_t> length * sizeof(Wind_t))
+    if <void *> winds_array == NULL:
+        free(<void *> ws)
+        raise MemoryError("Failed to allocate internal Wind_t array.")
+
+    # 3. Copying data from Python objects to C structures (must remain in Cython)
     cdef int i
     try:
-        for i in range(ws.length):
-            ws.winds[i] = Wind_t_from_python(winds_py_list[i])
+        for i in range(length):
+            # Wind_t_from_python interacts with a Python object, so it remains here
+            winds_array[i] = Wind_t_from_python(winds_py_list[i])
     except Exception:
-        free(<void*>ws.winds)
-        ws.winds = <Wind_t *>NULL
-        free(<void*>ws)
+        # Error handling
+        free(<void *> winds_array)
+        free(<void *> ws)
         raise RuntimeError("Invalid wind entry in winds list")
 
-    ws.current = 0
-    ws.next_range = cMaxWindDistanceFeet
-    ws.last_vector_cache.x = <double>0.0
-    ws.last_vector_cache.y = <double>0.0
-    ws.last_vector_cache.z = <double>0.0
-
-    # Initialize cache correctly
-    WindSock_t_updateCache(ws)
+    # 4. Structure initialization (calling the C function)
+    WindSock_t_init(ws, length, winds_array)
 
     return ws
 
@@ -310,7 +318,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 cant_sine=sin(shot_info.cant_angle._rad),
                 alt0=shot_info.atmo.altitude._feet,
                 calc_step=self.get_calc_step(),
-                diameter=shot_info.ammo.dm.diameter._inch,
+                muzzle_velocity=shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps,
                 stability_coefficient=0.0,
                 filter_flags=0,
                 atmo=Atmosphere_t(
@@ -322,7 +330,6 @@ cdef class CythonizedBaseIntegrationEngine:
                     cLowestTempC=shot_info.atmo.cLowestTempC,
                 )
             )
-            self._shot_s.muzzle_velocity = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
             if ShotProps_t_updateStabilityCoefficient(&self._shot_s) < 0:
                 raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
         except Exception:
@@ -828,7 +835,7 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
 
     # Note: Cython cdef class constructors don't support keyword args reliably from Cython.
     # Pass all fields positionally in the defined order.
-    return td.TrajectoryData(
+    return TrajectoryData(
         time,
         _new_feet(range_vector_ptr.x),
         _new_fps(velocity),
@@ -846,23 +853,3 @@ cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, con
         _new_lb(calculateOgw(shot_props_ptr.weight, velocity)),
         flag
     )
-
-
-cdef object _new_feet(double v):
-    return Distance(float(v), Unit.Foot)
-
-
-cdef object _new_fps(double v):
-    return Velocity(float(v), Unit.FPS)
-
-
-cdef object _new_rad(double v):
-    return Angular(float(v), Unit.Radian)
-
-
-cdef object _new_ft_lb(double v):
-    return Energy(float(v), Unit.FootPound)
-
-
-cdef object _new_lb(double v):
-    return Weight(float(v), Unit.Pound)

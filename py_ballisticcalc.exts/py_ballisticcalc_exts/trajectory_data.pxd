@@ -23,15 +23,33 @@ cdef extern from "include/bclib.h":
         V3dT velocity
         double mach
 
+
+cdef extern from "include/interp.h":
+    cdef int INTERP_ERROR_ZERODIVISION
+
+    # Internal nogil helpers for PCHIP used by base_traj_seq
+    int _sign(double a) noexcept nogil
+    void _sort3(double * xs, double * ys) noexcept nogil
+    void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2, double y2,
+                        double * m0, double * m1, double * m2) noexcept nogil
+    double _hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1) noexcept nogil
+
+    # Internal nogil helpers for PCHIP used by base_traj_seq
+    double _interpolate_3_pt(double x, double x0, double y0, double x1, double y1, double x2, double y2)
+    int _interpolate_2_pt(double x, double x0, double y0, double x1, double y1, double * result) except? -1 nogil
+
 # Expose new interpolation helpers for tests and reuse across modules
 cpdef double interpolate_3_pt(double x, double x0, double y0, double x1, double y1, double x2, double y2)
 cpdef double interpolate_2_pt(double x, double x0, double y0, double x1, double y1)
 
-# Internal nogil helpers for PCHIP used by base_traj_seq
-cdef void _sort3(double* xs, double* ys) noexcept nogil
-cdef void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2, double y2,
-                         double* m0, double* m1, double* m2) noexcept nogil
-cdef double _hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1) noexcept nogil
+cdef object _new_feet(double val)
+cdef object _new_fps(double val)
+cdef object _new_rad(double val)
+cdef object _new_ft_lb(double val)
+cdef object _new_lb(double val)
+# Additional angular helper for MOA-based fields
+cdef object _new_moa(double val)
+
 
 cdef class BaseTrajDataT:
     cdef:

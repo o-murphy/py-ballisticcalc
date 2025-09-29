@@ -1,15 +1,13 @@
 import copy
-import math
 import pytest
 
-from py_ballisticcalc import (DragModel, Ammo, Weapon, Calculator, Shot, Wind, Atmo, TableG7, RangeError, TrajFlag,
-                              BaseEngineConfigDict
-)
+from py_ballisticcalc import (Ammo, Atmo, BaseEngineConfigDict, Calculator, DragModel, RangeError, Shot,
+                              TableG7, TrajFlag, Vacuum, Weapon, Wind)
 from py_ballisticcalc.unit import *
 
 pytestmark = pytest.mark.engine
 
-class TestComputerPytest:
+class TestComputer:
 
     @pytest.fixture(autouse=True)
     def setup_method(self, loaded_engine_instance):
@@ -25,6 +23,7 @@ class TestComputerPytest:
             shot=self.baseline_shot, trajectory_range=self.range, trajectory_step=self.step
         )
 
+    #region Cant
     def test_cant_zero_elevation(self):
         """Cant_angle = 90 degrees with zero barrel elevation should match baseline with:
             drop+=sight_height, windage-=sight_height
@@ -59,6 +58,7 @@ class TestComputerPytest:
         assert pytest.approx(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value) == \
                self.baseline_trajectory[5].height.raw_value
         assert pytest.approx(t.trajectory[5].windage.raw_value) == self.baseline_trajectory[5].windage.raw_value
+    # endregion Cant
 
     # region Wind
     def test_wind_from_left(self):
@@ -88,6 +88,18 @@ class TestComputerPytest:
                     winds=[Wind(Velocity(5, Velocity.MPH), Angular(6, Angular.OClock))])
         t = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         assert t.trajectory[5].height.raw_value < self.baseline_trajectory[5].height.raw_value
+
+    def test_wind_lag_rule(self):
+        """Lag rule: Windage due to crosswind v_w = t_lag * v_w"""
+        v_w = Velocity.FPS(5)  # crosswind velocity
+        crosswind = Wind(v_w, Angular(3, Angular.OClock))
+        # Use default weapon with no twist to eliminate spin drift:
+        base_shot = Shot(ammo=self.ammo, atmo=Atmo.icao(), winds=[crosswind])
+        base = self.calc.fire(base_shot, trajectory_range=self.range, trajectory_step=self.step)
+        vacuum_shot = Shot(ammo=self.ammo, atmo=Vacuum(), winds=[crosswind])
+        vac = self.calc.fire(vacuum_shot, trajectory_range=self.range, trajectory_step=self.step)
+        t_lag = base[5].time - vac[5].time
+        assert pytest.approx(base[5].windage >> Distance.Feet) == t_lag * (v_w >> Velocity.FPS)
 
     def test_multiple_wind(self):
         """Multiple winds should be applied in order of distance"""
@@ -125,6 +137,7 @@ class TestComputerPytest:
             self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         except Exception as e:
             pytest.fail(f"self.calc.fire() raised ExceptionType unexpectedly: {e}")
+    # endregion Wind
 
     # region Twist
     def test_no_twist(self):
@@ -146,7 +159,6 @@ class TestComputerPytest:
         assert twist_left.trajectory[5].windage.raw_value < 0
         # Faster twist should produce larger drift:
         assert -twist_left.trajectory[5].windage.raw_value > twist_right.trajectory[5].windage.raw_value
-
     # endregion Twist
 
     # region Atmo
@@ -177,7 +189,6 @@ class TestComputerPytest:
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=thin)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         assert t.trajectory[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
-
     # endregion Atmo
 
     # region Ammo
@@ -225,6 +236,7 @@ class TestComputerPytest:
         assert t_diff_temp.trajectory[0].velocity.raw_value < self.baseline_trajectory[0].velocity.raw_value
 
         self.ammo.use_powder_sensitivity = False
+    # endregion Ammo
 
     def test_zero_velocity(self):
         """Test that firing with zero muzzle velocity raises a RangeError"""
@@ -264,6 +276,7 @@ class TestComputerPytest:
         assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'
 
     def test_find_apex_uses_no_min_velocity_and_restores(self, loaded_engine_instance):
+        """Ensure decorators work correctly for find_apex, and that config is restored after."""
         # Start with a very high minimum velocity so normal integrate would stop early
         shot = copy.copy(self.baseline_shot)
         mv_fps = shot.ammo.mv >> Velocity.FPS
@@ -280,6 +293,7 @@ class TestComputerPytest:
         assert res.error.reason == RangeError.MinimumVelocityReached
 
     def test_maximum_drop(self, loaded_engine_instance):
+        """Ensure cMaximumDrop is applied correctly, including adjustment for sight height."""
         # cMaximumDrop should be adjusted downward it start-height is negative
         dm = DragModel(bc=0.243, drag_table=TableG7)
         # Projectile starts at y=-sight_height
@@ -302,7 +316,7 @@ class TestComputerPytest:
         assert res.trajectory[-1].time > 0.0
 
     def test_min_altitude_downward_only(self, loaded_engine_instance):
-        # cMinimumAltitude should only apply once velocity is not positive
+        """cMinimumAltitude should only apply once velocity is not positive."""
         dm = DragModel(bc=0.243, drag_table=TableG7)
         shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
         shot.relative_angle = Angular.Degree(0.02)

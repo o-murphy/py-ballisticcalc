@@ -44,6 +44,7 @@ from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, Type
 
 from py_ballisticcalc._compat import bisect_left_key
 from py_ballisticcalc.conditions import Shot, ShotProps, Wind
+from py_ballisticcalc.constants import cGravityImperial
 from py_ballisticcalc.exceptions import ZeroFindingError, OutOfRangeError, SolverRuntimeError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
@@ -69,7 +70,7 @@ cMaxIterations: int = 40  # maximum number of iterations for zero search
 cMinimumAltitude: float = -1500  # feet, below sea level
 cMaximumDrop: float = -10000  # feet, maximum drop from the muzzle to continue trajectory
 cMinimumVelocity: float = 50.0  # fps, minimum velocity to continue trajectory
-cGravityConstant: float = -32.17405  # feet per second squared
+cGravityConstant: float = -cGravityImperial  # feet per second squared
 cStepMultiplier: float = 1.0  # Multiplier for engine's default step, for changing integration speed & precision
 
 

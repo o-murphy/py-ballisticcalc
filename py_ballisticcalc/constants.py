@@ -20,6 +20,10 @@ References:
 # Third-party imports
 from typing_extensions import Final
 
+cGravityImperial: Final[float] = 32.17405  # feet per second squared
+
+cEarthAngularVelocityRadS: Final[float] = 0.00007292  # Earth's rotational speed Ω in rad/s
+
 # =============================================================================
 # Global Atmosphere Constants
 # =============================================================================
@@ -93,7 +97,7 @@ cDensityImperialToMetric: Final[float] = 16.0185  # lb/ft^3 to kg/m^3
 """Density conversion factor from imperial to metric units (kg/m³ per lb/ft³)"""
 
 # =============================================================================
-# Runtime Limits and Validation Constants  
+# Runtime Limits and Validation Constants
 # =============================================================================
 
 cLowestTempF: Final[float] = -130  # °F
@@ -103,6 +107,8 @@ cMaxWindDistanceFeet: Final[float] = 1e8
 """Maximum wind effect distance for computational limits (ft)"""
 
 __all__ = (
+    'cGravityImperial',
+    'cEarthAngularVelocityRadS',
     # Global atmosphere constants
     'cStandardHumidity',
     'cPressureExponent', 

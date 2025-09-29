@@ -21,7 +21,6 @@ allow for custom drag functions based on Mach number vs drag coefficient data.
 
 # Standard library imports
 import math
-import warnings
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple, Union
 
@@ -81,7 +80,7 @@ class DragModel:
                  diameter: Union[float, Distance] = 0,
                  length: Union[float, Distance] = 0) -> None:
         """Initialize a drag model with ballistic coefficient and drag table.
-        
+
         Args:
             bc: Ballistic coefficient
             drag_table: Either list of DragDataPoint objects or list of
@@ -89,7 +88,17 @@ class DragModel:
             weight: Projectile weight in grains (default: 0)
             diameter: Projectile diameter in inches (default: 0)
             length: Projectile length in inches (default: 0)
-            
+
+        Examples:
+            ```python
+            # Constant drag curve with C_d = 0.3:
+            dm = DragModel(1, [DragDataPoint(1, 0.3)])
+
+            from py_ballisticcalc.drag_tables import TableG7
+            # Standard 155gr OTM bullet:
+            dm = DragModel(0.23, TableG7, weight=155, diameter=0.308, length=1.2)
+            ```
+
         Raises:
             ValueError: If BC is not positive or drag_table is empty
             TypeError: If drag_table format is invalid
@@ -98,10 +107,12 @@ class DragModel:
             raise ValueError('Received empty drag table')
         if bc <= 0:
             raise ValueError('Ballistic coefficient must be positive')
-        if len(drag_table) < 2:
-            warnings.warn('Drag table needs at least 2 entries to enable interpolation', UserWarning)
 
         self.drag_table = make_data_points(drag_table)
+
+        if len(self.drag_table) < 2:
+            # Add second point with constant C_d to avoid interpolator complaints
+            self.drag_table.append(DragDataPoint(self.drag_table[0].Mach + 0.1, self.drag_table[0].CD))
 
         self.BC = bc
         self.length = PreferredUnits.length(length)
@@ -272,8 +283,7 @@ def DragModelMultiBC(bc_points: List[BCPoint],
     """Create a drag model with multiple ballistic coefficients.
     
     Constructs a DragModel using multiple BC measurements at different velocities,
-    interpolating between them to create a more accurate drag function. This is
-    useful for projectiles whose BC varies significantly with velocity.
+    interpolating between them to create a more accurate drag function.
     
     Args:
         bc_points: List of BCPoint objects with BC measurements at specific velocities

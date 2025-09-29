@@ -1,7 +1,10 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport Config_t, Wind_t, ShotProps_t
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
@@ -17,6 +20,7 @@ cdef extern from "include/bclib.h" nogil:
         double next_range
         V3dT last_vector_cache
 
+    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     void WindSock_t_free(WindSock_t *ws)
     V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
     int WindSock_t_updateCache(WindSock_t *ws)
@@ -25,7 +29,6 @@ cdef extern from "include/bclib.h" nogil:
     double getCorrection(double distance, double offset)
     double calculateEnergy(double bulletWeight, double velocity)
     double calculateOgw(double bulletWeight, double velocity)
-
 
 # Function to create and initialize a WindSock_t
 cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL
@@ -67,9 +70,3 @@ cdef class CythonizedBaseIntegrationEngine:
 cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
                                   double mach, const ShotProps_t * shot_props_ptr,
                                   double density_ratio, double drag, int flag)
-
-cdef object _new_feet(double v)
-cdef object _new_fps(double v)
-cdef object _new_rad(double v)
-cdef object _new_ft_lb(double v)
-cdef object _new_lb(double v)

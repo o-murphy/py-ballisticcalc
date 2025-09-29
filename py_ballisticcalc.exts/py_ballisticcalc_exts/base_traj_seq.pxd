@@ -2,7 +2,7 @@
 Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 """
 
-from libc.stddef cimport size_t
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 
 cdef extern from "include/basetraj_seq.h" nogil:

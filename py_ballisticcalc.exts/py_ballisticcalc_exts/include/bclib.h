@@ -30,6 +30,7 @@ typedef struct {
     double a;
     double b;
     double c;
+    double d;  // PCHIP cubic constant term for segment (y at left knot)
 } CurvePoint_t;
 
 typedef struct {
@@ -128,6 +129,7 @@ typedef struct {
     V3dT last_vector_cache;
 } WindSock_t;
 
+void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
 void WindSock_t_free(WindSock_t *ws);
 V3dT WindSock_t_currentVector(WindSock_t *wind_sock);
 int WindSock_t_updateCache(WindSock_t *ws);
