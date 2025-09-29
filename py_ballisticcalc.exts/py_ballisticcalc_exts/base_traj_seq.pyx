@@ -22,52 +22,8 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport _sort3, _pchip_slopes3, _hermite
 
-cdef extern from "include/basetraj_seq.h" nogil:
-    ctypedef struct BaseTrajC:
-        double time
-        double px
-        double py
-        double pz
-        double vx
-        double vy
-        double vz
-        double mach
 
-cdef enum InterpKey:
-    KEY_TIME
-    KEY_MACH
-    KEY_POS_X
-    KEY_POS_Y
-    KEY_POS_Z
-    KEY_VEL_X
-    KEY_VEL_Y
-    KEY_VEL_Z
-
-ctypedef struct _CBaseTrajSeq_cview:
-    BaseTrajC* _buffer
-    size_t _length
-    size_t _capacity
-
-__all__ = ['CBaseTrajSeq', 'BaseTrajC']
-
-cdef inline double _key_val_from_kind_buf(BaseTrajC* p, int key_kind) noexcept nogil:
-    if key_kind == <int>KEY_TIME:
-        return p.time
-    elif key_kind == <int>KEY_MACH:
-        return p.mach
-    elif key_kind == <int>KEY_POS_X:
-        return p.px
-    elif key_kind == <int>KEY_POS_Y:
-        return p.py
-    elif key_kind == <int>KEY_POS_Z:
-        return p.pz
-    elif key_kind == <int>KEY_VEL_X:
-        return p.vx
-    elif key_kind == <int>KEY_VEL_Y:
-        return p.vy
-    elif key_kind == <int>KEY_VEL_Z:
-        return p.vz
-    return <double>0.0
+__all__ = ('CBaseTrajSeq', 'BaseTrajC')
 
 
 # Interpolation helper (pure C math; safe to call with or without GIL)
