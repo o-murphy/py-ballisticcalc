@@ -23,6 +23,7 @@ class TestComputer:
             shot=self.baseline_shot, trajectory_range=self.range, trajectory_step=self.step
         )
 
+    #region Cant
     def test_cant_zero_elevation(self):
         """Cant_angle = 90 degrees with zero barrel elevation should match baseline with:
             drop+=sight_height, windage-=sight_height
@@ -57,6 +58,7 @@ class TestComputer:
         assert pytest.approx(t.trajectory[5].height.raw_value - self.weapon.sight_height.raw_value) == \
                self.baseline_trajectory[5].height.raw_value
         assert pytest.approx(t.trajectory[5].windage.raw_value) == self.baseline_trajectory[5].windage.raw_value
+    # endregion Cant
 
     # region Wind
     def test_wind_from_left(self):
@@ -135,6 +137,7 @@ class TestComputer:
             self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         except Exception as e:
             pytest.fail(f"self.calc.fire() raised ExceptionType unexpectedly: {e}")
+    # endregion Wind
 
     # region Twist
     def test_no_twist(self):
@@ -156,7 +159,6 @@ class TestComputer:
         assert twist_left.trajectory[5].windage.raw_value < 0
         # Faster twist should produce larger drift:
         assert -twist_left.trajectory[5].windage.raw_value > twist_right.trajectory[5].windage.raw_value
-
     # endregion Twist
 
     # region Atmo
@@ -187,7 +189,6 @@ class TestComputer:
         shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=thin)
         t = self.calc.fire(shot=shot, trajectory_range=self.range, trajectory_step=self.step)
         assert t.trajectory[5].height.raw_value > self.baseline_trajectory[5].height.raw_value
-
     # endregion Atmo
 
     # region Ammo
@@ -235,6 +236,7 @@ class TestComputer:
         assert t_diff_temp.trajectory[0].velocity.raw_value < self.baseline_trajectory[0].velocity.raw_value
 
         self.ammo.use_powder_sensitivity = False
+    # endregion Ammo
 
     def test_zero_velocity(self):
         """Test that firing with zero muzzle velocity raises a RangeError"""
@@ -274,6 +276,7 @@ class TestComputer:
         assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'
 
     def test_find_apex_uses_no_min_velocity_and_restores(self, loaded_engine_instance):
+        """Ensure decorators work correctly for find_apex, and that config is restored after."""
         # Start with a very high minimum velocity so normal integrate would stop early
         shot = copy.copy(self.baseline_shot)
         mv_fps = shot.ammo.mv >> Velocity.FPS
@@ -290,6 +293,7 @@ class TestComputer:
         assert res.error.reason == RangeError.MinimumVelocityReached
 
     def test_maximum_drop(self, loaded_engine_instance):
+        """Ensure cMaximumDrop is applied correctly, including adjustment for sight height."""
         # cMaximumDrop should be adjusted downward it start-height is negative
         dm = DragModel(bc=0.243, drag_table=TableG7)
         # Projectile starts at y=-sight_height
@@ -312,7 +316,7 @@ class TestComputer:
         assert res.trajectory[-1].time > 0.0
 
     def test_min_altitude_downward_only(self, loaded_engine_instance):
-        # cMinimumAltitude should only apply once velocity is not positive
+        """cMinimumAltitude should only apply once velocity is not positive."""
         dm = DragModel(bc=0.243, drag_table=TableG7)
         shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
         shot.relative_angle = Angular.Degree(0.02)

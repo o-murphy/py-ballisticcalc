@@ -44,7 +44,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
 
     Args:
-        shot_props_addr: ``id()`` of an internal ShotProps_t struct exposed via engine._shot_s
+        shot_props_addr: `id()` of an internal ShotProps_t struct exposed via engine._shot_s
         mach: Mach number to evaluate
 
     Returns:
@@ -52,7 +52,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
 
     Notes:
         We pass a raw address obtained from a Cython engine instance to avoid adding
-        a new public attribute. Tests obtain it with ``shot_props_addr = <long>&engine._shot_s``.
+        a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._shot_s`.
     """
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     return ShotProps_t_dragByMach(sp_ptr, mach)
