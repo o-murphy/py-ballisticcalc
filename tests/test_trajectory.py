@@ -269,3 +269,16 @@ class TestTrajectoryDataFilter:
         # Find any ZERO row that also includes RANGE flag (coalesced)
         coalesced = [td for td in res.trajectory if (td.flag & TrajFlag.ZERO) and (td.flag & TrajFlag.RANGE)]
         assert len(coalesced) >= 1
+
+
+    def test_combined_flags(self, loaded_engine_instance):
+        """Test that combined flags are correctly set in the trajectory"""
+        dm = DragModel(bc=0.243, drag_table=TableG7)
+        shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
+        calc = Calculator(engine=loaded_engine_instance)
+        calc.set_weapon_zero(shot, zero_distance=Distance.Meter(200))
+        hit_result = calc.fire(shot, trajectory_range=Distance.Meter(300),
+                               trajectory_step=Distance.Meter(100), flags=TrajFlag.ALL)
+        td = hit_result.flag(TrajFlag.ZERO_DOWN)
+        assert td is not None, 'Expected to find a ZERO_DOWN flag in trajectory'
+        assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'

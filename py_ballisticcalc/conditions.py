@@ -45,12 +45,12 @@ from py_ballisticcalc.interpolation import PchipPrepared, pchip_prepare, pchip_e
 from py_ballisticcalc.constants import (cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric,
     cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric,
     cLapseRateMetric, cStandardTemperatureC, cStandardHumidity, cSpeedOfSoundImperial, cDegreesFtoR,
-    cSpeedOfSoundMetric, cMaxWindDistanceFeet)
+    cSpeedOfSoundMetric, cMaxWindDistanceFeet, cGravityImperial, cEarthAngularVelocityRadS)
 from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.munition import Weapon, Ammo
 from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Pressure, Temperature, Velocity, Weight
-from py_ballisticcalc.vector import Vector
+from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
 __all__ = ('Atmo', 'Vacuum', 'Wind', 'Shot', 'ShotProps')
 
@@ -489,6 +489,184 @@ class Wind:
         return Vector(range_component, 0, cross_component)
 
 
+@dataclass(frozen=True)
+class Coriolis:
+    r"""Precomputed Coriolis helpers for applying Earth's rotation.
+
+    The calculator keeps ballistic state in a local range/up/cross (*x, y, z*) frame where the *x* axis points
+    down-range, *y* points up, and *z* points to the shooter's right.  Coriolis forces originate in the
+    Earth-fixed East-North-Up (ENU) frame.  This class precumputes the scalars to transform between the two frames.
+
+    If we are given latitude but not azimuth of the shot, this class falls back on a *flat-fire* approximation of
+    Coriolis effects: north of the equator the deflection is to the right; south of the equator it is to the left.
+    Given both azimuth $A$ and latitude $L$ we compute the full 3D Coriolis acceleration as:
+
+    $$
+    2 \Omega \begin{bmatrix}
+        -V_y \cos(L) \sin(A) - V_z \sin(L) \\
+        V_x \cos(L) \sin(A) + V_z \cos(L) \cos(A) \\
+        V_x \sin(L) - V_y \cos(L) \cos(A)
+    \end{bmatrix}
+    $$
+
+    Attributes:
+        sin_lat: Sine of the firing latitude, used to project the Earth's rotation vector.
+        cos_lat: Cosine of the firing latitude.
+        sin_az: Sine of the firing azimuth, or `None` when azimuth is unknown (flat-fire fallback).
+        cos_az: Cosine of the firing azimuth, or `None` when azimuth is unknown.
+        range_east: Projection of the local range axis onto geographic east (None in flat-fire mode).
+        range_north: Projection of the local range axis onto geographic north (None in flat-fire mode).
+        cross_east: Projection of the local cross axis onto geographic east (None in flat-fire mode).
+        cross_north: Projection of the local cross axis onto geographic north (None in flat-fire mode).
+        flat_fire_only: `True` when no azimuth is provided and only the 2D flat-fire approximation should run.
+        muzzle_velocity_fps: Muzzle velocity in feet per second (only needed by the flat-fire approximation).
+    """
+
+    sin_lat: float
+    cos_lat: float
+    sin_az: Optional[float]
+    cos_az: Optional[float]
+    range_east: Optional[float]
+    range_north: Optional[float]
+    cross_east: Optional[float]
+    cross_north: Optional[float]
+    flat_fire_only: bool
+    muzzle_velocity_fps: float
+
+    @classmethod
+    def from_shot(cls, shot: Shot, muzzle_velocity_fps: float) -> Optional[Coriolis]:
+        """Build a `Coriolis` helper for a shot when latitude is available.
+
+        Args:
+            shot: Original `Shot` describing the firing solution.
+            muzzle_velocity_fps: Muzzle velocity in feet per second for the projectile.
+
+        Returns:
+            A populated `Coriolis` instance when the shot specifies a latitude, otherwise `None`.
+
+        Notes:
+            When azimuth is omitted we fall back to the *flat fire* approximation, which only corrects
+            for the horizontal drift term that dominates short-range, low-arc engagements.
+        """
+        latitude = shot.latitude
+        if latitude is None:
+            return None
+
+        lat_rad = math.radians(latitude)
+        sin_lat = math.sin(lat_rad)
+        cos_lat = math.cos(lat_rad)
+
+        azimuth = shot.azimuth
+        if azimuth is None:
+            return cls(
+                sin_lat=sin_lat,
+                cos_lat=cos_lat,
+                muzzle_velocity_fps=muzzle_velocity_fps,
+                sin_az=None,
+                cos_az=None,
+                range_east=None,
+                range_north=None,
+                cross_east=None,
+                cross_north=None,
+                flat_fire_only=True,
+            )
+
+        azimuth_rad = math.radians(azimuth)
+        sin_az = math.sin(azimuth_rad)
+        cos_az = math.cos(azimuth_rad)
+        range_east = math.sin(azimuth_rad)
+        range_north = math.cos(azimuth_rad)
+        cross_east = math.cos(azimuth_rad)
+        cross_north = -math.sin(azimuth_rad)
+
+        return cls(
+            sin_lat=sin_lat,
+            cos_lat=cos_lat,
+            muzzle_velocity_fps=muzzle_velocity_fps,
+            sin_az=sin_az,
+            cos_az=cos_az,
+            range_east=range_east,
+            range_north=range_north,
+            cross_east=cross_east,
+            cross_north=cross_north,
+            flat_fire_only=False,
+        )
+
+    @property
+    def full_3d(self) -> bool:
+        """Whether full 3D Coriolis terms are available for this shot."""
+        return not self.flat_fire_only and self.range_east is not None and self.cross_east is not None
+
+    def coriolis_acceleration_local(self, velocity: Vector) -> Vector:
+        """Compute the Coriolis acceleration for a velocity expressed in the local frame.
+
+        Args:
+            velocity: Projectile velocity vector in the local range/up/cross basis (feet per second).
+
+        Returns:
+            A `Vector` containing the Coriolis acceleration components in the same local basis.
+            Returns the `ZERO_VECTOR` when only the flat-fire approximation is available.
+        """
+        if not self.full_3d:
+            return ZERO_VECTOR
+
+        assert self.range_east is not None and self.range_north is not None
+        assert self.cross_east is not None and self.cross_north is not None
+
+        vel_east = velocity.x * self.range_east + velocity.z * self.cross_east
+        vel_north = velocity.x * self.range_north + velocity.z * self.cross_north
+        vel_up = velocity.y
+
+        factor = -2.0 * cEarthAngularVelocityRadS
+        accel_east = factor * (self.cos_lat * vel_up - self.sin_lat * vel_north)
+        accel_north = factor * (self.sin_lat * vel_east)
+        accel_up = factor * (-self.cos_lat * vel_east)
+
+        accel_range = accel_east * self.range_east + accel_north * self.range_north
+        accel_cross = accel_east * self.cross_east + accel_north * self.cross_north
+        return Vector(accel_range, accel_up, accel_cross)
+
+    def flat_fire_offsets(self, time: float, distance_ft: float, drop_ft: float) -> Tuple[float, float]:
+        """Estimate flat-fire vertical and horizontal corrections.
+
+        Args:
+            time: Time of flight in seconds for the sample point.
+            distance_ft: Down-range distance in feet at the sample point.
+            drop_ft: Local vertical displacement in feet (positive is up).
+
+        Returns:
+            A tuple `(vertical_ft, horizontal_ft)` of offsets that should be applied to the range/up/cross vector.
+            Both values are zero when `Shot` has both latitude and azimuth and so can compute a full 3D solution.
+        """
+        if not self.flat_fire_only:
+            return 0.0, 0.0
+
+        horizontal = cEarthAngularVelocityRadS * distance_ft * self.sin_lat * time
+        vertical = 0.0
+        if self.sin_az is not None:
+            vertical_factor = -2.0 * cEarthAngularVelocityRadS * self.muzzle_velocity_fps * self.cos_lat * self.sin_az
+            vertical = drop_ft * (vertical_factor / cGravityImperial)
+        return vertical, horizontal
+
+    def adjust_range(self, time: float, range_vector: Vector) -> Vector:
+        """Apply the flat-fire offsets to a range vector when necessary.
+
+        Args:
+            time: Time of flight in seconds for the sample point.
+            range_vector: Original range/up/cross vector (feet) produced by the integrator.
+
+        Returns:
+            Either the original vector (for full 3D solutions) or a new vector with the flat-fire offsets applied.
+        """
+        if not self.flat_fire_only:
+            return range_vector
+
+        delta_y, delta_z = self.flat_fire_offsets(time, range_vector.x, range_vector.y)
+        if delta_y == 0.0 and delta_z == 0.0:
+            return range_vector
+        return Vector(range_vector.x, range_vector.y + delta_y, range_vector.z + delta_z)
+
+
 @dataclass
 class Shot:
     """All information needed to compute a ballistic trajectory.
@@ -591,8 +769,6 @@ class Shot:
     def azimuth(self, value: Optional[float]) -> None:
         if value is not None and (value < 0.0 or value >= 360.0):
             raise ValueError("Azimuth must be in range [0, 360).")
-        if value is not None:
-            warnings.warn("Azimuth is not yet used by any calculation engine.", UserWarning)
         self._azimuth = value
 
     @property
@@ -603,8 +779,6 @@ class Shot:
     def latitude(self, value: Optional[float]) -> None:
         if value is not None and (value < -90.0 or value > 90.0):
             raise ValueError("Latitude must be in range [-90, 90].")
-        if value is not None:
-            warnings.warn("Latitude is not yet used by any calculation engine.", UserWarning)
         self._latitude = value
 
     @property
@@ -730,6 +904,7 @@ class ShotProps:
     cant_sine: float  # Sine of the cant angle
     alt0_ft: float  # Initial altitude in feet
     muzzle_velocity_fps: float  # Muzzle velocity in feet per second
+    coriolis: Optional[Coriolis] = field(default=None, repr=False)
     stability_coefficient: float = field(init=False)  # Miller stability coefficient
     calc_step: float = field(init=False)  # Calculation step size
     filter_flags: Union[TrajFlag, int] = field(init=False)  # Flags for special ballistic trajectory points
@@ -750,6 +925,8 @@ class ShotProps:
     @classmethod
     def from_shot(cls, shot: Shot) -> ShotProps:
         """Initialize a ShotProps instance from a Shot instance."""
+        muzzle_velocity_fps = shot.ammo.get_velocity_for_temp(shot.atmo.powder_temp) >> Velocity.FPS
+        coriolis_context = Coriolis.from_shot(shot, muzzle_velocity_fps)
         return cls(
             shot=shot,
             bc=shot.ammo.dm.BC,
@@ -765,8 +942,19 @@ class ShotProps:
             cant_cosine=math.cos(shot.cant_angle >> Angular.Radian),
             cant_sine=math.sin(shot.cant_angle >> Angular.Radian),
             alt0_ft=shot.atmo.altitude >> Distance.Foot,
-            muzzle_velocity_fps=shot.ammo.get_velocity_for_temp(shot.atmo.powder_temp) >> Velocity.FPS,
+            muzzle_velocity_fps=muzzle_velocity_fps,
+            coriolis=coriolis_context,
         )
+
+    def coriolis_acceleration(self, velocity: Vector) -> Vector:
+        if self.coriolis and self.coriolis.full_3d:
+            return self.coriolis.coriolis_acceleration_local(velocity)
+        return ZERO_VECTOR
+
+    def adjust_range_for_coriolis(self, time: float, range_vector: Vector) -> Vector:
+        if not self.coriolis:
+            return range_vector
+        return self.coriolis.adjust_range(time, range_vector)
 
     def get_density_and_mach_for_altitude(self, drop: float) -> Tuple[float, float]:
         """Get the air density and Mach number for a given altitude.

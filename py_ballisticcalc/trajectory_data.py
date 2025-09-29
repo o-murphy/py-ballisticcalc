@@ -526,11 +526,12 @@ class TrajectoryData(NamedTuple):
                     mach: float,
                     flag: Union[TrajFlag, int] = TrajFlag.NONE) -> TrajectoryData:
         """Create a TrajectoryData object."""
+        adjusted_range = props.adjust_range_for_coriolis(time, range_vector)
         spin_drift = props.spin_drift(time)
         velocity = velocity_vector.magnitude()
-        windage = range_vector.z + spin_drift
-        drop_angle = TrajectoryData.get_correction(range_vector.x, range_vector.y)
-        windage_angle = TrajectoryData.get_correction(range_vector.x, windage)
+        windage = adjusted_range.z + spin_drift
+        drop_angle = TrajectoryData.get_correction(adjusted_range.x, adjusted_range.y)
+        windage_angle = TrajectoryData.get_correction(adjusted_range.x, windage)
         trajectory_angle = math.atan2(velocity_vector.y, velocity_vector.x)
         look_angle_cos = math.cos(props.look_angle_rad)
         look_angle_sin = math.sin(props.look_angle_rad)
@@ -538,15 +539,15 @@ class TrajectoryData(NamedTuple):
         drag = props.drag_by_mach(velocity / mach)
         return TrajectoryData(
             time=time,
-            distance=TrajectoryData._new_feet(range_vector.x),
+            distance=TrajectoryData._new_feet(adjusted_range.x),
             velocity=TrajectoryData._new_fps(velocity),
             mach=velocity / mach,
-            height=TrajectoryData._new_feet(range_vector.y),
-            slant_height=TrajectoryData._new_feet(range_vector.y * look_angle_cos - range_vector.x * look_angle_sin),
-            drop_angle=TrajectoryData._new_rad(drop_angle - (props.look_angle_rad if range_vector.x else 0)),
+            height=TrajectoryData._new_feet(adjusted_range.y),
+            slant_height=TrajectoryData._new_feet(adjusted_range.y * look_angle_cos - adjusted_range.x * look_angle_sin),
+            drop_angle=TrajectoryData._new_rad(drop_angle - (props.look_angle_rad if adjusted_range.x else 0)),
             windage=TrajectoryData._new_feet(windage),
             windage_angle=TrajectoryData._new_rad(windage_angle),
-            slant_distance=TrajectoryData._new_feet(range_vector.x * look_angle_cos + range_vector.y * look_angle_sin),
+            slant_distance=TrajectoryData._new_feet(adjusted_range.x * look_angle_cos + adjusted_range.y * look_angle_sin),
             angle=TrajectoryData._new_rad(trajectory_angle),
             density_ratio=density_ratio,
             drag=drag,

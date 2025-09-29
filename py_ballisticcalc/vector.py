@@ -39,7 +39,7 @@ from __future__ import annotations
 import math
 from typing import Union, NamedTuple
 
-__all__ = ('Vector',)
+__all__ = ('Vector', 'ZERO_VECTOR')
 
 
 class Vector(NamedTuple):
@@ -545,3 +545,5 @@ class Vector(NamedTuple):
             ```
         """
         return self.negate()
+
+ZERO_VECTOR = Vector(0.0, 0.0, 0.0)

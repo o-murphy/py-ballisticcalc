@@ -45,7 +45,7 @@ from py_ballisticcalc.engines.base_engine import (
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
-from py_ballisticcalc.vector import Vector
+from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
 __all__ = ('EulerIntegrationEngine',)
 
@@ -150,6 +150,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude
+        coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
         step_data: List[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
         time: float = .0
@@ -210,8 +211,10 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             delta_time = self.time_step(props.calc_step, relative_speed)
             # Drag is a function of air density and velocity relative to the air
             drag = density_ratio * relative_speed * props.drag_by_mach(relative_speed / mach)
-            # Bullet velocity changes due to both drag and gravity
-            velocity_vector -= (relative_velocity * drag - self.gravity_vector) * delta_time  # type: ignore[operator]
+            # Bullet velocity changes due to drag, gravity, and Coriolis (if enabled)
+            coriolis_term = coriolis_fn(velocity_vector) if coriolis_fn else ZERO_VECTOR
+            acceleration = self.gravity_vector + coriolis_term - relative_velocity * drag  # type: ignore[operator]
+            velocity_vector += acceleration * delta_time  # type: ignore[operator]
             # Bullet position changes by velocity time_deltas the time step
             delta_range_vector = velocity_vector * delta_time
             # Update the bullet position
