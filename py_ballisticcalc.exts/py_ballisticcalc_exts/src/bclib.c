@@ -357,7 +357,6 @@ void Coriolis_t_coriolis_acceleration_local(
     double vel_up = velocity_ptr->y;
 
     // Coriolis acceleration in ENU coordinates
-    // factor = -2.0 * cEarthAngularVelocityRadS
     double factor = -2.0 * cEarthAngularVelocityRadS;
     double accel_east = factor * (coriolis_ptr->cos_lat * vel_up - coriolis_ptr->sin_lat * vel_north);
     double accel_north = factor * (coriolis_ptr->sin_lat * vel_east);

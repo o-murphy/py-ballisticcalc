@@ -629,7 +629,7 @@ class Coriolis:
 
         horizontal = cEarthAngularVelocityRadS * distance_ft * self.sin_lat * time
         vertical = 0.0
-        if self.sin_az is not None:
+        if self.sin_az is not None:  # This should not happen if not full_3d, but approximation provided for reference
             vertical_factor = -2.0 * cEarthAngularVelocityRadS * self.muzzle_velocity_fps * self.cos_lat * self.sin_az
             vertical = drop_ft * (vertical_factor / cGravityImperial)
         return vertical, horizontal
