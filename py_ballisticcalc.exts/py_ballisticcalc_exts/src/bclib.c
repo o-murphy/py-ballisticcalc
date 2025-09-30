@@ -242,7 +242,7 @@ V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) {
 
 void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) {
 
-    ws->length = length;
+    ws->length = (int)length;
     ws->winds = winds;
 
     ws->current = 0;
@@ -329,7 +329,7 @@ double calculateEnergy(double bulletWeight, double velocity) {
 }
 
 double calculateOgw(double bulletWeight, double velocity) {
-    return pow(bulletWeight, 2) * pow(velocity, 3) * 1.5e-12;
+    return bulletWeight * bulletWeight * velocity * velocity * velocity * 1.5e-12;
 }
 
 /**
