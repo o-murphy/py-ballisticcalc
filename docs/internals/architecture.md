@@ -12,7 +12,7 @@
 - [`Calculator`][py_ballisticcalc.interface.Calculator] is the top-level interface used by most clients.
 
 ### 2. Scene / shot description
-- [py_ballisticcalc.conditions.Shot][] captures the shot parameters: `ammo`, `weapon`, `look_angle`, `relative_angle`, `wind` and atmosphere.
+- [py_ballisticcalc.shot.Shot][] captures the shot parameters: `ammo`, `weapon`, `look_angle`, `relative_angle`, `wind` and atmosphere.
 - [Ammo][py_ballisticcalc.munition.Ammo], [Weapon][py_ballisticcalc.munition.Weapon], and [Atmo][py_ballisticcalc.conditions.Atmo] live in `py_ballisticcalc.munition.py` and `py_ballisticcalc.conditions.py`.
 
 ### 3. Drag model

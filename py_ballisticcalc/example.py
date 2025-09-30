@@ -17,7 +17,7 @@ Example:
 
 See Also:
     - py_ballisticcalc.interface.Calculator: Main calculation interface
-    - py_ballisticcalc.conditions.Shot: Shot configuration class
+    - py_ballisticcalc.shot.Shot: Shot configuration class
     - py_ballisticcalc.munition: Weapon and ammunition classes
     - py_ballisticcalc.unit.PreferredUnits: Default unit configuration
 """

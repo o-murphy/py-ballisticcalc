@@ -1,4 +1,4 @@
-::: py_ballisticcalc.conditions.ShotProps
+::: py_ballisticcalc.shot.ShotProps
     options:
       show_root_heading: true
       show_source: true
