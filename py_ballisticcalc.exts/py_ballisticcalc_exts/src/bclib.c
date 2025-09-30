@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 // Constants for unit conversions and atmospheric calculations
+const double cEarthAngularVelocityRadS = 7.2921159e-5;
 const double cDegreesFtoR           = 459.67;
 const double cDegreesCtoK           = 273.15;
 const double cSpeedOfSoundImperial  = 49.0223;
@@ -16,7 +17,6 @@ const double cLapseRateImperial     = -0.00356616;
 const double cPressureExponent      = 5.255876;
 const double cLowestTempF           = -130.0;
 const double mToFeet                = 3.280839895;
-
 const double cMaxWindDistanceFeet   = 1e8;
 
 void Curve_t_free(Curve_t *curve_ptr) {
@@ -330,4 +330,48 @@ double calculateEnergy(double bulletWeight, double velocity) {
 
 double calculateOgw(double bulletWeight, double velocity) {
     return pow(bulletWeight, 2) * pow(velocity, 3) * 1.5e-12;
+}
+
+/**
+ * @brief Calculate Coriolis acceleration in local coordinates
+ * @param coriolis_ptr Pointer to Coriolis_t containing precomputed transformation data
+ * @param velocity_x Local velocity in range direction (feet/second)
+ * @param velocity_y Local velocity in up direction (feet/second) 
+ * @param velocity_z Local velocity in cross direction (feet/second)
+ * @param accel_x_ptr Pointer to store acceleration in range direction
+ * @param accel_y_ptr Pointer to store acceleration in up direction
+ * @param accel_z_ptr Pointer to store acceleration in cross direction
+ */
+void Coriolis_t_coriolis_acceleration_local(
+    const Coriolis_t *coriolis_ptr,
+    double velocity_x, double velocity_y, double velocity_z,
+    double *accel_x_ptr, double *accel_y_ptr, double *accel_z_ptr
+) {
+    // Return zero acceleration if not full 3D mode
+    if (coriolis_ptr->flat_fire_only) {
+        *accel_x_ptr = 0.0;
+        *accel_y_ptr = 0.0;
+        *accel_z_ptr = 0.0;
+        return;
+    }
+
+    // Transform velocity from local (range/up/cross) to ENU coordinates
+    double vel_east = velocity_x * coriolis_ptr->range_east + velocity_z * coriolis_ptr->cross_east;
+    double vel_north = velocity_x * coriolis_ptr->range_north + velocity_z * coriolis_ptr->cross_north;
+    double vel_up = velocity_y;
+
+    // Coriolis acceleration in ENU coordinates
+    // factor = -2.0 * cEarthAngularVelocityRadS
+    double factor = -2.0 * cEarthAngularVelocityRadS;
+    double accel_east = factor * (coriolis_ptr->cos_lat * vel_up - coriolis_ptr->sin_lat * vel_north);
+    double accel_north = factor * (coriolis_ptr->sin_lat * vel_east);
+    double accel_up = factor * (-coriolis_ptr->cos_lat * vel_east);
+
+    // Transform acceleration back to local coordinates
+    double accel_range = accel_east * coriolis_ptr->range_east + accel_north * coriolis_ptr->range_north;
+    double accel_cross = accel_east * coriolis_ptr->cross_east + accel_north * coriolis_ptr->cross_north;
+
+    *accel_x_ptr = accel_range;
+    *accel_y_ptr = accel_up;
+    *accel_z_ptr = accel_cross;
 }

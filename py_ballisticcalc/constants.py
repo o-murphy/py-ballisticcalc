@@ -22,7 +22,7 @@ from typing_extensions import Final
 
 cGravityImperial: Final[float] = 32.17405  # feet per second squared
 
-cEarthAngularVelocityRadS: Final[float] = 0.00007292  # Earth's rotational speed Ω in rad/s
+cEarthAngularVelocityRadS: Final[float] = 7.2921159e-5  # Earth's rotational speed Ω in rad/s
 
 # =============================================================================
 # Global Atmosphere Constants

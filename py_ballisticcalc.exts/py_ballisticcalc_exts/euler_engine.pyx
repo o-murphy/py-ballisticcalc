@@ -10,6 +10,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     ShotProps_t_dragByMach,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
+    Coriolis_t_coriolis_acceleration_local,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
@@ -88,6 +89,10 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             V3dT _tv
             V3dT delta_range_vector
             int integration_step_count = 0
+            
+            # Coriolis variables
+            double coriolis_accel_x, coriolis_accel_y, coriolis_accel_z
+            V3dT coriolis_acceleration
 
         # Initialize gravity vector
         gravity_vector.x = <double>0.0
@@ -161,11 +166,27 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             km = density_ratio * ShotProps_t_dragByMach(shot_props_ptr, relative_speed / mach)
             drag = km * relative_speed
             
-            # 4. Apply drag and gravity to velocity
+            # 4. Apply drag, gravity, and Coriolis to velocity
             _tv = mulS(&relative_velocity, drag)
-            _tv = sub(&_tv, &gravity_vector)
+            _tv = sub(&gravity_vector, &_tv)
+            
+            # Add Coriolis acceleration if available
+            coriolis_accel_x = <double>0.0
+            coriolis_accel_y = <double>0.0
+            coriolis_accel_z = <double>0.0
+            if not shot_props_ptr.coriolis.flat_fire_only and shot_props_ptr.coriolis.range_east != -999.0:
+                Coriolis_t_coriolis_acceleration_local(
+                    &shot_props_ptr.coriolis,
+                    velocity_vector.x, velocity_vector.y, velocity_vector.z,
+                    &coriolis_accel_x, &coriolis_accel_y, &coriolis_accel_z
+                )
+            coriolis_acceleration.x = coriolis_accel_x
+            coriolis_acceleration.y = coriolis_accel_y
+            coriolis_acceleration.z = coriolis_accel_z
+            _tv = add(&_tv, &coriolis_acceleration)
+            
             _tv = mulS(&_tv, delta_time)
-            velocity_vector = sub(&velocity_vector, &_tv)
+            velocity_vector = add(&velocity_vector, &_tv)
             
             # 5. Update position based on new velocity
             delta_range_vector = mulS(&velocity_vector, delta_time)

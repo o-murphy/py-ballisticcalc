@@ -8,6 +8,8 @@ from libc.stdlib cimport malloc, free
 from libc.math cimport fabs, pow, atan2, exp, sqrt, sin, cos, fmin
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.base_engine cimport Config_t, MachList_t, Curve_t, Wind_t
 
 @final
 cdef Config_t Config_t_from_pyobject(object config):

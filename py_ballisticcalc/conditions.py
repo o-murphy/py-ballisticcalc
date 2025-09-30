@@ -581,7 +581,7 @@ class Coriolis:
     @property
     def full_3d(self) -> bool:
         """Whether full 3D Coriolis terms are available for this shot."""
-        return not self.flat_fire_only and self.range_east is not None and self.cross_east is not None
+        return not self.flat_fire_only
 
     def coriolis_acceleration_local(self, velocity: Vector) -> Vector:
         """Compute the Coriolis acceleration for a velocity expressed in the local frame.
