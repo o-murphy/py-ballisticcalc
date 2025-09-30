@@ -1,9 +1,11 @@
 import pytest
 
-from py_ballisticcalc.conditions import Ammo, Shot, Wind
+from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.drag_tables import TableG7
 from py_ballisticcalc.engines.base_engine import _WindSock
+from py_ballisticcalc.munition import Ammo
+from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.unit import Distance, Velocity, Angular, Unit
 
 

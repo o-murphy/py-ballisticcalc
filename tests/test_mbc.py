@@ -6,9 +6,9 @@ from typing import List, Tuple
 import pytest
 
 from py_ballisticcalc import *
-from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.drag_model import BCPoint, make_data_points, linear_interpolation
 from py_ballisticcalc.drag_tables import TableG1, TableG7
+from py_ballisticcalc.shot import ShotProps
 from tests.fixtures_and_helpers import create_23_mm_shot, create_5_56_mm_shot, create_7_62_mm_shot
 
 pytestmark = pytest.mark.engine

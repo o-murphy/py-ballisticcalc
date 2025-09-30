@@ -30,7 +30,6 @@ import warnings
 
 from typing_extensions import Union, List, override
 
-from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfigDict,
     BaseIntegrationEngine,
@@ -39,6 +38,7 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
+from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
@@ -202,7 +202,7 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             drag = density_ratio * new_relative_speed * props.drag_by_mach(new_relative_speed / mach)
             coriolis_next = coriolis_fn(predicted_velocity) if coriolis_fn else ZERO_VECTOR
             new_acceleration_vector = self.gravity_vector + coriolis_next - drag * new_relative_velocity  # type: ignore[operator]
-            # 3. Update velocity using the average of the old a(t) and new a(t+Δt) accelerations
+            # 2. Update velocity using the average of the old a(t) and new a(t+Δt) accelerations
             velocity_vector += (acceleration_vector + new_acceleration_vector) * 0.5 * delta_time  # type: ignore
             acceleration_vector = new_acceleration_vector
             velocity = velocity_vector.magnitude()  # Velocity relative to ground

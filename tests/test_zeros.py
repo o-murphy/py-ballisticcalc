@@ -1,9 +1,10 @@
 import math
 import pytest
-from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.drag_tables import TableG1
 from py_ballisticcalc.munition import Ammo
+from py_ballisticcalc.shot import Shot
+from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import *
 from py_ballisticcalc import (
     Calculator,
@@ -11,7 +12,6 @@ from py_ballisticcalc import (
     RK4IntegrationEngine,
     VelocityVerletIntegrationEngine
 )
-from py_ballisticcalc.trajectory_data import TrajFlag
 from tests.fixtures_and_helpers import create_23_mm_shot, create_5_56_mm_shot
 
 pytestmark = pytest.mark.engine

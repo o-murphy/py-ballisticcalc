@@ -67,7 +67,7 @@ from py_ballisticcalc.interpolation import (
 if typing.TYPE_CHECKING:
     from pandas import DataFrame
     from matplotlib.axes import Axes
-    from py_ballisticcalc.conditions import ShotProps
+    from py_ballisticcalc.shot import ShotProps
 
 __all__ = (
     'TrajFlag',
