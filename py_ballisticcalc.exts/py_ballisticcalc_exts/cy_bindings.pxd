@@ -114,8 +114,8 @@ cdef extern from "include/bclib.h" nogil:
 
     void Coriolis_t_coriolis_acceleration_local(
         const Coriolis_t *coriolis_ptr,
-        double velocity_x, double velocity_y, double velocity_z,
-        double *accel_x_ptr, double *accel_y_ptr, double *accel_z_ptr
+        V3dT *velocity_ptr,
+        V3dT *accel_ptr
     )
 
 

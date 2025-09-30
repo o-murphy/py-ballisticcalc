@@ -75,6 +75,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             V3dT relative_velocity
             V3dT gravity_vector
             V3dT wind_vector
+            V3dT coriolis_accel
             double calc_step = self._shot_s.calc_step
             
             # Early binding of configuration constants
@@ -89,10 +90,6 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             V3dT _tv
             V3dT delta_range_vector
             int integration_step_count = 0
-            
-            # Coriolis variables
-            double coriolis_accel_x, coriolis_accel_y, coriolis_accel_z
-            V3dT coriolis_acceleration
 
         # Initialize gravity vector
         gravity_vector.x = <double>0.0
@@ -171,19 +168,9 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             _tv = sub(&gravity_vector, &_tv)
             
             # Add Coriolis acceleration if available
-            coriolis_accel_x = <double>0.0
-            coriolis_accel_y = <double>0.0
-            coriolis_accel_z = <double>0.0
-            if not shot_props_ptr.coriolis.flat_fire_only and shot_props_ptr.coriolis.range_east != -999.0:
-                Coriolis_t_coriolis_acceleration_local(
-                    &shot_props_ptr.coriolis,
-                    velocity_vector.x, velocity_vector.y, velocity_vector.z,
-                    &coriolis_accel_x, &coriolis_accel_y, &coriolis_accel_z
-                )
-            coriolis_acceleration.x = coriolis_accel_x
-            coriolis_acceleration.y = coriolis_accel_y
-            coriolis_acceleration.z = coriolis_accel_z
-            _tv = add(&_tv, &coriolis_acceleration)
+            if not shot_props_ptr.coriolis.flat_fire_only:
+                Coriolis_t_coriolis_acceleration_local(&shot_props_ptr.coriolis, &velocity_vector, &coriolis_accel)
+                _tv = add(&_tv, &coriolis_accel)
             
             _tv = mulS(&_tv, delta_time)
             velocity_vector = add(&velocity_vector, &_tv)

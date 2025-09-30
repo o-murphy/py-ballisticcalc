@@ -335,30 +335,26 @@ double calculateOgw(double bulletWeight, double velocity) {
 /**
  * @brief Calculate Coriolis acceleration in local coordinates
  * @param coriolis_ptr Pointer to Coriolis_t containing precomputed transformation data
- * @param velocity_x Local velocity in range direction (feet/second)
- * @param velocity_y Local velocity in up direction (feet/second) 
- * @param velocity_z Local velocity in cross direction (feet/second)
- * @param accel_x_ptr Pointer to store acceleration in range direction
- * @param accel_y_ptr Pointer to store acceleration in up direction
- * @param accel_z_ptr Pointer to store acceleration in cross direction
+ * @param velocity Pointer to ground velocity of projectile
+ * @param accel_ptr Pointer to store acceleration in local coordinates
  */
 void Coriolis_t_coriolis_acceleration_local(
     const Coriolis_t *coriolis_ptr,
-    double velocity_x, double velocity_y, double velocity_z,
-    double *accel_x_ptr, double *accel_y_ptr, double *accel_z_ptr
+    V3dT *velocity_ptr,
+    V3dT *accel_ptr
 ) {
     // Return zero acceleration if not full 3D mode
     if (coriolis_ptr->flat_fire_only) {
-        *accel_x_ptr = 0.0;
-        *accel_y_ptr = 0.0;
-        *accel_z_ptr = 0.0;
+        accel_ptr->x = 0.0;
+        accel_ptr->y = 0.0;
+        accel_ptr->z = 0.0;
         return;
     }
 
     // Transform velocity from local (range/up/cross) to ENU coordinates
-    double vel_east = velocity_x * coriolis_ptr->range_east + velocity_z * coriolis_ptr->cross_east;
-    double vel_north = velocity_x * coriolis_ptr->range_north + velocity_z * coriolis_ptr->cross_north;
-    double vel_up = velocity_y;
+    double vel_east = velocity_ptr->x * coriolis_ptr->range_east + velocity_ptr->z * coriolis_ptr->cross_east;
+    double vel_north = velocity_ptr->x * coriolis_ptr->range_north + velocity_ptr->z * coriolis_ptr->cross_north;
+    double vel_up = velocity_ptr->y;
 
     // Coriolis acceleration in ENU coordinates
     // factor = -2.0 * cEarthAngularVelocityRadS
@@ -371,7 +367,7 @@ void Coriolis_t_coriolis_acceleration_local(
     double accel_range = accel_east * coriolis_ptr->range_east + accel_north * coriolis_ptr->range_north;
     double accel_cross = accel_east * coriolis_ptr->cross_east + accel_north * coriolis_ptr->cross_north;
 
-    *accel_x_ptr = accel_range;
-    *accel_y_ptr = accel_up;
-    *accel_z_ptr = accel_cross;
+    accel_ptr->x = accel_range;
+    accel_ptr->y = accel_up;
+    accel_ptr->z = accel_cross;
 }

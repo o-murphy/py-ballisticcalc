@@ -255,7 +255,6 @@ cdef V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, dou
     """
     cdef V3dT drag_force_component
     cdef V3dT coriolis_acceleration
-    cdef double coriolis_accel_x, coriolis_accel_y, coriolis_accel_z
     
     # Bullet velocity changes due to drag and gravity
     drag_force_component = mulS(v_ptr, km_coeff * mag(v_ptr))
@@ -264,13 +263,8 @@ cdef V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, dou
     # Add Coriolis acceleration if available
     if not shot_props_ptr.coriolis.flat_fire_only:
         Coriolis_t_coriolis_acceleration_local(
-            &shot_props_ptr.coriolis,
-            ground_velocity_ptr.x, ground_velocity_ptr.y, ground_velocity_ptr.z,
-            &coriolis_accel_x, &coriolis_accel_y, &coriolis_accel_z
+            &shot_props_ptr.coriolis, ground_velocity_ptr, &coriolis_acceleration
         )
-        coriolis_acceleration.x = coriolis_accel_x
-        coriolis_acceleration.y = coriolis_accel_y
-        coriolis_acceleration.z = coriolis_accel_z
         acceleration = add(&acceleration, &coriolis_acceleration)
     
     return acceleration
