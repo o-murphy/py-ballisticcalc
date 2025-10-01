@@ -16,6 +16,23 @@ cdef extern from "include/basetraj_seq.h" nogil:
         double vz
         double mach
 
+    ctypedef enum InterpKey:
+        KEY_TIME
+        KEY_MACH
+        KEY_POS_X
+        KEY_POS_Y
+        KEY_POS_Z
+        KEY_VEL_X
+        KEY_VEL_Y
+        KEY_VEL_Z
+
+    ctypedef struct _CBaseTrajSeq_cview:
+        BaseTrajC* _buffer
+        size_t _length
+        size_t _capacity
+
+    inline double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind)
+
 cdef class CBaseTrajSeq:
   cdef:
     BaseTrajC* _buffer
