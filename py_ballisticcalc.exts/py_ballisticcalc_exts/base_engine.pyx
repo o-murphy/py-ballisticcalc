@@ -35,13 +35,15 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,
     Wind_t_from_python,
+    Coriolis_t,
     # factory funcs
     Config_t_from_pyobject,
     MachList_t_from_pylist,
     Curve_t_from_pylist,
 )
 
-from py_ballisticcalc.conditions import ShotProps
+from py_ballisticcalc.shot import ShotProps
+from py_ballisticcalc.conditions import Coriolis
 from py_ballisticcalc.engines.base_engine import create_base_engine_config, TrajectoryDataFilter
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
@@ -301,7 +303,11 @@ cdef class CythonizedBaseIntegrationEngine:
 
         self._table_data = shot_info.ammo.dm.drag_table
         # Build C shot struct with robust cleanup on any error that follows
+        cdef object coriolis_obj
         try:
+            # Create coriolis object from shot parameters
+            coriolis_obj = Coriolis.create(shot_info.latitude, shot_info.azimuth, shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps)
+            
             self._shot_s = ShotProps_t(
                 bc=shot_info.ammo.dm.BC,
                 curve=Curve_t_from_pylist(self._table_data),
@@ -328,6 +334,18 @@ cdef class CythonizedBaseIntegrationEngine:
                     _mach=shot_info.atmo._mach,
                     density_ratio=shot_info.atmo.density_ratio,
                     cLowestTempC=shot_info.atmo.cLowestTempC,
+                ),
+                coriolis=Coriolis_t(
+                    sin_lat=coriolis_obj.sin_lat if coriolis_obj else 0.0,
+                    cos_lat=coriolis_obj.cos_lat if coriolis_obj else 0.0,
+                    sin_az=coriolis_obj.sin_az if coriolis_obj and coriolis_obj.sin_az is not None else 0.0,
+                    cos_az=coriolis_obj.cos_az if coriolis_obj and coriolis_obj.cos_az is not None else 0.0,
+                    range_east=coriolis_obj.range_east if coriolis_obj and coriolis_obj.range_east is not None else 0.0,
+                    range_north=coriolis_obj.range_north if coriolis_obj and coriolis_obj.range_north is not None else 0.0,
+                    cross_east=coriolis_obj.cross_east if coriolis_obj and coriolis_obj.cross_east is not None else 0.0,
+                    cross_north=coriolis_obj.cross_north if coriolis_obj and coriolis_obj.cross_north is not None else 0.0,
+                    flat_fire_only=coriolis_obj.flat_fire_only if coriolis_obj else 0,
+                    muzzle_velocity_fps=coriolis_obj.muzzle_velocity_fps if coriolis_obj else 0.0,
                 )
             )
             if ShotProps_t_updateStabilityCoefficient(&self._shot_s) < 0:

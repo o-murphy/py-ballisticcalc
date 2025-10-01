@@ -120,8 +120,8 @@ cpdef double ogw_eval(size_t shot_props_addr, double velocity_fps):
 
 cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
-    cdef double density_ratio
-    cdef double mach
+    cdef double density_ratio = <double>0.0
+    cdef double mach = <double>0.0
     Atmosphere_t_updateDensityFactorAndMachForAltitude(&sp_ptr.atmo, altitude_ft, &density_ratio, &mach)
     return density_ratio, mach
 

@@ -12,6 +12,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     ShotProps_t_dragByMach,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
+    Coriolis_t_coriolis_acceleration_local,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
@@ -160,22 +161,22 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
             #region RK4 integration
             
             # v1 = f(relative_velocity)
-            v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km)
+            v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, shot_props_ptr, &velocity_vector)
 
             # v2 = f(relative_velocity + 0.5 * delta_time * v1)
             _temp_add_operand = mulS(&v1, 0.5 * delta_time)
             _temp_v_result = add(&relative_velocity, &_temp_add_operand)
-            v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km)
+            v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, shot_props_ptr, &velocity_vector)
 
             # v3 = f(relative_velocity + 0.5 * delta_time * v2)
             _temp_add_operand = mulS(&v2, 0.5 * delta_time)
             _temp_v_result = add(&relative_velocity, &_temp_add_operand)
-            v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km)
+            v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, shot_props_ptr, &velocity_vector)
 
             # v4 = f(relative_velocity + delta_time * v3)
             _temp_add_operand = mulS(&v3, delta_time)
             _temp_v_result = add(&relative_velocity, &_temp_add_operand)
-            v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km)
+            v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, shot_props_ptr, &velocity_vector)
 
             # p1 = velocity_vector
             p1 = velocity_vector
@@ -237,19 +238,33 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         return (traj_seq, termination_reason)
         
         
-# This function calculates dv/dt for velocity (v) affected by gravity and drag.
-cdef V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff):
+# This function calculates dv/dt for velocity (v) affected by gravity, drag, and Coriolis forces.
+cdef V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff, 
+                          const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr):
     """Calculate the derivative of velocity with respect to time.
     
     Args:
-        v_ptr: Pointer to the velocity vector
+        v_ptr: Pointer to the relative velocity vector (velocity - wind)
         gravity_vector_ptr: Pointer to the gravity vector
         km_coeff: Drag coefficient
+        shot_props_ptr: Pointer to shot properties (for Coriolis data)
+        ground_velocity_ptr: Pointer to ground velocity vector (for Coriolis calculation)
         
     Returns:
         The acceleration vector (dv/dt)
     """
     cdef V3dT drag_force_component
-    # Bullet velocity changes due to both drag and gravity
+    cdef V3dT coriolis_acceleration
+    
+    # Bullet velocity changes due to drag and gravity
     drag_force_component = mulS(v_ptr, km_coeff * mag(v_ptr))
-    return sub(gravity_vector_ptr, &drag_force_component)
+    cdef V3dT acceleration = sub(gravity_vector_ptr, &drag_force_component)
+    
+    # Add Coriolis acceleration if available
+    if not shot_props_ptr.coriolis.flat_fire_only:
+        Coriolis_t_coriolis_acceleration_local(
+            &shot_props_ptr.coriolis, ground_velocity_ptr, &coriolis_acceleration
+        )
+        acceleration = add(&acceleration, &coriolis_acceleration)
+    
+    return acceleration

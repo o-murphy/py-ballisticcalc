@@ -61,6 +61,18 @@ cdef extern from "include/bclib.h" nogil:
         double *mach_ptr
     )
 
+    ctypedef struct Coriolis_t:
+        double sin_lat
+        double cos_lat
+        double sin_az
+        double cos_az
+        double range_east
+        double range_north
+        double cross_east
+        double cross_north
+        int flat_fire_only
+        double muzzle_velocity_fps
+
     ctypedef struct ShotProps_t:
         double bc
         Curve_t curve
@@ -81,6 +93,7 @@ cdef extern from "include/bclib.h" nogil:
         double stability_coefficient
         int filter_flags
         Atmosphere_t atmo
+        Coriolis_t coriolis
 
     void ShotProps_t_free(ShotProps_t *shot_props_ptr)
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
@@ -98,6 +111,12 @@ cdef extern from "include/bclib.h" nogil:
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
     # Wind_t Wind_t_fromPythonObj(PyObject *w)
+
+    void Coriolis_t_coriolis_acceleration_local(
+        const Coriolis_t *coriolis_ptr,
+        V3dT *velocity_ptr,
+        V3dT *accel_ptr
+    )
 
 
 # python to C objects conversion

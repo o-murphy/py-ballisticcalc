@@ -42,7 +42,6 @@ import warnings
 
 from typing_extensions import Union, List, override
 
-from py_ballisticcalc.conditions import ShotProps
 from py_ballisticcalc.engines.base_engine import (
     BaseIntegrationEngine,
     BaseEngineConfigDict,
@@ -51,8 +50,9 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import RangeError
 from py_ballisticcalc.logger import logger
+from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
-from py_ballisticcalc.vector import Vector
+from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
 __all__ = ('RK4IntegrationEngine',)
 
@@ -141,6 +141,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
         _cMinimumAltitude = self._config.cMinimumAltitude
+        coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
         step_data: List[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
         time: float = .0
@@ -197,23 +198,31 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
             delta_time = props.calc_step
             k_m = density_ratio * props.drag_by_mach(relative_speed / mach)
-            # drag = k_m * relative_speed  # This is the "drag rate." Multiply by velocity to get "drag acceleration."
+
+            def acceleration(rel_vel: Vector, ground_vel: Vector) -> Vector:
+                """Acceleration is net effect of gravity, drag, and Coriolis forces."""
+                coriolis_term = coriolis_fn(ground_vel) if coriolis_fn else ZERO_VECTOR
+                return self.gravity_vector + coriolis_term - k_m * rel_vel * rel_vel.magnitude()  # type: ignore[operator]
 
             # region RK4 integration
-            def f(v: Vector) -> Vector:  # dv/dt (acceleration)
-                # Bullet velocity changes due to both drag and gravity
-                return self.gravity_vector - k_m * v * v.magnitude()  # type: ignore[operator]
+            v1 = velocity_vector
+            rel1 = v1 - wind_vector
+            a1 = acceleration(rel1, v1)
 
-            v1 = f(relative_velocity)
-            v2 = f(relative_velocity + 0.5 * delta_time * v1)  # type: ignore[operator]
-            v3 = f(relative_velocity + 0.5 * delta_time * v2)  # type: ignore[operator]
-            v4 = f(relative_velocity + delta_time * v3)  # type: ignore[operator]
-            p1 = velocity_vector
-            p2 = velocity_vector + 0.5 * delta_time * v1  # type: ignore[operator]
-            p3 = velocity_vector + 0.5 * delta_time * v2  # type: ignore[operator]
-            p4 = velocity_vector + delta_time * v3  # type: ignore[operator]
-            velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)  # type: ignore[operator]
-            range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (delta_time / 6.0)  # type: ignore[operator]
+            v2 = velocity_vector + 0.5 * delta_time * a1  # type: ignore[operator]
+            rel2 = v2 - wind_vector
+            a2 = acceleration(rel2, v2)
+
+            v3 = velocity_vector + 0.5 * delta_time * a2  # type: ignore[operator]
+            rel3 = v3 - wind_vector
+            a3 = acceleration(rel3, v3)
+
+            v4 = velocity_vector + delta_time * a3  # type: ignore[operator]
+            rel4 = v4 - wind_vector
+            a4 = acceleration(rel4, v4)
+
+            velocity_vector += (a1 + 2 * a2 + 2 * a3 + a4) * (delta_time / 6.0)  # type: ignore[operator]
+            range_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)  # type: ignore[operator]
             # endregion RK4 integration
 
             # region for Reference: Euler integration

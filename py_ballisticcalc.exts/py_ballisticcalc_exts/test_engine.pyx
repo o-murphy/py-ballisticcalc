@@ -46,8 +46,8 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        cdef double density_ratio
-        cdef double mach
+        cdef double density_ratio = <double>0.0
+        cdef double mach = <double>0.0
         Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._shot_s.atmo, altitude_ft, &density_ratio, &mach)
         return density_ratio, mach
 

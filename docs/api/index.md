@@ -4,8 +4,8 @@ This page summarizes the primary classes for this project and how they fit toget
 
 ## Core Workflow
 
-- [`Calculator`][py_ballisticcalc.interface.Calculator]: High-level entry point to compute trajectories. Accepts a [`Shot`][py_ballisticcalc.conditions.Shot] (scene) and returns a [`HitResult`][py_ballisticcalc.trajectory_data.HitResult] with trajectory rows and helpers.
-- [`Shot`][py_ballisticcalc.conditions.Shot]: Details a shooting scenario – [`Ammo`][py_ballisticcalc.munition.Ammo], [`Atmo`][py_ballisticcalc.conditions.Atmo], [`Weapon`][py_ballisticcalc.munition.Weapon], [`Wind`][py_ballisticcalc.conditions.Wind], and angles (look/slant, relative, cant).
+- [`Calculator`][py_ballisticcalc.interface.Calculator]: High-level entry point to compute trajectories. Accepts a [`Shot`][py_ballisticcalc.shot.Shot] (scene) and returns a [`HitResult`][py_ballisticcalc.trajectory_data.HitResult] with trajectory rows and helpers.
+- [`Shot`][py_ballisticcalc.shot.Shot]: Details a shooting scenario – [`Ammo`][py_ballisticcalc.munition.Ammo], [`Atmo`][py_ballisticcalc.conditions.Atmo], [`Weapon`][py_ballisticcalc.munition.Weapon], [`Wind`][py_ballisticcalc.conditions.Wind], and angles (look/slant, relative, cant).
 - [`HitResult`][py_ballisticcalc.trajectory_data.HitResult]: Wrapper for accessing and displaying calculated results, including a list of [`TrajectoryData`][py_ballisticcalc.trajectory_data.TrajectoryData] (which are detailed characteristics of points on the ballistic trajectory).
 
 
@@ -46,7 +46,7 @@ classDiagram
 ```
 </div>
 
-The classes that comprise a [`Shot`][py_ballisticcalc.conditions.Shot]:
+The classes that comprise a [`Shot`][py_ballisticcalc.shot.Shot]:
 
 - [`Ammo`][py_ballisticcalc.munition.Ammo]: Wraps muzzle velocity, including optional powder temperature sensitivity, together with a DragModel.
     - [`DragModel`][py_ballisticcalc.drag_model]: Physical details of a projectile, including aerodynamic drag as a function of velocity.  (Drag is typically modelled via Ballistic Coefficient and standard [drag tables][py_ballisticcalc.drag_tables] – G1, G7, etc.)
@@ -66,7 +66,7 @@ Calculation engines implement different algorithms for integration and targeting
 ???+ api "Selected API references"
 
 	[`py_ballisticcalc.interface.Calculator`][py_ballisticcalc.interface.Calculator]<br>
-	[`py_ballisticcalc.conditions.Shot`][py_ballisticcalc.conditions.Shot]<br>
+	[`py_ballisticcalc.shot.Shot`][py_ballisticcalc.shot.Shot]<br>
 	[`py_ballisticcalc.munition.Ammo`][py_ballisticcalc.munition.Ammo]<br>
 	[`py_ballisticcalc.conditions.Atmo`][py_ballisticcalc.conditions.Atmo]<br>
 	[`py_ballisticcalc.munition.Weapon`][py_ballisticcalc.munition.Weapon]<br>

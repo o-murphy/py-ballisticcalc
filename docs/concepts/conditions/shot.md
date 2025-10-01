@@ -1,6 +1,6 @@
 # Shot
 
-The [`Shot`][py_ballisticcalc.conditions.Shot] class contains all information required to calculate a ballistic trajectory:
+The [`Shot`][py_ballisticcalc.shot.Shot] class contains all information required to calculate a ballistic trajectory:
 
 - [Atmosphere][py_ballisticcalc.conditions.Atmo] and [winds][py_ballisticcalc.conditions.Wind].
 - [Ammunition][py_ballisticcalc.munition.Ammo] characteristics.
@@ -11,4 +11,4 @@ The [`Shot`][py_ballisticcalc.conditions.Shot] class contains all information re
 
 ???+ api "API Documentation"
 
-    [`py_ballisticcalc.conditions.Shot`][py_ballisticcalc.conditions.Shot]<br>
+    [`py_ballisticcalc.shot.Shot`][py_ballisticcalc.shot.Shot]<br>

@@ -15,6 +15,7 @@ extern const double cLowestTempF;
 extern const double mToFeet;
 
 extern const double cMaxWindDistanceFeet;
+extern const double cEarthAngularVelocityRadS;
 
 typedef struct {
     double cStepMultiplier;
@@ -61,7 +62,21 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     const Atmosphere_t *atmo_ptr,
     double altitude,
     double *density_ratio_ptr,
-    double *mach_ptr);
+    double *mach_ptr
+);
+
+typedef struct {
+    double sin_lat;
+    double cos_lat;
+    double sin_az;
+    double cos_az;
+    double range_east;
+    double range_north;
+    double cross_east;
+    double cross_north;
+    int flat_fire_only;
+    double muzzle_velocity_fps;
+} Coriolis_t;
 
 typedef struct {
     double bc;
@@ -83,6 +98,7 @@ typedef struct {
     double stability_coefficient;
     int filter_flags;
     Atmosphere_t atmo;
+    Coriolis_t coriolis;
 } ShotProps_t;
 
 void ShotProps_t_free(ShotProps_t *shot_props_ptr);
@@ -156,5 +172,11 @@ typedef struct {
 double getCorrection(double distance, double offset);
 double calculateEnergy(double bulletWeight, double velocity);
 double calculateOgw(double bulletWeight, double velocity);
+
+void Coriolis_t_coriolis_acceleration_local(
+    const Coriolis_t *coriolis_ptr,
+    V3dT *velocity_ptr,
+    V3dT *accel_ptr
+);
 
 #endif // TYPES_H

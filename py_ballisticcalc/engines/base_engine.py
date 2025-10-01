@@ -43,11 +43,12 @@ from enum import Enum, auto
 from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, TypeVar, Union
 
 from py_ballisticcalc._compat import bisect_left_key
-from py_ballisticcalc.conditions import Shot, ShotProps, Wind
+from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
 from py_ballisticcalc.exceptions import ZeroFindingError, OutOfRangeError, SolverRuntimeError
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
+from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData, HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.vector import Vector

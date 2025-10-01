@@ -63,7 +63,7 @@ from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
 from py_ballisticcalc._compat import bisect_left_key
-from py_ballisticcalc.conditions import ShotProps, Wind
+from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.engines.base_engine import (
     BaseEngineConfig,
     BaseEngineConfigDict,
@@ -73,9 +73,10 @@ from py_ballisticcalc.engines.base_engine import (
 )
 from py_ballisticcalc.exceptions import OutOfRangeError, RangeError, ZeroFindingError
 from py_ballisticcalc.logger import logger
+from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
-from py_ballisticcalc.vector import Vector
+from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
 __all__ = ('SciPyIntegrationEngine',
            'SciPyEngineConfig',
@@ -649,6 +650,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
 
         wind_sock = WindSock(props.winds)
+        coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
         # region Initialize velocity and position of projectile
         velocity = props.muzzle_velocity_fps
@@ -683,13 +685,15 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             k_m = density_ratio * props.drag_by_mach(relative_speed / mach)
             drag = k_m * relative_speed  # This is the "drag rate"
 
+            coriolis_term = coriolis_fn(velocity_vector) if coriolis_fn else ZERO_VECTOR
+
             # Derivatives
             dxdt = vx
             dydt = vy
             dzdt = vz
-            dvxdt = -drag * relative_velocity.x
-            dvydt = self.gravity_vector.y - drag * relative_velocity.y
-            dvzdt = -drag * relative_velocity.z
+            dvxdt = coriolis_term.x - drag * relative_velocity.x
+            dvydt = self.gravity_vector.y + coriolis_term.y - drag * relative_velocity.y
+            dvzdt = coriolis_term.z - drag * relative_velocity.z
             return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
         # endregion SciPy integration
 

@@ -21,8 +21,8 @@ import pytest
 
 from py_ballisticcalc.drag_tables import TableG7, TableG1
 from py_ballisticcalc.drag_model import DragModel
-from py_ballisticcalc.conditions import Shot
 from py_ballisticcalc.munition import Ammo, Weapon
+from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.unit import Velocity
 from py_ballisticcalc_exts.test_engine import CythonEngineTestHarness
 from py_ballisticcalc_exts.test_helpers import init_shot, free_shot, shot_props_addr, introspect_shot

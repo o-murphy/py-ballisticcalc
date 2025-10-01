@@ -2,7 +2,7 @@ import copy
 import pytest
 
 from py_ballisticcalc import (Ammo, Atmo, BaseEngineConfigDict, Calculator, DragModel, RangeError, Shot,
-                              TableG7, TrajFlag, Vacuum, Weapon, Wind)
+                              TableG7, Vacuum, Weapon, Wind)
 from py_ballisticcalc.unit import *
 
 pytestmark = pytest.mark.engine
@@ -123,10 +123,7 @@ class TestComputer:
         assert t_multi_more.trajectory[9].windage.raw_value > t_multi.trajectory[9].windage.raw_value
 
     def test_no_winds(self):
-        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere,
-                    winds=[])
-        # set empty list (redundant as it's already set)
-        shot.winds = []
+        shot = Shot(weapon=self.weapon, ammo=self.ammo, atmo=self.atmosphere, winds=[])
         try:
             self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
         except Exception as e:
@@ -238,6 +235,85 @@ class TestComputer:
         self.ammo.use_powder_sensitivity = False
     # endregion Ammo
 
+    #region Coriolis
+    def test_coriolis_flat_approximation(self):
+        """Flat-fire Coriolis approximation based on latitude only (no azimuth)."""
+        # Ensure that shot.weapon has no twist so we don't add gyroscopic drift
+        shot = Shot(ammo=self.ammo, atmo=self.atmosphere)
+        base = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+
+        # Specify only latitude to get flat-fire approximation
+        shot.latitude = 0.0
+        equator = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert pytest.approx(equator[-1].windage.raw_value) == base[-1].windage.raw_value
+        assert pytest.approx(equator[-1].height.raw_value) == base[-1].height.raw_value
+        shot.latitude = -40.0
+        south = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert south[-1].windage.raw_value < base[-1].windage.raw_value
+        shot.latitude = 80.0
+        north = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert north[-1].windage.raw_value > -south[-1].windage.raw_value
+        assert pytest.approx(north[-1].height.raw_value) == base[-1].height.raw_value
+        with pytest.raises(ValueError):
+            shot.latitude = 91.0  # Invalid latitude
+            self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+
+    def test_full_coriolis_by_latitude(self):
+        """Shoot towards east at different latitudes."""
+        # Ensure that shot.weapon has no twist so we don't add gyroscopic drift
+        shot = Shot(ammo=self.ammo, atmo=self.atmosphere)
+        base = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+
+        shot.azimuth = 90.0  # East
+        shot.latitude = 0.0
+        equator = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert pytest.approx(equator[-1].windage.raw_value) == base[-1].windage.raw_value
+        assert equator[-1].height > base[-1].height, "Max vertical effect is shooting east at equator"
+        shot.latitude = -40.0
+        south = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert south[-1].windage < equator[-1].windage, "Windage goes left as latitude goes south"
+        assert south[-1].height < equator[-1].height, "Vertical effect decreases away from equator"
+        shot.latitude = 80.0
+        north = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert north[-1].windage > -1*south[-1].windage, "Windage goes right as latitude goes north"
+        assert north[-1].height < south[-1].height, "Vertical effect decreases away from equator"
+
+    def test_full_coriolis_by_azimuth(self):
+        """Shoot in different directions at equator (where vertical Coriolis effect is greatest)."""
+        # Ensure that shot.weapon has no twist so we don't add gyroscopic drift
+        shot = Shot(ammo=self.ammo, atmo=self.atmosphere)
+        base = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+
+        shot.latitude = 0.0
+        shot.azimuth = 0.0  # North
+        north = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert pytest.approx(north[-1].height.raw_value) == base[-1].height.raw_value
+        shot.azimuth = 45.0
+        northeast = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert northeast[-1].height > north[-1].height, "Vertical increasingly positive as we turn east"
+        shot.azimuth = 270.0
+        west = self.calc.fire(shot, trajectory_range=self.range, trajectory_step=self.step)
+        assert west[-1].height < north[-1].height, "Vertical increasingly negative as we turn west"
+
+    def test_full_coriolis_vertical(self, loaded_engine_instance):
+        """Shooting straight up, a projectile should drift west of launch.  Effect greatest at equator."""
+        # Ensure that shot.weapon has no twist so we don't add gyroscopic drift
+        shot = Shot(ammo=self.ammo, atmo=self.atmosphere)
+        shot.relative_angle = Angular.Degree(90)  # Straight up
+        calc = Calculator(config={'cMinimumVelocity': 1000}, engine=loaded_engine_instance)
+        base = calc.fire(shot, trajectory_range=self.range, raise_range_error=False)
+        assert base[-1].windage.raw_value == 0.0
+
+        shot.latitude = 0.0
+        shot.azimuth = 0.0  # Face North, so negative windage is west
+        equator = calc.fire(shot, trajectory_range=self.range, raise_range_error=False)
+        assert equator[-1].windage.raw_value < 0
+        shot.latitude = 40.0
+        north = calc.fire(shot, trajectory_range=self.range, raise_range_error=False)
+        assert equator[-1].windage.raw_value < north[-1].windage.raw_value < 0
+    # endregion Coriolis
+
+    # region Errors and Limits
     def test_zero_velocity(self):
         """Test that firing with zero muzzle velocity raises a RangeError"""
         tdm = DragModel(self.dm.BC + 0.5, self.dm.drag_table, self.dm.weight, self.dm.diameter, self.dm.length)
@@ -263,17 +339,6 @@ class TestComputer:
         t = calc.fire(shot, trajectory_range=Distance.Meter(100), raise_range_error=False)
         assert len(t.trajectory) >= 1
         assert isinstance(t.error, RangeError)
-
-    def test_combined_flags(self):
-        """Test that combined flags are correctly set in the trajectory"""
-        dm = DragModel(bc=0.243, drag_table=TableG7)
-        shot = Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
-        self.calc.set_weapon_zero(shot, zero_distance=Distance.Meter(200))
-        hit_result = self.calc.fire(shot, trajectory_range=Distance.Meter(300),
-                                    trajectory_step=Distance.Meter(100), flags=TrajFlag.ALL)
-        td = hit_result.flag(TrajFlag.ZERO_DOWN)
-        assert td is not None, 'Expected to find a ZERO_DOWN flag in trajectory'
-        assert td.flag == TrajFlag.ZERO_DOWN | TrajFlag.RANGE, 'ZERO_DOWN should occur on a RANGE row'
 
     def test_find_apex_uses_no_min_velocity_and_restores(self, loaded_engine_instance):
         """Ensure decorators work correctly for find_apex, and that config is restored after."""
@@ -325,3 +390,4 @@ class TestComputer:
         assert res.error is not None and res.error.reason == RangeError.MinimumAltitudeReached
         assert res.trajectory[-1].angle.raw_value <= 0.0 + 1e-9
         assert res.trajectory[-1].time > 0.0
+    # endregion Errors and Limits

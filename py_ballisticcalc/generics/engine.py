@@ -30,7 +30,7 @@ from typing import Any, Optional, TypeVar, Union
 from typing_extensions import Protocol, runtime_checkable
 
 # Local imports
-from py_ballisticcalc.conditions import Shot
+from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
 
