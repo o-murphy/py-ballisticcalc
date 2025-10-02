@@ -1,111 +1,119 @@
-#include "interp.h" // Include your own header file
+#include "interp.h"
 #include <stddef.h>
+#include <math.h>
 
-// int _sign(double a) {
-//     return (a > 0.0) ? 1 : ((a < 0.0) ? -1 : 0);
-// }
 
-// // Internal helpers for PCHIP used by base_traj_seq
-// void _sort3(double* xs, double* ys) {
-//     int i, j, min_idx;
-//     double tx, ty;
+// Internal helpers for PCHIP
+int _sign(double a) {
+    return (a > 0.0) ? 1 : ((a < 0.0) ? -1 : 0);
+}
 
-//     for (i = 0; i < 2; i++) {
-//         min_idx = i;
+// Internal helpers for PCHIP used by base_traj_seq
+void _sort3(double* xs, double* ys) {
+    int i, j, min_idx;
+    double tx, ty;
 
-//         for (j = i + 1; j < 3; j++) {
-//             if (xs[j] < xs[min_idx]) {
-//                 min_idx = j;
-//             }
-//         }
+    for (i = 0; i < 2; i++) {
+        min_idx = i;
 
-//         if (min_idx != i) {
-//             tx = xs[i];
-//             xs[i] = xs[min_idx];
-//             xs[min_idx] = tx;
+        for (j = i + 1; j < 3; j++) {
+            if (xs[j] < xs[min_idx]) {
+                min_idx = j;
+            }
+        }
 
-//             ty = ys[i];
-//             ys[i] = ys[min_idx];
-//             ys[min_idx] = ty;
-//         }
-//     }
-// }
+        if (min_idx != i) {
+            tx = xs[i];
+            xs[i] = xs[min_idx];
+            xs[min_idx] = tx;
 
-// void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2, double y2,
-//                                   double* m0, double* m1, double* m2) {
-//     double h0 = x1 - x0;
-//     double h1 = x2 - x1;
+            ty = ys[i];
+            ys[i] = ys[min_idx];
+            ys[min_idx] = ty;
+        }
+    }
+}
 
-//     double d0 = (y1 - y0) / h0;
-//     double d1 = (y2 - y1) / h1;
+void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2, double y2,
+                                  double* m0, double* m1, double* m2) {
+    double h0 = x1 - x0;
+    double h1 = x2 - x1;
 
-//     double m1l;
-//     double w1;
-//     double w2;
-//     double m0l;
-//     double m2l;
+    double d0 = (y1 - y0) / h0;
+    double d1 = (y2 - y1) / h1;
 
-//     if (_sign(d0) * _sign(d1) <= 0) {
-//         m1l = 0.0;
-//     } else {
-//         w1 = 2.0 * h1 + h0;
-//         w2 = h1 + 2.0 * h0;
-//         // (w1 + w2) / (w1/d0 + w2/d1)
-//         m1l = (w1 + w2) / (w1 / d0 + w2 / d1);
-//     }
+    double m1l;
+    double w1;
+    double w2;
+    double m0l;
+    double m2l;
 
-//     m0l = ((2.0 * h0 + h1) * d0 - h0 * d1) / (h0 + h1);
+    if (_sign(d0) * _sign(d1) <= 0) {
+        m1l = 0.0;
+    } else {
+        w1 = 2.0 * h1 + h0;
+        w2 = h1 + 2.0 * h0;
+        // (w1 + w2) / (w1/d0 + w2/d1)
+        m1l = (w1 + w2) / (w1 / d0 + w2 / d1);
+    }
 
-//     if (_sign(m0l) != _sign(d0)) {
-//         m0l = 0.0;
-//     }
-//     else if (fabs(m0l) > 3.0 * fabs(d0)) {
-//         m0l = 3.0 * d0;
-//     }
+    m0l = ((2.0 * h0 + h1) * d0 - h0 * d1) / (h0 + h1);
 
-//     m2l = ((2.0 * h1 + h0) * d1 - h1 * d0) / (h0 + h1);
+    if (_sign(m0l) != _sign(d0)) {
+        m0l = 0.0;
+    }
+    else if (fabs(m0l) > 3.0 * fabs(d0)) {
+        m0l = 3.0 * d0;
+    }
 
-//     if (_sign(m2l) != _sign(d1)) {
-//         m2l = 0.0;
-//     }
-//     else if (fabs(m2l) > 3.0 * fabs(d1)) {
-//         m2l = 3.0 * d1;
-//     }
+    m2l = ((2.0 * h1 + h0) * d1 - h1 * d0) / (h0 + h1);
 
-//     m0[0] = m0l;
-//     m1[0] = m1l;
-//     m2[0] = m2l;
-// }
+    if (_sign(m2l) != _sign(d1)) {
+        m2l = 0.0;
+    }
+    else if (fabs(m2l) > 3.0 * fabs(d1)) {
+        m2l = 3.0 * d1;
+    }
 
-// double _hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1) {
-//     // xk1 - xk
-//     double h = xk1 - xk;
+    m0[0] = m0l;
+    m1[0] = m1l;
+    m2[0] = m2l;
+}
 
-//     // (x - xk) / h
-//     double t = (x - xk) / h;
+double _hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1) {
+    // xk1 - xk
+    double h = xk1 - xk;
 
-//     // t * t
-//     double t2 = t * t;
+    // (x - xk) / h
+    double t = (x - xk) / h;
 
-//     // t2 * t
-//     double t3 = t2 * t;
+    // t * t
+    double t2 = t * t;
 
-//     return (
-//         // H0(t) * yk
-//         (2.0 * t3 - 3.0 * t2 + 1.0) * yk
+    // t2 * t
+    double t3 = t2 * t;
 
-//         // H1(t) * (mk * h)
-//         + (t3 - 2.0 * t2 + t) * (mk * h)
+    return (
+        // H0(t) * yk
+        (2.0 * t3 - 3.0 * t2 + 1.0) * yk
 
-//         // H2(t) * yk1
-//         + (-2.0 * t3 + 3.0 * t2) * yk1
+        // H1(t) * (mk * h)
+        + (t3 - 2.0 * t2 + t) * (mk * h)
 
-//         // H3(t) * (mk1 * h)
-//         + (t3 - t2) * (mk1 * h)
-//     );
-// }
+        // H2(t) * yk1
+        + (-2.0 * t3 + 3.0 * t2) * yk1
 
-double _interpolate_3_pt(double x, double x0, double y0, double x1, double y1, double x2, double y2) {
+        // H3(t) * (mk1 * h)
+        + (t3 - t2) * (mk1 * h)
+    );
+}
+
+
+// Interpolation functions
+// Monotone PCHIP interpolation for a single component using 3 support points.
+// Sorts (x*, y*) by x*, computes PCHIP slopes, and evaluates the Hermite piece
+// containing x. Assumes all x* distinct. Returns interpolated y.
+double _interpolate_3_pt(double x, double x0, double x1, double x2, double y0, double y1, double y2) {
 
     double xs[3];
     double ys[3];
@@ -129,6 +137,8 @@ double _interpolate_3_pt(double x, double x0, double y0, double x1, double y1, d
     }
 }
 
+
+// Declaration for 2-point interpolation
 int _interpolate_2_pt(double x, double x0, double y0, double x1, double y1, double* result) {
     if (x1 == x0) {
         return INTERP_ERROR_ZERODIVISION;

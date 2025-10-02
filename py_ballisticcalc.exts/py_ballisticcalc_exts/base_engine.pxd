@@ -52,7 +52,7 @@ cdef extern from "include/bclib.h" nogil:
         const Atmosphere_t *atmo_ptr,
         double altitude,
         double *density_ratio_ptr,
-        double *mach_ptr)
+        double *mach_ptr) noexcept nogil
 
     ctypedef struct Coriolis_t:
         double sin_lat
@@ -88,14 +88,14 @@ cdef extern from "include/bclib.h" nogil:
         Atmosphere_t atmo
         Coriolis_t coriolis
 
-    void ShotProps_t_free(ShotProps_t *shot_props_ptr)
-    double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
-    double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach)
+    void ShotProps_t_free(ShotProps_t *shot_props_ptr) noexcept nogil
+    double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
+    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
+    double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
 
     double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
                                        const Curve_t *curve_ptr,
-                                       double mach)
+                                       double mach) noexcept nogil
 
     ctypedef struct Wind_t:
         double velocity
@@ -134,20 +134,20 @@ cdef extern from "include/bclib.h" nogil:
     int WindSock_t_updateCache(WindSock_t *ws)
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
 
-    ctypedef struct TrajDataFilter_t:
-        int filter
-        int current_flag
-        int seen_zero
-        double time_step
-        double range_step
-        double time_of_last_record
-        double next_record_distance
-        double previous_mach
-        double previous_time
-        V3dT previous_position
-        V3dT previous_velocity
-        double previous_v_mach
-        double look_angle
+    # ctypedef struct TrajDataFilter_t:
+    #     int filter
+    #     int current_flag
+    #     int seen_zero
+    #     double time_step
+    #     double range_step
+    #     double time_of_last_record
+    #     double next_record_distance
+    #     double previous_mach
+    #     double previous_time
+    #     V3dT previous_position
+    #     V3dT previous_velocity
+    #     double previous_v_mach
+    #     double look_angle
 
     # helpers
     double getCorrection(double distance, double offset)

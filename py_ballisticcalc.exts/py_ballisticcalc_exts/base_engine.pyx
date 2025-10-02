@@ -15,6 +15,9 @@ from py_ballisticcalc_exts.trajectory_data cimport (
     TrajFlag_t,
     BaseTrajDataT,
     TrajectoryDataT,
+)
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.unit_helper cimport (
     _new_feet,
     _new_fps,
     _new_rad,
@@ -34,7 +37,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t_free,
     ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,
-    Wind_t_from_python,
+    Wind_t_from_py,
     Coriolis_t,
     # factory funcs
     Config_t_from_pyobject,
@@ -79,8 +82,8 @@ cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     cdef int i
     try:
         for i in range(length):
-            # Wind_t_from_python interacts with a Python object, so it remains here
-            winds_array[i] = Wind_t_from_python(winds_py_list[i])
+            # Wind_t_from_py interacts with a Python object, so it remains here
+            winds_array[i] = Wind_t_from_py(winds_py_list[i])
     except Exception:
         # Error handling
         free(<void *> winds_array)

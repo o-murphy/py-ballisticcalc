@@ -28,7 +28,7 @@ cdef Curve_t Curve_t_from_pylist(list[object] data_points):
 # We still need a way to get data from Python objects into Wind_t structs.
 # This internal helper function is used by WindSockT_create.
 # It assumes 'w' is a Python object that conforms to the interface needed.
-cdef Wind_t Wind_t_from_python(object w):
+cdef Wind_t Wind_t_from_py(object w):
     return Wind_t(
         w.velocity._fps,
         w.direction_from._rad,

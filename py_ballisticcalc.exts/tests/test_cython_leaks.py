@@ -109,7 +109,7 @@ def test_invalid_wind_entry_cleanup(loaded_engine_instance):
 
     class BadWind:
         # Provide until_distance.raw_value so Shot.winds sorting works,
-        # but omit attributes required by Wind_t_from_python to force failure later.
+        # but omit attributes required by Wind_t_from_py to force failure later.
         def __init__(self):
             self.until_distance = _AD(0.0)  # Intentionally missing '_feet'
 

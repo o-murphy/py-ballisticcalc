@@ -11,52 +11,28 @@ and convert to these types as needed for interpolation or presentation.
 """
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT, set
+from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
-
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc.vector import Vector
-import py_ballisticcalc.unit as pyunit
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.interp cimport _interpolate_3_pt
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.unit_helper cimport (
+    _new_feet, 
+    _new_fps, 
+    _new_ft_lb, 
+    _new_lb, 
+    _new_rad, 
+    _new_moa,
+)
 
-
-# Helper functions to create unit objects
-cdef object _new_feet(double val):
-    return pyunit.Distance(float(val), pyunit.Unit.Foot)
-    
-cdef object _new_fps(double val):
-    return pyunit.Velocity(float(val), pyunit.Unit.FPS)
-    
-cdef object _new_rad(double val):
-    return pyunit.Angular(float(val), pyunit.Unit.Radian)
-    
-cdef object _new_ft_lb(double val):
-    return pyunit.Energy(float(val), pyunit.Unit.FootPound)
-    
-cdef object _new_lb(double val):
-    return pyunit.Weight(float(val), pyunit.Unit.Pound)
-
-# Additional angular helper for MOA-based fields
-cdef object _new_moa(double val):
-    return pyunit.Angular(float(val), pyunit.Unit.MOA)
 
 cdef object _v3d_to_vector(V3dT v):
     """Convert C V3dT -> Python Vector"""
     return Vector(<float>v.x, <float>v.y, <float>v.z)
 
-cpdef double interpolate_3_pt(double x, double x0, double y0, double x1, double y1, double x2, double y2):
-    return _interpolate_3_pt(x, x0, y0, x1, y1, x2, y2)
-
-cpdef double interpolate_2_pt(double x, double x0, double y0, double x1, double y1):
-    cdef double result
-    cdef int status
-
-    with nogil:
-        status = _interpolate_2_pt(x, x0, y0, x1, y1, &result)
-
-    if status == INTERP_ERROR_ZERODIVISION:
-        raise ZeroDivisionError("Duplicate x for linear interpolation")
-
-    return result
 
 @final
 cdef class BaseTrajDataT:
@@ -165,7 +141,7 @@ cdef class BaseTrajDataT:
 
         # Helper for scalar interpolation using PCHIP
         def _interp(double y0, double y1, double y2) -> double:
-            return _interpolate_3_pt(key_value, x0, y0, x1, y1, x2, y2)
+            return _interpolate_3_pt(key_value, x0, x1, x2, y0, y1, y2)
 
         # Interpolate all scalar fields
         time = key_value if key_attribute == 'time' else _interp(_p0.time, _p1.time, _p2.time)
@@ -178,7 +154,7 @@ cdef class BaseTrajDataT:
         mach = key_value if key_attribute == 'mach' else _interp(_p0.mach, _p1.mach, _p2.mach)
 
         # Construct the resulting BaseTrajDataT
-        return BaseTrajDataT(time, set(px, py, pz), set(vx, vy, vz), mach)
+        return BaseTrajDataT(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach)
 
 
 cdef BaseTrajDataT BaseTrajDataT_create(double time, V3dT position, V3dT velocity, double mach):
@@ -187,7 +163,7 @@ cdef BaseTrajDataT BaseTrajDataT_create(double time, V3dT position, V3dT velocit
 # Small Python factory for tests and convenience
 def make_base_traj_data(double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach):
-    return BaseTrajDataT(time, set(px, py, pz), set(vx, vy, vz), mach)
+    return BaseTrajDataT(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach)
 
 @final
 cdef class TrajectoryDataT:
@@ -256,22 +232,31 @@ cdef class TrajectoryDataT:
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
-        time = key_value if key_attribute == 'time' else _interpolate_3_pt(key_value, x0, t0.time, x1, t1.time, x2, t2.time)
-        mach = key_value if key_attribute == 'mach' else _interpolate_3_pt(key_value, x0, t0.mach, x1, t1.mach, x2, t2.mach)
+        # The key_value is the 'x' for the interpolation.
+        # Arguments mapped to _interpolate_3_pt: (x, x0, x1, x2, y0, y1, y2)
 
-        distance = _new_feet(_interpolate_3_pt(key_value, x0, t0.distance._feet, x1, t1.distance._feet, x2, t2.distance._feet))
-        velocity = _new_fps(_interpolate_3_pt(key_value, x0, t0.velocity._fps, x1, t1.velocity._fps, x2, t2.velocity._fps))
-        height = _new_feet(_interpolate_3_pt(key_value, x0, t0.height._feet, x1, t1.height._feet, x2, t2.height._feet))
-        slant_height = _new_feet(_interpolate_3_pt(key_value, x0, t0.slant_height._feet, x1, t1.slant_height._feet, x2, t2.slant_height._feet))
-        drop_angle = _new_moa(_interpolate_3_pt(key_value, x0, t0.drop_angle._moa, x1, t1.drop_angle._moa, x2, t2.drop_angle._moa))
-        windage = _new_feet(_interpolate_3_pt(key_value, x0, t0.windage._feet, x1, t1.windage._feet, x2, t2.windage._feet))
-        windage_angle = _new_moa(_interpolate_3_pt(key_value, x0, t0.windage_angle._moa, x1, t1.windage_angle._moa, x2, t2.windage_angle._moa))
-        slant_distance = _new_feet(_interpolate_3_pt(key_value, x0, t0.slant_distance._feet, x1, t1.slant_distance._feet, x2, t2.slant_distance._feet))
-        angle = _new_rad(_interpolate_3_pt(key_value, x0, t0.angle._rad, x1, t1.angle._rad, x2, t2.angle._rad))
-        density_ratio = _interpolate_3_pt(key_value, x0, t0.density_ratio, x1, t1.density_ratio, x2, t2.density_ratio)
-        drag = _interpolate_3_pt(key_value, x0, t0.drag, x1, t1.drag, x2, t2.drag)
-        energy = _new_ft_lb(_interpolate_3_pt(key_value, x0, t0.energy._ft_lb, x1, t1.energy._ft_lb, x2, t2.energy._ft_lb))
-        ogw = _new_lb(_interpolate_3_pt(key_value, x0, t0.ogw._lb, x1, t1.ogw._lb, x2, t2.ogw._lb))
+        # Scalar fields (time, mach)
+        time = key_value if key_attribute == 'time' else _interpolate_3_pt(key_value, x0, x1, x2, t0.time, t1.time, t2.time)
+        mach = key_value if key_attribute == 'mach' else _interpolate_3_pt(key_value, x0, x1, x2, t0.mach, t1.mach, t2.mach)
+
+        # Dimensioned fields (distance, velocity, height, etc.)
+        distance = _new_feet(_interpolate_3_pt(key_value, x0, x1, x2, t0.distance._feet, t1.distance._feet, t2.distance._feet))
+        velocity = _new_fps(_interpolate_3_pt(key_value, x0, x1, x2, t0.velocity._fps, t1.velocity._fps, t2.velocity._fps))
+        height = _new_feet(_interpolate_3_pt(key_value, x0, x1, x2, t0.height._feet, t1.height._feet, t2.height._feet))
+        slant_height = _new_feet(_interpolate_3_pt(key_value, x0, x1, x2, t0.slant_height._feet, t1.slant_height._feet, t2.slant_height._feet))
+        drop_angle = _new_moa(_interpolate_3_pt(key_value, x0, x1, x2, t0.drop_angle._moa, t1.drop_angle._moa, t2.drop_angle._moa))
+        windage = _new_feet(_interpolate_3_pt(key_value, x0, x1, x2, t0.windage._feet, t1.windage._feet, t2.windage._feet))
+        windage_angle = _new_moa(_interpolate_3_pt(key_value, x0, x1, x2, t0.windage_angle._moa, t1.windage_angle._moa, t2.windage_angle._moa))
+        slant_distance = _new_feet(_interpolate_3_pt(key_value, x0, x1, x2, t0.slant_distance._feet, t1.slant_distance._feet, t2.slant_distance._feet))
+        angle = _new_rad(_interpolate_3_pt(key_value, x0, x1, x2, t0.angle._rad, t1.angle._rad, t2.angle._rad))
+
+        # Other scalar fields (density_ratio, drag)
+        density_ratio = _interpolate_3_pt(key_value, x0, x1, x2, t0.density_ratio, t1.density_ratio, t2.density_ratio)
+        drag = _interpolate_3_pt(key_value, x0, x1, x2, t0.drag, t1.drag, t2.drag)
+
+        # Dimensioned fields (energy, ogw)
+        energy = _new_ft_lb(_interpolate_3_pt(key_value, x0, x1, x2, t0.energy._ft_lb, t1.energy._ft_lb, t2.energy._ft_lb))
+        ogw = _new_lb(_interpolate_3_pt(key_value, x0, x1, x2, t0.ogw._lb, t1.ogw._lb, t2.ogw._lb))
 
         return TrajectoryDataT(time, distance, velocity, mach, height, slant_height,
                                drop_angle, windage, windage_angle, slant_distance,

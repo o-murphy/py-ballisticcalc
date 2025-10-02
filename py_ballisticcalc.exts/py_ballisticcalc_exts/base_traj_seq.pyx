@@ -20,173 +20,12 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajDataT_
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport _pchip_slopes3, _hermite
+from py_ballisticcalc_exts.interp cimport _interpolate_3_pt
 from py_ballisticcalc_exts.base_traj_seq cimport (BaseTrajC, _CBaseTrajSeq_cview, 
     KEY_TIME, KEY_MACH, KEY_POS_X, KEY_POS_Y, KEY_POS_Z, KEY_VEL_X, KEY_VEL_Y, KEY_VEL_Z, _key_val_from_kind_buf)
 
 
 __all__ = ('CBaseTrajSeq', 'BaseTrajC')
-
-
-# Interpolation helper (pure C math; safe to call with or without GIL)
-cdef inline double _interp3(double x, double x0, double x1, double x2,
-                            double y0, double y1, double y2) noexcept nogil:
-    """Monotone PCHIP interpolation for a single component using 3 support points.
-
-    Sorts (x*, y*) by x*, computes PCHIP slopes, and evaluates the Hermite piece
-    containing x. Assumes all x* distinct. Returns interpolated y.
-    """
-    cdef double tx0 = x0
-    cdef double tx1 = x1
-    cdef double tx2 = x2
-    cdef double ty0 = y0
-    cdef double ty1 = y1
-    cdef double ty2 = y2
-    cdef double m0, m1, m2
-    # Sorting network for 3 elements (x ascending, y permuted identically)
-    if tx0 > tx1:
-        tx0, tx1 = tx1, tx0
-        ty0, ty1 = ty1, ty0
-    if tx1 > tx2:
-        tx1, tx2 = tx2, tx1
-        ty1, ty2 = ty2, ty1
-    if tx0 > tx1:
-        tx0, tx1 = tx1, tx0
-        ty0, ty1 = ty1, ty0
-    _pchip_slopes3(tx0, ty0, tx1, ty1, tx2, ty2, &m0, &m1, &m2)
-    if x <= tx1:
-        return _hermite(x, tx0, tx1, ty0, ty1, m0, m1)
-    else:
-        return _hermite(x, tx1, tx2, ty1, ty2, m1, m2)
-
-
-cdef int _interpolate_nogil_raw(_CBaseTrajSeq_cview* seq, Py_ssize_t idx, int key_kind, double key_value, BaseTrajC* out) noexcept nogil:
-    """Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
-
-    Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
-    """
-    cdef BaseTrajC* buffer = seq._buffer
-    cdef Py_ssize_t plength = <Py_ssize_t> seq._length
-    cdef BaseTrajC *p0
-    cdef BaseTrajC *p1
-    cdef BaseTrajC *p2
-    cdef double ox0, ox1, ox2
-    cdef double x = key_value
-    cdef double time, px, py, pz, vx, vy, vz, mach
-
-    if idx < 0:
-        idx += plength
-    if idx <= 0 or idx >= plength - 1:
-        return 0
-
-    p0 = <BaseTrajC*>((<char*>buffer) + <size_t>(idx - 1) * sizeof(BaseTrajC))
-    p1 = <BaseTrajC*>((<char*>buffer) + <size_t>idx * sizeof(BaseTrajC))
-    p2 = <BaseTrajC*>((<char*>buffer) + <size_t>(idx + 1) * sizeof(BaseTrajC))
-
-    if key_kind == <int>KEY_TIME:
-        ox0 = p0.time; ox1 = p1.time; ox2 = p2.time
-    elif key_kind == <int>KEY_MACH:
-        ox0 = p0.mach; ox1 = p1.mach; ox2 = p2.mach
-    elif key_kind == <int>KEY_POS_X:
-        ox0 = p0.px; ox1 = p1.px; ox2 = p2.px
-    elif key_kind == <int>KEY_POS_Y:
-        ox0 = p0.py; ox1 = p1.py; ox2 = p2.py
-    elif key_kind == <int>KEY_POS_Z:
-        ox0 = p0.pz; ox1 = p1.pz; ox2 = p2.pz
-    elif key_kind == <int>KEY_VEL_X:
-        ox0 = p0.vx; ox1 = p1.vx; ox2 = p2.vx
-    elif key_kind == <int>KEY_VEL_Y:
-        ox0 = p0.vy; ox1 = p1.vy; ox2 = p2.vy
-    elif key_kind == <int>KEY_VEL_Z:
-        ox0 = p0.vz; ox1 = p1.vz; ox2 = p2.vz
-    else:
-        return 0
-
-    if ox0 == ox1 or ox0 == ox2 or ox1 == ox2:
-        return 0
-    if key_kind == <int>KEY_TIME:
-        time = x
-    else:
-        time = _interp3(x, ox0, ox1, ox2, p0.time, p1.time, p2.time)
-
-    px = _interp3(x, ox0, ox1, ox2, p0.px, p1.px, p2.px)
-    py = _interp3(x, ox0, ox1, ox2, p0.py, p1.py, p2.py)
-    pz = _interp3(x, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
-    vx = _interp3(x, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx)
-    vy = _interp3(x, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy)
-    vz = _interp3(x, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
-
-    if key_kind == <int>KEY_MACH:
-        mach = x
-    else:
-        mach = _interp3(x, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
-
-    out.time = time
-    out.px = px; out.py = py; out.pz = pz
-    out.vx = vx; out.vy = vy; out.vz = vz
-    out.mach = mach
-    return 1
-
-
-cdef Py_ssize_t _bisect_center_idx_buf(BaseTrajC* buf, size_t length, int key_kind, double key_value) noexcept nogil:
-    cdef Py_ssize_t n = <Py_ssize_t>length
-    if n < 3:
-        return <Py_ssize_t>(-1)
-    cdef double v0 = _key_val_from_kind_buf(<BaseTrajC*>(<char*>buf + <size_t>0 * <size_t>sizeof(BaseTrajC)), key_kind)
-    cdef double vN = _key_val_from_kind_buf(<BaseTrajC*>(<char*>buf + <size_t>(n - 1) * <size_t>sizeof(BaseTrajC)), key_kind)
-    cdef int increasing = 1 if vN >= v0 else 0
-    cdef Py_ssize_t lo = <Py_ssize_t>0
-    cdef Py_ssize_t hi = n - 1
-    cdef Py_ssize_t mid
-    cdef double vm
-    while lo < hi:
-        mid = lo + ((hi - lo) >> 1)
-        vm = _key_val_from_kind_buf(<BaseTrajC*>(<char*>buf + <size_t>mid * <size_t>sizeof(BaseTrajC)), key_kind)
-        if increasing:
-            if vm < key_value:
-                lo = mid + 1
-            else:
-                hi = mid
-        else:
-            if vm > key_value:
-                lo = mid + 1
-            else:
-                hi = mid
-    if lo < 1:
-        return <Py_ssize_t>1
-    if lo > n - 2:
-        return n - 2
-    return lo
-
-cdef Py_ssize_t _bisect_center_idx_slant_buf(BaseTrajC* buf, size_t length, double ca, double sa, double value) noexcept nogil:
-    cdef Py_ssize_t n = <Py_ssize_t>length
-    if n < 3:
-        return <Py_ssize_t>(-1)
-    cdef double v0 = _slant_val_buf(<BaseTrajC*>(<char*>buf + <size_t>0 * <size_t>sizeof(BaseTrajC)), ca, sa)
-    cdef double vN = _slant_val_buf(<BaseTrajC*>(<char*>buf + <size_t>(n - 1) * <size_t>sizeof(BaseTrajC)), ca, sa)
-    cdef int increasing = 1 if vN >= v0 else 0
-    cdef Py_ssize_t lo = <Py_ssize_t>0
-    cdef Py_ssize_t hi = n - 1
-    cdef Py_ssize_t mid
-    cdef double vm
-    while lo < hi:
-        mid = lo + ((hi - lo) >> 1)
-        vm = _slant_val_buf(<BaseTrajC*>(<char*>buf + <size_t>mid * <size_t>sizeof(BaseTrajC)), ca, sa)
-        if increasing:
-            if vm < value:
-                lo = mid + 1
-            else:
-                hi = mid
-        else:
-            if vm > value:
-                lo = mid + 1
-            else:
-                hi = mid
-    if lo < 1:
-        return <Py_ssize_t>1
-    if lo > n - 2:
-        return n - 2
-    return lo
 
 
 cdef class CBaseTrajSeq:
@@ -320,7 +159,7 @@ cdef class CBaseTrajSeq:
         view._buffer = self._buffer
         view._length = self._length
         view._capacity = self._capacity
-        if not _interpolate_nogil_raw(&view, _idx, key_kind, key_value, &outp):
+        if not _interpolate_raw(&view, _idx, key_kind, key_value, &outp):
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
 
         pos.x = outp.px; pos.y = outp.py; pos.z = outp.pz
@@ -463,13 +302,13 @@ cdef class CBaseTrajSeq:
         if ox0 == ox1 or ox0 == ox2 or ox1 == ox2:
             raise ZeroDivisionError("Duplicate x for interpolation")
 
-        time = _interp3(value, ox0, ox1, ox2, p0.time, p1.time, p2.time)
-        pos.x = _interp3(value, ox0, ox1, ox2, p0.px, p1.px, p2.px)
-        pos.y = _interp3(value, ox0, ox1, ox2, p0.py, p1.py, p2.py)
-        pos.z = _interp3(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
-        vel.x = _interp3(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx)
-        vel.y = _interp3(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy)
-        vel.z = _interp3(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
-        mach = _interp3(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
+        time = _interpolate_3_pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time)
+        pos.x = _interpolate_3_pt(value, ox0, ox1, ox2, p0.px, p1.px, p2.px)
+        pos.y = _interpolate_3_pt(value, ox0, ox1, ox2, p0.py, p1.py, p2.py)
+        pos.z = _interpolate_3_pt(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
+        vel.x = _interpolate_3_pt(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx)
+        vel.y = _interpolate_3_pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy)
+        vel.z = _interpolate_3_pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
+        mach = _interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
 
         return BaseTrajDataT_create(time, pos, vel, mach)
