@@ -73,4 +73,9 @@ static inline double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind) {
     }
 }
 
+static inline double _slant_val_buf(const BaseTrajC* p, double ca, double sa) {
+    /* Computes the slant_height of a trajectory point 'p' given cosine 'ca' and sine 'sa' of look_angle. */
+    return p->py * ca - p->px * sa;
+}
+
 #endif /* BASETRAJ_SEQ_H */

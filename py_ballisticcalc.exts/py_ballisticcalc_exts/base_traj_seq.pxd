@@ -32,6 +32,7 @@ cdef extern from "include/basetraj_seq.h" nogil:
         size_t _capacity
 
     inline double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind)
+    inline double _slant_val_buf(const BaseTrajC* p, double ca, double sa)
 
 cdef class CBaseTrajSeq:
   cdef:

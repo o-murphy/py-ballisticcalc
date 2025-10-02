@@ -128,10 +128,6 @@ cdef int _interpolate_nogil_raw(_CBaseTrajSeq_cview* seq, Py_ssize_t idx, int ke
     return 1
 
 
-cdef inline double _slant_val_buf(BaseTrajC* p, double ca, double sa) noexcept nogil:
-    """Computes the slant_height of a trajectory point `p` given cosine `ca` and sine `sa` of look_angle."""
-    return p.py * ca - p.px * sa
-
 cdef Py_ssize_t _bisect_center_idx_buf(BaseTrajC* buf, size_t length, int key_kind, double key_value) noexcept nogil:
     cdef Py_ssize_t n = <Py_ssize_t>length
     if n < 3:
