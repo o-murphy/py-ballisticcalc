@@ -8,7 +8,7 @@
 #include "bind.h"
 
 
-Config_t Config_t_fromPyObject(PyObject* config) {
+Config_t Config_t_fromPyObject(const PyObject* config) {
     Config_t c;
 
     PyObject* tmp;
@@ -50,7 +50,7 @@ Config_t Config_t_fromPyObject(PyObject* config) {
  * Returns MachList_t with allocated array or with array==NULL on error.
  * Caller responsible for freeing ml.array.
  */
-MachList_t MachList_t_fromPylist(PyObject *pylist) {
+MachList_t MachList_t_fromPylist(const PyObject *pylist) {
     MachList_t ml = {NULL, 0};
     Py_ssize_t len = PyList_Size(pylist);
     if (len < 0) return ml;  // error
@@ -94,7 +94,7 @@ MachList_t MachList_t_fromPylist(PyObject *pylist) {
     return ml;
 }
 
-Curve_t Curve_t_fromPylist(PyObject *data_points) {
+Curve_t Curve_t_fromPylist(const PyObject *data_points) {
     Curve_t curve = {NULL, 0};
     Py_ssize_t n = PyList_Size(data_points);
     if (n < 2)  // need at least 2 points
@@ -199,6 +199,87 @@ Curve_t Curve_t_fromPylist(PyObject *data_points) {
     free(d);
     free(m);
     return curve;
+}
+
+Wind_t Wind_t_fromPyObject(PyObject *w) {
+    // Initialize the C structure to zero values in case of error.
+    Wind_t wind_c = {0.0, 0.0, 0.0, 0.0}; 
+    
+    // Temporary variables for Python objects during attribute lookup. 
+    // Initialized to NULL for safety, although the current flow relies on Py_DECREF.
+    PyObject *tmp_vel = NULL;
+    PyObject *tmp_dir = NULL;
+    PyObject *tmp_dist = NULL;
+    PyObject *tmp_max = NULL;
+    
+    // Temporary variables for the final attribute values (e.g., _fps, _rad, _feet)
+    PyObject *fps_obj = NULL;
+    PyObject *rad_obj = NULL;
+    PyObject *feet_obj = NULL;
+
+    // --- 1. Get w.velocity._fps ---
+    // Check if an error occurred in a previous step before proceeding.
+    if (PyErr_Occurred() == NULL) {
+        // Get the 'velocity' attribute (returns a new reference)
+        tmp_vel = PyObject_GetAttrString(w, "velocity");
+        if (tmp_vel != NULL) {
+            // Get the '_fps' attribute (returns a new reference)
+            fps_obj = PyObject_GetAttrString(tmp_vel, "_fps");
+            Py_DECREF(tmp_vel); // Release the reference to the intermediate 'velocity' object
+            if (fps_obj != NULL) {
+                // Convert to double. PyFloat_AsDouble checks for errors internally.
+                wind_c.velocity = PyFloat_AsDouble(fps_obj);
+                Py_DECREF(fps_obj); // Release the reference to the '_fps' value object
+            }
+        }
+        // If PyObject_GetAttrString or PyFloat_AsDouble failed, PyErr_Occurred() is set.
+    }
+
+    // --- 2. Get w.direction_from._rad ---
+    if (PyErr_Occurred() == NULL) {
+        tmp_dir = PyObject_GetAttrString(w, "direction_from");
+        if (tmp_dir != NULL) {
+            rad_obj = PyObject_GetAttrString(tmp_dir, "_rad");
+            Py_DECREF(tmp_dir);
+            if (rad_obj != NULL) {
+                wind_c.direction_from = PyFloat_AsDouble(rad_obj);
+                Py_DECREF(rad_obj);
+            }
+        }
+    }
+
+    // --- 3. Get w.until_distance._feet ---
+    if (PyErr_Occurred() == NULL) {
+        tmp_dist = PyObject_GetAttrString(w, "until_distance");
+        if (tmp_dist != NULL) {
+            feet_obj = PyObject_GetAttrString(tmp_dist, "_feet");
+            Py_DECREF(tmp_dist);
+            if (feet_obj != NULL) {
+                wind_c.until_distance = PyFloat_AsDouble(feet_obj);
+                Py_DECREF(feet_obj);
+            }
+        }
+    }
+
+    // --- 4. Get w.MAX_DISTANCE_FEET ---
+    if (PyErr_Occurred() == NULL) {
+        // Get the direct attribute (returns a new reference)
+        tmp_max = PyObject_GetAttrString(w, "MAX_DISTANCE_FEET");
+        if (tmp_max != NULL) {
+            wind_c.MAX_DISTANCE_FEET = PyFloat_AsDouble(tmp_max);
+            Py_DECREF(tmp_max);
+        }
+    }
+    
+    // Check if a Python exception occurred during any attribute lookup or conversion.
+    if (PyErr_Occurred()) {
+        // If an error is set, return the zeroed structure.
+        // The calling Cython code is responsible for checking PyErr_Occurred() and raising the exception.
+        Wind_t err_wind = {0.0, 0.0, 0.0, 0.0};
+        return err_wind;
+    }
+
+    return wind_c;
 }
 
 #endif // BIND_H

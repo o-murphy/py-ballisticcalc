@@ -374,7 +374,8 @@ cdef class CythonizedBaseIntegrationEngine:
 
         return &self._shot_s
 
-    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance):
+    
+    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance):
         """
         Initializes the zero calculation for the given shot and distance.
         Handles edge cases.

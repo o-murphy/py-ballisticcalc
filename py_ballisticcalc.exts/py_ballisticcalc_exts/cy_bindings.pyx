@@ -1,27 +1,32 @@
 # noinspection PyUnresolvedReferences
+from cpython.exc cimport PyErr_Occurred
+# noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from cpython.object cimport PyObject
-# noinspection PyUnresolvedReferences
-from libc.stdlib cimport malloc, free
-# noinspection PyUnresolvedReferences
-from libc.math cimport fabs, pow, atan2, exp, sqrt, sin, cos, fmin
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport Config_t, MachList_t, Curve_t, Wind_t
 
 @final
 cdef Config_t Config_t_from_pyobject(object config):
-    return Config_t_fromPyObject(<PyObject *>config)
+    cdef Config_t result = Config_t_fromPyObject(<PyObject *>config)
+    if PyErr_Occurred():
+        raise
+    return result
 
 cdef MachList_t MachList_t_from_pylist(list[object] data):
     cdef MachList_t ml = MachList_t_fromPylist(<PyObject *>data)
     if ml.array == NULL:
-        raise MemoryError("Failed to create MachList_t from Python list")
+        if PyErr_Occurred():
+            raise
+        else:
+            raise MemoryError("Failed to create MachList_t from Python list")
     return ml
 
 cdef Curve_t Curve_t_from_pylist(list[object] data_points):
+    cdef Curve_t result = Curve_t_fromPylist(<PyObject *>data_points)
+    if PyErr_Occurred():
+        raise
     return Curve_t_fromPylist(<PyObject *>data_points)
 
 
@@ -29,9 +34,8 @@ cdef Curve_t Curve_t_from_pylist(list[object] data_points):
 # This internal helper function is used by WindSockT_create.
 # It assumes 'w' is a Python object that conforms to the interface needed.
 cdef Wind_t Wind_t_from_py(object w):
-    return Wind_t(
-        w.velocity._fps,
-        w.direction_from._rad,
-        w.until_distance._feet,
-        w.MAX_DISTANCE_FEET
-    )
+    cdef Wind_t result
+    result = Wind_t_fromPyObject(<PyObject *>w)
+    if PyErr_Occurred():
+        raise
+    return result

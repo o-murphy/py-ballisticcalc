@@ -5,8 +5,10 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 
 
 cdef extern from "include/bind.h" nogil:
-    MachList_t MachList_t_fromPylist(PyObject *pylist) noexcept nogil
-    Curve_t Curve_t_fromPylist(PyObject *data_points) noexcept nogil
+    MachList_t MachList_t_fromPylist(const PyObject *pylist) noexcept nogil
+    Curve_t Curve_t_fromPylist(const PyObject *data_points) noexcept nogil
+    Config_t Config_t_fromPyObject(const PyObject * config) noexcept nogil
+    Wind_t Wind_t_fromPyObject(PyObject *w) noexcept nogil
 
 
 cdef extern from "include/bclib.h" nogil:
@@ -28,8 +30,6 @@ cdef extern from "include/bclib.h" nogil:
         int cMaxIterations
         double cGravityConstant
         double cMinimumAltitude
-
-    Config_t Config_t_fromPyObject(PyObject * config) noexcept nogil
 
     ctypedef struct CurvePoint_t:
         double a, b, c, d
@@ -110,7 +110,6 @@ cdef extern from "include/bclib.h" nogil:
         double MAX_DISTANCE_FEET
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) noexcept nogil
-    # Wind_t Wind_t_fromPythonObj(PyObject *w)
 
     void Coriolis_t_coriolis_acceleration_local(
         const Coriolis_t *coriolis_ptr,
@@ -121,8 +120,6 @@ cdef extern from "include/bclib.h" nogil:
 
 # python to C objects conversion
 cdef Config_t Config_t_from_pyobject(object config)
-
 cdef MachList_t MachList_t_from_pylist(list[object] data)
 cdef Curve_t Curve_t_from_pylist(list[object] data_points)
-
 cdef Wind_t Wind_t_from_py(object w)

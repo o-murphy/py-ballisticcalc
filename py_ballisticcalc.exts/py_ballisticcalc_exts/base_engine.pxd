@@ -134,21 +134,6 @@ cdef extern from "include/bclib.h" nogil:
     int WindSock_t_updateCache(WindSock_t *ws)
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
 
-    # ctypedef struct TrajDataFilter_t:
-    #     int filter
-    #     int current_flag
-    #     int seen_zero
-    #     double time_step
-    #     double range_step
-    #     double time_of_last_record
-    #     double next_record_distance
-    #     double previous_mach
-    #     double previous_time
-    #     V3dT previous_position
-    #     V3dT previous_velocity
-    #     double previous_v_mach
-    #     double look_angle
-
     # helpers
     double getCorrection(double distance, double offset)
     double calculateEnergy(double bulletWeight, double velocity)
@@ -179,7 +164,7 @@ cdef class CythonizedBaseIntegrationEngine:
     # Only 'cdef' or 'cpdef' methods are declared here.
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self)
     cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info)
-    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance)
+    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance)
     cdef object _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted)
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance)
     cdef tuple _find_max_range(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, tuple angle_bracket_deg = *)
