@@ -115,7 +115,7 @@ cdef extern from "include/bclib.h" nogil:
         const Coriolis_t *coriolis_ptr,
         V3dT *velocity_ptr,
         V3dT *accel_ptr
-    )
+    ) noexcept nogil
 
 
 # python to C objects conversion

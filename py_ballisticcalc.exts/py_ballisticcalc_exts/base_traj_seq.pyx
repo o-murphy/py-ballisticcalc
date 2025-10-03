@@ -16,7 +16,7 @@ from libc.math cimport cos, sin, fabs
 from libc.string cimport memcpy
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajDataT_create
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
@@ -112,7 +112,7 @@ cdef class CBaseTrajSeq:
         entry_ptr = self.c_getitem(_i)
         position.x = entry_ptr.px; position.y = entry_ptr.py; position.z = entry_ptr.pz
         velocity.x = entry_ptr.vx; velocity.y = entry_ptr.vy; velocity.z = entry_ptr.vz
-        return BaseTrajDataT_create(entry_ptr.time, position, velocity, entry_ptr.mach)
+        return BaseTrajDataT(entry_ptr.time, position, velocity, entry_ptr.mach)
 
 
     cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value):
@@ -164,7 +164,7 @@ cdef class CBaseTrajSeq:
 
         pos.x = outp.px; pos.y = outp.py; pos.z = outp.pz
         vel.x = outp.vx; vel.y = outp.vy; vel.z = outp.vz
-        result = BaseTrajDataT_create(outp.time, pos, vel, outp.mach)
+        result = BaseTrajDataT(outp.time, pos, vel, outp.mach)
         return result
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
@@ -311,4 +311,4 @@ cdef class CBaseTrajSeq:
         vel.z = _interpolate_3_pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
         mach = _interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
 
-        return BaseTrajDataT_create(time, pos, vel, mach)
+        return BaseTrajDataT(time, pos, vel, mach)

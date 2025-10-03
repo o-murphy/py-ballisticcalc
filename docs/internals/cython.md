@@ -57,7 +57,7 @@ def interpolate_at(self, idx, key_attribute, key_value):
         outp = self._interpolate_nogil(idx, key_kind, key_value)
     if outp == NULL:
         raise IndexError(...)
-    result = BaseTrajDataT_create(...)
+    result = BaseTrajDataT(...)
     free(outp)
     return result
 ```

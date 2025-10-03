@@ -51,7 +51,3 @@ cdef class TrajectoryDataT:
         readonly object energy
         readonly object ogw
         readonly int flag
-
-
-# Factory helper exposed for use from other Cython modules
-cdef BaseTrajDataT BaseTrajDataT_create(double time, V3dT position, V3dT velocity, double mach)

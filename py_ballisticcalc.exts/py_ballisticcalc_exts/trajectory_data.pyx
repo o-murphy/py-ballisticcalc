@@ -157,9 +157,6 @@ cdef class BaseTrajDataT:
         return BaseTrajDataT(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach)
 
 
-cdef BaseTrajDataT BaseTrajDataT_create(double time, V3dT position, V3dT velocity, double mach):
-    return BaseTrajDataT(time, position, velocity, mach)
-
 # Small Python factory for tests and convenience
 def make_base_traj_data(double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach):
