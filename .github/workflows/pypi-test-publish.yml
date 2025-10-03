@@ -109,6 +109,7 @@ jobs:
         with:
           name: dist
           path: ./dist
+          retention-days: 30
 
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1

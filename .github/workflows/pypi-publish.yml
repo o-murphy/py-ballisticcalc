@@ -3,6 +3,7 @@ name: Upload Python Package to PyPI
 on:
   release:
     types: [ published, edited ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -111,8 +112,10 @@ jobs:
         with:
           name: dist
           path: ./dist
+          retention-days: 30
 
       - name: Publish package distributions to PyPI
+        if: github.event_name == 'release'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
