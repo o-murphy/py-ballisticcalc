@@ -3,6 +3,7 @@ name: Upload Python Package to PyPI
 on:
   release:
     types: [ published, edited ]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ]
+        os: [ ubuntu-latest, windows-latest, macos-13, macos-14, macos-15 ]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -88,6 +89,12 @@ jobs:
           name: dist-macos-14
           path: ./dist-macos-14
 
+      - name: Download artifacts (macOS 15)
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-macos-15
+          path: ./dist-macos-15
+
       - name: Combine artifacts
         run: |
           mkdir -p dist
@@ -95,6 +102,7 @@ jobs:
           cp ./dist-windows/* dist/ || true
           cp ./dist-macos-13/* dist/ || true
           cp ./dist-macos-14/* dist/ || true
+          cp ./dist-macos-15/* dist/ || true
 
       - name: List ./dist
         run: ls ./dist
@@ -104,8 +112,10 @@ jobs:
         with:
           name: dist
           path: ./dist
+          retention-days: 30
 
       - name: Publish package distributions to PyPI
+        if: github.event_name == 'release'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
