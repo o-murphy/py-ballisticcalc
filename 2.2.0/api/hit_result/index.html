@@ -1,0 +1,2801 @@
+
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="LGPL ballistic calculation library" name="description"/>
+<link href="https://o-murphy.github.io/py-ballisticcalc/latest/api/hit_result/" rel="canonical"/>
+<link href="../munition/weapon/" rel="prev"/>
+<link href="../trajectory_data/" rel="next"/>
+<link href="../../favicon.svg" rel="icon"/>
+<meta content="mkdocs-1.6.1, mkdocs-material-9.6.15" name="generator"/>
+<title>HitResult - py-ballisticcalc</title>
+<link href="../../assets/stylesheets/main.342714a4.min.css" rel="stylesheet"/>
+<link href="../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback" rel="stylesheet"/>
+<style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+<link href="../../assets/_mkdocstrings.css" rel="stylesheet"/>
+<link href="../../extra/terminal.css" rel="stylesheet"/>
+<link href="../../extra/tweaks.css" rel="stylesheet"/>
+<link href="../../extra/katex/katex.min.css" rel="stylesheet"/>
+<script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+</head>
+<body data-md-color-accent="teal" data-md-color-primary="teal" data-md-color-scheme="default" dir="ltr">
+<input autocomplete="off" class="md-toggle" data-md-toggle="drawer" id="__drawer" type="checkbox"/>
+<input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
+<label class="md-overlay" for="__drawer"></label>
+<div data-md-component="skip">
+<a class="md-skip" href="#py_ballisticcalc.trajectory_data.HitResult">
+          Skip to content
+        </a>
+</div>
+<div data-md-component="announce">
+</div>
+<div data-md-color-scheme="default" data-md-component="outdated" hidden="">
+</div>
+<header class="md-header" data-md-component="header">
+<nav aria-label="Header" class="md-header__inner md-grid">
+<a aria-label="py-ballisticcalc" class="md-header__button md-logo" data-md-component="logo" href="../.." title="py-ballisticcalc">
+<img alt="logo" src="../../favicon.svg"/>
+</a>
+<label class="md-header__button md-icon" for="__drawer">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"></path></svg>
+</label>
+<div class="md-header__title" data-md-component="header-title">
+<div class="md-header__ellipsis">
+<div class="md-header__topic">
+<span class="md-ellipsis">
+            py-ballisticcalc
+          </span>
+</div>
+<div class="md-header__topic" data-md-component="header-topic">
+<span class="md-ellipsis">
+            
+              HitResult
+            
+          </span>
+</div>
+</div>
+</div>
+<form class="md-header__option" data-md-component="palette">
+<input aria-label="Switch to light mode" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme)" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_0" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_1" hidden="" title="Switch to light mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9z"></path></svg>
+</label>
+<input aria-label="Switch to dark mode" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme: light)" data-md-color-primary="teal" data-md-color-scheme="default" id="__palette_1" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_2" hidden="" title="Switch to dark mode">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5"></path></svg>
+</label>
+<input aria-label="Switch to system preference" class="md-option" data-md-color-accent="teal" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-primary="teal" data-md-color-scheme="slate" id="__palette_2" name="__palette" type="radio"/>
+<label class="md-header__button md-icon" for="__palette_0" hidden="" title="Switch to system preference">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 2c3.87 0 7 3.13 7 7 0 2.38-1.19 4.47-3 5.74V17c0 .55-.45 1-1 1H6c-.55 0-1-.45-1-1v-2.26C3.19 13.47 2 11.38 2 9c0-3.87 3.13-7 7-7M6 21v-1h6v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1M9 4C6.24 4 4 6.24 4 9c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58 0-2.76-2.24-5-5-5m10 9h-2l-3.2 9h1.9l.7-2h3.2l.7 2h1.9zm-2.15 5.65L18 15l1.15 3.65z"></path></svg>
+</label>
+</form>
+<script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+<label class="md-header__button md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+</label>
+<div class="md-search" data-md-component="search" role="dialog">
+<label class="md-search__overlay" for="__search"></label>
+<div class="md-search__inner" role="search">
+<form class="md-search__form" name="search">
+<input aria-label="Search" autocapitalize="off" autocomplete="off" autocorrect="off" class="md-search__input" data-md-component="search-query" name="query" placeholder="Search" required="" spellcheck="false" type="text"/>
+<label class="md-search__icon md-icon" for="__search">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"></path></svg>
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+</label>
+<nav aria-label="Search" class="md-search__options">
+<button aria-label="Clear" class="md-search__icon md-icon" tabindex="-1" title="Clear" type="reset">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>
+</button>
+</nav>
+<div class="md-search__suggest" data-md-component="search-suggest"></div>
+</form>
+<div class="md-search__output">
+<div class="md-search__scrollwrap" data-md-scrollfix="" tabindex="0">
+<div class="md-search-result" data-md-component="search-result">
+<div class="md-search-result__meta">
+            Initializing search
+          </div>
+<ol class="md-search-result__list" role="presentation"></ol>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md-header__source">
+<a class="md-source" data-md-component="source" href="https://github.com/o-murphy/py-ballisticcalc" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"></path></svg>
+</div>
+<div class="md-source__repository">
+    o-murphy/py-ballisticcalc
+  </div>
+</a>
+</div>
+</nav>
+</header>
+<div class="md-container" data-md-component="container">
+<nav aria-label="Tabs" class="md-tabs" data-md-component="tabs">
+<div class="md-grid">
+<ul class="md-tabs__list">
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../..">
+          
+  
+  
+  Get started
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../concepts/">
+          
+  
+  
+  Concepts
+
+        </a>
+</li>
+<li class="md-tabs__item md-tabs__item--active">
+<a class="md-tabs__link" href="../">
+          
+  
+  
+  API Documentation
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../internals/architecture/">
+          
+  
+  
+  Internals
+
+        </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../contributors/">
+        
+  
+  
+    
+  
+  Contributors
+
+      </a>
+</li>
+<li class="md-tabs__item">
+<a class="md-tabs__link" href="../../about/">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+</li>
+</ul>
+</div>
+</nav>
+<main class="md-main" data-md-component="main">
+<div class="md-main__inner md-grid">
+<div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Navigation" class="md-nav md-nav--primary md-nav--lifted" data-md-level="0">
+<label class="md-nav__title" for="__drawer">
+<a aria-label="py-ballisticcalc" class="md-nav__button md-logo" data-md-component="logo" href="../.." title="py-ballisticcalc">
+<img alt="logo" src="../../favicon.svg"/>
+</a>
+    py-ballisticcalc
+  </label>
+<div class="md-nav__source">
+<a class="md-source" data-md-component="source" href="https://github.com/o-murphy/py-ballisticcalc" title="Go to repository">
+<div class="md-source__icon md-icon">
+<svg viewbox="0 0 448 512" xmlns="http://www.w3.org/2000/svg"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"></path></svg>
+</div>
+<div class="md-source__repository">
+    o-murphy/py-ballisticcalc
+  </div>
+</a>
+</div>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+<span class="md-ellipsis">
+    Get started
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_1">
+<span class="md-nav__icon md-icon"></span>
+            Get started
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../..">
+<span class="md-ellipsis">
+    QuickStart
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../install/">
+<span class="md-ellipsis">
+    Installation
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../help/">
+<span class="md-ellipsis">
+    Help
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../contributing/">
+<span class="md-ellipsis">
+    Contributing
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Concepts
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_2">
+<span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/">
+<span class="md-ellipsis">
+    Basics
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/unit/">
+<span class="md-ellipsis">
+    📏 Units
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+<span class="md-ellipsis">
+    Calculation Engines
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_3">
+<span class="md-nav__icon md-icon"></span>
+            Calculation Engines
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/engines/">
+<span class="md-ellipsis">
+    ⚙️ Engines
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/benchmarks/">
+<span class="md-ellipsis">
+    📊 Benchmarks
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Conditions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_4_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_4">
+<span class="md-nav__icon md-icon"></span>
+            Conditions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/conditions/atmo/">
+<span class="md-ellipsis">
+    🌡️ Atmo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/conditions/wind/">
+<span class="md-ellipsis">
+    💨 Wind
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/conditions/shot/">
+<span class="md-ellipsis">
+    🎯 Shot
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+<span class="md-ellipsis">
+    Munitions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_2_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_2_5">
+<span class="md-nav__icon md-icon"></span>
+            Munitions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/munition/weapon/">
+<span class="md-ellipsis">
+    🔫 Weapon
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/munition/ammo/">
+<span class="md-ellipsis">
+    💣 Ammo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/drag_model/">
+<span class="md-ellipsis">
+    🪂 DragModel
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/trajectory_data/">
+<span class="md-ellipsis">
+    📈 Trajectory Data
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../concepts/vector/">
+<span class="md-ellipsis">
+    📐 Vector
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+<span class="md-ellipsis">
+    API Documentation
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="true" aria-labelledby="__nav_3_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_3">
+<span class="md-nav__icon md-icon"></span>
+            API Documentation
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../">
+<span class="md-ellipsis">
+    Overview
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+<span class="md-ellipsis">
+    Calculator
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_2">
+<span class="md-nav__icon md-icon"></span>
+            Calculator
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../calculator/engines/">
+<span class="md-ellipsis">
+    Engines
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../calculator/interface/">
+<span class="md-ellipsis">
+    Interface
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../calculator/protocol/">
+<span class="md-ellipsis">
+    Protocol
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+<span class="md-ellipsis">
+    Conditions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_3">
+<span class="md-nav__icon md-icon"></span>
+            Conditions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../conditions/atmo/">
+<span class="md-ellipsis">
+    Atmo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../conditions/wind/">
+<span class="md-ellipsis">
+    Wind
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../conditions/shot/">
+<span class="md-ellipsis">
+    Shot
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../conditions/shotprops/">
+<span class="md-ellipsis">
+    ShotProps
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../constants/">
+<span class="md-ellipsis">
+    Constants
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_5" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+<span class="md-ellipsis">
+    Munitions
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_5_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_5">
+<span class="md-nav__icon md-icon"></span>
+            Munitions
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../munition/ammo/">
+<span class="md-ellipsis">
+    Ammo
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../drag_model/">
+<span class="md-ellipsis">
+    DragModel
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../drag_tables/">
+<span class="md-ellipsis">
+    DragTables
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../munition/sight/">
+<span class="md-ellipsis">
+    Sight
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../munition/weapon/">
+<span class="md-ellipsis">
+    Weapon
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--active md-nav__item--nested">
+<input checked="" class="md-nav__toggle md-toggle" id="__nav_3_6" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+<span class="md-ellipsis">
+    Results
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="true" aria-labelledby="__nav_3_6_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_6">
+<span class="md-nav__icon md-icon"></span>
+            Results
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+<span class="md-ellipsis">
+    HitResult
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<a class="md-nav__link md-nav__link--active" href="./">
+<span class="md-ellipsis">
+    HitResult
+    
+  </span>
+</a>
+<nav aria-label="Page contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> HitResult
+    </span>
+</a>
+<nav aria-label=" HitResult" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult-functions">
+<span class="md-ellipsis">
+      Functions
+    </span>
+</a>
+<nav aria-label="Functions" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.flag">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> flag
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.get_at">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_at
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.zeros">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> zeros
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.index_at_distance">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> index_at_distance
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_distance">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_at_distance
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_time">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_at_time
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.danger_space">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> danger_space
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.dataframe">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> dataframe
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.plot">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> plot
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.DangerSpace">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> DangerSpace
+    </span>
+</a>
+<nav aria-label=" DangerSpace" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.DangerSpace-functions">
+<span class="md-ellipsis">
+      Functions
+    </span>
+</a>
+<nav aria-label="Functions" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.DangerSpace.overlay">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> overlay
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../trajectory_data/">
+<span class="md-ellipsis">
+    TrajectoryData
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_3_7" type="checkbox"/>
+<label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+<span class="md-ellipsis">
+    Units
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_3_7_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_3_7">
+<span class="md-nav__icon md-icon"></span>
+            Units
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../units/dimensions/">
+<span class="md-ellipsis">
+    Dimensions
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../units/preferred_units/">
+<span class="md-ellipsis">
+    PreferredUnits
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../vector/">
+<span class="md-ellipsis">
+    Vector
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+<span class="md-ellipsis">
+    Internals
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_4_label" class="md-nav" data-md-level="1">
+<label class="md-nav__title" for="__nav_4">
+<span class="md-nav__icon md-icon"></span>
+            Internals
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/architecture/">
+<span class="md-ellipsis">
+    Architecture
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/details/">
+<span class="md-ellipsis">
+    Developer Details
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/cython/">
+<span class="md-ellipsis">
+    Cython Notes
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../internals/logger/">
+<span class="md-ellipsis">
+    Logger
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../contributors/">
+<span class="md-ellipsis">
+    Contributors
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../about/">
+<span class="md-ellipsis">
+    About
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc">
+<div class="md-sidebar__scrollwrap">
+<div class="md-sidebar__inner">
+<nav aria-label="Page contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> HitResult
+    </span>
+</a>
+<nav aria-label=" HitResult" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult-functions">
+<span class="md-ellipsis">
+      Functions
+    </span>
+</a>
+<nav aria-label="Functions" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.flag">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> flag
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.get_at">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_at
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.zeros">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> zeros
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.index_at_distance">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> index_at_distance
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_distance">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_at_distance
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_time">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> get_at_time
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.danger_space">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> danger_space
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.dataframe">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> dataframe
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.HitResult.plot">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> plot
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.DangerSpace">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-class"></code> DangerSpace
+    </span>
+</a>
+<nav aria-label=" DangerSpace" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.DangerSpace-functions">
+<span class="md-ellipsis">
+      Functions
+    </span>
+</a>
+<nav aria-label="Functions" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#py_ballisticcalc.trajectory_data.DangerSpace.overlay">
+<span class="md-ellipsis">
+<code class="doc-symbol doc-symbol-toc doc-symbol-method"></code> overlay
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+<div class="md-content" data-md-component="content">
+<article class="md-content__inner md-typeset">
+<h1>HitResult</h1>
+<div class="doc doc-object doc-class">
+<h3 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code> <span class="doc doc-object-name doc-class-name">HitResult</span>
+<span class="doc doc-labels">
+<small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult" title="Permanent link">¶</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">HitResult</span><span class="p">(</span>
+    <span class="n">props</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../conditions/shotprops/#py_ballisticcalc.shot.ShotProps">ShotProps</a></span><span class="p">,</span>
+    <span class="n">trajectory</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></span><span class="p">],</span>
+    <span class="n">base_data</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.BaseTrajData">BaseTrajData</a></span><span class="p">]],</span>
+    <span class="n">extra</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">error</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="py_ballisticcalc.exceptions.RangeError">RangeError</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<div class="doc doc-contents first">
+<p>Computed trajectory data of the shot.</p>
+<p><span class="doc-section-title">Attributes:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td><code><span title="py_ballisticcalc.trajectory_data.HitResult.shot">shot</span></code></td>
+<td>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The parameters of the shot calculation.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><span title="py_ballisticcalc.trajectory_data.HitResult.trajectory">trajectory</span></code></td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a>[<a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Computed TrajectoryData points.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><span title="py_ballisticcalc.trajectory_data.HitResult.base_data">base_data</span></code></td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a>[<a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.BaseTrajData">BaseTrajData</a>]]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Base trajectory data points for interpolation.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><span title="py_ballisticcalc.trajectory_data.HitResult.extra">extra</span></code></td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>[DEPRECATED] Whether extra_data was requested.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><span title="py_ballisticcalc.trajectory_data.HitResult.error">error</span></code></td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<span title="py_ballisticcalc.exceptions.RangeError">RangeError</span>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>RangeError, if any.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Methods:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.flag">flag</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Get first TrajectoryData row with the specified flag.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.get_at">get_at</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Get TrajectoryData where key_attribute==value.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.zeros">zeros</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Get all zero crossing points.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.index_at_distance">index_at_distance</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Deprecated. Use get_at() instead.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_distance">get_at_distance</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Deprecated. Use get_at('distance', d) instead.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_time">get_at_time</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Deprecated. Use get_at('time', t) instead.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.danger_space">danger_space</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Calculate the danger space for a target.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.dataframe">dataframe</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Return the trajectory table as a DataFrame.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.HitResult.plot">plot</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Return a graph of the trajectory.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="doc doc-children">
+<h4 id="py_ballisticcalc.trajectory_data.HitResult-functions">Functions<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult-functions" title="Permanent link">¶</a></h4>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.flag">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">flag</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.flag" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">flag</span><span class="p">(</span>
+    <span class="n">flag</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajFlag">TrajFlag</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></span><span class="p">]</span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Get first TrajectoryData row with the specified flag.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>flag</code>
+</td>
+<td>
+<code><span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajFlag">TrajFlag</a>, <a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The flag to search for.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>First TrajectoryData row with the specified flag.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AttributeError">AttributeError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If flag was not requested.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">733</span>
+<span class="normal">734</span>
+<span class="normal">735</span>
+<span class="normal">736</span>
+<span class="normal">737</span>
+<span class="normal">738</span>
+<span class="normal">739</span>
+<span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
+<span class="normal">743</span>
+<span class="normal">744</span>
+<span class="normal">745</span>
+<span class="normal">746</span>
+<span class="normal">747</span>
+<span class="normal">748</span>
+<span class="normal">749</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">flag</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flag</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">TrajFlag</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">TrajectoryData</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Get first TrajectoryData row with the specified flag.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        flag: The flag to search for.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        First TrajectoryData row with the specified flag.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AttributeError: If flag was not requested.</span>
+<span class="sd">    """</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_check_flag</span><span class="p">(</span><span class="n">flag</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">flag</span> <span class="o">&amp;</span> <span class="n">flag</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">row</span>
+    <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.get_at">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">get_at</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.get_at" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_at</span><span class="p">(</span>
+    <span class="n">key_attribute</span><span class="p">:</span> <span class="n"><span title="py_ballisticcalc.trajectory_data.TRAJECTORY_DATA_ATTRIBUTES">TRAJECTORY_DATA_ATTRIBUTES</span></span><span class="p">,</span>
+    <span class="n">value</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.GenericDimension">GenericDimension</a></span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">epsilon</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">1e-09</span><span class="p">,</span>
+    <span class="n">start_from_time</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Get TrajectoryData where key_attribute==value.</p>
+<p>Interpolates to create new object if necessary. Preserves the units of the original trajectory data.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>key_attribute</code>
+</td>
+<td>
+<code><span title="py_ballisticcalc.trajectory_data.TRAJECTORY_DATA_ATTRIBUTES">TRAJECTORY_DATA_ATTRIBUTES</span></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The name of the TrajectoryData attribute to key on (e.g., 'time', 'distance').</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>value</code>
+</td>
+<td>
+<code><span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.GenericDimension">GenericDimension</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The value of the key attribute to find. If a float is provided
+   for a dimensioned attribute, it's assumed to be a .raw_value.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>epsilon</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Allowed key value difference to match existing TrajectoryData object without interpolating.</p>
+</div>
+</td>
+<td>
+<code>1e-09</code>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>start_from_time</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The time to center the search from (default is 0.0).  If the target value is
+             at a local extremum then the search will only go forward in time.</p>
+</div>
+</td>
+<td>
+<code>0.0</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>TrajectoryData where key_attribute==value.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AttributeError">AttributeError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If TrajectoryData doesn't have the specified attribute.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#KeyError">KeyError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If the key_attribute is 'flag'.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ValueError">ValueError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If interpolation is required and len(self.trajectory) &lt; 3.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ArithmeticError">ArithmeticError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If trajectory doesn't reach the requested value.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="notes" open="">
+<summary>Notes</summary>
+<ul>
+<li>Not all attributes are monotonic: Height typically goes up and then down.
+    Velocity typically goes down, but for lofted trajectories can begin to increase.
+    Windage can wander back and forth in complex winds. We even have (see ExtremeExamples.ipynb)
+    backward-bending scenarios in which distance reverses!</li>
+<li>The only guarantee is that time is strictly increasing.</li>
+</ul>
+</details>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">751</span>
+<span class="normal">752</span>
+<span class="normal">753</span>
+<span class="normal">754</span>
+<span class="normal">755</span>
+<span class="normal">756</span>
+<span class="normal">757</span>
+<span class="normal">758</span>
+<span class="normal">759</span>
+<span class="normal">760</span>
+<span class="normal">761</span>
+<span class="normal">762</span>
+<span class="normal">763</span>
+<span class="normal">764</span>
+<span class="normal">765</span>
+<span class="normal">766</span>
+<span class="normal">767</span>
+<span class="normal">768</span>
+<span class="normal">769</span>
+<span class="normal">770</span>
+<span class="normal">771</span>
+<span class="normal">772</span>
+<span class="normal">773</span>
+<span class="normal">774</span>
+<span class="normal">775</span>
+<span class="normal">776</span>
+<span class="normal">777</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span>
+<span class="normal">781</span>
+<span class="normal">782</span>
+<span class="normal">783</span>
+<span class="normal">784</span>
+<span class="normal">785</span>
+<span class="normal">786</span>
+<span class="normal">787</span>
+<span class="normal">788</span>
+<span class="normal">789</span>
+<span class="normal">790</span>
+<span class="normal">791</span>
+<span class="normal">792</span>
+<span class="normal">793</span>
+<span class="normal">794</span>
+<span class="normal">795</span>
+<span class="normal">796</span>
+<span class="normal">797</span>
+<span class="normal">798</span>
+<span class="normal">799</span>
+<span class="normal">800</span>
+<span class="normal">801</span>
+<span class="normal">802</span>
+<span class="normal">803</span>
+<span class="normal">804</span>
+<span class="normal">805</span>
+<span class="normal">806</span>
+<span class="normal">807</span>
+<span class="normal">808</span>
+<span class="normal">809</span>
+<span class="normal">810</span>
+<span class="normal">811</span>
+<span class="normal">812</span>
+<span class="normal">813</span>
+<span class="normal">814</span>
+<span class="normal">815</span>
+<span class="normal">816</span>
+<span class="normal">817</span>
+<span class="normal">818</span>
+<span class="normal">819</span>
+<span class="normal">820</span>
+<span class="normal">821</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
+<span class="normal">851</span>
+<span class="normal">852</span>
+<span class="normal">853</span>
+<span class="normal">854</span>
+<span class="normal">855</span>
+<span class="normal">856</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_attribute</span><span class="p">:</span> <span class="n">TRAJECTORY_DATA_ATTRIBUTES</span><span class="p">,</span>
+                 <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">GenericDimension</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-9</span><span class="p">,</span>
+                 <span class="n">start_from_time</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrajectoryData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Get TrajectoryData where key_attribute==value.</span>
+
+<span class="sd">    Interpolates to create new object if necessary. Preserves the units of the original trajectory data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        key_attribute: The name of the TrajectoryData attribute to key on (e.g., 'time', 'distance').</span>
+<span class="sd">        value: The value of the key attribute to find. If a float is provided</span>
+<span class="sd">               for a dimensioned attribute, it's assumed to be a .raw_value.</span>
+<span class="sd">        epsilon: Allowed key value difference to match existing TrajectoryData object without interpolating.</span>
+<span class="sd">        start_from_time: The time to center the search from (default is 0.0).  If the target value is</span>
+<span class="sd">                         at a local extremum then the search will only go forward in time.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        TrajectoryData where key_attribute==value.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AttributeError: If TrajectoryData doesn't have the specified attribute.</span>
+<span class="sd">        KeyError: If the key_attribute is 'flag'.</span>
+<span class="sd">        ValueError: If interpolation is required and len(self.trajectory) &lt; 3.</span>
+<span class="sd">        ArithmeticError: If trajectory doesn't reach the requested value.</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">        * Not all attributes are monotonic: Height typically goes up and then down.</span>
+<span class="sd">            Velocity typically goes down, but for lofted trajectories can begin to increase.</span>
+<span class="sd">            Windage can wander back and forth in complex winds. We even have (see ExtremeExamples.ipynb)</span>
+<span class="sd">            backward-bending scenarios in which distance reverses!</span>
+<span class="sd">        * The only guarantee is that time is strictly increasing.</span>
+<span class="sd">    """</span>
+    <span class="n">key_attribute</span> <span class="o">=</span> <span class="n">TRAJECTORY_DATA_SYNONYMS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key_attribute</span><span class="p">,</span> <span class="n">key_attribute</span><span class="p">)</span>  <span class="c1"># Resolve synonyms</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">TrajectoryData</span><span class="p">,</span> <span class="n">key_attribute</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"TrajectoryData has no attribute '</span><span class="si">{</span><span class="n">key_attribute</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">key_attribute</span> <span class="o">==</span> <span class="s1">'flag'</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">"Cannot interpolate based on 'flag' attribute"</span><span class="p">)</span>
+
+    <span class="n">traj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span>
+    <span class="n">key_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">raw_value</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">GenericDimension</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_key_val</span><span class="p">(</span><span class="n">td</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Helper to get the raw value of the key attribute from a TrajectoryData point."""</span>
+        <span class="n">val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">td</span><span class="p">,</span> <span class="n">key_attribute</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">val</span><span class="o">.</span><span class="n">raw_value</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="s1">'raw_value'</span><span class="p">)</span> <span class="k">else</span> <span class="n">val</span>
+
+    <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>  <span class="c1"># We won't interpolate on less than 3 points, but check for an exact match in the existing rows.</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">key_value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">traj</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">key_value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">traj</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Interpolation requires at least 3 TrajectoryData points."</span><span class="p">)</span>
+
+    <span class="c1"># Find the starting index based on start_from_time</span>
+    <span class="n">start_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">start_from_time</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">start_idx</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">td</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">traj</span><span class="p">)</span> <span class="k">if</span> <span class="n">td</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;=</span> <span class="n">start_from_time</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="n">start_idx</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">curr_val</span> <span class="o">-</span> <span class="n">key_value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">:</span>  <span class="c1"># Check for exact match</span>
+        <span class="k">return</span> <span class="n">traj</span><span class="p">[</span><span class="n">start_idx</span><span class="p">]</span>
+    <span class="c1"># Determine search direction from the starting point</span>
+    <span class="n">search_forward</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># Default to forward search</span>
+    <span class="k">if</span> <span class="n">start_idx</span> <span class="o">==</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># We're at the last point, search backwards            </span>
+        <span class="n">search_forward</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">start_idx</span> <span class="o">&lt;</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># We're in the middle of the trajectory, determine local direction towards key_value</span>
+        <span class="n">next_val</span> <span class="o">=</span> <span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="n">start_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">next_val</span> <span class="o">&gt;</span> <span class="n">curr_val</span> <span class="ow">and</span> <span class="n">key_value</span> <span class="o">&gt;</span> <span class="n">curr_val</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">next_val</span> <span class="o">&lt;</span> <span class="n">curr_val</span> <span class="ow">and</span> <span class="n">key_value</span> <span class="o">&lt;</span> <span class="n">curr_val</span><span class="p">):</span>
+            <span class="n">search_forward</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">search_forward</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Search for the target value in the determined direction</span>
+    <span class="n">target_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">if</span> <span class="n">search_forward</span><span class="p">:</span>  <span class="c1"># Search forward from start_idx            </span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_idx</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">next_val</span> <span class="o">=</span> <span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Check if key_value is between curr_val and next_val</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">curr_val</span> <span class="o">&lt;</span> <span class="n">key_value</span> <span class="o">&lt;=</span> <span class="n">next_val</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">next_val</span> <span class="o">&lt;=</span> <span class="n">key_value</span> <span class="o">&lt;</span> <span class="n">curr_val</span><span class="p">)):</span>
+                <span class="n">target_idx</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">break</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">search_forward</span> <span class="ow">or</span> <span class="n">target_idx</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c1"># Search backward from start_idx</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start_idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">curr_val</span> <span class="o">=</span> <span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">prev_val</span> <span class="o">=</span> <span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Check if key_value is between prev_val and curr_val</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">prev_val</span> <span class="o">&lt;=</span> <span class="n">key_value</span> <span class="o">&lt;</span> <span class="n">curr_val</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">curr_val</span> <span class="o">&lt;</span> <span class="n">key_value</span> <span class="o">&lt;=</span> <span class="n">prev_val</span><span class="p">)):</span>
+                <span class="n">target_idx</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="k">break</span>
+
+    <span class="c1"># Check if we found a valid index</span>
+    <span class="k">if</span> <span class="n">target_idx</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ArithmeticError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Trajectory does not reach </span><span class="si">{</span><span class="n">key_attribute</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="c1"># Check for exact match here</span>
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">get_key_val</span><span class="p">(</span><span class="n">traj</span><span class="p">[</span><span class="n">target_idx</span><span class="p">])</span> <span class="o">-</span> <span class="n">key_value</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">traj</span><span class="p">[</span><span class="n">target_idx</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">target_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Step forward from first point so we can interpolate</span>
+        <span class="n">target_idx</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># Choose three bracketing points (p0, p1, p2)</span>
+    <span class="k">if</span> <span class="n">target_idx</span> <span class="o">&gt;=</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># At or after the last point</span>
+        <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">traj</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">3</span><span class="p">],</span> <span class="n">traj</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">],</span> <span class="n">traj</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="o">=</span> <span class="n">traj</span><span class="p">[</span><span class="n">target_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">traj</span><span class="p">[</span><span class="n">target_idx</span><span class="p">],</span> <span class="n">traj</span><span class="p">[</span><span class="n">target_idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">TrajectoryData</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">key_attribute</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.zeros">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">zeros</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.zeros" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">zeros</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></span><span class="p">]</span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Get all zero crossing points.</p>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/glossary.html#term-list">list</a>[<a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Zero crossing points.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#AttributeError">AttributeError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If extra_data was not requested.</p>
+</div>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ArithmeticError">ArithmeticError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If zero crossing points are not found.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">858</span>
+<span class="normal">859</span>
+<span class="normal">860</span>
+<span class="normal">861</span>
+<span class="normal">862</span>
+<span class="normal">863</span>
+<span class="normal">864</span>
+<span class="normal">865</span>
+<span class="normal">866</span>
+<span class="normal">867</span>
+<span class="normal">868</span>
+<span class="normal">869</span>
+<span class="normal">870</span>
+<span class="normal">871</span>
+<span class="normal">872</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">zeros</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">TrajectoryData</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Get all zero crossing points.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Zero crossing points.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AttributeError: If extra_data was not requested.</span>
+<span class="sd">        ArithmeticError: If zero crossing points are not found.</span>
+<span class="sd">    """</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_check_flag</span><span class="p">(</span><span class="n">TrajFlag</span><span class="o">.</span><span class="n">ZERO</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span> <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">flag</span> <span class="o">&amp;</span> <span class="n">TrajFlag</span><span class="o">.</span><span class="n">ZERO</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ArithmeticError</span><span class="p">(</span><span class="s2">"Can't find zero crossing points"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.index_at_distance">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">index_at_distance</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.index_at_distance" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">index_at_distance</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Deprecated. Use get_at() instead.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>d</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Distance for which we want Trajectory Data.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#int">int</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Index of first trajectory row with .distance &gt;= d; otherwise -1.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">874</span>
+<span class="normal">875</span>
+<span class="normal">876</span>
+<span class="normal">877</span>
+<span class="normal">878</span>
+<span class="normal">879</span>
+<span class="normal">880</span>
+<span class="normal">881</span>
+<span class="normal">882</span>
+<span class="normal">883</span>
+<span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">"Use get_at() instead for better flexibility."</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">index_at_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">Distance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Deprecated. Use get_at() instead.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d: Distance for which we want Trajectory Data.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Index of first trajectory row with .distance &gt;= d; otherwise -1.</span>
+<span class="sd">    """</span>
+    <span class="n">epsilon</span> <span class="o">=</span> <span class="mf">1e-1</span>  <span class="c1"># small value to avoid floating point issues</span>
+    <span class="k">return</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">))</span>
+                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">distance</span><span class="o">.</span><span class="n">raw_value</span> <span class="o">&gt;=</span> <span class="n">d</span><span class="o">.</span><span class="n">raw_value</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.get_at_distance">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">get_at_distance</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_distance" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_at_distance</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Deprecated. Use get_at('distance', d) instead.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>d</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Distance for which we want Trajectory Data.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>First trajectory row with .distance &gt;= d.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ArithmeticError">ArithmeticError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If trajectory doesn't reach requested distance.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">888</span>
+<span class="normal">889</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span>
+<span class="normal">893</span>
+<span class="normal">894</span>
+<span class="normal">895</span>
+<span class="normal">896</span>
+<span class="normal">897</span>
+<span class="normal">898</span>
+<span class="normal">899</span>
+<span class="normal">900</span>
+<span class="normal">901</span>
+<span class="normal">902</span>
+<span class="normal">903</span>
+<span class="normal">904</span>
+<span class="normal">905</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">"Use get_at('distance', d)"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_at_distance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">Distance</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrajectoryData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Deprecated. Use get_at('distance', d) instead.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        d: Distance for which we want Trajectory Data.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        First trajectory row with .distance &gt;= d.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ArithmeticError: If trajectory doesn't reach requested distance.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_at_distance</span><span class="p">(</span><span class="n">d</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ArithmeticError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Calculated trajectory doesn't reach requested distance </span><span class="si">{</span><span class="n">d</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.get_at_time">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">get_at_time</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.get_at_time" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_at_time</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Deprecated. Use get_at('time', t) instead.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>t</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Time for which we want Trajectory Data.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-internal" href="../trajectory_data/#py_ballisticcalc.trajectory_data.TrajectoryData">TrajectoryData</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>First trajectory row with .time &gt;= t.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ArithmeticError">ArithmeticError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If trajectory doesn't reach requested time.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">907</span>
+<span class="normal">908</span>
+<span class="normal">909</span>
+<span class="normal">910</span>
+<span class="normal">911</span>
+<span class="normal">912</span>
+<span class="normal">913</span>
+<span class="normal">914</span>
+<span class="normal">915</span>
+<span class="normal">916</span>
+<span class="normal">917</span>
+<span class="normal">918</span>
+<span class="normal">919</span>
+<span class="normal">920</span>
+<span class="normal">921</span>
+<span class="normal">922</span>
+<span class="normal">923</span>
+<span class="normal">924</span>
+<span class="normal">925</span>
+<span class="normal">926</span>
+<span class="normal">927</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="n">reason</span><span class="o">=</span><span class="s2">"Use get_at('time', t)"</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_at_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrajectoryData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Deprecated. Use get_at('time', t) instead.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        t: Time for which we want Trajectory Data.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        First trajectory row with .time &gt;= t.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ArithmeticError: If trajectory doesn't reach requested time.</span>
+<span class="sd">    """</span>
+    <span class="n">epsilon</span> <span class="o">=</span> <span class="mf">1e-6</span>  <span class="c1"># small value to avoid floating point issues</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">))</span>
+                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;=</span> <span class="n">t</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ArithmeticError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Calculated trajectory doesn't reach requested time </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.danger_space">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">danger_space</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.danger_space" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">danger_space</span><span class="p">(</span>
+    <span class="n">at_range</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">],</span>
+    <span class="n">target_height</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.DangerSpace">DangerSpace</a></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Calculate the danger space for a target.</p>
+<div class="language-text highlight"><pre><span></span><code>Assumes that the trajectory hits the center of a target at any distance.
+Determines how much ranging error can be tolerated if the critical region
+of the target has target_height *h*. Finds how far forward and backward along the
+line of sight a target can move such that the trajectory is still within *h*/2
+of the original drop at_range.
+</code></pre></div>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>at_range</code>
+</td>
+<td>
+<code><span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Danger space is calculated for a target centered at this sight distance.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>target_height</code>
+</td>
+<td>
+<code><span title="typing_extensions.Union">Union</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#float">float</a>, <a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Distance">Distance</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Target height (<em>h</em>) determines danger space.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th> <th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td><code>DangerSpace</code></td> <td>
+<code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.DangerSpace">DangerSpace</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The calculated danger space.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ArithmeticError">ArithmeticError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If trajectory doesn't reach requested distance.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">929</span>
+<span class="normal">930</span>
+<span class="normal">931</span>
+<span class="normal">932</span>
+<span class="normal">933</span>
+<span class="normal">934</span>
+<span class="normal">935</span>
+<span class="normal">936</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span>
+<span class="normal">965</span>
+<span class="normal">966</span>
+<span class="normal">967</span>
+<span class="normal">968</span>
+<span class="normal">969</span>
+<span class="normal">970</span>
+<span class="normal">971</span>
+<span class="normal">972</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">danger_space</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">at_range</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Distance</span><span class="p">],</span>
+                 <span class="n">target_height</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Distance</span><span class="p">],</span>
+                 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DangerSpace</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calculate the danger space for a target.</span>
+
+<span class="sd">        Assumes that the trajectory hits the center of a target at any distance.</span>
+<span class="sd">        Determines how much ranging error can be tolerated if the critical region</span>
+<span class="sd">        of the target has target_height *h*. Finds how far forward and backward along the</span>
+<span class="sd">        line of sight a target can move such that the trajectory is still within *h*/2</span>
+<span class="sd">        of the original drop at_range.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        at_range: Danger space is calculated for a target centered at this sight distance.</span>
+<span class="sd">        target_height: Target height (*h*) determines danger space.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DangerSpace: The calculated danger space.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ArithmeticError: If trajectory doesn't reach requested distance.</span>
+<span class="sd">    """</span>
+    <span class="n">target_at_range</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">distance</span><span class="p">(</span><span class="n">at_range</span><span class="p">)</span>
+    <span class="n">target_height</span> <span class="o">=</span> <span class="n">PreferredUnits</span><span class="o">.</span><span class="n">target_height</span><span class="p">(</span><span class="n">target_height</span><span class="p">)</span>
+    <span class="n">target_height_half</span> <span class="o">=</span> <span class="n">target_height</span><span class="o">.</span><span class="n">raw_value</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+    <span class="n">target_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="s1">'slant_distance'</span><span class="p">,</span> <span class="n">target_at_range</span><span class="p">)</span>
+    <span class="n">is_climbing</span> <span class="o">=</span> <span class="p">((</span><span class="n">target_row</span><span class="o">.</span><span class="n">angle</span> <span class="o">&gt;&gt;</span> <span class="n">Angular</span><span class="o">.</span><span class="n">Radian</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">look_angle_rad</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="n">slant_height_begin</span> <span class="o">=</span> <span class="n">target_row</span><span class="o">.</span><span class="n">slant_height</span><span class="o">.</span><span class="n">raw_value</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">is_climbing</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">target_height_half</span>
+    <span class="n">slant_height_end</span> <span class="o">=</span> <span class="n">target_row</span><span class="o">.</span><span class="n">slant_height</span><span class="o">.</span><span class="n">raw_value</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">is_climbing</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">target_height_half</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">begin_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="s1">'slant_height'</span><span class="p">,</span> <span class="n">slant_height_begin</span><span class="p">,</span> <span class="n">start_from_time</span><span class="o">=</span><span class="n">target_row</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ArithmeticError</span><span class="p">:</span>
+        <span class="n">begin_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">end_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_at</span><span class="p">(</span><span class="s1">'slant_height'</span><span class="p">,</span> <span class="n">slant_height_end</span><span class="p">,</span> <span class="n">start_from_time</span><span class="o">=</span><span class="n">target_row</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ArithmeticError</span><span class="p">:</span>
+        <span class="n">end_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trajectory</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">DangerSpace</span><span class="p">(</span><span class="n">target_row</span><span class="p">,</span>
+                       <span class="n">target_height</span><span class="p">,</span>
+                       <span class="n">begin_row</span><span class="p">,</span>
+                       <span class="n">end_row</span><span class="p">,</span>
+                       <span class="n">Angular</span><span class="o">.</span><span class="n">Radian</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">look_angle_rad</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.dataframe">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">dataframe</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.dataframe" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">dataframe</span><span class="p">(</span><span class="n">formatted</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="pandas.DataFrame">DataFrame</span></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Return the trajectory table as a DataFrame.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>formatted</code>
+</td>
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/functions.html#bool">bool</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>False for values as floats; True for strings in PreferredUnits. Default is False.</p>
+</div>
+</td>
+<td>
+<code>False</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><span title="pandas.DataFrame">DataFrame</span></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The trajectory table as a DataFrame.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ImportError">ImportError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If pandas or plotting dependencies are not installed.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">974</span>
+<span class="normal">975</span>
+<span class="normal">976</span>
+<span class="normal">977</span>
+<span class="normal">978</span>
+<span class="normal">979</span>
+<span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span>
+<span class="normal">989</span>
+<span class="normal">990</span>
+<span class="normal">991</span>
+<span class="normal">992</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formatted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the trajectory table as a DataFrame.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        formatted: False for values as floats; True for strings in PreferredUnits. Default is False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The trajectory table as a DataFrame.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ImportError: If pandas or plotting dependencies are not installed.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.visualize.dataframe</span><span class="w"> </span><span class="kn">import</span> <span class="n">hit_result_as_dataframe</span>
+        <span class="k">return</span> <span class="n">hit_result_as_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">formatted</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">"Use `pip install py_ballisticcalc[charts]` to get trajectory as pandas.DataFrame"</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">err</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.HitResult.plot">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">plot</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.HitResult.plot" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">plot</span><span class="p">(</span><span class="n">look_angle</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Angular">Angular</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="matplotlib.axes.Axes">Axes</span></span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Return a graph of the trajectory.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>look_angle</code>
+</td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<a class="autorefs autorefs-internal" href="../units/dimensions/#py_ballisticcalc.unit.Angular">Angular</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Look angle for the plot. Defaults to None.</p>
+</div>
+</td>
+<td>
+<code>None</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Returns:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><span title="matplotlib.axes.Axes">Axes</span></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The plot Axes object.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ImportError">ImportError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If plotting dependencies are not installed.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 994</span>
+<span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span>
+<span class="normal">1001</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">look_angle</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Angular</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Axes</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a graph of the trajectory.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        look_angle (Optional[Angular], optional): Look angle for the plot. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The plot Axes object.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ImportError: If plotting dependencies are not installed.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.visualize.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">hit_result_as_plot</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="k">return</span> <span class="n">hit_result_as_plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">look_angle</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">"Use `pip install py_ballisticcalc[charts]` to get results as a plot"</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">err</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="doc doc-object doc-class">
+<h3 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.DangerSpace">
+<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code> <span class="doc doc-object-name doc-class-name">DangerSpace</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.DangerSpace" title="Permanent link">¶</a></h3>
+<div class="doc doc-contents first">
+<p class="doc doc-class-bases">
+              Bases: <code><span title="typing_extensions.NamedTuple">NamedTuple</span></code></p>
+<p>Stores the danger space data for distance specified.</p>
+<p><span class="doc-section-title">Methods:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td><code><a class="autorefs autorefs-internal" href="#py_ballisticcalc.trajectory_data.DangerSpace.overlay">overlay</a></code></td>
+<td>
+<div class="doc-md-description">
+<p>Highlights danger-space region on plot.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="doc doc-children">
+<h4 id="py_ballisticcalc.trajectory_data.DangerSpace-functions">Functions<a class="headerlink" href="#py_ballisticcalc.trajectory_data.DangerSpace-functions" title="Permanent link">¶</a></h4>
+<div class="doc doc-object doc-function">
+<h5 class="doc doc-heading" id="py_ballisticcalc.trajectory_data.DangerSpace.overlay">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code> <span class="doc doc-object-name doc-function-name">overlay</span>
+<a class="headerlink" href="#py_ballisticcalc.trajectory_data.DangerSpace.overlay" title="Permanent link">¶</a></h5>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">overlay</span><span class="p">(</span><span class="n">ax</span><span class="p">:</span> <span class="n"><span title="matplotlib.axes.Axes">Axes</span></span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n"><span title="typing_extensions.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+<div class="doc doc-contents">
+<p>Highlights danger-space region on plot.</p>
+<p><span class="doc-section-title">Parameters:</span></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code>ax</code>
+</td>
+<td>
+<code><span title="matplotlib.axes.Axes">Axes</span></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>The axes to overlay on.</p>
+</div>
+</td>
+<td>
+<em>required</em>
+</td>
+</tr>
+<tr class="doc-section-item">
+<td>
+<code>label</code>
+</td>
+<td>
+<code><span title="typing_extensions.Optional">Optional</span>[<a class="autorefs autorefs-external" href="https://docs.python.org/3/library/stdtypes.html#str">str</a>]</code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>Label for the overlay. Defaults to None.</p>
+</div>
+</td>
+<td>
+<code>None</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p><span class="doc-section-title">Raises:</span></p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="doc-section-item">
+<td>
+<code><a class="autorefs autorefs-external" href="https://docs.python.org/3/library/exceptions.html#ImportError">ImportError</a></code>
+</td>
+<td>
+<div class="doc-md-description">
+<p>If plotting dependencies are not installed.</p>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<details class="quote">
+<summary>Source code in <code>py_ballisticcalc\trajectory_data.py</code></summary>
+<div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">668</span>
+<span class="normal">669</span>
+<span class="normal">670</span>
+<span class="normal">671</span>
+<span class="normal">672</span>
+<span class="normal">673</span>
+<span class="normal">674</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span>
+<span class="normal">680</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span>
+<span class="normal">684</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">overlay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">:</span> <span class="n">Axes</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Highlights danger-space region on plot.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ax: The axes to overlay on.</span>
+<span class="sd">        label: Label for the overlay. Defaults to None.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ImportError: If plotting dependencies are not installed.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">py_ballisticcalc.visualize.plot</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_danger_space_overlay</span>  <span class="c1"># type: ignore[attr-defined]</span>
+        <span class="n">add_danger_space_overlay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">"Use `pip install py_ballisticcalc[charts]` to get results as a plot"</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">err</span>
+</code></pre></div></td></tr></table></div>
+</details>
+</div>
+</div>
+</div>
+</div>
+</div>
+<form class="md-feedback" hidden="" name="feedback">
+<fieldset>
+<legend class="md-feedback__title">
+        Was this page helpful?
+      </legend>
+<div class="md-feedback__inner">
+<div class="md-feedback__list">
+<button class="md-feedback__icon md-icon" data-md-value="1" title="This page was helpful" type="submit">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 9v12H1V9zm4 12a2 2 0 0 1-2-2V9c0-.55.22-1.05.59-1.41L14.17 1l1.06 1.06c.27.27.44.64.44 1.05l-.03.32L14.69 8H21a2 2 0 0 1 2 2v2c0 .26-.05.5-.14.73l-3.02 7.05C19.54 20.5 18.83 21 18 21zm0-2h9.03L21 12v-2h-8.79l1.13-5.32L9 9.03z"></path></svg>
+</button>
+<button class="md-feedback__icon md-icon" data-md-value="0" title="This page could be improved" type="submit">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 15V3h4v12zM15 3a2 2 0 0 1 2 2v10c0 .55-.22 1.05-.59 1.41L9.83 23l-1.06-1.06c-.27-.27-.44-.64-.44-1.06l.03-.31.95-4.57H3a2 2 0 0 1-2-2v-2c0-.26.05-.5.14-.73l3.02-7.05C4.46 3.5 5.17 3 6 3zm0 2H5.97L3 12v2h8.78l-1.13 5.32L15 14.97z"></path></svg>
+</button>
+</div>
+<div class="md-feedback__note">
+<div data-md-value="1" hidden="">
+              
+              
+                
+              
+              
+              
+                
+                
+              
+              Thanks for your feedback!
+            </div>
+<div data-md-value="0" hidden="">
+              
+              
+                
+              
+              
+              
+                
+                
+              
+              Thanks for your feedback!
+            </div>
+</div>
+</div>
+</fieldset>
+</form>
+<script src="/flarelytics/client.js"></script>
+</article>
+</div>
+<script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+</div>
+<button class="md-top md-icon" data-md-component="top" hidden="" type="button">
+<svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"></path></svg>
+  Back to top
+</button>
+</main>
+<footer class="md-footer">
+<div class="md-footer-meta md-typeset">
+<div class="md-footer-meta__inner md-grid">
+<div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" rel="noopener" target="_blank">
+      Material for MkDocs
+    </a>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<div class="md-dialog" data-md-component="dialog">
+<div class="md-dialog__inner md-typeset"></div>
+</div>
+<div class="md-progress" data-md-component="progress" role="progressbar"></div>
+<script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "content.code.copy", "mermaid", "navigation.tabs", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.expand", "navigation.top", "navigation.tracking", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+<script src="../../assets/javascripts/bundle.56ea9cef.min.js"></script>
+<script src="../../extra/feedback.js"></script>
+<script src="../../extra/katex/katex.min.js"></script>
+<script src="../../extra/katex/contrib/auto-render.min.js"></script>
+<script src="../../extra/katex-init.js"></script>
+<script src="../../extra/mkdocstrings-tweaks.js"></script>
+<script src="https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"></script>
+</body>
+</html>
