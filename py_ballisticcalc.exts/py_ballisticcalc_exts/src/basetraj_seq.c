@@ -201,26 +201,35 @@ int _interpolate_raw(_CBaseTrajSeq_cview* seq, ssize_t idx, int key_kind, double
     p1 = &buffer[idx];
     p2 = &buffer[idx + 1];
 
-    // Read x values from buffer points (use -> for pointer access)
-    // Note: KEY_* are C enums defined in basetraj_seq.h
-    if (key_kind == KEY_TIME) {
-        ox0 = p0->time; ox1 = p1->time; ox2 = p2->time;
-    } else if (key_kind == KEY_MACH) {
-        ox0 = p0->mach; ox1 = p1->mach; ox2 = p2->mach;
-    } else if (key_kind == KEY_POS_X) {
-        ox0 = p0->px; ox1 = p1->px; ox2 = p2->px;
-    } else if (key_kind == KEY_POS_Y) {
-        ox0 = p0->py; ox1 = p1->py; ox2 = p2->py;
-    } else if (key_kind == KEY_POS_Z) {
-        ox0 = p0->pz; ox1 = p1->pz; ox2 = p2->pz;
-    } else if (key_kind == KEY_VEL_X) {
-        ox0 = p0->vx; ox1 = p1->vx; ox2 = p2->vx;
-    } else if (key_kind == KEY_VEL_Y) {
-        ox0 = p0->vy; ox1 = p1->vy; ox2 = p2->vy;
-    } else if (key_kind == KEY_VEL_Z) {
-        ox0 = p0->vz; ox1 = p1->vz; ox2 = p2->vz;
-    } else {
-        return 0;
+    // Read x values from buffer points using switch/case
+    switch (key_kind) {
+        case KEY_TIME:
+            ox0 = p0->time; ox1 = p1->time; ox2 = p2->time;
+            break;
+        case KEY_MACH:
+            ox0 = p0->mach; ox1 = p1->mach; ox2 = p2->mach;
+            break;
+        case KEY_POS_X:
+            ox0 = p0->px; ox1 = p1->px; ox2 = p2->px;
+            break;
+        case KEY_POS_Y:
+            ox0 = p0->py; ox1 = p1->py; ox2 = p2->py;
+            break;
+        case KEY_POS_Z:
+            ox0 = p0->pz; ox1 = p1->pz; ox2 = p2->pz;
+            break;
+        case KEY_VEL_X:
+            ox0 = p0->vx; ox1 = p1->vx; ox2 = p2->vx;
+            break;
+        case KEY_VEL_Y:
+            ox0 = p0->vy; ox1 = p1->vy; ox2 = p2->vy;
+            break;
+        case KEY_VEL_Z:
+            ox0 = p0->vz; ox1 = p1->vz; ox2 = p2->vz;
+            break;
+        default:
+            // If key_kind is not recognized, interpolation is impossible.
+            return 0;
     }
 
     // Check for duplicate x values (zero division risk in PCHIP)
