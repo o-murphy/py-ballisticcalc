@@ -5,6 +5,30 @@
 #include <sys/types.h> // For ssize_t
 
 
+// --- START CROSS-PLATFORM FIX ---
+// MSVC (Windows) often lacks a definition for ssize_t.
+#if defined(_MSC_VER)
+    // On Windows, define ssize_t to be the signed equivalent of size_t.
+    // For 64-bit builds, this is typically a signed 64-bit integer.
+    // We use __int64 here, as it's a Microsoft-specific type guaranteed to be 64-bit.
+    // If you are certain your build environment is always 64-bit, this is fine.
+    // A more generic approach is often used:
+    // typedef long ssize_t; // For compatibility if sizes are generally 32-bit or less
+
+    // A robust, modern definition for MSVC:
+    #if defined(_WIN64)
+        typedef __int64 ssize_t;
+    #else
+        typedef long ssize_t;
+    #endif
+
+#elif !defined(ssize_t)
+    // Fallback for non-MSVC, non-POSIX systems if sys/types.h failed
+    typedef long ssize_t; 
+#endif
+// --- END CROSS-PLATFORM FIX ---
+
+
 /**
  * Simple C struct for trajectory data points used in the contiguous buffer.
  */
