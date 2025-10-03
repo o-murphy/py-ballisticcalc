@@ -37,30 +37,31 @@ class Shot:
         atmo: Atmosphere in effect during shot.
         weapon: Weapon used for shot.
         winds: List of Wind in effect during shot, sorted by `.until_distance`.
-        look_angle (slant_angle): Angle of sight line relative to horizontal.
-            If `look_angle != 0` then any target in sight crosshairs will be at a different altitude:
-                With target_distance = sight distance to a target (i.e., as through a rangefinder):
-                    * Horizontal distance X to target = cos(look_angle) * target_distance
-                    * Vertical distance Y to target = sin(look_angle) * target_distance
-        cant_angle: Tilt of gun from vertical. If `weapon.sight_height != 0` then this shifts any barrel elevation
-            from the vertical plane into the horizontal plane (as `barrel_azimuth`) by `sine(cant_angle)`.
+        look_angle: Angle of sight line relative to horizontal.
+        slant_angle: Synonym for look_angle.
+        cant_angle: Tilt of gun from vertical.
         relative_angle: Elevation adjustment (a.k.a. "hold") added to `weapon.zero_elevation`.
         azimuth: Azimuth of the shooting direction in degrees [0, 360). Optional, for Coriolis effects.
-            Should be geographic bearing where 0 = North, 90 = East, 180 = South, 270 = West.
-            Difference from magnetic bearing is usually negligible.
         latitude: Latitude of the shooting location in degrees [-90, 90]. Optional, for Coriolis effects.
         barrel_elevation: Total barrel elevation (in vertical plane) from horizontal.
-            `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
         barrel_azimuth: Horizontal angle of barrel relative to sight line.
     """
 
     ammo: Ammo
     atmo: Atmo
     weapon: Weapon
-    _winds: List[Wind]  # Stored sorted by .until_distance
+    _winds: List[Wind]  # Wind stored sorted by .until_distance
     look_angle: Angular
+    """Angle of sight line relative to horizontal.
+        If `look_angle != 0` then any target in sight crosshairs will be at a different altitude:
+
+        - With target_distance = sight distance to a target (i.e., as through a rangefinder):
+            - Horizontal distance X to target = cos(look_angle) * target_distance
+            - Vertical distance Y to target = sin(look_angle) * target_distance"""
     relative_angle: Angular
     cant_angle: Angular
+    """Tilt of gun from vertical. If `weapon.sight_height != 0` then this shifts any barrel elevation
+            from the vertical plane into the horizontal plane (as `barrel_azimuth`) by `sine(cant_angle)`."""
     _azimuth: Optional[float] = field(default=None)
     _latitude: Optional[float] = field(default=None)
 
@@ -77,24 +78,6 @@ class Shot:
                  latitude: Optional[float] = None,
                  ):
         """Initialize `Shot` for trajectory calculations.
-
-        Args:
-            ammo: Ammo instance used for shot.
-            atmo: Atmosphere in effect during shot.
-            weapon: Weapon instance used for shot.
-            winds: List of Wind in effect during shot.
-            look_angle: Angle of sight line relative to horizontal.
-                If `look_angle != 0` then any target in sight crosshairs will be at a different altitude:
-                    With target_distance = sight distance to a target (i.e., as through a rangefinder):
-                        * Horizontal distance X to target = cos(look_angle) * target_distance
-                        * Vertical distance Y to target = sin(look_angle) * target_distance
-            cant_angle: Tilt of gun from vertical. If `weapon.sight_height != 0` then this shifts any barrel elevation
-                from the vertical plane into the horizontal plane (as `barrel_azimuth`) by `sine(cant_angle)`.
-            relative_angle: Elevation adjustment (a.k.a. "hold") added to `weapon.zero_elevation`.
-            azimuth: Azimuth of the shooting direction in degrees [0, 360). Optional, for Coriolis effects.
-                Should be geographic bearing where 0 = North, 90 = East, 180 = South, 270 = West.
-                Difference from magnetic bearing is usually negligible.
-            latitude: Latitude of the shooting location in degrees [-90, 90]. Optional, for Coriolis effects.
 
         Example:
             ```python
@@ -124,7 +107,10 @@ class Shot:
 
     @property
     def azimuth(self) -> Optional[float]:
-        """Azimuth of the shooting direction in degrees [0, 360)."""
+        """Azimuth of the shooting direction in degrees [0, 360).
+        
+        Should be *geographic* bearing where 0 = North, 90 = East, 180 = South, 270 = West.
+            However, difference from *magnetic* bearing is usually negligible."""
         return self._azimuth
     @azimuth.setter
     def azimuth(self, value: Optional[float]) -> None:
@@ -144,15 +130,13 @@ class Shot:
 
     @property
     def winds(self) -> Sequence[Wind]:
-        """Sequence[Wind] sorted by until_distance."""
+        """Sequence[Wind] sorted by until_distance.
+
+        Setter ensures that `winds` is sorted by until_distance.
+        """
         return tuple(self._winds)
     @winds.setter
     def winds(self, winds: Optional[Sequence[Wind]]):
-        """Property setter.  Ensures .winds is sorted by until_distance.
-
-        Args:
-            winds: list of the winds in effect during shot
-        """
         self._winds = sorted(winds or [Wind()], key=lambda wind: wind.until_distance.raw_value)
 
     @property
@@ -169,6 +153,10 @@ class Shot:
         Returns:
             Angle of barrel elevation in vertical plane from horizontal
                 `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
+
+        Setter:
+            Sets `.relative_angle` to achieve the desired elevation.
+                Note: This does not change the `.weapon.zero_elevation`.
         """
         return Angular.Radian((self.look_angle >> Angular.Radian)
                               + math.cos(self.cant_angle >> Angular.Radian)
@@ -176,14 +164,6 @@ class Shot:
                                  + (self.relative_angle >> Angular.Radian)))
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
-        """Setter for barrel_elevation.
-        
-        Sets `.relative_angle` to achieve the desired elevation.
-            Note: This does not change the `.weapon.zero_elevation`.
-
-        Args:
-            value: Desired barrel elevation in vertical plane from horizontal
-        """
         self.relative_angle = Angular.Radian((value >> Angular.Radian) - (self.look_angle >> Angular.Radian) \
                              - math.cos(self.cant_angle >> Angular.Radian) * (self.weapon.zero_elevation >> Angular.Radian))
 
@@ -251,7 +231,7 @@ class ShotProps:
 
     shot: Shot  # Reference to the original Shot object
     bc: float  # Ballistic coefficient
-    drag_curve: PchipPrepared  # Precomputed PCHIP spline for drag vs Mach
+    drag_curve: PchipPrepared  # Precomputed PCHIP spline for drag coefficient $C_d$ vs Mach
 
     look_angle_rad: float  # Slant angle in radians
     twist_inch: float  # Twist rate of barrel rifling, in inches of length to make one full rotation

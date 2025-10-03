@@ -8,6 +8,10 @@ The [`Shot`][py_ballisticcalc.shot.Shot] class contains all information required
 - `look_angle` (a.k.a. _slant angle_): sight line angle relative to horizontal.
 - `relative_angle` (a.k.a. _hold_): adjustment added by shooter to the gun's `zero_elevation`.
 - `cant_angle`: any rotation of the sight away from vertical alignment above the gun's barrel.
+- `azimuth`: Azimuth of the shooting direction in degrees [0, 360). Optional, for [Coriolis][py_ballisticcalc.conditions.Coriolis] effects.
+- [`latitude`][py_ballisticcalc.shot.Shot.latitude]: Latitude of the shooting location in degrees [-90, 90]. Optional, for [Coriolis][py_ballisticcalc.conditions.Coriolis] effects.
+
+If user supplies `latitude` and `azimuth` then engines will include [Coriolis][py_ballisticcalc.conditions.Coriolis] acceleration. If user supplies only `latitude` then a horizontal [Coriolis][py_ballisticcalc.conditions.Coriolis] approximation is applied.
 
 ???+ api "API Documentation"
 
