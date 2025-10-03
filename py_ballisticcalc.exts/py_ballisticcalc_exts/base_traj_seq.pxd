@@ -31,7 +31,31 @@ cdef extern from "include/basetraj_seq.h" nogil:
         size_t _length
         size_t _capacity
 
-    inline double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind)
+    double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind) noexcept nogil
+    double _slant_val_buf(const BaseTrajC* p, double ca, double sa) noexcept nogil
+
+    Py_ssize_t _bisect_center_idx_buf(
+        const BaseTrajC* buf,
+        size_t length,
+        int key_kind,
+        double key_value
+    ) noexcept nogil
+
+    Py_ssize_t _bisect_center_idx_slant_buf(
+        const BaseTrajC* buf,
+        size_t length,
+        double ca,
+        double sa,
+        double value
+    ) noexcept nogil
+
+    int _interpolate_raw(
+        _CBaseTrajSeq_cview* seq,
+        Py_ssize_t idx,
+        int key_kind,
+        double key_value,
+        BaseTrajC* out
+    ) except? 0 nogil
 
 cdef class CBaseTrajSeq:
   cdef:

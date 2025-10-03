@@ -5,8 +5,10 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 
 
 cdef extern from "include/bind.h" nogil:
-    MachList_t MachList_t_fromPylist(PyObject *pylist)
-    Curve_t Curve_t_fromPylist(PyObject *data_points)
+    MachList_t MachList_t_fromPylist(const PyObject *pylist) noexcept nogil
+    Curve_t Curve_t_fromPylist(const PyObject *data_points) noexcept nogil
+    Config_t Config_t_fromPyObject(const PyObject * config) noexcept nogil
+    Wind_t Wind_t_fromPyObject(PyObject *w) noexcept nogil
 
 
 cdef extern from "include/bclib.h" nogil:
@@ -29,8 +31,6 @@ cdef extern from "include/bclib.h" nogil:
         double cGravityConstant
         double cMinimumAltitude
 
-    Config_t Config_t_fromPyObject(PyObject * config)
-
     ctypedef struct CurvePoint_t:
         double a, b, c, d
 
@@ -44,7 +44,7 @@ cdef extern from "include/bclib.h" nogil:
         double * array
         size_t length
 
-    void MachList_t_free(MachList_t *mach_list_ptr)
+    void MachList_t_free(MachList_t *mach_list_ptr) noexcept nogil
 
     ctypedef struct Atmosphere_t:
         double _t0
@@ -59,7 +59,7 @@ cdef extern from "include/bclib.h" nogil:
         double altitude,
         double *density_ratio_ptr,
         double *mach_ptr
-    )
+    ) noexcept nogil
 
     ctypedef struct Coriolis_t:
         double sin_lat
@@ -95,13 +95,13 @@ cdef extern from "include/bclib.h" nogil:
         Atmosphere_t atmo
         Coriolis_t coriolis
 
-    void ShotProps_t_free(ShotProps_t *shot_props_ptr)
-    double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
-    double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach)
+    void ShotProps_t_free(ShotProps_t *shot_props_ptr) noexcept nogil
+    double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
+    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
+    double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
     double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
                                        const Curve_t *curve_ptr,
-                                       double mach)
+                                       double mach) noexcept nogil
 
     ctypedef struct Wind_t:
         double velocity
@@ -109,20 +109,17 @@ cdef extern from "include/bclib.h" nogil:
         double until_distance
         double MAX_DISTANCE_FEET
 
-    V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
-    # Wind_t Wind_t_fromPythonObj(PyObject *w)
+    V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) noexcept nogil
 
     void Coriolis_t_coriolis_acceleration_local(
         const Coriolis_t *coriolis_ptr,
         V3dT *velocity_ptr,
         V3dT *accel_ptr
-    )
+    ) noexcept nogil
 
 
 # python to C objects conversion
 cdef Config_t Config_t_from_pyobject(object config)
-
 cdef MachList_t MachList_t_from_pylist(list[object] data)
 cdef Curve_t Curve_t_from_pylist(list[object] data_points)
-
-cdef Wind_t Wind_t_from_python(object w)
+cdef Wind_t Wind_t_from_py(object w)

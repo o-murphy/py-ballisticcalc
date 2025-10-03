@@ -5,7 +5,7 @@
 // Function Implementations
 
 // Creates a new V3dT from given components
-V3dT set(double x, double y, double z) {
+V3dT vec(double x, double y, double z) {
     return (V3dT){.x = x, .y = y, .z = z};
 }
 

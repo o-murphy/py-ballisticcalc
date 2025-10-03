@@ -2,6 +2,31 @@
 #define BASETRAJ_SEQ_H
 
 #include <stddef.h>
+#include <sys/types.h> // For ssize_t
+
+
+// --- START CROSS-PLATFORM FIX ---
+// MSVC (Windows) often lacks a definition for ssize_t.
+#if defined(_MSC_VER)
+    // On Windows, define ssize_t to be the signed equivalent of size_t.
+    // For 64-bit builds, this is typically a signed 64-bit integer.
+    // We use __int64 here, as it's a Microsoft-specific type guaranteed to be 64-bit.
+    // If you are certain your build environment is always 64-bit, this is fine.
+    // A more generic approach is often used:
+    // typedef long ssize_t; // For compatibility if sizes are generally 32-bit or less
+
+    // A robust, modern definition for MSVC:
+    #if defined(_WIN64)
+        typedef __int64 ssize_t;
+    #else
+        typedef long ssize_t;
+    #endif
+
+#elif !defined(ssize_t)
+    // Fallback for non-MSVC, non-POSIX systems if sys/types.h failed
+    typedef long ssize_t; 
+#endif
+// --- END CROSS-PLATFORM FIX ---
 
 
 /**
@@ -49,28 +74,34 @@ typedef struct {
  * @param key_kind The InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
-static inline double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind) {
-    // Note: In C, accessing a struct member via a pointer uses '->' instead of '.'
-    switch (key_kind) {
-        case KEY_TIME:
-            return p->time;
-        case KEY_MACH:
-            return p->mach;
-        case KEY_POS_X:
-            return p->px;
-        case KEY_POS_Y:
-            return p->py;
-        case KEY_POS_Z:
-            return p->pz;
-        case KEY_VEL_X:
-            return p->vx;
-        case KEY_VEL_Y:
-            return p->vy;
-        case KEY_VEL_Z:
-            return p->vz;
-        default:
-            return 0.0;
-    }
-}
+double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind);
+
+double _slant_val_buf(const BaseTrajC* p, double ca, double sa);
+
+// Rewritten C function
+ssize_t _bisect_center_idx_buf(
+    const BaseTrajC* buf,
+    size_t length,
+    int key_kind,
+    double key_value
+);
+
+// Implementation of the function declared in basetraj_seq.h
+ssize_t _bisect_center_idx_slant_buf(
+    const BaseTrajC* buf,
+    size_t length,
+    double ca,
+    double sa,
+    double value
+);
+
+/**
+ * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
+ *
+ * Uses monotone-preserving PCHIP with Hermite evaluation.
+ * @return 1 on success, 0 on failure.
+ */
+int _interpolate_raw(_CBaseTrajSeq_cview* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out);
+
 
 #endif /* BASETRAJ_SEQ_H */

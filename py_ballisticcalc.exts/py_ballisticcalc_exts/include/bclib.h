@@ -151,22 +151,6 @@ V3dT WindSock_t_currentVector(WindSock_t *wind_sock);
 int WindSock_t_updateCache(WindSock_t *ws);
 V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
-typedef struct {
-    int filter;
-    int current_flag;
-    int seen_zero;
-    double time_step;
-    double range_step;
-    double time_of_last_record;
-    double next_record_distance;
-    double previous_mach;
-    double previous_time;
-    V3dT previous_position;
-    V3dT previous_velocity;
-    double previous_v_mach;
-    double look_angle;
-} TrajDataFilter_t;
-
 
 // helpers
 double getCorrection(double distance, double offset);

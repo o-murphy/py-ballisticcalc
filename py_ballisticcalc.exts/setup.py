@@ -63,9 +63,10 @@ ext_base_dir = 'py_ballisticcalc_exts'
 # Define all C source files and their paths
 C_SOURCES = {
     'v3d': os.path.join(ext_base_dir, 'src', 'v3d.c'),
-    'interp': os.path.join(ext_base_dir, 'src', 'interp.c'),
     'bclib': os.path.join(ext_base_dir, 'src', 'bclib.c'),
     "bind": os.path.join(ext_base_dir, 'src', 'bind.c'),
+    "interp": os.path.join(ext_base_dir, 'src', 'interp.c'),
+    "basetraj_seq": os.path.join(ext_base_dir, 'src', 'basetraj_seq.c'),
     # Add any other C source files here
 }
 
@@ -74,7 +75,8 @@ C_SOURCES = {
 # Values are lists of C source file keys from C_SOURCES that they depend on.
 EXTENSION_DEPS = {
     "cy_bindings": ["bclib", "bind"],
-    "base_traj_seq": ["v3d", "interp"],
+    "unit_helper": [],
+    "base_traj_seq": ["v3d", "interp", "basetraj_seq"],
     "base_engine": ["v3d", "bclib"],
     "euler_engine": ["v3d", "bclib"],
     "rk4_engine": ["v3d", "bclib"],
