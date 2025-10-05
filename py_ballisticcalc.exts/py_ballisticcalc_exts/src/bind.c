@@ -1,6 +1,3 @@
-#ifndef BIND_H
-#define BIND_H
-
 #include <Python.h>
 #include <stdlib.h>
 #include <math.h>
@@ -281,5 +278,3 @@ Wind_t Wind_t_fromPyObject(PyObject *w) {
 
     return wind_c;
 }
-
-#endif // BIND_H
