@@ -9,6 +9,7 @@ Key Classes:
     - Calculator: Main ballistics calculator with pluggable engine support
     - _EngineLoader: Internal utility for discovering and loading engine plugins
 """
+
 from dataclasses import dataclass, field
 from importlib.metadata import entry_points, EntryPoint
 from typing import Generic, Any
@@ -25,10 +26,10 @@ from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
-ConfigT = TypeVar('ConfigT', covariant=True)
+ConfigT = TypeVar("ConfigT", covariant=True)
 
-DEFAULT_ENTRY_SUFFIX = '_engine'
-DEFAULT_ENTRY_GROUP = 'py_ballisticcalc'
+DEFAULT_ENTRY_SUFFIX = "_engine"
+DEFAULT_ENTRY_GROUP = "py_ballisticcalc"
 DEFAULT_ENTRY: Type[EngineProtocol] = RK4IntegrationEngine
 
 EngineProtocolType = Type[EngineProtocol[ConfigT]]
@@ -43,12 +44,12 @@ class _EngineLoader:
     @classmethod
     def _get_entries_by_group(cls) -> set:
         all_entry_points = entry_points()
-        if hasattr(all_entry_points, 'select'):  # for importlib >= 5
+        if hasattr(all_entry_points, "select"):  # for importlib >= 5
             ballistic_entry_points = all_entry_points.select(group=cls._entry_point_group)
-        elif hasattr(all_entry_points, 'get'):  # for importlib < 5
+        elif hasattr(all_entry_points, "get"):  # for importlib < 5
             ballistic_entry_points = all_entry_points.get(cls._entry_point_group, [])  # type: ignore[arg-type]
         else:
-            raise RuntimeError('Entry point not supported')
+            raise RuntimeError("Entry point not supported")
         return set(ballistic_entry_points)
 
     @classmethod
@@ -145,21 +146,23 @@ class Calculator(Generic[ConfigT]):
         )
 
     @property
-    @deprecated(reason="`Calculator.cdm` is no longer supported by EngineProtocol. "
-                       "Please use `DragModel.drag_table` instead.")
+    @deprecated(
+        reason="`Calculator.cdm` is no longer supported by EngineProtocol. Please use `DragModel.drag_table` instead."
+    )
     def cdm(self) -> List[DragDataPoint]:
         """Return custom drag function based on input data."""
-        raise NotImplementedError("`Calculator.cdm` is no longer supported by EngineProtocol. "
-                                  "Please use `DragModel.drag_table` instead.")
+        raise NotImplementedError(
+            "`Calculator.cdm` is no longer supported by EngineProtocol. Please use `DragModel.drag_table` instead."
+        )
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculate barrel elevation to hit target at zero_distance.
-        
+
         Args:
             shot: Shot instance we want to zero.
             target_distance: Look-distance to "zero," which is point we want to hit.
                 This is the distance that a rangefinder would return with no ballistic adjustment.
-                
+
         Note:
             Some rangefinders offer an adjusted distance based on inclinometer measurement.
             However, without a complete ballistic model these can only approximate the effects
@@ -168,13 +171,11 @@ class Calculator(Generic[ConfigT]):
         """
         target_distance = PreferredUnits.distance(target_distance)
         total_elevation = self._engine_instance.zero_angle(shot, target_distance)
-        return Angular.Radian(
-            (total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian)
-        )
+        return Angular.Radian((total_elevation >> Angular.Radian) - (shot.look_angle >> Angular.Radian))
 
     def set_weapon_zero(self, shot: Shot, zero_distance: Union[float, Distance]) -> Angular:
         """Set shot.weapon.zero_elevation so that it hits a target at zero_distance.
-        
+
         Args:
             shot: Shot instance to zero.
             zero_distance: Look-distance to "zero," which is point we want to hit.
@@ -182,14 +183,18 @@ class Calculator(Generic[ConfigT]):
         shot.weapon.zero_elevation = self.barrel_elevation_for_target(shot, zero_distance)
         return shot.weapon.zero_elevation
 
-    def fire(self, shot: Shot,
-             trajectory_range: Union[float, Distance],
-             trajectory_step: Optional[Union[float, Distance]] = None, *,
-             extra_data: bool = False,
-             dense_output: bool = False,
-             time_step: float = 0.0,
-             flags: Union[TrajFlag, int] = TrajFlag.NONE,
-             raise_range_error: bool = True) -> HitResult:
+    def fire(
+        self,
+        shot: Shot,
+        trajectory_range: Union[float, Distance],
+        trajectory_step: Optional[Union[float, Distance]] = None,
+        *,
+        extra_data: bool = False,
+        dense_output: bool = False,
+        time_step: float = 0.0,
+        flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        raise_range_error: bool = True,
+    ) -> HitResult:
         """Calculate the trajectory for the given shot parameters.
 
         Args:
@@ -216,15 +221,17 @@ class Calculator(Generic[ConfigT]):
                 dist_step = trajectory_range
 
         if extra_data:
-            warnings.warn("extra_data is deprecated and will be removed in future versions. "
+            warnings.warn(
+                "extra_data is deprecated and will be removed in future versions. "
                 "Explicitly specify desired TrajectoryData frequency and flags.",
-                DeprecationWarning
+                DeprecationWarning,
             )
             dist_step = PreferredUnits.distance(1.0)  # << For compatibility with v2.1
             filter_flags = TrajFlag.ALL
 
-        result = self._engine_instance.integrate(shot, trajectory_range, dist_step, time_step,
-                                                 filter_flags, dense_output=dense_output)
+        result = self._engine_instance.integrate(
+            shot, trajectory_range, dist_step, time_step, filter_flags, dense_output=dense_output
+        )
         if result.error and raise_range_error:
             raise result.error
         return result
@@ -235,4 +242,7 @@ class Calculator(Generic[ConfigT]):
         yield from _EngineLoader.iter_engines()
 
 
-__all__ = ('Calculator', '_EngineLoader',)
+__all__ = (
+    "Calculator",
+    "_EngineLoader",
+)

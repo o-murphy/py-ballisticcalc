@@ -18,9 +18,9 @@ Examples:
 Mathematical Background:
     The Euler method approximates the solution to the differential equation
     dy/dt = f(t, y) using the formula:
-    
+
     y(t + h) = y(t) + h * f(t, y(t))
-    
+
     For ballistic calculations, this translates to updating position and
     velocity based on current acceleration values.
 
@@ -47,16 +47,16 @@ from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
-__all__ = ('EulerIntegrationEngine',)
+__all__ = ("EulerIntegrationEngine",)
 
 
 class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """Euler integration engine for ballistic trajectory calculations.
-    
+
     Attributes:
         DEFAULT_STEP: Default step size multiplier for integration (0.5).
         integration_step_count: Number of integration steps performed.
-        
+
     Examples:
         >>> config = BaseEngineConfigDict(cMinimumVelocity=100.0)
         >>> engine = EulerIntegrationEngine(config)
@@ -66,7 +66,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
     def __init__(self, config: BaseEngineConfigDict) -> None:
         """Initialize the Euler integration engine.
-        
+
         Args:
             config: Configuration dictionary containing engine parameters.
                    See BaseEngineConfigDict for available options.
@@ -77,13 +77,13 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     @override
     def get_calc_step(self) -> float:
         """Get the base calculation step size for Euler integration.
-        
+
         Calculates the effective step size by combining the base engine
         step multiplier with the Euler-specific DEFAULT_STEP constant.
         The step size directly affects accuracy and performance trade-offs.
         This is a distance-like quantity that is subsequently scaled by velocity
         to produce a time-like integration step.
-        
+
         Returns:
             Base step size for integration calculations.
 
@@ -96,21 +96,21 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
     def time_step(self, base_step: float, velocity: float) -> float:
         """Calculate adaptive time step based on current projectile velocity.
-        
+
         Implements adaptive time stepping where the time step is inversely
         related to projectile velocity. This helps maintain numerical stability
         and accuracy as the projectile slows down or speeds up.
-        
+
         Args:
             base_step: Base step size from the integration engine.
             velocity: Current projectile velocity in fps.
-            
+
         Returns:
             Adaptive time step for the current integration step.
-            
+
         Formula:
             time_step = base_step / max(1.0, velocity)
-            
+
         Examples:
             >>> config = BaseEngineConfigDict(cStepMultiplier=0.5)
             >>> engine = EulerIntegrationEngine(config)
@@ -127,9 +127,16 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         return base_step / max(1.0, velocity)
 
     @override
-    def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
-                   time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
-                   dense_output: bool = False, **kwargs) -> HitResult:
+    def _integrate(
+        self,
+        props: ShotProps,
+        range_limit_ft: float,
+        range_step_ft: float,
+        time_step: float = 0.0,
+        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        dense_output: bool = False,
+        **kwargs,
+    ) -> HitResult:
         """Create HitResult for the specified shot.
 
         Args:
@@ -153,10 +160,10 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
         step_data: List[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
-        time: float = .0
-        drag: float = .0
-        mach: float = .0
-        density_ratio: float = .0
+        time: float = 0.0
+        drag: float = 0.0
+        mach: float = 0.0
+        density_ratio: float = 0.0
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(props.winds)
@@ -166,19 +173,25 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         # region Initialize velocity and position of projectile
         velocity = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
+        range_vector = Vector(0.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
         velocity_vector: Vector = Vector(
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
-            math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
+            math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad),
         ).mul_by_const(velocity)  # type: ignore
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # endregion
 
-        data_filter = TrajectoryDataFilter(props=props, filter_flags=filter_flags,
-                                    initial_position=range_vector, initial_velocity=velocity_vector,
-                                    barrel_angle_rad=props.barrel_elevation_rad, look_angle_rad=props.look_angle_rad,
-                                    range_limit=range_limit_ft, range_step=range_step_ft, time_step=time_step
+        data_filter = TrajectoryDataFilter(
+            props=props,
+            filter_flags=filter_flags,
+            initial_position=range_vector,
+            initial_velocity=velocity_vector,
+            barrel_angle_rad=props.barrel_elevation_rad,
+            look_angle_rad=props.look_angle_rad,
+            range_limit=range_limit_ft,
+            range_step=range_step_ft,
+            time_step=time_step,
         )
 
         # region Trajectory Loop
@@ -223,7 +236,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             time += delta_time
             # endregion
 
-            if (velocity < _cMinimumVelocity
+            if (
+                velocity < _cMinimumVelocity
                 or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
                 or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
@@ -246,8 +260,8 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             if len(ranges) > 0 and ranges[-1].time == time:  # But don't duplicate the last point.
                 pass
             else:
-                ranges.append(TrajectoryData.from_props(
-                    props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
+                ranges.append(
+                    TrajectoryData.from_props(props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
                 )
         logger.debug(f"Euler ran {integration_step_count} iterations")
         self.integration_step_count += integration_step_count

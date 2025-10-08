@@ -20,22 +20,22 @@ Examples:
     Basic logging usage:
     ```python
     from py_ballisticcalc.logger import logger
-    
+
     logger.info("Ballistic calculation started")
     logger.warning("Trajectory calculation ended before requested distance")
     logger.error("Unable to find angle to hit target")
     ```
-    
+
     Enable file logging for debugging:
     ```python
     from py_ballisticcalc.logger import enable_file_logging, disable_file_logging
-    
+
     # Enable detailed logging to file
     enable_file_logging("ballistics_debug.log")
-    
+
     # Perform calculations with detailed logging
     # ... ballistic calculations ...
-    
+
     # Clean up file logging
     disable_file_logging()
     ```
@@ -44,12 +44,14 @@ Note:
     The logger name 'py_balcalc' is used for historical compatibility.
     All log messages from the library components will be routed through this logger.
 """
+
 import logging
 from typing import Optional
 
-__all__ = ('logger',
-           'enable_file_logging',
-           'disable_file_logging',
+__all__ = (
+    "logger",
+    "enable_file_logging",
+    "disable_file_logging",
 )
 
 formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
@@ -57,7 +59,7 @@ console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
 console_handler.setLevel(logging.DEBUG)  # Lowest level for console
 
-logger: logging.Logger = logging.getLogger('py_balcalc')
+logger: logging.Logger = logging.getLogger("py_balcalc")
 logger.addHandler(console_handler)
 logger.setLevel(logging.INFO)
 
@@ -85,10 +87,10 @@ def enable_file_logging(filename: str = "debug.log") -> None:
     Examples:
         ```python
         from py_ballisticcalc.logger import enable_file_logging, logger
-        
+
         # Enable detailed file logging
         enable_file_logging("trajectory_analysis.log")
-        
+
         # All subsequent log messages will be written to file
         logger.debug("Detailed calculation step information")
         logger.info("Calculation completed successfully")
@@ -120,10 +122,10 @@ def disable_file_logging() -> None:
     Examples:
         ```python
         from py_ballisticcalc.logger import disable_file_logging
-        
+
         # Clean up file logging when done with detailed analysis
         disable_file_logging()
-        
+
         # Only console logging remains active
         ```
     """

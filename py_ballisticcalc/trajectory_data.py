@@ -19,25 +19,25 @@ Typical Usage:
     ```python
     from py_ballisticcalc import Calculator, Shot, DragModel
     from py_ballisticcalc.trajectory_data import TrajFlag
-    
+
     # Calculate trajectory
     calc = Calculator()
     shot = Shot(...)
-    
+
     hit_result = calc.fire(shot, trajectory_range=1000, flags=TrajFlag.ALL)
-    
+
     # Access trajectory data
     for point in hit_result.trajectory:
         print(f"Time: {point.time:.3f}s, Distance: {point.distance}, "
               f"Height: {point.height}, Velocity: {point.velocity}")
-    
+
     # Find specific points
     zero_data = hit_result.zeros()  # Zero crossings
     max_range_point = hit_result.get_at('distance', Distance.Meter(1000))
 
     # Cubic interpolation for specific point
     interpolated = TrajectoryData.interpolate('time', 1.5, point1, point2, point3)
-    
+
     # Danger space analysis
     danger = hit_result.danger_space(at_range=Distance.Meter(500),
                                      target_height=Distance.Feet(2))
@@ -48,6 +48,7 @@ See Also:
     - py_ballisticcalc.unit: Unit system for all measurement values
     - py_ballisticcalc.vector: Vector mathematics for position/velocity
 """
+
 from __future__ import annotations
 import math
 from typing import TYPE_CHECKING, Dict, Any
@@ -70,20 +71,20 @@ if TYPE_CHECKING:
     from py_ballisticcalc.shot import ShotProps
 
 __all__ = (
-    'TrajFlag',
-    'BaseTrajData',
-    'TrajectoryData',
-    'HitResult',
-    'DangerSpace',
+    "TrajFlag",
+    "BaseTrajData",
+    "TrajectoryData",
+    "HitResult",
+    "DangerSpace",
 )
 
 
 class TrajFlag(int):
     """Trajectory point classification flags for marking special trajectory events.
-    
+
     Provides enumeration values for identifying and filtering special points in
     ballistic trajectories. The flags can be combined using bitwise operations.
-    
+
     Flag Values:
         - NONE (0): Standard trajectory point with no special events
         - ZERO_UP (1): Upward zero crossing (trajectory rising through sight line)
@@ -97,33 +98,33 @@ class TrajFlag(int):
 
     Examples:
         Basic flag usage:
-        
+
         ```python
         from py_ballisticcalc.trajectory_data import TrajFlag
-        
+
         # Filter for zero crossings only
         flags = TrajFlag.ZERO
-        
+
         # Filter for multiple event types
         flags = TrajFlag.ZERO | TrajFlag.APEX | TrajFlag.MACH
-        
+
         # Filter for all special points
         flags = TrajFlag.ALL
-        
+
         # Check if a trajectory point has specific flags
         if point.flag & TrajFlag.APEX:
             print("Trajectory apex")
         ```
-        
+
         Trajectory calculation with flags:
-        
+
         ```python
         # Calculate trajectory with zero crossings and apex
         hit_result = calc.fire(shot, 1000, filter_flags=TrajFlag.ZERO | TrajFlag.APEX)
-        
+
         # Find all zero crossing points
         zeros = [p for p in hit_result.trajectory if p.flag & TrajFlag.ZERO]
-        
+
         # Find apex point
         apex = next((p for p in hit_result.trajectory if p.flag & TrajFlag.APEX), None)
         ```
@@ -141,37 +142,33 @@ class TrajFlag(int):
 
     @classmethod
     def _value_to_name(cls) -> dict[int, str]:
-        return {
-            v: k
-            for k, v in vars(cls).items()
-            if k.isupper() and isinstance(v, int)
-        }
+        return {v: k for k, v in vars(cls).items() if k.isupper() and isinstance(v, int)}
 
     @staticmethod
     def name(value: Union[int, TrajFlag]) -> str:
         """Get the human-readable name for a trajectory flag value.
-        
+
         Converts a numeric flag value to its corresponding string name for
         display, logging, or debugging purposes. Supports both individual
         flags and combined flag values with intelligent formatting.
-        
+
         Args:
             value: The TrajFlag enum value or integer flag to convert.
-            
+
         Returns:
             String name of the flag. For combined flags, returns names joined with "|".
                 For unknown flags, returns "UNKNOWN". Special handling for ZERO flag combinations.
-            
+
         Examples:
             ```python
             # Individual flag names
             print(TrajFlag.name(TrajFlag.ZERO))      # "ZERO"
             print(TrajFlag.name(TrajFlag.APEX))      # "APEX"
-            
+
             # Combined flags
             combined = TrajFlag.ZERO | TrajFlag.APEX
             print(TrajFlag.name(combined))           # "ZERO|APEX"
-            
+
             # Unknown flags
             print(TrajFlag.name(999))                # "UNKNOWN"
             ```
@@ -189,7 +186,7 @@ class TrajFlag(int):
 
 class BaseTrajData(NamedTuple):
     """Minimal ballistic trajectory point data.
-    
+
     Represents the minimum state information for a single point in a ballistic trajectory.
     The data are kept in basic units (seconds, feet) to avoid unit tracking and conversion overhead.
 
@@ -202,7 +199,7 @@ class BaseTrajData(NamedTuple):
     Examples:
         ```python
         from py_ballisticcalc.vector import Vector
-        
+
         # Create trajectory point at launch
         launch_pt = BaseTrajData(
             time=0.0,
@@ -210,11 +207,11 @@ class BaseTrajData(NamedTuple):
             velocity=Vector(2640.0, 0.0, 0.0), # 800 m/s ≈ 2640 fps
             mach=1115.5                        # Standard conditions
         )
-        
+
         # Interpolate between points
         interpolated = BaseTrajData.interpolate('time', 1.25, launch_pt, mid_pt, end_pt)
         ```
-        
+
     Note:
         This class is designed for efficiency in calculation engines that may compute
         thousands of points over a trajectory. For detailed data with units and derived quantities,
@@ -227,9 +224,14 @@ class BaseTrajData(NamedTuple):
     mach: float  # Units: fps
 
     @staticmethod
-    def interpolate(key_attribute: str, key_value: float,
-                    p0: BaseTrajData, p1: BaseTrajData, p2: BaseTrajData,
-                    method: InterpolationMethod = "pchip") -> BaseTrajData:
+    def interpolate(
+        key_attribute: str,
+        key_value: float,
+        p0: BaseTrajData,
+        p1: BaseTrajData,
+        p2: BaseTrajData,
+        method: InterpolationMethod = "pchip",
+    ) -> BaseTrajData:
         """
         Interpolate a BaseTrajData point using monotone PCHIP (default) or linear.
 
@@ -250,10 +252,11 @@ class BaseTrajData(NamedTuple):
                                (This will result if two of the points are identical).
             ValueError: If method is not one of 'pchip' or 'linear'.
         """
+
         def get_key_val(td: "BaseTrajData", path: str) -> float:
             """Helper to get the key value from a BaseTrajData point."""
-            if '.' in path:
-                top, component = path.split('.', 1)
+            if "." in path:
+                top, component = path.split(".", 1)
                 obj = getattr(td, top)
                 return getattr(obj, component)
             return getattr(td, path)
@@ -262,6 +265,7 @@ class BaseTrajData(NamedTuple):
         x0 = get_key_val(p0, key_attribute)
         x1 = get_key_val(p1, key_attribute)
         x2 = get_key_val(p2, key_attribute)
+
         def _interp_scalar(y0, y1, y2):
             if method == "pchip":
                 return interpolate_3_pt(key_value, x0, y0, x1, y1, x2, y2)
@@ -275,7 +279,7 @@ class BaseTrajData(NamedTuple):
             else:
                 raise ValueError("method must be 'pchip' or 'linear'")
 
-        time = _interp_scalar(p0.time, p1.time, p2.time) if key_attribute != 'time' else key_value
+        time = _interp_scalar(p0.time, p1.time, p2.time) if key_attribute != "time" else key_value
         px = _interp_scalar(p0.position.x, p1.position.x, p2.position.x)
         py = _interp_scalar(p0.position.y, p1.position.y, p2.position.y)
         pz = _interp_scalar(p0.position.z, p1.position.z, p2.position.z)
@@ -284,21 +288,39 @@ class BaseTrajData(NamedTuple):
         vy = _interp_scalar(p0.velocity.y, p1.velocity.y, p2.velocity.y)
         vz = _interp_scalar(p0.velocity.z, p1.velocity.z, p2.velocity.z)
         velocity = Vector(vx, vy, vz)
-        mach = _interp_scalar(p0.mach, p1.mach, p2.mach) if key_attribute != 'mach' else key_value
+        mach = _interp_scalar(p0.mach, p1.mach, p2.mach) if key_attribute != "mach" else key_value
 
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
 
 
 TRAJECTORY_DATA_ATTRIBUTES = Literal[
-    'time', 'distance', 'velocity', 'mach', 'height', 'slant_height', 'drop_angle',
-    'windage', 'windage_angle', 'slant_distance', 'angle', 'density_ratio', 'drag',
-    'energy', 'ogw', 'flag', 'x', 'y', 'z'
+    "time",
+    "distance",
+    "velocity",
+    "mach",
+    "height",
+    "slant_height",
+    "drop_angle",
+    "windage",
+    "windage_angle",
+    "slant_distance",
+    "angle",
+    "density_ratio",
+    "drag",
+    "energy",
+    "ogw",
+    "flag",
+    "x",
+    "y",
+    "z",
 ]
 TRAJECTORY_DATA_SYNONYMS: dict[TRAJECTORY_DATA_ATTRIBUTES, TRAJECTORY_DATA_ATTRIBUTES] = {
-    'x': 'distance',
-    'y': 'height',
-    'z': 'windage',
+    "x": "distance",
+    "y": "height",
+    "z": "windage",
 }
+
+
 # pylint: disable=too-many-instance-attributes,protected-access
 class TrajectoryData(NamedTuple):
     """Data for one point in ballistic trajectory.
@@ -389,10 +411,10 @@ class TrajectoryData(NamedTuple):
             return f"{v >> u:.{u.accuracy}f} {u.symbol}"
 
         return (
-            f'{self.time:.3f} s',
+            f"{self.time:.3f} s",
             _fmt(self.distance, PreferredUnits.distance),
             _fmt(self.velocity, PreferredUnits.velocity),
-            f'{self.mach:.2f} mach',
+            f"{self.mach:.2f} mach",
             _fmt(self.height, PreferredUnits.drop),
             _fmt(self.slant_height, PreferredUnits.drop),
             _fmt(self.drop_angle, PreferredUnits.adjustment),
@@ -400,11 +422,11 @@ class TrajectoryData(NamedTuple):
             _fmt(self.windage_angle, PreferredUnits.adjustment),
             _fmt(self.slant_distance, PreferredUnits.distance),
             _fmt(self.angle, PreferredUnits.angular),
-            f'{self.density_ratio:.5e}',
-            f'{self.drag:.3e}',
+            f"{self.density_ratio:.5e}",
+            f"{self.drag:.3e}",
             _fmt(self.energy, PreferredUnits.energy),
             _fmt(self.ogw, PreferredUnits.ogw),
-            TrajFlag.name(self.flag)
+            TrajFlag.name(self.flag),
         )
 
     def in_def_units(self) -> Tuple[float, ...]:
@@ -429,7 +451,7 @@ class TrajectoryData(NamedTuple):
             self.drag,
             self.energy >> PreferredUnits.energy,
             self.ogw >> PreferredUnits.ogw,
-            self.flag
+            self.flag,
         )
 
     @staticmethod
@@ -513,18 +535,21 @@ class TrajectoryData(NamedTuple):
         return d
 
     @staticmethod
-    def from_base_data(props: ShotProps, data: BaseTrajData,
-                       flag: Union[TrajFlag, int] = TrajFlag.NONE) -> TrajectoryData:
+    def from_base_data(
+        props: ShotProps, data: BaseTrajData, flag: Union[TrajFlag, int] = TrajFlag.NONE
+    ) -> TrajectoryData:
         """Create a TrajectoryData object from BaseTrajData."""
         return TrajectoryData.from_props(props, data.time, data.position, data.velocity, data.mach, flag)
 
     @staticmethod
-    def from_props(props: ShotProps,
-                    time: float,
-                    range_vector: Vector,
-                    velocity_vector: Vector,
-                    mach: float,
-                    flag: Union[TrajFlag, int] = TrajFlag.NONE) -> TrajectoryData:
+    def from_props(
+        props: ShotProps,
+        time: float,
+        range_vector: Vector,
+        velocity_vector: Vector,
+        mach: float,
+        flag: Union[TrajFlag, int] = TrajFlag.NONE,
+    ) -> TrajectoryData:
         """Create a TrajectoryData object."""
         adjusted_range = props.adjust_range_for_coriolis(time, range_vector)
         spin_drift = props.spin_drift(time)
@@ -543,24 +568,33 @@ class TrajectoryData(NamedTuple):
             velocity=TrajectoryData._new_fps(velocity),
             mach=velocity / mach,
             height=TrajectoryData._new_feet(adjusted_range.y),
-            slant_height=TrajectoryData._new_feet(adjusted_range.y * look_angle_cos - adjusted_range.x * look_angle_sin),
+            slant_height=TrajectoryData._new_feet(
+                adjusted_range.y * look_angle_cos - adjusted_range.x * look_angle_sin
+            ),
             drop_angle=TrajectoryData._new_rad(drop_angle - (props.look_angle_rad if adjusted_range.x else 0)),
             windage=TrajectoryData._new_feet(windage),
             windage_angle=TrajectoryData._new_rad(windage_angle),
-            slant_distance=TrajectoryData._new_feet(adjusted_range.x * look_angle_cos + adjusted_range.y * look_angle_sin),
+            slant_distance=TrajectoryData._new_feet(
+                adjusted_range.x * look_angle_cos + adjusted_range.y * look_angle_sin
+            ),
             angle=TrajectoryData._new_rad(trajectory_angle),
             density_ratio=density_ratio,
             drag=drag,
             energy=TrajectoryData._new_ft_lb(TrajectoryData.calculate_energy(props.weight_grains, velocity)),
             ogw=TrajectoryData._new_lb(TrajectoryData.calculate_ogw(props.weight_grains, velocity)),
-            flag=flag
+            flag=flag,
         )
 
     @staticmethod
-    def interpolate(key_attribute: TRAJECTORY_DATA_ATTRIBUTES, value: Union[float, GenericDimension],
-                    p0: TrajectoryData, p1: TrajectoryData, p2: TrajectoryData,
-                    flag: Union[TrajFlag, int]=TrajFlag.NONE,
-                    method: InterpolationMethod = "pchip") -> TrajectoryData:
+    def interpolate(
+        key_attribute: TRAJECTORY_DATA_ATTRIBUTES,
+        value: Union[float, GenericDimension],
+        p0: TrajectoryData,
+        p1: TrajectoryData,
+        p2: TrajectoryData,
+        flag: Union[TrajFlag, int] = TrajFlag.NONE,
+        method: InterpolationMethod = "pchip",
+    ) -> TrajectoryData:
         """
         Interpolate TrajectoryData where key_attribute==value using PCHIP (default) or linear.
 
@@ -586,14 +620,14 @@ class TrajectoryData(NamedTuple):
         key_attribute = TRAJECTORY_DATA_SYNONYMS.get(key_attribute, key_attribute)  # Resolve synonyms
         if not hasattr(TrajectoryData, key_attribute):
             raise AttributeError(f"TrajectoryData has no attribute '{key_attribute}'")
-        if key_attribute == 'flag':
+        if key_attribute == "flag":
             raise KeyError("Cannot interpolate based on 'flag' attribute")
         key_value = value.raw_value if isinstance(value, GenericDimension) else value
 
         def get_key_val(td):
             """Helper to get the raw value of the key attribute from a TrajectoryData point."""
             val = getattr(td, key_attribute)
-            return val.raw_value if hasattr(val, 'raw_value') else float(val)
+            return val.raw_value if hasattr(val, "raw_value") else float(val)
 
         # The independent variable for interpolation (x-axis)
         x_val = key_value
@@ -602,7 +636,7 @@ class TrajectoryData(NamedTuple):
         # Use reflection to build the new TrajectoryData object
         interpolated_fields: Dict[str, Any] = {}
         for field_name in TrajectoryData._fields:
-            if field_name == 'flag':
+            if field_name == "flag":
                 continue
 
             p0_field = getattr(p0, field_name)
@@ -627,7 +661,11 @@ class TrajectoryData(NamedTuple):
                 if method == "pchip":
                     interpolated_raw = interpolate_3_pt(x_val, x0, y0, x1, y1, x2, y2)
                 elif method == "linear":
-                    interpolated_raw = interpolate_2_pt(x_val, x0, y0, x1, y1) if x_val <= x1 else interpolate_2_pt(x_val, x1, y1, x2, y2)
+                    interpolated_raw = (
+                        interpolate_2_pt(x_val, x0, y0, x1, y1)
+                        if x_val <= x1
+                        else interpolate_2_pt(x_val, x1, y1, x2, y2)
+                    )
                 else:
                     raise ValueError("method must be 'pchip' or 'linear'")
                 interpolated_fields[field_name] = type(y0_val).new_from_raw(interpolated_raw, y0_val.units)
@@ -636,13 +674,17 @@ class TrajectoryData(NamedTuple):
                 if method == "pchip":
                     interpolated_fields[field_name] = interpolate_3_pt(x_val, x0, fy0, x1, fy1, x2, fy2)
                 elif method == "linear":
-                    interpolated_fields[field_name] = interpolate_2_pt(x_val, x0, fy0, x1, fy1) if x_val <= x1 else interpolate_2_pt(x_val, x1, fy1, x2, fy2)
+                    interpolated_fields[field_name] = (
+                        interpolate_2_pt(x_val, x0, fy0, x1, fy1)
+                        if x_val <= x1
+                        else interpolate_2_pt(x_val, x1, fy1, x2, fy2)
+                    )
                 else:
                     raise ValueError("method must be 'pchip' or 'linear'")
             else:
                 raise TypeError(f"Cannot interpolate field '{field_name}' of type {type(y0_val)}")
 
-        interpolated_fields['flag'] = flag
+        interpolated_fields["flag"] = flag
         return TrajectoryData(**interpolated_fields)
 
 
@@ -656,13 +698,18 @@ class DangerSpace(NamedTuple):
     look_angle: Angular  # Look angle
 
     def __str__(self) -> str:
-        return f'Danger space at {self.at_range.slant_distance << PreferredUnits.distance} ' \
-            + f'for {self.target_height << PreferredUnits.drop} tall target ' \
-            + (f'at {self.look_angle << Angular.Degree} look-angle ' if self.look_angle != 0 else '') \
-            + f'ranges from {self.begin.slant_distance << PreferredUnits.distance} ' \
-            + f'to {self.end.slant_distance << PreferredUnits.distance}' \
-            + (f'\n\t(horizontal {self.begin.distance << PreferredUnits.distance} to {self.end.distance << PreferredUnits.distance})'
-               if self.look_angle != 0 else '')
+        return (
+            f"Danger space at {self.at_range.slant_distance << PreferredUnits.distance} "
+            + f"for {self.target_height << PreferredUnits.drop} tall target "
+            + (f"at {self.look_angle << Angular.Degree} look-angle " if self.look_angle != 0 else "")
+            + f"ranges from {self.begin.slant_distance << PreferredUnits.distance} "
+            + f"to {self.end.slant_distance << PreferredUnits.distance}"
+            + (
+                f"\n\t(horizontal {self.begin.distance << PreferredUnits.distance} to {self.end.distance << PreferredUnits.distance})"
+                if self.look_angle != 0
+                else ""
+            )
+        )
 
     # pylint: disable=import-outside-toplevel
     def overlay(self, ax: Axes, label: Optional[str] = None) -> None:
@@ -677,11 +724,10 @@ class DangerSpace(NamedTuple):
         """
         try:
             from py_ballisticcalc.visualize.plot import add_danger_space_overlay  # type: ignore[attr-defined]
+
             add_danger_space_overlay(self, ax, label)
         except ImportError as err:
-            raise ImportError(
-                "Use `pip install py_ballisticcalc[charts]` to get results as a plot"
-            ) from err
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot") from err
 
 
 # pylint: disable=import-outside-toplevel
@@ -696,6 +742,7 @@ class HitResult:
         extra: [DEPRECATED] Whether extra_data was requested.
         error: RangeError, if any.
     """
+
     """
     TODO:
     * Implement dense_output in cythonized engines to populate base_data
@@ -720,15 +767,16 @@ class HitResult:
     def _check_extra(self):
         if not self.extra:
             raise AttributeError(
-                f"{object.__repr__(self)} has no extra data. "
-                f"Use Calculator.fire(..., extra_data=True)"
+                f"{object.__repr__(self)} has no extra data. Use Calculator.fire(..., extra_data=True)"
             )
 
     def _check_flag(self, flag: Union[TrajFlag, int]):
         if not self.props.filter_flags & flag:
             flag_name = TrajFlag.name(flag)
-            raise AttributeError(f"{flag_name} was not requested in trajectory. "
-                                 f"Use Calculator.fire(..., flags=TrajFlag.{flag_name}) to include it.")
+            raise AttributeError(
+                f"{flag_name} was not requested in trajectory. "
+                f"Use Calculator.fire(..., flags=TrajFlag.{flag_name}) to include it."
+            )
 
     def flag(self, flag: Union[TrajFlag, int]) -> Optional[TrajectoryData]:
         """Get first TrajectoryData row with the specified flag.
@@ -748,10 +796,14 @@ class HitResult:
                 return row
         return None
 
-    def get_at(self, key_attribute: TRAJECTORY_DATA_ATTRIBUTES,
-                     value: Union[float, GenericDimension], *,
-                     epsilon: float = 1e-9,
-                     start_from_time: float=0.0) -> TrajectoryData:
+    def get_at(
+        self,
+        key_attribute: TRAJECTORY_DATA_ATTRIBUTES,
+        value: Union[float, GenericDimension],
+        *,
+        epsilon: float = 1e-9,
+        start_from_time: float = 0.0,
+    ) -> TrajectoryData:
         """Get TrajectoryData where key_attribute==value.
 
         Interpolates to create new object if necessary. Preserves the units of the original trajectory data.
@@ -783,7 +835,7 @@ class HitResult:
         key_attribute = TRAJECTORY_DATA_SYNONYMS.get(key_attribute, key_attribute)  # Resolve synonyms
         if not hasattr(TrajectoryData, key_attribute):
             raise AttributeError(f"TrajectoryData has no attribute '{key_attribute}'")
-        if key_attribute == 'flag':
+        if key_attribute == "flag":
             raise KeyError("Cannot interpolate based on 'flag' attribute")
 
         traj = self.trajectory
@@ -793,7 +845,7 @@ class HitResult:
         def get_key_val(td):
             """Helper to get the raw value of the key attribute from a TrajectoryData point."""
             val = getattr(td, key_attribute)
-            return val.raw_value if hasattr(val, 'raw_value') else val
+            return val.raw_value if hasattr(val, "raw_value") else val
 
         if n < 3:  # We won't interpolate on less than 3 points, but check for an exact match in the existing rows.
             if abs(get_key_val(traj[0]) - key_value) < epsilon:
@@ -811,7 +863,7 @@ class HitResult:
             return traj[start_idx]
         # Determine search direction from the starting point
         search_forward = True  # Default to forward search
-        if start_idx == n - 1:  # We're at the last point, search backwards            
+        if start_idx == n - 1:  # We're at the last point, search backwards
             search_forward = False
         if 0 < start_idx < n - 1:
             # We're in the middle of the trajectory, determine local direction towards key_value
@@ -823,12 +875,12 @@ class HitResult:
 
         # Search for the target value in the determined direction
         target_idx = -1
-        if search_forward:  # Search forward from start_idx            
+        if search_forward:  # Search forward from start_idx
             for i in range(start_idx, n - 1):
                 curr_val = get_key_val(traj[i])
                 next_val = get_key_val(traj[i + 1])
                 # Check if key_value is between curr_val and next_val
-                if ((curr_val < key_value <= next_val) or (next_val <= key_value < curr_val)):
+                if (curr_val < key_value <= next_val) or (next_val <= key_value < curr_val):
                     target_idx = i + 1
                     break
         if not search_forward or target_idx == -1:  # Search backward from start_idx
@@ -836,7 +888,7 @@ class HitResult:
                 curr_val = get_key_val(traj[i])
                 prev_val = get_key_val(traj[i - 1])
                 # Check if key_value is between prev_val and curr_val
-                if ((prev_val <= key_value < curr_val) or (curr_val < key_value <= prev_val)):
+                if (prev_val <= key_value < curr_val) or (curr_val < key_value <= prev_val):
                     target_idx = i
                     break
 
@@ -882,8 +934,10 @@ class HitResult:
             Index of first trajectory row with .distance >= d; otherwise -1.
         """
         epsilon = 1e-1  # small value to avoid floating point issues
-        return next((i for i in range(len(self.trajectory))
-                     if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon), -1)
+        return next(
+            (i for i in range(len(self.trajectory)) if self.trajectory[i].distance.raw_value >= d.raw_value - epsilon),
+            -1,
+        )
 
     @deprecated(reason="Use get_at('distance', d)")
     def get_at_distance(self, d: Distance) -> TrajectoryData:
@@ -899,9 +953,7 @@ class HitResult:
             ArithmeticError: If trajectory doesn't reach requested distance.
         """
         if (i := self.index_at_distance(d)) < 0:
-            raise ArithmeticError(
-                f"Calculated trajectory doesn't reach requested distance {d}"
-            )
+            raise ArithmeticError(f"Calculated trajectory doesn't reach requested distance {d}")
         return self.trajectory[i]
 
     @deprecated(reason="Use get_at('time', t)")
@@ -918,18 +970,16 @@ class HitResult:
             ArithmeticError: If trajectory doesn't reach requested time.
         """
         epsilon = 1e-6  # small value to avoid floating point issues
-        idx = next((i for i in range(len(self.trajectory))
-                     if self.trajectory[i].time >= t - epsilon), -1)
+        idx = next((i for i in range(len(self.trajectory)) if self.trajectory[i].time >= t - epsilon), -1)
         if idx < 0:
-            raise ArithmeticError(
-                f"Calculated trajectory doesn't reach requested time {t}"
-            )
+            raise ArithmeticError(f"Calculated trajectory doesn't reach requested time {t}")
         return self.trajectory[idx]
 
-    def danger_space(self,
-                     at_range: Union[float, Distance],
-                     target_height: Union[float, Distance],
-                     ) -> DangerSpace:
+    def danger_space(
+        self,
+        at_range: Union[float, Distance],
+        target_height: Union[float, Distance],
+    ) -> DangerSpace:
         """Calculate the danger space for a target.
 
             Assumes that the trajectory hits the center of a target at any distance.
@@ -952,24 +1002,20 @@ class HitResult:
         target_height = PreferredUnits.target_height(target_height)
         target_height_half = target_height.raw_value / 2.0
 
-        target_row = self.get_at('slant_distance', target_at_range)
+        target_row = self.get_at("slant_distance", target_at_range)
         is_climbing = ((target_row.angle >> Angular.Radian) - self.props.look_angle_rad) > 0
         slant_height_begin = target_row.slant_height.raw_value + (-1 if is_climbing else 1) * target_height_half
         slant_height_end = target_row.slant_height.raw_value - (-1 if is_climbing else 1) * target_height_half
         try:
-            begin_row = self.get_at('slant_height', slant_height_begin, start_from_time=target_row.time)
+            begin_row = self.get_at("slant_height", slant_height_begin, start_from_time=target_row.time)
         except ArithmeticError:
             begin_row = self.trajectory[0]
         try:
-            end_row = self.get_at('slant_height', slant_height_end, start_from_time=target_row.time)
+            end_row = self.get_at("slant_height", slant_height_end, start_from_time=target_row.time)
         except ArithmeticError:
             end_row = self.trajectory[-1]
 
-        return DangerSpace(target_row,
-                           target_height,
-                           begin_row,
-                           end_row,
-                           Angular.Radian(self.props.look_angle_rad))
+        return DangerSpace(target_row, target_height, begin_row, end_row, Angular.Radian(self.props.look_angle_rad))
 
     def dataframe(self, formatted: bool = False) -> DataFrame:
         """Return the trajectory table as a DataFrame.
@@ -985,6 +1031,7 @@ class HitResult:
         """
         try:
             from py_ballisticcalc.visualize.dataframe import hit_result_as_dataframe
+
             return hit_result_as_dataframe(self, formatted)
         except ImportError as err:
             raise ImportError(
@@ -1005,8 +1052,7 @@ class HitResult:
         """
         try:
             from py_ballisticcalc.visualize.plot import hit_result_as_plot  # type: ignore[attr-defined]
+
             return hit_result_as_plot(self, look_angle)
         except ImportError as err:
-            raise ImportError(
-                "Use `pip install py_ballisticcalc[charts]` to get results as a plot"
-            ) from err
+            raise ImportError("Use `pip install py_ballisticcalc[charts]` to get results as a plot") from err

@@ -15,7 +15,7 @@ Key Features:
 
 Examples:
     >>> # ----------------- Creation and conversion -----------------
-    >>> d = Distance.Yard(100)  
+    >>> d = Distance.Yard(100)
     >>> d.convert(Unit.Meter)      # Conversion method -> Distance
     <Distance: 91.4m (3600.0)>
     >>> d << Distance.Feet         # Conversion operator -> Distance
@@ -35,7 +35,7 @@ Examples:
     <Distance: 50.0yd (1800.0)>
     >>> d / Unit.Foot(3)
     100.0
-    
+
 Supported Dimensions:
     * Angular: `radian`, `degree`, `MOA`, `mil`, `mrad`, `thousandth`, `inch/100yd`, `cm/100m`, `o'clock`
     * Distance: `inch`, `foot`, `yard`, `mile`, `nautical mile`, `mm`, `cm`, `m`, `km`, `line`
@@ -53,9 +53,27 @@ from dataclasses import dataclass, fields, MISSING
 from enum import IntEnum
 from math import pi
 import re
-from typing import NamedTuple, Union, TypeVar, Optional, Tuple, Final, Protocol, runtime_checkable, \
-    SupportsFloat, SupportsInt, Generic, Mapping, Any, Iterable, Sequence, Callable, Generator
+from typing import (
+    NamedTuple,
+    Union,
+    TypeVar,
+    Optional,
+    Tuple,
+    Final,
+    Protocol,
+    runtime_checkable,
+    SupportsFloat,
+    SupportsInt,
+    Generic,
+    Mapping,
+    Any,
+    Iterable,
+    Sequence,
+    Callable,
+    Generator,
+)
 from collections.abc import Hashable
+
 try:
     # Python 3.10+ provides NotImplementedType in types
     from types import NotImplementedType  # type: ignore[attr-defined]
@@ -96,11 +114,11 @@ def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -
         >>> # Finite ascending sequence
         >>> list(counter(0, 1, 5))
         [0, 1, 2, 3, 4]
-        
+
         >>> # Finite descending sequence
         >>> list(counter(10, -2, 0))
         [10, 8, 6, 4, 2]
-        
+
         >>> # Infinite sequence (first 3 values)
         >>> iter_seq = counter(1, 0.5)
         >>> [next(iter_seq) for _ in range(3)]
@@ -134,10 +152,14 @@ def counter(start: Number = 0, step: Number = 1, end: Optional[Number] = None) -
                 current += step
 
 
-def iterator(items: Sequence[Number], /, *,
-             sort: bool = False,
-             key: Optional[Callable[[Number], Any]] = None,
-             reverse: bool = False) -> Generator[Number, None, None]:
+def iterator(
+    items: Sequence[Number],
+    /,
+    *,
+    sort: bool = False,
+    key: Optional[Callable[[Number], Any]] = None,
+    reverse: bool = False,
+) -> Generator[Number, None, None]:
     """Create a generator from a sequence of numbers with optional sorting.
 
     Provides a flexible iterator interface for numeric sequences.
@@ -158,15 +180,15 @@ def iterator(items: Sequence[Number], /, *,
         >>> # Basic iteration
         >>> list(iterator([3, 1, 4, 2]))
         [3, 1, 4, 2]
-        
+
         >>> # Sorted iteration
         >>> list(iterator([3, 1, 4, 2], sort=True))
         [1, 2, 3, 4]
-        
+
         >>> # Reverse sorted iteration
         >>> list(iterator([3, 1, 4, 2], sort=True, reverse=True))
         [4, 3, 2, 1]
-        
+
         >>> # Custom key function
         >>> list(iterator([-3, 1, -4, 2], sort=True, key=abs))
         [1, 2, -3, -4]
@@ -190,7 +212,7 @@ class Comparable(Protocol):
     def __ge__(self, other: Self) -> bool: ...
 
 
-_GenericDimensionType = TypeVar('_GenericDimensionType', bound='GenericDimension')
+_GenericDimensionType = TypeVar("_GenericDimensionType", bound="GenericDimension")
 
 
 class Unit(IntEnum):
@@ -211,11 +233,11 @@ class Unit(IntEnum):
         >>> # Create distance measurements
         >>> distance = Unit.Meter(100)
         >>> range_yards = Unit.Yard(109.4)
-        
+
         >>> # Create velocity measurements
         >>> muzzle_velocity = Unit.FPS(2800)
         >>> velocity_mps = Unit.MPS(853.4)
-        
+
         >>> # Angular measurements for ballistics
         >>> elevation = Unit.MOA(2.5)
         >>> windage = Unit.Mil(1.2)
@@ -331,8 +353,9 @@ class Unit(IntEnum):
             raise UnitTypeError(f"{self} Unit is not supported")
         return obj  # type: ignore
 
-    def counter(self, start: Number, step: Number,
-        end: Optional[Number] = None, include_end: bool = True) -> Generator[GenericDimension, None, None]:
+    def counter(
+        self, start: Number, step: Number, end: Optional[Number] = None, include_end: bool = True
+    ) -> Generator[GenericDimension, None, None]:
         """Generate a finite or infinite sequence of `GenericDimension` objects.
 
         This function acts as a counter for measurements, yielding `GenericDimension`
@@ -359,7 +382,7 @@ class Unit(IntEnum):
                 If the iteration limit (`MAX_ITERATIONS`) is reached during an infinite sequence.
 
         Examples:
-            >>> list(Unit.Millisecond.counter(start=0, step=10, end=30))   
+            >>> list(Unit.Millisecond.counter(start=0, step=10, end=30))
             [<Time: 0.0ms (0.0)>, <Time: 10.0ms (0.01)>, <Time: 20.0ms (0.02)>, <Time: 30.0ms (0.03)>]
         """
         _start: GenericDimension = self(start)
@@ -379,9 +402,9 @@ class Unit(IntEnum):
             if i == MAX_ITERATIONS:
                 raise ValueError("Reached generator limit %d" % MAX_ITERATIONS)
 
-    def iterator(self, items: Sequence[Number], /, *,
-                 sort: bool = False,
-                 reverse: bool = False) -> Generator["GenericDimension[Any]", None, None]:
+    def iterator(
+        self, items: Sequence[Number], /, *, sort: bool = False, reverse: bool = False
+    ) -> Generator["GenericDimension[Any]", None, None]:
         """Create a sorted sequence of `GenericDimension` objects from raw numeric values.
 
         Args:
@@ -460,15 +483,16 @@ class Unit(IntEnum):
             if (unit := Unit._find_unit_by_alias(input_, UnitAliases)) is not None:
                 return unit
             # Simple pluralization fallback: yard(s), meter(s), knot(s), etc.
-            if input_.endswith('s'):
+            if input_.endswith("s"):
                 singular = input_[:-1]
                 if (unit := Unit._find_unit_by_alias(singular, UnitAliases)) is not None:
                     return unit
             return None
 
     @staticmethod
-    def parse(input_: Union[str, Number],
-              preferred: Optional[Union[Unit, str]] = None) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
+    def parse(
+        input_: Union[str, Number], preferred: Optional[Union[Unit, str]] = None
+    ) -> Optional[Union[GenericDimension[Any], Any, Unit]]:
         """Parse a value with optional unit specification into a unit measurement.
 
         Args:
@@ -486,11 +510,11 @@ class Unit(IntEnum):
             >>> # Parse numeric value with preferred unit
             >>> Unit.parse(100, Unit.Meter)
             <Distance: 100.0m (3937.0079)>
-            
+
             >>> # Parse string with embedded unit
             >>> Unit.parse('2yd')
             <Distance: 2.0yd (72.0)>
-            
+
             >>> # Parse with PreferredUnit string
             >>> Unit.parse(50, 'grain')
             <Weight: 50.0gr (50.0)>
@@ -511,11 +535,11 @@ class Unit(IntEnum):
             raise TypeError(f"type, [str, float, int] expected for 'input_', got {type(input_)}")
 
         input_string = input_.replace(" ", "")
-        if match := re.match(r'^-?(?:\d+\.\d*|\.\d+|\d+\.?)$', input_string):
+        if match := re.match(r"^-?(?:\d+\.\d*|\.\d+|\d+\.?)$", input_string):
             value = match.group()
             return create_as_preferred(value)
 
-        if match := re.match(r'(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)', input_string):
+        if match := re.match(r"(^-?(?:\d+\.\d*|\.\d+|\d+\.?))(.*$)", input_string):
             value, alias = match.groups()
             if units := Unit._parse_unit(alias):
                 return units(float(value))
@@ -549,16 +573,15 @@ class UnitProps(NamedTuple):
 #: Mapping from Unit -> UnitProps used for formatting/display of units.
 # mkdocs.pymdown.snippet marker: --8<-- [start:UnitPropsDict]
 UnitPropsDict: Mapping[Unit, UnitProps] = {
-    Unit.Radian: UnitProps('radian', 6, 'rad'),
-    Unit.Degree: UnitProps('degree', 4, '°'),
-    Unit.MOA: UnitProps('MOA', 2, 'MOA'),
-    Unit.Mil: UnitProps('mil', 3, 'mil'),
-    Unit.MRad: UnitProps('mrad', 2, 'mrad'),
-    Unit.Thousandth: UnitProps('thousandth', 2, 'ths'),
-    Unit.InchesPer100Yd: UnitProps('inch/100yd', 2, 'in/100yd'),
-    Unit.CmPer100m: UnitProps('cm/100m', 2, 'cm/100m'),
-    Unit.OClock: UnitProps('hour', 2, 'h'),
-
+    Unit.Radian: UnitProps("radian", 6, "rad"),
+    Unit.Degree: UnitProps("degree", 4, "°"),
+    Unit.MOA: UnitProps("MOA", 2, "MOA"),
+    Unit.Mil: UnitProps("mil", 3, "mil"),
+    Unit.MRad: UnitProps("mrad", 2, "mrad"),
+    Unit.Thousandth: UnitProps("thousandth", 2, "ths"),
+    Unit.InchesPer100Yd: UnitProps("inch/100yd", 2, "in/100yd"),
+    Unit.CmPer100m: UnitProps("cm/100m", 2, "cm/100m"),
+    Unit.OClock: UnitProps("hour", 2, "h"),
     Unit.Inch: UnitProps("inch", 1, "inch"),
     Unit.Foot: UnitProps("foot", 2, "ft"),
     Unit.Yard: UnitProps("yard", 1, "yd"),
@@ -569,40 +592,42 @@ UnitPropsDict: Mapping[Unit, UnitProps] = {
     Unit.Meter: UnitProps("meter", 1, "m"),
     Unit.Kilometer: UnitProps("kilometer", 3, "km"),
     Unit.Line: UnitProps("line", 3, "ln"),
-
-    Unit.FootPound: UnitProps('foot-pound', 0, 'ft·lb'),
-    Unit.Joule: UnitProps('joule', 0, 'J'),
-
-    Unit.MmHg: UnitProps('mmHg', 0, 'mmHg'),
-    Unit.InHg: UnitProps('inHg', 6, 'inHg'),
-    Unit.Bar: UnitProps('bar', 2, 'bar'),
-    Unit.hPa: UnitProps('hPa', 4, 'hPa'),
-    Unit.PSI: UnitProps('psi', 4, 'psi'),
-
-    Unit.Fahrenheit: UnitProps('fahrenheit', 1, '°F'),
-    Unit.Celsius: UnitProps('celsius', 1, '°C'),
-    Unit.Kelvin: UnitProps('kelvin', 1, '°K'),
-    Unit.Rankin: UnitProps('rankin', 1, '°R'),
-
-    Unit.MPS: UnitProps('mps', 0, 'm/s'),
-    Unit.KMH: UnitProps('kmh', 1, 'km/h'),
-    Unit.FPS: UnitProps('fps', 1, 'ft/s'),
-    Unit.MPH: UnitProps('mph', 1, 'mph'),
-    Unit.KT: UnitProps('knot', 1, 'kt'),
-
-    Unit.Grain: UnitProps('grain', 1, 'gr'),
-    Unit.Ounce: UnitProps('ounce', 1, 'oz'),
-    Unit.Gram: UnitProps('gram', 1, 'g'),
-    Unit.Pound: UnitProps('pound', 0, 'lb'),
-    Unit.Kilogram: UnitProps('kilogram', 3, 'kg'),
-    Unit.Newton: UnitProps('newton', 3, 'N'),
-
-    Unit.Minute: UnitProps('minute', 0, 'min', ),
-    Unit.Second: UnitProps('second', 1, 's'),
-    Unit.Millisecond: UnitProps('millisecond', 3, 'ms', ),
-    Unit.Microsecond: UnitProps('microsecond', 6, 'µs'),
-    Unit.Nanosecond: UnitProps('nanosecond', 9, 'ns'),
-    Unit.Picosecond: UnitProps('picosecond', 12, 'ps')
+    Unit.FootPound: UnitProps("foot-pound", 0, "ft·lb"),
+    Unit.Joule: UnitProps("joule", 0, "J"),
+    Unit.MmHg: UnitProps("mmHg", 0, "mmHg"),
+    Unit.InHg: UnitProps("inHg", 6, "inHg"),
+    Unit.Bar: UnitProps("bar", 2, "bar"),
+    Unit.hPa: UnitProps("hPa", 4, "hPa"),
+    Unit.PSI: UnitProps("psi", 4, "psi"),
+    Unit.Fahrenheit: UnitProps("fahrenheit", 1, "°F"),
+    Unit.Celsius: UnitProps("celsius", 1, "°C"),
+    Unit.Kelvin: UnitProps("kelvin", 1, "°K"),
+    Unit.Rankin: UnitProps("rankin", 1, "°R"),
+    Unit.MPS: UnitProps("mps", 0, "m/s"),
+    Unit.KMH: UnitProps("kmh", 1, "km/h"),
+    Unit.FPS: UnitProps("fps", 1, "ft/s"),
+    Unit.MPH: UnitProps("mph", 1, "mph"),
+    Unit.KT: UnitProps("knot", 1, "kt"),
+    Unit.Grain: UnitProps("grain", 1, "gr"),
+    Unit.Ounce: UnitProps("ounce", 1, "oz"),
+    Unit.Gram: UnitProps("gram", 1, "g"),
+    Unit.Pound: UnitProps("pound", 0, "lb"),
+    Unit.Kilogram: UnitProps("kilogram", 3, "kg"),
+    Unit.Newton: UnitProps("newton", 3, "N"),
+    Unit.Minute: UnitProps(
+        "minute",
+        0,
+        "min",
+    ),
+    Unit.Second: UnitProps("second", 1, "s"),
+    Unit.Millisecond: UnitProps(
+        "millisecond",
+        3,
+        "ms",
+    ),
+    Unit.Microsecond: UnitProps("microsecond", 6, "µs"),
+    Unit.Nanosecond: UnitProps("nanosecond", 9, "ns"),
+    Unit.Picosecond: UnitProps("picosecond", 12, "ps"),
 }
 # --8<-- [end:UnitPropsDict]
 
@@ -610,60 +635,53 @@ UnitAliasesType: TypeAlias = Mapping[Tuple[str, ...], Unit]
 
 # mkdocs.pymdown.snippet marker: --8<-- [start:UnitAliases]
 UnitAliases: UnitAliasesType = {
-    ('radian', 'rad'): Unit.Radian,
-    ('degree', 'deg'): Unit.Degree,
-    ('moa',): Unit.MOA,
-    ('mil',): Unit.Mil,
-    ('mrad',): Unit.MRad,
-    ('thousandth', 'ths'): Unit.Thousandth,
-    ('inch/100yd', 'in/100yd', 'in/100yard', 'inper100yd'): Unit.InchesPer100Yd,
-    ('centimeter/100m', 'cm/100m', 'cm/100meter', 'centimeter/100meter', 'cmper100m'): Unit.CmPer100m,
-    ('hour', 'h'): Unit.OClock,
-
-    ('inch', 'in'): Unit.Inch,
-    ('foot', 'feet', 'ft'): Unit.Foot,
-    ('yard', 'yd'): Unit.Yard,
-    ('mile', 'mi', 'mi.'): Unit.Mile,
-    ('nauticalmile', 'nm', 'nmi'): Unit.NauticalMile,
-    ('millimeter', 'mm'): Unit.Millimeter,
-    ('centimeter', 'cm'): Unit.Centimeter,
-    ('meter', 'm'): Unit.Meter,
-    ('kilometer', 'km'): Unit.Kilometer,
-    ('line', 'ln', 'liniа'): Unit.Line,
-
-    ('footpound', 'foot-pound', 'ft⋅lbf', 'ft⋅lb', 'foot*pound', 'ft*lbf', 'ft*lb'): Unit.FootPound,
-    ('joule', 'J'): Unit.Joule,
-
-    ('mmHg',): Unit.MmHg,
-    ('inHg', '"Hg'): Unit.InHg,
-    ('bar',): Unit.Bar,
-    ('hectopascal', 'hPa'): Unit.hPa,
-    ('psi', 'lbf/in2'): Unit.PSI,
-
-    ('fahrenheit', '°F', 'F', 'degF'): Unit.Fahrenheit,
-    ('celsius', '°C', 'C', 'degC'): Unit.Celsius,
-    ('kelvin', '°K', 'K', 'degK'): Unit.Kelvin,
-    ('rankin', '°R', 'R', 'degR'): Unit.Rankin,
-
-    ('meter/second', 'm/s', 'meter/s', 'm/second', 'mps'): Unit.MPS,
-    ('kilometer/hour', 'km/h', 'kilometer/h', 'km/hour', 'kmh'): Unit.KMH,
-    ('foot/second', 'feet/second', 'ft/s', 'foot/s', 'feet/s', 'ft/second', 'fps'): Unit.FPS,
-    ('mile/hour', 'mi/h', 'mile/h', 'mi/hour', 'mph'): Unit.MPH,
-    ('knot', 'kn', 'kt'): Unit.KT,
-
-    ('grain', 'gr', 'grn'): Unit.Grain,
-    ('ounce', 'oz'): Unit.Ounce,
-    ('gram', 'g'): Unit.Gram,
-    ('pound', 'lb'): Unit.Pound,
-    ('kilogram', 'kilogramme', 'kg'): Unit.Kilogram,
-    ('newton', 'N'): Unit.Newton,
-
-    ('minute', 'min'): Unit.Minute,
-    ('second', 's', 'sec'): Unit.Second,
-    ('millisecond', 'ms'): Unit.Millisecond,
-    ('microsecond', 'us', 'µs'): Unit.Microsecond,
-    ('nanosecond', 'ns'): Unit.Nanosecond,
-    ('picosecond', 'ps'): Unit.Picosecond,
+    ("radian", "rad"): Unit.Radian,
+    ("degree", "deg"): Unit.Degree,
+    ("moa",): Unit.MOA,
+    ("mil",): Unit.Mil,
+    ("mrad",): Unit.MRad,
+    ("thousandth", "ths"): Unit.Thousandth,
+    ("inch/100yd", "in/100yd", "in/100yard", "inper100yd"): Unit.InchesPer100Yd,
+    ("centimeter/100m", "cm/100m", "cm/100meter", "centimeter/100meter", "cmper100m"): Unit.CmPer100m,
+    ("hour", "h"): Unit.OClock,
+    ("inch", "in"): Unit.Inch,
+    ("foot", "feet", "ft"): Unit.Foot,
+    ("yard", "yd"): Unit.Yard,
+    ("mile", "mi", "mi."): Unit.Mile,
+    ("nauticalmile", "nm", "nmi"): Unit.NauticalMile,
+    ("millimeter", "mm"): Unit.Millimeter,
+    ("centimeter", "cm"): Unit.Centimeter,
+    ("meter", "m"): Unit.Meter,
+    ("kilometer", "km"): Unit.Kilometer,
+    ("line", "ln", "liniа"): Unit.Line,
+    ("footpound", "foot-pound", "ft⋅lbf", "ft⋅lb", "foot*pound", "ft*lbf", "ft*lb"): Unit.FootPound,
+    ("joule", "J"): Unit.Joule,
+    ("mmHg",): Unit.MmHg,
+    ("inHg", '"Hg'): Unit.InHg,
+    ("bar",): Unit.Bar,
+    ("hectopascal", "hPa"): Unit.hPa,
+    ("psi", "lbf/in2"): Unit.PSI,
+    ("fahrenheit", "°F", "F", "degF"): Unit.Fahrenheit,
+    ("celsius", "°C", "C", "degC"): Unit.Celsius,
+    ("kelvin", "°K", "K", "degK"): Unit.Kelvin,
+    ("rankin", "°R", "R", "degR"): Unit.Rankin,
+    ("meter/second", "m/s", "meter/s", "m/second", "mps"): Unit.MPS,
+    ("kilometer/hour", "km/h", "kilometer/h", "km/hour", "kmh"): Unit.KMH,
+    ("foot/second", "feet/second", "ft/s", "foot/s", "feet/s", "ft/second", "fps"): Unit.FPS,
+    ("mile/hour", "mi/h", "mile/h", "mi/hour", "mph"): Unit.MPH,
+    ("knot", "kn", "kt"): Unit.KT,
+    ("grain", "gr", "grn"): Unit.Grain,
+    ("ounce", "oz"): Unit.Ounce,
+    ("gram", "g"): Unit.Gram,
+    ("pound", "lb"): Unit.Pound,
+    ("kilogram", "kilogramme", "kg"): Unit.Kilogram,
+    ("newton", "N"): Unit.Newton,
+    ("minute", "min"): Unit.Minute,
+    ("second", "s", "sec"): Unit.Second,
+    ("millisecond", "ms"): Unit.Millisecond,
+    ("microsecond", "us", "µs"): Unit.Microsecond,
+    ("nanosecond", "ns"): Unit.Nanosecond,
+    ("picosecond", "ps"): Unit.Picosecond,
 }
 # --8<-- [end:UnitAliases]
 
@@ -672,7 +690,7 @@ UnitAliases: UnitAliasesType = {
 class Measurable(SupportsFloat, SupportsInt, Hashable, Comparable, Protocol):
     _value: Number
     _defined_units: Unit
-    __slots__ = ('_value', '_defined_units')
+    __slots__ = ("_value", "_defined_units")
 
     def __init__(self, value: Number, units: Unit): ...
 
@@ -722,7 +740,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
         >>> # Subclasses define their own conversion factors
         >>> class Distance(GenericDimension):
         ...     _conversion_factors = {Unit.Meter: 39.3701, Unit.Yard: 36.0}
-        
+
         >>> # Create and convert measurements
         >>> meters = Distance(100, Unit.Meter)
         >>> yards = meters.convert(Unit.Yard)
@@ -732,7 +750,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
 
     _value: Number
     _defined_units: Unit
-    __slots__ = ('_value', '_defined_units')
+    __slots__ = ("_value", "_defined_units")
     _conversion_factors: Mapping[Unit, float] = {}
 
     def __init__(self, value: Number, units: Unit):
@@ -758,7 +776,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
         units = self._defined_units
         props = UnitPropsDict[units]
         v = self.from_raw(self._value, units)
-        return f'{round(v, props.accuracy)}{props.symbol}'
+        return f"{round(v, props.accuracy)}{props.symbol}"
 
     def __repr__(self) -> str:
         """Detailed string representation for debugging.
@@ -767,7 +785,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             String showing class name, formatted unit value, and raw internal value
             (e.g., "<Distance: 100.0m (3937.01)>").
         """
-        return f'<{self.__class__.__name__}: {self << self.units} ({round(self._value, 4)})>'
+        return f"<{self.__class__.__name__}: {self << self.units} ({round(self._value, 4)})>"
 
     def __float__(self) -> float:
         return float(self._value)
@@ -810,7 +828,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
             err_msg = f"Type expected: {Unit}, {type(Unit).__name__}; got: {type(units).__name__} ({units})"
             raise TypeError(err_msg)
         if units not in cls._conversion_factors.keys():
-            raise UnitConversionError(f'{cls.__name__}: unit {units} is not supported')
+            raise UnitConversionError(f"{cls.__name__}: unit {units} is not supported")
         return
 
     @classmethod
@@ -847,7 +865,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
         """
         cls._validate_unit_type(unit)
         return raw_value / cls._get_conversion_factor(unit)
-        
+
     @classmethod
     def to_raw(cls, value: Number, units: Unit) -> Number:
         """Convert a value in specified units to the raw unit.
@@ -948,7 +966,7 @@ class GenericDimension(Generic[_GenericDimensionType]):
         """Support Unit << GenericDimension; return a new instance without mutation."""
         return self.__class__.new_from_raw(self._value, units)
 
-    #region GenericDimension arithmetic operators
+    # region GenericDimension arithmetic operators
     def _units_to_raw_delta(self) -> float:
         """Return raw_value delta that corresponds to a +1 step in the current units.
 
@@ -1086,7 +1104,8 @@ class GenericDimension(Generic[_GenericDimensionType]):
             self._value = self._value * float(other)
             return self
         return NotImplemented
-    #endregion GenericDimension arithmetic operators
+
+    # endregion GenericDimension arithmetic operators
 
 
 class Angular(GenericDimension):
@@ -1096,14 +1115,14 @@ class Angular(GenericDimension):
     """
 
     _conversion_factors = {
-        Unit.Radian: 1.,
+        Unit.Radian: 1.0,
         Unit.Degree: pi / 180,
         Unit.MOA: pi / (60 * 180),
         Unit.Mil: pi / 3_200,
-        Unit.MRad: 1. / 1_000,
+        Unit.MRad: 1.0 / 1_000,
         Unit.Thousandth: pi / 3_000,
-        Unit.InchesPer100Yd: 1. / 3_600,
-        Unit.CmPer100m: 1. / 10_000,
+        Unit.InchesPer100Yd: 1.0 / 3_600,
+        Unit.CmPer100m: 1.0 / 10_000,
         Unit.OClock: pi / 6,
     }
 
@@ -1137,7 +1156,7 @@ class Energy(GenericDimension):
     """Energy measurements.  Raw unit is foot-pounds."""
 
     _conversion_factors = {
-        Unit.FootPound: 1.,
+        Unit.FootPound: 1.0,
         Unit.Joule: 1.3558179483314,
     }
 
@@ -1150,16 +1169,16 @@ class Distance(GenericDimension):
     """Distance measurements.  Raw value is inches."""
 
     _conversion_factors = {
-        Unit.Inch: 1.,
-        Unit.Foot: 12.,
-        Unit.Yard: 36.,
-        Unit.Mile: 63_360.,
+        Unit.Inch: 1.0,
+        Unit.Foot: 12.0,
+        Unit.Yard: 36.0,
+        Unit.Mile: 63_360.0,
         Unit.NauticalMile: 72_913.3858,
         Unit.Line: 0.1,
-        Unit.Millimeter: 1. / 25.4,
-        Unit.Centimeter: 10. / 25.4,
-        Unit.Meter: 1_000. / 25.4,
-        Unit.Kilometer: 1_000_000. / 25.4
+        Unit.Millimeter: 1.0 / 25.4,
+        Unit.Centimeter: 10.0 / 25.4,
+        Unit.Meter: 1_000.0 / 25.4,
+        Unit.Kilometer: 1_000_000.0 / 25.4,
     }
 
     @property
@@ -1190,11 +1209,11 @@ class Pressure(GenericDimension):
     """Pressure unit.  Raw value is mmHg."""
 
     _conversion_factors = {
-        Unit.MmHg: 1.,
+        Unit.MmHg: 1.0,
         Unit.InHg: 25.4,
         Unit.Bar: 750.061683,
         Unit.hPa: 750.061683 / 1_000,
-        Unit.PSI: 51.714924102396
+        Unit.PSI: 51.714924102396,
     }
 
     # Pressure.* unit aliases
@@ -1211,12 +1230,7 @@ class Temperature(GenericDimension):
     This dimension only supports addition and subtraction operations, and tries to clamp results at absolute zero.
     """
 
-    _conversion_factors = {
-        Unit.Fahrenheit: 0.,
-        Unit.Rankin: 0.,
-        Unit.Celsius: 0.,
-        Unit.Kelvin: 0.
-    }
+    _conversion_factors = {Unit.Fahrenheit: 0.0, Unit.Rankin: 0.0, Unit.Celsius: 0.0, Unit.Kelvin: 0.0}
 
     @property
     def _F(self) -> Number:
@@ -1231,9 +1245,9 @@ class Temperature(GenericDimension):
         if units == Temperature.Rankin:
             result = value - 459.67
         elif units == Temperature.Celsius:
-            result = value * 9. / 5 + 32
+            result = value * 9.0 / 5 + 32
         elif units == Temperature.Kelvin:
-            result = (value - 273.15) * 9. / 5 + 32
+            result = (value - 273.15) * 9.0 / 5 + 32
         else:
             raise UnitConversionError(f"Temperature does not support {units}")
         return result
@@ -1246,9 +1260,9 @@ class Temperature(GenericDimension):
         if unit == Temperature.Rankin:
             result = raw_value + 459.67
         elif unit == Temperature.Celsius:
-            result = (raw_value - 32) * 5. / 9
+            result = (raw_value - 32) * 5.0 / 9
         elif unit == Temperature.Kelvin:
-            result = (raw_value - 32) * 5. / 9 + 273.15
+            result = (raw_value - 32) * 5.0 / 9 + 273.15
         else:
             raise UnitConversionError(f"Temperature does not support {unit}")
         return result
@@ -1365,12 +1379,12 @@ class Time(GenericDimension):
     """Time measurements.  Raw unit is seconds."""
 
     _conversion_factors = {
-        Unit.Second: 1.,
-        Unit.Minute: 60.,
-        Unit.Millisecond: 1. / 1_000,
-        Unit.Microsecond: 1. / 1_000_000,
-        Unit.Nanosecond: 1. / 1_000_000_000,
-        Unit.Picosecond: 1. / 1_000_000_000_000,
+        Unit.Second: 1.0,
+        Unit.Minute: 60.0,
+        Unit.Millisecond: 1.0 / 1_000,
+        Unit.Microsecond: 1.0 / 1_000_000,
+        Unit.Nanosecond: 1.0 / 1_000_000_000,
+        Unit.Picosecond: 1.0 / 1_000_000_000_000,
     }
 
     @property
@@ -1391,11 +1405,11 @@ class Velocity(GenericDimension):
     """Velocity measurements.  Raw unit is meters per second."""
 
     _conversion_factors = {
-        Unit.MPS: 1.,
-        Unit.KMH: 1. / 3.6,
-        Unit.FPS: 1. / 3.2808399,
-        Unit.MPH: 1. / 2.23693629,
-        Unit.KT: 1. / 1.94384449,
+        Unit.MPS: 1.0,
+        Unit.KMH: 1.0 / 3.6,
+        Unit.FPS: 1.0 / 3.2808399,
+        Unit.MPH: 1.0 / 2.23693629,
+        Unit.KT: 1.0 / 1.94384449,
     }
 
     @property
@@ -1415,12 +1429,12 @@ class Weight(GenericDimension):
     """Weight unit.  Raw value is grains."""
 
     _conversion_factors = {
-        Unit.Grain: 1.,
+        Unit.Grain: 1.0,
         Unit.Ounce: 437.5,
         Unit.Gram: 15.4323584,
-        Unit.Pound: 7_000.,
+        Unit.Pound: 7_000.0,
         Unit.Kilogram: 15_432.3584,
-        Unit.Newton: 1_573.662597
+        Unit.Newton: 1_573.662597,
     }
 
     @property
@@ -1441,8 +1455,7 @@ class PreferredUnitsMeta(type):
     """Provide representation method for static dataclasses."""
 
     def __repr__(cls):
-        return '\n'.join(f'{field} = {getattr(cls, field)!r}'
-                         for field in getattr(cls, '__dataclass_fields__'))
+        return "\n".join(f"{field} = {getattr(cls, field)!r}" for field in getattr(cls, "__dataclass_fields__"))
 
 
 @dataclass
@@ -1477,10 +1490,10 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
         >>> # Set metric preferences
         >>> PreferredUnits.distance = Unit.Meter
         >>> PreferredUnits.velocity = Unit.MPS
-        
+
         >>> # Reset to defaults
         >>> PreferredUnits.restore_defaults()
-        
+
         >>> # Bulk configuration
         >>> PreferredUnits.set(
         ...     distance='meter',
@@ -1546,14 +1559,14 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
             ...     velocity=Unit.MPS,
             ...     temperature=Unit.Celsius
             ... )
-            
+
             >>> # Set using string aliases
             >>> PreferredUnits.set(
             ...     distance='meter',
             ...     velocity='mps',
             ...     weight='gram'
             ... )
-            
+
             >>> # Mixed types
             >>> PreferredUnits.set(
             ...     distance=Unit.Yard,
@@ -1579,24 +1592,24 @@ class PreferredUnits(metaclass=PreferredUnitsMeta):  # pylint: disable=too-many-
 
 
 __all__ = (
-    'Unit',
-    'counter',
-    'iterator',
-    'Measurable',
-    'GenericDimension',
-    'UnitProps',
-    'UnitAliases',
-    'UnitPropsDict',
-    'Distance',
-    'Velocity',
-    'Angular',
-    'Temperature',
-    'Pressure',
-    'Energy',
-    'Weight',
-    'Time',
-    'PreferredUnits',
-    'UnitAliasError',
-    'UnitTypeError',
-    'UnitConversionError',
+    "Unit",
+    "counter",
+    "iterator",
+    "Measurable",
+    "GenericDimension",
+    "UnitProps",
+    "UnitAliases",
+    "UnitPropsDict",
+    "Distance",
+    "Velocity",
+    "Angular",
+    "Temperature",
+    "Pressure",
+    "Energy",
+    "Weight",
+    "Time",
+    "PreferredUnits",
+    "UnitAliasError",
+    "UnitTypeError",
+    "UnitConversionError",
 )

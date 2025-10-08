@@ -11,6 +11,7 @@ Notes:
     to avoid per-step unit conversions and repeated lookups.
 - HitResult objects include the ShotProps instance used to calculate a trajectory.
 """
+
 from __future__ import annotations
 
 import math
@@ -25,7 +26,7 @@ from py_ballisticcalc.trajectory_data import TrajFlag
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Pressure, Temperature, Velocity, Weight
 from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
-__all__ = ('Shot', 'ShotProps')
+__all__ = ("Shot", "ShotProps")
 
 
 @dataclass
@@ -65,17 +66,19 @@ class Shot:
     _latitude: Optional[float] = field(default=None)
 
     # pylint: disable=too-many-positional-arguments
-    def __init__(self, *,
-                 ammo: Ammo,
-                 atmo: Optional[Atmo] = None,
-                 weapon: Optional[Weapon] = None,
-                 winds: Optional[Sequence[Wind]] = None,
-                 look_angle: Optional[Union[float, Angular]] = None,
-                 relative_angle: Optional[Union[float, Angular]] = None,
-                 cant_angle: Optional[Union[float, Angular]] = None,
-                 azimuth: Optional[float] = None,
-                 latitude: Optional[float] = None,
-                 ):
+    def __init__(
+        self,
+        *,
+        ammo: Ammo,
+        atmo: Optional[Atmo] = None,
+        weapon: Optional[Weapon] = None,
+        winds: Optional[Sequence[Wind]] = None,
+        look_angle: Optional[Union[float, Angular]] = None,
+        relative_angle: Optional[Union[float, Angular]] = None,
+        cant_angle: Optional[Union[float, Angular]] = None,
+        azimuth: Optional[float] = None,
+        latitude: Optional[float] = None,
+    ):
         """Initialize `Shot` for trajectory calculations.
 
         Args:
@@ -126,6 +129,7 @@ class Shot:
     def azimuth(self) -> Optional[float]:
         """Azimuth of the shooting direction in degrees [0, 360)."""
         return self._azimuth
+
     @azimuth.setter
     def azimuth(self, value: Optional[float]) -> None:
         if value is not None and (value < 0.0 or value >= 360.0):
@@ -136,6 +140,7 @@ class Shot:
     def latitude(self) -> Optional[float]:
         """Latitude of the shooting location in degrees [-90, 90]."""
         return self._latitude
+
     @latitude.setter
     def latitude(self, value: Optional[float]) -> None:
         if value is not None and (value < -90.0 or value > 90.0):
@@ -146,6 +151,7 @@ class Shot:
     def winds(self) -> Sequence[Wind]:
         """Sequence[Wind] sorted by until_distance."""
         return tuple(self._winds)
+
     @winds.setter
     def winds(self, winds: Optional[Sequence[Wind]]):
         """Property setter.  Ensures .winds is sorted by until_distance.
@@ -158,9 +164,10 @@ class Shot:
     @property
     def barrel_azimuth(self) -> Angular:
         """Horizontal angle of barrel relative to sight line."""
-        return Angular.Radian(math.sin(self.cant_angle >> Angular.Radian)
-                              * ((self.weapon.zero_elevation >> Angular.Radian)
-                                 + (self.relative_angle >> Angular.Radian)))
+        return Angular.Radian(
+            math.sin(self.cant_angle >> Angular.Radian)
+            * ((self.weapon.zero_elevation >> Angular.Radian) + (self.relative_angle >> Angular.Radian))
+        )
 
     @property
     def barrel_elevation(self) -> Angular:
@@ -170,27 +177,33 @@ class Shot:
             Angle of barrel elevation in vertical plane from horizontal
                 `= look_angle + cos(cant_angle) * zero_elevation + relative_angle`
         """
-        return Angular.Radian((self.look_angle >> Angular.Radian)
-                              + math.cos(self.cant_angle >> Angular.Radian)
-                              * ((self.weapon.zero_elevation >> Angular.Radian)
-                                 + (self.relative_angle >> Angular.Radian)))
+        return Angular.Radian(
+            (self.look_angle >> Angular.Radian)
+            + math.cos(self.cant_angle >> Angular.Radian)
+            * ((self.weapon.zero_elevation >> Angular.Radian) + (self.relative_angle >> Angular.Radian))
+        )
+
     @barrel_elevation.setter
     def barrel_elevation(self, value: Angular) -> None:
         """Setter for barrel_elevation.
-        
+
         Sets `.relative_angle` to achieve the desired elevation.
             Note: This does not change the `.weapon.zero_elevation`.
 
         Args:
             value: Desired barrel elevation in vertical plane from horizontal
         """
-        self.relative_angle = Angular.Radian((value >> Angular.Radian) - (self.look_angle >> Angular.Radian) \
-                             - math.cos(self.cant_angle >> Angular.Radian) * (self.weapon.zero_elevation >> Angular.Radian))
+        self.relative_angle = Angular.Radian(
+            (value >> Angular.Radian)
+            - (self.look_angle >> Angular.Radian)
+            - math.cos(self.cant_angle >> Angular.Radian) * (self.weapon.zero_elevation >> Angular.Radian)
+        )
 
     @property
     def slant_angle(self) -> Angular:
         """Synonym for look_angle."""
         return self.look_angle
+
     @slant_angle.setter
     def slant_angle(self, value: Angular) -> None:
         self.look_angle = value
@@ -203,47 +216,48 @@ class ShotProps:
     Contains all shot-specific parameters converted to standard internal units (feet, seconds, grains, radians)
     used by the calculation engines. The class pre-computes expensive calculations (drag curve interpolation,
     atmospheric data, projectile properties) for repeated use during trajectory integration.
-    
+
     Examples:
         ```python
         from py_ballisticcalc import Shot, ShotProps
-        
+
         # Create shot configuration
         shot = Shot(weapon=weapon, ammo=ammo, atmo=atmo)
 
         # Convert to ShotProps
         shot_props = ShotProps.from_shot(shot)
-        
+
         # Access pre-computed values
         print(f"Stability coefficient: {shot_props.stability_coefficient}")
 
         # Get drag coefficient at specific Mach number
         drag = shot_props.drag_by_mach(1.5)
-        
+
         # Calculate spin drift at flight time
         time = 1.2  # seconds
         drift = shot_props.spin_drift(time)  # inches
-        
+
         # Get atmospheric conditions at altitude
         altitude = shot_props.alt0_ft + 100  # 100 feet above initial altitude
         density_ratio, mach_fps = shot_props.get_density_and_mach_for_altitude(altitude)
         ```
-        
+
     Computational Optimizations:
         - Drag coefficient curves pre-computed for fast interpolation
         - Trigonometric values (cant_cosine, cant_sine) pre-calculated
         - Atmospheric parameters cached for repeated altitude lookups
         - Miller stability coefficient computed once during initialization
-        
+
     Notes:
         This class is designed for internal use by ballistic calculation engines.
         User code should typically work with Shot objects and let the Calculator
         handle the conversion to ShotProps automatically.
-        
+
         The original Shot object is retained for reference, but modifications
         to it after ShotProps creation will not affect the stored calculations.
         Create a new ShotProps instance if Shot parameters change.
     """
+
     """
     TODO: The `Shot` member object should either be a copy or immutable so that subsequent changes to its
           properties do not invalidate the calculations and data associated with this ShotProps instance.
@@ -276,9 +290,11 @@ class ShotProps:
     @property
     def azimuth(self) -> Optional[float]:
         return self.shot.azimuth
+
     @property
     def latitude(self) -> Optional[float]:
         return self.shot.latitude
+
     @property
     def winds(self) -> Sequence[Wind]:
         return self.shot.winds
@@ -363,8 +379,7 @@ class ShotProps:
         """
         if (self.stability_coefficient != 0) and (self.twist_inch != 0):
             sign = 1 if self.twist_inch > 0 else -1
-            return sign * (1.25 * (self.stability_coefficient + 1.2)
-                           * math.pow(time, 1.83)) / 12
+            return sign * (1.25 * (self.stability_coefficient + 1.2) * math.pow(time, 1.83)) / 12
         return 0
 
     def _calc_stability_coefficient(self) -> float:
@@ -377,8 +392,10 @@ class ShotProps:
             twist_rate = math.fabs(self.twist_inch) / self.diameter_inch
             length = self.length_inch / self.diameter_inch
             # Miller stability formula
-            sd = 30 * self.weight_grains / (
-                    math.pow(twist_rate, 2) * math.pow(self.diameter_inch, 3) * length * (1 + math.pow(length, 2))
+            sd = (
+                30
+                * self.weight_grains
+                / (math.pow(twist_rate, 2) * math.pow(self.diameter_inch, 3) * length * (1 + math.pow(length, 2)))
             )
             # Velocity correction factor
             fv = math.pow(self.muzzle_velocity_fps / 2800, 1.0 / 3.0)

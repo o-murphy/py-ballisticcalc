@@ -21,10 +21,22 @@ See Also:
     - py_ballisticcalc.munition: Weapon and ammunition classes
     - py_ballisticcalc.unit.PreferredUnits: Default unit configuration
 """
+
 from typing import List
 
-from py_ballisticcalc import (Ammo, Atmo, Calculator, Distance, DragModel,
-        PreferredUnits, Shot, TableG7, TrajectoryData, Unit, Weapon, Wind
+from py_ballisticcalc import (
+    Ammo,
+    Atmo,
+    Calculator,
+    Distance,
+    DragModel,
+    PreferredUnits,
+    Shot,
+    TableG7,
+    TrajectoryData,
+    Unit,
+    Weapon,
+    Wind,
 )
 
 # Modify default Units
@@ -43,25 +55,22 @@ ammo.calc_powder_sens(2723, 0)  # Calibrate powder temperature sensitivity
 gun: Weapon = Weapon(sight_height=6, twist=12)
 # Define atmospheric conditions
 current_atmo: Atmo = Atmo(
-    altitude=110,      # meters above sea level (PreferredUnits.distance)
-    pressure=29.8,     # barometric pressure in "Hg (PreferredUnits.pressure)
-    temperature=15,    # degrees Celsius
-    humidity=72        # relative humidity (%)
+    altitude=110,  # meters above sea level (PreferredUnits.distance)
+    pressure=29.8,  # barometric pressure in "Hg (PreferredUnits.pressure)
+    temperature=15,  # degrees Celsius
+    humidity=72,  # relative humidity (%)
 )
 
 # Define wind conditions
-current_winds: List[Wind] = [Wind(
-    velocity=2,         # wind speed in PreferredUnits.velocity
-    direction_from=90   # wind direction in degrees (90 = left to right crosswind)
-)]
+current_winds: List[Wind] = [
+    Wind(
+        velocity=2,  # wind speed in PreferredUnits.velocity
+        direction_from=90,  # wind direction in degrees (90 = left to right crosswind)
+    )
+]
 
 # Create shot configuration
-shot: Shot = Shot(
-    weapon=gun,
-    ammo=ammo,
-    atmo=current_atmo,
-    winds=current_winds
-)
+shot: Shot = Shot(weapon=gun, ammo=ammo, atmo=current_atmo, winds=current_winds)
 
 # Initialize calculator and set zero
 calc: Calculator = Calculator()
@@ -71,7 +80,7 @@ calc.set_weapon_zero(shot, Unit.Meter(100))
 shot_result = calc.fire(
     shot,
     trajectory_range=1000,  # meters (PreferredUnits.distance)
-    trajectory_step=100     # meter intervals (PreferredUnits.distance)
+    trajectory_step=100,  # meter intervals (PreferredUnits.distance)
 )
 
 # Display results

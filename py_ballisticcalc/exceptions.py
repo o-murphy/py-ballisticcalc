@@ -60,6 +60,7 @@ Solver-Related Exceptions:
   - max_range: Maximum achievable range (optional)
   - look_angle: Look angle for the shot (optional)
 """
+
 from __future__ import annotations
 
 from typing import List, Optional, TYPE_CHECKING
@@ -69,13 +70,13 @@ if TYPE_CHECKING:
     from py_ballisticcalc.unit import Angular, Distance
 
 __all__ = (
-    'UnitTypeError',
-    'UnitConversionError',
-    'UnitAliasError',
-    'SolverRuntimeError',
-    'OutOfRangeError',
-    'ZeroFindingError',
-    'RangeError',
+    "UnitTypeError",
+    "UnitConversionError",
+    "UnitAliasError",
+    "SolverRuntimeError",
+    "OutOfRangeError",
+    "ZeroFindingError",
+    "RangeError",
 )
 
 
@@ -107,11 +108,9 @@ class ZeroFindingError(SolverRuntimeError):
     DISTANCE_NON_CONVERGENT = "Distance non-convergent"
     ERROR_NON_CONVERGENT = "Error non-convergent"
 
-    def __init__(self,
-                 zero_finding_error: float,
-                 iterations_count: int,
-                 last_barrel_elevation: Angular,
-                 reason: str = ""):
+    def __init__(
+        self, zero_finding_error: float, iterations_count: int, last_barrel_elevation: Angular, reason: str = ""
+    ):
         """
         Parameters:
         - zero_finding_error: The error magnitude
@@ -122,9 +121,11 @@ class ZeroFindingError(SolverRuntimeError):
         self.iterations_count: int = iterations_count
         self.last_barrel_elevation: Angular = last_barrel_elevation
         self.reason: str = reason
-        msg = (f'Vertical error {zero_finding_error} '
-               f'feet with {last_barrel_elevation} elevation, '
-               f'after {iterations_count} iterations.')
+        msg = (
+            f"Vertical error {zero_finding_error} "
+            f"feet with {last_barrel_elevation} elevation, "
+            f"after {iterations_count} iterations."
+        )
         if reason:
             msg = f"{reason}. " + msg
         super().__init__(msg)
@@ -156,10 +157,10 @@ class RangeError(SolverRuntimeError):
         self.reason: str = reason
         self.incomplete_trajectory = ranges
 
-        message = f'Max range not reached: ({self.reason})'
+        message = f"Max range not reached: ({self.reason})"
         if len(ranges) > 0:
             self.last_distance = ranges[-1].distance
-            message += f', last distance: {self.last_distance}'
+            message += f", last distance: {self.last_distance}"
         else:
             self.last_distance = None
         super().__init__(message)
@@ -174,9 +175,13 @@ class OutOfRangeError(SolverRuntimeError):
     - Optionally, the look-angle
     """
 
-    def __init__(self, requested_distance: Distance, max_range: Optional[Distance] = None,
-                 look_angle: Optional[Angular] = None,
-                 note: str = ""):
+    def __init__(
+        self,
+        requested_distance: Distance,
+        max_range: Optional[Distance] = None,
+        look_angle: Optional[Angular] = None,
+        note: str = "",
+    ):
         self.requested_distance = requested_distance
         self.max_range = max_range
         self.look_angle = look_angle

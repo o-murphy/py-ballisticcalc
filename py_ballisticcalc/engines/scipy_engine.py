@@ -34,7 +34,7 @@ Configuration:
 Examples:
     >>> from py_ballisticcalc.engines.scipy_engine import SciPyIntegrationEngine
     >>> from py_ballisticcalc.engines.scipy_engine import SciPyEngineConfigDict
-    >>> 
+    >>>
     >>> # High-precision configuration
     >>> config = SciPyEngineConfigDict(
     ...     integration_method='DOP853',
@@ -42,7 +42,7 @@ Examples:
     ...     absolute_tolerance=1e-12
     ... )
     >>> engine = SciPyIntegrationEngine(config)
-    
+
     >>> # Using with Calculator
     >>> from py_ballisticcalc import Calculator
     >>> calc = Calculator(engine='scipy_engine')
@@ -51,6 +51,7 @@ Note:
     This engine requires scipy and numpy to be installed. Install with:
     `pip install py_ballisticcalc[scipy]` or `pip install scipy numpy`
 """
+
 from __future__ import annotations
 
 # Standard library imports
@@ -62,6 +63,7 @@ from typing import Any, Callable, Literal, Sequence, TYPE_CHECKING
 # Third-party imports
 try:
     import numpy as np
+
     _HAS_NUMPY = True
 except ImportError:
     _HAS_NUMPY = False
@@ -69,7 +71,7 @@ except ImportError:
 try:
     from scipy.optimize import root_scalar, minimize_scalar  # type: ignore[import-untyped]
     from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
-    from scipy.optimize import root_scalar  # type: ignore[import-untyped]
+
     _HAS_SCIPY = True
 except ImportError:
     _HAS_SCIPY = False
@@ -93,12 +95,13 @@ from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
-__all__ = ('SciPyIntegrationEngine',
-           'SciPyEngineConfig',
-           'SciPyEngineConfigDict',
-           'WindSock',
-           'DEFAULT_SCIPY_ENGINE_CONFIG',
-           'create_scipy_engine_config',
+__all__ = (
+    "SciPyIntegrationEngine",
+    "SciPyEngineConfig",
+    "SciPyEngineConfigDict",
+    "WindSock",
+    "DEFAULT_SCIPY_ENGINE_CONFIG",
+    "create_scipy_engine_config",
 )
 
 # This block would update warning format globally for the lib; use logging.warning instead
@@ -113,20 +116,21 @@ if TYPE_CHECKING:
 else:
     SciPyEventFunctionT = Callable[[float, Any], Any]
 
+
 # typed scipy event with expected attributes
 @dataclass
 class SciPyEvent:
     """Event object for SciPy solve_ivp integration with trajectory detection.
-    
+
     This dataclass wraps event functions for use with SciPy's solve_ivp integrator,
     providing a callable interface with terminal and direction control attributes.
     Events are used to detect specific trajectory conditions like zero crossings,
     maximum range, or other significant points during integration.
-    
+
     The SciPyEvent object implements the callable protocol, making it compatible
     with SciPy's event detection system while maintaining type safety and
     providing clear configuration for event behavior.
-    
+
     Attributes:
         func: The event function that takes time and state, returns float.
               Zero crossings of this function trigger the event.
@@ -142,48 +146,49 @@ class SciPyEvent:
         ...     return y[1]  # Detect when y-position crosses zero
         >>> event = SciPyEvent(zero_crossing, terminal=True, direction=-1)
         >>> # Event will stop integration when projectile hits ground
-    
+
     See Also:
         scipy_event: Decorator for creating SciPyEvent objects
         scipy.integrate.solve_ivp: SciPy integration function using events
-    
+
     Note:
         The callable interface allows SciPyEvent objects to be used directly
         as event functions in SciPy's solve_ivp, while the dataclass structure
         provides clear access to event configuration parameters.
     """
+
     func: SciPyEventFunctionT
     terminal: bool = False
     direction: Literal[-1, 0, 1] = 0
 
     def __call__(self, t: float, s: Any) -> np.floating:  # possibly s: np.ndarray
         """Call the wrapped event function with time and state parameters.
-        
+
         Args:
             t: Current integration time in seconds.
             s: Current state vector (typically position and velocity).
-            
+
         Returns:
             Function value whose zero crossings trigger the event.
         """
         return self.func(t, s)
 
+
 def scipy_event(
-        terminal: bool = False,
-        direction: Literal[-1, 0, 1] = 0
+    terminal: bool = False, direction: Literal[-1, 0, 1] = 0
 ) -> Callable[[SciPyEventFunctionT], SciPyEvent]:
     """Decorator to create SciPy solve_ivp compatible event objects.
-    
+
     This decorator transforms a standard event function into a SciPyEvent object
     that is compatible with SciPy's solve_ivp event detection system. The decorator
     configures event behavior including termination conditions and zero-crossing
     direction sensitivity.
-    
+
     Event functions are used to detect specific conditions during trajectory
     integration, such as when a projectile crosses the sight line, reaches
     maximum altitude, or hits the ground. The solve_ivp integrator monitors
     these functions and can terminate integration or record event occurrences.
-    
+
     Args:
         terminal: Whether to terminate integration when the event occurs.
                  True: Stop integration immediately when event is detected
@@ -195,35 +200,36 @@ def scipy_event(
                    1: Function value crosses from negative to positive
                   This allows selective detection of upward vs downward
                   crossings for more precise trajectory analysis.
-    
+
     Returns:
         A decorator function that transforms event functions into SciPyEvent objects.
         The returned decorator preserves the original function while adding
         the necessary attributes for SciPy integration.
-    
+
     Examples:
         >>> @scipy_event(terminal=True, direction=-1)
         ... def ground_impact(t, y):
         ...     '''Detect when projectile hits ground (y=0, falling)'''
         ...     return y[1]  # y-position
-        
+
     Mathematical Background:
         Event detection in numerical integration monitors functions g(t, y)
         and detects when g(t, y) = 0. The direction parameter controls
         whether to detect:
         - g'(t) < 0 (function decreasing through zero)
-        - g'(t) > 0 (function increasing through zero)  
+        - g'(t) > 0 (function increasing through zero)
         - Both directions
-    
+
     See Also:
         SciPyEvent: The event object created by this decorator
         scipy.integrate.solve_ivp: SciPy integration with event detection
-        
+
     Note:
         This decorator follows SciPy's event function protocol while providing
         type safety and clear configuration. The wrapped function must accept
         (time, state) parameters and return a scalar value.
     """
+
     def wrapper(func: SciPyEventFunctionT) -> SciPyEvent:
         """Wrapper function that creates the SciPyEvent object."""
         return SciPyEvent(func, terminal, direction)
@@ -233,13 +239,13 @@ def scipy_event(
 
 class WindSock:
     """Wind vector calculator for trajectory analysis at any downrange distance.
-    
+
     This differs slightly from the base_engine.py::_WindSock used by the other engines
     because we can't be certain whether SciPy will request Winds in distance order.
-    
+
     Attributes:
         winds: Sequence of Wind objects defining wind conditions at specific ranges.
-    
+
     Examples:
         >>> from py_ballisticcalc.conditions import Wind
         >>> from py_ballisticcalc.unit import Distance, Velocity, Angular
@@ -253,7 +259,7 @@ class WindSock:
         >>> wind_sock = WindSock(winds)
         >>> # Get wind vector at 250 yards (pass feet)
         >>> wind_vector = wind_sock.wind_at_distance(250 * 3.0)
-        
+
     Note:
         Wind measurements should be provided in order of increasing range for
         proper interpolation. The class assumes wind conditions remain constant
@@ -284,7 +290,7 @@ INTEGRATION_METHOD = Literal["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"]
 DEFAULT_MAX_TIME: float = 90.0  # Max flight time to simulate before stopping integration
 DEFAULT_RELATIVE_TOLERANCE: float = 1e-8  # Default relative tolerance (rtol) for integration
 DEFAULT_ABSOLUTE_TOLERANCE: float = 1e-6  # Default absolute tolerance (atol) for integration
-DEFAULT_INTEGRATION_METHOD: INTEGRATION_METHOD = 'RK45'  # Default integration method for solve_ivp
+DEFAULT_INTEGRATION_METHOD: INTEGRATION_METHOD = "RK45"  # Default integration method for solve_ivp
 
 
 @dataclass
@@ -292,7 +298,7 @@ class SciPyEngineConfig(BaseEngineConfig):
     """Configuration dataclass for the SciPy integration engine.
 
     This configuration class extends BaseEngineConfig with SciPy-specific parameters.
-    
+
     Attributes:
         max_time: Maximum simulation time in seconds before terminating integration.
                  Prevents infinite integration in pathological cases.
@@ -314,7 +320,7 @@ class SciPyEngineConfig(BaseEngineConfig):
                            - 'BDF': Backward differentiation for stiff systems
                            - 'LSODA': Automatic stiffness detection
                            Defaults to DEFAULT_INTEGRATION_METHOD ('RK45').
-    
+
     Examples:
         >>> # High-precision configuration
         >>> config = SciPyEngineConfig(
@@ -323,24 +329,24 @@ class SciPyEngineConfig(BaseEngineConfig):
         ...     absolute_tolerance=1e-14,
         ...     max_time=120.0
         ... )
-    
+
     Integration Method Selection:
         - RK45: Best general-purpose method, good accuracy/speed balance
         - RK23: Faster but less accurate, suitable for rough calculations
         - DOP853: Highest accuracy, slower, for precision-critical applications
         - Radau/BDF: For stiff differential equations (rare in ballistics)
         - LSODA: Automatic method selection based on problem characteristics
-    
+
     Error Control:
         The adaptive error control uses both relative and absolute tolerances:
             `error_estimate ≤ atol + rtol * |solution|`
         Lower tolerances provide higher accuracy but increase computation time.
-    
+
     See Also:
         - BaseEngineConfig: Base configuration with standard ballistic parameters
         - SciPyEngineConfigDict: TypedDict version for flexible configuration
         - scipy.integrate.solve_ivp: Underlying SciPy integration function
-        
+
     Note:
         All BaseEngineConfig parameters (cMinimumVelocity, cStepMultiplier, etc.)
         are inherited and remain available for ballistic-specific configuration.
@@ -354,11 +360,11 @@ class SciPyEngineConfig(BaseEngineConfig):
 
 class SciPyEngineConfigDict(BaseEngineConfigDict, total=False):
     """TypedDict for flexible SciPy integration engine configuration.
-    
+
     This TypedDict provides a flexible dictionary-based interface for configuring
     the SciPy integration engine. All fields are optional (total=False), allowing
     partial configuration with automatic fallback to default values.
-    
+
     Attributes:
         max_time: Maximum simulation time in seconds before terminating integration.
                  Prevents runaway calculations in edge cases.
@@ -373,7 +379,7 @@ class SciPyEngineConfigDict(BaseEngineConfigDict, total=False):
                            If not specified, uses DEFAULT_ABSOLUTE_TOLERANCE (1e-6).
         integration_method: SciPy solve_ivp integration method selection.
                            If not specified, uses DEFAULT_INTEGRATION_METHOD ('RK45').
-    
+
     Examples:
         >>> # Minimal configuration - uses defaults for unspecified fields
         >>> config: SciPyEngineConfigDict = {
@@ -400,7 +406,7 @@ def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] 
 # pylint: disable=import-outside-toplevel,unused-argument,too-many-statements
 class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     """High-performance ballistic trajectory integration engine using SciPy's solve_ivp.
-    
+
     Examples:
         >>> from py_ballisticcalc.engines.scipy_engine import SciPyIntegrationEngine, SciPyEngineConfigDict
         >>>
@@ -415,7 +421,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         >>> # Using with Calculator
         >>> from py_ballisticcalc import Calculator
         >>> calc = Calculator(engine='scipy_engine')
-    
+
     Note:
         Requires scipy and numpy packages. Install with:
         `pip install py_ballisticcalc[scipy]` or `pip install scipy numpy`
@@ -426,34 +432,34 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
     @override
     def __init__(self, _config: SciPyEngineConfigDict) -> None:
         """Initialize the SciPy integration engine with configuration.
-        
+
         Sets up the engine with the provided configuration dictionary, initializing
         all necessary parameters for high-precision ballistic trajectory calculations.
         The configuration is converted to a structured format with appropriate
         defaults for any unspecified parameters.
-        
+
         Args:
             _config: Configuration dictionary containing engine parameters.
                     Can include SciPy-specific options (integration_method,
                     tolerances, max_time) as well as all standard BaseEngineConfigDict
                     parameters (cMinimumVelocity, cStepMultiplier, etc.).
-                    
+
                     SciPy-specific parameters:
                     - integration_method: SciPy method ('RK45', 'DOP853', etc.)
                     - relative_tolerance: Relative error tolerance (rtol)
-                    - absolute_tolerance: Absolute error tolerance (atol) 
+                    - absolute_tolerance: Absolute error tolerance (atol)
                     - max_time: Maximum simulation time in seconds
-                    
+
                     Standard ballistic parameters:
                     - cMinimumVelocity: Minimum velocity to continue calculation
                     - cStepMultiplier: Integration step size multiplier
                     - cGravityConstant: Gravitational acceleration
                     - And other BaseEngineConfigDict parameters
-        
+
         Raises:
             ImportError: If scipy or numpy packages are not available.
             ValueError: If configuration contains invalid parameters.
-            
+
         Examples:
             >>> config = SciPyEngineConfigDict(
             ...     integration_method='DOP853',
@@ -461,7 +467,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             ...     cMinimumVelocity=50.0
             ... )
             >>> engine = SciPyIntegrationEngine(config)
-            
+
         Attributes Initialized:
             - _config: Complete configuration with defaults applied
             - gravity_vector: Gravitational acceleration vector
@@ -482,15 +488,16 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             raise ImportError("SciPy is required for SciPyIntegrationEngine.")
 
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)  # type: ignore
-        self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
+        self.gravity_vector: Vector = Vector(0.0, self._config.cGravityConstant, 0.0)
         self.integration_step_count = 0  # Number of evaluations of diff_eq during ._integrate()
         self.trajectory_count = 0  # Number of trajectories calculated
         self.eval_points: List[float] = []  # Points at which diff_eq is called
 
     @override
     @with_no_minimum_velocity
-    def _find_max_range(self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)) -> Tuple[
-        Distance, Angular]:
+    def _find_max_range(
+        self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0.0, 90.0)
+    ) -> Tuple[Distance, Angular]:
         """Find the maximum range along the look_angle and the launch angle to reach it.
 
         Args:
@@ -520,15 +527,19 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN, stop_at_zero=True)
             cross = hit.flag(TrajFlag.ZERO_DOWN)
             if cross is None:
-                warnings.warn(f'No ZERO_DOWN found for launch angle {angle_rad} rad.')
+                warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
                 return -9e9
             # Return value penalizes distance by slant height, which we want to be zero.
             return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
-        res = minimize_scalar(lambda angle_rad: -range_for_angle(angle_rad),
-                              bounds=(float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),
-                                      math.radians(angle_bracket_deg[1])),
-                              method='bounded')  # type: ignore
+        res = minimize_scalar(
+            lambda angle_rad: -range_for_angle(angle_rad),
+            bounds=(
+                float(max(props.look_angle_rad, math.radians(angle_bracket_deg[0]))),
+                math.radians(angle_bracket_deg[1]),
+            ),
+            method="bounded",
+        )  # type: ignore
 
         if not res.success:
             raise OutOfRangeError(Distance.Foot(0), note=res.message)
@@ -556,18 +567,18 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             ZeroFindingError: If no solution is found within the angle bracket.
         """
 
-        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
-            self._init_zero_calculation(props, distance)
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
+            props, distance
         )
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
 
-        #region Make mypy happy
+        # region Make mypy happy
         assert start_height_ft is not None
         assert target_x_ft is not None
         assert target_y_ft is not None
         assert slant_range_ft is not None
-        #endregion Make mypy happy
+        # endregion Make mypy happy
 
         # 1. Find the maximum possible range to establish a search bracket.
         max_range, angle_at_max = self._find_max_range(props)
@@ -600,15 +611,23 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             angle_bracket = (props.look_angle_rad - sight_height_adjust, angle_at_max >> Angular.Radian)
 
         try:
-            sol = root_scalar(error_at_distance, bracket=angle_bracket, method='brentq')
+            sol = root_scalar(error_at_distance, bracket=angle_bracket, method="brentq")
         except ValueError as e:
-            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad),
-                                   reason=f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range " +
-                                          f"({Angular.Radian(angle_bracket[0]) >> Angular.Degree}," +
-                                          f" {Angular.Radian(angle_bracket[1]) >> Angular.Degree} degrees. {e}")
+            raise ZeroFindingError(
+                target_y_ft,
+                0,
+                Angular.Radian(props.barrel_elevation_rad),
+                reason=f"No {'lofted' if lofted else 'low'} zero trajectory in elevation range "
+                + f"({Angular.Radian(angle_bracket[0]) >> Angular.Degree},"
+                + f" {Angular.Radian(angle_bracket[1]) >> Angular.Degree} degrees. {e}",
+            )
         if not sol.converged:
-            raise ZeroFindingError(target_y_ft, 0, Angular.Radian(props.barrel_elevation_rad),
-                                   reason=f"Root-finder failed to converge: {sol.flag} with {sol}")
+            raise ZeroFindingError(
+                target_y_ft,
+                0,
+                Angular.Radian(props.barrel_elevation_rad),
+                reason=f"Root-finder failed to converge: {sol.flag} with {sol}",
+            )
         return Angular.Radian(sol.root)
 
     @override
@@ -633,9 +652,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             return self._find_zero_angle(props, distance)
 
     @override
-    def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
-                   time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
-                   dense_output: bool = False, stop_at_zero: bool = False, **kwargs) -> HitResult:
+    def _integrate(
+        self,
+        props: ShotProps,
+        range_limit_ft: float,
+        range_step_ft: float,
+        time_step: float = 0.0,
+        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        dense_output: bool = False,
+        stop_at_zero: bool = False,
+        **kwargs,
+    ) -> HitResult:
         """Create HitResult for the specified shot.
 
         Args:
@@ -669,10 +696,14 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         velocity = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
         # s = [x, y, z, vx, vy, vz]
-        s0 = [.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft,
-              math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
-              math.sin(props.barrel_elevation_rad) * velocity,
-              math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity]
+        s0 = [
+            0.0,
+            -props.cant_cosine * props.sight_height_ft,
+            -props.cant_sine * props.sight_height_ft,
+            math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad) * velocity,
+            math.sin(props.barrel_elevation_rad) * velocity,
+            math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad) * velocity,
+        ]
         _cMaximumDrop += min(0, s0[1])  # Adjust max drop downward if above muzzle height
         # endregion
 
@@ -708,6 +739,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             dvydt = self.gravity_vector.y + coriolis_term.y - drag * relative_velocity.y
             dvzdt = coriolis_term.z - drag * relative_velocity.z
             return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
+
         # endregion SciPy integration
 
         @scipy_event(terminal=True)
@@ -726,11 +758,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         def event_min_velocity(t: float, s: Any) -> np.floating:  # Stop when velocity < _cMinimumVelocity
             v = np.linalg.norm(s[3:6])
             return v - _cMinimumVelocity
-        #TODO: If _cMinimumVelocity<=0 then: either don't add this event, or always return 0.
+
+        # TODO: If _cMinimumVelocity<=0 then: either don't add this event, or always return 0.
         traj_events: List[SciPyEvent] = [event_max_range, event_max_drop, event_min_velocity]
 
         slant_sine = math.sin(props.look_angle_rad)
         slant_cosine = math.cos(props.look_angle_rad)
+
         def event_zero_crossing(t: float, s: Any) -> np.floating:  # Look for trajectory crossing sight line
             return s[1] * slant_cosine - s[0] * slant_sine  # Compute slant_height
 
@@ -741,11 +775,16 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             zero_crossing_stop = scipy_event(terminal=True, direction=-1)(event_zero_crossing)
             traj_events.append(zero_crossing_stop)
 
-        sol = solve_ivp(diff_eq, (0, self._config.max_time), s0,  # type: ignore[arg-type]
-                        method=self._config.integration_method, dense_output=True,
-                        rtol=self._config.relative_tolerance,
-                        atol=self._config.absolute_tolerance,
-                        events=traj_events)  # type: ignore[arg-type]
+        sol = solve_ivp(
+            diff_eq,
+            (0, self._config.max_time),
+            s0,  # type: ignore[arg-type]
+            method=self._config.integration_method,
+            dense_output=True,
+            rtol=self._config.relative_tolerance,
+            atol=self._config.absolute_tolerance,
+            events=traj_events, # type: ignore[arg-type]
+        )  # type: ignore[arg-type]
 
         if not sol.success:  # Integration failed
             raise RangeError(f"SciPy integration failed: {sol.message}", ranges)
@@ -769,12 +808,17 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         termination_reason = RangeError.MinimumAltitudeReached
                 elif sol.t_events[2].size > 0:  # event_min_velocity
                     termination_reason = RangeError.MinimumVelocityReached
-                elif (stop_at_zero and len(traj_events) > 3 and sol.t_events[-1].size > 0 and
-                      traj_events[-1].func is event_zero_crossing):
+                elif (
+                    stop_at_zero
+                    and len(traj_events) > 3
+                    and sol.t_events[-1].size > 0
+                    and traj_events[-1].func is event_zero_crossing
+                ):
                     termination_reason = self.HitZero
 
         # region Find requested TrajectoryData points
         if sol.sol is not None and sol.status != -1:
+
             def make_row(t: float, state: np.ndarray, flag: Union[TrajFlag, int]) -> TrajectoryData:
                 """Helper function to create a TrajectoryData row."""
                 position = Vector(*state[0:3])
@@ -819,7 +863,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                             return sol.sol(t)[0] - x_target  # type: ignore  # pylint: disable=cell-var-from-loop
 
                         t_lo, t_hi = t_vals[idx - 1], t_vals[idx]
-                        res = root_scalar(x_minus_target, bracket=(t_lo, t_hi), method='brentq')
+                        res = root_scalar(x_minus_target, bracket=(t_lo, t_hi), method="brentq")
                         if not res.converged:
                             logger.warning(f"Could not find root for requested distance {x_target}")
                             continue
@@ -835,8 +879,9 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     t_at_x.append(sol.t[-1])
                     states_at_x.append(sol.y[:, -1])  # Last state at the end of integration
 
-                states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(states_at_x,
-                                                                dtype=np.float64).T  # shape: (state_dim, num_points)
+                states_at_x_arr_t: np.ndarray[Any, np.dtype[np.float64]] = np.array(
+                    states_at_x, dtype=np.float64
+                ).T  # shape: (state_dim, num_points)
                 for i in range(states_at_x_arr_t.shape[1]):
                     ranges.append(make_row(t_at_x[i], states_at_x_arr_t[:, i], TrajFlag.RANGE))
                 ranges.sort(key=lambda t: t.time)  # Sort by time
@@ -852,9 +897,10 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
             # region Find TrajectoryData points requested by filter_flags
             if filter_flags:
+
                 def add_row(time, state, flag):
                     """Add a row to ranges, keeping it sorted by time.
-                        If a row with (approximately) this time already exists then add this flag to it.
+                    If a row with (approximately) this time already exists then add this flag to it.
                     """
                     idx = bisect_left_key(ranges, time, key=lambda r: r.time)
                     if idx < len(ranges):
@@ -869,6 +915,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
                 # Make sure ranges are sorted by time before this check:
                 if filter_flags & TrajFlag.MACH and ranges[0].mach >= 1.0 and ranges[-1].mach < 1.0:
+
                     def mach_minus_one(t):
                         """Return the Mach number at time t minus 1."""
                         state = sol.sol(t)  # type: ignore[reportOptionalMemberAccess]
@@ -888,8 +935,12 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                     except ValueError:
                         logger.debug("No Mach crossing found")
 
-                if (filter_flags & TrajFlag.ZERO and sol.t_events and len(sol.t_events) > 3
-                        and sol.t_events[-1].size > 0):
+                if (
+                    filter_flags & TrajFlag.ZERO
+                    and sol.t_events
+                    and len(sol.t_events) > 3
+                    and sol.t_events[-1].size > 0
+                ):
                     for t_cross in sol.t_events[-1]:
                         state = sol.sol(t_cross)
                         # To determine crossing direction, sample after the crossing
@@ -903,6 +954,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
                         add_row(t_cross, state, direction)
 
                 if filter_flags & TrajFlag.APEX:
+
                     def vy(t):
                         """Return the vertical velocity at time t."""
                         return sol.sol(t)[4]  # type: ignore[reportOptionalMemberAccess]

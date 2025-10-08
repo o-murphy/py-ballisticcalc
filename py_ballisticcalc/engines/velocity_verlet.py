@@ -42,23 +42,23 @@ from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import BaseTrajData, TrajectoryData, TrajFlag, HitResult
 from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
-__all__ = ('VelocityVerletIntegrationEngine',)
+__all__ = ("VelocityVerletIntegrationEngine",)
 
 
 class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
     """Velocity Verlet integration engine for ballistic trajectory calculations.
-    
+
     Algorithm Details:
         The method uses a two-stage approach:
             1. Update position using current velocity and acceleration.
             2. Update velocity using average of current and new acceleration.
         This ensures velocity and position remain properly synchronized
         and conserves the total energy of the system.
-    
+
     Attributes:
         DEFAULT_TIME_STEP: Default time step multiplier.
         integration_step_count: Number of integration steps performed.
-        
+
     See Also:
         - RK4IntegrationEngine: Higher accuracy alternative
         - EulerIntegrationEngine: Simpler alternative
@@ -69,11 +69,11 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
 
     def __init__(self, config: BaseEngineConfigDict) -> None:
         """Initialize the Velocity Verlet integration engine.
-        
+
         Args:
             config: Configuration dictionary containing engine parameters.
                    See BaseEngineConfigDict for available options.
-                   
+
         Examples:
             >>> config = BaseEngineConfigDict(
             ...     cStepMultiplier=0.5,
@@ -87,16 +87,16 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
     @override
     def get_calc_step(self) -> float:
         """Get the calculation step size for Velocity Verlet integration.
-        
+
         Combines the base engine step multiplier with the Verlet-specific
         DEFAULT_TIME_STEP to determine the effective integration step size.
-        
+
         Returns:
             Effective step size for Velocity Verlet integration.
-            
+
         Formula:
             step_size = base_step_multiplier × DEFAULT_TIME_STEP
-            
+
         Note:
             The small DEFAULT_TIME_STEP value is chosen to ensure
             that this engine can pass all unit tests, despite most of them
@@ -105,9 +105,16 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         return super().get_calc_step() * self.DEFAULT_TIME_STEP
 
     @override
-    def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
-                   time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
-                   dense_output: bool = False, **kwargs) -> HitResult:
+    def _integrate(
+        self,
+        props: ShotProps,
+        range_limit_ft: float,
+        range_step_ft: float,
+        time_step: float = 0.0,
+        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        dense_output: bool = False,
+        **kwargs,
+    ) -> HitResult:
         """Create HitResult for the specified shot.
 
         Args:
@@ -130,10 +137,10 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
         step_data: List[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
-        time: float = .0
-        drag: float = .0
-        mach: float = .0
-        density_ratio: float = .0
+        time: float = 0.0
+        drag: float = 0.0
+        mach: float = 0.0
+        density_ratio: float = 0.0
 
         # region Initialize wind-related variables to first wind reading (if any)
         wind_sock = _WindSock(props.winds)
@@ -144,11 +151,11 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         # region Initialize position, velocity, and acceleration
         relative_speed = props.muzzle_velocity_fps
         # x: downrange distance, y: drop, z: windage
-        range_vector = Vector(.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
+        range_vector = Vector(0.0, -props.cant_cosine * props.sight_height_ft, -props.cant_sine * props.sight_height_ft)
         velocity_vector: Vector = Vector(
             math.cos(props.barrel_elevation_rad) * math.cos(props.barrel_azimuth_rad),
             math.sin(props.barrel_elevation_rad),
-            math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad)
+            math.cos(props.barrel_elevation_rad) * math.sin(props.barrel_azimuth_rad),
         ).mul_by_const(relative_speed)  # type: ignore
         _cMaximumDrop += min(0, range_vector.y)  # Adjust max drop downward if above muzzle height
         # Acceleration:
@@ -160,10 +167,16 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         acceleration_vector = self.gravity_vector + coriolis_term - drag * relative_velocity  # type: ignore[operator]
         # endregion
 
-        data_filter = TrajectoryDataFilter(props=props, filter_flags=filter_flags,
-                                    initial_position=range_vector, initial_velocity=velocity_vector,
-                                    barrel_angle_rad=props.barrel_elevation_rad, look_angle_rad=props.look_angle_rad,
-                                    range_limit=range_limit_ft, range_step=range_step_ft, time_step=time_step
+        data_filter = TrajectoryDataFilter(
+            props=props,
+            filter_flags=filter_flags,
+            initial_position=range_vector,
+            initial_velocity=velocity_vector,
+            barrel_angle_rad=props.barrel_elevation_rad,
+            look_angle_rad=props.look_angle_rad,
+            range_limit=range_limit_ft,
+            range_step=range_step_ft,
+            time_step=time_step,
         )
 
         # region Trajectory Loop
@@ -194,8 +207,10 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
 
             # region Verlet integration
             # 1. Update position using acceleration from the current step
-            range_vector += (velocity_vector * delta_time +                           # type: ignore[operator]
-                             acceleration_vector * delta_time * delta_time * 0.5)     # type: ignore[operator]
+            range_vector += (  # type: ignore[operator]
+                velocity_vector * delta_time  # type: ignore[operator]
+                + acceleration_vector * delta_time * delta_time * 0.5  # type: ignore[operator]
+            )  # type: ignore[operator]
             predicted_velocity = velocity_vector + acceleration_vector * delta_time  # type: ignore[operator]
             new_relative_velocity = predicted_velocity - wind_vector
             new_relative_speed = new_relative_velocity.magnitude()
@@ -210,7 +225,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             # endregion Verlet integration
             # endregion ballistic calculation step
 
-            if (velocity < _cMinimumVelocity
+            if (
+                velocity < _cMinimumVelocity
                 or (velocity_vector.y <= 0 and range_vector.y < _cMaximumDrop)
                 or (velocity_vector.y <= 0 and props.alt0_ft + range_vector.y < _cMinimumAltitude)
             ):
@@ -233,8 +249,8 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             if len(ranges) > 0 and ranges[-1].time == time:  # But don't duplicate the last point.
                 pass
             else:
-                ranges.append(TrajectoryData.from_props(
-                    props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
+                ranges.append(
+                    TrajectoryData.from_props(props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
                 )
         logger.debug(f"Velocity Verlet ran {integration_step_count} iterations")
         self.integration_step_count += integration_step_count

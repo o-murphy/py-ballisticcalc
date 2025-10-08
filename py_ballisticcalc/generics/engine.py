@@ -1,8 +1,8 @@
 """Engine protocol module for py_ballisticcalc.
 
-This module defines the EngineProtocol type protocol that all ballistic 
+This module defines the EngineProtocol type protocol that all ballistic
 calculation engines must implement. The protocol specifies the interface
-for integrating trajectories and finding zeroing angles, enabling 
+for integrating trajectories and finding zeroing angles, enabling
 interchangeable engine implementations throughout the library.
 
 The EngineProtocol uses Python's typing.Protocol to define a structural
@@ -34,7 +34,7 @@ from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
 from py_ballisticcalc.unit import Distance, Angular
 
-__all__ = ['EngineProtocol', 'ConfigT']
+__all__ = ["EngineProtocol", "ConfigT"]
 
 # Type variable for engine configuration
 ConfigT = TypeVar("ConfigT", covariant=True)
@@ -47,7 +47,7 @@ class EngineProtocol(Protocol[ConfigT]):
     This protocol outlines the methods that any concrete ballistic engine
     implementation should provide to perform trajectory calculations,
     retrieve drag model information, and determine zeroing angles for firearms.
-    
+
     All engines implementing this protocol can be used interchangeably with
     the Calculator interface, enabling a modular architecture for different
     numerical integration methods and calculation approaches.
@@ -91,9 +91,8 @@ class EngineProtocol(Protocol[ConfigT]):
         it doesn't explicitly inherit from EngineProtocol. The @runtime_checkable
         decorator enables isinstance() checks at runtime.
     """
-    
-    def __init__(self, config: Optional[ConfigT] = None) -> None:
-        ...
+
+    def __init__(self, config: Optional[ConfigT] = None) -> None: ...
 
     @abstractmethod
     def integrate(
@@ -107,11 +106,11 @@ class EngineProtocol(Protocol[ConfigT]):
         **kwargs: Any,
     ) -> HitResult:
         """Perform ballistic trajectory calculation from shot parameters to maximum range.
-        
+
         This method integrates the projectile's equations of motion to generate
         a complete trajectory from muzzle to the specified maximum range, accounting
         for gravitational acceleration, atmospheric drag, and environmental conditions.
-        
+
         Args:
             shot_info: Complete shot configuration containing projectile data,
                       environmental conditions, sight configuration, and firing
@@ -128,15 +127,15 @@ class EngineProtocol(Protocol[ConfigT]):
             dense_output: If True, return trajectory data at every integration step.
                          If False, return data only at specified distance intervals.
             **kwargs: Additional engine-specific parameters for specialized calculations.
-        
+
         Returns:
             HitResult: Complete trajectory calculation parameters and results.
-        
+
         Raises:
             ValueError: If shot_info contains invalid or inconsistent parameters.
             RuntimeError: If the numerical integration fails to converge.
             OutOfRangeError: If the requested max_range exceeds computational limits.
-        
+
         Mathematical Background:
             The integration solves the vector differential equation for projectile
             motion under the influence of gravity and atmospheric drag:
@@ -166,7 +165,7 @@ class EngineProtocol(Protocol[ConfigT]):
     @abstractmethod
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
         """Calculate launch angle required to hit target at specified distance.
-        
+
         Args:
             shot_info: Complete shot configuration containing projectile data,
                       environmental conditions, sight configuration, and target
@@ -174,16 +173,16 @@ class EngineProtocol(Protocol[ConfigT]):
                       atmospheric conditions, sight height, and target height.
             distance: Horizontal distance to target. Must be within the effective
                      range of the projectile under the given conditions.
-        
+
         Returns:
             Angular: Launch angle required to hit the target.
-        
+
         Raises:
             ValueError: If shot_info contains invalid parameters or distance
                        is negative or unreasonably large.
             ZeroFindingError: If the iterative algorithm fails to converge.
             OutOfRangeError: If the target distance exceeds maximum effective range.
-        
+
         Note:
             This method returns the lower of the two ballistic solutions hit a target point.
             To get the higher ("lofted") solution we have been adding a .find_zero_angle()
