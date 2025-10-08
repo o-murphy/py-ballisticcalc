@@ -783,7 +783,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             dense_output=True,
             rtol=self._config.relative_tolerance,
             atol=self._config.absolute_tolerance,
-            events=traj_events, # type: ignore[arg-type]
+            events=traj_events,  # type: ignore[arg-type]
         )  # type: ignore[arg-type]
 
         if not sol.success:  # Integration failed
