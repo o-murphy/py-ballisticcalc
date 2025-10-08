@@ -23,7 +23,7 @@ Architecture:
     This module follows the strategy pattern, where BaseIntegrationEngine
     provides the common interface and algorithms, while concrete subclasses
     implement specific numerical integration methods (Euler, RK4, Verlet, etc.).
-    
+
     The configuration system supports both dataclass and TypedDict formats
     for maximum flexibility in different usage contexts.
 
@@ -32,6 +32,7 @@ See Also:
     py_ballisticcalc.engines: Concrete engine implementations
     py_ballisticcalc.trajectory_data: Data structures for results
 """
+
 from __future__ import annotations
 import math
 from typing import Sequence
@@ -54,16 +55,16 @@ from py_ballisticcalc.unit import Distance, Angular
 from py_ballisticcalc.vector import Vector
 
 __all__ = (
-    'create_base_engine_config',
-    'BaseEngineConfig',
-    'BaseEngineConfigDict',
-    'DEFAULT_BASE_ENGINE_CONFIG',
-    'BaseIntegrationEngine',
-    'TrajectoryDataFilter',
-    '_WindSock',
-    '_ZeroCalcStatus',
-    'with_no_minimum_velocity',
-    'with_max_drop_zero',
+    "create_base_engine_config",
+    "BaseEngineConfig",
+    "BaseEngineConfigDict",
+    "DEFAULT_BASE_ENGINE_CONFIG",
+    "BaseIntegrationEngine",
+    "TrajectoryDataFilter",
+    "_WindSock",
+    "_ZeroCalcStatus",
+    "with_no_minimum_velocity",
+    "with_max_drop_zero",
 )
 
 cZeroFindingAccuracy: float = 0.000005  # Max allowed slant-error in feet to end zero search
@@ -104,13 +105,13 @@ class BaseEngineConfig:
                         Values < 1.0 increase precision but slow calculation.
                         Values > 1.0 decrease precision but speed calculation.
                         Defaults to 1.0.
-    
+
     Examples:
         >>> config = BaseEngineConfig(
         ...     cMinimumVelocity=100.0,
         ...     cStepMultiplier=0.5  # Higher precision
         ... )
-        
+
     Note:
         This dataclass is primarily used internally. For flexible configuration
         from dictionaries, use BaseEngineConfigDict with create_base_engine_config().
@@ -131,11 +132,11 @@ DEFAULT_BASE_ENGINE_CONFIG: BaseEngineConfig = BaseEngineConfig()
 
 class BaseEngineConfigDict(TypedDict, total=False):
     """TypedDict for flexible engine configuration from dictionaries.
-    
+
     This TypedDict provides a flexible way to configure ballistic calculation
     engines using dictionary syntax. All fields are optional, allowing partial
     configuration where only specific parameters need to be overridden.
-    
+
     When used with create_base_engine_config(), any unspecified fields will
     use their default values from DEFAULT_BASE_ENGINE_CONFIG.
 
@@ -159,7 +160,7 @@ class BaseEngineConfigDict(TypedDict, total=False):
         >>> # Using with Calculator
         >>> from py_ballisticcalc import Calculator
         >>> calc = Calculator(config=config_dict)
-        
+
     See Also:
         - BaseEngineConfig: Type-safe dataclass version
         - create_base_engine_config: Factory function for BaseEngineConfig creation
@@ -176,27 +177,27 @@ class BaseEngineConfigDict(TypedDict, total=False):
 
 def create_base_engine_config(interface_config: Optional[BaseEngineConfigDict] = None) -> BaseEngineConfig:
     """Create BaseEngineConfig from optional dictionary configuration.
-    
+
     This factory function creates a BaseEngineConfig instance by merging
     default configuration values with user-provided overrides. It provides
     a convenient way to create engine configurations from dictionary data
     while ensuring all parameters have valid defaults.
-    
+
     Args:
         interface_config: Optional dictionary containing configuration overrides.
                          If None, returns the default configuration.
                          Only specified fields will override defaults.
-                         
+
     Returns:
         BaseEngineConfig instance with merged configuration values.
-        
+
     Raises:
         TypeError: If interface_config is not None and not a dictionary.
-        
+
     Examples:
         >>> # Using default configuration
         >>> config = create_base_engine_config()
-        
+
         >>> # Overriding specific parameters
         >>> custom_config = create_base_engine_config({
         ...     'cMinimumVelocity': 75.0,
@@ -232,10 +233,18 @@ class TrajectoryDataFilter:
     look_angle_rad: float
     look_angle_tangent: float
 
-    def __init__(self, props: ShotProps, filter_flags: Union[TrajFlag, int],
-                 initial_position: Vector, initial_velocity: Vector,
-                 barrel_angle_rad: float, look_angle_rad: float = 0.0,
-                 range_limit: float = 0.0, range_step: float = 0.0, time_step: float = 0.0):
+    def __init__(
+        self,
+        props: ShotProps,
+        filter_flags: Union[TrajFlag, int],
+        initial_position: Vector,
+        initial_velocity: Vector,
+        barrel_angle_rad: float,
+        look_angle_rad: float = 0.0,
+        range_limit: float = 0.0,
+        range_step: float = 0.0,
+        time_step: float = 0.0,
+    ):
         """If a time_step > 0, then we will record a row at least that often in the trajectory."""
         self.records = []
         self.props = props
@@ -266,6 +275,7 @@ class TrajectoryDataFilter:
     def record(self, new_data: BaseTrajData):
         """For each integration step, creates TrajectoryData records based on filter/step criteria."""
         rows: List[Tuple[BaseTrajData, Union[TrajFlag, int]]] = []
+
         def add_row(data: BaseTrajData, flag: Union[TrajFlag, int]):
             """Add data, keeping `rows` sorted by time."""
             idx = bisect_left_key(rows, data.time, key=lambda r: r[0].time)
@@ -283,7 +293,7 @@ class TrajectoryDataFilter:
             # Always record starting point
             add_row(new_data, TrajFlag.RANGE if (self.range_step > 0 or self.time_step > 0) else TrajFlag.NONE)
         else:
-            #region RANGE steps
+            # region RANGE steps
             if self.range_step > 0:
                 while self.next_record_distance + self.range_step <= new_data.position.x:
                     new_row = None
@@ -294,40 +304,50 @@ class TrajectoryDataFilter:
                     if abs(record_distance - new_data.position.x) < self.EPSILON:
                         new_row = new_data
                     elif self.prev_data is not None and self.prev_prev_data is not None:
-                        new_row = BaseTrajData.interpolate('position.x', record_distance,
-                                                            self.prev_prev_data, self.prev_data, new_data)
+                        new_row = BaseTrajData.interpolate(
+                            "position.x", record_distance, self.prev_prev_data, self.prev_data, new_data
+                        )
                     if new_row is not None:
                         self.next_record_distance += self.range_step
                         add_row(new_row, TrajFlag.RANGE)
                         self.time_of_last_record = new_row.time
                     else:
                         break  # Can't interpolate without previous data
-            #endregion RANGE steps
-            #region Time steps
+            # endregion RANGE steps
+            # region Time steps
             if self.time_step > 0 and self.prev_data is not None and self.prev_prev_data is not None:
                 while self.time_of_last_record + self.time_step <= new_data.time:
                     self.time_of_last_record += self.time_step
-                    new_row = BaseTrajData.interpolate('time', self.time_of_last_record,
-                                                        self.prev_prev_data, self.prev_data, new_data)
+                    new_row = BaseTrajData.interpolate(
+                        "time", self.time_of_last_record, self.prev_prev_data, self.prev_data, new_data
+                    )
                     add_row(new_row, TrajFlag.RANGE)
-            #endregion Time steps
-            if (self.filter & TrajFlag.APEX and self.prev_data is not None and self.prev_prev_data is not None
-                                            and self.prev_data.velocity.y > 0 and new_data.velocity.y <= 0):
+            # endregion Time steps
+            if (
+                self.filter & TrajFlag.APEX
+                and self.prev_data is not None
+                and self.prev_prev_data is not None
+                and self.prev_data.velocity.y > 0
+                and new_data.velocity.y <= 0
+            ):
                 # "Apex" is the point where the vertical component of velocity goes from positive to negative.
-                new_row = BaseTrajData.interpolate('velocity.y', 0.0, self.prev_prev_data, self.prev_data, new_data)
+                new_row = BaseTrajData.interpolate("velocity.y", 0.0, self.prev_prev_data, self.prev_data, new_data)
                 add_row(new_row, TrajFlag.APEX)
                 self.filter &= ~TrajFlag.APEX  # Don't look for more apices
 
         self.records.extend([TrajectoryData.from_base_data(self.props, data, flag) for data, flag in rows])
 
-        #region Points that must be interpolated on TrajectoryData instances
+        # region Points that must be interpolated on TrajectoryData instances
         if self.prev_data is not None and self.prev_prev_data is not None:
             compute_flags = TrajFlag.NONE
-            if (self.filter & TrajFlag.MACH and self.prev_data is not None
-                and new_data.velocity.magnitude() < new_data.mach):
+            if (
+                self.filter & TrajFlag.MACH
+                and self.prev_data is not None
+                and new_data.velocity.magnitude() < new_data.mach
+            ):
                 compute_flags |= TrajFlag.MACH
                 self.filter &= ~TrajFlag.MACH  # Don't look for more Mach crossings
-            #region ZERO checks (done on TrajectoryData objects so we can interpolate for .slant_height)
+            # region ZERO checks (done on TrajectoryData objects so we can interpolate for .slant_height)
             if self.filter & TrajFlag.ZERO:
                 # Zero reference line is the sight line defined by look_angle
                 reference_height = new_data.position.x * self.look_angle_tangent
@@ -341,7 +361,7 @@ class TrajectoryDataFilter:
                     if new_data.position.y < reference_height:
                         compute_flags |= TrajFlag.ZERO_DOWN
                         self.filter &= ~TrajFlag.ZERO_DOWN
-            #endregion ZERO checks
+            # endregion ZERO checks
             if compute_flags:
                 # Instantiate TrajectoryData and interpolate
                 t0 = TrajectoryData.from_base_data(self.props, new_data)
@@ -349,28 +369,32 @@ class TrajectoryDataFilter:
                 t2 = TrajectoryData.from_base_data(self.props, self.prev_prev_data)
                 add_td = []
                 if compute_flags & TrajFlag.MACH:
-                    add_td.append(TrajectoryData.interpolate('mach', 1.0, t0, t1, t2, TrajFlag.MACH))
+                    add_td.append(TrajectoryData.interpolate("mach", 1.0, t0, t1, t2, TrajFlag.MACH))
                     compute_flags &= ~TrajFlag.MACH
                 if compute_flags & TrajFlag.ZERO:
-                    add_td.append(TrajectoryData.interpolate('slant_height', 0.0, t0, t1, t2, compute_flags))
+                    add_td.append(TrajectoryData.interpolate("slant_height", 0.0, t0, t1, t2, compute_flags))
                 for td in add_td:  # Add TrajectoryData, keeping `results` sorted by time.
                     idx = bisect_left_key(self.records, td.time, key=lambda r: r.time)
                     if idx < len(self.records):  # If we match existing row's time then just add this flag to the row
                         if abs(self.records[idx].time - td.time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
                             self.records[idx] = td._replace(flag=self.records[idx].flag | td.flag)
                             continue
-                        elif idx > 0 and abs(self.records[idx - 1].time - td.time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
+                        elif (
+                            idx > 0
+                            and abs(self.records[idx - 1].time - td.time)
+                            < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA
+                        ):
                             self.records[idx - 1] = td._replace(flag=self.records[idx - 1].flag | td.flag)
                             continue
                     self.records.insert(idx, td)  # Insert at sorted position
-        #endregion
+        # endregion
         self.prev_prev_data = self.prev_data
         self.prev_data = new_data
 
 
 class _WindSock:
     """Winds in effect down range.
-    
+
     Currently this class assumes that requests for wind readings will only be made in order of increasing range.
     This assumption is violated if the projectile is blown or otherwise moves backwards.
     """
@@ -452,6 +476,7 @@ class ZeroFindingProps(NamedTuple):
 
 def with_no_minimum_velocity(method):
     """Decorator to temporarily set minimum velocity to zero."""
+
     def wrapper(self, *args, **kwargs):
         restore = None
         if getattr(self._config, "cMinimumVelocity", None) != 0:
@@ -462,10 +487,13 @@ def with_no_minimum_velocity(method):
         finally:
             if restore is not None:
                 self._config.cMinimumVelocity = restore
+
     return wrapper
+
 
 def with_max_drop_zero(method):
     """Decorator to temporarily set maximum drop to zero."""
+
     def wrapper(self, *args, **kwargs):
         restore = None
         if getattr(self._config, "cMaximumDrop", None) != 0:
@@ -476,10 +504,11 @@ def with_max_drop_zero(method):
         finally:
             if restore is not None:
                 self._config.cMaximumDrop = restore
+
     return wrapper
 
 
-_BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound='BaseEngineConfigDict', covariant=True)
+_BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound="BaseEngineConfigDict", covariant=True)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -497,7 +526,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             _config: The configuration object.
         """
         self._config: BaseEngineConfig = create_base_engine_config(_config)
-        self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
+        self.gravity_vector: Vector = Vector(0.0, self._config.cGravityConstant, 0.0)
 
     def get_calc_step(self) -> float:
         """Get step size for integration."""
@@ -513,8 +542,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         props.calc_step = self.get_calc_step()
         return props
 
-    def find_max_range(self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
-        Distance, Angular]:
+    def find_max_range(
+        self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)
+    ) -> Tuple[Distance, Angular]:
         """Find the maximum range along shot_info.look_angle, and the launch angle to reach it.
 
         Args:
@@ -537,8 +567,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
     @with_max_drop_zero
     @with_no_minimum_velocity
-    def _find_max_range(self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0, 90)) -> Tuple[
-        Distance, Angular]:
+    def _find_max_range(
+        self, props: ShotProps, angle_bracket_deg: Tuple[float, float] = (0, 90)
+    ) -> Tuple[Distance, Angular]:
         """Find the maximum slant range via golden-section search.
 
         Args:
@@ -558,23 +589,24 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         # endregion Virtually vertical shot
 
         t_calls = 0
+
         def range_for_angle(angle_rad: float) -> float:
             """Return slant-distance minus slant-error (in feet) for given launch angle in radians."""
             props.barrel_elevation_rad = angle_rad
             nonlocal t_calls
             t_calls += 1
-            #logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
+            # logger.debug(f"range_for_angle call #{t_calls} for angle {math.degrees(angle_rad)} degrees")
             hit = self._integrate(props, 9e9, 9e9, filter_flags=TrajFlag.ZERO_DOWN)
             cross = hit.flag(TrajFlag.ZERO_DOWN)
             if cross is None:
-                warnings.warn(f'No ZERO_DOWN found for launch angle {angle_rad} rad.')
+                warnings.warn(f"No ZERO_DOWN found for launch angle {angle_rad} rad.")
                 return -9e9
             # Return value penalizes distance by slant height, which we want to be zero.
             return (cross.slant_distance >> Distance.Foot) - abs(cross.slant_height >> Distance.Foot)
 
         # region Golden-section search
         inv_phi = (math.sqrt(5) - 1) / 2  # 0.618...
-        inv_phi_sq = inv_phi ** 2
+        inv_phi_sq = inv_phi**2
         a, b = (math.radians(deg) for deg in angle_bracket_deg)
         h = b - a
         c = a + inv_phi_sq * h
@@ -608,10 +640,10 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
 
         Args:
             shot_info: The shot information.
-        
+
         Returns:
             TrajectoryData: The trajectory data at the apex of the trajectory.
-        
+
         Raises:
             SolverRuntimeError: If no apex is found in the trajectory data.
             ValueError: If barrel elevation is not > 0.
@@ -627,7 +659,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             props: The shot properties.
 
         Returns:
-            TrajectoryData at the trajectory's apex (where velocity.y goes from positive to negative).            
+            TrajectoryData at the trajectory's apex (where velocity.y goes from positive to negative).
 
         Raises:
             SolverRuntimeError: If no apex is found in the trajectory data.
@@ -661,8 +693,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
         if abs(slant_range_ft) < 2.0 * max(abs(start_height_ft), props.calc_step):
             # Very close shot; ignore gravity and drag
-            return ZeroFindingProps(_ZeroCalcStatus.DONE,
-                                    look_angle_rad=math.atan2(target_y_ft + start_height_ft, target_x_ft))
+            return ZeroFindingProps(
+                _ZeroCalcStatus.DONE, look_angle_rad=math.atan2(target_y_ft + start_height_ft, target_x_ft)
+            )
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
             # Virtually vertical shot; just check if it can reach the target
             max_range = self._find_apex(props).slant_distance
@@ -671,8 +704,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             return ZeroFindingProps(_ZeroCalcStatus.DONE, look_angle_rad=props.look_angle_rad)
         # endregion Edge cases
 
-        return ZeroFindingProps(_ZeroCalcStatus.CONTINUE,
-                                props.look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+        return ZeroFindingProps(
+            _ZeroCalcStatus.CONTINUE, props.look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft
+        )
 
     def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
         """Find the barrel elevation needed to hit sight line at a specific distance.
@@ -702,8 +736,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             Barrel elevation needed to hit the zero point.
         """
-        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
-            self._init_zero_calculation(props, distance)
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
+            props, distance
         )
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
@@ -792,8 +826,11 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             if abs(high_angle - low_angle) < self._config.cZeroFindingAccuracy:
                 return Angular.Radian((low_angle + high_angle) / 2)
 
-        raise ZeroFindingError(target_y_ft, self._config.cMaxIterations, Angular.Radian((low_angle + high_angle) / 2),
-                               reason="Ridder's method failed to converge."
+        raise ZeroFindingError(
+            target_y_ft,
+            self._config.cMaxIterations,
+            Angular.Radian((low_angle + high_angle) / 2),
+            reason="Ridder's method failed to converge.",
         )
 
     def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
@@ -826,8 +863,8 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         Returns:
             Barrel elevation to hit height zero at zero distance along sight line
         """
-        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
-            self._init_zero_calculation(props, distance)
+        status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = self._init_zero_calculation(
+            props, distance
         )
         if status is _ZeroCalcStatus.DONE:
             return Angular.Radian(look_angle_rad)
@@ -838,7 +875,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         _cZeroFindingAccuracy = self._config.cZeroFindingAccuracy
         _cMaxIterations = self._config.cMaxIterations
 
-        #region Ensure we can see drop at the target distance when launching along slant angle.
+        # region Ensure we can see drop at the target distance when launching along slant angle.
         required_drop_ft = target_x_ft / 2.0 - target_y_ft
         restore_cMaximumDrop = None
         if abs(self._config.cMaximumDrop) < required_drop_ft:
@@ -848,7 +885,7 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         if (self._config.cMinimumAltitude - props.alt0_ft) > required_drop_ft:
             restore_cMinimumAltitude = self._config.cMinimumAltitude
             self._config.cMinimumAltitude = props.alt0_ft - required_drop_ft
-        #endregion
+        # endregion
 
         iterations_count = 0
         range_error_ft = 9e9  # Absolute value of error from target distance along sight line
@@ -878,7 +915,9 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             range_error_ft = math.fabs(range_diff_ft)
             height_error_ft = math.fabs(height_diff_ft)
             trajectory_angle = t.angle >> Angular.Radian  # Flight angle at current distance
-            sensitivity = math.tan(props.barrel_elevation_rad - look_angle_rad) * math.tan(trajectory_angle - look_angle_rad)
+            sensitivity = math.tan(props.barrel_elevation_rad - look_angle_rad) * math.tan(
+                trajectory_angle - look_angle_rad
+            )
             if sensitivity < -0.5:
                 denominator = look_dist_ft
             else:
@@ -886,24 +925,36 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             if abs(denominator) > 1e-9:
                 correction = -height_diff_ft / denominator
             else:
-                raise ZeroFindingError(height_error_ft, iterations_count, Angular.Radian(props.barrel_elevation_rad),
-                      'Correction denominator is zero')
+                raise ZeroFindingError(
+                    height_error_ft,
+                    iterations_count,
+                    Angular.Radian(props.barrel_elevation_rad),
+                    "Correction denominator is zero",
+                )
 
             if range_error_ft > self.ALLOWED_ZERO_ERROR_FEET:
                 # We're still trying to reach zero_distance
                 if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
-                    raise ZeroFindingError(range_error_ft, iterations_count, Angular.Radian(props.barrel_elevation_rad),
-                          'Distance non-convergent')
+                    raise ZeroFindingError(
+                        range_error_ft,
+                        iterations_count,
+                        Angular.Radian(props.barrel_elevation_rad),
+                        "Distance non-convergent",
+                    )
             elif height_error_ft > math.fabs(prev_height_error_ft):  # Error is increasing, we are diverging
                 damping_factor *= damping_rate  # Apply damping to prevent overcorrection
                 if damping_factor < 0.3:
-                    raise ZeroFindingError(height_error_ft, iterations_count, Angular.Radian(props.barrel_elevation_rad),
-                          'Error non-convergent')
-                logger.debug(f'Tightened damping to {damping_factor:.2f} after {iterations_count} iterations')
+                    raise ZeroFindingError(
+                        height_error_ft,
+                        iterations_count,
+                        Angular.Radian(props.barrel_elevation_rad),
+                        "Error non-convergent",
+                    )
+                logger.debug(f"Tightened damping to {damping_factor:.2f} after {iterations_count} iterations")
                 props.barrel_elevation_rad -= last_correction  # Revert previous adjustment
                 correction = last_correction
             elif damping_factor < 1.0:
-                logger.debug('Resetting damping factor to 1.0')
+                logger.debug("Resetting damping factor to 1.0")
                 damping_factor = 1.0
 
             prev_range_error_ft = range_error_ft
@@ -929,13 +980,16 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
             raise ZeroFindingError(height_error_ft, iterations_count, result)
         return result
 
-    def integrate(self, shot_info: Shot,
-                        max_range: Distance,
-                        dist_step: Optional[Distance] = None,
-                        time_step: float = 0.0,
-                        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
-                        dense_output: bool = False,
-                        **kwargs) -> HitResult:
+    def integrate(
+        self,
+        shot_info: Shot,
+        max_range: Distance,
+        dist_step: Optional[Distance] = None,
+        time_step: float = 0.0,
+        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        dense_output: bool = False,
+        **kwargs,
+    ) -> HitResult:
         """Compute the trajectory for the given shot.
 
         Args:
@@ -959,9 +1013,16 @@ class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
         return self._integrate(props, range_limit_ft, range_step_ft, time_step, filter_flags, dense_output, **kwargs)
 
     @abstractmethod
-    def _integrate(self, props: ShotProps, range_limit_ft: float, range_step_ft: float,
-                   time_step: float = 0.0, filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
-                   dense_output: bool = False, **kwargs) -> HitResult:
+    def _integrate(
+        self,
+        props: ShotProps,
+        range_limit_ft: float,
+        range_step_ft: float,
+        time_step: float = 0.0,
+        filter_flags: Union[TrajFlag, int] = TrajFlag.NONE,
+        dense_output: bool = False,
+        **kwargs,
+    ) -> HitResult:
         """Create HitResult for the specified shot.
 
         Args:

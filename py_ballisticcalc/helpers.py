@@ -11,19 +11,17 @@ from py_ballisticcalc.unit import Distance, Unit
 
 EARTH_GRAVITY_CONSTANT_IN_SI: Final[float] = 9.81  # Acceleration due to gravity (m/s^2)
 
+
 @deprecated("Just call `Calculator.fire` directly with `raise_range_error=False`")
-def must_fire(interface: Calculator, shot: Shot, trajectory_range: Distance, extra_data: bool = False,
-              **kwargs) -> Tuple[HitResult, Optional[RangeError]]:
+def must_fire(
+    interface: Calculator, shot: Shot, trajectory_range: Distance, extra_data: bool = False, **kwargs
+) -> Tuple[HitResult, Optional[RangeError]]:
     """Wrapper function to resolve RangeError and get HitResult."""
     t = interface.fire(shot, trajectory_range, **kwargs, extra_data=extra_data, raise_range_error=False)
     return t, t.error
 
 
-def vacuum_range(
-        velocity: float,
-        angle_in_degrees: float,
-        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
-) -> float:
+def vacuum_range(velocity: float, angle_in_degrees: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI) -> float:
     """
     Distance for a vacuum ballistic trajectory to return to its starting height.
        Vacuum means projectile flies with no drag force, so this distance will overestimate
@@ -40,13 +38,10 @@ def vacuum_range(
     angle_rad = math.radians(angle_in_degrees)
     if gravity < 0:
         gravity = -gravity
-    return (velocity ** 2 * math.sin(2 * angle_rad)) / gravity
+    return (velocity**2 * math.sin(2 * angle_rad)) / gravity
 
-def vacuum_angle_to_zero(
-        velocity: float,
-        distance: float,
-        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
-) -> float:
+
+def vacuum_angle_to_zero(velocity: float, distance: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI) -> float:
     """
     Launch angle needed to hit zero at specified distance in a vacuum.
 
@@ -60,12 +55,11 @@ def vacuum_angle_to_zero(
     """
     if gravity < 0:
         gravity = -gravity
-    return math.degrees(0.5 * math.asin((distance * gravity) / (velocity ** 2)))
+    return math.degrees(0.5 * math.asin((distance * gravity) / (velocity**2)))
+
 
 def vacuum_time_to_zero(
-        velocity: float,
-        launch_angle_deg: float,
-        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+    velocity: float, launch_angle_deg: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
 ) -> float:
     """
     Time for a ballistic trajectory (in a vacuum) to return to its starting height.
@@ -83,10 +77,9 @@ def vacuum_time_to_zero(
         gravity = -gravity
     return 2 * velocity * math.sin(angle_rad) / gravity
 
+
 def vacuum_velocity_to_zero(
-        time_to_zero: float,
-        launch_angle_deg: float,
-        gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
+    time_to_zero: float, launch_angle_deg: float, gravity: float = EARTH_GRAVITY_CONSTANT_IN_SI
 ) -> float:
     """
     Solves for the launch velocity (m/s) needed for vacuum_time_to_zero to equal time_to_zero.
@@ -129,14 +122,14 @@ def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
     For a bisection algorithm, a monotonic condition means the function maintains a consistent direction:
     - Monotonically increasing: Each subsequent value is greater than or equal to the previous
     - Monotonically decreasing: Each subsequent value is less than or equal to the previous
-    
+
     Warning:
         If the condition for which you are searching is not monotonic, use `find_first_index_matching_condition`.
-    
+
     Args:
         arr: List of items to search through.
         wrapper: BisectWrapper instance that provides condition checking functionality.
-        
+
     Returns:
         Index of first element satisfying the condition, or -1 if no element satisfies it.
     """
@@ -149,7 +142,7 @@ def bisect_for_monotonic_condition(arr: List, wrapper: BisectWrapper) -> int:
 
 
 def find_first_index_satisfying_monotonic_condition(
-        arr: List[TrajectoryData], monotonic_condition: Callable[[Any], bool]
+    arr: List[TrajectoryData], monotonic_condition: Callable[[Any], bool]
 ) -> int:
     # Find the index where the condition first becomes true
     # Uses bisect to find the first index satisfying the condition.
@@ -157,9 +150,7 @@ def find_first_index_satisfying_monotonic_condition(
 
 
 def find_nearest_index_satisfying_monotonic_condition(
-        arr: List[TrajectoryData],
-        target_value: float,
-        value_getter: Callable[[TrajectoryData], float]
+    arr: List[TrajectoryData], target_value: float, value_getter: Callable[[TrajectoryData], float]
 ) -> int:
     """Find the index of the object with the nearest value to the target value.
 
@@ -186,23 +177,19 @@ def find_nearest_index_satisfying_monotonic_condition(
         return len(arr) - 1
     before = pos - 1
     after = pos
-    if abs(value_getter(arr[before]) - target_value) <= abs(
-            value_getter(arr[after]) - target_value
-    ):
+    if abs(value_getter(arr[before]) - target_value) <= abs(value_getter(arr[after]) - target_value):
         return before
     return after
 
 
-def find_index_of_point_for_distance(
-        shot: HitResult, distance: float, distance_unit: Unit = Distance.Meter
-) -> int:
+def find_index_of_point_for_distance(shot: HitResult, distance: float, distance_unit: Unit = Distance.Meter) -> int:
     """Find index of point, for which distance is bigger or equal to given `distance`.
-    
+
     Args:
         shot: HitResult instance containing trajectory data.
         distance: Distance threshold value.
         distance_unit: Unit of distance measurement (default: Distance.Meter).
-        
+
     Returns:
         Index of point where distance >= distance threshold, or -1 if no such point was found.
     """
@@ -211,69 +198,59 @@ def find_index_of_point_for_distance(
         return (p.distance >> distance_unit) >= distance
 
     # return find_first_index_matching_condition(shot, distance_is_bigger_or_equal)
-    return find_first_index_satisfying_monotonic_condition(
-        shot.trajectory, distance_ge
-    )
+    return find_first_index_satisfying_monotonic_condition(shot.trajectory, distance_ge)
 
 
 def find_index_for_time_point(
-        shot: HitResult,
-        time: float,
-        strictly_bigger_or_equal: bool = True,
-        max_time_deviation_in_seconds: float = 1,
+    shot: HitResult,
+    time: float,
+    strictly_bigger_or_equal: bool = True,
+    max_time_deviation_in_seconds: float = 1,
 ) -> int:
     """Find index of time point with nearest time to provided `time`.
-    
+
     Args:
         shot: HitResult instance containing trajectory data.
         time: Time value to search for.
         strictly_bigger_or_equal: If True, return the first point with time >= time.
                                  If False, return the index with smallest deviation.
         max_time_deviation_in_seconds: Maximum allowed time deviation for matches.
-        
+
     Returns:
         Index of matching time point, or -1 if no such time point exists or if points
         have deviation bigger than max_time_deviation_in_seconds.
-        
+
     Raises:
         ValueError: If max_time_deviation_in_seconds < 0 or time < 0.
     """
     if max_time_deviation_in_seconds < 0:
-        raise ValueError(
-            f"Max time deviation should be bigger then zero, but was {max_time_deviation_in_seconds}"
-        )
+        raise ValueError(f"Max time deviation should be bigger then zero, but was {max_time_deviation_in_seconds}")
     if time < 0:
         raise ValueError(f"Illegal searched time passed {time}")
     if strictly_bigger_or_equal:
-        return find_first_index_satisfying_monotonic_condition(
-            shot.trajectory, lambda e: e.time - time >= 0
-        )
+        return find_first_index_satisfying_monotonic_condition(shot.trajectory, lambda e: e.time - time >= 0)
     else:
-        index = find_nearest_index_satisfying_monotonic_condition(
-            shot.trajectory, time, lambda e: e.time
-        )
+        index = find_nearest_index_satisfying_monotonic_condition(shot.trajectory, time, lambda e: e.time)
         if abs(shot.trajectory[index].time - time) <= max_time_deviation_in_seconds:
             return index
         return -1
 
 
 def find_time_for_distance_in_shot(
-        shot: HitResult, distance_in_unit: float, distance_unit: Unit = Distance.Meter
+    shot: HitResult, distance_in_unit: float, distance_unit: Unit = Distance.Meter
 ) -> float:
     """Find time corresponding to certain distance being reached in shot.
-    
+
     Args:
         shot: HitResult instance containing trajectory data.
         distance_in_unit: Distance value to search for.
         distance_unit: Unit of distance measurement (default: Distance.Meter).
-        
+
     Returns:
         Time when distance is reached, or NaN if distance exceeds maximum distance in shot
         (i.e., no information is available).
     """
-    point_index = find_index_of_point_for_distance(
-        shot, distance_in_unit, distance_unit
-    )
+    point_index = find_index_of_point_for_distance(shot, distance_in_unit, distance_unit)
     if point_index >= 0:
         return shot[point_index].time
     return float("NaN")

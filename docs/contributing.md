@@ -43,6 +43,19 @@ You'll need the following prerequisites:
 - [**venv**](https://docs.python.org/3/library/venv.html) or [**uv**](https://docs.astral.sh/uv/getting-started/installation/) or other virtual environment tool
 - **git**
 
+For the Cythonized/C-based engines, you must have the following build dependencies installed:
+
+=== "Linux"
+    - **GCC** (e.g., `build-essential` for Ubuntu/Debian or `build-base` for Alpine)
+    - **`python3-dev`** (or equivalent Python development headers)
+
+=== "Windows"
+    - **Microsoft Visual C++ (MSVC)** build tools
+
+=== "macOS"
+    - **Xcode Command Line Tools** (installs Clang/GCC, `make`, etc.)
+
+
 ### Installation and setup
 
 Fork the repository on GitHub and clone your fork locally.

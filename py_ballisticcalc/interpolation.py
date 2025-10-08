@@ -5,6 +5,7 @@ interpolation methods. Linear interpolation (interpolate_2_pt) requires 2 points
 PCHIP (interpolate_3_pt) requires 3 points and produces smoother results that
 preserve monotonicity and prevent overshoot using the Fritsch–Carlson slope limiting algorithm.
 """
+
 from dataclasses import dataclass
 from enum import Enum
 from typing_extensions import List, Literal, Sequence
@@ -50,9 +51,7 @@ def _sign(a: float) -> int:
     return 1 if a > 0 else (-1 if a < 0 else 0)
 
 
-def _pchip_slopes_three_points(
-    x0: float, y0: float, x1: float, y1: float, x2: float, y2: float
-):
+def _pchip_slopes_three_points(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float):
     """Compute PCHIP endpoint and interior slopes for three points.
 
     Uses Fritsch–Carlson slope limiting to preserve monotonicity and prevent
@@ -204,6 +203,7 @@ def interpolate_2_pt(x: float, x0: float, y0: float, x1: float, y1: float) -> fl
 
 
 # ===== Optimized PCHIP: precompute coefficients for fast interpolation =====
+
 
 @dataclass
 class PchipPrepared:

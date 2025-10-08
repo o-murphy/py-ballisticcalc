@@ -36,7 +36,7 @@ from py_ballisticcalc.unit import Distance, PreferredUnits, Velocity, Weight
 @dataclass
 class DragDataPoint:
     """Drag coefficient at a specific Mach number.
-    
+
     Attributes:
         Mach: Velocity in Mach units (dimensionless)
         CD: Drag coefficient (dimensionless)
@@ -52,33 +52,35 @@ DragTableDataType: TypeAlias = Union[List[DragTablePointDictType], List[DragData
 
 class DragModel:
     """Aerodynamic drag model for ballistic projectiles.
-    
+
     Represents the drag characteristics of a projectile using a ballistic coefficient and drag table.
-    
+
     The ballistic coefficient (BC) is defined as:
         BC = weight / (diameter^2 * form_factor)
     where weight is in pounds, diameter is in inches, and form_factor is relative to the selected drag model.
-    
+
     Attributes:
         BC: Ballistic coefficient (scales drag model for a particular projectile)
         drag_table: List of DragDataPoint objects defining Mach vs CD
         weight: Projectile weight (only needed for spin drift calculations)
-        diameter: Projectile diameter (only needed for spin drift calculations) 
+        diameter: Projectile diameter (only needed for spin drift calculations)
         length: Projectile length (only needed for spin drift calculations)
         sectional_density: Calculated sectional density (lb/in²)
         form_factor: Calculated form factor (dimensionless)
-        
+
     Note:
         The weight, diameter, and length parameters are only required when computing spin drift.
         For basic trajectory calculations, only BC and drag_table are needed.
     """
 
-    def __init__(self,
-                 bc: float,
-                 drag_table: DragTableDataType,
-                 weight: Union[float, Weight] = 0,
-                 diameter: Union[float, Distance] = 0,
-                 length: Union[float, Distance] = 0) -> None:
+    def __init__(
+        self,
+        bc: float,
+        drag_table: DragTableDataType,
+        weight: Union[float, Weight] = 0,
+        diameter: Union[float, Distance] = 0,
+        length: Union[float, Distance] = 0,
+    ) -> None:
         """Initialize a drag model with ballistic coefficient and drag table.
 
         Args:
@@ -104,9 +106,9 @@ class DragModel:
             TypeError: If drag_table format is invalid
         """
         if len(drag_table) <= 0:
-            raise ValueError('Received empty drag table')
+            raise ValueError("Received empty drag table")
         if bc <= 0:
-            raise ValueError('Ballistic coefficient must be positive')
+            raise ValueError("Ballistic coefficient must be positive")
 
         self.drag_table = make_data_points(drag_table)
 
@@ -124,7 +126,7 @@ class DragModel:
 
     def __repr__(self) -> str:
         """Return string representation of the drag model.
-        
+
         Returns:
             String representation showing key parameters
         """
@@ -132,13 +134,13 @@ class DragModel:
 
     def _get_form_factor(self, bc: float) -> float:
         """Calculate form factor relative to this drag model.
-        
+
         Args:
             bc: Ballistic coefficient to calculate form factor for
-            
+
         Returns:
             Form factor (dimensionless)
-            
+
         Note:
             Requires sectional_density to be calculated (weight and diameter > 0)
         """
@@ -146,10 +148,10 @@ class DragModel:
 
     def _get_sectional_density(self) -> float:
         """Calculate sectional density from weight and diameter.
-        
+
         Returns:
             Sectional density in lb/in²
-            
+
         Note:
             Requires weight and diameter to be greater than 0
         """
@@ -160,24 +162,24 @@ class DragModel:
 
 def make_data_points(drag_table: DragTableDataType) -> List[DragDataPoint]:
     """Convert drag table from list of dictionaries to list of DragDataPoints.
-    
+
     Handles both DragDataPoint objects and dictionaries with 'Mach' and 'CD' keys.
     Validates input format and provides clear error messages for invalid data.
-    
+
     Args:
         drag_table: Either list of DragDataPoint objects or list of dictionaries
                     with 'Mach' and 'CD' keys
-                   
+
     Returns:
         List of DragDataPoint objects ready for use in ballistic calculations
-        
+
     Raises:
         TypeError: If drag_table items are not DragDataPoint objects or valid
                    dictionaries with required keys
     """
     try:
         return [
-            point if isinstance(point, DragDataPoint) else DragDataPoint(point['Mach'], point['CD'])
+            point if isinstance(point, DragDataPoint) else DragDataPoint(point["Mach"], point["CD"])
             for point in drag_table
         ]
     except (KeyError, TypeError) as exc:
@@ -188,14 +190,14 @@ def make_data_points(drag_table: DragTableDataType) -> List[DragDataPoint]:
 
 def sectional_density(weight: float, diameter: float) -> float:
     """Calculate sectional density of a projectile.
-    
+
     Args:
         weight: Projectile weight in grains
         diameter: Projectile diameter in inches
-        
+
     Returns:
         Sectional density in lb/in² (pounds per square inch)
-        
+
     Note:
         Formula: SD = weight / (diameter² * 7000)
         where 7000 converts grains to pounds (7000 grains = 1 pound)
@@ -206,7 +208,7 @@ def sectional_density(weight: float, diameter: float) -> float:
 @dataclass(order=True)
 class BCPoint:
     """Ballistic coefficient point for multi-BC drag models.
-    
+
     Represents a single ballistic coefficient at a specific velocity or Mach number.
         Sorts by Mach number for constructing drag models (see `DragModelMultiBC`).
 
@@ -219,15 +221,15 @@ class BCPoint:
         ```python
         # Create a BCPoint with BC=0.5 at Mach 2.0
         point1 = BCPoint(BC=0.5, Mach=2.0)
-        
+
         # Create a BCPoint with BC=0.4 at 1500fps
         point2 = BCPoint(BC=0.4, V=Velocity.FPS(1500))
-        
+
         # Sort points by Mach number
         points = [point2, point1]
         points.sort()  # point1 will come before point2 since Mach 2.0 < Mach at 1500fps
         ```
-        
+
     Note:
         Either `Mach` or `V` must be specified, but not both. If `V` is provided then `Mach`
             will be calculated automatically using standard atmospheric conditions.
@@ -237,22 +239,19 @@ class BCPoint:
     Mach: float = field(compare=True)
     V: Optional[Velocity] = field(compare=False)
 
-    def __init__(self,
-                 BC: float,
-                 Mach: Optional[float] = None,
-                 V: Optional[Union[float, Velocity]] = None) -> None:
+    def __init__(self, BC: float, Mach: Optional[float] = None, V: Optional[Union[float, Velocity]] = None) -> None:
         """Initialize a BCPoint.
-        
+
         Args:
             BC: Ballistic coefficient (must be positive)
             Mach: Mach number (optional, mutually exclusive with `V`)
             V: Velocity (optional, mutually exclusive with `Mach`)
-            
+
         Raises:
             ValueError: If `BC` is not positive, or if both or neither of `Mach` and `V` are specified.
         """
         if BC <= 0:
-            raise ValueError('Ballistic coefficient must be positive')
+            raise ValueError("Ballistic coefficient must be positive")
         if Mach and V:
             raise ValueError("You cannot specify both 'Mach' and 'V' at the same time")
         if not Mach and not V:
@@ -268,40 +267,42 @@ class BCPoint:
     @staticmethod
     def _machC() -> float:
         """Calculate Mach 1 velocity in m/s for standard Celsius temperature.
-        
+
         Returns:
             Speed of sound in m/s at standard atmospheric conditions
         """
         return math.sqrt(cStandardTemperatureC + cDegreesCtoK) * cSpeedOfSoundMetric
 
 
-def DragModelMultiBC(bc_points: List[BCPoint],
-                     drag_table: DragTableDataType,
-                     weight: Union[float, Weight] = 0,
-                     diameter: Union[float, Distance] = 0,
-                     length: Union[float, Distance] = 0) -> DragModel:
+def DragModelMultiBC(
+    bc_points: List[BCPoint],
+    drag_table: DragTableDataType,
+    weight: Union[float, Weight] = 0,
+    diameter: Union[float, Distance] = 0,
+    length: Union[float, Distance] = 0,
+) -> DragModel:
     """Create a drag model with multiple ballistic coefficients.
-    
+
     Constructs a DragModel using multiple BC measurements at different velocities,
     interpolating between them to create a more accurate drag function.
-    
+
     Args:
         bc_points: List of BCPoint objects with BC measurements at specific velocities
         drag_table: Standard drag table (G1, G7, etc.) or custom drag data
         weight: Projectile weight in grains (default: 0)
-        diameter: Projectile diameter in inches (default: 0) 
+        diameter: Projectile diameter in inches (default: 0)
         length: Projectile length in inches (default: 0)
-        
+
     Returns:
         DragModel with interpolated drag coefficients based on multiple BCs
-        
+
     Example:
         ```python
         from py_ballisticcalc.drag_tables import TableG7
         DragModelMultiBC([BCPoint(.21, V=Velocity.FPS(1500)), BCPoint(.22, V=Velocity.FPS(2500))],
                          drag_table=TableG7)
         ```
-    
+
     Note:
         If weight and diameter are provided, BC is set to sectional density.
         Otherwise, BC=1 and the drag_table contains final drag terms.
@@ -317,34 +318,34 @@ def DragModelMultiBC(bc_points: List[BCPoint],
     drag_table = make_data_points(drag_table)  # Convert from list of dicts to list of DragDataPoints
 
     bc_points.sort(key=lambda p: p.Mach)  # Make sure bc_points are sorted for linear interpolation
-    bc_interp = linear_interpolation([x.Mach for x in drag_table],
-                                     [x.Mach for x in bc_points],
-                                     [x.BC / bc for x in bc_points])
+    bc_interp = linear_interpolation(
+        [x.Mach for x in drag_table], [x.Mach for x in bc_points], [x.BC / bc for x in bc_points]
+    )
 
     for i, point in enumerate(drag_table):
         point.CD = point.CD / bc_interp[i]
     return DragModel(bc, drag_table, weight, diameter, length)
 
 
-def linear_interpolation(x: Union[List[float], Tuple[float]],
-                         xp: Union[List[float], Tuple[float]],
-                         yp: Union[List[float], Tuple[float]]) -> Union[List[float], Tuple[float]]:
+def linear_interpolation(
+    x: Union[List[float], Tuple[float]], xp: Union[List[float], Tuple[float]], yp: Union[List[float], Tuple[float]]
+) -> Union[List[float], Tuple[float]]:
     """Perform piecewise linear interpolation.
-    
+
     Interpolates y-values for given x-values using linear interpolation between known data points.
     Handles extrapolation by returning boundary values for x-values outside the range of xp.
-    
+
     Args:
         x: List of points for which we want interpolated values
         xp: List of existing x-coordinates (must be sorted in ascending order)
         yp: List of corresponding y-values for existing points
-        
+
     Returns:
         List of interpolated y-values corresponding to input x-values
-        
+
     Raises:
         AssertionError: If `xp` and `yp` lists have different lengths
-        
+
     Note:
         - For x-values below `min(xp)`, returns `yp[0]`
         - For x-values above `max(xp)`, returns `yp[-1]`
@@ -380,4 +381,4 @@ def linear_interpolation(x: Union[List[float], Tuple[float]],
     return y
 
 
-__all__ = ('DragModel', 'DragDataPoint', 'BCPoint', 'DragModelMultiBC')
+__all__ = ("DragModel", "DragDataPoint", "BCPoint", "DragModelMultiBC")

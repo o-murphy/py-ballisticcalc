@@ -148,6 +148,18 @@ def git_commit_changes(version: str, files: list[Path]):
         print("Git command not found. Please ensure Git is installed and in your PATH.")
 
 
+def git_add_tag(version: str):
+    try:
+        tag = f"v{version}"
+        subprocess.run(['git', 'tag', tag], check=True)
+        print(f"Added tag: '{tag}'")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during git tag: {e}")
+        print(e.stderr)
+    except FileNotFoundError:
+        print("Git command not found. Please ensure Git is installed and in your PATH.")
+
+
 def main():
     parser = ArgumentParser(description="Update versions in pyproject.toml files.")
     parser.add_argument('version', type=str, help='The new semantic version to set (e.g., 2.2.0b5).')
@@ -188,6 +200,7 @@ def main():
                 update_uv_lock(pyproject_toml)
                 update_uv_lock(bin_pyproject_toml)
                 git_commit_changes(version, files_to_update)
+                git_add_tag(version)
             else:
                 print("Working tree is not clean. Skipping file updates and commit as --no-commit was not specified.")
                 # IMPORTANT: No update_toml_version calls here, ensuring files are NOT touched.

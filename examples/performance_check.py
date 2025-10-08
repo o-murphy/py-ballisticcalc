@@ -132,38 +132,92 @@ def run_check(calc_, number):
     print(f"Execution rate: {rate:.2f} calls per second")
     print()
 
-number = 120
-config = {}
 
-[print(f"Detected: {e}") for e in _EngineLoader.iter_engines()]
-print()
 
-for ep in _EngineLoader.iter_engines():
-    config = {}
-
-    if ep.name in {"verlet_engine"}:
-    # if ep.name in {"euler_engine", "rk4_engine"}:
-        continue  # skip pure ones
-    elif ep.name in {"cythonized_euler_engine", "cythonized_rk4_engine"}:
-        ...
-    # elif ep.name in {"scipy"}:
-    #     config: SciPyEngineConfigDict = {
-    #         "relative_tolerance": 1e-6,
-    #         "absolute_tolerance": 1e-5,
-    #     }
-
-    engine = ep.load()
-    print("Engine: %s" % ep.value)
-    # if ep.name.startswith("scipy"):
-    #     config: SciPyEngineConfigDict = {
-    #         "relative_tolerance": 1e-4,
-    #         "absolute_tolerance": 1e-3,
-    #         "integration_method": "LSODA"
-    #     }
-    calc = Calculator(config=config, engine=engine)
-    run_check(calc, number)
+def check_all(number = 120):
+    [print(f"Detected: {e}") for e in _EngineLoader.iter_engines()]
     print()
 
+    for ep in _EngineLoader.iter_engines():
+        config = {}
+
+        if ep.name in {"verlet_engine"}:
+        # if ep.name in {"euler_engine", "rk4_engine"}:
+            continue  # skip pure ones
+        elif ep.name in {"cythonized_euler_engine", "cythonized_rk4_engine"}:
+            ...
+        # elif ep.name in {"scipy"}:
+        #     config: SciPyEngineConfigDict = {
+        #         "relative_tolerance": 1e-6,
+        #         "absolute_tolerance": 1e-5,
+        #     }
+
+        engine = ep.load()
+        print("Engine: %s" % ep.value)
+        # if ep.name.startswith("scipy"):
+        #     config: SciPyEngineConfigDict = {
+        #         "relative_tolerance": 1e-4,
+        #         "absolute_tolerance": 1e-3,
+        #         "integration_method": "LSODA"
+        #     }
+        calc = Calculator(config=config, engine=engine)
+        run_check(calc, number)
+        print()
+
+
+engines = {
+    "euler": "euler_engine", 
+    "rk4": "euler_engine", 
+    "verlet": "verlet_engine", 
+    "cythonized_euler": "cythonized_euler_engine", 
+    "cythonized_rk4": "cythonized_rk4_engine",
+    "scipy": "scipy_engine",
+    "all": "all", 
+}
+
+
+def check_one(en, m, number = 120):
+    config = {}
+    if en == "scipy":
+        config["integration_method"] = m
+
+    calc = Calculator(config=config, engine=en)
+    run_check(calc, number)
+
+
+def main():
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-e",
+        help="engine", 
+        choices=[
+            "euler", 
+            "rk4", 
+            "verlet", 
+            "cythonized_euler", 
+            "cythonized_rk4",
+            "scipy",
+            "all", 
+        ], 
+        default="rk4"
+    )
+    parser.add_argument("-m", help="SciPy method", choices=["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"], default="RK45")
+    parser.add_argument("-n", help="number", type=int, default=120)
+
+    args = parser.parse_args()
+    print(args)
+
+    if args.e == "all":
+        check_all()
+    else:
+        en = engines.get(args.e, args.n)
+        if not en:
+            parser.error("Unknown engine")
+        check_one(en, args.m, args.n)
+
+if __name__ == "__main__":
+    main()
 
 # Engine: py_ballisticcalc_exts:CythonizedEulerIntegrationEngine
 # Calculate barrel elevation at distance 100.0m 120 times:

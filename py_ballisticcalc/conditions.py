@@ -27,6 +27,7 @@ Examples:
 >>> from py_ballisticcalc import Unit
 >>> breeze = Wind(velocity=Unit.FPS(10), direction_from=Unit.Degree(90))
 """
+
 from __future__ import annotations
 
 import math
@@ -35,14 +36,30 @@ from dataclasses import dataclass
 
 from typing_extensions import Optional, Tuple, Union
 
-from py_ballisticcalc.constants import (cStandardDensity, cLapseRateKperFoot, cLowestTempF, cStandardDensityMetric,
-    cDegreesCtoK, cPressureExponent, cStandardTemperatureF, cLapseRateImperial, cStandardPressureMetric,
-    cLapseRateMetric, cStandardTemperatureC, cStandardHumidity, cSpeedOfSoundImperial, cDegreesFtoR,
-    cSpeedOfSoundMetric, cMaxWindDistanceFeet, cGravityImperial, cEarthAngularVelocityRadS)
+from py_ballisticcalc.constants import (
+    cStandardDensity,
+    cLapseRateKperFoot,
+    cLowestTempF,
+    cStandardDensityMetric,
+    cDegreesCtoK,
+    cPressureExponent,
+    cStandardTemperatureF,
+    cLapseRateImperial,
+    cStandardPressureMetric,
+    cLapseRateMetric,
+    cStandardTemperatureC,
+    cStandardHumidity,
+    cSpeedOfSoundImperial,
+    cDegreesFtoR,
+    cSpeedOfSoundMetric,
+    cMaxWindDistanceFeet,
+    cGravityImperial,
+    cEarthAngularVelocityRadS,
+)
 from py_ballisticcalc.unit import Angular, Distance, PreferredUnits, Pressure, Temperature, Velocity
 from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 
-__all__ = ('Atmo', 'Vacuum', 'Wind')
+__all__ = ("Atmo", "Vacuum", "Wind")
 
 
 class Atmo:  # pylint: disable=too-many-instance-attributes
@@ -217,8 +234,7 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         if t < Atmo.cLowestTempC:
             t = Atmo.cLowestTempC
             warnings.warn(
-                "Temperature interpolated from altitude fell below minimum model limit. "
-                f"Bounded at {cLowestTempF}°F.",
+                f"Temperature interpolated from altitude fell below minimum model limit. Bounded at {cLowestTempF}°F.",
                 RuntimeWarning,
             )
         return t
@@ -377,9 +393,11 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
             d = 1.83e-11
             e = -0.765e-8
             t_l = T - cDegreesCtoK
-            Z = 1 - (p / T) * (a0 + a1 * t_l + a2 * t_l**2 + (b0 + b1 * t_l) * x_v + (c0 + c1 * t_l) * x_v**2) + (
-                p / T
-            ) ** 2 * (d + e * x_v**2)
+            Z = (
+                1
+                - (p / T) * (a0 + a1 * t_l + a2 * t_l**2 + (b0 + b1 * t_l) * x_v + (c0 + c1 * t_l) * x_v**2)
+                + (p / T) ** 2 * (d + e * x_v**2)
+            )
             return Z
 
         # Normalize humidity to fraction [0..1]
@@ -388,16 +406,16 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
         rh_frac = max(0.0, min(1.0, rh_frac))
 
         # Convert inputs for CIPM equations
-        T_K = t + cDegreesCtoK           # Kelvin
-        p = float(p_hpa) * 100.0         # hPa -> Pa
+        T_K = t + cDegreesCtoK  # Kelvin
+        p = float(p_hpa) * 100.0  # hPa -> Pa
 
         # Calculation of saturated vapor pressure and enhancement factor
         p_sv = saturation_vapor_pressure(T_K)  # Pa (saturated vapor pressure)
-        f = enhancement_factor(p, t)           # Enhancement factor (p in Pa, t in °C)
+        f = enhancement_factor(p, t)  # Enhancement factor (p in Pa, t in °C)
 
         # Partial pressure of water vapor and mole fraction
-        p_v = rh_frac * f * p_sv               # Pa
-        x_v = p_v / p                          # Mole fraction of water vapor
+        p_v = rh_frac * f * p_sv  # Pa
+        x_v = p_v / p  # Mole fraction of water vapor
 
         # Calculation of compressibility factor
         Z = compressibility_factor(p, T_K, x_v)
@@ -407,9 +425,9 @@ class Atmo:  # pylint: disable=too-many-instance-attributes
 class Vacuum(Atmo):
     """Vacuum atmosphere (zero density => zero drag)."""
 
-    def __init__(self,
-                 altitude: Optional[Union[float, Distance]] = None,
-                 temperature: Optional[Union[float, Temperature]] = None):
+    def __init__(
+        self, altitude: Optional[Union[float, Distance]] = None, temperature: Optional[Union[float, Temperature]] = None
+    ):
         super().__init__(altitude, 0, temperature, 0)
         self._pressure = PreferredUnits.pressure(0)
         self._density_ratio = 0
@@ -436,12 +454,14 @@ class Wind:
     until_distance: Distance
     MAX_DISTANCE_FEET: float = cMaxWindDistanceFeet
 
-    def __init__(self,
-                 velocity: Optional[Union[float, Velocity]] = None,
-                 direction_from: Optional[Union[float, Angular]] = None,
-                 until_distance: Optional[Union[float, Distance]] = None,
-                 *,
-                 max_distance_feet: Optional[float] = cMaxWindDistanceFeet):
+    def __init__(
+        self,
+        velocity: Optional[Union[float, Velocity]] = None,
+        direction_from: Optional[Union[float, Angular]] = None,
+        until_distance: Optional[Union[float, Distance]] = None,
+        *,
+        max_distance_feet: Optional[float] = cMaxWindDistanceFeet,
+    ):
         """
         Create a new wind instance with given parameters.
 
@@ -524,10 +544,9 @@ class Coriolis:
     muzzle_velocity_fps: float
 
     @classmethod
-    def create(cls,
-               latitude: Optional[float],
-               azimuth: Optional[float],
-               muzzle_velocity_fps: float) -> Optional[Coriolis]:
+    def create(
+        cls, latitude: Optional[float], azimuth: Optional[float], muzzle_velocity_fps: float
+    ) -> Optional[Coriolis]:
         """Build a `Coriolis` helper for a shot when latitude is available.
 
         Args:

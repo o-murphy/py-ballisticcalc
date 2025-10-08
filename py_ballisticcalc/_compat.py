@@ -19,6 +19,4 @@ def get_bisect_left_key_func():
 
 bisect_left_key = get_bisect_left_key_func()
 
-__all__ = (
-    'bisect_left_key',
-)
+__all__ = ("bisect_left_key",)
