@@ -62,8 +62,18 @@ from typing import Any, Callable, Literal, Sequence, TYPE_CHECKING
 # Third-party imports
 try:
     import numpy as np
-except ImportError as error:
-    np = None
+    _HAS_NUMPY = True
+except ImportError:
+    _HAS_NUMPY = False
+
+try:
+    from scipy.optimize import root_scalar, minimize_scalar  # type: ignore[import-untyped]
+    from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
+    from scipy.optimize import root_scalar  # type: ignore[import-untyped]
+    _HAS_SCIPY = True
+except ImportError:
+    _HAS_SCIPY = False
+
 from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
@@ -464,6 +474,13 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             which applies defaults for any unspecified parameters. This ensures
             the engine always has a complete, valid configuration.
         """
+
+        # dependencies guard
+        if not _HAS_NUMPY:
+            raise ImportError("Numpy is required for SciPyIntegrationEngine.")
+        if not _HAS_SCIPY:
+            raise ImportError("SciPy is required for SciPyIntegrationEngine.")
+
         self._config: SciPyEngineConfig = create_scipy_engine_config(_config)  # type: ignore
         self.gravity_vector: Vector = Vector(.0, self._config.cGravityConstant, .0)
         self.integration_step_count = 0  # Number of evaluations of diff_eq during ._integrate()
@@ -488,10 +505,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             ValueError: If the angle bracket excludes the look_angle.
             OutOfRangeError: If we fail to find a max range.
         """
-        try:
-            from scipy.optimize import minimize_scalar  # type: ignore[import-untyped]
-        except ImportError as e:
-            raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
         # region Virtually vertical shot
         if abs(props.look_angle_rad - math.radians(90)) < self.APEX_IS_MAX_RANGE_RADIANS:
@@ -542,10 +555,6 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             OutOfRangeError: If distance exceeds max range at Shot.look_angle.
             ZeroFindingError: If no solution is found within the angle bracket.
         """
-        try:
-            from scipy.optimize import root_scalar  # type: ignore[import-untyped]
-        except ImportError as e:
-            raise ImportError("SciPy is required for SciPyIntegrationEngine.") from e
 
         status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft = (
             self._init_zero_calculation(props, distance)
@@ -645,11 +654,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
             HitResult: Object describing the trajectory.
         """
         self.trajectory_count += 1
-        try:
-            from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
-            from scipy.optimize import root_scalar  # type: ignore[import-untyped]
-        except ImportError as e:
-            raise ImportError("SciPy and numpy are required for SciPyIntegrationEngine.") from e
+
         props.filter_flags = filter_flags
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
