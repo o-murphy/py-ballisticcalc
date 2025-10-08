@@ -84,8 +84,7 @@ try:
 
     assert matplotlib
 except (ImportError, AssertionError) as error:
-    warnings.warn("Install matplotlib to get results as a plot", UserWarning)
-    raise error
+    raise ImportError("Install matplotlib to get results as a plot") from error
 
 __all__ = (
     'show_hit_result_plot',

@@ -51,14 +51,19 @@ Note:
     This engine requires scipy and numpy to be installed. Install with:
     `pip install py_ballisticcalc[scipy]` or `pip install scipy numpy`
 """
+from __future__ import annotations
+
 # Standard library imports
 import math
 import warnings
 from dataclasses import dataclass, asdict
-from typing import Any, Callable, Literal, Sequence
+from typing import Any, Callable, Literal, Sequence, TYPE_CHECKING
 
 # Third-party imports
-import numpy as np
+try:
+    import numpy as np
+except ImportError as error:
+    np = None
 from typing_extensions import List, Optional, Tuple, Union, override
 
 # Local imports
@@ -93,7 +98,10 @@ __all__ = ('SciPyIntegrationEngine',
 
 
 # type of event callback
-SciPyEventFunctionT = Callable[[float, Any], np.floating]
+if TYPE_CHECKING:
+    SciPyEventFunctionT = Callable[[float, Any], np.floating]
+else:
+    SciPyEventFunctionT = Callable[[float, Any], Any]
 
 # typed scipy event with expected attributes
 @dataclass

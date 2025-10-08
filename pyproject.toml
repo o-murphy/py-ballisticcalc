@@ -37,7 +37,6 @@ dependencies = [
     "typing_extensions>= 4.12.2",
     "tomli>=2.2.1; python_version<'3.11'",
     "Deprecated>=1.2.18",
-    "pandas>=2.3.1",
 ]
 
 [project.entry-points.py_ballisticcalc]
@@ -94,7 +93,7 @@ dev = [
     "jupyter>=1.1.1",
     "matplotlib>=3.9",
     "mypy>=1.15.0",
-    "numpy>=2",
+    "numpy>=2", # should be updated after Python 3.9 sunset
     "scipy>=1.13.1", # maybe should be in separate dependency group (40+Mb zipped size)
     "pandas>=2.3.1",
     "pandas-stubs>=2.2.2.240807",

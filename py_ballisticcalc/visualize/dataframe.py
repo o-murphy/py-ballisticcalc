@@ -44,8 +44,8 @@ from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 try:
     from pandas import DataFrame
 except ImportError as error:
-    warnings.warn("Install pandas to convert trajectory to pandas.DataFrame", UserWarning)
-    raise error
+    raise ImportError("Install pandas to convert trajectory to pandas.DataFrame") from error
+
 
 __all__ = (
     'hit_result_as_dataframe',

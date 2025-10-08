@@ -50,7 +50,7 @@ See Also:
 """
 from __future__ import annotations
 import math
-import typing
+from typing import TYPE_CHECKING, Dict, Any
 from dataclasses import dataclass, field
 from deprecated import deprecated
 from typing_extensions import Final, Literal, NamedTuple, Optional, Tuple, Union
@@ -64,7 +64,7 @@ from py_ballisticcalc.interpolation import (
     interpolate_2_pt,
 )
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from pandas import DataFrame
     from matplotlib.axes import Axes
     from py_ballisticcalc.shot import ShotProps
@@ -600,7 +600,7 @@ class TrajectoryData(NamedTuple):
         x0, x1, x2 = get_key_val(p0), get_key_val(p1), get_key_val(p2)
 
         # Use reflection to build the new TrajectoryData object
-        interpolated_fields: typing.Dict[str, typing.Any] = {}
+        interpolated_fields: Dict[str, Any] = {}
         for field_name in TrajectoryData._fields:
             if field_name == 'flag':
                 continue
