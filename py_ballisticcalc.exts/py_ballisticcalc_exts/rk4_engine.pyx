@@ -161,7 +161,7 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         )
 
         # Store point in trajectory sequence
-        traj_seq.append(
+        traj_seq._append_c(
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
@@ -246,7 +246,7 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
             break
         #endregion
     # Process final data point
-    traj_seq.append(
+    traj_seq._append_c(
         time,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,
