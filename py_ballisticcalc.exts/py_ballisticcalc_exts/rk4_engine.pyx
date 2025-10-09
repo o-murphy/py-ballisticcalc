@@ -28,10 +28,26 @@ from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq
 from py_ballisticcalc_exts.v3d cimport V3dT, add, sub, mag, mulS
 
 from py_ballisticcalc.exceptions import RangeError
+from cpython.ref cimport PyObject, Py_INCREF, Py_DECREF 
 
 __all__ = [
     'CythonizedRK4IntegrationEngine',
 ]
+
+
+
+
+cdef void _traj_seq_append_wrapper(
+    PyObject* obj_ptr,
+    double time, double r_x, double r_y, double r_z,
+    double v_x, double v_y, double v_z, double mach
+):
+    """
+    C-level function pointer target to call the Cython class method 'append'.
+    """
+    cdef CBaseTrajSeq traj_seq = <CBaseTrajSeq>obj_ptr
+    traj_seq.append(time, r_x, r_y, r_z, v_x, v_y, v_z, mach)
+
 
 @final
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
@@ -45,19 +61,41 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef tuple _integrate(CythonizedRK4IntegrationEngine self, ShotProps_t *shot_props_ptr,
                            double range_limit_ft, double range_step_ft,
                            double time_step, int filter_flags):
-        return _integrate_rk4(
+        
+        cdef CBaseTrajSeq traj_seq = CBaseTrajSeq() 
+        cdef TrajectoryRecorder recorder 
+        cdef object termination_reason # Зберігаємо повернуту причину
+        
+        # 1. Заповнення структури
+        recorder.append_func = _traj_seq_append_wrapper
+        recorder.traj_seq_instance_ptr = <PyObject*>traj_seq 
+        
+        # 2. Збільшення лічильника посилань
+        Py_INCREF(<object>recorder.traj_seq_instance_ptr)
+        
+        # 3. Виклик C-функції та отримання лише причини
+        termination_reason = _integrate_rk4(
             shot_props_ptr,
             self._wind_sock,
             &self._config_s,
+            &recorder, 
             range_limit_ft, 
             range_step_ft, 
             time_step, 
             filter_flags
         )
-
-cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
+        
+        # 4. Зменшення лічильника посилань після використання
+        Py_DECREF(<object>recorder.traj_seq_instance_ptr)
+        
+        # 5. Повертаємо (об'єкт траєкторії, який був заповнений, та причину)
+        # Тепер traj_seq і termination_reason знаходяться у scope _integrate
+        return (traj_seq, termination_reason)
+        
+cdef object _integrate_rk4(ShotProps_t *shot_props_ptr,
                         WindSock_t *wind_sock_ptr,
                         const Config_t *config_ptr,
+                        TrajectoryRecorder *recorder_ptr, # <-- Новий аргумент
                         double range_limit_ft, double range_step_ft,
                         double time_step, int filter_flags):
     """
@@ -104,9 +142,6 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         V3dT _p_sum_intermediate
         V3dT v1, v2, v3, v4
         V3dT p1, p2, p3, p4
-        
-        # For storing dense output
-        CBaseTrajSeq traj_seq
 
     # Initialize gravity vector
     gravity_vector.x = <double>0.0
@@ -141,8 +176,6 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         &mach
     )
     
-    traj_seq = CBaseTrajSeq()
-
     # Trajectory Loop
     # Cubic interpolation requires 3 points, so we will need at least 3 steps
     while (range_vector.x <= range_limit_ft) or integration_step_count < 3:
@@ -161,7 +194,8 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         )
 
         # Store point in trajectory sequence
-        traj_seq.append(
+        recorder_ptr.append_func(
+            recorder_ptr.traj_seq_instance_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
@@ -246,13 +280,14 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
             break
         #endregion
     # Process final data point
-    traj_seq.append(
+    recorder_ptr.append_func(
+        recorder_ptr.traj_seq_instance_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,
         mach
     )
-    return (traj_seq, termination_reason)
+    return termination_reason
         
         
 # This function calculates dv/dt for velocity (v) affected by gravity, drag, and Coriolis forces.

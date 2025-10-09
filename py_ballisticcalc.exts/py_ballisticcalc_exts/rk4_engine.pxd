@@ -5,6 +5,24 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     Config_t,
 )
+from cpython.ref cimport PyObject
+
+
+ctypedef void (*TrajectoryAppendFunc)(
+    PyObject* traj_seq_obj,
+    double time, double r_x, double r_y, double r_z,
+    double v_x, double v_y, double v_z, double mach
+)
+
+cdef void _traj_seq_append_wrapper(
+    PyObject* obj_ptr,
+    double time, double r_x, double r_y, double r_z,
+    double v_x, double v_y, double v_z, double mach
+)
+
+cdef struct TrajectoryRecorder:
+    TrajectoryAppendFunc append_func
+    PyObject* traj_seq_instance_ptr
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self)
@@ -12,8 +30,9 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
                           double range_limit_ft, double range_step_ft,
                           double time_step, int filter_flags)
     
-cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
+cdef object _integrate_rk4(ShotProps_t *shot_props_ptr,
                         WindSock_t *wind_sock_ptr,
                         const Config_t *config_ptr,
+                        TrajectoryRecorder *recorder_ptr,
                         double range_limit_ft, double range_step_ft,
                         double time_step, int filter_flags)
