@@ -163,7 +163,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             )
 
             # Store point in trajectory sequence
-            traj_seq.append(time, range_vector.x, range_vector.y, range_vector.z,
+            traj_seq._append_c(time, range_vector.x, range_vector.y, range_vector.z,
                             velocity_vector.x, velocity_vector.y, velocity_vector.z, mach)
             
             # Euler integration step
@@ -212,7 +212,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
                     termination_reason = RangeError.MinimumAltitudeReached
                 break
         # Add final data point
-        traj_seq.append(
+        traj_seq._append_c(
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
