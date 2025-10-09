@@ -12,8 +12,8 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
                           double range_limit_ft, double range_step_ft,
                           double time_step, int filter_flags)
     
-    cdef tuple _integrate1(CythonizedRK4IntegrationEngine self, ShotProps_t *shot_props_ptr,
-                           WindSock_t *wind_sock_ptr,
-                           const Config_t *config_ptr,
-                           double range_limit_ft, double range_step_ft,
-                           double time_step, int filter_flags)
+cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
+                        WindSock_t *wind_sock_ptr,
+                        const Config_t *config_ptr,
+                        double range_limit_ft, double range_step_ft,
+                        double time_step, int filter_flags)
