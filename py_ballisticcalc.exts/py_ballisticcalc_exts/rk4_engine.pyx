@@ -45,12 +45,10 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef tuple _integrate(CythonizedRK4IntegrationEngine self, ShotProps_t *shot_props_ptr,
                            double range_limit_ft, double range_step_ft,
                            double time_step, int filter_flags):
-        cdef:
-            Config_t* config_ptr = &self._config_s
         return self._integrate1(
             shot_props_ptr,
             self._wind_sock,
-            config_ptr,
+            &self._config_s,
             range_limit_ft, 
             range_step_ft, 
             time_step, 
