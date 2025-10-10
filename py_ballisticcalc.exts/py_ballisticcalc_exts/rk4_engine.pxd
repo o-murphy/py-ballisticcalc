@@ -26,7 +26,7 @@ cdef extern from "include/rk4.h":
                          const V3dT *gravity_vector_ptr, 
                          double km_coeff, 
                          const ShotProps_t *shot_props_ptr, 
-                         const V3dT *ground_velocity_ptr)
+                         const V3dT *ground_velocity_ptr) noexcept nogil
                          
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):

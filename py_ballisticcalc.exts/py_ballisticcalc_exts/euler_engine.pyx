@@ -33,6 +33,10 @@ __all__ = [
     'CythonizedEulerIntegrationEngine',
 ]
 
+cdef extern from "include/euler.h":
+    double _euler_time_step(double base_step, double velocity) noexcept nogil
+
+
 @final
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     """Cythonized Euler integration engine for ballistic calculations."""
@@ -41,10 +45,6 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedEulerIntegrationEngine self):
         """Calculate the step size for integration."""
         return self.DEFAULT_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)
-    
-    cdef double time_step(CythonizedEulerIntegrationEngine self, double base_step, double velocity):
-        """Calculate time step based on current projectile speed."""
-        return base_step / fmax(<double>1.0, velocity)
 
     cdef tuple _integrate(CythonizedEulerIntegrationEngine self, ShotProps_t *shot_props_ptr,
                            double range_limit_ft, double range_step_ft,
@@ -173,7 +173,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             relative_speed = mag(&relative_velocity)
             
             # 2. Calculate time step (adaptive based on velocity)
-            delta_time = self.time_step(calc_step, relative_speed)
+            delta_time = _euler_time_step(calc_step, relative_speed)
             
             # 3. Calculate drag coefficient and drag force
             km = density_ratio * ShotProps_t_dragByMach(shot_props_ptr, relative_speed / mach)
