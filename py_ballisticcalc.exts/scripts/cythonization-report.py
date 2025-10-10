@@ -15,7 +15,7 @@ from typing import Tuple, Dict
 from bs4 import BeautifulSoup
 
 PROJECT_ROOT = Path(__file__).parent.parent
-PROJECT_SRC = PROJECT_ROOT / 'py_ballisticcalc_exts'
+PROJECT_SRC = PROJECT_ROOT / 'py_ballisticcalc_exts' / 'build' / 'py_ballisticcalc_exts'
 REPORTS_DIR = PROJECT_ROOT / "reports"
 HTML_REPORT_PATH = PROJECT_ROOT / "cythonization.html"
 MARKDOWN_REPORT_PATH = PROJECT_ROOT / "cythonization.md"
