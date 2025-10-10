@@ -121,13 +121,10 @@ cdef class CythonizedBaseIntegrationEngine:
             ShotProps_t* shot_props_ptr
         shot_props_ptr = self._init_trajectory(shot_info)
         try:
-            result = self._find_max_range(shot_props_ptr, angle_bracket_deg)
+            return self._find_max_range(shot_props_ptr, angle_bracket_deg)
+        finally:
             self._free_trajectory()
-            return result
-        except:
-            self._free_trajectory()
-            raise
-
+            
     def find_zero_angle(self, object shot_info, object distance, bint lofted = False):
         """
         Finds the barrel elevation needed to hit sight line at a specific distance,
@@ -137,12 +134,9 @@ cdef class CythonizedBaseIntegrationEngine:
             ShotProps_t* shot_props_ptr
         shot_props_ptr = self._init_trajectory(shot_info)
         try:
-            result = self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
+            return self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
+        finally:
             self._free_trajectory()
-            return result
-        except:
-            self._free_trajectory()
-            raise
 
     def find_apex(self, object shot_info) -> TrajectoryData:
         """
@@ -155,11 +149,9 @@ cdef class CythonizedBaseIntegrationEngine:
         try:
             result = self._find_apex(shot_props_ptr)
             props = ShotProps.from_shot(shot_info)
-            self._free_trajectory()
             return TrajectoryData.from_props(props, result.time, result.position, result.velocity, result.mach)
-        except:
+        finally:
             self._free_trajectory()
-            raise
 
     def zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance) -> Angular:
         """
@@ -185,12 +177,9 @@ cdef class CythonizedBaseIntegrationEngine:
             # Fallback to guaranteed method
             shot_props_ptr = self._init_trajectory(shot_info)
             try:
-                result = self._find_zero_angle(shot_props_ptr, distance._feet, False)
+                return self._find_zero_angle(shot_props_ptr, distance._feet, False)
+            finally:
                 self._free_trajectory()
-                return result
-            except:
-                self._free_trajectory()
-                raise
 
     def integrate(CythonizedBaseIntegrationEngine self,
                   object shot_info,
@@ -272,10 +261,10 @@ cdef class CythonizedBaseIntegrationEngine:
             return <double>9e9
         try:
             hit = trajectory.get_at('position.x', target_x_ft)
+            return (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft)
         except Exception:
             # Any interpolation failure (e.g., degenerate points) signals unreachable
             return <double>9e9
-        return (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft)
 
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self):
         if self._wind_sock != NULL:
