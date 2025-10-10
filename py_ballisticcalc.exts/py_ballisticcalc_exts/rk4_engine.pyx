@@ -6,7 +6,7 @@ Because storing each step in a CBaseTrajSeq is practically costless, we always r
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from libc.math cimport sin, cos, fmin
+from libc.math cimport sin, cos, fmin, fabs
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
@@ -89,7 +89,7 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         # Early binding of configuration constants
         double _cMinimumVelocity = config_ptr.cMinimumVelocity
         double _cMinimumAltitude = config_ptr.cMinimumAltitude
-        double _cMaximumDrop = -abs(config_ptr.cMaximumDrop)
+        double _cMaximumDrop = -fabs(config_ptr.cMaximumDrop)
         
         # Working variables
         object termination_reason = None
@@ -253,35 +253,3 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         mach
     )
     return (traj_seq, termination_reason)
-        
-        
-# This function calculates dv/dt for velocity (v) affected by gravity, drag, and Coriolis forces.
-cdef V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff, 
-                          const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr):
-    """Calculate the derivative of velocity with respect to time.
-    
-    Args:
-        v_ptr: Pointer to the relative velocity vector (velocity - wind)
-        gravity_vector_ptr: Pointer to the gravity vector
-        km_coeff: Drag coefficient
-        shot_props_ptr: Pointer to shot properties (for Coriolis data)
-        ground_velocity_ptr: Pointer to ground velocity vector (for Coriolis calculation)
-        
-    Returns:
-        The acceleration vector (dv/dt)
-    """
-    cdef V3dT drag_force_component
-    cdef V3dT coriolis_acceleration
-    
-    # Bullet velocity changes due to drag and gravity
-    drag_force_component = mulS(v_ptr, km_coeff * mag(v_ptr))
-    cdef V3dT acceleration = sub(gravity_vector_ptr, &drag_force_component)
-    
-    # Add Coriolis acceleration if available
-    if not shot_props_ptr.coriolis.flat_fire_only:
-        Coriolis_t_coriolis_acceleration_local(
-            &shot_props_ptr.coriolis, ground_velocity_ptr, &coriolis_acceleration
-        )
-        acceleration = add(&acceleration, &coriolis_acceleration)
-    
-    return acceleration
