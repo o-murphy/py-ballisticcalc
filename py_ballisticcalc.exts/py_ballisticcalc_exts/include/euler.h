@@ -1,8 +1,6 @@
 #ifndef EULER_H
 #define EULER_H
 
-#include <math.h>
-
 /**
  * @brief Calculate time step based on current projectile speed.
  * * @param base_step The base time step value.

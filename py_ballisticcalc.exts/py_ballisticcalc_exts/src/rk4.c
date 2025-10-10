@@ -1,3 +1,4 @@
+#include <math.h>
 #include "rk4.h"
 #include "v3d.h"
 #include "bclib.h"
