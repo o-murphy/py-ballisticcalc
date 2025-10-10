@@ -4,7 +4,7 @@ Cythonized Euler Integration Engine
 Because storing each step in a CBaseTrajSeq is practically costless, we always run with "dense_output=True".
 """
 from cython cimport final
-from libc.math cimport fabs, sin, cos, fmin, fmax
+from libc.math cimport fabs, sin, cos, fmin
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
