@@ -120,28 +120,28 @@ cdef class CBaseTrajSeq:
         Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
             Supports negative idx (which references from end of sequence).
         """
-        cdef BaseTrajC outp
-        cdef V3dT pos
-        cdef V3dT vel
-        cdef BaseTrajDataT result
-        cdef int key_kind
+        cdef:
+            BaseTrajC outp
+            V3dT pos
+            V3dT vel
+            int key_kind
 
         if key_attribute == 'time':
-            key_kind = <int>KEY_TIME
+            key_kind = KEY_TIME
         elif key_attribute == 'mach':
-            key_kind = <int>KEY_MACH
+            key_kind = KEY_MACH
         elif key_attribute == 'position.x':
-            key_kind = <int>KEY_POS_X
+            key_kind = KEY_POS_X
         elif key_attribute == 'position.y':
-            key_kind = <int>KEY_POS_Y
+            key_kind = KEY_POS_Y
         elif key_attribute == 'position.z':
-            key_kind = <int>KEY_POS_Z
+            key_kind = KEY_POS_Z
         elif key_attribute == 'velocity.x':
-            key_kind = <int>KEY_VEL_X
+            key_kind = KEY_VEL_X
         elif key_attribute == 'velocity.y':
-            key_kind = <int>KEY_VEL_Y
+            key_kind = KEY_VEL_Y
         elif key_attribute == 'velocity.z':
-            key_kind = <int>KEY_VEL_Z
+            key_kind = KEY_VEL_Z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
@@ -164,8 +164,7 @@ cdef class CBaseTrajSeq:
 
         pos.x = outp.px; pos.y = outp.py; pos.z = outp.pz
         vel.x = outp.vx; vel.y = outp.vy; vel.z = outp.vz
-        result = BaseTrajDataT(outp.time, pos, vel, outp.mach)
-        return result
+        return BaseTrajDataT(outp.time, pos, vel, outp.mach)
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
@@ -195,21 +194,21 @@ cdef class CBaseTrajSeq:
         cdef double b2
         cdef bint search_forward
         if key_attribute == 'time':
-            key_kind = <int>KEY_TIME
+            key_kind = KEY_TIME
         elif key_attribute == 'mach':
-            key_kind = <int>KEY_MACH
+            key_kind = KEY_MACH
         elif key_attribute == 'position.x':
-            key_kind = <int>KEY_POS_X
+            key_kind = KEY_POS_X
         elif key_attribute == 'position.y':
-            key_kind = <int>KEY_POS_Y
+            key_kind = KEY_POS_Y
         elif key_attribute == 'position.z':
-            key_kind = <int>KEY_POS_Z
+            key_kind = KEY_POS_Z
         elif key_attribute == 'velocity.x':
-            key_kind = <int>KEY_VEL_X
+            key_kind = KEY_VEL_X
         elif key_attribute == 'velocity.y':
-            key_kind = <int>KEY_VEL_Y
+            key_kind = KEY_VEL_Y
         elif key_attribute == 'velocity.z':
-            key_kind = <int>KEY_VEL_Z
+            key_kind = KEY_VEL_Z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
         n = <Py_ssize_t>self._length
