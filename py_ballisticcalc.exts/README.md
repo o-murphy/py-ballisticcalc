@@ -7,7 +7,7 @@ LGPL library for small arms ballistic calculations based on point-mass (3 DoF) p
 [![pypi-pre]][pypi-pre-url]
 [![downloads]][pepy]
 [![downloads/month]][pepy]
-[![coverage]][coverage]
+![cythonization](reports/cythonization.svg)
 [![py-versions]][sources]
 [![Made in Ukraine]][SWUBadge]
 
