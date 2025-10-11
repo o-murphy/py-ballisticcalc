@@ -15,10 +15,76 @@ from typing import Tuple, Dict
 from bs4 import BeautifulSoup
 
 PROJECT_ROOT = Path(__file__).parent.parent
-PROJECT_SRC = PROJECT_ROOT / 'py_ballisticcalc_exts'
+PROJECT_SRC = PROJECT_ROOT / 'py_ballisticcalc_exts' / 'build' / 'py_ballisticcalc_exts'
 REPORTS_DIR = PROJECT_ROOT / "reports"
 HTML_REPORT_PATH = PROJECT_ROOT / "cythonization.html"
 MARKDOWN_REPORT_PATH = PROJECT_ROOT / "cythonization.md"
+
+
+def generate_svg_badge(total_percentage: float) -> str:
+    """
+    Generates an SVG badge string with the overall Cythonization percentage.
+    The color of the badge changes based on the percentage for visual feedback.
+
+    Args:
+        total_percentage: The overall Cythonization percentage (0.0 to 100.0).
+
+    Returns:
+        A string containing the complete SVG badge.
+    """
+    # Determine the color based on the percentage
+    # Green for good, Yellow/Orange for moderate, Red for low
+    if total_percentage >= 90:
+        # Green (e.g., passing/excellent)
+        color_hex = "#4c1" # Green
+    elif total_percentage >= 75:
+        # Light Green (e.g., good)
+        color_hex = "#a4a61d" # Light Green/Olive
+    elif total_percentage >= 50:
+        # Yellow/Orange (e.g., moderate/needs work)
+        color_hex = "#fe7d37"
+    else:
+        # Red (e.g., low/bad)
+        color_hex = "#e05d44"
+
+    percentage_str = f"{total_percentage:.0f}%" # Format as integer percentage, e.g., "75%"
+    
+    # Calculate text width for the percentage value.
+    # We'll use a fixed width for simplicity, mimicking the structure of standard badges.
+    # Left side width: "cythonize" is 63
+    left_width = 63
+    # Right side width: fixed at 36 for a two/three-digit percentage
+    right_width = 36
+    total_width = left_width + right_width
+    
+    # Text positions
+    left_text_x = left_width / 2
+    right_text_x = left_width + right_width / 2
+    
+    svg_content = f"""
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="20">
+    <linearGradient id="b" x2="0" y2="100%">
+        <stop offset="0" stop-color="#bbb" stop-opacity=".1"/>
+        <stop offset="1" stop-opacity=".1"/>
+    </linearGradient>
+    <mask id="a">
+        <rect width="{total_width}" height="20" rx="0" fill="#fff"/>
+    </mask>
+    <g mask="url(#a)">
+        <path fill="#555" d="M0 0h{left_width}v20H0z"/>
+        <path fill="{color_hex}" d="M{left_width} 0h{right_width}v20H{left_width}z"/>
+        <path fill="url(#b)" d="M0 0h{total_width}v20H0z"/>
+    </g>
+    <g fill="#fff" text-anchor="middle" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="11">
+        <text x="{left_text_x}" y="15" fill="#010101" fill-opacity=".3">cythonize</text>
+        <text x="{left_text_x}" y="14">cythonize</text>
+        <text x="{right_text_x + 0.5}" y="15" fill="#010101" fill-opacity=".3">{percentage_str}</text>
+        <text x="{right_text_x}" y="14">{percentage_str}</text>
+    </g>
+</svg>
+    """
+    return svg_content.strip()
 
 
 def calculate_cythonization_percentage(html_content: str) -> (float, float, float):
@@ -355,6 +421,13 @@ def main():
         default="both",
         help="Report format to generate: 'html', 'markdown', or 'both'. Defaults to 'both'."
     )
+    # Add a new format option for the SVG badge
+    parser.add_argument(
+        "-b", "--badge",
+        action="store_true",
+        default=True,
+        help="Generate an SVG badge (cythonization.svg) with the total percentage."
+    )
 
     args = parser.parse_args()
 
@@ -365,6 +438,7 @@ def main():
 
     html_report_path = output_dir / "cythonization.html"
     markdown_report_path = output_dir / "cythonization.md"
+    svg_badge_path = output_dir / "cythonization.svg" # Define the path for the new SVG badge
 
     reports = (p for p in reports_dir.iterdir() if p.suffix == '.html')
     results = {}
@@ -379,10 +453,15 @@ def main():
         print("\nNo Cythonization reports found or processed to generate reports.")
         return # Exit if no results
 
+    # Calculate total results once
+    total_raw_result = compose_results(results)
+    total_formatted_result = format_result(*total_raw_result)
+    total_cythonization_percentage = total_formatted_result['cythonization_percentage']
+
     for report, result in results.items():
         print_result(f"File: {report.stem} :", result)
 
-    print_result("Total:", compose_results(results))
+    print_result("Total:", total_raw_result) # Use total_raw_result here
 
     # Generate and save reports based on format argument
     if args.format == "html" or args.format == "both":
@@ -402,6 +481,16 @@ def main():
             print(f"Markdown report generated successfully: {markdown_report_path}")
         except IOError as e:
             print(f"Error saving Markdown report to {markdown_report_path}: {e}")
+
+    # Generate and save SVG badge if requested
+    if args.badge:
+        svg_content = generate_svg_badge(total_cythonization_percentage)
+        try:
+            with open(svg_badge_path, 'w', encoding='utf-8') as f:
+                f.write(svg_content)
+            print(f"SVG badge generated successfully: {svg_badge_path}")
+        except IOError as e:
+            print(f"Error saving SVG badge to {svg_badge_path}: {e}")
 
 
 if __name__ == "__main__":

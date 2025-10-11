@@ -46,8 +46,8 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        cdef double density_ratio = <double>0.0
-        cdef double mach = <double>0.0
+        cdef double density_ratio = 0.0
+        cdef double mach = 0.0
         Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._shot_s.atmo, altitude_ft, &density_ratio, &mach)
         return density_ratio, mach
 
@@ -92,19 +92,19 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         cdef double vy = v * sin(be)
         cdef double vz = v * cos(be) * sin(az)
         # initial point
-        seq._append_c(<double>0.0, <double>0.0,
+        seq._append_c(0.0, 0.0,
               -self._shot_s.cant_cosine * self._shot_s.sight_height,
               -self._shot_s.cant_sine * self._shot_s.sight_height,
-              vx, vy, vz, <double>1.0)
+              vx, vy, vz, 1.0)
         # second point simple Euler step without drag / gravity for minimal path
         cdef double dt
         if time_step > 0:
             dt = time_step
         else:
-            dt = <double>0.001
+            dt = 0.001
         seq._append_c(dt, vx * dt,
               -self._shot_s.cant_cosine * self._shot_s.sight_height + vy * dt,
               -self._shot_s.cant_sine * self._shot_s.sight_height + vz * dt,
-              vx, vy, vz, <double>1.0)
+              vx, vy, vz, 1.0)
         self.integration_step_count = <int>seq._length
         return (seq, None)

@@ -120,28 +120,28 @@ cdef class CBaseTrajSeq:
         Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
             Supports negative idx (which references from end of sequence).
         """
-        cdef BaseTrajC outp
-        cdef V3dT pos
-        cdef V3dT vel
-        cdef BaseTrajDataT result
-        cdef int key_kind
+        cdef:
+            BaseTrajC outp
+            V3dT pos
+            V3dT vel
+            int key_kind
 
         if key_attribute == 'time':
-            key_kind = <int>KEY_TIME
+            key_kind = KEY_TIME
         elif key_attribute == 'mach':
-            key_kind = <int>KEY_MACH
+            key_kind = KEY_MACH
         elif key_attribute == 'position.x':
-            key_kind = <int>KEY_POS_X
+            key_kind = KEY_POS_X
         elif key_attribute == 'position.y':
-            key_kind = <int>KEY_POS_Y
+            key_kind = KEY_POS_Y
         elif key_attribute == 'position.z':
-            key_kind = <int>KEY_POS_Z
+            key_kind = KEY_POS_Z
         elif key_attribute == 'velocity.x':
-            key_kind = <int>KEY_VEL_X
+            key_kind = KEY_VEL_X
         elif key_attribute == 'velocity.y':
-            key_kind = <int>KEY_VEL_Y
+            key_kind = KEY_VEL_Y
         elif key_attribute == 'velocity.z':
-            key_kind = <int>KEY_VEL_Z
+            key_kind = KEY_VEL_Z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
@@ -164,14 +164,16 @@ cdef class CBaseTrajSeq:
 
         pos.x = outp.px; pos.y = outp.py; pos.z = outp.pz
         vel.x = outp.vx; vel.y = outp.vy; vel.z = outp.vz
-        result = BaseTrajDataT(outp.time, pos, vel, outp.mach)
-        return result
+        return BaseTrajDataT(outp.time, pos, vel, outp.mach)
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         return self._interpolate_at_c(idx, key_attribute, key_value)
 
-    def get_at(self, str key_attribute, double key_value, start_from_time=None):
+    def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
+        return self._get_at_c(key_attribute, key_value, start_from_time)
+
+    cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time=None):
         """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
 
         If start_from_time > 0, search is centered from the first point where time >= start_from_time,
@@ -195,21 +197,21 @@ cdef class CBaseTrajSeq:
         cdef double b2
         cdef bint search_forward
         if key_attribute == 'time':
-            key_kind = <int>KEY_TIME
+            key_kind = KEY_TIME
         elif key_attribute == 'mach':
-            key_kind = <int>KEY_MACH
+            key_kind = KEY_MACH
         elif key_attribute == 'position.x':
-            key_kind = <int>KEY_POS_X
+            key_kind = KEY_POS_X
         elif key_attribute == 'position.y':
-            key_kind = <int>KEY_POS_Y
+            key_kind = KEY_POS_Y
         elif key_attribute == 'position.z':
-            key_kind = <int>KEY_POS_Z
+            key_kind = KEY_POS_Z
         elif key_attribute == 'velocity.x':
-            key_kind = <int>KEY_VEL_X
+            key_kind = KEY_VEL_X
         elif key_attribute == 'velocity.y':
-            key_kind = <int>KEY_VEL_Y
+            key_kind = KEY_VEL_Y
         elif key_attribute == 'velocity.z':
-            key_kind = <int>KEY_VEL_Z
+            key_kind = KEY_VEL_Z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
         n = <Py_ssize_t>self._length
@@ -217,10 +219,10 @@ cdef class CBaseTrajSeq:
             raise ValueError("Interpolation requires at least 3 points")
 
         # If start_from_time is provided, mimic HitResult.get_at search strategy
-        sft = <double>0.0
+        sft = 0.0
         if start_from_time is not None:
-            sft = <double>float(start_from_time)
-        if sft > <double>0.0 and key_kind != <int>KEY_TIME:
+            sft = start_from_time
+        if sft > 0.0 and key_kind != KEY_TIME:
             buf = self._buffer
             start_idx = <Py_ssize_t>0
             # find first index with time >= start_from_time
@@ -230,7 +232,7 @@ cdef class CBaseTrajSeq:
                     start_idx = i
                     break
                 i += 1
-            epsilon = <double>1e-9
+            epsilon = 1e-9
             curr_val = _key_val_from_kind_buf(<BaseTrajC*>(<char*>buf + <size_t>start_idx * <size_t>sizeof(BaseTrajC)), key_kind)
             if fabs(curr_val - key_value) < epsilon:
                 return self[start_idx]

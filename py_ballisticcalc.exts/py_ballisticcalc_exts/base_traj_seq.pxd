@@ -66,4 +66,5 @@ cdef class CBaseTrajSeq:
   cdef void _append_c(self, double time, double px, double py, double pz,
             double vx, double vy, double vz, double mach)
   cdef BaseTrajC* c_getitem(self, Py_ssize_t idx)
+  cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time = *)
   cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value)
