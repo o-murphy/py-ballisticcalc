@@ -170,7 +170,10 @@ cdef class CBaseTrajSeq:
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         return self._interpolate_at_c(idx, key_attribute, key_value)
 
-    def get_at(self, str key_attribute, double key_value, start_from_time=None):
+    def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
+        return self._get_at_c(key_attribute, key_value, start_from_time)
+
+    cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time=None):
         """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
 
         If start_from_time > 0, search is centered from the first point where time >= start_from_time,
