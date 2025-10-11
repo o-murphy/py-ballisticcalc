@@ -75,10 +75,10 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
     """
     cdef:
         double velocity, delta_time
-        double density_ratio = <double>0.0
-        double mach = <double>0.0
-        double time = <double>0.0
-        double km = <double>0.0
+        double density_ratio = 0.0
+        double mach = 0.0
+        double time = 0.0
+        double km = 0.0
         V3dT range_vector
         V3dT velocity_vector
         V3dT relative_velocity
@@ -109,9 +109,9 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         CBaseTrajSeq traj_seq
 
     # Initialize gravity vector
-    gravity_vector.x = <double>0.0
+    gravity_vector.x = 0.0
     gravity_vector.y = config_ptr.cGravityConstant
-    gravity_vector.z = <double>0.0
+    gravity_vector.z = 0.0
 
     # Initialize wind vector
     wind_vector = WindSock_t_currentVector(wind_sock_ptr)
@@ -121,10 +121,10 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
     calc_step = shot_props_ptr.calc_step
     
     # Set range_vector components directly
-    range_vector.x = <double>0.0
+    range_vector.x = 0.0
     range_vector.y = -shot_props_ptr.cant_cosine * shot_props_ptr.sight_height
     range_vector.z = -shot_props_ptr.cant_sine * shot_props_ptr.sight_height
-    _cMaximumDrop += fmin(<double>0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
+    _cMaximumDrop += fmin(0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
     
     # Set direction vector components
     _dir_vector.x = cos(shot_props_ptr.barrel_elevation) * cos(shot_props_ptr.barrel_azimuth)
@@ -211,21 +211,21 @@ cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
         p4 = add(&velocity_vector, &_temp_add_operand)
 
         # velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)
-        _temp_add_operand = mulS(&v2, <double>2.0)
+        _temp_add_operand = mulS(&v2, 2.0)
         _v_sum_intermediate = add(&v1, &_temp_add_operand)
-        _temp_add_operand = mulS(&v3, <double>2.0)
+        _temp_add_operand = mulS(&v3, 2.0)
         _v_sum_intermediate = add(&_v_sum_intermediate, &_temp_add_operand)
         _v_sum_intermediate = add(&_v_sum_intermediate, &v4)
-        _v_sum_intermediate = mulS(&_v_sum_intermediate, (delta_time / <double>6.0))
+        _v_sum_intermediate = mulS(&_v_sum_intermediate, (delta_time / 6.0))
         velocity_vector = add(&velocity_vector, &_v_sum_intermediate)
 
         # range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (delta_time / 6.0)
-        _temp_add_operand = mulS(&p2, <double>2.0)
+        _temp_add_operand = mulS(&p2, 2.0)
         _p_sum_intermediate = add(&p1, &_temp_add_operand)
-        _temp_add_operand = mulS(&p3, <double>2.0)
+        _temp_add_operand = mulS(&p3, 2.0)
         _p_sum_intermediate = add(&_p_sum_intermediate, &_temp_add_operand)
         _p_sum_intermediate = add(&_p_sum_intermediate, &p4)
-        _p_sum_intermediate = mulS(&_p_sum_intermediate, (delta_time / <double>6.0))
+        _p_sum_intermediate = mulS(&_p_sum_intermediate, (delta_time / 6.0))
         range_vector = add(&range_vector, &_p_sum_intermediate)
         
         # Update time and velocity magnitude

@@ -219,10 +219,10 @@ cdef class CBaseTrajSeq:
             raise ValueError("Interpolation requires at least 3 points")
 
         # If start_from_time is provided, mimic HitResult.get_at search strategy
-        sft = <double>0.0
+        sft = 0.0
         if start_from_time is not None:
-            sft = <double>float(start_from_time)
-        if sft > <double>0.0 and key_kind != <int>KEY_TIME:
+            sft = start_from_time
+        if sft > 0.0 and key_kind != KEY_TIME:
             buf = self._buffer
             start_idx = <Py_ssize_t>0
             # find first index with time >= start_from_time
@@ -232,7 +232,7 @@ cdef class CBaseTrajSeq:
                     start_idx = i
                     break
                 i += 1
-            epsilon = <double>1e-9
+            epsilon = 1e-9
             curr_val = _key_val_from_kind_buf(<BaseTrajC*>(<char*>buf + <size_t>start_idx * <size_t>sizeof(BaseTrajC)), key_kind)
             if fabs(curr_val - key_value) < epsilon:
                 return self[start_idx]

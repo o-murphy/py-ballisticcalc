@@ -9,7 +9,7 @@
  */
 double _euler_time_step(double base_step, double velocity)
 {
-    // C equivalent of fmax(<double>1.0, velocity)
+    // C equivalent of fmax(1.0, velocity)
     // fmax is defined in <math.h>
     double divisor = fmax(1.0, velocity);
     
