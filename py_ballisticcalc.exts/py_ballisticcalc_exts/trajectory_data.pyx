@@ -31,7 +31,7 @@ from py_ballisticcalc_exts.unit_helper cimport (
 
 cdef object _v3d_to_vector(const V3dT v):
     """Convert C V3dT -> Python Vector"""
-    return Vector(<float>v.x, <float>v.y, <float>v.z)
+    return Vector(v.x, v.y, v.z)
 
 
 @final

@@ -25,7 +25,6 @@ from py_ballisticcalc_exts.v3d cimport V3dT, add, sub, mag, mulS
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq
 
-import warnings
 
 from py_ballisticcalc.exceptions import RangeError
 
@@ -80,12 +79,12 @@ cdef tuple _integrate_euler(ShotProps_t *shot_props_ptr,
     cdef:
         double velocity
         double delta_time
-        double density_ratio = <double>0.0
-        double mach = <double>0.0
+        double density_ratio = 0.0
+        double mach = 0.0
         CBaseTrajSeq traj_seq
-        double time = <double>0.0
-        double drag = <double>0.0
-        double km = <double>0.0
+        double time = 0.0
+        double drag = 0.0
+        double km = 0.0
         V3dT range_vector
         V3dT velocity_vector
         V3dT relative_velocity
@@ -108,9 +107,9 @@ cdef tuple _integrate_euler(ShotProps_t *shot_props_ptr,
         int integration_step_count = 0
 
     # Initialize gravity vector
-    gravity_vector.x = <double>0.0
+    gravity_vector.x = 0.0
     gravity_vector.y = config_ptr.cGravityConstant
-    gravity_vector.z = <double>0.0
+    gravity_vector.z = 0.0
 
     # Initialize wind vector
     wind_vector = WindSock_t_currentVector(wind_sock_ptr)
@@ -119,10 +118,10 @@ cdef tuple _integrate_euler(ShotProps_t *shot_props_ptr,
     velocity = shot_props_ptr.muzzle_velocity
     
     # Set range_vector components
-    range_vector.x = <double>0.0
+    range_vector.x = 0.0
     range_vector.y = -shot_props_ptr.cant_cosine * shot_props_ptr.sight_height
     range_vector.z = -shot_props_ptr.cant_sine * shot_props_ptr.sight_height
-    _cMaximumDrop += fmin(<double>0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
+    _cMaximumDrop += fmin(0.0, range_vector.y)  # Adjust max drop downward (only) for muzzle height
     
     # Set direction vector components
     _dir_vector.x = cos(shot_props_ptr.barrel_elevation) * cos(shot_props_ptr.barrel_azimuth)
@@ -136,7 +135,6 @@ cdef tuple _integrate_euler(ShotProps_t *shot_props_ptr,
     traj_seq = CBaseTrajSeq()
 
     # Trajectory Loop
-    warnings.simplefilter("once")  # avoid multiple warnings
     
     # Update air density and mach at initial altitude
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
