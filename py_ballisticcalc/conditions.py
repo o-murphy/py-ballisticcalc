@@ -599,7 +599,7 @@ class Coriolis:
 
     @property
     def full_3d(self) -> bool:
-        """Whether full 3D Coriolis terms are available for this shot."""
+        """Whether full 3D Coriolis model is available (i.e., both azimuth and latitude)."""
         return not self.flat_fire_only
 
     def coriolis_acceleration_local(self, velocity: Vector) -> Vector:
