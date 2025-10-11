@@ -140,8 +140,8 @@ cdef tuple _integrate_euler(ShotProps_t *shot_props_ptr,
     
     # Update air density and mach at initial altitude
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
-        &shot_props_ptr[0].atmo,
-        shot_props_ptr[0].alt0 + range_vector.y,
+        &shot_props_ptr.atmo,
+        shot_props_ptr.alt0 + range_vector.y,
         &density_ratio,
         &mach
     )
