@@ -55,7 +55,7 @@ Public call flow (simplified):
     - Dense output correctness (HitResult.base_data) and shape.
 
 ## Benchmarking
-`scripts/benchmark.py` checks execution speed on two standardized scenarios: `Trajectory` and `Zero`.
+`scripts/benchmark.py` checks execution speed on two standardized scenarios named `Trajectory` and `Zero`.
 
 !!! note
     If you are contemplating work that could affect performance you should run `benchmark.py` before modifying any code to set a baseline, and then re-run the benchmark afterwards to confirm whether the changes have affected performance.
@@ -86,6 +86,7 @@ Each benchmark run will be logged to `./benchmarks/benchmarks.csv`, which will c
 * `max_ms` — slowest runtime observed.
 
 The key statistic to look at is `mean_ms`.  The other three statistics are useful for validating that figure and detecting benchmarking problems.  Ideally:
+
 * **`stdev_ms` should be very small relative to `mean_ms`.**  If it is not then you should check for other processes that could be consuming compute while running the benchmarks and try to disable those.  Alternatively, you can increase the number of iterations used for benchmark by setting a larger `--repeats` argument.  (More samples should reduce the variance from the mean.)
 * **`min_ms` and `max_ms` should be similar to `mean_ms`.**  If `max_ms` is much larger than `mean_ms` then you may have other processes competing for compute during the benchmark run.  Or you may need a longer warmup, which you can set with the `--warmup` argument.
 
