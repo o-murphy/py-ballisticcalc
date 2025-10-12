@@ -26,7 +26,7 @@ cdef extern from "include/basetraj_seq.h" nogil:
         KEY_VEL_Y
         KEY_VEL_Z
 
-    ctypedef struct _CBaseTrajSeq_cview:
+    ctypedef struct CBaseTrajSeq_t:
         BaseTrajC* _buffer
         size_t _length
         size_t _capacity
@@ -50,20 +50,23 @@ cdef extern from "include/basetraj_seq.h" nogil:
     ) noexcept nogil
 
     int _interpolate_raw(
-        _CBaseTrajSeq_cview* seq,
+        CBaseTrajSeq_t* seq,
         Py_ssize_t idx,
         int key_kind,
         double key_value,
         BaseTrajC* out
     ) except? 0 nogil
 
+    CBaseTrajSeq_t* CBaseTrajSeq_t_create(BaseTrajC *buffer, size_t _length, size_t _capacity) noexcept nogil
+    void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq) noexcept nogil
+
+
 cdef class CBaseTrajSeq:
-  cdef:
-    BaseTrajC* _buffer
-    size_t _length
-    size_t _capacity
-  cdef void _ensure_capacity(self, size_t min_capacity)
-  cdef void _append_c(self, double time, double px, double py, double pz,
+    cdef CBaseTrajSeq_t* _c_view
+
+    cdef void _ensure_capacity(self, size_t min_capacity)
+    cdef void _append_c(self, double time, double px, double py, double pz,
             double vx, double vy, double vz, double mach)
-  cdef BaseTrajC* c_getitem(self, Py_ssize_t idx)
-  cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value)
+    cdef BaseTrajC* c_getitem(self, Py_ssize_t idx)
+    cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time = *)
+    cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value)

@@ -21,7 +21,7 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.interp cimport _interpolate_3_pt
-from py_ballisticcalc_exts.base_traj_seq cimport (BaseTrajC, _CBaseTrajSeq_cview, 
+from py_ballisticcalc_exts.base_traj_seq cimport (BaseTrajC, CBaseTrajSeq_t, 
     KEY_TIME, KEY_MACH, KEY_POS_X, KEY_POS_Y, KEY_POS_Z, KEY_VEL_X, KEY_VEL_Y, KEY_VEL_Z, _key_val_from_kind_buf)
 
 
@@ -35,23 +35,24 @@ cdef class CBaseTrajSeq:
         nogil helpers work directly on the C buffer for speed.
     """
     def __cinit__(self):
-        self._buffer = <BaseTrajC*>NULL
-        self._length = <size_t>0
-        self._capacity = <size_t>0
-
+        self._c_view = CBaseTrajSeq_t_create(NULL, 0, 0)
+        if self._c_view is NULL:
+            raise MemoryError("Failed to create CBaseTrajSeq_t")
+    
     def __dealloc__(self):
-        if self._buffer:
-            PyMem_Free(<void*>self._buffer)
-            self._buffer = <BaseTrajC*>NULL
-
+        cdef CBaseTrajSeq_t* ptr = self._c_view
+        if ptr is not NULL:
+            self._c_view = NULL
+            CBaseTrajSeq_t_destroy(ptr)
+        
     cdef void _ensure_capacity(self, size_t min_capacity):
         cdef size_t new_capacity
         cdef BaseTrajC* new_buffer
         cdef size_t bytes_copy
         cdef size_t new_bytes
-        if min_capacity > self._capacity:
-            if self._capacity > 0:
-                new_capacity = <size_t>(self._capacity * 2)
+        if min_capacity > self._c_view._capacity:
+            if self._c_view._capacity > 0:
+                new_capacity = <size_t>(self._c_view._capacity * 2)
                 if new_capacity < min_capacity:
                     new_capacity = min_capacity
             else:
@@ -62,23 +63,23 @@ cdef class CBaseTrajSeq:
             new_buffer = <BaseTrajC*>PyMem_Malloc(<size_t>new_bytes)
             if not new_buffer:
                 raise MemoryError("Failed to allocate memory for trajectory buffer")
-            if self._buffer:
-                if self._length:
-                    bytes_copy = (<size_t>self._length) * (<size_t>sizeof(BaseTrajC))
-                    memcpy(<void*>new_buffer, <const void*>self._buffer, <size_t>bytes_copy)
-                PyMem_Free(<void*>self._buffer)
-            self._buffer = new_buffer
-            self._capacity = new_capacity
+            if self._c_view._buffer:
+                if self._c_view._length:
+                    bytes_copy = (<size_t>self._c_view._length) * (<size_t>sizeof(BaseTrajC))
+                    memcpy(<void*>new_buffer, <const void*>self._c_view._buffer, <size_t>bytes_copy)
+                PyMem_Free(<void*>self._c_view._buffer)
+            self._c_view._buffer = new_buffer
+            self._c_view._capacity = new_capacity
 
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach):
-        self._ensure_capacity(self._length + 1)
-        cdef BaseTrajC* entry_ptr = <BaseTrajC*>(<char*>self._buffer + (<size_t>self._length) * (<size_t>sizeof(BaseTrajC)))
+        self._ensure_capacity(self._c_view._length + 1)
+        cdef BaseTrajC* entry_ptr = <BaseTrajC*>(<char*>self._c_view._buffer + (<size_t>self._c_view._length) * (<size_t>sizeof(BaseTrajC)))
         entry_ptr.time = time
         entry_ptr.px = px; entry_ptr.py = py; entry_ptr.pz = pz
         entry_ptr.vx = vx; entry_ptr.vy = vy; entry_ptr.vz = vz
         entry_ptr.mach = mach
-        self._length += 1
+        self._c_view._length += 1
 
     def append(self, double time, double px, double py, double pz,
                double vx, double vy, double vz, double mach):
@@ -92,16 +93,16 @@ cdef class CBaseTrajSeq:
         self._ensure_capacity(<size_t>min_capacity)
 
     cdef BaseTrajC* c_getitem(self, Py_ssize_t idx):
-        cdef Py_ssize_t length = <Py_ssize_t> self._length
+        cdef Py_ssize_t length = <Py_ssize_t> self._c_view._length
         if idx < 0:
             idx += length
         if idx < 0 or idx >= length:
             raise IndexError("Index out of range")
-        return <BaseTrajC*>(<char*>self._buffer + (<size_t>idx * <size_t>sizeof(BaseTrajC)))
+        return <BaseTrajC*>(<char*>self._c_view._buffer + (<size_t>idx * <size_t>sizeof(BaseTrajC)))
 
     def __len__(self):
         """Number of points in the sequence."""
-        return <Py_ssize_t> self._length
+        return <Py_ssize_t> self._c_view._length
 
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
@@ -120,58 +121,60 @@ cdef class CBaseTrajSeq:
         Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
             Supports negative idx (which references from end of sequence).
         """
-        cdef BaseTrajC outp
-        cdef V3dT pos
-        cdef V3dT vel
-        cdef BaseTrajDataT result
-        cdef int key_kind
+        cdef:
+            BaseTrajC outp
+            V3dT pos
+            V3dT vel
+            int key_kind
 
         if key_attribute == 'time':
-            key_kind = <int>KEY_TIME
+            key_kind = KEY_TIME
         elif key_attribute == 'mach':
-            key_kind = <int>KEY_MACH
+            key_kind = KEY_MACH
         elif key_attribute == 'position.x':
-            key_kind = <int>KEY_POS_X
+            key_kind = KEY_POS_X
         elif key_attribute == 'position.y':
-            key_kind = <int>KEY_POS_Y
+            key_kind = KEY_POS_Y
         elif key_attribute == 'position.z':
-            key_kind = <int>KEY_POS_Z
+            key_kind = KEY_POS_Z
         elif key_attribute == 'velocity.x':
-            key_kind = <int>KEY_VEL_X
+            key_kind = KEY_VEL_X
         elif key_attribute == 'velocity.y':
-            key_kind = <int>KEY_VEL_Y
+            key_kind = KEY_VEL_Y
         elif key_attribute == 'velocity.z':
-            key_kind = <int>KEY_VEL_Z
+            key_kind = KEY_VEL_Z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
         cdef Py_ssize_t _idx = idx
         if _idx < 0:
-            _idx += <Py_ssize_t>self._length
+            _idx += <Py_ssize_t>self._c_view._length
         if _idx < 1:
             _idx += 1  # try to advance index so that we have a point to the left
-        if _idx >= (<Py_ssize_t>self._length - 1):
+        if _idx >= (<Py_ssize_t>self._c_view._length - 1):
             _idx -= 1  # try to retreat index so that we have a point to the right
         if _idx < 1:
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
 
-        cdef _CBaseTrajSeq_cview view
-        view._buffer = self._buffer
-        view._length = self._length
-        view._capacity = self._capacity
+        cdef CBaseTrajSeq_t view
+        view._buffer = self._c_view._buffer
+        view._length = self._c_view._length
+        view._capacity = self._c_view._capacity
         if not _interpolate_raw(&view, _idx, key_kind, key_value, &outp):
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
 
         pos.x = outp.px; pos.y = outp.py; pos.z = outp.pz
         vel.x = outp.vx; vel.y = outp.vy; vel.z = outp.vz
-        result = BaseTrajDataT(outp.time, pos, vel, outp.mach)
-        return result
+        return BaseTrajDataT(outp.time, pos, vel, outp.mach)
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         return self._interpolate_at_c(idx, key_attribute, key_value)
 
-    def get_at(self, str key_attribute, double key_value, start_from_time=None):
+    def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
+        return self._get_at_c(key_attribute, key_value, start_from_time)
+
+    cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time=None):
         """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
 
         If start_from_time > 0, search is centered from the first point where time >= start_from_time,
@@ -195,33 +198,33 @@ cdef class CBaseTrajSeq:
         cdef double b2
         cdef bint search_forward
         if key_attribute == 'time':
-            key_kind = <int>KEY_TIME
+            key_kind = KEY_TIME
         elif key_attribute == 'mach':
-            key_kind = <int>KEY_MACH
+            key_kind = KEY_MACH
         elif key_attribute == 'position.x':
-            key_kind = <int>KEY_POS_X
+            key_kind = KEY_POS_X
         elif key_attribute == 'position.y':
-            key_kind = <int>KEY_POS_Y
+            key_kind = KEY_POS_Y
         elif key_attribute == 'position.z':
-            key_kind = <int>KEY_POS_Z
+            key_kind = KEY_POS_Z
         elif key_attribute == 'velocity.x':
-            key_kind = <int>KEY_VEL_X
+            key_kind = KEY_VEL_X
         elif key_attribute == 'velocity.y':
-            key_kind = <int>KEY_VEL_Y
+            key_kind = KEY_VEL_Y
         elif key_attribute == 'velocity.z':
-            key_kind = <int>KEY_VEL_Z
+            key_kind = KEY_VEL_Z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
-        n = <Py_ssize_t>self._length
+        n = <Py_ssize_t>self._c_view._length
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
 
         # If start_from_time is provided, mimic HitResult.get_at search strategy
-        sft = <double>0.0
+        sft = 0.0
         if start_from_time is not None:
-            sft = <double>float(start_from_time)
-        if sft > <double>0.0 and key_kind != <int>KEY_TIME:
-            buf = self._buffer
+            sft = start_from_time
+        if sft > 0.0 and key_kind != KEY_TIME:
+            buf = self._c_view._buffer
             start_idx = <Py_ssize_t>0
             # find first index with time >= start_from_time
             i = <Py_ssize_t>0
@@ -230,7 +233,7 @@ cdef class CBaseTrajSeq:
                     start_idx = i
                     break
                 i += 1
-            epsilon = <double>1e-9
+            epsilon = 1e-9
             curr_val = _key_val_from_kind_buf(<BaseTrajC*>(<char*>buf + <size_t>start_idx * <size_t>sizeof(BaseTrajC)), key_kind)
             if fabs(curr_val - key_value) < epsilon:
                 return self[start_idx]
@@ -273,7 +276,7 @@ cdef class CBaseTrajSeq:
             return self._interpolate_at_c(center_idx, key_attribute, key_value)
 
         # Default: bisect across entire range
-        cdef Py_ssize_t center = _bisect_center_idx_buf(self._buffer, self._length, key_kind, key_value)
+        cdef Py_ssize_t center = _bisect_center_idx_buf(self._c_view._buffer, self._c_view._length, key_kind, key_value)
         if center < 0:
             raise ValueError("Interpolation requires at least 3 points")
         return self._interpolate_at_c(center, key_attribute, key_value)
@@ -282,12 +285,12 @@ cdef class CBaseTrajSeq:
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
         cdef double ca = cos(look_angle_rad)
         cdef double sa = sin(look_angle_rad)
-        cdef Py_ssize_t n = <Py_ssize_t>self._length
+        cdef Py_ssize_t n = <Py_ssize_t>self._c_view._length
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
-        cdef Py_ssize_t center = _bisect_center_idx_slant_buf(self._buffer, self._length, ca, sa, value)
+        cdef Py_ssize_t center = _bisect_center_idx_slant_buf(self._c_view._buffer, self._c_view._length, ca, sa, value)
         # Use three consecutive points around center to perform monotone PCHIP interpolation keyed on slant height
-        cdef BaseTrajC* buf = self._buffer
+        cdef BaseTrajC* buf = self._c_view._buffer
         cdef BaseTrajC* p0 = <BaseTrajC*>(<char*>buf + <size_t>(center - 1) * <size_t>sizeof(BaseTrajC))
         cdef BaseTrajC* p1 = <BaseTrajC*>(<char*>buf + <size_t>center * <size_t>sizeof(BaseTrajC))
         cdef BaseTrajC* p2 = <BaseTrajC*>(<char*>buf + <size_t>(center + 1) * <size_t>sizeof(BaseTrajC))
