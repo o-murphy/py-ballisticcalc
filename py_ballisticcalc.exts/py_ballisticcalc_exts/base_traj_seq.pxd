@@ -58,7 +58,7 @@ cdef extern from "include/basetraj_seq.h" nogil:
     ) except? 0 nogil
 
     CBaseTrajSeq_t* CBaseTrajSeq_t_create(BaseTrajC *buffer, size_t _length, size_t _capacity) noexcept nogil
-    void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq)
+    void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq) noexcept nogil
 
 
 cdef class CBaseTrajSeq:

@@ -36,12 +36,15 @@ cdef class CBaseTrajSeq:
     """
     def __cinit__(self):
         self._c_view = CBaseTrajSeq_t_create(NULL, 0, 0)
-
+        if self._c_view is NULL:
+            raise MemoryError("Failed to create CBaseTrajSeq_t")
+    
     def __dealloc__(self):
-        if self._c_view is not NULL:
-            CBaseTrajSeq_t_destroy(self._c_view)
+        cdef CBaseTrajSeq_t* ptr = self._c_view
+        if ptr is not NULL:
             self._c_view = NULL
-
+            CBaseTrajSeq_t_destroy(ptr)
+        
     cdef void _ensure_capacity(self, size_t min_capacity):
         cdef size_t new_capacity
         cdef BaseTrajC* new_buffer
