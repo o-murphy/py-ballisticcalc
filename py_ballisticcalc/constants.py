@@ -21,8 +21,10 @@ References:
 from typing_extensions import Final
 
 cGravityImperial: Final[float] = 32.17405  # feet per second squared
+"""Standard gravity (g) in ft/s²"""
 
 cEarthAngularVelocityRadS: Final[float] = 7.2921159e-5  # Earth's rotational speed Ω in rad/s
+"""Earth's rotational speed (Ω) in radians per second (rad/s)"""
 
 # =============================================================================
 # Global Atmosphere Constants

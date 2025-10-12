@@ -127,7 +127,11 @@ class Shot:
 
     @property
     def azimuth(self) -> Optional[float]:
-        """Azimuth of the shooting direction in degrees [0, 360)."""
+        """Azimuth of the shooting direction in degrees [0, 360).
+
+        Should be *geographic* bearing where 0 = North, 90 = East, 180 = South, 270 = West.
+            However, difference from *magnetic* bearing is usually negligible.
+        """
         return self._azimuth
 
     @azimuth.setter
@@ -265,7 +269,7 @@ class ShotProps:
 
     shot: Shot  # Reference to the original Shot object
     bc: float  # Ballistic coefficient
-    drag_curve: PchipPrepared  # Precomputed PCHIP spline for drag vs Mach
+    drag_curve: PchipPrepared  # Precomputed PCHIP spline for drag coefficient $C_d$ vs Mach
 
     look_angle_rad: float  # Slant angle in radians
     twist_inch: float  # Twist rate of barrel rifling, in inches of length to make one full rotation
