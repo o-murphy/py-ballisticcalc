@@ -1,4 +1,5 @@
-#include <stddef.h>
+#include <stdlib.h> // Required for malloc()
+#include <stddef.h> // Required for size_t
 #include <math.h>
 #include <sys/types.h> // For ssize_t
 #include "basetraj_seq.h"
@@ -177,7 +178,7 @@ ssize_t _bisect_center_idx_slant_buf(
  * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
  * This is the C-equivalent of the Cython function _interpolate_raw.
  */
-int _interpolate_raw(_CBaseTrajSeq_cview* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out) {
+int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out) {
     // Cast Cython's size_t to C's ssize_t for bounds checking
     BaseTrajC* buffer = seq->_buffer;
     ssize_t plength = (ssize_t)seq->_length;
@@ -264,3 +265,22 @@ int _interpolate_raw(_CBaseTrajSeq_cview* seq, ssize_t idx, int key_kind, double
     out->mach = mach;
     return 1;
 }
+
+CBaseTrajSeq_t* CBaseTrajSeq_t_create(BaseTrajC* buffer, size_t length, size_t capacity)
+{
+    CBaseTrajSeq_t* seq = (CBaseTrajSeq_t*)malloc(sizeof(CBaseTrajSeq_t));
+    if (seq == NULL) {
+        return NULL;
+    }
+    seq->_buffer = buffer;
+    seq->_length = length;
+    seq->_capacity = capacity;
+    return seq;
+};
+
+void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq)
+{
+    if (seq != NULL) {
+        free(seq);
+    }
+};

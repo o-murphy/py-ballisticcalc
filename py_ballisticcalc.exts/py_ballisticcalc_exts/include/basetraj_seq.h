@@ -1,7 +1,8 @@
 #ifndef BASETRAJ_SEQ_H
 #define BASETRAJ_SEQ_H
 
-#include <stddef.h>
+#include <stdlib.h> // Required for malloc()
+#include <stddef.h> // Required for size_t
 #include <sys/types.h> // For ssize_t
 
 
@@ -55,7 +56,7 @@ typedef struct {
     BaseTrajC* _buffer;
     size_t _length;
     size_t _capacity;
-} _CBaseTrajSeq_cview;
+} CBaseTrajSeq_t;
 
 /**
  * Retrieves a specific double value from a BaseTrajC struct using an InterpKey.
@@ -92,7 +93,11 @@ ssize_t _bisect_center_idx_slant_buf(
  * Uses monotone-preserving PCHIP with Hermite evaluation.
  * @return 1 on success, 0 on failure.
  */
-int _interpolate_raw(_CBaseTrajSeq_cview* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out);
+int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out);
+
+
+CBaseTrajSeq_t* CBaseTrajSeq_t_create(BaseTrajC *buffer, size_t _length, size_t _capacity);
+void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq);
 
 
 #endif /* BASETRAJ_SEQ_H */
