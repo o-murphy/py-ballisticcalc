@@ -35,6 +35,8 @@ Because of this, setting up and running the tests should be very simple.
 !!! note
     For high performance, [the py-ballisticcalc.exts subproject](internals/cython.md) requires [cython](https://cython.readthedocs.io/en/latest/src/quickstart/install.html) to create compiled calculation engines.
 
+Following are the basics of creating a Pull Request.  For more developer guidance see [Developer Details](internals/details.md) and [Architecture](internals/architecture.md).
+
 ### Prerequisites
 
 You'll need the following prerequisites:

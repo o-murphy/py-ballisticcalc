@@ -54,6 +54,41 @@ Public call flow (simplified):
     - Search functions (`find_zero_angle`, `find_max_range`, `find_apex`).
     - Dense output correctness (HitResult.base_data) and shape.
 
+## Benchmarking
+`scripts/benchmark.py` checks execution speed on two standardized scenarios: `Trajectory` and `Zero`.
+
+!!! note
+    If you are contemplating work that could affect performance you should run `benchmark.py` before modifying any code to set a baseline, and then re-run the benchmark afterwards to confirm whether the changes have affected performance.
+
+```bash
+# Run benchmarks on all engines:
+uv run python scripts/benchmark.py --all
+
+# Run benchmarks on specific engine:
+uv run python scripts/benchmark.py --engine="rk4_engine"
+```
+
+### Understanding benchmark results
+The benchmark numbers are only meaningful for comparing different versions of the project **run on the same computer** (and under the same operating conditions — i.e., same processor and memory availability).
+
+Each benchmark run will be logged to `./benchmarks/benchmarks.csv`, which will contain a row for each engine and scenario, with the following columns:
+
+* `timestamp` — of the run.
+* `version` — of the project (as listed in `pyproject.toml`).
+* `branch` — name reported by `git` (if any).
+* `git_hash` — version (short) reported by `git`.
+* `case` — which scenario was run (`Trajectory` or `Zero`).
+* `engine` — which engine was run.
+* `repeats` — how many iterations of the case were run to determine runtime statistics.
+* `mean_ms` — average runtime (in milliseconds) for the case.
+* `stdev_ms` — standard deviation of runtimes observed.
+* `min_ms` — fastest runtime observed.
+* `max_ms` — slowest runtime observed.
+
+The key statistic to look at is `mean_ms`.  The other three statistics are useful for validating that figure and detecting benchmarking problems.  Ideally:
+* **`stdev_ms` should be very small relative to `mean_ms`.**  If it is not then you should check for other processes that could be consuming compute while running the benchmarks and try to disable those.  Alternatively, you can increase the number of iterations used for benchmark by setting a larger `--repeats` argument.  (More samples should reduce the variance from the mean.)
+* **`min_ms` and `max_ms` should be similar to `mean_ms`.**  If `max_ms` is much larger than `mean_ms` then you may have other processes competing for compute during the benchmark run.  Or you may need a longer warmup, which you can set with the `--warmup` argument.
+
 ## [Cython notes](cython.md) & common pitfalls
 - Cython is used only for performance-critical numeric loops. Keep higher-level semantics in Python to avoid code duplication and subtle parity issues.
 - Common Cython pitfalls observed in this codebase:
