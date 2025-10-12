@@ -113,7 +113,7 @@ docs = [
     "mkdocs-material[imaging]",
     "mkdocs-redirects",
     "mkdocstrings>=0.29.0",
-    "mkdocstrings-python>=1.16.0",
+    "mkdocstrings-python>=1.17.0",
     "mkdocs-autorefs",
     "mike",
     "pydocstyle",
