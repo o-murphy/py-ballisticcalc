@@ -335,6 +335,11 @@ void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
 {
     if (seq != NULL)
     {
+        if (seq->_buffer != NULL)
+        {
+            free(seq->_buffer);
+            seq->_buffer = NULL;
+        }
         free(seq);
     }
     return;

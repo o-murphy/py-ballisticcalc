@@ -125,17 +125,17 @@ cdef class BaseTrajDataT:
             x1 = _p1.c_position().z
             x2 = _p2.c_position().z
         elif key_attribute == 'velocity.x':
-            x0 = _p0.c_position().x
-            x1 = _p1.c_position().x
-            x2 = _p2.c_position().x
+            x0 = _p0.c_velocity().x
+            x1 = _p1.c_velocity().x
+            x2 = _p2.c_velocity().x
         elif key_attribute == 'velocity.y':
-            x0 = _p0.c_position().y
-            x1 = _p1.c_position().y
-            x2 = _p2.c_position().y
+            x0 = _p0.c_velocity().y
+            x1 = _p1.c_velocity().y
+            x2 = _p2.c_velocity().y
         elif key_attribute == 'velocity.z':
-            x0 = _p0.c_position().z
-            x1 = _p1.c_position().z
-            x2 = _p2.c_position().z
+            x0 = _p0.c_velocity().z
+            x1 = _p1.c_velocity().z
+            x2 = _p2.c_velocity().z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 

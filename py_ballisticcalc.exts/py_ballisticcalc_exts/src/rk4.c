@@ -251,7 +251,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
         //        relative_speed, mach);
         // fflush(stdout);
 
-        // Перевірка на ділення на нуль
+        // Check for division by zero
         if (mach == 0.0)
         {
             // printf("ERROR: mach is zero, cannot divide!\n");
