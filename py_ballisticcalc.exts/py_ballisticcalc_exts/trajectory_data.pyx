@@ -122,29 +122,29 @@ cdef class BaseTrajDataT:
             x1 = _p1.mach
             x2 = _p2.mach
         elif key_attribute == 'position.x':
-            x0 = _p0._position.x
-            x1 = _p1._position.x
-            x2 = _p2._position.x
+            x0 = _p0.c_position().x
+            x1 = _p1.c_position().x
+            x2 = _p2.c_position().x
         elif key_attribute == 'position.y':
-            x0 = _p0._position.y
-            x1 = _p1._position.y
-            x2 = _p2._position.y
+            x0 = _p0.c_position().y
+            x1 = _p1.c_position().y
+            x2 = _p2.c_position().y
         elif key_attribute == 'position.z':
-            x0 = _p0._position.z
-            x1 = _p1._position.z
-            x2 = _p2._position.z
+            x0 = _p0.c_position().z
+            x1 = _p1.c_position().z
+            x2 = _p2.c_position().z
         elif key_attribute == 'velocity.x':
-            x0 = _p0._velocity.x
-            x1 = _p1._velocity.x
-            x2 = _p2._velocity.x
+            x0 = _p0.c_position().x
+            x1 = _p1.c_position().x
+            x2 = _p2.c_position().x
         elif key_attribute == 'velocity.y':
-            x0 = _p0._velocity.y
-            x1 = _p1._velocity.y
-            x2 = _p2._velocity.y
+            x0 = _p0.c_position().y
+            x1 = _p1.c_position().y
+            x2 = _p2.c_position().y
         elif key_attribute == 'velocity.z':
-            x0 = _p0._velocity.z
-            x1 = _p1._velocity.z
-            x2 = _p2._velocity.z
+            x0 = _p0.c_position().z
+            x1 = _p1.c_position().z
+            x2 = _p2.c_position().z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
@@ -158,12 +158,12 @@ cdef class BaseTrajDataT:
 
         # Interpolate all scalar fields
         time = key_value if key_attribute == 'time' else _interp(_p0.time, _p1.time, _p2.time)
-        px = _interp(_p0._position.x, _p1._position.x, _p2._position.x)
-        py = _interp(_p0._position.y, _p1._position.y, _p2._position.y)
-        pz = _interp(_p0._position.z, _p1._position.z, _p2._position.z)
-        vx = _interp(_p0._velocity.x, _p1._velocity.x, _p2._velocity.x)
-        vy = _interp(_p0._velocity.y, _p1._velocity.y, _p2._velocity.y)
-        vz = _interp(_p0._velocity.z, _p1._velocity.z, _p2._velocity.z)
+        px = _interp(_p0.c_position().x, _p1.c_position().x, _p2.c_position().x)
+        py = _interp(_p0.c_position().y, _p1.c_position().y, _p2.c_position().y)
+        pz = _interp(_p0.c_position().z, _p1.c_position().z, _p2.c_position().z)
+        vx = _interp(_p0.c_velocity().x, _p1.c_velocity().x, _p2.c_velocity().x)
+        vy = _interp(_p0.c_velocity().y, _p1.c_velocity().y, _p2.c_velocity().y)
+        vz = _interp(_p0.c_velocity().z, _p1.c_velocity().z, _p2.c_velocity().z)
         mach = key_value if key_attribute == 'mach' else _interp(_p0.mach, _p1.mach, _p2.mach)
 
         # Construct the resulting BaseTrajDataT

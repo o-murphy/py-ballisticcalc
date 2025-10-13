@@ -174,4 +174,5 @@ typedef enum {
     RangeErrorMinimumAltitudeReached,
 } TerminationReason;
 
+
 #endif // TYPES_H
