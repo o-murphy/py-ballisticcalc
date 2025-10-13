@@ -286,7 +286,7 @@ void WindSock_t_free(WindSock_t *ws) {
     }
 }
 
-V3dT WindSock_t_currentVector(WindSock_t *wind_sock) {
+V3dT WindSock_t_currentVector(const WindSock_t *wind_sock) {
     if (wind_sock == NULL) {
         return (V3dT){0.0, 0.0, 0.0};
     }

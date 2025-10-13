@@ -150,7 +150,7 @@ typedef struct {
 
 void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
 void WindSock_t_free(WindSock_t *ws);
-V3dT WindSock_t_currentVector(WindSock_t *wind_sock);
+V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
 int WindSock_t_updateCache(WindSock_t *ws);
 V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
