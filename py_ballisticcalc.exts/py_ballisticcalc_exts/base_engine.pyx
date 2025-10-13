@@ -252,7 +252,7 @@ cdef class CythonizedBaseIntegrationEngine:
         __res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.NONE)
         trajectory = <CBaseTrajSeq>__res[0]
         # If trajectory is too short for cubic interpolation, treat as unreachable
-        n = <Py_ssize_t>len(trajectory)
+        n = trajectory.len_c()
         if n < <Py_ssize_t>3:
             return 9e9
         last_ptr = trajectory.c_getitem(<Py_ssize_t>(-1))
@@ -590,7 +590,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 trajectory = <CBaseTrajSeq>_res[0]
                 ca = cos(shot_props_ptr.look_angle)
                 sa = sin(shot_props_ptr.look_angle)
-                n = <Py_ssize_t>len(trajectory)
+                n = trajectory.len_c()
                 if n >= 2:
                     # Linear search from end of trajectory for zero-down crossing
                     for i in range(n - 1, 0, -1):

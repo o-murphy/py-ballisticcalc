@@ -100,6 +100,7 @@ int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_
 
 CBaseTrajSeq_t* CBaseTrajSeq_t_create();
 void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq);
+int CBaseTrajSeq_t_len(CBaseTrajSeq_t *seq);
 BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx);
 int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity);
 int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);

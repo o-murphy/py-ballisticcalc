@@ -273,13 +273,20 @@ CBaseTrajSeq_t* CBaseTrajSeq_t_create()
     return (CBaseTrajSeq_t*)calloc(1, sizeof(CBaseTrajSeq_t));
 };
 
-void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq)
+void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq)
 {
     if (seq != NULL) {
         free(seq);
     }
     return;
 };
+
+int CBaseTrajSeq_t_len(CBaseTrajSeq_t *seq) {
+    if (seq != NULL) {
+        return seq->_length;
+    }
+    return -1;
+}
 
 BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx)
 {

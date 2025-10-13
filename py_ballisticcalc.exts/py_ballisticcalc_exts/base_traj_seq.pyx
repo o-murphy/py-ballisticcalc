@@ -74,7 +74,13 @@ cdef class CBaseTrajSeq:
 
     def __len__(self):
         """Number of points in the sequence."""
-        return <Py_ssize_t> self._c_view._length
+        return self.len_c()
+
+    cdef Py_ssize_t len_c(self):
+        cdef int length = CBaseTrajSeq_t_len(self._c_view)
+        if length < 0:
+            raise MemoryError("Trajectory buffer is NULL")
+        return length 
 
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
