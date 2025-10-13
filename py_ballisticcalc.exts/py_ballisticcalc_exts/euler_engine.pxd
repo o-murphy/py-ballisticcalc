@@ -21,7 +21,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     RangeErrorMinimumAltitudeReached,
 )
 
-cdef extern from "include/euler.h":
+cdef extern from "include/euler.h" nogil:
     double _euler_time_step(double base_step, double velocity) noexcept nogil
 
     TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,

@@ -105,16 +105,6 @@ cdef extern from "include/bclib.h" nogil:
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
 
-    ctypedef enum TrajFlag_t:
-        NONE = 0
-        ZERO_UP = 1
-        ZERO_DOWN = 2
-        ZERO = ZERO_UP | ZERO_DOWN
-        MACH = 4
-        RANGE = 8
-        APEX = 16
-        ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
-
     ctypedef struct BaseTrajData_t:
         double time
         V3dT position

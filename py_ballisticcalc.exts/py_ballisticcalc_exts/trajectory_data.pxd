@@ -1,20 +1,21 @@
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 
-cdef extern from "include/bclib.h":
+cdef extern from "include/bclib.h" nogil:
     # Using 'int' as the underlying type for the enum
     # Cython can typically handle C enums directly.
     # The actual integer values are important for bitwise operations.
+
     ctypedef enum TrajFlag_t:
-        NONE = 0
-        ZERO_UP = 1
-        ZERO_DOWN = 2
-        ZERO = ZERO_UP | ZERO_DOWN
-        MACH = 4
-        RANGE = 8
-        APEX = 16
-        ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX  # 31
-        MRT = 32
+        TFLAG_NONE = 0,
+        TFLAG_ZERO_UP = 1,
+        TFLAG_ZERO_DOWN = 2,
+        TFLAG_ZERO = TFLAG_ZERO_UP | TFLAG_ZERO_DOWN,
+        TFLAG_MACH = 4,
+        TFLAG_RANGE = 8,
+        TFLAG_APEX = 16,
+        TFLAG_ALL = TFLAG_RANGE | TFLAG_ZERO_UP | TFLAG_ZERO_DOWN | TFLAG_MACH | TFLAG_APEX
+        TFLAG_MRT = 32
 
     ctypedef struct BaseTrajData_t:
         double time

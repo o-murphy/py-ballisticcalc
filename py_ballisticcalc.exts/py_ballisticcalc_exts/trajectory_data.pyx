@@ -29,7 +29,7 @@ from py_ballisticcalc_exts.unit_helper cimport (
 )
 
 
-cdef object _v3d_to_vector(const V3dT v):
+cdef object _v3d_to_vector(const V3dT *v):
     """Convert C V3dT -> Python Vector"""
     return Vector(v.x, v.y, v.z)
 
@@ -67,20 +67,11 @@ cdef class BaseTrajDataT:
     # Python-facing properties return Vector, not dict
     @property
     def position(self):
-        return _v3d_to_vector(self._c_view.position)
+        return _v3d_to_vector(&self._c_view.position)
 
     @property
     def velocity(self):
-        return _v3d_to_vector(self._c_view.velocity)
-
-    # Back-compat names used elsewhere in ext code
-    @property
-    def position_vector(self):
-        return _v3d_to_vector(self._c_view.position)
-
-    @property
-    def velocity_vector(self):
-        return _v3d_to_vector(self._c_view.velocity)
+        return _v3d_to_vector(&self._c_view.velocity)
 
     @staticmethod
     def interpolate(str key_attribute, double key_value,

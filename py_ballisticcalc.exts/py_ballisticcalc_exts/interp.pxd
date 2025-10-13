@@ -1,4 +1,4 @@
-cdef extern from "include/interp.h":
+cdef extern from "include/interp.h" nogil:
     cdef int INTERP_ERROR_ZERODIVISION
 
     # Internal nogil helpers for PCHIP used by base_traj_seq

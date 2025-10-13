@@ -14,7 +14,7 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 
-cdef extern from "include/bclib.h":
+cdef extern from "include/bclib.h" nogil:
     ctypedef enum TerminationReason:
         NoRangeError
         RangeErrorInvalidParameter
@@ -22,7 +22,7 @@ cdef extern from "include/bclib.h":
         RangeErrorMaximumDropReached
         RangeErrorMinimumAltitudeReached
 
-cdef extern from "include/rk4.h":
+cdef extern from "include/rk4.h" nogil:
 
     # This function calculates dv/dt for velocity (v) affected by gravity, drag, and Coriolis forces.
     # """Calculate the derivative of velocity with respect to time.

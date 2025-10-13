@@ -1,8 +1,6 @@
-#include <stdlib.h> // Required for calloc, malloc, free
-#include <stddef.h> // Required for size_t
-#include <string.h> // Required for memcpy
 #include <math.h>
-#include <sys/types.h> // For ssize_t
+#include <stdlib.h> // Required for calloc, malloc, free
+#include <string.h> // Required for memcpy
 #include "basetraj_seq.h"
 #include "interp.h"
 #include "bclib.h"
@@ -15,47 +13,51 @@
  * @param key_kind The InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
-double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t* p, int key_kind) {
+double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, int key_kind)
+{
     // Note: In C, accessing a struct member via a pointer uses '->' instead of '.'
-    switch (key_kind) {
-        case KEY_TIME:
-            return p->time;
-        case KEY_MACH:
-            return p->mach;
-        case KEY_POS_X:
-            return p->px;
-        case KEY_POS_Y:
-            return p->py;
-        case KEY_POS_Z:
-            return p->pz;
-        case KEY_VEL_X:
-            return p->vx;
-        case KEY_VEL_Y:
-            return p->vy;
-        case KEY_VEL_Z:
-            return p->vz;
-        default:
-            return 0.0;
+    switch (key_kind)
+    {
+    case KEY_TIME:
+        return p->time;
+    case KEY_MACH:
+        return p->mach;
+    case KEY_POS_X:
+        return p->px;
+    case KEY_POS_Y:
+        return p->py;
+    case KEY_POS_Z:
+        return p->pz;
+    case KEY_VEL_X:
+        return p->vx;
+    case KEY_VEL_Y:
+        return p->vy;
+    case KEY_VEL_Z:
+        return p->vz;
+    default:
+        return 0.0;
     }
 }
 
-double BaseTraj_t_slant_val_buf(const BaseTraj_t* p, double ca, double sa) {
+double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
+{
     /* Computes the slant_height of a trajectory point 'p' given cosine 'ca' and sine 'sa' of look_angle. */
     return p->py * ca - p->px * sa;
 }
 
 // Rewritten C function
 ssize_t BaseTraj_t_bisect_center_idx_buf(
-    const BaseTraj_t* buf,
+    const BaseTraj_t *buf,
     size_t length,
     int key_kind,
-    double key_value
-) {
+    double key_value)
+{
     // Cast size_t to ssize_t for consistency with Cython/Python indexing
     ssize_t n = (ssize_t)length;
 
     // Check for minimum required points (n < 3 is impossible for a center index)
-    if (n < 3) {
+    if (n < 3)
+    {
         return (ssize_t)(-1);
     }
 
@@ -73,23 +75,33 @@ ssize_t BaseTraj_t_bisect_center_idx_buf(
     double vm;
 
     // Binary search loop
-    while (lo < hi) {
+    while (lo < hi)
+    {
         // mid = lo + (hi - lo) / 2; (avoids overflow, same as original (hi - lo) >> 1)
         mid = lo + ((hi - lo) >> 1);
 
         // Get value at midpoint
         vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
 
-        if (increasing) {
-            if (vm < key_value) {
+        if (increasing)
+        {
+            if (vm < key_value)
+            {
                 lo = mid + 1;
-            } else {
+            }
+            else
+            {
                 hi = mid;
             }
-        } else { // decreasing
-            if (vm > key_value) {
+        }
+        else
+        { // decreasing
+            if (vm > key_value)
+            {
                 lo = mid + 1;
-            } else {
+            }
+            else
+            {
                 hi = mid;
             }
         }
@@ -101,11 +113,13 @@ ssize_t BaseTraj_t_bisect_center_idx_buf(
     // for a 3-point interpolation (p0, p1, p2).
 
     // Clamp lo to be at least 1 (to ensure p0 exists)
-    if (lo < 1) {
+    if (lo < 1)
+    {
         return (ssize_t)1;
     }
     // Clamp lo to be at most n - 2 (to ensure p2 exists)
-    if (lo > n - 2) {
+    if (lo > n - 2)
+    {
         return n - 2;
     }
 
@@ -114,17 +128,18 @@ ssize_t BaseTraj_t_bisect_center_idx_buf(
 
 // Implementation of the function declared in basetraj_seq.h
 ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
-    const BaseTraj_t* buf,
+    const BaseTraj_t *buf,
     size_t length,
     double ca,
     double sa,
-    double value
-) {
+    double value)
+{
     // Cast size_t to ssize_t for bounds checking and signed return value
     ssize_t n = (ssize_t)length;
 
     // Check for minimum required points (p0, p1, p2 needed)
-    if (n < 3) {
+    if (n < 3)
+    {
         return (ssize_t)(-1);
     }
 
@@ -141,33 +156,45 @@ ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
     double vm;
 
     // Binary search loop
-    while (lo < hi) {
+    while (lo < hi)
+    {
         // mid = lo + (hi - lo) / 2; (safer way to calculate midpoint)
         mid = lo + ((hi - lo) >> 1);
 
         // Get value at midpoint
         vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
 
-        if (increasing) {
-            if (vm < value) {
+        if (increasing)
+        {
+            if (vm < value)
+            {
                 lo = mid + 1;
-            } else {
+            }
+            else
+            {
                 hi = mid;
             }
-        } else { // decreasing
-            if (vm > value) {
+        }
+        else
+        { // decreasing
+            if (vm > value)
+            {
                 lo = mid + 1;
-            } else {
+            }
+            else
+            {
                 hi = mid;
             }
         }
     }
 
     // Clamp the result to be a valid center index [1, n-2]
-    if (lo < 1) {
+    if (lo < 1)
+    {
         return (ssize_t)1;
     }
-    if (lo > n - 2) {
+    if (lo > n - 2)
+    {
         return n - 2;
     }
 
@@ -180,9 +207,10 @@ ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
  * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
  * This is the C-equivalent of the Cython function BaseTrajSeq_t_interpolate_raw.
  */
-int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t* out) {
+int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t *out)
+{
     // Cast Cython's size_t to C's ssize_t for bounds checking
-    BaseTraj_t* buffer = seq->_buffer;
+    BaseTraj_t *buffer = seq->_buffer;
     ssize_t plength = (ssize_t)seq->_length;
     BaseTraj_t *p0;
     BaseTraj_t *p1;
@@ -192,10 +220,12 @@ int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t* seq, ssize_t idx, int key_kind,
     double time, px, py, pz, vx, vy, vz, mach;
 
     // Handle negative index (Cython style) and check bounds
-    if (idx < 0) {
+    if (idx < 0)
+    {
         idx += plength;
     }
-    if (idx <= 0 || idx >= plength - 1) {
+    if (idx <= 0 || idx >= plength - 1)
+    {
         return 0;
     }
 
@@ -205,45 +235,66 @@ int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t* seq, ssize_t idx, int key_kind,
     p2 = &buffer[idx + 1];
 
     // Read x values from buffer points using switch/case
-    switch (key_kind) {
-        case KEY_TIME:
-            ox0 = p0->time; ox1 = p1->time; ox2 = p2->time;
-            break;
-        case KEY_MACH:
-            ox0 = p0->mach; ox1 = p1->mach; ox2 = p2->mach;
-            break;
-        case KEY_POS_X:
-            ox0 = p0->px; ox1 = p1->px; ox2 = p2->px;
-            break;
-        case KEY_POS_Y:
-            ox0 = p0->py; ox1 = p1->py; ox2 = p2->py;
-            break;
-        case KEY_POS_Z:
-            ox0 = p0->pz; ox1 = p1->pz; ox2 = p2->pz;
-            break;
-        case KEY_VEL_X:
-            ox0 = p0->vx; ox1 = p1->vx; ox2 = p2->vx;
-            break;
-        case KEY_VEL_Y:
-            ox0 = p0->vy; ox1 = p1->vy; ox2 = p2->vy;
-            break;
-        case KEY_VEL_Z:
-            ox0 = p0->vz; ox1 = p1->vz; ox2 = p2->vz;
-            break;
-        default:
-            // If key_kind is not recognized, interpolation is impossible.
-            return 0;
+    switch (key_kind)
+    {
+    case KEY_TIME:
+        ox0 = p0->time;
+        ox1 = p1->time;
+        ox2 = p2->time;
+        break;
+    case KEY_MACH:
+        ox0 = p0->mach;
+        ox1 = p1->mach;
+        ox2 = p2->mach;
+        break;
+    case KEY_POS_X:
+        ox0 = p0->px;
+        ox1 = p1->px;
+        ox2 = p2->px;
+        break;
+    case KEY_POS_Y:
+        ox0 = p0->py;
+        ox1 = p1->py;
+        ox2 = p2->py;
+        break;
+    case KEY_POS_Z:
+        ox0 = p0->pz;
+        ox1 = p1->pz;
+        ox2 = p2->pz;
+        break;
+    case KEY_VEL_X:
+        ox0 = p0->vx;
+        ox1 = p1->vx;
+        ox2 = p2->vx;
+        break;
+    case KEY_VEL_Y:
+        ox0 = p0->vy;
+        ox1 = p1->vy;
+        ox2 = p2->vy;
+        break;
+    case KEY_VEL_Z:
+        ox0 = p0->vz;
+        ox1 = p1->vz;
+        ox2 = p2->vz;
+        break;
+    default:
+        // If key_kind is not recognized, interpolation is impossible.
+        return 0;
     }
 
     // Check for duplicate x values (zero division risk in PCHIP)
-    if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2) {
+    if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
+    {
         return 0;
     }
 
     // Interpolate all components using the external C function _interpolate_3_pt
-    if (key_kind == KEY_TIME) {
+    if (key_kind == KEY_TIME)
+    {
         time = x;
-    } else {
+    }
+    else
+    {
         time = _interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
     }
 
@@ -254,50 +305,63 @@ int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t* seq, ssize_t idx, int key_kind,
     vy = _interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
     vz = _interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
 
-    if (key_kind == KEY_MACH) {
+    if (key_kind == KEY_MACH)
+    {
         mach = x;
-    } else {
+    }
+    else
+    {
         mach = _interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
     }
 
     // Write results to the output BaseTraj_t struct (use -> for pointer access)
     out->time = time;
-    out->px = px; out->py = py; out->pz = pz;
-    out->vx = vx; out->vy = vy; out->vz = vz;
+    out->px = px;
+    out->py = py;
+    out->pz = pz;
+    out->vx = vx;
+    out->vy = vy;
+    out->vz = vz;
     out->mach = mach;
     return 1;
 }
 
-BaseTrajSeq_t* BaseTrajSeq_t_create()
+BaseTrajSeq_t *BaseTrajSeq_t_create()
 {
-    return (BaseTrajSeq_t*)calloc(1, sizeof(BaseTrajSeq_t));
+    return (BaseTrajSeq_t *)calloc(1, sizeof(BaseTrajSeq_t));
 };
 
 void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
 {
-    if (seq != NULL) {
+    if (seq != NULL)
+    {
         free(seq);
     }
     return;
 };
 
-int BaseTrajSeq_t_len(BaseTrajSeq_t *seq) {
-    if (seq != NULL) {
+int BaseTrajSeq_t_len(BaseTrajSeq_t *seq)
+{
+    if (seq != NULL)
+    {
         return seq->_length;
     }
     return -1;
 }
 
-BaseTraj_t* BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx)
+BaseTraj_t *BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx)
 {
     ssize_t len = (ssize_t)seq->_length;
-    if (len <= 0) {
+    if (len <= 0)
+    {
         return NULL;
     }
-    if (idx < 0) {
+    if (idx < 0)
+    {
         idx += len;
     }
-    if (idx < 0 || idx >= len) {
+    if (idx < 0 || idx >= len)
+    {
         return NULL;
     }
     return seq->_buffer + idx;
@@ -310,36 +374,45 @@ BaseTraj_t* BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx)
  * @param min_capacity The minimum required capacity.
  * @return int 0 on success, -1 on memory allocation error.
  */
-int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) {
+int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
+{
     size_t new_capacity;
     BaseTraj_t *new_buffer;
     size_t bytes_copy;
 
-    if (seq == NULL) {
+    if (seq == NULL)
+    {
         return -1;
     }
-    
-    if (min_capacity <= seq->_capacity) {
+
+    if (min_capacity <= seq->_capacity)
+    {
         return 0;
     }
 
-    if (seq->_capacity > 0) {
+    if (seq->_capacity > 0)
+    {
         new_capacity = seq->_capacity * 2;
-    } else {
+    }
+    else
+    {
         new_capacity = 64;
     }
 
-    if (new_capacity < min_capacity) {
+    if (new_capacity < min_capacity)
+    {
         new_capacity = min_capacity;
     }
 
     new_buffer = malloc(new_capacity * sizeof(BaseTraj_t));
 
-    if (new_buffer == NULL) {
+    if (new_buffer == NULL)
+    {
         return -1;
     }
 
-    if (seq->_length > 0) {
+    if (seq->_length > 0)
+    {
         bytes_copy = seq->_length * sizeof(BaseTraj_t);
         memcpy(new_buffer, seq->_buffer, bytes_copy);
     }
@@ -359,15 +432,17 @@ int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) {
 int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
 {
 
-    if (seq == NULL) {
+    if (seq == NULL)
+    {
         return -1;
     }
 
-    if (BaseTrajSeq_t_ensure_capacity(seq, seq->_length + 1) < 0) {
+    if (BaseTrajSeq_t_ensure_capacity(seq, seq->_length + 1) < 0)
+    {
         return -1;
     }
 
-    BaseTraj_t* entry_ptr = seq->_buffer + seq->_length;
+    BaseTraj_t *entry_ptr = seq->_buffer + seq->_length;
     entry_ptr->time = time;
     entry_ptr->px = px;
     entry_ptr->py = py;

@@ -17,11 +17,11 @@ def test_get_at_time_and_posx_basic():
     # time key
     r1 = seq.get_at("time", 1.5)
     assert r1.time == pytest.approx(1.5)
-    assert r1.position_vector.x == pytest.approx(15.0)
+    assert r1.position.x == pytest.approx(15.0)
     # position.x key
     r2 = seq.get_at("position.x", 15.0)
     assert r2.time == pytest.approx(1.5)
-    assert r2.position_vector.x == pytest.approx(15.0)
+    assert r2.position.x == pytest.approx(15.0)
 
 
 def test_get_at_with_start_from_time_behaves_like_hitresult():
@@ -29,7 +29,7 @@ def test_get_at_with_start_from_time_behaves_like_hitresult():
     # Starting search around time >= 2 should still find x=15 at ~1.5 by scanning backward
     r = seq.get_at("position.x", 15.0, start_from_time=2.0)
     assert r.time == pytest.approx(1.5)
-    assert r.position_vector.x == pytest.approx(15.0)
+    assert r.position.x == pytest.approx(15.0)
 
 
 def test_get_at_slant_height_simple():
@@ -38,5 +38,5 @@ def test_get_at_slant_height_simple():
     look = math.pi / 2.0
     target_slant = -15.0  # implies px=15
     r = seq.get_at_slant_height(look, target_slant)
-    assert r.position_vector.x == pytest.approx(15.0)
+    assert r.position.x == pytest.approx(15.0)
     assert r.time == pytest.approx(1.5)

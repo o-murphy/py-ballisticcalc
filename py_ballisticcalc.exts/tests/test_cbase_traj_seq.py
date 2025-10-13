@@ -40,8 +40,8 @@ def test_append_and_len_and_getitem():
     assert p0.time == pytest.approx(0.0)
     assert p1.time == pytest.approx(1.0)
     # position components (use Python-facing Vector properties)
-    assert p0.position_vector.x == pytest.approx(1.0)
-    assert p1.position_vector.y == pytest.approx(3.0)
+    assert p0.position.x == pytest.approx(1.0)
+    assert p1.position.y == pytest.approx(3.0)
 
 
 def test_negative_index_and_c_getitem():
@@ -63,11 +63,11 @@ def test_interpolate_at_time_and_position():
     # Interpolate at time=1.5 should give position.x ~ 15.0
     interpolated = seq.interpolate_at(1, 'time', 1.5)
     assert interpolated.time == pytest.approx(1.5)
-    assert interpolated.position_vector.x == pytest.approx(15.0)
+    assert interpolated.position.x == pytest.approx(15.0)
     # Interpolate at position.x == 15 -> should give time ~1.5
     interpolated2 = seq.interpolate_at(1, 'position.x', 15.0)
     assert interpolated2.time == pytest.approx(1.5)
-    assert interpolated2.position_vector.x == pytest.approx(15.0)
+    assert interpolated2.position.x == pytest.approx(15.0)
 
 
 def test_interpolate_at_accepts_negative_index_middle():
@@ -79,4 +79,4 @@ def test_interpolate_at_accepts_negative_index_middle():
 
     mid = seq.interpolate_at(-2, 'time', 1.5)
     assert mid.time == pytest.approx(1.5)
-    assert mid.position_vector.x == pytest.approx(15.0)
+    assert mid.position.x == pytest.approx(15.0)

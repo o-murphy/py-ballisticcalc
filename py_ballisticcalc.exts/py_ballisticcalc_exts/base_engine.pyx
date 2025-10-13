@@ -221,20 +221,20 @@ cdef class CythonizedBaseIntegrationEngine:
         trajectory = _res[0]
         error = _res[1]
         init = trajectory[0]
-        tdf = TrajectoryDataFilter(props, filter_flags, init.position_vector, init.velocity_vector,
+        tdf = TrajectoryDataFilter(props, filter_flags, init.position, init.velocity,
                                     props.barrel_elevation_rad, props.look_angle_rad,
                                     range_limit_ft, range_step_ft, time_step
         )
         # Feed step_data through TrajectoryDataFilter to get TrajectoryData
         for _, d in enumerate(trajectory):
-            tdf.record(BaseTrajData(d.time, d.position_vector, d.velocity_vector, d.mach))
+            tdf.record(BaseTrajData(d.time, d.position, d.velocity, d.mach))
         if error is not None:
             error = RangeError(error, tdf.records)
             # For incomplete trajectories we add last point, so long as it isn't a duplicate
             fin = trajectory[-1]
             if fin.time > tdf.records[-1].time:
-                tdf.records.append(TrajectoryData.from_props(props, fin.time, fin.position_vector, fin.velocity_vector, fin.mach, TrajFlag.NONE))
-        return HitResult(props, tdf.records, trajectory if dense_output else None, filter_flags != TrajFlag_t.NONE, error)
+                tdf.records.append(TrajectoryData.from_props(props, fin.time, fin.position, fin.velocity, fin.mach, TrajFlag.NONE))
+        return HitResult(props, tdf.records, trajectory if dense_output else None, filter_flags != TrajFlag_t.TFLAG_NONE, error)
 
     cdef inline double _error_at_distance(CythonizedBaseIntegrationEngine self,
                                           ShotProps_t *shot_props_ptr,
@@ -249,7 +249,7 @@ cdef class CythonizedBaseIntegrationEngine:
             BaseTraj_t* last_ptr
             Py_ssize_t n
         shot_props_ptr.barrel_elevation = angle_rad
-        __res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.NONE)
+        __res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.TFLAG_NONE)
         trajectory = <BaseTrajSeqT>__res[0]
         # If trajectory is too short for cubic interpolation, treat as unreachable
         n = trajectory.len_c()
@@ -261,7 +261,7 @@ cdef class CythonizedBaseIntegrationEngine:
             return 9e9
         try:
             hit = trajectory._get_at_c('position.x', target_x_ft)
-            return (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft)
+            return (hit.c_position().y - target_y_ft) - fabs(hit.c_position().x - target_x_ft)
         except Exception:
             # Any interpolation failure (e.g., degenerate points) signals unreachable
             return 9e9
@@ -394,7 +394,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if fabs(look_angle_rad - 1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
             # Compute slant distance at apex using robust accessor
             apex = self._find_apex(shot_props_ptr)
-            apex_slant_ft = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad)
+            apex_slant_ft = apex.c_position().x * cos(look_angle_rad) + apex.c_position().y * sin(look_angle_rad)
             if apex_slant_ft < slant_range_ft:
                 raise OutOfRangeError(_new_feet(distance), _new_feet(apex_slant_ft), _new_rad(look_angle_rad))
             return (1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
@@ -535,7 +535,7 @@ cdef class CythonizedBaseIntegrationEngine:
         # Virtually vertical shot
         if fabs(look_angle_rad - <double>1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
             _apex_obj = self._find_apex(shot_props_ptr)
-            _sdist = _apex_obj.position.x * cos(look_angle_rad) + _apex_obj.position.y * sin(look_angle_rad)
+            _sdist = _apex_obj.c_position().x * cos(look_angle_rad) + _apex_obj.c_position().y * sin(look_angle_rad)
             return (_new_feet(_sdist), _new_rad(look_angle_rad))
         
         # Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
@@ -586,7 +586,7 @@ cdef class CythonizedBaseIntegrationEngine:
             # Update shot data
             shot_props_ptr.barrel_elevation = angle_rad
             try:
-                _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, <int>TrajFlag_t.NONE)
+                _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, <int>TrajFlag_t.TFLAG_NONE)
                 trajectory = <BaseTrajSeqT>_res[0]
                 ca = cos(shot_props_ptr.look_angle)
                 sa = sin(shot_props_ptr.look_angle)
@@ -666,7 +666,7 @@ cdef class CythonizedBaseIntegrationEngine:
             has_restore_min_velocity = 1
         
         try:
-            _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, <int>TrajFlag_t.APEX)
+            _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, <int>TrajFlag_t.TFLAG_APEX)
             apex = (<BaseTrajSeqT>_res[0])._get_at_c('velocity.y', 0.0)
         finally:
             if has_restore_min_velocity:
@@ -743,7 +743,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
             while iterations_count < _cMaxIterations:
                 # Check height of trajectory at the zero distance (using current barrel_elevation)
-                _res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.NONE)
+                _res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.TFLAG_NONE)
                 hit = (<BaseTrajSeqT>_res[0])._get_at_c('position.x', target_x_ft)
 
                 if hit.time == 0.0:
