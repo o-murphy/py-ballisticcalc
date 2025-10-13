@@ -24,7 +24,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 cdef extern from "include/euler.h":
     double _euler_time_step(double base_step, double velocity) noexcept nogil
 
-    TerminationReason _integrate_euler(ShotProps_t *shot_props_ptr,
+    TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
                                     WindSock_t *wind_sock_ptr,
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,
@@ -34,6 +34,6 @@ cdef extern from "include/euler.h":
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedEulerIntegrationEngine self)
-    cdef tuple _integrate(CythonizedEulerIntegrationEngine self, ShotProps_t *shot_props_ptr,
+    cdef tuple _integrate(CythonizedEulerIntegrationEngine self, const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, int filter_flags)

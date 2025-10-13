@@ -39,7 +39,7 @@ double _euler_time_step(double base_step, double velocity)
  * @return TerminationReason An enumeration value indicating why the integration 
  * loop was terminated (e.g., NoRangeError on success).
  */
-TerminationReason _integrate_euler(ShotProps_t *shot_props_ptr,
+TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
                                     WindSock_t *wind_sock_ptr,
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,

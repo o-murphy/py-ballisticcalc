@@ -5,7 +5,7 @@
 #include "bind.h"
 
 
-Config_t Config_t_fromPyObject(const PyObject* config) {
+Config_t Config_t_fromPyObject(PyObject* config) {
     Config_t c;
 
     PyObject* tmp;
@@ -47,7 +47,7 @@ Config_t Config_t_fromPyObject(const PyObject* config) {
  * Returns MachList_t with allocated array or with array==NULL on error.
  * Caller responsible for freeing ml.array.
  */
-MachList_t MachList_t_fromPylist(const PyObject *pylist) {
+MachList_t MachList_t_fromPylist(PyObject *pylist) {
     MachList_t ml = {NULL, 0};
     Py_ssize_t len = PyList_Size(pylist);
     if (len < 0) return ml;  // error
@@ -91,7 +91,7 @@ MachList_t MachList_t_fromPylist(const PyObject *pylist) {
     return ml;
 }
 
-Curve_t Curve_t_fromPylist(const PyObject *data_points) {
+Curve_t Curve_t_fromPylist(PyObject *data_points) {
     Curve_t curve = {NULL, 0};
     Py_ssize_t n = PyList_Size(data_points);
     if (n < 2)  // need at least 2 points

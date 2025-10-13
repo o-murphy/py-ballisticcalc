@@ -162,7 +162,7 @@ double calculateOgw(double bulletWeight, double velocity);
 
 void Coriolis_t_coriolis_acceleration_local(
     const Coriolis_t *coriolis_ptr,
-    V3dT *velocity_ptr,
+    const V3dT *velocity_ptr,
     V3dT *accel_ptr
 );
 

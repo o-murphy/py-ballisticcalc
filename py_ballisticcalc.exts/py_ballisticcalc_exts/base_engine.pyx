@@ -81,7 +81,7 @@ cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     # 3. Copying data from Python objects to C structures (must remain in Cython)
     cdef int i
     try:
-        for i in range(length):
+        for i in range(<int>length):
             # Wind_t_from_py interacts with a Python object, so it remains here
             winds_array[i] = Wind_t_from_py(winds_py_list[i])
     except Exception:
@@ -646,7 +646,7 @@ cdef class CythonizedBaseIntegrationEngine:
         
         return (_new_feet(max_range_ft), _new_rad(angle_at_max_rad))
 
-    cdef BaseTrajDataT _find_apex(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr):
+    cdef BaseTrajDataT _find_apex(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr):
         """
         Internal implementation to find the apex of the trajectory.
         """
@@ -821,7 +821,7 @@ cdef class CythonizedBaseIntegrationEngine:
         return _new_rad(shot_props_ptr.barrel_elevation)
 
 
-    cdef tuple _integrate(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr,
+    cdef tuple _integrate(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, int filter_flags):
         raise NotImplementedError

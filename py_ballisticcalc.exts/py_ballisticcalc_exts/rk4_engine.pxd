@@ -44,7 +44,7 @@ cdef extern from "include/rk4.h":
                          const ShotProps_t *shot_props_ptr, 
                          const V3dT *ground_velocity_ptr) noexcept nogil
 
-    TerminationReason _integrate_rk4(ShotProps_t *shot_props_ptr,
+    TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
                                     WindSock_t *wind_sock_ptr,
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,
@@ -54,6 +54,6 @@ cdef extern from "include/rk4.h":
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self)
-    cdef tuple _integrate(CythonizedRK4IntegrationEngine self, ShotProps_t *shot_props_ptr,
+    cdef tuple _integrate(CythonizedRK4IntegrationEngine self, const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, int filter_flags)

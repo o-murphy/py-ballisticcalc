@@ -43,7 +43,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         """Calculate the step size for integration."""
         return self.DEFAULT_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)
 
-    cdef tuple _integrate(CythonizedEulerIntegrationEngine self, ShotProps_t *shot_props_ptr,
+    cdef tuple _integrate(CythonizedEulerIntegrationEngine self, const ShotProps_t *shot_props_ptr,
                            double range_limit_ft, double range_step_ft,
                            double time_step, int filter_flags):
         cdef CBaseTrajSeq traj_seq = CBaseTrajSeq()
