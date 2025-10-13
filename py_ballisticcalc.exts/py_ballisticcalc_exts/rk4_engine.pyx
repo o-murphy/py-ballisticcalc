@@ -1,7 +1,7 @@
 """
 Cythonized RK4 Integration Engine
 
-Because storing each step in a CBaseTrajSeq is practically costless, we always run with "dense_output=True".
+Because storing each step in a BaseTrajSeqT is practically costless, we always run with "dense_output=True".
 """
 # noinspection PyUnresolvedReferences
 from cython cimport final
@@ -17,7 +17,7 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport (
-    CBaseTrajSeq,
+    BaseTrajSeqT,
 )
 
 from py_ballisticcalc.exceptions import RangeError
@@ -38,7 +38,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef tuple _integrate(CythonizedRK4IntegrationEngine self, const ShotProps_t *shot_props_ptr,
                            double range_limit_ft, double range_step_ft,
                            double time_step, int filter_flags):
-        cdef CBaseTrajSeq traj_seq = CBaseTrajSeq()
+        cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
         cdef TerminationReason termination_reason = _integrate_rk4(
             shot_props_ptr,
             self._wind_sock,

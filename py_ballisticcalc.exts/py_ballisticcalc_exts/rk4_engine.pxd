@@ -12,7 +12,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq_t
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 
 cdef extern from "include/bclib.h":
     ctypedef enum TerminationReason:
@@ -49,7 +49,7 @@ cdef extern from "include/rk4.h":
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,
                                     double time_step, int filter_flags,
-                                    CBaseTrajSeq_t *traj_seq_ptr) noexcept nogil
+                                    BaseTrajSeq_t *traj_seq_ptr) noexcept nogil
                          
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):

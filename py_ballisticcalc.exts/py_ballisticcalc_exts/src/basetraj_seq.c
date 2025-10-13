@@ -8,14 +8,14 @@
 #include "bclib.h"
 
 /**
- * Retrieves a specific double value from a BaseTrajC struct using an InterpKey.
+ * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
  * This function is defined as static inline for performance.
  *
- * @param p A pointer to the BaseTrajC struct.
+ * @param p A pointer to the BaseTraj_t struct.
  * @param key_kind The InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
-double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind) {
+double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t* p, int key_kind) {
     // Note: In C, accessing a struct member via a pointer uses '->' instead of '.'
     switch (key_kind) {
         case KEY_TIME:
@@ -39,14 +39,14 @@ double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind) {
     }
 }
 
-double _slant_val_buf(const BaseTrajC* p, double ca, double sa) {
+double BaseTraj_t_slant_val_buf(const BaseTraj_t* p, double ca, double sa) {
     /* Computes the slant_height of a trajectory point 'p' given cosine 'ca' and sine 'sa' of look_angle. */
     return p->py * ca - p->px * sa;
 }
 
 // Rewritten C function
-ssize_t _bisect_center_idx_buf(
-    const BaseTrajC* buf,
+ssize_t BaseTraj_t_bisect_center_idx_buf(
+    const BaseTraj_t* buf,
     size_t length,
     int key_kind,
     double key_value
@@ -61,8 +61,8 @@ ssize_t _bisect_center_idx_buf(
 
     // Get the first and last key values
     // Note: The C version simplifies pointer arithmetic compared to the Cython original
-    double v0 = _key_val_from_kind_buf(&buf[0], key_kind);
-    double vN = _key_val_from_kind_buf(&buf[n - 1], key_kind);
+    double v0 = BaseTraj_t_key_val_from_kind_buf(&buf[0], key_kind);
+    double vN = BaseTraj_t_key_val_from_kind_buf(&buf[n - 1], key_kind);
 
     // Determine sort order
     int increasing = (vN >= v0) ? 1 : 0;
@@ -78,7 +78,7 @@ ssize_t _bisect_center_idx_buf(
         mid = lo + ((hi - lo) >> 1);
 
         // Get value at midpoint
-        vm = _key_val_from_kind_buf(&buf[mid], key_kind);
+        vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
 
         if (increasing) {
             if (vm < key_value) {
@@ -113,8 +113,8 @@ ssize_t _bisect_center_idx_buf(
 }
 
 // Implementation of the function declared in basetraj_seq.h
-ssize_t _bisect_center_idx_slant_buf(
-    const BaseTrajC* buf,
+ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
+    const BaseTraj_t* buf,
     size_t length,
     double ca,
     double sa,
@@ -129,8 +129,8 @@ ssize_t _bisect_center_idx_slant_buf(
     }
 
     // Get the first and last slant values using array indexing
-    double v0 = _slant_val_buf(&buf[0], ca, sa);
-    double vN = _slant_val_buf(&buf[n - 1], ca, sa);
+    double v0 = BaseTraj_t_slant_val_buf(&buf[0], ca, sa);
+    double vN = BaseTraj_t_slant_val_buf(&buf[n - 1], ca, sa);
 
     // Determine sort order
     int increasing = (vN >= v0) ? 1 : 0;
@@ -146,7 +146,7 @@ ssize_t _bisect_center_idx_slant_buf(
         mid = lo + ((hi - lo) >> 1);
 
         // Get value at midpoint
-        vm = _slant_val_buf(&buf[mid], ca, sa);
+        vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
 
         if (increasing) {
             if (vm < value) {
@@ -178,15 +178,15 @@ ssize_t _bisect_center_idx_slant_buf(
  * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
  *
  * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
- * This is the C-equivalent of the Cython function _interpolate_raw.
+ * This is the C-equivalent of the Cython function BaseTrajSeq_t_interpolate_raw.
  */
-int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out) {
+int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t* out) {
     // Cast Cython's size_t to C's ssize_t for bounds checking
-    BaseTrajC* buffer = seq->_buffer;
+    BaseTraj_t* buffer = seq->_buffer;
     ssize_t plength = (ssize_t)seq->_length;
-    BaseTrajC *p0;
-    BaseTrajC *p1;
-    BaseTrajC *p2;
+    BaseTraj_t *p0;
+    BaseTraj_t *p1;
+    BaseTraj_t *p2;
     double ox0, ox1, ox2;
     double x = key_value;
     double time, px, py, pz, vx, vy, vz, mach;
@@ -260,7 +260,7 @@ int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_
         mach = _interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
     }
 
-    // Write results to the output BaseTrajC struct (use -> for pointer access)
+    // Write results to the output BaseTraj_t struct (use -> for pointer access)
     out->time = time;
     out->px = px; out->py = py; out->pz = pz;
     out->vx = vx; out->vy = vy; out->vz = vz;
@@ -268,12 +268,12 @@ int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_
     return 1;
 }
 
-CBaseTrajSeq_t* CBaseTrajSeq_t_create()
+BaseTrajSeq_t* BaseTrajSeq_t_create()
 {
-    return (CBaseTrajSeq_t*)calloc(1, sizeof(CBaseTrajSeq_t));
+    return (BaseTrajSeq_t*)calloc(1, sizeof(BaseTrajSeq_t));
 };
 
-void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq)
+void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
 {
     if (seq != NULL) {
         free(seq);
@@ -281,14 +281,14 @@ void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq)
     return;
 };
 
-int CBaseTrajSeq_t_len(CBaseTrajSeq_t *seq) {
+int BaseTrajSeq_t_len(BaseTrajSeq_t *seq) {
     if (seq != NULL) {
         return seq->_length;
     }
     return -1;
 }
 
-BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx)
+BaseTraj_t* BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx)
 {
     ssize_t len = (ssize_t)seq->_length;
     if (len <= 0) {
@@ -304,15 +304,15 @@ BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx)
 };
 
 /**
- * @brief Перевіряє та забезпечує мінімальну ємність буфера.
+ * @brief Checks and ensures the minimum buffer capacity.
  *
- * @param seq Вказівник на структуру послідовності.
- * @param min_capacity Мінімальна необхідна ємність.
- * @return int 0 при успіху, -1 при помилці виділення пам'яті.
+ * @param seq Pointer to the sequence structure.
+ * @param min_capacity The minimum required capacity.
+ * @return int 0 on success, -1 on memory allocation error.
  */
-int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity) {
+int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) {
     size_t new_capacity;
-    BaseTrajC *new_buffer;
+    BaseTraj_t *new_buffer;
     size_t bytes_copy;
 
     if (seq == NULL) {
@@ -333,14 +333,14 @@ int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity) {
         new_capacity = min_capacity;
     }
 
-    new_buffer = malloc(new_capacity * sizeof(BaseTrajC));
+    new_buffer = malloc(new_capacity * sizeof(BaseTraj_t));
 
     if (new_buffer == NULL) {
         return -1;
     }
 
     if (seq->_length > 0) {
-        bytes_copy = seq->_length * sizeof(BaseTrajC);
+        bytes_copy = seq->_length * sizeof(BaseTraj_t);
         memcpy(new_buffer, seq->_buffer, bytes_copy);
     }
     free(seq->_buffer);
@@ -352,22 +352,22 @@ int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity) {
 };
 
 /**
- * @brief Додає новий елемент в кінець послідовності.
- * * @param seq Вказівник на структуру послідовності.
- * @return int 0 при успіху, -1 при помилці виділення пам'яті або NULL-покажчику.
+ * @brief Appends a new element to the end of the sequence.
+ * @param seq Pointer to the sequence structure.
+ * @return int 0 on success, -1 on memory allocation error or NULL pointer.
  */
-int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
+int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
 {
 
     if (seq == NULL) {
         return -1;
     }
 
-    if (CBaseTrajSeq_t_ensure_capacity(seq, seq->_length + 1) < 0) {
+    if (BaseTrajSeq_t_ensure_capacity(seq, seq->_length + 1) < 0) {
         return -1;
     }
 
-    BaseTrajC* entry_ptr = seq->_buffer + seq->_length;
+    BaseTraj_t* entry_ptr = seq->_buffer + seq->_length;
     entry_ptr->time = time;
     entry_ptr->px = px;
     entry_ptr->py = py;

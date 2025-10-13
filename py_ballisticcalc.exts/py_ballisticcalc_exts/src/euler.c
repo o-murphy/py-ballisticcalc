@@ -34,7 +34,7 @@ double _euler_time_step(double base_step, double velocity)
  * (not used for integration step size).
  * @param time_step The base time step for integration (can be adaptive).
  * @param filter_flags Flags (TrajFlag_t) specifying additional points to record.
- * @param traj_seq_ptr Pointer to the CBaseTrajSeq_t buffer where trajectory 
+ * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where trajectory 
  * data points will be stored.
  * @return TerminationReason An enumeration value indicating why the integration 
  * loop was terminated (e.g., NoRangeError on success).
@@ -44,7 +44,7 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,
                                     double time_step, int filter_flags,
-                                    CBaseTrajSeq_t *traj_seq_ptr)
+                                    BaseTrajSeq_t *traj_seq_ptr)
 {
 
     if (!shot_props_ptr) {
@@ -144,7 +144,7 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
         );
 
         // Store point in trajectory sequence
-        CBaseTrajSeq_t_append(
+        BaseTrajSeq_t_append(
             traj_seq_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
@@ -205,7 +205,7 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
     }
 
     // Add final data point
-    CBaseTrajSeq_t_append(
+    BaseTrajSeq_t_append(
         traj_seq_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,

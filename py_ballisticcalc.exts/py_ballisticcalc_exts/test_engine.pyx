@@ -13,7 +13,7 @@ from py_ballisticcalc_exts.base_engine cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
@@ -84,7 +84,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         """
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        cdef CBaseTrajSeq seq = CBaseTrajSeq()
+        cdef BaseTrajSeqT seq = BaseTrajSeqT()
         cdef double v = self._shot_s.muzzle_velocity
         cdef double be = self._shot_s.barrel_elevation
         cdef double az = self._shot_s.barrel_azimuth

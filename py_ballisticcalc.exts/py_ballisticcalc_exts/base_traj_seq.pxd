@@ -6,7 +6,7 @@ Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 
 cdef extern from "include/basetraj_seq.h" nogil:
-    ctypedef struct BaseTrajC:
+    ctypedef struct BaseTraj_t:
         double time
         double px
         double py
@@ -26,52 +26,52 @@ cdef extern from "include/basetraj_seq.h" nogil:
         KEY_VEL_Y
         KEY_VEL_Z
 
-    ctypedef struct CBaseTrajSeq_t:
-        BaseTrajC* _buffer
+    ctypedef struct BaseTrajSeq_t:
+        BaseTraj_t* _buffer
         size_t _length
         size_t _capacity
 
-    double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind) noexcept nogil
-    double _slant_val_buf(const BaseTrajC* p, double ca, double sa) noexcept nogil
+    double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t* p, int key_kind) noexcept nogil
+    double BaseTraj_t_slant_val_buf(const BaseTraj_t* p, double ca, double sa) noexcept nogil
 
-    Py_ssize_t _bisect_center_idx_buf(
-        const BaseTrajC* buf,
+    Py_ssize_t BaseTraj_t_bisect_center_idx_buf(
+        const BaseTraj_t* buf,
         size_t length,
         int key_kind,
         double key_value
     ) noexcept nogil
 
-    Py_ssize_t _bisect_center_idx_slant_buf(
-        const BaseTrajC* buf,
+    Py_ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
+        const BaseTraj_t* buf,
         size_t length,
         double ca,
         double sa,
         double value
     ) noexcept nogil
 
-    int _interpolate_raw(
-        CBaseTrajSeq_t* seq,
+    int BaseTrajSeq_t_interpolate_raw(
+        BaseTrajSeq_t* seq,
         Py_ssize_t idx,
         int key_kind,
         double key_value,
-        BaseTrajC* out
+        BaseTraj_t* out
     ) except? 0 nogil
 
-    CBaseTrajSeq_t* CBaseTrajSeq_t_create() noexcept nogil
-    void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq) noexcept nogil
-    int CBaseTrajSeq_t_len(CBaseTrajSeq_t *seq) noexcept nogil
-    BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
-    int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil
-    int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach) noexcept nogil
+    BaseTrajSeq_t* BaseTrajSeq_t_create() noexcept nogil
+    void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq) noexcept nogil
+    int BaseTrajSeq_t_len(BaseTrajSeq_t *seq) noexcept nogil
+    BaseTraj_t* BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
+    int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil
+    int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach) noexcept nogil
 
 
-cdef class CBaseTrajSeq:
-    cdef CBaseTrajSeq_t* _c_view
+cdef class BaseTrajSeqT:
+    cdef BaseTrajSeq_t* _c_view
 
     cdef void _ensure_capacity_c(self, size_t min_capacity)
     cdef void _append_c(self, double time, double px, double py, double pz,
             double vx, double vy, double vz, double mach)
     cdef Py_ssize_t len_c(self)
-    cdef BaseTrajC* c_getitem(self, Py_ssize_t idx)
+    cdef BaseTraj_t* c_getitem(self, Py_ssize_t idx)
     cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time = *)
     cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value)

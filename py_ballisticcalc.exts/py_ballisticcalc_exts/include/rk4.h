@@ -14,7 +14,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
                                 const Config_t *config_ptr,
                                 double range_limit_ft, double range_step_ft,
                                 double time_step, int filter_flags,
-                                CBaseTrajSeq_t *traj_seq_ptr);
+                                BaseTrajSeq_t *traj_seq_ptr);
 
 
 #endif // RK4_H

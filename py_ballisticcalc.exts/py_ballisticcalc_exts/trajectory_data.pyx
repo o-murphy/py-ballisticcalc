@@ -41,7 +41,7 @@ cdef class BaseTrajDataT:
     def __cinit__(self, double time, V3dT position, V3dT velocity, double mach):
         self._c_view = BaseTrajData_t_create(time, position, velocity, mach)
         if self._c_view is NULL:
-            raise MemoryError("Failed to create CBaseTrajSeq_t")
+            raise MemoryError("Failed to create BaseTrajSeq_t")
 
     def __dealloc__(self):
         cdef BaseTrajData_t* ptr = self._c_view

@@ -10,7 +10,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq_t
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     TerminationReason,
@@ -29,7 +29,7 @@ cdef extern from "include/euler.h":
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,
                                     double time_step, int filter_flags,
-                                    CBaseTrajSeq_t *traj_seq_ptr) noexcept nogil
+                                    BaseTrajSeq_t *traj_seq_ptr) noexcept nogil
                          
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):

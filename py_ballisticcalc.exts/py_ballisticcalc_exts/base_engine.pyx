@@ -1,7 +1,7 @@
 """
 CythonizedBaseIntegrationEngine
 
-Presently ._integrate() returns dense data in a CBaseTrajSeq, then .integrate()
+Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
     feeds it through the Python TrajectoryDataFilter to build List[TrajectoryData].
 TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 """
@@ -27,7 +27,7 @@ from py_ballisticcalc_exts.unit_helper cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT, mag
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq, BaseTrajC
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     # types and methods
@@ -241,16 +241,16 @@ cdef class CythonizedBaseIntegrationEngine:
                                           double angle_rad,
                                           double target_x_ft,
                                           double target_y_ft):
-        """Target miss (feet) for given launch angle using CBaseTrajSeq.
+        """Target miss (feet) for given launch angle using BaseTrajSeqT.
         Attempts to avoid Python exceptions in the hot path by pre-checking reach."""
         cdef:
-            CBaseTrajSeq trajectory
+            BaseTrajSeqT trajectory
             BaseTrajDataT hit
-            BaseTrajC* last_ptr
+            BaseTraj_t* last_ptr
             Py_ssize_t n
         shot_props_ptr.barrel_elevation = angle_rad
         __res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.NONE)
-        trajectory = <CBaseTrajSeq>__res[0]
+        trajectory = <BaseTrajSeqT>__res[0]
         # If trajectory is too short for cubic interpolation, treat as unreachable
         n = trajectory.len_c()
         if n < <Py_ssize_t>3:
@@ -578,16 +578,16 @@ cdef class CythonizedBaseIntegrationEngine:
             cdef double ix
             cdef double iy
             cdef double sdist
-            cdef CBaseTrajSeq trajectory
+            cdef BaseTrajSeqT trajectory
             cdef Py_ssize_t n
             cdef Py_ssize_t i
-            cdef BaseTrajC* prev_ptr
-            cdef BaseTrajC* cur_ptr
+            cdef BaseTraj_t* prev_ptr
+            cdef BaseTraj_t* cur_ptr
             # Update shot data
             shot_props_ptr.barrel_elevation = angle_rad
             try:
                 _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, <int>TrajFlag_t.NONE)
-                trajectory = <CBaseTrajSeq>_res[0]
+                trajectory = <BaseTrajSeqT>_res[0]
                 ca = cos(shot_props_ptr.look_angle)
                 sa = sin(shot_props_ptr.look_angle)
                 n = trajectory.len_c()
@@ -667,7 +667,7 @@ cdef class CythonizedBaseIntegrationEngine:
         
         try:
             _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, <int>TrajFlag_t.APEX)
-            apex = (<CBaseTrajSeq>_res[0])._get_at_c('velocity.y', 0.0)
+            apex = (<BaseTrajSeqT>_res[0])._get_at_c('velocity.y', 0.0)
         finally:
             if has_restore_min_velocity:
                 self._config_s.cMinimumVelocity = restore_min_velocity
@@ -744,7 +744,7 @@ cdef class CythonizedBaseIntegrationEngine:
             while iterations_count < _cMaxIterations:
                 # Check height of trajectory at the zero distance (using current barrel_elevation)
                 _res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.NONE)
-                hit = (<CBaseTrajSeq>_res[0])._get_at_c('position.x', target_x_ft)
+                hit = (<BaseTrajSeqT>_res[0])._get_at_c('position.x', target_x_ft)
 
                 if hit.time == 0.0:
                     # Integrator returned initial point - consider removing constraints

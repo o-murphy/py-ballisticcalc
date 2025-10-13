@@ -1,7 +1,7 @@
 """
 Cythonized Euler Integration Engine
 
-Because storing each step in a CBaseTrajSeq is practically costless, we always run with "dense_output=True".
+Because storing each step in a BaseTrajSeqT is practically costless, we always run with "dense_output=True".
 """
 from cython cimport final
 from libc.math cimport fabs, sin, cos, fmin
@@ -16,7 +16,7 @@ from py_ballisticcalc_exts.base_engine cimport (
     WindSock_t,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq, CBaseTrajSeq_t
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTrajSeq_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     TerminationReason,
@@ -46,7 +46,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef tuple _integrate(CythonizedEulerIntegrationEngine self, const ShotProps_t *shot_props_ptr,
                            double range_limit_ft, double range_step_ft,
                            double time_step, int filter_flags):
-        cdef CBaseTrajSeq traj_seq = CBaseTrajSeq()
+        cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
         cdef TerminationReason termination_reason = _integrate_euler(
             shot_props_ptr,
             self._wind_sock,

@@ -35,10 +35,10 @@ typedef struct {
     double vy;    /* Velocity y-component */
     double vz;    /* Velocity z-component */
     double mach;  /* Mach number */
-} BaseTrajC;
+} BaseTraj_t;
 
 /**
- * Keys used to look up specific values within a BaseTrajC struct.
+ * Keys used to look up specific values within a BaseTraj_t struct.
  */
 typedef enum {
     KEY_TIME,
@@ -52,37 +52,37 @@ typedef enum {
 } InterpKey;
 
 /**
- * Internal view structure for a sequence (buffer) of BaseTrajC points.
+ * Internal view structure for a sequence (buffer) of BaseTraj_t points.
  */
 typedef struct {
-    BaseTrajC* _buffer;
+    BaseTraj_t* _buffer;
     size_t _length;
     size_t _capacity;
-} CBaseTrajSeq_t;
+} BaseTrajSeq_t;
 
 /**
- * Retrieves a specific double value from a BaseTrajC struct using an InterpKey.
+ * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
  * This function is defined as static inline for performance.
  *
- * @param p A pointer to the BaseTrajC struct.
+ * @param p A pointer to the BaseTraj_t struct.
  * @param key_kind The InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
-double _key_val_from_kind_buf(const BaseTrajC* p, int key_kind);
+double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t* p, int key_kind);
 
-double _slant_val_buf(const BaseTrajC* p, double ca, double sa);
+double BaseTraj_t_slant_val_buf(const BaseTraj_t* p, double ca, double sa);
 
 // Rewritten C function
-ssize_t _bisect_center_idx_buf(
-    const BaseTrajC* buf,
+ssize_t BaseTraj_t_bisect_center_idx_buf(
+    const BaseTraj_t* buf,
     size_t length,
     int key_kind,
     double key_value
 );
 
 // Implementation of the function declared in basetraj_seq.h
-ssize_t _bisect_center_idx_slant_buf(
-    const BaseTrajC* buf,
+ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
+    const BaseTraj_t* buf,
     size_t length,
     double ca,
     double sa,
@@ -95,16 +95,14 @@ ssize_t _bisect_center_idx_slant_buf(
  * Uses monotone-preserving PCHIP with Hermite evaluation.
  * @return 1 on success, 0 on failure.
  */
-int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out);
+int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t* out);
 
-
-CBaseTrajSeq_t* CBaseTrajSeq_t_create();
-void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq);
-int CBaseTrajSeq_t_len(CBaseTrajSeq_t *seq);
-BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx);
-int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity);
-int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
-// int CBaseTrajSeq_t_get_at(CBaseTrajSeq_t *seq, InterpKey key_kind, double key_value, double *start_from_time, BaseTrajData_t *out);
+BaseTrajSeq_t* BaseTrajSeq_t_create();
+void BaseTrajSeq_t_destroy(BaseTrajSeq_t* seq);
+int BaseTrajSeq_t_len(BaseTrajSeq_t *seq);
+BaseTraj_t* BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx);
+int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
+int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
 
 
 #endif /* BASETRAJ_SEQ_H */

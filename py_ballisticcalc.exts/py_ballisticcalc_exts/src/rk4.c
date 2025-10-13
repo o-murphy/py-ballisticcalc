@@ -71,7 +71,7 @@ V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double k
  * @param time_step The base time step (dt) used for the RK4 calculation.
  * @param filter_flags Flags (TrajFlag_t) specifying special points to record 
  * (e.g., ZERO, MACH, APEX).
- * @param traj_seq_ptr Pointer to the CBaseTrajSeq_t buffer where dense trajectory 
+ * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where dense trajectory 
  * data points will be stored.
  * @return TerminationReason An enumeration value indicating why the integration 
  * loop was terminated (e.g., NoRangeError on successful completion).
@@ -81,7 +81,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
                                 const Config_t *config_ptr,
                                 double range_limit_ft, double range_step_ft,
                                 double time_step, int filter_flags,
-                                CBaseTrajSeq_t *traj_seq_ptr)
+                                BaseTrajSeq_t *traj_seq_ptr)
 {
     // printf("DEBUG: Function entry\n");
     // fflush(stdout);
@@ -229,7 +229,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
         // Store point in trajectory sequence
         // printf("DEBUG: About to append to trajectory sequence\n");
         // fflush(stdout);
-        CBaseTrajSeq_t_append(
+        BaseTrajSeq_t_append(
             traj_seq_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
@@ -347,7 +347,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
     // fflush(stdout);
     
     // Process final data point
-    CBaseTrajSeq_t_append(
+    BaseTrajSeq_t_append(
         traj_seq_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,

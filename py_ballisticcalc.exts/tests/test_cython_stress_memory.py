@@ -17,7 +17,7 @@ from py_ballisticcalc import (
     Weight,
 )
 
-from py_ballisticcalc_exts.base_traj_seq import CBaseTrajSeq
+from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
 
 
 def _base_config():
@@ -66,7 +66,7 @@ def test_rss_stability_over_many_runs(loaded_engine_instance):
 
 
 def test_cbase_traj_seq_append_and_get_at_edge_cases():
-    seq = CBaseTrajSeq()
+    seq = BaseTrajSeqT()
     # Append many points to exercise reallocation logic
     n = 10_000
     for i in range(n):
