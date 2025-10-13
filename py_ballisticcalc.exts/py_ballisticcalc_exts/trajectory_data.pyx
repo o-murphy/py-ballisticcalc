@@ -39,39 +39,48 @@ cdef class BaseTrajDataT:
     __slots__ = ('time', '_position', '_velocity', 'mach')
 
     def __cinit__(self, double time, V3dT position, V3dT velocity, double mach):
-        self.time = time
-        self._position = position
-        self._velocity = velocity
-        self.mach = mach
-        # self._c_view = CBaseTrajSeq_t_create(NULL, 0, 0)
-        # if self._c_view is NULL:
-        #     raise MemoryError("Failed to create CBaseTrajSeq_t")
+        self._c_view = BaseTrajData_t_create(time, position, velocity, mach)
+        if self._c_view is NULL:
+            raise MemoryError("Failed to create CBaseTrajSeq_t")
 
+    def __dealloc__(self):
+        cdef BaseTrajData_t* ptr = self._c_view
+        if ptr is not NULL:
+            self._c_view = NULL
+            BaseTrajData_t_destroy(ptr)
 
     # Hot-path C accessors (used by Cython code directly)
     cdef V3dT c_position(self):
-        return self._position
+        return self._c_view.position
 
     cdef V3dT c_velocity(self):
-        return self._velocity
+        return self._c_view.velocity
+
+    @property
+    def time(self):
+        return self._c_view.time
+
+    @property
+    def mach(self):
+        return self._c_view.mach
 
     # Python-facing properties return Vector, not dict
     @property
     def position(self):
-        return _v3d_to_vector(self._position)
+        return _v3d_to_vector(self._c_view.position)
 
     @property
     def velocity(self):
-        return _v3d_to_vector(self._velocity)
+        return _v3d_to_vector(self._c_view.velocity)
 
     # Back-compat names used elsewhere in ext code
     @property
     def position_vector(self):
-        return _v3d_to_vector(self._position)
+        return _v3d_to_vector(self._c_view.position)
 
     @property
     def velocity_vector(self):
-        return _v3d_to_vector(self._velocity)
+        return _v3d_to_vector(self._c_view.velocity)
 
     @staticmethod
     def interpolate(str key_attribute, double key_value,

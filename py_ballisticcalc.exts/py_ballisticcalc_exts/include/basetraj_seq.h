@@ -5,6 +5,8 @@
 #include <stddef.h> // Required for size_t
 #include <sys/types.h> // For ssize_t
 
+#include "bclib.h"
+
 
 // --- START CROSS-PLATFORM FIX ---
 // The manylinux build environment failed due to redefinition.
@@ -101,5 +103,7 @@ void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq);
 BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx);
 int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity);
 int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+// int CBaseTrajSeq_t_get_at(CBaseTrajSeq_t *seq, InterpKey key_kind, double key_value, double *start_from_time, BaseTrajData_t *out);
+
 
 #endif /* BASETRAJ_SEQ_H */

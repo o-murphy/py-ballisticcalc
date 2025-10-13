@@ -13,8 +13,6 @@ passing Python cdef-class instances into nogil code paths.
 """
 
 from libc.math cimport cos, sin, fabs
-from libc.string cimport memcpy
-from cpython.mem cimport PyMem_Malloc, PyMem_Free
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences

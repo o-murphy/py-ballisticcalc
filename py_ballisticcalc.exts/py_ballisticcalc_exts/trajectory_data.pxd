@@ -22,14 +22,14 @@ cdef extern from "include/bclib.h":
         V3dT velocity
         double mach
 
+    BaseTrajData_t* BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach) noexcept nogil
+    void BaseTrajData_t_destroy(BaseTrajData_t *ptr) noexcept nogil
+
 
 cdef class BaseTrajDataT:
     cdef:
-        # BaseTrajData_t *_c_view
-        readonly double time
-        readonly V3dT _position
-        readonly V3dT _velocity
-        readonly double mach
+        BaseTrajData_t *_c_view
+
     # Hot-path C accessors (must be declared in .pxd to avoid Cython errors)
     cdef V3dT c_position(self)
     cdef V3dT c_velocity(self)

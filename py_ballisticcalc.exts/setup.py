@@ -82,7 +82,7 @@ EXTENSION_DEPS = {
     "base_engine": ["v3d", "bclib"],
     "euler_engine": ["v3d", "bclib", "euler"],
     "rk4_engine": ["v3d", "bclib", "rk4"],
-    "trajectory_data": ["v3d", "interp"],
+    "trajectory_data": ["v3d", "interp", "bclib"],
     # Test modules (expose internal C functions for tests only)
     "test_helpers": ["v3d", "bclib"],
     "test_engine": ["v3d", "bclib"],
