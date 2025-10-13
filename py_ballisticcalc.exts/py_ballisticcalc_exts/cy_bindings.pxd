@@ -117,6 +117,14 @@ cdef extern from "include/bclib.h" nogil:
         V3dT *accel_ptr
     ) noexcept nogil
 
+    cdef extern from "include/bclib.h":
+        ctypedef enum TerminationReason:
+            NoRangeError
+            RangeErrorInvalidParameter
+            RangeErrorMinimumVelocityReached
+            RangeErrorMaximumDropReached
+            RangeErrorMinimumAltitudeReached
+
 
 # python to C objects conversion
 cdef Config_t Config_t_from_pyobject(object config)

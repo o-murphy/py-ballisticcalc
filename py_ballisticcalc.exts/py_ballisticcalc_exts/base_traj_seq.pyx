@@ -19,8 +19,6 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.interp cimport _interpolate_3_pt
-from py_ballisticcalc_exts.base_traj_seq cimport (BaseTrajC, CBaseTrajSeq_t, 
-    KEY_TIME, KEY_MACH, KEY_POS_X, KEY_POS_Y, KEY_POS_Z, KEY_VEL_X, KEY_VEL_Y, KEY_VEL_Z, _key_val_from_kind_buf)
 
 
 __all__ = ('CBaseTrajSeq', 'BaseTrajC')
@@ -98,7 +96,7 @@ cdef class CBaseTrajSeq:
             BaseTrajC outp
             V3dT pos
             V3dT vel
-            int key_kind
+            InterpKey key_kind
 
         if key_attribute == 'time':
             key_kind = KEY_TIME

@@ -17,30 +17,21 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq, CBaseTrajSeq_t
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.cy_bindings cimport (
+    TerminationReason,
+    NoRangeError,
+    RangeErrorInvalidParameter,
+    RangeErrorMinimumVelocityReached,
+    RangeErrorMaximumDropReached,
+    RangeErrorMinimumAltitudeReached,
+)
 
 from py_ballisticcalc.exceptions import RangeError
 
 __all__ = [
     'CythonizedEulerIntegrationEngine',
 ]
-
-cdef extern from "include/bclib.h":
-    ctypedef enum TerminationReason:
-        NoRangeError
-        RangeErrorInvalidParameter
-        RangeErrorMinimumVelocityReached
-        RangeErrorMaximumDropReached
-        RangeErrorMinimumAltitudeReached
-
-cdef extern from "include/euler.h":
-    double _euler_time_step(double base_step, double velocity) noexcept nogil
-
-    TerminationReason _integrate_euler(ShotProps_t *shot_props_ptr,
-                                    WindSock_t *wind_sock_ptr,
-                                    const Config_t *config_ptr,
-                                    double range_limit_ft, double range_step_ft,
-                                    double time_step, int filter_flags,
-                                    CBaseTrajSeq_t *traj_seq_ptr) noexcept nogil
 
 
 @final

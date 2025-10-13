@@ -4,11 +4,14 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine, 
     WindSock_t
 )
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     Config_t,
 )
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq_t
 
 cdef extern from "include/bclib.h":
