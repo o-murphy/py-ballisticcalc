@@ -1,6 +1,10 @@
 #ifndef EULER_H
 #define EULER_H
 
+#include "v3d.h"
+#include "bclib.h"
+#include "basetraj_seq.h"
+
 /**
  * @brief Calculate time step based on current projectile speed.
  * * @param base_step The base time step value.
@@ -8,5 +12,12 @@
  * @return double The calculated time step.
  */
 double _euler_time_step(double base_step, double velocity);
+
+TerminationReason _integrate_euler(ShotProps_t *shot_props_ptr,
+                                    WindSock_t *wind_sock_ptr,
+                                    const Config_t *config_ptr,
+                                    double range_limit_ft, double range_step_ft,
+                                    double time_step, int filter_flags,
+                                    CBaseTrajSeq_t *traj_seq_ptr);
 
 #endif // EULER_H

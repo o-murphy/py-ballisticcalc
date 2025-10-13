@@ -166,4 +166,12 @@ void Coriolis_t_coriolis_acceleration_local(
     V3dT *accel_ptr
 );
 
+typedef enum {
+    NoRangeError,
+    RangeErrorInvalidParameter,
+    RangeErrorMinimumVelocityReached,
+    RangeErrorMaximumDropReached,
+    RangeErrorMinimumAltitudeReached,
+} TerminationReason;
+
 #endif // TYPES_H

@@ -1,11 +1,23 @@
 # pxd for rk4_engine to expose CythonizedRK4IntegrationEngine
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine, WindSock_t
+from py_ballisticcalc_exts.base_engine cimport (
+    CythonizedBaseIntegrationEngine, 
+    WindSock_t
+)
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     Config_t,
 )
 from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.base_traj_seq cimport CBaseTrajSeq_t
+
+cdef extern from "include/bclib.h":
+    ctypedef enum TerminationReason:
+        NoRangeError
+        RangeErrorInvalidParameter
+        RangeErrorMinimumVelocityReached
+        RangeErrorMaximumDropReached
+        RangeErrorMinimumAltitudeReached
 
 cdef extern from "include/rk4.h":
 
@@ -22,11 +34,19 @@ cdef extern from "include/rk4.h":
     # Returns:
     #     The acceleration vector (dv/dt)
     # """
+
     V3dT _calculate_dvdt(const V3dT *v_ptr, 
                          const V3dT *gravity_vector_ptr, 
                          double km_coeff, 
                          const ShotProps_t *shot_props_ptr, 
                          const V3dT *ground_velocity_ptr) noexcept nogil
+
+    TerminationReason _integrate_rk4(ShotProps_t *shot_props_ptr,
+                                    WindSock_t *wind_sock_ptr,
+                                    const Config_t *config_ptr,
+                                    double range_limit_ft, double range_step_ft,
+                                    double time_step, int filter_flags,
+                                    CBaseTrajSeq_t *traj_seq_ptr) noexcept nogil
                          
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
@@ -34,9 +54,3 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef tuple _integrate(CythonizedRK4IntegrationEngine self, ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, int filter_flags)
-    
-cdef tuple _integrate_rk4(ShotProps_t *shot_props_ptr,
-                        WindSock_t *wind_sock_ptr,
-                        const Config_t *config_ptr,
-                        double range_limit_ft, double range_step_ft,
-                        double time_step, int filter_flags)
