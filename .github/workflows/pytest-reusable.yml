@@ -67,3 +67,17 @@ jobs:
             echo "Pytest succeeded on the first attempt."
           fi
         shell: bash # Ensure this command runs in a bash shell environment
+
+      - name: Test Cythonized code (if applicable)
+        if: startsWith(inputs.engine_name, 'cythonized_')
+        run: |
+          echo "Detected Cythonized engine. Testing extensions..."
+          pytest ./py_ballisticcalc.exts/tests --no-header -v -n auto --engine=${{ inputs.engine_name }}
+                    # Check the exit code of pytest. If it's not 0 (failure), run again without capture for full logs.
+          if [ $? -ne 0 ]; then
+            echo "Pytest failed on the first attempt. Running again without capture for detailed output."
+            pytest ./py_ballisticcalc.exts/tests -v --engine=${{ inputs.engine_name }}
+          else
+            echo "Pytest succeeded on the first attempt."
+          fi
+        shell: bash # Ensure this command runs in a bash shell environment
