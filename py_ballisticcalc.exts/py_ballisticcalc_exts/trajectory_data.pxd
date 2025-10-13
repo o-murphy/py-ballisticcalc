@@ -25,6 +25,7 @@ cdef extern from "include/bclib.h":
 
 cdef class BaseTrajDataT:
     cdef:
+        # BaseTrajData_t *_c_view
         readonly double time
         readonly V3dT _position
         readonly V3dT _velocity

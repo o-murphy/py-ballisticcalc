@@ -96,8 +96,10 @@ ssize_t _bisect_center_idx_slant_buf(
 int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_value, BaseTrajC* out);
 
 
-CBaseTrajSeq_t* CBaseTrajSeq_t_create(BaseTrajC *buffer, size_t _length, size_t _capacity);
+CBaseTrajSeq_t* CBaseTrajSeq_t_create();
 void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq);
-
+BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx);
+int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity);
+int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
 
 #endif /* BASETRAJ_SEQ_H */

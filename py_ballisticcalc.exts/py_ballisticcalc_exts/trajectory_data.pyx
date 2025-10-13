@@ -43,6 +43,10 @@ cdef class BaseTrajDataT:
         self._position = position
         self._velocity = velocity
         self.mach = mach
+        # self._c_view = CBaseTrajSeq_t_create(NULL, 0, 0)
+        # if self._c_view is NULL:
+        #     raise MemoryError("Failed to create CBaseTrajSeq_t")
+
 
     # Hot-path C accessors (used by Cython code directly)
     cdef V3dT c_position(self):

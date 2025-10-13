@@ -35,7 +35,7 @@ cdef class CBaseTrajSeq:
         nogil helpers work directly on the C buffer for speed.
     """
     def __cinit__(self):
-        self._c_view = CBaseTrajSeq_t_create(NULL, 0, 0)
+        self._c_view = CBaseTrajSeq_t_create()
         if self._c_view is NULL:
             raise MemoryError("Failed to create CBaseTrajSeq_t")
     
@@ -45,41 +45,19 @@ cdef class CBaseTrajSeq:
             self._c_view = NULL
             CBaseTrajSeq_t_destroy(ptr)
         
-    cdef void _ensure_capacity(self, size_t min_capacity):
-        cdef size_t new_capacity
-        cdef BaseTrajC* new_buffer
-        cdef size_t bytes_copy
-        cdef size_t new_bytes
-        if min_capacity > self._c_view._capacity:
-            if self._c_view._capacity > 0:
-                new_capacity = <size_t>(self._c_view._capacity * 2)
-                if new_capacity < min_capacity:
-                    new_capacity = min_capacity
-            else:
-                new_capacity = <size_t>64
-                if new_capacity < min_capacity:
-                    new_capacity = min_capacity
-            new_bytes = (<size_t>new_capacity) * (<size_t>sizeof(BaseTrajC))
-            new_buffer = <BaseTrajC*>PyMem_Malloc(<size_t>new_bytes)
-            if not new_buffer:
-                raise MemoryError("Failed to allocate memory for trajectory buffer")
-            if self._c_view._buffer:
-                if self._c_view._length:
-                    bytes_copy = (<size_t>self._c_view._length) * (<size_t>sizeof(BaseTrajC))
-                    memcpy(<void*>new_buffer, <const void*>self._c_view._buffer, <size_t>bytes_copy)
-                PyMem_Free(<void*>self._c_view._buffer)
-            self._c_view._buffer = new_buffer
-            self._c_view._capacity = new_capacity
+    cdef void _ensure_capacity_c(self, size_t min_capacity):
+        cdef int ret = CBaseTrajSeq_t_ensure_capacity(self._c_view, min_capacity)
+        if ret < 0:
+            raise MemoryError("Failed to allocate memory for trajectory buffer")
 
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach):
-        self._ensure_capacity(self._c_view._length + 1)
-        cdef BaseTrajC* entry_ptr = <BaseTrajC*>(<char*>self._c_view._buffer + (<size_t>self._c_view._length) * (<size_t>sizeof(BaseTrajC)))
-        entry_ptr.time = time
-        entry_ptr.px = px; entry_ptr.py = py; entry_ptr.pz = pz
-        entry_ptr.vx = vx; entry_ptr.vy = vy; entry_ptr.vz = vz
-        entry_ptr.mach = mach
-        self._c_view._length += 1
+        cdef int ret = CBaseTrajSeq_t_append(self._c_view, time, px, py, pz, vx, vy, vz, mach)
+        if ret < 0:
+            raise MemoryError("Failed to allocate memory for trajectory buffer")
+
+    def _ensure_capacity(self, size_t min_capacity):
+        self._ensure_capacity_c(min_capacity)
 
     def append(self, double time, double px, double py, double pz,
                double vx, double vy, double vz, double mach):
@@ -90,15 +68,13 @@ cdef class CBaseTrajSeq:
         """Ensure capacity is at least min_capacity (no-op if already large enough)."""
         if min_capacity < 0:
             raise ValueError("min_capacity must be non-negative")
-        self._ensure_capacity(<size_t>min_capacity)
+        self._ensure_capacity_c(min_capacity)
 
     cdef BaseTrajC* c_getitem(self, Py_ssize_t idx):
-        cdef Py_ssize_t length = <Py_ssize_t> self._c_view._length
-        if idx < 0:
-            idx += length
-        if idx < 0 or idx >= length:
+        cdef BaseTrajC *item = CBaseTrajSeq_t_get_item(self._c_view, idx)
+        if item == NULL:
             raise IndexError("Index out of range")
-        return <BaseTrajC*>(<char*>self._c_view._buffer + (<size_t>idx * <size_t>sizeof(BaseTrajC)))
+        return item
 
     def __len__(self):
         """Number of points in the sequence."""
@@ -109,12 +85,11 @@ cdef class CBaseTrajSeq:
         cdef V3dT position
         cdef V3dT velocity
         cdef BaseTrajC* entry_ptr
-        cdef Py_ssize_t _i = <Py_ssize_t> idx
+        cdef Py_ssize_t _i = <Py_ssize_t>idx
         entry_ptr = self.c_getitem(_i)
         position.x = entry_ptr.px; position.y = entry_ptr.py; position.z = entry_ptr.pz
         velocity.x = entry_ptr.vx; velocity.y = entry_ptr.vy; velocity.z = entry_ptr.vz
         return BaseTrajDataT(entry_ptr.time, position, velocity, entry_ptr.mach)
-
 
     cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value):
         """

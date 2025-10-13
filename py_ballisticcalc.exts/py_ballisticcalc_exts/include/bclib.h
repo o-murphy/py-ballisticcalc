@@ -137,6 +137,8 @@ typedef struct {
     double mach;
 } BaseTrajData_t;
 
+// BaseTrajData_t* BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach);
+
 typedef struct {
     Wind_t *winds;
     int current;

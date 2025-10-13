@@ -232,6 +232,15 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     //        altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
+
+// BaseTrajData_t* BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach)
+// {
+
+//     return
+// }
+
+
+
 V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) {
     return (V3dT){
         .x=wind_ptr->velocity * cos(wind_ptr->direction_from),

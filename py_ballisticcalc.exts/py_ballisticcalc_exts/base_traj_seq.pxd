@@ -57,14 +57,17 @@ cdef extern from "include/basetraj_seq.h" nogil:
         BaseTrajC* out
     ) except? 0 nogil
 
-    CBaseTrajSeq_t* CBaseTrajSeq_t_create(BaseTrajC *buffer, size_t _length, size_t _capacity) noexcept nogil
+    CBaseTrajSeq_t* CBaseTrajSeq_t_create() noexcept nogil
     void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t *seq) noexcept nogil
+    BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
+    int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil
+    int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach) noexcept nogil
 
 
 cdef class CBaseTrajSeq:
     cdef CBaseTrajSeq_t* _c_view
 
-    cdef void _ensure_capacity(self, size_t min_capacity)
+    cdef void _ensure_capacity_c(self, size_t min_capacity)
     cdef void _append_c(self, double time, double px, double py, double pz,
             double vx, double vy, double vz, double mach)
     cdef BaseTrajC* c_getitem(self, Py_ssize_t idx)

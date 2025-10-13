@@ -1,5 +1,6 @@
-#include <stdlib.h> // Required for malloc()
+#include <stdlib.h> // Required for calloc, malloc, free
 #include <stddef.h> // Required for size_t
+#include <string.h> // Required for memcpy
 #include <math.h>
 #include <sys/types.h> // For ssize_t
 #include "basetraj_seq.h"
@@ -266,16 +267,9 @@ int _interpolate_raw(CBaseTrajSeq_t* seq, ssize_t idx, int key_kind, double key_
     return 1;
 }
 
-CBaseTrajSeq_t* CBaseTrajSeq_t_create(BaseTrajC* buffer, size_t length, size_t capacity)
+CBaseTrajSeq_t* CBaseTrajSeq_t_create()
 {
-    CBaseTrajSeq_t* seq = (CBaseTrajSeq_t*)malloc(sizeof(CBaseTrajSeq_t));
-    if (seq == NULL) {
-        return NULL;
-    }
-    seq->_buffer = buffer;
-    seq->_length = length;
-    seq->_capacity = capacity;
-    return seq;
+    return (CBaseTrajSeq_t*)calloc(1, sizeof(CBaseTrajSeq_t));
 };
 
 void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq)
@@ -283,4 +277,99 @@ void CBaseTrajSeq_t_destroy(CBaseTrajSeq_t* seq)
     if (seq != NULL) {
         free(seq);
     }
+    return;
 };
+
+BaseTrajC* CBaseTrajSeq_t_get_item(CBaseTrajSeq_t *seq, ssize_t idx)
+{
+    ssize_t len = (ssize_t)seq->_length;
+    if (len <= 0) {
+        return NULL;
+    }
+    if (idx < 0) {
+        idx += len;
+    }
+    if (idx < 0 || idx >= len) {
+        return NULL;
+    }
+    return seq->_buffer + idx;
+};
+
+/**
+ * @brief Перевіряє та забезпечує мінімальну ємність буфера.
+ *
+ * @param seq Вказівник на структуру послідовності.
+ * @param min_capacity Мінімальна необхідна ємність.
+ * @return int 0 при успіху, -1 при помилці виділення пам'яті.
+ */
+int CBaseTrajSeq_t_ensure_capacity(CBaseTrajSeq_t *seq, size_t min_capacity) {
+    size_t new_capacity;
+    BaseTrajC *new_buffer;
+    size_t bytes_copy;
+
+    if (seq == NULL) {
+        return -1;
+    }
+    
+    if (min_capacity <= seq->_capacity) {
+        return 0;
+    }
+
+    if (seq->_capacity > 0) {
+        new_capacity = seq->_capacity * 2;
+    } else {
+        new_capacity = 64;
+    }
+
+    if (new_capacity < min_capacity) {
+        new_capacity = min_capacity;
+    }
+
+    new_buffer = malloc(new_capacity * sizeof(BaseTrajC));
+
+    if (new_buffer == NULL) {
+        return -1;
+    }
+
+    if (seq->_length > 0) {
+        bytes_copy = seq->_length * sizeof(BaseTrajC);
+        memcpy(new_buffer, seq->_buffer, bytes_copy);
+    }
+    free(seq->_buffer);
+
+    seq->_buffer = new_buffer;
+    seq->_capacity = new_capacity;
+
+    return 0;
+};
+
+/**
+ * @brief Додає новий елемент в кінець послідовності.
+ * * @param seq Вказівник на структуру послідовності.
+ * @return int 0 при успіху, -1 при помилці виділення пам'яті або NULL-покажчику.
+ */
+int CBaseTrajSeq_t_append(CBaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
+{
+
+    if (seq == NULL) {
+        return -1;
+    }
+
+    if (CBaseTrajSeq_t_ensure_capacity(seq, seq->_length + 1) < 0) {
+        return -1;
+    }
+
+    BaseTrajC* entry_ptr = seq->_buffer + seq->_length;
+    entry_ptr->time = time;
+    entry_ptr->px = px;
+    entry_ptr->py = py;
+    entry_ptr->pz = pz;
+    entry_ptr->vx = vx;
+    entry_ptr->vy = vy;
+    entry_ptr->vz = vz;
+    entry_ptr->mach = mach;
+    seq->_length += 1;
+
+    return 0;
+}
+
