@@ -7,7 +7,6 @@
 
 /**
  * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
- * This function is defined as static inline for performance.
  *
  * @param p A pointer to the BaseTraj_t struct.
  * @param key_kind The InterpKey indicating which value to retrieve.
