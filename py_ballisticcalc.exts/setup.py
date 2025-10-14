@@ -124,6 +124,7 @@ for name, deps in EXTENSION_DEPS.items():
             sources=sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
+            extra_compile_args=["-g", "-O0", "-std=c99"],
             # extra_compile_args=["-std=c99"], # Uncomment if needed for specific C standards
             # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
         )

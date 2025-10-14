@@ -1,0 +1,47 @@
+name: Manual Test Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      os:
+        description: "Operating system for the test"
+        required: true
+        type: choice
+        default: ubuntu-latest
+        options:
+          - ubuntu-latest
+          - macos-15
+          - windows-latest
+
+      python_version:
+        description: "Python version to use"
+        required: true
+        type: choice
+        default: "3.11"
+        options:
+          - "3.9"
+          - "3.10"
+          - "3.11"
+          - "3.12"
+          - "3.13"
+          - "3.14"
+
+      engine_name:
+        description: "Engine name (e.g., euler_engine, rk4_engine, cythonized_euler)"
+        required: true
+        type: choice
+        default: euler_engine
+        options:
+          - euler_engine
+          - rk4_engine
+          - cythonized_euler
+          - cythonized_rk4
+          - scipy
+
+jobs:
+  run_reusable_workflow:
+    uses: ./.github/workflows/reusable-test.yml
+    with:
+      os: ${{ inputs.os }}
+      python_version: ${{ inputs.python_version }}
+      engine_name: ${{ inputs.engine_name }}

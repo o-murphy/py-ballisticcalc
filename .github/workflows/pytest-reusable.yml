@@ -81,3 +81,17 @@ jobs:
             echo "Pytest succeeded on the first attempt."
           fi
         shell: bash # Ensure this command runs in a bash shell environment
+
+      - name: Run stress tests
+        if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.engine_name, 'cythonized_') }}
+        run: |
+          echo "This workflow was triggered manually. Running stress tests..."
+          pytest ./py_ballisticcalc.exts/tests -m stress
+          if [ $? -ne 0 ]; then
+            echo "Stress test failed on the first attempt. Running again with valgrind."
+            sudo apt update
+            sudo apt install -y valgrind
+            valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes -- pytest ./py_ballisticcalc.exts/tests -m stress
+          else
+            echo "Stress test succeeded on the first attempt."
+        shell: bash
