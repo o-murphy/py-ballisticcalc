@@ -449,6 +449,8 @@ cdef class CythonizedBaseIntegrationEngine:
             low_angle = look_angle_rad - sight_height_adjust
             high_angle = angle_at_max_rad
 
+        cdef str reason
+        
         # Prepare variables for Ridder's method outside of try block to satisfy Cython
         cdef int iteration
         cdef double mid_angle, f_mid, s, next_angle, f_next
@@ -463,10 +465,12 @@ cdef class CythonizedBaseIntegrationEngine:
 
             if f_low * f_high >= 0:
                 lofted_str = "lofted" if lofted else "low"
-                reason = f"No {lofted_str} zero trajectory in elevation range "
-                reason += f"({low_angle * 57.29577951308232:.2f}, "  # Convert to degrees
-                reason += f"{high_angle * 57.29577951308232:.2f} deg). "
-                reason += f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
+                reason = (
+                    f"No {lofted_str} zero trajectory in elevation range "
+                    f"({low_angle * 57.29577951308232:.2f}, "
+                    f"{high_angle * 57.29577951308232:.2f} deg). "
+                    f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
+                )
                 raise ZeroFindingError(float(target_y_ft), 0, _new_rad(shot_props_ptr.barrel_elevation), reason=reason)
 
             # 4. Ridder's method implementation
