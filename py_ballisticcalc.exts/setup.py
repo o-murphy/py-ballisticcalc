@@ -86,6 +86,7 @@ EXTENSION_DEPS = {
     # Test modules (expose internal C functions for tests only)
     "test_helpers": ["v3d", "bclib"],
     "test_engine": ["v3d", "bclib"],
+    "v3d": ["v3d"],
 }
 
 
