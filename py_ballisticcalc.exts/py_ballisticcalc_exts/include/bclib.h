@@ -107,7 +107,7 @@ typedef struct
     Coriolis_t coriolis;
 } ShotProps_t;
 
-void ShotProps_t_free(ShotProps_t *shot_props_ptr);
+void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr);
 double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
 int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
 double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);

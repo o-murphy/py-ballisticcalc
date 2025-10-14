@@ -7,7 +7,7 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
 # noinspection PyUnresolvedReferences
-from libc.stdlib cimport malloc, free
+from libc.stdlib cimport calloc, free
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, copysign
 # noinspection PyUnresolvedReferences
@@ -34,7 +34,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Wind_t,
     Atmosphere_t,
     ShotProps_t,
-    ShotProps_t_free,
+    ShotProps_t_free_resources,
     ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,
     Wind_t_from_py,
@@ -43,6 +43,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t_from_pyobject,
     MachList_t_from_pylist,
     Curve_t_from_pylist,
+    TerminationReason,
 )
 
 from py_ballisticcalc.shot import ShotProps
@@ -68,13 +69,13 @@ cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     cdef size_t length = <size_t> len(winds_py_list)
 
     # 1. Memory allocation for the struct (remains in Cython)
-    cdef WindSock_t * ws = <WindSock_t *> malloc(sizeof(WindSock_t))
-    if <void *> ws == NULL:
+    cdef WindSock_t * ws = <WindSock_t *> calloc(1, sizeof(WindSock_t))
+    if <void *> ws is NULL:
         raise MemoryError("Failed to allocate WindSock_t structure.")
 
     # 2. Memory allocation for the Wind_t array (remains in Cython)
-    cdef Wind_t * winds_array = <Wind_t *> malloc(<size_t> length * sizeof(Wind_t))
-    if <void *> winds_array == NULL:
+    cdef Wind_t * winds_array = <Wind_t *> calloc(<size_t> length, sizeof(Wind_t))
+    if <void *> winds_array is NULL:
         free(<void *> ws)
         raise MemoryError("Failed to allocate internal Wind_t array.")
 
@@ -117,9 +118,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Finds the maximum range along shot_info.look_angle, and the launch angle to reach it.
         """
-        cdef:
-            ShotProps_t* shot_props_ptr
-        shot_props_ptr = self._init_trajectory(shot_info)
+        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         try:
             return self._find_max_range(shot_props_ptr, angle_bracket_deg)
         finally:
@@ -130,9 +129,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Finds the barrel elevation needed to hit sight line at a specific distance,
         using unimodal root-finding that is guaranteed to succeed if a solution exists.
         """
-        cdef:
-            ShotProps_t* shot_props_ptr
-        shot_props_ptr = self._init_trajectory(shot_info)
+        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         try:
             return self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
         finally:
@@ -143,9 +140,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Finds the apex of the trajectory, where apex is defined as the point
         where the vertical component of velocity goes from positive to negative.
         """
-        cdef:
-            ShotProps_t* shot_props_ptr
-        shot_props_ptr = self._init_trajectory(shot_info)
+        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         try:
             result = self._find_apex(shot_props_ptr)
             props = ShotProps.from_shot(shot_info)
@@ -165,21 +160,15 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        cdef:
-            ShotProps_t* shot_props_ptr
-        shot_props_ptr = self._init_trajectory(shot_info)
+        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         try:
-            result = self._zero_angle(shot_props_ptr, distance._feet)
-            self._free_trajectory()
-            return result
+            return self._zero_angle(shot_props_ptr, distance._feet)
         except ZeroFindingError:
-            self._free_trajectory()
             # Fallback to guaranteed method
             shot_props_ptr = self._init_trajectory(shot_info)
-            try:
-                return self._find_zero_angle(shot_props_ptr, distance._feet, False)
-            finally:
-                self._free_trajectory()
+            return self._find_zero_angle(shot_props_ptr, distance._feet, False)
+        finally:
+            self._free_trajectory()
 
     def integrate(CythonizedBaseIntegrationEngine self,
                   object shot_info,
@@ -204,10 +193,13 @@ cdef class CythonizedBaseIntegrationEngine:
             HitResult: Object for describing the trajectory.
         """
         cdef:
-            ShotProps_t* shot_props_ptr
-        range_limit_ft = max_range._feet
-        range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
-        shot_props_ptr = self._init_trajectory(shot_info)
+            tuple _res
+            object props, error, tdf
+            BaseTrajSeqT trajectory
+            BaseTrajDataT init, fin
+            double range_limit_ft = max_range._feet
+            double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft    
+            ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         try:
             _res = self._integrate(shot_props_ptr, range_limit_ft, range_step_ft, time_step, filter_flags)
         finally:
@@ -268,9 +260,9 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self):
         if self._wind_sock != NULL:
-            WindSock_t_free(self._wind_sock)
+            WindSock_t_free(self._wind_sock) 
             self._wind_sock = NULL
-        ShotProps_t_free(&self._shot_s)
+        ShotProps_t_free_resources(&self._shot_s)
 
         # After free_trajectory(&self._shot_s), it's good practice to ensure
         # the internal pointers within _shot_s are indeed NULLIFIED for future checks,
@@ -289,16 +281,27 @@ cdef class CythonizedBaseIntegrationEngine:
         Args:
             shot_info (Shot): Information about the shot.
         """
+
+        # --- 🛑 CRITICAL FIX: FREE OLD RESOURCES FIRST ---
+        self._free_trajectory() 
+        # ---------------------------------------------------
+
+        cdef object coriolis_obj
+
         # hack to reload config if it was changed explicit on existed instance
         self._config_s = Config_t_from_pyobject(self._config)
         self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
 
         self._table_data = shot_info.ammo.dm.drag_table
         # Build C shot struct with robust cleanup on any error that follows
-        cdef object coriolis_obj
+        
         try:
-            # Create coriolis object from shot parameters
-            coriolis_obj = Coriolis.create(shot_info.latitude, shot_info.azimuth, shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps)
+            # Create coriolis object from shot parameters    
+            coriolis_obj = Coriolis.create(
+                shot_info.latitude, 
+                shot_info.azimuth, 
+                shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
+            )
             
             self._shot_s = ShotProps_t(
                 bc=shot_info.ammo.dm.BC,
@@ -342,24 +345,15 @@ cdef class CythonizedBaseIntegrationEngine:
             )
             if ShotProps_t_updateStabilityCoefficient(&self._shot_s) < 0:
                 raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
+
+            self._wind_sock = WindSock_t_create(shot_info.winds)
+            if self._wind_sock is NULL:
+                raise MemoryError("Can't allocate memory for wind_sock")
+
         except Exception:
             # Ensure we free any partially allocated arrays inside _shot_s
-            ShotProps_t_free(&self._shot_s)
-            self._shot_s.mach_list.array = NULL
-            self._shot_s.mach_list.length = 0
-            self._shot_s.curve.points = NULL
-            self._shot_s.curve.length = 0
+            self._free_trajectory()
             raise
-
-        self._wind_sock = WindSock_t_create(shot_info.winds)
-        if self._wind_sock is NULL:
-            # Free partially constructed shot props before raising
-            ShotProps_t_free(&self._shot_s)
-            self._shot_s.mach_list.array = NULL
-            self._shot_s.mach_list.length = 0
-            self._shot_s.curve.points = NULL
-            self._shot_s.curve.length = 0
-            raise MemoryError("Can't allocate memory for wind_sock")
 
         return &self._shot_s
 

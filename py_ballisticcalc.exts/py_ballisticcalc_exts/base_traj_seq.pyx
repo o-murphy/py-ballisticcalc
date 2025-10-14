@@ -68,7 +68,7 @@ cdef class BaseTrajSeqT:
 
     cdef BaseTraj_t* c_getitem(self, Py_ssize_t idx):
         cdef BaseTraj_t *item = BaseTrajSeq_t_get_item(self._c_view, idx)
-        if item == NULL:
+        if item is NULL:
             raise IndexError("Index out of range")
         return item
 

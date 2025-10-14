@@ -16,7 +16,7 @@ cdef Config_t Config_t_from_pyobject(object config):
 
 cdef MachList_t MachList_t_from_pylist(list[object] data):
     cdef MachList_t ml = MachList_t_fromPylist(<PyObject *>data)
-    if ml.array == NULL:
+    if ml.array is NULL:
         if PyErr_Occurred():
             raise
         else:
@@ -27,7 +27,7 @@ cdef Curve_t Curve_t_from_pylist(list[object] data_points):
     cdef Curve_t result = Curve_t_fromPylist(<PyObject *>data_points)
     if PyErr_Occurred():
         raise
-    return Curve_t_fromPylist(<PyObject *>data_points)
+    return result
 
 
 # We still need a way to get data from Python objects into Wind_t structs.

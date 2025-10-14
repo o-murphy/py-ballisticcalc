@@ -21,25 +21,33 @@ const double cMaxWindDistanceFeet = 1e8;
 
 void Curve_t_free(Curve_t *curve_ptr)
 {
-    if (curve_ptr != NULL && curve_ptr->points != NULL)
+    if (curve_ptr == NULL)
+        return;
+
+    if (curve_ptr->points != NULL)
     {
         free(curve_ptr->points);
-        curve_ptr->points = NULL; // optional: avoid dangling pointer
-        curve_ptr->length = 0;    // optional: reset length
+        curve_ptr->points = NULL;
     }
+
+    curve_ptr->length = 0;
 }
 
 void MachList_t_free(MachList_t *mach_list_ptr)
 {
-    if (mach_list_ptr != NULL && mach_list_ptr->array != NULL)
+    if (mach_list_ptr == NULL)
+        return;
+
+    if (mach_list_ptr->array != NULL)
     {
-        free((void *)mach_list_ptr->array);
-        mach_list_ptr->array = NULL; // avoid dangling pointer
-        mach_list_ptr->length = 0;   // reset length
+        free(mach_list_ptr->array);
+        mach_list_ptr->array = NULL;
     }
+
+    mach_list_ptr->length = 0;
 }
 
-void ShotProps_t_free(ShotProps_t *shot_props_ptr)
+void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
         return;
