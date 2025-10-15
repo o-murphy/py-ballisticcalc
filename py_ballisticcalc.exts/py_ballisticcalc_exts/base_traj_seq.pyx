@@ -206,19 +206,19 @@ cdef class BaseTrajSeqT:
             # find first index with time >= start_from_time
             i = <Py_ssize_t>0
             while i < n:
-                if (<BaseTraj_t*>(<char*>buf + <size_t>i * <size_t>sizeof(BaseTraj_t))).time >= sft:
+                if buf[i].time >= sft:
                     start_idx = i
                     break
                 i += 1
             epsilon = 1e-9
-            curr_val = BaseTraj_t_key_val_from_kind_buf(<BaseTraj_t*>(<char*>buf + <size_t>start_idx * <size_t>sizeof(BaseTraj_t)), key_kind)
+            curr_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx], key_kind)
             if fabs(curr_val - key_value) < epsilon:
                 return self[start_idx]
             search_forward = <bint>1
             if start_idx == n - 1:
                 search_forward = <bint>0
             elif 0 < start_idx < n - 1:
-                next_val = BaseTraj_t_key_val_from_kind_buf(<BaseTraj_t*>(<char*>buf + <size_t>(start_idx + 1) * <size_t>sizeof(BaseTraj_t)), key_kind)
+                next_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx + 1], key_kind)
                 if (next_val > curr_val and key_value > curr_val) or (next_val < curr_val and key_value < curr_val):
                     search_forward = <bint>1
                 else:
@@ -228,8 +228,8 @@ cdef class BaseTrajSeqT:
             if search_forward:
                 i = <Py_ssize_t>start_idx
                 while i < n - 1:
-                    a = BaseTraj_t_key_val_from_kind_buf(<BaseTraj_t*>(<char*>buf + <size_t>i * <size_t>sizeof(BaseTraj_t)), key_kind)
-                    b = BaseTraj_t_key_val_from_kind_buf(<BaseTraj_t*>(<char*>buf + <size_t>(i + 1) * <size_t>sizeof(BaseTraj_t)), key_kind)
+                    a = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind)
+                    b = BaseTraj_t_key_val_from_kind_buf(&buf[i + 1], key_kind)
                     if ((a < key_value <= b) or (b <= key_value < a)):
                         target_idx = i + 1
                         break
@@ -237,15 +237,15 @@ cdef class BaseTrajSeqT:
             if target_idx == <Py_ssize_t>(-1):
                 i = <Py_ssize_t>start_idx
                 while i > 0:
-                    a2 = BaseTraj_t_key_val_from_kind_buf(<BaseTraj_t*>(<char*>buf + <size_t>i * <size_t>sizeof(BaseTraj_t)), key_kind)
-                    b2 = BaseTraj_t_key_val_from_kind_buf(<BaseTraj_t*>(<char*>buf + <size_t>(i - 1) * <size_t>sizeof(BaseTraj_t)), key_kind)
+                    a2 = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind)
+                    b2 = BaseTraj_t_key_val_from_kind_buf(&buf[i - 1], key_kind)
                     if ((b2 <= key_value < a2) or (a2 < key_value <= b2)):
                         target_idx = i
                         break
                     i -= 1
             if target_idx == <Py_ssize_t>(-1):
                 raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {key_value}")
-            if fabs(BaseTraj_t_key_val_from_kind_buf(<BaseTraj_t*>(<char*>buf + <size_t>target_idx * <size_t>sizeof(BaseTraj_t)), key_kind) - key_value) < epsilon:
+            if fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon:
                 return self[target_idx]
             if target_idx == 0:
                 target_idx = <Py_ssize_t>1
@@ -268,9 +268,9 @@ cdef class BaseTrajSeqT:
         cdef Py_ssize_t center = BaseTraj_t_bisect_center_idx_slant_buf(self._c_view._buffer, self._c_view._length, ca, sa, value)
         # Use three consecutive points around center to perform monotone PCHIP interpolation keyed on slant height
         cdef BaseTraj_t* buf = self._c_view._buffer
-        cdef BaseTraj_t* p0 = <BaseTraj_t*>(<char*>buf + <size_t>(center - 1) * <size_t>sizeof(BaseTraj_t))
-        cdef BaseTraj_t* p1 = <BaseTraj_t*>(<char*>buf + <size_t>center * <size_t>sizeof(BaseTraj_t))
-        cdef BaseTraj_t* p2 = <BaseTraj_t*>(<char*>buf + <size_t>(center + 1) * <size_t>sizeof(BaseTraj_t))
+        cdef BaseTraj_t* p0 = &buf[center - 1]
+        cdef BaseTraj_t* p1 = &buf[center]
+        cdef BaseTraj_t* p2 = &buf[center + 1]
         cdef double ox0, ox1, ox2
         cdef V3dT pos
         cdef V3dT vel
