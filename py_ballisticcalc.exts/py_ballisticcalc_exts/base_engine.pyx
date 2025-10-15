@@ -14,18 +14,14 @@ from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, copysign
 from py_ballisticcalc_exts.trajectory_data cimport (
     TrajFlag_t,
     BaseTrajDataT,
-    TrajectoryDataT,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.unit_helper cimport (
     _new_feet,
-    _new_fps,
     _new_rad,
-    _new_ft_lb,
-    _new_lb,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT, mag
+from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t
 # noinspection PyUnresolvedReferences
@@ -35,7 +31,6 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Atmosphere_t,
     ShotProps_t,
     ShotProps_t_free_resources,
-    ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,
     Wind_t_from_py,
     Coriolis_t,
@@ -43,7 +38,6 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t_from_pyobject,
     MachList_t_from_pylist,
     Curve_t_from_pylist,
-    TerminationReason,
 )
 
 from py_ballisticcalc.shot import ShotProps
@@ -52,14 +46,15 @@ from py_ballisticcalc.engines.base_engine import create_base_engine_config, Traj
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, BaseTrajData, TrajectoryData
-from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Energy, Weight
-cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
-cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
-
+from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Weight
 
 __all__ = (
     'CythonizedBaseIntegrationEngine',
 )
+
+cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
+cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
+
 
 cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     """
@@ -823,42 +818,3 @@ cdef class CythonizedBaseIntegrationEngine:
                           double range_limit_ft, double range_step_ft,
                           double time_step, int filter_flags):
         raise NotImplementedError
-
-
-cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
-                                  double mach, const ShotProps_t *shot_props_ptr,
-                                  double density_ratio, double drag, int flag):
-
-    cdef:
-        double look_angle = shot_props_ptr.look_angle
-        double spin_drift = ShotProps_t_spinDrift(shot_props_ptr, time)
-        double velocity = mag(velocity_vector_ptr)
-        double windage = range_vector_ptr.z + spin_drift
-        double drop_angleustment = getCorrection(range_vector_ptr.x, range_vector_ptr.y)
-        double windage_angleustment = getCorrection(range_vector_ptr.x, windage)
-        double trajectory_angle = atan2(velocity_vector_ptr.y, velocity_vector_ptr.x);
-        double look_angle_cos = cos(look_angle)
-        double look_angle_sin = sin(look_angle)
-
-    drop_angleustment -= (look_angle if range_vector_ptr.x else 0)
-
-    # Note: Cython cdef class constructors don't support keyword args reliably from Cython.
-    # Pass all fields positionally in the defined order.
-    return TrajectoryData(
-        time,
-        _new_feet(range_vector_ptr.x),
-        _new_fps(velocity),
-        velocity / mach,
-        _new_feet(range_vector_ptr.y),
-        _new_feet(range_vector_ptr.y * look_angle_cos - range_vector_ptr.x * look_angle_sin),
-        _new_rad(drop_angleustment),
-        _new_feet(windage),
-        _new_rad(windage_angleustment),
-        _new_feet(range_vector_ptr.x * look_angle_cos + range_vector_ptr.y * look_angle_sin),
-        _new_rad(trajectory_angle),
-        density_ratio,
-        drag,
-        _new_ft_lb(calculateEnergy(shot_props_ptr.weight, velocity)),
-        _new_lb(calculateOgw(shot_props_ptr.weight, velocity)),
-        flag
-    )

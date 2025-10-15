@@ -6,18 +6,19 @@ Because storing each step in a BaseTrajSeqT is practically costless, we always r
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from libc.math cimport sin, cos, fmin, fabs
+from py_ballisticcalc_exts.cy_bindings cimport ShotProps_t
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
-    ShotProps_t,
-)
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport (
-    CythonizedBaseIntegrationEngine,
-)
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport (
-    BaseTrajSeqT,
+    TerminationReason,
+    NoRangeError,
+    RangeErrorInvalidParameter,
+    RangeErrorMinimumVelocityReached,
+    RangeErrorMaximumDropReached,
+    RangeErrorMinimumAltitudeReached,
 )
 
 from py_ballisticcalc.exceptions import RangeError

@@ -16,7 +16,7 @@ cdef extern from "include/v3d.h" nogil:
     V3dT mulS(const V3dT *v, double scalar) noexcept nogil
     double dot(const V3dT *v1, const V3dT *v2) noexcept nogil
     double mag(const V3dT *v) noexcept nogil
-    void iNorm(V3dT *v) noexcept nogil
+    # void iNorm(V3dT *v) noexcept nogil
     V3dT norm(const V3dT *v) noexcept nogil
     void print_vec(const char* name, const V3dT *v) noexcept nogil
 
