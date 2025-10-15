@@ -84,26 +84,15 @@ cdef class BaseTrajSeqT:
 
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
-        cdef V3dT position
-        cdef V3dT velocity
-        cdef BaseTraj_t* entry_ptr
+        cdef V3dT position, velocity
         cdef Py_ssize_t _i = <Py_ssize_t>idx
-        entry_ptr = self.c_getitem(_i)
+        cdef BaseTraj_t* entry_ptr = self.c_getitem(_i)
         position.x = entry_ptr.px; position.y = entry_ptr.py; position.z = entry_ptr.pz
         velocity.x = entry_ptr.vx; velocity.y = entry_ptr.vy; velocity.z = entry_ptr.vz
         return BaseTrajDataT(entry_ptr.time, position, velocity, entry_ptr.mach)
 
-    cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value):
-        """
-        Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
-            Supports negative idx (which references from end of sequence).
-        """
-        cdef:
-            BaseTraj_t outp
-            V3dT pos
-            V3dT vel
-            InterpKey key_kind
-
+    cdef InterpKey _attr_to_key(self, str key_attribute):
+        cdef InterpKey key_kind
         if key_attribute == 'time':
             key_kind = KEY_TIME
         elif key_attribute == 'mach':
@@ -122,31 +111,28 @@ cdef class BaseTrajSeqT:
             key_kind = KEY_VEL_Z
         else:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+        return key_kind
 
-        cdef Py_ssize_t _idx = idx
-        if _idx < 0:
-            _idx += <Py_ssize_t>self._c_view._length
-        if _idx < 1:
-            _idx += 1  # try to advance index so that we have a point to the left
-        if _idx >= (<Py_ssize_t>self._c_view._length - 1):
-            _idx -= 1  # try to retreat index so that we have a point to the right
-        if _idx < 1:
+    cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value):
+        """
+        Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
+            Supports negative idx (which references from end of sequence).
+        """
+        cdef BaseTraj_t output
+        cdef int ret = BaseTrajSeq_t_interpolate_raw(self._c_view, idx, key_kind, key_value, &output)
+        
+        if ret < 0:
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
 
-        cdef BaseTrajSeq_t view
-        view._buffer = self._c_view._buffer
-        view._length = self._c_view._length
-        view._capacity = self._c_view._capacity
-        if not BaseTrajSeq_t_interpolate_raw(&view, _idx, key_kind, key_value, &outp):
-            raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
+        cdef position = V3dT(output.px, output.py, output.pz)
+        cdef velocity = V3dT(output.vx, output.vy, output.vz)
 
-        pos.x = outp.px; pos.y = outp.py; pos.z = outp.pz
-        vel.x = outp.vx; vel.y = outp.vy; vel.z = outp.vz
-        return BaseTrajDataT(outp.time, pos, vel, outp.mach)
+        return BaseTrajDataT(output.time, position, velocity, output.mach)
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
-        return self._interpolate_at_c(idx, key_attribute, key_value)
+        cdef InterpKey key_kind = self._attr_to_key(key_attribute)
+        return self._interpolate_at_c(idx, key_kind, key_value)
 
     def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
         return self._get_at_c(key_attribute, key_value, start_from_time)
@@ -158,7 +144,9 @@ cdef class BaseTrajSeqT:
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
-        cdef int key_kind
+
+        cdef InterpKey key_kind = self._attr_to_key(key_attribute)
+
         cdef Py_ssize_t n
         cdef BaseTraj_t* buf
         cdef Py_ssize_t i
@@ -174,24 +162,7 @@ cdef class BaseTrajSeqT:
         cdef double a2
         cdef double b2
         cdef bint search_forward
-        if key_attribute == 'time':
-            key_kind = KEY_TIME
-        elif key_attribute == 'mach':
-            key_kind = KEY_MACH
-        elif key_attribute == 'position.x':
-            key_kind = KEY_POS_X
-        elif key_attribute == 'position.y':
-            key_kind = KEY_POS_Y
-        elif key_attribute == 'position.z':
-            key_kind = KEY_POS_Z
-        elif key_attribute == 'velocity.x':
-            key_kind = KEY_VEL_X
-        elif key_attribute == 'velocity.y':
-            key_kind = KEY_VEL_Y
-        elif key_attribute == 'velocity.z':
-            key_kind = KEY_VEL_Z
-        else:
-            raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+
         n = <Py_ssize_t>self._c_view._length
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
@@ -250,13 +221,13 @@ cdef class BaseTrajSeqT:
             if target_idx == 0:
                 target_idx = <Py_ssize_t>1
             center_idx = target_idx if target_idx < n - 1 else n - 2
-            return self._interpolate_at_c(center_idx, key_attribute, key_value)
+            return self._interpolate_at_c(center_idx, key_kind, key_value)
 
         # Default: bisect across entire range
         cdef Py_ssize_t center = BaseTraj_t_bisect_center_idx_buf(self._c_view._buffer, self._c_view._length, key_kind, key_value)
         if center < 0:
             raise ValueError("Interpolation requires at least 3 points")
-        return self._interpolate_at_c(center, key_attribute, key_value)
+        return self._interpolate_at_c(center, key_kind, key_value)
 
     def get_at_slant_height(self, double look_angle_rad, double value):
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""

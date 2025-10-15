@@ -97,7 +97,7 @@ extern "C"
      * Uses monotone-preserving PCHIP with Hermite evaluation.
      * @return 1 on success, 0 on failure.
      */
-    int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t *out);
+    int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out);
 
     BaseTrajSeq_t *BaseTrajSeq_t_create();
     void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq);

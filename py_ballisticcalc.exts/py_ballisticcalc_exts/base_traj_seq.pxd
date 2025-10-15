@@ -50,9 +50,9 @@ cdef extern from "include/basetraj_seq.h" nogil:
     ) noexcept nogil
 
     int BaseTrajSeq_t_interpolate_raw(
-        BaseTrajSeq_t* seq,
+        const BaseTrajSeq_t* seq,
         Py_ssize_t idx,
-        int key_kind,
+        InterpKey key_kind,
         double key_value,
         BaseTraj_t* out
     ) except? 0 nogil
@@ -72,6 +72,7 @@ cdef class BaseTrajSeqT:
     cdef void _append_c(self, double time, double px, double py, double pz,
             double vx, double vy, double vz, double mach)
     cdef Py_ssize_t len_c(self)
+    cdef InterpKey _attr_to_key(self, str key_attribute)
     cdef BaseTraj_t* c_getitem(self, Py_ssize_t idx)
     cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time = *)
-    cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, str key_attribute, double key_value)
+    cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value)

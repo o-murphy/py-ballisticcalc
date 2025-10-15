@@ -206,11 +206,11 @@ ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
  * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
  * This is the C-equivalent of the Cython function BaseTrajSeq_t_interpolate_raw.
  */
-int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t *out)
+int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
 {
     // Cast Cython's size_t to C's ssize_t for bounds checking
     BaseTraj_t *buffer = seq->_buffer;
-    ssize_t plength = (ssize_t)seq->_length;
+    ssize_t length = seq->_length;
     BaseTraj_t *p0;
     BaseTraj_t *p1;
     BaseTraj_t *p2;
@@ -218,14 +218,16 @@ int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind,
     double x = key_value;
     double time, px, py, pz, vx, vy, vz, mach;
 
-    // Handle negative index (Cython style) and check bounds
+    // Handle negative index
     if (idx < 0)
     {
-        idx += plength;
+        idx += length;
     }
-    if (idx <= 0 || idx >= plength - 1)
+
+    // Check if we have valid points on both sides
+    if (idx < 1 || idx >= length - 1)
     {
-        return 0;
+        return -1;
     }
 
     // Use standard C array indexing instead of complex pointer arithmetic
@@ -278,13 +280,13 @@ int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind,
         break;
     default:
         // If key_kind is not recognized, interpolation is impossible.
-        return 0;
+        return -1;
     }
 
     // Check for duplicate x values (zero division risk in PCHIP)
     if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
     {
-        return 0;
+        return -1;
     }
 
     // Interpolate all components using the external C function _interpolate_3_pt
@@ -322,7 +324,7 @@ int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind,
     out->vy = vy;
     out->vz = vz;
     out->mach = mach;
-    return 1;
+    return 0;
 }
 
 BaseTrajSeq_t *BaseTrajSeq_t_create()
