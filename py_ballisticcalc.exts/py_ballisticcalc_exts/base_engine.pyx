@@ -98,11 +98,14 @@ cdef class CythonizedBaseIntegrationEngine:
     APEX_IS_MAX_RANGE_RADIANS = float(_APEX_IS_MAX_RANGE_RADIANS)
     ALLOWED_ZERO_ERROR_FEET = float(_ALLOWED_ZERO_ERROR_FEET)
 
-    def __cinit__(CythonizedBaseIntegrationEngine self, object _config):
+    def __init__(self, object _config):
+        # WARNING: Avoid calling Python functions inside __cinit__!
+        # __cinit__ is only for memory allocation
+        # Calling Python functions inside __cinit__ is guaranteed to cause a memory leak
         self._config = create_base_engine_config(_config)
-        self.gravity_vector = V3dT(.0, self._config.cGravityConstant, .0)
+        self.gravity_vector = V3dT(.0, .0, .0)
         self.integration_step_count = 0
-
+        
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         self._free_trajectory()
 
@@ -289,13 +292,18 @@ cdef class CythonizedBaseIntegrationEngine:
 
         self._table_data = shot_info.ammo.dm.drag_table
         # Build C shot struct with robust cleanup on any error that follows
+
+        # WARNING: Avoid calling Python attributes in a chain!
+        # Cython may forget to add DECREF, so memory leaks are possible
+        cdef object velocity_obj = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)
+        cdef double muzzle_velocity_fps = velocity_obj._fps
         
         try:
             # Create coriolis object from shot parameters    
             coriolis_obj = Coriolis.create(
                 shot_info.latitude, 
                 shot_info.azimuth, 
-                shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps
+                muzzle_velocity_fps
             )
             
             self._shot_s = ShotProps_t(
@@ -314,7 +322,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 cant_sine=sin(shot_info.cant_angle._rad),
                 alt0=shot_info.atmo.altitude._feet,
                 calc_step=self.get_calc_step(),
-                muzzle_velocity=shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)._fps,
+                muzzle_velocity=muzzle_velocity_fps,
                 stability_coefficient=0.0,
                 filter_flags=0,
                 atmo=Atmosphere_t(
