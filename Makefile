@@ -3,14 +3,11 @@
 # Define the virtual environment directory
 VENV_DIR = .venv
 
-# Define the uv command (uv is often preferred as a standalone tool)
-UV = uv
-
 # Activation script logic is intentionally omitted here as it must be run 
 # manually in the main shell (e.g., source .venv/bin/activate).
 
 # Phony targets are actions, not files
-.PHONY: sync-dev sync-exts clean-exts clean test-dev test-exts bench-dev bench-exts
+.PHONY: sync-dev sync-exts clean-exts clean test-dev test-exts bench-dev bench-exts test-leaks
 
 # -------------------------------------------------------------
 # CORE SYNC TARGETS
@@ -20,7 +17,7 @@ UV = uv
 # Action: Runs uv sync --dev to install base dependencies.
 sync-dev:
 	@echo "--- Running standard dev sync (uv sync --dev) ---"
-	$(UV) sync --dev
+	uv sync --dev
 	@echo "✅ Dev sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # Target 2: Full sync with cleanup and extras
@@ -28,7 +25,7 @@ sync-dev:
 # Action: Runs uv sync --dev --extra exts --no-cache to install extensions.
 sync-exts: clean-exts
 	@echo "--- Running full sync with extras and no-cache ---"
-	$(UV) sync --dev --extra exts --no-cache
+	uv sync --dev --extra exts --no-cache
 	@echo "✅ Exts sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # -------------------------------------------------------------
@@ -80,16 +77,23 @@ clean:
 # Action: Runs pytest using the base 'rk4_engine'.
 test-dev: clean-exts
 	@echo "--- Testing the Development/Base environment (pure Python engine) ---"
-	${UV} run pytest --engine="rk4_engine"
+	uv run pytest --engine="rk4_engine"
 
 # Target 4: Test extensions environment
 # Prerequisites: sync-exts must run first (which pulls in clean-exts and sync-dev).
 # Action: Runs pytest twice using the 'cythonized_rk4_engine'.
 test-exts: sync-exts
-	@echo "--- Testing the Extensions environment (pure Python engine) ---"
-	${UV} run pytest py_ballisticcalc.exts --engine="cythonized_rk4_engine"
-	${UV} run pytest --engine="cythonized_rk4_engine"
+	@echo "--- Testing the Extensions environment (Cythonized engine) ---"
+	uv run pytest py_ballisticcalc.exts --engine="cythonized_rk4_engine"
+	uv run pytest --engine="cythonized_rk4_engine"
 
+# Target 5: Test memory leaks with valgrind
+# Prerequisites: sync-exts must run first (which pulls in clean-exts and sync-dev).
+# Action: Runs valgrind -- pytest -m stress using the 'cythonized_rk4_engine'.
+test-leaks: sync-exts
+	@echo "--- Testing the C/Cython memory leaks (Cythonized engine) ---"
+	ulimit -n 65536 && \
+	valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes -- uv run pytest -m stress ./py_ballisticcalc.exts 2> valgrind.log
 
 # -------------------------------------------------------------
 # BENCHMARKING TARGETS
@@ -100,11 +104,11 @@ test-exts: sync-exts
 # Action: Runs the benchmark script, testing the pure Python engine.
 bench-dev: sync-dev
 	@echo "--- Benchmarking the Development/Base environment (pure Python engine) ---"
-	${UV} run python scripts/benchmark.py --engine="rk4_engine" 
+	uv run python scripts/benchmark.py --engine="rk4_engine" 
 
 # Target: bench-exts
 # Prerequisites: sync-exts must be complete (ensures extensions are built and installed).
 # Action: Runs the benchmark script, testing the high-performance Cythonized engine.
 bench-exts: sync-exts
 	@echo "--- Benchmarking the Extensions environment (Cythonized engine) ---"
-	${UV} run python scripts/benchmark.py --engine="cythonized_rk4_engine"
+	uv run python scripts/benchmark.py --engine="cythonized_rk4_engine"
