@@ -60,45 +60,54 @@ typedef struct
     size_t _capacity;
 } BaseTrajSeq_t;
 
-/**
- * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
- *
- * @param p A pointer to the BaseTraj_t struct.
- * @param key_kind The InterpKey indicating which value to retrieve.
- * @return The corresponding double value, or 0.0 if the key is unrecognized.
- */
-double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, int key_kind);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa);
+    /**
+     * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
+     *
+     * @param p A pointer to the BaseTraj_t struct.
+     * @param key_kind The InterpKey indicating which value to retrieve.
+     * @return The corresponding double value, or 0.0 if the key is unrecognized.
+     */
+    double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, int key_kind);
 
-// Rewritten C function
-ssize_t BaseTraj_t_bisect_center_idx_buf(
-    const BaseTraj_t *buf,
-    size_t length,
-    int key_kind,
-    double key_value);
+    double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa);
 
-// Implementation of the function declared in basetraj_seq.h
-ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
-    const BaseTraj_t *buf,
-    size_t length,
-    double ca,
-    double sa,
-    double value);
+    // Rewritten C function
+    ssize_t BaseTraj_t_bisect_center_idx_buf(
+        const BaseTraj_t *buf,
+        size_t length,
+        int key_kind,
+        double key_value);
 
-/**
- * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
- *
- * Uses monotone-preserving PCHIP with Hermite evaluation.
- * @return 1 on success, 0 on failure.
- */
-int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t *out);
+    // Implementation of the function declared in basetraj_seq.h
+    ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
+        const BaseTraj_t *buf,
+        size_t length,
+        double ca,
+        double sa,
+        double value);
 
-BaseTrajSeq_t *BaseTrajSeq_t_create();
-void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq);
-int BaseTrajSeq_t_len(BaseTrajSeq_t *seq);
-BaseTraj_t *BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx);
-int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
-int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+    /**
+     * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
+     *
+     * Uses monotone-preserving PCHIP with Hermite evaluation.
+     * @return 1 on success, 0 on failure.
+     */
+    int BaseTrajSeq_t_interpolate_raw(BaseTrajSeq_t *seq, ssize_t idx, int key_kind, double key_value, BaseTraj_t *out);
+
+    BaseTrajSeq_t *BaseTrajSeq_t_create();
+    void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq);
+    int BaseTrajSeq_t_len(BaseTrajSeq_t *seq);
+    BaseTraj_t *BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx);
+    int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
+    int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BASETRAJ_SEQ_H */
