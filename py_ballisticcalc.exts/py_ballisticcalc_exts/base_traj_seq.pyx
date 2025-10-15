@@ -84,11 +84,18 @@ cdef class BaseTrajSeqT:
 
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
-        cdef V3dT position, velocity
         cdef Py_ssize_t _i = <Py_ssize_t>idx
         cdef BaseTraj_t* entry_ptr = self.c_getitem(_i)
-        position.x = entry_ptr.px; position.y = entry_ptr.py; position.z = entry_ptr.pz
-        velocity.x = entry_ptr.vx; velocity.y = entry_ptr.vy; velocity.z = entry_ptr.vz
+        cdef V3dT position = V3dT(
+            entry_ptr.px,
+            entry_ptr.py,
+            entry_ptr.pz
+        )
+        cdef V3dT velocity = V3dT(
+            entry_ptr.vx,
+            entry_ptr.vy,
+            entry_ptr.vz
+        )
         return BaseTrajDataT(entry_ptr.time, position, velocity, entry_ptr.mach)
 
     cdef InterpKey _attr_to_key(self, str key_attribute):
@@ -124,8 +131,8 @@ cdef class BaseTrajSeqT:
         if ret < 0:
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
 
-        cdef position = V3dT(output.px, output.py, output.pz)
-        cdef velocity = V3dT(output.vx, output.vy, output.vz)
+        cdef V3dT position = V3dT(output.px, output.py, output.pz)
+        cdef V3dT velocity = V3dT(output.vx, output.vy, output.vz)
 
         return BaseTrajDataT(output.time, position, velocity, output.mach)
 
@@ -224,7 +231,7 @@ cdef class BaseTrajSeqT:
             return self._interpolate_at_c(center_idx, key_kind, key_value)
 
         # Default: bisect across entire range
-        cdef Py_ssize_t center = BaseTraj_t_bisect_center_idx_buf(self._c_view._buffer, self._c_view._length, key_kind, key_value)
+        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(self._c_view, key_kind, key_value)
         if center < 0:
             raise ValueError("Interpolation requires at least 3 points")
         return self._interpolate_at_c(center, key_kind, key_value)
@@ -236,30 +243,30 @@ cdef class BaseTrajSeqT:
         cdef Py_ssize_t n = <Py_ssize_t>self._c_view._length
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
-        cdef Py_ssize_t center = BaseTraj_t_bisect_center_idx_slant_buf(self._c_view._buffer, self._c_view._length, ca, sa, value)
+        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(self._c_view, ca, sa, value)
         # Use three consecutive points around center to perform monotone PCHIP interpolation keyed on slant height
         cdef BaseTraj_t* buf = self._c_view._buffer
         cdef BaseTraj_t* p0 = &buf[center - 1]
         cdef BaseTraj_t* p1 = &buf[center]
         cdef BaseTraj_t* p2 = &buf[center + 1]
         cdef double ox0, ox1, ox2
-        cdef V3dT pos
-        cdef V3dT vel
-        cdef double time
-        cdef double mach
         ox0 = BaseTraj_t_slant_val_buf(p0, ca, sa)
         ox1 = BaseTraj_t_slant_val_buf(p1, ca, sa)
         ox2 = BaseTraj_t_slant_val_buf(p2, ca, sa)
         if ox0 == ox1 or ox0 == ox2 or ox1 == ox2:
             raise ZeroDivisionError("Duplicate x for interpolation")
 
-        time = _interpolate_3_pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time)
-        pos.x = _interpolate_3_pt(value, ox0, ox1, ox2, p0.px, p1.px, p2.px)
-        pos.y = _interpolate_3_pt(value, ox0, ox1, ox2, p0.py, p1.py, p2.py)
-        pos.z = _interpolate_3_pt(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
-        vel.x = _interpolate_3_pt(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx)
-        vel.y = _interpolate_3_pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy)
-        vel.z = _interpolate_3_pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
-        mach = _interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
+        cdef double time = _interpolate_3_pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time)
+        cdef V3dT position = V3dT(
+            _interpolate_3_pt(value, ox0, ox1, ox2, p0.px, p1.px, p2.px),
+            _interpolate_3_pt(value, ox0, ox1, ox2, p0.py, p1.py, p2.py),
+            _interpolate_3_pt(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
+        )
+        cdef V3dT velocity = V3dT(
+            _interpolate_3_pt(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx),
+            _interpolate_3_pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy),
+            _interpolate_3_pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
+        )
+        cdef double mach = _interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
 
-        return BaseTrajDataT(time, pos, vel, mach)
+        return BaseTrajDataT(time, position, velocity, mach)

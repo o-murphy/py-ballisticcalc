@@ -1,9 +1,9 @@
 #include <math.h>
 #include <stdlib.h> // Required for calloc, malloc, free
 #include <string.h> // Required for memcpy
-#include "basetraj_seq.h"
 #include "interp.h"
 #include "bclib.h"
+#include "base_traj_seq.h"
 
 /**
  * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
@@ -12,7 +12,7 @@
  * @param key_kind The InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
-double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, int key_kind)
+double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind)
 {
     // Note: In C, accessing a struct member via a pointer uses '->' instead of '.'
     switch (key_kind)
@@ -42,162 +42,6 @@ double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
 {
     /* Computes the slant_height of a trajectory point 'p' given cosine 'ca' and sine 'sa' of look_angle. */
     return p->py * ca - p->px * sa;
-}
-
-// Rewritten C function
-ssize_t BaseTraj_t_bisect_center_idx_buf(
-    const BaseTraj_t *buf,
-    size_t length,
-    int key_kind,
-    double key_value)
-{
-    // Cast size_t to ssize_t for consistency with Cython/Python indexing
-    ssize_t n = (ssize_t)length;
-
-    // Check for minimum required points (n < 3 is impossible for a center index)
-    if (n < 3)
-    {
-        return (ssize_t)(-1);
-    }
-
-    // Get the first and last key values
-    // Note: The C version simplifies pointer arithmetic compared to the Cython original
-    double v0 = BaseTraj_t_key_val_from_kind_buf(&buf[0], key_kind);
-    double vN = BaseTraj_t_key_val_from_kind_buf(&buf[n - 1], key_kind);
-
-    // Determine sort order
-    int increasing = (vN >= v0) ? 1 : 0;
-
-    ssize_t lo = 0;
-    ssize_t hi = n - 1;
-    ssize_t mid;
-    double vm;
-
-    // Binary search loop
-    while (lo < hi)
-    {
-        // mid = lo + (hi - lo) / 2; (avoids overflow, same as original (hi - lo) >> 1)
-        mid = lo + ((hi - lo) >> 1);
-
-        // Get value at midpoint
-        vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
-
-        if (increasing)
-        {
-            if (vm < key_value)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
-        }
-        else
-        { // decreasing
-            if (vm > key_value)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
-        }
-    }
-
-    // The result lo is the index of the first element >= key_value (if increasing)
-    // or the first element <= key_value (if decreasing).
-    // The result should be constrained to [1, n-2] to provide a center point
-    // for a 3-point interpolation (p0, p1, p2).
-
-    // Clamp lo to be at least 1 (to ensure p0 exists)
-    if (lo < 1)
-    {
-        return (ssize_t)1;
-    }
-    // Clamp lo to be at most n - 2 (to ensure p2 exists)
-    if (lo > n - 2)
-    {
-        return n - 2;
-    }
-
-    return lo;
-}
-
-// Implementation of the function declared in basetraj_seq.h
-ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
-    const BaseTraj_t *buf,
-    size_t length,
-    double ca,
-    double sa,
-    double value)
-{
-    // Cast size_t to ssize_t for bounds checking and signed return value
-    ssize_t n = (ssize_t)length;
-
-    // Check for minimum required points (p0, p1, p2 needed)
-    if (n < 3)
-    {
-        return (ssize_t)(-1);
-    }
-
-    // Get the first and last slant values using array indexing
-    double v0 = BaseTraj_t_slant_val_buf(&buf[0], ca, sa);
-    double vN = BaseTraj_t_slant_val_buf(&buf[n - 1], ca, sa);
-
-    // Determine sort order
-    int increasing = (vN >= v0) ? 1 : 0;
-
-    ssize_t lo = 0;
-    ssize_t hi = n - 1;
-    ssize_t mid;
-    double vm;
-
-    // Binary search loop
-    while (lo < hi)
-    {
-        // mid = lo + (hi - lo) / 2; (safer way to calculate midpoint)
-        mid = lo + ((hi - lo) >> 1);
-
-        // Get value at midpoint
-        vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
-
-        if (increasing)
-        {
-            if (vm < value)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
-        }
-        else
-        { // decreasing
-            if (vm > value)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
-        }
-    }
-
-    // Clamp the result to be a valid center index [1, n-2]
-    if (lo < 1)
-    {
-        return (ssize_t)1;
-    }
-    if (lo > n - 2)
-    {
-        return n - 2;
-    }
-
-    return lo;
 }
 
 /**
@@ -460,4 +304,159 @@ int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, 
     seq->_length += 1;
 
     return 0;
+}
+
+ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
+    const BaseTrajSeq_t *seq,
+    InterpKey key_kind,
+    double key_value)
+{
+    // Cast size_t to ssize_t for consistency with Cython/Python indexing
+    ssize_t n = seq->_length;
+    BaseTraj_t *buf = seq->_buffer;
+
+    // Check for minimum required points (n < 3 is impossible for a center index)
+    if (n < 3)
+    {
+        return (ssize_t)(-1);
+    }
+
+    // Get the first and last key values
+    // Note: The C version simplifies pointer arithmetic compared to the Cython original
+    double v0 = BaseTraj_t_key_val_from_kind_buf(&buf[0], key_kind);
+    double vN = BaseTraj_t_key_val_from_kind_buf(&buf[n - 1], key_kind);
+
+    // Determine sort order
+    int increasing = (vN >= v0) ? 1 : 0;
+
+    ssize_t lo = 0;
+    ssize_t hi = n - 1;
+    ssize_t mid;
+    double vm;
+
+    // Binary search loop
+    while (lo < hi)
+    {
+        // mid = lo + (hi - lo) / 2; (avoids overflow, same as original (hi - lo) >> 1)
+        mid = lo + ((hi - lo) >> 1);
+
+        // Get value at midpoint
+        vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
+
+        if (increasing)
+        {
+            if (vm < key_value)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+        else
+        { // decreasing
+            if (vm > key_value)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+    }
+
+    // The result lo is the index of the first element >= key_value (if increasing)
+    // or the first element <= key_value (if decreasing).
+    // The result should be constrained to [1, n-2] to provide a center point
+    // for a 3-point interpolation (p0, p1, p2).
+
+    // Clamp lo to be at least 1 (to ensure p0 exists)
+    if (lo < 1)
+    {
+        return (ssize_t)1;
+    }
+    // Clamp lo to be at most n - 2 (to ensure p2 exists)
+    if (lo > n - 2)
+    {
+        return n - 2;
+    }
+
+    return lo;
+}
+
+// Implementation of the function declared in base_traj_seq.h
+ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
+    const BaseTrajSeq_t *seq,
+    double ca,
+    double sa,
+    double value)
+{
+    // Cast size_t to ssize_t for bounds checking and signed return value
+    ssize_t n = seq->_length;
+    BaseTraj_t *buf = seq->_buffer;
+
+    // Check for minimum required points (p0, p1, p2 needed)
+    if (n < 3)
+    {
+        return (ssize_t)(-1);
+    }
+
+    // Get the first and last slant values using array indexing
+    double v0 = BaseTraj_t_slant_val_buf(&buf[0], ca, sa);
+    double vN = BaseTraj_t_slant_val_buf(&buf[n - 1], ca, sa);
+
+    // Determine sort order
+    int increasing = (vN >= v0) ? 1 : 0;
+
+    ssize_t lo = 0;
+    ssize_t hi = n - 1;
+    ssize_t mid;
+    double vm;
+
+    // Binary search loop
+    while (lo < hi)
+    {
+        // mid = lo + (hi - lo) / 2; (safer way to calculate midpoint)
+        mid = lo + ((hi - lo) >> 1);
+
+        // Get value at midpoint
+        vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
+
+        if (increasing)
+        {
+            if (vm < value)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+        else
+        { // decreasing
+            if (vm > value)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                hi = mid;
+            }
+        }
+    }
+
+    // Clamp the result to be a valid center index [1, n-2]
+    if (lo < 1)
+    {
+        return (ssize_t)1;
+    }
+    if (lo > n - 2)
+    {
+        return n - 2;
+    }
+
+    return lo;
 }

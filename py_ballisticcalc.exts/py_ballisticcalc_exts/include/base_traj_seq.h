@@ -72,24 +72,9 @@ extern "C"
      * @param key_kind The InterpKey indicating which value to retrieve.
      * @return The corresponding double value, or 0.0 if the key is unrecognized.
      */
-    double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, int key_kind);
+    double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind);
 
     double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa);
-
-    // Rewritten C function
-    ssize_t BaseTraj_t_bisect_center_idx_buf(
-        const BaseTraj_t *buf,
-        size_t length,
-        int key_kind,
-        double key_value);
-
-    // Implementation of the function declared in basetraj_seq.h
-    ssize_t BaseTraj_t_bisect_center_idx_slant_buf(
-        const BaseTraj_t *buf,
-        size_t length,
-        double ca,
-        double sa,
-        double value);
 
     /**
      * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
@@ -105,6 +90,15 @@ extern "C"
     BaseTraj_t *BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx);
     int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
     int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+    ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
+        const BaseTrajSeq_t *seq,
+        InterpKey key_kind,
+        double key_value);
+    ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
+        const BaseTrajSeq_t *seq,
+        double ca,
+        double sa,
+        double value);
 
 #ifdef __cplusplus
 }

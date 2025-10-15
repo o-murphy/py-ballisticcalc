@@ -3,7 +3,7 @@
 
 #include "v3d.h"
 #include "bclib.h"
-#include "basetraj_seq.h"
+#include "base_traj_seq.h"
 
 #ifdef __cplusplus
 extern "C"
