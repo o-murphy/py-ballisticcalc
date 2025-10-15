@@ -328,23 +328,21 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
         // fflush(stdout);
 
         // Check termination conditions
-        if (
-            velocity < _cMinimumVelocity || (velocity_vector.y <= 0 && range_vector.y < _cMaximumDrop) || (velocity_vector.y <= 0 && shot_props_ptr->alt0 + range_vector.y < _cMinimumAltitude))
+        if (velocity < _cMinimumVelocity)
         {
-            if (velocity < _cMinimumVelocity)
-            {
-                termination_reason = RangeErrorMinimumVelocityReached;
-            }
-            else if (range_vector.y < _cMaximumDrop)
-            {
-                termination_reason = RangeErrorMaximumDropReached;
-            }
-            else
-            {
-                termination_reason = RangeErrorMinimumAltitudeReached;
-            }
-            // printf("DEBUG: Termination condition met: %d\n", termination_reason);
-            // fflush(stdout);
+            termination_reason = RangeErrorMinimumVelocityReached;
+        }
+        else if (velocity_vector.y <= 0 && range_vector.y < _cMaximumDrop)
+        {
+            termination_reason = RangeErrorMaximumDropReached;
+        }
+        else if (velocity_vector.y <= 0 && (shot_props_ptr->alt0 + range_vector.y < _cMinimumAltitude))
+        {
+            termination_reason = RangeErrorMinimumAltitudeReached;
+        }
+
+        if (termination_reason != NoRangeError)
+        {
             break;
         }
     }

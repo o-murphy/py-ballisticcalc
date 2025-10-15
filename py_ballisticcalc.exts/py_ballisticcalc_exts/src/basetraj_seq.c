@@ -408,7 +408,7 @@ int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
         new_capacity = min_capacity;
     }
 
-    new_buffer = (BaseTraj_t*)calloc(new_capacity, sizeof(BaseTraj_t));
+    new_buffer = (BaseTraj_t *)calloc(new_capacity, sizeof(BaseTraj_t));
 
     if (new_buffer == NULL)
     {
