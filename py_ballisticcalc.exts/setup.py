@@ -84,7 +84,7 @@ EXTENSION_DEPS = {
     "rk4_engine": ["v3d", "bclib", "rk4", "interp", "basetraj_seq"],
     "trajectory_data": ["v3d", "interp", "bclib"],
     # Test modules (expose internal C functions for tests only)
-    "test_helpers": ["v3d", "bclib"],
+    "test_helpers": ["v3d", "bclib", "interp"],
     "test_engine": ["v3d", "bclib"],
 }
 

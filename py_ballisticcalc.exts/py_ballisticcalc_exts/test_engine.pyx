@@ -6,7 +6,6 @@ engine modules. Not part of the public API.
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
-    CythonizedBaseIntegrationEngine,  # retained for type reference
     calculateEnergy,
     calculateOgw,
 )
@@ -17,7 +16,6 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
-    ShotProps_t,
     ShotProps_t_dragByMach,
     ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,
