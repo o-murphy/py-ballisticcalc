@@ -117,7 +117,7 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
     _dir_vector.z = cos(shot_props_ptr->barrel_elevation) * sin(shot_props_ptr->barrel_azimuth);
 
     // Calculate velocity vector
-    velocity_vector = mulS(&_dir_vector, velocity);
+    velocity_vector = mulS(_dir_vector, velocity);
 
     // Trajectory Loop
 
@@ -157,8 +157,8 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
         // Euler integration step
 
         // 1. Calculate relative velocity (projectile velocity - wind)
-        relative_velocity = sub(&velocity_vector, &wind_vector);
-        relative_speed = mag(&relative_velocity);
+        relative_velocity = sub(velocity_vector, wind_vector);
+        relative_speed = mag(relative_velocity);
 
         // 2. Calculate time step (adaptive based on velocity)
         delta_time = _euler_time_step(calc_step, relative_speed);
@@ -168,26 +168,26 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
         drag = km * relative_speed;
 
         // 4. Apply drag, gravity, and Coriolis to velocity
-        _tv = mulS(&relative_velocity, drag);
-        _tv = sub(&gravity_vector, &_tv);
+        _tv = mulS(relative_velocity, drag);
+        _tv = sub(gravity_vector, _tv);
 
         // Check the flat_fire_only flag within the Coriolis structure
         if (!shot_props_ptr->coriolis.flat_fire_only)
         {
             Coriolis_t_coriolis_acceleration_local(
                 &shot_props_ptr->coriolis, &velocity_vector, &coriolis_accel);
-            _tv = add(&_tv, &coriolis_accel);
+            _tv = add(_tv, coriolis_accel);
         }
 
-        _tv = mulS(&_tv, delta_time);
-        velocity_vector = add(&velocity_vector, &_tv);
+        _tv = mulS(_tv, delta_time);
+        velocity_vector = add(velocity_vector, _tv);
 
         // 5. Update position based on new velocity
-        delta_range_vector = mulS(&velocity_vector, delta_time);
-        range_vector = add(&range_vector, &delta_range_vector);
+        delta_range_vector = mulS(velocity_vector, delta_time);
+        range_vector = add(range_vector, delta_range_vector);
 
         // 6. Update time and velocity magnitude
-        velocity = mag(&velocity_vector);
+        velocity = mag(velocity_vector);
         time += delta_time;
 
         // Check termination conditions

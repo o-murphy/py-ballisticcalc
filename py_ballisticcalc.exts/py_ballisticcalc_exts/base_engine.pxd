@@ -166,6 +166,6 @@ cdef class CythonizedBaseIntegrationEngine:
                           double range_limit_ft, double range_step_ft, double time_step, int filter_flags)
 
 
-cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
-                                  double mach, const ShotProps_t * shot_props_ptr,
-                                  double density_ratio, double drag, int flag)
+# cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
+#                                   double mach, const ShotProps_t * shot_props_ptr,
+#                                   double density_ratio, double drag, int flag)

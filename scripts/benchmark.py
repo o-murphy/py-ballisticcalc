@@ -169,7 +169,7 @@ def _bench_single(case: BenchmarkCase, engine: str, repeats: int, warmup: int, s
     stdev_ms = statistics.pstdev(timings) if len(timings) > 1 else 0.0
     branch, gh = _git_info()
     # Timezone-aware UTC timestamp (display + file-safe variant)
-    now_utc = dt.datetime.now(dt.UTC).replace(microsecond=0)
+    now_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
     iso_ts = now_utc.isoformat().replace('+00:00', 'Z')  # e.g. 2025-09-30T21:37:36Z
     return BenchmarkResult(
         case=case.name,
@@ -213,7 +213,7 @@ def _persist(results: List[BenchmarkResult]) -> None:
         # Use file-system safe timestamp: 20250930T213736Z
         file_ts = results[0].timestamp.replace('-', '').replace(':', '').replace('T', 'T').replace('Z', 'Z')
     else:
-        now_utc = dt.datetime.now(dt.UTC).replace(microsecond=0)
+        now_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
         file_ts = now_utc.strftime('%Y%m%dT%H%M%SZ')
     json_path = BENCH_DIR / f"{file_ts}_bench.json"
     with json_path.open("w", encoding="utf-8") as fp:
