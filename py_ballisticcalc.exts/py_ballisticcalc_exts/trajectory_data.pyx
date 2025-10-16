@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 """
 Lightweight Cython data types for trajectory rows and interpolation helpers.
 

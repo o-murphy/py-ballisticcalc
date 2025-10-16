@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 """
 Cythonized Euler Integration Engine
 

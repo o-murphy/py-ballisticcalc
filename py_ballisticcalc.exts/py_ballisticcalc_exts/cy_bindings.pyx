@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 # noinspection PyUnresolvedReferences
 from cpython.exc cimport PyErr_Occurred
 # noinspection PyUnresolvedReferences

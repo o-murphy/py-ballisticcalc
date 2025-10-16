@@ -2,7 +2,7 @@
 # Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
 
 [build-system]
-requires = ["setuptools", "wheel", 'cython']
+requires = ["setuptools", "wheel", 'cython>=3.1.4']
 build-backend = "setuptools.build_meta"
 
 
@@ -64,9 +64,6 @@ dev = ['cython>=3.1.4', 'build>=1.3.0', 'setuptools', 'cibuildwheel']
 [tool.cibuildwheel]
 # Use uv and build
 build-frontend = "build[uv]"
-test-requires = ["pytest"]
-before-test = "cd {project_dir}/.."
-test-command = "pytest"
 
 [tool.pytest.ini_options]
 minversion = "7.0"

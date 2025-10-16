@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 """CythonEngineTestHarness (test-only Cython engine).
 
 Provides direct C-layer accessors for parity tests without modifying production

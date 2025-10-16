@@ -39,7 +39,8 @@ compiler_directives = {
     "warn.unused_arg": False,
     "warn.multiple_declarators": True,
     "show_performance_hints": True,
-    # "emit_code_comments": False
+    # "emit_code_comments": False,
+    "freethreading_compatible": True,
 }
 
 # Enable line tracing for Cython coverage when requested

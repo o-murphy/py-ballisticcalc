@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 """
 Low-level, high-performance trajectory buffer and interpolation helpers (Cython).
 
