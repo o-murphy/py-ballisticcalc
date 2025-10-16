@@ -58,7 +58,7 @@ jobs:
         run: |
           # Homebrew is already installed on GitHub Actions macOS runners
           echo "Installing dependencies via Homebrew for macOS..."
-          brew install gcc  # Provides gfortran
+          # brew install gcc  # Provides gfortran # Already installed in gh CI
           brew install openblas
         shell: bash
 

@@ -1,4 +1,5 @@
 name: Manual Test Runner
+run-name: 'Manual Pytest: ${{ inputs.engine_name }} on ${{ inputs.os }} @ Python ${{ inputs.python_version }}'
 
 on:
   workflow_dispatch:
@@ -31,20 +32,22 @@ on:
           - "3.15t"
 
       engine_name:
-        description: "Engine name (e.g., euler_engine, rk4_engine, cythonized_euler)"
+        description: "Engine name (e.g., euler_engine, rk4_engine, scipy_engine, cythonized_rk4_engine, cythonized_euler_engine)"
         required: true
         type: choice
-        default: euler_engine
+        default: rk4_engine
         options:
           - euler_engine
           - rk4_engine
-          - cythonized_euler
-          - cythonized_rk4
-          - scipy
+          - scipy_engine
+          - cythonized_euler_engine
+          - cythonized_rk4_engine
 
 jobs:
   run_reusable_workflow:
-    uses: ./.github/workflows/reusable-test.yml
+    name: 'Test ${{ inputs.engine_name }} on ${{ inputs.os }} with Python ${{ inputs.python_version }}'
+  
+    uses: ./.github/workflows/pytest-reusable.yml
     with:
       os: ${{ inputs.os }}
       python_version: ${{ inputs.python_version }}
