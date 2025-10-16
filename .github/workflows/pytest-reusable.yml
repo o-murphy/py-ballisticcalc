@@ -15,6 +15,10 @@ on:
       engine_name: # Input for the engine type to test with (e.g., "euler_engine")
         required: true # This input is mandatory
         type: string
+      stress_test: # Input to manually enable stress tests
+        required: false # Stress tests are optional
+        type: boolean
+        default: false # Disabled by default
 
 jobs:
   run_single_test_combination: # This is the job that will execute for each specific test combination
@@ -39,11 +43,13 @@ jobs:
         run: uv run hooks/version_check.py
         shell: bash
 
-      - name: Install dependencies for python 3.14.x (Linux)
+      - name: Install dependencies for python 3.13.x 3.14.x (Linux)
         # Install deps to build matplotlib, numpy, pandas, scipy, jupyter
-        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'Linux' }}
+        if: ${{ (startsWith(inputs.python_version, '3.13') || startsWith(inputs.python_version, '3.14')) && runner.os == 'Linux' }}
         run: |
           sudo apt update 
+          echo "Installing build-essential for C extensions (like cffi)..."
+          sudo apt install build-essential
           echo "Installing libffi-dev for jupyter..."
           sudo apt install libffi-dev
           echo "Installing libjpeg-dev zlib1g-dev for matplotlib(pillow)..."
@@ -91,11 +97,15 @@ jobs:
         # Execute pytest using the engine name provided as an input.
         # --no-header for cleaner output, -v for verbose output, -n auto for parallel execution if applicable.
         run: |
-          pytest tests --no-header -v -n auto --engine=${{ inputs.engine_name }}
-          # Check the exit code of pytest. If it's not 0 (failure), run again without capture for full logs.
-          if [ $? -ne 0 ]; then
-            echo "Pytest failed on the first attempt. Running again without capture for detailed output."
+          # 1. Run tests and save the exit code, suppressing the default failure behavior
+          pytest tests --no-header -v -n auto --engine=${{ inputs.engine_name }} || EXIT_CODE=$?
+          
+          # 2. Check the saved exit code. 
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
+            # Run again without parallelization (-n auto)
             pytest tests -v --engine=${{ inputs.engine_name }}
+            # If the second attempt also fails, the script will exit with the non-zero code of this last command.
           else
             echo "Pytest succeeded on the first attempt."
           fi
@@ -105,26 +115,37 @@ jobs:
         if: startsWith(inputs.engine_name, 'cythonized_')
         run: |
           echo "Detected Cythonized engine. Testing extensions..."
-          pytest ./py_ballisticcalc.exts/tests --no-header -v -n auto --engine=${{ inputs.engine_name }}
-                    # Check the exit code of pytest. If it's not 0 (failure), run again without capture for full logs.
-          if [ $? -ne 0 ]; then
-            echo "Pytest failed on the first attempt. Running again without capture for detailed output."
+          # 1. Run tests and save the exit code, suppressing the default failure behavior
+          pytest ./py_ballisticcalc.exts/tests --no-header -v -n auto --engine=${{ inputs.engine_name }} || EXIT_CODE=$?
+                    
+          # 2. Check the saved exit code.
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
+            # Run again without parallelization (-n auto)
             pytest ./py_ballisticcalc.exts/tests -v --engine=${{ inputs.engine_name }}
+            # If the second attempt also fails, the script will exit with the non-zero code of this last command.
           else
             echo "Pytest succeeded on the first attempt."
           fi
         shell: bash # Ensure this command runs in a bash shell environment
 
       - name: Run stress tests
-        if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.engine_name, 'cythonized_') }}
+        # This step now runs only if the 'stress_test' input is explicitly set to true 
+        # AND the engine is a cythonized one.
+        if: ${{ inputs.stress_test == true && startsWith(inputs.engine_name, 'cythonized_') }}
         run: |
-          echo "This workflow was triggered manually. Running stress tests..."
-          pytest ./py_ballisticcalc.exts/tests -m stress
-          if [ $? -ne 0 ]; then
-            echo "Stress test failed on the first attempt. Running again with valgrind."
+          echo "Stress test flag is enabled. Running stress tests..."
+          # 1. Run tests and save the exit code, suppressing immediate step failure
+          pytest ./py_ballisticcalc.exts/tests -m stress || EXIT_CODE=$?
+          
+          # 2. Check the saved EXIT_CODE (not $?)
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Stress test failed on the first attempt (Code: $EXIT_CODE). Running again with valgrind."
             sudo apt update
             sudo apt install -y valgrind
+            # 3. If Valgrind runs and fails, the entire step will fail, which is correct.
             valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes -- pytest ./py_ballisticcalc.exts/tests -m stress
           else
             echo "Stress test succeeded on the first attempt."
+          fi
         shell: bash
