@@ -27,10 +27,6 @@ jobs:
       - name: Validate exts version matching
         run: uv run hooks/version_check.py
         shell: bash
-      
-      - name: Install dependencies
-        run: uv pip install cibuildwheel
-        shell: bash
 
       - name: Build pure python package
         run: uv build
