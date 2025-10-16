@@ -27,9 +27,9 @@ cdef extern from "include/base_traj_seq.h" nogil:
         KEY_VEL_Z
 
     ctypedef struct BaseTrajSeq_t:
-        BaseTraj_t* _buffer
-        size_t _length
-        size_t _capacity
+        BaseTraj_t* buffer
+        size_t length
+        size_t capacity
 
     double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t* p, InterpKey key_kind) noexcept nogil
     double BaseTraj_t_slant_val_buf(const BaseTraj_t* p, double ca, double sa) noexcept nogil
@@ -60,6 +60,11 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double value
     ) noexcept nogil
 
+
+cdef InterpKey _attribute_to_key(str key_attribute)
+cdef str _key_to_attribute(InterpKey key_kind)
+
+
 cdef class BaseTrajSeqT:
     cdef BaseTrajSeq_t* _c_view
 
@@ -67,7 +72,6 @@ cdef class BaseTrajSeqT:
     cdef void _append_c(self, double time, double px, double py, double pz,
             double vx, double vy, double vz, double mach)
     cdef Py_ssize_t len_c(self)
-    cdef InterpKey _attr_to_key(self, str key_attribute)
     cdef BaseTraj_t* c_getitem(self, Py_ssize_t idx)
-    cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time = *)
+    cdef BaseTrajDataT _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)
     cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value)

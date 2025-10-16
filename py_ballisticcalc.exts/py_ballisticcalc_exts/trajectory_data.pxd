@@ -34,22 +34,3 @@ cdef class BaseTrajDataT:
     # Hot-path C accessors (must be declared in .pxd to avoid Cython errors)
     cdef V3dT c_position(self)
     cdef V3dT c_velocity(self)
-
-cdef class TrajectoryDataT:
-    cdef:
-        readonly double time
-        readonly object distance
-        readonly object velocity
-        readonly double mach
-        readonly object height
-        readonly object slant_height
-        readonly object drop_angle
-        readonly object windage
-        readonly object windage_angle
-        readonly object slant_distance
-        readonly object angle
-        readonly double density_ratio
-        readonly double drag
-        readonly object energy
-        readonly object ogw
-        readonly int flag

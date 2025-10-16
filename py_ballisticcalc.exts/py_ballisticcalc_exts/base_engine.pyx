@@ -23,7 +23,7 @@ from py_ballisticcalc_exts.unit_helper cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t, InterpKey
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     # types and methods
@@ -45,7 +45,7 @@ from py_ballisticcalc.conditions import Coriolis
 from py_ballisticcalc.engines.base_engine import create_base_engine_config, TrajectoryDataFilter
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, BaseTrajData, TrajectoryData
+from py_ballisticcalc.trajectory_data import HitResult, BaseTrajData, TrajectoryData
 from py_ballisticcalc.unit import Angular, Unit, Velocity, Distance, Weight
 
 __all__ = (
@@ -223,7 +223,7 @@ cdef class CythonizedBaseIntegrationEngine:
             # For incomplete trajectories we add last point, so long as it isn't a duplicate
             fin = trajectory[-1]
             if fin.time > tdf.records[-1].time:
-                tdf.records.append(TrajectoryData.from_props(props, fin.time, fin.position, fin.velocity, fin.mach, TrajFlag.NONE))
+                tdf.records.append(TrajectoryData.from_props(props, fin.time, fin.position, fin.velocity, fin.mach, TrajFlag_t.TFLAG_NONE))
         return HitResult(props, tdf.records, trajectory if dense_output else None, filter_flags != TrajFlag_t.TFLAG_NONE, error)
 
     cdef inline double _error_at_distance(CythonizedBaseIntegrationEngine self,
@@ -250,7 +250,7 @@ cdef class CythonizedBaseIntegrationEngine:
             # Integrator returned only the initial point; signal unreachable
             return 9e9
         try:
-            hit = trajectory._get_at_c('position.x', target_x_ft)
+            hit = trajectory._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
             return (hit.c_position().y - target_y_ft) - fabs(hit.c_position().x - target_x_ft)
         except Exception:
             # Any interpolation failure (e.g., degenerate points) signals unreachable
@@ -668,7 +668,7 @@ cdef class CythonizedBaseIntegrationEngine:
         
         try:
             _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, <int>TrajFlag_t.TFLAG_APEX)
-            apex = (<BaseTrajSeqT>_res[0])._get_at_c('velocity.y', 0.0)
+            apex = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_VEL_Y, 0.0)
         finally:
             if has_restore_min_velocity:
                 self._config_s.cMinimumVelocity = restore_min_velocity
@@ -745,7 +745,7 @@ cdef class CythonizedBaseIntegrationEngine:
             while iterations_count < _cMaxIterations:
                 # Check height of trajectory at the zero distance (using current barrel_elevation)
                 _res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, <int>TrajFlag_t.TFLAG_NONE)
-                hit = (<BaseTrajSeqT>_res[0])._get_at_c('position.x', target_x_ft)
+                hit = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
 
                 if hit.time == 0.0:
                     # Integrator returned initial point - consider removing constraints

@@ -48,13 +48,13 @@ double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
  * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
  *
  * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
- * This is the C-equivalent of the Cython function BaseTrajSeq_t_interpolate_raw.
+ * @return 1 on success, 0 on failure.
  */
 int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
 {
     // Cast Cython's size_t to C's ssize_t for bounds checking
-    BaseTraj_t *buffer = seq->_buffer;
-    ssize_t length = seq->_length;
+    BaseTraj_t *buffer = seq->buffer;
+    ssize_t length = seq->length;
     BaseTraj_t *p0;
     BaseTraj_t *p1;
     BaseTraj_t *p2;
@@ -133,22 +133,22 @@ int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpK
         return -1;
     }
 
-    // Interpolate all components using the external C function _interpolate_3_pt
+    // Interpolate all components using the external C function interpolate_3_pt
     if (key_kind == KEY_TIME)
     {
         time = x;
     }
     else
     {
-        time = _interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+        time = interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
     }
 
-    px = _interpolate_3_pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
-    py = _interpolate_3_pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
-    pz = _interpolate_3_pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
-    vx = _interpolate_3_pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
-    vy = _interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
-    vz = _interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
+    px = interpolate_3_pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
+    py = interpolate_3_pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
+    pz = interpolate_3_pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
+    vx = interpolate_3_pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
+    vy = interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
+    vz = interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
 
     if (key_kind == KEY_MACH)
     {
@@ -156,7 +156,7 @@ int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpK
     }
     else
     {
-        mach = _interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
+        mach = interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
     }
 
     // Write results to the output BaseTraj_t struct (use -> for pointer access)
@@ -180,28 +180,28 @@ void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
 {
     if (seq != NULL)
     {
-        if (seq->_buffer != NULL)
+        if (seq->buffer != NULL)
         {
-            free(seq->_buffer);
-            seq->_buffer = NULL;
+            free(seq->buffer);
+            seq->buffer = NULL;
         }
         free(seq);
     }
     return;
 };
 
-int BaseTrajSeq_t_len(BaseTrajSeq_t *seq)
+int BaseTrajSeq_t_len(const BaseTrajSeq_t *seq)
 {
     if (seq != NULL)
     {
-        return seq->_length;
+        return seq->length;
     }
     return -1;
 }
 
-BaseTraj_t *BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx)
+BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx)
 {
-    ssize_t len = (ssize_t)seq->_length;
+    ssize_t len = (ssize_t)seq->length;
     if (len <= 0)
     {
         return NULL;
@@ -214,7 +214,7 @@ BaseTraj_t *BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, ssize_t idx)
     {
         return NULL;
     }
-    return seq->_buffer + idx;
+    return seq->buffer + idx;
 };
 
 /**
@@ -235,14 +235,14 @@ int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
         return -1;
     }
 
-    if (min_capacity <= seq->_capacity)
+    if (min_capacity <= seq->capacity)
     {
         return 0;
     }
 
-    if (seq->_capacity > 0)
+    if (seq->capacity > 0)
     {
-        new_capacity = seq->_capacity * 2;
+        new_capacity = seq->capacity * 2;
     }
     else
     {
@@ -261,15 +261,15 @@ int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
         return -1;
     }
 
-    if (seq->_length > 0)
+    if (seq->length > 0)
     {
-        bytes_copy = seq->_length * sizeof(BaseTraj_t);
-        memcpy(new_buffer, seq->_buffer, bytes_copy);
+        bytes_copy = seq->length * sizeof(BaseTraj_t);
+        memcpy(new_buffer, seq->buffer, bytes_copy);
     }
-    free(seq->_buffer);
+    free(seq->buffer);
 
-    seq->_buffer = new_buffer;
-    seq->_capacity = new_capacity;
+    seq->buffer = new_buffer;
+    seq->capacity = new_capacity;
 
     return 0;
 };
@@ -287,12 +287,12 @@ int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, 
         return -1;
     }
 
-    if (BaseTrajSeq_t_ensure_capacity(seq, seq->_length + 1) < 0)
+    if (BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1) < 0)
     {
         return -1;
     }
 
-    BaseTraj_t *entry_ptr = seq->_buffer + seq->_length;
+    BaseTraj_t *entry_ptr = seq->buffer + seq->length;
     entry_ptr->time = time;
     entry_ptr->px = px;
     entry_ptr->py = py;
@@ -301,7 +301,7 @@ int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, 
     entry_ptr->vy = vy;
     entry_ptr->vz = vz;
     entry_ptr->mach = mach;
-    seq->_length += 1;
+    seq->length += 1;
 
     return 0;
 }
@@ -312,8 +312,8 @@ ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
     double key_value)
 {
     // Cast size_t to ssize_t for consistency with Cython/Python indexing
-    ssize_t n = seq->_length;
-    BaseTraj_t *buf = seq->_buffer;
+    ssize_t n = seq->length;
+    BaseTraj_t *buf = seq->buffer;
 
     // Check for minimum required points (n < 3 is impossible for a center index)
     if (n < 3)
@@ -394,8 +394,8 @@ ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
     double value)
 {
     // Cast size_t to ssize_t for bounds checking and signed return value
-    ssize_t n = seq->_length;
-    BaseTraj_t *buf = seq->_buffer;
+    ssize_t n = seq->length;
+    BaseTraj_t *buf = seq->buffer;
 
     // Check for minimum required points (p0, p1, p2 needed)
     if (n < 3)

@@ -24,10 +24,10 @@ extern "C"
     // Monotone PCHIP interpolation for a single component using 3 support points.
     // Sorts (x*, y*) by x*, computes PCHIP slopes, and evaluates the Hermite piece
     // containing x. Assumes all x* distinct. Returns interpolated y.
-    double _interpolate_3_pt(double x, double x0, double x1, double x2, double y0, double y1, double y2);
+    double interpolate_3_pt(double x, double x0, double x1, double x2, double y0, double y1, double y2);
 
     // Declaration for 2-point interpolation
-    int _interpolate_2_pt(double x, double x0, double y0, double x1, double y1, double *result);
+    int interpolate_2_pt(double x, double x0, double y0, double x1, double y1, double *result);
 
 #ifdef __cplusplus
 }

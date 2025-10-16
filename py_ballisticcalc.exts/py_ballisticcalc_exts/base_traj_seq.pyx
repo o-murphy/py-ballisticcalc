@@ -18,10 +18,60 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.interp cimport _interpolate_3_pt
+from py_ballisticcalc_exts.interp cimport interpolate_3_pt
 
 
 __all__ = ('BaseTrajSeqT', 'BaseTraj_t')
+
+
+cdef InterpKey _attribute_to_key(str key_attribute):
+    cdef InterpKey key_kind
+
+    if key_attribute == 'time':
+        key_kind = KEY_TIME
+    elif key_attribute == 'mach':
+        key_kind = KEY_MACH
+    elif key_attribute == 'position.x':
+        key_kind = KEY_POS_X
+    elif key_attribute == 'position.y':
+        key_kind = KEY_POS_Y
+    elif key_attribute == 'position.z':
+        key_kind = KEY_POS_Z
+    elif key_attribute == 'velocity.x':
+        key_kind = KEY_VEL_X
+    elif key_attribute == 'velocity.y':
+        key_kind = KEY_VEL_Y
+    elif key_attribute == 'velocity.z':
+        key_kind = KEY_VEL_Z
+    else:
+        raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+
+    return key_kind
+
+
+cdef str _key_to_attribute(InterpKey key_kind):
+    cdef str key_attribute
+    
+    if key_kind == KEY_TIME:
+        key_attribute = 'time'
+    elif key_kind == KEY_MACH:
+        key_attribute = 'mach'
+    elif key_kind == KEY_POS_X:
+        key_attribute = 'position.x'
+    elif key_kind == KEY_POS_Y:
+        key_attribute = 'position.y'
+    elif key_kind == KEY_POS_Z:
+        key_attribute = 'position.z'
+    elif key_kind == KEY_VEL_X:
+        key_attribute = 'velocity.x'
+    elif key_kind == KEY_VEL_Y:
+        key_attribute = 'velocity.y'
+    elif key_kind == KEY_VEL_Z:
+        key_attribute = 'velocity.z'
+    else:
+        raise ValueError(f"Unknown InterpKey value: {key_kind}")
+        
+    return key_attribute
 
 
 cdef class BaseTrajSeqT:
@@ -98,28 +148,6 @@ cdef class BaseTrajSeqT:
         )
         return BaseTrajDataT(entry_ptr.time, position, velocity, entry_ptr.mach)
 
-    cdef InterpKey _attr_to_key(self, str key_attribute):
-        cdef InterpKey key_kind
-        if key_attribute == 'time':
-            key_kind = KEY_TIME
-        elif key_attribute == 'mach':
-            key_kind = KEY_MACH
-        elif key_attribute == 'position.x':
-            key_kind = KEY_POS_X
-        elif key_attribute == 'position.y':
-            key_kind = KEY_POS_Y
-        elif key_attribute == 'position.z':
-            key_kind = KEY_POS_Z
-        elif key_attribute == 'velocity.x':
-            key_kind = KEY_VEL_X
-        elif key_attribute == 'velocity.y':
-            key_kind = KEY_VEL_Y
-        elif key_attribute == 'velocity.z':
-            key_kind = KEY_VEL_Z
-        else:
-            raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
-        return key_kind
-
     cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value):
         """
         Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
@@ -138,21 +166,20 @@ cdef class BaseTrajSeqT:
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
-        cdef InterpKey key_kind = self._attr_to_key(key_attribute)
+        cdef InterpKey key_kind = _attribute_to_key(key_attribute)
         return self._interpolate_at_c(idx, key_kind, key_value)
 
     def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
-        return self._get_at_c(key_attribute, key_value, start_from_time)
+        cdef InterpKey key_kind = _attribute_to_key(key_attribute)
+        return self._get_at_c(key_kind, key_value, start_from_time)
 
-    cdef BaseTrajDataT _get_at_c(self, str key_attribute, double key_value, object start_from_time=None):
+    cdef BaseTrajDataT _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time=None):
         """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
 
         If start_from_time > 0, search is centered from the first point where time >= start_from_time,
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
-
-        cdef InterpKey key_kind = self._attr_to_key(key_attribute)
 
         cdef Py_ssize_t n
         cdef BaseTraj_t* buf
@@ -170,7 +197,7 @@ cdef class BaseTrajSeqT:
         cdef double b2
         cdef bint search_forward
 
-        n = <Py_ssize_t>self._c_view._length
+        n = <Py_ssize_t>self._c_view.length
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
 
@@ -179,7 +206,7 @@ cdef class BaseTrajSeqT:
         if start_from_time is not None:
             sft = start_from_time
         if sft > 0.0 and key_kind != KEY_TIME:
-            buf = self._c_view._buffer
+            buf = self._c_view.buffer
             start_idx = <Py_ssize_t>0
             # find first index with time >= start_from_time
             i = <Py_ssize_t>0
@@ -222,7 +249,7 @@ cdef class BaseTrajSeqT:
                         break
                     i -= 1
             if target_idx == <Py_ssize_t>(-1):
-                raise ArithmeticError(f"Trajectory does not reach {key_attribute} = {key_value}")
+                raise ArithmeticError(f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
             if fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon:
                 return self[target_idx]
             if target_idx == 0:
@@ -240,12 +267,12 @@ cdef class BaseTrajSeqT:
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
         cdef double ca = cos(look_angle_rad)
         cdef double sa = sin(look_angle_rad)
-        cdef Py_ssize_t n = <Py_ssize_t>self._c_view._length
+        cdef Py_ssize_t n = <Py_ssize_t>self._c_view.length
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
         cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(self._c_view, ca, sa, value)
         # Use three consecutive points around center to perform monotone PCHIP interpolation keyed on slant height
-        cdef BaseTraj_t* buf = self._c_view._buffer
+        cdef BaseTraj_t* buf = self._c_view.buffer
         cdef BaseTraj_t* p0 = &buf[center - 1]
         cdef BaseTraj_t* p1 = &buf[center]
         cdef BaseTraj_t* p2 = &buf[center + 1]
@@ -256,17 +283,17 @@ cdef class BaseTrajSeqT:
         if ox0 == ox1 or ox0 == ox2 or ox1 == ox2:
             raise ZeroDivisionError("Duplicate x for interpolation")
 
-        cdef double time = _interpolate_3_pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time)
+        cdef double time = interpolate_3_pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time)
         cdef V3dT position = V3dT(
-            _interpolate_3_pt(value, ox0, ox1, ox2, p0.px, p1.px, p2.px),
-            _interpolate_3_pt(value, ox0, ox1, ox2, p0.py, p1.py, p2.py),
-            _interpolate_3_pt(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
+            interpolate_3_pt(value, ox0, ox1, ox2, p0.px, p1.px, p2.px),
+            interpolate_3_pt(value, ox0, ox1, ox2, p0.py, p1.py, p2.py),
+            interpolate_3_pt(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
         )
         cdef V3dT velocity = V3dT(
-            _interpolate_3_pt(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx),
-            _interpolate_3_pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy),
-            _interpolate_3_pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
+            interpolate_3_pt(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx),
+            interpolate_3_pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy),
+            interpolate_3_pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
         )
-        cdef double mach = _interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
+        cdef double mach = interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
 
         return BaseTrajDataT(time, position, velocity, mach)
