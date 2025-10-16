@@ -28,7 +28,7 @@ jobs:
         name: Checkout Repository Code # A clear name for this foundational step
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ inputs.python_version }} # Use the Python version passed via inputs
 
