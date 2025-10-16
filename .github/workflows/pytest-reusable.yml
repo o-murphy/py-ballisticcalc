@@ -39,7 +39,7 @@ jobs:
         run: uv run hooks/version_check.py
         shell: bash
 
-      - name: Install dependencies for python 3.14.x
+      - name: Install dependencies for python 3.14.x (Linux)
         # Install deps to build matplotlib, numpy, pandas, scipy, jupyter
         if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'Linux' }}
         run: |
@@ -50,6 +50,26 @@ jobs:
           sudo apt install libjpeg-dev zlib1g-dev
           echo "Installing gfortran libopenblas-dev for scipy..."
           sudo apt install gfortran libopenblas-dev
+        shell: bash
+
+      - name: Install dependencies for python 3.14.x (macOS)
+        # Install deps to build scipy (gfortran, openblas)
+        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'macOS' }}
+        run: |
+          # Homebrew is already installed on GitHub Actions macOS runners
+          echo "Installing dependencies via Homebrew for macOS..."
+          brew install gcc  # Provides gfortran
+          brew install openblas
+        shell: bash
+
+      - name: System dependencies on Windows (Python 3.14)
+        # Compilation of packages like scipy on Windows for new Python versions (like 3.14)
+        # usually fails in CI because it requires complex MSVC configuration.
+        # This step performs no action, as the setup is too complex for a simple 'run:' block.
+        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'Windows' }}
+        run: |
+          echo "Warning: No system dependency setup for Windows Python 3.14."
+          echo "If no wheels are available, the build is expected to fail (due to missing MSVC/Fortran compiler)."
         shell: bash
 
       - name: Install the project in editable mode
