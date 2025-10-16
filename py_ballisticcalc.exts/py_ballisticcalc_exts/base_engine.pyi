@@ -5,10 +5,9 @@ to improve IDE completion for the Cythonized API.
 
 from typing import Any, Optional, Tuple
 
-from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, ShotProps, BaseTrajData, TrajectoryData
+from py_ballisticcalc.shot import Shot
+from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
-from py_ballisticcalc.vector import Vector
 
 
 class CythonizedBaseIntegrationEngine:
@@ -30,16 +29,7 @@ class CythonizedBaseIntegrationEngine:
                   dense_output: bool = False,
                   **kwargs) -> HitResult: ...
 
-    # Internal lifecycle / helpers exposed to Python callers (kept here for completeness)
-    def _free_trajectory(self) -> None: ...
-    def _init_trajectory(self, shot_info: ShotProps) -> None: ...
-
-
-def create_trajectory_row(time: float,
-                          range_vector: Vector,
-                          velocity_vector: Vector,
-                          mach: float,
-                          shot_props: ShotProps,
-                          density_ratio: float,
-                          drag: float,
-                          flag: int) -> TrajectoryData: ...
+    # # Internal lifecycle / helpers exposed to Python callers (kept here for completeness)
+    # # Not exposed
+    # cdef _free_trajectory(self) -> None: ...
+    # cdef _init_trajectory(self, shot_info: ShotProps) -> None: ...

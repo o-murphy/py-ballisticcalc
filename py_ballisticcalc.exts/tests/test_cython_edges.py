@@ -85,7 +85,7 @@ def test_dense_output_random_sampling_get_at(loaded_engine_instance):
     shot = _mk_shot()
 
     res = calc.integrate(shot, Distance.Yard(400), Distance.Yard(10), dense_output=True)
-    traj = res.base_data  # CBaseTrajSeq when cythonized engine is used
+    traj = res.base_data  # BaseTrajSeqT when cythonized engine is used
     assert traj is not None and len(traj) >= 3
 
     # Random time samples across the trajectory duration

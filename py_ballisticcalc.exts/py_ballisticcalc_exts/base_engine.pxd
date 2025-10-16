@@ -88,7 +88,7 @@ cdef extern from "include/bclib.h" nogil:
         Atmosphere_t atmo
         Coriolis_t coriolis
 
-    void ShotProps_t_free(ShotProps_t *shot_props_ptr) noexcept nogil
+    void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
     int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
@@ -104,16 +104,6 @@ cdef extern from "include/bclib.h" nogil:
         double MAX_DISTANCE_FEET
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
-
-    ctypedef enum TrajFlag_t:
-        NONE = 0
-        ZERO_UP = 1
-        ZERO_DOWN = 2
-        ZERO = ZERO_UP | ZERO_DOWN
-        MACH = 4
-        RANGE = 8
-        APEX = 16
-        ALL = RANGE | ZERO_UP | ZERO_DOWN | MACH | APEX
 
     ctypedef struct BaseTrajData_t:
         double time
@@ -168,14 +158,9 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef object _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted)
     cdef object _zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance)
     cdef tuple _find_max_range(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, tuple angle_bracket_deg = *)
-    cdef BaseTrajDataT _find_apex(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr)
+    cdef BaseTrajDataT _find_apex(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr)
     cdef double _error_at_distance(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr,
                                    double angle_rad, double target_x_ft, double target_y_ft)
-    # In contrast to Python engines, _integrate returns (CBaseTrajSeq, Optional[str]) as a Python tuple
-    cdef tuple _integrate(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr,
+    # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
+    cdef tuple _integrate(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft, double time_step, int filter_flags)
-
-
-cdef object create_trajectory_row(double time, const V3dT *range_vector_ptr, const V3dT *velocity_vector_ptr,
-                                  double mach, const ShotProps_t * shot_props_ptr,
-                                  double density_ratio, double drag, int flag)

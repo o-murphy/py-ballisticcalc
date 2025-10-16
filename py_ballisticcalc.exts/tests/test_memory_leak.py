@@ -99,6 +99,13 @@ def test_drag_eval_memory_growth(table_variant):
         gc.collect()
     snap1 = tracemalloc.take_snapshot()
     total_diff = sum(s.size_diff for s in snap1.compare_to(snap0, "filename"))
+    top_stats_by_lineno = snap1.compare_to(snap0, "lineno")
+    if total_diff >= LEAK_THRESHOLD_BYTES:
+        print(f"\n--- Top 10 retained allocations for {table_variant[0]} ---")
+        for stat in top_stats_by_lineno[:10]:
+            print(stat)
+        print("-------------------------------------------------------")
+
     assert total_diff < LEAK_THRESHOLD_BYTES, (
         f"Possible leak for table {table_variant[0]}: {total_diff} bytes retained (> {LEAK_THRESHOLD_BYTES})"
     )

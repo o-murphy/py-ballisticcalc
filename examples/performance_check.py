@@ -211,7 +211,7 @@ def main():
     if args.e == "all":
         check_all()
     else:
-        en = engines.get(args.e, args.n)
+        en = engines.get(args.e)
         if not en:
             parser.error("Unknown engine")
         check_one(en, args.m, args.n)

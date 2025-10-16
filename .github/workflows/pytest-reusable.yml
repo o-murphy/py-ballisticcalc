@@ -28,21 +28,54 @@ jobs:
         name: Checkout Repository Code # A clear name for this foundational step
 
       - name: Install uv and set the python version
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ inputs.python_version }} # Use the Python version passed via inputs
-
+          activate-environment: "true"
+      
       - name: Validate extensions version matching
         # Install tomli (if not already present) to parse pyproject.toml
         # Then run your custom version check hook
+        run: uv run hooks/version_check.py
+        shell: bash
+
+      - name: Install dependencies for python 3.14.x (Linux)
+        # Install deps to build matplotlib, numpy, pandas, scipy, jupyter
+        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'Linux' }}
         run: |
-          uv pip install tomli
-          python hooks/version_check.py
+          sudo apt update 
+          echo "Installing libffi-dev for jupyter..."
+          sudo apt install libffi-dev
+          echo "Installing libjpeg-dev zlib1g-dev for matplotlib(pillow)..."
+          sudo apt install libjpeg-dev zlib1g-dev
+          echo "Installing gfortran libopenblas-dev for scipy..."
+          sudo apt install gfortran libopenblas-dev
+        shell: bash
+
+      - name: Install dependencies for python 3.14.x (macOS)
+        # Install deps to build scipy (gfortran, openblas)
+        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'macOS' }}
+        run: |
+          # Homebrew is already installed on GitHub Actions macOS runners
+          echo "Installing dependencies via Homebrew for macOS..."
+          brew install gcc  # Provides gfortran
+          brew install openblas
+        shell: bash
+
+      - name: System dependencies on Windows (Python 3.14)
+        # Compilation of packages like scipy on Windows for new Python versions (like 3.14)
+        # usually fails in CI because it requires complex MSVC configuration.
+        # This step performs no action, as the setup is too complex for a simple 'run:' block.
+        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'Windows' }}
+        run: |
+          echo "Warning: No system dependency setup for Windows Python 3.14."
+          echo "If no wheels are available, the build is expected to fail (due to missing MSVC/Fortran compiler)."
+        shell: bash
 
       - name: Install the project in editable mode
         # Install your project and its development dependencies
-        run: |
-          uv pip install -e .[dev]
+        run: uv sync -p ${{ inputs.python_version }} --dev
+        shell: bash
 
       - name: Build Cython extensions (if applicable)
         # This step runs ONLY if the engine_name starts with 'cythonized_'.
@@ -51,7 +84,7 @@ jobs:
         if: startsWith(inputs.engine_name, 'cythonized_')
         run: |
           echo "Detected Cythonized engine. Building extensions..."
-          uv pip install -e ./py_ballisticcalc.exts
+          uv sync -p ${{ inputs.python_version }} --dev --extra exts
         shell: bash # Ensure this command runs in a bash shell environment
 
       - name: Run tests with ${{ inputs.engine_name }}
@@ -67,3 +100,31 @@ jobs:
             echo "Pytest succeeded on the first attempt."
           fi
         shell: bash # Ensure this command runs in a bash shell environment
+
+      - name: Test Cythonized code (if applicable)
+        if: startsWith(inputs.engine_name, 'cythonized_')
+        run: |
+          echo "Detected Cythonized engine. Testing extensions..."
+          pytest ./py_ballisticcalc.exts/tests --no-header -v -n auto --engine=${{ inputs.engine_name }}
+                    # Check the exit code of pytest. If it's not 0 (failure), run again without capture for full logs.
+          if [ $? -ne 0 ]; then
+            echo "Pytest failed on the first attempt. Running again without capture for detailed output."
+            pytest ./py_ballisticcalc.exts/tests -v --engine=${{ inputs.engine_name }}
+          else
+            echo "Pytest succeeded on the first attempt."
+          fi
+        shell: bash # Ensure this command runs in a bash shell environment
+
+      - name: Run stress tests
+        if: ${{ github.event_name == 'workflow_dispatch' && startsWith(inputs.engine_name, 'cythonized_') }}
+        run: |
+          echo "This workflow was triggered manually. Running stress tests..."
+          pytest ./py_ballisticcalc.exts/tests -m stress
+          if [ $? -ne 0 ]; then
+            echo "Stress test failed on the first attempt. Running again with valgrind."
+            sudo apt update
+            sudo apt install -y valgrind
+            valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes -- pytest ./py_ballisticcalc.exts/tests -m stress
+          else
+            echo "Stress test succeeded on the first attempt."
+        shell: bash

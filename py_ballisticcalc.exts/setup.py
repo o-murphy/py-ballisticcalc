@@ -68,7 +68,7 @@ C_SOURCES = {
     "interp": os.path.join(ext_base_dir, 'src', 'interp.c'),
     "euler": os.path.join(ext_base_dir, 'src', 'euler.c'),
     "rk4": os.path.join(ext_base_dir, 'src', 'rk4.c'),
-    "basetraj_seq": os.path.join(ext_base_dir, 'src', 'basetraj_seq.c'),
+    "base_traj_seq": os.path.join(ext_base_dir, 'src', 'base_traj_seq.c'),
     # Add any other C source files here
 }
 
@@ -78,13 +78,13 @@ C_SOURCES = {
 EXTENSION_DEPS = {
     "cy_bindings": ["bclib", "bind"],
     "unit_helper": [],
-    "base_traj_seq": ["v3d", "interp", "basetraj_seq"],
+    "base_traj_seq": ["v3d", "interp", "base_traj_seq"],
     "base_engine": ["v3d", "bclib"],
-    "euler_engine": ["v3d", "bclib", "euler"],
-    "rk4_engine": ["v3d", "bclib", "rk4"],
-    "trajectory_data": ["v3d", "interp"],
+    "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq"],
+    "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq"],
+    "trajectory_data": ["v3d", "interp", "bclib"],
     # Test modules (expose internal C functions for tests only)
-    "test_helpers": ["v3d", "bclib"],
+    "test_helpers": ["v3d", "bclib", "interp"],
     "test_engine": ["v3d", "bclib"],
 }
 
@@ -124,6 +124,7 @@ for name, deps in EXTENSION_DEPS.items():
             sources=sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
+            extra_compile_args=["-g", "-O0", "-std=c99"],
             # extra_compile_args=["-std=c99"], # Uncomment if needed for specific C standards
             # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
         )

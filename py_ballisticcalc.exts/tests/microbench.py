@@ -1,11 +1,11 @@
 import time
 from statistics import mean
 
-from py_ballisticcalc_exts.base_traj_seq import CBaseTrajSeq
+from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
 
 
 def bench_append(n, reserve_first=False):
-    seq = CBaseTrajSeq()
+    seq = BaseTrajSeqT()
     if reserve_first:
         seq.reserve(n)
     t0 = time.perf_counter()

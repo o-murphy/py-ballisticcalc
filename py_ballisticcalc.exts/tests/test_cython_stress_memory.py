@@ -17,7 +17,7 @@ from py_ballisticcalc import (
     Weight,
 )
 
-from py_ballisticcalc_exts.base_traj_seq import CBaseTrajSeq
+from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
 
 
 def _base_config():
@@ -66,7 +66,7 @@ def test_rss_stability_over_many_runs(loaded_engine_instance):
 
 
 def test_cbase_traj_seq_append_and_get_at_edge_cases():
-    seq = CBaseTrajSeq()
+    seq = BaseTrajSeqT()
     # Append many points to exercise reallocation logic
     n = 10_000
     for i in range(n):
@@ -77,11 +77,11 @@ def test_cbase_traj_seq_append_and_get_at_edge_cases():
     # Query at ends and midpoints
     r0 = seq.get_at("time", 0.0)
     r1 = seq.get_at("time", (n - 1) * 0.002)
-    rm = seq.get_at("position.x", (r0.position_vector.x + r1.position_vector.x) * 0.5)
+    rm = seq.get_at("position.x", (r0.position.x + r1.position.x) * 0.5)
 
     assert r0.time == pytest.approx(0.0)
     assert r1.time == pytest.approx((n - 1) * 0.002)
-    assert r0.position_vector.x <= rm.position_vector.x <= r1.position_vector.x
+    assert r0.position.x <= rm.position.x <= r1.position.x
 
 
 def test_tracemalloc_no_python_object_leak(loaded_engine_instance):

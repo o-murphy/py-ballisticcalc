@@ -22,6 +22,9 @@ from py_ballisticcalc_exts.base_engine cimport (
     calculateEnergy,
     calculateOgw,
 )
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.v3d cimport V3dT
+
 
 __all__ = [
     'init_shot',
@@ -38,6 +41,12 @@ __all__ = [
     'step_count',
     'introspect_shot',
 ]
+
+
+# Small Python factory for tests and convenience
+cpdef make_base_traj_data(double time, double px, double py, double pz,
+                        double vx, double vy, double vz, double mach):
+    return BaseTrajDataT(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach)
 
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
