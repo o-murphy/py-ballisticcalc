@@ -18,9 +18,8 @@ on:
         description: "Python version to use"
         required: true
         type: choice
-        default: "3.11"
+        default: "3.10"
         options:
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"

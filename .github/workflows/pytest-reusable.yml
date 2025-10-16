@@ -9,7 +9,7 @@ on:
       os: # Input for the operating system (e.g., ubuntu-latest)
         required: true # This input is mandatory
         type: string
-      python_version: # Input for the Python version (e.g., "3.9")
+      python_version: # Input for the Python version (e.g., "3.10")
         required: true # This input is mandatory
         type: string
       engine_name: # Input for the engine type to test with (e.g., "euler_engine")

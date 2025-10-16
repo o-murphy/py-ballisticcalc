@@ -23,7 +23,7 @@ jobs:
       fail-fast: false # Set to 'false' so that if one job in the matrix fails, the others will still complete.
       matrix: # Define all the combinations for the 'full' test suite
         os: [ ubuntu-latest, windows-latest, macos-13, macos-14 ] # Operating systems to test on
-        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: [ "3.10", "3.11", "3.12", "3.13"]
         # The 'engine' variable for this matrix. Make sure the name matches what you pass in 'with:' below.
         engine: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk4_engine" ]
 
@@ -33,7 +33,7 @@ jobs:
     with:
       # Pass the current values from the matrix to the corresponding inputs of the reusable workflow.
       os: ${{ matrix.os }} # Passes the current OS (e.g., 'ubuntu-latest')
-      python_version: ${{ matrix.python-version }} # Passes the current Python version (e.g., '3.9')
+      python_version: ${{ matrix.python-version }} # Passes the current Python version (e.g., '3.10')
       engine_name: ${{ matrix.engine }} # Passes the current engine (e.g., 'euler_engine')
 
   # This job manages a 'minimal matrix' of tests, typically used for push events.
@@ -47,7 +47,7 @@ jobs:
       fail-fast: false # Ensure all jobs in this minimal matrix complete even if one fails.
       matrix: # Define the combinations for the 'minimal' test suite
         os: [ ubuntu-latest ] # Fixed to one OS for minimal testing
-        python-version: [ "3.9" ] # Fixed to one Python version for minimal testing
+        python-version: [ "3.10" ] # Fixed to one Python version for minimal testing
         # The 'engine-entry' variable as defined in your original minimal matrix.
         engine-entry: [ "euler_engine", "rk4_engine", "cythonized_euler_engine", "cythonized_rk4_engine" ]
 
