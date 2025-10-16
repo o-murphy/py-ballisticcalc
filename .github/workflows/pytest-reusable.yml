@@ -31,18 +31,20 @@ jobs:
         uses: astral-sh/setup-uv@v7
         with:
           python-version: ${{ inputs.python_version }} # Use the Python version passed via inputs
-
+          activate-environment: "true"
+      
       - name: Validate extensions version matching
         # Install tomli (if not already present) to parse pyproject.toml
         # Then run your custom version check hook
         run: |
-          uv pip install tomli
-          python hooks/version_check.py
+          uv run hooks/version_check.py
+        shell: bash
 
       - name: Install the project in editable mode
         # Install your project and its development dependencies
         run: |
-          uv pip install -e .[dev]
+          uv sync -p ${{ inputs.python_version }} --dev
+        shell: bash
 
       - name: Build Cython extensions (if applicable)
         # This step runs ONLY if the engine_name starts with 'cythonized_'.
@@ -51,7 +53,7 @@ jobs:
         if: startsWith(inputs.engine_name, 'cythonized_')
         run: |
           echo "Detected Cythonized engine. Building extensions..."
-          uv pip install -e ./py_ballisticcalc.exts
+          uv sync -p ${{ inputs.python_version }} --dev --extra exts
         shell: bash # Ensure this command runs in a bash shell environment
 
       - name: Run tests with ${{ inputs.engine_name }}

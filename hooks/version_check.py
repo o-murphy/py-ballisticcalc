@@ -1,5 +1,15 @@
-# import re
-# from importlib_metadata import metadata
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.9"
+# dependencies = [
+#   "semver", "tomlkit", "tomli;python_version<'3.11'"
+# ]
+# ///
+import sys
+import os
+
+# Додаємо import io для примусового встановлення кодування
+import io 
 
 try:
     import tomllib
@@ -35,6 +45,19 @@ def extract_dep_version(data, name):
 
 
 def main():
+    # --- FIX for UnicodeEncodeError on Windows ---
+    # Примусово встановлюємо sys.stdout та sys.stderr на UTF-8 для коректного виводу емодзі
+    # Це допомагає обійти обмеження консолі cp1252 на Windows.
+    if sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
+        try:
+            sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+            sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+        except AttributeError:
+            # У деяких середовищах (наприклад, деякі CI), буфер може бути недоступний,
+            # але ми все одно намагаємося встановити кодування, якщо це можливо.
+            pass
+    # --- END FIX ---
+    
     # pkg_ver, groups = extract_ver(pkg_name)
     # bin_pkg_ver, bin_groups = extract_ver(bin_pkg_name)
 
@@ -50,12 +73,13 @@ def main():
 
         dep_ver = extract_dep_version(pkg_toml, bin_pkg_name)
 
-        assert pkg_ver == bin_pkg_ver, f"Versions don't match {pkg_name}=={pkg_ver} != {bin_pkg_name}=={bin_pkg_ver}"
-        assert dep_ver == bin_pkg_ver, f"Versions don't match {bin_pkg_name}=={bin_pkg_ver} != {dep_ver}"
+        assert pkg_ver == bin_pkg_ver, f"❌ Versions don't match {pkg_name}=={pkg_ver} != {bin_pkg_name}=={bin_pkg_ver}"
+        assert dep_ver == bin_pkg_ver, f"❌ Versions don't match {bin_pkg_name}=={bin_pkg_ver} != {dep_ver}"
+        print("✅ Versions are matching")
     except AssertionError as err:
         raise err
     except Exception:
-        raise Exception("Could not parse versions")
+        raise Exception("❌ Could not parse versions")
 
 if __name__ == '__main__':
     main()
