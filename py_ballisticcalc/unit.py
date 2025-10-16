@@ -74,12 +74,7 @@ from typing import (
 )
 from collections.abc import Hashable
 
-try:
-    # Python 3.10+ provides NotImplementedType in types
-    from types import NotImplementedType  # type: ignore[attr-defined]
-except Exception:  # pragma: no cover - fallback for Python 3.9
-    # On older Python, derive the type from the singleton
-    NotImplementedType = type(NotImplemented)  # type: ignore[misc,assignment]
+from types import NotImplementedType  # type: ignore[attr-defined]
 
 from typing_extensions import Self, TypeAlias, override
 

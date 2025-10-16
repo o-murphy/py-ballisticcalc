@@ -79,9 +79,9 @@ from py_ballisticcalc.unit import PreferredUnits, Angular
 
 # Handle optional matplotlib dependency with graceful degradation
 try:
-    import matplotlib
-    from matplotlib.patches import Polygon
-    from matplotlib.axes import Axes
+    import matplotlib  # type: ignore[import-not-found]
+    from matplotlib.patches import Polygon  # type: ignore[import-not-found]
+    from matplotlib.axes import Axes  # type: ignore[import-not-found]
     from matplotlib import pyplot, ticker
 
     assert matplotlib

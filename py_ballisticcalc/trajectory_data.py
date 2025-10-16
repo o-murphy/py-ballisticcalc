@@ -67,7 +67,7 @@ from py_ballisticcalc.interpolation import (
 
 if TYPE_CHECKING:
     from pandas import DataFrame
-    from matplotlib.axes import Axes
+    from matplotlib.axes import Axes  # type: ignore[import-not-found]
     from py_ballisticcalc.shot import ShotProps
 
 __all__ = (
