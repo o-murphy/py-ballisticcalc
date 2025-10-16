@@ -80,7 +80,8 @@ cdef class BaseTrajDataT:
         """
         cdef:
             double x0, x1, x2
-            double time, px, py, pz, vx, vy, vz, mach
+            double time, mach
+            V3dT position, velocity, vp0, vp1, vp2, vv0, vv1, vv2
             BaseTrajDataT _p0
             BaseTrajDataT _p1
             BaseTrajDataT _p2
@@ -129,19 +130,28 @@ cdef class BaseTrajDataT:
         if x0 == x1 or x0 == x2 or x1 == x2:
             raise ZeroDivisionError("Duplicate x for interpolation")
 
-        # Helper for scalar interpolation using PCHIP
-        def _interp(double y0, double y1, double y2) -> double:
-            return interpolate_3_pt(key_value, x0, x1, x2, y0, y1, y2)
+        # Scalar interpolation using PCHIP
+
+        vp0 = _p0.c_position()
+        vp1 = _p1.c_position()
+        vp2 = _p2.c_position()
+        vv0 = _p0.c_velocity()
+        vv1 = _p1.c_velocity()
+        vv2 = _p2.c_velocity()
 
         # Interpolate all scalar fields
-        time = key_value if key_attribute == 'time' else _interp(_p0.time, _p1.time, _p2.time)
-        px = _interp(_p0.c_position().x, _p1.c_position().x, _p2.c_position().x)
-        py = _interp(_p0.c_position().y, _p1.c_position().y, _p2.c_position().y)
-        pz = _interp(_p0.c_position().z, _p1.c_position().z, _p2.c_position().z)
-        vx = _interp(_p0.c_velocity().x, _p1.c_velocity().x, _p2.c_velocity().x)
-        vy = _interp(_p0.c_velocity().y, _p1.c_velocity().y, _p2.c_velocity().y)
-        vz = _interp(_p0.c_velocity().z, _p1.c_velocity().z, _p2.c_velocity().z)
-        mach = key_value if key_attribute == 'mach' else _interp(_p0.mach, _p1.mach, _p2.mach)
+        time = key_value if key_attribute == 'time' else interpolate_3_pt(key_value, x0, x1, x2, _p0.time, _p1.time, _p2.time)
+        position = V3dT(
+            interpolate_3_pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
+            interpolate_3_pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
+            interpolate_3_pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)
+        )
+        velocity = V3dT(
+            interpolate_3_pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
+            interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
+            interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)
+        )
+        mach = key_value if key_attribute == 'mach' else interpolate_3_pt(key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach)
 
         # Construct the resulting BaseTrajDataT
-        return BaseTrajDataT(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach)
+        return BaseTrajDataT(time, position, velocity, mach)

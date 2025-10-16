@@ -204,7 +204,7 @@ cdef class BaseTrajSeqT:
         # If start_from_time is provided, mimic HitResult.get_at search strategy
         sft = 0.0
         if start_from_time is not None:
-            sft = start_from_time
+            sft = <double>start_from_time
         if sft > 0.0 and key_kind != KEY_TIME:
             buf = self._c_view.buffer
             start_idx = <Py_ssize_t>0

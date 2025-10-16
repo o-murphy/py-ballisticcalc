@@ -279,15 +279,24 @@ class BaseTrajData(NamedTuple):
             else:
                 raise ValueError("method must be 'pchip' or 'linear'")
 
+        vp0 = p0.position
+        vp1 = p1.position
+        vp2 = p2.position
+        vv0 = p0.velocity
+        vv1 = p1.velocity
+        vv2 = p2.velocity
+
         time = _interp_scalar(p0.time, p1.time, p2.time) if key_attribute != "time" else key_value
-        px = _interp_scalar(p0.position.x, p1.position.x, p2.position.x)
-        py = _interp_scalar(p0.position.y, p1.position.y, p2.position.y)
-        pz = _interp_scalar(p0.position.z, p1.position.z, p2.position.z)
-        position = Vector(px, py, pz)
-        vx = _interp_scalar(p0.velocity.x, p1.velocity.x, p2.velocity.x)
-        vy = _interp_scalar(p0.velocity.y, p1.velocity.y, p2.velocity.y)
-        vz = _interp_scalar(p0.velocity.z, p1.velocity.z, p2.velocity.z)
-        velocity = Vector(vx, vy, vz)
+        position = Vector(
+            _interp_scalar(vp0.x, vp1.x, vp2.x),
+            _interp_scalar(vp0.y, vp1.y, vp2.y),
+            _interp_scalar(vp0.z, vp1.z, vp2.z)
+        )
+        velocity = Vector(
+            _interp_scalar(vv0.x, vv1.x, vv2.x),
+            _interp_scalar(vv0.y, vv1.y, vv2.y),
+            _interp_scalar(vv0.z, vv1.z, vv2.z)
+        )
         mach = _interp_scalar(p0.mach, p1.mach, p2.mach) if key_attribute != "mach" else key_value
 
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
