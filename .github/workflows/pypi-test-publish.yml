@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-13, macos-14, macos-15 ]
+        os: [ ubuntu-latest, windows-latest, macos-14, macos-15 ]
 
     runs-on: ${{ matrix.os }}
     steps:
@@ -76,12 +76,6 @@ jobs:
           name: dist-windows-latest
           path: ./dist-windows
 
-      - name: Download artifacts (macOS 13)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-macos-13
-          path: ./dist-macos-13
-
       - name: Download artifacts (macOS 14)
         uses: actions/download-artifact@v4
         with:
@@ -99,7 +93,6 @@ jobs:
           mkdir -p dist
           cp ./dist-ubuntu/* dist/ || true
           cp ./dist-windows/* dist/ || true
-          cp ./dist-macos-13/* dist/ || true
           cp ./dist-macos-14/* dist/ || true
           cp ./dist-macos-15/* dist/ || true
         shell: bash

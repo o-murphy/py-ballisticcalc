@@ -11,6 +11,7 @@ on:
         default: ubuntu-latest
         options:
           - ubuntu-latest
+          - macos-14
           - macos-15
           - windows-latest
 
