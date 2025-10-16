@@ -36,14 +36,25 @@ jobs:
       - name: Validate extensions version matching
         # Install tomli (if not already present) to parse pyproject.toml
         # Then run your custom version check hook
+        run: uv run hooks/version_check.py
+        shell: bash
+
+      - name: Install dependencies for python 3.14.x
+        # Install deps to build matplotlib, numpy, pandas, scipy, jupyter
+        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'Linux' }}
         run: |
-          uv run hooks/version_check.py
+          sudo apt update 
+          echo "Installing libffi-dev for jupyter..."
+          sudo apt install libffi-dev
+          echo "Installing libjpeg-dev zlib1g-dev for matplotlib(pillow)..."
+          sudo apt install libjpeg-dev zlib1g-dev
+          echo "Installing gfortran libopenblas-dev for scipy..."
+          sudo apt install gfortran libopenblas-dev
         shell: bash
 
       - name: Install the project in editable mode
         # Install your project and its development dependencies
-        run: |
-          uv sync -p ${{ inputs.python_version }} --dev
+        run: uv sync -p ${{ inputs.python_version }} --dev
         shell: bash
 
       - name: Build Cython extensions (if applicable)

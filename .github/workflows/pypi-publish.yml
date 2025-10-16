@@ -33,8 +33,7 @@ jobs:
         shell: bash
 
       - name: Install dependencies
-        run: python -m pip install build cibuildwheel==2.20.0 twine 
-# Hardcoded cibuildwheel version here to overcome macos build failures on v2.2.0b6.  Can probably remove after Python3.9 sunset.
+        run: python -m pip install build cibuildwheel twine
         shell: bash
 
       - name: Build pure python package
