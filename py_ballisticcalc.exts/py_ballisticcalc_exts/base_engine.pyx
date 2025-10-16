@@ -39,6 +39,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t_from_pyobject,
     MachList_t_from_pylist,
     Curve_t_from_pylist,
+    Coriolis_t_from_pyobject,
 )
 
 from py_ballisticcalc.shot import ShotProps
@@ -285,8 +286,6 @@ cdef class CythonizedBaseIntegrationEngine:
         self._free_trajectory() 
         # ---------------------------------------------------
 
-        cdef object coriolis_obj
-
         # hack to reload config if it was changed explicit on existed instance
         self._config_s = Config_t_from_pyobject(self._config)
         self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
@@ -298,15 +297,17 @@ cdef class CythonizedBaseIntegrationEngine:
         # Cython may forget to add DECREF, so memory leaks are possible
         cdef object velocity_obj = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)
         cdef double muzzle_velocity_fps = velocity_obj._fps
-        
+                
+        # Create coriolis object from shot parameters    
+        cdef object coriolis_obj = Coriolis.create(
+            shot_info.latitude, 
+            shot_info.azimuth, 
+            muzzle_velocity_fps
+        )
+
+        cdef Coriolis_t coriolis = Coriolis_t_from_pyobject(coriolis_obj)
+
         try:
-            # Create coriolis object from shot parameters    
-            coriolis_obj = Coriolis.create(
-                shot_info.latitude, 
-                shot_info.azimuth, 
-                muzzle_velocity_fps
-            )
-            
             self._shot_s = ShotProps_t(
                 bc=shot_info.ammo.dm.BC,
                 curve=Curve_t_from_pylist(self._table_data),
@@ -334,18 +335,7 @@ cdef class CythonizedBaseIntegrationEngine:
                     density_ratio=shot_info.atmo.density_ratio,
                     cLowestTempC=shot_info.atmo.cLowestTempC,
                 ),
-                coriolis=Coriolis_t(
-                    sin_lat=coriolis_obj.sin_lat if coriolis_obj else 0.0,
-                    cos_lat=coriolis_obj.cos_lat if coriolis_obj else 0.0,
-                    sin_az=coriolis_obj.sin_az if coriolis_obj and coriolis_obj.sin_az is not None else 0.0,
-                    cos_az=coriolis_obj.cos_az if coriolis_obj and coriolis_obj.cos_az is not None else 0.0,
-                    range_east=coriolis_obj.range_east if coriolis_obj and coriolis_obj.range_east is not None else 0.0,
-                    range_north=coriolis_obj.range_north if coriolis_obj and coriolis_obj.range_north is not None else 0.0,
-                    cross_east=coriolis_obj.cross_east if coriolis_obj and coriolis_obj.cross_east is not None else 0.0,
-                    cross_north=coriolis_obj.cross_north if coriolis_obj and coriolis_obj.cross_north is not None else 0.0,
-                    flat_fire_only=coriolis_obj.flat_fire_only if coriolis_obj else 0,
-                    muzzle_velocity_fps=coriolis_obj.muzzle_velocity_fps if coriolis_obj else 0.0,
-                )
+                coriolis=coriolis
             )
             if ShotProps_t_updateStabilityCoefficient(&self._shot_s) < 0:
                 raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")

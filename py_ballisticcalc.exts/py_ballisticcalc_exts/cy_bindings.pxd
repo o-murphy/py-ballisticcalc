@@ -131,3 +131,5 @@ cdef Config_t Config_t_from_pyobject(object config)
 cdef MachList_t MachList_t_from_pylist(list[object] data)
 cdef Curve_t Curve_t_from_pylist(list[object] data_points)
 cdef Wind_t Wind_t_from_py(object w)
+
+cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj)
