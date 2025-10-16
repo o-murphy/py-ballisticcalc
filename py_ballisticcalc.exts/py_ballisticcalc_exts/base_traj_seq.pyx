@@ -21,7 +21,7 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 from py_ballisticcalc_exts.interp cimport interpolate_3_pt
 
 
-__all__ = ('BaseTrajSeqT', 'BaseTraj_t')
+__all__ = ('BaseTrajSeqT')
 
 
 cdef InterpKey _attribute_to_key(str key_attribute):
@@ -127,7 +127,7 @@ cdef class BaseTrajSeqT:
         return self.len_c()
 
     cdef Py_ssize_t len_c(self):
-        cdef int length = BaseTrajSeq_t_len(self._c_view)
+        cdef Py_ssize_t length = BaseTrajSeq_t_len(self._c_view)
         if length < 0:
             raise MemoryError("Trajectory buffer is NULL")
         return length 

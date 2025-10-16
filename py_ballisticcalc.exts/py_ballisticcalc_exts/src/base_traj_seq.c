@@ -41,6 +41,10 @@ double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind)
 double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
 {
     /* Computes the slant_height of a trajectory point 'p' given cosine 'ca' and sine 'sa' of look_angle. */
+    if (p == NULL)
+    {
+        return NAN;
+    }
     return p->py * ca - p->px * sa;
 }
 
@@ -173,8 +177,14 @@ int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpK
 
 BaseTrajSeq_t *BaseTrajSeq_t_create()
 {
-    return (BaseTrajSeq_t *)calloc(1, sizeof(BaseTrajSeq_t));
-};
+    BaseTrajSeq_t *ptr = (BaseTrajSeq_t *)calloc(1, sizeof(BaseTrajSeq_t));
+    if (ptr == NULL)
+    {
+        // Optionally log error: fprintf(stderr, "Failed to allocate BaseTrajSeq_t\n");
+        return NULL;
+    }
+    return ptr;
+}
 
 void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
 {
@@ -188,19 +198,24 @@ void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
         free(seq);
     }
     return;
-};
+}
 
-int BaseTrajSeq_t_len(const BaseTrajSeq_t *seq)
+ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq)
 {
     if (seq != NULL)
     {
-        return seq->length;
+        return (ssize_t)seq->length;
     }
-    return -1;
+    return (ssize_t)-1;
 }
 
 BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx)
 {
+    if (seq == NULL)
+    {
+        return NULL;
+    }
+
     ssize_t len = (ssize_t)seq->length;
     if (len <= 0)
     {
@@ -215,7 +230,7 @@ BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx)
         return NULL;
     }
     return seq->buffer + idx;
-};
+}
 
 /**
  * @brief Checks and ensures the minimum buffer capacity.
@@ -226,14 +241,14 @@ BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx)
  */
 int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
-    size_t new_capacity;
-    BaseTraj_t *new_buffer;
-    size_t bytes_copy;
-
     if (seq == NULL)
     {
         return -1;
     }
+
+    size_t new_capacity;
+    BaseTraj_t *new_buffer;
+    size_t bytes_copy;
 
     if (min_capacity <= seq->capacity)
     {
@@ -272,7 +287,7 @@ int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
     seq->capacity = new_capacity;
 
     return 0;
-};
+}
 
 /**
  * @brief Appends a new element to the end of the sequence.
@@ -311,6 +326,11 @@ ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
     InterpKey key_kind,
     double key_value)
 {
+    if (seq == NULL)
+    {
+        return (ssize_t)(-1);
+    }
+
     // Cast size_t to ssize_t for consistency with Cython/Python indexing
     ssize_t n = seq->length;
     BaseTraj_t *buf = seq->buffer;
@@ -393,6 +413,12 @@ ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
     double sa,
     double value)
 {
+
+    if (seq == NULL)
+    {
+        return (ssize_t)(-1);
+    }
+
     // Cast size_t to ssize_t for bounds checking and signed return value
     ssize_t n = seq->length;
     BaseTraj_t *buf = seq->buffer;

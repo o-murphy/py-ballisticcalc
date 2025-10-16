@@ -95,7 +95,7 @@ extern "C"
      */
     int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
 
-    int BaseTrajSeq_t_len(const BaseTrajSeq_t *seq);
+    ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq);
 
     /**
      * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
