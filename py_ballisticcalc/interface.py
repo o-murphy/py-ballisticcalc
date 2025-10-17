@@ -100,14 +100,58 @@ class _EngineLoader:
 
 @dataclass
 class Calculator(Generic[ConfigT]):
-    """Basic interface for the ballistics calculator."""
+    """The main interface for the ballistics calculator.
+
+    This class provides thread-safe access to the underlying integration engines
+    by creating a new, isolated engine instance for every method call.
+    """
 
     config: Optional[ConfigT] = field(default=None)
     engine: EngineProtocolEntry = field(default=DEFAULT_ENTRY)
-    _engine_instance: EngineProtocol[Any] = field(init=False, repr=False, compare=False)
+    _engine_class: Type[EngineProtocol] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        self._engine_instance = _EngineLoader.load(self.engine)(self.config)
+        """
+        Loads the engine class.
+
+        Crucially: The engine instance is not created here. To ensure
+        thread safety (especially in free-threaded Python), each method call
+        must operate on a new, isolated engine instance.
+        """
+        self._engine_class = _EngineLoader.load(self.engine)
+
+    @property
+    def _engine_instance(self) -> EngineProtocol[Any]:
+        """
+        Creates and returns a **fresh, isolated engine instance** upon every access.
+
+        This implementation is the core mechanism for ensuring **thread safety** in the `Calculator` class,
+        particularly essential in **free-threaded Python** (e.g., CPython with GIL disabled, Python 3.13+).
+
+        ## Thread Safety Rationale
+
+        Instead of using traditional **synchronization primitives** (like `threading.Lock`)
+        to protect a single, shared engine instance, this method employs **isolation**.
+        Since the underlying engine instances are not guaranteed to be thread-safe
+        internally, generating a new instance for each operation ensures that
+        **no two concurrent threads will ever modify the same engine object**. This
+        approach eliminates race conditions without introducing the overhead or
+        potential deadlocks associated with locking mechanisms.
+
+        ## Performance Consideration
+
+        Note: The **overall performance** of concurrent operations critically depends
+        on the **initialization cost** of the underlying engine class (`self._engine_class`).
+        If the engine's constructor performs extensive I/O, loads large data tables,
+        or executes complex setup, repeated instantiation may introduce significant
+        overhead. For optimal performance, the engine's initialization (`__init__`)
+        should be designed to be as **lightweight** as possible.
+
+        Returns:
+            EngineProtocol[Any]: A new, single-use engine instance configured
+                                 with the `Calculator`'s current settings.
+        """
+        return self._engine_class(self.config)
 
     def __getattr__(self, item: str) -> Any:
         """Delegate attribute access to the underlying engine instance.
@@ -138,11 +182,12 @@ class Calculator(Generic[ConfigT]):
             ...     print(e)
             'Calculator' object or its underlying engine 'RK4IntegrationEngine' has no attribute 'unknown_method'
         """
-        if hasattr(self._engine_instance, item):
-            return getattr(self._engine_instance, item)
+        engine_instance = self._engine_instance
+        if hasattr(engine_instance, item):
+            return getattr(engine_instance, item)
         raise AttributeError(
             f"'{self.__class__.__name__}' object or its underlying engine "
-            f"'{self._engine_instance.__class__.__name__}' has no attribute '{item}'"
+            f"'{engine_instance.__class__.__name__}' has no attribute '{item}'"
         )
 
     @property

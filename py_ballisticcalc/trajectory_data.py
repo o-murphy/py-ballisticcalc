@@ -290,12 +290,12 @@ class BaseTrajData(NamedTuple):
         position = Vector(
             _interp_scalar(vp0.x, vp1.x, vp2.x),
             _interp_scalar(vp0.y, vp1.y, vp2.y),
-            _interp_scalar(vp0.z, vp1.z, vp2.z)
+            _interp_scalar(vp0.z, vp1.z, vp2.z),
         )
         velocity = Vector(
             _interp_scalar(vv0.x, vv1.x, vv2.x),
             _interp_scalar(vv0.y, vv1.y, vv2.y),
-            _interp_scalar(vv0.z, vv1.z, vv2.z)
+            _interp_scalar(vv0.z, vv1.z, vv2.z),
         )
         mach = _interp_scalar(p0.mach, p1.mach, p2.mach) if key_attribute != "mach" else key_value
 
