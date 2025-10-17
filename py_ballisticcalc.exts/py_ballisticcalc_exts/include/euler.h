@@ -12,7 +12,7 @@ extern "C"
 
     /**
      * @brief Calculate time step based on current projectile speed.
-     * * @param base_step The base time step value.
+     * @param base_step The base time step value.
      * @param velocity The current projectile speed (magnitude of velocity).
      * @return double The calculated time step.
      */
