@@ -31,7 +31,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Wind_t,
     Atmosphere_t,
     ShotProps_t,
-    ShotProps_t_free_resources,
+    ShotProps_t_freeResources,
     ShotProps_t_updateStabilityCoefficient,
     Wind_t_from_py,
     Coriolis_t,
@@ -58,25 +58,19 @@ cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERR
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
 
-cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
+cdef WindSock_t WindSock_t_create(object winds_py_list):
     """
     Creates and initializes a WindSock_t structure.
     Processes the Python list, then delegates initialization to C.
     """
     cdef size_t length = <size_t> len(winds_py_list)
-
-    # 1. Memory allocation for the struct (remains in Cython)
-    cdef WindSock_t * ws = <WindSock_t *> calloc(1, sizeof(WindSock_t))
-    if <void *> ws is NULL:
-        raise MemoryError("Failed to allocate WindSock_t structure.")
-
-    # 2. Memory allocation for the Wind_t array (remains in Cython)
+    cdef WindSock_t ws
+    # Memory allocation for the Wind_t array (remains in Cython)
     cdef Wind_t * winds_array = <Wind_t *> calloc(<size_t> length, sizeof(Wind_t))
     if <void *> winds_array is NULL:
-        free(<void *> ws)
         raise MemoryError("Failed to allocate internal Wind_t array.")
 
-    # 3. Copying data from Python objects to C structures (must remain in Cython)
+    # Copying data from Python objects to C structures (must remain in Cython)
     cdef int i
     try:
         for i in range(<int>length):
@@ -85,11 +79,10 @@ cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     except Exception:
         # Error handling
         free(<void *> winds_array)
-        free(<void *> ws)
         raise RuntimeError("Invalid wind entry in winds list")
 
     # 4. Structure initialization (calling the C function)
-    WindSock_t_init(ws, length, winds_array)
+    WindSock_t_init(&ws, length, winds_array)
 
     return ws
 
@@ -266,10 +259,9 @@ cdef class CythonizedBaseIntegrationEngine:
             return 9e9
 
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self):
-        if self._wind_sock != NULL:
-            WindSock_t_free(self._wind_sock) 
-            self._wind_sock = NULL
-        ShotProps_t_free_resources(&self._shot_s)
+        if self._wind_sock.winds is not NULL:
+            WindSock_t_freeResources(&self._wind_sock) 
+        ShotProps_t_freeResources(&self._shot_s)
 
         # After free_trajectory(&self._shot_s), it's good practice to ensure
         # the internal pointers within _shot_s are indeed NULLIFIED for future checks,
@@ -348,7 +340,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
 
             self._wind_sock = WindSock_t_create(shot_info.winds)
-            if self._wind_sock is NULL:
+            if self._wind_sock.winds is NULL:
                 raise MemoryError("Can't allocate memory for wind_sock")
 
         except Exception:

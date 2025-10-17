@@ -88,7 +88,7 @@ cdef extern from "include/bclib.h" nogil:
         Atmosphere_t atmo
         Coriolis_t coriolis
 
-    void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr) noexcept nogil
+    void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
     int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
@@ -119,7 +119,7 @@ cdef extern from "include/bclib.h" nogil:
         V3dT last_vector_cache
 
     void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
-    void WindSock_t_free(WindSock_t *ws)
+    void WindSock_t_freeResources(WindSock_t *ws)
     V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
     int WindSock_t_updateCache(WindSock_t *ws)
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
@@ -130,7 +130,7 @@ cdef extern from "include/bclib.h" nogil:
     double calculateOgw(double bulletWeight, double velocity)
 
 # Function to create and initialize a WindSock_t
-cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL
+cdef WindSock_t WindSock_t_create(object winds_py_list)
 
 
 cdef struct ZeroInitialData_t:
@@ -158,7 +158,7 @@ cdef class CythonizedBaseIntegrationEngine:
         public object _config
         list _table_data  # list[object]
         V3dT gravity_vector
-        WindSock_t * _wind_sock
+        WindSock_t _wind_sock
         Config_t _config_s  # Declared here
         ShotProps_t _shot_s  # Declared here
 

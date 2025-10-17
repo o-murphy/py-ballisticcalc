@@ -95,7 +95,7 @@ cdef extern from "include/bclib.h" nogil:
         Atmosphere_t atmo
         Coriolis_t coriolis
 
-    void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr) noexcept nogil
+    void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
     int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil

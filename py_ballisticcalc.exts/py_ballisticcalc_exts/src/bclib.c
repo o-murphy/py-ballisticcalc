@@ -47,7 +47,7 @@ void MachList_t_free(MachList_t *mach_list_ptr)
     mach_list_ptr->length = 0;
 }
 
-void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr)
+void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
         return;
@@ -324,16 +324,19 @@ void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     WindSock_t_updateCache(ws);
 }
 
-void WindSock_t_free(WindSock_t *ws)
+void WindSock_t_freeResources(WindSock_t *ws)
 {
-    if (ws != NULL)
+    if (ws == NULL)
     {
-        if (ws->winds != NULL)
-        {
-            free(ws->winds);
-        }
-        free(ws);
+        return;
     }
+
+    if (ws->winds != NULL)
+    {
+        free(ws->winds);
+        ws->winds = NULL;
+    }
+    WindSock_t_init(ws, 0, NULL);
 }
 
 V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
