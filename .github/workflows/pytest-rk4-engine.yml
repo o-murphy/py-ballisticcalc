@@ -21,8 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-14, macos-14 ]
-        python-version: [ "3.10", "3.10", "3.11", "3.12", "3.13"]
+        os: [ ubuntu-latest, windows-latest, macos-14, macos-15 ]
+        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
         engine: [ "rk4_engine" ]
 
     uses: ./.github/workflows/pytest-reusable.yml
