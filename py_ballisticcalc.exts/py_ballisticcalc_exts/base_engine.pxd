@@ -133,6 +133,25 @@ cdef extern from "include/bclib.h" nogil:
 cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL
 
 
+cdef struct ZeroInitialData_t:
+    int status
+    double look_angle_rad
+    double slant_range_ft
+    double target_x_ft
+    double target_y_ft
+    double start_height_ft
+
+
+cdef struct MaxRangeResult_t:
+    double max_range_ft
+    double angle_at_max_rad
+
+
+cdef struct AngleBracketDeg_t:
+    double low_angle_deg
+    double high_angle_deg
+
+
 cdef class CythonizedBaseIntegrationEngine:
     cdef:
         public int integration_step_count
@@ -154,13 +173,13 @@ cdef class CythonizedBaseIntegrationEngine:
     # Only 'cdef' or 'cpdef' methods are declared here.
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self)
     cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info)
-    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance)
-    cdef object _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted)
-    cdef object _zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance)
-    cdef tuple _find_max_range(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, tuple angle_bracket_deg = *)
+    cdef ZeroInitialData_t _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance)
+    cdef double _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted)
+    cdef double _zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance)
+    cdef MaxRangeResult_t _find_max_range(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, AngleBracketDeg_t angle_bracket_deg)
     cdef BaseTrajDataT _find_apex(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr)
     cdef double _error_at_distance(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr,
                                    double angle_rad, double target_x_ft, double target_y_ft)
     # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
     cdef tuple _integrate(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr,
-                          double range_limit_ft, double range_step_ft, double time_step, int filter_flags)
+                                        double range_limit_ft, double range_step_ft, double time_step, int filter_flags)
