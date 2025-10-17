@@ -44,6 +44,9 @@ from py_ballisticcalc import (
 )
 from py_ballisticcalc.unit import Distance, Velocity, Weight, Angular
 
+from importlib.metadata import metadata
+__version__ = metadata('py-ballisticcalc').get('Version', 'unknown')
+
 BENCH_DIR = Path("./benchmarks")
 BENCH_DIR.mkdir(exist_ok=True)
 
@@ -169,7 +172,7 @@ def _bench_single(case: BenchmarkCase, engine: str, repeats: int, warmup: int, s
     stdev_ms = statistics.pstdev(timings) if len(timings) > 1 else 0.0
     branch, gh = _git_info()
     # Timezone-aware UTC timestamp (display + file-safe variant)
-    now_utc = dt.datetime.now(dt.UTC).replace(microsecond=0)
+    now_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
     iso_ts = now_utc.isoformat().replace('+00:00', 'Z')  # e.g. 2025-09-30T21:37:36Z
     return BenchmarkResult(
         case=case.name,
@@ -213,7 +216,7 @@ def _persist(results: List[BenchmarkResult]) -> None:
         # Use file-system safe timestamp: 20250930T213736Z
         file_ts = results[0].timestamp.replace('-', '').replace(':', '').replace('T', 'T').replace('Z', 'Z')
     else:
-        now_utc = dt.datetime.now(dt.UTC).replace(microsecond=0)
+        now_utc = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
         file_ts = now_utc.strftime('%Y%m%dT%H%M%SZ')
     json_path = BENCH_DIR / f"{file_ts}_bench.json"
     with json_path.open("w", encoding="utf-8") as fp:
@@ -230,15 +233,18 @@ def _persist(results: List[BenchmarkResult]) -> None:
 
 # ---------------------------- CLI ---------------------------------------------
 
-def parse_args(argv: Optional[Sequence[str]] = None):
-    p = argparse.ArgumentParser(description="Benchmark py_ballisticcalc engines (fixed scenarios)")
-    p.add_argument("--engine", dest="engine", help="Single engine entry point (e.g. rk4_engine)")
-    p.add_argument("--all", action="store_true", help="Benchmark all discovered engines")
-    p.add_argument("--repeats", type=int, default=100, help="Timed repetitions (default 100)")
-    p.add_argument("--warmup", type=int, default=10, help="Warmup iterations (default 10)")
-    p.add_argument("--format", choices=["markdown", "json", "csv"], default="csv", help="Stdout format (default csv)")
+def get_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser("py_ballisticcalc benchmark", description="Benchmark py_ballisticcalc engines (fixed scenarios)")
+    engine_group = p.add_mutually_exclusive_group(required=True)
+    engine_group.add_argument("-e", "--engine", nargs="+", dest="engine",
+                              help="Single engine entry point (e.g. rk4_engine)")
+    engine_group.add_argument("-A", "--all", action="store_true", help="Benchmark all discovered engines")
+    p.add_argument("-r", "--repeats", type=int, default=100, help="Timed repetitions (default 100)")
+    p.add_argument("-w", "--warmup", type=int, default=10, help="Warmup iterations (default 10)")
+    p.add_argument("-f", "--format", choices=["markdown", "json", "csv"], default="csv", help="Stdout format (default csv)")
     p.add_argument("--no-gc-suppress", action="store_true", help="Do not disable GC during timing")
-    return p.parse_args(argv)
+    p.add_argument("-V", "--version", action='version', version=__version__)
+    return p
 
 
 def iter_engine_names() -> List[str]:
@@ -246,15 +252,15 @@ def iter_engine_names() -> List[str]:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    args = parse_args(argv)
-    if not args.all and not args.engine:
-        print("Specify --all or --engine <name>", file=sys.stderr)
-        return 2
+    parser = get_parser()
+    ns: argparse.Namespace = parser.parse_args(argv)
+
     engines: List[str]
-    if args.all:
+    if ns.all:
         engines = iter_engine_names()
     else:
-        engines = [args.engine.strip().strip('"').strip("'")]
+        engines = ns.engine
+
     results: List[BenchmarkResult] = []
     for engine in engines:
         for case in CASES:
@@ -263,20 +269,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     _bench_single(
                         case,
                         engine=engine,
-                        repeats=args.repeats,
-                        warmup=args.warmup,
-                        suppress_gc=not args.no_gc_suppress,
+                        repeats=ns.repeats,
+                        warmup=ns.warmup,
+                        suppress_gc=not ns.no_gc_suppress,
                     )
                 )
             except Exception as exc:  # pragma: no cover
                 print(f"[WARN] Failed benchmark {case.name} on {engine}: {exc}")
     if not results:
-        print("No results produced", file=sys.stderr)
-        return 1
+        parser.error("No results produced", file=sys.stderr)
+
     _persist(results)
-    if args.format == "markdown":
+    if ns.format == "markdown":
         print(_format_markdown(results))
-    elif args.format == "json":
+    elif ns.format == "json":
         print(json.dumps([asdict(r) for r in results], indent=2, sort_keys=True))
     else:
         print(_format_csv(results))
