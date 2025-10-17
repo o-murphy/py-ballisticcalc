@@ -263,16 +263,6 @@ cdef class CythonizedBaseIntegrationEngine:
             WindSock_t_freeResources(&self._wind_sock) 
         ShotProps_t_freeResources(&self._shot_s)
 
-        # After free_trajectory(&self._shot_s), it's good practice to ensure
-        # the internal pointers within _shot_s are indeed NULLIFIED for future checks,
-        # even if free_trajectory is supposed to do it. This prevents issues if
-        # free_trajectory itself doesn't nullify, or if it's called multiple times.
-        # (Though your free_curve/free_mach_list don't nullify, so this is important here)
-        self._shot_s.mach_list.array = NULL
-        self._shot_s.mach_list.length = 0
-        self._shot_s.curve.points = NULL
-        self._shot_s.curve.length = 0
-
     cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info):
         """
         Converts Shot properties into floats dimensioned in internal units.
