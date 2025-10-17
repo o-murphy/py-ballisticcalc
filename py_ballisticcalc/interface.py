@@ -15,11 +15,9 @@ from importlib.metadata import entry_points, EntryPoint
 from typing import Generic, Any
 import warnings
 
-from deprecated import deprecated
-from typing_extensions import Union, List, Optional, TypeVar, Type, Generator
+from typing_extensions import Union, Optional, TypeVar, Type, Generator
 
 from py_ballisticcalc import RK4IntegrationEngine
-from py_ballisticcalc.drag_model import DragDataPoint
 from py_ballisticcalc.generics.engine import EngineProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot
@@ -188,16 +186,6 @@ class Calculator(Generic[ConfigT]):
         raise AttributeError(
             f"'{self.__class__.__name__}' object or its underlying engine "
             f"'{engine_instance.__class__.__name__}' has no attribute '{item}'"
-        )
-
-    @property
-    @deprecated(
-        reason="`Calculator.cdm` is no longer supported by EngineProtocol. Please use `DragModel.drag_table` instead."
-    )
-    def cdm(self) -> List[DragDataPoint]:
-        """Return custom drag function based on input data."""
-        raise NotImplementedError(
-            "`Calculator.cdm` is no longer supported by EngineProtocol. Please use `DragModel.drag_table` instead."
         )
 
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
