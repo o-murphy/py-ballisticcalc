@@ -4,7 +4,7 @@
 #include "bclib.h"
 #include "bind.h"
 
-Config_t Config_t_fromPyObject(PyObject *config)
+Config_t Config_t_fromPyObject(const PyObject *config)
 {
     Config_t c;
 
@@ -46,7 +46,7 @@ Config_t Config_t_fromPyObject(PyObject *config)
  * Returns MachList_t with allocated array or with array==NULL on error.
  * Caller responsible for freeing ml.array.
  */
-MachList_t MachList_t_fromPylist(PyObject *pylist)
+MachList_t MachList_t_fromPylist(const PyObject *pylist)
 {
     MachList_t ml = {NULL, 0};
     Py_ssize_t len = PyList_Size(pylist);
@@ -97,7 +97,7 @@ MachList_t MachList_t_fromPylist(PyObject *pylist)
     return ml;
 }
 
-Curve_t Curve_t_fromPylist(PyObject *data_points)
+Curve_t Curve_t_fromPylist(const PyObject *data_points)
 {
     Curve_t curve = {NULL, 0};
     Py_ssize_t n = PyList_Size(data_points);
@@ -248,7 +248,7 @@ Curve_t Curve_t_fromPylist(PyObject *data_points)
     return curve;
 }
 
-Wind_t Wind_t_fromPyObject(PyObject *w)
+Wind_t Wind_t_fromPyObject(const PyObject *w)
 {
     // Initialize the C structure to zero values in case of error.
     Wind_t wind_c = {0.0, 0.0, 0.0, 0.0};

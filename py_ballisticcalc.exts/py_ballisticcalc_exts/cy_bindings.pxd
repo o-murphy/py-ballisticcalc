@@ -8,7 +8,7 @@ cdef extern from "include/bind.h" nogil:
     MachList_t MachList_t_fromPylist(const PyObject *pylist) noexcept nogil
     Curve_t Curve_t_fromPylist(const PyObject *data_points) noexcept nogil
     Config_t Config_t_fromPyObject(const PyObject * config) noexcept nogil
-    Wind_t Wind_t_fromPyObject(PyObject *w) noexcept nogil
+    Wind_t Wind_t_fromPyObject(const PyObject *w) noexcept nogil
 
 
 cdef extern from "include/bclib.h" nogil:
@@ -95,7 +95,7 @@ cdef extern from "include/bclib.h" nogil:
         Atmosphere_t atmo
         Coriolis_t coriolis
 
-    void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr) noexcept nogil
+    void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
     int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
@@ -131,3 +131,5 @@ cdef Config_t Config_t_from_pyobject(object config)
 cdef MachList_t MachList_t_from_pylist(list[object] data)
 cdef Curve_t Curve_t_from_pylist(list[object] data_points)
 cdef Wind_t Wind_t_from_py(object w)
+
+cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj)

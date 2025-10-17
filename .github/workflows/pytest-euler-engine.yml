@@ -13,6 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+
   # Job for full matrix, runs ONLY on pull_request events
   test_full_matrix:
     if: github.event_name == 'pull_request'
@@ -20,8 +21,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-13, macos-14, macos-15 ]
-        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13"]
+        os: [ ubuntu-latest, windows-latest, macos-14, macos-15 ]
+        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
         engine: [ "euler_engine" ]
 
     uses: ./.github/workflows/pytest-reusable.yml
@@ -38,7 +39,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [ "3.9" ]
+        python-version: [ "3.10" ]
         engine: [ "euler_engine" ]
 
     uses: ./.github/workflows/pytest-reusable.yml

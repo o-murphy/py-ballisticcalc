@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 from py_ballisticcalc.unit import Distance, Angular, Velocity, Weight, Energy, Unit
 
 

@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 """Test helper accessors for Cython-specific tests.
 
 This module is NOT part of the public API. It provides a minimal surface for

@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 """
 CythonizedBaseIntegrationEngine
 
@@ -30,7 +31,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Wind_t,
     Atmosphere_t,
     ShotProps_t,
-    ShotProps_t_free_resources,
+    ShotProps_t_freeResources,
     ShotProps_t_updateStabilityCoefficient,
     Wind_t_from_py,
     Coriolis_t,
@@ -38,6 +39,7 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     Config_t_from_pyobject,
     MachList_t_from_pylist,
     Curve_t_from_pylist,
+    Coriolis_t_from_pyobject,
 )
 
 from py_ballisticcalc.shot import ShotProps
@@ -56,25 +58,19 @@ cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERR
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
 
-cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
+cdef WindSock_t WindSock_t_create(object winds_py_list):
     """
     Creates and initializes a WindSock_t structure.
     Processes the Python list, then delegates initialization to C.
     """
     cdef size_t length = <size_t> len(winds_py_list)
-
-    # 1. Memory allocation for the struct (remains in Cython)
-    cdef WindSock_t * ws = <WindSock_t *> calloc(1, sizeof(WindSock_t))
-    if <void *> ws is NULL:
-        raise MemoryError("Failed to allocate WindSock_t structure.")
-
-    # 2. Memory allocation for the Wind_t array (remains in Cython)
+    cdef WindSock_t ws
+    # Memory allocation for the Wind_t array (remains in Cython)
     cdef Wind_t * winds_array = <Wind_t *> calloc(<size_t> length, sizeof(Wind_t))
     if <void *> winds_array is NULL:
-        free(<void *> ws)
         raise MemoryError("Failed to allocate internal Wind_t array.")
 
-    # 3. Copying data from Python objects to C structures (must remain in Cython)
+    # Copying data from Python objects to C structures (must remain in Cython)
     cdef int i
     try:
         for i in range(<int>length):
@@ -83,11 +79,10 @@ cdef WindSock_t * WindSock_t_create(object winds_py_list) except NULL:
     except Exception:
         # Error handling
         free(<void *> winds_array)
-        free(<void *> ws)
         raise RuntimeError("Invalid wind entry in winds list")
 
     # 4. Structure initialization (calling the C function)
-    WindSock_t_init(ws, length, winds_array)
+    WindSock_t_init(&ws, length, winds_array)
 
     return ws
 
@@ -117,8 +112,10 @@ cdef class CythonizedBaseIntegrationEngine:
         Finds the maximum range along shot_info.look_angle, and the launch angle to reach it.
         """
         cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        cdef MaxRangeResult_t res
         try:
-            return self._find_max_range(shot_props_ptr, angle_bracket_deg)
+            res = self._find_max_range(shot_props_ptr, AngleBracketDeg_t(angle_bracket_deg[0], angle_bracket_deg[1]))
+            return _new_feet(res.max_range_ft), _new_rad(res.angle_at_max_rad)
         finally:
             self._free_trajectory()
             
@@ -128,8 +125,10 @@ cdef class CythonizedBaseIntegrationEngine:
         using unimodal root-finding that is guaranteed to succeed if a solution exists.
         """
         cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        cdef double zero_angle
         try:
-            return self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
+            zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
+            return _new_rad(zero_angle)
         finally:
             self._free_trajectory()
 
@@ -159,12 +158,15 @@ cdef class CythonizedBaseIntegrationEngine:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
         cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        cdef double zero_angle
         try:
-            return self._zero_angle(shot_props_ptr, distance._feet)
+            zero_angle = self._zero_angle(shot_props_ptr, distance._feet)
+            return _new_rad(zero_angle)
         except ZeroFindingError:
             # Fallback to guaranteed method
             shot_props_ptr = self._init_trajectory(shot_info)
-            return self._find_zero_angle(shot_props_ptr, distance._feet, False)
+            zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, False)
+            return _new_rad(zero_angle)
         finally:
             self._free_trajectory()
 
@@ -257,20 +259,9 @@ cdef class CythonizedBaseIntegrationEngine:
             return 9e9
 
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self):
-        if self._wind_sock != NULL:
-            WindSock_t_free(self._wind_sock) 
-            self._wind_sock = NULL
-        ShotProps_t_free_resources(&self._shot_s)
-
-        # After free_trajectory(&self._shot_s), it's good practice to ensure
-        # the internal pointers within _shot_s are indeed NULLIFIED for future checks,
-        # even if free_trajectory is supposed to do it. This prevents issues if
-        # free_trajectory itself doesn't nullify, or if it's called multiple times.
-        # (Though your free_curve/free_mach_list don't nullify, so this is important here)
-        self._shot_s.mach_list.array = NULL
-        self._shot_s.mach_list.length = 0
-        self._shot_s.curve.points = NULL
-        self._shot_s.curve.length = 0
+        if self._wind_sock.winds is not NULL:
+            WindSock_t_freeResources(&self._wind_sock) 
+        ShotProps_t_freeResources(&self._shot_s)
 
     cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info):
         """
@@ -284,8 +275,6 @@ cdef class CythonizedBaseIntegrationEngine:
         self._free_trajectory() 
         # ---------------------------------------------------
 
-        cdef object coriolis_obj
-
         # hack to reload config if it was changed explicit on existed instance
         self._config_s = Config_t_from_pyobject(self._config)
         self.gravity_vector = V3dT(.0, self._config_s.cGravityConstant, .0)
@@ -297,15 +286,17 @@ cdef class CythonizedBaseIntegrationEngine:
         # Cython may forget to add DECREF, so memory leaks are possible
         cdef object velocity_obj = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)
         cdef double muzzle_velocity_fps = velocity_obj._fps
-        
+                
+        # Create coriolis object from shot parameters    
+        cdef object coriolis_obj = Coriolis.create(
+            shot_info.latitude, 
+            shot_info.azimuth, 
+            muzzle_velocity_fps
+        )
+
+        cdef Coriolis_t coriolis = Coriolis_t_from_pyobject(coriolis_obj)
+
         try:
-            # Create coriolis object from shot parameters    
-            coriolis_obj = Coriolis.create(
-                shot_info.latitude, 
-                shot_info.azimuth, 
-                muzzle_velocity_fps
-            )
-            
             self._shot_s = ShotProps_t(
                 bc=shot_info.ammo.dm.BC,
                 curve=Curve_t_from_pylist(self._table_data),
@@ -333,24 +324,13 @@ cdef class CythonizedBaseIntegrationEngine:
                     density_ratio=shot_info.atmo.density_ratio,
                     cLowestTempC=shot_info.atmo.cLowestTempC,
                 ),
-                coriolis=Coriolis_t(
-                    sin_lat=coriolis_obj.sin_lat if coriolis_obj else 0.0,
-                    cos_lat=coriolis_obj.cos_lat if coriolis_obj else 0.0,
-                    sin_az=coriolis_obj.sin_az if coriolis_obj and coriolis_obj.sin_az is not None else 0.0,
-                    cos_az=coriolis_obj.cos_az if coriolis_obj and coriolis_obj.cos_az is not None else 0.0,
-                    range_east=coriolis_obj.range_east if coriolis_obj and coriolis_obj.range_east is not None else 0.0,
-                    range_north=coriolis_obj.range_north if coriolis_obj and coriolis_obj.range_north is not None else 0.0,
-                    cross_east=coriolis_obj.cross_east if coriolis_obj and coriolis_obj.cross_east is not None else 0.0,
-                    cross_north=coriolis_obj.cross_north if coriolis_obj and coriolis_obj.cross_north is not None else 0.0,
-                    flat_fire_only=coriolis_obj.flat_fire_only if coriolis_obj else 0,
-                    muzzle_velocity_fps=coriolis_obj.muzzle_velocity_fps if coriolis_obj else 0.0,
-                )
+                coriolis=coriolis
             )
             if ShotProps_t_updateStabilityCoefficient(&self._shot_s) < 0:
                 raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
 
             self._wind_sock = WindSock_t_create(shot_info.winds)
-            if self._wind_sock is NULL:
+            if self._wind_sock.winds is NULL:
                 raise MemoryError("Can't allocate memory for wind_sock")
 
         except Exception:
@@ -361,7 +341,7 @@ cdef class CythonizedBaseIntegrationEngine:
         return &self._shot_s
 
     
-    cdef tuple _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance):
+    cdef ZeroInitialData_t _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance):
         """
         Initializes the zero calculation for the given shot and distance.
         Handles edge cases.
@@ -381,11 +361,11 @@ cdef class CythonizedBaseIntegrationEngine:
         
         # Edge case: Very close shot
         if fabs(slant_range_ft) < _ALLOWED_ZERO_ERROR_FEET:
-            return (1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+            return ZeroInitialData_t(1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
         
         # Edge case: Very close shot; ignore gravity and drag
         if fabs(slant_range_ft) < 2.0 * max(fabs(start_height_ft), self._config_s.cStepMultiplier):
-            return (1, atan2(target_y_ft + start_height_ft, target_x_ft), slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+            return ZeroInitialData_t(1, atan2(target_y_ft + start_height_ft, target_x_ft), slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
         
         # Edge case: Virtually vertical shot; just check if it can reach the target
         if fabs(look_angle_rad - 1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
@@ -394,40 +374,38 @@ cdef class CythonizedBaseIntegrationEngine:
             apex_slant_ft = apex.c_position().x * cos(look_angle_rad) + apex.c_position().y * sin(look_angle_rad)
             if apex_slant_ft < slant_range_ft:
                 raise OutOfRangeError(_new_feet(distance), _new_feet(apex_slant_ft), _new_rad(look_angle_rad))
-            return (1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
-        
-        return (0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+            return ZeroInitialData_t(1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
 
-    cdef object _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted):
+        # return (0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+        return ZeroInitialData_t(0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)        
+
+    cdef double _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted):
         """
         Find zero angle using Ridder's method for guaranteed convergence.
         """
         # Get initialization data
-        cdef tuple init_data = self._init_zero_calculation(shot_props_ptr, distance)
+        cdef ZeroInitialData_t init_data = self._init_zero_calculation(shot_props_ptr, distance)
         cdef:
-            int status = init_data[0]
-            double look_angle_rad = init_data[1]
-            double slant_range_ft = init_data[2]
-            double target_x_ft = init_data[3]
-            double target_y_ft = init_data[4]
-            double start_height_ft = init_data[5]
+            int status = init_data.status
+            double look_angle_rad = init_data.look_angle_rad
+            double slant_range_ft = init_data.slant_range_ft
+            double target_x_ft = init_data.target_x_ft
+            double target_y_ft = init_data.target_y_ft
+            double start_height_ft = init_data.start_height_ft
         
         if status == 1:  # DONE
-            return _new_rad(look_angle_rad)
+            return look_angle_rad
             
         # 1. Find the maximum possible range to establish a search bracket.
-        cdef tuple max_range_result = self._find_max_range(shot_props_ptr, (0, 90))
-        cdef object max_range = max_range_result[0]
-        cdef object angle_at_max = max_range_result[1]
-        cdef:
-            double max_range_ft = max_range._feet
-            double angle_at_max_rad = angle_at_max._rad
-            
+        cdef MaxRangeResult_t max_range_result = self._find_max_range(shot_props_ptr, AngleBracketDeg_t(0, 90))
+        cdef double max_range_ft = max_range_result.max_range_ft
+        cdef double angle_at_max_rad = max_range_result.angle_at_max_rad
+                
         # 2. Handle edge cases based on max range.
         if slant_range_ft > max_range_ft:
-            raise OutOfRangeError(_new_feet(distance), max_range, _new_rad(look_angle_rad))
+            raise OutOfRangeError(_new_feet(distance), _new_feet(max_range_ft), _new_rad(look_angle_rad))
         if fabs(slant_range_ft - max_range_ft) < _ALLOWED_ZERO_ERROR_FEET:
-            return angle_at_max
+            return angle_at_max_rad
 
         # Backup and adjust constraints (emulate @with_no_minimum_velocity)
         cdef double restore_cMinimumVelocity__zero = 0.0
@@ -489,7 +467,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
                 next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s)
                 if fabs(next_angle - mid_angle) < self._config_s.cZeroFindingAccuracy:
-                    return _new_rad(next_angle)
+                    return next_angle
 
                 f_next = self._error_at_distance(shot_props_ptr, next_angle, target_x_ft, target_y_ft)
                 # Update the bracket
@@ -504,7 +482,7 @@ cdef class CythonizedBaseIntegrationEngine:
                     break  # If we are here, something is wrong, the root is not bracketed anymore
 
                 if fabs(high_angle - low_angle) < self._config_s.cZeroFindingAccuracy:
-                    return _new_rad((low_angle + high_angle) / 2)
+                    return (low_angle + high_angle) / 2
 
             raise ZeroFindingError(target_y_ft, self._config_s.cMaxIterations, _new_rad((low_angle + high_angle) / 2),
                                    reason="Ridder's method failed to converge.")
@@ -512,7 +490,7 @@ cdef class CythonizedBaseIntegrationEngine:
             if has_restore_cMinimumVelocity__zero:
                 self._config_s.cMinimumVelocity = restore_cMinimumVelocity__zero
 
-    cdef tuple _find_max_range(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, tuple angle_bracket_deg = (0, 90)):
+    cdef MaxRangeResult_t _find_max_range(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, AngleBracketDeg_t angle_bracket_deg):
         """
         Internal function to find the maximum slant range via golden-section search.
 
@@ -526,8 +504,8 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         cdef:
             double look_angle_rad = shot_props_ptr.look_angle
-            double low_angle_deg = angle_bracket_deg[0]
-            double high_angle_deg = angle_bracket_deg[1]
+            double low_angle_deg = angle_bracket_deg.low_angle_deg
+            double high_angle_deg = angle_bracket_deg.high_angle_deg
             double max_range_ft
             double angle_at_max_rad
             BaseTrajDataT _apex_obj
@@ -537,7 +515,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if fabs(look_angle_rad - <double>1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
             _apex_obj = self._find_apex(shot_props_ptr)
             _sdist = _apex_obj.c_position().x * cos(look_angle_rad) + _apex_obj.c_position().y * sin(look_angle_rad)
-            return (_new_feet(_sdist), _new_rad(look_angle_rad))
+            return MaxRangeResult_t(_sdist, look_angle_rad)
         
         # Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
         cdef:
@@ -645,7 +623,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if has_restore_cMinimumVelocity:
             self._config_s.cMinimumVelocity = restore_cMinimumVelocity
         
-        return (_new_feet(max_range_ft), _new_rad(angle_at_max_rad))
+        return MaxRangeResult_t(max_range_ft, angle_at_max_rad)
 
     cdef BaseTrajDataT _find_apex(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr):
         """
@@ -678,7 +656,7 @@ cdef class CythonizedBaseIntegrationEngine:
         
         return apex
 
-    cdef object _zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance):
+    cdef double _zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance):
         """
         Iterative algorithm to find barrel elevation needed for a particular zero
 
@@ -691,17 +669,17 @@ cdef class CythonizedBaseIntegrationEngine:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
         # Get initialization data using the new method
-        cdef tuple init_data = self._init_zero_calculation(shot_props_ptr, distance)
+        cdef ZeroInitialData_t init_data = self._init_zero_calculation(shot_props_ptr, distance)
         cdef:
-            int status = init_data[0]
-            double look_angle_rad = init_data[1]
-            double slant_range_ft = init_data[2]
-            double target_x_ft = init_data[3]
-            double target_y_ft = init_data[4]
-            double start_height_ft = init_data[5]
+            int status = init_data.status
+            double look_angle_rad = init_data.look_angle_rad
+            double slant_range_ft = init_data.slant_range_ft
+            double target_x_ft = init_data.target_x_ft
+            double target_y_ft = init_data.target_y_ft
+            double start_height_ft = init_data.start_height_ft
         
         if status == 1:  # DONE
-            return _new_rad(look_angle_rad)
+            return look_angle_rad
 
         cdef:
             BaseTrajDataT hit
@@ -819,10 +797,10 @@ cdef class CythonizedBaseIntegrationEngine:
             # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
             raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(shot_props_ptr.barrel_elevation))
         
-        return _new_rad(shot_props_ptr.barrel_elevation)
+        return shot_props_ptr.barrel_elevation
 
 
     cdef tuple _integrate(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr,
-                          double range_limit_ft, double range_step_ft,
-                          double time_step, int filter_flags):
+                                        double range_limit_ft, double range_step_ft,
+                                        double time_step, int filter_flags):
         raise NotImplementedError

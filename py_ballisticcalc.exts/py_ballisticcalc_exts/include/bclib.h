@@ -159,7 +159,7 @@ extern "C"
         double *density_ratio_ptr,
         double *mach_ptr);
 
-    void ShotProps_t_free_resources(ShotProps_t *shot_props_ptr);
+    void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr);
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
     int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
@@ -174,7 +174,7 @@ extern "C"
     void BaseTrajData_t_destroy(BaseTrajData_t *ptr);
 
     void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
-    void WindSock_t_free(WindSock_t *ws);
+    void WindSock_t_freeResources(WindSock_t *ws);
     V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
     int WindSock_t_updateCache(WindSock_t *ws);
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
