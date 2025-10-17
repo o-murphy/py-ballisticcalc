@@ -106,7 +106,8 @@ dev = [
     "numpy>=2.2.6",
     "numpy>=2.3.4; python_version>='3.14'",
     "scipy>=1.15.3",
-    # "jupyter>=1.1.1; python_version!='3.14t' and python_version!='3.15t'",
+    # "jupyter>=1.1.1"
+    "ipykernel", "nbformat", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
 
     # code standards
     "mypy>=1.18.2",
@@ -148,7 +149,8 @@ dev = [
     "numpy>=2.2.6",
     "numpy>=2.3.4; python_version>='3.14'",
     "scipy>=1.15.3",
-    # "jupyter>=1.1.1; python_version!='3.14t' and python_version!='3.15t'",
+    # "jupyter>=1.1.1"
+    "ipykernel", "nbformat", # minimal installation for .ipynb for IDE (works in VS Code, PyCharm)
 
     # code standards
     "mypy>=1.18.2",
