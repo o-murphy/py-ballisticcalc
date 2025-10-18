@@ -87,6 +87,7 @@ line-length = 120
 exts = ["py_ballisticcalc.exts==2.2.2"]
 charts = [
     "matplotlib>=3.10.7",
+    "pillow>=11.3.0; python_version>='3.13' and sys_platform == 'win32'", # minimal wheel required for matplotlib with python 3.13+ in windows
     "numpy>=2.2.6",
     "numpy>=2.3.4; python_version>='3.14'",
     "scipy>=1.15.3",
@@ -101,7 +102,8 @@ dev = [
     "build>=1.3.0",
 
     # math and data
-    "matplotlib>=3.10.7",
+    "matplotlib>=3.10.7", 
+    "pillow>=11.3.0; python_version>='3.13' and sys_platform == 'win32'", # minimal wheel required for matplotlib with python 3.13+ in windows
     "pandas>=2.3.3",
     "numpy>=2.2.6",
     "numpy>=2.3.4; python_version>='3.14'",
@@ -145,6 +147,7 @@ dev = [
 
     # math and data
     "matplotlib>=3.10.7",
+    "pillow>=11.3.0; python_version>='3.13' and sys_platform == 'win32'", # minimal wheel required for matplotlib with python 3.13+ in windows
     "pandas>=2.3.3",
     "numpy>=2.2.6",
     "numpy>=2.3.4; python_version>='3.14'",
