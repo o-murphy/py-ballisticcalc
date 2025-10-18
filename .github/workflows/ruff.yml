@@ -4,6 +4,13 @@ on:
   pull_request:
     branches:
       - '*'
+    paths:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'py_ballisticcalc/**'
+      - 'tests/**'
+      - 'py_ballisticcalc.exts/**'
+      - '.github/**'
   workflow_dispatch:
 
 concurrency:

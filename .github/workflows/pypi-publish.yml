@@ -1,9 +1,20 @@
-name: Upload Python Package to PyPI
+name: Build and Upload Python Package to PyPI
 
 on:
   release:
     types: [ published, edited ]
   workflow_dispatch:
+    inputs:
+      testpypi:
+        description: "Publish to test pypi"
+        required: false
+        type: boolean
+        default: false
+
+run-name: >
+  Build & Publish → ${{ github.event_name == 'release' && 'PyPI' ||
+      github.event_name == 'workflow_dispatch' && inputs.testpypi && 'TestPyPI' ||
+      'Build Only' }}
 
 permissions:
   contents: read
@@ -11,6 +22,7 @@ permissions:
 jobs:
 
   build:
+    name: Build wheels on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -61,42 +73,54 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: ${{ github.event_name == 'release' && 'pypi' || inputs.testpypi && 'testpypi' || 'build' }}
     permissions:
       id-token: write
 
     steps:
-      - name: Download artifacts (Ubuntu)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-ubuntu-latest
-          path: ./dist-ubuntu
+      # - name: Download artifacts (Ubuntu)
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: dist-ubuntu-latest
+      #     path: ./dist-ubuntu
 
-      - name: Download artifacts (Windows)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-windows-latest
-          path: ./dist-windows
+      # - name: Download artifacts (Windows)
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: dist-windows-latest
+      #     path: ./dist-windows
 
-      - name: Download artifacts (macOS 14)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-macos-14
-          path: ./dist-macos-14
+      # - name: Download artifacts (macOS 14)
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: dist-macos-14
+      #     path: ./dist-macos-14
 
-      - name: Download artifacts (macOS 15)
+      # - name: Download artifacts (macOS 15)
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: dist-macos-15
+      #     path: ./dist-macos-15
+
+      - name: Download all artifacts dynamically
         uses: actions/download-artifact@v4
         with:
-          name: dist-macos-15
-          path: ./dist-macos-15
+          pattern: dist-*
+          path: ./all-dist
+
+      # - name: Combine artifacts
+      #   run: |
+      #     mkdir -p dist
+      #     cp ./dist-ubuntu/* dist/ || true
+      #     cp ./dist-windows/* dist/ || true
+      #     cp ./dist-macos-14/* dist/ || true
+      #     cp ./dist-macos-15/* dist/ || true
+      #   shell: bash
 
       - name: Combine artifacts
         run: |
           mkdir -p dist
-          cp ./dist-ubuntu/* dist/ || true
-          cp ./dist-windows/* dist/ || true
-          cp ./dist-macos-14/* dist/ || true
-          cp ./dist-macos-15/* dist/ || true
+          find ./all-dist -type f -exec cp {} dist/ \;
         shell: bash
       
       - name: List ./dist
@@ -108,10 +132,17 @@ jobs:
         with:
           name: dist
           path: ./dist
-          retention-days: 30
+          retention-days: 14
 
       - name: Publish package distributions to PyPI
-        if: github.event_name == 'release'
+        if: ${{ github.event_name == 'release' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi == true }}
+        with:
+          skip-existing: true
+          repository-url: https://test.pypi.org/legacy/
