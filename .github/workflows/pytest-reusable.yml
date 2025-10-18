@@ -166,24 +166,3 @@ jobs:
           name: valgrind-stress-test-log
           path: valgrind.log
           retention-days: 14
-
-      # - name: Run stress tests
-      #   # This step now runs only if the 'stress_test' input is explicitly set to true 
-      #   # AND the engine is a cythonized one.
-      #   if: ${{ inputs.stress_test == true && startsWith(inputs.engine_name, 'cythonized_') }}
-      #   run: |
-      #     echo "Stress test flag is enabled. Running stress tests..."
-      #     # 1. Run tests and save the exit code, suppressing immediate step failure
-      #     pytest ./py_ballisticcalc.exts/tests -m stress || EXIT_CODE=$?
-          
-      #     # 2. Check the saved EXIT_CODE (not $?)
-      #     if [ $EXIT_CODE -ne 0 ]; then
-      #       echo "Stress test failed on the first attempt (Code: $EXIT_CODE). Running again with valgrind."
-      #       sudo apt update
-      #       sudo apt install -y valgrind
-      #       # 3. If Valgrind runs and fails, the entire step will fail, which is correct.
-      #       valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes -- pytest ./py_ballisticcalc.exts/tests -m stress
-      #     else
-      #       echo "Stress test succeeded on the first attempt."
-      #     fi
-      #   shell: bash

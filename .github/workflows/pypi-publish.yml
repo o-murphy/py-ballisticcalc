@@ -78,44 +78,11 @@ jobs:
       id-token: write
 
     steps:
-      # - name: Download artifacts (Ubuntu)
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: dist-ubuntu-latest
-      #     path: ./dist-ubuntu
-
-      # - name: Download artifacts (Windows)
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: dist-windows-latest
-      #     path: ./dist-windows
-
-      # - name: Download artifacts (macOS 14)
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: dist-macos-14
-      #     path: ./dist-macos-14
-
-      # - name: Download artifacts (macOS 15)
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: dist-macos-15
-      #     path: ./dist-macos-15
-
       - name: Download all artifacts dynamically
         uses: actions/download-artifact@v4
         with:
           pattern: dist-*
           path: ./all-dist
-
-      # - name: Combine artifacts
-      #   run: |
-      #     mkdir -p dist
-      #     cp ./dist-ubuntu/* dist/ || true
-      #     cp ./dist-windows/* dist/ || true
-      #     cp ./dist-macos-14/* dist/ || true
-      #     cp ./dist-macos-15/* dist/ || true
-      #   shell: bash
 
       - name: Combine artifacts
         run: |
