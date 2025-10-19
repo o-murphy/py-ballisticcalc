@@ -78,9 +78,15 @@ jobs:
           echo "If no wheels are available, the build is expected to fail (due to missing MSVC/Fortran compiler)."
         shell: bash
 
-      - name: Install the project in editable mode
+      - name: Install the project in editable mode (Pure)
         # Install your project and its development dependencies
-        run: uv sync -p ${{ inputs.python_version }} --dev
+        run: uv sync -p ${{ inputs.python_version }} --no-dev --group test
+        shell: bash
+
+      - name: Install the project in editable mode (Scipy)
+        # Install your project and its development dependencies
+        if: startsWith(inputs.engine_name, 'scipy_')
+        run: uv sync -p ${{ inputs.python_version }} --no-dev --group test --extra scipy
         shell: bash
 
       - name: Build Cython extensions (if applicable)
@@ -90,7 +96,7 @@ jobs:
         if: startsWith(inputs.engine_name, 'cythonized_')
         run: |
           echo "Detected Cythonized engine. Building extensions..."
-          uv sync -p ${{ inputs.python_version }} --dev --extra exts
+          uv sync -p ${{ inputs.python_version }} --no-dev --group test --extra exts
         shell: bash # Ensure this command runs in a bash shell environment
 
       - name: Run tests with ${{ inputs.engine_name }}
