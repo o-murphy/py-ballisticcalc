@@ -2075,7 +2075,7 @@ wheels = [
 
 [[package]]
 name = "py-ballisticcalc"
-version = "2.2.2"
+version = "2.2.3"
 source = { editable = "." }
 dependencies = [
     { name = "deprecated" },
@@ -2249,7 +2249,7 @@ test = [
 
 [[package]]
 name = "py-ballisticcalc-exts"
-version = "2.2.2"
+version = "2.2.3"
 source = { directory = "py_ballisticcalc.exts" }
 
 [package.metadata]
