@@ -90,7 +90,7 @@ def update_uv_lock(file_path: Path) -> bool:
     try:
         os.chdir(_root)
         subprocess.run(
-            ['uv', 'sync'],
+            ['uv', 'sync', '--no-dev'],
             capture_output=True,
             text=True,
             check=True
