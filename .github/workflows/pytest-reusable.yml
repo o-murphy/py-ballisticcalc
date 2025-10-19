@@ -23,7 +23,7 @@ on:
 jobs:
   run_single_test_combination: # This is the job that will execute for each specific test combination
     # This 'name' will appear clearly in the GitHub Actions UI for each individual test run.
-    # For example: "Python 3.10 on macos-14 with rk4_engine"
+    # For example: "Python 3.10 on macos-15 with rk4_engine"
     name: Python ${{ inputs.python_version }} on ${{ inputs.os }} with ${{ inputs.engine_name }}
     runs-on: ${{ inputs.os }} # The runner's OS is provided by the 'os' input
 

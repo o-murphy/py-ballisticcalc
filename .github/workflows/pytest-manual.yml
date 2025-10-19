@@ -11,9 +11,12 @@ on:
         default: ubuntu-latest
         options:
           - ubuntu-latest
-          - macos-14
-          - macos-15
+          - ubuntu-24.04-arm
           - windows-latest
+          - windows-11-arm
+          - macos-15
+          - macos-15-intel
+          - macos-26
 
       python_version:
         description: "Python version to use"

@@ -19,7 +19,7 @@ usage() {
     echo "Required arguments:"
     echo "  --engine  Engine name (e.g., rk4_engine)."
     echo "  -p        Python version (e.g., 3.12, 3.14t)."
-    echo "  -o        Operating system (e.g., ubuntu-latest, macos-14)."
+    echo "  -o        Operating system (e.g., ubuntu-latest, macos-15)."
     echo ""
     echo "Optional arguments:"
     echo "  --stress  Flag to enable stress tests (will be set to true)."
