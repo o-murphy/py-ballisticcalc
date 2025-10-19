@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 """
 Cythonized Euler Integration Engine
 
@@ -43,7 +44,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
         cdef TerminationReason termination_reason = _integrate_euler(
             shot_props_ptr,
-            self._wind_sock,
+            &self._wind_sock,
             &self._config_s,
             range_limit_ft, 
             range_step_ft, 

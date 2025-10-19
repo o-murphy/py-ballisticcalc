@@ -1,4 +1,5 @@
 name: Manual Test Runner
+run-name: 'Manual Pytest: ${{ inputs.engine_name }} on ${{ inputs.os }} @ Python ${{ inputs.python_version }}'
 
 on:
   workflow_dispatch:
@@ -10,16 +11,19 @@ on:
         default: ubuntu-latest
         options:
           - ubuntu-latest
-          - macos-15
+          - ubuntu-24.04-arm
           - windows-latest
+          - windows-11-arm
+          - macos-15
+          - macos-15-intel
+          - macos-26
 
       python_version:
         description: "Python version to use"
         required: true
         type: choice
-        default: "3.11"
+        default: "3.10"
         options:
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
@@ -31,21 +35,30 @@ on:
           - "3.15t"
 
       engine_name:
-        description: "Engine name (e.g., euler_engine, rk4_engine, cythonized_euler)"
+        description: "Engine name (e.g., euler_engine, rk4_engine, scipy_engine, cythonized_rk4_engine, cythonized_euler_engine)"
         required: true
         type: choice
-        default: euler_engine
+        default: rk4_engine
         options:
           - euler_engine
           - rk4_engine
-          - cythonized_euler
-          - cythonized_rk4
-          - scipy
+          - scipy_engine
+          - cythonized_euler_engine
+          - cythonized_rk4_engine
+
+      stress_test:
+        description: "Enable stress tests (only runs for cythonized engines)"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   run_reusable_workflow:
-    uses: ./.github/workflows/reusable-test.yml
+    name: 'Test ${{ inputs.engine_name }} on ${{ inputs.os }} with Python ${{ inputs.python_version }}'
+  
+    uses: ./.github/workflows/pytest-reusable.yml
     with:
       os: ${{ inputs.os }}
       python_version: ${{ inputs.python_version }}
       engine_name: ${{ inputs.engine_name }}
+      stress_test: ${{ inputs.stress_test }}

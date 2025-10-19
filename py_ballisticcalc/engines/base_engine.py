@@ -40,10 +40,9 @@ import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import Enum, auto
-
+from bisect import bisect_left
 from typing_extensions import List, NamedTuple, Optional, Tuple, TypedDict, TypeVar, Union
 
-from py_ballisticcalc._compat import bisect_left_key
 from py_ballisticcalc.conditions import Wind
 from py_ballisticcalc.constants import cGravityImperial
 from py_ballisticcalc.exceptions import ZeroFindingError, OutOfRangeError, SolverRuntimeError
@@ -278,7 +277,7 @@ class TrajectoryDataFilter:
 
         def add_row(data: BaseTrajData, flag: Union[TrajFlag, int]):
             """Add data, keeping `rows` sorted by time."""
-            idx = bisect_left_key(rows, data.time, key=lambda r: r[0].time)
+            idx = bisect_left(rows, data.time, key=lambda r: r[0].time)
             if idx < len(rows):
                 # If we match existing row's time then just add this flag to the row
                 if abs(rows[idx][0].time - data.time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
@@ -374,7 +373,7 @@ class TrajectoryDataFilter:
                 if compute_flags & TrajFlag.ZERO:
                     add_td.append(TrajectoryData.interpolate("slant_height", 0.0, t0, t1, t2, compute_flags))
                 for td in add_td:  # Add TrajectoryData, keeping `results` sorted by time.
-                    idx = bisect_left_key(self.records, td.time, key=lambda r: r.time)
+                    idx = bisect_left(self.records, td.time, key=lambda r: r.time)
                     if idx < len(self.records):  # If we match existing row's time then just add this flag to the row
                         if abs(self.records[idx].time - td.time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
                             self.records[idx] = td._replace(flag=self.records[idx].flag | td.flag)

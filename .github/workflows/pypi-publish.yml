@@ -1,9 +1,20 @@
-name: Upload Python Package to PyPI
+name: Build and Upload Python Package to PyPI
 
 on:
   release:
     types: [ published, edited ]
   workflow_dispatch:
+    inputs:
+      testpypi:
+        description: "Publish to test pypi"
+        required: false
+        type: boolean
+        default: false
+
+run-name: >
+  Build & Publish → ${{ github.event_name == 'release' && 'PyPI' ||
+      github.event_name == 'workflow_dispatch' && inputs.testpypi && 'TestPyPI' ||
+      'Build Only' }}
 
 permissions:
   contents: read
@@ -11,14 +22,44 @@ permissions:
 jobs:
 
   build:
+    name: Build wheels on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-13, macos-14, macos-15 ]
+        include:
+          - os: ubuntu-latest
+            cibw_archs: "i686,x86_64" # x64 native, i686 через QEMU
+            needs_qemu: true
+            
+          - os: ubuntu-24.04-arm
+            cibw_archs: "aarch64,armv7l" # aarch64
+            needs_qemu: false
+
+          - os: windows-latest
+            cibw_archs: "x86,AMD64"
+            needs_qemu: false
+
+          - os: windows-11-arm
+            cibw_archs: "ARM64"
+            needs_qemu: false
+
+          - os: macos-15
+            cibw_archs: "arm64,universal2"
+            needs_qemu: false
+
+          - os: macos-15-intel
+            cibw_archs: "x86_64,universal2"
+            needs_qemu: false
 
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
+
+      - name: Set up QEMU for Emulated Architectures
+        if: ${{ matrix.needs_qemu }}
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -33,7 +74,7 @@ jobs:
         shell: bash
 
       - name: Install dependencies
-        run: python -m pip install build cibuildwheel twine
+        run: python -m pip install build cibuildwheel
         shell: bash
 
       - name: Build pure python package
@@ -44,7 +85,7 @@ jobs:
         run: |
           cd ./py_ballisticcalc.exts
           python -m build --sdist --outdir ../dist
-          cibuildwheel --output-dir ../dist
+          cibuildwheel --output-dir ../dist --platform auto --archs ${{ matrix.cibw_archs }} .
           cd ..
         shell: bash
 
@@ -57,53 +98,26 @@ jobs:
         with:
           name: dist-${{ matrix.os }}
           path: ./dist
+          retention-days: 14
 
   publish:
     needs: build
     runs-on: ubuntu-latest
-    environment: pypi
+    environment: ${{ github.event_name == 'release' && 'pypi' || inputs.testpypi && 'testpypi' || 'build' }}
     permissions:
       id-token: write
 
     steps:
-      - name: Download artifacts (Ubuntu)
+      - name: Download all artifacts dynamically
         uses: actions/download-artifact@v4
         with:
-          name: dist-ubuntu-latest
-          path: ./dist-ubuntu
-
-      - name: Download artifacts (Windows)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-windows-latest
-          path: ./dist-windows
-
-      - name: Download artifacts (macOS 13)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-macos-13
-          path: ./dist-macos-13
-
-      - name: Download artifacts (macOS 14)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-macos-14
-          path: ./dist-macos-14
-
-      - name: Download artifacts (macOS 15)
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-macos-15
-          path: ./dist-macos-15
+          pattern: dist-*
+          path: ./all-dist
 
       - name: Combine artifacts
         run: |
           mkdir -p dist
-          cp ./dist-ubuntu/* dist/ || true
-          cp ./dist-windows/* dist/ || true
-          cp ./dist-macos-13/* dist/ || true
-          cp ./dist-macos-14/* dist/ || true
-          cp ./dist-macos-15/* dist/ || true
+          find ./all-dist -type f -exec cp {} dist/ \;
         shell: bash
       
       - name: List ./dist
@@ -115,10 +129,17 @@ jobs:
         with:
           name: dist
           path: ./dist
-          retention-days: 30
+          retention-days: 14
 
       - name: Publish package distributions to PyPI
-        if: github.event_name == 'release'
+        if: ${{ github.event_name == 'release' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.testpypi == true }}
+        with:
+          skip-existing: true
+          repository-url: https://test.pypi.org/legacy/

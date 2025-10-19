@@ -1,15 +1,27 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Pytest Cythonized RK4
 
 on:
   pull_request:
     branches:
       - '*'
+    paths:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'py_ballisticcalc/**'
+      - 'tests/**'
+      - 'py_ballisticcalc.exts/**'
+      - '.github/**'
+
   push:
     branches:
       - '*'
+    paths:
+      - 'pyproject.toml'
+      - 'setup.py'
+      - 'py_ballisticcalc/**'
+      - 'tests/**'
+      - 'py_ballisticcalc.exts/**'
+      - '.github/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,13 +30,20 @@ concurrency:
 jobs:
   # Job for full matrix, runs ONLY on pull_request events
   test_full_matrix:
+    name: Run Full Matrix Tests (Pull Request)
     if: github.event_name == 'pull_request'
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-13, macos-14, macos-15 ]
-        python-version: [ "3.9", "3.10", "3.11", "3.12", "3.13"]
+        os: 
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+          - windows-latest
+          - windows-11-arm
+          - macos-15-intel
+          - macos-15
+        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
         engine: [ "cythonized_rk4_engine" ]
 
     uses: ./.github/workflows/pytest-reusable.yml
@@ -41,7 +60,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest ]
-        python-version: [ "3.9" ]
+        python-version: [ "3.10" ]
         engine: [ "cythonized_rk4_engine" ]
 
     uses: ./.github/workflows/pytest-reusable.yml

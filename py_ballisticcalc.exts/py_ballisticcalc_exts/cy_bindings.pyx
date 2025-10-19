@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 # noinspection PyUnresolvedReferences
 from cpython.exc cimport PyErr_Occurred
 # noinspection PyUnresolvedReferences
@@ -42,3 +43,22 @@ cdef Wind_t Wind_t_from_py(object w):
     if PyErr_Occurred():
         raise
     return result
+
+
+cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj):
+    cdef Coriolis_t coriolis 
+    
+    if coriolis_obj:
+        coriolis.sin_lat = coriolis_obj.sin_lat
+        coriolis.cos_lat = coriolis_obj.cos_lat
+        coriolis.flat_fire_only = coriolis_obj.flat_fire_only
+        coriolis.muzzle_velocity_fps = coriolis_obj.muzzle_velocity_fps
+        
+        coriolis.sin_az = coriolis_obj.sin_az if coriolis_obj.sin_az is not None else 0.0
+        coriolis.cos_az = coriolis_obj.cos_az if coriolis_obj.cos_az is not None else 0.0
+        coriolis.range_east = coriolis_obj.range_east if coriolis_obj.range_east is not None else 0.0
+        coriolis.range_north = coriolis_obj.range_north if coriolis_obj.range_north is not None else 0.0
+        coriolis.cross_east = coriolis_obj.cross_east if coriolis_obj.cross_east is not None else 0.0
+        coriolis.cross_north = coriolis_obj.cross_north if coriolis_obj.cross_north is not None else 0.0
+        
+    return coriolis
