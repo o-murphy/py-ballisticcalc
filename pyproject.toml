@@ -59,6 +59,10 @@ include = ["py_ballisticcalc*"]
 py_ballisticcalc = ["py.typed", "assets/*.toml"]
 
 
+[project.scripts]
+uconv = "py_ballisticcalc.tools.uconv:main"
+
+
 [tool.pytest.ini_options]
 minversion = "8.0"
 addopts = "-rf"
