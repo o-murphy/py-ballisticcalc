@@ -1,5 +1,7 @@
 # cython: freethreading_compatible=True
 # noinspection PyUnresolvedReferences
+from libc.stdlib cimport calloc, free
+# noinspection PyUnresolvedReferences
 from cpython.exc cimport PyErr_Occurred
 # noinspection PyUnresolvedReferences
 from cython cimport final
@@ -11,16 +13,15 @@ from py_ballisticcalc_exts.bclib cimport (
     Curve_t,
     Config_t,
     Wind_t,
+    WindSock_t,
     Coriolis_t,
+    WindSock_t_init,
 )
 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc.unit import (
-    Weight,
     Angular,
     Distance,
-    Velocity,
-    Energy,
     Unit,
 )
 
@@ -83,22 +84,37 @@ cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj):
     return coriolis
 
 
+cdef WindSock_t WindSock_t_from_pylist(object winds_py_list):
+    """
+    Creates and initializes a WindSock_t structure.
+    Processes the Python list, then delegates initialization to C.
+    """
+    cdef size_t length = <size_t> len(winds_py_list)
+    cdef WindSock_t ws
+    # Memory allocation for the Wind_t array (remains in Cython)
+    cdef Wind_t * winds_array = <Wind_t *> calloc(<size_t> length, sizeof(Wind_t))
+    if <void *> winds_array is NULL:
+        raise MemoryError("Failed to allocate internal Wind_t array.")
+
+    # Copying data from Python objects to C structures (must remain in Cython)
+    cdef int i
+    try:
+        for i in range(<int>length):
+            # Wind_t_from_py interacts with a Python object, so it remains here
+            winds_array[i] = Wind_t_from_py(winds_py_list[i])
+    except Exception:
+        # Error handling
+        free(<void *> winds_array)
+        raise RuntimeError("Invalid wind entry in winds list")
+
+    # 4. Structure initialization (calling the C function)
+    WindSock_t_init(&ws, length, winds_array)
+
+    return ws
+
+
 # Helper functions to create unit objects
 cdef object _new_feet(double val):
     return Distance(val, Unit.Foot)
-
-cdef object _new_fps(double val):
-    return Velocity(val, Unit.FPS)
-
 cdef object _new_rad(double val):
     return Angular(val, Unit.Radian)
-
-cdef object _new_ft_lb(double val):
-    return Energy(val, Unit.FootPound)
-
-cdef object _new_lb(double val):
-    return Weight(val, Unit.Pound)
-
-# Additional angular helper for MOA-based fields
-cdef object _new_moa(double val):
-    return Angular(val, Unit.MOA)

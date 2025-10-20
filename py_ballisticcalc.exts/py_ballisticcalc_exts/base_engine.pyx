@@ -8,8 +8,6 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
 # noinspection PyUnresolvedReferences
-from libc.stdlib cimport calloc, free
-# noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, fmax, copysign
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
@@ -20,8 +18,6 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     # types and methods
-    Wind_t,
-    WindSock_t_init,
     WindSock_t_freeResources,
     Atmosphere_t,
     ShotProps_t,
@@ -33,11 +29,11 @@ from py_ballisticcalc_exts.bclib cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport (
     # factory funcs
-    Wind_t_from_py,
     Config_t_from_pyobject,
     MachList_t_from_pylist,
     Curve_t_from_pylist,
     Coriolis_t_from_pyobject,
+    WindSock_t_from_pylist,
     _new_feet,
     _new_rad,
 )
@@ -57,33 +53,6 @@ __all__ = (
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
-cdef WindSock_t WindSock_t_from_pylist(object winds_py_list):
-    """
-    Creates and initializes a WindSock_t structure.
-    Processes the Python list, then delegates initialization to C.
-    """
-    cdef size_t length = <size_t> len(winds_py_list)
-    cdef WindSock_t ws
-    # Memory allocation for the Wind_t array (remains in Cython)
-    cdef Wind_t * winds_array = <Wind_t *> calloc(<size_t> length, sizeof(Wind_t))
-    if <void *> winds_array is NULL:
-        raise MemoryError("Failed to allocate internal Wind_t array.")
-
-    # Copying data from Python objects to C structures (must remain in Cython)
-    cdef int i
-    try:
-        for i in range(<int>length):
-            # Wind_t_from_py interacts with a Python object, so it remains here
-            winds_array[i] = Wind_t_from_py(winds_py_list[i])
-    except Exception:
-        # Error handling
-        free(<void *> winds_array)
-        raise RuntimeError("Invalid wind entry in winds list")
-
-    # 4. Structure initialization (calling the C function)
-    WindSock_t_init(&ws, length, winds_array)
-
-    return ws
 
 cdef class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""

@@ -30,8 +30,6 @@ cdef struct AngleBracketDeg_t:
     double low_angle_deg
     double high_angle_deg
 
-# Function to create and initialize a WindSock_t
-cdef WindSock_t WindSock_t_from_pylist(object winds_py_list)
 
 cdef class CythonizedBaseIntegrationEngine:
     cdef:

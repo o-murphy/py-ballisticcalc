@@ -7,6 +7,7 @@ from py_ballisticcalc_exts.bclib cimport (
     Config_t,
     Wind_t,
     Coriolis_t,
+    WindSock_t,
 )
 
 cdef extern from "include/bind.h" nogil:
@@ -21,14 +22,15 @@ cdef Config_t Config_t_from_pyobject(object config)
 cdef MachList_t MachList_t_from_pylist(list[object] data)
 cdef Curve_t Curve_t_from_pylist(list[object] data_points)
 cdef Wind_t Wind_t_from_py(object w)
-
 cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj)
+# Function to create and initialize a WindSock_t
+cdef WindSock_t WindSock_t_from_pylist(object winds_py_list)
 
 # Helper functions to create unit objects
 cdef object _new_feet(double val)
-cdef object _new_fps(double val)
+# cdef object _new_fps(double val)
 cdef object _new_rad(double val)
-cdef object _new_ft_lb(double val)
-cdef object _new_lb(double val)
-# Additional angular helper for MOA-based fields
-cdef object _new_moa(double val)
+# cdef object _new_ft_lb(double val)
+# cdef object _new_lb(double val)
+# # Additional angular helper for MOA-based fields
+# cdef object _new_moa(double val)
