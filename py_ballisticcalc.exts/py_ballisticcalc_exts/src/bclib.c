@@ -19,7 +19,7 @@ const double cLowestTempF = -130.0;
 const double mToFeet = 3.280839895;
 const double cMaxWindDistanceFeet = 1e8;
 
-void Curve_t_free(Curve_t *curve_ptr)
+void Curve_t_release(Curve_t *curve_ptr)
 {
     if (curve_ptr == NULL)
         return;
@@ -33,7 +33,7 @@ void Curve_t_free(Curve_t *curve_ptr)
     curve_ptr->length = 0;
 }
 
-void MachList_t_free(MachList_t *mach_list_ptr)
+void MachList_t_release(MachList_t *mach_list_ptr)
 {
     if (mach_list_ptr == NULL)
         return;
@@ -52,8 +52,9 @@ void ShotProps_t_release(ShotProps_t *shot_props_ptr)
     if (shot_props_ptr == NULL)
         return;
 
-    Curve_t_free(&shot_props_ptr->curve);
-    MachList_t_free(&shot_props_ptr->mach_list);
+    Curve_t_release(&shot_props_ptr->curve);
+    MachList_t_release(&shot_props_ptr->mach_list);
+    WindSock_t_release(&shot_props_ptr->wind_sock);
 }
 
 /**

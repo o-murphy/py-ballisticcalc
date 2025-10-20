@@ -37,7 +37,6 @@ cdef class CythonizedBaseIntegrationEngine:
         public object _config
         list _table_data  # list[object]
         V3dT gravity_vector
-        WindSock_t _wind_sock
         Config_t _config_s  # Declared here
         ShotProps_t _shot_s  # Declared here
 
@@ -50,14 +49,48 @@ cdef class CythonizedBaseIntegrationEngine:
     # Python 'def' methods are not exposed in the C interface defined by a .pxd.
     # Only 'cdef' or 'cpdef' methods are declared here.
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self)
-    cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info)
-    cdef ZeroInitialData_t _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance)
-    cdef double _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted)
-    cdef double _zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance)
-    cdef MaxRangeResult_t _find_max_range(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, AngleBracketDeg_t angle_bracket_deg)
-    cdef BaseTrajDataT _find_apex(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr)
-    cdef double _error_at_distance(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr,
-                                   double angle_rad, double target_x_ft, double target_y_ft)
+    cdef ShotProps_t* _init_trajectory(
+        CythonizedBaseIntegrationEngine self,
+        object shot_info
+    )
+    cdef ZeroInitialData_t _init_zero_calculation(
+        CythonizedBaseIntegrationEngine self,
+        const ShotProps_t *shot_props_ptr,
+        double distance
+    )
+    cdef double _find_zero_angle(
+        CythonizedBaseIntegrationEngine self,
+        ShotProps_t *shot_props_ptr,
+        double distance,
+        bint lofted
+    )
+    cdef double _zero_angle(
+        CythonizedBaseIntegrationEngine self,
+        ShotProps_t *shot_props_ptr,
+        double distance
+    )
+    cdef MaxRangeResult_t _find_max_range(
+        CythonizedBaseIntegrationEngine self,
+        ShotProps_t *shot_props_ptr,
+        AngleBracketDeg_t angle_bracket_deg
+    )
+    cdef BaseTrajDataT _find_apex(
+        CythonizedBaseIntegrationEngine self,
+        const ShotProps_t *shot_props_ptr
+    )
+    cdef double _error_at_distance(
+        CythonizedBaseIntegrationEngine self,
+        ShotProps_t *shot_props_ptr,
+        double angle_rad,
+        double target_x_ft,
+        double target_y_ft
+    )
     # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
-    cdef tuple _integrate(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr,
-                          double range_limit_ft, double range_step_ft, double time_step, TrajFlag_t filter_flags)
+    cdef tuple _integrate(
+        CythonizedBaseIntegrationEngine self,
+        const ShotProps_t *shot_props_ptr,
+        double range_limit_ft,
+        double range_step_ft,
+        double time_step,
+        TrajFlag_t filter_flags
+    )

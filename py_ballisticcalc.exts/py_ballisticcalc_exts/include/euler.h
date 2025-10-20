@@ -19,7 +19,6 @@ extern "C"
     double _euler_time_step(double base_step, double velocity);
 
     TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
-                                       WindSock_t *wind_sock_ptr,
                                        const Config_t *config_ptr,
                                        double range_limit_ft, double range_step_ft,
                                        double time_step, TrajFlag_t filter_flags,

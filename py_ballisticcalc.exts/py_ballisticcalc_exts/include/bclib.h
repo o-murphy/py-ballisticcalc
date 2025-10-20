@@ -119,12 +119,9 @@ typedef enum
     RangeErrorMinimumAltitudeReached,
 } TerminationReason;
 
-
 typedef struct
 {
     double bc;
-    Curve_t curve;
-    MachList_t mach_list;
     double look_angle;
     double twist;
     double length;
@@ -139,9 +136,12 @@ typedef struct
     double calc_step;
     double muzzle_velocity;
     double stability_coefficient;
-    TrajFlag_t filter_flags;
+    Curve_t curve;
+    MachList_t mach_list;
     Atmosphere_t atmo;
     Coriolis_t coriolis;
+    WindSock_t wind_sock;
+    TrajFlag_t filter_flags;
 } ShotProps_t;
 
 #ifdef __cplusplus
@@ -149,10 +149,10 @@ extern "C"
 {
 #endif
 
-    void Curve_t_free(Curve_t *curve_ptr);
+    void Curve_t_release(Curve_t *curve_ptr);
 
     // MachList_t MachList_fromArray(const double *values, size_t length);
-    void MachList_t_free(MachList_t *mach_list_ptr);
+    void MachList_t_release(MachList_t *mach_list_ptr);
 
     void Atmosphere_t_updateDensityFactorAndMachForAltitude(
         const Atmosphere_t *atmo_ptr,

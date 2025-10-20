@@ -30,13 +30,13 @@ cdef extern from "include/bclib.h" nogil:
         CurvePoint_t * points
         size_t length
 
-    void Curve_t_free(Curve_t *curve_ptr)
+    void Curve_t_release(Curve_t *curve_ptr)
 
     ctypedef struct MachList_t:
         double * array
         size_t length
 
-    void MachList_t_free(MachList_t *mach_list_ptr) noexcept nogil
+    void MachList_t_release(MachList_t *mach_list_ptr) noexcept nogil
 
     ctypedef struct Atmosphere_t:
         double _t0
@@ -118,8 +118,6 @@ cdef extern from "include/bclib.h" nogil:
 
     ctypedef struct ShotProps_t:
         double bc
-        Curve_t curve
-        MachList_t mach_list
         double look_angle
         double twist
         double length
@@ -134,9 +132,12 @@ cdef extern from "include/bclib.h" nogil:
         double calc_step
         double muzzle_velocity
         double stability_coefficient
-        TrajFlag_t filter_flags
+        Curve_t curve
+        MachList_t mach_list
         Atmosphere_t atmo
         Coriolis_t coriolis
+        WindSock_t wind_sock
+        TrajFlag_t filter_flags
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil

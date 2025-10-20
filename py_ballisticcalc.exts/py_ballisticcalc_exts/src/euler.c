@@ -39,7 +39,6 @@ double _euler_time_step(double base_step, double velocity)
  * loop was terminated (e.g., NoRangeError on success).
  */
 TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
-                                   WindSock_t *wind_sock_ptr,
                                    const Config_t *config_ptr,
                                    double range_limit_ft, double range_step_ft,
                                    double time_step, TrajFlag_t filter_flags,
@@ -49,11 +48,6 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
     if (!shot_props_ptr)
     {
         // printf("ERROR: shot_props_ptr is NULL\n");
-        return RangeErrorInvalidParameter;
-    }
-    if (!wind_sock_ptr)
-    {
-        // printf("ERROR: wind_sock_ptr is NULL\n");
         return RangeErrorInvalidParameter;
     }
     if (!config_ptr)
@@ -100,7 +94,7 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
     gravity_vector.z = 0.0;
 
     // Initialize wind vector
-    wind_vector = WindSock_t_currentVector(wind_sock_ptr);
+    wind_vector = WindSock_t_currentVector(&shot_props_ptr->wind_sock);
 
     // Initialize velocity and position vectors
     velocity = shot_props_ptr->muzzle_velocity;
@@ -134,9 +128,9 @@ TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
         integration_step_count++;
 
         // Update wind reading at current point in trajectory
-        if (range_vector.x >= wind_sock_ptr->next_range)
+        if (range_vector.x >= shot_props_ptr->wind_sock.next_range)
         {
-            wind_vector = WindSock_t_vectorForRange(wind_sock_ptr, range_vector.x);
+            wind_vector = WindSock_t_vectorForRange(&shot_props_ptr->wind_sock, range_vector.x);
         }
 
         // Update air density and mach at current altitude

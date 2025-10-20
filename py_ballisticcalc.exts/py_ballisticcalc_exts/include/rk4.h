@@ -14,7 +14,6 @@ extern "C"
                          const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr);
 
     TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
-                                     WindSock_t *wind_sock_ptr,
                                      const Config_t *config_ptr,
                                      double range_limit_ft, double range_step_ft,
                                      double time_step, TrajFlag_t filter_flags,

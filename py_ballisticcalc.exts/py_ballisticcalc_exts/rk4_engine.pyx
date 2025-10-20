@@ -29,13 +29,13 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
         """Calculate the step size for integration."""
         return self.DEFAULT_TIME_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)
 
-    cdef tuple _integrate(CythonizedRK4IntegrationEngine self, const ShotProps_t *shot_props_ptr,
+    cdef tuple _integrate(CythonizedRK4IntegrationEngine self,
+                          const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, TrajFlag_t filter_flags):
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
         cdef TerminationReason termination_reason = _integrate_rk4(
             shot_props_ptr,
-            &self._wind_sock,
             &self._config_s,
             range_limit_ft,
             range_step_ft,

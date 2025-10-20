@@ -19,7 +19,8 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 
 cdef extern from "include/rk4.h" nogil:
 
-    # This function calculates dv/dt for velocity (v) affected by gravity, drag, and Coriolis forces.
+    # This function calculates dv/dt for velocity (v)
+    # affected by gravity, drag, and Coriolis forces.
     # """Calculate the derivative of velocity with respect to time.
 
     # Args:
@@ -40,7 +41,6 @@ cdef extern from "include/rk4.h" nogil:
                          const V3dT *ground_velocity_ptr) noexcept nogil
 
     TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
-                                     WindSock_t *wind_sock_ptr,
                                      const Config_t *config_ptr,
                                      double range_limit_ft, double range_step_ft,
                                      double time_step, TrajFlag_t filter_flags,
@@ -48,6 +48,7 @@ cdef extern from "include/rk4.h" nogil:
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self)
-    cdef tuple _integrate(CythonizedRK4IntegrationEngine self, const ShotProps_t *shot_props_ptr,
+    cdef tuple _integrate(CythonizedRK4IntegrationEngine self,
+                          const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, TrajFlag_t filter_flags)
