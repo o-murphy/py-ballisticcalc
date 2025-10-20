@@ -10,7 +10,7 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 # noinspection PyUnresolvedReferences
 from libc.stdlib cimport calloc, free
 # noinspection PyUnresolvedReferences
-from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, copysign
+from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, fmax, copysign
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, TrajFlag_t
 # noinspection PyUnresolvedReferences
@@ -363,7 +363,7 @@ cdef class CythonizedBaseIntegrationEngine:
             return ZeroInitialData_t(1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
         
         # Edge case: Very close shot; ignore gravity and drag
-        if fabs(slant_range_ft) < 2.0 * max(fabs(start_height_ft), self._config_s.cStepMultiplier):
+        if fabs(slant_range_ft) < 2.0 * fmax(fabs(start_height_ft), self._config_s.cStepMultiplier):
             return ZeroInitialData_t(1, atan2(target_y_ft + start_height_ft, target_x_ft), slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
         
         # Edge case: Virtually vertical shot; just check if it can reach the target
