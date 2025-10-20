@@ -74,30 +74,6 @@ typedef struct
 
 typedef struct
 {
-    double bc;
-    Curve_t curve;
-    MachList_t mach_list;
-    double look_angle;
-    double twist;
-    double length;
-    double diameter;
-    double weight;
-    double barrel_elevation;
-    double barrel_azimuth;
-    double sight_height;
-    double cant_cosine;
-    double cant_sine;
-    double alt0;
-    double calc_step;
-    double muzzle_velocity;
-    double stability_coefficient;
-    int filter_flags;
-    Atmosphere_t atmo;
-    Coriolis_t coriolis;
-} ShotProps_t;
-
-typedef struct
-{
     double velocity;
     double direction_from;
     double until_distance;
@@ -143,15 +119,40 @@ typedef enum
     RangeErrorMinimumAltitudeReached,
 } TerminationReason;
 
+typedef struct
+{
+    double bc;
+    double look_angle;
+    double twist;
+    double length;
+    double diameter;
+    double weight;
+    double barrel_elevation;
+    double barrel_azimuth;
+    double sight_height;
+    double cant_cosine;
+    double cant_sine;
+    double alt0;
+    double calc_step;
+    double muzzle_velocity;
+    double stability_coefficient;
+    Curve_t curve;
+    MachList_t mach_list;
+    Atmosphere_t atmo;
+    Coriolis_t coriolis;
+    WindSock_t wind_sock;
+    TrajFlag_t filter_flags;
+} ShotProps_t;
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    void Curve_t_free(Curve_t *curve_ptr);
+    void Curve_t_release(Curve_t *curve_ptr);
 
     // MachList_t MachList_fromArray(const double *values, size_t length);
-    void MachList_t_free(MachList_t *mach_list_ptr);
+    void MachList_t_release(MachList_t *mach_list_ptr);
 
     void Atmosphere_t_updateDensityFactorAndMachForAltitude(
         const Atmosphere_t *atmo_ptr,
@@ -159,7 +160,7 @@ extern "C"
         double *density_ratio_ptr,
         double *mach_ptr);
 
-    void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr);
+    void ShotProps_t_release(ShotProps_t *shot_props_ptr);
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
     int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
@@ -174,7 +175,7 @@ extern "C"
     void BaseTrajData_t_destroy(BaseTrajData_t *ptr);
 
     void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
-    void WindSock_t_freeResources(WindSock_t *ws);
+    void WindSock_t_release(WindSock_t *ws);
     V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
     int WindSock_t_updateCache(WindSock_t *ws);
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);

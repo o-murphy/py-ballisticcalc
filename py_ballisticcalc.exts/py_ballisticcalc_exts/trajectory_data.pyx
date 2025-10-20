@@ -12,9 +12,14 @@ from cython cimport final
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc.vector import Vector
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.interp cimport interpolate_3_pt
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.bclib cimport (
+    BaseTrajData_t_create,
+    BaseTrajData_t_destroy,
+)
+
+from py_ballisticcalc.vector import Vector
 
 
 cdef object _v3d_to_vector(const V3dT *v):
@@ -62,7 +67,7 @@ cdef class BaseTrajDataT:
 
     @staticmethod
     def interpolate(str key_attribute, double key_value,
-                   object p0, object p1, object p2):
+                    object p0, object p1, object p2):
         """
         Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation of a BaseTrajData point.
 
@@ -141,7 +146,9 @@ cdef class BaseTrajDataT:
         vv2 = _p2.c_velocity()
 
         # Interpolate all scalar fields
-        time = key_value if key_attribute == 'time' else interpolate_3_pt(key_value, x0, x1, x2, _p0.time, _p1.time, _p2.time)
+        time = key_value if key_attribute == 'time' else interpolate_3_pt(
+            key_value, x0, x1, x2, _p0.time, _p1.time, _p2.time
+        )
         position = V3dT(
             interpolate_3_pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
             interpolate_3_pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
@@ -152,7 +159,9 @@ cdef class BaseTrajDataT:
             interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
             interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)
         )
-        mach = key_value if key_attribute == 'mach' else interpolate_3_pt(key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach)
+        mach = key_value if key_attribute == 'mach' else interpolate_3_pt(
+            key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach
+        )
 
         # Construct the resulting BaseTrajDataT
         return BaseTrajDataT(time, position, velocity, mach)

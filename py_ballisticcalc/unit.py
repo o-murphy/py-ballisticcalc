@@ -823,11 +823,12 @@ class GenericDimension(Generic[_GenericDimensionType]):
             err_msg = f"Type expected: {Unit}, {type(Unit).__name__}; got: {type(units).__name__} ({units})"
             raise TypeError(err_msg)
         if units not in cls._conversion_factors.keys():
-            raise UnitConversionError(f"{cls.__name__}: unit {units} is not supported")
+            raise UnitConversionError(f"{cls.__name__}: unit {units.name} is not supported")
         return
 
     @classmethod
     def _get_conversion_factor(cls, unit: Unit) -> float:
+        cls._validate_unit_type(unit)
         return cls._conversion_factors[unit]
 
     @classmethod
@@ -858,7 +859,6 @@ class GenericDimension(Generic[_GenericDimensionType]):
         Note:
             Static conversion method that doesn't create a unit instance.
         """
-        cls._validate_unit_type(unit)
         return raw_value / cls._get_conversion_factor(unit)
 
     @classmethod
@@ -875,7 +875,6 @@ class GenericDimension(Generic[_GenericDimensionType]):
         Note:
             Used internally for storing values in consistent raw units.
         """
-        cls._validate_unit_type(units)
         return value * cls._get_conversion_factor(units)
 
     def convert(self, units: Unit) -> Self:
@@ -1249,17 +1248,17 @@ class Temperature(GenericDimension):
 
     @override
     @classmethod
-    def from_raw(cls, raw_value: Number, unit: Unit) -> Number:
-        if unit == Temperature.Fahrenheit:
+    def from_raw(cls, raw_value: Number, units: Unit) -> Number:
+        if units == Temperature.Fahrenheit:
             return raw_value
-        if unit == Temperature.Rankin:
+        if units == Temperature.Rankin:
             result = raw_value + 459.67
-        elif unit == Temperature.Celsius:
+        elif units == Temperature.Celsius:
             result = (raw_value - 32) * 5.0 / 9
-        elif unit == Temperature.Kelvin:
+        elif units == Temperature.Kelvin:
             result = (raw_value - 32) * 5.0 / 9 + 273.15
         else:
-            raise UnitConversionError(f"Temperature does not support {unit}")
+            raise UnitConversionError(f"Temperature does not support {units}")
         return result
 
     @override

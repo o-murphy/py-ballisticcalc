@@ -38,7 +38,7 @@ Development dependencies and reproducible developer/CI installs are pinned in `u
 - `py_ballisticcalc.exts/` — Cython subproject.
     - `py_ballisticcalc_exts/base_engine.pyx` — Cython wrapper that orchestrates C-layer stepping and defers event logic to Python.
     - `py_ballisticcalc_exts/` `rk4_engine.pyx`, `euler_engine.pyx` — Cython engine implementations.
-    - `py_ballisticcalc_exts/cy_bindings.pyx/.pxd` — helper functions and bridging helpers for C structs.
+    - `py_ballisticcalc_exts/bclib.pyx/.pxd` — helper functions and bridging helpers for C structs.
 
 ## How engines are wired
 Public call flow (simplified):
@@ -95,7 +95,7 @@ The key statistic to look at is `mean_ms`.  The other three statistics are usefu
 - Common Cython pitfalls observed in this codebase:
     - Indentation and cdef scoping errors — ensure `cdef` declarations live at the top of a C function or appropriate scope.
     - Avoid using Python booleans when declaring typed C variables (use `bint` and 0/1 assignment in the C context).
-    - Keep initialisation of C structs and memory allocation clear; release resources in `_free_trajectory`.
+    - Keep initialisation of C structs and memory allocation clear; release resources in `_release_trajectory`.
 
 ## Build / test commands
 

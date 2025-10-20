@@ -21,9 +21,7 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.interp cimport interpolate_3_pt
 
-
 __all__ = ('BaseTrajSeqT')
-
 
 cdef InterpKey _attribute_to_key(str key_attribute):
     cdef InterpKey key_kind
@@ -49,10 +47,9 @@ cdef InterpKey _attribute_to_key(str key_attribute):
 
     return key_kind
 
-
 cdef str _key_to_attribute(InterpKey key_kind):
     cdef str key_attribute
-    
+
     if key_kind == KEY_TIME:
         key_attribute = 'time'
     elif key_kind == KEY_MACH:
@@ -71,9 +68,8 @@ cdef str _key_to_attribute(InterpKey key_kind):
         key_attribute = 'velocity.z'
     else:
         raise ValueError(f"Unknown InterpKey value: {key_kind}")
-        
-    return key_attribute
 
+    return key_attribute
 
 cdef class BaseTrajSeqT:
     """Contiguous C buffer of BaseTraj_t points with fast append and interpolation.
@@ -85,13 +81,12 @@ cdef class BaseTrajSeqT:
         self._c_view = BaseTrajSeq_t_create()
         if self._c_view is NULL:
             raise MemoryError("Failed to create BaseTrajSeq_t")
-    
+
     def __dealloc__(self):
-        cdef BaseTrajSeq_t* ptr = self._c_view
-        if ptr is not NULL:
+        if self._c_view is not NULL:
+            BaseTrajSeq_t_destroy(self._c_view)
             self._c_view = NULL
-            BaseTrajSeq_t_destroy(ptr)
-        
+
     cdef void _ensure_capacity_c(self, size_t min_capacity):
         cdef int ret = BaseTrajSeq_t_ensure_capacity(self._c_view, min_capacity)
         if ret < 0:
@@ -131,7 +126,7 @@ cdef class BaseTrajSeqT:
         cdef Py_ssize_t length = BaseTrajSeq_t_len(self._c_view)
         if length < 0:
             raise MemoryError("Trajectory buffer is NULL")
-        return length 
+        return length
 
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
@@ -156,7 +151,7 @@ cdef class BaseTrajSeqT:
         """
         cdef BaseTraj_t output
         cdef int ret = BaseTrajSeq_t_interpolate_raw(self._c_view, idx, key_kind, key_value, &output)
-        
+
         if ret < 0:
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
 
