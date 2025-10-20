@@ -4,13 +4,13 @@
 # dependencies = [
 # ]
 # ///
-from py_ballisticcalc.unit import Unit, UnitTypeError, UnitConversionError
+from py_ballisticcalc.unit import Unit, UnitTypeError
 from argparse import ArgumentParser
-import sys
-from importlib.metadata import metadata
 
 try:
-    __version__ = metadata("py-ballisticcalc").get("Version", "unknown")
+    from importlib.metadata import metadata
+
+    __version__ = metadata("py-ballisticcalc")["Version"]
 except Exception:
     __version__ = "unknown"
 
@@ -47,7 +47,7 @@ def main():
     except UnitTypeError as exc:
         parser.error(str(exc))
     except TypeError as exc:
-        parser.error("Invalid input")
+        parser.error(f"Invalid input: {str(exc)}")
     except Exception as exc:
         parser.error(exc)
 
