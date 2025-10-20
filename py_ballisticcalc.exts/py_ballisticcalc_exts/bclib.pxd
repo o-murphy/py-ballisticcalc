@@ -1,14 +1,6 @@
 # noinspection PyUnresolvedReferences
-from cpython.object cimport PyObject
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 
-
-cdef extern from "include/bind.h" nogil:
-    MachList_t MachList_t_fromPylist(const PyObject *pylist) noexcept nogil
-    Curve_t Curve_t_fromPylist(const PyObject *data_points) noexcept nogil
-    Config_t Config_t_fromPyObject(const PyObject * config) noexcept nogil
-    Wind_t Wind_t_fromPyObject(const PyObject *w) noexcept nogil
 
 cdef extern from "include/bclib.h" nogil:
     cdef const double cDegreesFtoR
@@ -162,12 +154,3 @@ cdef extern from "include/bclib.h" nogil:
     double getCorrection(double distance, double offset)
     double calculateEnergy(double bulletWeight, double velocity)
     double calculateOgw(double bulletWeight, double velocity)
-
-
-# python to C objects conversion
-cdef Config_t Config_t_from_pyobject(object config)
-cdef MachList_t MachList_t_from_pylist(list[object] data)
-cdef Curve_t Curve_t_from_pylist(list[object] data_points)
-cdef Wind_t Wind_t_from_py(object w)
-
-cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj)
