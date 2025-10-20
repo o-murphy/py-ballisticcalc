@@ -18,10 +18,10 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     # types and methods
-    WindSock_t_freeResources,
+    WindSock_t_release,
     Atmosphere_t,
     ShotProps_t,
-    ShotProps_t_freeResources,
+    ShotProps_t_release,
     ShotProps_t_updateStabilityCoefficient,
     Coriolis_t,
     TrajFlag_t,
@@ -229,8 +229,8 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _free_trajectory(CythonizedBaseIntegrationEngine self):
         if self._wind_sock.winds is not NULL:
-            WindSock_t_freeResources(&self._wind_sock)
-        ShotProps_t_freeResources(&self._shot_s)
+            WindSock_t_release(&self._wind_sock)
+        ShotProps_t_release(&self._shot_s)
 
     cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info):
         """

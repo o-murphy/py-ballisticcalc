@@ -114,8 +114,8 @@ def append(self, time, ...):
 
 For any object in the hot path we create a C helper as follows:
 
-1. Define a C struct in `bclib.h`, and list helper functions.  Example: `typedef struct ... ShotProps_t` and `void ShotProps_t_freeResources(ShotProps_t*shot_props_ptr)`
-2. Implement any helper functions in `bclib.c`.  These are typically to allocate and free memory.  Example: `ShotProps_t_freeResources()`.
+1. Define a C struct in `bclib.h`, and list helper functions.  Example: `typedef struct ... ShotProps_t` and `void ShotProps_t_release(ShotProps_t*shot_props_ptr)`
+2. Implement any helper functions in `bclib.c`.  These are typically to allocate and free memory.  Example: `ShotProps_t_release()`.
 3. Copy the `struct` as a `ctypedef` to `bclib.pxd`.  (This could be automated at compile time but is not at present.)
 4. Put any conversion logic in `bclib.pyx`.  E.g., `cdef ShotProps_t ShotProps_t_from_pyshot(object shot_props):`
 

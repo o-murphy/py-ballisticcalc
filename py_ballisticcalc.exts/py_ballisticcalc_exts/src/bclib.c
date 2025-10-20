@@ -47,7 +47,7 @@ void MachList_t_free(MachList_t *mach_list_ptr)
     mach_list_ptr->length = 0;
 }
 
-void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr)
+void ShotProps_t_release(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
         return;
@@ -324,7 +324,7 @@ void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     WindSock_t_updateCache(ws);
 }
 
-void WindSock_t_freeResources(WindSock_t *ws)
+void WindSock_t_release(WindSock_t *ws)
 {
     if (ws == NULL)
     {
