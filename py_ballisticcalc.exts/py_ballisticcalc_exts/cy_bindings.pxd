@@ -2,8 +2,7 @@
 from cpython.object cimport PyObject
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
+
 
 cdef extern from "include/bind.h" nogil:
     MachList_t MachList_t_fromPylist(const PyObject *pylist) noexcept nogil
@@ -21,6 +20,7 @@ cdef extern from "include/bclib.h" nogil:
     cdef const double cPressureExponent
     cdef const double cLowestTempF
     cdef const double mToFeet
+    cdef const double cMaxWindDistanceFeet
 
     ctypedef struct Config_t:
         double cStepMultiplier
@@ -73,6 +73,57 @@ cdef extern from "include/bclib.h" nogil:
         int flat_fire_only
         double muzzle_velocity_fps
 
+    void Coriolis_t_coriolis_acceleration_local(
+        const Coriolis_t *coriolis_ptr,
+        V3dT *velocity_ptr,
+        V3dT *accel_ptr
+    ) noexcept nogil
+
+    double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
+                                       const Curve_t *curve_ptr,
+                                       double mach) noexcept nogil
+
+    ctypedef struct Wind_t:
+        double velocity
+        double direction_from
+        double until_distance
+        double MAX_DISTANCE_FEET
+
+    V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) noexcept nogil
+
+    ctypedef struct WindSock_t:
+        Wind_t *winds
+        int current
+        int length
+        double next_range
+        V3dT last_vector_cache
+
+    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
+    void WindSock_t_freeResources(WindSock_t *ws)
+    V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
+    int WindSock_t_updateCache(WindSock_t *ws)
+    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
+
+    ctypedef enum TrajFlag_t:
+        TFLAG_NONE = 0,
+        TFLAG_ZERO_UP = 1,
+        TFLAG_ZERO_DOWN = 2,
+        TFLAG_ZERO = TFLAG_ZERO_UP | TFLAG_ZERO_DOWN,
+        TFLAG_MACH = 4,
+        TFLAG_RANGE = 8,
+        TFLAG_APEX = 16,
+        TFLAG_ALL = TFLAG_RANGE | TFLAG_ZERO_UP | TFLAG_ZERO_DOWN | TFLAG_MACH | TFLAG_APEX
+        TFLAG_MRT = 32
+
+    ctypedef struct BaseTrajData_t:
+        double time
+        V3dT position
+        V3dT velocity
+        double mach
+
+    BaseTrajData_t* BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach) noexcept nogil
+    void BaseTrajData_t_destroy(BaseTrajData_t *ptr) noexcept nogil
+
     ctypedef struct ShotProps_t:
         double bc
         Curve_t curve
@@ -99,31 +150,19 @@ cdef extern from "include/bclib.h" nogil:
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
     int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
-    double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
-                                       const Curve_t *curve_ptr,
-                                       double mach) noexcept nogil
 
-    ctypedef struct Wind_t:
-        double velocity
-        double direction_from
-        double until_distance
-        double MAX_DISTANCE_FEET
+    ctypedef enum TerminationReason:
+        NoRangeError
+        RangeErrorInvalidParameter
+        RangeErrorMinimumVelocityReached
+        RangeErrorMaximumDropReached
+        RangeErrorMinimumAltitudeReached
 
-    V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) noexcept nogil
+    # helpers
+    double getCorrection(double distance, double offset)
+    double calculateEnergy(double bulletWeight, double velocity)
+    double calculateOgw(double bulletWeight, double velocity)
 
-    void Coriolis_t_coriolis_acceleration_local(
-        const Coriolis_t *coriolis_ptr,
-        V3dT *velocity_ptr,
-        V3dT *accel_ptr
-    ) noexcept nogil
-
-    cdef extern from "include/bclib.h":
-        ctypedef enum TerminationReason:
-            NoRangeError
-            RangeErrorInvalidParameter
-            RangeErrorMinimumVelocityReached
-            RangeErrorMaximumDropReached
-            RangeErrorMinimumAltitudeReached
 
 # python to C objects conversion
 cdef Config_t Config_t_from_pyobject(object config)

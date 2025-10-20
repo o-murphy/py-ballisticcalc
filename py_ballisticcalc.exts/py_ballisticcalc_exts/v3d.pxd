@@ -1,5 +1,3 @@
-# v3d.pxd
-
 # Declare the C header file
 cdef extern from "include/v3d.h" nogil:
     # Declare the V3dT structure

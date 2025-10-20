@@ -7,17 +7,13 @@ Because storing each step in a BaseTrajSeqT is practically costless, we always r
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport ShotProps_t
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport TerminationReason
+from py_ballisticcalc_exts.cy_bindings cimport TerminationReason, TrajFlag_t, ShotProps_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc.exceptions import RangeError
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
 
 __all__ = [
     'CythonizedEulerIntegrationEngine',
@@ -48,7 +44,7 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
             traj_seq._c_view,
         )
         cdef str termination_reason_str = None
-        if termination_reason == RangeErrorInvalidParameter:
+        if termination_reason == TerminationReason.RangeErrorInvalidParameter:
             raise RuntimeError("InvalidParameter")
         if termination_reason == TerminationReason.RangeErrorMinimumVelocityReached:
             termination_reason_str = RangeError.MinimumVelocityReached

@@ -1,133 +1,18 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport Config_t, Wind_t, ShotProps_t, Coriolis_t
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, TrajFlag_t
+from py_ballisticcalc_exts.cy_bindings cimport (
+    Config_t,
+    ShotProps_t,
+    WindSock_t,
+    TrajFlag_t,
+)
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
-
-cdef extern from "include/bclib.h" nogil:
-
-    cdef const double cMaxWindDistanceFeet
-
-    ctypedef struct Config_t:
-        double cStepMultiplier
-        double cZeroFindingAccuracy
-        double cMinimumVelocity
-        double cMaximumDrop
-        int cMaxIterations
-        double cGravityConstant
-        double cMinimumAltitude
-
-    ctypedef struct CurvePoint_t:
-        double a
-        double b
-        double c
-        double d
-
-    ctypedef struct Curve_t:
-        CurvePoint_t *points
-        size_t length
-
-    void Curve_t_free(Curve_t *curve_ptr)
-
-    ctypedef struct MachList_t:
-        double * array
-        size_t length
-
-    void MachList_t_free(MachList_t *mach_list_ptr)
-
-    ctypedef struct Atmosphere_t:
-        double _t0
-        double _a0
-        double _p0
-        double _mach
-        double density_ratio
-        double cLowestTempC
-
-    void Atmosphere_t_updateDensityFactorAndMachForAltitude(
-        const Atmosphere_t *atmo_ptr,
-        double altitude,
-        double *density_ratio_ptr,
-        double *mach_ptr) noexcept nogil
-
-    ctypedef struct Coriolis_t:
-        double sin_lat
-        double cos_lat
-        double sin_az
-        double cos_az
-        double range_east
-        double range_north
-        double cross_east
-        double cross_north
-        int flat_fire_only
-        double muzzle_velocity_fps
-
-    ctypedef struct ShotProps_t:
-        double bc
-        Curve_t curve
-        MachList_t mach_list
-        double look_angle
-        double twist
-        double length
-        double diameter
-        double weight
-        double barrel_elevation
-        double barrel_azimuth
-        double sight_height
-        double cant_cosine
-        double cant_sine
-        double alt0
-        double calc_step
-        double muzzle_velocity
-        double stability_coefficient
-        TrajFlag_t filter_flags
-        Atmosphere_t atmo
-        Coriolis_t coriolis
-
-    void ShotProps_t_freeResources(ShotProps_t *shot_props_ptr) noexcept nogil
-    double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
-    double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
-
-    double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
-                                       const Curve_t *curve_ptr,
-                                       double mach) noexcept nogil
-
-    ctypedef struct Wind_t:
-        double velocity
-        double direction_from
-        double until_distance
-        double MAX_DISTANCE_FEET
-
-    V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
-
-    ctypedef struct BaseTrajData_t:
-        double time
-        V3dT position
-        V3dT velocity
-        double mach
-
-    ctypedef struct WindSock_t:
-        Wind_t *winds
-        int current
-        int length
-        double next_range
-        V3dT last_vector_cache
-
-    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
-    void WindSock_t_freeResources(WindSock_t *ws)
-    V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
-    int WindSock_t_updateCache(WindSock_t *ws)
-    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
-
-    # helpers
-    double getCorrection(double distance, double offset)
-    double calculateEnergy(double bulletWeight, double velocity)
-    double calculateOgw(double bulletWeight, double velocity)
 
 cdef struct ZeroInitialData_t:
     int status

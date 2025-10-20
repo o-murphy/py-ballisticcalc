@@ -5,8 +5,6 @@ from cpython.exc cimport PyErr_Occurred
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from cpython.object cimport PyObject
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport Config_t, MachList_t, Curve_t, Wind_t
 
 
 @final

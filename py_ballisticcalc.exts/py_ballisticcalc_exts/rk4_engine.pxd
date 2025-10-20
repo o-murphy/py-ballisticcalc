@@ -2,27 +2,20 @@
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
-    WindSock_t
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t,
     Config_t,
+    WindSock_t,
+    TrajFlag_t,
+    TerminationReason,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
 
-cdef extern from "include/bclib.h" nogil:
-    ctypedef enum TerminationReason:
-        NoRangeError
-        RangeErrorInvalidParameter
-        RangeErrorMinimumVelocityReached
-        RangeErrorMaximumDropReached
-        RangeErrorMinimumAltitudeReached
 
 cdef extern from "include/rk4.h" nogil:
 

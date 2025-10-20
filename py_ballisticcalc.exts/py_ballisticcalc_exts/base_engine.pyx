@@ -12,8 +12,6 @@ from libc.stdlib cimport calloc, free
 # noinspection PyUnresolvedReferences
 from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, fmax, copysign
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, TrajFlag_t
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.unit_helper cimport (
     _new_feet,
     _new_rad,
@@ -23,16 +21,21 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t, InterpKey
 # noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport (
     # types and methods
     Wind_t,
+    WindSock_t_init,
+    WindSock_t_freeResources,
     Atmosphere_t,
     ShotProps_t,
     ShotProps_t_freeResources,
     ShotProps_t_updateStabilityCoefficient,
-    Wind_t_from_py,
     Coriolis_t,
+    TrajFlag_t,
     # factory funcs
+    Wind_t_from_py,
     Config_t_from_pyobject,
     MachList_t_from_pylist,
     Curve_t_from_pylist,

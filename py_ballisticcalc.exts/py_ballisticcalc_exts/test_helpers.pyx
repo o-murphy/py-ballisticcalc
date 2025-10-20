@@ -16,14 +16,17 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
-)
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport (
-    CythonizedBaseIntegrationEngine,
+    TrajFlag_t,
     calculateEnergy,
     calculateOgw,
 )
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, TrajFlag_t
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.base_engine cimport (
+    CythonizedBaseIntegrationEngine,
+)
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 
 __all__ = [

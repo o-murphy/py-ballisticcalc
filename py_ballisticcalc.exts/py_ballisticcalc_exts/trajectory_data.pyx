@@ -12,9 +12,14 @@ from cython cimport final
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc.vector import Vector
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.interp cimport interpolate_3_pt
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.cy_bindings cimport (
+    BaseTrajData_t_create,
+    BaseTrajData_t_destroy,
+)
+
+from py_ballisticcalc.vector import Vector
 
 
 cdef object _v3d_to_vector(const V3dT *v):
