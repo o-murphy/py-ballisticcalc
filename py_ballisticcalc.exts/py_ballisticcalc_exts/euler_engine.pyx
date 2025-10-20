@@ -13,19 +13,11 @@ from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport (
-    TerminationReason,
-    NoRangeError,
-    RangeErrorInvalidParameter,
-    RangeErrorMinimumVelocityReached,
-    RangeErrorMaximumDropReached,
-    RangeErrorMinimumAltitudeReached,
-)
+from py_ballisticcalc_exts.cy_bindings cimport TerminationReason
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc.exceptions import RangeError
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
-
 
 __all__ = [
     'CythonizedEulerIntegrationEngine',
@@ -42,26 +34,26 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         return self.DEFAULT_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)
 
     cdef tuple _integrate(CythonizedEulerIntegrationEngine self, const ShotProps_t *shot_props_ptr,
-                           double range_limit_ft, double range_step_ft,
-                           double time_step, TrajFlag_t filter_flags):
+                          double range_limit_ft, double range_step_ft,
+                          double time_step, TrajFlag_t filter_flags):
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
         cdef TerminationReason termination_reason = _integrate_euler(
             shot_props_ptr,
             &self._wind_sock,
             &self._config_s,
-            range_limit_ft, 
-            range_step_ft, 
-            time_step, 
+            range_limit_ft,
+            range_step_ft,
+            time_step,
             filter_flags,
             traj_seq._c_view,
         )
         cdef str termination_reason_str = None
         if termination_reason == RangeErrorInvalidParameter:
             raise RuntimeError("InvalidParameter")
-        if termination_reason == RangeErrorMinimumVelocityReached:
+        if termination_reason == TerminationReason.RangeErrorMinimumVelocityReached:
             termination_reason_str = RangeError.MinimumVelocityReached
-        if termination_reason == RangeErrorMaximumDropReached:
+        if termination_reason == TerminationReason.RangeErrorMaximumDropReached:
             termination_reason_str = RangeError.MaximumDropReached
-        if termination_reason == RangeErrorMinimumAltitudeReached:
+        if termination_reason == TerminationReason.RangeErrorMinimumAltitudeReached:
             termination_reason_str = RangeError.MinimumAltitudeReached
         return traj_seq, termination_reason_str

@@ -5,13 +5,11 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
 
-
 cdef extern from "include/bind.h" nogil:
     MachList_t MachList_t_fromPylist(const PyObject *pylist) noexcept nogil
     Curve_t Curve_t_fromPylist(const PyObject *data_points) noexcept nogil
     Config_t Config_t_fromPyObject(const PyObject * config) noexcept nogil
     Wind_t Wind_t_fromPyObject(const PyObject *w) noexcept nogil
-
 
 cdef extern from "include/bclib.h" nogil:
     cdef const double cDegreesFtoR
@@ -126,7 +124,6 @@ cdef extern from "include/bclib.h" nogil:
             RangeErrorMinimumVelocityReached
             RangeErrorMaximumDropReached
             RangeErrorMinimumAltitudeReached
-
 
 # python to C objects conversion
 cdef Config_t Config_t_from_pyobject(object config)

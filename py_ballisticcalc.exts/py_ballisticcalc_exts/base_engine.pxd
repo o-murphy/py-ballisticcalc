@@ -137,20 +137,16 @@ cdef struct ZeroInitialData_t:
     double target_y_ft
     double start_height_ft
 
-
 cdef struct MaxRangeResult_t:
     double max_range_ft
     double angle_at_max_rad
-
 
 cdef struct AngleBracketDeg_t:
     double low_angle_deg
     double high_angle_deg
 
-
 # Function to create and initialize a WindSock_t
 cdef WindSock_t WindSock_t_from_pylist(object winds_py_list)
-
 
 cdef class CythonizedBaseIntegrationEngine:
     cdef:
@@ -182,4 +178,4 @@ cdef class CythonizedBaseIntegrationEngine:
                                    double angle_rad, double target_x_ft, double target_y_ft)
     # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
     cdef tuple _integrate(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr,
-                                        double range_limit_ft, double range_step_ft, double time_step, TrajFlag_t filter_flags)
+                          double range_limit_ft, double range_step_ft, double time_step, TrajFlag_t filter_flags)

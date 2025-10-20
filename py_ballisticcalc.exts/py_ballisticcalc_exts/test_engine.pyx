@@ -92,9 +92,9 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         cdef double vz = v * cos(be) * sin(az)
         # initial point
         seq._append_c(0.0, 0.0,
-              -self._shot_s.cant_cosine * self._shot_s.sight_height,
-              -self._shot_s.cant_sine * self._shot_s.sight_height,
-              vx, vy, vz, 1.0)
+                      -self._shot_s.cant_cosine * self._shot_s.sight_height,
+                      -self._shot_s.cant_sine * self._shot_s.sight_height,
+                      vx, vy, vz, 1.0)
         # second point simple Euler step without drag / gravity for minimal path
         cdef double dt
         if time_step > 0:
@@ -102,8 +102,8 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         else:
             dt = 0.001
         seq._append_c(dt, vx * dt,
-              -self._shot_s.cant_cosine * self._shot_s.sight_height + vy * dt,
-              -self._shot_s.cant_sine * self._shot_s.sight_height + vz * dt,
-              vx, vy, vz, 1.0)
+                      -self._shot_s.cant_cosine * self._shot_s.sight_height + vy * dt,
+                      -self._shot_s.cant_sine * self._shot_s.sight_height + vz * dt,
+                      vx, vy, vz, 1.0)
         self.integration_step_count = <int>seq._length
         return (seq, None)

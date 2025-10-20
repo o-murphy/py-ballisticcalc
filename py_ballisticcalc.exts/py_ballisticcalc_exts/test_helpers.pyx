@@ -26,7 +26,6 @@ from py_ballisticcalc_exts.base_engine cimport (
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, TrajFlag_t
 from py_ballisticcalc_exts.v3d cimport V3dT
 
-
 __all__ = [
     'init_shot',
     'free_shot',
@@ -43,12 +42,10 @@ __all__ = [
     'introspect_shot',
 ]
 
-
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
-                        double vx, double vy, double vz, double mach):
+                          double vx, double vy, double vz, double mach):
     return BaseTrajDataT(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach)
-
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
@@ -67,12 +64,10 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     return ShotProps_t_dragByMach(sp_ptr, mach)
 
-
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
     return ShotProps_t_dragByMach(&e._shot_s, mach)
-
 
 cpdef size_t shot_props_addr(object engine):
     """Return raw address of the engine's internal ShotProps_t struct.
@@ -83,7 +78,6 @@ cpdef size_t shot_props_addr(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
     return <size_t>&e._shot_s
 
-
 cpdef size_t init_shot(object engine, object shot):
     """Initialize shot props inside engine and return its address.
 
@@ -93,22 +87,18 @@ cpdef size_t init_shot(object engine, object shot):
     cdef ShotProps_t *ptr = e._init_trajectory(shot)
     return <size_t>ptr
 
-
 cpdef void free_shot(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
     e._free_trajectory()
-
 
 cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     return ShotProps_t_spinDrift(sp_ptr, time_s)
 
-
 cpdef double stability_update_eval(size_t shot_props_addr):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     ShotProps_t_updateStabilityCoefficient(sp_ptr)
     return sp_ptr.stability_coefficient
-
 
 cpdef dict introspect_shot(size_t shot_props_addr):
     """Return basic structural info about ShotProps_t for debugging."""
@@ -117,16 +107,13 @@ cpdef dict introspect_shot(size_t shot_props_addr):
         return {'null': True}
     return {'bc': sp_ptr.bc, 'curve_len': sp_ptr.curve.length, 'mach_len': sp_ptr.mach_list.length}
 
-
 cpdef double energy_eval(size_t shot_props_addr, double velocity_fps):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     return calculateEnergy(sp_ptr.weight, velocity_fps)
 
-
 cpdef double ogw_eval(size_t shot_props_addr, double velocity_fps):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     return calculateOgw(sp_ptr.weight, velocity_fps)
-
 
 cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
@@ -135,14 +122,12 @@ cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     Atmosphere_t_updateDensityFactorAndMachForAltitude(&sp_ptr.atmo, altitude_ft, &density_ratio, &mach)
     return density_ratio, mach
 
-
 cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
                                 double range_limit_ft, double range_step_ft, double time_step):
     """Call engine._integrate directly with current shot props."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     return e._integrate(sp_ptr, range_limit_ft, range_step_ft, time_step, TrajFlag_t.TFLAG_NONE)
-
 
 cpdef int step_count(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine

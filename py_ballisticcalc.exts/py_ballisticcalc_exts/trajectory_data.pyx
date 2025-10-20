@@ -62,7 +62,7 @@ cdef class BaseTrajDataT:
 
     @staticmethod
     def interpolate(str key_attribute, double key_value,
-                   object p0, object p1, object p2):
+                    object p0, object p1, object p2):
         """
         Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation of a BaseTrajData point.
 

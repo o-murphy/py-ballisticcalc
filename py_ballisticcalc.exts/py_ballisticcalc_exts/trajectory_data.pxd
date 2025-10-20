@@ -26,7 +26,6 @@ cdef extern from "include/bclib.h" nogil:
     BaseTrajData_t* BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach) noexcept nogil
     void BaseTrajData_t_destroy(BaseTrajData_t *ptr) noexcept nogil
 
-
 cdef class BaseTrajDataT:
     cdef:
         BaseTrajData_t *_c_view

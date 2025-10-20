@@ -541,6 +541,21 @@ wheels = [
 ]
 
 [[package]]
+name = "cython-lint"
+version = "0.18.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cython" },
+    { name = "pycodestyle" },
+    { name = "tokenize-rt" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c6/e8/6048568188d9faceae2dcda85a2cef7f504002322df68f8d02f649ed2623/cython_lint-0.18.1.tar.gz", hash = "sha256:c99d9a1c4052e56a85f8aedd86777ba41f85bc50eb38d65adbc6e124bb76d2b5", size = 27298, upload-time = "2025-10-19T16:27:59.277Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/b9/b4427a2cab013ffb23d7659aa6a8bdfa09054caaff4d9cb95f85992bd2bf/cython_lint-0.18.1-py3-none-any.whl", hash = "sha256:9f5e35e53d2010c1bd473d2b7da291831b4fd267dccfd9796226f5447313730e", size = 13407, upload-time = "2025-10-19T16:27:57.687Z" },
+]
+
+[[package]]
 name = "debugpy"
 version = "1.8.17"
 source = { registry = "https://pypi.org/simple" }
@@ -2145,6 +2160,7 @@ scipy = [
 dev = [
     { name = "build" },
     { name = "cython" },
+    { name = "cython-lint" },
     { name = "ipykernel" },
     { name = "matplotlib" },
     { name = "mypy" },
@@ -2223,6 +2239,7 @@ provides-extras = ["exts", "charts", "scipy", "dev", "docs"]
 dev = [
     { name = "build", specifier = ">=1.3.0" },
     { name = "cython", specifier = ">=3.1.4" },
+    { name = "cython-lint", specifier = ">=0.18.1" },
     { name = "ipykernel" },
     { name = "matplotlib", specifier = ">=3.10.7" },
     { name = "mypy", specifier = ">=1.18.2" },
@@ -2258,6 +2275,15 @@ requires-dist = [
     { name = "cython", marker = "extra == 'dev'", specifier = ">=3.1.4" },
 ]
 provides-extras = ["dev"]
+
+[[package]]
+name = "pycodestyle"
+version = "2.14.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/11/e0/abfd2a0d2efe47670df87f3e3a0e2edda42f055053c85361f19c0e2c1ca8/pycodestyle-2.14.0.tar.gz", hash = "sha256:c4b5b517d278089ff9d0abdec919cd97262a3367449ea1c8b49b91529167b783", size = 39472, upload-time = "2025-06-20T18:49:48.75Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/27/a58ddaf8c588a3ef080db9d0b7e0b97215cee3a45df74f3a94dbbf5c893a/pycodestyle-2.14.0-py2.py3-none-any.whl", hash = "sha256:dd6bf7cb4ee77f8e016f9c8e74a35ddd9f67e1d5fd4184d86c3b98e07099f42d", size = 31594, upload-time = "2025-06-20T18:49:47.491Z" },
+]
 
 [[package]]
 name = "pycparser"
@@ -2933,6 +2959,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/7a/fd/7a5ee21fd08ff70d3d33a5781c255cbe779659bd03278feb98b19ee550f4/tinycss2-1.4.0.tar.gz", hash = "sha256:10c0972f6fc0fbee87c3edb76549357415e94548c1ae10ebccdea16fb404a9b7", size = 87085, upload-time = "2024-10-24T14:58:29.895Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e6/34/ebdc18bae6aa14fbee1a08b63c015c72b64868ff7dae68808ab500c492e2/tinycss2-1.4.0-py3-none-any.whl", hash = "sha256:3a49cf47b7675da0b15d0c6e1df8df4ebd96e9394bb905a5775adb0d884c5289", size = 26610, upload-time = "2024-10-24T14:58:28.029Z" },
+]
+
+[[package]]
+name = "tokenize-rt"
+version = "6.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/69/ed/8f07e893132d5051d86a553e749d5c89b2a4776eb3a579b72ed61f8559ca/tokenize_rt-6.2.0.tar.gz", hash = "sha256:8439c042b330c553fdbe1758e4a05c0ed460dbbbb24a606f11f0dee75da4cad6", size = 5476, upload-time = "2025-05-23T23:48:00.035Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/33/f0/3fe8c6e69135a845f4106f2ff8b6805638d4e85c264e70114e8126689587/tokenize_rt-6.2.0-py2.py3-none-any.whl", hash = "sha256:a152bf4f249c847a66497a4a95f63376ed68ac6abf092a2f7cfb29d044ecff44", size = 6004, upload-time = "2025-05-23T23:47:58.812Z" },
 ]
 
 [[package]]

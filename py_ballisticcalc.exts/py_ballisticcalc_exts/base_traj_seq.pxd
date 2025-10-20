@@ -60,17 +60,15 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double value
     ) noexcept nogil
 
-
 cdef InterpKey _attribute_to_key(str key_attribute)
 cdef str _key_to_attribute(InterpKey key_kind)
-
 
 cdef class BaseTrajSeqT:
     cdef BaseTrajSeq_t* _c_view
 
     cdef void _ensure_capacity_c(self, size_t min_capacity)
     cdef void _append_c(self, double time, double px, double py, double pz,
-            double vx, double vy, double vz, double mach)
+                        double vx, double vy, double vz, double mach)
     cdef Py_ssize_t len_c(self)
     cdef BaseTraj_t* c_getitem(self, Py_ssize_t idx)
     cdef BaseTrajDataT _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)
