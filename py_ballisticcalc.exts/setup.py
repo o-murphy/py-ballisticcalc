@@ -77,7 +77,7 @@ C_SOURCES = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from C_SOURCES that they depend on.
 EXTENSION_DEPS = {
-    "cy_bindings": ["bclib", "bind"],
+    "bclib": ["bclib", "bind"],
     "unit_helper": [],
     "base_traj_seq": ["v3d", "interp", "base_traj_seq"],
     "base_engine": ["v3d", "bclib"],

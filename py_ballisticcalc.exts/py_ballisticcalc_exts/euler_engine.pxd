@@ -4,7 +4,7 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport (
+from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     Config_t,
     WindSock_t,

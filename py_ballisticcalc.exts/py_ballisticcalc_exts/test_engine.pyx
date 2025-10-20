@@ -11,7 +11,7 @@ from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport (
+from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t_dragByMach,
     ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,

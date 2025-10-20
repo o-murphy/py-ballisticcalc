@@ -10,7 +10,7 @@ polluting hot paths or public symbols. Import only inside test code.
 """
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport (
+from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     ShotProps_t_dragByMach,
     ShotProps_t_spinDrift,

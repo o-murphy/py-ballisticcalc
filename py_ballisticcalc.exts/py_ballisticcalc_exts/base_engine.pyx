@@ -23,7 +23,7 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t, Inter
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport (
+from py_ballisticcalc_exts.bclib cimport (
     # types and methods
     Wind_t,
     WindSock_t_init,

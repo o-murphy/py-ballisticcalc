@@ -99,7 +99,7 @@ This report summarizes the Cythonization percentage for various source files, in
 | **Python Overhead Lines Percentage** | **32.0%** |
 
 ---
-## File: cy_bindings.html
+## File: bclib.html
 
 | Metric                         | Value       |
 | :----------------------------- | :---------- |

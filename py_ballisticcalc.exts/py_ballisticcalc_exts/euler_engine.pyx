@@ -11,7 +11,7 @@ from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.cy_bindings cimport TerminationReason, TrajFlag_t, ShotProps_t
+from py_ballisticcalc_exts.bclib cimport TerminationReason, TrajFlag_t, ShotProps_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc.exceptions import RangeError
 

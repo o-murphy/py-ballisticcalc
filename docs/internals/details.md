@@ -38,7 +38,7 @@ Development dependencies and reproducible developer/CI installs are pinned in `u
 - `py_ballisticcalc.exts/` — Cython subproject.
     - `py_ballisticcalc_exts/base_engine.pyx` — Cython wrapper that orchestrates C-layer stepping and defers event logic to Python.
     - `py_ballisticcalc_exts/` `rk4_engine.pyx`, `euler_engine.pyx` — Cython engine implementations.
-    - `py_ballisticcalc_exts/cy_bindings.pyx/.pxd` — helper functions and bridging helpers for C structs.
+    - `py_ballisticcalc_exts/bclib.pyx/.pxd` — helper functions and bridging helpers for C structs.
 
 ## How engines are wired
 Public call flow (simplified):
