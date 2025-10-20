@@ -92,7 +92,7 @@ cpdef size_t init_shot(object engine, object shot):
 
 cpdef void free_shot(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    e._free_trajectory()
+    e._release_trajectory()
 
 cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr

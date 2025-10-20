@@ -69,7 +69,7 @@ cdef class CythonizedBaseIntegrationEngine:
         self.integration_step_count = 0
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
-        self._free_trajectory()
+        self._release_trajectory()
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
         return self._config_s.cStepMultiplier
@@ -84,7 +84,7 @@ cdef class CythonizedBaseIntegrationEngine:
             res = self._find_max_range(shot_props_ptr, AngleBracketDeg_t(angle_bracket_deg[0], angle_bracket_deg[1]))
             return _new_feet(res.max_range_ft), _new_rad(res.angle_at_max_rad)
         finally:
-            self._free_trajectory()
+            self._release_trajectory()
 
     def find_zero_angle(self, object shot_info, object distance, bint lofted = False):
         """
@@ -97,7 +97,7 @@ cdef class CythonizedBaseIntegrationEngine:
             zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
             return _new_rad(zero_angle)
         finally:
-            self._free_trajectory()
+            self._release_trajectory()
 
     def find_apex(self, object shot_info) -> TrajectoryData:
         """
@@ -112,7 +112,7 @@ cdef class CythonizedBaseIntegrationEngine:
             props = ShotProps.from_shot(shot_info)
             return TrajectoryData.from_props(props, result.time, result.position, result.velocity, result.mach)
         finally:
-            self._free_trajectory()
+            self._release_trajectory()
 
     def zero_angle(CythonizedBaseIntegrationEngine self, object shot_info, object distance) -> Angular:
         """
@@ -137,7 +137,7 @@ cdef class CythonizedBaseIntegrationEngine:
             zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, False)
             return _new_rad(zero_angle)
         finally:
-            self._free_trajectory()
+            self._release_trajectory()
 
     def integrate(CythonizedBaseIntegrationEngine self,
                   object shot_info,
@@ -173,7 +173,7 @@ cdef class CythonizedBaseIntegrationEngine:
             _res = self._integrate(shot_props_ptr, range_limit_ft, range_step_ft, time_step, <TrajFlag_t>filter_flags)
         finally:
             # Always release C resources
-            self._free_trajectory()
+            self._release_trajectory()
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
@@ -227,9 +227,8 @@ cdef class CythonizedBaseIntegrationEngine:
             # Any interpolation failure (e.g., degenerate points) signals unreachable
             return 9e9
 
-    cdef void _free_trajectory(CythonizedBaseIntegrationEngine self):
-        if self._wind_sock.winds is not NULL:
-            WindSock_t_release(&self._wind_sock)
+    cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
+        WindSock_t_release(&self._wind_sock)
         ShotProps_t_release(&self._shot_s)
 
     cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info):
@@ -241,7 +240,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         # --- 🛑 CRITICAL FIX: FREE OLD RESOURCES FIRST ---
-        self._free_trajectory()
+        self._release_trajectory()
         # ---------------------------------------------------
 
         # hack to reload config if it was changed explicit on existed instance
@@ -304,7 +303,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         except Exception:
             # Ensure we free any partially allocated arrays inside _shot_s
-            self._free_trajectory()
+            self._release_trajectory()
             raise
 
         return &self._shot_s

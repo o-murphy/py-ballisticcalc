@@ -49,7 +49,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     # Python 'def' methods are not exposed in the C interface defined by a .pxd.
     # Only 'cdef' or 'cpdef' methods are declared here.
-    cdef void _free_trajectory(CythonizedBaseIntegrationEngine self)
+    cdef void _release_trajectory(CythonizedBaseIntegrationEngine self)
     cdef ShotProps_t* _init_trajectory(CythonizedBaseIntegrationEngine self, object shot_info)
     cdef ZeroInitialData_t _init_zero_calculation(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr, double distance)
     cdef double _find_zero_angle(CythonizedBaseIntegrationEngine self, ShotProps_t *shot_props_ptr, double distance, bint lofted)

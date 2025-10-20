@@ -95,7 +95,7 @@ The key statistic to look at is `mean_ms`.  The other three statistics are usefu
 - Common Cython pitfalls observed in this codebase:
     - Indentation and cdef scoping errors — ensure `cdef` declarations live at the top of a C function or appropriate scope.
     - Avoid using Python booleans when declaring typed C variables (use `bint` and 0/1 assignment in the C context).
-    - Keep initialisation of C structs and memory allocation clear; release resources in `_free_trajectory`.
+    - Keep initialisation of C structs and memory allocation clear; release resources in `_release_trajectory`.
 
 ## Build / test commands
 
