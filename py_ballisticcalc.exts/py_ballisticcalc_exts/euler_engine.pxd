@@ -20,6 +20,9 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     RangeErrorMaximumDropReached,
     RangeErrorMinimumAltitudeReached,
 )
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
+
 
 cdef extern from "include/euler.h" nogil:
     double _euler_time_step(double base_step, double velocity) noexcept nogil
@@ -28,7 +31,7 @@ cdef extern from "include/euler.h" nogil:
                                     WindSock_t *wind_sock_ptr,
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,
-                                    double time_step, int filter_flags,
+                                    double time_step, TrajFlag_t filter_flags,
                                     BaseTrajSeq_t *traj_seq_ptr) noexcept nogil
                          
 
@@ -36,4 +39,4 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedEulerIntegrationEngine self)
     cdef tuple _integrate(CythonizedEulerIntegrationEngine self, const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
-                          double time_step, int filter_flags)
+                          double time_step, TrajFlag_t filter_flags)

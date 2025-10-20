@@ -13,6 +13,9 @@ from py_ballisticcalc_exts.cy_bindings cimport (
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
+
 
 cdef extern from "include/bclib.h" nogil:
     ctypedef enum TerminationReason:
@@ -48,7 +51,7 @@ cdef extern from "include/rk4.h" nogil:
                                     WindSock_t *wind_sock_ptr,
                                     const Config_t *config_ptr,
                                     double range_limit_ft, double range_step_ft,
-                                    double time_step, int filter_flags,
+                                    double time_step, TrajFlag_t filter_flags,
                                     BaseTrajSeq_t *traj_seq_ptr) noexcept nogil
                          
 
@@ -56,4 +59,4 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self)
     cdef tuple _integrate(CythonizedRK4IntegrationEngine self, const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
-                          double time_step, int filter_flags)
+                          double time_step, TrajFlag_t filter_flags)

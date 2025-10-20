@@ -74,30 +74,6 @@ typedef struct
 
 typedef struct
 {
-    double bc;
-    Curve_t curve;
-    MachList_t mach_list;
-    double look_angle;
-    double twist;
-    double length;
-    double diameter;
-    double weight;
-    double barrel_elevation;
-    double barrel_azimuth;
-    double sight_height;
-    double cant_cosine;
-    double cant_sine;
-    double alt0;
-    double calc_step;
-    double muzzle_velocity;
-    double stability_coefficient;
-    int filter_flags;
-    Atmosphere_t atmo;
-    Coriolis_t coriolis;
-} ShotProps_t;
-
-typedef struct
-{
     double velocity;
     double direction_from;
     double until_distance;
@@ -142,6 +118,31 @@ typedef enum
     RangeErrorMaximumDropReached,
     RangeErrorMinimumAltitudeReached,
 } TerminationReason;
+
+
+typedef struct
+{
+    double bc;
+    Curve_t curve;
+    MachList_t mach_list;
+    double look_angle;
+    double twist;
+    double length;
+    double diameter;
+    double weight;
+    double barrel_elevation;
+    double barrel_azimuth;
+    double sight_height;
+    double cant_cosine;
+    double cant_sine;
+    double alt0;
+    double calc_step;
+    double muzzle_velocity;
+    double stability_coefficient;
+    TrajFlag_t filter_flags;
+    Atmosphere_t atmo;
+    Coriolis_t coriolis;
+} ShotProps_t;
 
 #ifdef __cplusplus
 extern "C"

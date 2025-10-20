@@ -3,7 +3,7 @@
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.cy_bindings cimport Config_t, Wind_t, ShotProps_t, Coriolis_t
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, TrajFlag_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 
@@ -84,7 +84,7 @@ cdef extern from "include/bclib.h" nogil:
         double calc_step
         double muzzle_velocity
         double stability_coefficient
-        int filter_flags
+        TrajFlag_t filter_flags
         Atmosphere_t atmo
         Coriolis_t coriolis
 
@@ -129,10 +129,6 @@ cdef extern from "include/bclib.h" nogil:
     double calculateEnergy(double bulletWeight, double velocity)
     double calculateOgw(double bulletWeight, double velocity)
 
-# Function to create and initialize a WindSock_t
-cdef WindSock_t WindSock_t_create(object winds_py_list)
-
-
 cdef struct ZeroInitialData_t:
     int status
     double look_angle_rad
@@ -150,6 +146,10 @@ cdef struct MaxRangeResult_t:
 cdef struct AngleBracketDeg_t:
     double low_angle_deg
     double high_angle_deg
+
+
+# Function to create and initialize a WindSock_t
+cdef WindSock_t WindSock_t_from_pylist(object winds_py_list)
 
 
 cdef class CythonizedBaseIntegrationEngine:
@@ -182,4 +182,4 @@ cdef class CythonizedBaseIntegrationEngine:
                                    double angle_rad, double target_x_ft, double target_y_ft)
     # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
     cdef tuple _integrate(CythonizedBaseIntegrationEngine self, const ShotProps_t *shot_props_ptr,
-                                        double range_limit_ft, double range_step_ft, double time_step, int filter_flags)
+                                        double range_limit_ft, double range_step_ft, double time_step, TrajFlag_t filter_flags)

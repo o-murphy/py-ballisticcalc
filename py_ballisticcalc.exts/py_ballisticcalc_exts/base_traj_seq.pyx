@@ -87,10 +87,9 @@ cdef class BaseTrajSeqT:
             raise MemoryError("Failed to create BaseTrajSeq_t")
     
     def __dealloc__(self):
-        cdef BaseTrajSeq_t* ptr = self._c_view
-        if ptr is not NULL:
+        if self._c_view is not NULL:
+            BaseTrajSeq_t_destroy(self._c_view)
             self._c_view = NULL
-            BaseTrajSeq_t_destroy(ptr)
         
     cdef void _ensure_capacity_c(self, size_t min_capacity):
         cdef int ret = BaseTrajSeq_t_ensure_capacity(self._c_view, min_capacity)

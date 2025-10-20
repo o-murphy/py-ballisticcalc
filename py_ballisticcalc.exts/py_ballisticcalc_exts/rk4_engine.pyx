@@ -21,8 +21,11 @@ from py_ballisticcalc_exts.cy_bindings cimport (
     RangeErrorMaximumDropReached,
     RangeErrorMinimumAltitudeReached,
 )
-
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc.exceptions import RangeError
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
+
 
 __all__ = [
     'CythonizedRK4IntegrationEngine',
@@ -39,7 +42,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
     cdef tuple _integrate(CythonizedRK4IntegrationEngine self, const ShotProps_t *shot_props_ptr,
                            double range_limit_ft, double range_step_ft,
-                           double time_step, int filter_flags):
+                           double time_step, TrajFlag_t filter_flags):
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
         cdef TerminationReason termination_reason = _integrate_rk4(
             shot_props_ptr,

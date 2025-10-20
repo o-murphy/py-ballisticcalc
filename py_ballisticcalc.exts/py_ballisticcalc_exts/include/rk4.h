@@ -17,7 +17,7 @@ extern "C"
                                      WindSock_t *wind_sock_ptr,
                                      const Config_t *config_ptr,
                                      double range_limit_ft, double range_step_ft,
-                                     double time_step, int filter_flags,
+                                     double time_step, TrajFlag_t filter_flags,
                                      BaseTrajSeq_t *traj_seq_ptr);
 
 #ifdef __cplusplus

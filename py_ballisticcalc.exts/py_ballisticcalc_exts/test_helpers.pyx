@@ -23,7 +23,7 @@ from py_ballisticcalc_exts.base_engine cimport (
     calculateEnergy,
     calculateOgw,
 )
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, TrajFlag_t
 from py_ballisticcalc_exts.v3d cimport V3dT
 
 
@@ -141,7 +141,7 @@ cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
     """Call engine._integrate directly with current shot props."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
-    return e._integrate(sp_ptr, range_limit_ft, range_step_ft, time_step, 0)
+    return e._integrate(sp_ptr, range_limit_ft, range_step_ft, time_step, TrajFlag_t.TFLAG_NONE)
 
 
 cpdef int step_count(object engine):

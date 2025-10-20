@@ -2,6 +2,8 @@
 from cpython.object cimport PyObject
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.trajectory_data cimport TrajFlag_t
 
 
 cdef extern from "include/bind.h" nogil:
@@ -91,7 +93,7 @@ cdef extern from "include/bclib.h" nogil:
         double calc_step
         double muzzle_velocity
         double stability_coefficient
-        int filter_flags
+        TrajFlag_t filter_flags
         Atmosphere_t atmo
         Coriolis_t coriolis
 
