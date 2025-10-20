@@ -1,4 +1,7 @@
 name: Pytest Cythonized Euler
+run-name: >
+  ${{ github.event_name == 'pull_request' && 'Full Matrix — PR' || 'Minimal Matrix — Push' }}
+  ${{ github.event.pull_request.number || github.ref_name }}
 
 on:
   pull_request:
