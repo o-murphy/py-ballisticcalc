@@ -75,28 +75,17 @@ V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double k
  * @return TerminationReason An enumeration value indicating why the integration
  * loop was terminated (e.g., NoRangeError on successful completion).
  */
-TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
-                                 const Config_t *config_ptr,
+TerminationReason _integrate_rk4(Engine_t *engine_ptr,
                                  double range_limit_ft, double range_step_ft,
                                  double time_step, TrajFlag_t filter_flags,
                                  BaseTrajSeq_t *traj_seq_ptr)
 {
-    // printf("DEBUG: Function entry\n");
-    // fflush(stdout);
-
-    if (!shot_props_ptr)
+    if (!engine_ptr)
     {
-        // printf("ERROR: shot_props_ptr is NULL\n");
-        return RangeErrorInvalidParameter;
-    }
-    if (!config_ptr)
-    {
-        // printf("ERROR: config_ptr is NULL\n");
         return RangeErrorInvalidParameter;
     }
     if (!traj_seq_ptr)
     {
-        // printf("ERROR: traj_seq_ptr is NULL\n");
         return RangeErrorInvalidParameter;
     }
 
@@ -119,9 +108,9 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
     // fflush(stdout);
 
     // Early binding of configuration constants
-    double _cMinimumVelocity = config_ptr->cMinimumVelocity;
-    double _cMinimumAltitude = config_ptr->cMinimumAltitude;
-    double _cMaximumDrop = -fabs(config_ptr->cMaximumDrop);
+    double _cMinimumVelocity = engine_ptr->config.cMinimumVelocity;
+    double _cMinimumAltitude = engine_ptr->config.cMinimumAltitude;
+    double _cMaximumDrop = -fabs(engine_ptr->config.cMaximumDrop);
 
     // printf("DEBUG: Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
     //        _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
@@ -131,7 +120,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
     TerminationReason termination_reason = NoRangeError;
     double relative_speed;
     V3dT _dir_vector;
-    int integration_step_count = 0;
+    engine_ptr->integration_step_count = 0;
 
     // RK4 specific variables
     V3dT _temp_add_operand;
@@ -143,7 +132,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
 
     // Initialize gravity vector
     gravity_vector.x = 0.0;
-    gravity_vector.y = config_ptr->cGravityConstant;
+    gravity_vector.y = engine_ptr->config.cGravityConstant;
     gravity_vector.z = 0.0;
 
     // printf("DEBUG: Gravity initialized: %f\n", gravity_vector.y);
@@ -152,30 +141,30 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
     // Initialize wind vector
     // printf("DEBUG: About to call WindSock_t_currentVector\n");
     // fflush(stdout);
-    wind_vector = WindSock_t_currentVector(&shot_props_ptr->wind_sock);
+    wind_vector = WindSock_t_currentVector(&engine_ptr->shot.wind_sock);
     // printf("DEBUG: Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
     // fflush(stdout);
 
     // Initialize velocity and position vectors
-    velocity = shot_props_ptr->muzzle_velocity;
-    calc_step = shot_props_ptr->calc_step;
+    velocity = engine_ptr->shot.muzzle_velocity;
+    calc_step = engine_ptr->shot.calc_step;
 
     // printf("DEBUG: velocity=%f, calc_step=%f\n", velocity, calc_step);
     // fflush(stdout);
 
     // Set range_vector components directly
     range_vector.x = 0.0;
-    range_vector.y = -shot_props_ptr->cant_cosine * shot_props_ptr->sight_height;
-    range_vector.z = -shot_props_ptr->cant_sine * shot_props_ptr->sight_height;
+    range_vector.y = -engine_ptr->shot.cant_cosine * engine_ptr->shot.sight_height;
+    range_vector.z = -engine_ptr->shot.cant_sine * engine_ptr->shot.sight_height;
     _cMaximumDrop += fmin(0.0, range_vector.y);
 
     // printf("DEBUG: range_vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
     // fflush(stdout);
 
     // Set direction vector components
-    _dir_vector.x = cos(shot_props_ptr->barrel_elevation) * cos(shot_props_ptr->barrel_azimuth);
-    _dir_vector.y = sin(shot_props_ptr->barrel_elevation);
-    _dir_vector.z = cos(shot_props_ptr->barrel_elevation) * sin(shot_props_ptr->barrel_azimuth);
+    _dir_vector.x = cos(engine_ptr->shot.barrel_elevation) * cos(engine_ptr->shot.barrel_azimuth);
+    _dir_vector.y = sin(engine_ptr->shot.barrel_elevation);
+    _dir_vector.z = cos(engine_ptr->shot.barrel_elevation) * sin(engine_ptr->shot.barrel_azimuth);
 
     // printf("DEBUG: dir_vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
     // fflush(stdout);
@@ -190,8 +179,8 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
     // printf("DEBUG: About to call Atmosphere_t_updateDensityFactorAndMachForAltitude\n");
     // fflush(stdout);
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
-        &shot_props_ptr->atmo,
-        shot_props_ptr->alt0 + range_vector.y,
+        &engine_ptr->shot.atmo,
+        engine_ptr->shot.alt0 + range_vector.y,
         &density_ratio,
         &mach);
     // printf("DEBUG: density_ratio=%f, mach=%f\n", density_ratio, mach);
@@ -201,25 +190,25 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
     // printf("DEBUG: Entering main loop, range_limit_ft=%f\n", range_limit_ft);
     // fflush(stdout);
 
-    while (range_vector.x <= range_limit_ft || integration_step_count < 3)
+    while (range_vector.x <= range_limit_ft || engine_ptr->integration_step_count < 3)
     {
         // printf("DEBUG: Loop iteration %d, range_x=%f\n", integration_step_count, range_vector.x);
         // fflush(stdout);
 
-        integration_step_count++;
+        engine_ptr->integration_step_count++;
 
         // Update wind reading at current point in trajectory
-        if (range_vector.x >= shot_props_ptr->wind_sock.next_range)
+        if (range_vector.x >= engine_ptr->shot.wind_sock.next_range)
         {
             // printf("DEBUG: Updating wind vector\n");
             // fflush(stdout);
-            wind_vector = WindSock_t_vectorForRange(&shot_props_ptr->wind_sock, range_vector.x);
+            wind_vector = WindSock_t_vectorForRange(&engine_ptr->shot.wind_sock, range_vector.x);
         }
 
         // Update air density and mach at current altitude
         Atmosphere_t_updateDensityFactorAndMachForAltitude(
-            &shot_props_ptr->atmo,
-            shot_props_ptr->alt0 + range_vector.y,
+            &engine_ptr->shot.atmo,
+            engine_ptr->shot.alt0 + range_vector.y,
             &density_ratio,
             &mach);
 
@@ -252,7 +241,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
             return RangeErrorInvalidParameter;
         }
 
-        km = density_ratio * ShotProps_t_dragByMach(shot_props_ptr, relative_speed / mach);
+        km = density_ratio * ShotProps_t_dragByMach(&engine_ptr->shot, relative_speed / mach);
         // printf("DEBUG: km=%f\n", km);
         // fflush(stdout);
 
@@ -261,22 +250,22 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
         // fflush(stdout);
 
         // v1 = f(relative_velocity)
-        v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, shot_props_ptr, &velocity_vector);
+        v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
 
         // v2 = f(relative_velocity + 0.5 * delta_time * v1)
         _temp_add_operand = mulS(&v1, 0.5 * delta_time);
         _temp_v_result = add(&relative_velocity, &_temp_add_operand);
-        v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, shot_props_ptr, &velocity_vector);
+        v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
 
         // v3 = f(relative_velocity + 0.5 * delta_time * v2)
         _temp_add_operand = mulS(&v2, 0.5 * delta_time);
         _temp_v_result = add(&relative_velocity, &_temp_add_operand);
-        v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, shot_props_ptr, &velocity_vector);
+        v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
 
         // v4 = f(relative_velocity + delta_time * v3)
         _temp_add_operand = mulS(&v3, delta_time);
         _temp_v_result = add(&relative_velocity, &_temp_add_operand);
-        v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, shot_props_ptr, &velocity_vector);
+        v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
 
         // p1 = velocity_vector
         p1 = velocity_vector;
@@ -330,7 +319,7 @@ TerminationReason _integrate_rk4(const ShotProps_t *shot_props_ptr,
         {
             termination_reason = RangeErrorMaximumDropReached;
         }
-        else if (velocity_vector.y <= 0 && (shot_props_ptr->alt0 + range_vector.y < _cMinimumAltitude))
+        else if (velocity_vector.y <= 0 && (engine_ptr->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
             termination_reason = RangeErrorMinimumAltitudeReached;
         }

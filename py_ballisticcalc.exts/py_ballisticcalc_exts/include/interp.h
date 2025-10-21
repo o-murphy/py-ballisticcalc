@@ -33,4 +33,4 @@ extern "C"
 }
 #endif
 
-#endif /* INTERP_H */
+#endif // INTERP_H

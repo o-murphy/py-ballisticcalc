@@ -3,6 +3,7 @@
 
 #include "v3d.h"
 #include "bclib.h"
+#include "engine.h"
 #include "base_traj_seq.h"
 
 #ifdef __cplusplus
@@ -18,8 +19,7 @@ extern "C"
      */
     double _euler_time_step(double base_step, double velocity);
 
-    TerminationReason _integrate_euler(const ShotProps_t *shot_props_ptr,
-                                       const Config_t *config_ptr,
+    TerminationReason _integrate_euler(Engine_t *engine_ptr,
                                        double range_limit_ft, double range_step_ft,
                                        double time_step, TrajFlag_t filter_flags,
                                        BaseTrajSeq_t *traj_seq_ptr);

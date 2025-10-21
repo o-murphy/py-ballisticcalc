@@ -54,7 +54,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
 
     Args:
-        shot_props_addr: `id()` of an internal ShotProps_t struct exposed via engine._shot_s
+        shot_props_addr: `id()` of an internal ShotProps_t struct exposed via engine._engine.shot
         mach: Mach number to evaluate
 
     Returns:
@@ -62,7 +62,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
 
     Notes:
         We pass a raw address obtained from a Cython engine instance to avoid adding
-        a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._shot_s`.
+        a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._engine.shot`.
     """
     cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
     return ShotProps_t_dragByMach(sp_ptr, mach)
@@ -70,16 +70,16 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return ShotProps_t_dragByMach(&e._shot_s, mach)
+    return ShotProps_t_dragByMach(&e._engine.shot, mach)
 
 cpdef size_t shot_props_addr(object engine):
     """Return raw address of the engine's internal ShotProps_t struct.
 
     Engine must have performed at least one initialization (e.g., integrate or zeroing)
-    so that its _shot_s contains prepared curve + mach list.
+    so that its _engine.shot contains prepared curve + mach list.
     """
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return <size_t>&e._shot_s
+    return <size_t>&e._engine.shot
 
 cpdef size_t init_shot(object engine, object shot):
     """Initialize shot props inside engine and return its address.
@@ -129,8 +129,7 @@ cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
                                 double range_limit_ft, double range_step_ft, double time_step):
     """Call engine._integrate directly with current shot props."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
-    return e._integrate(sp_ptr, range_limit_ft, range_step_ft, time_step, TrajFlag_t.TFLAG_NONE)
+    return e._integrate(range_limit_ft, range_step_ft, time_step, TrajFlag_t.TFLAG_NONE)
 
 cpdef int step_count(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
