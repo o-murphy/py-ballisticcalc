@@ -11,7 +11,7 @@ from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine, 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport TerminationReason, TrajFlag_t, ShotProps_t
+from py_ballisticcalc_exts.bclib cimport TerminationReason, TrajFlag_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc.exceptions import RangeError
 
@@ -30,7 +30,6 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
         return self.DEFAULT_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)
 
     cdef tuple _integrate(CythonizedEulerIntegrationEngine self,
-                          const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, TrajFlag_t filter_flags):
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()

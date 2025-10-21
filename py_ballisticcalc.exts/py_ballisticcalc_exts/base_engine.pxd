@@ -17,7 +17,6 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
-
 cdef extern from "include/engine.h" nogil:
     ctypedef struct ZeroInitialData_t:
         int status
@@ -118,7 +117,6 @@ cdef class CythonizedBaseIntegrationEngine:
     # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr,
         double range_limit_ft,
         double range_step_ft,
         double time_step,

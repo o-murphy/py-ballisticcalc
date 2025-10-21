@@ -5,9 +5,6 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    ShotProps_t,
-    Config_t,
-    WindSock_t,
     TrajFlag_t,
     TerminationReason,
 )
@@ -28,6 +25,5 @@ cdef extern from "include/euler.h" nogil:
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedEulerIntegrationEngine self)
     cdef tuple _integrate(CythonizedEulerIntegrationEngine self,
-                          const ShotProps_t *shot_props_ptr,
                           double range_limit_ft, double range_step_ft,
                           double time_step, TrajFlag_t filter_flags)

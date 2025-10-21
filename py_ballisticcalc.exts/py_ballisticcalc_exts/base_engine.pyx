@@ -173,7 +173,7 @@ cdef class CythonizedBaseIntegrationEngine:
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         try:
-            _res = self._integrate(shot_props_ptr, range_limit_ft, range_step_ft, time_step, <TrajFlag_t>filter_flags)
+            _res = self._integrate(range_limit_ft, range_step_ft, time_step, <TrajFlag_t>filter_flags)
         finally:
             # Always release C resources
             self._release_trajectory()
@@ -225,7 +225,7 @@ cdef class CythonizedBaseIntegrationEngine:
             BaseTraj_t* last_ptr
             Py_ssize_t n
         shot_props_ptr.barrel_elevation = angle_rad
-        __res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
+        __res = self._integrate(target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
         trajectory = <BaseTrajSeqT>__res[0]
         # If trajectory is too short for cubic interpolation, treat as unreachable
         n = trajectory.len_c()
@@ -563,7 +563,7 @@ cdef class CythonizedBaseIntegrationEngine:
             # Update shot data
             shot_props_ptr.barrel_elevation = angle_rad
             try:
-                _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, TrajFlag_t.TFLAG_NONE)
+                _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_NONE)
                 trajectory = <BaseTrajSeqT>_res[0]
                 ca = cos(shot_props_ptr.look_angle)
                 sa = sin(shot_props_ptr.look_angle)
@@ -646,7 +646,7 @@ cdef class CythonizedBaseIntegrationEngine:
             has_restore_min_velocity = 1
 
         try:
-            _res = self._integrate(shot_props_ptr, 9e9, 9e9, 0.0, TrajFlag_t.TFLAG_APEX)
+            _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_APEX)
             apex = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_VEL_Y, 0.0)
         finally:
             if has_restore_min_velocity:
@@ -727,7 +727,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
             while iterations_count < _cMaxIterations:
                 # Check height of trajectory at the zero distance (using current barrel_elevation)
-                _res = self._integrate(shot_props_ptr, target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
+                _res = self._integrate(target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
                 hit = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
 
                 if hit.time == 0.0:
@@ -814,7 +814,6 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
