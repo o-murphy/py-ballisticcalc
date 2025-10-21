@@ -37,36 +37,36 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double drag(self, double mach):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return ShotProps_t_dragByMach(&self._shot_s, mach)
+        return ShotProps_t_dragByMach(&self._engine.shot, mach)
 
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
         cdef double density_ratio = 0.0
         cdef double mach = 0.0
-        Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._shot_s.atmo, altitude_ft, &density_ratio, &mach)
+        Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._engine.shot.atmo, altitude_ft, &density_ratio, &mach)
         return density_ratio, mach
 
     cpdef double spin_drift(self, double time_s):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return ShotProps_t_spinDrift(&self._shot_s, time_s)
+        return ShotProps_t_spinDrift(&self._engine.shot, time_s)
 
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        ShotProps_t_updateStabilityCoefficient(&self._shot_s)
-        return self._shot_s.stability_coefficient
+        ShotProps_t_updateStabilityCoefficient(&self._engine.shot)
+        return self._engine.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return calculateEnergy(self._shot_s.weight, velocity_fps)
+        return calculateEnergy(self._engine.shot.weight, velocity_fps)
 
     cpdef double ogw(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return calculateOgw(self._shot_s.weight, velocity_fps)
+        return calculateOgw(self._engine.shot.weight, velocity_fps)
 
     cpdef int step_count(self):
         return self.integration_step_count
@@ -81,16 +81,16 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
         cdef BaseTrajSeqT seq = BaseTrajSeqT()
-        cdef double v = self._shot_s.muzzle_velocity
-        cdef double be = self._shot_s.barrel_elevation
-        cdef double az = self._shot_s.barrel_azimuth
+        cdef double v = self._engine.shot.muzzle_velocity
+        cdef double be = self._engine.shot.barrel_elevation
+        cdef double az = self._engine.shot.barrel_azimuth
         cdef double vx = v * cos(be) * cos(az)
         cdef double vy = v * sin(be)
         cdef double vz = v * cos(be) * sin(az)
         # initial point
         seq._append_c(0.0, 0.0,
-                      -self._shot_s.cant_cosine * self._shot_s.sight_height,
-                      -self._shot_s.cant_sine * self._shot_s.sight_height,
+                      -self._engine.shot.cant_cosine * self._engine.shot.sight_height,
+                      -self._shot_engine._engine.shot.cant_sine * self._engine.shot.sight_height,
                       vx, vy, vz, 1.0)
         # second point simple Euler step without drag / gravity for minimal path
         cdef double dt
@@ -99,8 +99,8 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         else:
             dt = 0.001
         seq._append_c(dt, vx * dt,
-                      -self._shot_s.cant_cosine * self._shot_s.sight_height + vy * dt,
-                      -self._shot_s.cant_sine * self._shot_s.sight_height + vz * dt,
+                      -self._engine.shot.cant_cosine * self._engine.shot.sight_height + vy * dt,
+                      -self._engine.shot.cant_sine * self._engine.shot.sight_height + vz * dt,
                       vx, vy, vz, 1.0)
         self.integration_step_count = <int>seq._length
         return (seq, None)

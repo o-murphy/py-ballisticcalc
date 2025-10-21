@@ -6,39 +6,70 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     WindSock_t,
     TrajFlag_t,
+    TerminationReason,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
-cdef struct ZeroInitialData_t:
-    int status
-    double look_angle_rad
-    double slant_range_ft
-    double target_x_ft
-    double target_y_ft
-    double start_height_ft
 
-cdef struct MaxRangeResult_t:
-    double max_range_ft
-    double angle_at_max_rad
 
-cdef struct AngleBracketDeg_t:
-    double low_angle_deg
-    double high_angle_deg
+cdef extern from "include/engine.h" nogil:
+    ctypedef struct ZeroInitialData_t:
+        int status
+        double look_angle_rad
+        double slant_range_ft
+        double target_x_ft
+        double target_y_ft
+        double start_height_ft
+    
+    ctypedef struct MaxRangeResult_t:
+        double max_range_ft
+        double angle_at_max_rad
+
+    ctypedef struct AngleBracketDeg_t:
+        double low_angle_deg
+        double high_angle_deg
+
+    ctypedef TerminationReason (*IntegrateFuncPtr)(
+        const ShotProps_t *shot_props_ptr,
+        const Config_t *config_ptr,
+        double range_limit_ft,
+        double range_step_ft,
+        double time_step,
+        TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr
+    )
+
+    ctypedef struct Engine_t:
+        int integration_step_count
+        V3dT gravity_vector
+        Config_t config
+        ShotProps_t shot
+        # IntegrateFuncPtr integrate_func
+
+    void Engine_t_release_trajectory(Engine_t *engine)
+
+    TerminationReason Engine_t_integrate(
+        IntegrateFuncPtr integrate_func,
+        Engine_t *engine,
+        double range_limit_ft,
+        double range_step_ft,
+        double time_step,
+        TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr
+    )
 
 
 cdef class CythonizedBaseIntegrationEngine:
     cdef:
-        public int integration_step_count
         public object _config
         list _table_data  # list[object]
-        V3dT gravity_vector
-        Config_t _config_s  # Declared here
-        ShotProps_t _shot_s  # Declared here
+        Engine_t _engine
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
 

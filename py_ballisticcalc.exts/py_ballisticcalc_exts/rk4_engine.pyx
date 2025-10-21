@@ -7,7 +7,7 @@ Because storing each step in a BaseTrajSeqT is practically costless, we always r
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
+from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine, Engine_t_integrate
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 # noinspection PyUnresolvedReferences
@@ -34,9 +34,9 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
                           double range_limit_ft, double range_step_ft,
                           double time_step, TrajFlag_t filter_flags):
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
-        cdef TerminationReason termination_reason = _integrate_rk4(
-            shot_props_ptr,
-            &self._config_s,
+        cdef TerminationReason termination_reason = Engine_t_integrate(
+            _integrate_rk4,
+            &self._engine,
             range_limit_ft,
             range_step_ft,
             time_step,
