@@ -29,11 +29,6 @@ typedef struct
 
 typedef struct engine_t Engine_t;
 
-// typedef TerminationReason (*IntegrateFuncPtr)(Engine_t *engine_ptr,
-//                                               double range_limit_ft, double range_step_ft,
-//                                               double time_step, TrajFlag_t filter_flags,
-//                                               BaseTrajSeq_t *traj_seq_ptr);
-
 typedef TerminationReason IntegrateFunc(
     Engine_t *engine_ptr,
     double range_limit_ft,

@@ -40,16 +40,6 @@ cdef extern from "include/engine.h" nogil:
     # Typedef alias
     ctypedef engine_t Engine_t
 
-    # # Function pointer
-    # ctypedef TerminationReason (*IntegrateFuncPtr)(
-    #     Engine_t *engine_ptr,
-    #     double range_limit_ft,
-    #     double range_step_ft,
-    #     double time_step,
-    #     TrajFlag_t filter_flags,
-    #     BaseTrajSeq_t *traj_seq_ptr
-    # )
-
     # Declare the function signature type (not a pointer yet)
     ctypedef TerminationReason IntegrateFunc(
         Engine_t *engine_ptr,

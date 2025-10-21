@@ -1,11 +1,5 @@
 #include "engine.h"
 
-// void Engine_t_init_trajectory(Engine_t *engine_ptr) {
-//     if (engine_ptr == NULL) {
-//         return -1;
-//     }
-// }
-
 void Engine_t_release_trajectory(Engine_t *engine_ptr)
 {
     if (engine_ptr == NULL)
