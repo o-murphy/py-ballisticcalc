@@ -34,6 +34,14 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double key_value,
         BaseTraj_t* out
     ) except? 0 nogil
+    
+    int BaseTrajSeq_t_interpolate_at(
+        const BaseTrajSeq_t *seq,
+        ssize_t idx,
+        InterpKey key_kind,
+        double key_value,
+        BaseTrajData_t *out
+    )
 
     BaseTrajSeq_t* BaseTrajSeq_t_create() noexcept nogil
     void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq) noexcept nogil

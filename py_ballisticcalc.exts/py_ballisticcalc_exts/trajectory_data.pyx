@@ -16,7 +16,6 @@ from py_ballisticcalc_exts.interp cimport interpolate_3_pt
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BaseTrajData_t,
-    BaseTrajData_t_create,
     BaseTrajData_t_destroy,
     InterpKey,
 )

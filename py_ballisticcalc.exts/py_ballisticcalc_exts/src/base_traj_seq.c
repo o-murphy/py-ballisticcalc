@@ -175,6 +175,25 @@ int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpK
     return 0;
 }
 
+int BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+{
+    if (!seq || !out)
+    {
+        return -1; // Invalid input
+    }
+    BaseTraj_t raw_output;
+    int ret = BaseTrajSeq_t_interpolate_raw(seq, idx, key_kind, key_value, &raw_output);
+    if (ret < 0)
+    {
+        return -1; // IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
+    }
+    out->time = raw_output.time;
+    out->position = (V3dT){raw_output.px, raw_output.py, raw_output.pz};
+    out->velocity = (V3dT){raw_output.vx, raw_output.vy, raw_output.vz};
+    out->mach = raw_output.mach;
+    return 0;
+}
+
 BaseTrajSeq_t *BaseTrajSeq_t_create()
 {
     BaseTrajSeq_t *ptr = (BaseTrajSeq_t *)calloc(1, sizeof(BaseTrajSeq_t));

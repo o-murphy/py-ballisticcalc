@@ -108,16 +108,13 @@ cdef class BaseTrajSeqT:
         Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
             Supports negative idx (which references from end of sequence).
         """
-        cdef BaseTraj_t output
-        cdef int ret = BaseTrajSeq_t_interpolate_raw(self._c_view, idx, key_kind, key_value, &output)
+        cdef BaseTrajData_t output
+        cdef int ret = BaseTrajSeq_t_interpolate_at(self._c_view, idx, key_kind, key_value, &output)
 
         if ret < 0:
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
 
-        cdef V3dT position = V3dT(output.px, output.py, output.pz)
-        cdef V3dT velocity = V3dT(output.vx, output.vy, output.vz)
-
-        return BaseTrajData_t(output.time, position, velocity, output.mach)
+        return output
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""

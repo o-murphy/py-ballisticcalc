@@ -279,19 +279,19 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     //        altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
-BaseTrajData_t *BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach)
-{
-    BaseTrajData_t *ptr = calloc(1, sizeof(BaseTrajData_t));
-    if (ptr == NULL)
-    {
-        return NULL;
-    }
-    ptr->time = time;
-    ptr->position = position;
-    ptr->velocity = velocity;
-    ptr->mach = mach;
-    return ptr;
-}
+// BaseTrajData_t *BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach)
+// {
+//     BaseTrajData_t *ptr = calloc(1, sizeof(BaseTrajData_t));
+//     if (ptr == NULL)
+//     {
+//         return NULL;
+//     }
+//     ptr->time = time;
+//     ptr->position = position;
+//     ptr->velocity = velocity;
+//     ptr->mach = mach;
+//     return ptr;
+// }
 
 void BaseTrajData_t_destroy(BaseTrajData_t *ptr)
 {

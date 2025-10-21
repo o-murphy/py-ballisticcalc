@@ -89,7 +89,7 @@ extern "C"
      * @return 1 on success, 0 on failure.
      */
     int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out);
-
+    int BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
     BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx);
     ssize_t BaseTrajSeq_t_bisect_center_idx_buf(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value);
     ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(const BaseTrajSeq_t *seq, double ca, double sa, double value);
