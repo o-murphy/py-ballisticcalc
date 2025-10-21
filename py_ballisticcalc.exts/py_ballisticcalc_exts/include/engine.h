@@ -27,12 +27,6 @@ typedef struct
     double high_angle_deg;
 } AngleBracketDeg_t;
 
-typedef TerminationReason (*IntegrateFuncPtr)(const ShotProps_t *shot_props_ptr,
-                                              const Config_t *config_ptr,
-                                              double range_limit_ft, double range_step_ft,
-                                              double time_step, TrajFlag_t filter_flags,
-                                              BaseTrajSeq_t *traj_seq_ptr);
-
 typedef struct
 {
     int integration_step_count;
@@ -42,14 +36,28 @@ typedef struct
     // IntegrateFuncPtr integrate_func;
 } Engine_t;
 
-void Engine_t_release_trajectory(Engine_t *engine);
-TerminationReason Engine_t_integrate(
-    IntegrateFuncPtr integrate_func,
-    Engine_t *engine,
-    double range_limit_ft,
-    double range_step_ft,
-    double time_step,
-    TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr);
+typedef TerminationReason (*IntegrateFuncPtr)(Engine_t *engine_ptr,
+                                              double range_limit_ft, double range_step_ft,
+                                              double time_step, TrajFlag_t filter_flags,
+                                              BaseTrajSeq_t *traj_seq_ptr);
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    void Engine_t_release_trajectory(Engine_t *engine_ptr);
+    TerminationReason Engine_t_integrate(
+        IntegrateFuncPtr integrate_func,
+        Engine_t *engine_ptr,
+        double range_limit_ft,
+        double range_step_ft,
+        double time_step,
+        TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // H_ENGINE
