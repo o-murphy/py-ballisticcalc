@@ -25,7 +25,7 @@ cdef extern from "include/engine.h" nogil:
         double target_x_ft
         double target_y_ft
         double start_height_ft
-    
+
     ctypedef struct MaxRangeResult_t:
         double max_range_ft
         double angle_at_max_rad
@@ -34,14 +34,24 @@ cdef extern from "include/engine.h" nogil:
         double low_angle_deg
         double high_angle_deg
 
-    ctypedef struct Engine_t:
-        int integration_step_count
-        V3dT gravity_vector
-        Config_t config
-        ShotProps_t shot
-        # IntegrateFuncPtr integrate_func
+    # Forward declaration
+    struct engine_t
 
-    ctypedef TerminationReason (*IntegrateFuncPtr)(
+    # Typedef alias
+    ctypedef engine_t Engine_t
+
+    # # Function pointer
+    # ctypedef TerminationReason (*IntegrateFuncPtr)(
+    #     Engine_t *engine_ptr,
+    #     double range_limit_ft,
+    #     double range_step_ft,
+    #     double time_step,
+    #     TrajFlag_t filter_flags,
+    #     BaseTrajSeq_t *traj_seq_ptr
+    # )
+
+    # Declare the function signature type (not a pointer yet)
+    ctypedef TerminationReason IntegrateFunc(
         Engine_t *engine_ptr,
         double range_limit_ft,
         double range_step_ft,
@@ -49,11 +59,21 @@ cdef extern from "include/engine.h" nogil:
         TrajFlag_t filter_flags,
         BaseTrajSeq_t *traj_seq_ptr
     )
+    
+    # Declare pointer to function
+    ctypedef IntegrateFunc *IntegrateFuncPtr
+
+    # Full struct definition
+    struct engine_t:
+        int integration_step_count
+        V3dT gravity_vector
+        Config_t config
+        ShotProps_t shot
+        IntegrateFuncPtr integrate_func_ptr
 
     void Engine_t_release_trajectory(Engine_t *engine_ptr)
 
     TerminationReason Engine_t_integrate(
-        IntegrateFuncPtr integrate_func,
         Engine_t *engine_ptr,
         double range_limit_ft,
         double range_step_ft,

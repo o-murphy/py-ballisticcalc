@@ -17,7 +17,6 @@ void Engine_t_release_trajectory(Engine_t *engine_ptr)
 }
 
 TerminationReason Engine_t_integrate(
-    IntegrateFuncPtr integrate_func,
     Engine_t *engine_ptr,
     double range_limit_ft,
     double range_step_ft,
@@ -25,10 +24,11 @@ TerminationReason Engine_t_integrate(
     TrajFlag_t filter_flags,
     BaseTrajSeq_t *traj_seq_ptr)
 {
-    if (!integrate_func) {
+    if (!engine_ptr)
+    {
         return RangeErrorInvalidParameter;
     }
-    if (!engine_ptr)
+    if (!engine_ptr->integrate_func_ptr)
     {
         return RangeErrorInvalidParameter;
     }
@@ -36,5 +36,5 @@ TerminationReason Engine_t_integrate(
     {
         return RangeErrorInvalidParameter;
     }
-    return integrate_func(engine_ptr, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
+    return engine_ptr->integrate_func_ptr(engine_ptr, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 }

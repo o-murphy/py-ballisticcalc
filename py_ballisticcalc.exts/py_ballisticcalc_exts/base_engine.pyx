@@ -22,6 +22,7 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     ShotProps_t_updateStabilityCoefficient,
     TrajFlag_t,
+    TerminationReason,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport (
@@ -171,7 +172,9 @@ cdef class CythonizedBaseIntegrationEngine:
             BaseTrajDataT init, fin
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
-            ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+
+        self._init_trajectory(shot_info)
+
         try:
             _res = self._integrate(range_limit_ft, range_step_ft, time_step, <TrajFlag_t>filter_flags)
         finally:
@@ -819,4 +822,25 @@ cdef class CythonizedBaseIntegrationEngine:
         double time_step,
         TrajFlag_t filter_flags
     ):
-        raise NotImplementedError
+        if self._engine.integrate_func_ptr is NULL:
+            raise NotImplementedError
+
+        cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
+        cdef TerminationReason termination_reason = Engine_t_integrate(
+            &self._engine,
+            range_limit_ft,
+            range_step_ft,
+            time_step,
+            filter_flags,
+            traj_seq._c_view,
+        )
+        cdef str termination_reason_str = None
+        if termination_reason == TerminationReason.RangeErrorInvalidParameter:
+            raise RuntimeError("InvalidParameter")
+        if termination_reason == TerminationReason.RangeErrorMinimumVelocityReached:
+            termination_reason_str = RangeError.MinimumVelocityReached
+        if termination_reason == TerminationReason.RangeErrorMaximumDropReached:
+            termination_reason_str = RangeError.MaximumDropReached
+        if termination_reason == TerminationReason.RangeErrorMinimumAltitudeReached:
+            termination_reason_str = RangeError.MinimumAltitudeReached
+        return traj_seq, termination_reason_str

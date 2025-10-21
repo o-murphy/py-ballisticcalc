@@ -7,13 +7,7 @@ Because storing each step in a BaseTrajSeqT is practically costless, we always r
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine, Engine_t_integrate
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport TerminationReason, TrajFlag_t
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc.exceptions import RangeError
+from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 
 __all__ = [
     'CythonizedRK4IntegrationEngine',
@@ -25,30 +19,9 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     """Cythonized RK4 (Runge-Kutta 4th order) integration engine for ballistic calculations."""
     DEFAULT_TIME_STEP = 0.0025
 
+    def __cinit__(self, object _config):
+        self._engine.integrate_func_ptr = _integrate_rk4
+
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self):
         """Calculate the step size for integration."""
         return self.DEFAULT_TIME_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)
-
-    cdef tuple _integrate(CythonizedRK4IntegrationEngine self,
-                          double range_limit_ft, double range_step_ft,
-                          double time_step, TrajFlag_t filter_flags):
-        cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
-        cdef TerminationReason termination_reason = Engine_t_integrate(
-            _integrate_rk4,
-            &self._engine,
-            range_limit_ft,
-            range_step_ft,
-            time_step,
-            filter_flags,
-            traj_seq._c_view,
-        )
-        cdef str termination_reason_str = None
-        if termination_reason == TerminationReason.RangeErrorInvalidParameter:
-            raise RuntimeError("InvalidParameter")
-        if termination_reason == TerminationReason.RangeErrorMinimumVelocityReached:
-            termination_reason_str = RangeError.MinimumVelocityReached
-        if termination_reason == TerminationReason.RangeErrorMaximumDropReached:
-            termination_reason_str = RangeError.MaximumDropReached
-        if termination_reason == TerminationReason.RangeErrorMinimumAltitudeReached:
-            termination_reason_str = RangeError.MinimumAltitudeReached
-        return traj_seq, termination_reason_str
