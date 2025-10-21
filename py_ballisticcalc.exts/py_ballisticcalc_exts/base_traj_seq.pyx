@@ -20,56 +20,14 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.interp cimport interpolate_3_pt
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.bclib cimport InterpKey
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.bind cimport _attribute_to_key, _key_to_attribute
+
 
 __all__ = ('BaseTrajSeqT')
 
-cdef InterpKey _attribute_to_key(str key_attribute):
-    cdef InterpKey key_kind
-
-    if key_attribute == 'time':
-        key_kind = KEY_TIME
-    elif key_attribute == 'mach':
-        key_kind = KEY_MACH
-    elif key_attribute == 'position.x':
-        key_kind = KEY_POS_X
-    elif key_attribute == 'position.y':
-        key_kind = KEY_POS_Y
-    elif key_attribute == 'position.z':
-        key_kind = KEY_POS_Z
-    elif key_attribute == 'velocity.x':
-        key_kind = KEY_VEL_X
-    elif key_attribute == 'velocity.y':
-        key_kind = KEY_VEL_Y
-    elif key_attribute == 'velocity.z':
-        key_kind = KEY_VEL_Z
-    else:
-        raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
-
-    return key_kind
-
-cdef str _key_to_attribute(InterpKey key_kind):
-    cdef str key_attribute
-
-    if key_kind == KEY_TIME:
-        key_attribute = 'time'
-    elif key_kind == KEY_MACH:
-        key_attribute = 'mach'
-    elif key_kind == KEY_POS_X:
-        key_attribute = 'position.x'
-    elif key_kind == KEY_POS_Y:
-        key_attribute = 'position.y'
-    elif key_kind == KEY_POS_Z:
-        key_attribute = 'position.z'
-    elif key_kind == KEY_VEL_X:
-        key_attribute = 'velocity.x'
-    elif key_kind == KEY_VEL_Y:
-        key_attribute = 'velocity.y'
-    elif key_kind == KEY_VEL_Z:
-        key_attribute = 'velocity.z'
-    else:
-        raise ValueError(f"Unknown InterpKey value: {key_kind}")
-
-    return key_attribute
 
 cdef class BaseTrajSeqT:
     """Contiguous C buffer of BaseTraj_t points with fast append and interpolation.
@@ -198,7 +156,7 @@ cdef class BaseTrajSeqT:
         sft = 0.0
         if start_from_time is not None:
             sft = <double>start_from_time
-        if sft > 0.0 and key_kind != KEY_TIME:
+        if sft > 0.0 and key_kind != InterpKey.KEY_TIME:
             buf = self._c_view.buffer
             start_idx = <Py_ssize_t>0
             # find first index with time >= start_from_time

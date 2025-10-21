@@ -144,6 +144,21 @@ typedef struct
     TrajFlag_t filter_flags;
 } ShotProps_t;
 
+/**
+ * Keys used to look up specific values within a BaseTraj_t struct.
+ */
+typedef enum
+{
+    KEY_TIME,
+    KEY_MACH,
+    KEY_POS_X,
+    KEY_POS_Y,
+    KEY_POS_Z,
+    KEY_VEL_X,
+    KEY_VEL_Y,
+    KEY_VEL_Z
+} InterpKey;
+
 #ifdef __cplusplus
 extern "C"
 {

@@ -151,6 +151,16 @@ cdef extern from "include/bclib.h" nogil:
         RangeErrorMaximumDropReached
         RangeErrorMinimumAltitudeReached
 
+    ctypedef enum InterpKey:
+        KEY_TIME
+        KEY_MACH
+        KEY_POS_X
+        KEY_POS_Y
+        KEY_POS_Z
+        KEY_VEL_X
+        KEY_VEL_Y
+        KEY_VEL_Z
+
     # helpers
     double getCorrection(double distance, double offset)
     double calculateEnergy(double bulletWeight, double velocity)

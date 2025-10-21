@@ -4,6 +4,9 @@ Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.bclib cimport InterpKey
+
 
 cdef extern from "include/base_traj_seq.h" nogil:
     ctypedef struct BaseTraj_t:
@@ -15,16 +18,6 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double vy
         double vz
         double mach
-
-    ctypedef enum InterpKey:
-        KEY_TIME
-        KEY_MACH
-        KEY_POS_X
-        KEY_POS_Y
-        KEY_POS_Z
-        KEY_VEL_X
-        KEY_VEL_Y
-        KEY_VEL_Z
 
     ctypedef struct BaseTrajSeq_t:
         BaseTraj_t* buffer
@@ -70,8 +63,6 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double value
     ) noexcept nogil
 
-cdef InterpKey _attribute_to_key(str key_attribute)
-cdef str _key_to_attribute(InterpKey key_kind)
 
 cdef class BaseTrajSeqT:
     cdef BaseTrajSeq_t* _c_view

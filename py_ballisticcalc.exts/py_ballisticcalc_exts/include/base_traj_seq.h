@@ -36,21 +36,6 @@ typedef struct
 } BaseTraj_t;
 
 /**
- * Keys used to look up specific values within a BaseTraj_t struct.
- */
-typedef enum
-{
-    KEY_TIME,
-    KEY_MACH,
-    KEY_POS_X,
-    KEY_POS_Y,
-    KEY_POS_Z,
-    KEY_VEL_X,
-    KEY_VEL_Y,
-    KEY_VEL_Z
-} InterpKey;
-
-/**
  * Internal view structure for a sequence (buffer) of BaseTraj_t points.
  */
 typedef struct
