@@ -120,7 +120,7 @@ TerminationReason _integrate_rk4(Engine_t *engine_ptr,
     TerminationReason termination_reason = NoRangeError;
     double relative_speed;
     V3dT _dir_vector;
-    int integration_step_count = 0;
+    engine_ptr->integration_step_count = 0;
 
     // RK4 specific variables
     V3dT _temp_add_operand;
@@ -190,12 +190,12 @@ TerminationReason _integrate_rk4(Engine_t *engine_ptr,
     // printf("DEBUG: Entering main loop, range_limit_ft=%f\n", range_limit_ft);
     // fflush(stdout);
 
-    while (range_vector.x <= range_limit_ft || integration_step_count < 3)
+    while (range_vector.x <= range_limit_ft || engine_ptr->integration_step_count < 3)
     {
         // printf("DEBUG: Loop iteration %d, range_x=%f\n", integration_step_count, range_vector.x);
         // fflush(stdout);
 
-        integration_step_count++;
+        engine_ptr->integration_step_count++;
 
         // Update wind reading at current point in trajectory
         if (range_vector.x >= engine_ptr->shot.wind_sock.next_range)

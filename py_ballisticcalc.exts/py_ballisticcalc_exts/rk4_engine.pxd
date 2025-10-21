@@ -40,7 +40,7 @@ cdef extern from "include/rk4.h" nogil:
                          const ShotProps_t *shot_props_ptr,
                          const V3dT *ground_velocity_ptr) noexcept nogil
 
-    TerminationReason _integrate_rk4(const Engine_t *engine_ptr,
+    TerminationReason _integrate_rk4(Engine_t *engine_ptr,
                                      double range_limit_ft, double range_step_ft,
                                      double time_step, TrajFlag_t filter_flags,
                                      BaseTrajSeq_t *traj_seq_ptr) noexcept nogil

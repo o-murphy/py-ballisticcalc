@@ -73,6 +73,10 @@ cdef class CythonizedBaseIntegrationEngine:
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         self._release_trajectory()
 
+    @property
+    def integration_step_count(self) -> int:
+        return self.base_engine.integration_step_count
+
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
         return self._engine.config.cStepMultiplier
 

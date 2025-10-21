@@ -58,7 +58,7 @@ cdef extern from "include/engine.h" nogil:
         double time_step,
         TrajFlag_t filter_flags,
         BaseTrajSeq_t *traj_seq_ptr
-    )
+    ) noexcept nogil
 
     # Declare pointer to function
     ctypedef IntegrateFunc *IntegrateFuncPtr
@@ -71,7 +71,7 @@ cdef extern from "include/engine.h" nogil:
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr
 
-    void Engine_t_release_trajectory(Engine_t *engine_ptr)
+    void Engine_t_release_trajectory(Engine_t *engine_ptr) noexcept nogil
 
     TerminationReason Engine_t_integrate(
         Engine_t *engine_ptr,
@@ -80,7 +80,7 @@ cdef extern from "include/engine.h" nogil:
         double time_step,
         TrajFlag_t filter_flags,
         BaseTrajSeq_t *traj_seq_ptr
-    )
+    ) noexcept nogil
 
 
 cdef class CythonizedBaseIntegrationEngine:

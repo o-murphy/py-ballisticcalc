@@ -78,7 +78,7 @@ TerminationReason _integrate_euler(Engine_t *engine_ptr,
     V3dT _dir_vector;
     V3dT _tv;
     V3dT delta_range_vector;
-    int integration_step_count = 0;
+    engine_ptr->integration_step_count = 0;
 
     // Initialize gravity vector
     gravity_vector.x = 0.0;
@@ -115,9 +115,9 @@ TerminationReason _integrate_euler(Engine_t *engine_ptr,
         &mach);
 
     // Cubic interpolation requires 3 points, so we will need at least 3 steps
-    while (range_vector.x <= range_limit_ft || integration_step_count < 3)
+    while (range_vector.x <= range_limit_ft || engine_ptr->integration_step_count < 3)
     {
-        integration_step_count++;
+        engine_ptr->integration_step_count++;
 
         // Update wind reading at current point in trajectory
         if (range_vector.x >= engine_ptr->shot.wind_sock.next_range)

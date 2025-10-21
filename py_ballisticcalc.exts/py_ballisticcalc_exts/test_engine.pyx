@@ -90,7 +90,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         # initial point
         seq._append_c(0.0, 0.0,
                       -self._engine.shot.cant_cosine * self._engine.shot.sight_height,
-                      -self._shot_engine._engine.shot.cant_sine * self._engine.shot.sight_height,
+                      -self._engine.shot.cant_sine * self._engine.shot.sight_height,
                       vx, vy, vz, 1.0)
         # second point simple Euler step without drag / gravity for minimal path
         cdef double dt

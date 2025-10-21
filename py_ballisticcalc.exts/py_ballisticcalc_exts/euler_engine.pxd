@@ -17,7 +17,7 @@ from py_ballisticcalc_exts.base_engine cimport Engine_t
 cdef extern from "include/euler.h" nogil:
     double _euler_time_step(double base_step, double velocity) noexcept nogil
 
-    TerminationReason _integrate_euler(const Engine_t *engine_ptr,
+    TerminationReason _integrate_euler(Engine_t *engine_ptr,
                                        double range_limit_ft, double range_step_ft,
                                        double time_step, TrajFlag_t filter_flags,
                                        BaseTrajSeq_t *traj_seq_ptr) noexcept nogil
