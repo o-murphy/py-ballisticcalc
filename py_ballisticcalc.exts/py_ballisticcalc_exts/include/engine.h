@@ -1,5 +1,5 @@
-#ifndef H_ENGINE
-#define H_ENGINE
+#ifndef ENGINE_H
+#define ENGINE_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -20,12 +20,6 @@ typedef struct
     double max_range_ft;
     double angle_at_max_rad;
 } MaxRangeResult_t;
-
-typedef struct
-{
-    double low_angle_deg;
-    double high_angle_deg;
-} AngleBracketDeg_t;
 
 typedef struct engine_t Engine_t;
 
@@ -66,4 +60,4 @@ extern "C"
 }
 #endif
 
-#endif // H_ENGINE
+#endif // ENGINE_H

@@ -87,7 +87,9 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         cdef MaxRangeResult_t res
         try:
-            res = self._find_max_range(shot_props_ptr, AngleBracketDeg_t(angle_bracket_deg[0], angle_bracket_deg[1]))
+            res = self._find_max_range(
+                shot_props_ptr, angle_bracket_deg[0], angle_bracket_deg[1]
+            )
             return _new_feet(res.max_range_ft), _new_rad(res.angle_at_max_rad)
         finally:
             self._release_trajectory()
@@ -164,11 +166,16 @@ cdef class CythonizedBaseIntegrationEngine:
 
         Args:
             shot_info (Shot): The shot information.
-            max_range (Distance): Maximum range of the trajectory (if float then treated as feet).
-            dist_step (Optional[Distance]): Distance step for recording RANGE TrajectoryData rows.
-            time_step (float, optional): Time step for recording trajectory data. Defaults to 0.0.
-            filter_flags (Union[TrajFlag, int], optional): Flags to filter trajectory data. Defaults to TrajFlag.RANGE.
-            dense_output (bool, optional): If True, HitResult will save BaseTrajData for interpolating TrajectoryData.
+            max_range (Distance):
+                Maximum range of the trajectory (if float then treated as feet).
+            dist_step (Optional[Distance]):
+                Distance step for recording RANGE TrajectoryData rows.
+            time_step (float, optional):
+                Time step for recording trajectory data. Defaults to 0.0.
+            filter_flags (Union[TrajFlag, int], optional):
+                Flags to filter trajectory data. Defaults to TrajFlag.RANGE.
+            dense_output (bool, optional):
+                If True, HitResult will save BaseTrajData for interpolating TrajectoryData.
 
         Returns:
             HitResult: Object for describing the trajectory.
@@ -402,7 +409,9 @@ cdef class CythonizedBaseIntegrationEngine:
             return look_angle_rad
 
         # 1. Find the maximum possible range to establish a search bracket.
-        cdef MaxRangeResult_t max_range_result = self._find_max_range(shot_props_ptr, AngleBracketDeg_t(0, 90))
+        cdef MaxRangeResult_t max_range_result = self._find_max_range(
+            shot_props_ptr, 0, 90
+        )
         cdef double max_range_ft = max_range_result.max_range_ft
         cdef double angle_at_max_rad = max_range_result.angle_at_max_rad
 
@@ -457,14 +466,20 @@ cdef class CythonizedBaseIntegrationEngine:
                     f"{high_angle * 57.29577951308232:.2f} deg). "
                     f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
                 )
-                raise ZeroFindingError(float(target_y_ft), 0, _new_rad(shot_props_ptr.barrel_elevation), reason=reason)
+                raise ZeroFindingError(
+                    float(target_y_ft),
+                    0,
+                    _new_rad(shot_props_ptr.barrel_elevation),
+                    reason=reason
+                )
 
             # 4. Ridder's method implementation
             for iteration in range(self._engine.config.cMaxIterations):
                 mid_angle = (low_angle + high_angle) / 2.0
                 f_mid = self._error_at_distance(shot_props_ptr, mid_angle, target_x_ft, target_y_ft)
 
-                # s is the updated point using the root of the linear function through (low_angle, f_low) and (high_angle, f_high)
+                # s is the updated point using the root of the linear function
+                # through (low_angle, f_low) and (high_angle, f_high)
                 # and the quadratic function that passes through those points and (mid_angle, f_mid)
                 s = sqrt(f_mid * f_mid - f_low * f_high)
                 if s == 0.0:
@@ -489,8 +504,12 @@ cdef class CythonizedBaseIntegrationEngine:
                 if fabs(high_angle - low_angle) < self._engine.config.cZeroFindingAccuracy:
                     return (low_angle + high_angle) / 2
 
-            raise ZeroFindingError(target_y_ft, self._engine.config.cMaxIterations, _new_rad((low_angle + high_angle) / 2),
-                                   reason="Ridder's method failed to converge.")
+            raise ZeroFindingError(
+                target_y_ft,
+                self._engine.config.cMaxIterations,
+                _new_rad((low_angle + high_angle) / 2),
+                reason="Ridder's method failed to converge."
+            )
         finally:
             if has_restore_cMinimumVelocity__zero:
                 self._engine.config.cMinimumVelocity = restore_cMinimumVelocity__zero
@@ -498,32 +517,38 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
         ShotProps_t *shot_props_ptr,
-        AngleBracketDeg_t angle_bracket_deg
+        double low_angle_deg,
+        double high_angle_deg,
     ):
         """
         Internal function to find the maximum slant range via golden-section search.
 
         Args:
             props (ShotProps): The shot information: gun, ammo, environment, look_angle.
-            angle_bracket_deg (Tuple[float, float], optional): The angle bracket in degrees to search for max range.
-                                                               Defaults to (0, 90).
+            angle_bracket_deg (Tuple[float, float], optional):
+                The angle bracket in degrees to search for max range. Defaults to (0, 90).
 
         Returns:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         cdef:
             double look_angle_rad = shot_props_ptr.look_angle
-            double low_angle_deg = angle_bracket_deg.low_angle_deg
-            double high_angle_deg = angle_bracket_deg.high_angle_deg
             double max_range_ft
             double angle_at_max_rad
             BaseTrajDataT _apex_obj
             double _sdist
 
         # Virtually vertical shot
-        if fabs(look_angle_rad - <double>1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
+        if (
+            fabs(look_angle_rad - <double>1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS
+        ):  # π/2 radians = 90 degrees
             _apex_obj = self._find_apex(shot_props_ptr)
-            _sdist = _apex_obj.c_position().x * cos(look_angle_rad) + _apex_obj.c_position().y * sin(look_angle_rad)
+            _sdist = (
+                _apex_obj.c_position().x
+                * cos(look_angle_rad)
+                + _apex_obj.c_position().y
+                * sin(look_angle_rad)
+            )
             return MaxRangeResult_t(_sdist, look_angle_rad)
 
         # Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
@@ -746,7 +771,11 @@ cdef class CythonizedBaseIntegrationEngine:
                     break
 
                 current_distance = hit.position.x  # Horizontal distance along X
-                if 2 * current_distance < target_x_ft and shot_props_ptr.barrel_elevation == 0.0 and look_angle_rad < 1.5:
+                if (
+                    2 * current_distance < target_x_ft
+                    and shot_props_ptr.barrel_elevation == 0.0
+                    and look_angle_rad < 1.5
+                ):
                     # Degenerate case: little distance and zero elevation; try with some elevation
                     shot_props_ptr.barrel_elevation = 0.01
                     continue
@@ -761,7 +790,10 @@ cdef class CythonizedBaseIntegrationEngine:
                 trajectory_angle = atan2(hit.velocity.y, hit.velocity.x)  # Flight angle at current distance
 
                 # Calculate sensitivity and correction
-                sensitivity = tan(shot_props_ptr.barrel_elevation - look_angle_rad) * tan(trajectory_angle - look_angle_rad)
+                sensitivity = (
+                    tan(shot_props_ptr.barrel_elevation - look_angle_rad)
+                    * tan(trajectory_angle - look_angle_rad)
+                )
                 if sensitivity < -0.5:
                     denominator = look_dist_ft
                 else:
@@ -770,8 +802,12 @@ cdef class CythonizedBaseIntegrationEngine:
                 if fabs(denominator) > 1e-9:
                     correction = -height_diff_ft / denominator
                 else:
-                    raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(shot_props_ptr.barrel_elevation),
-                                           'Correction denominator is zero')
+                    raise ZeroFindingError(
+                        height_error_ft,
+                        iterations_count,
+                        _new_rad(shot_props_ptr.barrel_elevation),
+                        'Correction denominator is zero'
+                    )
 
                 if range_error_ft > _ALLOWED_ZERO_ERROR_FEET:
                     # We're still trying to reach zero_distance
@@ -845,10 +881,10 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef str termination_reason_str = None
         if termination_reason == TerminationReason.RangeErrorInvalidParameter:
             raise RuntimeError("InvalidParameter")
-        if termination_reason == TerminationReason.RangeErrorMinimumVelocityReached:
+        elif termination_reason == TerminationReason.RangeErrorMinimumVelocityReached:
             termination_reason_str = RangeError.MinimumVelocityReached
-        if termination_reason == TerminationReason.RangeErrorMaximumDropReached:
+        elif termination_reason == TerminationReason.RangeErrorMaximumDropReached:
             termination_reason_str = RangeError.MaximumDropReached
-        if termination_reason == TerminationReason.RangeErrorMinimumAltitudeReached:
+        elif termination_reason == TerminationReason.RangeErrorMinimumAltitudeReached:
             termination_reason_str = RangeError.MinimumAltitudeReached
         return traj_seq, termination_reason_str

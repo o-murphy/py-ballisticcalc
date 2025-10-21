@@ -98,9 +98,6 @@ cdef class BaseTrajSeqT:
         if ret < 0:
             raise MemoryError("Failed to allocate memory for trajectory buffer")
 
-    def _ensure_capacity(self, size_t min_capacity):
-        self._ensure_capacity_c(min_capacity)
-
     def append(self, double time, double px, double py, double pz,
                double vx, double vy, double vz, double mach):
         """Append a new point to the sequence."""
@@ -220,7 +217,10 @@ cdef class BaseTrajSeqT:
                 search_forward = <bint>0
             elif 0 < start_idx < n - 1:
                 next_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx + 1], key_kind)
-                if (next_val > curr_val and key_value > curr_val) or (next_val < curr_val and key_value < curr_val):
+                if (
+                    (next_val > curr_val and key_value > curr_val)
+                    or (next_val < curr_val and key_value < curr_val)
+                ):
                     search_forward = <bint>1
                 else:
                     search_forward = <bint>0

@@ -44,7 +44,12 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
             raise RuntimeError("prepare() must be called first")
         cdef double density_ratio = 0.0
         cdef double mach = 0.0
-        Atmosphere_t_updateDensityFactorAndMachForAltitude(&self._engine.shot.atmo, altitude_ft, &density_ratio, &mach)
+        Atmosphere_t_updateDensityFactorAndMachForAltitude(
+            &self._engine.shot.atmo,
+            altitude_ft,
+            &density_ratio,
+            &mach
+        )
         return density_ratio, mach
 
     cpdef double spin_drift(self, double time_s):

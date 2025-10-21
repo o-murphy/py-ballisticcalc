@@ -113,4 +113,4 @@ extern "C"
 }
 #endif
 
-#endif /* BASETRAJ_SEQ_H */
+#endif // BASETRAJ_SEQ_H

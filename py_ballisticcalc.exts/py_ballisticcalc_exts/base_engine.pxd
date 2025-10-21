@@ -30,10 +30,6 @@ cdef extern from "include/engine.h" nogil:
         double max_range_ft
         double angle_at_max_rad
 
-    ctypedef struct AngleBracketDeg_t:
-        double low_angle_deg
-        double high_angle_deg
-
     # Forward declaration
     struct engine_t
 
@@ -111,7 +107,8 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
         ShotProps_t *shot_props_ptr,
-        AngleBracketDeg_t angle_bracket_deg
+        double low_angle_deg,
+        double high_angle_deg,
     )
     cdef BaseTrajDataT _find_apex(
         CythonizedBaseIntegrationEngine self,
