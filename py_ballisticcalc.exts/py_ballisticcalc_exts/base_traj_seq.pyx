@@ -15,7 +15,7 @@ passing Python cdef-class instances into nogil code paths.
 
 from libc.math cimport cos, sin, fabs
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
@@ -67,7 +67,7 @@ cdef class BaseTrajSeqT:
             raise ValueError("min_capacity must be non-negative")
         self._ensure_capacity_c(min_capacity)
 
-    cdef BaseTraj_t* c_getitem(self, Py_ssize_t idx):
+    cdef BaseTraj_t* _get_raw_item(self, Py_ssize_t idx):
         cdef BaseTraj_t *item = BaseTrajSeq_t_get_item(self._c_view, idx)
         if item is NULL:
             raise IndexError("Index out of range")
@@ -86,7 +86,11 @@ cdef class BaseTrajSeqT:
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
         cdef Py_ssize_t _i = <Py_ssize_t>idx
-        cdef BaseTraj_t* entry_ptr = self.c_getitem(_i)
+        cdef BaseTrajData_t data = self._getitem(_i)
+        return BaseTrajDataT(data)
+
+    cdef BaseTrajData_t _getitem(self, Py_ssize_t idx):
+        cdef BaseTraj_t* entry_ptr = self._get_raw_item(idx)
         cdef V3dT position = V3dT(
             entry_ptr.px,
             entry_ptr.py,
@@ -97,9 +101,9 @@ cdef class BaseTrajSeqT:
             entry_ptr.vy,
             entry_ptr.vz
         )
-        return BaseTrajDataT(entry_ptr.time, position, velocity, entry_ptr.mach)
+        return BaseTrajData_t(entry_ptr.time, position, velocity, entry_ptr.mach)
 
-    cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value):
+    cdef BaseTrajData_t _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value):
         """
         Interpolate at idx using points (idx-1, idx, idx+1) keyed by key_kind at key_value.
             Supports negative idx (which references from end of sequence).
@@ -113,18 +117,18 @@ cdef class BaseTrajSeqT:
         cdef V3dT position = V3dT(output.px, output.py, output.pz)
         cdef V3dT velocity = V3dT(output.vx, output.vy, output.vz)
 
-        return BaseTrajDataT(output.time, position, velocity, output.mach)
+        return BaseTrajData_t(output.time, position, velocity, output.mach)
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         cdef InterpKey key_kind = _attribute_to_key(key_attribute)
-        return self._interpolate_at_c(idx, key_kind, key_value)
+        return BaseTrajDataT(self._interpolate_at_c(idx, key_kind, key_value))
 
     def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
         cdef InterpKey key_kind = _attribute_to_key(key_attribute)
-        return self._get_at_c(key_kind, key_value, start_from_time)
+        return BaseTrajDataT(self._get_at_c(key_kind, key_value, start_from_time))
 
-    cdef BaseTrajDataT _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time=None):
+    cdef BaseTrajData_t _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time=None):
         """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
 
         If start_from_time > 0, search is centered from the first point where time >= start_from_time,
@@ -169,7 +173,7 @@ cdef class BaseTrajSeqT:
             epsilon = 1e-9
             curr_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx], key_kind)
             if fabs(curr_val - key_value) < epsilon:
-                return self[start_idx]
+                return self._getitem(start_idx)
             search_forward = <bint>1
             if start_idx == n - 1:
                 search_forward = <bint>0
@@ -205,7 +209,7 @@ cdef class BaseTrajSeqT:
             if target_idx == <Py_ssize_t>(-1):
                 raise ArithmeticError(f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
             if fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon:
-                return self[target_idx]
+                return self._getitem(target_idx)
             if target_idx == 0:
                 target_idx = <Py_ssize_t>1
             center_idx = target_idx if target_idx < n - 1 else n - 2
@@ -250,4 +254,4 @@ cdef class BaseTrajSeqT:
         )
         cdef double mach = interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
 
-        return BaseTrajDataT(time, position, velocity, mach)
+        return BaseTrajDataT(BaseTrajData_t(time, position, velocity, mach))

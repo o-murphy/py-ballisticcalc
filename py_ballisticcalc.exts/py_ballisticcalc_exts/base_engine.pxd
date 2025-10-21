@@ -11,7 +11,7 @@ from py_ballisticcalc_exts.bclib cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
@@ -110,7 +110,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double low_angle_deg,
         double high_angle_deg,
     )
-    cdef BaseTrajDataT _find_apex(
+    cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
         const ShotProps_t *shot_props_ptr
     )

@@ -3,7 +3,7 @@ Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 """
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport InterpKey
 
@@ -71,6 +71,7 @@ cdef class BaseTrajSeqT:
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach)
     cdef Py_ssize_t len_c(self)
-    cdef BaseTraj_t* c_getitem(self, Py_ssize_t idx)
-    cdef BaseTrajDataT _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)
-    cdef BaseTrajDataT _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value)
+    cdef BaseTraj_t* _get_raw_item(self, Py_ssize_t idx)
+    cdef BaseTrajData_t _getitem(self, Py_ssize_t idx)
+    cdef BaseTrajData_t _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)
+    cdef BaseTrajData_t _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value)

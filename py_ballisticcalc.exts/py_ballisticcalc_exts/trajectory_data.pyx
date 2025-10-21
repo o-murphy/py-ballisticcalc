@@ -15,6 +15,7 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 from py_ballisticcalc_exts.interp cimport interpolate_3_pt
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
+    BaseTrajData_t,
     BaseTrajData_t_create,
     BaseTrajData_t_destroy,
     InterpKey,
@@ -29,15 +30,9 @@ from py_ballisticcalc.vector import Vector
 cdef class BaseTrajDataT:
     __slots__ = ('time', '_position', '_velocity', 'mach')
 
-    def __cinit__(self, double time, V3dT position, V3dT velocity, double mach):
-        self._c_view = BaseTrajData_t_create(time, position, velocity, mach)
-        if self._c_view is NULL:
-            raise MemoryError("Failed to create BaseTrajSeq_t")
+    def __cinit__(self, BaseTrajData_t data):
+        self._c_view = data
 
-    def __dealloc__(self):
-        if self._c_view is not NULL:
-            BaseTrajData_t_destroy(self._c_view)
-            self._c_view = NULL
 
     # Hot-path C accessors (used by Cython code directly)
     cdef V3dT c_position(self):
@@ -147,7 +142,7 @@ cdef class BaseTrajDataT:
         # Scalar interpolation using PCHIP
 
         # Interpolate all scalar fields
-        time = key_value if key_kind == KEY_TIME else interpolate_3_pt(
+        time = key_value if key_kind == InterpKey.KEY_TIME else interpolate_3_pt(
             key_value, x0, x1, x2, _p0.time, _p1.time, _p2.time
         )
         position = V3dT(
@@ -160,9 +155,9 @@ cdef class BaseTrajDataT:
             interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
             interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)
         )
-        mach = key_value if key_kind == KEY_MACH else interpolate_3_pt(
+        mach = key_value if key_kind == InterpKey.KEY_MACH else interpolate_3_pt(
             key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach
         )
 
         # Construct the resulting BaseTrajDataT
-        return BaseTrajDataT(time, position, velocity, mach)
+        return BaseTrajDataT(BaseTrajData_t(time, position, velocity, mach))

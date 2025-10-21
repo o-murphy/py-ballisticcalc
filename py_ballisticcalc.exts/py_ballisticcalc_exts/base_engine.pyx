@@ -14,7 +14,7 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t, InterpKey
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     # types and methods
@@ -116,7 +116,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BaseTrajDataT result
         cdef object props
         try:
-            result = self._find_apex(shot_props_ptr)
+            result = BaseTrajDataT(self._find_apex(shot_props_ptr))
             props = ShotProps.from_shot(shot_info)
             return TrajectoryData.from_props(props, result.time, result.position, result.velocity, result.mach)
         finally:
@@ -239,7 +239,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Attempts to avoid Python exceptions in the hot path by pre-checking reach."""
         cdef:
             BaseTrajSeqT trajectory
-            BaseTrajDataT hit
+            BaseTrajData_t hit
             BaseTraj_t* last_ptr
             Py_ssize_t n
         shot_props_ptr.barrel_elevation = angle_rad
@@ -249,13 +249,13 @@ cdef class CythonizedBaseIntegrationEngine:
         n = trajectory.len_c()
         if n < <Py_ssize_t>3:
             return 9e9
-        last_ptr = trajectory.c_getitem(<Py_ssize_t>(-1))
+        last_ptr = trajectory._get_raw_item(<Py_ssize_t>(-1))
         if last_ptr.time == 0.0:
             # Integrator returned only the initial point; signal unreachable
             return 9e9
         try:
             hit = trajectory._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
-            return (hit.c_position().y - target_y_ft) - fabs(hit.c_position().x - target_x_ft)
+            return (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft)
         except Exception:
             # Any interpolation failure (e.g., degenerate points) signals unreachable
             return 9e9
@@ -357,7 +357,7 @@ cdef class CythonizedBaseIntegrationEngine:
             double target_x_ft = slant_range_ft * cos(look_angle_rad)
             double target_y_ft = slant_range_ft * sin(look_angle_rad)
             double start_height_ft = -shot_props_ptr.sight_height * shot_props_ptr.cant_cosine
-            BaseTrajDataT apex
+            BaseTrajData_t apex
             double apex_slant_ft
 
         # Edge case: Very close shot
@@ -378,7 +378,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if fabs(look_angle_rad - 1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
             # Compute slant distance at apex using robust accessor
             apex = self._find_apex(shot_props_ptr)
-            apex_slant_ft = apex.c_position().x * cos(look_angle_rad) + apex.c_position().y * sin(look_angle_rad)
+            apex_slant_ft = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad)
             if apex_slant_ft < slant_range_ft:
                 raise OutOfRangeError(_new_feet(distance), _new_feet(apex_slant_ft), _new_rad(look_angle_rad))
             return ZeroInitialData_t(1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
@@ -535,7 +535,7 @@ cdef class CythonizedBaseIntegrationEngine:
             double look_angle_rad = shot_props_ptr.look_angle
             double max_range_ft
             double angle_at_max_rad
-            BaseTrajDataT _apex_obj
+            BaseTrajData_t _apex_obj
             double _sdist
 
         # Virtually vertical shot
@@ -544,9 +544,9 @@ cdef class CythonizedBaseIntegrationEngine:
         ):  # π/2 radians = 90 degrees
             _apex_obj = self._find_apex(shot_props_ptr)
             _sdist = (
-                _apex_obj.c_position().x
+                _apex_obj.position.x
                 * cos(look_angle_rad)
-                + _apex_obj.c_position().y
+                + _apex_obj.position.y
                 * sin(look_angle_rad)
             )
             return MaxRangeResult_t(_sdist, look_angle_rad)
@@ -607,8 +607,8 @@ cdef class CythonizedBaseIntegrationEngine:
                 if n >= 2:
                     # Linear search from end of trajectory for zero-down crossing
                     for i in range(n - 1, 0, -1):
-                        prev_ptr = trajectory.c_getitem(i - 1)
-                        cur_ptr = trajectory.c_getitem(i)
+                        prev_ptr = trajectory._get_raw_item(i - 1)
+                        cur_ptr = trajectory._get_raw_item(i)
                         h_prev = prev_ptr.py * ca - prev_ptr.px * sa
                         h_cur = cur_ptr.py * ca - cur_ptr.px * sa
                         if h_prev > 0.0 and h_cur <= 0.0:
@@ -659,7 +659,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         return MaxRangeResult_t(max_range_ft, angle_at_max_rad)
 
-    cdef BaseTrajDataT _find_apex(
+    cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
         const ShotProps_t *shot_props_ptr
     ):
@@ -673,9 +673,9 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             double restore_min_velocity = 0.0
             int has_restore_min_velocity = 0
-            BaseTrajDataT apex
+            BaseTrajData_t apex
             tuple _res
-
+            
         if self._engine.config.cMinimumVelocity > 0.0:
             restore_min_velocity = self._engine.config.cMinimumVelocity
             self._engine.config.cMinimumVelocity = 0.0
@@ -684,12 +684,11 @@ cdef class CythonizedBaseIntegrationEngine:
         try:
             _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_APEX)
             apex = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_VEL_Y, 0.0)
+        except Exception: # IndexError from _get_at_c
+            raise SolverRuntimeError("No apex flagged in trajectory data")
         finally:
             if has_restore_min_velocity:
                 self._engine.config.cMinimumVelocity = restore_min_velocity
-
-        if not apex:
-            raise SolverRuntimeError("No apex flagged in trajectory data")
 
         return apex
 
@@ -723,7 +722,7 @@ cdef class CythonizedBaseIntegrationEngine:
             return look_angle_rad
 
         cdef:
-            BaseTrajDataT hit
+            BaseTrajData_t hit
             # early bindings
             double _cZeroFindingAccuracy = self._engine.config.cZeroFindingAccuracy
             int _cMaxIterations = self._engine.config.cMaxIterations
