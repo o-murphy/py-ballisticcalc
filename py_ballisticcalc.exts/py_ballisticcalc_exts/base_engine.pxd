@@ -59,7 +59,7 @@ cdef extern from "include/engine.h" nogil:
         TrajFlag_t filter_flags,
         BaseTrajSeq_t *traj_seq_ptr
     )
-    
+
     # Declare pointer to function
     ctypedef IntegrateFunc *IntegrateFuncPtr
 

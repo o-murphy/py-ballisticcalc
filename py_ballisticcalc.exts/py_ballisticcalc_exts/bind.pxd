@@ -11,10 +11,10 @@ from py_ballisticcalc_exts.bclib cimport (
 )
 
 cdef extern from "include/bind.h" nogil:
-    MachList_t MachList_t_fromPylist(const PyObject *pylist) noexcept nogil
-    Curve_t Curve_t_fromPylist(const PyObject *data_points) noexcept nogil
-    Config_t Config_t_fromPyObject(const PyObject * config) noexcept nogil
-    Wind_t Wind_t_fromPyObject(const PyObject *w) noexcept nogil
+    MachList_t MachList_t_fromPylist(PyObject *pylist) noexcept nogil
+    Curve_t Curve_t_fromPylist(PyObject *data_points) noexcept nogil
+    Config_t Config_t_fromPyObject(PyObject * config) noexcept nogil
+    Wind_t Wind_t_fromPyObject(PyObject *w) noexcept nogil
 
 
 # python to C objects conversion

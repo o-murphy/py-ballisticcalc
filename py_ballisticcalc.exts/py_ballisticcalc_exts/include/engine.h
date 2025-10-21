@@ -40,8 +40,7 @@ typedef TerminationReason IntegrateFunc(
     double range_step_ft,
     double time_step,
     TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr
-);
+    BaseTrajSeq_t *traj_seq_ptr);
 
 typedef IntegrateFunc *IntegrateFuncPtr;
 

@@ -63,8 +63,12 @@ cdef class CythonizedBaseIntegrationEngine:
         # __cinit__ is only for memory allocation
         # Calling Python functions inside __cinit__ is guaranteed to cause a memory leak
         self._config = create_base_engine_config(_config)
-        self._engine.gravity_vector = V3dT(.0, .0, .0)
-        self._engine.integration_step_count = 0
+
+    # NOTE: The Engine_t is built-in to CythonizedBaseIntegrationEngine,
+    # so we are need no set it's fields to null
+    # def __cinit__(self, object _config):
+    #     self._engine.gravity_vector = V3dT(.0, .0, .0)
+    #     self._engine.integration_step_count = 0
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         self._release_trajectory()

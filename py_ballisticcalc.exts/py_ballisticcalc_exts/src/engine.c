@@ -1,10 +1,9 @@
 #include "engine.h"
 
-// int Engine_t_init_trajectory(Engine_t *engine_ptr) {
-//     if (engine == NULL) {
+// void Engine_t_init_trajectory(Engine_t *engine_ptr) {
+//     if (engine_ptr == NULL) {
 //         return -1;
 //     }
-
 // }
 
 void Engine_t_release_trajectory(Engine_t *engine_ptr)
@@ -14,6 +13,7 @@ void Engine_t_release_trajectory(Engine_t *engine_ptr)
         return;
     }
     ShotProps_t_release(&engine_ptr->shot);
+    // NOTE: It is not neccessary to NULLIFY integrate_func_ptr
 }
 
 TerminationReason Engine_t_integrate(
