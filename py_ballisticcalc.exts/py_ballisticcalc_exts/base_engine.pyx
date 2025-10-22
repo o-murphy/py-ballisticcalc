@@ -252,7 +252,7 @@ cdef class CythonizedBaseIntegrationEngine:
         __res = self._integrate(target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
         trajectory = <BaseTrajSeqT>__res[0]
         # If trajectory is too short for cubic interpolation, treat as unreachable
-        n = trajectory.len_c()
+        n = trajectory._c_view.length
         if n < <Py_ssize_t>3:
             return 9e9
         last_ptr = BaseTrajSeq_t_get_raw_item(&trajectory._c_view, <Py_ssize_t>(-1))
@@ -622,7 +622,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 trajectory = <BaseTrajSeqT>_res[0]
                 ca = cos(shot_props_ptr.look_angle)
                 sa = sin(shot_props_ptr.look_angle)
-                n = trajectory.len_c()
+                n = trajectory._c_view.length
                 if n >= 2:
                     # Linear search from end of trajectory for zero-down crossing
                     for i in range(n - 1, 0, -1):
@@ -923,5 +923,5 @@ cdef class CythonizedBaseIntegrationEngine:
         elif err == ErrorCode.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
         else:
-            raise RuntimeError(f"integrate_func failed with error code: {err}")
+            raise RuntimeError(f"undefined error in integrate_func, error code: {err}")
         return traj_seq, termination_reason

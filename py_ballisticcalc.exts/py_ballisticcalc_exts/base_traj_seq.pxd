@@ -90,10 +90,4 @@ cdef extern from "include/base_traj_seq.h" nogil:
 
 cdef class BaseTrajSeqT:
     cdef BaseTrajSeq_t _c_view
-
-    cdef void _ensure_capacity_c(self, size_t min_capacity)
-    cdef void _append_c(self, double time, double px, double py, double pz,
-                        double vx, double vy, double vz, double mach)
-    cdef Py_ssize_t len_c(self)
     cdef BaseTrajData_t _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)
-    cdef BaseTrajData_t _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value)
