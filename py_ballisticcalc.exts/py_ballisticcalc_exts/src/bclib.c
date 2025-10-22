@@ -7,6 +7,14 @@
 #include <float.h>  // For fabs()
 #include <stdlib.h>
 
+LogLevel global_log_level = LOG_LEVEL_CRITICAL;  // DIsabled by default
+
+void setLogLevel(LogLevel level)
+{
+    global_log_level = level;
+    C_LOG(LOG_LEVEL_INFO, "Log level set to %d\n", level);
+}
+
 // Constants for unit conversions and atmospheric calculations
 const double cEarthAngularVelocityRadS = 7.2921159e-5;
 const double cDegreesFtoR = 459.67;
@@ -97,6 +105,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
     {
+        C_LOG(LOG_LEVEL_ERROR, "ShotProps_t_updateStabilityCoefficient: Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
     /* Miller stability coefficient */
@@ -125,6 +134,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
+            C_LOG(LOG_LEVEL_ERROR, "ShotProps_t_updateStabilityCoefficient: Division by zero in stability coefficient calculation.");
             return ZERO_DIVISION_ERROR; // Exit if denominator is zero
         }
 
@@ -140,6 +150,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
+            C_LOG(LOG_LEVEL_ERROR, "ShotProps_t_updateStabilityCoefficient: Division by zero in ftp calculation.");
             return ZERO_DIVISION_ERROR; // Exit if pt is zero
         }
 
@@ -149,6 +160,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
     {
         shot_props_ptr->stability_coefficient = 0.0;
     }
+    C_LOG(LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
     return NO_ERROR;
 }
 
@@ -250,19 +262,19 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     if (altitude > 36089.0)
     {
         // Warning: altitude above troposphere
-        fprintf(stderr, "Warning: Density request for altitude above troposphere. Atmospheric model not valid here.\n");
+        C_LOG(LOG_LEVEL_WARNING, "Density request for altitude above troposphere. Atmospheric model not valid here.");
     }
 
     if (celsius < -cDegreesCtoK)
     {
-        fprintf(stderr, "Warning: Invalid temperature %.2f °C. Adjusted to absolute zero %.2f °C to avoid domain error.\n",
-                celsius, -cDegreesCtoK);
+        C_LOG(LOG_LEVEL_WARNING, "Invalid temperature %.2f °C. Adjusted to absolute zero %.2f °C to avoid domain error.",
+              celsius, -cDegreesCtoK);
         celsius = -cDegreesCtoK;
     }
     else if (celsius < atmo_ptr->cLowestTempC)
     {
         celsius = atmo_ptr->cLowestTempC;
-        fprintf(stderr, "Warning: Reached minimum temperature limit. Adjusted to %.2f °C. Redefine 'cLowestTempF' constant to increase it.\n", celsius);
+        C_LOG(LOG_LEVEL_WARNING, "Reached minimum temperature limit. Adjusted to %.2f °C. Redefine 'cLowestTempF' constant to increase it.", celsius);
     }
 
     kelvin = celsius + cDegreesCtoK;
@@ -279,9 +291,8 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     // Mach 1 speed at altitude (fps)
     *mach_ptr = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet;
 
-    // Optional debug print (uncomment if needed)
-    // printf("Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
-    //        altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
+    C_LOG(LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
+          altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
 V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
@@ -296,7 +307,7 @@ ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
     {
-        fprintf(stderr, "Warning: WindSock_t_updateCache failed. WindSock_t is NULL.\n");
+        C_LOG(LOG_LEVEL_ERROR, "WindSock_t_init: Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -315,7 +326,7 @@ ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 
 void WindSock_t_release(WindSock_t *ws)
 {
-    if (ws == INPUT_ERROR)
+    if (ws == NULL)
     {
         return;
     }
@@ -341,6 +352,7 @@ ErrorCode WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
+        C_LOG(LOG_LEVEL_ERROR, "WindSock_t_updateCache: Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -383,7 +395,7 @@ V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
             // If cache update fails, return zero vector
             if (WindSock_t_updateCache(ws) < 0)
             {
-                fprintf(stderr, "Warning: WindSock_t_updateCache failed. Returning zero vector.\n");
+                C_LOG(LOG_LEVEL_WARNING, "WindSock_t_updateCache failed. Returning zero vector.");
                 return zero_vector;
             }
         }
@@ -399,7 +411,7 @@ double getCorrection(double distance, double offset)
     {
         return atan2(offset, distance);
     }
-    // fprintf(stderr, "Error: Division by zero in getCorrection.\n");
+    C_LOG(LOG_LEVEL_ERROR, "Division by zero in getCorrection.");
     return 0.0;
 }
 
@@ -464,6 +476,7 @@ ErrorCode BaseTrajData_t_interpolate(
 
     if (!p0 || !p1 || !p2 || !out)
     {
+        C_LOG(LOG_LEVEL_ERROR, "BaseTrajData_t_interpolate: Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 

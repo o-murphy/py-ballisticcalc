@@ -3,6 +3,16 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 
 
 cdef extern from "include/bclib.h" nogil:
+    ctypedef enum LogLevel:
+        LOG_LEVEL_CRITICAL,
+        LOG_LEVEL_ERROR,
+        LOG_LEVEL_WARNING,
+        LOG_LEVEL_INFO,
+        LOG_LEVEL_DEBUG,
+        LOG_LEVEL_NOTSET
+
+    void setLogLevel(LogLevel level) noexcept nogil
+
     cdef const double cDegreesFtoR
     cdef const double cDegreesCtoK
     cdef const double cSpeedOfSoundImperial

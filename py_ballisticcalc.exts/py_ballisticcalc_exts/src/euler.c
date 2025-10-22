@@ -1,6 +1,6 @@
 #include <math.h>
 #include "euler.h"
-// #include <stdio.h>  // for printf (DEBUG)
+// #include "bclib.h"  // for C_LOG
 
 /**
  * @brief Calculate time step based on current projectile speed.
@@ -46,6 +46,7 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
 
     if (!engine_ptr || !traj_seq_ptr)
     {
+        C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -213,8 +214,7 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
     //     return err;
     // }
 
-    // printf("DEBUG: Function exit, reason=%d\n", termination_reason);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", termination_reason);
 
     return termination_reason;
 }

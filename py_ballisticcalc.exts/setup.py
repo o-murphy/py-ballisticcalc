@@ -79,7 +79,7 @@ C_SOURCES = {
 # Values are lists of C source file keys from C_SOURCES that they depend on.
 EXTENSION_DEPS = {
     "bind": ["interp", "bclib", "bind"],
-    "base_traj_seq": ["interp", "base_traj_seq"],
+    "base_traj_seq": ["interp", "bclib", "base_traj_seq"],
     "base_engine": ["interp", "bclib", "engine", "base_traj_seq"],
     "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine"],
     "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine"],

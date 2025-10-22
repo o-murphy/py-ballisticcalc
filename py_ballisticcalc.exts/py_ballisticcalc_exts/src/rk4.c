@@ -1,6 +1,6 @@
 #include <math.h>
 #include "rk4.h"
-// #include <stdio.h>  // for printf (DEBUG)
+#include "bclib.h"
 
 /**
  * @brief Calculate the derivative of velocity with respect to time (acceleration).
@@ -82,11 +82,11 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
 {
     if (!engine_ptr || !traj_seq_ptr)
     {
+        C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
-    // printf("DEBUG: All pointers valid\n");
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "All pointers valid\n");
 
     double velocity, delta_time;
     double density_ratio = 0.0;
@@ -100,17 +100,15 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     V3dT wind_vector;
     double calc_step;
 
-    // printf("DEBUG: Variables declared\n");
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Variables declared\n");
 
     // Early binding of configuration constants
     double _cMinimumVelocity = engine_ptr->config.cMinimumVelocity;
     double _cMinimumAltitude = engine_ptr->config.cMinimumAltitude;
     double _cMaximumDrop = -fabs(engine_ptr->config.cMaximumDrop);
 
-    // printf("DEBUG: Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
-    //        _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
+          _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
 
     // Working variables
     ErrorCode termination_reason = NO_ERROR;
@@ -132,22 +130,18 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     gravity_vector.y = engine_ptr->config.cGravityConstant;
     gravity_vector.z = 0.0;
 
-    // printf("DEBUG: Gravity initialized: %f\n", gravity_vector.y);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Gravity initialized: %f\n", gravity_vector.y);
 
     // Initialize wind vector
-    // printf("DEBUG: About to call WindSock_t_currentVector\n");
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "About to call WindSock_t_currentVector\n");
     wind_vector = WindSock_t_currentVector(&engine_ptr->shot.wind_sock);
-    // printf("DEBUG: Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
 
     // Initialize velocity and position vectors
     velocity = engine_ptr->shot.muzzle_velocity;
     calc_step = engine_ptr->shot.calc_step;
 
-    // printf("DEBUG: velocity=%f, calc_step=%f\n", velocity, calc_step);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Velocity=%f, Calc Step=%f\n", velocity, calc_step);
 
     // Set range_vector components directly
     range_vector.x = 0.0;
@@ -155,50 +149,42 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     range_vector.z = -engine_ptr->shot.cant_sine * engine_ptr->shot.sight_height;
     _cMaximumDrop += fmin(0.0, range_vector.y);
 
-    // printf("DEBUG: range_vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Range vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
 
     // Set direction vector components
     _dir_vector.x = cos(engine_ptr->shot.barrel_elevation) * cos(engine_ptr->shot.barrel_azimuth);
     _dir_vector.y = sin(engine_ptr->shot.barrel_elevation);
     _dir_vector.z = cos(engine_ptr->shot.barrel_elevation) * sin(engine_ptr->shot.barrel_azimuth);
 
-    // printf("DEBUG: dir_vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Direction vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
 
     // Calculate velocity vector
-    // printf("DEBUG: About to call mulS\n");
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "About to call mulS\n");
     velocity_vector = mulS(&_dir_vector, velocity);
-    // printf("DEBUG: velocity_vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
-    // fflush(stdout);
+    
+    C_LOG(LOG_LEVEL_DEBUG, "Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
-    // printf("DEBUG: About to call Atmosphere_t_updateDensityFactorAndMachForAltitude\n");
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "About to call Atmosphere_t_updateDensityFactorAndMachForAltitude\n");
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
         &engine_ptr->shot.atmo,
         engine_ptr->shot.alt0 + range_vector.y,
         &density_ratio,
         &mach);
-    // printf("DEBUG: density_ratio=%f, mach=%f\n", density_ratio, mach);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Density ratio: %f, Mach: %f\n", density_ratio, mach);
 
     // Trajectory Loop
-    // printf("DEBUG: Entering main loop, range_limit_ft=%f\n", range_limit_ft);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Entering main loop, range_limit_ft=%f\n", range_limit_ft);
 
     while (range_vector.x <= range_limit_ft || engine_ptr->integration_step_count < 3)
     {
-        // printf("DEBUG: Loop iteration %d, range_x=%f\n", integration_step_count, range_vector.x);
-        // fflush(stdout);
+        C_LOG(LOG_LEVEL_DEBUG, "Loop iteration %d, range_x=%f\n", engine_ptr->integration_step_count, range_vector.x);
 
         engine_ptr->integration_step_count++;
 
         // Update wind reading at current point in trajectory
         if (range_vector.x >= engine_ptr->shot.wind_sock.next_range)
         {
-            // printf("DEBUG: Updating wind vector\n");
-            // fflush(stdout);
+            C_LOG(LOG_LEVEL_DEBUG, "Updating wind vector\n");
             wind_vector = WindSock_t_vectorForRange(&engine_ptr->shot.wind_sock, range_vector.x);
         }
 
@@ -210,9 +196,8 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
             &mach);
 
         // Store point in trajectory sequence
-        // printf("DEBUG: About to append to trajectory sequence\n");
-        // fflush(stdout);
-        
+        C_LOG(LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
+
         // err =
         BaseTrajSeq_t_append(
             traj_seq_ptr,
@@ -225,8 +210,7 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         //     return err;
         // }
 
-        // printf("DEBUG: Append successful\n");
-        // fflush(stdout);
+        C_LOG(LOG_LEVEL_DEBUG, "Append successful\n");
 
         // Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
         relative_velocity = sub(&velocity_vector, &wind_vector);
@@ -234,24 +218,21 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
 
         delta_time = calc_step;
 
-        // printf("DEBUG: About to call ShotProps_t_dragByMach, relative_speed=%f, mach=%f\n",
-        //        relative_speed, mach);
-        // fflush(stdout);
+        C_LOG(LOG_LEVEL_DEBUG, "About to call ShotProps_t_dragByMach, relative_speed=%f, mach=%f\n",
+              relative_speed, mach);
 
         // Check for division by zero
         if (mach == 0.0)
         {
-            // printf("ERROR: mach is zero, cannot divide!\n");
+            C_LOG(LOG_LEVEL_ERROR, "Integration error: Mach number is zero, cannot divide!");
             return ZERO_DIVISION_ERROR;
         }
 
         km = density_ratio * ShotProps_t_dragByMach(&engine_ptr->shot, relative_speed / mach);
-        // printf("DEBUG: km=%f\n", km);
-        // fflush(stdout);
+        C_LOG(LOG_LEVEL_DEBUG, "Calculated drag coefficient km=%f\n", km);
 
         // region RK4 integration
-        // printf("DEBUG: Starting RK4 integration\n");
-        // fflush(stdout);
+        C_LOG(LOG_LEVEL_DEBUG, "Starting RK4 integration\n");
 
         // v1 = f(relative_velocity)
         v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
@@ -304,15 +285,13 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         _p_sum_intermediate = mulS(&_p_sum_intermediate, (delta_time / 6.0));
         range_vector = add(&range_vector, &_p_sum_intermediate);
 
-        // printf("DEBUG: RK4 integration complete\n");
-        // fflush(stdout);
+        C_LOG(LOG_LEVEL_DEBUG, "RK4 integration complete\n");
 
         // Update time and velocity magnitude
         velocity = mag(&velocity_vector);
         time += delta_time;
 
-        // printf("DEBUG: velocity=%f, time=%f\n", velocity, time);
-        // fflush(stdout);
+        C_LOG(LOG_LEVEL_DEBUG, "Velocity=%f, Time=%f\n", velocity, time);
 
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
@@ -334,12 +313,11 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         }
     }
 
-    // printf("DEBUG: Loop exited, appending final point\n");
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Loop exited, appending final point\n");
 
     // Process final data point
-    
-    // err = 
+
+    // err =
     BaseTrajSeq_t_append(
         traj_seq_ptr,
         time,
@@ -351,8 +329,7 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     //     return err;
     // }
 
-    // printf("DEBUG: Function exit, reason=%d\n", termination_reason);
-    // fflush(stdout);
+    C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", termination_reason);
 
     return termination_reason;
 }
