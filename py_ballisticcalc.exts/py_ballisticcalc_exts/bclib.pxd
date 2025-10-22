@@ -106,11 +106,11 @@ cdef extern from "include/bclib.h" nogil:
         double next_range
         V3dT last_vector_cache
 
-    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
-    void WindSock_t_release(WindSock_t *ws)
-    V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
-    ErrorCode WindSock_t_updateCache(WindSock_t *ws)
-    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
+    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
+    void WindSock_t_release(WindSock_t *ws) noexcept nogil
+    V3dT WindSock_t_currentVector(WindSock_t *wind_sock) noexcept nogil
+    ErrorCode WindSock_t_updateCache(WindSock_t *ws) noexcept nogil
+    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param) noexcept nogil
 
     ctypedef enum TrajFlag_t:
         TFLAG_NONE = 0,
@@ -168,9 +168,9 @@ cdef extern from "include/bclib.h" nogil:
         KEY_VEL_Z
 
     # helpers
-    double getCorrection(double distance, double offset)
-    double calculateEnergy(double bulletWeight, double velocity)
-    double calculateOgw(double bulletWeight, double velocity)
+    double getCorrection(double distance, double offset) noexcept nogil
+    double calculateEnergy(double bulletWeight, double velocity) noexcept nogil
+    double calculateOgw(double bulletWeight, double velocity) noexcept nogil
 
     ErrorCode BaseTrajData_t_interpolate(
         InterpKey key_kind,
@@ -179,4 +179,4 @@ cdef extern from "include/bclib.h" nogil:
         const BaseTrajData_t *p1,
         const BaseTrajData_t *p2,
         BaseTrajData_t *out
-    )
+    ) noexcept nogil

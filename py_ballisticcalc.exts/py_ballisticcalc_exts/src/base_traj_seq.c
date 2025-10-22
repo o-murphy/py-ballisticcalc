@@ -529,3 +529,23 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double loo
 
     return NO_ERROR;
 }
+
+ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out)
+{
+    BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
+    if (!entry_ptr)
+    {
+        return INDEX_ERROR;
+    }
+    out->time = entry_ptr->time;
+    out->position = (V3dT){
+        entry_ptr->px,
+        entry_ptr->py,
+        entry_ptr->pz};
+    out->velocity = (V3dT){
+        entry_ptr->vx,
+        entry_ptr->vy,
+        entry_ptr->vz};
+    out->mach = entry_ptr->mach;
+    return NO_ERROR;
+}

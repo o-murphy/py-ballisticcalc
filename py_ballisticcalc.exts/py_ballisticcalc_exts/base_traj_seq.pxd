@@ -74,7 +74,11 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double look_angle_rad,
         double value,
         BaseTrajData_t *out
-    )
+    ) noexcept nogil
+    ErrorCode BaseTrajSeq_t_get_item(
+        const BaseTrajSeq_t *seq,
+        ssize_t idx, BaseTrajData_t *out
+    ) noexcept nogil
 
 
 cdef class BaseTrajSeqT:
@@ -84,6 +88,5 @@ cdef class BaseTrajSeqT:
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach)
     cdef Py_ssize_t len_c(self)
-    cdef BaseTrajData_t _getitem(self, Py_ssize_t idx)
     cdef BaseTrajData_t _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)
     cdef BaseTrajData_t _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value)
