@@ -35,10 +35,10 @@ double _euler_time_step(double base_step, double velocity)
  * @param filter_flags Flags (TrajFlag_t) specifying additional points to record.
  * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where trajectory
  * data points will be stored.
- * @return TerminationReason An enumeration value indicating why the integration
- * loop was terminated (e.g., NoRangeError on success).
+ * @return ErrorCode An enumeration value indicating why the integration
+ * loop was terminated (e.g., NoError on success).
  */
-TerminationReason _integrate_euler(Engine_t *engine_ptr,
+ErrorCode _integrate_euler(Engine_t *engine_ptr,
                                    double range_limit_ft, double range_step_ft,
                                    double time_step, TrajFlag_t filter_flags,
                                    BaseTrajSeq_t *traj_seq_ptr)
@@ -46,11 +46,11 @@ TerminationReason _integrate_euler(Engine_t *engine_ptr,
 
     if (!engine_ptr)
     {
-        return RangeErrorInvalidParameter;
+        return InvalidInput;
     }
     if (!traj_seq_ptr)
     {
-        return RangeErrorInvalidParameter;
+        return InvalidInput;
     }
 
     double velocity, delta_time;
@@ -73,7 +73,7 @@ TerminationReason _integrate_euler(Engine_t *engine_ptr,
     double _cMaximumDrop = -fabs(engine_ptr->config.cMaximumDrop);
 
     // Working variables
-    TerminationReason termination_reason = NoRangeError;
+    ErrorCode termination_reason = NoError;
     double relative_speed;
     V3dT _dir_vector;
     V3dT _tv;
@@ -190,7 +190,7 @@ TerminationReason _integrate_euler(Engine_t *engine_ptr,
             termination_reason = RangeErrorMinimumAltitudeReached;
         }
 
-        if (termination_reason != NoRangeError)
+        if (termination_reason != NoError)
         {
             break;
         }

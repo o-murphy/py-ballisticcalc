@@ -17,6 +17,21 @@ extern const double mToFeet;
 extern const double cMaxWindDistanceFeet;
 extern const double cEarthAngularVelocityRadS;
 
+typedef enum
+{
+    // General error codes
+    NoError = 0,
+    ZeroDivisionError = -1,
+    InvalidInput = -2,
+    
+    UNDEFINED = -1000,
+    
+    // Solver range errors
+    RangeErrorMinimumVelocityReached = -10,
+    RangeErrorMaximumDropReached = -11,
+    RangeErrorMinimumAltitudeReached = -12,
+} ErrorCode;
+
 typedef struct
 {
     double cStepMultiplier;
@@ -110,15 +125,6 @@ typedef struct
     V3dT last_vector_cache;
 } WindSock_t;
 
-typedef enum
-{
-    NoRangeError,
-    RangeErrorInvalidParameter,
-    RangeErrorMinimumVelocityReached,
-    RangeErrorMaximumDropReached,
-    RangeErrorMinimumAltitudeReached,
-} TerminationReason;
-
 typedef struct
 {
     double bc;
@@ -177,7 +183,7 @@ extern "C"
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr);
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
+    ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
 
     double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
@@ -192,7 +198,7 @@ extern "C"
     void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);
     V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
-    int WindSock_t_updateCache(WindSock_t *ws);
+    ErrorCode WindSock_t_updateCache(WindSock_t *ws);
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
     // helpers

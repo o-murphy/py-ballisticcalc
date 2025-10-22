@@ -92,7 +92,7 @@ double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
     return 0.0;
 }
 
-int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
+ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     /* Miller stability coefficient */
     double twist_rate, length, sd, fv, ft, pt, ftp;
@@ -349,7 +349,7 @@ V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
     return wind_sock->last_vector_cache;
 }
 
-int WindSock_t_updateCache(WindSock_t *ws)
+ErrorCode WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {

@@ -68,7 +68,7 @@ extern "C"
      * @param seq Pointer to the sequence structure.
      * @return int 0 on success, -1 on memory allocation error or NULL pointer.
      */
-    int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+    ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
 
     /**
      * @brief Checks and ensures the minimum buffer capacity.
@@ -77,7 +77,7 @@ extern "C"
      * @param min_capacity The minimum required capacity.
      * @return int 0 on success, -1 on memory allocation error.
      */
-    int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
+    ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
 
     ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq);
 
@@ -87,8 +87,8 @@ extern "C"
      * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
      * @return 1 on success, 0 on failure.
      */
-    int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out);
-    int BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
+    ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out);
+    ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
     BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx);
     ssize_t BaseTrajSeq_t_bisect_center_idx_buf(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value);
     ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(const BaseTrajSeq_t *seq, double ca, double sa, double value);

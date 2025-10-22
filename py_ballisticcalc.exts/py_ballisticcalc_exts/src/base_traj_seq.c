@@ -54,7 +54,7 @@ double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
  * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
  * @return 1 on success, 0 on failure.
  */
-int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
+ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
 {
     // Cast Cython's size_t to C's ssize_t for bounds checking
     BaseTraj_t *buffer = seq->buffer;
@@ -175,7 +175,7 @@ int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpK
     return 0;
 }
 
-int BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
 {
     if (!seq || !out)
     {
@@ -246,7 +246,7 @@ BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx)
  * @param min_capacity The minimum required capacity.
  * @return int 0 on success, -1 on memory allocation error.
  */
-int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
+ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
     if (seq == NULL)
     {
@@ -301,7 +301,7 @@ int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
  * @param seq Pointer to the sequence structure.
  * @return int 0 on success, -1 on memory allocation error or NULL pointer.
  */
-int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
+ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
 {
 
     if (seq == NULL)

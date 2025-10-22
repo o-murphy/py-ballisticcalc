@@ -14,6 +14,15 @@ cdef extern from "include/bclib.h" nogil:
     cdef const double mToFeet
     cdef const double cMaxWindDistanceFeet
 
+    ctypedef enum ErrorCode:
+        NoError = 0
+        ZeroDivisionError = -1
+        InvalidInput = -2
+        UNDEFINED = -1000,
+        RangeErrorMinimumVelocityReached = -10
+        RangeErrorMaximumDropReached = -11
+        RangeErrorMinimumAltitudeReached = -12
+
     ctypedef struct Config_t:
         double cStepMultiplier
         double cZeroFindingAccuracy
@@ -93,7 +102,7 @@ cdef extern from "include/bclib.h" nogil:
     void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     void WindSock_t_release(WindSock_t *ws)
     V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
-    int WindSock_t_updateCache(WindSock_t *ws)
+    ErrorCode WindSock_t_updateCache(WindSock_t *ws)
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
 
     ctypedef enum TrajFlag_t:
@@ -141,15 +150,8 @@ cdef extern from "include/bclib.h" nogil:
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
+    ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
-
-    ctypedef enum TerminationReason:
-        NoRangeError
-        RangeErrorInvalidParameter
-        RangeErrorMinimumVelocityReached
-        RangeErrorMaximumDropReached
-        RangeErrorMinimumAltitudeReached
 
     ctypedef enum InterpKey:
         KEY_TIME

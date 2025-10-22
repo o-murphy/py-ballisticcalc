@@ -6,7 +6,7 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     WindSock_t,
     TrajFlag_t,
-    TerminationReason,
+    ErrorCode,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
@@ -37,7 +37,7 @@ cdef extern from "include/engine.h" nogil:
     ctypedef engine_t Engine_t
 
     # Declare the function signature type (not a pointer yet)
-    ctypedef TerminationReason IntegrateFunc(
+    ctypedef ErrorCode IntegrateFunc(
         Engine_t *engine_ptr,
         double range_limit_ft,
         double range_step_ft,
@@ -59,7 +59,7 @@ cdef extern from "include/engine.h" nogil:
 
     void Engine_t_release_trajectory(Engine_t *engine_ptr) noexcept nogil
 
-    TerminationReason Engine_t_integrate(
+    ErrorCode Engine_t_integrate(
         Engine_t *engine_ptr,
         double range_limit_ft,
         double range_step_ft,

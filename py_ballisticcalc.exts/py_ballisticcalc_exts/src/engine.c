@@ -10,7 +10,7 @@ void Engine_t_release_trajectory(Engine_t *engine_ptr)
     // NOTE: It is not neccessary to NULLIFY integrate_func_ptr
 }
 
-TerminationReason Engine_t_integrate(
+ErrorCode Engine_t_integrate(
     Engine_t *engine_ptr,
     double range_limit_ft,
     double range_step_ft,
@@ -20,15 +20,15 @@ TerminationReason Engine_t_integrate(
 {
     if (!engine_ptr)
     {
-        return RangeErrorInvalidParameter;
+        return InvalidInput;
     }
     if (!engine_ptr->integrate_func_ptr)
     {
-        return RangeErrorInvalidParameter;
+        return InvalidInput;
     }
     if (!traj_seq_ptr)
     {
-        return RangeErrorInvalidParameter;
+        return InvalidInput;
     }
     return engine_ptr->integrate_func_ptr(engine_ptr, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 }

@@ -23,7 +23,7 @@ typedef struct
 
 typedef struct engine_t Engine_t;
 
-typedef TerminationReason IntegrateFunc(
+typedef ErrorCode IntegrateFunc(
     Engine_t *engine_ptr,
     double range_limit_ft,
     double range_step_ft,
@@ -48,7 +48,7 @@ extern "C"
 #endif
 
     void Engine_t_release_trajectory(Engine_t *engine_ptr);
-    TerminationReason Engine_t_integrate(
+    ErrorCode Engine_t_integrate(
         Engine_t *engine_ptr,
         double range_limit_ft,
         double range_step_ft,

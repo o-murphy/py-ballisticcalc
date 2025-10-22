@@ -72,21 +72,21 @@ V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double k
  * (e.g., ZERO, MACH, APEX).
  * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where dense trajectory
  * data points will be stored.
- * @return TerminationReason An enumeration value indicating why the integration
- * loop was terminated (e.g., NoRangeError on successful completion).
+ * @return ErrorCode An enumeration value indicating why the integration
+ * loop was terminated (e.g., NoError on successful completion).
  */
-TerminationReason _integrate_rk4(Engine_t *engine_ptr,
+ErrorCode _integrate_rk4(Engine_t *engine_ptr,
                                  double range_limit_ft, double range_step_ft,
                                  double time_step, TrajFlag_t filter_flags,
                                  BaseTrajSeq_t *traj_seq_ptr)
 {
     if (!engine_ptr)
     {
-        return RangeErrorInvalidParameter;
+        return InvalidInput;
     }
     if (!traj_seq_ptr)
     {
-        return RangeErrorInvalidParameter;
+        return InvalidInput;
     }
 
     // printf("DEBUG: All pointers valid\n");
@@ -117,7 +117,7 @@ TerminationReason _integrate_rk4(Engine_t *engine_ptr,
     // fflush(stdout);
 
     // Working variables
-    TerminationReason termination_reason = NoRangeError;
+    ErrorCode termination_reason = NoError;
     double relative_speed;
     V3dT _dir_vector;
     engine_ptr->integration_step_count = 0;
@@ -238,7 +238,7 @@ TerminationReason _integrate_rk4(Engine_t *engine_ptr,
         if (mach == 0.0)
         {
             // printf("ERROR: mach is zero, cannot divide!\n");
-            return RangeErrorInvalidParameter;
+            return InvalidInput;
         }
 
         km = density_ratio * ShotProps_t_dragByMach(&engine_ptr->shot, relative_speed / mach);
@@ -324,7 +324,7 @@ TerminationReason _integrate_rk4(Engine_t *engine_ptr,
             termination_reason = RangeErrorMinimumAltitudeReached;
         }
 
-        if (termination_reason != NoRangeError)
+        if (termination_reason != NoError)
         {
             break;
         }
