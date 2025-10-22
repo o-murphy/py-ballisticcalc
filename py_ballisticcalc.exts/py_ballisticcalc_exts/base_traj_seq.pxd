@@ -45,7 +45,7 @@ cdef extern from "include/base_traj_seq.h" nogil:
 
     void BaseTrajSeq_t_release(BaseTrajSeq_t *seq) noexcept nogil
     Py_ssize_t BaseTrajSeq_t_len(BaseTrajSeq_t *seq) noexcept nogil
-    BaseTraj_t* BaseTrajSeq_t_get_item(BaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
+    BaseTraj_t* BaseTrajSeq_t_get_raw_item(BaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
     ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil
     ErrorCode BaseTrajSeq_t_append(
         BaseTrajSeq_t *seq,
@@ -84,7 +84,6 @@ cdef class BaseTrajSeqT:
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach)
     cdef Py_ssize_t len_c(self)
-    cdef BaseTraj_t* _get_raw_item(self, Py_ssize_t idx)
     cdef BaseTrajData_t _getitem(self, Py_ssize_t idx)
     cdef BaseTrajData_t _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)
     cdef BaseTrajData_t _interpolate_at_c(self, Py_ssize_t idx, InterpKey key_kind, double key_value)

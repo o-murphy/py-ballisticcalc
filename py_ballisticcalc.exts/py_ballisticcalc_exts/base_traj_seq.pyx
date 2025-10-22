@@ -68,12 +68,6 @@ cdef class BaseTrajSeqT:
             raise ValueError("min_capacity must be non-negative")
         self._ensure_capacity_c(min_capacity)
 
-    cdef BaseTraj_t* _get_raw_item(self, Py_ssize_t idx):
-        cdef BaseTraj_t *item = BaseTrajSeq_t_get_item(&self._c_view, idx)
-        if item is NULL:
-            raise IndexError("Index out of range")
-        return item
-
     def __len__(self):
         """Number of points in the sequence."""
         return self.len_c()
@@ -91,7 +85,9 @@ cdef class BaseTrajSeqT:
         return BaseTrajDataT(data)
 
     cdef BaseTrajData_t _getitem(self, Py_ssize_t idx):
-        cdef BaseTraj_t* entry_ptr = self._get_raw_item(idx)
+        cdef BaseTraj_t* entry_ptr = BaseTrajSeq_t_get_raw_item(&self._c_view, idx)
+        if entry_ptr is NULL:
+            raise IndexError("Index out of range")
         cdef V3dT position = V3dT(
             entry_ptr.px,
             entry_ptr.py,

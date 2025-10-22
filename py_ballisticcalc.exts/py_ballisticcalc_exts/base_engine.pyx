@@ -12,7 +12,12 @@ from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, fmax, copysign
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t, InterpKey
+from py_ballisticcalc_exts.base_traj_seq cimport (
+    BaseTrajSeqT,
+    BaseTraj_t,
+    InterpKey,
+    BaseTrajSeq_t_get_raw_item,
+)
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
@@ -250,7 +255,9 @@ cdef class CythonizedBaseIntegrationEngine:
         n = trajectory.len_c()
         if n < <Py_ssize_t>3:
             return 9e9
-        last_ptr = trajectory._get_raw_item(<Py_ssize_t>(-1))
+        last_ptr = BaseTrajSeq_t_get_raw_item(&trajectory._c_view, <Py_ssize_t>(-1))
+        if last_ptr is NULL:
+            return 9e9
         if last_ptr.time == 0.0:
             # Integrator returned only the initial point; signal unreachable
             return 9e9
@@ -619,8 +626,18 @@ cdef class CythonizedBaseIntegrationEngine:
                 if n >= 2:
                     # Linear search from end of trajectory for zero-down crossing
                     for i in range(n - 1, 0, -1):
-                        prev_ptr = trajectory._get_raw_item(i - 1)
-                        cur_ptr = trajectory._get_raw_item(i)
+                        prev_ptr = BaseTrajSeq_t_get_raw_item(
+                            &trajectory._c_view, 
+                            i - 1
+                        )
+                        if prev_ptr is NULL:
+                            return -9e9  # assume IndexError
+                        cur_ptr = BaseTrajSeq_t_get_raw_item(
+                            &trajectory._c_view, 
+                            i
+                        )
+                        if cur_ptr is NULL:
+                            return -9e9  # assume IndexError
                         h_prev = prev_ptr.py * ca - prev_ptr.px * sa
                         h_cur = cur_ptr.py * ca - cur_ptr.px * sa
                         if h_prev > 0.0 and h_cur <= 0.0:
@@ -663,7 +680,7 @@ cdef class CythonizedBaseIntegrationEngine:
         angle_at_max_rad = (a + b) / 2
         max_range_ft = range_for_angle(angle_at_max_rad)
 
-    # Restore original constraints
+        # Restore original constraints
         if has_restore_cMaximumDrop:
             self._engine.config.cMaximumDrop = restore_cMaximumDrop
         if has_restore_cMinimumVelocity:

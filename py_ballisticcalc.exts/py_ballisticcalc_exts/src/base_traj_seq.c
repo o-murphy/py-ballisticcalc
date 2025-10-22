@@ -216,7 +216,7 @@ ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq)
     return (ssize_t)-1;
 }
 
-BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx)
+BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t idx)
 {
     if (seq == NULL)
     {

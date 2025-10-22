@@ -80,7 +80,7 @@ C_SOURCES = {
 EXTENSION_DEPS = {
     "bind": ["bclib", "bind"],
     "base_traj_seq": ["interp", "base_traj_seq"],
-    "base_engine": ["bclib", "engine"],
+    "base_engine": ["interp", "bclib", "engine", "base_traj_seq"],
     "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine"],
     "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine"],
     "trajectory_data": ["interp", "bclib"],

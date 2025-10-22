@@ -89,7 +89,7 @@ extern "C"
      */
     ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out);
     ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
-    BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx);
+    BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t idx);
     ssize_t BaseTrajSeq_t_bisect_center_idx_buf(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value);
     ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(const BaseTrajSeq_t *seq, double ca, double sa, double value);
     ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out);
