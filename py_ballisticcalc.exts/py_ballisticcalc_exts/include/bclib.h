@@ -20,16 +20,19 @@ extern const double cEarthAngularVelocityRadS;
 typedef enum
 {
     // General error codes
-    NoError = 0,
-    ZeroDivisionError = -1,
-    InvalidInput = -2,
-    
-    UNDEFINED = -1000,
-    
-    // Solver range errors
-    RangeErrorMinimumVelocityReached = -10,
-    RangeErrorMaximumDropReached = -11,
-    RangeErrorMinimumAltitudeReached = -12,
+    NO_ERROR = 0,
+    ZERO_DIVISION_ERROR = -1,
+    VALUE_ERROR = -2,
+    KEY_ERROR = -3,
+    INDEX_ERROR = -4,
+    MEMORY_ERROR = -5,
+
+    UNDEFINED_ERROR = -1000,
+
+    // Solver specific errors
+    RANGE_ERROR_MINIMUM_VELOCITY_REACHED = -10,
+    RANGE_ERROR_MAXIMUM_DROP_REACHED = -11,
+    RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = -12,
 } ErrorCode;
 
 typedef struct
@@ -191,9 +194,6 @@ extern "C"
                                        double mach);
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr);
-
-    BaseTrajData_t *BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach);
-    void BaseTrajData_t_destroy(BaseTrajData_t *ptr);
 
     void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);

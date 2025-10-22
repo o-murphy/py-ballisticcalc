@@ -34,16 +34,20 @@ cdef extern from "include/rk4.h" nogil:
     #     The acceleration vector (dv/dt)
     # """
 
-    V3dT _calculate_dvdt(const V3dT *v_ptr,
-                         const V3dT *gravity_vector_ptr,
-                         double km_coeff,
-                         const ShotProps_t *shot_props_ptr,
-                         const V3dT *ground_velocity_ptr) noexcept nogil
+    V3dT _calculate_dvdt(
+        const V3dT *v_ptr,
+        const V3dT *gravity_vector_ptr,
+        double km_coeff,
+        const ShotProps_t *shot_props_ptr,
+        const V3dT *ground_velocity_ptr
+    ) noexcept nogil
 
-    ErrorCode _integrate_rk4(Engine_t *engine_ptr,
-                                     double range_limit_ft, double range_step_ft,
-                                     double time_step, TrajFlag_t filter_flags,
-                                     BaseTrajSeq_t *traj_seq_ptr) noexcept nogil
+    ErrorCode _integrate_rk4(
+        Engine_t *engine_ptr,
+        double range_limit_ft, double range_step_ft,
+        double time_step, TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr
+    ) noexcept nogil
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self)

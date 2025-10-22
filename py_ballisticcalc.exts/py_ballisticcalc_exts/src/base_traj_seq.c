@@ -75,7 +75,7 @@ ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, I
     // Check if we have valid points on both sides
     if (idx < 1 || idx >= length - 1)
     {
-        return -1;
+        return VALUE_ERROR;
     }
 
     // Use standard C array indexing instead of complex pointer arithmetic
@@ -128,13 +128,13 @@ ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, I
         break;
     default:
         // If key_kind is not recognized, interpolation is impossible.
-        return -1;
+        return KEY_ERROR;
     }
 
     // Check for duplicate x values (zero division risk in PCHIP)
     if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
     {
-        return -1;
+        return VALUE_ERROR;
     }
 
     // Interpolate all components using the external C function interpolate_3_pt
@@ -172,26 +172,26 @@ ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, I
     out->vy = vy;
     out->vz = vz;
     out->mach = mach;
-    return 0;
+    return NO_ERROR;
 }
 
 ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
 {
     if (!seq || !out)
     {
-        return -1; // Invalid input
+        return VALUE_ERROR; // Invalid input
     }
     BaseTraj_t raw_output;
-    int ret = BaseTrajSeq_t_interpolate_raw(seq, idx, key_kind, key_value, &raw_output);
-    if (ret < 0)
+    int err = BaseTrajSeq_t_interpolate_raw(seq, idx, key_kind, key_value, &raw_output);
+    if (err < 0)
     {
-        return -1; // IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
+        return err; // INDEX_ERROR or VALUE_ERROR or KEY_ERROR
     }
     out->time = raw_output.time;
     out->position = (V3dT){raw_output.px, raw_output.py, raw_output.pz};
     out->velocity = (V3dT){raw_output.vx, raw_output.vy, raw_output.vz};
     out->mach = raw_output.mach;
-    return 0;
+    return NO_ERROR;
 }
 
 void BaseTrajSeq_t_release(BaseTrajSeq_t *seq)
@@ -250,7 +250,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
     if (seq == NULL)
     {
-        return -1;
+        return VALUE_ERROR;
     }
 
     size_t new_capacity;
@@ -259,7 +259,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 
     if (min_capacity <= seq->capacity)
     {
-        return 0;
+        return NO_ERROR;
     }
 
     if (seq->capacity > 0)
@@ -280,7 +280,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 
     if (new_buffer == NULL)
     {
-        return -1;
+        return MEMORY_ERROR;
     }
 
     if (seq->length > 0)
@@ -293,7 +293,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
     seq->buffer = new_buffer;
     seq->capacity = new_capacity;
 
-    return 0;
+    return NO_ERROR;
 }
 
 /**
@@ -306,12 +306,13 @@ ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
 
     if (seq == NULL)
     {
-        return -1;
+        return VALUE_ERROR;
     }
 
-    if (BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1) < 0)
+    ErrorCode err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
+    if (err < 0)
     {
-        return -1;
+        return err;
     }
 
     BaseTraj_t *entry_ptr = seq->buffer + seq->length;
@@ -325,7 +326,7 @@ ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
     entry_ptr->mach = mach;
     seq->length += 1;
 
-    return 0;
+    return NO_ERROR;
 }
 
 ssize_t BaseTrajSeq_t_bisect_center_idx_buf(

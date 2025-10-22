@@ -37,17 +37,27 @@ cdef class BaseTrajSeqT:
     """
     def __dealloc__(self):
         BaseTrajSeq_t_release(&self._c_view)
-        
+
     cdef void _ensure_capacity_c(self, size_t min_capacity):
-        cdef int ret = BaseTrajSeq_t_ensure_capacity(&self._c_view, min_capacity)
-        if ret < 0:
-            raise MemoryError("Failed to allocate memory for trajectory buffer")
+        cdef ErrorCode err = BaseTrajSeq_t_ensure_capacity(&self._c_view, min_capacity)
+        if err == 0:
+            return
+        if err == ErrorCode.MEMORY_ERROR:
+            raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
+        if err == ErrorCode.VALUE_ERROR:
+            raise ValueError('Invalid BaseTrajSeq_t_ensure_capacity input')
+        raise RuntimeError("undefined error occured during BaseTrajSeq_t_ensure_capacity")
 
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach):
-        cdef int ret = BaseTrajSeq_t_append(&self._c_view, time, px, py, pz, vx, vy, vz, mach)
-        if ret < 0:
-            raise MemoryError("Failed to allocate memory for trajectory buffer")
+        cdef ErrorCode err = BaseTrajSeq_t_append(&self._c_view, time, px, py, pz, vx, vy, vz, mach)
+        if err == 0:
+            return
+        if err == ErrorCode.MEMORY_ERROR:
+            raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
+        if err == ErrorCode.VALUE_ERROR:
+            raise ValueError('Invalid BaseTrajSeq_t_append input')
+        raise RuntimeError("undefined error occured during BaseTrajSeq_t_append")
 
     def append(self, double time, double px, double py, double pz,
                double vx, double vy, double vz, double mach):
@@ -102,12 +112,20 @@ cdef class BaseTrajSeqT:
             Supports negative idx (which references from end of sequence).
         """
         cdef BaseTrajData_t output
-        cdef int ret = BaseTrajSeq_t_interpolate_at(&self._c_view, idx, key_kind, key_value, &output)
+        cdef ErrorCode ret = BaseTrajSeq_t_interpolate_at(&self._c_view, idx, key_kind, key_value, &output)
 
-        if ret < 0:
-            raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
+        if ret == 0:
+            return output
 
-        return output
+        if ret == ErrorCode.VALUE_ERROR:
+            raise ValueError("invalid BaseTrajSeq_t_interpolate_at input")
+        if ret == ErrorCode.INDEX_ERROR:
+            raise IndexError(
+                "BaseTrajSeq_t_interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)"
+            )
+        if ret == ErrorCode.KEY_ERROR:
+            raise AttributeError("invalid InterpKey")
+        raise RuntimeError("undefined error occured during BaseTrajSeq_t_interpolate_at")
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
@@ -197,7 +215,8 @@ cdef class BaseTrajSeqT:
                         break
                     i -= 1
             if target_idx == <Py_ssize_t>(-1):
-                raise ArithmeticError(f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
+                raise ArithmeticError(
+                    f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
             if fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon:
                 return self._getitem(target_idx)
             if target_idx == 0:
@@ -219,7 +238,8 @@ cdef class BaseTrajSeqT:
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
         cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(&self._c_view, ca, sa, value)
-        # Use three consecutive points around center to perform monotone PCHIP interpolation keyed on slant height
+        # Use three consecutive points around center to perform
+        # monotone PCHIP interpolation keyed on slant height
         cdef BaseTraj_t* buf = self._c_view.buffer
         cdef BaseTraj_t* p0 = &buf[center - 1]
         cdef BaseTraj_t* p1 = &buf[center]

@@ -120,7 +120,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            return -1; // Exit if denominator is zero
+            return ZERO_DIVISION_ERROR; // Exit if denominator is zero
         }
 
         fv = pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
@@ -135,7 +135,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            return -1; // Exit if pt is zero
+            return ZERO_DIVISION_ERROR; // Exit if pt is zero
         }
 
         shot_props_ptr->stability_coefficient = sd * fv * ftp;
@@ -144,7 +144,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
     {
         shot_props_ptr->stability_coefficient = 0.0;
     }
-    return 0;
+    return NO_ERROR;
 }
 
 double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
@@ -279,28 +279,6 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     //        altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
-// BaseTrajData_t *BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach)
-// {
-//     BaseTrajData_t *ptr = calloc(1, sizeof(BaseTrajData_t));
-//     if (ptr == NULL)
-//     {
-//         return NULL;
-//     }
-//     ptr->time = time;
-//     ptr->position = position;
-//     ptr->velocity = velocity;
-//     ptr->mach = mach;
-//     return ptr;
-// }
-
-void BaseTrajData_t_destroy(BaseTrajData_t *ptr)
-{
-    if (ptr != NULL)
-    {
-        free(ptr);
-    }
-}
-
 V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
 {
     return (V3dT){
@@ -311,6 +289,11 @@ V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
 
 void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
+    if (ws == NULL)
+    {
+        fprintf(stderr, "Warning: WindSock_t_updateCache failed. WindSock_t is NULL.\n");
+        return;
+    }
 
     ws->length = (int)length;
     ws->winds = winds;
@@ -353,7 +336,7 @@ ErrorCode WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
-        return -1;
+        return VALUE_ERROR;
     }
 
     if (ws->current < ws->length)
@@ -369,7 +352,7 @@ ErrorCode WindSock_t_updateCache(WindSock_t *ws)
         ws->last_vector_cache.z = 0.0;
         ws->next_range = cMaxWindDistanceFeet;
     }
-    return 0;
+    return NO_ERROR;
 }
 
 V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)

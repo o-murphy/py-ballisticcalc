@@ -34,7 +34,7 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double key_value,
         BaseTraj_t* out
     ) noexcept nogil
-    
+
     ErrorCode BaseTrajSeq_t_interpolate_at(
         const BaseTrajSeq_t *seq,
         ssize_t idx,

@@ -24,8 +24,8 @@ def test_interpolate_bounds_checks():
     mid = seq.interpolate_at(1, "time", 0.5)
     assert mid.time == pytest.approx(0.5)
 
-    # Error cases: out-of-range or no neighbors
-    with pytest.raises(IndexError):
+    # Error cases: NULL, out-of-range or no neighbors
+    with pytest.raises((IndexError, KeyError, ValueError)):
         seq.interpolate_at(3, "time", 1.5)
 
 

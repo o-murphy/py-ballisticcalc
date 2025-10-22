@@ -16,13 +16,10 @@ from py_ballisticcalc_exts.interp cimport interpolate_3_pt
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BaseTrajData_t,
-    BaseTrajData_t_destroy,
     InterpKey,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport _attribute_to_key, _v3d_to_vector
-
-from py_ballisticcalc.vector import Vector
 
 
 @final
@@ -31,7 +28,6 @@ cdef class BaseTrajDataT:
 
     def __cinit__(self, BaseTrajData_t data):
         self._c_view = data
-
 
     # Hot-path C accessors (used by Cython code directly)
     cdef V3dT c_position(self):
@@ -61,12 +57,15 @@ cdef class BaseTrajDataT:
     def interpolate(str key_attribute, double key_value,
                     object p0, object p1, object p2):
         """
-        Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation of a BaseTrajData point.
+        Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation
+        of a BaseTrajData point.
 
         Args:
-            key_attribute (str): Can be 'time', 'mach', or a vector component like 'position.x' or 'velocity.z'.
+            key_attribute (str): Can be 'time', 'mach',
+                or a vector component like 'position.x' or 'velocity.z'.
             key_value (float): The value to interpolate.
-            p0, p1, p2 (BaseTrajDataT): Any three points surrounding the point where key_attribute==value.
+            p0, p1, p2 (BaseTrajDataT):
+                Any three points surrounding the point where key_attribute==value.
 
         Returns:
             BaseTrajData: The interpolated data point.

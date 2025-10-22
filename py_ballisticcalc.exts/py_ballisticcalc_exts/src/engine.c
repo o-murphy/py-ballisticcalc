@@ -20,15 +20,15 @@ ErrorCode Engine_t_integrate(
 {
     if (!engine_ptr)
     {
-        return InvalidInput;
+        return VALUE_ERROR;
     }
     if (!engine_ptr->integrate_func_ptr)
     {
-        return InvalidInput;
+        return VALUE_ERROR;
     }
     if (!traj_seq_ptr)
     {
-        return InvalidInput;
+        return VALUE_ERROR;
     }
     return engine_ptr->integrate_func_ptr(engine_ptr, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 }

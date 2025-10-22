@@ -73,20 +73,20 @@ V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double k
  * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where dense trajectory
  * data points will be stored.
  * @return ErrorCode An enumeration value indicating why the integration
- * loop was terminated (e.g., NoError on successful completion).
+ * loop was terminated (e.g., NO_ERROR on successful completion).
  */
 ErrorCode _integrate_rk4(Engine_t *engine_ptr,
-                                 double range_limit_ft, double range_step_ft,
-                                 double time_step, TrajFlag_t filter_flags,
-                                 BaseTrajSeq_t *traj_seq_ptr)
+                         double range_limit_ft, double range_step_ft,
+                         double time_step, TrajFlag_t filter_flags,
+                         BaseTrajSeq_t *traj_seq_ptr)
 {
     if (!engine_ptr)
     {
-        return InvalidInput;
+        return VALUE_ERROR;
     }
     if (!traj_seq_ptr)
     {
-        return InvalidInput;
+        return VALUE_ERROR;
     }
 
     // printf("DEBUG: All pointers valid\n");
@@ -117,7 +117,8 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     // fflush(stdout);
 
     // Working variables
-    ErrorCode termination_reason = NoError;
+    ErrorCode termination_reason = NO_ERROR;
+    // ErrorCode err = NO_ERROR;
     double relative_speed;
     V3dT _dir_vector;
     engine_ptr->integration_step_count = 0;
@@ -215,12 +216,19 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         // Store point in trajectory sequence
         // printf("DEBUG: About to append to trajectory sequence\n");
         // fflush(stdout);
+        
+        // err =
         BaseTrajSeq_t_append(
             traj_seq_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
             mach);
+        // if (err < 0)
+        // {
+        //     return err;
+        // }
+
         // printf("DEBUG: Append successful\n");
         // fflush(stdout);
 
@@ -238,7 +246,7 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         if (mach == 0.0)
         {
             // printf("ERROR: mach is zero, cannot divide!\n");
-            return InvalidInput;
+            return ZERO_DIVISION_ERROR;
         }
 
         km = density_ratio * ShotProps_t_dragByMach(&engine_ptr->shot, relative_speed / mach);
@@ -313,18 +321,18 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
         {
-            termination_reason = RangeErrorMinimumVelocityReached;
+            termination_reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
         }
         else if (velocity_vector.y <= 0 && range_vector.y < _cMaximumDrop)
         {
-            termination_reason = RangeErrorMaximumDropReached;
+            termination_reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
         }
         else if (velocity_vector.y <= 0 && (engine_ptr->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
-            termination_reason = RangeErrorMinimumAltitudeReached;
+            termination_reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
         }
 
-        if (termination_reason != NoError)
+        if (termination_reason != NO_ERROR)
         {
             break;
         }
@@ -334,12 +342,18 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     // fflush(stdout);
 
     // Process final data point
+    
+    // err = 
     BaseTrajSeq_t_append(
         traj_seq_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,
         mach);
+    // if (err < 0)
+    // {
+    //     return err;
+    // }
 
     // printf("DEBUG: Function exit, reason=%d\n", termination_reason);
     // fflush(stdout);

@@ -118,7 +118,8 @@ cdef class CythonizedBaseIntegrationEngine:
         try:
             result = BaseTrajDataT(self._find_apex(shot_props_ptr))
             props = ShotProps.from_shot(shot_info)
-            return TrajectoryData.from_props(props, result.time, result.position, result.velocity, result.mach)
+            return TrajectoryData.from_props(
+                props, result.time, result.position, result.velocity, result.mach)
         finally:
             self._release_trajectory()
 
@@ -380,11 +381,22 @@ cdef class CythonizedBaseIntegrationEngine:
             apex = self._find_apex(shot_props_ptr)
             apex_slant_ft = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad)
             if apex_slant_ft < slant_range_ft:
-                raise OutOfRangeError(_new_feet(distance), _new_feet(apex_slant_ft), _new_rad(look_angle_rad))
-            return ZeroInitialData_t(1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+                raise OutOfRangeError(
+                    _new_feet(distance),
+                    _new_feet(apex_slant_ft),
+                    _new_rad(look_angle_rad)
+                )
+
+            return ZeroInitialData_t(
+                1, look_angle_rad, slant_range_ft,
+                target_x_ft, target_y_ft, start_height_ft
+            )
 
         # return (0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
-        return ZeroInitialData_t(0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+        return ZeroInitialData_t(
+            0, look_angle_rad, slant_range_ft,
+            target_x_ft, target_y_ft, start_height_ft
+        )
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -675,7 +687,7 @@ cdef class CythonizedBaseIntegrationEngine:
             int has_restore_min_velocity = 0
             BaseTrajData_t apex
             tuple _res
-            
+
         if self._engine.config.cMinimumVelocity > 0.0:
             restore_min_velocity = self._engine.config.cMinimumVelocity
             self._engine.config.cMinimumVelocity = 0.0
@@ -684,7 +696,7 @@ cdef class CythonizedBaseIntegrationEngine:
         try:
             _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_APEX)
             apex = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_VEL_Y, 0.0)
-        except Exception: # IndexError from _get_at_c
+        except Exception:  # IndexError from _get_at_c
             raise SolverRuntimeError("No apex flagged in trajectory data")
         finally:
             if has_restore_min_velocity:
@@ -810,7 +822,8 @@ cdef class CythonizedBaseIntegrationEngine:
 
                 if range_error_ft > _ALLOWED_ZERO_ERROR_FEET:
                     # We're still trying to reach zero_distance
-                    if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
+                    #   We're not getting closer to zero_distance
+                    if range_error_ft > prev_range_error_ft - 1e-6:
                         raise ZeroFindingError(
                             range_error_ft,
                             iterations_count,
@@ -853,8 +866,13 @@ cdef class CythonizedBaseIntegrationEngine:
                 self._engine.config.cMinimumAltitude = restore_cMinimumAltitude
 
         if height_error_ft > _cZeroFindingAccuracy or range_error_ft > _ALLOWED_ZERO_ERROR_FEET:
-            # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(shot_props_ptr.barrel_elevation))
+            # ZeroFindingError contains an instance of last barrel elevation;
+            # so caller can check how close zero is
+            raise ZeroFindingError(
+                height_error_ft,
+                iterations_count,
+                _new_rad(shot_props_ptr.barrel_elevation)
+            )
 
         return shot_props_ptr.barrel_elevation
 
@@ -866,10 +884,10 @@ cdef class CythonizedBaseIntegrationEngine:
         TrajFlag_t filter_flags
     ):
         if self._engine.integrate_func_ptr is NULL:
-            raise NotImplementedError
+            raise NotImplementedError("integrate_func not implemented or not provided")
 
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
-        cdef ErrorCode termination_reason = Engine_t_integrate(
+        cdef ErrorCode err = Engine_t_integrate(
             &self._engine,
             range_limit_ft,
             range_step_ft,
@@ -877,16 +895,18 @@ cdef class CythonizedBaseIntegrationEngine:
             filter_flags,
             &traj_seq._c_view,
         )
-        if termination_reason == 0:
+        if err == ErrorCode.NO_ERROR:
             return traj_seq, None
 
-        cdef str termination_reason_str = None
-        if termination_reason == ErrorCode.InvalidInput:
-            raise ValueError("InvalidInput")
-        elif termination_reason == ErrorCode.RangeErrorMinimumVelocityReached:
-            termination_reason_str = RangeError.MinimumVelocityReached
-        elif termination_reason == ErrorCode.RangeErrorMaximumDropReached:
-            termination_reason_str = RangeError.MaximumDropReached
-        elif termination_reason == ErrorCode.RangeErrorMinimumAltitudeReached:
-            termination_reason_str = RangeError.MinimumAltitudeReached
-        return traj_seq, termination_reason_str
+        cdef str termination_reason = None
+        if err == ErrorCode.VALUE_ERROR:
+            raise ValueError("invalid integrate_func input")
+        elif err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+            termination_reason = RangeError.MinimumVelocityReached
+        elif err == ErrorCode.RANGE_ERROR_MAXIMUM_DROP_REACHED:
+            termination_reason = RangeError.MaximumDropReached
+        elif err == ErrorCode.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+            termination_reason = RangeError.MinimumAltitudeReached
+        else:
+            raise RuntimeError(f"integrate_func failed with error code: {err}")
+        return traj_seq, termination_reason

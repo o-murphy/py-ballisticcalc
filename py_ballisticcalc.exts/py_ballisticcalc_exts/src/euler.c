@@ -36,21 +36,21 @@ double _euler_time_step(double base_step, double velocity)
  * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where trajectory
  * data points will be stored.
  * @return ErrorCode An enumeration value indicating why the integration
- * loop was terminated (e.g., NoError on success).
+ * loop was terminated (e.g., NO_ERROR on success).
  */
 ErrorCode _integrate_euler(Engine_t *engine_ptr,
-                                   double range_limit_ft, double range_step_ft,
-                                   double time_step, TrajFlag_t filter_flags,
-                                   BaseTrajSeq_t *traj_seq_ptr)
+                           double range_limit_ft, double range_step_ft,
+                           double time_step, TrajFlag_t filter_flags,
+                           BaseTrajSeq_t *traj_seq_ptr)
 {
 
     if (!engine_ptr)
     {
-        return InvalidInput;
+        return VALUE_ERROR;
     }
     if (!traj_seq_ptr)
     {
-        return InvalidInput;
+        return VALUE_ERROR;
     }
 
     double velocity, delta_time;
@@ -73,7 +73,8 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
     double _cMaximumDrop = -fabs(engine_ptr->config.cMaximumDrop);
 
     // Working variables
-    ErrorCode termination_reason = NoError;
+    ErrorCode termination_reason = NO_ERROR;
+    // ErrorCode err = NO_ERROR;
     double relative_speed;
     V3dT _dir_vector;
     V3dT _tv;
@@ -133,12 +134,18 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
             &mach);
 
         // Store point in trajectory sequence
+        
+        // err = 
         BaseTrajSeq_t_append(
             traj_seq_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
             mach);
+        // if (err < 0)
+        // {
+        //     return err;
+        // }
 
         // Euler integration step
 
@@ -179,30 +186,36 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
         {
-            termination_reason = RangeErrorMinimumVelocityReached;
+            termination_reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
         }
         else if (velocity_vector.y <= 0 && range_vector.y < _cMaximumDrop)
         {
-            termination_reason = RangeErrorMaximumDropReached;
+            termination_reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
         }
         else if (velocity_vector.y <= 0 && (engine_ptr->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
-            termination_reason = RangeErrorMinimumAltitudeReached;
+            termination_reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
         }
 
-        if (termination_reason != NoError)
+        if (termination_reason != NO_ERROR)
         {
             break;
         }
     }
 
     // Add final data point
+    
+    // err = 
     BaseTrajSeq_t_append(
         traj_seq_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,
         mach);
+    // if (err < 0)
+    // {
+    //     return err;
+    // }
 
     // printf("DEBUG: Function exit, reason=%d\n", termination_reason);
     // fflush(stdout);
