@@ -69,6 +69,12 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double sa,
         double value
     ) noexcept nogil
+    ErrorCode BaseTrajSeq_t_get_at_slant_height(
+        const BaseTrajSeq_t *seq,
+        double look_angle_rad,
+        double value,
+        BaseTrajData_t *out
+    )
 
 
 cdef class BaseTrajSeqT:

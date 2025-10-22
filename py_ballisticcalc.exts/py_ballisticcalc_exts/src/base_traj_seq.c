@@ -494,3 +494,38 @@ ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
 
     return lo;
 }
+
+ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out)
+{
+    double ca = cos(look_angle_rad);
+    double sa = sin(look_angle_rad);
+    ssize_t n = seq->length;
+    if (n < 3)
+    {
+        return VALUE_ERROR;
+    }
+    ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(seq, ca, sa, value);
+    // Use three consecutive points around center to perform
+    // monotone PCHIP interpolation keyed on slant height
+    BaseTraj_t *buf = seq->buffer;
+    BaseTraj_t *p0 = &buf[center - 1];
+    BaseTraj_t *p1 = &buf[center];
+    BaseTraj_t *p2 = &buf[center + 1];
+
+    double ox0 = BaseTraj_t_slant_val_buf(p0, ca, sa);
+    double ox1 = BaseTraj_t_slant_val_buf(p1, ca, sa);
+    double ox2 = BaseTraj_t_slant_val_buf(p2, ca, sa);
+
+    out->time = interpolate_3_pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+    out->position = (V3dT){
+        interpolate_3_pt(value, ox0, ox1, ox2, p0->px, p1->px, p2->px),
+        interpolate_3_pt(value, ox0, ox1, ox2, p0->py, p1->py, p2->py),
+        interpolate_3_pt(value, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz)};
+    out->velocity = (V3dT){
+        interpolate_3_pt(value, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx),
+        interpolate_3_pt(value, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy),
+        interpolate_3_pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz)};
+    out->mach = interpolate_3_pt(value, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
+
+    return NO_ERROR;
+}

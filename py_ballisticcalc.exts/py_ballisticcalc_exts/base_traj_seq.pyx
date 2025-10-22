@@ -13,13 +13,11 @@ Design note: nogil helpers operate on a tiny C struct view of the sequence to av
 passing Python cdef-class instances into nogil code paths.
 """
 
-from libc.math cimport cos, sin, fabs
+from libc.math cimport fabs
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.interp cimport interpolate_3_pt
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport InterpKey
 # noinspection PyUnresolvedReferences
@@ -232,36 +230,13 @@ cdef class BaseTrajSeqT:
 
     def get_at_slant_height(self, double look_angle_rad, double value):
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
-        cdef double ca = cos(look_angle_rad)
-        cdef double sa = sin(look_angle_rad)
-        cdef Py_ssize_t n = <Py_ssize_t>self._c_view.length
-        if n < 3:
+
+        cdef BaseTrajData_t out
+        cdef ErrorCode err = BaseTrajSeq_t_get_at_slant_height(&self._c_view, look_angle_rad, value, &out)
+        if err == ErrorCode.NO_ERROR:
+            return BaseTrajDataT(out)
+
+        if err == ErrorCode.VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
-        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(&self._c_view, ca, sa, value)
-        # Use three consecutive points around center to perform
-        # monotone PCHIP interpolation keyed on slant height
-        cdef BaseTraj_t* buf = self._c_view.buffer
-        cdef BaseTraj_t* p0 = &buf[center - 1]
-        cdef BaseTraj_t* p1 = &buf[center]
-        cdef BaseTraj_t* p2 = &buf[center + 1]
-        cdef double ox0, ox1, ox2
-        ox0 = BaseTraj_t_slant_val_buf(p0, ca, sa)
-        ox1 = BaseTraj_t_slant_val_buf(p1, ca, sa)
-        ox2 = BaseTraj_t_slant_val_buf(p2, ca, sa)
-        if ox0 == ox1 or ox0 == ox2 or ox1 == ox2:
+        if err == ErrorCode.ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
-
-        cdef double time = interpolate_3_pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time)
-        cdef V3dT position = V3dT(
-            interpolate_3_pt(value, ox0, ox1, ox2, p0.px, p1.px, p2.px),
-            interpolate_3_pt(value, ox0, ox1, ox2, p0.py, p1.py, p2.py),
-            interpolate_3_pt(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz)
-        )
-        cdef V3dT velocity = V3dT(
-            interpolate_3_pt(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx),
-            interpolate_3_pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy),
-            interpolate_3_pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz)
-        )
-        cdef double mach = interpolate_3_pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach)
-
-        return BaseTrajDataT(BaseTrajData_t(time, position, velocity, mach))
