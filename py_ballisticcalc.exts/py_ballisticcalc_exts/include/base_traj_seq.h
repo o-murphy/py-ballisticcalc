@@ -61,8 +61,7 @@ extern "C"
 
     double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa);
 
-    BaseTrajSeq_t *BaseTrajSeq_t_create();
-    void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq);
+    void BaseTrajSeq_t_release(BaseTrajSeq_t *seq);
 
     /**
      * @brief Appends a new element to the end of the sequence.

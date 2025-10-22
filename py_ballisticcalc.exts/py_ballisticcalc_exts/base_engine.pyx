@@ -875,7 +875,7 @@ cdef class CythonizedBaseIntegrationEngine:
             range_step_ft,
             time_step,
             filter_flags,
-            traj_seq._c_view,
+            &traj_seq._c_view,
         )
         cdef str termination_reason_str = None
         if termination_reason == TerminationReason.RangeErrorInvalidParameter:

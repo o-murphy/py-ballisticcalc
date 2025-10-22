@@ -194,18 +194,7 @@ int BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKe
     return 0;
 }
 
-BaseTrajSeq_t *BaseTrajSeq_t_create()
-{
-    BaseTrajSeq_t *ptr = (BaseTrajSeq_t *)calloc(1, sizeof(BaseTrajSeq_t));
-    if (ptr == NULL)
-    {
-        // Optionally log error: fprintf(stderr, "Failed to allocate BaseTrajSeq_t\n");
-        return NULL;
-    }
-    return ptr;
-}
-
-void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
+void BaseTrajSeq_t_release(BaseTrajSeq_t *seq)
 {
     if (seq != NULL)
     {
@@ -214,7 +203,6 @@ void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq)
             free(seq->buffer);
             seq->buffer = NULL;
         }
-        free(seq);
     }
     return;
 }

@@ -35,24 +35,17 @@ cdef class BaseTrajSeqT:
     Python-facing access lazily creates lightweight BaseTrajDataT objects; internal
         nogil helpers work directly on the C buffer for speed.
     """
-    def __cinit__(self):
-        self._c_view = BaseTrajSeq_t_create()
-        if self._c_view is NULL:
-            raise MemoryError("Failed to create BaseTrajSeq_t")
-
     def __dealloc__(self):
-        if self._c_view is not NULL:
-            BaseTrajSeq_t_destroy(self._c_view)
-            self._c_view = NULL
-
+        BaseTrajSeq_t_release(&self._c_view)
+        
     cdef void _ensure_capacity_c(self, size_t min_capacity):
-        cdef int ret = BaseTrajSeq_t_ensure_capacity(self._c_view, min_capacity)
+        cdef int ret = BaseTrajSeq_t_ensure_capacity(&self._c_view, min_capacity)
         if ret < 0:
             raise MemoryError("Failed to allocate memory for trajectory buffer")
 
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach):
-        cdef int ret = BaseTrajSeq_t_append(self._c_view, time, px, py, pz, vx, vy, vz, mach)
+        cdef int ret = BaseTrajSeq_t_append(&self._c_view, time, px, py, pz, vx, vy, vz, mach)
         if ret < 0:
             raise MemoryError("Failed to allocate memory for trajectory buffer")
 
@@ -68,7 +61,7 @@ cdef class BaseTrajSeqT:
         self._ensure_capacity_c(min_capacity)
 
     cdef BaseTraj_t* _get_raw_item(self, Py_ssize_t idx):
-        cdef BaseTraj_t *item = BaseTrajSeq_t_get_item(self._c_view, idx)
+        cdef BaseTraj_t *item = BaseTrajSeq_t_get_item(&self._c_view, idx)
         if item is NULL:
             raise IndexError("Index out of range")
         return item
@@ -78,7 +71,7 @@ cdef class BaseTrajSeqT:
         return self.len_c()
 
     cdef Py_ssize_t len_c(self):
-        cdef Py_ssize_t length = BaseTrajSeq_t_len(self._c_view)
+        cdef Py_ssize_t length = BaseTrajSeq_t_len(&self._c_view)
         if length < 0:
             raise MemoryError("Trajectory buffer is NULL")
         return length
@@ -109,7 +102,7 @@ cdef class BaseTrajSeqT:
             Supports negative idx (which references from end of sequence).
         """
         cdef BaseTrajData_t output
-        cdef int ret = BaseTrajSeq_t_interpolate_at(self._c_view, idx, key_kind, key_value, &output)
+        cdef int ret = BaseTrajSeq_t_interpolate_at(&self._c_view, idx, key_kind, key_value, &output)
 
         if ret < 0:
             raise IndexError("interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)")
@@ -213,7 +206,7 @@ cdef class BaseTrajSeqT:
             return self._interpolate_at_c(center_idx, key_kind, key_value)
 
         # Default: bisect across entire range
-        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(self._c_view, key_kind, key_value)
+        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(&self._c_view, key_kind, key_value)
         if center < 0:
             raise ValueError("Interpolation requires at least 3 points")
         return self._interpolate_at_c(center, key_kind, key_value)
@@ -225,7 +218,7 @@ cdef class BaseTrajSeqT:
         cdef Py_ssize_t n = <Py_ssize_t>self._c_view.length
         if n < 3:
             raise ValueError("Interpolation requires at least 3 points")
-        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(self._c_view, ca, sa, value)
+        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(&self._c_view, ca, sa, value)
         # Use three consecutive points around center to perform monotone PCHIP interpolation keyed on slant height
         cdef BaseTraj_t* buf = self._c_view.buffer
         cdef BaseTraj_t* p0 = &buf[center - 1]
