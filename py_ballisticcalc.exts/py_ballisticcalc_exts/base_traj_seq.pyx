@@ -13,7 +13,6 @@ Design note: nogil helpers operate on a tiny C struct view of the sequence to av
 passing Python cdef-class instances into nogil code paths.
 """
 
-from libc.math cimport fabs
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
@@ -122,92 +121,20 @@ cdef class BaseTrajSeqT:
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
-
-        cdef Py_ssize_t n
-        cdef BaseTraj_t* buf
-        cdef Py_ssize_t i
-        cdef Py_ssize_t start_idx
-        cdef Py_ssize_t target_idx
-        cdef Py_ssize_t center_idx
-        cdef double sft
-        cdef double epsilon
-        cdef double curr_val
-        cdef double next_val
-        cdef double a
-        cdef double b
-        cdef double a2
-        cdef double b2
-        cdef bint search_forward
-
-        n = <Py_ssize_t>self._c_view.length
-        if n < 3:
-            raise ValueError("Interpolation requires at least 3 points")
-
-        # If start_from_time is provided, mimic HitResult.get_at search strategy
-        sft = 0.0
+        cdef BaseTrajData_t out
+        cdef double _start_from_time = 0.0
         if start_from_time is not None:
-            sft = <double>start_from_time
-        if sft > 0.0 and key_kind != InterpKey.KEY_TIME:
-            buf = self._c_view.buffer
-            start_idx = <Py_ssize_t>0
-            # find first index with time >= start_from_time
-            i = <Py_ssize_t>0
-            while i < n:
-                if buf[i].time >= sft:
-                    start_idx = i
-                    break
-                i += 1
-            epsilon = 1e-9
-            curr_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx], key_kind)
-            if fabs(curr_val - key_value) < epsilon:
-                return self[start_idx]
-            search_forward = <bint>1
-            if start_idx == n - 1:
-                search_forward = <bint>0
-            elif 0 < start_idx < n - 1:
-                next_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx + 1], key_kind)
-                if (
-                    (next_val > curr_val and key_value > curr_val)
-                    or (next_val < curr_val and key_value < curr_val)
-                ):
-                    search_forward = <bint>1
-                else:
-                    search_forward = <bint>0
+            _start_from_time = <double>start_from_time
+        cdef ErrorCode err = BaseTrajSeq_t_get_at(&self._c_view, key_kind, key_value, _start_from_time, &out)
+        if err == ErrorCode.NO_ERROR:
+            return out
 
-            target_idx = <Py_ssize_t>(-1)
-            if search_forward:
-                i = <Py_ssize_t>start_idx
-                while i < n - 1:
-                    a = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind)
-                    b = BaseTraj_t_key_val_from_kind_buf(&buf[i + 1], key_kind)
-                    if ((a < key_value <= b) or (b <= key_value < a)):
-                        target_idx = i + 1
-                        break
-                    i += 1
-            if target_idx == <Py_ssize_t>(-1):
-                i = <Py_ssize_t>start_idx
-                while i > 0:
-                    a2 = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind)
-                    b2 = BaseTraj_t_key_val_from_kind_buf(&buf[i - 1], key_kind)
-                    if ((b2 <= key_value < a2) or (a2 < key_value <= b2)):
-                        target_idx = i
-                        break
-                    i -= 1
-            if target_idx == <Py_ssize_t>(-1):
-                raise ArithmeticError(
-                    f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
-            if fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon:
-                return self[target_idx]
-            if target_idx == 0:
-                target_idx = <Py_ssize_t>1
-            center_idx = target_idx if target_idx < n - 1 else n - 2
-            return self._interpolate_at_c(center_idx, key_kind, key_value)
-
-        # Default: bisect across entire range
-        cdef Py_ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(&self._c_view, key_kind, key_value)
-        if center < 0:
+        if err == ErrorCode.VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
-        return self._interpolate_at_c(center, key_kind, key_value)
+        if err == ErrorCode.ARITHMETIC_ERROR:
+            raise ArithmeticError(
+                f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
+        raise RuntimeError(f"Unknown internal error in BaseTrajSeq_t_get_at, error code: {err}")
 
     def get_at_slant_height(self, double look_angle_rad, double value):
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""

@@ -79,6 +79,13 @@ cdef extern from "include/base_traj_seq.h" nogil:
         const BaseTrajSeq_t *seq,
         ssize_t idx, BaseTrajData_t *out
     ) noexcept nogil
+    ErrorCode BaseTrajSeq_t_get_at(
+        const BaseTrajSeq_t *seq,
+        InterpKey key_kind,
+        double key_value,
+        double start_from_time,
+        BaseTrajData_t *out
+    ) noexcept nogil
 
 
 cdef class BaseTrajSeqT:

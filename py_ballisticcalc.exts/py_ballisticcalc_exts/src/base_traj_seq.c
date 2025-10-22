@@ -497,6 +497,10 @@ ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
 
 ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out)
 {
+    if (!seq || !out)
+    {
+        return VALUE_ERROR;
+    }
     double ca = cos(look_angle_rad);
     double sa = sin(look_angle_rad);
     ssize_t n = seq->length;
@@ -532,6 +536,11 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double loo
 
 ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out)
 {
+    if (!seq || !out)
+    {
+        return VALUE_ERROR;
+    }
+
     BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
     if (!entry_ptr)
     {
@@ -547,5 +556,152 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
         entry_ptr->vy,
         entry_ptr->vz};
     out->mach = entry_ptr->mach;
+    return NO_ERROR;
+}
+
+ErrorCode BaseTrajSeq_t_get_at(
+    const BaseTrajSeq_t *seq,
+    InterpKey key_kind,
+    double key_value,
+    double start_from_time,
+    BaseTrajData_t *out)
+{
+    if (!seq || !out)
+    {
+        return VALUE_ERROR;
+    }
+
+    ssize_t i, n, start_idx, target_idx, center_idx;
+    n = seq->length;
+    if (n < 3)
+    {
+        return VALUE_ERROR;
+    }
+
+    double curr_val, next_val;
+    double a, b, a2, b2;
+    int search_forward;
+    BaseTraj_t *buf;
+    double sft = 0.0;
+    double epsilon = 1e-9;
+    ErrorCode err;
+
+    // If start_from_time is provided, mimic HitResult.get_at search strategy
+    if (start_from_time >= 0.0)
+    {
+        sft = start_from_time;
+    }
+    if (sft > 0.0 && key_kind != KEY_TIME)
+    {
+        buf = seq->buffer;
+        start_idx = 0;
+        // find first index with time >= start_from_time
+        i = 0;
+        while (i < n)
+        {
+            if (buf[i].time >= sft)
+            {
+                start_idx = i;
+                break;
+            }
+            i++;
+        }
+        curr_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx], key_kind);
+        if (fabs(curr_val - key_value) < epsilon)
+        {
+            err = BaseTrajSeq_t_get_item(seq, start_idx, out);
+            if (err < 0)
+            {
+                return INDEX_ERROR; // FIXME: Should return specific error?
+            }
+            return NO_ERROR;
+        }
+        search_forward = 1;
+        if (start_idx == n - 1)
+        {
+            search_forward = 0;
+        }
+        else if (0 < start_idx < n - 1)
+        {
+            next_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx + 1], key_kind);
+            if (
+                (next_val > curr_val && key_value > curr_val) || (next_val < curr_val && key_value < curr_val))
+            {
+                search_forward = 1;
+            }
+            else
+            {
+                search_forward = 0;
+            }
+        }
+
+        target_idx = -1;
+        if (search_forward)
+        {
+            i = start_idx;
+            while (i < n - 1)
+            {
+                a = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind);
+                b = BaseTraj_t_key_val_from_kind_buf(&buf[i + 1], key_kind);
+                if ((a < key_value <= b) || (b <= key_value < a))
+                {
+                    target_idx = i + 1;
+                    break;
+                }
+                i++;
+            }
+        }
+        if (target_idx == -1)
+        {
+            i = start_idx;
+            while (i > 0)
+            {
+                a2 = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind);
+                b2 = BaseTraj_t_key_val_from_kind_buf(&buf[i - 1], key_kind);
+                if ((b2 <= key_value < a2) || (a2 < key_value <= b2))
+                {
+                    target_idx = i;
+                    break;
+                }
+                i--;
+            }
+        }
+        if (target_idx == -1)
+        {
+            return ARITHMETIC_ERROR;
+        }
+        if (fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon)
+        {
+            err = BaseTrajSeq_t_get_item(seq, target_idx, out);
+            if (err < 0)
+            {
+                return INDEX_ERROR; // FIXME: Should return specific error?
+            }
+            return NO_ERROR;
+        }
+        if (target_idx == 0)
+        {
+            target_idx = 1;
+        }
+        center_idx = target_idx < n - 1 ? target_idx : n - 2;
+        err = BaseTrajSeq_t_interpolate_at(seq, center_idx, key_kind, key_value, out);
+        if (err < 0)
+        {
+            return err; // FIXME: Should return specific error?
+        }
+        return NO_ERROR;
+    }
+
+    // Default: bisect across entire range
+    ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(seq, key_kind, key_value);
+    if (center < 0)
+    {
+        return VALUE_ERROR;
+    }
+    err = BaseTrajSeq_t_interpolate_at(seq, center, key_kind, key_value, out);
+    if (err < 0)
+    {
+        return err; // FIXME: Should return specific error?
+    }
     return NO_ERROR;
 }

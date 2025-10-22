@@ -26,6 +26,7 @@ typedef enum
     KEY_ERROR = -3,
     INDEX_ERROR = -4,
     MEMORY_ERROR = -5,
+    ARITHMETIC_ERROR = -6,
 
     UNDEFINED_ERROR = -1000,
 

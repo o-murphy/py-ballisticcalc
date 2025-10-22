@@ -21,9 +21,10 @@ cdef extern from "include/bclib.h" nogil:
         VALUE_ERROR = -2
         KEY_ERROR = -3
         INDEX_ERROR = -4
-        MEMORY_ERROR = -5,
+        MEMORY_ERROR = -5
+        ARITHMETIC_ERROR = -6
 
-        UNDEFINED_ERROR = -1000,
+        UNDEFINED_ERROR = -1000
 
         # Solver specific errors
         RANGE_ERROR_MINIMUM_VELOCITY_REACHED = -10
