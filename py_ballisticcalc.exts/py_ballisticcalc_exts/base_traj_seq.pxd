@@ -90,4 +90,3 @@ cdef extern from "include/base_traj_seq.h" nogil:
 
 cdef class BaseTrajSeqT:
     cdef BaseTrajSeq_t _c_view
-    cdef BaseTrajData_t _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time = *)

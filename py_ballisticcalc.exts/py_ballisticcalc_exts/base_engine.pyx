@@ -17,6 +17,7 @@ from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTraj_t,
     InterpKey,
     BaseTrajSeq_t_get_raw_item,
+    BaseTrajSeq_t_get_at,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
@@ -262,7 +263,10 @@ cdef class CythonizedBaseIntegrationEngine:
             # Integrator returned only the initial point; signal unreachable
             return 9e9
         try:
-            hit = trajectory._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
+            err = BaseTrajSeq_t_get_at(&trajectory._c_view, InterpKey.KEY_POS_X, target_x_ft, -1, &hit)
+            if err != ErrorCode.NO_ERROR:
+                raise SolverRuntimeError(
+                    f"Failed to interpolate trajectory at target distance, error code: {err}")
             return (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft)
         except Exception:
             # Any interpolation failure (e.g., degenerate points) signals unreachable
@@ -700,8 +704,10 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             double restore_min_velocity = 0.0
             int has_restore_min_velocity = 0
+            BaseTrajSeqT res
             BaseTrajData_t apex
             tuple _res
+            ErrorCode err
 
         if self._engine.config.cMinimumVelocity > 0.0:
             restore_min_velocity = self._engine.config.cMinimumVelocity
@@ -710,9 +716,10 @@ cdef class CythonizedBaseIntegrationEngine:
 
         try:
             _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_APEX)
-            apex = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_VEL_Y, 0.0)
-        except Exception:  # IndexError from _get_at_c
-            raise SolverRuntimeError("No apex flagged in trajectory data")
+            res = <BaseTrajSeqT>_res[0]
+            err = BaseTrajSeq_t_get_at(&res._c_view, InterpKey.KEY_VEL_Y, 0.0, -1, &apex)
+            if err != ErrorCode.NO_ERROR:
+                raise SolverRuntimeError("No apex flagged in trajectory data")
         finally:
             if has_restore_min_velocity:
                 self._engine.config.cMinimumVelocity = restore_min_velocity
@@ -750,6 +757,8 @@ cdef class CythonizedBaseIntegrationEngine:
 
         cdef:
             BaseTrajData_t hit
+            BaseTrajSeqT seq
+            ErrorCode err
             # early bindings
             double _cZeroFindingAccuracy = self._engine.config.cZeroFindingAccuracy
             int _cMaxIterations = self._engine.config.cMaxIterations
@@ -790,8 +799,11 @@ cdef class CythonizedBaseIntegrationEngine:
             while iterations_count < _cMaxIterations:
                 # Check height of trajectory at the zero distance (using current barrel_elevation)
                 _res = self._integrate(target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
-                hit = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
-
+                seq = <BaseTrajSeqT>_res[0]
+                err = BaseTrajSeq_t_get_at(&seq._c_view, InterpKey.KEY_POS_X, target_x_ft, -1, &hit)
+                if err != ErrorCode.NO_ERROR:
+                    raise SolverRuntimeError(
+                        f"Failed to interpolate trajectory at target distance, error code: {err}")
                 if hit.time == 0.0:
                     # Integrator returned initial point - consider removing constraints
                     break

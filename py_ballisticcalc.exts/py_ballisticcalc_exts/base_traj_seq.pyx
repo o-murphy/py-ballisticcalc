@@ -94,23 +94,21 @@ cdef class BaseTrajSeqT:
         raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_interpolate_at, error code: {err}")
 
     def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
-        cdef InterpKey key_kind = _attribute_to_key(key_attribute)
-        return BaseTrajDataT(self._get_at_c(key_kind, key_value, start_from_time))
-
-    cdef BaseTrajData_t _get_at_c(self, InterpKey key_kind, double key_value, object start_from_time=None):
         """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
 
         If start_from_time > 0, search is centered from the first point where time >= start_from_time,
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
+        cdef InterpKey key_kind = _attribute_to_key(key_attribute)
+
         cdef BaseTrajData_t out
         cdef double _start_from_time = 0.0
         if start_from_time is not None:
             _start_from_time = <double>start_from_time
         cdef ErrorCode err = BaseTrajSeq_t_get_at(&self._c_view, key_kind, key_value, _start_from_time, &out)
         if err == ErrorCode.NO_ERROR:
-            return out
+            return BaseTrajDataT(out)
 
         if err == ErrorCode.VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
