@@ -44,13 +44,9 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
                            BaseTrajSeq_t *traj_seq_ptr)
 {
 
-    if (!engine_ptr)
+    if (!engine_ptr || !traj_seq_ptr)
     {
-        return VALUE_ERROR;
-    }
-    if (!traj_seq_ptr)
-    {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     double velocity, delta_time;

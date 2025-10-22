@@ -56,6 +56,11 @@ double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
  */
 ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
 {
+    if (!seq || !out)
+    {
+        return INPUT_ERROR; // Invalid input
+    }
+
     // Cast Cython's size_t to C's ssize_t for bounds checking
     BaseTraj_t *buffer = seq->buffer;
     ssize_t length = seq->length;
@@ -179,7 +184,7 @@ ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, In
 {
     if (!seq || !out)
     {
-        return VALUE_ERROR; // Invalid input
+        return INPUT_ERROR; // Invalid input
     }
     BaseTraj_t raw_output;
     int err = BaseTrajSeq_t_interpolate_raw(seq, idx, key_kind, key_value, &raw_output);
@@ -250,7 +255,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
     if (seq == NULL)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     size_t new_capacity;
@@ -306,7 +311,7 @@ ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
 
     if (seq == NULL)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     ErrorCode err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
@@ -499,7 +504,7 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double loo
 {
     if (!seq || !out)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
     double ca = cos(look_angle_rad);
     double sa = sin(look_angle_rad);
@@ -538,7 +543,7 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
 {
     if (!seq || !out)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
@@ -568,7 +573,7 @@ ErrorCode BaseTrajSeq_t_get_at(
 {
     if (!seq || !out)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     ssize_t i, n, start_idx, target_idx, center_idx;

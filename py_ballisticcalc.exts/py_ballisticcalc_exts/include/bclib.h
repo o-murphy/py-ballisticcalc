@@ -27,6 +27,7 @@ typedef enum
     INDEX_ERROR = 4,
     MEMORY_ERROR = 5,
     ARITHMETIC_ERROR = 6,
+    INPUT_ERROR = 7,
 
     UNDEFINED_ERROR = 1000,
 
@@ -196,7 +197,7 @@ extern "C"
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr);
 
-    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
+    ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);
     V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
     ErrorCode WindSock_t_updateCache(WindSock_t *ws);

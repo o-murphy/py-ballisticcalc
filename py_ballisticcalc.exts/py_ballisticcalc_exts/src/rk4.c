@@ -80,13 +80,9 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
                          double time_step, TrajFlag_t filter_flags,
                          BaseTrajSeq_t *traj_seq_ptr)
 {
-    if (!engine_ptr)
+    if (!engine_ptr || !traj_seq_ptr)
     {
-        return VALUE_ERROR;
-    }
-    if (!traj_seq_ptr)
-    {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     // printf("DEBUG: All pointers valid\n");

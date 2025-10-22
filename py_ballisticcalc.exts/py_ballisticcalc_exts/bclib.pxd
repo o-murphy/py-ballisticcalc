@@ -23,6 +23,7 @@ cdef extern from "include/bclib.h" nogil:
         INDEX_ERROR = 4
         MEMORY_ERROR = 5
         ARITHMETIC_ERROR = 6
+        INPUT_ERROR = 7
 
         UNDEFINED_ERROR = 1000
 
@@ -107,7 +108,7 @@ cdef extern from "include/bclib.h" nogil:
         double next_range
         V3dT last_vector_cache
 
-    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
+    ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
     void WindSock_t_release(WindSock_t *ws) noexcept nogil
     V3dT WindSock_t_currentVector(WindSock_t *wind_sock) noexcept nogil
     ErrorCode WindSock_t_updateCache(WindSock_t *ws) noexcept nogil

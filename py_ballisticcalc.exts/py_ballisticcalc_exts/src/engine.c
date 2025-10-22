@@ -18,17 +18,13 @@ ErrorCode Engine_t_integrate(
     TrajFlag_t filter_flags,
     BaseTrajSeq_t *traj_seq_ptr)
 {
-    if (!engine_ptr)
+    if (!engine_ptr || !traj_seq_ptr)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
     if (!engine_ptr->integrate_func_ptr)
     {
-        return VALUE_ERROR;
-    }
-    if (!traj_seq_ptr)
-    {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
     return engine_ptr->integrate_func_ptr(engine_ptr, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 }

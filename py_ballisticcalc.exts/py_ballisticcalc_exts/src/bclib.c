@@ -95,6 +95,10 @@ double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
 
 ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
+    if (shot_props_ptr == NULL)
+    {
+        return INPUT_ERROR;
+    }
     /* Miller stability coefficient */
     double twist_rate, length, sd, fv, ft, pt, ftp;
 
@@ -288,12 +292,12 @@ V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
         .z = wind_ptr->velocity * sin(wind_ptr->direction_from)};
 }
 
-void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
+ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
     {
         fprintf(stderr, "Warning: WindSock_t_updateCache failed. WindSock_t is NULL.\n");
-        return;
+        return INPUT_ERROR;
     }
 
     ws->length = (int)length;
@@ -306,12 +310,12 @@ void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     ws->last_vector_cache.y = 0.0;
     ws->last_vector_cache.z = 0.0;
 
-    WindSock_t_updateCache(ws);
+    return WindSock_t_updateCache(ws);
 }
 
 void WindSock_t_release(WindSock_t *ws)
 {
-    if (ws == NULL)
+    if (ws == INPUT_ERROR)
     {
         return;
     }
@@ -337,7 +341,7 @@ ErrorCode WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     if (ws->current < ws->length)
@@ -460,7 +464,7 @@ ErrorCode BaseTrajData_t_interpolate(
 
     if (!p0 || !p1 || !p2 || !out)
     {
-        return VALUE_ERROR;
+        return INPUT_ERROR;
     }
 
     double x0, x1, x2;
