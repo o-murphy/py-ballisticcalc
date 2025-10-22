@@ -8,11 +8,11 @@ This report summarizes the Cythonization percentage for various source files, in
 | Metric                                 | Value       |
 | :------------------------------------- | :---------- |
 | Total Score Sum                        | 7442.0      |
-| Possible Score                         | 145500.0      |
-| Total Non-Empty Lines                  | 1455.0      |
+| Possible Score                         | 144600.0      |
+| Total Non-Empty Lines                  | 1446.0      |
 | Python Overhead Lines                  | 460.0      |
-| **Overall Cythonization Percentage** | **94.89%** |
-| **Overall Python Overhead Lines Percentage** | **31.62%** |
+| **Overall Cythonization Percentage** | **94.85%** |
+| **Overall Python Overhead Lines Percentage** | **31.81%** |
 
 ---
 ## File: base_traj_seq.html
@@ -56,11 +56,11 @@ This report summarizes the Cythonization percentage for various source files, in
 | Metric                         | Value       |
 | :----------------------------- | :---------- |
 | Total Score Sum                | 313      |
-| Possible Score                 | 7800      |
-| Total Non-Empty Lines          | 78      |
+| Possible Score                 | 7100      |
+| Total Non-Empty Lines          | 71      |
 | Python Overhead Lines          | 23      |
-| **Cythonization Percentage** | **95.99%** |
-| **Python Overhead Lines Percentage** | **29.49%** |
+| **Cythonization Percentage** | **95.59%** |
+| **Python Overhead Lines Percentage** | **32.39%** |
 
 ---
 ## File: base_engine.html
@@ -68,11 +68,11 @@ This report summarizes the Cythonization percentage for various source files, in
 | Metric                         | Value       |
 | :----------------------------- | :---------- |
 | Total Score Sum                | 2903      |
-| Possible Score                 | 78200      |
-| Total Non-Empty Lines          | 782      |
+| Possible Score                 | 78000      |
+| Total Non-Empty Lines          | 780      |
 | Python Overhead Lines          | 216      |
-| **Cythonization Percentage** | **96.29%** |
-| **Python Overhead Lines Percentage** | **27.62%** |
+| **Cythonization Percentage** | **96.28%** |
+| **Python Overhead Lines Percentage** | **27.69%** |
 
 ---
 ## File: euler_engine.html
@@ -111,4 +111,4 @@ This report summarizes the Cythonization percentage for various source files, in
 | **Python Overhead Lines Percentage** | **52.11%** |
 
 ---
-Generated on 2025-10-22 15:22:02.
+Generated on 2025-10-22 15:24:00.

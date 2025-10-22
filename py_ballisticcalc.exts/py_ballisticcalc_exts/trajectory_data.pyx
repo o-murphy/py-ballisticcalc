@@ -10,8 +10,6 @@ and convert to these types as needed for interpolation or presentation.
 """
 from cython cimport final
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     ErrorCode,
     BaseTrajData_t,
@@ -28,13 +26,6 @@ cdef class BaseTrajDataT:
 
     def __cinit__(self, BaseTrajData_t data):
         self._c_view = data
-
-    # Hot-path C accessors (used by Cython code directly)
-    cdef V3dT c_position(self):
-        return self._c_view.position
-
-    cdef V3dT c_velocity(self):
-        return self._c_view.velocity
 
     @property
     def time(self):
