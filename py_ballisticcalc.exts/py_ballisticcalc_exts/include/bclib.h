@@ -211,6 +211,14 @@ extern "C"
         const V3dT *velocity_ptr,
         V3dT *accel_ptr);
 
+    ErrorCode BaseTrajData_t_interpolate(
+        InterpKey key_kind,
+        double key_value,
+        const BaseTrajData_t *p0,
+        const BaseTrajData_t *p1,
+        const BaseTrajData_t *p2,
+        BaseTrajData_t *out);
+
 #ifdef __cplusplus
 }
 #endif

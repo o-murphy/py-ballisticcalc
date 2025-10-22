@@ -627,14 +627,12 @@ cdef class CythonizedBaseIntegrationEngine:
                     # Linear search from end of trajectory for zero-down crossing
                     for i in range(n - 1, 0, -1):
                         prev_ptr = BaseTrajSeq_t_get_raw_item(
-                            &trajectory._c_view, 
-                            i - 1
+                            &trajectory._c_view, i - 1
                         )
                         if prev_ptr is NULL:
                             return -9e9  # assume IndexError
                         cur_ptr = BaseTrajSeq_t_get_raw_item(
-                            &trajectory._c_view, 
-                            i
+                            &trajectory._c_view, i
                         )
                         if cur_ptr is NULL:
                             return -9e9  # assume IndexError

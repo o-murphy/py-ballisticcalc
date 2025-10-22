@@ -1,5 +1,6 @@
 #include "bclib.h"
 #include "v3d.h"
+#include "interp.h"
 #include <math.h>
 #include <stddef.h> // For size_t
 #include <stdio.h>  // For warnings (printf used here)
@@ -446,4 +447,103 @@ void Coriolis_t_coriolis_acceleration_local(
     accel_ptr->x = accel_range;
     accel_ptr->y = accel_up;
     accel_ptr->z = accel_cross;
+}
+
+ErrorCode BaseTrajData_t_interpolate(
+    InterpKey key_kind,
+    double key_value,
+    const BaseTrajData_t *p0,
+    const BaseTrajData_t *p1,
+    const BaseTrajData_t *p2,
+    BaseTrajData_t *out)
+{
+
+    if (!p0 || !p1 || !p2 || !out)
+    {
+        return VALUE_ERROR;
+    }
+
+    double x0, x1, x2;
+    double time, mach;
+    V3dT position, velocity;
+    V3dT vp0, vp1, vp2, vv0, vv1, vv2;
+    BaseTrajData_t _p0 = *p0;
+    BaseTrajData_t _p1 = *p1;
+    BaseTrajData_t _p2 = *p2;
+
+    vp0 = _p0.position;
+    vp1 = _p1.position;
+    vp2 = _p2.position;
+    vv0 = _p0.velocity;
+    vv1 = _p1.velocity;
+    vv2 = _p2.velocity;
+
+    // Determine independent variable values from key_kind
+    switch (key_kind)
+    {
+    case KEY_TIME:
+        x0 = _p0.time;
+        x1 = _p1.time;
+        x2 = _p2.time;
+        break;
+    case KEY_MACH:
+        x0 = _p0.mach;
+        x1 = _p1.mach;
+        x2 = _p2.mach;
+        break;
+    case KEY_POS_X:
+        x0 = vp0.x;
+        x1 = vp1.x;
+        x2 = vp2.x;
+        break;
+    case KEY_POS_Y:
+        x0 = vp0.y;
+        x1 = vp1.y;
+        x2 = vp2.y;
+        break;
+    case KEY_POS_Z:
+        x0 = vp0.z;
+        x1 = vp1.z;
+        x2 = vp2.z;
+        break;
+    case KEY_VEL_X:
+        x0 = vv0.x;
+        x1 = vv1.x;
+        x2 = vv2.x;
+        break;
+    case KEY_VEL_Y:
+        x0 = vv0.y;
+        x1 = vv1.y;
+        x2 = vv2.y;
+        break;
+    case KEY_VEL_Z:
+        x0 = vv0.z;
+        x1 = vv1.z;
+        x2 = vv2.z;
+        break;
+    default:
+        return KEY_ERROR;
+    }
+
+    // Guard against degenerate segments
+    if (x0 == x1 || x0 == x2 || x1 == x2)
+    {
+        return ZERO_DIVISION_ERROR;
+    }
+
+    // Scalar interpolation using PCHIP
+
+    // Interpolate all scalar fields
+    out->time = key_kind == KEY_TIME ? key_value : interpolate_3_pt(key_value, x0, x1, x2, _p0.time, _p1.time, _p2.time);
+    out->position = (V3dT){
+        interpolate_3_pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
+        interpolate_3_pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
+        interpolate_3_pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
+    out->velocity = (V3dT){
+        interpolate_3_pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
+        interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
+        interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
+    out->mach = key_kind == KEY_MACH ? key_value : interpolate_3_pt(key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach);
+
+    return NO_ERROR;
 }

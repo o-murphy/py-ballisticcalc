@@ -78,15 +78,15 @@ C_SOURCES = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from C_SOURCES that they depend on.
 EXTENSION_DEPS = {
-    "bind": ["bclib", "bind"],
+    "bind": ["interp", "bclib", "bind"],
     "base_traj_seq": ["interp", "base_traj_seq"],
     "base_engine": ["interp", "bclib", "engine", "base_traj_seq"],
     "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine"],
     "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine"],
     "trajectory_data": ["interp", "bclib"],
     # Test modules (expose internal C functions for tests only)
-    "test_helpers": ["bclib"],
-    "test_engine": ["bclib"],
+    "test_helpers": ["bclib", "interp"],
+    "test_engine": ["bclib", "interp"],
 }
 
 

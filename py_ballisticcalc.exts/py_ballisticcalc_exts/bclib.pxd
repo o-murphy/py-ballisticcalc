@@ -171,3 +171,12 @@ cdef extern from "include/bclib.h" nogil:
     double getCorrection(double distance, double offset)
     double calculateEnergy(double bulletWeight, double velocity)
     double calculateOgw(double bulletWeight, double velocity)
+
+    ErrorCode BaseTrajData_t_interpolate(
+        InterpKey key_kind,
+        double key_value,
+        const BaseTrajData_t *p0,
+        const BaseTrajData_t *p1,
+        const BaseTrajData_t *p2,
+        BaseTrajData_t *out
+    )
