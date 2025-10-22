@@ -35,7 +35,7 @@ cdef class BaseTrajSeqT:
 
     cdef void _ensure_capacity_c(self, size_t min_capacity):
         cdef ErrorCode err = BaseTrajSeq_t_ensure_capacity(&self._c_view, min_capacity)
-        if err == 0:
+        if err == ErrorCode.NO_ERROR:
             return
         if err == ErrorCode.MEMORY_ERROR:
             raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
@@ -46,7 +46,7 @@ cdef class BaseTrajSeqT:
     cdef void _append_c(self, double time, double px, double py, double pz,
                         double vx, double vy, double vz, double mach):
         cdef ErrorCode err = BaseTrajSeq_t_append(&self._c_view, time, px, py, pz, vx, vy, vz, mach)
-        if err == 0:
+        if err == ErrorCode.NO_ERROR:
             return
         if err == ErrorCode.MEMORY_ERROR:
             raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
@@ -90,18 +90,18 @@ cdef class BaseTrajSeqT:
             Supports negative idx (which references from end of sequence).
         """
         cdef BaseTrajData_t output
-        cdef ErrorCode ret = BaseTrajSeq_t_interpolate_at(&self._c_view, idx, key_kind, key_value, &output)
+        cdef ErrorCode err = BaseTrajSeq_t_interpolate_at(&self._c_view, idx, key_kind, key_value, &output)
 
-        if ret == 0:
+        if err == ErrorCode.NO_ERROR:
             return output
 
-        if ret == ErrorCode.VALUE_ERROR:
+        if err == ErrorCode.VALUE_ERROR:
             raise ValueError("invalid BaseTrajSeq_t_interpolate_at input")
-        if ret == ErrorCode.INDEX_ERROR:
+        if err == ErrorCode.INDEX_ERROR:
             raise IndexError(
                 "BaseTrajSeq_t_interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)"
             )
-        if ret == ErrorCode.KEY_ERROR:
+        if err == ErrorCode.KEY_ERROR:
             raise AttributeError("invalid InterpKey")
         raise RuntimeError("undefined error occured during BaseTrajSeq_t_interpolate_at")
 

@@ -224,7 +224,7 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
             mach);
-        // if (err < 0)
+        // if (err != NO_ERROR)
         // {
         //     return err;
         // }
@@ -350,7 +350,7 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,
         mach);
-    // if (err < 0)
+    // if (err !+ NO_ERROR)
     // {
     //     return err;
     // }

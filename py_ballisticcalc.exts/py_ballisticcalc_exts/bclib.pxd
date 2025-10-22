@@ -17,19 +17,19 @@ cdef extern from "include/bclib.h" nogil:
     ctypedef enum ErrorCode:
         # General error codes
         NO_ERROR = 0
-        ZERO_DIVISION_ERROR = -1
-        VALUE_ERROR = -2
-        KEY_ERROR = -3
-        INDEX_ERROR = -4
-        MEMORY_ERROR = -5
-        ARITHMETIC_ERROR = -6
+        ZERO_DIVISION_ERROR = 1
+        VALUE_ERROR = 2
+        KEY_ERROR = 3
+        INDEX_ERROR = 4
+        MEMORY_ERROR = 5
+        ARITHMETIC_ERROR = 6
 
-        UNDEFINED_ERROR = -1000
+        UNDEFINED_ERROR = 1000
 
         # Solver specific errors
-        RANGE_ERROR_MINIMUM_VELOCITY_REACHED = -10
-        RANGE_ERROR_MAXIMUM_DROP_REACHED = -11
-        RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = -12
+        RANGE_ERROR_MINIMUM_VELOCITY_REACHED = 100
+        RANGE_ERROR_MAXIMUM_DROP_REACHED = 101
+        RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = 102
 
     ctypedef struct Config_t:
         double cStepMultiplier

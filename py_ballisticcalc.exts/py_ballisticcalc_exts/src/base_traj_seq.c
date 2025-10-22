@@ -183,7 +183,7 @@ ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, In
     }
     BaseTraj_t raw_output;
     int err = BaseTrajSeq_t_interpolate_raw(seq, idx, key_kind, key_value, &raw_output);
-    if (err < 0)
+    if (err != NO_ERROR)
     {
         return err; // INDEX_ERROR or VALUE_ERROR or KEY_ERROR
     }
@@ -310,7 +310,7 @@ ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
     }
 
     ErrorCode err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
-    if (err < 0)
+    if (err != NO_ERROR)
     {
         return err;
     }
@@ -610,7 +610,7 @@ ErrorCode BaseTrajSeq_t_get_at(
         if (fabs(curr_val - key_value) < epsilon)
         {
             err = BaseTrajSeq_t_get_item(seq, start_idx, out);
-            if (err < 0)
+            if (err != NO_ERROR)
             {
                 return INDEX_ERROR; // FIXME: Should return specific error?
             }
@@ -673,7 +673,7 @@ ErrorCode BaseTrajSeq_t_get_at(
         if (fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon)
         {
             err = BaseTrajSeq_t_get_item(seq, target_idx, out);
-            if (err < 0)
+            if (err != NO_ERROR)
             {
                 return INDEX_ERROR; // FIXME: Should return specific error?
             }
@@ -685,7 +685,7 @@ ErrorCode BaseTrajSeq_t_get_at(
         }
         center_idx = target_idx < n - 1 ? target_idx : n - 2;
         err = BaseTrajSeq_t_interpolate_at(seq, center_idx, key_kind, key_value, out);
-        if (err < 0)
+        if (err != NO_ERROR)
         {
             return err; // FIXME: Should return specific error?
         }
@@ -699,7 +699,7 @@ ErrorCode BaseTrajSeq_t_get_at(
         return VALUE_ERROR;
     }
     err = BaseTrajSeq_t_interpolate_at(seq, center, key_kind, key_value, out);
-    if (err < 0)
+    if (err != NO_ERROR)
     {
         return err; // FIXME: Should return specific error?
     }
