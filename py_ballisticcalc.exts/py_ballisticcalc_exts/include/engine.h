@@ -1,5 +1,5 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#ifndef BCLIB_ENGINE_H
+#define BCLIB_ENGINE_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -7,7 +7,7 @@
 
 #include <stdarg.h> // for va_list, va_start, va_end, va_copy
 #include <stdio.h>  // for fprintf
-#include <string.h> // Потрібен для vsnprintf
+#include <string.h> // for vsnprintf
 
 #define MAX_ERR_MSG_LEN 256
 
@@ -49,24 +49,26 @@ typedef struct engine_t
     char err_msg[MAX_ERR_MSG_LEN];
 } Engine_t;
 
-#define Engine_t_ERR(eng, code, format, ...)                         \
-    ({                                                                      \
-        ErrorCode _code = code;                                             \
-        Engine_t *_eng = eng;                                 \
-        C_LOG(LOG_LEVEL_ERROR, format, ##__VA_ARGS__);                      \
-        if (_eng != NULL && _code != NO_ERROR)                       \
-        {                                                                   \
-            Engine_t_save_err_internal(_eng, format, ##__VA_ARGS__); \
-        }                                                                   \
-        _code;                                                              \
-    })
+// Cross-platform Engine_t_ERR macro
+// This macro logs the error and saves it to the engine, then evaluates to the error code.
+#define Engine_t_ERR(eng, code, format, ...) \
+    Engine_t_log_and_save_error((eng), (code), __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-    ErrorCode Engine_t_save_err_internal(Engine_t *eng, const char *format, ...);
+    ErrorCode Engine_t_log_and_save_error(
+        Engine_t *eng,
+        ErrorCode code,
+        const char *file,
+        int line,
+        const char *func,
+        const char *format,
+        ...);
+
     void Engine_t_release_trajectory(Engine_t *eng);
+
     ErrorCode Engine_t_integrate(
         Engine_t *eng,
         double range_limit_ft,
@@ -81,4 +83,4 @@ extern "C"
 }
 #endif
 
-#endif // ENGINE_H
+#endif // BCLIB_ENGINE_H

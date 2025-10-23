@@ -46,8 +46,7 @@ ErrorCode _integrate_euler(Engine_t *eng,
 
     if (!eng || !traj_seq_ptr)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
 
     double velocity, delta_time;
@@ -131,8 +130,8 @@ ErrorCode _integrate_euler(Engine_t *eng,
             &mach);
 
         // Store point in trajectory sequence
-        
-        // err = 
+
+        // err =
         BaseTrajSeq_t_append(
             traj_seq_ptr,
             time,
@@ -201,8 +200,8 @@ ErrorCode _integrate_euler(Engine_t *eng,
     }
 
     // Add final data point
-    
-    // err = 
+
+    // err =
     BaseTrajSeq_t_append(
         traj_seq_ptr,
         time,

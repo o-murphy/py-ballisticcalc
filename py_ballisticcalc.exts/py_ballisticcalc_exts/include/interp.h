@@ -1,6 +1,6 @@
 // interp.h (Виправлено)
-#ifndef INTERP_H
-#define INTERP_H
+#ifndef BCLIB_INTERP_H
+#define BCLIB_INTERP_H
 
 #define INTERP_SUCCESS 0
 #define INTERP_ERROR_ZERODIVISION -1
@@ -33,4 +33,4 @@ extern "C"
 }
 #endif
 
-#endif // INTERP_H
+#endif // BCLIB_INTERP_H

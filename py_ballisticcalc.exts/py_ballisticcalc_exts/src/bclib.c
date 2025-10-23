@@ -124,7 +124,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "ShotProps_t_updateStabilityCoefficient: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
     /* Miller stability coefficient */
@@ -153,7 +153,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            C_LOG(LOG_LEVEL_ERROR, "ShotProps_t_updateStabilityCoefficient: Division by zero in stability coefficient calculation.");
+            C_LOG(LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
             return ZERO_DIVISION_ERROR; // Exit if denominator is zero
         }
 
@@ -169,7 +169,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            C_LOG(LOG_LEVEL_ERROR, "ShotProps_t_updateStabilityCoefficient: Division by zero in ftp calculation.");
+            C_LOG(LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
             return ZERO_DIVISION_ERROR; // Exit if pt is zero
         }
 
@@ -326,7 +326,7 @@ ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "WindSock_t_init: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -371,7 +371,7 @@ ErrorCode WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "WindSock_t_updateCache: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -414,7 +414,7 @@ V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
             // If cache update fails, return zero vector
             if (WindSock_t_updateCache(ws) < 0)
             {
-                C_LOG(LOG_LEVEL_WARNING, "WindSock_t_updateCache failed. Returning zero vector.");
+                C_LOG(LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                 return zero_vector;
             }
         }
@@ -495,7 +495,7 @@ ErrorCode BaseTrajData_t_interpolate(
 
     if (!p0 || !p1 || !p2 || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajData_t_interpolate: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 

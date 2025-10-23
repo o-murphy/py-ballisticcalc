@@ -1,39 +1,9 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef BCLIB_TYPES_H
+#define BCLIB_TYPES_H
 
 #include "v3d.h"
+#include "log.h"
 #include <stddef.h>
-#include <stdio.h> // For fprintf
-
-// Define Log Levels (matching Python's logging module for consistency)
-typedef enum
-{
-    LOG_LEVEL_CRITICAL = 50,
-    LOG_LEVEL_ERROR = 40,
-    LOG_LEVEL_WARNING = 30, // Default for fprintf warnings
-    LOG_LEVEL_INFO = 20,
-    LOG_LEVEL_DEBUG = 10,
-    LOG_LEVEL_NOTSET = 0
-} LogLevel;
-
-// Global variable to hold the currently configured minimum level
-extern LogLevel global_log_level;
-
-// Macro for conditional logging
-#define C_LOG(level, format, ...)                                                                                                          \
-    do                                                                                                                                     \
-    {                                                                                                                                      \
-        if (level >= global_log_level)                                                                                                     \
-        {                                                                                                                                  \
-            fprintf(stderr, "[%s] " format "\n", /* --- START LEVEL STRING CHECK --- */                                                    \
-                    (level >= LOG_LEVEL_CRITICAL) ? "CRITICAL" : (level >= LOG_LEVEL_ERROR) ? "ERROR"                                      \
-                                                             : (level >= LOG_LEVEL_WARNING) ? "WARNING"                                    \
-                                                             : (level >= LOG_LEVEL_INFO)    ? "INFO"                                       \
-                                                             : (level >= LOG_LEVEL_DEBUG)   ? "DEBUG"                                      \
-                                                                                            : "NOTSET", /* --- END LEVEL STRING CHECK --- */ \
-                    ##__VA_ARGS__);                                                                                                        \
-        }                                                                                                                                  \
-    } while (0)
 
 extern const double cDegreesFtoR;
 extern const double cDegreesCtoK;
@@ -259,4 +229,4 @@ extern "C"
 }
 #endif
 
-#endif // TYPES_H
+#endif // BCLIB_TYPES_H

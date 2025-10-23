@@ -82,10 +82,8 @@ ErrorCode _integrate_rk4(Engine_t *eng,
 {
     if (!eng || !traj_seq_ptr)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
-    }
-
-    C_LOG(LOG_LEVEL_DEBUG, "All pointers valid\n");
+        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    };
 
     double velocity, delta_time;
     double density_ratio = 0.0;
@@ -160,10 +158,9 @@ ErrorCode _integrate_rk4(Engine_t *eng,
     // Calculate velocity vector
     C_LOG(LOG_LEVEL_DEBUG, "About to call mulS\n");
     velocity_vector = mulS(&_dir_vector, velocity);
-    
+
     C_LOG(LOG_LEVEL_DEBUG, "Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
-    C_LOG(LOG_LEVEL_DEBUG, "About to call Atmosphere_t_updateDensityFactorAndMachForAltitude\n");
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
         &eng->shot.atmo,
         eng->shot.alt0 + range_vector.y,
@@ -322,7 +319,7 @@ ErrorCode _integrate_rk4(Engine_t *eng,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,
         mach);
-    // if (err !+ NO_ERROR)
+    // if (err != NO_ERROR)
     // {
     //     return err;
     // }

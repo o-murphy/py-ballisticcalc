@@ -1,5 +1,5 @@
-#ifndef BASETRAJ_SEQ_H
-#define BASETRAJ_SEQ_H
+#ifndef BCLIB_BASE_TRAJ_SEQ_H
+#define BCLIB_BASE_TRAJ_SEQ_H
 
 #include <stddef.h>    // Required for size_t
 #include <sys/types.h> // Required for ssize_t
@@ -101,4 +101,4 @@ extern "C"
 }
 #endif
 
-#endif // BASETRAJ_SEQ_H
+#endif // BCLIB_BASE_TRAJ_SEQ_H

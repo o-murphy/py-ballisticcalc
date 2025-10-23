@@ -1,5 +1,5 @@
-#ifndef RK4_H
-#define RK4_H
+#ifndef BCLIB_RK4_H
+#define BCLIB_RK4_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -23,4 +23,4 @@ extern "C"
 }
 #endif
 
-#endif // RK4_H
+#endif // BCLIB_RK4_H

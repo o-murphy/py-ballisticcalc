@@ -1,63 +1,35 @@
 #include "engine.h"
 
-static void Engine_t_vsave_err(Engine_t *eng, const char *format, va_list args)
-{
-    memset(eng->err_msg, 0, MAX_ERR_MSG_LEN);
-
-    vsnprintf(
-        eng->err_msg,
-        MAX_ERR_MSG_LEN,
-        format,
-        args);
-}
-
-ErrorCode Engine_t_save_err_internal(Engine_t *eng, const char *format, ...)
-{
-    va_list args;
-
-    if (!eng)
-    {
-        return INPUT_ERROR; // Не можемо зберегти помилку
-    }
-
-    va_start(args, format);
-
-    Engine_t_vsave_err(eng, format, args);
-
-    va_end(args);
-
-    return NO_ERROR;
-}
-
-// This function replaces the logic of the non-portable Engine_t_ERR macro.
-ErrorCode Engine_t_handle_error_and_log(
+ErrorCode Engine_t_log_and_save_error(
     Engine_t *eng,
     ErrorCode code,
+    const char *file,
+    int line,
+    const char *func,
     const char *format,
     ...)
 {
-    va_list args_log;
-    va_list args_save;
+    va_list args;
+    char log_buffer[MAX_ERR_MSG_LEN];
 
-    // 1. Logging (Replicating C_LOG(LOG_LEVEL_ERROR, ...) functionality)
+    // Format the message
+    va_start(args, format);
+    vsnprintf(log_buffer, MAX_ERR_MSG_LEN, format, args);
+    va_end(args);
+
+    // Log with the REAL location (passed from macro)
     if (LOG_LEVEL_ERROR >= global_log_level)
     {
-        va_start(args_log, format);
-        char log_buffer[MAX_ERR_MSG_LEN];
-        vsnprintf(log_buffer, MAX_ERR_MSG_LEN, format, args_log);
-        va_end(args_log);
-        fprintf(stderr, "[ERROR] %s\n", log_buffer);
+        fprintf(stderr, "[ERROR] %s:%d in %s: %s\n", file, line, func, log_buffer);
     }
 
-    // 2. Error Saving (Replicating the conditional error save)
+    // Save error message to engine
     if (eng != NULL && code != NO_ERROR)
     {
-        va_start(args_save, format);
-        Engine_t_vsave_err(eng, format, args_save);
-        va_end(args_save);
+        strncpy(eng->err_msg, log_buffer, MAX_ERR_MSG_LEN - 1);
+        eng->err_msg[MAX_ERR_MSG_LEN - 1] = '\0';
     }
 
-    // 3. Return the error code (Replicating the return value of the macro)
     return code;
 }
 
@@ -81,19 +53,19 @@ ErrorCode Engine_t_integrate(
 {
     if (!eng || !traj_seq_ptr)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
+        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
     if (!eng->integrate_func_ptr)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
+        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
-    C_LOG(LOG_LEVEL_DEBUG, "Engine_t_integrate: Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
+    C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
     ErrorCode err = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 
     if (err != NO_ERROR)
     {
-        Engine_t_ERR(eng, err, "Engine_t_integrate: error code: %d", err);
+        Engine_t_ERR(eng, err, "error code: %d", err);
     }
     return err;
 }
@@ -134,13 +106,13 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     case RANGE_ERROR_MAXIMUM_DROP_REACHED:
     case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
     case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
-        C_LOG(LOG_LEVEL_DEBUG, "Engine_t_find_apex: Integration completed successfully or with acceptable termination reason (%d).", err);
+        C_LOG(LOG_LEVEL_DEBUG, "Integration completed successfully or with acceptable termination code: (%d).", err);
         err = NO_ERROR;
         break;
     default:
-        Engine_t_ERR(eng, err, "Engine_t_find_apex: Critical integration error code: %d", err);
+        Engine_t_ERR(eng, err, "Critical integration error code: %d", err);
         break;
-        // goto interupt;
+        // goto finally;
     }
 
     if (err == NO_ERROR)
@@ -148,7 +120,7 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
         err = BaseTrajSeq_t_get_at(&result, KEY_VEL_Y, 0.0, -1, out);
         if (err != NO_ERROR)
         {
-            err = Engine_t_ERR(eng, RUNTIME_ERROR, "Engine_t_find_apex: Runtime error (No apex flagged in trajectory data)");
+            err = Engine_t_ERR(eng, RUNTIME_ERROR, "Runtime error (No apex flagged in trajectory data)");
         }
     }
 
@@ -158,7 +130,7 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
         eng->config.cMinimumVelocity = restore_min_velocity;
     }
 
-    // interupt:
+    // finally:
 
     BaseTrajSeq_t_release(&result);
     return err;

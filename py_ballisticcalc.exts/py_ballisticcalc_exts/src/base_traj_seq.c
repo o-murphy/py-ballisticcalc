@@ -58,7 +58,7 @@ ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, I
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_interpolate_raw: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR; // Invalid input
     }
 
@@ -81,7 +81,7 @@ ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, I
     // Check if we have valid points on both sides
     if (idx < 1 || idx >= length - 1)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_interpolate_raw: Index out of bounds for interpolation.");
+        C_LOG(LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
         return VALUE_ERROR;
     }
 
@@ -135,14 +135,14 @@ ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, I
         break;
     default:
         // If key_kind is not recognized, interpolation is impossible.
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_interpolate_raw: Unrecognized InterpKey.");
+        C_LOG(LOG_LEVEL_ERROR, "Unrecognized InterpKey.");
         return KEY_ERROR;
     }
 
     // Check for duplicate x values (zero division risk in PCHIP)
     if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_interpolate_raw: Duplicate x values detected; cannot interpolate.");
+        C_LOG(LOG_LEVEL_ERROR, "Duplicate x values detected; cannot interpolate.");
         return VALUE_ERROR;
     }
 
@@ -188,7 +188,7 @@ ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, In
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_interpolate_at: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR; // Invalid input
     }
     BaseTraj_t raw_output;
@@ -208,7 +208,7 @@ void BaseTrajSeq_t_init(BaseTrajSeq_t *seq)
 {
     seq->buffer = NULL;
     seq->length = 0;
-    seq->capacity = 0;    
+    seq->capacity = 0;
 }
 
 void BaseTrajSeq_t_release(BaseTrajSeq_t *seq)
@@ -267,7 +267,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
     if (seq == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_ensure_capacity: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -277,7 +277,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 
     if (min_capacity <= seq->capacity)
     {
-        C_LOG(LOG_LEVEL_DEBUG, "BaseTrajSeq_t_ensure_capacity: Current capacity sufficient (%zu >= %zu).", seq->capacity, min_capacity);
+        C_LOG(LOG_LEVEL_DEBUG, "Current capacity sufficient (%zu >= %zu).", seq->capacity, min_capacity);
         return NO_ERROR;
     }
 
@@ -299,7 +299,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 
     if (new_buffer == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_ensure_capacity: Memory (re)allocation failed.");
+        C_LOG(LOG_LEVEL_ERROR, "Memory (re)allocation failed.");
         return MEMORY_ERROR;
     }
 
@@ -326,7 +326,7 @@ ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
 
     if (seq == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_append: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -520,7 +520,7 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double loo
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at_slant_height: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
     double ca = cos(look_angle_rad);
@@ -528,7 +528,7 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double loo
     ssize_t n = seq->length;
     if (n < 3)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at_slant_height: Not enough data points for interpolation.");
+        C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
         return VALUE_ERROR;
     }
     ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(seq, ca, sa, value);
@@ -561,14 +561,14 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_item: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
     BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
     if (!entry_ptr)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_item: Index out of bounds.");
+        C_LOG(LOG_LEVEL_ERROR, "Index out of bounds.");
         return INDEX_ERROR;
     }
     out->time = entry_ptr->time;
@@ -593,7 +593,7 @@ ErrorCode BaseTrajSeq_t_get_at(
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at: Invalid input (NULL pointer).");
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return INPUT_ERROR;
     }
 
@@ -601,7 +601,7 @@ ErrorCode BaseTrajSeq_t_get_at(
     n = seq->length;
     if (n < 3)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at: Not enough data points for interpolation.");
+        C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
         return VALUE_ERROR;
     }
 
@@ -639,10 +639,10 @@ ErrorCode BaseTrajSeq_t_get_at(
             err = BaseTrajSeq_t_get_item(seq, start_idx, out);
             if (err != NO_ERROR)
             {
-                C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at: Failed to get item at index %zd.", start_idx);
+                C_LOG(LOG_LEVEL_ERROR, "Failed to get item at index %zd.", start_idx);
                 return INDEX_ERROR; // FIXME: Should return specific error?
             }
-            C_LOG(LOG_LEVEL_DEBUG, "BaseTrajSeq_t_get_at: Exact match found at start index %zd.", start_idx);
+            C_LOG(LOG_LEVEL_DEBUG, "Exact match found at start index %zd.", start_idx);
             return NO_ERROR;
         }
         search_forward = 1;
@@ -697,7 +697,7 @@ ErrorCode BaseTrajSeq_t_get_at(
         }
         if (target_idx == -1)
         {
-            C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at: Key value %.6f out of range for interpolation.", key_value);
+            C_LOG(LOG_LEVEL_ERROR, "Key value %.6f out of range for interpolation.", key_value);
             return ARITHMETIC_ERROR;
         }
         if (fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon)
@@ -705,10 +705,10 @@ ErrorCode BaseTrajSeq_t_get_at(
             err = BaseTrajSeq_t_get_item(seq, target_idx, out);
             if (err != NO_ERROR)
             {
-                C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at: Failed to get item at index %zd.", target_idx);
+                C_LOG(LOG_LEVEL_ERROR, "Failed to get item at index %zd.", target_idx);
                 return INDEX_ERROR; // FIXME: Should return specific error?
             }
-            C_LOG(LOG_LEVEL_DEBUG, "BaseTrajSeq_t_get_at: Exact match found at target index %zd.", target_idx);
+            C_LOG(LOG_LEVEL_DEBUG, "Exact match found at target index %zd.", target_idx);
             return NO_ERROR;
         }
         if (target_idx == 0)
@@ -721,7 +721,7 @@ ErrorCode BaseTrajSeq_t_get_at(
         {
             return err; // FIXME: Should return specific error?
         }
-        C_LOG(LOG_LEVEL_DEBUG, "BaseTrajSeq_t_get_at: Interpolation successful at center index %zd.", center_idx);
+        C_LOG(LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", center_idx);
         return NO_ERROR;
     }
 
@@ -729,7 +729,7 @@ ErrorCode BaseTrajSeq_t_get_at(
     ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(seq, key_kind, key_value);
     if (center < 0)
     {
-        C_LOG(LOG_LEVEL_ERROR, "BaseTrajSeq_t_get_at: Bisecting failed; not enough data points.");
+        C_LOG(LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
         return VALUE_ERROR;
     }
     err = BaseTrajSeq_t_interpolate_at(seq, center, key_kind, key_value, out);
@@ -737,6 +737,6 @@ ErrorCode BaseTrajSeq_t_get_at(
     {
         return err; // FIXME: Should return specific error?
     }
-    C_LOG(LOG_LEVEL_DEBUG, "BaseTrajSeq_t_get_at: Interpolation successful at center index %zd.", center);
+    C_LOG(LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", center);
     return NO_ERROR;
 }
