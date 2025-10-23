@@ -69,39 +69,84 @@ cdef class CythonizedBaseIntegrationEngine:
     ALLOWED_ZERO_ERROR_FEET = float(_ALLOWED_ZERO_ERROR_FEET)
 
     def __init__(self, object _config):
-        # WARNING: Avoid calling Python functions inside __cinit__!
-        # __cinit__ is only for memory allocation
-        # Calling Python functions inside __cinit__ is guaranteed to cause a memory leak
+        """
+        Initializes the engine with the given configuration.
+
+        Args:
+            _config (BaseEngineConfig): The engine configuration.
+
+        IMPORTANT:      
+            Avoid calling Python functions inside __init__!
+            __init__ is called after __cinit__, so any memory allocated in __cinit__
+            that is not referenced in Python will be leaked if __init__ raises an exception.
+        """
+
         self._config = create_base_engine_config(_config)
 
-    # NOTE: The Engine_t is built-in to CythonizedBaseIntegrationEngine,
-    # so we are need no set it's fields to null
-    # def __cinit__(self, object _config):
-    #     self._engine.gravity_vector = V3dT(.0, .0, .0)
-    #     self._engine.integration_step_count = 0
+    def __cinit__(self, object _config):
+        """
+        C-level initializer for the engine.
+        Override this method to setup integrate_func_ptr and other fields.
+
+        NOTE:
+            The Engine_t is built-in to CythonizedBaseIntegrationEngine,
+            so we are need no set it's fields to null
+        """
+        # self._engine.gravity_vector = V3dT(.0, .0, .0)
+        # self._engine.integration_step_count = 0
+        pass
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
-        self._release_trajectory()
+        """Frees any allocated resources."""
+        Engine_t_release_trajectory(&self._engine)
 
     @property
     def integration_step_count(self) -> int:
+        """
+        Gets the number of integration steps performed in the last integration.
+
+        Returns:
+            int: The number of integration steps.
+        """
         return self._engine.integration_step_count
 
     @property
     def error_message(self) -> str:
+        """
+        Gets the last error message from the engine.
+
+        Returns:
+            str: The error message.
+        """
         return self.get_error_message()
 
     cdef str get_error_message(CythonizedBaseIntegrationEngine self):
+        """
+        Gets the last error message from the engine.
+
+        Returns:
+            str: The error message.
+        """
         # Get length up to first null terminator
         cdef Py_ssize_t n = strlen(self._engine.err_msg)
         return self._engine.err_msg[:n].decode('utf-8', 'ignore')
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
+        """Gets the calculation step size in feet."""
         return self._engine.config.cStepMultiplier
 
     def find_max_range(self, object shot_info, tuple angle_bracket_deg = (0, 90)):
         """
-        Finds the maximum range along shot_info.look_angle, and the launch angle to reach it.
+        Finds the maximum range along shot_info.look_angle,
+        and the launch angle to reach it.
+
+        Args:
+            shot_info (Shot): The shot information.
+            angle_bracket_deg (Tuple[float, float], optional):
+                The angle bracket in degrees to search for max range. Defaults to (0, 90).
+
+        Returns:
+            Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         cdef MaxRangeResult_t res
@@ -117,6 +162,14 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Finds the barrel elevation needed to hit sight line at a specific distance,
         using unimodal root-finding that is guaranteed to succeed if a solution exists.
+
+        Args:
+            shot_info (Shot): The shot information.
+            distance (Distance): The distance to the target.
+            lofted (bool): Whether the shot is lofted.
+
+        Returns:
+            Angular: The required barrel elevation angle.
         """
         cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         cdef double zero_angle
@@ -130,6 +183,12 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Finds the apex of the trajectory, where apex is defined as the point
         where the vertical component of velocity goes from positive to negative.
+
+        Args:
+            shot_info (Shot): The shot information.
+
+        Returns:
+            TrajectoryData: The trajectory data at the apex.
         """
         cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
         cdef BaseTrajDataT result
@@ -255,37 +314,46 @@ cdef class CythonizedBaseIntegrationEngine:
         double target_x_ft,
         double target_y_ft
     ):
-        """Target miss (feet) for given launch angle using BaseTrajSeqT.
-        Attempts to avoid Python exceptions in the hot path by pre-checking reach."""
+        """
+        Target miss (feet) for given launch angle using BaseTrajSeqT.
+        Attempts to avoid Python exceptions in the hot path by pre-checking reach.
+
+        Args:
+            shot_props_ptr (ShotProps_t*): Pointer to shot properties.
+            angle_rad (double): Launch angle in radians.
+            target_x_ft (double): Target X coordinate in feet.
+            target_y_ft (double): Target Y coordinate in feet.
+
+        Returns:
+            double: The miss distance in feet (positive if overshot, negative if undershot).
+        """
         cdef:
-            BaseTrajSeqT trajectory
-            BaseTrajData_t hit
-            BaseTraj_t* last_ptr
-            Py_ssize_t n
-        shot_props_ptr.barrel_elevation = angle_rad
-        __res = self._integrate(target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
-        trajectory = <BaseTrajSeqT>__res[0]
-        # If trajectory is too short for cubic interpolation, treat as unreachable
-        n = trajectory._c_view.length
-        if n < <Py_ssize_t>3:
-            return 9e9
-        last_ptr = BaseTrajSeq_t_get_raw_item(&trajectory._c_view, <Py_ssize_t>(-1))
-        if last_ptr is NULL:
-            return 9e9
-        if last_ptr.time == 0.0:
-            # Integrator returned only the initial point; signal unreachable
-            return 9e9
-        try:
-            err = BaseTrajSeq_t_get_at(&trajectory._c_view, InterpKey.KEY_POS_X, target_x_ft, -1, &hit)
-            if err != ErrorCode.NO_ERROR:
-                raise SolverRuntimeError(
-                    f"Failed to interpolate trajectory at target distance, error code: {err}")
-            return (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft)
-        except Exception:
-            # Any interpolation failure (e.g., degenerate points) signals unreachable
-            return 9e9
+            ErrorCode err
+            double out_error_ft
+
+        err = Engine_t_error_at_distance(
+            &self._engine,
+            angle_rad,
+            target_x_ft,
+            target_y_ft,
+            &out_error_ft
+        )
+
+        if err == ErrorCode.NO_ERROR or err >= ErrorCode.RANGE_ERROR:
+            return out_error_ft
+
+        if err == ErrorCode.VALUE_ERROR:
+            raise ValueError(self.error_message)
+
+        raise SolverRuntimeError(
+            f"Failed to integrate trajectory for error_at_distance, "
+            f"error code: {err}, {self.error_message}"
+        )
 
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
+        """
+        Releases the resources held by the trajectory.
+        """
         Engine_t_release_trajectory(&self._engine)
 
     cdef ShotProps_t* _init_trajectory(
@@ -297,6 +365,9 @@ cdef class CythonizedBaseIntegrationEngine:
 
         Args:
             shot_info (Shot): Information about the shot.
+
+        Returns:
+            ShotProps_t*: Pointer to the initialized shot properties.
         """
 
         # --- 🛑 CRITICAL FIX: FREE OLD RESOURCES FIRST ---
@@ -372,6 +443,10 @@ cdef class CythonizedBaseIntegrationEngine:
         Initializes the zero calculation for the given shot and distance.
         Handles edge cases.
 
+        Args:
+            shot_props_ptr (const ShotProps_t*): Pointer to shot properties.
+            distance (double): The distance to the target in feet.
+
         Returns:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
@@ -430,6 +505,14 @@ cdef class CythonizedBaseIntegrationEngine:
     ):
         """
         Find zero angle using Ridder's method for guaranteed convergence.
+
+        Args:
+            shot_props_ptr (ShotProps_t*): Pointer to shot properties.
+            distance (double): The distance to the target in feet.
+            lofted (bint): Whether the shot is lofted.
+
+        Returns:
+            double: The calculated zero angle in radians.
         """
         # Get initialization data
         cdef ZeroInitialData_t init_data = self._init_zero_calculation(shot_props_ptr, distance)
@@ -709,6 +792,12 @@ cdef class CythonizedBaseIntegrationEngine:
     ):
         """
         Internal implementation to find the apex of the trajectory.
+
+        Args:
+            shot_props_ptr (const ShotProps_t*): Pointer to shot properties.
+
+        Returns:
+            BaseTrajData_t: The trajectory data at the apex.
         """
 
         cdef BaseTrajData_t apex
@@ -923,6 +1012,20 @@ cdef class CythonizedBaseIntegrationEngine:
         double time_step,
         TrajFlag_t filter_flags
     ):
+        """
+        Internal method to perform trajectory integration.
+
+        Args:
+            range_limit_ft (double): Maximum range limit in feet.
+            range_step_ft (double): Range step in feet.
+            time_step (double): Time step in seconds.
+            filter_flags (TrajFlag_t): Flags to filter trajectory data.
+
+        Returns:
+            tuple: (BaseTrajSeqT, str or None)
+                BaseTrajSeqT: The trajectory sequence.
+                str or None: Termination reason if applicable.
+        """
         if self._engine.integrate_func_ptr is NULL:
             raise NotImplementedError("integrate_func not implemented or not provided")
 
@@ -941,15 +1044,18 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef str termination_reason = None
         if err == ErrorCode.VALUE_ERROR:
             raise ValueError(self.error_message)
-        elif err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+
+        if err < ErrorCode.RANGE_ERROR:
+            raise SolverRuntimeError(
+                f"undefined error in integrate_func, "
+                f"error code: {err}, {self.error_message}"
+            )
+
+        if err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
             termination_reason = RangeError.MinimumVelocityReached
         elif err == ErrorCode.RANGE_ERROR_MAXIMUM_DROP_REACHED:
             termination_reason = RangeError.MaximumDropReached
         elif err == ErrorCode.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
-        else:
-            raise RuntimeError(
-                f"undefined error in integrate_func, "
-                f"error code: {err}, {self.error_message}"
-            )
+
         return traj_seq, termination_reason

@@ -27,22 +27,23 @@ cdef extern from "include/bclib.h" nogil:
 
     ctypedef enum ErrorCode:
         # General error codes
-        NO_ERROR = 0
-        ZERO_DIVISION_ERROR = 1
-        VALUE_ERROR = 2
-        KEY_ERROR = 3
-        INDEX_ERROR = 4
-        MEMORY_ERROR = 5
-        ARITHMETIC_ERROR = 6
-        INPUT_ERROR = 7
-        RUNTIME_ERROR = 8
+        NO_ERROR
+        ZERO_DIVISION_ERROR
+        VALUE_ERROR
+        KEY_ERROR
+        INDEX_ERROR
+        MEMORY_ERROR
+        ARITHMETIC_ERROR
+        INPUT_ERROR
+        RUNTIME_ERROR
 
-        UNDEFINED_ERROR = 1000
+        UNDEFINED_ERROR
 
         # Solver specific errors
-        RANGE_ERROR_MINIMUM_VELOCITY_REACHED = 100
-        RANGE_ERROR_MAXIMUM_DROP_REACHED = 101
-        RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = 102
+        RANGE_ERROR
+        RANGE_ERROR_MINIMUM_VELOCITY_REACHED
+        RANGE_ERROR_MAXIMUM_DROP_REACHED
+        RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
 
     ctypedef struct Config_t:
         double cStepMultiplier

@@ -79,6 +79,13 @@ extern "C"
 
     ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *apex);
 
+    ErrorCode Engine_t_error_at_distance(
+        Engine_t *eng,
+        double angle_rad,
+        double target_x_ft,
+        double target_y_ft,
+        double *out_error_ft);
+
 #ifdef __cplusplus
 }
 #endif

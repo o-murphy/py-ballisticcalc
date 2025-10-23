@@ -100,18 +100,14 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     // try
     err = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
     // allow RANGE_ERROR
-    switch (err)
+    if (err == NO_ERROR || err >= RANGE_ERROR)
     {
-    case NO_ERROR:
-    case RANGE_ERROR_MAXIMUM_DROP_REACHED:
-    case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
-    case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
         C_LOG(LOG_LEVEL_DEBUG, "Integration completed successfully or with acceptable termination code: (%d).", err);
         err = NO_ERROR;
-        break;
-    default:
+    }
+    else
+    {
         Engine_t_ERR(eng, err, "Critical integration error code: %d", err);
-        break;
         // goto finally;
     }
 
@@ -135,3 +131,69 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     BaseTrajSeq_t_release(&result);
     return err;
 }
+
+ErrorCode Engine_t_error_at_distance(
+    Engine_t *eng,
+    double angle_rad,
+    double target_x_ft,
+    double target_y_ft,
+    double *out_error_ft)
+{
+    *out_error_ft = 9e9;
+
+    if (!eng || !out_error_ft)
+    {
+        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    }
+
+    ErrorCode err;
+    BaseTrajSeq_t trajectory;
+    BaseTrajData_t hit;
+    BaseTraj_t *last_ptr;
+    ssize_t n;
+
+    BaseTrajSeq_t_init(&trajectory);
+
+    // try
+
+    eng->shot.barrel_elevation = angle_rad;
+
+    err = Engine_t_integrate(
+        eng,
+        target_x_ft,
+        target_x_ft,
+        0.0,
+        TFLAG_NONE,
+        &trajectory);
+
+    if (err == NO_ERROR || err >= RANGE_ERROR)
+    {
+        // If trajectory is too short for cubic interpolation, treat as unreachable
+        if (trajectory.length >= 3)
+        {
+            last_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, -1);
+            if (last_ptr != NULL && last_ptr->time != 0.0)
+            {
+                if (BaseTrajSeq_t_get_at(&trajectory, KEY_POS_X, target_x_ft, -1, &hit) == NO_ERROR)
+                {
+                    *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
+                }
+            }
+        }
+    }
+    else
+    {
+        if (err == VALUE_ERROR)
+        {
+            err = Engine_t_ERR(eng, err, "Value error, %d", err);
+        }
+        else // < RANGE_ERROR
+        {
+            err = Engine_t_ERR(eng, err, "Failed to integrate trajectory for error_at_distance, error code: %d", err);
+        }
+    }
+
+    // finally:
+    BaseTrajSeq_t_release(&trajectory);
+    return err;
+};

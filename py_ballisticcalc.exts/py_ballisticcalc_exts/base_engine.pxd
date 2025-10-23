@@ -78,6 +78,14 @@ cdef extern from "include/engine.h" nogil:
         BaseTrajData_t *apex
     ) noexcept nogil
 
+    ErrorCode Engine_t_error_at_distance(
+        Engine_t *eng,
+        double angle_rad,
+        double target_x_ft,
+        double target_y_ft,
+        double *out_error_ft
+    ) noexcept nogil
+
 
 cdef class CythonizedBaseIntegrationEngine:
 
