@@ -29,6 +29,38 @@ ErrorCode Engine_t_save_err_internal(Engine_t *eng, const char *format, ...)
     return NO_ERROR;
 }
 
+// This function replaces the logic of the non-portable Engine_t_ERR macro.
+ErrorCode Engine_t_handle_error_and_log(
+    Engine_t *eng,
+    ErrorCode code,
+    const char *format,
+    ...)
+{
+    va_list args_log;
+    va_list args_save;
+
+    // 1. Logging (Replicating C_LOG(LOG_LEVEL_ERROR, ...) functionality)
+    if (LOG_LEVEL_ERROR >= global_log_level)
+    {
+        va_start(args_log, format);
+        char log_buffer[MAX_ERR_MSG_LEN];
+        vsnprintf(log_buffer, MAX_ERR_MSG_LEN, format, args_log);
+        va_end(args_log);
+        fprintf(stderr, "[ERROR] %s\n", log_buffer);
+    }
+
+    // 2. Error Saving (Replicating the conditional error save)
+    if (eng != NULL && code != NO_ERROR)
+    {
+        va_start(args_save, format);
+        Engine_t_vsave_err(eng, format, args_save);
+        va_end(args_save);
+    }
+
+    // 3. Return the error code (Replicating the return value of the macro)
+    return code;
+}
+
 void Engine_t_release_trajectory(Engine_t *eng)
 {
     if (eng == NULL)
@@ -127,7 +159,7 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     }
 
     // interupt:
-    
+
     BaseTrajSeq_t_release(&result);
     return err;
 }
