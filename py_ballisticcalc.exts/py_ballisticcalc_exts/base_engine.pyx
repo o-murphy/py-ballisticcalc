@@ -87,6 +87,15 @@ cdef class CythonizedBaseIntegrationEngine:
     def integration_step_count(self) -> int:
         return self._engine.integration_step_count
 
+    @property
+    def error_message(self) -> str:
+        return self.get_error_message()
+
+    cdef str get_error_message(CythonizedBaseIntegrationEngine self):
+        # Get length up to first null terminator
+        cdef Py_ssize_t n = strlen(self._engine.err_msg)
+        return self._engine.err_msg[:n].decode('utf-8', 'ignore')
+
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
         return self._engine.config.cStepMultiplier
 
@@ -703,7 +712,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         cdef BaseTrajData_t apex
-        
+
         # FIXME: possibly needs to be initialised with zeros
         # apex = BaseTrajData_t(
         #     0.0,
@@ -725,7 +734,10 @@ cdef class CythonizedBaseIntegrationEngine:
         if (err == ErrorCode.RUNTIME_ERROR):
             raise SolverRuntimeError("No apex flagged in trajectory data")
 
-        raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_append, error code: {err}")
+        raise RuntimeError(
+            f"undefined error occured during BaseTrajSeq_t_append, "
+            f"error code: {err}, {self.error_message}"
+        )
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -928,7 +940,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         cdef str termination_reason = None
         if err == ErrorCode.VALUE_ERROR:
-            raise ValueError("invalid integrate_func input")
+            raise ValueError(self.error_message)
         elif err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
             termination_reason = RangeError.MinimumVelocityReached
         elif err == ErrorCode.RANGE_ERROR_MAXIMUM_DROP_REACHED:
@@ -936,5 +948,8 @@ cdef class CythonizedBaseIntegrationEngine:
         elif err == ErrorCode.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
         else:
-            raise RuntimeError(f"undefined error in integrate_func, error code: {err}")
+            raise RuntimeError(
+                f"undefined error in integrate_func, "
+                f"error code: {err}, {self.error_message}"
+            )
         return traj_seq, termination_reason

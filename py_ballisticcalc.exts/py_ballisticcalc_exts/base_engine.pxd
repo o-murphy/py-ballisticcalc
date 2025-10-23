@@ -1,6 +1,8 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
 # noinspection PyUnresolvedReferences
+from libc.string cimport strlen
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     Config_t,
     ShotProps_t,
@@ -18,6 +20,8 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 
 
 cdef extern from "include/engine.h" nogil:
+    DEF MAX_ERR_MSG_LEN = 256
+
     ctypedef struct ZeroInitialData_t:
         int status
         double look_angle_rad
@@ -31,10 +35,10 @@ cdef extern from "include/engine.h" nogil:
         double angle_at_max_rad
 
     # Forward declaration
-    struct engine_t
+    struct Engine_s
 
     # Typedef alias
-    ctypedef engine_t Engine_t
+    ctypedef Engine_s Engine_t
 
     # Declare the function signature type (not a pointer yet)
     ctypedef ErrorCode IntegrateFunc(
@@ -50,12 +54,13 @@ cdef extern from "include/engine.h" nogil:
     ctypedef IntegrateFunc *IntegrateFuncPtr
 
     # Full struct definition
-    struct engine_t:
+    struct Engine_s:
         int integration_step_count
         V3dT gravity_vector
         Config_t config
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr
+        char err_msg[MAX_ERR_MSG_LEN]
 
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 
@@ -75,10 +80,13 @@ cdef extern from "include/engine.h" nogil:
 
 
 cdef class CythonizedBaseIntegrationEngine:
+
     cdef:
         public object _config
         list _table_data  # list[object]
         Engine_t _engine
+
+    cdef str get_error_message(CythonizedBaseIntegrationEngine self)
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
 
@@ -89,6 +97,7 @@ cdef class CythonizedBaseIntegrationEngine:
     # Python 'def' methods are not exposed in the C interface defined by a .pxd.
     # Only 'cdef' or 'cpdef' methods are declared here.
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self)
+
     cdef ShotProps_t* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
         object shot_info

@@ -27,7 +27,7 @@ typedef struct
     double angle_at_max_rad;
 } MaxRangeResult_t;
 
-typedef struct engine_t Engine_t;
+typedef struct Engine_s Engine_t;
 
 typedef ErrorCode IntegrateFunc(
     Engine_t *eng,
@@ -39,7 +39,7 @@ typedef ErrorCode IntegrateFunc(
 
 typedef IntegrateFunc *IntegrateFuncPtr;
 
-typedef struct engine_t
+typedef struct Engine_s
 {
     int integration_step_count;
     V3dT gravity_vector;
