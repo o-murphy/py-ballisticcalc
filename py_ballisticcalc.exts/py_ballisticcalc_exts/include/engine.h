@@ -56,6 +56,8 @@ extern "C"
         TrajFlag_t filter_flags,
         BaseTrajSeq_t *traj_seq_ptr);
 
+    ErrorCode Engine_t_find_apex(Engine_t *engine_ptr, BaseTrajData_t *apex);
+
 #ifdef __cplusplus
 }
 #endif

@@ -68,6 +68,11 @@ cdef extern from "include/engine.h" nogil:
         BaseTrajSeq_t *traj_seq_ptr
     ) noexcept nogil
 
+    ErrorCode Engine_t_find_apex(
+        Engine_t *engine_ptr,
+        BaseTrajData_t *apex
+    ) noexcept nogil
+
 
 cdef class CythonizedBaseIntegrationEngine:
     cdef:

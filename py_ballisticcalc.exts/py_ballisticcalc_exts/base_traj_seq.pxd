@@ -43,7 +43,9 @@ cdef extern from "include/base_traj_seq.h" nogil:
         BaseTrajData_t *out
     ) noexcept nogil
 
+    void BaseTrajSeq_t_init(BaseTrajSeq_t *seq) noexcept nogil
     void BaseTrajSeq_t_release(BaseTrajSeq_t *seq) noexcept nogil
+
     Py_ssize_t BaseTrajSeq_t_len(BaseTrajSeq_t *seq) noexcept nogil
     BaseTraj_t* BaseTrajSeq_t_get_raw_item(BaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
     ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil

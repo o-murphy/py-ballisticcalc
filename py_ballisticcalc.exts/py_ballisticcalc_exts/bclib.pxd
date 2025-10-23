@@ -35,6 +35,7 @@ cdef extern from "include/bclib.h" nogil:
         MEMORY_ERROR = 5
         ARITHMETIC_ERROR = 6
         INPUT_ERROR = 7
+        RUNTIME_ERROR = 8
 
         UNDEFINED_ERROR = 1000
 

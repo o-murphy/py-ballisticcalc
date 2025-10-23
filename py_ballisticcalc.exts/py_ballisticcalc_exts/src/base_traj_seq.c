@@ -204,6 +204,13 @@ ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, In
     return NO_ERROR;
 }
 
+void BaseTrajSeq_t_init(BaseTrajSeq_t *seq)
+{
+    seq->buffer = NULL;
+    seq->length = 0;
+    seq->capacity = 0;    
+}
+
 void BaseTrajSeq_t_release(BaseTrajSeq_t *seq)
 {
     if (seq != NULL)

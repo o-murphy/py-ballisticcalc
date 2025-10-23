@@ -701,34 +701,22 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Internal implementation to find the apex of the trajectory.
         """
-        if shot_props_ptr.barrel_elevation <= 0:
+
+        cdef BaseTrajData_t apex
+        cdef ErrorCode err
+
+        err = Engine_t_find_apex(&self._engine, &apex)
+
+        if (err == ErrorCode.NO_ERROR):
+            return apex
+
+        if (err == ErrorCode.VALUE_ERROR):
             raise ValueError("Barrel elevation must be greater than 0 to find apex.")
 
-        # Have to ensure cMinimumVelocity is 0 for this to work
-        cdef:
-            double restore_min_velocity = 0.0
-            int has_restore_min_velocity = 0
-            BaseTrajSeqT res
-            BaseTrajData_t apex
-            tuple _res
-            ErrorCode err
+        if (err == ErrorCode.RUNTIME_ERROR):
+            raise SolverRuntimeError("No apex flagged in trajectory data")
 
-        if self._engine.config.cMinimumVelocity > 0.0:
-            restore_min_velocity = self._engine.config.cMinimumVelocity
-            self._engine.config.cMinimumVelocity = 0.0
-            has_restore_min_velocity = 1
-
-        try:
-            _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_APEX)
-            res = <BaseTrajSeqT>_res[0]
-            err = BaseTrajSeq_t_get_at(&res._c_view, InterpKey.KEY_VEL_Y, 0.0, -1, &apex)
-            if err != ErrorCode.NO_ERROR:
-                raise SolverRuntimeError("No apex flagged in trajectory data")
-        finally:
-            if has_restore_min_velocity:
-                self._engine.config.cMinimumVelocity = restore_min_velocity
-
-        return apex
+        raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_append, error code: {err}")
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
