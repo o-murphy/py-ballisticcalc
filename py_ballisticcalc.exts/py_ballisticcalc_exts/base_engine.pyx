@@ -703,6 +703,15 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         cdef BaseTrajData_t apex
+        
+        # FIXME: possibly needs to be initialised with zeros
+        # apex = BaseTrajData_t(
+        #     0.0,
+        #     V3dT(0.0, 0.0, 0.0),
+        #     V3dT(0.0, 0.0, 0.0),
+        #     0.0
+        # )
+
         cdef ErrorCode err
 
         err = Engine_t_find_apex(&self._engine, &apex)

@@ -95,24 +95,23 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
 
     // try
     err = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
-    if (err != NO_ERROR)
+    // allow RANGE_ERROR
+    switch (err)
     {
-        // allow RANGE_ERROR
-        switch (err)
-        {
-        case NO_ERROR:
-        case RANGE_ERROR_MAXIMUM_DROP_REACHED:
-        case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
-        case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
-            C_LOG(LOG_LEVEL_DEBUG, "Engine_t_find_apex: Integration completed successfully or with acceptable termination reason (%d).", err);
-            err = NO_ERROR;
-            break;
-        default:
-            Engine_t_ERR(eng, err, "Engine_t_find_apex: Critical integration error code: %d", err);
-            break;
-        }
+    case NO_ERROR:
+    case RANGE_ERROR_MAXIMUM_DROP_REACHED:
+    case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+    case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+        C_LOG(LOG_LEVEL_DEBUG, "Engine_t_find_apex: Integration completed successfully or with acceptable termination reason (%d).", err);
+        err = NO_ERROR;
+        break;
+    default:
+        Engine_t_ERR(eng, err, "Engine_t_find_apex: Critical integration error code: %d", err);
+        break;
+        // goto interupt;
     }
-    else
+
+    if (err == NO_ERROR)
     {
         err = BaseTrajSeq_t_get_at(&result, KEY_VEL_Y, 0.0, -1, out);
         if (err != NO_ERROR)
@@ -120,12 +119,15 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
             err = Engine_t_ERR(eng, RUNTIME_ERROR, "Engine_t_find_apex: Runtime error (No apex flagged in trajectory data)");
         }
     }
+
     // finally
     if (has_restore_min_velocity)
     {
         eng->config.cMinimumVelocity = restore_min_velocity;
     }
 
+    // interupt:
+    
     BaseTrajSeq_t_release(&result);
     return err;
 }
