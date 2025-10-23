@@ -47,11 +47,11 @@ clean-exts: sync-dev
 	-rm -rfv py_ballisticcalc.exts/py_ballisticcalc_exts.egg-info
 	-rm -rfv py_ballisticcalc.exts/py_ballisticcalc_exts/build
 	
-	# 2. REMOVE GENERATED FILES (Cython .c, .h, .html, .pyd files)
+	# 2. REMOVE GENERATED FILES (Cython .c, .h, .html, .pyd, .so files)
 	# Use -exec rm -v {} \; to output each deleted file. Maxdepth 1 protects src/ and include/.
 	@echo "Searching for generated files in py_ballisticcalc_exts/..."
-	-find py_ballisticcalc_exts/ -maxdepth 1 -type f \( -name "*.c" -o -name "*.h" -o -name "*.pyd" -o -name "*.html" \) -exec rm -v {} \;
-	-find py_ballisticcalc.exts/py_ballisticcalc_exts/ -maxdepth 1 -type f \( -name "*.pyd" -o -name "*.html" \) -exec rm -v {} \;
+	-find py_ballisticcalc_exts/ -maxdepth 1 -type f \( -name "*.c" -o -name "*.h" -o -name "*.pyd" -o -name "*.so" -o -name "*.html" \) -exec rm -v {} \;
+	-find py_ballisticcalc.exts/py_ballisticcalc_exts/ -maxdepth 1 -type f \( -name "*.pyd" -o -name "*.so" -o -name "*.html" \) -exec rm -v {} \;
 
 	# 3. REMOVE GENERAL BUILD/EGG-INFO ARTIFACTS (Recursive find cleanup)
 	# Use -exec rm -rfv {} + for verbose output when deleting general build/dist directories.

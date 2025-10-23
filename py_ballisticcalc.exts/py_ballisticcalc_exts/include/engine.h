@@ -5,6 +5,12 @@
 #include "bclib.h"
 #include "base_traj_seq.h"
 
+#include <stdarg.h> // for va_list, va_start, va_end, va_copy
+#include <stdio.h>  // for fprintf
+#include <string.h> // Потрібен для vsnprintf
+
+#define MAX_ERR_MSG_LEN 256
+
 typedef struct
 {
     int status;
@@ -24,7 +30,7 @@ typedef struct
 typedef struct engine_t Engine_t;
 
 typedef ErrorCode IntegrateFunc(
-    Engine_t *engine_ptr,
+    Engine_t *eng,
     double range_limit_ft,
     double range_step_ft,
     double time_step,
@@ -40,23 +46,36 @@ typedef struct engine_t
     Config_t config;
     ShotProps_t shot;
     IntegrateFuncPtr integrate_func_ptr;
+    char err_msg[MAX_ERR_MSG_LEN];
 } Engine_t;
+
+#define Engine_t_ERR(eng, code, format, ...)                         \
+    ({                                                                      \
+        ErrorCode _code = code;                                             \
+        Engine_t *_eng = eng;                                 \
+        C_LOG(LOG_LEVEL_ERROR, format, ##__VA_ARGS__);                      \
+        if (_eng != NULL && _code != NO_ERROR)                       \
+        {                                                                   \
+            Engine_t_save_err_internal(_eng, format, ##__VA_ARGS__); \
+        }                                                                   \
+        _code;                                                              \
+    })
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-    void Engine_t_release_trajectory(Engine_t *engine_ptr);
+    ErrorCode Engine_t_save_err_internal(Engine_t *eng, const char *format, ...);
+    void Engine_t_release_trajectory(Engine_t *eng);
     ErrorCode Engine_t_integrate(
-        Engine_t *engine_ptr,
+        Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
         BaseTrajSeq_t *traj_seq_ptr);
 
-    ErrorCode Engine_t_find_apex(Engine_t *engine_ptr, BaseTrajData_t *apex);
+    ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *apex);
 
 #ifdef __cplusplus
 }

@@ -75,12 +75,12 @@ V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double k
  * @return ErrorCode An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on successful completion).
  */
-ErrorCode _integrate_rk4(Engine_t *engine_ptr,
+ErrorCode _integrate_rk4(Engine_t *eng,
                          double range_limit_ft, double range_step_ft,
                          double time_step, TrajFlag_t filter_flags,
                          BaseTrajSeq_t *traj_seq_ptr)
 {
-    if (!engine_ptr || !traj_seq_ptr)
+    if (!eng || !traj_seq_ptr)
     {
         C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
         return INPUT_ERROR;
@@ -103,9 +103,9 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     C_LOG(LOG_LEVEL_DEBUG, "Variables declared\n");
 
     // Early binding of configuration constants
-    double _cMinimumVelocity = engine_ptr->config.cMinimumVelocity;
-    double _cMinimumAltitude = engine_ptr->config.cMinimumAltitude;
-    double _cMaximumDrop = -fabs(engine_ptr->config.cMaximumDrop);
+    double _cMinimumVelocity = eng->config.cMinimumVelocity;
+    double _cMinimumAltitude = eng->config.cMinimumAltitude;
+    double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
 
     C_LOG(LOG_LEVEL_DEBUG, "Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
           _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
@@ -115,7 +115,7 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     // ErrorCode err = NO_ERROR;
     double relative_speed;
     V3dT _dir_vector;
-    engine_ptr->integration_step_count = 0;
+    eng->integration_step_count = 0;
 
     // RK4 specific variables
     V3dT _temp_add_operand;
@@ -127,34 +127,34 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
 
     // Initialize gravity vector
     gravity_vector.x = 0.0;
-    gravity_vector.y = engine_ptr->config.cGravityConstant;
+    gravity_vector.y = eng->config.cGravityConstant;
     gravity_vector.z = 0.0;
 
     C_LOG(LOG_LEVEL_DEBUG, "Gravity initialized: %f\n", gravity_vector.y);
 
     // Initialize wind vector
     C_LOG(LOG_LEVEL_DEBUG, "About to call WindSock_t_currentVector\n");
-    wind_vector = WindSock_t_currentVector(&engine_ptr->shot.wind_sock);
+    wind_vector = WindSock_t_currentVector(&eng->shot.wind_sock);
     C_LOG(LOG_LEVEL_DEBUG, "Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
 
     // Initialize velocity and position vectors
-    velocity = engine_ptr->shot.muzzle_velocity;
-    calc_step = engine_ptr->shot.calc_step;
+    velocity = eng->shot.muzzle_velocity;
+    calc_step = eng->shot.calc_step;
 
     C_LOG(LOG_LEVEL_DEBUG, "Velocity=%f, Calc Step=%f\n", velocity, calc_step);
 
     // Set range_vector components directly
     range_vector.x = 0.0;
-    range_vector.y = -engine_ptr->shot.cant_cosine * engine_ptr->shot.sight_height;
-    range_vector.z = -engine_ptr->shot.cant_sine * engine_ptr->shot.sight_height;
+    range_vector.y = -eng->shot.cant_cosine * eng->shot.sight_height;
+    range_vector.z = -eng->shot.cant_sine * eng->shot.sight_height;
     _cMaximumDrop += fmin(0.0, range_vector.y);
 
     C_LOG(LOG_LEVEL_DEBUG, "Range vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
 
     // Set direction vector components
-    _dir_vector.x = cos(engine_ptr->shot.barrel_elevation) * cos(engine_ptr->shot.barrel_azimuth);
-    _dir_vector.y = sin(engine_ptr->shot.barrel_elevation);
-    _dir_vector.z = cos(engine_ptr->shot.barrel_elevation) * sin(engine_ptr->shot.barrel_azimuth);
+    _dir_vector.x = cos(eng->shot.barrel_elevation) * cos(eng->shot.barrel_azimuth);
+    _dir_vector.y = sin(eng->shot.barrel_elevation);
+    _dir_vector.z = cos(eng->shot.barrel_elevation) * sin(eng->shot.barrel_azimuth);
 
     C_LOG(LOG_LEVEL_DEBUG, "Direction vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
 
@@ -166,8 +166,8 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
 
     C_LOG(LOG_LEVEL_DEBUG, "About to call Atmosphere_t_updateDensityFactorAndMachForAltitude\n");
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
-        &engine_ptr->shot.atmo,
-        engine_ptr->shot.alt0 + range_vector.y,
+        &eng->shot.atmo,
+        eng->shot.alt0 + range_vector.y,
         &density_ratio,
         &mach);
     C_LOG(LOG_LEVEL_DEBUG, "Density ratio: %f, Mach: %f\n", density_ratio, mach);
@@ -175,23 +175,23 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
     // Trajectory Loop
     C_LOG(LOG_LEVEL_DEBUG, "Entering main loop, range_limit_ft=%f\n", range_limit_ft);
 
-    while (range_vector.x <= range_limit_ft || engine_ptr->integration_step_count < 3)
+    while (range_vector.x <= range_limit_ft || eng->integration_step_count < 3)
     {
-        C_LOG(LOG_LEVEL_DEBUG, "Loop iteration %d, range_x=%f\n", engine_ptr->integration_step_count, range_vector.x);
+        C_LOG(LOG_LEVEL_DEBUG, "Loop iteration %d, range_x=%f\n", eng->integration_step_count, range_vector.x);
 
-        engine_ptr->integration_step_count++;
+        eng->integration_step_count++;
 
         // Update wind reading at current point in trajectory
-        if (range_vector.x >= engine_ptr->shot.wind_sock.next_range)
+        if (range_vector.x >= eng->shot.wind_sock.next_range)
         {
             C_LOG(LOG_LEVEL_DEBUG, "Updating wind vector\n");
-            wind_vector = WindSock_t_vectorForRange(&engine_ptr->shot.wind_sock, range_vector.x);
+            wind_vector = WindSock_t_vectorForRange(&eng->shot.wind_sock, range_vector.x);
         }
 
         // Update air density and mach at current altitude
         Atmosphere_t_updateDensityFactorAndMachForAltitude(
-            &engine_ptr->shot.atmo,
-            engine_ptr->shot.alt0 + range_vector.y,
+            &eng->shot.atmo,
+            eng->shot.alt0 + range_vector.y,
             &density_ratio,
             &mach);
 
@@ -228,29 +228,29 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
             return ZERO_DIVISION_ERROR;
         }
 
-        km = density_ratio * ShotProps_t_dragByMach(&engine_ptr->shot, relative_speed / mach);
+        km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
         C_LOG(LOG_LEVEL_DEBUG, "Calculated drag coefficient km=%f\n", km);
 
         // region RK4 integration
         C_LOG(LOG_LEVEL_DEBUG, "Starting RK4 integration\n");
 
         // v1 = f(relative_velocity)
-        v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
+        v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v2 = f(relative_velocity + 0.5 * delta_time * v1)
         _temp_add_operand = mulS(&v1, 0.5 * delta_time);
         _temp_v_result = add(&relative_velocity, &_temp_add_operand);
-        v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
+        v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v3 = f(relative_velocity + 0.5 * delta_time * v2)
         _temp_add_operand = mulS(&v2, 0.5 * delta_time);
         _temp_v_result = add(&relative_velocity, &_temp_add_operand);
-        v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
+        v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v4 = f(relative_velocity + delta_time * v3)
         _temp_add_operand = mulS(&v3, delta_time);
         _temp_v_result = add(&relative_velocity, &_temp_add_operand);
-        v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &engine_ptr->shot, &velocity_vector);
+        v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // p1 = velocity_vector
         p1 = velocity_vector;
@@ -302,7 +302,7 @@ ErrorCode _integrate_rk4(Engine_t *engine_ptr,
         {
             termination_reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
         }
-        else if (velocity_vector.y <= 0 && (engine_ptr->shot.alt0 + range_vector.y < _cMinimumAltitude))
+        else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
             termination_reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
         }

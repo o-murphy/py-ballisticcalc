@@ -38,13 +38,13 @@ double _euler_time_step(double base_step, double velocity)
  * @return ErrorCode An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
  */
-ErrorCode _integrate_euler(Engine_t *engine_ptr,
+ErrorCode _integrate_euler(Engine_t *eng,
                            double range_limit_ft, double range_step_ft,
                            double time_step, TrajFlag_t filter_flags,
                            BaseTrajSeq_t *traj_seq_ptr)
 {
 
-    if (!engine_ptr || !traj_seq_ptr)
+    if (!eng || !traj_seq_ptr)
     {
         C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
         return INPUT_ERROR;
@@ -62,12 +62,12 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
     V3dT gravity_vector;
     V3dT wind_vector;
     V3dT coriolis_accel;
-    double calc_step = engine_ptr->shot.calc_step;
+    double calc_step = eng->shot.calc_step;
 
     // Early binding of configuration constants
-    double _cMinimumVelocity = engine_ptr->config.cMinimumVelocity;
-    double _cMinimumAltitude = engine_ptr->config.cMinimumAltitude;
-    double _cMaximumDrop = -fabs(engine_ptr->config.cMaximumDrop);
+    double _cMinimumVelocity = eng->config.cMinimumVelocity;
+    double _cMinimumAltitude = eng->config.cMinimumAltitude;
+    double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
 
     // Working variables
     ErrorCode termination_reason = NO_ERROR;
@@ -76,29 +76,29 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
     V3dT _dir_vector;
     V3dT _tv;
     V3dT delta_range_vector;
-    engine_ptr->integration_step_count = 0;
+    eng->integration_step_count = 0;
 
     // Initialize gravity vector
     gravity_vector.x = 0.0;
-    gravity_vector.y = engine_ptr->config.cGravityConstant;
+    gravity_vector.y = eng->config.cGravityConstant;
     gravity_vector.z = 0.0;
 
     // Initialize wind vector
-    wind_vector = WindSock_t_currentVector(&engine_ptr->shot.wind_sock);
+    wind_vector = WindSock_t_currentVector(&eng->shot.wind_sock);
 
     // Initialize velocity and position vectors
-    velocity = engine_ptr->shot.muzzle_velocity;
+    velocity = eng->shot.muzzle_velocity;
 
     // Set range_vector components
     range_vector.x = 0.0;
-    range_vector.y = -engine_ptr->shot.cant_cosine * engine_ptr->shot.sight_height;
-    range_vector.z = -engine_ptr->shot.cant_sine * engine_ptr->shot.sight_height;
+    range_vector.y = -eng->shot.cant_cosine * eng->shot.sight_height;
+    range_vector.z = -eng->shot.cant_sine * eng->shot.sight_height;
     _cMaximumDrop += fmin(0.0, range_vector.y); // Adjust max drop downward (only) for muzzle height
 
     // Set direction vector components
-    _dir_vector.x = cos(engine_ptr->shot.barrel_elevation) * cos(engine_ptr->shot.barrel_azimuth);
-    _dir_vector.y = sin(engine_ptr->shot.barrel_elevation);
-    _dir_vector.z = cos(engine_ptr->shot.barrel_elevation) * sin(engine_ptr->shot.barrel_azimuth);
+    _dir_vector.x = cos(eng->shot.barrel_elevation) * cos(eng->shot.barrel_azimuth);
+    _dir_vector.y = sin(eng->shot.barrel_elevation);
+    _dir_vector.z = cos(eng->shot.barrel_elevation) * sin(eng->shot.barrel_azimuth);
 
     // Calculate velocity vector
     velocity_vector = mulS(&_dir_vector, velocity);
@@ -107,26 +107,26 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
 
     // Update air density and mach at initial altitude
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
-        &engine_ptr->shot.atmo,
-        engine_ptr->shot.alt0 + range_vector.y,
+        &eng->shot.atmo,
+        eng->shot.alt0 + range_vector.y,
         &density_ratio,
         &mach);
 
     // Cubic interpolation requires 3 points, so we will need at least 3 steps
-    while (range_vector.x <= range_limit_ft || engine_ptr->integration_step_count < 3)
+    while (range_vector.x <= range_limit_ft || eng->integration_step_count < 3)
     {
-        engine_ptr->integration_step_count++;
+        eng->integration_step_count++;
 
         // Update wind reading at current point in trajectory
-        if (range_vector.x >= engine_ptr->shot.wind_sock.next_range)
+        if (range_vector.x >= eng->shot.wind_sock.next_range)
         {
-            wind_vector = WindSock_t_vectorForRange(&engine_ptr->shot.wind_sock, range_vector.x);
+            wind_vector = WindSock_t_vectorForRange(&eng->shot.wind_sock, range_vector.x);
         }
 
         // Update air density and mach at current altitude
         Atmosphere_t_updateDensityFactorAndMachForAltitude(
-            &engine_ptr->shot.atmo,
-            engine_ptr->shot.alt0 + range_vector.y,
+            &eng->shot.atmo,
+            eng->shot.alt0 + range_vector.y,
             &density_ratio,
             &mach);
 
@@ -154,7 +154,7 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
         delta_time = _euler_time_step(calc_step, relative_speed);
 
         // 3. Calculate drag coefficient and drag force
-        km = density_ratio * ShotProps_t_dragByMach(&engine_ptr->shot, relative_speed / mach);
+        km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
         drag = km * relative_speed;
 
         // 4. Apply drag, gravity, and Coriolis to velocity
@@ -162,10 +162,10 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
         _tv = sub(&gravity_vector, &_tv);
 
         // Check the flat_fire_only flag within the Coriolis structure
-        if (!engine_ptr->shot.coriolis.flat_fire_only)
+        if (!eng->shot.coriolis.flat_fire_only)
         {
             Coriolis_t_coriolis_acceleration_local(
-                &engine_ptr->shot.coriolis, &velocity_vector, &coriolis_accel);
+                &eng->shot.coriolis, &velocity_vector, &coriolis_accel);
             _tv = add(&_tv, &coriolis_accel);
         }
 
@@ -189,7 +189,7 @@ ErrorCode _integrate_euler(Engine_t *engine_ptr,
         {
             termination_reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
         }
-        else if (velocity_vector.y <= 0 && (engine_ptr->shot.alt0 + range_vector.y < _cMinimumAltitude))
+        else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
             termination_reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
         }

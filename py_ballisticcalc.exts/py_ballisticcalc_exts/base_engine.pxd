@@ -38,7 +38,7 @@ cdef extern from "include/engine.h" nogil:
 
     # Declare the function signature type (not a pointer yet)
     ctypedef ErrorCode IntegrateFunc(
-        Engine_t *engine_ptr,
+        Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -57,10 +57,10 @@ cdef extern from "include/engine.h" nogil:
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr
 
-    void Engine_t_release_trajectory(Engine_t *engine_ptr) noexcept nogil
+    void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 
     ErrorCode Engine_t_integrate(
-        Engine_t *engine_ptr,
+        Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -69,7 +69,7 @@ cdef extern from "include/engine.h" nogil:
     ) noexcept nogil
 
     ErrorCode Engine_t_find_apex(
-        Engine_t *engine_ptr,
+        Engine_t *eng,
         BaseTrajData_t *apex
     ) noexcept nogil
 

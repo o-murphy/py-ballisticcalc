@@ -1,56 +1,81 @@
 #include "engine.h"
 
-void Engine_t_release_trajectory(Engine_t *engine_ptr)
+static void Engine_t_vsave_err(Engine_t *eng, const char *format, va_list args)
 {
-    if (engine_ptr == NULL)
+    memset(eng->err_msg, 0, MAX_ERR_MSG_LEN);
+
+    vsnprintf(
+        eng->err_msg,
+        MAX_ERR_MSG_LEN,
+        format,
+        args);
+}
+
+ErrorCode Engine_t_save_err_internal(Engine_t *eng, const char *format, ...)
+{
+    va_list args;
+
+    if (!eng)
+    {
+        return INPUT_ERROR; // Не можемо зберегти помилку
+    }
+
+    va_start(args, format);
+
+    Engine_t_vsave_err(eng, format, args);
+
+    va_end(args);
+
+    return NO_ERROR;
+}
+
+void Engine_t_release_trajectory(Engine_t *eng)
+{
+    if (eng == NULL)
     {
         return;
     }
-    ShotProps_t_release(&engine_ptr->shot);
+    ShotProps_t_release(&eng->shot);
     // NOTE: It is not neccessary to NULLIFY integrate_func_ptr
 }
 
 ErrorCode Engine_t_integrate(
-    Engine_t *engine_ptr,
+    Engine_t *eng,
     double range_limit_ft,
     double range_step_ft,
     double time_step,
     TrajFlag_t filter_flags,
     BaseTrajSeq_t *traj_seq_ptr)
 {
-    if (!engine_ptr || !traj_seq_ptr)
+    if (!eng || !traj_seq_ptr)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
     }
-    if (!engine_ptr->integrate_func_ptr)
+    if (!eng->integrate_func_ptr)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
     }
-    C_LOG(LOG_LEVEL_DEBUG, "Engine_t_integrate: Using integration function pointer %p.", (void *)engine_ptr->integrate_func_ptr);
+    C_LOG(LOG_LEVEL_DEBUG, "Engine_t_integrate: Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
-    ErrorCode err = engine_ptr->integrate_func_ptr(engine_ptr, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
+    ErrorCode err = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 
     if (err != NO_ERROR)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: error code: %d", err);
+        Engine_t_ERR(eng, err, "Engine_t_integrate: error code: %d", err);
     }
     return err;
 }
 
-ErrorCode Engine_t_find_apex(Engine_t *engine_ptr, BaseTrajData_t *out)
+ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
 {
-    if (!engine_ptr || !out)
+    if (!eng || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Engine_t_find_apex: Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_find_apex: Invalid input (NULL pointer).");
     }
 
-    if (engine_ptr->shot.barrel_elevation <= 0)
+    if (eng->shot.barrel_elevation <= 0)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Engine_t_find_apex: Value error (Barrel elevation must be greater than 0 to find apex).");
-        return VALUE_ERROR;
+        return Engine_t_ERR(eng, VALUE_ERROR, "Engine_t_find_apex: Value error (Barrel elevation must be greater than 0 to find apex).");
     }
 
     // Have to ensure cMinimumVelocity is 0 for this to work
@@ -61,15 +86,15 @@ ErrorCode Engine_t_find_apex(Engine_t *engine_ptr, BaseTrajData_t *out)
 
     BaseTrajSeq_t_init(&result);
 
-    if (engine_ptr->config.cMinimumVelocity > 0.0)
+    if (eng->config.cMinimumVelocity > 0.0)
     {
-        restore_min_velocity = engine_ptr->config.cMinimumVelocity;
-        engine_ptr->config.cMinimumVelocity = 0.0;
+        restore_min_velocity = eng->config.cMinimumVelocity;
+        eng->config.cMinimumVelocity = 0.0;
         has_restore_min_velocity = 1;
     }
 
     // try
-    err = Engine_t_integrate(engine_ptr, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
+    err = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
     if (err != NO_ERROR)
     {
         // allow RANGE_ERROR
@@ -92,14 +117,13 @@ ErrorCode Engine_t_find_apex(Engine_t *engine_ptr, BaseTrajData_t *out)
         err = BaseTrajSeq_t_get_at(&result, KEY_VEL_Y, 0.0, -1, out);
         if (err != NO_ERROR)
         {
-            C_LOG(LOG_LEVEL_ERROR, "Engine_t_find_apex: Runtime error (No apex flagged in trajectory data)");
-            err = RUNTIME_ERROR;
+            err = Engine_t_ERR(eng, RUNTIME_ERROR, "Engine_t_find_apex: Runtime error (No apex flagged in trajectory data)");
         }
     }
     // finally
     if (has_restore_min_velocity)
     {
-        engine_ptr->config.cMinimumVelocity = restore_min_velocity;
+        eng->config.cMinimumVelocity = restore_min_velocity;
     }
 
     BaseTrajSeq_t_release(&result);

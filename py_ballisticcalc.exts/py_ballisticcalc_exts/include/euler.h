@@ -19,7 +19,7 @@ extern "C"
      */
     double _euler_time_step(double base_step, double velocity);
 
-    ErrorCode _integrate_euler(Engine_t *engine_ptr,
+    ErrorCode _integrate_euler(Engine_t *eng,
                                double range_limit_ft, double range_step_ft,
                                double time_step, TrajFlag_t filter_flags,
                                BaseTrajSeq_t *traj_seq_ptr);
