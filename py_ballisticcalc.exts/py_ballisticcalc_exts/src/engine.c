@@ -108,7 +108,7 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
             err = NO_ERROR;
             break;
         default:
-            C_LOG(LOG_LEVEL_ERROR, "Engine_t_find_apex: Critical integration error code: %d", err);
+            Engine_t_ERR(eng, err, "Engine_t_find_apex: Critical integration error code: %d", err);
             break;
         }
     }

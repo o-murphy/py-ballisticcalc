@@ -82,8 +82,7 @@ ErrorCode _integrate_rk4(Engine_t *eng,
 {
     if (!eng || !traj_seq_ptr)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_integrate: Invalid input (NULL pointer).");
     }
 
     C_LOG(LOG_LEVEL_DEBUG, "All pointers valid\n");
@@ -224,8 +223,7 @@ ErrorCode _integrate_rk4(Engine_t *eng,
         // Check for division by zero
         if (mach == 0.0)
         {
-            C_LOG(LOG_LEVEL_ERROR, "Integration error: Mach number is zero, cannot divide!");
-            return ZERO_DIVISION_ERROR;
+            return Engine_t_ERR(eng, ZERO_DIVISION_ERROR, "Integration error: Mach number is zero, cannot divide!");
         }
 
         km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
