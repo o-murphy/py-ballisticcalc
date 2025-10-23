@@ -8,10 +8,14 @@ Because storing each step in a BaseTrajSeqT is practically costless, we always r
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
+from py_ballisticcalc_exts.bclib cimport initLogLevel
+
 
 __all__ = [
     'CythonizedRK4IntegrationEngine',
 ]
+
+initLogLevel()
 
 
 @final

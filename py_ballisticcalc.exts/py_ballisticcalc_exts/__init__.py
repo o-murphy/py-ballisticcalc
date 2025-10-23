@@ -6,7 +6,6 @@ __copyright__ = (
 
 __credits__ = ["o-murphy", "dbookstaber"]
 
-import sys
 
 from .bind import set_log_level
 from .euler_engine import CythonizedEulerIntegrationEngine
@@ -25,7 +24,6 @@ try:
 except KeyError:
     raise ImportError(f"Cannot read version from {CORE_PACKAGE_NAME} or {EXTS_PACKAGE_NAME} metadata.")
 
-__PYTEST_DETECTED = "pytest" in sys.modules
 
 if __core_version != __exts_version:
     raise AssertionError(
@@ -34,16 +32,8 @@ if __core_version != __exts_version:
         "Versions must match."
     )
 
-if __PYTEST_DETECTED:
-    from py_ballisticcalc.logger import logger
-
-    logger.debug("pytest detected: setting C library log level to DEBUG")
-    # During pytest runs, set C library log level to INFO for more verbose output
-    set_log_level(10)  # LogLevel.DEBUG
-
 
 __all__ = (
-    "set_log_level",
     "CythonizedEulerIntegrationEngine",
     "CythonizedRK4IntegrationEngine",
     "CythonEngineTestHarness",

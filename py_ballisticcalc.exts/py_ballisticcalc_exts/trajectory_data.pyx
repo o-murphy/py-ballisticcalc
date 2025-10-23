@@ -15,9 +15,13 @@ from py_ballisticcalc_exts.bclib cimport (
     BaseTrajData_t,
     InterpKey,
     BaseTrajData_t_interpolate,
+    initLogLevel,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport _attribute_to_key, _v3d_to_vector
+
+
+initLogLevel()
 
 
 @final

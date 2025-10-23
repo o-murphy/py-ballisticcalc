@@ -12,6 +12,7 @@ cdef extern from "include/bclib.h" nogil:
         LOG_LEVEL_NOTSET
 
     void setLogLevel(LogLevel level) noexcept nogil
+    void initLogLevel()
 
     cdef const double cDegreesFtoR
     cdef const double cDegreesCtoK

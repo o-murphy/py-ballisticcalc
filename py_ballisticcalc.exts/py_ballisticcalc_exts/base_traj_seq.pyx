@@ -16,12 +16,15 @@ passing Python cdef-class instances into nogil code paths.
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport InterpKey
+from py_ballisticcalc_exts.bclib cimport InterpKey, initLogLevel
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport _attribute_to_key, _key_to_attribute
 
 
 __all__ = ('BaseTrajSeqT')
+
+
+initLogLevel()
 
 
 cdef class BaseTrajSeqT:

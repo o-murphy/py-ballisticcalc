@@ -206,6 +206,7 @@ extern "C"
 {
 #endif
     void setLogLevel(LogLevel level);
+    void initLogLevel();
 
     void Curve_t_release(Curve_t *curve_ptr);
 

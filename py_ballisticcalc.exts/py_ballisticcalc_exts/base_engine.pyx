@@ -29,6 +29,7 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t_updateStabilityCoefficient,
     TrajFlag_t,
     ErrorCode,
+    initLogLevel,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport (
@@ -53,6 +54,9 @@ from py_ballisticcalc.unit import Angular
 __all__ = (
     'CythonizedBaseIntegrationEngine',
 )
+
+
+initLogLevel()
 
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS

@@ -10,6 +10,7 @@ from cpython.object cimport PyObject
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     setLogLevel,
+    initLogLevel,
     LogLevel,
     MachList_t,
     Curve_t,
@@ -31,6 +32,8 @@ from py_ballisticcalc.unit import (
 from py_ballisticcalc_exts.v3d cimport V3dT
 
 from py_ballisticcalc.vector import Vector
+
+initLogLevel()
 
 
 def set_log_level(int level):

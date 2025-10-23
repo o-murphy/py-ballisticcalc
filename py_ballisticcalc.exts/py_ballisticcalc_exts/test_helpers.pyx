@@ -19,6 +19,7 @@ from py_ballisticcalc_exts.bclib cimport (
     TrajFlag_t,
     calculateEnergy,
     calculateOgw,
+    initLogLevel,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
@@ -44,6 +45,9 @@ __all__ = [
     'step_count',
     'introspect_shot',
 ]
+
+
+initLogLevel()
 
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
