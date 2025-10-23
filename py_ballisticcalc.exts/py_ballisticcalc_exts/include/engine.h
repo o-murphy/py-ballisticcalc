@@ -86,6 +86,11 @@ extern "C"
         double target_y_ft,
         double *out_error_ft);
 
+    // ErrorCode Engine_t_init_zero_calculation(
+    //     Engine_t *eng,
+    //     double distance,
+    //     ZeroInitialData_t *result);
+
 #ifdef __cplusplus
 }
 #endif

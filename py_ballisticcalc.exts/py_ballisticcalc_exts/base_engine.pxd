@@ -134,11 +134,9 @@ cdef class CythonizedBaseIntegrationEngine:
     )
     cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr
     )
     cdef double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double angle_rad,
         double target_x_ft,
         double target_y_ft

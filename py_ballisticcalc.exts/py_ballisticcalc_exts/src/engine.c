@@ -197,3 +197,79 @@ ErrorCode Engine_t_error_at_distance(
     BaseTrajSeq_t_release(&trajectory);
     return err;
 };
+
+// ErrorCode Engine_t_init_zero_calculation(
+//     Engine_t *eng,
+//     double distance,
+//     double APEX_IS_MAX_RANGE_RADIANS,
+//     double ALLOWED_ZERO_ERROR_FEET,
+//     ZeroInitialData_t *result)
+// {
+//     double slant_range_ft = distance;
+//     double look_angle_rad = eng->shot.look_angle;
+//     double target_x_ft = slant_range_ft * cos(look_angle_rad);
+//     double target_y_ft = slant_range_ft * sin(look_angle_rad);
+//     double start_height_ft = -eng->shot.sight_height * eng->shot.cant_cosine;
+//     BaseTrajData_t apex;
+//     double apex_slant_ft;
+//     ErrorCode err;
+
+//     // Edge case: Very close shot
+//     if (fabs(slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
+//     {
+//         result->status = 1;
+//         result->look_angle_rad = look_angle_rad;
+//         result->slant_range_ft = slant_range_ft;
+//         result->target_x_ft = target_x_ft;
+//         result->target_y_ft = target_y_ft;
+//         result->start_height_ft = start_height_ft;
+//         return NO_ERROR;
+//     }
+
+//     // Edge case: Very close shot; ignore gravity and drag
+//     if (fabs(slant_range_ft) < 2.0 * fmax(fabs(start_height_ft), eng->config.cStepMultiplier))
+//     {
+//         result->status = 1;
+//         result->look_angle_rad = atan2(target_y_ft + start_height_ft, target_x_ft);
+//         result->slant_range_ft = slant_range_ft;
+//         result->target_x_ft = target_x_ft;
+//         result->target_y_ft = target_y_ft;
+//         result->start_height_ft = start_height_ft;
+//         return NO_ERROR;
+//     }
+
+//     // Edge case: Virtually vertical shot; just check if it can reach the target
+//     if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+//     { // π/2 radians = 90 degrees
+//         // Compute slant distance at apex using robust accessor
+//         err = Engine_t_find_apex(eng, &apex);
+//         if (err != NO_ERROR)
+//         {
+//             return err;
+//         }
+//         apex_slant_ft = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
+//         if (apex_slant_ft < slant_range_ft)
+//         {
+//             // result->status = 1;
+//             // result->look_angle_rad = look_angle_rad;
+//             // result->distance = distance;
+//             // result->apex_slant_ft = apex_slant_ft;
+//             // return RUNTIME_ERROR;
+//         }
+//         result->status = 1;
+//         result->look_angle_rad = look_angle_rad;
+//         result->slant_range_ft = slant_range_ft;
+//         result->target_x_ft = target_x_ft;
+//         result->target_y_ft = target_y_ft;
+//         result->start_height_ft = start_height_ft;
+//         return NO_ERROR;
+//     }
+
+//     result->status = 0;
+//     result->look_angle_rad = look_angle_rad;
+//     result->slant_range_ft = slant_range_ft;
+//     result->target_x_ft = target_x_ft;
+//     result->target_y_ft = target_y_ft;
+//     result->start_height_ft = start_height_ft;
+//     return NO_ERROR;
+// }

@@ -194,7 +194,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BaseTrajDataT result
         cdef object props
         try:
-            result = BaseTrajDataT(self._find_apex(shot_props_ptr))
+            result = BaseTrajDataT(self._find_apex())
             props = ShotProps.from_shot(shot_info)
             return TrajectoryData.from_props(
                 props, result.time, result.position, result.velocity, result.mach)
@@ -309,7 +309,6 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef inline double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double angle_rad,
         double target_x_ft,
         double target_y_ft
@@ -477,7 +476,7 @@ cdef class CythonizedBaseIntegrationEngine:
         # Edge case: Virtually vertical shot; just check if it can reach the target
         if fabs(look_angle_rad - 1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
             # Compute slant distance at apex using robust accessor
-            apex = self._find_apex(shot_props_ptr)
+            apex = self._find_apex()
             apex_slant_ft = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad)
             if apex_slant_ft < slant_range_ft:
                 raise OutOfRangeError(
@@ -570,12 +569,12 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef double mid_angle, f_mid, s, next_angle, f_next
 
         try:
-            f_low = self._error_at_distance(shot_props_ptr, low_angle, target_x_ft, target_y_ft)
+            f_low = self._error_at_distance(low_angle, target_x_ft, target_y_ft)
             # If low is exactly look angle and failed to evaluate, nudge slightly upward to bracket
             if f_low > <double>1e8 and fabs(low_angle - look_angle_rad) < <double>1e-9:
                 low_angle = look_angle_rad + 1e-3
-                f_low = self._error_at_distance(shot_props_ptr, low_angle, target_x_ft, target_y_ft)
-            f_high = self._error_at_distance(shot_props_ptr, high_angle, target_x_ft, target_y_ft)
+                f_low = self._error_at_distance(low_angle, target_x_ft, target_y_ft)
+            f_high = self._error_at_distance(high_angle, target_x_ft, target_y_ft)
 
             if f_low * f_high >= 0:
                 lofted_str = "lofted" if lofted else "low"
@@ -595,7 +594,7 @@ cdef class CythonizedBaseIntegrationEngine:
             # 4. Ridder's method implementation
             for iteration in range(self._engine.config.cMaxIterations):
                 mid_angle = (low_angle + high_angle) / 2.0
-                f_mid = self._error_at_distance(shot_props_ptr, mid_angle, target_x_ft, target_y_ft)
+                f_mid = self._error_at_distance(mid_angle, target_x_ft, target_y_ft)
 
                 # s is the updated point using the root of the linear function
                 # through (low_angle, f_low) and (high_angle, f_high)
@@ -608,7 +607,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 if fabs(next_angle - mid_angle) < self._engine.config.cZeroFindingAccuracy:
                     return next_angle
 
-                f_next = self._error_at_distance(shot_props_ptr, next_angle, target_x_ft, target_y_ft)
+                f_next = self._error_at_distance(next_angle, target_x_ft, target_y_ft)
                 # Update the bracket
                 if f_mid * f_next < 0:
                     low_angle, f_low = mid_angle, f_mid
@@ -661,7 +660,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if (
             fabs(look_angle_rad - <double>1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS
         ):  # π/2 radians = 90 degrees
-            _apex_obj = self._find_apex(shot_props_ptr)
+            _apex_obj = self._find_apex()
             _sdist = (
                 _apex_obj.position.x
                 * cos(look_angle_rad)
@@ -788,7 +787,6 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr
     ):
         """
         Internal implementation to find the apex of the trajectory.
