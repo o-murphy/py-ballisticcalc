@@ -7,7 +7,6 @@ __copyright__ = (
 __credits__ = ["o-murphy", "dbookstaber"]
 
 
-from .bind import set_log_level
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
 from .test_engine import CythonEngineTestHarness

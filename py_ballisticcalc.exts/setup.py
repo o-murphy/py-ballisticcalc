@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """setup.py script for py_ballisticcalc library"""
+
 import os
 
 from setuptools import setup, Extension
@@ -26,7 +27,7 @@ REPO_ROOT = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 compiler_directives = {
     "language_level": 3,
     "embedsignature": True,
-    "cdivision": True, # use with caution! can affect on "/" operator
+    "cdivision": True,  # use with caution! can affect on "/" operator
     "binding": False,  # Keep as False unless you explicitly want Python-level binding methods
     "c_api_binop_methods": True,
     # Suppress noisy warnings about Python-level names (PreferredUnits, Vector, etc.)
@@ -49,28 +50,30 @@ if ENABLE_CYTHON_COVERAGE:
 
 # When safety is requested, favor correctness checks over speed
 if ENABLE_CYTHON_SAFETY:
-    compiler_directives.update({
-        "boundscheck": True,
-        "wraparound": True,
-        "initializedcheck": True,
-        "nonecheck": True,
-        "cdivision": False,
-        "overflowcheck": True,
-        "embedsignature": True,
-    })
+    compiler_directives.update(
+        {
+            "boundscheck": True,
+            "wraparound": True,
+            "initializedcheck": True,
+            "nonecheck": True,
+            "cdivision": False,
+            "overflowcheck": True,
+            "embedsignature": True,
+        }
+    )
 
-ext_base_dir = 'py_ballisticcalc_exts'
+ext_base_dir = "py_ballisticcalc_exts"
 
 # Define all C source files and their paths
 C_SOURCES = {
-    'v3d': os.path.join(ext_base_dir, 'src', 'v3d.c'),
-    'bclib': os.path.join(ext_base_dir, 'src', 'bclib.c'),
-    "bind": os.path.join(ext_base_dir, 'src', 'bind.c'),
-    "interp": os.path.join(ext_base_dir, 'src', 'interp.c'),
-    "euler": os.path.join(ext_base_dir, 'src', 'euler.c'),
-    "rk4": os.path.join(ext_base_dir, 'src', 'rk4.c'),
-    "base_traj_seq": os.path.join(ext_base_dir, 'src', 'base_traj_seq.c'),
-    "engine": os.path.join(ext_base_dir, 'src', 'engine.c'),
+    "v3d": os.path.join(ext_base_dir, "src", "v3d.c"),
+    "bclib": os.path.join(ext_base_dir, "src", "bclib.c"),
+    "bind": os.path.join(ext_base_dir, "src", "bind.c"),
+    "interp": os.path.join(ext_base_dir, "src", "interp.c"),
+    "euler": os.path.join(ext_base_dir, "src", "euler.c"),
+    "rk4": os.path.join(ext_base_dir, "src", "rk4.c"),
+    "base_traj_seq": os.path.join(ext_base_dir, "src", "base_traj_seq.c"),
+    "engine": os.path.join(ext_base_dir, "src", "engine.c"),
     # Add any other C source files here
 }
 
@@ -93,8 +96,8 @@ EXTENSION_DEPS = {
 # added 'include' to include_dirs for searching headers ***
 include_dirs = [
     os.path.join(THIS_DIR, ext_base_dir),  # For .pxd files
-    os.path.join(THIS_DIR, ext_base_dir, 'src'),
-    os.path.join(THIS_DIR, ext_base_dir, 'include'),
+    os.path.join(THIS_DIR, ext_base_dir, "src"),
+    os.path.join(THIS_DIR, ext_base_dir, "include"),
 ]
 
 # Initialize extensions list
@@ -103,7 +106,7 @@ extensions = []
 # Dynamically create extensions for names in extension_names
 for name, deps in EXTENSION_DEPS.items():
     # Use subproject-local .pyx paths (these exist during build)
-    sources = [os.path.join(ext_base_dir, name + '.pyx')]
+    sources = [os.path.join(ext_base_dir, name + ".pyx")]
 
     # Add dependent C source files from the EXTENSION_DEPS dictionary
     # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
@@ -113,7 +116,6 @@ for name, deps in EXTENSION_DEPS.items():
         else:
             print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
-
     define_macros = []
     if ENABLE_CYTHON_COVERAGE:
         # Enable tracing in both with-GIL and nogil regions
@@ -121,7 +123,7 @@ for name, deps in EXTENSION_DEPS.items():
 
     extensions.append(
         Extension(
-            'py_ballisticcalc_exts.' + name,
+            "py_ballisticcalc_exts." + name,
             sources=sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
@@ -135,8 +137,8 @@ for name, deps in EXTENSION_DEPS.items():
 extensions = cythonize(
     extensions,
     compiler_directives=compiler_directives,
-    annotate=True, #ENABLE_CYTHON_COVERAGE, # whether to generate .html annotations
-    build_dir=os.path.join(ext_base_dir, 'build'),
+    annotate=True,  # ENABLE_CYTHON_COVERAGE, # whether to generate .html annotations
+    build_dir=os.path.join(ext_base_dir, "build"),
     force=ENABLE_CYTHON_COVERAGE or CYTHON_FORCE_REGEN,
 )
 

@@ -11,4 +11,3 @@ def test_import_individual_extensions():
 
     rk4 = importlib.import_module("py_ballisticcalc_exts.rk4_engine")
     assert hasattr(rk4, "CythonizedRK4IntegrationEngine")
-

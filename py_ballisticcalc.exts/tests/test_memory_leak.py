@@ -12,6 +12,7 @@ stay out of Python's allocator will require external tools (ASan / Valgrind) or 
 allocation counters compiled behind a macro. This suite is intentionally lightweight enough
 to run under a `@pytest.mark.stress` opt-in.
 """
+
 from __future__ import annotations
 
 import gc
@@ -25,7 +26,7 @@ from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.unit import Velocity
 from py_ballisticcalc_exts.test_engine import CythonEngineTestHarness
-from py_ballisticcalc_exts.test_helpers import init_shot, free_shot, shot_props_addr, introspect_shot
+from py_ballisticcalc_exts.test_helpers import free_shot, shot_props_addr, introspect_shot
 
 pytestmark = pytest.mark.stress
 
@@ -44,6 +45,7 @@ def _make_engine(dm=None, mv_fps: float = 2790.0):
 def _minimal_two_point_table():
     # Smallest reasonable monotone table (Mach, CD) entries
     from py_ballisticcalc.drag_model import DragDataPoint
+
     return [DragDataPoint(0.5, 0.2), DragDataPoint(1.5, 0.18)]
 
 
@@ -54,7 +56,7 @@ def _minimal_two_point_table():
         ("G1", TableG1),
         ("MIN2", _minimal_two_point_table()),
     ],
-    ids=lambda p: p[0]
+    ids=lambda p: p[0],
 )
 def test_drag_eval_memory_growth(table_variant):
     # Freeze GC to reduce allocator noise (Python 3.12+) – safe if available
@@ -68,9 +70,11 @@ def test_drag_eval_memory_growth(table_variant):
     # Build unique DM so we trigger full drag curve interpolation each parametrization
     dm = DragModel(0.305, table)
     eng, _ = _make_engine(dm=dm, mv_fps=2790.0)
+
     # Table can be list of dict-like or DragDataPoint objects depending on variant
     def _mach(dp):
         return dp["Mach"] if isinstance(dp, dict) else dp.Mach
+
     xs = [_mach(dp) for dp in table]
     rnd = random.Random(42)
     WARMUP = 1000
@@ -116,7 +120,9 @@ def test_engine_alloc_free_churn_no_growth_and_struct_zeroing():
 
     Also validates the helper-reported struct fields are cleared after free.
     """
-    import psutil, statistics
+    import psutil
+    import statistics
+
     rss_samples = []
     proc = psutil.Process()
     rnd = random.Random(42)

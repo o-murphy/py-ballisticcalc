@@ -79,7 +79,10 @@ packages = ["py_ballisticcalc"]
 [tool.ruff]
 include = [
     "pyproject.toml",
-    "py_ballisticcalc/**/*.py"
+    "py_ballisticcalc/**/*.py",
+    "py_ballisticcalc/**/*.pyi",
+    "py_ballisticcalc.exts/**/*.py",
+    "py_ballisticcalc.exts/**/*.pyi",
 ]
 extend-exclude = ["__init__.py"]
 line-length = 120

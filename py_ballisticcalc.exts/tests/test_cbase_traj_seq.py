@@ -61,11 +61,11 @@ def test_interpolate_at_time_and_position():
     seq.append(2.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.7)
 
     # Interpolate at time=1.5 should give position.x ~ 15.0
-    interpolated = seq.interpolate_at(1, 'time', 1.5)
+    interpolated = seq.interpolate_at(1, "time", 1.5)
     assert interpolated.time == pytest.approx(1.5)
     assert interpolated.position.x == pytest.approx(15.0)
     # Interpolate at position.x == 15 -> should give time ~1.5
-    interpolated2 = seq.interpolate_at(1, 'position.x', 15.0)
+    interpolated2 = seq.interpolate_at(1, "position.x", 15.0)
     assert interpolated2.time == pytest.approx(1.5)
     assert interpolated2.position.x == pytest.approx(15.0)
 
@@ -77,6 +77,6 @@ def test_interpolate_at_accepts_negative_index_middle():
     seq.append(1.0, 10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6)
     seq.append(2.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.7)
 
-    mid = seq.interpolate_at(-2, 'time', 1.5)
+    mid = seq.interpolate_at(-2, "time", 1.5)
     assert mid.time == pytest.approx(1.5)
     assert mid.position.x == pytest.approx(15.0)

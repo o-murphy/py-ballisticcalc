@@ -10,7 +10,7 @@ def bench_append(n, reserve_first=False):
         seq.reserve(n)
     t0 = time.perf_counter()
     for i in range(n):
-        seq.append(float(i), float(i*0.01), 0.0, 0.0, 0.0, 0.0, 0.0, 0.5)
+        seq.append(float(i), float(i * 0.01), 0.0, 0.0, 0.0, 0.0, 0.0, 0.5)
     t1 = time.perf_counter()
     return t1 - t0
 
@@ -23,5 +23,5 @@ def run_many(n=200000, repeats=5):
     print("with reserve:", [f"{t:.4f}s" for t in results_with_reserve], "mean=", f"{mean(results_with_reserve):.4f}s")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run_many(200000, repeats=3)

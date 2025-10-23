@@ -2,7 +2,7 @@
 # Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
 
 [build-system]
-requires = ["setuptools", "wheel", 'cython>=3.1.4']
+requires = ["setuptools", 'cython>=3.1.4']
 build-backend = "setuptools.build_meta"
 
 
@@ -69,3 +69,10 @@ build-frontend = "build[uv]"
 minversion = "7.0"
 addopts = '-m "not stress"'
 markers = ["stress: long-running or resource-intensive tests, opt-in only"]
+
+[dependency-groups]
+dev = [
+    "cibuildwheel>=2.23.2",
+    "cython>=3.1.4",
+    "setuptools>=80.9.0",
+]
