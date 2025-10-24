@@ -260,27 +260,43 @@ cdef class CythonizedBaseIntegrationEngine:
             HitResult: Object for describing the trajectory.
         """
         cdef:
-            tuple _res
-            object props, error, tdf
+            ErrorCode err
             BaseTrajSeqT trajectory
             BaseTrajDataT init, fin
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
+            object props, tdf
+            object termination_reason = None
 
         self._init_trajectory(shot_info)
 
         try:
-            _res = self._integrate(range_limit_ft, range_step_ft, time_step, <TrajFlag_t>filter_flags)
+            trajectory = BaseTrajSeqT()
+            err = Engine_t_integrate(
+                &self._engine,
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                <TrajFlag_t>filter_flags,
+                &trajectory._c_view,
+            )
+            self._raise_on_integrate_error(err)
         finally:
             # Always release C resources
             self._release_trajectory()
+
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
 
-        # Extract trajectory and step_data from the result
-        trajectory = _res[0]
-        error = _res[1]
+        # Extract termination_reason from the result
+        if err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+            termination_reason = RangeError.MinimumVelocityReached
+        elif err == ErrorCode.RANGE_ERROR_MAXIMUM_DROP_REACHED:
+            termination_reason = RangeError.MaximumDropReached
+        elif err == ErrorCode.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+            termination_reason = RangeError.MinimumAltitudeReached
+
         init = trajectory[0]
         tdf = TrajectoryDataFilter(props, filter_flags, init.position, init.velocity,
                                    props.barrel_elevation_rad, props.look_angle_rad,
@@ -289,8 +305,8 @@ cdef class CythonizedBaseIntegrationEngine:
         # Feed step_data through TrajectoryDataFilter to get TrajectoryData
         for _, d in enumerate(trajectory):
             tdf.record(BaseTrajData(d.time, d.position, d.velocity, d.mach))
-        if error is not None:
-            error = RangeError(error, tdf.records)
+        if termination_reason is not None:
+            termination_reason = RangeError(termination_reason, tdf.records)
             # For incomplete trajectories we add last point, so long as it isn't a duplicate
             fin = trajectory[-1]
             if fin.time > tdf.records[-1].time:
@@ -304,7 +320,7 @@ cdef class CythonizedBaseIntegrationEngine:
             tdf.records,
             trajectory if dense_output else None,
             filter_flags != TrajFlag_t.TFLAG_NONE,
-            error
+            termination_reason
         )
 
     cdef inline double _error_at_distance(
@@ -425,8 +441,11 @@ cdef class CythonizedBaseIntegrationEngine:
                 wind_sock=WindSock_t_from_pylist(shot_info.winds),
                 filter_flags=TrajFlag_t.TFLAG_NONE,
             )
-            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) < 0:
-                raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
+
+            # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
+            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != ErrorCode.NO_ERROR:
+                raise ZeroDivisionError(
+                    "Zero division detected in ShotProps_t_updateStabilityCoefficient")
 
         except Exception:
             # Ensure we free any partially allocated arrays inside _shot_s
@@ -975,7 +994,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             tuple: (BaseTrajSeqT, str or None)
                 BaseTrajSeqT: The trajectory sequence.
-                str or None: Termination reason if applicable.
+                ErrorCode: Termination reason if applicable.
         """
         if self._engine.integrate_func_ptr is NULL:
             raise NotImplementedError("integrate_func not implemented or not provided")
@@ -990,17 +1009,7 @@ cdef class CythonizedBaseIntegrationEngine:
             &traj_seq._c_view,
         )
         self._raise_on_integrate_error(err)
-
-        cdef object termination_reason = None
-
-        if err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
-            termination_reason = RangeError.MinimumVelocityReached
-        elif err == ErrorCode.RANGE_ERROR_MAXIMUM_DROP_REACHED:
-            termination_reason = RangeError.MaximumDropReached
-        elif err == ErrorCode.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
-            termination_reason = RangeError.MinimumAltitudeReached
-
-        return traj_seq, termination_reason
+        return traj_seq, err
 
     cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
         if err & ErrorCode.INPUT_ERROR:
@@ -1014,7 +1023,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         if err & ErrorCode.ZERO_DIVISION_ERROR:
             raise ZeroDivisionError(self.error_message)
-        
+
         raise SolverRuntimeError(
             f"unhandled error in integrate_func, "
             f"error code: {err}, {self.error_message}"

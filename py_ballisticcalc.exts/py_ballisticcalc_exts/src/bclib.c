@@ -412,7 +412,7 @@ V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
         else
         {
             // If cache update fails, return zero vector
-            if (WindSock_t_updateCache(ws) < 0)
+            if (WindSock_t_updateCache(ws) != NO_ERROR)
             {
                 C_LOG(LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                 return zero_vector;

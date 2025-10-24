@@ -19,6 +19,7 @@ from py_ballisticcalc_exts.bclib cimport (
     calculateEnergy,
     calculateOgw,
     initLogLevel,
+    ErrorCode,
 )
 
 __all__ = ["CythonEngineTestHarness"]
@@ -64,7 +65,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) < 0:
+        if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != ErrorCode.NO_ERROR:
             raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
         return self._engine.shot.stability_coefficient
 

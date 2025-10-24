@@ -2,7 +2,8 @@
 """
 Cythonized RK4 Integration Engine
 
-Because storing each step in a BaseTrajSeq_t is practically costless, we always run with "dense_output=True".
+Because storing each step in a BaseTrajSeq_t is practically costless,
+we always run with "dense_output=True".
 """
 # noinspection PyUnresolvedReferences
 from cython cimport final
