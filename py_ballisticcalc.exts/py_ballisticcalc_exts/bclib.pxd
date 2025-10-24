@@ -37,8 +37,6 @@ cdef extern from "include/bclib.h" nogil:
         INPUT_ERROR
         RUNTIME_ERROR
 
-        UNDEFINED_ERROR
-
         # Solver specific errors
         RANGE_ERROR
         RANGE_ERROR_MINIMUM_VELOCITY_REACHED
@@ -48,6 +46,10 @@ cdef extern from "include/bclib.h" nogil:
         OUT_OF_RANGE_ERROR
         ZERO_INIT_CONTINUE
         ZERO_INIT_DONE
+
+        ZERO_FINDING_ERROR
+
+        UNDEFINED_ERROR
 
     ctypedef struct Config_t:
         double cStepMultiplier

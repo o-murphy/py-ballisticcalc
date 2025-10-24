@@ -34,6 +34,13 @@ typedef struct
     double angle_at_max_rad;
 } MaxRangeResult_t;
 
+typedef struct
+{
+    double zero_finding_error;
+    int iterations_count;
+    double last_barrel_elevation_rad;
+} ZeroFindingError_t;
+
 typedef struct Engine_s Engine_t;
 
 typedef ErrorCode IntegrateFunc(
@@ -103,6 +110,15 @@ extern "C"
         double ALLOWED_ZERO_ERROR_FEET,
         ZeroInitialData_t *result,
         OutOfRangeError_t *error);
+
+    ErrorCode Engine_t_zero_angle(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error);
 
 #ifdef __cplusplus
 }

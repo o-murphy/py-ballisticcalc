@@ -295,3 +295,237 @@ ErrorCode Engine_t_init_zero_calculation(
 
     return ZERO_INIT_CONTINUE;
 }
+
+ErrorCode Engine_t_zero_angle(
+    Engine_t *eng,
+    double distance,
+    double APEX_IS_MAX_RANGE_RADIANS,
+    double ALLOWED_ZERO_ERROR_FEET,
+    double *result,
+    OutOfRangeError_t *range_error,
+    ZeroFindingError_t *zero_error)
+{
+    if (!eng || !result || !range_error || !zero_error)
+    {
+        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    }
+
+    ZeroInitialData_t init_data;
+    ErrorCode status = Engine_t_init_zero_calculation(
+        eng,
+        distance,
+        APEX_IS_MAX_RANGE_RADIANS,
+        ALLOWED_ZERO_ERROR_FEET,
+        &init_data,
+        &range_error);
+
+    if (status != ZERO_INIT_CONTINUE && status != ZERO_INIT_DONE)
+    {
+        // return status up
+        return status;
+    }
+
+    double look_angle_rad = init_data.look_angle_rad;
+    double slant_range_ft = init_data.slant_range_ft;
+    double target_x_ft = init_data.target_x_ft;
+    double target_y_ft = init_data.target_y_ft;
+
+    if (status == ZERO_INIT_DONE)
+    {
+        *result = look_angle_rad;
+    }
+
+    BaseTrajData_t hit;
+    BaseTrajSeq_t seq;
+    ErrorCode err;
+
+    double _cZeroFindingAccuracy = eng->config.cZeroFindingAccuracy;
+    int _cMaxIterations = eng->config.cMaxIterations;
+
+    // Enhanced zero-finding variables
+    int iterations_count = 0;
+    double range_error_ft = 9e9; // Absolute value of error from target distance along sight line
+    double prev_range_error_ft = 9e9;
+    double prev_height_error_ft = 9e9;
+    double damping_factor = 1.0; // Start with no damping
+    double damping_rate = 0.7;   // Damping rate for correction
+    double last_correction = 0.0;
+    double height_error_ft = _cZeroFindingAccuracy * 2; // Absolute value of error from sight line
+
+    // Ensure we can see drop at the target distance when launching along slant angle
+    double required_drop_ft = target_x_ft / 2.0 - target_y_ft;
+    double restore_cMaximumDrop = 0.0;
+    double restore_cMinimumAltitude = 0.0;
+    int has_restore_cMaximumDrop = 0;
+    int has_restore_cMinimumAltitude = 0;
+
+    double current_distance, height_diff_ft, look_dist_ft, range_diff_ft;
+    double trajectory_angle, sensitivity, denominator, correction, applied_correction;
+    double ca, sa;
+
+    // Backup and adjust constraints if needed, then ensure single restore via try/finally
+    // try:
+
+    if (fabs(eng->config.cMaximumDrop) < required_drop_ft)
+    {
+        restore_cMaximumDrop = eng->config.cMaximumDrop;
+        eng->config.cMaximumDrop = required_drop_ft;
+        has_restore_cMaximumDrop = 1;
+    }
+
+    if ((eng->config.cMinimumAltitude - eng->shot.alt0) > required_drop_ft)
+    {
+        restore_cMinimumAltitude = eng->config.cMinimumAltitude;
+        eng->config.cMinimumAltitude = eng->shot.alt0 - required_drop_ft;
+        has_restore_cMinimumAltitude = 1;
+    }
+
+    while (iterations_count < _cMaxIterations)
+    {
+        // Check height of trajectory at the zero distance (using current barrel_elevation)
+        BaseTrajSeq_t_init(&seq);
+        err = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq);
+
+        if (err == NO_ERROR || isRangeError(err))
+        {
+            // Do not mask Engine_t_integrate error
+            C_LOG(LOG_LEVEL_INFO, "Integration completed successfully or with acceptable termination code: (%d).", err);
+
+            err = NO_ERROR;
+            err = BaseTrajSeq_t_get_at(&result, KEY_POS_X, target_x_ft, -1, &hit);
+            if (err != NO_ERROR)
+            {
+                err = Engine_t_ERR(eng, RUNTIME_ERROR, "Failed to interpolate trajectory at target distance, error code: %d", err);
+                goto finally;
+            }
+        }
+        else
+        {
+            err = Engine_t_ERR(eng, err, "Critical: integration error: %s, error code: %d", eng->err_msg, err);
+            goto finally;
+        }
+        if (hit.time == 0.0)
+        {
+            // Integrator returned initial point - consider removing constraints
+            break;
+        }
+        current_distance = hit.position.x;
+        if (2 * current_distance < target_x_ft && eng->shot.barrel_elevation == 0.0 && look_angle_rad < 1.5)
+        {
+            // Degenerate case: little distance and zero elevation; try with some elevation
+            eng->shot.barrel_elevation = 0.01;
+            continue;
+        }
+
+        ca = cos(look_angle_rad);
+        sa = sin(look_angle_rad);
+        height_diff_ft = hit.position.y * ca - hit.position.x * sa; // slant_height
+        look_dist_ft = hit.position.x * ca + hit.position.y * sa;   // slant_distance
+        range_diff_ft = look_dist_ft - slant_range_ft;
+        range_error_ft = fabs(range_diff_ft);
+        height_error_ft = fabs(height_diff_ft);
+        trajectory_angle = atan2(hit.velocity.y, hit.velocity.x); // Flight angle at current distance
+
+        // Calculate sensitivity and correction
+        sensitivity = (tan(eng->shot.barrel_elevation - look_angle_rad) * tan(trajectory_angle - look_angle_rad));
+        if (sensitivity < -0.5)
+        {
+            denominator = look_dist_ft;
+        }
+        else
+        {
+            denominator = look_dist_ft * (1 + sensitivity);
+        }
+
+        if (fabs(denominator) > 1e-9)
+        {
+            correction = -height_diff_ft / denominator;
+        }
+        else
+        {
+            zero_error->zero_finding_error = height_error_ft;
+            zero_error->iterations_count = iterations_count;
+            zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
+            err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Correction denominator is zero");
+            goto finally;
+        }
+
+        if (range_error_ft > ALLOWED_ZERO_ERROR_FEET)
+        {
+            // We're still trying to reach zero_distance
+            // We're not getting closer to zero_distance
+            if (range_error_ft > prev_range_error_ft - 1e-6)
+            {
+                zero_error->zero_finding_error = range_error_ft;
+                zero_error->iterations_count = iterations_count;
+                zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
+                err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Distance non-convergent");
+                goto finally;
+            }
+        }
+        else if (height_error_ft > fabs(prev_height_error_ft))
+        {
+            damping_factor *= damping_rate;
+            if (damping_factor < 0.3)
+            {
+                zero_error->zero_finding_error = height_error_ft;
+                zero_error->iterations_count = iterations_count;
+                zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
+                err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Error non-convergent");
+                goto finally;
+            }
+            // Revert previous adjustment
+            eng->shot.barrel_elevation -= last_correction;
+            correction = last_correction;
+        }
+        else if (damping_factor < 1.0)
+        {
+            damping_factor = 1.0;
+        }
+
+        prev_range_error_ft = range_error_ft;
+        prev_height_error_ft = height_error_ft;
+        if (height_error_ft > _cZeroFindingAccuracy || range_error_ft > ALLOWED_ZERO_ERROR_FEET)
+        {
+            // Adjust barrel elevation to close height at zero distance
+            applied_correction = correction * damping_factor;
+            eng->shot.barrel_elevation += applied_correction;
+            last_correction = applied_correction;
+        }
+        else
+        {
+            // Current barrel_elevation hit zero: success!
+            break;
+        }
+        iterations_count++;
+    }
+
+finally:
+    // Restore original constraints
+    if (has_restore_cMaximumDrop)
+    {
+        eng->config.cMaximumDrop = restore_cMaximumDrop;
+    }
+    if (has_restore_cMinimumAltitude)
+    {
+        eng->config.cMinimumAltitude = restore_cMinimumAltitude;
+    }
+
+    if (height_error_ft > _cZeroFindingAccuracy || range_error_ft > ALLOWED_ZERO_ERROR_FEET)
+    {
+        // ZeroFindingError contains an instance of last barrel elevation;
+        // so caller can check how close zero is
+        zero_error->zero_finding_error = height_error_ft;
+        zero_error->iterations_count = iterations_count;
+        zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
+        err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "");
+    }
+
+    if (err == ZERO_FINDING_ERROR)
+    {
+    }
+
+    // success
+    *result = eng->shot.barrel_elevation;
+    return NO_ERROR;
+};
