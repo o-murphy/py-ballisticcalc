@@ -584,7 +584,30 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
     return NO_ERROR;
 }
 
-static ErrorCode BaseTrajSeq_t_interpolate_at_center_with_log(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+/**
+ * @file base_traj_seq_helpers.c
+ * @brief Helper functions for BaseTrajSeq interpolation and access.
+ */
+
+#include <math.h>
+#include "base_traj_seq.h"
+
+/**
+ * @brief Interpolate at center index with logging.
+ *
+ * @param seq Pointer to the trajectory sequence.
+ * @param idx Center index for interpolation.
+ * @param key_kind Kind of interpolation key.
+ * @param key_value Key value to interpolate at.
+ * @param out Output trajectory data.
+ * @return ErrorCode NO_ERROR if successful, otherwise error code.
+ */
+ErrorCode BaseTrajSeq_t_interpolate_at_center_with_log(
+    const BaseTrajSeq_t *seq,
+    ssize_t idx,
+    InterpKey key_kind,
+    double key_value,
+    BaseTrajData_t *out)
 {
     ErrorCode err = BaseTrajSeq_t_interpolate_at(seq, idx, key_kind, key_value, out);
     if (err != NO_ERROR)
@@ -596,6 +619,130 @@ static ErrorCode BaseTrajSeq_t_interpolate_at_center_with_log(const BaseTrajSeq_
     return NO_ERROR;
 }
 
+/**
+ * @brief Check if two double values are approximately equal.
+ *
+ * @param a First value.
+ * @param b Second value.
+ * @param epsilon Tolerance.
+ * @return 1 if close, 0 otherwise.
+ */
+static int BaseTrajSeq_t_is_close(double a, double b, double epsilon)
+{
+    return fabs(a - b) < epsilon;
+}
+
+/**
+ * @brief Get the key value of a BaseTraj element.
+ *
+ * @param elem Pointer to BaseTraj element.
+ * @param key_kind Kind of key.
+ * @return Value of the key.
+ */
+static double BaseTraj_t_key_val(const BaseTraj_t *elem, InterpKey key_kind)
+{
+    return BaseTraj_t_key_val_from_kind_buf(elem, key_kind);
+}
+
+/**
+ * @brief Find the starting index for a given start time.
+ *
+ * @param buf Buffer of trajectory points.
+ * @param n Length of buffer.
+ * @param start_time Start time to search from.
+ * @return Index of the first element with time >= start_time.
+ */
+static ssize_t BaseTrajSeq_t_find_start_index(const BaseTraj_t *buf, ssize_t n, double start_time)
+{
+    for (ssize_t i = 0; i < n; i++)
+    {
+        if (buf[i].time >= start_time)
+        {
+            return i;
+        }
+    }
+    return n - 1;
+}
+
+/**
+ * @brief Find the target index covering key_value for interpolation.
+ *
+ * @param buf Buffer of trajectory points.
+ * @param n Length of buffer.
+ * @param key_kind Kind of key.
+ * @param key_value Key value to interpolate.
+ * @param start_idx Index to start searching from.
+ * @return Target index for interpolation, -1 if not found.
+ */
+static ssize_t BaseTrajSeq_t_find_target_index(const BaseTraj_t *buf, ssize_t n, InterpKey key_kind, double key_value, ssize_t start_idx)
+{
+    double a, b;
+
+    // Forward search
+    for (ssize_t i = start_idx; i < n - 1; i++)
+    {
+        a = BaseTraj_t_key_val(&buf[i], key_kind);
+        b = BaseTraj_t_key_val(&buf[i + 1], key_kind);
+        if ((a <= key_value && key_value <= b) || (b <= key_value && key_value <= a))
+        {
+            return i + 1;
+        }
+    }
+
+    // Backward search
+    for (ssize_t i = start_idx; i > 0; i--)
+    {
+        a = BaseTraj_t_key_val(&buf[i], key_kind);
+        b = BaseTraj_t_key_val(&buf[i - 1], key_kind);
+        if ((b <= key_value && key_value <= a) || (a <= key_value && key_value <= b))
+        {
+            return i;
+        }
+    }
+
+    return -1; // not found
+}
+
+/**
+ * @brief Try to get exact value at index, return NO_ERROR if successful.
+ *
+ * @param seq Pointer to trajectory sequence.
+ * @param idx Index to check.
+ * @param key_kind Kind of key.
+ * @param key_value Key value to match.
+ * @param out Output trajectory data.
+ * @return NO_ERROR if exact match found, otherwise SEQUENCE_VALUE_ERROR.
+ */
+static ErrorCode BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+{
+    const BaseTraj_t *buf = seq->buffer;
+    double epsilon = 1e-9;
+
+    if (BaseTrajSeq_t_is_close(BaseTraj_t_key_val(&buf[idx], key_kind), key_value, epsilon))
+    {
+        ErrorCode err = BaseTrajSeq_t_get_item(seq, idx, out);
+        if (err != NO_ERROR)
+        {
+            C_LOG(LOG_LEVEL_ERROR, "Failed to get item at index %zd.", idx);
+            return SEQUENCE_INDEX_ERROR;
+        }
+        C_LOG(LOG_LEVEL_DEBUG, "Exact match found at index %zd.", idx);
+        return NO_ERROR;
+    }
+
+    return SEQUENCE_VALUE_ERROR; // not an exact match
+}
+
+/**
+ * @brief Get trajectory data at a given key value, with optional start time.
+ *
+ * @param seq Pointer to trajectory sequence.
+ * @param key_kind Kind of key to search/interpolate.
+ * @param key_value Key value to get.
+ * @param start_from_time Optional start time (use -1 if not used).
+ * @param out Output trajectory data.
+ * @return ErrorCode NO_ERROR if successful, otherwise error code.
+ */
 ErrorCode BaseTrajSeq_t_get_at(
     const BaseTrajSeq_t *seq,
     InterpKey key_kind,
@@ -609,134 +756,48 @@ ErrorCode BaseTrajSeq_t_get_at(
         return SEQUENCE_INPUT_ERROR;
     }
 
-    ssize_t i, n, start_idx, target_idx, center_idx;
-    n = seq->length;
+    ssize_t n = seq->length;
     if (n < 3)
     {
         C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
         return SEQUENCE_VALUE_ERROR;
     }
 
-    double curr_val, next_val;
-    double a, b, a2, b2;
-    int search_forward;
-    BaseTraj_t *buf;
-    double sft = 0.0;
-    double epsilon = 1e-9;
-    ErrorCode err;
+    BaseTraj_t *buf = seq->buffer;
+    ssize_t target_idx = -1;
 
-    // If start_from_time is provided, mimic HitResult.get_at search strategy
-    if (start_from_time >= 0.0)
+    // Search from start_from_time if provided
+    if (start_from_time > 0.0 && key_kind != KEY_TIME)
     {
-        sft = start_from_time;
-    }
-    if (sft > 0.0 && key_kind != KEY_TIME)
-    {
-        buf = seq->buffer;
-        start_idx = 0;
-        // find first index with time >= start_from_time
-        i = 0;
-        while (i < n)
-        {
-            if (buf[i].time >= sft)
-            {
-                start_idx = i;
-                break;
-            }
-            i++;
-        }
-        curr_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx], key_kind);
-        if (fabs(curr_val - key_value) < epsilon)
-        {
-            err = BaseTrajSeq_t_get_item(seq, start_idx, out);
-            if (err != NO_ERROR)
-            {
-                C_LOG(LOG_LEVEL_ERROR, "Failed to get item at index %zd.", start_idx);
-                return SEQUENCE_INDEX_ERROR; // FIXME: Should return specific error?
-            }
-            C_LOG(LOG_LEVEL_DEBUG, "Exact match found at start index %zd.", start_idx);
+        ssize_t start_idx = BaseTrajSeq_t_find_start_index(buf, n, start_from_time);
+
+        // Try exact match at start index
+        ErrorCode exact_err = BaseTrajSeq_t_try_get_exact(seq, start_idx, key_kind, key_value, out);
+        if (exact_err == NO_ERROR)
             return NO_ERROR;
-        }
-        search_forward = 1;
-        if (start_idx == n - 1)
-        {
-            search_forward = 0;
-        }
-        else if (0 < start_idx < n - 1)
-        {
-            next_val = BaseTraj_t_key_val_from_kind_buf(&buf[start_idx + 1], key_kind);
-            if (
-                (next_val > curr_val && key_value > curr_val) || (next_val < curr_val && key_value < curr_val))
-            {
-                search_forward = 1;
-            }
-            else
-            {
-                search_forward = 0;
-            }
-        }
 
-        target_idx = -1;
-        if (search_forward)
-        {
-            i = start_idx;
-            while (i < n - 1)
-            {
-                a = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind);
-                b = BaseTraj_t_key_val_from_kind_buf(&buf[i + 1], key_kind);
-                if ((a < key_value <= b) || (b <= key_value < a))
-                {
-                    target_idx = i + 1;
-                    break;
-                }
-                i++;
-            }
-        }
-        if (target_idx == -1)
-        {
-            i = start_idx;
-            while (i > 0)
-            {
-                a2 = BaseTraj_t_key_val_from_kind_buf(&buf[i], key_kind);
-                b2 = BaseTraj_t_key_val_from_kind_buf(&buf[i - 1], key_kind);
-                if ((b2 <= key_value < a2) || (a2 < key_value <= b2))
-                {
-                    target_idx = i;
-                    break;
-                }
-                i--;
-            }
-        }
-        if (target_idx == -1)
-        {
-            C_LOG(LOG_LEVEL_ERROR, "Key value %.6f out of range for interpolation.", key_value);
-            return SEQUENCE_ARITHMETIC_ERROR;
-        }
-        if (fabs(BaseTraj_t_key_val_from_kind_buf(&buf[target_idx], key_kind) - key_value) < epsilon)
-        {
-            err = BaseTrajSeq_t_get_item(seq, target_idx, out);
-            if (err != NO_ERROR)
-            {
-                C_LOG(LOG_LEVEL_ERROR, "Failed to get item at index %zd.", target_idx);
-                return SEQUENCE_INDEX_ERROR; // FIXME: Should return specific error?
-            }
-            C_LOG(LOG_LEVEL_DEBUG, "Exact match found at target index %zd.", target_idx);
-            return NO_ERROR;
-        }
-        if (target_idx == 0)
-        {
-            target_idx = 1;
-        }
-        center_idx = target_idx < n - 1 ? target_idx : n - 2;
-        return BaseTrajSeq_t_interpolate_at_center_with_log(seq, center_idx, key_kind, key_value, out);
+        // Find target index for interpolation
+        target_idx = BaseTrajSeq_t_find_target_index(buf, n, key_kind, key_value, start_idx);
     }
 
-    // Default: bisect across entire range
-    ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(seq, key_kind, key_value);
-    if (center < 0)
+    // If not found, bisect the whole range
+    if (target_idx < 0)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
-        return SEQUENCE_VALUE_ERROR;
+        ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(seq, key_kind, key_value);
+        if (center < 0)
+        {
+            C_LOG(LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
+            return SEQUENCE_VALUE_ERROR;
+        }
+        target_idx = center < n - 1 ? center : n - 2;
     }
-    return BaseTrajSeq_t_interpolate_at_center_with_log(seq, center, key_kind, key_value, out);
+
+    // Try exact match at target index
+    ErrorCode exact_err = BaseTrajSeq_t_try_get_exact(seq, target_idx, key_kind, key_value, out);
+    if (exact_err == NO_ERROR)
+        return NO_ERROR;
+
+    // Otherwise interpolate at center
+    ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;
+    return BaseTrajSeq_t_interpolate_at_center_with_log(seq, center_idx, key_kind, key_value, out);
 }
