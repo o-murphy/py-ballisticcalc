@@ -23,7 +23,6 @@ cdef extern from "include/engine.h" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
     ctypedef struct ZeroInitialData_t:
-        int status
         double look_angle_rad
         double slant_range_ft
         double target_x_ft
@@ -33,6 +32,11 @@ cdef extern from "include/engine.h" nogil:
     ctypedef struct MaxRangeResult_t:
         double max_range_ft
         double angle_at_max_rad
+
+    ctypedef struct OutOfRangeError_t:
+        double requested_distance_ft
+        double max_range_ft
+        double look_angle_rad
 
     # Forward declaration
     struct Engine_s
@@ -62,6 +66,8 @@ cdef extern from "include/engine.h" nogil:
         IntegrateFuncPtr integrate_func_ptr
         char err_msg[MAX_ERR_MSG_LEN]
 
+    int isRangeError(ErrorCode err) noexcept nogil
+
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 
     ErrorCode Engine_t_integrate(
@@ -84,6 +90,15 @@ cdef extern from "include/engine.h" nogil:
         double target_x_ft,
         double target_y_ft,
         double *out_error_ft
+    ) noexcept nogil
+
+    ErrorCode Engine_t_init_zero_calculation(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        ZeroInitialData_t *result,
+        OutOfRangeError_t *error
     ) noexcept nogil
 
 
@@ -110,10 +125,10 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         object shot_info
     )
-    cdef ZeroInitialData_t _init_zero_calculation(
+    cdef ErrorCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr,
-        double distance
+        double distance,
+        ZeroInitialData_t *out,
     )
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,

@@ -5,6 +5,7 @@
 #include "bclib.h"
 #include "base_traj_seq.h"
 
+#include <math.h>
 #include <stdarg.h> // for va_list, va_start, va_end, va_copy
 #include <stdio.h>  // for fprintf
 #include <string.h> // for vsnprintf
@@ -13,13 +14,19 @@
 
 typedef struct
 {
-    int status;
     double look_angle_rad;
     double slant_range_ft;
     double target_x_ft;
     double target_y_ft;
     double start_height_ft;
 } ZeroInitialData_t;
+
+typedef struct
+{
+    double requested_distance_ft;
+    double max_range_ft;
+    double look_angle_rad;
+} OutOfRangeError_t;
 
 typedef struct
 {
@@ -69,6 +76,8 @@ extern "C"
 
     void Engine_t_release_trajectory(Engine_t *eng);
 
+    int isRangeError(ErrorCode err);
+
     ErrorCode Engine_t_integrate(
         Engine_t *eng,
         double range_limit_ft,
@@ -86,10 +95,13 @@ extern "C"
         double target_y_ft,
         double *out_error_ft);
 
-    // ErrorCode Engine_t_init_zero_calculation(
-    //     Engine_t *eng,
-    //     double distance,
-    //     ZeroInitialData_t *result);
+    ErrorCode Engine_t_init_zero_calculation(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        ZeroInitialData_t *result,
+        OutOfRangeError_t *error);
 
 #ifdef __cplusplus
 }

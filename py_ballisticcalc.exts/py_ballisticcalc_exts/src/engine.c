@@ -33,6 +33,20 @@ ErrorCode Engine_t_log_and_save_error(
     return code;
 }
 
+int isRangeError(ErrorCode err)
+{
+    switch (err)
+    {
+    case RANGE_ERROR:
+    case RANGE_ERROR_MAXIMUM_DROP_REACHED:
+    case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+    case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
 void Engine_t_release_trajectory(Engine_t *eng)
 {
     if (eng == NULL)
@@ -63,10 +77,11 @@ ErrorCode Engine_t_integrate(
 
     ErrorCode err = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 
-    if (err != NO_ERROR)
-    {
-        Engine_t_ERR(eng, err, "error code: %d", err);
-    }
+    // // fix: do not overwrite integrator_func error
+    // if (err != NO_ERROR)
+    // {
+    //     Engine_t_ERR(eng, err, "error code: %d", err);
+    // }
     return err;
 }
 
@@ -100,7 +115,7 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     // try
     err = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
     // allow RANGE_ERROR
-    if (err == NO_ERROR || err >= RANGE_ERROR)
+    if (err == NO_ERROR || isRangeError(err))
     {
         C_LOG(LOG_LEVEL_DEBUG, "Integration completed successfully or with acceptable termination code: (%d).", err);
         err = NO_ERROR;
@@ -166,7 +181,7 @@ ErrorCode Engine_t_error_at_distance(
         TFLAG_NONE,
         &trajectory);
 
-    if (err == NO_ERROR || err >= RANGE_ERROR)
+    if (err == NO_ERROR || isRangeError(err))
     {
         // If trajectory is too short for cubic interpolation, treat as unreachable
         if (trajectory.length >= 3)
@@ -176,7 +191,9 @@ ErrorCode Engine_t_error_at_distance(
             {
                 if (BaseTrajSeq_t_get_at(&trajectory, KEY_POS_X, target_x_ft, -1, &hit) == NO_ERROR)
                 {
-                    *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
+                    // FIXME: possible fix ?
+                    // *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
+                    *out_error_ft = hit.position.y - target_y_ft;
                 }
             }
         }
@@ -198,78 +215,53 @@ ErrorCode Engine_t_error_at_distance(
     return err;
 };
 
-// ErrorCode Engine_t_init_zero_calculation(
-//     Engine_t *eng,
-//     double distance,
-//     double APEX_IS_MAX_RANGE_RADIANS,
-//     double ALLOWED_ZERO_ERROR_FEET,
-//     ZeroInitialData_t *result)
-// {
-//     double slant_range_ft = distance;
-//     double look_angle_rad = eng->shot.look_angle;
-//     double target_x_ft = slant_range_ft * cos(look_angle_rad);
-//     double target_y_ft = slant_range_ft * sin(look_angle_rad);
-//     double start_height_ft = -eng->shot.sight_height * eng->shot.cant_cosine;
-//     BaseTrajData_t apex;
-//     double apex_slant_ft;
-//     ErrorCode err;
+ErrorCode Engine_t_init_zero_calculation(
+    Engine_t *eng,
+    double distance,
+    double APEX_IS_MAX_RANGE_RADIANS,
+    double ALLOWED_ZERO_ERROR_FEET,
+    ZeroInitialData_t *result,
+    OutOfRangeError_t *error)
+{
+    ErrorCode err;
+    BaseTrajData_t apex;
+    double apex_slant_ft;
 
-//     // Edge case: Very close shot
-//     if (fabs(slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
-//     {
-//         result->status = 1;
-//         result->look_angle_rad = look_angle_rad;
-//         result->slant_range_ft = slant_range_ft;
-//         result->target_x_ft = target_x_ft;
-//         result->target_y_ft = target_y_ft;
-//         result->start_height_ft = start_height_ft;
-//         return NO_ERROR;
-//     }
+    result->slant_range_ft = distance;
+    result->look_angle_rad = eng->shot.look_angle;
+    result->target_x_ft = result->slant_range_ft * cos(result->look_angle_rad);
+    result->target_y_ft = result->slant_range_ft * sin(result->look_angle_rad);
+    result->start_height_ft = -eng->shot.sight_height * eng->shot.cant_cosine;
 
-//     // Edge case: Very close shot; ignore gravity and drag
-//     if (fabs(slant_range_ft) < 2.0 * fmax(fabs(start_height_ft), eng->config.cStepMultiplier))
-//     {
-//         result->status = 1;
-//         result->look_angle_rad = atan2(target_y_ft + start_height_ft, target_x_ft);
-//         result->slant_range_ft = slant_range_ft;
-//         result->target_x_ft = target_x_ft;
-//         result->target_y_ft = target_y_ft;
-//         result->start_height_ft = start_height_ft;
-//         return NO_ERROR;
-//     }
+    // Edge case: Very close shot
+    if (fabs(result->slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
+    {
+        return ZERO_INIT_DONE;
+    }
 
-//     // Edge case: Virtually vertical shot; just check if it can reach the target
-//     if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
-//     { // π/2 radians = 90 degrees
-//         // Compute slant distance at apex using robust accessor
-//         err = Engine_t_find_apex(eng, &apex);
-//         if (err != NO_ERROR)
-//         {
-//             return err;
-//         }
-//         apex_slant_ft = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
-//         if (apex_slant_ft < slant_range_ft)
-//         {
-//             // result->status = 1;
-//             // result->look_angle_rad = look_angle_rad;
-//             // result->distance = distance;
-//             // result->apex_slant_ft = apex_slant_ft;
-//             // return RUNTIME_ERROR;
-//         }
-//         result->status = 1;
-//         result->look_angle_rad = look_angle_rad;
-//         result->slant_range_ft = slant_range_ft;
-//         result->target_x_ft = target_x_ft;
-//         result->target_y_ft = target_y_ft;
-//         result->start_height_ft = start_height_ft;
-//         return NO_ERROR;
-//     }
+    // Edge case: Very close shot; ignore gravity and drag
+    if (fabs(result->slant_range_ft) < 2.0 * fmax(fabs(result->start_height_ft),
+                                                  eng->config.cStepMultiplier))
+    {
+        result->look_angle_rad = atan2(result->target_y_ft + result->start_height_ft, result->target_x_ft);
+        return ZERO_INIT_DONE;
+    }
 
-//     result->status = 0;
-//     result->look_angle_rad = look_angle_rad;
-//     result->slant_range_ft = slant_range_ft;
-//     result->target_x_ft = target_x_ft;
-//     result->target_y_ft = target_y_ft;
-//     result->start_height_ft = start_height_ft;
-//     return NO_ERROR;
-// }
+    // Edge case: Virtually vertical shot; just check if it can reach the target
+    if (fabs(result->look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+    {
+        // Compute slant distance at apex using robust accessor
+        err = Engine_t_find_apex(eng, &apex);
+        apex_slant_ft = apex.position.x * cos(result->look_angle_rad) + apex.position.y * sin(result->look_angle_rad);
+        if (apex_slant_ft < result->slant_range_ft)
+        {
+            error->requested_distance_ft = result->slant_range_ft;
+            error->max_range_ft = apex_slant_ft;
+            error->look_angle_rad = result->look_angle_rad;
+            return Engine_t_ERR(eng, OUT_OF_RANGE_ERROR, "Out of range");
+        }
+        return ZERO_INIT_DONE;
+    }
+
+    return ZERO_INIT_CONTINUE;
+}

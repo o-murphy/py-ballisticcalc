@@ -8,7 +8,7 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
 # noinspection PyUnresolvedReferences
-from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, fmax, copysign
+from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, copysign
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
@@ -75,7 +75,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Args:
             _config (BaseEngineConfig): The engine configuration.
 
-        IMPORTANT:      
+        IMPORTANT:
             Avoid calling Python functions inside __init__!
             __init__ is called after __cinit__, so any memory allocated in __cinit__
             that is not referenced in Python will be leaked if __init__ raises an exception.
@@ -190,7 +190,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             TrajectoryData: The trajectory data at the apex.
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef BaseTrajDataT result
         cdef object props
         try:
@@ -338,7 +338,7 @@ cdef class CythonizedBaseIntegrationEngine:
             &out_error_ft
         )
 
-        if err == ErrorCode.NO_ERROR or err >= ErrorCode.RANGE_ERROR:
+        if err == ErrorCode.NO_ERROR or isRangeError(err):
             return out_error_ft
 
         if err == ErrorCode.VALUE_ERROR:
@@ -433,10 +433,10 @@ cdef class CythonizedBaseIntegrationEngine:
 
         return &self._engine.shot
 
-    cdef ZeroInitialData_t _init_zero_calculation(
+    cdef ErrorCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr,
-        double distance
+        double distance,
+        ZeroInitialData_t *out,
     ):
         """
         Initializes the zero calculation for the given shot and distance.
@@ -450,51 +450,27 @@ cdef class CythonizedBaseIntegrationEngine:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
-        cdef:
-            double slant_range_ft = distance
-            double look_angle_rad = shot_props_ptr.look_angle
-            double target_x_ft = slant_range_ft * cos(look_angle_rad)
-            double target_y_ft = slant_range_ft * sin(look_angle_rad)
-            double start_height_ft = -shot_props_ptr.sight_height * shot_props_ptr.cant_cosine
-            BaseTrajData_t apex
-            double apex_slant_ft
 
-        # Edge case: Very close shot
-        if fabs(slant_range_ft) < _ALLOWED_ZERO_ERROR_FEET:
-            return ZeroInitialData_t(
-                1, look_angle_rad,
-                slant_range_ft, target_x_ft, target_y_ft, start_height_ft
-            )
+        cdef OutOfRangeError_t error
+        cdef ErrorCode err
 
-        # Edge case: Very close shot; ignore gravity and drag
-        if fabs(slant_range_ft) < 2.0 * fmax(fabs(start_height_ft), self._engine.config.cStepMultiplier):
-            return ZeroInitialData_t(
-                1, atan2(target_y_ft + start_height_ft, target_x_ft),
-                slant_range_ft, target_x_ft, target_y_ft, start_height_ft
-            )
-
-        # Edge case: Virtually vertical shot; just check if it can reach the target
-        if fabs(look_angle_rad - 1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
-            # Compute slant distance at apex using robust accessor
-            apex = self._find_apex()
-            apex_slant_ft = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad)
-            if apex_slant_ft < slant_range_ft:
-                raise OutOfRangeError(
-                    _new_feet(distance),
-                    _new_feet(apex_slant_ft),
-                    _new_rad(look_angle_rad)
-                )
-
-            return ZeroInitialData_t(
-                1, look_angle_rad, slant_range_ft,
-                target_x_ft, target_y_ft, start_height_ft
-            )
-
-        # return (0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
-        return ZeroInitialData_t(
-            0, look_angle_rad, slant_range_ft,
-            target_x_ft, target_y_ft, start_height_ft
+        err = Engine_t_init_zero_calculation(
+            &self._engine,
+            distance,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            out,
+            &error,
         )
+
+        if err == ErrorCode.OUT_OF_RANGE_ERROR:
+            raise OutOfRangeError(
+                _new_feet(error.requested_distance_ft),
+                _new_feet(error.max_range_ft),
+                _new_rad(error.look_angle_rad)
+            )
+
+        return err
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -514,16 +490,16 @@ cdef class CythonizedBaseIntegrationEngine:
             double: The calculated zero angle in radians.
         """
         # Get initialization data
-        cdef ZeroInitialData_t init_data = self._init_zero_calculation(shot_props_ptr, distance)
+        cdef ZeroInitialData_t init_data
+        cdef ErrorCode status = self._init_zero_calculation(distance, &init_data)
         cdef:
-            int status = init_data.status
             double look_angle_rad = init_data.look_angle_rad
             double slant_range_ft = init_data.slant_range_ft
             double target_x_ft = init_data.target_x_ft
             double target_y_ft = init_data.target_y_ft
             double start_height_ft = init_data.start_height_ft
 
-        if status == 1:  # DONE
+        if status == ErrorCode.ZERO_INIT_DONE:  # DONE
             return look_angle_rad
 
         # 1. Find the maximum possible range to establish a search bracket.
@@ -843,16 +819,16 @@ cdef class CythonizedBaseIntegrationEngine:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
         # Get initialization data using the new method
-        cdef ZeroInitialData_t init_data = self._init_zero_calculation(shot_props_ptr, distance)
+        cdef ZeroInitialData_t init_data
+        cdef ErrorCode status = self._init_zero_calculation(distance, &init_data)
         cdef:
-            int status = init_data.status
             double look_angle_rad = init_data.look_angle_rad
             double slant_range_ft = init_data.slant_range_ft
             double target_x_ft = init_data.target_x_ft
             double target_y_ft = init_data.target_y_ft
             # double start_height_ft = init_data.start_height_ft  # FIXME: unused definition
 
-        if status == 1:  # DONE
+        if status == ErrorCode.ZERO_INIT_DONE:  # DONE
             return look_angle_rad
 
         cdef:
@@ -1043,7 +1019,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if err == ErrorCode.VALUE_ERROR:
             raise ValueError(self.error_message)
 
-        if err < ErrorCode.RANGE_ERROR:
+        if not isRangeError(err):
             raise SolverRuntimeError(
                 f"undefined error in integrate_func, "
                 f"error code: {err}, {self.error_message}"

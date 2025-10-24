@@ -45,6 +45,10 @@ cdef extern from "include/bclib.h" nogil:
         RANGE_ERROR_MAXIMUM_DROP_REACHED
         RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
 
+        OUT_OF_RANGE_ERROR
+        ZERO_INIT_CONTINUE
+        ZERO_INIT_DONE
+
     ctypedef struct Config_t:
         double cStepMultiplier
         double cZeroFindingAccuracy
