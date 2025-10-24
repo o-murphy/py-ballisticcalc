@@ -1015,7 +1015,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
         if err == ErrorCode.INPUT_ERROR:
-            raise ValueError(f"Invalid input (NULL pointer): {self.error_message}: error code: {err}")
+            raise TypeError(f"Invalid input (NULL pointer): {self.error_message}: error code: {err}")
 
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
 
