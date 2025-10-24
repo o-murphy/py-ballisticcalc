@@ -38,6 +38,11 @@ cdef extern from "include/engine.h" nogil:
         double max_range_ft
         double look_angle_rad
 
+    ctypedef struct ZeroFindingError_t:
+        double zero_finding_error
+        int iterations_count
+        double last_barrel_elevation_rad
+
     # Forward declaration
     struct Engine_s
 
@@ -100,6 +105,16 @@ cdef extern from "include/engine.h" nogil:
         double ALLOWED_ZERO_ERROR_FEET,
         ZeroInitialData_t *result,
         OutOfRangeError_t *error
+    ) noexcept nogil
+
+    ErrorCode Engine_t_zero_angle(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error
     ) noexcept nogil
 
 
@@ -173,4 +188,9 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         ErrorCode err,
         OutOfRangeError_t *err_data
+    )
+    cdef void _raise_on_zero_finding_error(
+        CythonizedBaseIntegrationEngine self,
+        ErrorCode err,
+        ZeroFindingError_t *zero_error
     )
