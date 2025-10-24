@@ -24,9 +24,6 @@ cdef extern from "include/base_traj_seq.h" nogil:
         size_t length
         size_t capacity
 
-    double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t* p, InterpKey key_kind) noexcept nogil
-    double BaseTraj_t_slant_val_buf(const BaseTraj_t* p, double ca, double sa) noexcept nogil
-
     ErrorCode BaseTrajSeq_t_interpolate_at(
         const BaseTrajSeq_t *seq,
         ssize_t idx,

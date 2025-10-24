@@ -50,17 +50,6 @@ extern "C"
 {
 #endif
 
-    /**
-     * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
-     *
-     * @param p A pointer to the BaseTraj_t struct.
-     * @param key_kind The InterpKey indicating which value to retrieve.
-     * @return The corresponding double value, or 0.0 if the key is unrecognized.
-     */
-    double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind);
-
-    double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa);
-
     void BaseTrajSeq_t_init(BaseTrajSeq_t *seq);
     void BaseTrajSeq_t_release(BaseTrajSeq_t *seq);
     

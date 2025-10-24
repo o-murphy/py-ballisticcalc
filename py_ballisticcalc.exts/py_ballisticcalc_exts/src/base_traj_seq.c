@@ -12,7 +12,7 @@
  * @param key_kind The InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
-double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind)
+static double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind)
 {
     // Note: In C, accessing a struct member via a pointer uses '->' instead of '.'
     switch (key_kind)
@@ -38,9 +38,20 @@ double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind)
     }
 }
 
-double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
+/**
+ * Computes the slant height of a trajectory point relative to a given look angle.
+ *
+ * This function calculates the slant height using the formula:
+ * slant_height = py * cos(angle) - px * sin(angle),
+ * where `ca` and `sa` are the cosine and sine of the look angle, respectively.
+ *
+ * @param p Pointer to the BaseTraj_t trajectory point.
+ * @param ca Cosine of the look angle.
+ * @param sa Sine of the look angle.
+ * @return The computed slant height, or NAN if the input pointer is NULL.
+ */
+static double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
 {
-    /* Computes the slant_height of a trajectory point 'p' given cosine 'ca' and sine 'sa' of look_angle. */
     if (p == NULL)
     {
         return NAN;
@@ -49,130 +60,69 @@ double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
 }
 
 /**
- * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
+ * Interpolates a trajectory point at a specific index using its neighbors.
  *
- * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
- * @return 1 on success, 0 on failure.
+ * This function performs 3-point monotone-preserving PCHIP interpolation
+ * (Hermite evaluation) for all components of a trajectory point.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t sequence.
+ * @param idx Index around which interpolation is performed (uses idx-1, idx, idx+1).
+ *            Negative indices are counted from the end of the buffer.
+ * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
+ * @param key_value The target value of the key to interpolate at.
+ * @param out Pointer to a BaseTraj_t struct where the interpolated result will be stored.
+ * @return NO_ERROR on success, or an ErrorCode on failure.
  */
 static ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
 {
     if (!seq || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR; // Invalid input
+        return SEQUENCE_INPUT_ERROR;
     }
 
-    // Cast Cython's size_t to C's ssize_t for bounds checking
     BaseTraj_t *buffer = seq->buffer;
     ssize_t length = seq->length;
-    BaseTraj_t *p0;
-    BaseTraj_t *p1;
-    BaseTraj_t *p2;
-    double ox0, ox1, ox2;
-    double x = key_value;
-    double time, px, py, pz, vx, vy, vz, mach;
 
-    // Handle negative index
+    // Handle negative indices
     if (idx < 0)
-    {
         idx += length;
-    }
 
-    // Check if we have valid points on both sides
+    // Ensure we have valid points on both sides
     if (idx < 1 || idx >= length - 1)
     {
         C_LOG(LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
         return SEQUENCE_VALUE_ERROR;
     }
 
-    // Use standard C array indexing instead of complex pointer arithmetic
-    p0 = &buffer[idx - 1];
-    p1 = &buffer[idx];
-    p2 = &buffer[idx + 1];
+    BaseTraj_t *p0 = &buffer[idx - 1];
+    BaseTraj_t *p1 = &buffer[idx];
+    BaseTraj_t *p2 = &buffer[idx + 1];
 
-    // Read x values from buffer points using switch/case
-    switch (key_kind)
-    {
-    case KEY_TIME:
-        ox0 = p0->time;
-        ox1 = p1->time;
-        ox2 = p2->time;
-        break;
-    case KEY_MACH:
-        ox0 = p0->mach;
-        ox1 = p1->mach;
-        ox2 = p2->mach;
-        break;
-    case KEY_POS_X:
-        ox0 = p0->px;
-        ox1 = p1->px;
-        ox2 = p2->px;
-        break;
-    case KEY_POS_Y:
-        ox0 = p0->py;
-        ox1 = p1->py;
-        ox2 = p2->py;
-        break;
-    case KEY_POS_Z:
-        ox0 = p0->pz;
-        ox1 = p1->pz;
-        ox2 = p2->pz;
-        break;
-    case KEY_VEL_X:
-        ox0 = p0->vx;
-        ox1 = p1->vx;
-        ox2 = p2->vx;
-        break;
-    case KEY_VEL_Y:
-        ox0 = p0->vy;
-        ox1 = p1->vy;
-        ox2 = p2->vy;
-        break;
-    case KEY_VEL_Z:
-        ox0 = p0->vz;
-        ox1 = p1->vz;
-        ox2 = p2->vz;
-        break;
-    default:
-        // If key_kind is not recognized, interpolation is impossible.
-        C_LOG(LOG_LEVEL_ERROR, "Unrecognized InterpKey.");
-        return SEQUENCE_KEY_ERROR;
-    }
+    // Get key values from the three points using helper
+    double ox0 = BaseTraj_t_key_val_from_kind_buf(p0, key_kind);
+    double ox1 = BaseTraj_t_key_val_from_kind_buf(p1, key_kind);
+    double ox2 = BaseTraj_t_key_val_from_kind_buf(p2, key_kind);
 
-    // Check for duplicate x values (zero division risk in PCHIP)
+    // Check for duplicate key values (would cause division by zero)
     if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Duplicate x values detected; cannot interpolate.");
+        C_LOG(LOG_LEVEL_ERROR, "Duplicate key values detected; cannot interpolate.");
         return SEQUENCE_VALUE_ERROR;
     }
 
-    // Interpolate all components using the external C function interpolate_3_pt
-    if (key_kind == KEY_TIME)
-    {
-        time = x;
-    }
-    else
-    {
-        time = interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
-    }
+    // Interpolate all trajectory components
+    double x = key_value;
+    double time = (key_kind == KEY_TIME) ? x : interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+    double px = interpolate_3_pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
+    double py = interpolate_3_pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
+    double pz = interpolate_3_pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
+    double vx = interpolate_3_pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
+    double vy = interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
+    double vz = interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
+    double mach = (key_kind == KEY_MACH) ? x : interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
 
-    px = interpolate_3_pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
-    py = interpolate_3_pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
-    pz = interpolate_3_pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
-    vx = interpolate_3_pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
-    vy = interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
-    vz = interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
-
-    if (key_kind == KEY_MACH)
-    {
-        mach = x;
-    }
-    else
-    {
-        mach = interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
-    }
-
-    // Write results to the output BaseTraj_t struct (use -> for pointer access)
+    // Store results
     out->time = time;
     out->px = px;
     out->py = py;
@@ -181,6 +131,7 @@ static ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     out->vy = vy;
     out->vz = vz;
     out->mach = mach;
+
     return NO_ERROR;
 }
 
@@ -204,197 +155,234 @@ ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, In
     return NO_ERROR;
 }
 
+/**
+ * Initializes a BaseTrajSeq_t structure.
+ *
+ * Sets the buffer to NULL and length/capacity to 0.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t structure to initialize.
+ */
 void BaseTrajSeq_t_init(BaseTrajSeq_t *seq)
 {
+    if (seq == NULL)
+        return; // safe guard
+
     seq->buffer = NULL;
     seq->length = 0;
     seq->capacity = 0;
 }
 
+/**
+ * Releases resources used by a BaseTrajSeq_t structure.
+ *
+ * Frees the internal buffer and resets all fields to default values.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t structure to release.
+ */
 void BaseTrajSeq_t_release(BaseTrajSeq_t *seq)
 {
-    if (seq != NULL)
-    {
-        if (seq->buffer != NULL)
-        {
-            free(seq->buffer);
-            seq->buffer = NULL;
-        }
-    }
-    return;
+    if (seq == NULL)
+        return;
+
+    free(seq->buffer); // safe even if buffer is NULL
+    seq->buffer = NULL;
+    seq->length = 0;
+    seq->capacity = 0;
 }
 
+/**
+ * Returns the length of the trajectory sequence.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t structure.
+ * @return The number of elements in the sequence, or -1 if seq is NULL.
+ */
 ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq)
 {
-    if (seq != NULL)
-    {
-        return (ssize_t)seq->length;
-    }
-    return (ssize_t)-1;
+    return seq ? (ssize_t)seq->length : -1;
 }
 
-BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t idx)
+/**
+ * Retrieve a pointer to a trajectory element at the given index.
+ * Supports negative indices: -1 = last element, -2 = second-to-last, etc.
+ *
+ * @param seq Pointer to the trajectory sequence.
+ * @param idx Index of the element to retrieve. Can be negative.
+ * @return Pointer to the BaseTraj_t element, or NULL if index is out of bounds.
+ */
+inline BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t idx)
 {
-    if (seq == NULL)
+    if (!seq || !seq->buffer || seq->length == 0)
     {
         return NULL;
     }
 
     ssize_t len = (ssize_t)seq->length;
-    if (len <= 0)
-    {
-        return NULL;
-    }
+
+    // Adjust negative indices
     if (idx < 0)
     {
         idx += len;
     }
-    if (idx < 0 || idx >= len)
+
+    // Out-of-bounds check
+    if ((size_t)idx >= (size_t)len)
     {
         return NULL;
     }
-    return seq->buffer + idx;
+
+    return &seq->buffer[idx];
 }
 
 /**
- * @brief Checks and ensures the minimum buffer capacity.
+ * @brief Ensure that the sequence has at least `min_capacity` slots.
  *
- * @param seq Pointer to the sequence structure.
- * @param min_capacity The minimum required capacity.
- * @return int 0 on success, -1 on memory allocation error.
+ * This function safely allocates a new buffer if the current capacity is insufficient,
+ * copies existing elements to the new buffer, and frees the old buffer.
+ *
+ * It avoids using realloc to ensure that existing memory is not invalidated in case
+ * of allocation failure.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t structure.
+ * @param min_capacity Minimum required number of elements.
+ * @return ErrorCode NO_ERROR on success, SEQUENCE_MEMORY_ERROR on allocation failure,
+ *         SEQUENCE_INPUT_ERROR if seq is NULL.
  */
 ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
-    if (seq == NULL)
+    if (!seq)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return SEQUENCE_INPUT_ERROR;
     }
 
-    size_t new_capacity;
-    BaseTraj_t *new_buffer;
-    size_t bytes_copy;
-
+    // If current capacity is enough, do nothing
     if (min_capacity <= seq->capacity)
     {
         C_LOG(LOG_LEVEL_DEBUG, "Current capacity sufficient (%zu >= %zu).", seq->capacity, min_capacity);
         return NO_ERROR;
     }
 
-    if (seq->capacity > 0)
-    {
-        new_capacity = seq->capacity * 2;
-    }
-    else
-    {
-        new_capacity = 64;
-    }
-
+    // Determine new capacity: double current or start from 64
+    size_t new_capacity = seq->capacity > 0 ? seq->capacity * 2 : 64;
     if (new_capacity < min_capacity)
-    {
         new_capacity = min_capacity;
-    }
 
-    new_buffer = (BaseTraj_t *)calloc(new_capacity, sizeof(BaseTraj_t));
-
-    if (new_buffer == NULL)
+    // Allocate a new buffer (zero-initialized)
+    BaseTraj_t *new_buffer = (BaseTraj_t *)calloc(new_capacity, sizeof(BaseTraj_t));
+    if (!new_buffer)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Memory (re)allocation failed.");
+        C_LOG(LOG_LEVEL_ERROR, "Memory allocation failed for capacity %zu.", new_capacity);
         return SEQUENCE_MEMORY_ERROR;
     }
 
-    if (seq->length > 0)
+    // Copy existing data safely
+    if (seq->buffer && seq->length > 0)
     {
-        bytes_copy = seq->length * sizeof(BaseTraj_t);
-        memcpy(new_buffer, seq->buffer, bytes_copy);
+        memcpy(new_buffer, seq->buffer, seq->length * sizeof(BaseTraj_t));
     }
+
+    // Free old buffer
     free(seq->buffer);
 
+    // Update sequence structure
     seq->buffer = new_buffer;
     seq->capacity = new_capacity;
 
+    C_LOG(LOG_LEVEL_DEBUG, "Capacity increased to %zu.", new_capacity);
     return NO_ERROR;
 }
 
 /**
- * @brief Appends a new element to the end of the sequence.
- * @param seq Pointer to the sequence structure.
- * @return int 0 on success, -1 on memory allocation error or NULL pointer.
+ * @brief Appends a new trajectory point to the end of the sequence.
+ *
+ * This function ensures that the sequence has enough capacity, then
+ * writes the provided values into a new BaseTraj_t element at the end.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t structure.
+ * @param time Time of the trajectory point.
+ * @param px X position.
+ * @param py Y position.
+ * @param pz Z position.
+ * @param vx X velocity.
+ * @param vy Y velocity.
+ * @param vz Z velocity.
+ * @param mach Mach number.
+ * @return ErrorCode NO_ERROR on success, SEQUENCE_MEMORY_ERROR if allocation fails,
+ *         SEQUENCE_INPUT_ERROR if seq is NULL.
  */
-ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
+ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz,
+                               double vx, double vy, double vz, double mach)
 {
-
-    if (seq == NULL)
+    if (!seq)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return SEQUENCE_INPUT_ERROR;
     }
 
+    // Ensure enough capacity for the new element
     ErrorCode err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
     if (err != NO_ERROR)
     {
         return err;
     }
 
-    BaseTraj_t *entry_ptr = seq->buffer + seq->length;
-    entry_ptr->time = time;
-    entry_ptr->px = px;
-    entry_ptr->py = py;
-    entry_ptr->pz = pz;
-    entry_ptr->vx = vx;
-    entry_ptr->vy = vy;
-    entry_ptr->vz = vz;
-    entry_ptr->mach = mach;
+    // Append the new element at the end
+    BaseTraj_t *entry = &seq->buffer[seq->length];
+    entry->time = time;
+    entry->px = px;
+    entry->py = py;
+    entry->pz = pz;
+    entry->vx = vx;
+    entry->vy = vy;
+    entry->vz = vz;
+    entry->mach = mach;
+
     seq->length += 1;
 
     return NO_ERROR;
 }
 
+/**
+ * @brief Finds the center index for 3-point interpolation in a trajectory sequence.
+ *
+ * Performs a binary search to locate the index "lo" such that:
+ * - buf[lo-1], buf[lo], buf[lo+1] can be safely used for interpolation,
+ * - the key value at buf[lo] is the first >= key_value (if increasing)
+ *   or first <= key_value (if decreasing).
+ *
+ * @param seq Pointer to the BaseTrajSeq_t sequence.
+ * @param key_kind The InterpKey specifying which component to search by.
+ * @param key_value The value to locate.
+ * @return The center index for interpolation, or -1 if sequence is too short or NULL.
+ */
 static ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
     const BaseTrajSeq_t *seq,
     InterpKey key_kind,
     double key_value)
 {
-    if (seq == NULL)
+    if (!seq || seq->length < 3)
     {
-        return (ssize_t)(-1);
+        return -1;
     }
 
-    // Cast size_t to ssize_t for consistency with Cython/Python indexing
+    const BaseTraj_t *buf = seq->buffer;
     ssize_t n = seq->length;
-    BaseTraj_t *buf = seq->buffer;
 
-    // Check for minimum required points (n < 3 is impossible for a center index)
-    if (n < 3)
-    {
-        return (ssize_t)(-1);
-    }
-
-    // Get the first and last key values
-    // Note: The C version simplifies pointer arithmetic compared to the Cython original
     double v0 = BaseTraj_t_key_val_from_kind_buf(&buf[0], key_kind);
     double vN = BaseTraj_t_key_val_from_kind_buf(&buf[n - 1], key_kind);
-
-    // Determine sort order
     int increasing = (vN >= v0) ? 1 : 0;
 
     ssize_t lo = 0;
     ssize_t hi = n - 1;
-    ssize_t mid;
-    double vm;
 
     // Binary search loop
     while (lo < hi)
-    {
-        // mid = lo + (hi - lo) / 2; (avoids overflow, same as original (hi - lo) >> 1)
-        mid = lo + ((hi - lo) >> 1);
-
-        // Get value at midpoint
-        vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
-
-        if (increasing)
+        while (lo < hi)
         {
-            if (vm < key_value)
+            ssize_t mid = lo + ((hi - lo) >> 1);
+            double vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
+
+            if ((increasing && vm < key_value) || (!increasing && vm > key_value))
             {
                 lo = mid + 1;
             }
@@ -403,141 +391,119 @@ static ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
                 hi = mid;
             }
         }
-        else
-        { // decreasing
-            if (vm > key_value)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
-        }
-    }
 
-    // The result lo is the index of the first element >= key_value (if increasing)
-    // or the first element <= key_value (if decreasing).
-    // The result should be constrained to [1, n-2] to provide a center point
-    // for a 3-point interpolation (p0, p1, p2).
-
-    // Clamp lo to be at least 1 (to ensure p0 exists)
+    // Clamp to valid center index for 3-point interpolation
     if (lo < 1)
-    {
-        return (ssize_t)1;
-    }
-    // Clamp lo to be at most n - 2 (to ensure p2 exists)
+        lo = 1;
     if (lo > n - 2)
-    {
-        return n - 2;
-    }
+        lo = n - 2;
 
     return lo;
 }
 
-// Implementation of the function declared in base_traj_seq.h
+/**
+ * @brief Finds the center index for 3-point interpolation along slant height.
+ *
+ * Performs a binary search to locate an index "lo" such that:
+ * - buf[lo-1], buf[lo], buf[lo+1] can be safely used for interpolation,
+ * - the slant value at buf[lo] is the first >= value (if increasing)
+ *   or first <= value (if decreasing).
+ *
+ * @param seq Pointer to the BaseTrajSeq_t sequence.
+ * @param ca Cosine of the look angle.
+ * @param sa Sine of the look angle.
+ * @param value Target slant value.
+ * @return Center index suitable for 3-point interpolation [1, n-2],
+ *         or -1 if sequence is NULL or too short.
+ */
 static ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
     const BaseTrajSeq_t *seq,
     double ca,
     double sa,
     double value)
 {
+    if (!seq || seq->length < 3)
+        return -1;
 
-    if (seq == NULL)
-    {
-        return (ssize_t)(-1);
-    }
-
-    // Cast size_t to ssize_t for bounds checking and signed return value
+    const BaseTraj_t *buf = seq->buffer;
     ssize_t n = seq->length;
-    BaseTraj_t *buf = seq->buffer;
 
-    // Check for minimum required points (p0, p1, p2 needed)
-    if (n < 3)
-    {
-        return (ssize_t)(-1);
-    }
-
-    // Get the first and last slant values using array indexing
     double v0 = BaseTraj_t_slant_val_buf(&buf[0], ca, sa);
     double vN = BaseTraj_t_slant_val_buf(&buf[n - 1], ca, sa);
-
-    // Determine sort order
     int increasing = (vN >= v0) ? 1 : 0;
 
     ssize_t lo = 0;
     ssize_t hi = n - 1;
-    ssize_t mid;
-    double vm;
 
-    // Binary search loop
     while (lo < hi)
     {
-        // mid = lo + (hi - lo) / 2; (safer way to calculate midpoint)
-        mid = lo + ((hi - lo) >> 1);
+        ssize_t mid = lo + ((hi - lo) >> 1);
+        double vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
 
-        // Get value at midpoint
-        vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
-
-        if (increasing)
-        {
-            if (vm < value)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
-        }
+        if ((increasing && vm < value) || (!increasing && vm > value))
+            lo = mid + 1;
         else
-        { // decreasing
-            if (vm > value)
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
-        }
+            hi = mid;
     }
 
-    // Clamp the result to be a valid center index [1, n-2]
+    // Clamp to valid center index for 3-point interpolation
     if (lo < 1)
-    {
-        return (ssize_t)1;
-    }
+        lo = 1;
     if (lo > n - 2)
-    {
-        return n - 2;
-    }
+        lo = n - 2;
 
     return lo;
 }
 
-ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out)
+/**
+ * @brief Interpolates trajectory data at a given slant height.
+ *
+ * Given a look angle (in radians) and a target slant height value,
+ * this function finds a center index and performs monotone-preserving
+ * 3-point Hermite (PCHIP) interpolation to compute time, position,
+ * velocity, and Mach number at that slant height.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t sequence.
+ * @param look_angle_rad Look angle in radians.
+ * @param value Target slant height for interpolation.
+ * @param out Pointer to BaseTrajData_t where interpolated results will be stored.
+ * @return NO_ERROR on success, or an appropriate ErrorCode on failure:
+ *         SEQUENCE_INPUT_ERROR if seq or out is NULL,
+ *         SEQUENCE_VALUE_ERROR if not enough points or interpolation fails.
+ */
+ErrorCode BaseTrajSeq_t_get_at_slant_height(
+    const BaseTrajSeq_t *seq,
+    double look_angle_rad,
+    double value,
+    BaseTrajData_t *out)
 {
     if (!seq || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return SEQUENCE_INPUT_ERROR;
     }
+
     double ca = cos(look_angle_rad);
     double sa = sin(look_angle_rad);
     ssize_t n = seq->length;
+
     if (n < 3)
     {
         C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
         return SEQUENCE_VALUE_ERROR;
     }
+
     ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(seq, ca, sa, value);
-    // Use three consecutive points around center to perform
-    // monotone PCHIP interpolation keyed on slant height
-    BaseTraj_t *buf = seq->buffer;
-    BaseTraj_t *p0 = &buf[center - 1];
-    BaseTraj_t *p1 = &buf[center];
-    BaseTraj_t *p2 = &buf[center + 1];
+    if (center < 0)
+    {
+        C_LOG(LOG_LEVEL_ERROR, "Failed to find center index for interpolation.");
+        return SEQUENCE_VALUE_ERROR;
+    }
+
+    const BaseTraj_t *buf = seq->buffer;
+    const BaseTraj_t *p0 = &buf[center - 1];
+    const BaseTraj_t *p1 = &buf[center];
+    const BaseTraj_t *p2 = &buf[center + 1];
 
     double ox0 = BaseTraj_t_slant_val_buf(p0, ca, sa);
     double ox1 = BaseTraj_t_slant_val_buf(p1, ca, sa);
@@ -557,6 +523,19 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double loo
     return NO_ERROR;
 }
 
+/**
+ * @brief Retrieves trajectory data at a given index.
+ *
+ * Copies the values of time, position, velocity, and Mach number
+ * from the sequence at the specified index into the provided output struct.
+ *
+ * @param seq Pointer to the BaseTrajSeq_t sequence.
+ * @param idx Index of the trajectory point to retrieve.
+ * @param out Pointer to BaseTrajData_t where results will be stored.
+ * @return NO_ERROR on success, or an appropriate ErrorCode on failure:
+ *         SEQUENCE_INPUT_ERROR if seq or out is NULL,
+ *         SEQUENCE_INDEX_ERROR if idx is out of bounds.
+ */
 ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out)
 {
     if (!seq || !out)
@@ -565,32 +544,20 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
         return SEQUENCE_INPUT_ERROR;
     }
 
-    BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
+    const BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
     if (!entry_ptr)
     {
         C_LOG(LOG_LEVEL_ERROR, "Index out of bounds.");
         return SEQUENCE_INDEX_ERROR;
     }
+
     out->time = entry_ptr->time;
-    out->position = (V3dT){
-        entry_ptr->px,
-        entry_ptr->py,
-        entry_ptr->pz};
-    out->velocity = (V3dT){
-        entry_ptr->vx,
-        entry_ptr->vy,
-        entry_ptr->vz};
+    out->position = (V3dT){entry_ptr->px, entry_ptr->py, entry_ptr->pz};
+    out->velocity = (V3dT){entry_ptr->vx, entry_ptr->vy, entry_ptr->vz};
     out->mach = entry_ptr->mach;
+
     return NO_ERROR;
 }
-
-/**
- * @file base_traj_seq_helpers.c
- * @brief Helper functions for BaseTrajSeq interpolation and access.
- */
-
-#include <math.h>
-#include "base_traj_seq.h"
 
 /**
  * @brief Interpolate at center index with logging.
@@ -602,7 +569,7 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
  * @param out Output trajectory data.
  * @return ErrorCode NO_ERROR if successful, otherwise error code.
  */
-ErrorCode BaseTrajSeq_t_interpolate_at_center_with_log(
+static ErrorCode BaseTrajSeq_t_interpolate_at_center_with_log(
     const BaseTrajSeq_t *seq,
     ssize_t idx,
     InterpKey key_kind,
