@@ -1,10 +1,11 @@
 __author__ = "o-murphy"
 __copyright__ = (
     "Copyright 2023 Dmytro Yaroshenko (https://github.com/o-murphy)",
-    "Copyright 2024 David Bookstaber (https://github.com/dbookstaber)"
+    "Copyright 2024 David Bookstaber (https://github.com/dbookstaber)",
 )
 
 __credits__ = ["o-murphy", "dbookstaber"]
+
 
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
@@ -13,13 +14,15 @@ from .test_engine import CythonEngineTestHarness
 
 # Version matching guard
 from importlib.metadata import metadata
+
 try:
-    CORE_PACKAGE_NAME = 'py-ballisticcalc'
-    EXTS_PACKAGE_NAME = 'py-ballisticcalc-exts'
-    __core_version = metadata(CORE_PACKAGE_NAME)['Version']
-    __exts_version = metadata(EXTS_PACKAGE_NAME)['Version']
+    CORE_PACKAGE_NAME = "py-ballisticcalc"
+    EXTS_PACKAGE_NAME = "py-ballisticcalc-exts"
+    __core_version = metadata(CORE_PACKAGE_NAME)["Version"]
+    __exts_version = metadata(EXTS_PACKAGE_NAME)["Version"]
 except KeyError:
     raise ImportError(f"Cannot read version from {CORE_PACKAGE_NAME} or {EXTS_PACKAGE_NAME} metadata.")
+
 
 if __core_version != __exts_version:
     raise AssertionError(
@@ -30,7 +33,7 @@ if __core_version != __exts_version:
 
 
 __all__ = (
-    'CythonizedEulerIntegrationEngine',
-    'CythonizedRK4IntegrationEngine',
-    'CythonEngineTestHarness',
+    "CythonizedEulerIntegrationEngine",
+    "CythonizedRK4IntegrationEngine",
+    "CythonEngineTestHarness",
 )

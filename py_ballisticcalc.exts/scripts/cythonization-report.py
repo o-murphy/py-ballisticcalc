@@ -8,14 +8,14 @@
 
 import re
 from datetime import datetime
-import argparse # Import the argparse module
+import argparse  # Import the argparse module
 from pathlib import Path
 from typing import Tuple, Dict
 
 from bs4 import BeautifulSoup
 
 PROJECT_ROOT = Path(__file__).parent.parent
-PROJECT_SRC = PROJECT_ROOT / 'py_ballisticcalc_exts' / 'build' / 'py_ballisticcalc_exts'
+PROJECT_SRC = PROJECT_ROOT / "py_ballisticcalc_exts" / "build" / "py_ballisticcalc_exts"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 HTML_REPORT_PATH = PROJECT_ROOT / "cythonization.html"
 MARKDOWN_REPORT_PATH = PROJECT_ROOT / "cythonization.md"
@@ -36,10 +36,10 @@ def generate_svg_badge(total_percentage: float) -> str:
     # Green for good, Yellow/Orange for moderate, Red for low
     if total_percentage >= 90:
         # Green (e.g., passing/excellent)
-        color_hex = "#4c1" # Green
+        color_hex = "#4c1"  # Green
     elif total_percentage >= 75:
         # Light Green (e.g., good)
-        color_hex = "#a4a61d" # Light Green/Olive
+        color_hex = "#a4a61d"  # Light Green/Olive
     elif total_percentage >= 50:
         # Yellow/Orange (e.g., moderate/needs work)
         color_hex = "#fe7d37"
@@ -47,8 +47,8 @@ def generate_svg_badge(total_percentage: float) -> str:
         # Red (e.g., low/bad)
         color_hex = "#e05d44"
 
-    percentage_str = f"{total_percentage:.0f}%" # Format as integer percentage, e.g., "75%"
-    
+    percentage_str = f"{total_percentage:.0f}%"  # Format as integer percentage, e.g., "75%"
+
     # Calculate text width for the percentage value.
     # We'll use a fixed width for simplicity, mimicking the structure of standard badges.
     # Left side width: "cythonize" is 63
@@ -56,11 +56,11 @@ def generate_svg_badge(total_percentage: float) -> str:
     # Right side width: fixed at 36 for a two/three-digit percentage
     right_width = 36
     total_width = left_width + right_width
-    
+
     # Text positions
     left_text_x = left_width / 2
     right_text_x = left_width + right_width / 2
-    
+
     svg_content = f"""
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="20">
@@ -103,7 +103,7 @@ def calculate_cythonization_percentage(html_content: str) -> (float, float, floa
         - 'cythonization_percentage': Overall Cythonization percentage based on scores.
         - 'python_overhead_lines_percentage': Percentage of lines with Python overhead.
     """
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
 
     total_lines = 0
     python_overhead_lines = 0
@@ -112,7 +112,7 @@ def calculate_cythonization_percentage(html_content: str) -> (float, float, floa
     # Select all lines with the 'pre.cython.line' class
     # These correspond to the annotated lines in Cython's HTML output
     # cython_lines = soup.find_all('pre', {"class": 'cython line'})
-    cython_lines = soup.find_all('pre', {"class": ['cython', 'line']})
+    cython_lines = soup.find_all("pre", {"class": ["cython", "line"]})
 
     for pre in cython_lines:
         line_text = pre.get_text().strip()
@@ -122,9 +122,9 @@ def calculate_cythonization_percentage(html_content: str) -> (float, float, floa
         # that is present in the `line_text` from the HTML.
         # The logic precisely matches the JavaScript's filtering conditions.
         if (
-                re.match(r'^\d+:\s*#', line_text)  # Matches "1: # This is a comment"
-                or re.match(r'^\d+:\s*"""', line_text)  # Matches "2: """Docstring"""
-                or not re.search(r':\s*\S', line_text)  # Matches "3:", "4:   ", but not "5: actual_code"
+            re.match(r"^\d+:\s*#", line_text)  # Matches "1: # This is a comment"
+            or re.match(r'^\d+:\s*"""', line_text)  # Matches "2: """Docstring"""
+            or not re.search(r":\s*\S", line_text)  # Matches "3:", "4:   ", but not "5: actual_code"
         ):
             continue  # Skip this line from all calculations
 
@@ -132,10 +132,10 @@ def calculate_cythonization_percentage(html_content: str) -> (float, float, floa
 
         # Extract the score from the class attribute (e.g., 'score-62')
         score = 0
-        for cls in pre.get('class', []):
-            if cls.startswith('score-'):
+        for cls in pre.get("class", []):
+            if cls.startswith("score-"):
                 try:
-                    score = int(cls.split('-')[1])
+                    score = int(cls.split("-")[1])
                     break
                 except ValueError:
                     # Handle cases where score might not be a valid integer, though unlikely
@@ -170,7 +170,7 @@ def format_result(total_lines, total_score_sum, python_overhead_lines):
         "python_overhead_lines": python_overhead_lines,
         "total_score_sum": total_score_sum,
         "cythonization_percentage": round(cythonization_percentage, 2),
-        "python_overhead_lines_percentage": round(python_overhead_lines_percentage, 2)
+        "python_overhead_lines_percentage": round(python_overhead_lines_percentage, 2),
     }
 
 
@@ -210,7 +210,7 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
         A string containing the complete HTML report.
     """
     current_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    html_content = f"""
+    html_content = """
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -218,79 +218,79 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Cythonization Report</title>
         <style>
-            body {{
+            body {
                 font-family: 'Inter', sans-serif; /* Using a common sans-serif font */
                 margin: 20px;
                 background-color: #f4f7f6;
                 color: #333;
                 line-height: 1.6;
-            }}
-            .container {{
+            }
+            .container {
                 max-width: 900px;
                 margin: 0 auto;
                 padding: 20px;
                 background-color: #ffffff;
                 border-radius: 12px;
                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            }}
-            h1 {{
+            }
+            h1 {
                 color: #2c3e50;
                 text-align: center;
                 margin-bottom: 30px;
                 font-size: 2.5em;
                 border-bottom: 2px solid #e0e0e0;
                 padding-bottom: 15px;
-            }}
-            h2 {{
+            }
+            h2 {
                 color: #34495e;
                 margin-top: 40px;
                 margin-bottom: 20px;
                 font-size: 1.8em;
                 border-bottom: 1px solid #e0e0e0;
                 padding-bottom: 10px;
-            }}
-            .file-section, .total-section {{
+            }
+            .file-section, .total-section {
                 margin-bottom: 30px;
                 padding: 20px;
                 background-color: #ecf0f1;
                 border-radius: 8px;
                 box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-            }}
-            table {{
+            }
+            table {
                 width: 100%;
                 border-collapse: collapse;
                 margin-top: 15px;
-            }}
-            th, td {{
+            }
+            th, td {
                 padding: 12px 15px;
                 border: 1px solid #ddd;
                 text-align: left;
-            }}
-            th {{
+            }
+            th {
                 background-color: #4a69bd;
                 color: white;
                 font-weight: bold;
-            }}
-            tr:nth-child(even) {{
+            }
+            tr:nth-child(even) {
                 background-color: #f9f9f9;
-            }}
-            tr:hover {{
+            }
+            tr:hover {
                 background-color: #f1f1f1;
-            }}
-            .percentage {{
+            }
+            .percentage {
                 font-weight: bold;
                 color: #27ae60; /* Green for good percentages */
-            }}
-            .overhead-percentage {{
+            }
+            .overhead-percentage {
                 font-weight: bold;
                 color: #e74c3c; /* Red for high overhead */
-            }}
-            .footer {{
+            }
+            .footer {
                 text-align: center;
                 margin-top: 40px;
                 font-size: 0.9em;
                 color: #7f8c8d;
-            }}
+            }
         </style>
     </head>
     <body>
@@ -308,12 +308,12 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
                     <h2>Overall Summary</h2>
                     <table>
                         <tr><th>Metric</th><th>Value</th></tr>
-                        <tr><td>Total Score Sum</td><td>{total_formatted_result['total_score_sum']}</td></tr>
-                        <tr><td>Possible Score</td><td>{total_formatted_result['total_lines'] * 100}</td></tr>
-                        <tr><td>Total Non-Empty Lines</td><td>{total_formatted_result['total_lines']}</td></tr>
-                        <tr><td>Python Overhead Lines</td><td>{total_formatted_result['python_overhead_lines']}</td></tr>
-                        <tr><td>Overall Cythonization Percentage</td><td class="percentage">{total_formatted_result['cythonization_percentage']}%</td></tr>
-                        <tr><td>Overall Python Overhead Lines Percentage</td><td class="overhead-percentage">{total_formatted_result['python_overhead_lines_percentage']}%</td></tr>
+                        <tr><td>Total Score Sum</td><td>{total_formatted_result["total_score_sum"]}</td></tr>
+                        <tr><td>Possible Score</td><td>{total_formatted_result["total_lines"] * 100}</td></tr>
+                        <tr><td>Total Non-Empty Lines</td><td>{total_formatted_result["total_lines"]}</td></tr>
+                        <tr><td>Python Overhead Lines</td><td>{total_formatted_result["python_overhead_lines"]}</td></tr>
+                        <tr><td>Overall Cythonization Percentage</td><td class="percentage">{total_formatted_result["cythonization_percentage"]}%</td></tr>
+                        <tr><td>Overall Python Overhead Lines Percentage</td><td class="overhead-percentage">{total_formatted_result["python_overhead_lines_percentage"]}%</td></tr>
                     </table>
                 </div>
         """
@@ -327,12 +327,12 @@ def generate_html_report(results: Dict[Path, Tuple[float, float, float]]) -> str
                 <h2>File: {file_name}.html</h2>
                 <table>
                     <tr><th>Metric</th><th>Value</th></tr>
-                    <tr><td>Total Score Sum</td><td>{formatted_result['total_score_sum']}</td></tr>
-                    <tr><td>Possible Score</td><td>{formatted_result['total_lines'] * 100}</td></tr>
-                    <tr><td>Total Non-Empty Lines</td><td>{formatted_result['total_lines']}</td></tr>
-                    <tr><td>Python Overhead Lines</td><td>{formatted_result['python_overhead_lines']}</td></tr>
-                    <tr><td>Cythonization Percentage</td><td class="percentage">{formatted_result['cythonization_percentage']}%</td></tr>
-                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">{formatted_result['python_overhead_lines_percentage']}%</td></tr>
+                    <tr><td>Total Score Sum</td><td>{formatted_result["total_score_sum"]}</td></tr>
+                    <tr><td>Possible Score</td><td>{formatted_result["total_lines"] * 100}</td></tr>
+                    <tr><td>Total Non-Empty Lines</td><td>{formatted_result["total_lines"]}</td></tr>
+                    <tr><td>Python Overhead Lines</td><td>{formatted_result["python_overhead_lines"]}</td></tr>
+                    <tr><td>Cythonization Percentage</td><td class="percentage">{formatted_result["cythonization_percentage"]}%</td></tr>
+                    <tr><td>Python Overhead Lines Percentage</td><td class="overhead-percentage">{formatted_result["python_overhead_lines_percentage"]}%</td></tr>
                 </table>
             </div>
         """
@@ -372,11 +372,19 @@ def generate_markdown_report(results: Dict[Path, Tuple[float, float, float]]) ->
     markdown_content += "## Overall Summary\n\n"
     markdown_content += "| Metric                                 | Value       |\n"
     markdown_content += "| :------------------------------------- | :---------- |\n"
-    markdown_content += f"| Total Score Sum                        | {total_formatted_result['total_score_sum']}      |\n"
-    markdown_content += f"| Possible Score                         | {total_formatted_result['total_lines'] * 100}      |\n"
+    markdown_content += (
+        f"| Total Score Sum                        | {total_formatted_result['total_score_sum']}      |\n"
+    )
+    markdown_content += (
+        f"| Possible Score                         | {total_formatted_result['total_lines'] * 100}      |\n"
+    )
     markdown_content += f"| Total Non-Empty Lines                  | {total_formatted_result['total_lines']}      |\n"
-    markdown_content += f"| Python Overhead Lines                  | {total_formatted_result['python_overhead_lines']}      |\n"
-    markdown_content += f"| **Overall Cythonization Percentage** | **{total_formatted_result['cythonization_percentage']}%** |\n"
+    markdown_content += (
+        f"| Python Overhead Lines                  | {total_formatted_result['python_overhead_lines']}      |\n"
+    )
+    markdown_content += (
+        f"| **Overall Cythonization Percentage** | **{total_formatted_result['cythonization_percentage']}%** |\n"
+    )
     markdown_content += f"| **Overall Python Overhead Lines Percentage** | **{total_formatted_result['python_overhead_lines_percentage']}%** |\n\n"
 
     # Add individual file reports
@@ -404,29 +412,33 @@ def generate_markdown_report(results: Dict[Path, Tuple[float, float, float]]) ->
 def main():
     parser = argparse.ArgumentParser(description="Generate Cythonization reports from HTML annotation files.")
     parser.add_argument(
-        "-i", "--input-dir",
+        "-i",
+        "--input-dir",
         type=str,
         default=PROJECT_SRC.as_posix(),
-        help="Directory containing Cython HTML annotation files. Defaults to 'py_ballisticcalc.exts/py_ballisticcalc_exts' relative to script parent."
+        help="Directory containing Cython HTML annotation files. Defaults to 'py_ballisticcalc.exts/py_ballisticcalc_exts' relative to script parent.",
     )
     parser.add_argument(
-        "-o", "--output-dir",
+        "-o",
+        "--output-dir",
         type=str,
         default=REPORTS_DIR.as_posix(),
-        help="Directory where the reports will be saved. Defaults to script's parent directory."
+        help="Directory where the reports will be saved. Defaults to script's parent directory.",
     )
     parser.add_argument(
-        "-f", "--format",
+        "-f",
+        "--format",
         choices=["html", "markdown", "both"],
         default="both",
-        help="Report format to generate: 'html', 'markdown', or 'both'. Defaults to 'both'."
+        help="Report format to generate: 'html', 'markdown', or 'both'. Defaults to 'both'.",
     )
     # Add a new format option for the SVG badge
     parser.add_argument(
-        "-b", "--badge",
+        "-b",
+        "--badge",
         action="store_true",
         default=True,
-        help="Generate an SVG badge (cythonization.svg) with the total percentage."
+        help="Generate an SVG badge (cythonization.svg) with the total percentage.",
     )
 
     args = parser.parse_args()
@@ -434,40 +446,40 @@ def main():
     # Resolve paths based on arguments
     reports_dir = Path(args.input_dir)
     output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True) # Ensure output directory exists
+    output_dir.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
 
     html_report_path = output_dir / "cythonization.html"
     markdown_report_path = output_dir / "cythonization.md"
-    svg_badge_path = output_dir / "cythonization.svg" # Define the path for the new SVG badge
+    svg_badge_path = output_dir / "cythonization.svg"  # Define the path for the new SVG badge
 
-    reports = (p for p in reports_dir.iterdir() if p.suffix == '.html')
+    reports = (p for p in reports_dir.iterdir() if p.suffix == ".html")
     results = {}
     report: Path
     for report in reports:
-        with open(report, 'r', encoding='utf-8') as html_file: # Added encoding
+        with open(report, "r", encoding="utf-8") as html_file:  # Added encoding
             html_content_from_file = html_file.read()
 
-        results[report] = (calculate_cythonization_percentage(html_content_from_file))
+        results[report] = calculate_cythonization_percentage(html_content_from_file)
 
     if not results:
         print("\nNo Cythonization reports found or processed to generate reports.")
-        return # Exit if no results
+        return  # Exit if no results
 
     # Calculate total results once
     total_raw_result = compose_results(results)
     total_formatted_result = format_result(*total_raw_result)
-    total_cythonization_percentage = total_formatted_result['cythonization_percentage']
+    total_cythonization_percentage = total_formatted_result["cythonization_percentage"]
 
     for report, result in results.items():
         print_result(f"File: {report.stem} :", result)
 
-    print_result("Total:", total_raw_result) # Use total_raw_result here
+    print_result("Total:", total_raw_result)  # Use total_raw_result here
 
     # Generate and save reports based on format argument
     if args.format == "html" or args.format == "both":
         html_report_output = generate_html_report(results)
         try:
-            with open(html_report_path, 'w', encoding='utf-8') as f:
+            with open(html_report_path, "w", encoding="utf-8") as f:
                 f.write(html_report_output)
             print(f"\nHTML report generated successfully: {html_report_path}")
         except IOError as e:
@@ -476,7 +488,7 @@ def main():
     if args.format == "markdown" or args.format == "both":
         markdown_report_output = generate_markdown_report(results)
         try:
-            with open(markdown_report_path, 'w', encoding='utf-8') as f:
+            with open(markdown_report_path, "w", encoding="utf-8") as f:
                 f.write(markdown_report_output)
             print(f"Markdown report generated successfully: {markdown_report_path}")
         except IOError as e:
@@ -486,7 +498,7 @@ def main():
     if args.badge:
         svg_content = generate_svg_badge(total_cythonization_percentage)
         try:
-            with open(svg_badge_path, 'w', encoding='utf-8') as f:
+            with open(svg_badge_path, "w", encoding="utf-8") as f:
                 f.write(svg_content)
             print(f"SVG badge generated successfully: {svg_badge_path}")
         except IOError as e:
@@ -494,4 +506,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() # Call the main function
+    main()  # Call the main function

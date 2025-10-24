@@ -7,108 +7,132 @@ This report summarizes the Cythonization percentage for various source files, in
 
 | Metric                                 | Value       |
 | :------------------------------------- | :---------- |
-| Total Score Sum                        | 7813.0      |
-| Possible Score                         | 147000.0      |
-| Total Non-Empty Lines                  | 1470.0      |
-| Python Overhead Lines                  | 474.0      |
-| **Overall Cythonization Percentage** | **94.69%** |
-| **Overall Python Overhead Lines Percentage** | **32.24%** |
-
----
-## File: euler_engine.html
-
-| Metric                         | Value       |
-| :----------------------------- | :---------- |
-| Total Score Sum                | 143      |
-| Possible Score                 | 4200      |
-| Total Non-Empty Lines          | 42      |
-| Python Overhead Lines          | 16      |
-| **Cythonization Percentage** | **96.6%** |
-| **Python Overhead Lines Percentage** | **38.1%** |
-
----
-## File: test_engine.html
-
-| Metric                         | Value       |
-| :----------------------------- | :---------- |
-| Total Score Sum                | 875      |
-| Possible Score                 | 9300      |
-| Total Non-Empty Lines          | 93      |
-| Python Overhead Lines          | 33      |
-| **Cythonization Percentage** | **90.59%** |
-| **Python Overhead Lines Percentage** | **35.48%** |
-
----
-## File: trajectory_data.html
-
-| Metric                         | Value       |
-| :----------------------------- | :---------- |
-| Total Score Sum                | 600      |
-| Possible Score                 | 13700      |
-| Total Non-Empty Lines          | 137      |
-| Python Overhead Lines          | 49      |
-| **Cythonization Percentage** | **95.62%** |
-| **Python Overhead Lines Percentage** | **35.77%** |
+| Total Score Sum                        | 8088.0      |
+| Possible Score                         | 143100.0      |
+| Total Non-Empty Lines                  | 1431.0      |
+| Python Overhead Lines                  | 510.0      |
+| **Overall Cythonization Percentage** | **94.35%** |
+| **Overall Python Overhead Lines Percentage** | **35.64%** |
 
 ---
 ## File: base_engine.html
 
 | Metric                         | Value       |
 | :----------------------------- | :---------- |
-| Total Score Sum                | 2915      |
-| Possible Score                 | 68900      |
-| Total Non-Empty Lines          | 689      |
-| Python Overhead Lines          | 192      |
-| **Cythonization Percentage** | **95.77%** |
-| **Python Overhead Lines Percentage** | **27.87%** |
-
----
-## File: bind.html
-
-| Metric                         | Value       |
-| :----------------------------- | :---------- |
-| Total Score Sum                | 358      |
-| Possible Score                 | 9000      |
-| Total Non-Empty Lines          | 90      |
-| Python Overhead Lines          | 46      |
-| **Cythonization Percentage** | **96.02%** |
-| **Python Overhead Lines Percentage** | **51.11%** |
+| Total Score Sum                | 2881      |
+| Possible Score                 | 77800      |
+| Total Non-Empty Lines          | 778      |
+| Python Overhead Lines          | 217      |
+| **Cythonization Percentage** | **96.3%** |
+| **Python Overhead Lines Percentage** | **27.89%** |
 
 ---
 ## File: base_traj_seq.html
 
 | Metric                         | Value       |
 | :----------------------------- | :---------- |
-| Total Score Sum                | 1136      |
-| Possible Score                 | 26500      |
-| Total Non-Empty Lines          | 265      |
-| Python Overhead Lines          | 81      |
-| **Cythonization Percentage** | **95.71%** |
-| **Python Overhead Lines Percentage** | **30.57%** |
+| Total Score Sum                | 923      |
+| Possible Score                 | 10300      |
+| Total Non-Empty Lines          | 103      |
+| Python Overhead Lines          | 45      |
+| **Cythonization Percentage** | **91.04%** |
+| **Python Overhead Lines Percentage** | **43.69%** |
 
 ---
-## File: test_helpers.html
+## File: bind.html
 
 | Metric                         | Value       |
 | :----------------------------- | :---------- |
-| Total Score Sum                | 1643      |
-| Possible Score                 | 11200      |
-| Total Non-Empty Lines          | 112      |
-| Python Overhead Lines          | 41      |
-| **Cythonization Percentage** | **85.33%** |
-| **Python Overhead Lines Percentage** | **36.61%** |
+| Total Score Sum                | 603      |
+| Possible Score                 | 14900      |
+| Total Non-Empty Lines          | 149      |
+| Python Overhead Lines          | 76      |
+| **Cythonization Percentage** | **95.95%** |
+| **Python Overhead Lines Percentage** | **51.01%** |
+
+---
+## File: cy_bindings.html
+
+| Metric                         | Value       |
+| :----------------------------- | :---------- |
+| Total Score Sum                | 186      |
+| Possible Score                 | 5100      |
+| Total Non-Empty Lines          | 51      |
+| Python Overhead Lines          | 29      |
+| **Cythonization Percentage** | **96.35%** |
+| **Python Overhead Lines Percentage** | **56.86%** |
+
+---
+## File: euler_engine.html
+
+| Metric                         | Value       |
+| :----------------------------- | :---------- |
+| Total Score Sum                | 94      |
+| Possible Score                 | 2000      |
+| Total Non-Empty Lines          | 20      |
+| Python Overhead Lines          | 8      |
+| **Cythonization Percentage** | **95.3%** |
+| **Python Overhead Lines Percentage** | **40.0%** |
 
 ---
 ## File: rk4_engine.html
 
 | Metric                         | Value       |
 | :----------------------------- | :---------- |
-| Total Score Sum                | 143      |
-| Possible Score                 | 4200      |
-| Total Non-Empty Lines          | 42      |
-| Python Overhead Lines          | 16      |
-| **Cythonization Percentage** | **96.6%** |
-| **Python Overhead Lines Percentage** | **38.1%** |
+| Total Score Sum                | 94      |
+| Possible Score                 | 2000      |
+| Total Non-Empty Lines          | 20      |
+| Python Overhead Lines          | 8      |
+| **Cythonization Percentage** | **95.3%** |
+| **Python Overhead Lines Percentage** | **40.0%** |
 
 ---
-Generated on 2025-10-21 01:02:36.
+## File: test_engine.html
+
+| Metric                         | Value       |
+| :----------------------------- | :---------- |
+| Total Score Sum                | 998      |
+| Possible Score                 | 10600      |
+| Total Non-Empty Lines          | 106      |
+| Python Overhead Lines          | 44      |
+| **Cythonization Percentage** | **90.58%** |
+| **Python Overhead Lines Percentage** | **41.51%** |
+
+---
+## File: test_helpers.html
+
+| Metric                         | Value       |
+| :----------------------------- | :---------- |
+| Total Score Sum                | 1680      |
+| Possible Score                 | 11300      |
+| Total Non-Empty Lines          | 113      |
+| Python Overhead Lines          | 42      |
+| **Cythonization Percentage** | **85.13%** |
+| **Python Overhead Lines Percentage** | **37.17%** |
+
+---
+## File: trajectory_data.html
+
+| Metric                         | Value       |
+| :----------------------------- | :---------- |
+| Total Score Sum                | 313      |
+| Possible Score                 | 7200      |
+| Total Non-Empty Lines          | 72      |
+| Python Overhead Lines          | 23      |
+| **Cythonization Percentage** | **95.65%** |
+| **Python Overhead Lines Percentage** | **31.94%** |
+
+---
+## File: unit_helper.html
+
+| Metric                         | Value       |
+| :----------------------------- | :---------- |
+| Total Score Sum                | 316      |
+| Possible Score                 | 1900      |
+| Total Non-Empty Lines          | 19      |
+| Python Overhead Lines          | 18      |
+| **Cythonization Percentage** | **83.37%** |
+| **Python Overhead Lines Percentage** | **94.74%** |
+
+---
+Generated on 2025-10-25 02:06:54.

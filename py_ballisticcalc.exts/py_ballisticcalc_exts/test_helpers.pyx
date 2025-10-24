@@ -19,9 +19,10 @@ from py_ballisticcalc_exts.bclib cimport (
     TrajFlag_t,
     calculateEnergy,
     calculateOgw,
+    initLogLevel,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
@@ -45,10 +46,13 @@ __all__ = [
     'introspect_shot',
 ]
 
+
+initLogLevel()
+
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
-    return BaseTrajDataT(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach)
+    return BaseTrajDataT(BaseTrajData_t(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach))
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.

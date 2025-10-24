@@ -93,12 +93,12 @@ def test_dense_output_random_sampling_get_at(loaded_engine_instance):
     t_end = traj[-1].time
     for _ in range(200):
         t = random.random() * t_end
-    _ = traj.get_at('time', t)
+    _ = traj.get_at("time", t)
     # Random range samples
     x_end = traj[-1].position.x
     for _ in range(200):
         x = random.random() * x_end
-        _ = traj.get_at('position.x', x)
+        _ = traj.get_at("position.x", x)
     # Clean up
     del res
     gc.collect()

@@ -3,11 +3,18 @@ from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc.engines.base_engine import BaseEngineConfig
 from py_ballisticcalc.trajectory_data import TrajectoryData
 
-__all__ = ['CythonizedEulerIntegrationEngine']
+__all__ = ["CythonizedEulerIntegrationEngine"]
 
 class CythonizedEulerIntegrationEngine:
     def __init__(self, _config: BaseEngineConfig) -> None: ...
     @property
     def get_calc_step(self, step: float = 0) -> float: ...
-    def trajectory(self, shot_info: Shot, max_range: Distance, dist_step: Distance, extra_data: bool = False, time_step: float = 0.0) -> list[TrajectoryData]: ...
+    def trajectory(
+        self,
+        shot_info: Shot,
+        max_range: Distance,
+        dist_step: Distance,
+        extra_data: bool = False,
+        time_step: float = 0.0,
+    ) -> list[TrajectoryData]: ...
     def zero_angle(self, shot_info: Shot, distance: Distance, time_step: float = 0.0) -> Angular: ...

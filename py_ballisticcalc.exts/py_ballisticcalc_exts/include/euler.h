@@ -1,5 +1,5 @@
-#ifndef EULER_H
-#define EULER_H
+#ifndef BCLIB_EULER_H
+#define BCLIB_EULER_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -19,13 +19,13 @@ extern "C"
      */
     double _euler_time_step(double base_step, double velocity);
 
-    TerminationReason _integrate_euler(Engine_t *engine_ptr,
-                                       double range_limit_ft, double range_step_ft,
-                                       double time_step, TrajFlag_t filter_flags,
-                                       BaseTrajSeq_t *traj_seq_ptr);
+    ErrorCode _integrate_euler(Engine_t *eng,
+                               double range_limit_ft, double range_step_ft,
+                               double time_step, TrajFlag_t filter_flags,
+                               BaseTrajSeq_t *traj_seq_ptr);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // EULER_H
+#endif // BCLIB_EULER_H

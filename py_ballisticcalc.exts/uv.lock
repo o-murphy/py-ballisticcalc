@@ -160,6 +160,13 @@ dev = [
     { name = "setuptools" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "cibuildwheel" },
+    { name = "cython" },
+    { name = "setuptools" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "cibuildwheel", marker = "extra == 'dev'" },
@@ -167,6 +174,13 @@ requires-dist = [
     { name = "setuptools", marker = "extra == 'dev'" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "cibuildwheel", specifier = ">=2.23.2" },
+    { name = "cython", specifier = ">=3.1.4" },
+    { name = "setuptools", specifier = ">=80.9.0" },
+]
 
 [[package]]
 name = "setuptools"

@@ -1,7 +1,8 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef BCLIB_TYPES_H
+#define BCLIB_TYPES_H
 
 #include "v3d.h"
+#include "log.h"
 #include <stddef.h>
 
 extern const double cDegreesFtoR;
@@ -16,6 +17,49 @@ extern const double mToFeet;
 
 extern const double cMaxWindDistanceFeet;
 extern const double cEarthAngularVelocityRadS;
+
+typedef enum
+{
+    // General error flags (bitmask)
+    NO_ERROR = 0x0000,            // (0)
+    ZERO_DIVISION_ERROR = 0x0001, // (1 << 0)
+    VALUE_ERROR = 0x0002,         // (1 << 1)
+    KEY_ERROR = 0x0004,           // (1 << 2)
+    INDEX_ERROR = 0x0008,         // (1 << 3)
+    MEMORY_ERROR = 0x0010,        // (1 << 4)
+    ARITHMETIC_ERROR = 0x0020,    // (1 << 5)
+    INPUT_ERROR = 0x0040,         // (1 << 6)
+    RUNTIME_ERROR = 0x0080,       // (1 << 7)
+
+    // Sequence (BaseTrajSeq_t) specific flags
+    SEQUENCE_ERROR = 0x0100,                                     // (1 << 8)
+    SEQUENCE_INPUT_ERROR = SEQUENCE_ERROR | INPUT_ERROR,           // 0x0100 | 0x0040 = 0x0140  -> (1 << 8) | (1 << 6)
+    SEQUENCE_VALUE_ERROR = SEQUENCE_ERROR | VALUE_ERROR,           // 0x0100 | 0x0002 = 0x0102  -> (1 << 8) | (1 << 1)
+    SEQUENCE_KEY_ERROR = SEQUENCE_ERROR | KEY_ERROR,               // 0x0100 | 0x0004 = 0x0104  -> (1 << 8) | (1 << 2)
+    SEQUENCE_MEMORY_ERROR = SEQUENCE_ERROR | MEMORY_ERROR,         // 0x0100 | 0x0010 = 0x0110  -> (1 << 8) | (1 << 4)
+    SEQUENCE_INDEX_ERROR = SEQUENCE_ERROR | INDEX_ERROR,           // 0x0100 | 0x0008 = 0x0108  -> (1 << 8) | (1 << 3)
+    SEQUENCE_ARITHMETIC_ERROR = SEQUENCE_ERROR | ARITHMETIC_ERROR, // 0x0100 | 0x0020 = 0x0120  -> (1 << 8) | (1 << 5)
+
+    // Interpolation specific flag
+    INTERPOLATION_ERROR = 0x0200, // (1 << 9)
+
+    // Solver specific flags (always include RANGE_ERROR)
+    RANGE_ERROR = NO_ERROR | 0x0400,                             // 0x0400 -> (1 << 10)
+    RANGE_ERROR_MINIMUM_VELOCITY_REACHED = RANGE_ERROR | 0x0800, // 0x0400 | 0x0800 = 0x0C00 -> (1 << 10) | (1 << 11)
+    RANGE_ERROR_MAXIMUM_DROP_REACHED = RANGE_ERROR | 0x1000,     // 0x0400 | 0x1000 = 0x1400 -> (1 << 10) | (1 << 12)
+    RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = RANGE_ERROR | 0x2000, // 0x0400 | 0x2000 = 0x2400 -> (1 << 10) | (1 << 13)
+
+    // Zero init specific flags
+    OUT_OF_RANGE_ERROR = 0x4000,            // (1 << 14)
+    ZERO_INIT_CONTINUE = NO_ERROR | 0x8000, // 0x8000 -> (1 << 15)
+    ZERO_INIT_DONE = NO_ERROR | 0x10000,    // 0x10000 -> (1 << 16)
+
+    // Zero finding error flag
+    ZERO_FINDING_ERROR = 0x20000, // (1 << 17)
+
+    // Undefined
+    UNDEFINED_ERROR = 0x40000 // (1 << 18)
+} ErrorCode;
 
 typedef struct
 {
@@ -110,15 +154,6 @@ typedef struct
     V3dT last_vector_cache;
 } WindSock_t;
 
-typedef enum
-{
-    NoRangeError,
-    RangeErrorInvalidParameter,
-    RangeErrorMinimumVelocityReached,
-    RangeErrorMaximumDropReached,
-    RangeErrorMinimumAltitudeReached,
-} TerminationReason;
-
 typedef struct
 {
     double bc;
@@ -144,10 +179,27 @@ typedef struct
     TrajFlag_t filter_flags;
 } ShotProps_t;
 
+/**
+ * Keys used to look up specific values within a BaseTraj_t struct.
+ */
+typedef enum
+{
+    KEY_TIME,
+    KEY_MACH,
+    KEY_POS_X,
+    KEY_POS_Y,
+    KEY_POS_Z,
+    KEY_VEL_X,
+    KEY_VEL_Y,
+    KEY_VEL_Z
+} InterpKey;
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+    void setLogLevel(LogLevel level);
+    void initLogLevel();
 
     void Curve_t_release(Curve_t *curve_ptr);
 
@@ -162,7 +214,7 @@ extern "C"
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr);
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
+    ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
 
     double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
@@ -171,13 +223,10 @@ extern "C"
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr);
 
-    BaseTrajData_t *BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach);
-    void BaseTrajData_t_destroy(BaseTrajData_t *ptr);
-
-    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
+    ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);
     V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
-    int WindSock_t_updateCache(WindSock_t *ws);
+    ErrorCode WindSock_t_updateCache(WindSock_t *ws);
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
     // helpers
@@ -190,8 +239,16 @@ extern "C"
         const V3dT *velocity_ptr,
         V3dT *accel_ptr);
 
+    ErrorCode BaseTrajData_t_interpolate(
+        InterpKey key_kind,
+        double key_value,
+        const BaseTrajData_t *p0,
+        const BaseTrajData_t *p1,
+        const BaseTrajData_t *p2,
+        BaseTrajData_t *out);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif // TYPES_H
+#endif // BCLIB_TYPES_H

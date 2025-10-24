@@ -3,8 +3,6 @@ import os
 import math
 import pytest
 
-pytestmark = pytest.mark.stress
-
 from py_ballisticcalc import (
     BaseEngineConfigDict,
     Calculator,
@@ -20,6 +18,9 @@ from py_ballisticcalc import (
 from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
 
 
+pytestmark = pytest.mark.stress
+
+
 def _base_config():
     return BaseEngineConfigDict(
         cMinimumVelocity=0.0,
@@ -29,8 +30,13 @@ def _base_config():
 
 
 def _shot():
-    dm = DragModel(bc=0.243, drag_table=TableG7,
-                   weight=Weight.Grain(175), diameter=Distance.Millimeter(7.62), length=Distance.Millimeter(32.0))
+    dm = DragModel(
+        bc=0.243,
+        drag_table=TableG7,
+        weight=Weight.Grain(175),
+        diameter=Distance.Millimeter(7.62),
+        length=Distance.Millimeter(32.0),
+    )
     return Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
 
 

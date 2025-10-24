@@ -14,10 +14,7 @@ faulthandler.enable()
 
 def pytest_addoption(parser):
     parser.addoption(
-        "--engine",
-        action="store",
-        default="cythonized_rk4_engine",
-        help="Specify the engine entry point name"
+        "--engine", action="store", default="cythonized_rk4_engine", help="Specify the engine entry point name"
     )
 
 

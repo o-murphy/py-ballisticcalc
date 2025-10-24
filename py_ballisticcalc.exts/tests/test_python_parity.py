@@ -4,11 +4,11 @@ The CythonEngineTestHarness exposes internal C computations so we can assert tig
 numerical equivalence across drag, atmosphere density/mach, spin drift, energy,
 stability coefficient updates, and integration step count behavior.
 """
+
 from __future__ import annotations
 
 import math
 import random
-import pytest
 
 from py_ballisticcalc.drag_tables import TableG7
 from py_ballisticcalc.drag_model import DragModel

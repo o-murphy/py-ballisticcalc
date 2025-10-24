@@ -8,7 +8,11 @@ from py_ballisticcalc_exts.bclib cimport (
     Wind_t,
     Coriolis_t,
     WindSock_t,
+    InterpKey,
 )
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport V3dT
+
 
 cdef extern from "include/bind.h" nogil:
     MachList_t MachList_t_fromPylist(PyObject *pylist) noexcept nogil
@@ -29,3 +33,8 @@ cdef WindSock_t WindSock_t_from_pylist(object winds_py_list)
 # Helper functions to create unit objects
 cdef object _new_feet(double val)
 cdef object _new_rad(double val)
+
+cdef object _v3d_to_vector(const V3dT *v)
+
+cdef InterpKey _attribute_to_key(str key_attribute)
+cdef str _key_to_attribute(InterpKey key_kind)

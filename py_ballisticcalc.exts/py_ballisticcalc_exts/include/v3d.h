@@ -1,5 +1,5 @@
-#ifndef V3dT_H
-#define V3dT_H
+#ifndef BCLIB_V3dT_H
+#define BCLIB_V3dT_H
 
 #include <math.h> // For sqrt (for double precision)
 
@@ -43,4 +43,4 @@ extern "C"
 }
 #endif
 
-#endif // V3dT_H
+#endif // BCLIB_V3dT_H
