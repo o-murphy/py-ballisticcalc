@@ -42,7 +42,7 @@ extern LogLevel global_log_level;
  */
 
 // Alternative: Shorter format (just filename without path)
-#ifdef _WIN32
+#if defined(_MSC_VER)
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #else
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
