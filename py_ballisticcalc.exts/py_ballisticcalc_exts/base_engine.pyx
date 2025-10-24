@@ -343,7 +343,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if err == ErrorCode.NO_ERROR or isRangeError(err):
             return out_error_ft
 
-        if err == ErrorCode.VALUE_ERROR:
+        if err & ErrorCode.VALUE_ERROR:
             raise ValueError(self.error_message)
 
         raise SolverRuntimeError(
@@ -989,20 +989,9 @@ cdef class CythonizedBaseIntegrationEngine:
             filter_flags,
             &traj_seq._c_view,
         )
-        self._raise_on_input_error(err)
+        self._raise_on_integrate_error(err)
 
-        if err == ErrorCode.NO_ERROR:
-            return traj_seq, None
-
-        cdef str termination_reason = None
-        if err == ErrorCode.VALUE_ERROR:
-            raise ValueError(self.error_message)
-
-        if not isRangeError(err):
-            raise SolverRuntimeError(
-                f"undefined error in integrate_func, "
-                f"error code: {err}, {self.error_message}"
-            )
+        cdef object termination_reason = None
 
         if err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
             termination_reason = RangeError.MinimumVelocityReached
@@ -1014,18 +1003,32 @@ cdef class CythonizedBaseIntegrationEngine:
         return traj_seq, termination_reason
 
     cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
-        if err == ErrorCode.INPUT_ERROR:
+        if err & ErrorCode.INPUT_ERROR:
             raise TypeError(f"Invalid input (NULL pointer): {self.error_message}: error code: {err}")
+
+    cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
+        self._raise_on_input_error(err)
+
+        if err == ErrorCode.NO_ERROR or isRangeError(err):
+            return
+
+        if err & ErrorCode.ZERO_DIVISION_ERROR:
+            raise ZeroDivisionError(self.error_message)
+        
+        raise SolverRuntimeError(
+            f"unhandled error in integrate_func, "
+            f"error code: {err}, {self.error_message}"
+        )
 
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
 
         if err == ErrorCode.NO_ERROR or isRangeError(err):
             return
 
-        if (err == ErrorCode.VALUE_ERROR):
+        if (err & ErrorCode.VALUE_ERROR):
             raise ValueError("Barrel elevation must be greater than 0 to find apex.")
 
-        if (err == ErrorCode.RUNTIME_ERROR):
+        if (err & ErrorCode.RUNTIME_ERROR):
             raise SolverRuntimeError("No apex flagged in trajectory data")
 
         raise RuntimeError(

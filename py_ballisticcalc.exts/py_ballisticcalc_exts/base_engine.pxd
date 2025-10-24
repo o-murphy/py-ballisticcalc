@@ -167,6 +167,7 @@ cdef class CythonizedBaseIntegrationEngine:
     )
 
     cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err)
+    cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorCode err)
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err)
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
