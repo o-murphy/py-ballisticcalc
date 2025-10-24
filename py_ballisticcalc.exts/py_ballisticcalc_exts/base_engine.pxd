@@ -166,3 +166,8 @@ cdef class CythonizedBaseIntegrationEngine:
     )
 
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err)
+    cdef void _raise_on_init_zero_error(
+        CythonizedBaseIntegrationEngine self,
+        ErrorCode err,
+        OutOfRangeError_t *err_data
+    )

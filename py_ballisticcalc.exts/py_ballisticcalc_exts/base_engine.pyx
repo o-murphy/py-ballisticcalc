@@ -451,29 +451,18 @@ cdef class CythonizedBaseIntegrationEngine:
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
 
-        cdef OutOfRangeError_t error
-        cdef ErrorCode err
-
-        err = Engine_t_init_zero_calculation(
+        cdef OutOfRangeError_t err_data
+        cdef ErrorCode err = Engine_t_init_zero_calculation(
             &self._engine,
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
             out,
-            &error,
+            &err_data,
         )
 
-        if err == ErrorCode.ZERO_INIT_CONTINUE or err == ErrorCode.ZERO_INIT_DONE:
-            return err
-
-        if err == ErrorCode.OUT_OF_RANGE_ERROR:
-            raise OutOfRangeError(
-                _new_feet(error.requested_distance_ft),
-                _new_feet(error.max_range_ft),
-                _new_rad(error.look_angle_rad)
-            )
-
-        self._raise_on_apex_error(err)
+        self._raise_on_init_zero_error(err, &err_data)
+        return err
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -1039,3 +1028,20 @@ cdef class CythonizedBaseIntegrationEngine:
             f"undefined error occured, "
             f"error code: {err}, {self.error_message}"
         )
+
+    cdef void _raise_on_init_zero_error(
+        CythonizedBaseIntegrationEngine self,
+        ErrorCode err,
+        OutOfRangeError_t *err_data
+    ):
+        if err == ErrorCode.ZERO_INIT_CONTINUE or err == ErrorCode.ZERO_INIT_DONE:
+            return
+
+        if err == ErrorCode.OUT_OF_RANGE_ERROR:
+            raise OutOfRangeError(
+                _new_feet(err_data.requested_distance_ft),
+                _new_feet(err_data.max_range_ft),
+                _new_rad(err_data.look_angle_rad)
+            )
+
+        self._raise_on_apex_error(err)
