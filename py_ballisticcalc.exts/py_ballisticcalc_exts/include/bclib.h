@@ -20,28 +20,42 @@ extern const double cEarthAngularVelocityRadS;
 
 typedef enum
 {
-    // General error codes
-    NO_ERROR = 0,
-    ZERO_DIVISION_ERROR = 1,
-    VALUE_ERROR = 2,
-    KEY_ERROR = 3,
-    INDEX_ERROR = 4,
-    MEMORY_ERROR = 5,
-    ARITHMETIC_ERROR = 6,
-    INPUT_ERROR = 7,
-    RUNTIME_ERROR = 8,
+    // General error flags (bitmask)
+    NO_ERROR = 0x0000,            // (0)
+    ZERO_DIVISION_ERROR = 0x0001, // (1 << 0)
+    VALUE_ERROR = 0x0002,         // (1 << 1)
+    KEY_ERROR = 0x0004,           // (1 << 2)
+    INDEX_ERROR = 0x0008,         // (1 << 3)
+    MEMORY_ERROR = 0x0010,        // (1 << 4)
+    ARITHMETIC_ERROR = 0x0020,    // (1 << 5)
+    INPUT_ERROR = 0x0040,         // (1 << 6)
+    RUNTIME_ERROR = 0x0080,       // (1 << 7)
 
-    UNDEFINED_ERROR = 1000,
+    // Sequence (BaseTrajSeq_t) specific flags
+    SEQUENCE_ERROR = 0x0100,                                     // (1 << 8)
+    SEQUENCE_INPUT_ERROR = SEQUENCE_ERROR | INPUT_ERROR,           // 0x0100 | 0x0040 = 0x0140  -> (1 << 8) | (1 << 6)
+    SEQUENCE_VALUE_ERROR = SEQUENCE_ERROR | VALUE_ERROR,           // 0x0100 | 0x0002 = 0x0102  -> (1 << 8) | (1 << 1)
+    SEQUENCE_KEY_ERROR = SEQUENCE_ERROR | KEY_ERROR,               // 0x0100 | 0x0004 = 0x0104  -> (1 << 8) | (1 << 2)
+    SEQUENCE_MEMORY_ERROR = SEQUENCE_ERROR | MEMORY_ERROR,         // 0x0100 | 0x0010 = 0x0110  -> (1 << 8) | (1 << 4)
+    SEQUENCE_INDEX_ERROR = SEQUENCE_ERROR | INDEX_ERROR,           // 0x0100 | 0x0008 = 0x0108  -> (1 << 8) | (1 << 3)
+    SEQUENCE_ARITHMETIC_ERROR = SEQUENCE_ERROR | ARITHMETIC_ERROR, // 0x0100 | 0x0020 = 0x0120  -> (1 << 8) | (1 << 5)
 
-    // Solver specific errors
-    RANGE_ERROR = 100,
-    RANGE_ERROR_MINIMUM_VELOCITY_REACHED = 101,
-    RANGE_ERROR_MAXIMUM_DROP_REACHED = 102,
-    RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = 103,
+    // Interpolation specific flag
+    INTERPOLATION_ERROR = 0x0200, // (1 << 9)
 
-    OUT_OF_RANGE_ERROR = 200,
-    ZERO_INIT_CONTINUE = 201,
-    ZERO_INIT_DONE = 202,
+    // Solver specific flags (always include RANGE_ERROR)
+    RANGE_ERROR = NO_ERROR | 0x0400,                             // 0x0400 -> (1 << 10)
+    RANGE_ERROR_MINIMUM_VELOCITY_REACHED = RANGE_ERROR | 0x0800, // 0x0400 | 0x0800 = 0x0C00 -> (1 << 10) | (1 << 11)
+    RANGE_ERROR_MAXIMUM_DROP_REACHED = RANGE_ERROR | 0x1000,     // 0x0400 | 0x1000 = 0x1400 -> (1 << 10) | (1 << 12)
+    RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = RANGE_ERROR | 0x2000, // 0x0400 | 0x2000 = 0x2400 -> (1 << 10) | (1 << 13)
+
+    // Zero init specific flags
+    OUT_OF_RANGE_ERROR = 0x4000,            // (1 << 14)
+    ZERO_INIT_CONTINUE = NO_ERROR | 0x8000, // 0x8000 -> (1 << 15)
+    ZERO_INIT_DONE = NO_ERROR | 0x10000,    // 0x10000 -> (1 << 16)
+
+    // Undefined
+    UNDEFINED_ERROR = 0x20000 // (1 << 17)
 } ErrorCode;
 
 typedef struct
