@@ -35,16 +35,22 @@ ErrorCode Engine_t_log_and_save_error(
 
 int isRangeError(ErrorCode err)
 {
-    switch (err)
-    {
-    case RANGE_ERROR:
-    case RANGE_ERROR_MAXIMUM_DROP_REACHED:
-    case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
-    case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
-        return 1;
-    default:
-        return 0;
-    }
+    return (err & RANGE_ERROR) != 0;
+    // switch (err)
+    // {
+    // case RANGE_ERROR:
+    // case RANGE_ERROR_MAXIMUM_DROP_REACHED:
+    // case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+    // case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+    //     return 1;
+    // default:
+    //     return 0;
+    // }
+}
+
+int isSequenceError(ErrorCode err)
+{
+    return (err & SEQUENCE_ERROR) != 0;
 }
 
 void Engine_t_release_trajectory(Engine_t *eng)

@@ -77,6 +77,7 @@ extern "C"
     void Engine_t_release_trajectory(Engine_t *eng);
 
     int isRangeError(ErrorCode err);
+    int isSequenceError(ErrorCode err);
 
     ErrorCode Engine_t_integrate(
         Engine_t *eng,

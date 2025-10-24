@@ -27,14 +27,6 @@ cdef extern from "include/base_traj_seq.h" nogil:
     double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t* p, InterpKey key_kind) noexcept nogil
     double BaseTraj_t_slant_val_buf(const BaseTraj_t* p, double ca, double sa) noexcept nogil
 
-    ErrorCode BaseTrajSeq_t_interpolate_raw(
-        const BaseTrajSeq_t* seq,
-        Py_ssize_t idx,
-        InterpKey key_kind,
-        double key_value,
-        BaseTraj_t* out
-    ) noexcept nogil
-
     ErrorCode BaseTrajSeq_t_interpolate_at(
         const BaseTrajSeq_t *seq,
         ssize_t idx,
@@ -59,17 +51,6 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double vy,
         double vz,
         double mach
-    ) noexcept nogil
-    Py_ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
-        const BaseTrajSeq_t* seq,
-        InterpKey key_kind,
-        double key_value
-    ) noexcept nogil
-    Py_ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
-        const BaseTrajSeq_t* seq,
-        double ca,
-        double sa,
-        double value
     ) noexcept nogil
     ErrorCode BaseTrajSeq_t_get_at_slant_height(
         const BaseTrajSeq_t *seq,

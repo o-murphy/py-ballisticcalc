@@ -67,6 +67,7 @@ cdef extern from "include/engine.h" nogil:
         char err_msg[MAX_ERR_MSG_LEN]
 
     int isRangeError(ErrorCode err) noexcept nogil
+    int isSequenceError(ErrorCode err) noexcept nogil
 
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 

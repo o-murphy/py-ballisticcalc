@@ -42,9 +42,9 @@ cdef class BaseTrajSeqT:
         cdef ErrorCode err = BaseTrajSeq_t_append(&self._c_view, time, px, py, pz, vx, vy, vz, mach)
         if err == ErrorCode.NO_ERROR:
             return
-        if err == ErrorCode.MEMORY_ERROR:
+        if err & ErrorCode.MEMORY_ERROR:
             raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
-        if err == ErrorCode.VALUE_ERROR:
+        if err & ErrorCode.VALUE_ERROR:
             raise ValueError('Invalid BaseTrajSeq_t_append input')
         raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_append, error code: {err}")
 
@@ -55,9 +55,9 @@ cdef class BaseTrajSeqT:
         cdef ErrorCode err = BaseTrajSeq_t_ensure_capacity(&self._c_view, <Py_ssize_t>min_capacity)
         if err == ErrorCode.NO_ERROR:
             return
-        if err == ErrorCode.MEMORY_ERROR:
+        if err & ErrorCode.MEMORY_ERROR:
             raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
-        if err == ErrorCode.VALUE_ERROR:
+        if err & ErrorCode.VALUE_ERROR:
             raise ValueError('Invalid BaseTrajSeq_t_ensure_capacity input')
         raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_ensure_capacity, error code: {err}")
 
@@ -86,13 +86,13 @@ cdef class BaseTrajSeqT:
         if err == ErrorCode.NO_ERROR:
             return BaseTrajDataT(output)
 
-        if err == ErrorCode.VALUE_ERROR:
+        if err & ErrorCode.VALUE_ERROR:
             raise ValueError("invalid BaseTrajSeq_t_interpolate_at input")
-        if err == ErrorCode.INDEX_ERROR:
+        if err & ErrorCode.INDEX_ERROR:
             raise IndexError(
                 "BaseTrajSeq_t_interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)"
             )
-        if err == ErrorCode.KEY_ERROR:
+        if err & ErrorCode.KEY_ERROR:
             raise AttributeError("invalid InterpKey")
         raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_interpolate_at, error code: {err}")
 
@@ -113,9 +113,9 @@ cdef class BaseTrajSeqT:
         if err == ErrorCode.NO_ERROR:
             return BaseTrajDataT(out)
 
-        if err == ErrorCode.VALUE_ERROR:
+        if err & ErrorCode.VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
-        if err == ErrorCode.ARITHMETIC_ERROR:
+        if err & ErrorCode.ARITHMETIC_ERROR:
             raise ArithmeticError(
                 f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
         raise RuntimeError(f"undefined internal error in BaseTrajSeq_t_get_at, error code: {err}")
@@ -128,8 +128,8 @@ cdef class BaseTrajSeqT:
         if err == ErrorCode.NO_ERROR:
             return BaseTrajDataT(out)
 
-        if err == ErrorCode.VALUE_ERROR:
+        if err & ErrorCode.VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
-        if err == ErrorCode.ZERO_DIVISION_ERROR:
+        if err & ErrorCode.ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
         raise RuntimeError(f"undefined error in BaseTrajSeq_t_get_at_slant_height, error code: {err}")
