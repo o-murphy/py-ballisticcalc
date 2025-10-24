@@ -77,11 +77,18 @@ ErrorCode Engine_t_integrate(
 
     ErrorCode err = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 
-    // // fix: do not overwrite integrator_func error
-    // if (err != NO_ERROR)
-    // {
-    //     Engine_t_ERR(eng, err, "error code: %d", err);
-    // }
+    // redirect last error message
+    if (err != NO_ERROR)
+    {
+        if (isRangeError(err))
+        {
+            C_LOG(LOG_LEVEL_INFO, "%s: termination reason: %d", eng->err_msg, err);
+        }
+        else
+        {
+            Engine_t_ERR(eng, err, "%s: error code: %d", eng->err_msg, err);
+        }
+    }
     return err;
 }
 
@@ -117,22 +124,20 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     // allow RANGE_ERROR
     if (err == NO_ERROR || isRangeError(err))
     {
-        C_LOG(LOG_LEVEL_DEBUG, "Integration completed successfully or with acceptable termination code: (%d).", err);
-        err = NO_ERROR;
-    }
-    else
-    {
-        Engine_t_ERR(eng, err, "Critical integration error code: %d", err);
-        // goto finally;
-    }
+        // Do not mask Engine_t_integrate error
+        C_LOG(LOG_LEVEL_INFO, "Integration completed successfully or with acceptable termination code: (%d).", err);
 
-    if (err == NO_ERROR)
-    {
+        err = NO_ERROR;
         err = BaseTrajSeq_t_get_at(&result, KEY_VEL_Y, 0.0, -1, out);
         if (err != NO_ERROR)
         {
             err = Engine_t_ERR(eng, RUNTIME_ERROR, "Runtime error (No apex flagged in trajectory data)");
         }
+    }
+    else
+    {
+        Engine_t_ERR(eng, err, "Critical: integration error: %s, error code: %d", eng->err_msg, err);
+        // goto finally;
     }
 
     // finally
@@ -252,6 +257,21 @@ ErrorCode Engine_t_init_zero_calculation(
     {
         // Compute slant distance at apex using robust accessor
         err = Engine_t_find_apex(eng, &apex);
+        if (err != NO_ERROR && !isRangeError(err))
+        {
+            switch (err)
+            {
+            case VALUE_ERROR:
+                return Engine_t_ERR(eng, err, "Barrel elevation must be greater than 0 to find apex.");
+            case RUNTIME_ERROR:
+                return Engine_t_ERR(eng, err, "No apex flagged in trajectory data");
+            default:
+                break;
+            }
+            // // fix
+            // redirect Engine_t_find_apex error
+            return Engine_t_ERR(eng, err, "Find apex error: %s: error code: %d", eng->err_msg, err);
+        }
         apex_slant_ft = apex.position.x * cos(result->look_angle_rad) + apex.position.y * sin(result->look_angle_rad);
         if (apex_slant_ft < result->slant_range_ft)
         {

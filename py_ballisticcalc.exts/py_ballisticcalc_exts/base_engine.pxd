@@ -164,3 +164,5 @@ cdef class CythonizedBaseIntegrationEngine:
         double time_step,
         TrajFlag_t filter_flags
     )
+
+    cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err)

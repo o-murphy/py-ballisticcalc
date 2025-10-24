@@ -463,6 +463,9 @@ cdef class CythonizedBaseIntegrationEngine:
             &error,
         )
 
+        if err == ErrorCode.ZERO_INIT_CONTINUE or err == ErrorCode.ZERO_INIT_DONE:
+            return err
+
         if err == ErrorCode.OUT_OF_RANGE_ERROR:
             raise OutOfRangeError(
                 _new_feet(error.requested_distance_ft),
@@ -470,7 +473,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 _new_rad(error.look_angle_rad)
             )
 
-        return err
+        self._raise_on_apex_error(err)
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -787,20 +790,8 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef ErrorCode err
 
         err = Engine_t_find_apex(&self._engine, &apex)
-
-        if (err == ErrorCode.NO_ERROR):
-            return apex
-
-        if (err == ErrorCode.VALUE_ERROR):
-            raise ValueError("Barrel elevation must be greater than 0 to find apex.")
-
-        if (err == ErrorCode.RUNTIME_ERROR):
-            raise SolverRuntimeError("No apex flagged in trajectory data")
-
-        raise RuntimeError(
-            f"undefined error occured during BaseTrajSeq_t_append, "
-            f"error code: {err}, {self.error_message}"
-        )
+        self._raise_on_apex_error(err)
+        return apex
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -1033,3 +1024,18 @@ cdef class CythonizedBaseIntegrationEngine:
             termination_reason = RangeError.MinimumAltitudeReached
 
         return traj_seq, termination_reason
+
+    cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
+        if err == ErrorCode.NO_ERROR or isRangeError(err):
+            return
+
+        if (err == ErrorCode.VALUE_ERROR):
+            raise ValueError("Barrel elevation must be greater than 0 to find apex.")
+
+        if (err == ErrorCode.RUNTIME_ERROR):
+            raise SolverRuntimeError("No apex flagged in trajectory data")
+
+        raise RuntimeError(
+            f"undefined error occured, "
+            f"error code: {err}, {self.error_message}"
+        )
