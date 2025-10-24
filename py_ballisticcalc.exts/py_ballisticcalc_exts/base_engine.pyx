@@ -338,6 +338,8 @@ cdef class CythonizedBaseIntegrationEngine:
             &out_error_ft
         )
 
+        self._raise_on_input_error(err)
+
         if err == ErrorCode.NO_ERROR or isRangeError(err):
             return out_error_ft
 
@@ -460,7 +462,7 @@ cdef class CythonizedBaseIntegrationEngine:
             out,
             &err_data,
         )
-
+        self._raise_on_input_error(err)
         self._raise_on_init_zero_error(err, &err_data)
         return err
 
@@ -770,15 +772,10 @@ cdef class CythonizedBaseIntegrationEngine:
 
         # FIXME: possibly needs to be initialised with zeros
         # apex = BaseTrajData_t(
-        #     0.0,
-        #     V3dT(0.0, 0.0, 0.0),
-        #     V3dT(0.0, 0.0, 0.0),
-        #     0.0
-        # )
+        #     0.0, V3dT(0.0, 0.0, 0.0), V3dT(0.0, 0.0, 0.0), 0.0)
 
-        cdef ErrorCode err
-
-        err = Engine_t_find_apex(&self._engine, &apex)
+        cdef ErrorCode err = Engine_t_find_apex(&self._engine, &apex)
+        self._raise_on_input_error(err)
         self._raise_on_apex_error(err)
         return apex
 
@@ -992,6 +989,8 @@ cdef class CythonizedBaseIntegrationEngine:
             filter_flags,
             &traj_seq._c_view,
         )
+        self._raise_on_input_error(err)
+
         if err == ErrorCode.NO_ERROR:
             return traj_seq, None
 
@@ -1014,7 +1013,12 @@ cdef class CythonizedBaseIntegrationEngine:
 
         return traj_seq, termination_reason
 
+    cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
+        if err == ErrorCode.INPUT_ERROR:
+            raise ValueError(f"Invalid input (NULL pointer): {self.error_message}: error code: {err}")
+
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
+
         if err == ErrorCode.NO_ERROR or isRangeError(err):
             return
 

@@ -166,11 +166,9 @@ ErrorCode Engine_t_error_at_distance(
         return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
 
-    ErrorCode err;
     BaseTrajSeq_t trajectory;
     BaseTrajData_t hit;
     BaseTraj_t *last_ptr;
-    ssize_t n;
 
     BaseTrajSeq_t_init(&trajectory);
 
@@ -178,7 +176,7 @@ ErrorCode Engine_t_error_at_distance(
 
     eng->shot.barrel_elevation = angle_rad;
 
-    err = Engine_t_integrate(
+    ErrorCode err = Engine_t_integrate(
         eng,
         target_x_ft,
         target_x_ft,
@@ -228,6 +226,12 @@ ErrorCode Engine_t_init_zero_calculation(
     ZeroInitialData_t *result,
     OutOfRangeError_t *error)
 {
+
+    if (!eng || !result || !error)
+    {
+        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    }
+
     ErrorCode err;
     BaseTrajData_t apex;
     double apex_slant_ft;
