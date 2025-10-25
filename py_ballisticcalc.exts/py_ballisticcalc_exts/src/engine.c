@@ -526,7 +526,7 @@ finally:
 // Returns max slant-distance for given launch angle in radians.
 // Robust ZERO_DOWN detection: scan from the end and find the first slant-height
 // crossing where the previous point is positive and current is non-positive.
-ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
+static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
 {
     double ca;
     double sa;
@@ -595,76 +595,138 @@ ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *resu
     return err;
 }
 
-// ErrorCode Engine_t_find_max_raange(
-//     Engine_t *eng,
-//     double low_angle_deg,
-//     double high_angle_deg,
-//     double APEX_IS_MAX_RANGE_RADIANS,
-//     MaxRangeResult_t *result)
-// {
-//     double look_angle_rad = eng->shot.look_angle;
-//     double max_range_ft;
-//     double angle_at_max_rad;
-//     BaseTrajData_t apex;
-//     ErrorCode err;
-//     double sdist;
+ErrorCode Engine_t_find_max_raange(
+    Engine_t *eng,
+    double low_angle_deg,
+    double high_angle_deg,
+    double APEX_IS_MAX_RANGE_RADIANS,
+    MaxRangeResult_t *result)
+{
+    double look_angle_rad = eng->shot.look_angle;
+    double max_range_ft;
+    double angle_at_max_rad;
+    BaseTrajData_t apex;
+    ErrorCode err;
+    double sdist;
 
-//     // Virtually vertical shot
-//     // π/2 radians = 90 degrees
-//     if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
-//     {
-//         err = Engine_t_find_apex(eng, &apex);
-//         if (err != NO_ERROR && !isRangeError(err))
-//         {
-//             switch (err)
-//             {
-//             case VALUE_ERROR:
-//                 return Engine_t_ERR(eng, err, "Barrel elevation must be greater than 0 to find apex.");
-//             case RUNTIME_ERROR:
-//                 return Engine_t_ERR(eng, err, "No apex flagged in trajectory data");
-//             default:
-//                 break;
-//             }
-//             // // fix
-//             // redirect Engine_t_find_apex error
-//             return Engine_t_ERR(eng, err, "Find apex error: %s: error code: %d", eng->err_msg, err);
-//         }
-//         sdist = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
-//         result->max_range_ft = sdist;
-//         result->angle_at_max_rad = look_angle_rad;
-//         return NO_ERROR;
-//     }
+    // Virtually vertical shot
+    // π/2 radians = 90 degrees
+    if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+    {
+        err = Engine_t_find_apex(eng, &apex);
+        if (err != NO_ERROR && !isRangeError(err))
+        {
+            switch (err)
+            {
+            case VALUE_ERROR:
+                return Engine_t_ERR(eng, err, "Barrel elevation must be greater than 0 to find apex.");
+            case RUNTIME_ERROR:
+                return Engine_t_ERR(eng, err, "No apex flagged in trajectory data");
+            default:
+                break;
+            }
+            // // fix
+            // redirect Engine_t_find_apex error
+            return Engine_t_ERR(eng, err, "Find apex error: %s: error code: %d", eng->err_msg, err);
+        }
+        sdist = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
+        result->max_range_ft = sdist;
+        result->angle_at_max_rad = look_angle_rad;
+        return NO_ERROR;
+    }
 
-//     // Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
-//     double restore_cMaximumDrop = 0.0;
-//     int has_restore_cMaximumDrop = 0;
-//     double restore_cMinimumVelocity = 0.0;
-//     int has_restore_cMinimumVelocity = 0;
+    // Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
+    double restore_cMaximumDrop = 0.0;
+    int has_restore_cMaximumDrop = 0;
+    double restore_cMinimumVelocity = 0.0;
+    int has_restore_cMinimumVelocity = 0;
 
-//     if (eng->config.cMaximumDrop != 0.0)
-//     {
-//         restore_cMaximumDrop = eng->config.cMaximumDrop;
-//         eng->config.cMaximumDrop = 0.0; // We want to run trajectory until it returns to horizontal
-//         has_restore_cMaximumDrop = 1;
-//     }
+    if (eng->config.cMaximumDrop != 0.0)
+    {
+        restore_cMaximumDrop = eng->config.cMaximumDrop;
+        eng->config.cMaximumDrop = 0.0; // We want to run trajectory until it returns to horizontal
+        has_restore_cMaximumDrop = 1;
+    }
 
-//     if (eng->config.cMinimumVelocity != 0.0)
-//     {
-//         restore_cMinimumVelocity = eng->config.cMinimumVelocity;
-//         eng->config.cMinimumVelocity = 0.0; // We want to run trajectory until it returns to horizontal
-//         has_restore_cMinimumVelocity = 1;
-//     }
+    if (eng->config.cMinimumVelocity != 0.0)
+    {
+        restore_cMinimumVelocity = eng->config.cMinimumVelocity;
+        eng->config.cMinimumVelocity = 0.0; // We want to run trajectory until it returns to horizontal
+        has_restore_cMinimumVelocity = 1;
+    }
 
-//     double inv_phi = 0.6180339887498949;              // (sqrt(5) - 1) / 2
-//     double inv_phi_sq = 0.38196601125010515;          // inv_phi^2
-//     double a = low_angle_deg * 0.017453292519943295;  // Convert to radians
-//     double b = high_angle_deg * 0.017453292519943295; // Convert to radians
-//     double h = b - a;
-//     double c = a + inv_phi_sq * h;
-//     double d = a + inv_phi * h;
-//     double yc, yd;
-//     int iteration;
-// }
+    double inv_phi = 0.6180339887498949;              // (sqrt(5) - 1) / 2
+    double inv_phi_sq = 0.38196601125010515;          // inv_phi^2
+    double a = low_angle_deg * 0.017453292519943295;  // Convert to radians
+    double b = high_angle_deg * 0.017453292519943295; // Convert to radians
+    double h = b - a;
+    double c = a + inv_phi_sq * h;
+    double d = a + inv_phi * h;
+    double yc, yd;
+
+    err = Engine_t_range_for_angle(eng, c, &yc);
+    if (err != NO_ERROR && !isRangeError(err))
+    {
+        return err;
+    }
+    err = Engine_t_range_for_angle(eng, d, &yd);
+    if (err != NO_ERROR && !isRangeError(err))
+    {
+        return err;
+    }
+
+    // Golden-section search
+    for (int i = 0; i < 100; i++)
+    {
+        if (h < 1e-5)
+        {
+            break;
+        }
+        if (yc > yd)
+        {
+            b = d;
+            d = c;
+            yd = yc;
+            h = b - a;
+            c = a + inv_phi_sq * h;
+            err = Engine_t_range_for_angle(eng, c, &yc);
+        }
+        else
+        {
+            a = c;
+            c = d;
+            yc = yd;
+            h = b - a;
+            d = a + inv_phi * h;
+            err = Engine_t_range_for_angle(eng, d, &yd);
+        }
+        if (err != NO_ERROR && !isRangeError(err))
+        {
+            return err;
+        }
+    }
+
+    angle_at_max_rad = (a + b) / 2;
+    err = Engine_t_range_for_angle(eng, angle_at_max_rad, &max_range_ft);
+    if (err != NO_ERROR && !isRangeError(err))
+    {
+        return err;
+    }
+
+    // Restore original constraints
+    if (has_restore_cMaximumDrop)
+    {
+        eng->config.cMaximumDrop = restore_cMaximumDrop;
+    }
+    if (has_restore_cMinimumVelocity)
+    {
+        eng->config.cMinimumVelocity = restore_cMinimumVelocity;
+    }
+
+    result->max_range_ft = max_range_ft;
+    result->angle_at_max_rad = angle_at_max_rad;
+    return NO_ERROR;
+}
 
 // ErrorCode Engine_t_find_zero_angle(
 //     Engine_t *eng,

@@ -634,95 +634,20 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
-        cdef:
-            double look_angle_rad = shot_props_ptr.look_angle
-            double max_range_ft
-            double angle_at_max_rad
-            BaseTrajData_t _apex_obj
-            double _sdist
 
-        # Virtually vertical shot
-        if (
-            fabs(look_angle_rad - <double>1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS
-        ):  # π/2 radians = 90 degrees
-            _apex_obj = self._find_apex()
-            _sdist = (
-                _apex_obj.position.x
-                * cos(look_angle_rad)
-                + _apex_obj.position.y
-                * sin(look_angle_rad)
-            )
-            return MaxRangeResult_t(_sdist, look_angle_rad)
+        cdef MaxRangeResult_t result
+        cdef ErrorCode err = Engine_t_find_max_raange(
+            &self._engine,
+            low_angle_deg,
+            high_angle_deg,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            &result
+        )
+        self._raise_on_input_error(err)
+        self._raise_on_integrate_error(err)
+        self._raise_on_apex_error(err)
 
-        # Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
-        cdef:
-            double restore_cMaximumDrop = 0.0
-            int has_restore_cMaximumDrop = 0
-            double restore_cMinimumVelocity = 0.0
-            int has_restore_cMinimumVelocity = 0
-
-        if self._engine.config.cMaximumDrop != <double>0.0:
-            restore_cMaximumDrop = self._engine.config.cMaximumDrop
-            self._engine.config.cMaximumDrop = 0.0  # We want to run trajectory until it returns to horizontal
-            has_restore_cMaximumDrop = 1
-        if self._engine.config.cMinimumVelocity != <double>0.0:
-            restore_cMinimumVelocity = self._engine.config.cMinimumVelocity
-            self._engine.config.cMinimumVelocity = 0.0
-            has_restore_cMinimumVelocity = 1
-
-        cdef:
-            double inv_phi = 0.6180339887498949  # (sqrt(5) - 1) / 2
-            double inv_phi_sq = 0.38196601125010515  # inv_phi^2
-            double a = low_angle_deg * 0.017453292519943295  # Convert to radians
-            double b = high_angle_deg * 0.017453292519943295  # Convert to radians
-            double h = b - a
-            double c = a + inv_phi_sq * h
-            double d = a + inv_phi * h
-            double yc, yd
-            int iteration
-
-        def range_for_angle(angle_rad):
-            """Returns max slant-distance for given launch angle in radians.
-            Robust ZERO_DOWN detection: scan from the end and find the first slant-height
-            crossing where the previous point is positive and current is non-positive."""
-
-            cdef double _result
-            cdef ErrorCode _err = Engine_t_range_for_angle(
-                &self._engine,
-                angle_rad,
-                &_result
-            )
-            self._raise_on_integrate_error(_err)
-            return _result
-
-        yc = range_for_angle(c)
-        yd = range_for_angle(d)
-
-        # Golden-section search
-        for iteration in range(100):  # 100 iterations is more than enough for high precision
-            if h < <double>1e-5:  # Angle tolerance in radians
-                break
-            if yc > yd:
-                b, d, yd = d, c, yc
-                h = b - a
-                c = a + inv_phi_sq * h
-                yc = range_for_angle(c)
-            else:
-                a, c, yc = c, d, yd
-                h = b - a
-                d = a + inv_phi * h
-                yd = range_for_angle(d)
-
-        angle_at_max_rad = (a + b) / 2
-        max_range_ft = range_for_angle(angle_at_max_rad)
-
-        # Restore original constraints
-        if has_restore_cMaximumDrop:
-            self._engine.config.cMaximumDrop = restore_cMaximumDrop
-        if has_restore_cMinimumVelocity:
-            self._engine.config.cMinimumVelocity = restore_cMinimumVelocity
-
-        return MaxRangeResult_t(max_range_ft, angle_at_max_rad)
+        return result
 
     cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,

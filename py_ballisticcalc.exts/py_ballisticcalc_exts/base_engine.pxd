@@ -117,10 +117,12 @@ cdef extern from "include/engine.h" nogil:
         ZeroFindingError_t *zero_error
     ) noexcept nogil
 
-    ErrorCode Engine_t_range_for_angle(
+    ErrorCode Engine_t_find_max_raange(
         Engine_t *eng,
-        double angle_rad,
-        double *result
+        double low_angle_deg,
+        double high_angle_deg,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        MaxRangeResult_t *result
     ) noexcept nogil
 
 
