@@ -516,9 +516,6 @@ cdef class CythonizedBaseIntegrationEngine:
             return look_angle_rad
 
         # 1. Find the maximum possible range to establish a search bracket.
-        # cdef MaxRangeResult_t max_range_result = self._find_max_range(
-        #     shot_props_ptr, 0, 90
-        # )
 
         cdef MaxRangeResult_t max_range_result
         err = Engine_t_find_max_range(

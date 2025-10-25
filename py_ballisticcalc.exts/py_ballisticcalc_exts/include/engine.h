@@ -135,12 +135,15 @@ extern "C"
         double APEX_IS_MAX_RANGE_RADIANS,
         MaxRangeResult_t *result);
 
-    // ErrorCode Engine_t_find_zero_angle(
-    //     Engine_t *eng,
-    //     double distance,
-    //     int lofted,
-    //     double *result
-    // );
+    ErrorCode Engine_t_find_zero_angle(
+        Engine_t *eng,
+        double distance,
+        int lofted,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error);
 
 #ifdef __cplusplus
 }

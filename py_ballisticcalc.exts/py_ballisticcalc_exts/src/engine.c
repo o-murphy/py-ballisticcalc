@@ -507,6 +507,11 @@ ErrorCode Engine_t_zero_angle(
 // crossing where the previous point is positive and current is non-positive.
 static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
 {
+    if (!eng || !result)
+    {
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    }
+
     double ca;
     double sa;
     double h_prev;
@@ -581,6 +586,12 @@ ErrorCode Engine_t_find_max_range(
     double APEX_IS_MAX_RANGE_RADIANS,
     MaxRangeResult_t *result)
 {
+
+    if (!eng || !result)
+    {
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    }
+
     double look_angle_rad = eng->shot.look_angle;
     double max_range_ft;
     double angle_at_max_rad;
@@ -680,43 +691,252 @@ ErrorCode Engine_t_find_max_range(
     return NO_ERROR;
 }
 
-// ErrorCode Engine_t_find_zero_angle(
-//     Engine_t *eng,
-//     double distance,
-//     int lofted,
-//     double APEX_IS_MAX_RANGE_RADIANS,
-//     double ALLOWED_ZERO_ERROR_FEET,
-//     double *result,
-//     OutOfRangeError_t *range_error,
-//     ZeroFindingError_t *zero_error)
-// {
-//     ZeroInitialData_t init_data;
-//     ErrorCode status = Engine_t_init_zero_calculation(
-//         eng,
-//         distance,
-//         APEX_IS_MAX_RANGE_RADIANS,
-//         ALLOWED_ZERO_ERROR_FEET,
-//         &init_data,
-//         range_error); // pass pointer directly, not &range_error
+ErrorCode Engine_t_find_zero_angle(
+    Engine_t *eng,
+    double distance,
+    int lofted,
+    double APEX_IS_MAX_RANGE_RADIANS,
+    double ALLOWED_ZERO_ERROR_FEET,
+    double *result,
+    OutOfRangeError_t *range_error,
+    ZeroFindingError_t *zero_error)
+{
 
-//     if (status != ZERO_INIT_CONTINUE && status != ZERO_INIT_DONE)
-//     {
-//         return status;
-//     }
+    if (!eng || !result || !range_error || !zero_error)
+    {
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    }
 
-//     double look_angle_rad = init_data.look_angle_rad;
-//     double slant_range_ft = init_data.slant_range_ft;
-//     double target_x_ft = init_data.target_x_ft;
-//     double target_y_ft = init_data.target_y_ft;
-//     double start_height_ft = init_data.start_height_ft;
+    ZeroInitialData_t init_data;
+    ErrorCode err = Engine_t_init_zero_calculation(
+        eng,
+        distance,
+        APEX_IS_MAX_RANGE_RADIANS,
+        ALLOWED_ZERO_ERROR_FEET,
+        &init_data,
+        &range_error); // pass pointer directly, not &range_error
 
-//     if (status == ZERO_INIT_DONE)
-//     {
-//         *result = look_angle_rad;
-//         return NO_ERROR; // immediately return when already done
-//     }
+    if (err == INPUT_ERROR)
+    {
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+    }
+    if (err != ZERO_INIT_CONTINUE && err != ZERO_INIT_DONE)
+    {
+        return err;
+    }
 
-//     // 1. Find the maximum possible range to establish a search bracket.
-//     MaxRangeResult_t max_range_result = Engine_t_find_max_range(
-//         eng, 0, 90);
-// }
+    double look_angle_rad = init_data.look_angle_rad;
+    double slant_range_ft = init_data.slant_range_ft;
+    double target_x_ft = init_data.target_x_ft;
+    double target_y_ft = init_data.target_y_ft;
+    double start_height_ft = init_data.start_height_ft;
+
+    if (err == ZERO_INIT_DONE)
+    {
+        *result = look_angle_rad;
+        return NO_ERROR;
+    }
+
+    // 1. Find the maximum possible range to establish a search bracket.
+    MaxRangeResult_t max_range_result;
+    err = Engine_t_find_max_range(
+        eng,
+        0,
+        90,
+        APEX_IS_MAX_RANGE_RADIANS,
+        &max_range_result);
+    if (err != NO_ERROR && !isRangeError(err))
+    {
+        return err;
+    }
+
+    double max_range_ft = max_range_result.max_range_ft;
+    double angle_at_max_rad = max_range_result.angle_at_max_rad;
+
+    // 2. Handle edge cases based on max range.
+    if (slant_range_ft > max_range_ft)
+    {
+        range_error->requested_distance_ft = distance;
+        range_error->max_range_ft = max_range_ft;
+        range_error->look_angle_rad = look_angle_rad;
+        return OUT_OF_RANGE_ERROR;
+    }
+    if (fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
+    {
+        *result = angle_at_max_rad;
+        return NO_ERROR;
+    }
+
+    // try:
+
+    // Backup and adjust constraints (emulate @with_no_minimum_velocity)
+    double restore_cMinimumVelocity__zero = 0.0;
+    int has_restore_cMinimumVelocity__zero = 0;
+    if (eng->config.cMinimumVelocity != 0.0)
+    {
+        restore_cMinimumVelocity__zero = eng->config.cMinimumVelocity;
+        eng->config.cMinimumVelocity = 0.0;
+        has_restore_cMinimumVelocity__zero = 1;
+    }
+
+    // 3. Establish search bracket for the zero angle.
+    double low_angle, high_angle;
+    double sight_height_adjust = 0.0;
+    double f_low, f_high;
+
+    if (lofted)
+    {
+        low_angle = angle_at_max_rad;
+        high_angle = 1.5690308719637473; // 89.9 degrees in radians
+    }
+    else
+    {
+        if (start_height_ft > 0.0)
+        {
+            sight_height_adjust = atan2(start_height_ft, target_x_ft);
+        }
+        low_angle = look_angle_rad - sight_height_adjust;
+        high_angle = angle_at_max_rad;
+    }
+
+    char *reason;
+
+    // Prepare variables for Ridder's method outside of try block to satisfy Cython
+    double mid_angle, f_mid, s, next_angle, f_next;
+
+    err = Engine_t_error_at_distance(
+        eng,
+        low_angle,
+        target_x_ft,
+        target_y_ft,
+        &f_low);
+    if (err != NO_ERROR && !isRangeError(err))
+    {
+        goto finally;
+    }
+
+    // If low is exactly look angle and failed to evaluate, nudge slightly upward to bracket
+    if (f_low > 1e8 && fabs(low_angle - look_angle_rad) < 1e-9)
+    {
+        low_angle = look_angle_rad + 1e-3;
+        err = Engine_t_error_at_distance(
+            eng,
+            low_angle,
+            target_x_ft,
+            target_y_ft,
+            &f_low);
+        if (err != NO_ERROR && !isRangeError(err))
+        {
+            goto finally;
+        }
+    }
+
+    err = Engine_t_error_at_distance(
+        eng,
+        high_angle,
+        target_x_ft,
+        target_y_ft,
+        &f_high);
+    if (err != NO_ERROR && !isRangeError(err))
+    {
+        goto finally;
+    }
+
+    if (f_low * f_high >= 0)
+    {
+        // char* lofted_str = lofted ? "lofted" : "low";
+        // char* reason = (
+        //             f"No {lofted_str} zero trajectory in elevation range "
+        //             f"({low_angle * 57.29577951308232:.2f}, "
+        //             f"{high_angle * 57.29577951308232:.2f} deg). "
+        //             f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
+        //         )
+        zero_error->zero_finding_error = target_y_ft;
+        zero_error->iterations_count = 0;
+        zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
+        err = Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "");
+        goto finally;
+    }
+
+    // 4. Ridder's method implementation
+    for (int i = 0; i < eng->config.cMaxIterations; i++)
+    {
+        mid_angle = (low_angle + high_angle) / 2.0;
+
+        err = Engine_t_error_at_distance(
+            eng,
+            mid_angle,
+            target_x_ft,
+            target_y_ft,
+            &f_mid);
+        if (err != NO_ERROR && !isRangeError(err))
+        {
+            goto finally;
+        }
+
+        // s is the updated point using the root of the linear function
+        // through (low_angle, f_low) and (high_angle, f_high)
+        // and the quadratic function that passes through those points and (mid_angle, f_mid)
+        s = sqrt(f_mid * f_mid - f_low * f_high);
+        if (s == 0.0)
+        {
+            break; // Should not happen if f_low and f_high have opposite signs
+        }
+
+        next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s);
+        if (fabs(next_angle - mid_angle) < eng->config.cZeroFindingAccuracy)
+        {
+            *result = next_angle;
+            err = NO_ERROR;
+            goto finally;
+        }
+
+        err = Engine_t_error_at_distance(
+            eng,
+            next_angle,
+            target_x_ft,
+            target_y_ft,
+            &f_next);
+        if (err != NO_ERROR && !isRangeError(err))
+        {
+            goto finally;
+        }
+
+        // Update the bracket
+        if (f_mid * f_next < 0)
+        {
+            low_angle, f_low = mid_angle, f_mid;
+            high_angle, f_high = next_angle, f_next;
+        }
+        else if (f_low * f_next < 0)
+        {
+            high_angle, f_high = next_angle, f_next;
+        }
+        else if (f_high * f_next < 0)
+        {
+            low_angle, f_low = next_angle, f_next;
+        }
+        else
+        {
+            break; // If we are here, something is wrong, the root is not bracketed anymore
+        }
+
+        if (fabs(high_angle - low_angle) < eng->config.cZeroFindingAccuracy)
+        {
+            *result = (low_angle + high_angle) / 2;
+            err = NO_ERROR;
+        }
+    }
+
+    zero_error->zero_finding_error = target_y_ft;
+    zero_error->iterations_count = eng->config.cMaxIterations;
+    zero_error->last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
+    err = Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "Ridder's method failed to converge.");
+
+finally:
+    if (has_restore_cMinimumVelocity__zero)
+    {
+        eng->config.cMinimumVelocity = restore_cMinimumVelocity__zero;
+    }
+    return err;
+}
