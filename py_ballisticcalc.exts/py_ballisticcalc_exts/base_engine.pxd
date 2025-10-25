@@ -117,6 +117,12 @@ cdef extern from "include/engine.h" nogil:
         ZeroFindingError_t *zero_error
     ) noexcept nogil
 
+    ErrorCode Engine_t_range_for_angle(
+        Engine_t *eng,
+        double angle_rad,
+        double *result
+    ) noexcept nogil
+
 
 cdef class CythonizedBaseIntegrationEngine:
 

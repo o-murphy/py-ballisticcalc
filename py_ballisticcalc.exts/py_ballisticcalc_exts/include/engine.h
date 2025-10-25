@@ -120,6 +120,25 @@ extern "C"
         OutOfRangeError_t *range_error,
         ZeroFindingError_t *zero_error);
 
+    ErrorCode Engine_t_range_for_angle(
+        Engine_t *eng,
+        double angle_rad,
+        double *result);
+
+    // ErrorCode Engine_t_find_max_raange(
+    //     Engine_t *eng,
+    //     double low_angle_deg,
+    //     double high_angle_deg,
+    //     MaxRangeResult_t *result
+    // );
+
+    // ErrorCode Engine_t_find_zero_angle(
+    //     Engine_t *eng,
+    //     double distance,
+    //     int lofted,
+    //     double *result
+    // );
+
 #ifdef __cplusplus
 }
 #endif

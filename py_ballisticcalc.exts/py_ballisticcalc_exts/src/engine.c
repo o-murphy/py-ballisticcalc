@@ -522,3 +522,187 @@ finally:
     *result = eng->shot.barrel_elevation;
     return NO_ERROR;
 }
+
+// Returns max slant-distance for given launch angle in radians.
+// Robust ZERO_DOWN detection: scan from the end and find the first slant-height
+// crossing where the previous point is positive and current is non-positive.
+ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
+{
+    double ca;
+    double sa;
+    double h_prev;
+    double h_cur;
+    double denom;
+    double t;
+    double ix;
+    double iy;
+    double sdist;
+    BaseTrajSeq_t trajectory;
+    ErrorCode err;
+    ssize_t n;
+    ssize_t i;
+    BaseTraj_t *prev_ptr;
+    BaseTraj_t *cur_ptr;
+
+    // Update shot data
+    eng->shot.barrel_elevation = angle_rad;
+
+    // try:
+    *result = -9e9;
+    BaseTrajSeq_t_init(&trajectory);
+    err = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
+    if (err == NO_ERROR || isRangeError(err)) // assume it is not RANGE_ERROR
+    {
+        ca = cos(eng->shot.look_angle);
+        sa = sin(eng->shot.look_angle);
+        n = trajectory.length;
+        if (n >= 2)
+        {
+            // Linear search from end of trajectory for zero-down crossing
+            for (i = n - 1; i > 0; i--)
+            {
+                prev_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i - 1);
+                if (prev_ptr == NULL)
+                {
+                    err = Engine_t_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
+                    break; // assume INDEX_ERROR
+                }
+                cur_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i);
+                if (cur_ptr == NULL)
+                {
+                    err = Engine_t_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
+                    break; // assume INDEX_ERROR
+                }
+                h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
+                h_cur = cur_ptr->py * ca - cur_ptr->px * sa;
+                if (h_prev > 0.0 && h_cur <= 0.0)
+                {
+                    // Interpolate for slant_distance
+                    denom = h_prev - h_cur;
+                    t = denom == 0.0 ? 0.0 : h_prev / denom;
+                    t = fmax(0.0, fmin(1.0, t));
+                    ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
+                    iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
+                    sdist = ix * ca + iy * sa;
+                    *result = sdist;
+                    break;
+                }
+            }
+        }
+    }
+
+    BaseTrajSeq_t_release(&trajectory);
+    return err;
+}
+
+// ErrorCode Engine_t_find_max_raange(
+//     Engine_t *eng,
+//     double low_angle_deg,
+//     double high_angle_deg,
+//     double APEX_IS_MAX_RANGE_RADIANS,
+//     MaxRangeResult_t *result)
+// {
+//     double look_angle_rad = eng->shot.look_angle;
+//     double max_range_ft;
+//     double angle_at_max_rad;
+//     BaseTrajData_t apex;
+//     ErrorCode err;
+//     double sdist;
+
+//     // Virtually vertical shot
+//     // π/2 radians = 90 degrees
+//     if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+//     {
+//         err = Engine_t_find_apex(eng, &apex);
+//         if (err != NO_ERROR && !isRangeError(err))
+//         {
+//             switch (err)
+//             {
+//             case VALUE_ERROR:
+//                 return Engine_t_ERR(eng, err, "Barrel elevation must be greater than 0 to find apex.");
+//             case RUNTIME_ERROR:
+//                 return Engine_t_ERR(eng, err, "No apex flagged in trajectory data");
+//             default:
+//                 break;
+//             }
+//             // // fix
+//             // redirect Engine_t_find_apex error
+//             return Engine_t_ERR(eng, err, "Find apex error: %s: error code: %d", eng->err_msg, err);
+//         }
+//         sdist = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
+//         result->max_range_ft = sdist;
+//         result->angle_at_max_rad = look_angle_rad;
+//         return NO_ERROR;
+//     }
+
+//     // Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
+//     double restore_cMaximumDrop = 0.0;
+//     int has_restore_cMaximumDrop = 0;
+//     double restore_cMinimumVelocity = 0.0;
+//     int has_restore_cMinimumVelocity = 0;
+
+//     if (eng->config.cMaximumDrop != 0.0)
+//     {
+//         restore_cMaximumDrop = eng->config.cMaximumDrop;
+//         eng->config.cMaximumDrop = 0.0; // We want to run trajectory until it returns to horizontal
+//         has_restore_cMaximumDrop = 1;
+//     }
+
+//     if (eng->config.cMinimumVelocity != 0.0)
+//     {
+//         restore_cMinimumVelocity = eng->config.cMinimumVelocity;
+//         eng->config.cMinimumVelocity = 0.0; // We want to run trajectory until it returns to horizontal
+//         has_restore_cMinimumVelocity = 1;
+//     }
+
+//     double inv_phi = 0.6180339887498949;              // (sqrt(5) - 1) / 2
+//     double inv_phi_sq = 0.38196601125010515;          // inv_phi^2
+//     double a = low_angle_deg * 0.017453292519943295;  // Convert to radians
+//     double b = high_angle_deg * 0.017453292519943295; // Convert to radians
+//     double h = b - a;
+//     double c = a + inv_phi_sq * h;
+//     double d = a + inv_phi * h;
+//     double yc, yd;
+//     int iteration;
+// }
+
+// ErrorCode Engine_t_find_zero_angle(
+//     Engine_t *eng,
+//     double distance,
+//     int lofted,
+//     double APEX_IS_MAX_RANGE_RADIANS,
+//     double ALLOWED_ZERO_ERROR_FEET,
+//     double *result,
+//     OutOfRangeError_t *range_error,
+//     ZeroFindingError_t *zero_error)
+// {
+//     ZeroInitialData_t init_data;
+//     ErrorCode status = Engine_t_init_zero_calculation(
+//         eng,
+//         distance,
+//         APEX_IS_MAX_RANGE_RADIANS,
+//         ALLOWED_ZERO_ERROR_FEET,
+//         &init_data,
+//         range_error); // pass pointer directly, not &range_error
+
+//     if (status != ZERO_INIT_CONTINUE && status != ZERO_INIT_DONE)
+//     {
+//         return status;
+//     }
+
+//     double look_angle_rad = init_data.look_angle_rad;
+//     double slant_range_ft = init_data.slant_range_ft;
+//     double target_x_ft = init_data.target_x_ft;
+//     double target_y_ft = init_data.target_y_ft;
+//     double start_height_ft = init_data.start_height_ft;
+
+//     if (status == ZERO_INIT_DONE)
+//     {
+//         *result = look_angle_rad;
+//         return NO_ERROR; // immediately return when already done
+//     }
+
+//     // 1. Find the maximum possible range to establish a search bracket.
+//     MaxRangeResult_t max_range_result = Engine_t_find_max_range(
+//         eng, 0, 90);
+// }

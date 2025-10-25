@@ -14,8 +14,6 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTrajSeqT,
-    BaseTraj_t,
-    BaseTrajSeq_t_get_raw_item,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
@@ -687,61 +685,15 @@ cdef class CythonizedBaseIntegrationEngine:
             """Returns max slant-distance for given launch angle in radians.
             Robust ZERO_DOWN detection: scan from the end and find the first slant-height
             crossing where the previous point is positive and current is non-positive."""
-            cdef double ca
-            cdef double sa
-            cdef double h_prev
-            cdef double h_cur
-            cdef double denom
-            cdef double t
-            cdef double ix
-            cdef double iy
-            cdef double sdist
-            cdef BaseTrajSeqT trajectory
-            cdef Py_ssize_t n
-            cdef Py_ssize_t i
-            cdef BaseTraj_t* prev_ptr
-            cdef BaseTraj_t* cur_ptr
-            # Update shot data
-            shot_props_ptr.barrel_elevation = angle_rad
-            try:
-                _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_NONE)
-                trajectory = <BaseTrajSeqT>_res[0]
-                ca = cos(shot_props_ptr.look_angle)
-                sa = sin(shot_props_ptr.look_angle)
-                n = trajectory._c_view.length
-                if n >= 2:
-                    # Linear search from end of trajectory for zero-down crossing
-                    for i in range(n - 1, 0, -1):
-                        prev_ptr = BaseTrajSeq_t_get_raw_item(
-                            &trajectory._c_view, i - 1
-                        )
-                        if prev_ptr is NULL:
-                            return -9e9  # assume IndexError
-                        cur_ptr = BaseTrajSeq_t_get_raw_item(
-                            &trajectory._c_view, i
-                        )
-                        if cur_ptr is NULL:
-                            return -9e9  # assume IndexError
-                        h_prev = prev_ptr.py * ca - prev_ptr.px * sa
-                        h_cur = cur_ptr.py * ca - cur_ptr.px * sa
-                        if h_prev > 0.0 and h_cur <= 0.0:
-                            # Interpolate for slant_distance
-                            denom = h_prev - h_cur
-                            if denom == 0.0:
-                                t = 0.0
-                            else:
-                                t = h_prev / denom
-                            if t < 0.0:
-                                t = 0.0
-                            elif t > 1.0:
-                                t = 1.0
-                            ix = prev_ptr.px + t * (cur_ptr.px - prev_ptr.px)
-                            iy = prev_ptr.py + t * (cur_ptr.py - prev_ptr.py)
-                            sdist = ix * ca + iy * sa
-                            return sdist
-                return -9e9
-            except RangeError:
-                return -9e9
+
+            cdef double _result
+            cdef ErrorCode _err = Engine_t_range_for_angle(
+                &self._engine,
+                angle_rad,
+                &_result
+            )
+            self._raise_on_integrate_error(_err)
+            return _result
 
         yc = range_for_angle(c)
         yd = range_for_angle(d)
