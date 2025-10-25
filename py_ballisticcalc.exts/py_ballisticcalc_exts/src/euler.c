@@ -46,7 +46,7 @@ ErrorCode _integrate_euler(Engine_t *eng,
 
     if (!eng || !traj_seq_ptr)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
 
     double velocity, delta_time;

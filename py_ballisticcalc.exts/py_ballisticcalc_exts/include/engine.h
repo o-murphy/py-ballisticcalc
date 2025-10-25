@@ -12,14 +12,6 @@
 
 #define MAX_ERR_MSG_LEN 256
 
-#define Engine_t_TRY_RANGE_FOR_ANGLE(err_var, eng, angle, y_out) \
-    do                                                           \
-    {                                                            \
-        (err_var) = Engine_t_range_for_angle(eng, angle, y_out); \
-        if ((err_var) != NO_ERROR && !isRangeError(err_var))     \
-            return err_var;                                      \
-    } while (0)
-
 typedef struct
 {
     double look_angle_rad;
@@ -71,10 +63,18 @@ typedef struct Engine_s
     char err_msg[MAX_ERR_MSG_LEN];
 } Engine_t;
 
-// Cross-platform Engine_t_ERR macro
+// Cross-platform Engine_t_LOG_AND_SAVE_ERR macro
 // This macro logs the error and saves it to the engine, then evaluates to the error code.
-#define Engine_t_ERR(eng, code, format, ...) \
+#define Engine_t_LOG_AND_SAVE_ERR(eng, code, format, ...) \
     Engine_t_log_and_save_error((eng), (code), __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
+
+#define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err_var, eng, angle, y_out) \
+    do                                                                     \
+    {                                                                      \
+        (err_var) = Engine_t_range_for_angle(eng, angle, y_out);           \
+        if ((err_var) != NO_ERROR && !isRangeError(err_var))               \
+            return err_var;                                                \
+    } while (0)
 
 #ifdef __cplusplus
 extern "C"

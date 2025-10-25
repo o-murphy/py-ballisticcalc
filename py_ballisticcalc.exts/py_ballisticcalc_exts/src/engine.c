@@ -36,16 +36,6 @@ ErrorCode Engine_t_log_and_save_error(
 int isRangeError(ErrorCode err)
 {
     return (err & RANGE_ERROR) != 0;
-    // switch (err)
-    // {
-    // case RANGE_ERROR:
-    // case RANGE_ERROR_MAXIMUM_DROP_REACHED:
-    // case RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
-    // case RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
-    //     return 1;
-    // default:
-    //     return 0;
-    // }
 }
 
 int isSequenceError(ErrorCode err)
@@ -73,11 +63,11 @@ ErrorCode Engine_t_integrate(
 {
     if (!eng || !traj_seq_ptr)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
     if (!eng->integrate_func_ptr)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
     C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
@@ -92,9 +82,12 @@ ErrorCode Engine_t_integrate(
         }
         else
         {
-            Engine_t_ERR(eng, err, "%s: error code: %d", eng->err_msg, err);
+            Engine_t_LOG_AND_SAVE_ERR(eng, err, "%s: error code: %d", eng->err_msg, err);
         }
     }
+
+    C_LOG(LOG_LEVEL_INFO, "Integration completed successfully or with acceptable termination code: (%d).", err);
+
     return err;
 }
 
@@ -102,12 +95,12 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
 {
     if (!eng || !out)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Engine_t_find_apex: Invalid input (NULL pointer).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Engine_t_find_apex: Invalid input (NULL pointer).");
     }
 
     if (eng->shot.barrel_elevation <= 0)
     {
-        return Engine_t_ERR(eng, VALUE_ERROR, "Engine_t_find_apex: Value error (Barrel elevation must be greater than 0 to find apex).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, VALUE_ERROR, "Engine_t_find_apex: Value error (Barrel elevation must be greater than 0 to find apex).");
     }
 
     // Have to ensure cMinimumVelocity is 0 for this to work
@@ -130,19 +123,16 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     // allow RANGE_ERROR
     if (err == NO_ERROR || isRangeError(err))
     {
-        // Do not mask Engine_t_integrate error
-        C_LOG(LOG_LEVEL_INFO, "Integration completed successfully or with acceptable termination code: (%d).", err);
-
-        err = NO_ERROR;
+        // err = NO_ERROR;
         err = BaseTrajSeq_t_get_at(&result, KEY_VEL_Y, 0.0, -1, out);
         if (err != NO_ERROR)
         {
-            err = Engine_t_ERR(eng, RUNTIME_ERROR, "Runtime error (No apex flagged in trajectory data)");
+            err = Engine_t_LOG_AND_SAVE_ERR(eng, RUNTIME_ERROR, "Runtime error (No apex flagged in trajectory data)");
         }
     }
-    else
+    else // Assume we wrap any latest integrator error
     {
-        Engine_t_ERR(eng, err, "Critical: integration error: %s, error code: %d", eng->err_msg, err);
+        err = Engine_t_LOG_AND_SAVE_ERR(eng, err, "Find apex error: %s: error code: %d", eng->err_msg, err);
     }
 
     // finally
@@ -150,8 +140,6 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     {
         eng->config.cMinimumVelocity = restore_min_velocity;
     }
-
-    // finally:
 
     BaseTrajSeq_t_release(&result);
     return err;
@@ -168,7 +156,7 @@ ErrorCode Engine_t_error_at_distance(
 
     if (!eng || !out_error_ft)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
 
     BaseTrajSeq_t trajectory;
@@ -197,7 +185,8 @@ ErrorCode Engine_t_error_at_distance(
             last_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, -1);
             if (last_ptr != NULL && last_ptr->time != 0.0)
             {
-                if (BaseTrajSeq_t_get_at(&trajectory, KEY_POS_X, target_x_ft, -1, &hit) == NO_ERROR)
+                err = BaseTrajSeq_t_get_at(&trajectory, KEY_POS_X, target_x_ft, -1, &hit);
+                if (err == NO_ERROR)
                 {
                     // FIXME: possible fix ?
                     // *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
@@ -210,11 +199,11 @@ ErrorCode Engine_t_error_at_distance(
     {
         if (err == VALUE_ERROR)
         {
-            err = Engine_t_ERR(eng, err, "Value error, %d", err);
+            err = Engine_t_LOG_AND_SAVE_ERR(eng, err, "Value error, %d", err);
         }
         else // < RANGE_ERROR
         {
-            err = Engine_t_ERR(eng, err, "Failed to integrate trajectory for error_at_distance, error code: %d", err);
+            err = Engine_t_LOG_AND_SAVE_ERR(eng, err, "Failed to integrate trajectory, error code: %d, %s", err, eng->err_msg);
         }
     }
 
@@ -234,7 +223,7 @@ ErrorCode Engine_t_init_zero_calculation(
 
     if (!eng || !result || !error)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
 
     ErrorCode err;
@@ -268,18 +257,7 @@ ErrorCode Engine_t_init_zero_calculation(
         err = Engine_t_find_apex(eng, &apex);
         if (err != NO_ERROR && !isRangeError(err))
         {
-            switch (err)
-            {
-            case VALUE_ERROR:
-                return Engine_t_ERR(eng, err, "Barrel elevation must be greater than 0 to find apex.");
-            case RUNTIME_ERROR:
-                return Engine_t_ERR(eng, err, "No apex flagged in trajectory data");
-            default:
-                break;
-            }
-            // // fix
-            // redirect Engine_t_find_apex error
-            return Engine_t_ERR(eng, err, "Find apex error: %s: error code: %d", eng->err_msg, err);
+            return err; // Redirect apex finding error
         }
         apex_slant_ft = apex.position.x * cos(result->look_angle_rad) + apex.position.y * sin(result->look_angle_rad);
         if (apex_slant_ft < result->slant_range_ft)
@@ -287,7 +265,7 @@ ErrorCode Engine_t_init_zero_calculation(
             error->requested_distance_ft = result->slant_range_ft;
             error->max_range_ft = apex_slant_ft;
             error->look_angle_rad = result->look_angle_rad;
-            return Engine_t_ERR(eng, OUT_OF_RANGE_ERROR, "Out of range");
+            return Engine_t_LOG_AND_SAVE_ERR(eng, OUT_OF_RANGE_ERROR, "Out of range");
         }
         return ZERO_INIT_DONE;
     }
@@ -306,7 +284,7 @@ ErrorCode Engine_t_zero_angle(
 {
     if (!eng || !result || !range_error || !zero_error)
     {
-        return Engine_t_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
 
     ZeroInitialData_t init_data;
@@ -386,7 +364,7 @@ ErrorCode Engine_t_zero_angle(
 
         if (err != NO_ERROR && !isRangeError(err))
         {
-            err = Engine_t_ERR(eng, err, "Critical: integration error: %s, error code: %d", eng->err_msg, err);
+            err = Engine_t_LOG_AND_SAVE_ERR(eng, err, "Critical: integration error: %s, error code: %d", eng->err_msg, err);
             break;
         }
 
@@ -394,7 +372,7 @@ ErrorCode Engine_t_zero_angle(
         err = BaseTrajSeq_t_get_at(&seq, KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
         if (err != NO_ERROR)
         {
-            err = Engine_t_ERR(eng, RUNTIME_ERROR, "Failed to interpolate trajectory at target distance, error code: %d", err);
+            err = Engine_t_LOG_AND_SAVE_ERR(eng, RUNTIME_ERROR, "Failed to interpolate trajectory at target distance, error code: %d", err);
             break;
         }
 
@@ -443,7 +421,7 @@ ErrorCode Engine_t_zero_angle(
                     zero_error->zero_finding_error = range_error_ft;
                     zero_error->iterations_count = iterations_count;
                     zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
-                    err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Distance non-convergent");
+                    err = Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "Distance non-convergent");
                     break;
                     ;
                 }
@@ -456,7 +434,7 @@ ErrorCode Engine_t_zero_angle(
                     zero_error->zero_finding_error = height_error_ft;
                     zero_error->iterations_count = iterations_count;
                     zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
-                    err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Error non-convergent");
+                    err = Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "Error non-convergent");
                     break;
                 }
                 // Revert previous adjustment
@@ -488,7 +466,7 @@ ErrorCode Engine_t_zero_angle(
             zero_error->zero_finding_error = height_error_ft;
             zero_error->iterations_count = iterations_count;
             zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
-            err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Correction denominator is zero");
+            err = Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "Correction denominator is zero");
             break;
         }
 
@@ -565,13 +543,13 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
                 prev_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i - 1);
                 if (prev_ptr == NULL)
                 {
-                    err = Engine_t_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
+                    err = Engine_t_LOG_AND_SAVE_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
                     break; // assume INDEX_ERROR
                 }
                 cur_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i);
                 if (cur_ptr == NULL)
                 {
-                    err = Engine_t_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
+                    err = Engine_t_LOG_AND_SAVE_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
                     break; // assume INDEX_ERROR
                 }
                 h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
@@ -617,18 +595,7 @@ ErrorCode Engine_t_find_max_range(
         err = Engine_t_find_apex(eng, &apex);
         if (err != NO_ERROR && !isRangeError(err))
         {
-            switch (err)
-            {
-            case VALUE_ERROR:
-                return Engine_t_ERR(eng, err, "Barrel elevation must be greater than 0 to find apex.");
-            case RUNTIME_ERROR:
-                return Engine_t_ERR(eng, err, "No apex flagged in trajectory data");
-            default:
-                break;
-            }
-            // // fix
-            // redirect Engine_t_find_apex error
-            return Engine_t_ERR(eng, err, "Find apex error: %s: error code: %d", eng->err_msg, err);
+            return err; // Redirect apex finding error
         }
         sdist = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
         result->max_range_ft = sdist;
@@ -665,8 +632,8 @@ ErrorCode Engine_t_find_max_range(
     double d = a + inv_phi * h;
     double yc, yd;
 
-    Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, c, &yc);
-    Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, d, &yd);
+    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, c, &yc);
+    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, d, &yd);
 
     // Golden-section search
     for (int i = 0; i < 100; i++)
@@ -682,7 +649,7 @@ ErrorCode Engine_t_find_max_range(
             yd = yc;
             h = b - a;
             c = a + inv_phi_sq * h;
-            Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, c, &yc);
+            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, c, &yc);
         }
         else
         {
@@ -691,12 +658,12 @@ ErrorCode Engine_t_find_max_range(
             yc = yd;
             h = b - a;
             d = a + inv_phi * h;
-            Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, d, &yd);
+            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, d, &yd);
         }
     }
 
     angle_at_max_rad = (a + b) / 2;
-    Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, angle_at_max_rad, &max_range_ft);
+    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, angle_at_max_rad, &max_range_ft);
 
     // Restore original constraints
     if (has_restore_cMaximumDrop)
