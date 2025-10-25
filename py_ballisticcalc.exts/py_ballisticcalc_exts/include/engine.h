@@ -128,7 +128,7 @@ extern "C"
         OutOfRangeError_t *range_error,
         ZeroFindingError_t *zero_error);
 
-    ErrorCode Engine_t_find_max_raange(
+    ErrorCode Engine_t_find_max_range(
         Engine_t *eng,
         double low_angle_deg,
         double high_angle_deg,
