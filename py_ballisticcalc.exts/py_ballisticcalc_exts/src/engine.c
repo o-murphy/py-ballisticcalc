@@ -143,7 +143,6 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     else
     {
         Engine_t_ERR(eng, err, "Critical: integration error: %s, error code: %d", eng->err_msg, err);
-        // goto finally;
     }
 
     // finally
@@ -388,7 +387,7 @@ ErrorCode Engine_t_zero_angle(
         if (err != NO_ERROR && !isRangeError(err))
         {
             err = Engine_t_ERR(eng, err, "Critical: integration error: %s, error code: %d", eng->err_msg, err);
-            goto finally;
+            break;
         }
 
         // interpolate trajectory at target_x_ft using the sequence we just filled
@@ -396,7 +395,7 @@ ErrorCode Engine_t_zero_angle(
         if (err != NO_ERROR)
         {
             err = Engine_t_ERR(eng, RUNTIME_ERROR, "Failed to interpolate trajectory at target distance, error code: %d", err);
-            goto finally;
+            break;
         }
 
         if (hit.time == 0.0)
@@ -445,7 +444,8 @@ ErrorCode Engine_t_zero_angle(
                     zero_error->iterations_count = iterations_count;
                     zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
                     err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Distance non-convergent");
-                    goto finally;
+                    break;
+                    ;
                 }
             }
             else if (height_error_ft > fabs(prev_height_error_ft))
@@ -457,7 +457,7 @@ ErrorCode Engine_t_zero_angle(
                     zero_error->iterations_count = iterations_count;
                     zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
                     err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Error non-convergent");
-                    goto finally;
+                    break;
                 }
                 // Revert previous adjustment
                 eng->shot.barrel_elevation -= last_correction;
@@ -489,13 +489,14 @@ ErrorCode Engine_t_zero_angle(
             zero_error->iterations_count = iterations_count;
             zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
             err = Engine_t_ERR(eng, ZERO_FINDING_ERROR, "Correction denominator is zero");
-            goto finally;
+            break;
         }
 
         iterations_count++;
     }
 
-finally:
+    // finally:
+
     // Always release seq if it was allocated
     BaseTrajSeq_t_release(&seq);
 
@@ -595,7 +596,7 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
     return err;
 }
 
-ErrorCode Engine_t_find_max_raange(
+ErrorCode Engine_t_find_max_range(
     Engine_t *eng,
     double low_angle_deg,
     double high_angle_deg,
@@ -664,16 +665,8 @@ ErrorCode Engine_t_find_max_raange(
     double d = a + inv_phi * h;
     double yc, yd;
 
-    err = Engine_t_range_for_angle(eng, c, &yc);
-    if (err != NO_ERROR && !isRangeError(err))
-    {
-        return err;
-    }
-    err = Engine_t_range_for_angle(eng, d, &yd);
-    if (err != NO_ERROR && !isRangeError(err))
-    {
-        return err;
-    }
+    Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, c, &yc);
+    Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, d, &yd);
 
     // Golden-section search
     for (int i = 0; i < 100; i++)
@@ -689,7 +682,7 @@ ErrorCode Engine_t_find_max_raange(
             yd = yc;
             h = b - a;
             c = a + inv_phi_sq * h;
-            err = Engine_t_range_for_angle(eng, c, &yc);
+            Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, c, &yc);
         }
         else
         {
@@ -698,20 +691,12 @@ ErrorCode Engine_t_find_max_raange(
             yc = yd;
             h = b - a;
             d = a + inv_phi * h;
-            err = Engine_t_range_for_angle(eng, d, &yd);
-        }
-        if (err != NO_ERROR && !isRangeError(err))
-        {
-            return err;
+            Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, d, &yd);
         }
     }
 
     angle_at_max_rad = (a + b) / 2;
-    err = Engine_t_range_for_angle(eng, angle_at_max_rad, &max_range_ft);
-    if (err != NO_ERROR && !isRangeError(err))
-    {
-        return err;
-    }
+    Engine_t_TRY_RANGE_FOR_ANGLE(err, eng, angle_at_max_rad, &max_range_ft);
 
     // Restore original constraints
     if (has_restore_cMaximumDrop)

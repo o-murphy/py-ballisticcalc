@@ -512,9 +512,22 @@ cdef class CythonizedBaseIntegrationEngine:
             return look_angle_rad
 
         # 1. Find the maximum possible range to establish a search bracket.
-        cdef MaxRangeResult_t max_range_result = self._find_max_range(
-            shot_props_ptr, 0, 90
+        # cdef MaxRangeResult_t max_range_result = self._find_max_range(
+        #     shot_props_ptr, 0, 90
+        # )
+
+        cdef MaxRangeResult_t max_range_result
+        err = Engine_t_find_max_range(
+            &self._engine,
+            0,
+            90,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            &max_range_result
         )
+        self._raise_on_input_error(err)
+        self._raise_on_integrate_error(err)
+        self._raise_on_apex_error(err)
+
         cdef double max_range_ft = max_range_result.max_range_ft
         cdef double angle_at_max_rad = max_range_result.angle_at_max_rad
 
@@ -636,7 +649,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         cdef MaxRangeResult_t result
-        cdef ErrorCode err = Engine_t_find_max_raange(
+        cdef ErrorCode err = Engine_t_find_max_range(
             &self._engine,
             low_angle_deg,
             high_angle_deg,

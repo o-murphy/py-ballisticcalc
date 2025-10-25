@@ -12,6 +12,14 @@
 
 #define MAX_ERR_MSG_LEN 256
 
+#define Engine_t_TRY_RANGE_FOR_ANGLE(err_var, eng, angle, y_out) \
+    do                                                           \
+    {                                                            \
+        (err_var) = Engine_t_range_for_angle(eng, angle, y_out); \
+        if ((err_var) != NO_ERROR && !isRangeError(err_var))     \
+            return err_var;                                      \
+    } while (0)
+
 typedef struct
 {
     double look_angle_rad;
