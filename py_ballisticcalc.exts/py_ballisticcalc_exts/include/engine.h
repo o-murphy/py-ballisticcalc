@@ -71,9 +71,9 @@ typedef struct Engine_s
 #define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err_var, eng, angle, y_out) \
     do                                                                     \
     {                                                                      \
-        (err_var) = Engine_t_range_for_angle(eng, angle, y_out);           \
-        if ((err_var) != NO_ERROR && !isRangeError(err_var))               \
-            return err_var;                                                \
+        (err_var) = Engine_t_range_for_angle((eng), (angle), (y_out));     \
+        if ((err_var) != NO_ERROR && !isRangeError((err_var)))             \
+            return (err_var);                                              \
     } while (0)
 
 #ifdef __cplusplus
