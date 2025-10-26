@@ -36,11 +36,11 @@ typedef enum
     ARITHMETIC_ERROR,
     INPUT_ERROR,
     RUNTIME_ERROR,
-} ErrorCode;
+} ErrorType;
 
 typedef struct
 {
-    ErrorCode code;
+    ErrorType code;
     ErrorSource src;
     const char *func;
     const char *file;
@@ -61,7 +61,7 @@ extern "C"
 
     void push_err(
         ErrorStack *stack,
-        ErrorCode code,
+        ErrorType code,
         ErrorSource src,
         const char *func,
         const char *file,

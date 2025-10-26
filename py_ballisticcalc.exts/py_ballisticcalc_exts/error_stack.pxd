@@ -13,7 +13,7 @@ cdef extern from "error_stack.h":
         FIND_ZERO_ANGLE
         ERROR_AT_DISTANCE
 
-    ctypedef enum ErrorCode:
+    ctypedef enum ErrorType:
         NO_ERROR
         ZERO_DIVISION_ERROR
         VALUE_ERROR
@@ -25,7 +25,7 @@ cdef extern from "error_stack.h":
         RUNTIME_ERROR
 
     ctypedef struct ErrorFrame:
-        ErrorCode code
+        ErrorType code
         ErrorSource src
         const char *func
         const char *file
@@ -38,7 +38,7 @@ cdef extern from "error_stack.h":
 
     void push_err(
         ErrorStack *stack,
-        ErrorCode code,
+        ErrorType code,
         ErrorSource src,
         const char *func,
         const char *file,

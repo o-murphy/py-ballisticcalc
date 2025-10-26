@@ -1,5 +1,39 @@
 #include "engine.h"
 
+/*
+Possible call chains
+
+Engine_t_find_zero_angle
+ ├─> Engine_t_init_zero_calculation
+ │    └─> Engine_t_find_apex
+ │         └─> Engine_t_integrate
+ │              └─> eng->integrate_func_ptr
+ │              └─> Engine_t_log_and_save_error
+ │         └─> BaseTrajSeq_t_init / get_at / release
+ │
+ ├─> Engine_t_find_max_range
+ │    ├─> Engine_t_find_apex
+ │    │    └─> Engine_t_integrate
+ │    │         └─> eng->integrate_func_ptr
+ │    │         └─> Engine_t_log_and_save_error
+ │    └─> Engine_t_range_for_angle (static)
+ │         └─> Engine_t_integrate
+ │              └─> eng->integrate_func_ptr
+ │         └─> BaseTrajSeq_t_get_raw_item
+ │         └─> Engine_t_log_and_save_error
+ │
+ └─> Engine_t_error_at_distance
+      └─> Engine_t_integrate
+      └─> BaseTrajSeq_t_get_at / get_raw_item
+      └─> Engine_t_log_and_save_error
+
+Engine_t_zero_angle
+ ├─> Engine_t_init_zero_calculation
+ ├─> Engine_t_integrate
+ ├─> BaseTrajSeq_t_init / get_at / release
+ └─> Engine_t_log_and_save_error
+*/
+
 ErrorCode Engine_t_log_and_save_error(
     Engine_t *eng,
     ErrorCode code,

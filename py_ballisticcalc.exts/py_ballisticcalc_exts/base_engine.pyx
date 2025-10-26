@@ -471,6 +471,7 @@ cdef class CythonizedBaseIntegrationEngine:
         )
         self._raise_on_input_error(err)
         self._raise_on_init_zero_error(err, &err_data)
+        self._raise_on_apex_error(err)
         return err
 
     cdef double _find_zero_angle(
@@ -490,193 +491,29 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The calculated zero angle in radians.
         """
-        # Get initialization data
-        cdef Engine_t *eng = &self._engine
-        cdef ZeroInitialData_t init_data
-        cdef OutOfRangeError_t err_data
-        cdef ErrorCode err = Engine_t_init_zero_calculation(
-            eng,
+
+        cdef OutOfRangeError_t range_error
+        cdef ZeroFindingError_t zero_error
+        cdef double result
+        cdef ErrorCode err = Engine_t_find_zero_angle(
+            &self._engine,
             distance,
+            lofted,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
-            &init_data,
-            &err_data,
+            &result,
+            &range_error,
+            &zero_error,
         )
+
         self._raise_on_input_error(err)
-        self._raise_on_init_zero_error(err, &err_data)
-
-        cdef:
-            double look_angle_rad = init_data.look_angle_rad
-            double slant_range_ft = init_data.slant_range_ft
-            double target_x_ft = init_data.target_x_ft
-            double target_y_ft = init_data.target_y_ft
-            double start_height_ft = init_data.start_height_ft
-
-        if err == ErrorCode.ZERO_INIT_DONE:  # DONE
-            return look_angle_rad
-
-        # 1. Find the maximum possible range to establish a search bracket.
-
-        cdef MaxRangeResult_t max_range_result
-        err = Engine_t_find_max_range(
-            eng,
-            0,
-            90,
-            _APEX_IS_MAX_RANGE_RADIANS,
-            &max_range_result
-        )
-        self._raise_on_input_error(err)
-        self._raise_on_integrate_error(err)
+        self._raise_on_init_zero_error(err, &range_error)
         self._raise_on_apex_error(err)
+        # self._raise_on_integrate_error(err)  # FIXME
+        # self._raise_on_zero_finding_error(err, &zero_error)  # FIXME
 
-        cdef double max_range_ft = max_range_result.max_range_ft
-        cdef double angle_at_max_rad = max_range_result.angle_at_max_rad
-
-        # 2. Handle edge cases based on max range.
-        if slant_range_ft > max_range_ft:
-            raise OutOfRangeError(_new_feet(distance), _new_feet(max_range_ft), _new_rad(look_angle_rad))
-        if fabs(slant_range_ft - max_range_ft) < _ALLOWED_ZERO_ERROR_FEET:
-            return angle_at_max_rad
-
-        # Backup and adjust constraints (emulate @with_no_minimum_velocity)
-        cdef double restore_cMinimumVelocity__zero = 0.0
-        cdef int has_restore_cMinimumVelocity__zero = 0
-        if eng.config.cMinimumVelocity != <double>0.0:
-            restore_cMinimumVelocity__zero = eng.config.cMinimumVelocity
-            eng.config.cMinimumVelocity = 0.0
-            has_restore_cMinimumVelocity__zero = 1
-
-        # 3. Establish search bracket for the zero angle.
-        cdef:
-            double low_angle, high_angle
-            double sight_height_adjust = 0.0
-            double f_low, f_high
-
-        if lofted:
-            low_angle = angle_at_max_rad
-            high_angle = 1.5690308719637473  # 89.9 degrees in radians
-        else:
-            if start_height_ft > 0:
-                sight_height_adjust = atan2(start_height_ft, target_x_ft)
-            low_angle = look_angle_rad - sight_height_adjust
-            high_angle = angle_at_max_rad
-
-        cdef str reason
-
-        # Prepare variables for Ridder's method outside of try block to satisfy Cython
-        cdef int iteration
-        cdef double mid_angle, f_mid, s, next_angle, f_next
-
-        try:
-
-            err = Engine_t_error_at_distance(
-                eng,
-                low_angle,
-                target_x_ft,
-                target_y_ft,
-                &f_low
-            )
-            self._raise_on_input_error(err)
-            self._raise_on_integrate_error(err)
-
-            # If low is exactly look angle and failed to evaluate, nudge slightly upward to bracket
-            if f_low > <double>1e8 and fabs(low_angle - look_angle_rad) < <double>1e-9:
-                low_angle = look_angle_rad + 1e-3
-
-                err = Engine_t_error_at_distance(
-                    eng,
-                    low_angle,
-                    target_x_ft,
-                    target_y_ft,
-                    &f_low
-                )
-                self._raise_on_input_error(err)
-                self._raise_on_integrate_error(err)
-
-            err = Engine_t_error_at_distance(
-                eng,
-                high_angle,
-                target_x_ft,
-                target_y_ft,
-                &f_high
-            )
-            self._raise_on_input_error(err)
-            self._raise_on_integrate_error(err)
-
-            if f_low * f_high >= 0:
-                lofted_str = "lofted" if lofted else "low"
-                reason = (
-                    f"No {lofted_str} zero trajectory in elevation range "
-                    f"({low_angle * 57.29577951308232:.2f}, "
-                    f"{high_angle * 57.29577951308232:.2f} deg). "
-                    f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
-                )
-                raise ZeroFindingError(
-                    float(target_y_ft),
-                    0,
-                    _new_rad(shot_props_ptr.barrel_elevation),
-                    reason=reason
-                )
-
-            # 4. Ridder's method implementation
-            for iteration in range(eng.config.cMaxIterations):
-                mid_angle = (low_angle + high_angle) / 2.0
-
-                err = Engine_t_error_at_distance(
-                    eng,
-                    mid_angle,
-                    target_x_ft,
-                    target_y_ft,
-                    &f_mid
-                )
-                self._raise_on_input_error(err)
-                self._raise_on_integrate_error(err)
-
-                # s is the updated point using the root of the linear function
-                # through (low_angle, f_low) and (high_angle, f_high)
-                # and the quadratic function that passes through those points and (mid_angle, f_mid)
-                s = sqrt(f_mid * f_mid - f_low * f_high)
-                if s == 0.0:
-                    break  # Should not happen if f_low and f_high have opposite signs
-
-                next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s)
-                if fabs(next_angle - mid_angle) < eng.config.cZeroFindingAccuracy:
-                    return next_angle
-
-                err = Engine_t_error_at_distance(
-                    eng,
-                    next_angle,
-                    target_x_ft,
-                    target_y_ft,
-                    &f_next
-                )
-                self._raise_on_input_error(err)
-                self._raise_on_integrate_error(err)
-
-                # Update the bracket
-                if f_mid * f_next < 0:
-                    low_angle, f_low = mid_angle, f_mid
-                    high_angle, f_high = next_angle, f_next
-                elif f_low * f_next < 0:
-                    high_angle, f_high = next_angle, f_next
-                elif f_high * f_next < 0:
-                    low_angle, f_low = next_angle, f_next
-                else:
-                    break  # If we are here, something is wrong, the root is not bracketed anymore
-
-                if fabs(high_angle - low_angle) < eng.config.cZeroFindingAccuracy:
-                    return (low_angle + high_angle) / 2
-
-            raise ZeroFindingError(
-                target_y_ft,
-                eng.config.cMaxIterations,
-                _new_rad((low_angle + high_angle) / 2),
-                reason="Ridder's method failed to converge."
-            )
-        finally:
-            if has_restore_cMinimumVelocity__zero:
-                eng.config.cMinimumVelocity = restore_cMinimumVelocity__zero
-
+        return result
+        
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
         ShotProps_t *shot_props_ptr,
@@ -767,6 +604,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         self._raise_on_input_error(err)
         self._raise_on_init_zero_error(err, &range_error)
+        self._raise_on_apex_error(err)
         self._raise_on_integrate_error(err)
         self._raise_on_zero_finding_error(err, &zero_error)
 
@@ -843,11 +681,6 @@ cdef class CythonizedBaseIntegrationEngine:
         if (err & ErrorCode.RUNTIME_ERROR):
             raise SolverRuntimeError("No apex flagged in trajectory data")
 
-        raise RuntimeError(
-            f"undefined error occured, "
-            f"error code: {err}, {self.error_message}"
-        )
-
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
         ErrorCode err,
@@ -862,8 +695,6 @@ cdef class CythonizedBaseIntegrationEngine:
                 _new_feet(err_data.max_range_ft),
                 _new_rad(err_data.look_angle_rad)
             )
-
-        self._raise_on_apex_error(err)
 
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
@@ -880,8 +711,3 @@ cdef class CythonizedBaseIntegrationEngine:
                 _new_rad(zero_error.last_barrel_elevation_rad),
                 'Correction denominator is zero'
             )
-
-        raise RuntimeError(
-            f"undefined error occured, "
-            f"error code: {err}, {self.error_message}"
-        )
