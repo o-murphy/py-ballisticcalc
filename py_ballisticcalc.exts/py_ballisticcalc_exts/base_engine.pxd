@@ -15,6 +15,7 @@ from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
+from py_ballisticcalc_exts.error_stack cimport ErrorStack, StatusCode
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
@@ -70,11 +71,21 @@ cdef extern from "include/engine.h" nogil:
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr
         char err_msg[MAX_ERR_MSG_LEN]
+        ErrorStack err_stack
 
     int isRangeError(ErrorCode err) noexcept nogil
     int isSequenceError(ErrorCode err) noexcept nogil
 
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
+
+    StatusCode EngEngine_t_integrate1(
+        Engine_t *eng,
+        double range_limit_ft,
+        double range_step_ft,
+        double time_step,
+        TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr
+    )
 
     ErrorCode Engine_t_integrate(
         Engine_t *eng,

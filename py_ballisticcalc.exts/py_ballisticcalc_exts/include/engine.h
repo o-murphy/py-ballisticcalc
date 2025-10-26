@@ -11,7 +11,6 @@
 #include <stdio.h>  // for fprintf
 #include <string.h> // for vsnprintf
 
-
 typedef struct
 {
     double look_angle_rad;

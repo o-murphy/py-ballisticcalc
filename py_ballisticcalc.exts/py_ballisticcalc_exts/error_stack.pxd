@@ -5,6 +5,7 @@ cdef extern from "error_stack.h":
     ctypedef enum StatusCode:
         STATUS_SUCCESS
         STATUS_ERROR
+        STATUS_TERMINATED
 
     ctypedef enum ErrorSource:
         SRC_INTEGRATE

@@ -14,6 +14,7 @@ typedef enum
 {
     STATUS_SUCCESS,
     STATUS_ERROR,
+    STATUS_TERMINATED,
 } StatusCode;
 
 typedef enum

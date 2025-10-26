@@ -87,6 +87,37 @@ void Engine_t_release_trajectory(Engine_t *eng)
     // NOTE: It is not neccessary to NULLIFY integrate_func_ptr
 }
 
+// StatusCode EngEngine_t_integrate1(
+//     Engine_t *eng,
+//     double range_limit_ft,
+//     double range_step_ft,
+//     double time_step,
+//     TrajFlag_t filter_flags,
+//     BaseTrajSeq_t *traj_seq_ptr)
+// {
+//     if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr)
+//     {
+//         PUSH_ERR(&eng->err_stack, INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
+//         return STATUS_ERROR;
+//     }
+//     C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
+
+//     ErrorCode err = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
+
+//     if (err == NO_ERROR) {
+//         C_LOG(LOG_LEVEL_INFO, "Integration completed successfully or with acceptable termination code: (%d).", err);
+//         return STATUS_SUCCESS;
+//     }
+
+//     if (err == NO_ERROR || isRangeError(err))
+//     {
+//         C_LOG(LOG_LEVEL_INFO, "%s: termination reason: %d", eng->err_msg, err);
+//         return STATUS_TERMINATED;
+//     }
+//     PUSH_ERR(&eng->err_stack, err, SRC_INTEGRATE, "%s: error code: %d", eng->err_msg, err);
+//     return STATUS_ERROR;
+// }
+
 ErrorCode Engine_t_integrate(
     Engine_t *eng,
     double range_limit_ft,
@@ -97,7 +128,6 @@ ErrorCode Engine_t_integrate(
 {
     if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr)
     {
-        PUSH_ERR(&eng->err_stack, INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
     C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
@@ -113,7 +143,6 @@ ErrorCode Engine_t_integrate(
         }
         else
         {
-            PUSH_ERR(&eng->err_stack, err, SRC_INTEGRATE, "%s: error code: %d", eng->err_msg, err);
             Engine_t_LOG_AND_SAVE_ERR(eng, err, "%s: error code: %d", eng->err_msg, err);
         }
     }
