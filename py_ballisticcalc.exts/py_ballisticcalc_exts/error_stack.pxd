@@ -3,26 +3,26 @@ cdef extern from "error_stack.h":
     DEF MAX_ERROR_MSG_LEN = 256
 
     ctypedef enum StatusCode:
-        SUCCESS
-        ERROR
+        STATUS_SUCCESS
+        STATUS_ERROR
 
     ctypedef enum ErrorSource:
-        INTEGRATE
-        FIND_APEX
-        ZERO_ANGLE
-        FIND_ZERO_ANGLE
-        ERROR_AT_DISTANCE
+        SRC_INTEGRATE
+        SRC_FIND_APEX
+        SRC_ZERO_ANGLE
+        SRC_FIND_ZERO_ANGLE
+        SRC_ERROR_AT_DISTANCE
 
     ctypedef enum ErrorType:
-        NO_ERROR
-        ZERO_DIVISION_ERROR
-        VALUE_ERROR
-        KEY_ERROR
-        INDEX_ERROR
-        MEMORY_ERROR
-        ARITHMETIC_ERROR
-        INPUT_ERROR
-        RUNTIME_ERROR
+        T_NO_ERROR
+        T_ZERO_DIVISION_ERROR
+        T_VALUE_ERROR
+        T_KEY_ERROR
+        T_INDEX_ERROR
+        T_MEMORY_ERROR
+        T_ARITHMETIC_ERROR
+        T_INPUT_ERROR
+        T_RUNTIME_ERROR
 
     ctypedef struct ErrorFrame:
         ErrorType code

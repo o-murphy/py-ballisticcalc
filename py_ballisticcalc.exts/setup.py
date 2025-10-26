@@ -67,6 +67,7 @@ ext_base_dir = "py_ballisticcalc_exts"
 # Define all C source files and their paths
 C_SOURCES = {
     "v3d": os.path.join(ext_base_dir, "src", "v3d.c"),
+    "error_stack": os.path.join(ext_base_dir, "src", "error_stack.c"),
     "bclib": os.path.join(ext_base_dir, "src", "bclib.c"),
     "bind": os.path.join(ext_base_dir, "src", "bind.c"),
     "interp": os.path.join(ext_base_dir, "src", "interp.c"),
@@ -83,7 +84,7 @@ C_SOURCES = {
 EXTENSION_DEPS = {
     "bind": ["interp", "bclib", "bind"],
     "base_traj_seq": ["interp", "bclib", "base_traj_seq"],
-    "base_engine": ["interp", "bclib", "engine", "base_traj_seq"],
+    "base_engine": ["interp", "bclib", "engine", "base_traj_seq", "error_stack"],
     "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine"],
     "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine"],
     "trajectory_data": ["interp", "bclib"],
@@ -91,7 +92,7 @@ EXTENSION_DEPS = {
     "test_helpers": ["bclib", "interp"],
     "test_engine": ["bclib", "interp"],
     # error stack
-    "error_stack": ["v3d"]
+    "error_stack": ["v3d", "error_stack"]
 }
 
 

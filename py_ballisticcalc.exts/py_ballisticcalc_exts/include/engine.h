@@ -4,13 +4,13 @@
 #include "v3d.h"
 #include "bclib.h"
 #include "base_traj_seq.h"
+#include "error_stack.h"
 
 #include <math.h>
 #include <stdarg.h> // for va_list, va_start, va_end, va_copy
 #include <stdio.h>  // for fprintf
 #include <string.h> // for vsnprintf
 
-#define MAX_ERR_MSG_LEN 256
 
 typedef struct
 {
@@ -60,7 +60,8 @@ typedef struct Engine_s
     Config_t config;
     ShotProps_t shot;
     IntegrateFuncPtr integrate_func_ptr;
-    char err_msg[MAX_ERR_MSG_LEN];
+    char err_msg[MAX_ERROR_MSG_LEN];
+    ErrorStack err_stack;
 } Engine_t;
 
 // Cross-platform Engine_t_LOG_AND_SAVE_ERR macro

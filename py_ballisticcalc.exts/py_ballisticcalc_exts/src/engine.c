@@ -44,11 +44,11 @@ ErrorCode Engine_t_log_and_save_error(
     ...)
 {
     va_list args;
-    char log_buffer[MAX_ERR_MSG_LEN];
+    char log_buffer[MAX_ERROR_MSG_LEN];
 
     // Format the message
     va_start(args, format);
-    vsnprintf(log_buffer, MAX_ERR_MSG_LEN, format, args);
+    vsnprintf(log_buffer, MAX_ERROR_MSG_LEN, format, args);
     va_end(args);
 
     // Log with the REAL location (passed from macro)
@@ -60,8 +60,8 @@ ErrorCode Engine_t_log_and_save_error(
     // Save error message to engine
     if (eng != NULL && code != NO_ERROR)
     {
-        strncpy(eng->err_msg, log_buffer, MAX_ERR_MSG_LEN - 1);
-        eng->err_msg[MAX_ERR_MSG_LEN - 1] = '\0';
+        strncpy(eng->err_msg, log_buffer, MAX_ERROR_MSG_LEN - 1);
+        eng->err_msg[MAX_ERROR_MSG_LEN - 1] = '\0';
     }
 
     return code;
