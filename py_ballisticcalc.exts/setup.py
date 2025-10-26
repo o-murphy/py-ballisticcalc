@@ -90,6 +90,8 @@ EXTENSION_DEPS = {
     # Test modules (expose internal C functions for tests only)
     "test_helpers": ["bclib", "interp"],
     "test_engine": ["bclib", "interp"],
+    # error stack
+    "error_stack": ["v3d"]
 }
 
 
