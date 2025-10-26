@@ -1,11 +1,11 @@
 #ifndef BCLIB_ERROR_STACK_H
 #define BCLIB_ERROR_STACK_H
 
-// without prev
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include "log.h"
+#include "bclib.h"
 
 #define MAX_ERROR_STACK 16
 #define MAX_ERROR_MSG_LEN 256
@@ -77,61 +77,17 @@ extern "C"
 }
 #endif
 
-#define PUSH_ERR(stack, code, src, ...) \
-    push_err((stack), (code), (src), __func__, __FILE__, __LINE__, __VA_ARGS__)
+#define PUSH_ERR(stack, code, src, format, ...) \
+    push_err((stack), (code), (src), __func__, __FILE__, __LINE__, format, ##__VA_ARGS__)
 
-// Usage example
-// if (angle <= 0.0)
-//     RETURN_ERR(&eng->err_stack, T_VALUE_ERROR, FIND_APEX,
-//                "Invalid angle %.2f — must be positive", angle);
+// #define RETURN_ERR(stack, code, src, format, ...)          \
+//     do                                                     \
+//     {                                                      \
+//         PUSH_ERR(stack, code, src, format, ##__VA_ARGS__); \
+//         return ERROR;                                      \
+//     } while (0)
 
-#define PUSH_ERR_LOG(stack, code, src, ...)      \
-    do                                           \
-    {                                            \
-        PUSH_ERR(stack, code, src, __VA_ARGS__); \
-        C_LOG(T_LOG_LEVEL_ERROR, __VA_ARGS__);   \
-    } while (0)
-
-#define POP_ERR(stack) \
-    pop_err((stack))
-
-#define POP_ERR_LOG(stack)                                              \
-    do                                                                  \
-    {                                                                   \
-        if (stack && stack->top > 0)                                    \
-        {                                                               \
-            ErrorFrame *f = &stack->frames[stack->top - 1];             \
-            C_LOG(LOG_LEVEL_DEBUG,                                      \
-                  "Popped error frame [%d/%d]: %s:%d (%s): [%d/%d] %s", \
-                  stack->top - 1, MAX_ERROR_STACK,                      \
-                  f->file, f->line, f->func, f->src, f->code, f->msg);  \
-        }                                                               \
-        POP_ERR(stack);                                                 \
-    } while (0)
-
-#define RETURN_ERR(stack, code, src, ...)              \
-    do                                                 \
-    {                                                  \
-        PUSH_ERR((stack), (code), (src), __VA_ARGS__); \
-        return ERROR;                                  \
-    } while (0)
-
-#define RETURN_ERR_LOG(stack, code, src, ...)    \
-    do                                           \
-    {                                            \
-        PUSH_ERR(stack, code, src, __VA_ARGS__); \
-        C_LOG(T_LOG_LEVEL_ERROR, __VA_ARGS__);   \
-        return ERROR;                            \
-    } while (0)
-
-#define CLEAR_ERR(stack) \
-    clear_err((stack))
-
-#define CLEAR_ERR_LOG(stack)                           \
-    do                                                 \
-    {                                                  \
-        CLEAR_ERR(stack);                              \
-        C_LOG(LOG_LEVEL_DEBUG, "Error stack cleared"); \
-    } while (0)
+#define POP_ERR(stack) pop_err(stack)
+#define CLEAR_ERR(stack) clear_err(stack)
 
 #endif // BCLIB_ERROR_STACK_H

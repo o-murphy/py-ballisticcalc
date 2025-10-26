@@ -29,19 +29,20 @@ void push_err(
 
     f->msg[sizeof(f->msg) - 1] = '\0';
 
-    // C_LOG(T_LOG_LEVEL_ERROR, "%s", f->msg);
+    C_LOG(LOG_LEVEL_ERROR, "%s:%d (%s): %s", file, line, func, f->msg);
 }
 
 void pop_err(ErrorStack *stack)
 {
     if (stack && stack->top > 0)
     {
-        stack->top--;
+        // stack->top--;
+        // memset(&stack->frames[stack->top], 0, sizeof(ErrorFrame));
+        ErrorFrame *f = &stack->frames[--stack->top];
+        C_LOG(LOG_LEVEL_DEBUG, "Popped error frame [%d/%d]: %s:%d (%s): [%d/%d] %s",
+              stack->top, MAX_ERROR_STACK,
+              f->file, f->line, f->func, f->src, f->code, f->msg);
         memset(&stack->frames[stack->top], 0, sizeof(ErrorFrame));
-        // ErrorFrame *f = &stack->frames[--stack->top];
-        // C_LOG(LOG_LEVEL_DEBUG, "Popped error frame [%d/%d]: %s:%d (%s): [%d/%d] %s",
-        //  stack->top, MAX_ERROR_STACK,
-        //  f->file, f->line, f->func, f->src, f->code, f->msg);
     }
 }
 
@@ -51,6 +52,8 @@ void clear_err(ErrorStack *stack)
         return;
     memset(stack->frames, 0, sizeof(stack->frames));
     stack->top = 0;
+
+    C_LOG(LOG_LEVEL_DEBUG, "Error stack cleared");
 }
 
 const ErrorFrame *last_err(const ErrorStack *stack)

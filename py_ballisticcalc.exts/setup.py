@@ -85,14 +85,14 @@ EXTENSION_DEPS = {
     "bind": ["interp", "bclib", "bind"],
     "base_traj_seq": ["interp", "bclib", "base_traj_seq"],
     "base_engine": ["interp", "bclib", "engine", "base_traj_seq", "error_stack"],
-    "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine"],
-    "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine"],
+    "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine", "error_stack"],
+    "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine", "error_stack"],
     "trajectory_data": ["interp", "bclib"],
     # Test modules (expose internal C functions for tests only)
     "test_helpers": ["bclib", "interp"],
     "test_engine": ["bclib", "interp"],
     # error stack
-    "error_stack": ["v3d", "error_stack"]
+    "error_stack": ["v3d", "error_stack", "bclib", "interp"]
 }
 
 

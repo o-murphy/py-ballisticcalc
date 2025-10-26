@@ -95,12 +95,9 @@ ErrorCode Engine_t_integrate(
     TrajFlag_t filter_flags,
     BaseTrajSeq_t *traj_seq_ptr)
 {
-    if (!eng || !traj_seq_ptr)
+    if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr)
     {
-        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
-    }
-    if (!eng->integrate_func_ptr)
-    {
+        PUSH_ERR(&eng->err_stack, INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     }
     C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
@@ -116,6 +113,7 @@ ErrorCode Engine_t_integrate(
         }
         else
         {
+            PUSH_ERR(&eng->err_stack, err, SRC_INTEGRATE, "%s: error code: %d", eng->err_msg, err);
             Engine_t_LOG_AND_SAVE_ERR(eng, err, "%s: error code: %d", eng->err_msg, err);
         }
     }
@@ -748,7 +746,7 @@ ErrorCode Engine_t_find_zero_angle(
         APEX_IS_MAX_RANGE_RADIANS,
         ALLOWED_ZERO_ERROR_FEET,
         &init_data,
-        &range_error); // pass pointer directly, not &range_error
+        range_error); // pass pointer directly, not &range_error
 
     if (err == INPUT_ERROR)
     {
