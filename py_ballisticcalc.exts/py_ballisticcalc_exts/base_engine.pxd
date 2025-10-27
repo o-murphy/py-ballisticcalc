@@ -210,18 +210,15 @@ cdef class CythonizedBaseIntegrationEngine:
     )
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance,
         bint lofted
     )
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance
     )
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double low_angle_deg,
         double high_angle_deg,
     )

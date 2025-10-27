@@ -145,11 +145,11 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef MaxRangeResult_t res
         try:
             res = self._find_max_range(
-                shot_props_ptr, angle_bracket_deg[0], angle_bracket_deg[1]
+                angle_bracket_deg[0], angle_bracket_deg[1]
             )
             return _new_feet(res.max_range_ft), _new_rad(res.angle_at_max_rad)
         finally:
@@ -168,10 +168,10 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Angular: The required barrel elevation angle.
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef double zero_angle
         try:
-            zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
+            zero_angle = self._find_zero_angle(distance._feet, lofted)
             return _new_rad(zero_angle)
         finally:
             self._release_trajectory()
@@ -214,15 +214,15 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef double zero_angle
         try:
-            zero_angle = self._zero_angle(shot_props_ptr, distance._feet)
+            zero_angle = self._zero_angle(distance._feet)
             return _new_rad(zero_angle)
         except ZeroFindingError:
             # Fallback to guaranteed method
-            shot_props_ptr = self._init_trajectory(shot_info)
-            zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, False)
+            self._init_trajectory(shot_info)
+            zero_angle = self._find_zero_angle(distance._feet, False)
             return _new_rad(zero_angle)
         finally:
             self._release_trajectory()
@@ -340,7 +340,6 @@ cdef class CythonizedBaseIntegrationEngine:
         Attempts to avoid Python exceptions in the hot path by pre-checking reach.
 
         Args:
-            shot_props_ptr (ShotProps_t*): Pointer to shot properties.
             angle_rad (double): Launch angle in radians.
             target_x_ft (double): Target X coordinate in feet.
             target_y_ft (double): Target Y coordinate in feet.
@@ -472,7 +471,6 @@ cdef class CythonizedBaseIntegrationEngine:
         Handles edge cases.
 
         Args:
-            shot_props_ptr (const ShotProps_t*): Pointer to shot properties.
             distance (double): The distance to the target in feet.
 
         Returns:
@@ -508,7 +506,6 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance,
         bint lofted
     ):
@@ -516,7 +513,6 @@ cdef class CythonizedBaseIntegrationEngine:
         Find zero angle using Ridder's method for guaranteed convergence.
 
         Args:
-            shot_props_ptr (ShotProps_t*): Pointer to shot properties.
             distance (double): The distance to the target in feet.
             lofted (bint): Whether the shot is lofted.
 
@@ -548,7 +544,6 @@ cdef class CythonizedBaseIntegrationEngine:
         
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double low_angle_deg,
         double high_angle_deg,
     ):
@@ -617,9 +612,6 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Internal implementation to find the apex of the trajectory.
 
-        Args:
-            shot_props_ptr (const ShotProps_t*): Pointer to shot properties.
-
         Returns:
             BaseTrajData_t: The trajectory data at the apex.
         """
@@ -649,7 +641,6 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance
     ):
         """
