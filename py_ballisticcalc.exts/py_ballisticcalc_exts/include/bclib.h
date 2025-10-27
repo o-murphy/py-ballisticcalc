@@ -51,8 +51,6 @@ typedef enum
 
     // Zero init specific flags
     OUT_OF_RANGE_ERROR = 0x4000,            // (1 << 14)
-    ZERO_INIT_CONTINUE = NO_ERROR | 0x8000, // 0x8000 -> (1 << 15)
-    ZERO_INIT_DONE = NO_ERROR | 0x10000,    // 0x10000 -> (1 << 16)
 
     // Zero finding error flag
     ZERO_FINDING_ERROR = 0x20000, // (1 << 17)

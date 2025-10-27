@@ -11,13 +11,11 @@ cdef extern from "error_stack.h":
         STATUS_RANGE_ERROR_MAXIMUM_DROP_REACHED
         STATUS_RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
 
-        STATUS_ZERO_INIT_DONE
-        STATUS_ZERO_INIT_CONTINUE
-
     ctypedef enum ErrorSource:
         SRC_INTEGRATE
         SRC_FIND_APEX
         SRC_ZERO_ANGLE
+        SRC_FIND_ZERO_ANGLE
         SRC_FIND_ZERO_ANGLE
         SRC_ERROR_AT_DISTANCE
         SRC_FIND_MAX_RANGE

@@ -44,8 +44,6 @@ cdef extern from "include/bclib.h" nogil:
         RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
 
         OUT_OF_RANGE_ERROR
-        ZERO_INIT_CONTINUE
-        ZERO_INIT_DONE
 
         ZERO_FINDING_ERROR
 

@@ -58,7 +58,7 @@ ErrorCode Engine_t_log_and_save_error(
     }
 
     // Save error message to engine
-    if (eng != NULL && code != NO_ERROR)
+    if (eng != NULL && code != STATUS_SUCCESS)
     {
         strncpy(eng->err_msg, log_buffer, MAX_ERROR_MSG_LEN - 1);
         eng->err_msg[MAX_ERROR_MSG_LEN - 1] = '\0';
@@ -268,6 +268,7 @@ StatusCode Engine_t_init_zero_calculation(
     BaseTrajData_t apex;
     double apex_slant_ft;
 
+    result->status = ZERO_INIT_DONE;
     result->slant_range_ft = distance;
     result->look_angle_rad = eng->shot.look_angle;
     result->target_x_ft = result->slant_range_ft * cos(result->look_angle_rad);
@@ -277,7 +278,7 @@ StatusCode Engine_t_init_zero_calculation(
     // Edge case: Very close shot
     if (fabs(result->slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
     {
-        return STATUS_ZERO_INIT_DONE;
+        return STATUS_SUCCESS;
     }
 
     // Edge case: Very close shot; ignore gravity and drag
@@ -285,7 +286,7 @@ StatusCode Engine_t_init_zero_calculation(
                                                   eng->config.cStepMultiplier))
     {
         result->look_angle_rad = atan2(result->target_y_ft + result->start_height_ft, result->target_x_ft);
-        return STATUS_ZERO_INIT_DONE;
+        return STATUS_SUCCESS;
     }
 
     // Edge case: Virtually vertical shot; just check if it can reach the target
@@ -306,10 +307,11 @@ StatusCode Engine_t_init_zero_calculation(
             PUSH_ERR(&eng->err_stack, OUT_OF_RANGE_ERROR, SRC_INIT_ZERO, "Out of range");
             return STATUS_ERROR;
         }
-        return STATUS_ZERO_INIT_DONE;
+        return STATUS_SUCCESS;
     }
 
-    return STATUS_ZERO_INIT_CONTINUE;
+    result->status = ZERO_INIT_CONTINUE;
+    return STATUS_SUCCESS;
 }
 
 ErrorCode Engine_t_zero_angle(
@@ -335,7 +337,7 @@ ErrorCode Engine_t_zero_angle(
         &init_data,
         range_error); // pass pointer directly, not &range_error
 
-    if (status != ZERO_INIT_CONTINUE && status != ZERO_INIT_DONE)
+    if (status != STATUS_SUCCESS)
     {
         return status;
     }
@@ -345,15 +347,15 @@ ErrorCode Engine_t_zero_angle(
     double target_x_ft = init_data.target_x_ft;
     double target_y_ft = init_data.target_y_ft;
 
-    if (status == ZERO_INIT_DONE)
+    if (init_data.status == ZERO_INIT_DONE)
     {
         *result = look_angle_rad;
-        return NO_ERROR; // immediately return when already done
+        return STATUS_SUCCESS; // immediately return when already done
     }
 
     BaseTrajData_t hit;
     BaseTrajSeq_t seq;
-    ErrorCode err = NO_ERROR; // initialize
+    ErrorCode err = STATUS_SUCCESS; // initialize
     BaseTrajSeq_t_init(&seq);
 
     double _cZeroFindingAccuracy = eng->config.cZeroFindingAccuracy;
@@ -409,7 +411,7 @@ ErrorCode Engine_t_zero_angle(
 
         // interpolate trajectory at target_x_ft using the sequence we just filled
         err = BaseTrajSeq_t_get_at(&seq, KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
-        if (err != NO_ERROR)
+        if (err != STATUS_SUCCESS)
         {
             err = Engine_t_LOG_AND_SAVE_ERR(eng, RUNTIME_ERROR, "Failed to interpolate trajectory at target distance, error code: %d", err);
             break;
@@ -527,7 +529,7 @@ ErrorCode Engine_t_zero_angle(
         eng->config.cMinimumAltitude = restore_cMinimumAltitude;
     }
 
-    if (err != NO_ERROR)
+    if (err != STATUS_SUCCESS)
     {
         // Fill zero_error if not already filled
         zero_error->zero_finding_error = height_error_ft;
@@ -538,7 +540,7 @@ ErrorCode Engine_t_zero_angle(
 
     // success
     *result = eng->shot.barrel_elevation;
-    return NO_ERROR;
+    return STATUS_SUCCESS;
 }
 
 // Returns max slant-distance for given launch angle in radians.
@@ -764,7 +766,7 @@ ErrorCode Engine_t_find_zero_angle(
         &init_data,
         range_error); // pass pointer directly, not &range_error
 
-    if (status != ZERO_INIT_CONTINUE && status != ZERO_INIT_DONE)
+    if (status != STATUS_SUCCESS)
     {
         return status;
     }
@@ -775,10 +777,10 @@ ErrorCode Engine_t_find_zero_angle(
     double target_y_ft = init_data.target_y_ft;
     double start_height_ft = init_data.start_height_ft;
 
-    if (status == ZERO_INIT_DONE)
+    if (init_data.status == ZERO_INIT_DONE)
     {
         *result = look_angle_rad;
-        return NO_ERROR;
+        return STATUS_SUCCESS;
     }
 
     // 1. Find the maximum possible range to establish a search bracket.
@@ -808,7 +810,7 @@ ErrorCode Engine_t_find_zero_angle(
     if (fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
     {
         *result = angle_at_max_rad;
-        return NO_ERROR;
+        return STATUS_SUCCESS;
     }
 
     // try:
@@ -888,17 +890,24 @@ ErrorCode Engine_t_find_zero_angle(
 
     if (f_low * f_high >= 0)
     {
-        // char* lofted_str = lofted ? "lofted" : "low";
-        // char* reason = (
-        //             f"No {lofted_str} zero trajectory in elevation range "
-        //             f"({low_angle * 57.29577951308232:.2f}, "
-        //             f"{high_angle * 57.29577951308232:.2f} deg). "
-        //             f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
-        //         )
+        char reason[256];
+        const char *lofted_str = lofted ? "lofted" : "low";
+        snprintf(
+            reason,
+            sizeof(reason),
+            "No %s zero trajectory in elevation range (%.2f, %.2f deg). "
+            "Errors at bracket: f(low)=%.2f, f(high)=%.2f",
+            lofted_str,
+            low_angle * 57.29577951308232,
+            high_angle * 57.29577951308232,
+            f_low,
+            f_high);
         zero_error->zero_finding_error = target_y_ft;
         zero_error->iterations_count = 0;
         zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
-        status = Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "");
+        PUSH_ERR(&eng->err_stack, ZERO_FINDING_ERROR, SRC_FIND_ZERO_ANGLE, reason);
+        Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, reason);
+        status = ZERO_FINDING_ERROR;
         goto finally;
     }
 
@@ -931,7 +940,7 @@ ErrorCode Engine_t_find_zero_angle(
         if (fabs(next_angle - mid_angle) < eng->config.cZeroFindingAccuracy)
         {
             *result = next_angle;
-            status = NO_ERROR;
+            status = STATUS_SUCCESS;
             goto finally;
         }
 
@@ -968,14 +977,16 @@ ErrorCode Engine_t_find_zero_angle(
         if (fabs(high_angle - low_angle) < eng->config.cZeroFindingAccuracy)
         {
             *result = (low_angle + high_angle) / 2;
-            status = NO_ERROR;
+            status = STATUS_SUCCESS;
         }
     }
 
     zero_error->zero_finding_error = target_y_ft;
     zero_error->iterations_count = eng->config.cMaxIterations;
     zero_error->last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
-    status = Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "Ridder's method failed to converge.");
+    PUSH_ERR(&eng->err_stack, ZERO_FINDING_ERROR, SRC_FIND_ZERO_ANGLE, "Ridder's method failed to converge.");
+    Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_FINDING_ERROR, "Ridder's method failed to converge.");
+    status = ZERO_FINDING_ERROR;
 
 finally:
     if (has_restore_cMinimumVelocity__zero)

@@ -11,8 +11,15 @@
 #include <stdio.h>  // for fprintf
 #include <string.h> // for vsnprintf
 
+typedef enum
+{
+    ZERO_INIT_CONTINUE,
+    ZERO_INIT_DONE,
+} ZeroInitialStatus;
+
 typedef struct
 {
+    ZeroInitialStatus status;
     double look_angle_rad;
     double slant_range_ft;
     double target_x_ft;

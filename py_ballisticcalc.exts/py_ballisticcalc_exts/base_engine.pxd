@@ -23,7 +23,12 @@ from py_ballisticcalc_exts.error_stack cimport ErrorStack, StatusCode
 cdef extern from "include/engine.h" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
+    ctypedef enum ZeroInitialStatus:
+        ZERO_INIT_CONTINUE
+        ZERO_INIT_DONE
+
     ctypedef struct ZeroInitialData_t:
+        ZeroInitialStatus status
         double look_angle_rad
         double slant_range_ft
         double target_x_ft

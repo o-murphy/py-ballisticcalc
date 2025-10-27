@@ -487,7 +487,7 @@ cdef class CythonizedBaseIntegrationEngine:
             out,
             &err_data,
         )
-        if status == StatusCode.STATUS_ZERO_INIT_CONTINUE or status == StatusCode.STATUS_ZERO_INIT_DONE:
+        if status == StatusCode.STATUS_SUCCESS:
             return status
 
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
@@ -763,9 +763,6 @@ cdef class CythonizedBaseIntegrationEngine:
         ErrorCode err,
         OutOfRangeError_t *err_data
     ):
-        if err == ErrorCode.ZERO_INIT_CONTINUE or err == ErrorCode.ZERO_INIT_DONE:
-            return
-
         if err == ErrorCode.OUT_OF_RANGE_ERROR:
             raise OutOfRangeError(
                 _new_feet(err_data.requested_distance_ft),
