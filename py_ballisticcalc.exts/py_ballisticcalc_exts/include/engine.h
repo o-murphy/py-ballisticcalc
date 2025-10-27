@@ -93,14 +93,7 @@ extern "C"
 
     int isRangeError(ErrorCode err);
     int isSequenceError(ErrorCode err);
-
-    ErrorCode Engine_t_integrate_old(
-        Engine_t *eng,
-        double range_limit_ft,
-        double range_step_ft,
-        double time_step,
-        TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr);
+    int isIntegrateComplete(StatusCode status);
 
     StatusCode Engine_t_integrate(
         Engine_t *eng,
@@ -110,8 +103,6 @@ extern "C"
         TrajFlag_t filter_flags,
         BaseTrajSeq_t *traj_seq_ptr);
 
-    ErrorCode Engine_t_find_apex_old(Engine_t *eng, BaseTrajData_t *apex);
-
     StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out);
 
     StatusCode Engine_t_error_at_distance(
@@ -120,21 +111,6 @@ extern "C"
         double target_x_ft,
         double target_y_ft,
         double *out_error_ft);
-
-    ErrorCode Engine_t_error_at_distance_old(
-        Engine_t *eng,
-        double angle_rad,
-        double target_x_ft,
-        double target_y_ft,
-        double *out_error_ft);
-
-    ErrorCode Engine_t_init_zero_calculation_old(
-        Engine_t *eng,
-        double distance,
-        double APEX_IS_MAX_RANGE_RADIANS,
-        double ALLOWED_ZERO_ERROR_FEET,
-        ZeroInitialData_t *result,
-        OutOfRangeError_t *error);
 
     StatusCode Engine_t_init_zero_calculation(
         Engine_t *eng,
