@@ -68,12 +68,12 @@ typedef struct Engine_s
 #define Engine_t_LOG_AND_SAVE_ERR(eng, code, format, ...) \
     Engine_t_log_and_save_error((eng), (code), __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
-#define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err_var, eng, angle, y_out) \
-    do                                                                     \
-    {                                                                      \
-        (err_var) = Engine_t_range_for_angle((eng), (angle), (y_out));     \
-        if ((err_var) != NO_ERROR && !isRangeError((err_var)))             \
-            return (err_var);                                              \
+#define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle, y_out) \
+    do                                                                    \
+    {                                                                     \
+        (status) = Engine_t_range_for_angle((eng), (angle), (y_out));     \
+        if ((status) != STATUS_SUCCESS)                                   \
+            return (status);                                              \
     } while (0)
 
 #ifdef __cplusplus
@@ -153,7 +153,7 @@ extern "C"
         OutOfRangeError_t *range_error,
         ZeroFindingError_t *zero_error);
 
-    ErrorCode Engine_t_find_max_range(
+    StatusCode Engine_t_find_max_range(
         Engine_t *eng,
         double low_angle_deg,
         double high_angle_deg,

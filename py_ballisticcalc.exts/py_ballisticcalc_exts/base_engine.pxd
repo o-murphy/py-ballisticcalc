@@ -150,7 +150,7 @@ cdef extern from "include/engine.h" nogil:
         ZeroFindingError_t *zero_error
     ) noexcept nogil
 
-    ErrorCode Engine_t_find_max_range(
+    StatusCode Engine_t_find_max_range(
         Engine_t *eng,
         double low_angle_deg,
         double high_angle_deg,

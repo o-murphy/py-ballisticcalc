@@ -755,11 +755,12 @@ ErrorCode Engine_t_zero_angle(
 // Returns max slant-distance for given launch angle in radians.
 // Robust ZERO_DOWN detection: scan from the end and find the first slant-height
 // crossing where the previous point is positive and current is non-positive.
-static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
+static StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
 {
     if (!eng || !result)
     {
-        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_RANGE_FOR_ANGLE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
     }
 
     double ca;
@@ -772,7 +773,7 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
     double iy;
     double sdist;
     BaseTrajSeq_t trajectory;
-    ErrorCode err;
+    StatusCode status;
     ssize_t n;
     ssize_t i;
     BaseTraj_t *prev_ptr;
@@ -784,8 +785,12 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
     // try:
     *result = -9e9;
     BaseTrajSeq_t_init(&trajectory);
-    err = Engine_t_integrate_old(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
-    if (err == NO_ERROR || isRangeError(err)) // assume it is not RANGE_ERROR
+    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
+    if (status != STATUS_SUCCESS && !(status & STATUS_RANGE_ERROR))
+    {
+        status = STATUS_ERROR;
+    }
+    else
     {
         ca = cos(eng->shot.look_angle);
         sa = sin(eng->shot.look_angle);
@@ -798,13 +803,15 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
                 prev_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i - 1);
                 if (prev_ptr == NULL)
                 {
-                    err = Engine_t_LOG_AND_SAVE_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
+                    PUSH_ERR(&eng->err_stack, T_INDEX_ERROR, SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+                    status = STATUS_ERROR;
                     break; // assume INDEX_ERROR
                 }
                 cur_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i);
                 if (cur_ptr == NULL)
                 {
-                    err = Engine_t_LOG_AND_SAVE_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
+                    PUSH_ERR(&eng->err_stack, T_INDEX_ERROR, SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+                    status = STATUS_ERROR;
                     break; // assume INDEX_ERROR
                 }
                 h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
@@ -819,6 +826,7 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
                     iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
                     sdist = ix * ca + iy * sa;
                     *result = sdist;
+                    status = STATUS_SUCCESS;
                     break;
                 }
             }
@@ -826,15 +834,17 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
     }
 
     BaseTrajSeq_t_release(&trajectory);
-    return err;
+    return status;
 }
 
-// static StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
+// // Returns max slant-distance for given launch angle in radians.
+// // Robust ZERO_DOWN detection: scan from the end and find the first slant-height
+// // crossing where the previous point is positive and current is non-positive.
+// static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
 // {
 //     if (!eng || !result)
 //     {
-//         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_RANGE_FOR_ANGLE, "Invalid input (NULL pointer).");
-//         return STATUS_ERROR;
+//         return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
 //     }
 
 //     double ca;
@@ -847,7 +857,7 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
 //     double iy;
 //     double sdist;
 //     BaseTrajSeq_t trajectory;
-//     StatusCode status;
+//     ErrorCode err;
 //     ssize_t n;
 //     ssize_t i;
 //     BaseTraj_t *prev_ptr;
@@ -859,14 +869,8 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
 //     // try:
 //     *result = -9e9;
 //     BaseTrajSeq_t_init(&trajectory);
-
-//     status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
-
-//     if (status != STATUS_SUCCESS && !(status & STATUS_RANGE_ERROR))
-//     {
-//         PUSH_ERR(&eng->err_stack, status, SRC_RANGE_FOR_ANGLE, "Find apex error: %s", eng->err_msg);
-//     }
-//     else
+//     err = Engine_t_integrate_old(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
+//     if (err == NO_ERROR || isRangeError(err)) // assume it is not RANGE_ERROR
 //     {
 //         ca = cos(eng->shot.look_angle);
 //         sa = sin(eng->shot.look_angle);
@@ -879,13 +883,13 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
 //                 prev_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i - 1);
 //                 if (prev_ptr == NULL)
 //                 {
-//                     PUSH_ERR(&eng->err_stack, INDEX_ERROR, SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+//                     err = Engine_t_LOG_AND_SAVE_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
 //                     break; // assume INDEX_ERROR
 //                 }
 //                 cur_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i);
 //                 if (cur_ptr == NULL)
 //                 {
-//                     PUSH_ERR(&eng->err_stack, INDEX_ERROR, SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+//                     err = Engine_t_LOG_AND_SAVE_ERR(eng, INDEX_ERROR, "Index error in BaseTrajSeq_t_get_raw_item, error code: %d", err);
 //                     break; // assume INDEX_ERROR
 //                 }
 //                 h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
@@ -907,10 +911,10 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
 //     }
 
 //     BaseTrajSeq_t_release(&trajectory);
-//     return status;
+//     return err;
 // }
 
-ErrorCode Engine_t_find_max_range(
+StatusCode Engine_t_find_max_range(
     Engine_t *eng,
     double low_angle_deg,
     double high_angle_deg,
@@ -920,36 +924,37 @@ ErrorCode Engine_t_find_max_range(
 
     if (!eng || !result)
     {
-        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_FIND_MAX_RANGE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
     }
 
     double look_angle_rad = eng->shot.look_angle;
     double max_range_ft;
     double angle_at_max_rad;
     BaseTrajData_t apex;
-    ErrorCode err;
+    StatusCode status;
     double sdist;
-
-    // Virtually vertical shot
-    // π/2 radians = 90 degrees
-    if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
-    {
-        err = Engine_t_find_apex_old(eng, &apex);
-        if (err != NO_ERROR && !isRangeError(err))
-        {
-            return err; // Redirect apex finding error
-        }
-        sdist = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
-        result->max_range_ft = sdist;
-        result->angle_at_max_rad = look_angle_rad;
-        return NO_ERROR;
-    }
 
     // Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
     double restore_cMaximumDrop = 0.0;
     int has_restore_cMaximumDrop = 0;
     double restore_cMinimumVelocity = 0.0;
     int has_restore_cMinimumVelocity = 0;
+
+    // Virtually vertical shot
+    // π/2 radians = 90 degrees
+    if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+    {
+        status = Engine_t_find_apex(eng, &apex);
+        if (status != STATUS_SUCCESS)
+        {
+            return STATUS_ERROR; // Redirect apex finding error
+        }
+        sdist = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
+        result->max_range_ft = sdist;
+        result->angle_at_max_rad = look_angle_rad;
+        return STATUS_SUCCESS;
+    }
 
     if (eng->config.cMaximumDrop != 0.0)
     {
@@ -974,8 +979,8 @@ ErrorCode Engine_t_find_max_range(
     double d = a + inv_phi * h;
     double yc, yd;
 
-    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, c, &yc);
-    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, d, &yd);
+    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, c, &yc);
+    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, d, &yd);
 
     // Golden-section search
     for (int i = 0; i < 100; i++)
@@ -991,7 +996,7 @@ ErrorCode Engine_t_find_max_range(
             yd = yc;
             h = b - a;
             c = a + inv_phi_sq * h;
-            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, c, &yc);
+            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, c, &yc);
         }
         else
         {
@@ -1000,12 +1005,12 @@ ErrorCode Engine_t_find_max_range(
             yc = yd;
             h = b - a;
             d = a + inv_phi * h;
-            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, d, &yd);
+            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, d, &yd);
         }
     }
 
     angle_at_max_rad = (a + b) / 2;
-    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(err, eng, angle_at_max_rad, &max_range_ft);
+    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle_at_max_rad, &max_range_ft);
 
     // Restore original constraints
     if (has_restore_cMaximumDrop)
@@ -1019,7 +1024,7 @@ ErrorCode Engine_t_find_max_range(
 
     result->max_range_ft = max_range_ft;
     result->angle_at_max_rad = angle_at_max_rad;
-    return NO_ERROR;
+    return STATUS_SUCCESS;
 }
 
 ErrorCode Engine_t_find_zero_angle(

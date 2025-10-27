@@ -565,18 +565,51 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         cdef MaxRangeResult_t result
-        cdef ErrorCode err = Engine_t_find_max_range(
+        cdef StatusCode status = Engine_t_find_max_range(
             &self._engine,
             low_angle_deg,
             high_angle_deg,
             _APEX_IS_MAX_RANGE_RADIANS,
             &result
         )
-        self._raise_on_input_error(err)
-        self._raise_on_integrate_error(err)
-        self._raise_on_apex_error(err)
+        # self._raise_on_input_error(err)
+        # self._raise_on_integrate_error(err)
+        # self._raise_on_apex_error(err)
+        if status == StatusCode.STATUS_SUCCESS:
+            return result
 
-        return result
+
+        # cdef process_err_stack(idx: int = 0):
+        #     cdef int last_idx = self._engine.err_stack.top-1
+
+        #     if idx > last_idx:
+        #         return None
+
+        #     cdef ErrorFrame *cur_frame = self._engine.err_stack.frames[last_idx-idx]
+        #     Exception prev_err = resolve_error_type(cur_frame)            
+        #     try:
+        #         process_err_stack(idx+1)
+        #     except Exception as next_err:
+        #         raise prev_err from next_err
+        #     raise prev_err
+        
+        # process_err_stack(0)
+
+
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        
+        if err.src == ErrorSource.SRC_FIND_APEX:
+            self._raise_on_apex_error(<ErrorCode>err.code)
+        elif err.src == ErrorSource.SRC_INTEGRATE:
+            self._raise_on_integrate_error(<ErrorCode>err.code)
+        # ErrorSource.SRC_FIND_MAX_RANGE
+        # ErrorSource.SRC_RANGE_FOR_ANGLE
+        raise SolverRuntimeError(
+            f"unhandled error in integrate_func, "
+            f"error code: {hex(err.code)}, "
+            f"source: {err.src}: "
+            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
+        )
 
     cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
