@@ -5,7 +5,14 @@ cdef extern from "error_stack.h":
     ctypedef enum StatusCode:
         STATUS_SUCCESS
         STATUS_ERROR
-        STATUS_TERMINATED
+
+        STATUS_RANGE_ERROR
+        STATUS_RANGE_ERROR_MINIMUM_VELOCITY_REACHED
+        STATUS_RANGE_ERROR_MAXIMUM_DROP_REACHED
+        STATUS_RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
+
+        STATUS_ZERO_INIT_DONE
+        STATUS_ZERO_INIT_CONTINUE
 
     ctypedef enum ErrorSource:
         SRC_INTEGRATE
@@ -13,6 +20,9 @@ cdef extern from "error_stack.h":
         SRC_ZERO_ANGLE
         SRC_FIND_ZERO_ANGLE
         SRC_ERROR_AT_DISTANCE
+        SRC_FIND_MAX_RANGE
+        SRC_RANGE_FOR_ANGLE
+        SRC_INIT_ZERO
 
     ctypedef enum ErrorType:
         T_NO_ERROR

@@ -104,5 +104,5 @@ cdef object _frame_as_dict(ErrorFrame *f):
         "func": f.func.decode('utf-8', 'ignore') if f.func is not NULL else "",
         "file": f.file.decode('utf-8', 'ignore') if f.file is not NULL else "",
         "line": f.line,
-        "msg": f.msg.decode('utf-8', 'ignore') if f.file is not NULL else ""
+        "msg": f.msg.decode('utf-8', 'ignore') if f.msg is not NULL else ""
     }

@@ -78,16 +78,7 @@ cdef extern from "include/engine.h" nogil:
 
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 
-    StatusCode EngEngine_t_integrate1(
-        Engine_t *eng,
-        double range_limit_ft,
-        double range_step_ft,
-        double time_step,
-        TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr
-    )
-
-    ErrorCode Engine_t_integrate(
+    StatusCode Engine_t_integrate(
         Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
@@ -96,12 +87,26 @@ cdef extern from "include/engine.h" nogil:
         BaseTrajSeq_t *traj_seq_ptr
     ) noexcept nogil
 
-    ErrorCode Engine_t_find_apex(
+    ErrorCode Engine_t_integrate_old(
+        Engine_t *eng,
+        double range_limit_ft,
+        double range_step_ft,
+        double time_step,
+        TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr
+    ) noexcept nogil
+
+    StatusCode Engine_t_find_apex(
+        Engine_t *eng,
+        BaseTrajData_t *out
+    ) noexcept nogil
+
+    ErrorCode Engine_t_find_apex_old(
         Engine_t *eng,
         BaseTrajData_t *apex
     ) noexcept nogil
 
-    ErrorCode Engine_t_error_at_distance(
+    StatusCode Engine_t_error_at_distance(
         Engine_t *eng,
         double angle_rad,
         double target_x_ft,
@@ -109,7 +114,24 @@ cdef extern from "include/engine.h" nogil:
         double *out_error_ft
     ) noexcept nogil
 
-    ErrorCode Engine_t_init_zero_calculation(
+    ErrorCode Engine_t_error_at_distance_old(
+        Engine_t *eng,
+        double angle_rad,
+        double target_x_ft,
+        double target_y_ft,
+        double *out_error_ft
+    ) noexcept nogil
+
+    ErrorCode Engine_t_init_zero_calculation_old(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        ZeroInitialData_t *result,
+        OutOfRangeError_t *error
+    ) noexcept nogil
+
+    StatusCode Engine_t_init_zero_calculation(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -181,7 +203,7 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         object shot_info
     )
-    cdef ErrorCode _init_zero_calculation(
+    cdef StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
         double distance,
         ZeroInitialData_t *out,

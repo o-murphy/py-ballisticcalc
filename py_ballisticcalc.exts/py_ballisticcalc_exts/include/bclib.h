@@ -44,7 +44,7 @@ typedef enum
     INTERPOLATION_ERROR = 0x0200, // (1 << 9)
 
     // Solver specific flags (always include RANGE_ERROR)
-    RANGE_ERROR = NO_ERROR | 0x0400,                             // 0x0400 -> (1 << 10)
+    RANGE_ERROR = 0x0400,                             // 0x0400 -> (1 << 10)
     RANGE_ERROR_MINIMUM_VELOCITY_REACHED = RANGE_ERROR | 0x0800, // 0x0400 | 0x0800 = 0x0C00 -> (1 << 10) | (1 << 11)
     RANGE_ERROR_MAXIMUM_DROP_REACHED = RANGE_ERROR | 0x1000,     // 0x0400 | 0x1000 = 0x1400 -> (1 << 10) | (1 << 12)
     RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = RANGE_ERROR | 0x2000, // 0x0400 | 0x2000 = 0x2400 -> (1 << 10) | (1 << 13)

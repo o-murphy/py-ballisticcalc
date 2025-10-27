@@ -38,6 +38,7 @@ from py_ballisticcalc_exts.bind cimport (
     _new_feet,
     _new_rad,
 )
+from py_ballisticcalc_exts.error_stack cimport StatusCode, ErrorSource, ErrorFrame, last_err
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
@@ -256,7 +257,8 @@ cdef class CythonizedBaseIntegrationEngine:
             HitResult: Object for describing the trajectory.
         """
         cdef:
-            ErrorCode err
+            StatusCode status
+            ErrorFrame *err
             BaseTrajSeqT trajectory
             BaseTrajDataT init, fin
             double range_limit_ft = max_range._feet
@@ -268,7 +270,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         try:
             trajectory = BaseTrajSeqT()
-            err = Engine_t_integrate(
+            status = Engine_t_integrate(
                 &self._engine,
                 range_limit_ft,
                 range_step_ft,
@@ -276,7 +278,15 @@ cdef class CythonizedBaseIntegrationEngine:
                 <TrajFlag_t>filter_flags,
                 &trajectory._c_view,
             )
-            self._raise_on_integrate_error(err)
+
+            if status == StatusCode.STATUS_ERROR:
+                err = last_err(&self._engine.err_stack)
+                raise SolverRuntimeError(
+                    f"unhandled error in integrate_func, "
+                    f"error code: {hex(err.code)}, "
+                    f"source: {err.src}: "
+                    f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
+                )
         finally:
             # Always release C resources
             self._release_trajectory()
@@ -286,11 +296,11 @@ cdef class CythonizedBaseIntegrationEngine:
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
 
         # Extract termination_reason from the result
-        if err == ErrorCode.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+        if status == StatusCode.STATUS_RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
             termination_reason = RangeError.MinimumVelocityReached
-        elif err == ErrorCode.RANGE_ERROR_MAXIMUM_DROP_REACHED:
+        elif status == StatusCode.STATUS_RANGE_ERROR_MAXIMUM_DROP_REACHED:
             termination_reason = RangeError.MaximumDropReached
-        elif err == ErrorCode.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+        elif status == StatusCode.STATUS_RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
 
         init = trajectory[0]
@@ -339,10 +349,9 @@ cdef class CythonizedBaseIntegrationEngine:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
         cdef:
-            ErrorCode err
             double out_error_ft
 
-        err = Engine_t_error_at_distance(
+        cdef StatusCode status = Engine_t_error_at_distance(
             &self._engine,
             angle_rad,
             target_x_ft,
@@ -350,10 +359,21 @@ cdef class CythonizedBaseIntegrationEngine:
             &out_error_ft
         )
 
-        self._raise_on_input_error(err)
-        self._raise_on_integrate_error(err)
+        if status == StatusCode.STATUS_SUCCESS:
+            return out_error_ft
+        
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
 
-        return out_error_ft
+        if err.src == ErrorSource.SRC_FIND_APEX:
+            self._raise_on_apex_error(<ErrorCode>err.code)
+        elif err.src == ErrorSource.SRC_INTEGRATE:
+            self._raise_on_integrate_error(<ErrorCode>err.code)
+        raise SolverRuntimeError(
+            f"unhandled error in integrate_func, "
+            f"error code: {hex(err.code)}, "
+            f"source: {err.src}: "
+            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
+        )            
 
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
         """
@@ -442,7 +462,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         return &self._engine.shot
 
-    cdef ErrorCode _init_zero_calculation(
+    cdef StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
         double distance,
         ZeroInitialData_t *out,
@@ -461,7 +481,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         cdef OutOfRangeError_t err_data
-        cdef ErrorCode err = Engine_t_init_zero_calculation(
+        cdef StatusCode status = Engine_t_init_zero_calculation(
             &self._engine,
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
@@ -469,10 +489,22 @@ cdef class CythonizedBaseIntegrationEngine:
             out,
             &err_data,
         )
-        self._raise_on_input_error(err)
-        self._raise_on_init_zero_error(err, &err_data)
-        self._raise_on_apex_error(err)
-        return err
+        if status == StatusCode.STATUS_ZERO_INIT_CONTINUE or status == StatusCode.STATUS_ZERO_INIT_DONE:
+            return status
+
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        if err.src == ErrorSource.SRC_INIT_ZERO:
+            self._raise_on_init_zero_error(<ErrorCode>err.code, &err_data)
+        elif err.src == ErrorSource.SRC_FIND_APEX:
+            self._raise_on_apex_error(<ErrorCode>err.code)
+        elif err.src == ErrorSource.SRC_INTEGRATE:
+            self._raise_on_integrate_error(<ErrorCode>err.code)
+        raise SolverRuntimeError(
+            f"unhandled error in integrate_func, "
+            f"error code: {hex(err.code)}, "
+            f"source: {err.src}: "
+            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
+        )
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -565,10 +597,22 @@ cdef class CythonizedBaseIntegrationEngine:
         # apex = BaseTrajData_t(
         #     0.0, V3dT(0.0, 0.0, 0.0), V3dT(0.0, 0.0, 0.0), 0.0)
 
-        cdef ErrorCode err = Engine_t_find_apex(&self._engine, &apex)
-        self._raise_on_input_error(err)
-        self._raise_on_apex_error(err)
-        return apex
+        cdef StatusCode status = Engine_t_find_apex(&self._engine, &apex)
+        if status == StatusCode.STATUS_SUCCESS:
+            return apex
+        
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+
+        if err.src == ErrorSource.SRC_FIND_APEX:
+            self._raise_on_apex_error(<ErrorCode>err.code)
+        elif err.src == ErrorSource.SRC_INTEGRATE:
+            self._raise_on_integrate_error(<ErrorCode>err.code)
+        raise SolverRuntimeError(
+            f"unhandled error in integrate_func, "
+            f"error code: {hex(err.code)}, "
+            f"source: {err.src}: "
+            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
+        )
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -635,7 +679,7 @@ cdef class CythonizedBaseIntegrationEngine:
             raise NotImplementedError("integrate_func not implemented or not provided")
 
         cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
-        cdef ErrorCode err = Engine_t_integrate(
+        cdef StatusCode status = Engine_t_integrate(
             &self._engine,
             range_limit_ft,
             range_step_ft,
@@ -643,8 +687,17 @@ cdef class CythonizedBaseIntegrationEngine:
             filter_flags,
             &traj_seq._c_view,
         )
-        self._raise_on_integrate_error(err)
-        return traj_seq, err
+
+        if status != StatusCode.STATUS_ERROR:
+            return traj_seq, status
+        
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        raise SolverRuntimeError(
+            f"unhandled error in integrate_func, "
+            f"error code: {hex(err.code)}, "
+            f"source: {err.src}: "
+            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
+        )
 
     cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
         if err & ErrorCode.INPUT_ERROR:
@@ -664,7 +717,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         raise SolverRuntimeError(
             f"unhandled error in integrate_func, "
-            f"error code: {err}, {self.error_message}"
+            f"error code: {hex(err)}, {self.error_message}"
         )
 
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err):

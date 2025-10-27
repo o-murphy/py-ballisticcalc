@@ -87,38 +87,39 @@ void Engine_t_release_trajectory(Engine_t *eng)
     // NOTE: It is not neccessary to NULLIFY integrate_func_ptr
 }
 
-// StatusCode EngEngine_t_integrate1(
-//     Engine_t *eng,
-//     double range_limit_ft,
-//     double range_step_ft,
-//     double time_step,
-//     TrajFlag_t filter_flags,
-//     BaseTrajSeq_t *traj_seq_ptr)
-// {
-//     if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr)
-//     {
-//         PUSH_ERR(&eng->err_stack, INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
-//         return STATUS_ERROR;
-//     }
-//     C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
+StatusCode Engine_t_integrate(
+    Engine_t *eng,
+    double range_limit_ft,
+    double range_step_ft,
+    double time_step,
+    TrajFlag_t filter_flags,
+    BaseTrajSeq_t *traj_seq_ptr)
+{
+    if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr)
+    {
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
+    }
+    C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
-//     ErrorCode err = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
+    StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
 
-//     if (err == NO_ERROR) {
-//         C_LOG(LOG_LEVEL_INFO, "Integration completed successfully or with acceptable termination code: (%d).", err);
-//         return STATUS_SUCCESS;
-//     }
+    if (status == STATUS_SUCCESS)
+    {
+        C_LOG(LOG_LEVEL_INFO, "Integration completed successfully: (%d).", status);
+        return STATUS_SUCCESS;
+    }
 
-//     if (err == NO_ERROR || isRangeError(err))
-//     {
-//         C_LOG(LOG_LEVEL_INFO, "%s: termination reason: %d", eng->err_msg, err);
-//         return STATUS_TERMINATED;
-//     }
-//     PUSH_ERR(&eng->err_stack, err, SRC_INTEGRATE, "%s: error code: %d", eng->err_msg, err);
-//     return STATUS_ERROR;
-// }
+    if (isRangeError(status))
+    {
+        C_LOG(LOG_LEVEL_INFO, "Integration completed with acceptable termination code: (%d).", status);
+        return status;
+    }
+    PUSH_ERR(&eng->err_stack, status, SRC_INTEGRATE, "Integration failed: %s: error code: %d", eng->err_msg, status);
+    return STATUS_ERROR;
+}
 
-ErrorCode Engine_t_integrate(
+ErrorCode Engine_t_integrate_old(
     Engine_t *eng,
     double range_limit_ft,
     double range_step_ft,
@@ -152,7 +153,66 @@ ErrorCode Engine_t_integrate(
     return err;
 }
 
-ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
+StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
+{
+    if (!eng || !out)
+    {
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_FIND_APEX, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
+    }
+
+    if (eng->shot.barrel_elevation <= 0)
+    {
+        PUSH_ERR(&eng->err_stack, T_VALUE_ERROR, SRC_FIND_APEX, "Value error (Barrel elevation must be greater than 0 to find apex).");
+        return STATUS_ERROR;
+    }
+
+    // Have to ensure cMinimumVelocity is 0 for this to work
+    double restore_min_velocity = 0.0;
+    int has_restore_min_velocity = 0;
+    BaseTrajSeq_t result;
+    StatusCode status;
+
+    BaseTrajSeq_t_init(&result);
+
+    if (eng->config.cMinimumVelocity > 0.0)
+    {
+        restore_min_velocity = eng->config.cMinimumVelocity;
+        eng->config.cMinimumVelocity = 0.0;
+        has_restore_min_velocity = 1;
+    }
+
+    // try
+    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
+
+    if (status != STATUS_SUCCESS && !(status & STATUS_RANGE_ERROR))
+    {
+        status = STATUS_ERROR;
+    }
+    else
+    {
+        status = BaseTrajSeq_t_get_at(&result, KEY_VEL_Y, 0.0, -1, out);
+        if (status != STATUS_SUCCESS)
+        {
+            PUSH_ERR(&eng->err_stack, T_RUNTIME_ERROR, SRC_FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
+            status = STATUS_ERROR;
+        }
+        else
+        {
+            status = STATUS_SUCCESS;
+        }
+    }
+    // finally
+    if (has_restore_min_velocity)
+    {
+        eng->config.cMinimumVelocity = restore_min_velocity;
+    }
+
+    BaseTrajSeq_t_release(&result);
+    return status;
+}
+
+ErrorCode Engine_t_find_apex_old(Engine_t *eng, BaseTrajData_t *out)
 {
     if (!eng || !out)
     {
@@ -180,7 +240,7 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     }
 
     // try
-    err = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
+    err = Engine_t_integrate_old(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
     // allow RANGE_ERROR
     if (err == NO_ERROR || isRangeError(err))
     {
@@ -206,7 +266,73 @@ ErrorCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     return err;
 }
 
-ErrorCode Engine_t_error_at_distance(
+StatusCode Engine_t_error_at_distance(
+    Engine_t *eng,
+    double angle_rad,
+    double target_x_ft,
+    double target_y_ft,
+    double *out_error_ft)
+{
+    *out_error_ft = 9e9;
+
+    if (!eng || !out_error_ft)
+    {
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_ERROR_AT_DISTANCE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
+    }
+
+    BaseTrajSeq_t trajectory;
+    BaseTrajData_t hit;
+    BaseTraj_t *last_ptr;
+
+    BaseTrajSeq_t_init(&trajectory);
+
+    // try
+
+    eng->shot.barrel_elevation = angle_rad;
+
+    StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory);
+
+    if (status != STATUS_SUCCESS && !(status & STATUS_RANGE_ERROR))
+    {
+        PUSH_ERR(&eng->err_stack, status, SRC_ERROR_AT_DISTANCE, "Find apex error: %s: error code: %d", eng->err_msg, status);
+    }
+    else
+    {
+        // If trajectory is too short for cubic interpolation, treat as unreachable
+        if (trajectory.length >= 3)
+        {
+            last_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, -1);
+            if (last_ptr != NULL && last_ptr->time != 0.0)
+            {
+                status = BaseTrajSeq_t_get_at(&trajectory, KEY_POS_X, target_x_ft, -1, &hit);
+                if (status != STATUS_SUCCESS)
+                {
+                    PUSH_ERR(&eng->err_stack, RUNTIME_ERROR, SRC_ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
+                    status = STATUS_ERROR;
+                }
+                else
+                {
+                    // FIXME: possible fix ?
+                    // *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
+                    *out_error_ft = hit.position.y - target_y_ft;
+                    status = STATUS_SUCCESS;
+                }
+            }
+            else
+            {
+                PUSH_ERR(&eng->err_stack, RUNTIME_ERROR, SRC_ERROR_AT_DISTANCE, "Trajectory sequence error, error code: %d", status);
+                status = STATUS_ERROR;
+            }
+        }
+    }
+
+    // finally:
+    BaseTrajSeq_t_release(&trajectory);
+    return status;
+};
+
+ErrorCode Engine_t_error_at_distance_old(
     Engine_t *eng,
     double angle_rad,
     double target_x_ft,
@@ -230,7 +356,7 @@ ErrorCode Engine_t_error_at_distance(
 
     eng->shot.barrel_elevation = angle_rad;
 
-    ErrorCode err = Engine_t_integrate(
+    ErrorCode err = Engine_t_integrate_old(
         eng,
         target_x_ft,
         target_x_ft,
@@ -273,7 +399,7 @@ ErrorCode Engine_t_error_at_distance(
     return err;
 };
 
-ErrorCode Engine_t_init_zero_calculation(
+ErrorCode Engine_t_init_zero_calculation_old(
     Engine_t *eng,
     double distance,
     double APEX_IS_MAX_RANGE_RADIANS,
@@ -315,7 +441,7 @@ ErrorCode Engine_t_init_zero_calculation(
     if (fabs(result->look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
     {
         // Compute slant distance at apex using robust accessor
-        err = Engine_t_find_apex(eng, &apex);
+        err = Engine_t_find_apex_old(eng, &apex);
         if (err != NO_ERROR && !isRangeError(err))
         {
             return err; // Redirect apex finding error
@@ -334,6 +460,69 @@ ErrorCode Engine_t_init_zero_calculation(
     return ZERO_INIT_CONTINUE;
 }
 
+StatusCode Engine_t_init_zero_calculation(
+    Engine_t *eng,
+    double distance,
+    double APEX_IS_MAX_RANGE_RADIANS,
+    double ALLOWED_ZERO_ERROR_FEET,
+    ZeroInitialData_t *result,
+    OutOfRangeError_t *error)
+{
+
+    if (!eng || !result || !error)
+    {
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INIT_ZERO, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
+    }
+
+    StatusCode status;
+    BaseTrajData_t apex;
+    double apex_slant_ft;
+
+    result->slant_range_ft = distance;
+    result->look_angle_rad = eng->shot.look_angle;
+    result->target_x_ft = result->slant_range_ft * cos(result->look_angle_rad);
+    result->target_y_ft = result->slant_range_ft * sin(result->look_angle_rad);
+    result->start_height_ft = -eng->shot.sight_height * eng->shot.cant_cosine;
+
+    // Edge case: Very close shot
+    if (fabs(result->slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
+    {
+        return STATUS_ZERO_INIT_DONE;
+    }
+
+    // Edge case: Very close shot; ignore gravity and drag
+    if (fabs(result->slant_range_ft) < 2.0 * fmax(fabs(result->start_height_ft),
+                                                  eng->config.cStepMultiplier))
+    {
+        result->look_angle_rad = atan2(result->target_y_ft + result->start_height_ft, result->target_x_ft);
+        return STATUS_ZERO_INIT_DONE;
+    }
+
+    // Edge case: Virtually vertical shot; just check if it can reach the target
+    if (fabs(result->look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+    {
+        // Compute slant distance at apex using robust accessor
+        status = Engine_t_find_apex_old(eng, &apex);
+        if (status == STATUS_ERROR)
+        {
+            return STATUS_ERROR; // Redirect apex finding error
+        }
+        apex_slant_ft = apex.position.x * cos(result->look_angle_rad) + apex.position.y * sin(result->look_angle_rad);
+        if (apex_slant_ft < result->slant_range_ft)
+        {
+            error->requested_distance_ft = result->slant_range_ft;
+            error->max_range_ft = apex_slant_ft;
+            error->look_angle_rad = result->look_angle_rad;
+            PUSH_ERR(&eng->err_stack, OUT_OF_RANGE_ERROR, SRC_INIT_ZERO, "Out of range");
+            return STATUS_ERROR;
+        }
+        return STATUS_ZERO_INIT_DONE;
+    }
+
+    return STATUS_ZERO_INIT_CONTINUE;
+}
+
 ErrorCode Engine_t_zero_angle(
     Engine_t *eng,
     double distance,
@@ -349,7 +538,7 @@ ErrorCode Engine_t_zero_angle(
     }
 
     ZeroInitialData_t init_data;
-    ErrorCode status = Engine_t_init_zero_calculation(
+    ErrorCode status = Engine_t_init_zero_calculation_old(
         eng,
         distance,
         APEX_IS_MAX_RANGE_RADIANS,
@@ -421,7 +610,7 @@ ErrorCode Engine_t_zero_angle(
         BaseTrajSeq_t_release(&seq);
         BaseTrajSeq_t_init(&seq);
 
-        err = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq);
+        err = Engine_t_integrate_old(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq);
 
         if (err != NO_ERROR && !isRangeError(err))
         {
@@ -595,7 +784,7 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
     // try:
     *result = -9e9;
     BaseTrajSeq_t_init(&trajectory);
-    err = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
+    err = Engine_t_integrate_old(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
     if (err == NO_ERROR || isRangeError(err)) // assume it is not RANGE_ERROR
     {
         ca = cos(eng->shot.look_angle);
@@ -640,6 +829,87 @@ static ErrorCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doubl
     return err;
 }
 
+// static StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
+// {
+//     if (!eng || !result)
+//     {
+//         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_RANGE_FOR_ANGLE, "Invalid input (NULL pointer).");
+//         return STATUS_ERROR;
+//     }
+
+//     double ca;
+//     double sa;
+//     double h_prev;
+//     double h_cur;
+//     double denom;
+//     double t;
+//     double ix;
+//     double iy;
+//     double sdist;
+//     BaseTrajSeq_t trajectory;
+//     StatusCode status;
+//     ssize_t n;
+//     ssize_t i;
+//     BaseTraj_t *prev_ptr;
+//     BaseTraj_t *cur_ptr;
+
+//     // Update shot data
+//     eng->shot.barrel_elevation = angle_rad;
+
+//     // try:
+//     *result = -9e9;
+//     BaseTrajSeq_t_init(&trajectory);
+
+//     status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
+
+//     if (status != STATUS_SUCCESS && !(status & STATUS_RANGE_ERROR))
+//     {
+//         PUSH_ERR(&eng->err_stack, status, SRC_RANGE_FOR_ANGLE, "Find apex error: %s", eng->err_msg);
+//     }
+//     else
+//     {
+//         ca = cos(eng->shot.look_angle);
+//         sa = sin(eng->shot.look_angle);
+//         n = trajectory.length;
+//         if (n >= 2)
+//         {
+//             // Linear search from end of trajectory for zero-down crossing
+//             for (i = n - 1; i > 0; i--)
+//             {
+//                 prev_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i - 1);
+//                 if (prev_ptr == NULL)
+//                 {
+//                     PUSH_ERR(&eng->err_stack, INDEX_ERROR, SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+//                     break; // assume INDEX_ERROR
+//                 }
+//                 cur_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i);
+//                 if (cur_ptr == NULL)
+//                 {
+//                     PUSH_ERR(&eng->err_stack, INDEX_ERROR, SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+//                     break; // assume INDEX_ERROR
+//                 }
+//                 h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
+//                 h_cur = cur_ptr->py * ca - cur_ptr->px * sa;
+//                 if (h_prev > 0.0 && h_cur <= 0.0)
+//                 {
+//                     // Interpolate for slant_distance
+//                     denom = h_prev - h_cur;
+//                     t = denom == 0.0 ? 0.0 : h_prev / denom;
+//                     t = fmax(0.0, fmin(1.0, t));
+//                     ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
+//                     iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
+//                     sdist = ix * ca + iy * sa;
+//                     *result = sdist;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+
+//     BaseTrajSeq_t_release(&trajectory);
+//     return status;
+// }
+
 ErrorCode Engine_t_find_max_range(
     Engine_t *eng,
     double low_angle_deg,
@@ -664,7 +934,7 @@ ErrorCode Engine_t_find_max_range(
     // π/2 radians = 90 degrees
     if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
     {
-        err = Engine_t_find_apex(eng, &apex);
+        err = Engine_t_find_apex_old(eng, &apex);
         if (err != NO_ERROR && !isRangeError(err))
         {
             return err; // Redirect apex finding error
@@ -769,7 +1039,7 @@ ErrorCode Engine_t_find_zero_angle(
     }
 
     ZeroInitialData_t init_data;
-    ErrorCode err = Engine_t_init_zero_calculation(
+    ErrorCode err = Engine_t_init_zero_calculation_old(
         eng,
         distance,
         APEX_IS_MAX_RANGE_RADIANS,
@@ -865,7 +1135,7 @@ ErrorCode Engine_t_find_zero_angle(
     // Prepare variables for Ridder's method outside of try block to satisfy Cython
     double mid_angle, f_mid, s, next_angle, f_next;
 
-    err = Engine_t_error_at_distance(
+    err = Engine_t_error_at_distance_old(
         eng,
         low_angle,
         target_x_ft,
@@ -880,7 +1150,7 @@ ErrorCode Engine_t_find_zero_angle(
     if (f_low > 1e8 && fabs(low_angle - look_angle_rad) < 1e-9)
     {
         low_angle = look_angle_rad + 1e-3;
-        err = Engine_t_error_at_distance(
+        err = Engine_t_error_at_distance_old(
             eng,
             low_angle,
             target_x_ft,
@@ -892,7 +1162,7 @@ ErrorCode Engine_t_find_zero_angle(
         }
     }
 
-    err = Engine_t_error_at_distance(
+    err = Engine_t_error_at_distance_old(
         eng,
         high_angle,
         target_x_ft,
@@ -924,7 +1194,7 @@ ErrorCode Engine_t_find_zero_angle(
     {
         mid_angle = (low_angle + high_angle) / 2.0;
 
-        err = Engine_t_error_at_distance(
+        err = Engine_t_error_at_distance_old(
             eng,
             mid_angle,
             target_x_ft,
@@ -952,7 +1222,7 @@ ErrorCode Engine_t_find_zero_angle(
             goto finally;
         }
 
-        err = Engine_t_error_at_distance(
+        err = Engine_t_error_at_distance_old(
             eng,
             next_angle,
             target_x_ft,
