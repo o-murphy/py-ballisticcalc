@@ -35,7 +35,7 @@ double _euler_time_step(double base_step, double velocity)
  * @param filter_flags Flags (TrajFlag_t) specifying additional points to record.
  * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where trajectory
  * data points will be stored.
- * @return ErrorCode An enumeration value indicating why the integration
+ * @return ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
  */
 StatusCode _integrate_euler(
@@ -48,7 +48,8 @@ StatusCode _integrate_euler(
 
     if (!eng || !traj_seq_ptr || !reason)
     {
-        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
     }
 
     double velocity, delta_time;

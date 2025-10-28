@@ -72,7 +72,7 @@ V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double k
  * (e.g., ZERO, MACH, APEX).
  * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where dense trajectory
  * data points will be stored.
- * @return ErrorCode An enumeration value indicating why the integration
+ * @return ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on successful completion).
  */
 StatusCode _integrate_rk4(
@@ -84,7 +84,8 @@ StatusCode _integrate_rk4(
 {
     if (!eng || !traj_seq_ptr || !reason)
     {
-        return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
     };
 
     double velocity, delta_time;
@@ -111,7 +112,6 @@ StatusCode _integrate_rk4(
 
     // Working variables
     *reason = NO_TERMINATE;
-    // ErrorCode err = NO_ERROR;
     double relative_speed;
     V3dT _dir_vector;
     eng->integration_step_count = 0;
@@ -222,7 +222,8 @@ StatusCode _integrate_rk4(
         // Check for division by zero
         if (mach == 0.0)
         {
-            return Engine_t_LOG_AND_SAVE_ERR(eng, ZERO_DIVISION_ERROR, "Integration error: Mach number is zero, cannot divide!");
+            PUSH_ERR(&eng->err_stack, T_ZERO_DIVISION_ERROR, SRC_INTEGRATE, "Integration error: Mach number is zero cannot divide!");
+            return STATUS_ERROR;
         }
 
         km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);

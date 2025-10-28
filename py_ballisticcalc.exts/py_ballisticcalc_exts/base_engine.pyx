@@ -24,7 +24,6 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     ShotProps_t_updateStabilityCoefficient,
     TrajFlag_t,
-    ErrorCode,
     initLogLevel,
 )
 # noinspection PyUnresolvedReferences
@@ -38,7 +37,7 @@ from py_ballisticcalc_exts.bind cimport (
     _new_feet,
     _new_rad,
 )
-from py_ballisticcalc_exts.error_stack cimport StatusCode, ErrorSource, ErrorFrame, last_err
+from py_ballisticcalc_exts.error_stack cimport StatusCode, ErrorSource, ErrorFrame, ErrorType, last_err
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
@@ -366,9 +365,9 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
 
         if err.src == ErrorSource.SRC_FIND_APEX:
-            self._raise_on_apex_error(<ErrorCode>err.code)
+            self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
-            self._raise_on_integrate_error(<ErrorCode>err.code)
+            self._raise_on_integrate_error(err.code)
         raise SolverRuntimeError(
             f"unhandled error in integrate_func, "
             f"error code: {hex(err.code)}, "
@@ -452,7 +451,7 @@ cdef class CythonizedBaseIntegrationEngine:
             )
 
             # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != ErrorCode.NO_ERROR:
+            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != <int>ErrorType.T_NO_ERROR:
                 raise ZeroDivisionError(
                     "Zero division detected in ShotProps_t_updateStabilityCoefficient")
 
@@ -494,11 +493,11 @@ cdef class CythonizedBaseIntegrationEngine:
 
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
         if err.src == ErrorSource.SRC_INIT_ZERO:
-            self._raise_on_init_zero_error(<ErrorCode>err.code, &err_data)
+            self._raise_on_init_zero_error(err, &err_data)
         elif err.src == ErrorSource.SRC_FIND_APEX:
-            self._raise_on_apex_error(<ErrorCode>err.code)
+            self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
-            self._raise_on_integrate_error(<ErrorCode>err.code)
+            self._raise_on_integrate_error(err.code)
         raise SolverRuntimeError(
             f"unhandled error in integrate_func, "
             f"error code: {hex(err.code)}, "
@@ -525,7 +524,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef OutOfRangeError_t range_error
         cdef ZeroFindingError_t zero_error
         cdef double result
-        cdef ErrorCode err = Engine_t_find_zero_angle(
+        cdef StatusCode status = Engine_t_find_zero_angle(
             &self._engine,
             distance,
             lofted,
@@ -535,14 +534,18 @@ cdef class CythonizedBaseIntegrationEngine:
             &range_error,
             &zero_error,
         )
+        if status == StatusCode.STATUS_SUCCESS:
+            return result
 
-        self._raise_on_input_error(err)
-        self._raise_on_init_zero_error(err, &range_error)
-        self._raise_on_apex_error(err)
-        # self._raise_on_integrate_error(err)  # FIXME
-        # self._raise_on_zero_finding_error(err, &zero_error)  # FIXME
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
 
-        return result
+        if err.src == ErrorSource.SRC_INIT_ZERO:
+            self._raise_on_init_zero_error(err, &range_error)
+        if err.src == ErrorSource.SRC_FIND_ZERO_ANGLE:
+            self._raise_on_init_zero_error(err, &range_error)
+            self._raise_on_zero_finding_error(err, &zero_error)
+        if err.src == ErrorSource.SRC_FIND_APEX:
+            self._raise_on_apex_error(err.code)
         
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
@@ -596,9 +599,9 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
         
         if err.src == ErrorSource.SRC_FIND_APEX:
-            self._raise_on_apex_error(<ErrorCode>err.code)
+            self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
-            self._raise_on_integrate_error(<ErrorCode>err.code)
+            self._raise_on_integrate_error(err.code)
         # ErrorSource.SRC_FIND_MAX_RANGE
         # ErrorSource.SRC_RANGE_FOR_ANGLE
         raise SolverRuntimeError(
@@ -631,9 +634,9 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
 
         if err.src == ErrorSource.SRC_FIND_APEX:
-            self._raise_on_apex_error(<ErrorCode>err.code)
+            self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
-            self._raise_on_integrate_error(<ErrorCode>err.code)
+            self._raise_on_integrate_error(err.code)
         raise SolverRuntimeError(
             f"unhandled error in integrate_func, "
             f"error code: {hex(err.code)}, "
@@ -662,7 +665,7 @@ cdef class CythonizedBaseIntegrationEngine:
             OutOfRangeError_t range_error
             ZeroFindingError_t zero_error
 
-        cdef ErrorCode err = Engine_t_zero_angle(
+        cdef StatusCode status = Engine_t_zero_angle(
             &self._engine,
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
@@ -672,13 +675,26 @@ cdef class CythonizedBaseIntegrationEngine:
             &zero_error,
         )
 
-        self._raise_on_input_error(err)
-        self._raise_on_init_zero_error(err, &range_error)
-        self._raise_on_apex_error(err)
-        self._raise_on_integrate_error(err)
-        self._raise_on_zero_finding_error(err, &zero_error)
+        if status == StatusCode.STATUS_SUCCESS:
+            return result
 
-        return result
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+
+        # if err.src == ErrorSource.SRC_FIND_APEX:
+        #     self._raise_on_apex_error(<ErrorType>err.code)
+        # elif err.src == ErrorSource.SRC_INTEGRATE:
+        #     self._raise_on_integrate_error(<ErrorType>err.code)
+        # raise SolverRuntimeError(
+        #     f"unhandled error in integrate_func, "
+        #     f"error code: {hex(err.code)}, "
+        #     f"source: {err.src}: "
+        #     f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
+
+        self._raise_on_input_error(err.code)
+        self._raise_on_init_zero_error(err, &range_error)
+        self._raise_on_apex_error(err.code)
+        self._raise_on_integrate_error(err.code)
+        self._raise_on_zero_finding_error(err, &zero_error)
 
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -699,7 +715,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             tuple: (BaseTrajSeqT, str or None)
                 BaseTrajSeqT: The trajectory sequence.
-                ErrorCode: Termination reason if applicable.
+                TerminationReason: Termination reason if applicable.
         """
         if self._engine.integrate_func_ptr is NULL:
             raise NotImplementedError("integrate_func not implemented or not provided")
@@ -718,7 +734,7 @@ cdef class CythonizedBaseIntegrationEngine:
             &reason,
         )
 
-        if status != StatusCode.STATUS_ERROR:
+        if status == StatusCode.STATUS_SUCCESS:
             return traj_seq, reason
         
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
@@ -729,17 +745,19 @@ cdef class CythonizedBaseIntegrationEngine:
             f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
         )
 
-    cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
-        if err & ErrorCode.INPUT_ERROR:
-            raise TypeError(f"Invalid input (NULL pointer): {self.error_message}: error code: {err}")
+    cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorType err):
+        if err == ErrorType.T_INPUT_ERROR:
+            raise TypeError(
+                f"Invalid input (NULL pointer): {self.error_message}: error code: {err}")
+        pass
 
-    cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
+    cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorType err):
         self._raise_on_input_error(err)
 
-        if err == ErrorCode.NO_ERROR:
+        if err == ErrorType.T_NO_ERROR:
             return
 
-        if err & ErrorCode.ZERO_DIVISION_ERROR:
+        if err & ErrorType.T_ZERO_DIVISION_ERROR:
             raise ZeroDivisionError(self.error_message)
 
         raise SolverRuntimeError(
@@ -747,23 +765,23 @@ cdef class CythonizedBaseIntegrationEngine:
             f"error code: {hex(err)}, {self.error_message}"
         )
 
-    cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
+    cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorType err):
 
-        if err == ErrorCode.NO_ERROR:
+        if err == ErrorType.T_NO_ERROR:
             return
 
-        if (err & ErrorCode.VALUE_ERROR):
+        if (err & ErrorType.T_VALUE_ERROR):
             raise ValueError("Barrel elevation must be greater than 0 to find apex.")
 
-        if (err & ErrorCode.RUNTIME_ERROR):
+        if (err & ErrorType.T_RUNTIME_ERROR):
             raise SolverRuntimeError("No apex flagged in trajectory data")
 
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
-        ErrorCode err,
+        ErrorFrame *err,
         OutOfRangeError_t *err_data
     ):
-        if err == ErrorCode.OUT_OF_RANGE_ERROR:
+        if err.code == ErrorType.T_OUT_OF_RANGE_ERROR:
             raise OutOfRangeError(
                 _new_feet(err_data.requested_distance_ft),
                 _new_feet(err_data.max_range_ft),
@@ -772,16 +790,13 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
-        ErrorCode err,
+        ErrorFrame *err,
         ZeroFindingError_t *zero_error
     ):
-        if err == ErrorCode.NO_ERROR:
-            return
-
-        if err == ErrorCode.ZERO_FINDING_ERROR:
+        if err.code == ErrorType.T_ZERO_FINDING_ERROR:
             raise ZeroFindingError(
                 zero_error.zero_finding_error,
                 zero_error.iterations_count,
                 _new_rad(zero_error.last_barrel_elevation_rad),
-                'Correction denominator is zero'
+                err.msg.decode('utf-8')
             )

@@ -28,6 +28,10 @@ cdef extern from "error_stack.h":
         T_INPUT_ERROR
         T_RUNTIME_ERROR
 
+        T_APEX_ERROR
+        T_ZERO_FINDING_ERROR
+        T_OUT_OF_RANGE_ERROR
+
     ctypedef struct ErrorFrame:
         ErrorType code
         ErrorSource src

@@ -37,9 +37,9 @@ cdef extern from "include/bclib.h" nogil:
         INPUT_ERROR
         RUNTIME_ERROR
 
-        OUT_OF_RANGE_ERROR
+        T_OUT_OF_RANGE_ERROR
 
-        ZERO_FINDING_ERROR
+        T_ZERO_FINDING_ERROR
 
         UNDEFINED_ERROR
 

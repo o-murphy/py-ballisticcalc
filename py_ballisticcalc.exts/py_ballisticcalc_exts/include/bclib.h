@@ -3,6 +3,7 @@
 
 #include "v3d.h"
 #include "log.h"
+#include "error_stack.h"
 #include <stddef.h>
 
 extern const double cDegreesFtoR;
@@ -39,15 +40,6 @@ typedef enum
     SEQUENCE_MEMORY_ERROR = SEQUENCE_ERROR | MEMORY_ERROR,         // 0x0100 | 0x0010 = 0x0110  -> (1 << 8) | (1 << 4)
     SEQUENCE_INDEX_ERROR = SEQUENCE_ERROR | INDEX_ERROR,           // 0x0100 | 0x0008 = 0x0108  -> (1 << 8) | (1 << 3)
     SEQUENCE_ARITHMETIC_ERROR = SEQUENCE_ERROR | ARITHMETIC_ERROR, // 0x0100 | 0x0020 = 0x0120  -> (1 << 8) | (1 << 5)
-
-    // Interpolation specific flag
-    INTERPOLATION_ERROR = 0x0200, // (1 << 9)
-
-    // Zero init specific flags
-    OUT_OF_RANGE_ERROR = 0x4000, // (1 << 14)
-
-    // Zero finding error flag
-    ZERO_FINDING_ERROR = 0x20000, // (1 << 17)
 
     // Undefined
     UNDEFINED_ERROR = 0x40000 // (1 << 18)

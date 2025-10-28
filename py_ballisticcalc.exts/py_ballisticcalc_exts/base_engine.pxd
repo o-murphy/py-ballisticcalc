@@ -8,14 +8,13 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     WindSock_t,
     TrajFlag_t,
-    ErrorCode,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
-from py_ballisticcalc_exts.error_stack cimport ErrorStack, StatusCode
+from py_ballisticcalc_exts.error_stack cimport ErrorStack, StatusCode, ErrorType, ErrorFrame
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
@@ -86,7 +85,7 @@ cdef extern from "include/engine.h" nogil:
         char err_msg[MAX_ERR_MSG_LEN]
         ErrorStack err_stack
 
-    int isSequenceError(ErrorCode err) noexcept nogil
+    int isSequenceError(ErrorType err) noexcept nogil
     int isIntegrateComplete(StatusCode status) noexcept nogil
 
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
@@ -123,7 +122,7 @@ cdef extern from "include/engine.h" nogil:
         OutOfRangeError_t *error
     ) noexcept nogil
 
-    ErrorCode Engine_t_zero_angle(
+    StatusCode Engine_t_zero_angle(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -141,7 +140,7 @@ cdef extern from "include/engine.h" nogil:
         MaxRangeResult_t *result
     ) noexcept nogil
 
-    ErrorCode Engine_t_find_zero_angle(
+    StatusCode Engine_t_find_zero_angle(
         Engine_t *eng,
         double distance,
         int lofted,
@@ -152,7 +151,7 @@ cdef extern from "include/engine.h" nogil:
         ZeroFindingError_t *zero_error
     )
 
-    ErrorCode Engine_t_find_zero_angle(
+    StatusCode Engine_t_find_zero_angle(
         Engine_t *eng,
         double distance,
         int lofted,
@@ -223,16 +222,16 @@ cdef class CythonizedBaseIntegrationEngine:
         TrajFlag_t filter_flags
     )
 
-    cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorCode err)
-    cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorCode err)
-    cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err)
+    cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorType err)
+    cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorType err)
+    cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorType err)
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
-        ErrorCode err,
+        ErrorFrame *err,
         OutOfRangeError_t *err_data
     )
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
-        ErrorCode err,
+        ErrorFrame *err,
         ZeroFindingError_t *zero_error
     )

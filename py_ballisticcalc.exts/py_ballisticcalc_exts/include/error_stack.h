@@ -5,7 +5,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include "log.h"
-#include "bclib.h"
 
 #define MAX_ERROR_STACK 16
 #define MAX_ERROR_MSG_LEN 256
@@ -30,6 +29,7 @@ typedef enum
 
 typedef enum
 {
+    // General
     T_NO_ERROR,
     T_ZERO_DIVISION_ERROR,
     T_VALUE_ERROR,
@@ -39,6 +39,9 @@ typedef enum
     T_ARITHMETIC_ERROR,
     T_INPUT_ERROR,
     T_RUNTIME_ERROR,
+    // Special
+    T_ZERO_FINDING_ERROR,
+    T_OUT_OF_RANGE_ERROR,
 } ErrorType;
 
 typedef struct

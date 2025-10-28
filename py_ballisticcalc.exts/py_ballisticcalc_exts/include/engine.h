@@ -97,9 +97,9 @@ typedef struct Engine_s
 extern "C"
 {
 #endif
-    ErrorCode Engine_t_log_and_save_error(
+    ErrorType Engine_t_log_and_save_error(
         Engine_t *eng,
-        ErrorCode code,
+        ErrorType code,
         const char *file,
         int line,
         const char *func,
@@ -108,7 +108,7 @@ extern "C"
 
     void Engine_t_release_trajectory(Engine_t *eng);
 
-    int isSequenceError(ErrorCode err);
+    int isSequenceError(ErrorType err);
     int isIntegrateComplete(StatusCode status);
 
     StatusCode Engine_t_integrate(
@@ -137,7 +137,7 @@ extern "C"
         ZeroInitialData_t *result,
         OutOfRangeError_t *error);
 
-    ErrorCode Engine_t_zero_angle(
+    StatusCode Engine_t_zero_angle(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -153,7 +153,7 @@ extern "C"
         double APEX_IS_MAX_RANGE_RADIANS,
         MaxRangeResult_t *result);
 
-    ErrorCode Engine_t_find_zero_angle(
+    StatusCode Engine_t_find_zero_angle(
         Engine_t *eng,
         double distance,
         int lofted,
