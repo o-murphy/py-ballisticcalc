@@ -84,17 +84,11 @@ cdef extern from "include/bclib.h" nogil:
         V3dT *accel_ptr
     ) noexcept nogil
 
-    double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
-                                       const Curve_t *curve_ptr,
-                                       double mach) noexcept nogil
-
     ctypedef struct Wind_t:
         double velocity
         double direction_from
         double until_distance
         double MAX_DISTANCE_FEET
-
-    V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr) noexcept nogil
 
     ctypedef struct WindSock_t:
         Wind_t *winds

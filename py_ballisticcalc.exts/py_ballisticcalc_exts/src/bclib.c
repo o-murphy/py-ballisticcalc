@@ -183,13 +183,14 @@ ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
     return T_NO_ERROR;
 }
 
-double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
-                                   const Curve_t *curve_ptr,
-                                   double mach)
+static inline double calculateByCurveAndMachList(
+    const MachList_t *restrict mach_list_ptr,
+    const Curve_t *restrict curve_ptr,
+    double mach)
 {
-    // PCHIP evaluation: find segment i with x in [x_i, x_{i+1}], then y = d + dx*(c + dx*(b + dx*a))
-    const double *xs = mach_list_ptr->array;
-    int n = (int)mach_list_ptr->length; // number of knots
+    const double *restrict xs = mach_list_ptr->array;
+    const int n = (int)mach_list_ptr->length;
+
     if (n < 2)
     {
         // insufficient data; return 0
@@ -208,25 +209,25 @@ double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
     }
     else
     {
-        // lower_bound to find first j with xs[j] >= mach, then i = j - 1
+        // Optimized binary search
         int lo = 0, hi = n - 1;
         while (lo < hi)
         {
-            int mid = lo + (hi - lo) / 2;
+            int mid = lo + ((hi - lo) >> 1); // Bitshift is fater
             if (xs[mid] < mach)
                 lo = mid + 1;
             else
                 hi = mid;
         }
         i = lo - 1;
-        if (i < 0)
-            i = 0;
-        if (i > n - 2)
-            i = n - 2;
+        // Clamping not needed more
     }
 
-    CurvePoint_t seg = curve_ptr->points[i];
-    double dx = mach - xs[i];
+    // Storing struct locally for better access
+    const CurvePoint_t seg = curve_ptr->points[i];
+    const double dx = mach - xs[i];
+
+    // Horner's method
     return seg.d + dx * (seg.c + dx * (seg.b + dx * seg.a));
 }
 
@@ -261,14 +262,15 @@ double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach)
 }
 
 void Atmosphere_t_updateDensityFactorAndMachForAltitude(
-    const Atmosphere_t *atmo_ptr,
+    const Atmosphere_t *restrict atmo_ptr,
     double altitude,
-    double *density_ratio_ptr,
-    double *mach_ptr)
+    double *restrict density_ratio_ptr,
+    double *restrict mach_ptr)
 {
-    double celsius, kelvin, pressure, density_delta;
+    const double alt_diff = altitude - atmo_ptr->_a0;
 
-    if (fabs(atmo_ptr->_a0 - altitude) < 30.0)
+    // Fast check
+    if (fabs(alt_diff) < 30.0)
     {
         // Close enough to base altitude, use stored values
         *density_ratio_ptr = atmo_ptr->density_ratio;
@@ -276,7 +278,7 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
         return;
     }
 
-    celsius = (altitude - atmo_ptr->_a0) * cLapseRateKperFoot + atmo_ptr->_t0;
+    double celsius = alt_diff * cLapseRateKperFoot + atmo_ptr->_t0;
 
     if (altitude > 36089.0)
     {
@@ -284,26 +286,28 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
         C_LOG(LOG_LEVEL_WARNING, "Density request for altitude above troposphere. Atmospheric model not valid here.");
     }
 
-    if (celsius < -cDegreesCtoK)
+    // Clamp temperature
+    const double min_temp = -cDegreesCtoK;
+    if (celsius < min_temp)
     {
-        C_LOG(LOG_LEVEL_WARNING, "Invalid temperature %.2f °C. Adjusted to absolute zero %.2f °C to avoid domain error.",
-              celsius, -cDegreesCtoK);
-        celsius = -cDegreesCtoK;
+        C_LOG(LOG_LEVEL_WARNING, "Invalid temperature %.2f °C. Adjusted to %.2f °C.", celsius, min_temp);
+        celsius = min_temp;
     }
     else if (celsius < atmo_ptr->cLowestTempC)
     {
         celsius = atmo_ptr->cLowestTempC;
-        C_LOG(LOG_LEVEL_WARNING, "Reached minimum temperature limit. Adjusted to %.2f °C. Redefine 'cLowestTempF' constant to increase it.", celsius);
+        C_LOG(LOG_LEVEL_WARNING, "Reached minimum temperature limit. Adjusted to %.2f °C.", celsius);
     }
 
-    kelvin = celsius + cDegreesCtoK;
+    const double kelvin = celsius + cDegreesCtoK;
+    const double base_kelvin = atmo_ptr->_t0 + cDegreesCtoK;
 
     // Pressure calculation using barometric formula
-    pressure = atmo_ptr->_p0 * pow(
-                                   1.0 + cLapseRateKperFoot * (altitude - atmo_ptr->_a0) / (atmo_ptr->_t0 + cDegreesCtoK),
-                                   cPressureExponent);
+    const double pressure = atmo_ptr->_p0 * pow(
+                                                1.0 + cLapseRateKperFoot * alt_diff / base_kelvin,
+                                                cPressureExponent);
 
-    density_delta = ((atmo_ptr->_t0 + cDegreesCtoK) * pressure) / (atmo_ptr->_p0 * kelvin);
+    const double density_delta = (base_kelvin * pressure) / (atmo_ptr->_p0 * kelvin);
 
     *density_ratio_ptr = atmo_ptr->density_ratio * density_delta;
 
@@ -314,12 +318,15 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
           altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
-V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
+static inline V3dT Wind_t_to_V3dT(const Wind_t *restrict wind_ptr)
 {
+    const double dir = wind_ptr->direction_from;
+    const double vel = wind_ptr->velocity;
+
     return (V3dT){
-        .x = wind_ptr->velocity * cos(wind_ptr->direction_from),
+        .x = vel * cos(dir),
         .y = 0.0,
-        .z = wind_ptr->velocity * sin(wind_ptr->direction_from)};
+        .z = vel * sin(dir)};
 }
 
 ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
@@ -451,115 +458,91 @@ double calculateOgw(double bulletWeight, double velocity)
  * @param accel_ptr Pointer to store acceleration in local coordinates
  */
 void Coriolis_t_coriolis_acceleration_local(
-    const Coriolis_t *coriolis_ptr,
-    const V3dT *velocity_ptr,
-    V3dT *accel_ptr)
+    const Coriolis_t *restrict coriolis_ptr,
+    const V3dT *restrict velocity_ptr,
+    V3dT *restrict accel_ptr)
 {
-    // Return zero acceleration if not full 3D mode
+    // Early exit for most common case
     if (coriolis_ptr->flat_fire_only)
     {
-        accel_ptr->x = 0.0;
-        accel_ptr->y = 0.0;
-        accel_ptr->z = 0.0;
+        *accel_ptr = (V3dT){0.0, 0.0, 0.0};
         return;
     }
 
-    // Transform velocity from local (range/up/cross) to ENU coordinates
-    double vel_east = velocity_ptr->x * coriolis_ptr->range_east + velocity_ptr->z * coriolis_ptr->cross_east;
-    double vel_north = velocity_ptr->x * coriolis_ptr->range_north + velocity_ptr->z * coriolis_ptr->cross_north;
-    double vel_up = velocity_ptr->y;
+    // Cache frequently used values
+    const double vx = velocity_ptr->x;
+    const double vy = velocity_ptr->y;
+    const double vz = velocity_ptr->z;
 
-    // Coriolis acceleration in ENU coordinates
-    double factor = -2.0 * cEarthAngularVelocityRadS;
-    double accel_east = factor * (coriolis_ptr->cos_lat * vel_up - coriolis_ptr->sin_lat * vel_north);
-    double accel_north = factor * (coriolis_ptr->sin_lat * vel_east);
-    double accel_up = factor * (-coriolis_ptr->cos_lat * vel_east);
+    const double range_east = coriolis_ptr->range_east;
+    const double range_north = coriolis_ptr->range_north;
+    const double cross_east = coriolis_ptr->cross_east;
+    const double cross_north = coriolis_ptr->cross_north;
 
-    // Transform acceleration back to local coordinates
-    double accel_range = accel_east * coriolis_ptr->range_east + accel_north * coriolis_ptr->range_north;
-    double accel_cross = accel_east * coriolis_ptr->cross_east + accel_north * coriolis_ptr->cross_north;
+    // Transform velocity to ENU
+    const double vel_east = vx * range_east + vz * cross_east;
+    const double vel_north = vx * range_north + vz * cross_north;
+    const double vel_up = vy;
 
-    accel_ptr->x = accel_range;
+    // Coriolis acceleration in ENU
+    const double factor = -2.0 * cEarthAngularVelocityRadS;
+    const double sin_lat = coriolis_ptr->sin_lat;
+    const double cos_lat = coriolis_ptr->cos_lat;
+
+    const double accel_east = factor * (cos_lat * vel_up - sin_lat * vel_north);
+    const double accel_north = factor * sin_lat * vel_east;
+    const double accel_up = factor * (-cos_lat * vel_east);
+
+    // Transform back to local coordinates
+    accel_ptr->x = accel_east * range_east + accel_north * range_north;
     accel_ptr->y = accel_up;
-    accel_ptr->z = accel_cross;
+    accel_ptr->z = accel_east * cross_east + accel_north * cross_north;
+}
+
+// Lookup table
+static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey key_kind)
+{
+    switch (key_kind)
+    {
+    case KEY_TIME:
+        return p->time;
+    case KEY_MACH:
+        return p->mach;
+    case KEY_POS_X:
+        return p->position.x;
+    case KEY_POS_Y:
+        return p->position.y;
+    case KEY_POS_Z:
+        return p->position.z;
+    case KEY_VEL_X:
+        return p->velocity.x;
+    case KEY_VEL_Y:
+        return p->velocity.y;
+    case KEY_VEL_Z:
+        return p->velocity.z;
+    default:
+        return 0.0;
+    }
 }
 
 ErrorType BaseTrajData_t_interpolate(
     InterpKey key_kind,
     double key_value,
-    const BaseTrajData_t *p0,
-    const BaseTrajData_t *p1,
-    const BaseTrajData_t *p2,
-    BaseTrajData_t *out)
+    const BaseTrajData_t *restrict p0,
+    const BaseTrajData_t *restrict p1,
+    const BaseTrajData_t *restrict p2,
+    BaseTrajData_t *restrict out)
 {
-
     if (!p0 || !p1 || !p2 || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
-    double x0, x1, x2;
-    double time, mach;
-    V3dT position, velocity;
-    V3dT vp0, vp1, vp2, vv0, vv1, vv2;
-    BaseTrajData_t _p0 = *p0;
-    BaseTrajData_t _p1 = *p1;
-    BaseTrajData_t _p2 = *p2;
-
-    vp0 = _p0.position;
-    vp1 = _p1.position;
-    vp2 = _p2.position;
-    vv0 = _p0.velocity;
-    vv1 = _p1.velocity;
-    vv2 = _p2.velocity;
-
-    // Determine independent variable values from key_kind
-    switch (key_kind)
-    {
-    case KEY_TIME:
-        x0 = _p0.time;
-        x1 = _p1.time;
-        x2 = _p2.time;
-        break;
-    case KEY_MACH:
-        x0 = _p0.mach;
-        x1 = _p1.mach;
-        x2 = _p2.mach;
-        break;
-    case KEY_POS_X:
-        x0 = vp0.x;
-        x1 = vp1.x;
-        x2 = vp2.x;
-        break;
-    case KEY_POS_Y:
-        x0 = vp0.y;
-        x1 = vp1.y;
-        x2 = vp2.y;
-        break;
-    case KEY_POS_Z:
-        x0 = vp0.z;
-        x1 = vp1.z;
-        x2 = vp2.z;
-        break;
-    case KEY_VEL_X:
-        x0 = vv0.x;
-        x1 = vv1.x;
-        x2 = vv2.x;
-        break;
-    case KEY_VEL_Y:
-        x0 = vv0.y;
-        x1 = vv1.y;
-        x2 = vv2.y;
-        break;
-    case KEY_VEL_Z:
-        x0 = vv0.z;
-        x1 = vv1.z;
-        x2 = vv2.z;
-        break;
-    default:
-        return T_KEY_ERROR;
-    }
+    // Get key values
+    const double x0 = get_key_value(p0, key_kind);
+    const double x1 = get_key_value(p1, key_kind);
+    const double x2 = get_key_value(p2, key_kind);
 
     // Guard against degenerate segments
     if (x0 == x1 || x0 == x2 || x1 == x2)
@@ -567,10 +550,18 @@ ErrorType BaseTrajData_t_interpolate(
         return T_ZERO_DIVISION_ERROR;
     }
 
+    // Cache position and velocity
+    const V3dT vp0 = p0->position;
+    const V3dT vp1 = p1->position;
+    const V3dT vp2 = p2->position;
+    const V3dT vv0 = p0->velocity;
+    const V3dT vv1 = p1->velocity;
+    const V3dT vv2 = p2->velocity;
+
     // Scalar interpolation using PCHIP
 
     // Interpolate all scalar fields
-    out->time = key_kind == KEY_TIME ? key_value : interpolate_3_pt(key_value, x0, x1, x2, _p0.time, _p1.time, _p2.time);
+    out->time = (key_kind == KEY_TIME) ? key_value : interpolate_3_pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
     out->position = (V3dT){
         interpolate_3_pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
         interpolate_3_pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
@@ -579,7 +570,8 @@ ErrorType BaseTrajData_t_interpolate(
         interpolate_3_pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
         interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
         interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
-    out->mach = key_kind == KEY_MACH ? key_value : interpolate_3_pt(key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach);
+
+    out->mach = (key_kind == KEY_MACH) ? key_value : interpolate_3_pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
 
     return T_NO_ERROR;
 }
