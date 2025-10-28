@@ -7,14 +7,15 @@
  * * Assumes all necessary types (V3dT, ShotProps_t, Coriolis_t) and vector
  * functions (mulS, mag, sub, add, Coriolis_t_coriolis_acceleration_local)
  * are declared and defined in relevant C headers.
- * * @param v_ptr Pointer to the relative velocity vector (velocity - wind).
+ * 
+ * @param v_ptr Pointer to the relative velocity vector (velocity - wind).
  * @param gravity_vector_ptr Pointer to the gravity vector.
  * @param km_coeff Drag coefficient.
  * @param shot_props_ptr Pointer to shot properties (for Coriolis data).
  * @param ground_velocity_ptr Pointer to ground velocity vector (for Coriolis calculation).
  * @return V3dT The acceleration vector (dv/dt).
  */
-V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff,
+static inline V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff,
                      const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr)
 {
     // Local variables for components and result

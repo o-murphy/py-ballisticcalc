@@ -18,7 +18,6 @@ from py_ballisticcalc_exts.base_engine cimport (
 
 
 cdef extern from "include/euler.h" nogil:
-    double _euler_time_step(double base_step, double velocity) noexcept nogil
 
     StatusCode _integrate_euler(
         Engine_t *eng,

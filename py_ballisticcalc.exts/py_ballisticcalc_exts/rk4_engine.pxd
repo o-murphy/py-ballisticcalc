@@ -21,29 +21,6 @@ from py_ballisticcalc_exts.base_engine cimport (
 
 cdef extern from "include/rk4.h" nogil:
 
-    # This function calculates dv/dt for velocity (v)
-    # affected by gravity, drag, and Coriolis forces.
-    # """Calculate the derivative of velocity with respect to time.
-
-    # Args:
-    #     v_ptr: Pointer to the relative velocity vector (velocity - wind)
-    #     gravity_vector_ptr: Pointer to the gravity vector
-    #     km_coeff: Drag coefficient
-    #     shot_props_ptr: Pointer to shot properties (for Coriolis data)
-    #     ground_velocity_ptr: Pointer to ground velocity vector (for Coriolis calculation)
-
-    # Returns:
-    #     The acceleration vector (dv/dt)
-    # """
-
-    V3dT _calculate_dvdt(
-        const V3dT *v_ptr,
-        const V3dT *gravity_vector_ptr,
-        double km_coeff,
-        const ShotProps_t *shot_props_ptr,
-        const V3dT *ground_velocity_ptr
-    ) noexcept nogil
-
     StatusCode _integrate_rk4(
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
