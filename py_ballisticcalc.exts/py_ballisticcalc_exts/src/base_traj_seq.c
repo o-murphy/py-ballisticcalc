@@ -5,6 +5,18 @@
 #include "bclib.h"
 #include "base_traj_seq.h"
 
+// Lookup table
+static const size_t key_offsets[] = {
+    [KEY_TIME] = offsetof(BaseTraj_t, time),
+    [KEY_MACH] = offsetof(BaseTraj_t, mach),
+    [KEY_POS_X] = offsetof(BaseTraj_t, px),
+    [KEY_POS_Y] = offsetof(BaseTraj_t, py),
+    [KEY_POS_Z] = offsetof(BaseTraj_t, pz),
+    [KEY_VEL_X] = offsetof(BaseTraj_t, vx),
+    [KEY_VEL_Y] = offsetof(BaseTraj_t, vy),
+    [KEY_VEL_Z] = offsetof(BaseTraj_t, vz),
+};
+
 /**
  * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
  *
@@ -12,30 +24,12 @@
  * @param key_kind The InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
-static double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind)
+static inline double BaseTraj_t_key_val_from_kind_buf(
+    const BaseTraj_t *p, InterpKey key_kind)
 {
-    // Note: In C, accessing a struct member via a pointer uses '->' instead of '.'
-    switch (key_kind)
-    {
-    case KEY_TIME:
-        return p->time;
-    case KEY_MACH:
-        return p->mach;
-    case KEY_POS_X:
-        return p->px;
-    case KEY_POS_Y:
-        return p->py;
-    case KEY_POS_Z:
-        return p->pz;
-    case KEY_VEL_X:
-        return p->vx;
-    case KEY_VEL_Y:
-        return p->vy;
-    case KEY_VEL_Z:
-        return p->vz;
-    default:
+    if (key_kind < 0 || key_kind >= sizeof(key_offsets) / sizeof(key_offsets[0]))
         return 0.0;
-    }
+    return *(const double *)((const char *)p + key_offsets[key_kind]);
 }
 
 /**
@@ -50,13 +44,56 @@ static double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey ke
  * @param sa Sine of the look angle.
  * @return The computed slant height, or NAN if the input pointer is NULL.
  */
-static double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
+static inline double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa)
 {
     if (p == NULL)
     {
         return NAN;
     }
     return p->py * ca - p->px * sa;
+}
+
+/**
+ * Vectorized 3-point interpolation for all trajectory components.
+ *
+ * Performs PCHIP interpolation for all fields of BaseTraj_t in a single pass.
+ * When interpolating by KEY_TIME, the time field is set directly to x.
+ * When interpolating by KEY_MACH, the mach field is set directly to x.
+ *
+ * @param x The target value to interpolate at.
+ * @param ox0 Key value at point 0.
+ * @param ox1 Key value at point 1.
+ * @param ox2 Key value at point 2.
+ * @param p0 Pointer to trajectory point 0.
+ * @param p1 Pointer to trajectory point 1.
+ * @param p2 Pointer to trajectory point 2.
+ * @param out Pointer to output BaseTraj_t where results will be stored.
+ * @param skip_key InterpKey indicating which field is the interpolation key.
+ */
+static void interpolate_3_pt_vectorized(
+    double x, double ox0, double ox1, double ox2,
+    const BaseTraj_t *p0, const BaseTraj_t *p1, const BaseTraj_t *p2,
+    BaseTraj_t *out, InterpKey skip_key)
+{
+    // Time: either use x directly (if interpolating by time) or interpolate
+    out->time = (skip_key == KEY_TIME)
+                    ? x
+                    : interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+
+    // Position components - always interpolate
+    out->px = interpolate_3_pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
+    out->py = interpolate_3_pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
+    out->pz = interpolate_3_pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
+
+    // Velocity components - always interpolate
+    out->vx = interpolate_3_pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
+    out->vy = interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
+    out->vz = interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
+
+    // Mach: either use x directly (if interpolating by mach) or interpolate
+    out->mach = (skip_key == KEY_MACH)
+                    ? x
+                    : interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
 }
 
 /**
@@ -112,25 +149,9 @@ static ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     }
 
     // Interpolate all trajectory components
-    double x = key_value;
-    double time = (key_kind == KEY_TIME) ? x : interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
-    double px = interpolate_3_pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
-    double py = interpolate_3_pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
-    double pz = interpolate_3_pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
-    double vx = interpolate_3_pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
-    double vy = interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
-    double vz = interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
-    double mach = (key_kind == KEY_MACH) ? x : interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
-
+    // Vectorized interpolation
     // Store results
-    out->time = time;
-    out->px = px;
-    out->py = py;
-    out->pz = pz;
-    out->vx = vx;
-    out->vy = vy;
-    out->vz = vz;
-    out->mach = mach;
+    interpolate_3_pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
 
     return T_NO_ERROR;
 }
@@ -262,13 +283,15 @@ ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
         return T_NO_ERROR;
     }
 
-    // Determine new capacity: double current or start from 64
-    size_t new_capacity = seq->capacity > 0 ? seq->capacity * 2 : 64;
-    if (new_capacity < min_capacity)
-        new_capacity = min_capacity;
+    // Determine new capacity: ^2 current or start from 64
+    size_t new_capacity = seq->capacity > 0 ? seq->capacity : 64;
+    while (new_capacity < min_capacity)
+    {
+        new_capacity <<= 1; // Faster than *= 2
+    }
 
     // Allocate a new buffer (zero-initialized)
-    BaseTraj_t *new_buffer = (BaseTraj_t *)calloc(new_capacity, sizeof(BaseTraj_t));
+    BaseTraj_t *new_buffer = (BaseTraj_t *)malloc(new_capacity * sizeof(BaseTraj_t));
     if (!new_buffer)
     {
         C_LOG(LOG_LEVEL_ERROR, "Memory allocation failed for capacity %zu.", new_capacity);
@@ -276,7 +299,7 @@ ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
     }
 
     // Copy existing data safely
-    if (seq->buffer && seq->length > 0)
+    if (seq->length > 0)
     {
         memcpy(new_buffer, seq->buffer, seq->length * sizeof(BaseTraj_t));
     }
@@ -375,22 +398,23 @@ static ssize_t BaseTrajSeq_t_bisect_center_idx_buf(
     ssize_t lo = 0;
     ssize_t hi = n - 1;
 
+    double vm;
+
     // Binary search loop
     while (lo < hi)
-        while (lo < hi)
-        {
-            ssize_t mid = lo + ((hi - lo) >> 1);
-            double vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
+    {
+        ssize_t mid = lo + ((hi - lo) >> 1);
+        vm = BaseTraj_t_key_val_from_kind_buf(&buf[mid], key_kind);
 
-            if ((increasing && vm < key_value) || (!increasing && vm > key_value))
-            {
-                lo = mid + 1;
-            }
-            else
-            {
-                hi = mid;
-            }
+        if ((increasing && vm < key_value) || (!increasing && vm > key_value))
+        {
+            lo = mid + 1;
         }
+        else
+        {
+            hi = mid;
+        }
+    }
 
     // Clamp to valid center index for 3-point interpolation
     if (lo < 1)
@@ -434,11 +458,12 @@ static ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
 
     ssize_t lo = 0;
     ssize_t hi = n - 1;
+    double vm;
 
     while (lo < hi)
     {
         ssize_t mid = lo + ((hi - lo) >> 1);
-        double vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
+        vm = BaseTraj_t_slant_val_buf(&buf[mid], ca, sa);
 
         if ((increasing && vm < value) || (!increasing && vm > value))
             lo = mid + 1;
@@ -621,6 +646,25 @@ static double BaseTraj_t_key_val(const BaseTraj_t *elem, InterpKey key_kind)
  */
 static ssize_t BaseTrajSeq_t_find_start_index(const BaseTraj_t *buf, ssize_t n, double start_time)
 {
+    // // FIXME: possibly use Binary search
+    // if (n > 10 && buf[0].time <= buf[n-1].time)
+    // {
+    //     ssize_t lo = 0, hi = n - 1;
+
+    //     while (lo < hi)
+    //     {
+    //         ssize_t mid = lo + ((hi - lo) >> 1);
+
+    //         if (buf[mid].time < start_time)
+    //             lo = mid + 1;
+    //         else
+    //             hi = mid;
+    //     }
+
+    //     return lo;
+    // }
+
+    // Fallback for small arrays
     for (ssize_t i = 0; i < n; i++)
     {
         if (buf[i].time >= start_time)
