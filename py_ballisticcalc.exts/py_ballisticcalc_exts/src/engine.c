@@ -727,7 +727,7 @@ StatusCode Engine_t_find_zero_angle(
         APEX_IS_MAX_RANGE_RADIANS,
         ALLOWED_ZERO_ERROR_FEET,
         &init_data,
-        range_error); // pass pointer directly, not &range_error
+        range_error);
 
     if (status != STATUS_SUCCESS)
     {
@@ -777,8 +777,6 @@ StatusCode Engine_t_find_zero_angle(
         return STATUS_SUCCESS;
     }
 
-    // try:
-
     // Backup and adjust constraints (emulate @with_no_minimum_velocity)
     double restore_cMinimumVelocity__zero = 0.0;
     int has_restore_cMinimumVelocity__zero = 0;
@@ -809,10 +807,9 @@ StatusCode Engine_t_find_zero_angle(
         high_angle = angle_at_max_rad;
     }
 
-    char *reason;
-
-    // Prepare variables for Ridder's method outside of try block to satisfy Cython
+    // Prepare variables for Ridder's method
     double mid_angle, f_mid, s, next_angle, f_next;
+    int converged = 0;
 
     status = Engine_t_error_at_distance(
         eng,
@@ -890,27 +887,36 @@ StatusCode Engine_t_find_zero_angle(
             goto finally;
         }
 
+        // Check if we found exact solution at midpoint
+        if (fabs(f_mid) < eng->config.cZeroFindingAccuracy)
+        {
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: found exact solution at mid_angle=%.6f", mid_angle);
+            *result = mid_angle;
+            converged = 1;
+            status = STATUS_SUCCESS;
+            goto finally;
+        }
+
         // s is the updated point using the root of the linear function
         // through (low_angle, f_low) and (high_angle, f_high)
         // and the quadratic function that passes through those points and (mid_angle, f_mid)
         double _inner = f_mid * f_mid - f_low * f_high;
 
-        // Log values for debugging
         C_LOG(LOG_LEVEL_DEBUG,
               "Ridder iteration %d: low_angle=%.12f, high_angle=%.12f, mid_angle=%.12f, "
               "f_low=%.12f, f_high=%.12f, f_mid=%.12f, _inner=%.12e",
               i, low_angle, high_angle, mid_angle, f_low, f_high, f_mid, _inner);
 
-        // Check for invalid sqrt argument - break instead of clamping
+        // Check for invalid sqrt argument - should not happen if bracket is valid
         if (_inner <= 0.0)
         {
             C_LOG(LOG_LEVEL_DEBUG, "Ridder: _inner <= 0 (%.12e), breaking iteration", _inner);
-            break; // Should not happen if f_low and f_high have opposite signs
+            break;
         }
 
         s = sqrt(_inner);
 
-        // Additional check: if s is zero or too small, break
+        // Should not happen if f_low and f_high have opposite signs
         if (s == 0.0)
         {
             C_LOG(LOG_LEVEL_DEBUG, "Ridder: s == 0, breaking iteration");
@@ -922,6 +928,7 @@ StatusCode Engine_t_find_zero_angle(
         if (fabs(next_angle - mid_angle) < eng->config.cZeroFindingAccuracy)
         {
             *result = next_angle;
+            converged = 1;
             status = STATUS_SUCCESS;
             goto finally;
         }
@@ -934,6 +941,16 @@ StatusCode Engine_t_find_zero_angle(
             &f_next);
         if (status != STATUS_SUCCESS)
         {
+            goto finally;
+        }
+
+        // Check if we found exact solution at next_angle
+        if (fabs(f_next) < eng->config.cZeroFindingAccuracy)
+        {
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: found exact solution at next_angle=%.6f", next_angle);
+            *result = next_angle;
+            converged = 1;
+            status = STATUS_SUCCESS;
             goto finally;
         }
 
@@ -958,21 +975,50 @@ StatusCode Engine_t_find_zero_angle(
         else
         {
             // If we are here, something is wrong, the root is not bracketed anymore
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: root not bracketed, breaking");
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: root not bracketed anymore, breaking");
             break;
         }
 
         if (fabs(high_angle - low_angle) < eng->config.cZeroFindingAccuracy)
         {
             *result = (low_angle + high_angle) / 2.0;
+            converged = 1;
             status = STATUS_SUCCESS;
             goto finally;
         }
     }
 
-    // If we exited the loop without finding a solution
-    if (status != STATUS_SUCCESS)
+    // If we exited the loop without convergence
+    if (!converged)
     {
+        // Try fallback strategies before giving up
+
+        // If we have a very small bracket, consider it converged
+        if (fabs(high_angle - low_angle) < 10.0 * eng->config.cZeroFindingAccuracy)
+        {
+            *result = (low_angle + high_angle) / 2.0;
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: accepting solution from small bracket: %.6f", *result);
+            status = STATUS_SUCCESS;
+            goto finally;
+        }
+
+        // If we have very small errors, consider it converged
+        if (fabs(f_low) < 10.0 * eng->config.cZeroFindingAccuracy)
+        {
+            *result = low_angle;
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: accepting low_angle due to small f_low: %.6f", *result);
+            status = STATUS_SUCCESS;
+            goto finally;
+        }
+        if (fabs(f_high) < 10.0 * eng->config.cZeroFindingAccuracy)
+        {
+            *result = high_angle;
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: accepting high_angle due to small f_high: %.6f", *result);
+            status = STATUS_SUCCESS;
+            goto finally;
+        }
+
+        // All fallback strategies failed
         zero_error->zero_finding_error = target_y_ft;
         zero_error->iterations_count = eng->config.cMaxIterations;
         zero_error->last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
