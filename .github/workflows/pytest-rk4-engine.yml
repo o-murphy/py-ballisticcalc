@@ -37,6 +37,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     strategy:
+      max-parallel: 10
       fail-fast: false
       matrix:
         os: 

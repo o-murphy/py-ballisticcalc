@@ -1,8 +1,21 @@
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.error_stack cimport ErrorType
 
 
 cdef extern from "include/bclib.h" nogil:
+    ctypedef enum LogLevel:
+        LOG_LEVEL_CRITICAL,
+        LOG_LEVEL_ERROR,
+        LOG_LEVEL_WARNING,
+        LOG_LEVEL_INFO,
+        LOG_LEVEL_DEBUG,
+        LOG_LEVEL_NOTSET
+
+    void setLogLevel(LogLevel level) noexcept nogil
+    void initLogLevel()
+
     cdef const double cDegreesFtoR
     cdef const double cDegreesCtoK
     cdef const double cSpeedOfSoundImperial
@@ -90,11 +103,11 @@ cdef extern from "include/bclib.h" nogil:
         double next_range
         V3dT last_vector_cache
 
-    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
-    void WindSock_t_release(WindSock_t *ws)
-    V3dT WindSock_t_currentVector(WindSock_t *wind_sock)
-    int WindSock_t_updateCache(WindSock_t *ws)
-    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
+    ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
+    void WindSock_t_release(WindSock_t *ws) noexcept nogil
+    V3dT WindSock_t_currentVector(WindSock_t *wind_sock) noexcept nogil
+    ErrorType WindSock_t_updateCache(WindSock_t *ws) noexcept nogil
+    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param) noexcept nogil
 
     ctypedef enum TrajFlag_t:
         TFLAG_NONE = 0,
@@ -112,9 +125,6 @@ cdef extern from "include/bclib.h" nogil:
         V3dT position
         V3dT velocity
         double mach
-
-    BaseTrajData_t* BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach) noexcept nogil
-    void BaseTrajData_t_destroy(BaseTrajData_t *ptr) noexcept nogil
 
     ctypedef struct ShotProps_t:
         double bc
@@ -141,17 +151,29 @@ cdef extern from "include/bclib.h" nogil:
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
+    ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
 
-    ctypedef enum TerminationReason:
-        NoRangeError
-        RangeErrorInvalidParameter
-        RangeErrorMinimumVelocityReached
-        RangeErrorMaximumDropReached
-        RangeErrorMinimumAltitudeReached
+    ctypedef enum InterpKey:
+        KEY_TIME
+        KEY_MACH
+        KEY_POS_X
+        KEY_POS_Y
+        KEY_POS_Z
+        KEY_VEL_X
+        KEY_VEL_Y
+        KEY_VEL_Z
 
     # helpers
-    double getCorrection(double distance, double offset)
-    double calculateEnergy(double bulletWeight, double velocity)
-    double calculateOgw(double bulletWeight, double velocity)
+    double getCorrection(double distance, double offset) noexcept nogil
+    double calculateEnergy(double bulletWeight, double velocity) noexcept nogil
+    double calculateOgw(double bulletWeight, double velocity) noexcept nogil
+
+    ErrorType BaseTrajData_t_interpolate(
+        InterpKey key_kind,
+        double key_value,
+        const BaseTrajData_t *p0,
+        const BaseTrajData_t *p1,
+        const BaseTrajData_t *p2,
+        BaseTrajData_t *out
+    ) noexcept nogil

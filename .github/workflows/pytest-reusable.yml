@@ -110,7 +110,7 @@ jobs:
           if [ $EXIT_CODE -ne 0 ]; then
             echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
             # Run again without parallelization (-n auto)
-            pytest tests -v --engine=${{ inputs.engine_name }}
+            pytest tests -v -s -q --engine=${{ inputs.engine_name }}
             # If the second attempt also fails, the script will exit with the non-zero code of this last command.
           else
             echo "Pytest succeeded on the first attempt."
@@ -128,7 +128,7 @@ jobs:
           if [ $EXIT_CODE -ne 0 ]; then
             echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
             # Run again without parallelization (-n auto)
-            pytest ./py_ballisticcalc.exts/tests -v --engine=${{ inputs.engine_name }}
+            pytest ./py_ballisticcalc.exts/tests -v -s -q --engine=${{ inputs.engine_name }}
             # If the second attempt also fails, the script will exit with the non-zero code of this last command.
           else
             echo "Pytest succeeded on the first attempt."

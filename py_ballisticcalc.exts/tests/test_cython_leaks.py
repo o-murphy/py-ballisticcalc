@@ -1,8 +1,6 @@
 import gc
 import pytest
 
-pytestmark = pytest.mark.stress
-
 
 from py_ballisticcalc import (
     BaseEngineConfigDict,
@@ -17,11 +15,20 @@ from py_ballisticcalc import (
     Weight,
 )
 
+pytestmark = pytest.mark.stress
+
+
 def create_7_62_mm_shot():
     """7.62x51mm NATO M118"""
-    dm = DragModel(bc=0.243, drag_table=TableG7,
-                   weight=Weight.Grain(175), diameter=Distance.Millimeter(7.62), length=Distance.Millimeter(32.0))
+    dm = DragModel(
+        bc=0.243,
+        drag_table=TableG7,
+        weight=Weight.Grain(175),
+        diameter=Distance.Millimeter(7.62),
+        length=Distance.Millimeter(32.0),
+    )
     return Shot(ammo=Ammo(dm, mv=Velocity.MPS(800)))
+
 
 def _base_config():
     # Disable early termination constraints to exercise long(er) paths
@@ -96,7 +103,7 @@ def test_integrate_dense_output_repeated(loaded_engine_instance):
         if traj is not None:
             _ = len(traj)
             if len(traj) >= 3:
-                _ = traj.get_at('time', traj[-1].time * 0.5)
+                _ = traj.get_at("time", traj[-1].time * 0.5)
         # Drop references and collect
         del res
         gc.collect()

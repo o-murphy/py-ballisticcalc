@@ -9,6 +9,9 @@ from cython cimport final
 from cpython.object cimport PyObject
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
+    setLogLevel,
+    initLogLevel,
+    LogLevel,
     MachList_t,
     Curve_t,
     Config_t,
@@ -16,6 +19,7 @@ from py_ballisticcalc_exts.bclib cimport (
     WindSock_t,
     Coriolis_t,
     WindSock_t_init,
+    InterpKey,
 )
 
 # noinspection PyUnresolvedReferences
@@ -24,6 +28,17 @@ from py_ballisticcalc.unit import (
     Distance,
     Unit,
 )
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.v3d cimport V3dT
+
+from py_ballisticcalc.vector import Vector
+
+initLogLevel()
+
+
+def set_log_level(int level):
+    """Set the global log level for the C library."""
+    setLogLevel(<LogLevel>level)
 
 
 @final
@@ -118,3 +133,57 @@ cdef object _new_feet(double val):
     return Distance(val, Unit.Foot)
 cdef object _new_rad(double val):
     return Angular(val, Unit.Radian)
+
+
+cdef object _v3d_to_vector(const V3dT *v):
+    """Convert C V3dT -> Python Vector"""
+    return Vector(v.x, v.y, v.z)
+
+
+cdef InterpKey _attribute_to_key(str key_attribute):
+    cdef InterpKey key_kind
+
+    if key_attribute == 'time':
+        key_kind = InterpKey.KEY_TIME
+    elif key_attribute == 'mach':
+        key_kind = InterpKey.KEY_MACH
+    elif key_attribute == 'position.x':
+        key_kind = InterpKey.KEY_POS_X
+    elif key_attribute == 'position.y':
+        key_kind = InterpKey.KEY_POS_Y
+    elif key_attribute == 'position.z':
+        key_kind = InterpKey.KEY_POS_Z
+    elif key_attribute == 'velocity.x':
+        key_kind = InterpKey.KEY_VEL_X
+    elif key_attribute == 'velocity.y':
+        key_kind = InterpKey.KEY_VEL_Y
+    elif key_attribute == 'velocity.z':
+        key_kind = InterpKey.KEY_VEL_Z
+    else:
+        raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+
+    return key_kind
+
+cdef str _key_to_attribute(InterpKey key_kind):
+    cdef str key_attribute
+
+    if key_kind == InterpKey.KEY_TIME:
+        key_attribute = 'time'
+    elif key_kind == InterpKey.KEY_MACH:
+        key_attribute = 'mach'
+    elif key_kind == InterpKey.KEY_POS_X:
+        key_attribute = 'position.x'
+    elif key_kind == InterpKey.KEY_POS_Y:
+        key_attribute = 'position.y'
+    elif key_kind == InterpKey.KEY_POS_Z:
+        key_attribute = 'position.z'
+    elif key_kind == InterpKey.KEY_VEL_X:
+        key_attribute = 'velocity.x'
+    elif key_kind == InterpKey.KEY_VEL_Y:
+        key_attribute = 'velocity.y'
+    elif key_kind == InterpKey.KEY_VEL_Z:
+        key_attribute = 'velocity.z'
+    else:
+        raise ValueError(f"Unknown InterpKey value: {key_kind}")
+
+    return key_attribute

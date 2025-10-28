@@ -1,25 +1,40 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
 # noinspection PyUnresolvedReferences
+from libc.string cimport strlen
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     Config_t,
     ShotProps_t,
     WindSock_t,
     TrajFlag_t,
-    TerminationReason,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
+from py_ballisticcalc_exts.error_stack cimport ErrorStack, StatusCode, ErrorType, ErrorFrame
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
 cdef extern from "include/engine.h" nogil:
+    DEF MAX_ERR_MSG_LEN = 256
+
+    ctypedef enum ZeroInitialStatus:
+        ZERO_INIT_CONTINUE
+        ZERO_INIT_DONE
+
+    ctypedef enum TerminationReason:
+        # Solver specific, not real errors, just termination reasons!
+        NO_TERMINATE
+        RANGE_ERROR_MINIMUM_VELOCITY_REACHED
+        RANGE_ERROR_MAXIMUM_DROP_REACHED
+        RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
+
     ctypedef struct ZeroInitialData_t:
-        int status
+        ZeroInitialStatus status
         double look_angle_rad
         double slant_range_ft
         double target_x_ft
@@ -30,46 +45,121 @@ cdef extern from "include/engine.h" nogil:
         double max_range_ft
         double angle_at_max_rad
 
+    ctypedef struct OutOfRangeError_t:
+        double requested_distance_ft
+        double max_range_ft
+        double look_angle_rad
+
+    ctypedef struct ZeroFindingError_t:
+        double zero_finding_error
+        int iterations_count
+        double last_barrel_elevation_rad
+
     # Forward declaration
-    struct engine_t
+    struct Engine_s
 
     # Typedef alias
-    ctypedef engine_t Engine_t
+    ctypedef Engine_s Engine_t
 
     # Declare the function signature type (not a pointer yet)
-    ctypedef TerminationReason IntegrateFunc(
-        Engine_t *engine_ptr,
+    ctypedef StatusCode IntegrateFunc(
+        Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr
+        BaseTrajSeq_t *traj_seq_ptr,
+        TerminationReason *reason,
     ) noexcept nogil
 
     # Declare pointer to function
     ctypedef IntegrateFunc *IntegrateFuncPtr
 
     # Full struct definition
-    struct engine_t:
+    struct Engine_s:
         int integration_step_count
         V3dT gravity_vector
         Config_t config
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr
+        ErrorStack err_stack
 
-    void Engine_t_release_trajectory(Engine_t *engine_ptr) noexcept nogil
+    void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 
-    TerminationReason Engine_t_integrate(
-        Engine_t *engine_ptr,
+    StatusCode Engine_t_integrate(
+        Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr
+        BaseTrajSeq_t *traj_seq_ptr,
+        TerminationReason *reason,
     ) noexcept nogil
+
+    StatusCode Engine_t_find_apex(
+        Engine_t *eng,
+        BaseTrajData_t *out
+    ) noexcept nogil
+
+    StatusCode Engine_t_error_at_distance(
+        Engine_t *eng,
+        double angle_rad,
+        double target_x_ft,
+        double target_y_ft,
+        double *out_error_ft
+    ) noexcept nogil
+
+    StatusCode Engine_t_init_zero_calculation(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        ZeroInitialData_t *result,
+        OutOfRangeError_t *error
+    ) noexcept nogil
+
+    StatusCode Engine_t_zero_angle(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error
+    ) noexcept nogil
+
+    StatusCode Engine_t_find_max_range(
+        Engine_t *eng,
+        double low_angle_deg,
+        double high_angle_deg,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        MaxRangeResult_t *result
+    ) noexcept nogil
+
+    StatusCode Engine_t_find_zero_angle(
+        Engine_t *eng,
+        double distance,
+        int lofted,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error
+    )
+
+    StatusCode Engine_t_find_zero_angle(
+        Engine_t *eng,
+        double distance,
+        int lofted,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error)
 
 
 cdef class CythonizedBaseIntegrationEngine:
+
     cdef:
         public object _config
         list _table_data  # list[object]
@@ -84,39 +174,35 @@ cdef class CythonizedBaseIntegrationEngine:
     # Python 'def' methods are not exposed in the C interface defined by a .pxd.
     # Only 'cdef' or 'cpdef' methods are declared here.
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self)
+
     cdef ShotProps_t* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
         object shot_info
     )
-    cdef ZeroInitialData_t _init_zero_calculation(
+    cdef StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr,
-        double distance
+        double distance,
+        ZeroInitialData_t *out,
     )
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance,
         bint lofted
     )
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance
     )
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double low_angle_deg,
         double high_angle_deg,
     )
-    cdef BaseTrajDataT _find_apex(
+    cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr
     )
     cdef double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double angle_rad,
         double target_x_ft,
         double target_y_ft
@@ -129,3 +215,15 @@ cdef class CythonizedBaseIntegrationEngine:
         double time_step,
         TrajFlag_t filter_flags
     )
+
+    cdef void _raise_on_init_zero_error(
+        CythonizedBaseIntegrationEngine self,
+        ErrorFrame *err,
+        OutOfRangeError_t *err_data
+    )
+    cdef void _raise_on_zero_finding_error(
+        CythonizedBaseIntegrationEngine self,
+        ErrorFrame *err,
+        ZeroFindingError_t *zero_error
+    )
+    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self, ErrorFrame *err)

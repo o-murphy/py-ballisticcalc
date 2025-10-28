@@ -1,7 +1,9 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef BCLIB_TYPES_H
+#define BCLIB_TYPES_H
 
 #include "v3d.h"
+#include "log.h"
+#include "error_stack.h"
 #include <stddef.h>
 
 extern const double cDegreesFtoR;
@@ -110,15 +112,6 @@ typedef struct
     V3dT last_vector_cache;
 } WindSock_t;
 
-typedef enum
-{
-    NoRangeError,
-    RangeErrorInvalidParameter,
-    RangeErrorMinimumVelocityReached,
-    RangeErrorMaximumDropReached,
-    RangeErrorMinimumAltitudeReached,
-} TerminationReason;
-
 typedef struct
 {
     double bc;
@@ -144,10 +137,27 @@ typedef struct
     TrajFlag_t filter_flags;
 } ShotProps_t;
 
+/**
+ * Keys used to look up specific values within a BaseTraj_t struct.
+ */
+typedef enum
+{
+    KEY_TIME,
+    KEY_MACH,
+    KEY_POS_X,
+    KEY_POS_Y,
+    KEY_POS_Z,
+    KEY_VEL_X,
+    KEY_VEL_Y,
+    KEY_VEL_Z
+} InterpKey;
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+    void setLogLevel(LogLevel level);
+    void initLogLevel();
 
     void Curve_t_release(Curve_t *curve_ptr);
 
@@ -162,7 +172,7 @@ extern "C"
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr);
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
-    int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
+    ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
 
     double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
@@ -171,13 +181,10 @@ extern "C"
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr);
 
-    BaseTrajData_t *BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach);
-    void BaseTrajData_t_destroy(BaseTrajData_t *ptr);
-
-    void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
+    ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);
     V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
-    int WindSock_t_updateCache(WindSock_t *ws);
+    ErrorType WindSock_t_updateCache(WindSock_t *ws);
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
     // helpers
@@ -190,8 +197,16 @@ extern "C"
         const V3dT *velocity_ptr,
         V3dT *accel_ptr);
 
+    ErrorType BaseTrajData_t_interpolate(
+        InterpKey key_kind,
+        double key_value,
+        const BaseTrajData_t *p0,
+        const BaseTrajData_t *p1,
+        const BaseTrajData_t *p2,
+        BaseTrajData_t *out);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif // TYPES_H
+#endif // BCLIB_TYPES_H

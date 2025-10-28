@@ -2277,6 +2277,13 @@ requires-dist = [
 ]
 provides-extras = ["dev"]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "cibuildwheel", specifier = ">=2.23.2" },
+    { name = "cython", specifier = ">=3.1.4" },
+    { name = "setuptools", specifier = ">=80.9.0" },
+]
+
 [[package]]
 name = "pycodestyle"
 version = "2.14.0"

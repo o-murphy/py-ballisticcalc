@@ -18,9 +18,14 @@ from py_ballisticcalc_exts.bclib cimport (
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
     calculateEnergy,
     calculateOgw,
+    initLogLevel,
+    ErrorType,
 )
 
 __all__ = ["CythonEngineTestHarness"]
+
+
+initLogLevel()
 
 
 @final
@@ -60,7 +65,8 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        ShotProps_t_updateStabilityCoefficient(&self._engine.shot)
+        if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != ErrorType.T_NO_ERROR:
+            raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
         return self._engine.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):
@@ -93,19 +99,23 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         cdef double vy = v * sin(be)
         cdef double vz = v * cos(be) * sin(az)
         # initial point
-        seq._append_c(0.0, 0.0,
-                      -self._engine.shot.cant_cosine * self._engine.shot.sight_height,
-                      -self._engine.shot.cant_sine * self._engine.shot.sight_height,
-                      vx, vy, vz, 1.0)
+        seq.append(
+            0.0, 0.0,
+            -self._engine.shot.cant_cosine * self._engine.shot.sight_height,
+            -self._engine.shot.cant_sine * self._engine.shot.sight_height,
+            vx, vy, vz, 1.0
+        )
         # second point simple Euler step without drag / gravity for minimal path
         cdef double dt
         if time_step > 0:
             dt = time_step
         else:
             dt = 0.001
-        seq._append_c(dt, vx * dt,
-                      -self._engine.shot.cant_cosine * self._engine.shot.sight_height + vy * dt,
-                      -self._engine.shot.cant_sine * self._engine.shot.sight_height + vz * dt,
-                      vx, vy, vz, 1.0)
+        seq.append(
+            dt, vx * dt,
+            -self._engine.shot.cant_cosine * self._engine.shot.sight_height + vy * dt,
+            -self._engine.shot.cant_sine * self._engine.shot.sight_height + vz * dt,
+            vx, vy, vz, 1.0
+        )
         self.integration_step_count = <int>seq._length
         return (seq, None)

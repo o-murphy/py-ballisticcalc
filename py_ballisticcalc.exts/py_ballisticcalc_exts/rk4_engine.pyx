@@ -2,16 +2,21 @@
 """
 Cythonized RK4 Integration Engine
 
-Because storing each step in a BaseTrajSeqT is practically costless, we always run with "dense_output=True".
+Because storing each step in a BaseTrajSeq_t is practically costless,
+we always run with "dense_output=True".
 """
 # noinspection PyUnresolvedReferences
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
+from py_ballisticcalc_exts.bclib cimport initLogLevel
+
 
 __all__ = [
     'CythonizedRK4IntegrationEngine',
 ]
+
+initLogLevel()
 
 
 @final

@@ -1,5 +1,5 @@
-#ifndef RK4_H
-#define RK4_H
+#ifndef BCLIB_RK4_H
+#define BCLIB_RK4_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -14,13 +14,15 @@ extern "C"
     V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff,
                          const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr);
 
-    TerminationReason _integrate_rk4(Engine_t *engine_ptr,
-                                     double range_limit_ft, double range_step_ft,
-                                     double time_step, TrajFlag_t filter_flags,
-                                     BaseTrajSeq_t *traj_seq_ptr);
+    StatusCode _integrate_rk4(
+        Engine_t *eng,
+        double range_limit_ft, double range_step_ft,
+        double time_step, TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr,
+        TerminationReason *reason);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // RK4_H
+#endif // BCLIB_RK4_H

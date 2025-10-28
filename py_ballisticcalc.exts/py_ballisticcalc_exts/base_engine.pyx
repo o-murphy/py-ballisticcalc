@@ -8,13 +8,15 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
 # noinspection PyUnresolvedReferences
-from libc.math cimport fabs, sin, cos, tan, atan2, sqrt, fmax, copysign
+from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT, BaseTraj_t, InterpKey
+from py_ballisticcalc_exts.base_traj_seq cimport (
+    BaseTrajSeqT,
+)
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     # types and methods
@@ -22,7 +24,7 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     ShotProps_t_updateStabilityCoefficient,
     TrajFlag_t,
-    TerminationReason,
+    initLogLevel,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport (
@@ -34,6 +36,14 @@ from py_ballisticcalc_exts.bind cimport (
     WindSock_t_from_pylist,
     _new_feet,
     _new_rad,
+)
+from py_ballisticcalc_exts.error_stack cimport (
+    StatusCode,
+    ErrorSource,
+    ErrorFrame,
+    ErrorType,
+    last_err,
+    error_stack_to_string,
 )
 
 from py_ballisticcalc.shot import ShotProps
@@ -48,9 +58,24 @@ __all__ = (
     'CythonizedBaseIntegrationEngine',
 )
 
+
+initLogLevel()
+
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
+
+cdef dict ERROR_TYPE_TO_EXCEPTION = {
+    ErrorType.T_INPUT_ERROR: TypeError,
+    ErrorType.T_ZERO_FINDING_ERROR: ZeroFindingError,
+    ErrorType.T_OUT_OF_RANGE_ERROR: OutOfRangeError,
+    ErrorType.T_VALUE_ERROR: ValueError,
+    ErrorType.T_INDEX_ERROR: IndexError,
+    ErrorType.T_KEY_ERROR: AttributeError,
+    ErrorType.T_MEMORY_ERROR: MemoryError,
+    ErrorType.T_ARITHMETIC_ERROR: ArithmeticError,
+    ErrorType.T_RUNTIME_ERROR: SolverRuntimeError,
+}
 
 cdef class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""
@@ -59,36 +84,69 @@ cdef class CythonizedBaseIntegrationEngine:
     ALLOWED_ZERO_ERROR_FEET = float(_ALLOWED_ZERO_ERROR_FEET)
 
     def __init__(self, object _config):
-        # WARNING: Avoid calling Python functions inside __cinit__!
-        # __cinit__ is only for memory allocation
-        # Calling Python functions inside __cinit__ is guaranteed to cause a memory leak
+        """
+        Initializes the engine with the given configuration.
+
+        Args:
+            _config (BaseEngineConfig): The engine configuration.
+
+        IMPORTANT:
+            Avoid calling Python functions inside __init__!
+            __init__ is called after __cinit__, so any memory allocated in __cinit__
+            that is not referenced in Python will be leaked if __init__ raises an exception.
+        """
+
         self._config = create_base_engine_config(_config)
 
-    # NOTE: The Engine_t is built-in to CythonizedBaseIntegrationEngine,
-    # so we are need no set it's fields to null
-    # def __cinit__(self, object _config):
-    #     self._engine.gravity_vector = V3dT(.0, .0, .0)
-    #     self._engine.integration_step_count = 0
+    def __cinit__(self, object _config):
+        """
+        C-level initializer for the engine.
+        Override this method to setup integrate_func_ptr and other fields.
+
+        NOTE:
+            The Engine_t is built-in to CythonizedBaseIntegrationEngine,
+            so we are need no set it's fields to null
+        """
+        # self._engine.gravity_vector = V3dT(.0, .0, .0)
+        # self._engine.integration_step_count = 0
+        pass
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
-        self._release_trajectory()
+        """Frees any allocated resources."""
+        Engine_t_release_trajectory(&self._engine)
 
     @property
     def integration_step_count(self) -> int:
+        """
+        Gets the number of integration steps performed in the last integration.
+
+        Returns:
+            int: The number of integration steps.
+        """
         return self._engine.integration_step_count
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
+        """Gets the calculation step size in feet."""
         return self._engine.config.cStepMultiplier
 
     def find_max_range(self, object shot_info, tuple angle_bracket_deg = (0, 90)):
         """
-        Finds the maximum range along shot_info.look_angle, and the launch angle to reach it.
+        Finds the maximum range along shot_info.look_angle,
+        and the launch angle to reach it.
+
+        Args:
+            shot_info (Shot): The shot information.
+            angle_bracket_deg (Tuple[float, float], optional):
+                The angle bracket in degrees to search for max range. Defaults to (0, 90).
+
+        Returns:
+            Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef MaxRangeResult_t res
         try:
             res = self._find_max_range(
-                shot_props_ptr, angle_bracket_deg[0], angle_bracket_deg[1]
+                angle_bracket_deg[0], angle_bracket_deg[1]
             )
             return _new_feet(res.max_range_ft), _new_rad(res.angle_at_max_rad)
         finally:
@@ -98,11 +156,19 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Finds the barrel elevation needed to hit sight line at a specific distance,
         using unimodal root-finding that is guaranteed to succeed if a solution exists.
+
+        Args:
+            shot_info (Shot): The shot information.
+            distance (Distance): The distance to the target.
+            lofted (bool): Whether the shot is lofted.
+
+        Returns:
+            Angular: The required barrel elevation angle.
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef double zero_angle
         try:
-            zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, lofted)
+            zero_angle = self._find_zero_angle(distance._feet, lofted)
             return _new_rad(zero_angle)
         finally:
             self._release_trajectory()
@@ -111,14 +177,21 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Finds the apex of the trajectory, where apex is defined as the point
         where the vertical component of velocity goes from positive to negative.
+
+        Args:
+            shot_info (Shot): The shot information.
+
+        Returns:
+            TrajectoryData: The trajectory data at the apex.
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef BaseTrajDataT result
         cdef object props
         try:
-            result = self._find_apex(shot_props_ptr)
+            result = BaseTrajDataT(self._find_apex())
             props = ShotProps.from_shot(shot_info)
-            return TrajectoryData.from_props(props, result.time, result.position, result.velocity, result.mach)
+            return TrajectoryData.from_props(
+                props, result.time, result.position, result.velocity, result.mach)
         finally:
             self._release_trajectory()
 
@@ -138,15 +211,15 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        cdef ShotProps_t* shot_props_ptr = self._init_trajectory(shot_info)
+        self._init_trajectory(shot_info)
         cdef double zero_angle
         try:
-            zero_angle = self._zero_angle(shot_props_ptr, distance._feet)
+            zero_angle = self._zero_angle(distance._feet)
             return _new_rad(zero_angle)
         except ZeroFindingError:
             # Fallback to guaranteed method
-            shot_props_ptr = self._init_trajectory(shot_info)
-            zero_angle = self._find_zero_angle(shot_props_ptr, distance._feet, False)
+            self._init_trajectory(shot_info)
+            zero_angle = self._find_zero_angle(distance._feet, False)
             return _new_rad(zero_angle)
         finally:
             self._release_trajectory()
@@ -181,27 +254,49 @@ cdef class CythonizedBaseIntegrationEngine:
             HitResult: Object for describing the trajectory.
         """
         cdef:
-            tuple _res
-            object props, error, tdf
+            TerminationReason reason
+            StatusCode status
             BaseTrajSeqT trajectory
             BaseTrajDataT init, fin
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
+            object props, tdf
+            object termination_reason = None
 
         self._init_trajectory(shot_info)
+        cdef ErrorFrame *err
 
         try:
-            _res = self._integrate(range_limit_ft, range_step_ft, time_step, <TrajFlag_t>filter_flags)
+            trajectory = BaseTrajSeqT()
+            status = Engine_t_integrate(
+                &self._engine,
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                <TrajFlag_t>filter_flags,
+                &trajectory._c_view,
+                &reason,
+            )
+
+            if status == StatusCode.STATUS_ERROR:
+                err = last_err(&self._engine.err_stack)
+                self._raise_solver_runtime_error(err)
         finally:
             # Always release C resources
             self._release_trajectory()
+
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
 
-        # Extract trajectory and step_data from the result
-        trajectory = _res[0]
-        error = _res[1]
+        # Extract termination_reason from the result
+        if reason == TerminationReason.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+            termination_reason = RangeError.MinimumVelocityReached
+        elif reason == TerminationReason.RANGE_ERROR_MAXIMUM_DROP_REACHED:
+            termination_reason = RangeError.MaximumDropReached
+        elif reason == TerminationReason.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+            termination_reason = RangeError.MinimumAltitudeReached
+
         init = trajectory[0]
         tdf = TrajectoryDataFilter(props, filter_flags, init.position, init.velocity,
                                    props.barrel_elevation_rad, props.look_angle_rad,
@@ -210,8 +305,8 @@ cdef class CythonizedBaseIntegrationEngine:
         # Feed step_data through TrajectoryDataFilter to get TrajectoryData
         for _, d in enumerate(trajectory):
             tdf.record(BaseTrajData(d.time, d.position, d.velocity, d.mach))
-        if error is not None:
-            error = RangeError(error, tdf.records)
+        if termination_reason is not None:
+            termination_reason = RangeError(termination_reason, tdf.records)
             # For incomplete trajectories we add last point, so long as it isn't a duplicate
             fin = trajectory[-1]
             if fin.time > tdf.records[-1].time:
@@ -225,42 +320,48 @@ cdef class CythonizedBaseIntegrationEngine:
             tdf.records,
             trajectory if dense_output else None,
             filter_flags != TrajFlag_t.TFLAG_NONE,
-            error
+            termination_reason
         )
 
     cdef inline double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double angle_rad,
         double target_x_ft,
         double target_y_ft
     ):
-        """Target miss (feet) for given launch angle using BaseTrajSeqT.
-        Attempts to avoid Python exceptions in the hot path by pre-checking reach."""
+        """
+        Target miss (feet) for given launch angle using BaseTrajSeqT.
+        Attempts to avoid Python exceptions in the hot path by pre-checking reach.
+
+        Args:
+            angle_rad (double): Launch angle in radians.
+            target_x_ft (double): Target X coordinate in feet.
+            target_y_ft (double): Target Y coordinate in feet.
+
+        Returns:
+            double: The miss distance in feet (positive if overshot, negative if undershot).
+        """
         cdef:
-            BaseTrajSeqT trajectory
-            BaseTrajDataT hit
-            BaseTraj_t* last_ptr
-            Py_ssize_t n
-        shot_props_ptr.barrel_elevation = angle_rad
-        __res = self._integrate(target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
-        trajectory = <BaseTrajSeqT>__res[0]
-        # If trajectory is too short for cubic interpolation, treat as unreachable
-        n = trajectory.len_c()
-        if n < <Py_ssize_t>3:
-            return 9e9
-        last_ptr = trajectory.c_getitem(<Py_ssize_t>(-1))
-        if last_ptr.time == 0.0:
-            # Integrator returned only the initial point; signal unreachable
-            return 9e9
-        try:
-            hit = trajectory._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
-            return (hit.c_position().y - target_y_ft) - fabs(hit.c_position().x - target_x_ft)
-        except Exception:
-            # Any interpolation failure (e.g., degenerate points) signals unreachable
-            return 9e9
+            double out_error_ft
+
+        cdef StatusCode status = Engine_t_error_at_distance(
+            &self._engine,
+            angle_rad,
+            target_x_ft,
+            target_y_ft,
+            &out_error_ft
+        )
+
+        if status == StatusCode.STATUS_SUCCESS:
+            return out_error_ft
+
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        self._raise_solver_runtime_error(err)
 
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
+        """
+        Releases the resources held by the trajectory.
+        """
         Engine_t_release_trajectory(&self._engine)
 
     cdef ShotProps_t* _init_trajectory(
@@ -272,6 +373,9 @@ cdef class CythonizedBaseIntegrationEngine:
 
         Args:
             shot_info (Shot): Information about the shot.
+
+        Returns:
+            ShotProps_t*: Pointer to the initialized shot properties.
         """
 
         # --- 🛑 CRITICAL FIX: FREE OLD RESOURCES FIRST ---
@@ -328,8 +432,11 @@ cdef class CythonizedBaseIntegrationEngine:
                 wind_sock=WindSock_t_from_pylist(shot_info.winds),
                 filter_flags=TrajFlag_t.TFLAG_NONE,
             )
-            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) < 0:
-                raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
+
+            # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
+            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != <int>ErrorType.T_NO_ERROR:
+                raise ZeroDivisionError(
+                    "Zero division detected in ShotProps_t_updateStabilityCoefficient")
 
         except Exception:
             # Ensure we free any partially allocated arrays inside _shot_s
@@ -338,185 +445,83 @@ cdef class CythonizedBaseIntegrationEngine:
 
         return &self._engine.shot
 
-    cdef ZeroInitialData_t _init_zero_calculation(
+    cdef StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr,
-        double distance
+        double distance,
+        ZeroInitialData_t *out,
     ):
         """
         Initializes the zero calculation for the given shot and distance.
         Handles edge cases.
 
+        Args:
+            distance (double): The distance to the target in feet.
+
         Returns:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
-        cdef:
-            double slant_range_ft = distance
-            double look_angle_rad = shot_props_ptr.look_angle
-            double target_x_ft = slant_range_ft * cos(look_angle_rad)
-            double target_y_ft = slant_range_ft * sin(look_angle_rad)
-            double start_height_ft = -shot_props_ptr.sight_height * shot_props_ptr.cant_cosine
-            BaseTrajDataT apex
-            double apex_slant_ft
 
-        # Edge case: Very close shot
-        if fabs(slant_range_ft) < _ALLOWED_ZERO_ERROR_FEET:
-            return ZeroInitialData_t(
-                1, look_angle_rad,
-                slant_range_ft, target_x_ft, target_y_ft, start_height_ft
-            )
+        cdef OutOfRangeError_t err_data
+        cdef StatusCode status = Engine_t_init_zero_calculation(
+            &self._engine,
+            distance,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            out,
+            &err_data,
+        )
+        if status == StatusCode.STATUS_SUCCESS:
+            return status
 
-        # Edge case: Very close shot; ignore gravity and drag
-        if fabs(slant_range_ft) < 2.0 * fmax(fabs(start_height_ft), self._engine.config.cStepMultiplier):
-            return ZeroInitialData_t(
-                1, atan2(target_y_ft + start_height_ft, target_x_ft),
-                slant_range_ft, target_x_ft, target_y_ft, start_height_ft
-            )
-
-        # Edge case: Virtually vertical shot; just check if it can reach the target
-        if fabs(look_angle_rad - 1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS:  # π/2 radians = 90 degrees
-            # Compute slant distance at apex using robust accessor
-            apex = self._find_apex(shot_props_ptr)
-            apex_slant_ft = apex.c_position().x * cos(look_angle_rad) + apex.c_position().y * sin(look_angle_rad)
-            if apex_slant_ft < slant_range_ft:
-                raise OutOfRangeError(_new_feet(distance), _new_feet(apex_slant_ft), _new_rad(look_angle_rad))
-            return ZeroInitialData_t(1, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
-
-        # return (0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
-        return ZeroInitialData_t(0, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        if err.src == ErrorSource.SRC_INIT_ZERO:
+            self._raise_on_init_zero_error(err, &err_data)
+        self._raise_solver_runtime_error(err)
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance,
         bint lofted
     ):
         """
         Find zero angle using Ridder's method for guaranteed convergence.
+
+        Args:
+            distance (double): The distance to the target in feet.
+            lofted (bint): Whether the shot is lofted.
+
+        Returns:
+            double: The calculated zero angle in radians.
         """
-        # Get initialization data
-        cdef ZeroInitialData_t init_data = self._init_zero_calculation(shot_props_ptr, distance)
-        cdef:
-            int status = init_data.status
-            double look_angle_rad = init_data.look_angle_rad
-            double slant_range_ft = init_data.slant_range_ft
-            double target_x_ft = init_data.target_x_ft
-            double target_y_ft = init_data.target_y_ft
-            double start_height_ft = init_data.start_height_ft
 
-        if status == 1:  # DONE
-            return look_angle_rad
-
-        # 1. Find the maximum possible range to establish a search bracket.
-        cdef MaxRangeResult_t max_range_result = self._find_max_range(
-            shot_props_ptr, 0, 90
+        cdef OutOfRangeError_t range_error
+        cdef ZeroFindingError_t zero_error
+        cdef double result
+        cdef StatusCode status = Engine_t_find_zero_angle(
+            &self._engine,
+            distance,
+            lofted,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            &result,
+            &range_error,
+            &zero_error,
         )
-        cdef double max_range_ft = max_range_result.max_range_ft
-        cdef double angle_at_max_rad = max_range_result.angle_at_max_rad
+        if status == StatusCode.STATUS_SUCCESS:
+            return result
 
-        # 2. Handle edge cases based on max range.
-        if slant_range_ft > max_range_ft:
-            raise OutOfRangeError(_new_feet(distance), _new_feet(max_range_ft), _new_rad(look_angle_rad))
-        if fabs(slant_range_ft - max_range_ft) < _ALLOWED_ZERO_ERROR_FEET:
-            return angle_at_max_rad
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
 
-        # Backup and adjust constraints (emulate @with_no_minimum_velocity)
-        cdef double restore_cMinimumVelocity__zero = 0.0
-        cdef int has_restore_cMinimumVelocity__zero = 0
-        if self._engine.config.cMinimumVelocity != <double>0.0:
-            restore_cMinimumVelocity__zero = self._engine.config.cMinimumVelocity
-            self._engine.config.cMinimumVelocity = 0.0
-            has_restore_cMinimumVelocity__zero = 1
-
-        # 3. Establish search bracket for the zero angle.
-        cdef:
-            double low_angle, high_angle
-            double sight_height_adjust = 0.0
-            double f_low, f_high
-
-        if lofted:
-            low_angle = angle_at_max_rad
-            high_angle = 1.5690308719637473  # 89.9 degrees in radians
-        else:
-            if start_height_ft > 0:
-                sight_height_adjust = atan2(start_height_ft, target_x_ft)
-            low_angle = look_angle_rad - sight_height_adjust
-            high_angle = angle_at_max_rad
-
-        cdef str reason
-
-        # Prepare variables for Ridder's method outside of try block to satisfy Cython
-        cdef int iteration
-        cdef double mid_angle, f_mid, s, next_angle, f_next
-
-        try:
-            f_low = self._error_at_distance(shot_props_ptr, low_angle, target_x_ft, target_y_ft)
-            # If low is exactly look angle and failed to evaluate, nudge slightly upward to bracket
-            if f_low > <double>1e8 and fabs(low_angle - look_angle_rad) < <double>1e-9:
-                low_angle = look_angle_rad + 1e-3
-                f_low = self._error_at_distance(shot_props_ptr, low_angle, target_x_ft, target_y_ft)
-            f_high = self._error_at_distance(shot_props_ptr, high_angle, target_x_ft, target_y_ft)
-
-            if f_low * f_high >= 0:
-                lofted_str = "lofted" if lofted else "low"
-                reason = (
-                    f"No {lofted_str} zero trajectory in elevation range "
-                    f"({low_angle * 57.29577951308232:.2f}, "
-                    f"{high_angle * 57.29577951308232:.2f} deg). "
-                    f"Errors at bracket: f(low)={f_low:.2f}, f(high)={f_high:.2f}"
-                )
-                raise ZeroFindingError(
-                    float(target_y_ft),
-                    0,
-                    _new_rad(shot_props_ptr.barrel_elevation),
-                    reason=reason
-                )
-
-            # 4. Ridder's method implementation
-            for iteration in range(self._engine.config.cMaxIterations):
-                mid_angle = (low_angle + high_angle) / 2.0
-                f_mid = self._error_at_distance(shot_props_ptr, mid_angle, target_x_ft, target_y_ft)
-
-                # s is the updated point using the root of the linear function
-                # through (low_angle, f_low) and (high_angle, f_high)
-                # and the quadratic function that passes through those points and (mid_angle, f_mid)
-                s = sqrt(f_mid * f_mid - f_low * f_high)
-                if s == 0.0:
-                    break  # Should not happen if f_low and f_high have opposite signs
-
-                next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s)
-                if fabs(next_angle - mid_angle) < self._engine.config.cZeroFindingAccuracy:
-                    return next_angle
-
-                f_next = self._error_at_distance(shot_props_ptr, next_angle, target_x_ft, target_y_ft)
-                # Update the bracket
-                if f_mid * f_next < 0:
-                    low_angle, f_low = mid_angle, f_mid
-                    high_angle, f_high = next_angle, f_next
-                elif f_low * f_next < 0:
-                    high_angle, f_high = next_angle, f_next
-                elif f_high * f_next < 0:
-                    low_angle, f_low = next_angle, f_next
-                else:
-                    break  # If we are here, something is wrong, the root is not bracketed anymore
-
-                if fabs(high_angle - low_angle) < self._engine.config.cZeroFindingAccuracy:
-                    return (low_angle + high_angle) / 2
-
-            raise ZeroFindingError(
-                target_y_ft,
-                self._engine.config.cMaxIterations,
-                _new_rad((low_angle + high_angle) / 2),
-                reason="Ridder's method failed to converge."
-            )
-        finally:
-            if has_restore_cMinimumVelocity__zero:
-                self._engine.config.cMinimumVelocity = restore_cMinimumVelocity__zero
+        if err.src == ErrorSource.SRC_INIT_ZERO:
+            self._raise_on_init_zero_error(err, &range_error)
+        if err.src == ErrorSource.SRC_FIND_ZERO_ANGLE:
+            self._raise_on_init_zero_error(err, &range_error)
+            self._raise_on_zero_finding_error(err, &zero_error)
+        self._raise_solver_runtime_error(err)
 
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double low_angle_deg,
         double high_angle_deg,
     ):
@@ -531,171 +536,47 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
-        cdef:
-            double look_angle_rad = shot_props_ptr.look_angle
-            double max_range_ft
-            double angle_at_max_rad
-            BaseTrajDataT _apex_obj
-            double _sdist
 
-        # Virtually vertical shot
-        if (
-            fabs(look_angle_rad - <double>1.5707963267948966) < _APEX_IS_MAX_RANGE_RADIANS
-        ):  # π/2 radians = 90 degrees
-            _apex_obj = self._find_apex(shot_props_ptr)
-            _sdist = (
-                _apex_obj.c_position().x
-                * cos(look_angle_rad)
-                + _apex_obj.c_position().y
-                * sin(look_angle_rad)
-            )
-            return MaxRangeResult_t(_sdist, look_angle_rad)
+        cdef MaxRangeResult_t result
+        cdef StatusCode status = Engine_t_find_max_range(
+            &self._engine,
+            low_angle_deg,
+            high_angle_deg,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            &result
+        )
 
-        # Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
-        cdef:
-            double restore_cMaximumDrop = 0.0
-            int has_restore_cMaximumDrop = 0
-            double restore_cMinimumVelocity = 0.0
-            int has_restore_cMinimumVelocity = 0
+        if status == StatusCode.STATUS_SUCCESS:
+            return result
 
-        if self._engine.config.cMaximumDrop != <double>0.0:
-            restore_cMaximumDrop = self._engine.config.cMaximumDrop
-            self._engine.config.cMaximumDrop = 0.0  # We want to run trajectory until it returns to horizontal
-            has_restore_cMaximumDrop = 1
-        if self._engine.config.cMinimumVelocity != <double>0.0:
-            restore_cMinimumVelocity = self._engine.config.cMinimumVelocity
-            self._engine.config.cMinimumVelocity = 0.0
-            has_restore_cMinimumVelocity = 1
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        self._raise_solver_runtime_error(err)
 
-        cdef:
-            double inv_phi = 0.6180339887498949  # (sqrt(5) - 1) / 2
-            double inv_phi_sq = 0.38196601125010515  # inv_phi^2
-            double a = low_angle_deg * 0.017453292519943295  # Convert to radians
-            double b = high_angle_deg * 0.017453292519943295  # Convert to radians
-            double h = b - a
-            double c = a + inv_phi_sq * h
-            double d = a + inv_phi * h
-            double yc, yd
-            int iteration
-
-        def range_for_angle(angle_rad):
-            """Returns max slant-distance for given launch angle in radians.
-            Robust ZERO_DOWN detection: scan from the end and find the first slant-height
-            crossing where the previous point is positive and current is non-positive."""
-            cdef double ca
-            cdef double sa
-            cdef double h_prev
-            cdef double h_cur
-            cdef double denom
-            cdef double t
-            cdef double ix
-            cdef double iy
-            cdef double sdist
-            cdef BaseTrajSeqT trajectory
-            cdef Py_ssize_t n
-            cdef Py_ssize_t i
-            cdef BaseTraj_t* prev_ptr
-            cdef BaseTraj_t* cur_ptr
-            # Update shot data
-            shot_props_ptr.barrel_elevation = angle_rad
-            try:
-                _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_NONE)
-                trajectory = <BaseTrajSeqT>_res[0]
-                ca = cos(shot_props_ptr.look_angle)
-                sa = sin(shot_props_ptr.look_angle)
-                n = trajectory.len_c()
-                if n >= 2:
-                    # Linear search from end of trajectory for zero-down crossing
-                    for i in range(n - 1, 0, -1):
-                        prev_ptr = trajectory.c_getitem(i - 1)
-                        cur_ptr = trajectory.c_getitem(i)
-                        h_prev = prev_ptr.py * ca - prev_ptr.px * sa
-                        h_cur = cur_ptr.py * ca - cur_ptr.px * sa
-                        if h_prev > 0.0 and h_cur <= 0.0:
-                            # Interpolate for slant_distance
-                            denom = h_prev - h_cur
-                            if denom == 0.0:
-                                t = 0.0
-                            else:
-                                t = h_prev / denom
-                            if t < 0.0:
-                                t = 0.0
-                            elif t > 1.0:
-                                t = 1.0
-                            ix = prev_ptr.px + t * (cur_ptr.px - prev_ptr.px)
-                            iy = prev_ptr.py + t * (cur_ptr.py - prev_ptr.py)
-                            sdist = ix * ca + iy * sa
-                            return sdist
-                return -9e9
-            except RangeError:
-                return -9e9
-
-        yc = range_for_angle(c)
-        yd = range_for_angle(d)
-
-        # Golden-section search
-        for iteration in range(100):  # 100 iterations is more than enough for high precision
-            if h < <double>1e-5:  # Angle tolerance in radians
-                break
-            if yc > yd:
-                b, d, yd = d, c, yc
-                h = b - a
-                c = a + inv_phi_sq * h
-                yc = range_for_angle(c)
-            else:
-                a, c, yc = c, d, yd
-                h = b - a
-                d = a + inv_phi * h
-                yd = range_for_angle(d)
-
-        angle_at_max_rad = (a + b) / 2
-        max_range_ft = range_for_angle(angle_at_max_rad)
-
-    # Restore original constraints
-        if has_restore_cMaximumDrop:
-            self._engine.config.cMaximumDrop = restore_cMaximumDrop
-        if has_restore_cMinimumVelocity:
-            self._engine.config.cMinimumVelocity = restore_cMinimumVelocity
-
-        return MaxRangeResult_t(max_range_ft, angle_at_max_rad)
-
-    cdef BaseTrajDataT _find_apex(
+    cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
-        const ShotProps_t *shot_props_ptr
     ):
         """
         Internal implementation to find the apex of the trajectory.
+
+        Returns:
+            BaseTrajData_t: The trajectory data at the apex.
         """
-        if shot_props_ptr.barrel_elevation <= 0:
-            raise ValueError("Barrel elevation must be greater than 0 to find apex.")
 
-        # Have to ensure cMinimumVelocity is 0 for this to work
-        cdef:
-            double restore_min_velocity = 0.0
-            int has_restore_min_velocity = 0
-            BaseTrajDataT apex
-            tuple _res
+        cdef BaseTrajData_t apex
 
-        if self._engine.config.cMinimumVelocity > 0.0:
-            restore_min_velocity = self._engine.config.cMinimumVelocity
-            self._engine.config.cMinimumVelocity = 0.0
-            has_restore_min_velocity = 1
+        # FIXME: possibly needs to be initialised with zeros
+        # apex = BaseTrajData_t(
+        #     0.0, V3dT(0.0, 0.0, 0.0), V3dT(0.0, 0.0, 0.0), 0.0)
 
-        try:
-            _res = self._integrate(9e9, 9e9, 0.0, TrajFlag_t.TFLAG_APEX)
-            apex = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_VEL_Y, 0.0)
-        finally:
-            if has_restore_min_velocity:
-                self._engine.config.cMinimumVelocity = restore_min_velocity
+        cdef StatusCode status = Engine_t_find_apex(&self._engine, &apex)
+        if status == StatusCode.STATUS_SUCCESS:
+            return apex
 
-        if not apex:
-            raise SolverRuntimeError("No apex flagged in trajectory data")
-
-        return apex
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        self._raise_solver_runtime_error(err)
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
-        ShotProps_t *shot_props_ptr,
         double distance
     ):
         """
@@ -709,182 +590,118 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-        # Get initialization data using the new method
-        cdef ZeroInitialData_t init_data = self._init_zero_calculation(shot_props_ptr, distance)
-        cdef:
-            int status = init_data.status
-            double look_angle_rad = init_data.look_angle_rad
-            double slant_range_ft = init_data.slant_range_ft
-            double target_x_ft = init_data.target_x_ft
-            double target_y_ft = init_data.target_y_ft
-            # double start_height_ft = init_data.start_height_ft  # FIXME: unused definition
-
-        if status == 1:  # DONE
-            return look_angle_rad
 
         cdef:
-            BaseTrajDataT hit
-            # early bindings
-            double _cZeroFindingAccuracy = self._engine.config.cZeroFindingAccuracy
-            int _cMaxIterations = self._engine.config.cMaxIterations
+            double result
+            OutOfRangeError_t range_error
+            ZeroFindingError_t zero_error
 
-            # Enhanced zero-finding variables
-            int iterations_count = 0
-            double range_error_ft = 9e9  # Absolute value of error from target distance along sight line
-            double prev_range_error_ft = 9e9
-            double prev_height_error_ft = 9e9
-            double damping_factor = 1.0  # Start with no damping
-            double damping_rate = 0.7  # Damping rate for correction
-            double last_correction = 0.0
-            double height_error_ft = _cZeroFindingAccuracy * 2  # Absolute value of error from sight line
+        cdef StatusCode status = Engine_t_zero_angle(
+            &self._engine,
+            distance,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            &result,
+            &range_error,
+            &zero_error,
+        )
 
-            # Ensure we can see drop at the target distance when launching along slant angle
-            double required_drop_ft = target_x_ft / 2.0 - target_y_ft
-            double restore_cMaximumDrop = 0.0
-            double restore_cMinimumAltitude = 0.0
-            int has_restore_cMaximumDrop = 0
-            int has_restore_cMinimumAltitude = 0
+        if status == StatusCode.STATUS_SUCCESS:
+            return result
 
-            double current_distance, height_diff_ft, look_dist_ft, range_diff_ft
-            double trajectory_angle, sensitivity, denominator, correction, applied_correction
-            double ca, sa
-
-        # Backup and adjust constraints if needed, then ensure single restore via try/finally
-        try:
-            if fabs(self._engine.config.cMaximumDrop) < required_drop_ft:
-                restore_cMaximumDrop = self._engine.config.cMaximumDrop
-                self._engine.config.cMaximumDrop = required_drop_ft
-                has_restore_cMaximumDrop = 1
-
-            if (self._engine.config.cMinimumAltitude - shot_props_ptr.alt0) > required_drop_ft:
-                restore_cMinimumAltitude = self._engine.config.cMinimumAltitude
-                self._engine.config.cMinimumAltitude = shot_props_ptr.alt0 - required_drop_ft
-                has_restore_cMinimumAltitude = 1
-
-            while iterations_count < _cMaxIterations:
-                # Check height of trajectory at the zero distance (using current barrel_elevation)
-                _res = self._integrate(target_x_ft, target_x_ft, 0.0, TrajFlag_t.TFLAG_NONE)
-                hit = (<BaseTrajSeqT>_res[0])._get_at_c(InterpKey.KEY_POS_X, target_x_ft)
-
-                if hit.time == 0.0:
-                    # Integrator returned initial point - consider removing constraints
-                    break
-
-                current_distance = hit.position.x  # Horizontal distance along X
-                if (
-                    2 * current_distance < target_x_ft
-                    and shot_props_ptr.barrel_elevation == 0.0
-                    and look_angle_rad < 1.5
-                ):
-                    # Degenerate case: little distance and zero elevation; try with some elevation
-                    shot_props_ptr.barrel_elevation = 0.01
-                    continue
-
-                ca = cos(look_angle_rad)
-                sa = sin(look_angle_rad)
-                height_diff_ft = hit.position.y * ca - hit.position.x * sa  # slant_height
-                look_dist_ft = hit.position.x * ca + hit.position.y * sa  # slant_distance
-                range_diff_ft = look_dist_ft - slant_range_ft
-                range_error_ft = fabs(range_diff_ft)
-                height_error_ft = fabs(height_diff_ft)
-                trajectory_angle = atan2(hit.velocity.y, hit.velocity.x)  # Flight angle at current distance
-
-                # Calculate sensitivity and correction
-                sensitivity = (
-                    tan(shot_props_ptr.barrel_elevation - look_angle_rad)
-                    * tan(trajectory_angle - look_angle_rad)
-                )
-                if sensitivity < -0.5:
-                    denominator = look_dist_ft
-                else:
-                    denominator = look_dist_ft * (1 + sensitivity)
-
-                if fabs(denominator) > 1e-9:
-                    correction = -height_diff_ft / denominator
-                else:
-                    raise ZeroFindingError(
-                        height_error_ft,
-                        iterations_count,
-                        _new_rad(shot_props_ptr.barrel_elevation),
-                        'Correction denominator is zero'
-                    )
-
-                if range_error_ft > _ALLOWED_ZERO_ERROR_FEET:
-                    # We're still trying to reach zero_distance
-                    if range_error_ft > prev_range_error_ft - 1e-6:  # We're not getting closer to zero_distance
-                        raise ZeroFindingError(
-                            range_error_ft,
-                            iterations_count,
-                            _new_rad(shot_props_ptr.barrel_elevation),
-                            'Distance non-convergent'
-                        )
-                elif height_error_ft > fabs(prev_height_error_ft):  # Error is increasing, we are diverging
-                    damping_factor *= damping_rate  # Apply damping to prevent overcorrection
-                    if damping_factor < 0.3:
-                        raise ZeroFindingError(
-                            height_error_ft,
-                            iterations_count,
-                            _new_rad(shot_props_ptr.barrel_elevation),
-                            'Error non-convergent'
-                        )
-                    # Revert previous adjustment
-                    shot_props_ptr.barrel_elevation -= last_correction
-                    correction = last_correction
-                elif damping_factor < 1.0:
-                    damping_factor = 1.0
-
-                prev_range_error_ft = range_error_ft
-                prev_height_error_ft = height_error_ft
-
-                if height_error_ft > _cZeroFindingAccuracy or range_error_ft > _ALLOWED_ZERO_ERROR_FEET:
-                    # Adjust barrel elevation to close height at zero distance
-                    applied_correction = correction * damping_factor
-                    shot_props_ptr.barrel_elevation += applied_correction
-                    last_correction = applied_correction
-                else:  # Current barrel_elevation hit zero: success!
-                    break
-
-                iterations_count += 1
-
-        finally:
-            # Restore original constraints
-            if has_restore_cMaximumDrop:
-                self._engine.config.cMaximumDrop = restore_cMaximumDrop
-            if has_restore_cMinimumAltitude:
-                self._engine.config.cMinimumAltitude = restore_cMinimumAltitude
-
-        if height_error_ft > _cZeroFindingAccuracy or range_error_ft > _ALLOWED_ZERO_ERROR_FEET:
-            # ZeroFindingError contains an instance of last barrel elevation; so caller can check how close zero is
-            raise ZeroFindingError(height_error_ft, iterations_count, _new_rad(shot_props_ptr.barrel_elevation))
-
-        return shot_props_ptr.barrel_elevation
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        if err.src == ErrorSource.SRC_INIT_ZERO:
+            self._raise_on_init_zero_error(err, &range_error)
+        if err.src == ErrorSource.SRC_ZERO_ANGLE:
+            self._raise_on_init_zero_error(err, &range_error)
+            self._raise_on_zero_finding_error(err, &zero_error)
+        self._raise_solver_runtime_error(err)
 
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        TrajFlag_t filter_flags
+        TrajFlag_t filter_flags,
     ):
-        if self._engine.integrate_func_ptr is NULL:
-            raise NotImplementedError
+        """
+        Internal method to perform trajectory integration.
 
-        cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
-        cdef TerminationReason termination_reason = Engine_t_integrate(
+        Args:
+            range_limit_ft (double): Maximum range limit in feet.
+            range_step_ft (double): Range step in feet.
+            time_step (double): Time step in seconds.
+            filter_flags (TrajFlag_t): Flags to filter trajectory data.
+
+        Returns:
+            tuple: (BaseTrajSeqT, str or None)
+                BaseTrajSeqT: The trajectory sequence.
+                TerminationReason: Termination reason if applicable.
+        """
+        if self._engine.integrate_func_ptr is NULL:
+            raise NotImplementedError("integrate_func not implemented or not provided")
+
+        cdef:
+            BaseTrajSeqT traj_seq = BaseTrajSeqT()
+            TerminationReason reason
+
+        cdef StatusCode status = Engine_t_integrate(
             &self._engine,
             range_limit_ft,
             range_step_ft,
             time_step,
             filter_flags,
-            traj_seq._c_view,
+            &traj_seq._c_view,
+            &reason,
         )
-        cdef str termination_reason_str = None
-        if termination_reason == TerminationReason.RangeErrorInvalidParameter:
-            raise RuntimeError("InvalidParameter")
-        elif termination_reason == TerminationReason.RangeErrorMinimumVelocityReached:
-            termination_reason_str = RangeError.MinimumVelocityReached
-        elif termination_reason == TerminationReason.RangeErrorMaximumDropReached:
-            termination_reason_str = RangeError.MaximumDropReached
-        elif termination_reason == TerminationReason.RangeErrorMinimumAltitudeReached:
-            termination_reason_str = RangeError.MinimumAltitudeReached
-        return traj_seq, termination_reason_str
+
+        if status == StatusCode.STATUS_SUCCESS:
+            return traj_seq, reason
+        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+        self._raise_solver_runtime_error(err)
+
+    cdef void _raise_on_init_zero_error(
+        CythonizedBaseIntegrationEngine self,
+        ErrorFrame *err,
+        OutOfRangeError_t *err_data
+    ):
+        if err.code == ErrorType.T_OUT_OF_RANGE_ERROR:
+            raise OutOfRangeError(
+                _new_feet(err_data.requested_distance_ft),
+                _new_feet(err_data.max_range_ft),
+                _new_rad(err_data.look_angle_rad)
+            )
+
+    cdef void _raise_on_zero_finding_error(
+        CythonizedBaseIntegrationEngine self,
+        ErrorFrame *err,
+        ZeroFindingError_t *zero_error
+    ):
+        if err.code == ErrorType.T_ZERO_FINDING_ERROR:
+            raise ZeroFindingError(
+                zero_error.zero_finding_error,
+                zero_error.iterations_count,
+                _new_rad(zero_error.last_barrel_elevation_rad),
+                err.msg.decode('utf-8')
+            )
+
+    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self, ErrorFrame *f):
+        cdef ErrorStack *stack = &self._engine.err_stack
+        if stack.top <= 0 or f.code == ErrorType.T_NO_ERROR:
+            return
+
+        # Отримуємо exception, дефолт – RuntimeError
+        cdef object exception_type = ERROR_TYPE_TO_EXCEPTION.get(f.code, RuntimeError)
+
+        cdef char trace[4096]
+        error_stack_to_string(stack, trace, sizeof(trace))
+
+        cdef str trace_str = trace.decode('utf-8', 'ignore')
+        cdef list lines = [
+            ("=> " if i==len(trace_str.splitlines())-1 else "   ") + line
+            for i, line in enumerate(trace_str.splitlines()) if line
+        ]
+
+        trace_str = "Trace:\n" + "\n".join(lines)
+
+        raise exception_type(trace_str)

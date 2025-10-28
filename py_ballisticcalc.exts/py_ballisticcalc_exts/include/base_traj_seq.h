@@ -1,5 +1,5 @@
-#ifndef BASETRAJ_SEQ_H
-#define BASETRAJ_SEQ_H
+#ifndef BCLIB_BASE_TRAJ_SEQ_H
+#define BCLIB_BASE_TRAJ_SEQ_H
 
 #include <stddef.h>    // Required for size_t
 #include <sys/types.h> // Required for ssize_t
@@ -36,21 +36,6 @@ typedef struct
 } BaseTraj_t;
 
 /**
- * Keys used to look up specific values within a BaseTraj_t struct.
- */
-typedef enum
-{
-    KEY_TIME,
-    KEY_MACH,
-    KEY_POS_X,
-    KEY_POS_Y,
-    KEY_POS_Z,
-    KEY_VEL_X,
-    KEY_VEL_Y,
-    KEY_VEL_Z
-} InterpKey;
-
-/**
  * Internal view structure for a sequence (buffer) of BaseTraj_t points.
  */
 typedef struct
@@ -65,26 +50,15 @@ extern "C"
 {
 #endif
 
-    /**
-     * Retrieves a specific double value from a BaseTraj_t struct using an InterpKey.
-     *
-     * @param p A pointer to the BaseTraj_t struct.
-     * @param key_kind The InterpKey indicating which value to retrieve.
-     * @return The corresponding double value, or 0.0 if the key is unrecognized.
-     */
-    double BaseTraj_t_key_val_from_kind_buf(const BaseTraj_t *p, InterpKey key_kind);
-
-    double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa);
-
-    BaseTrajSeq_t *BaseTrajSeq_t_create();
-    void BaseTrajSeq_t_destroy(BaseTrajSeq_t *seq);
+    void BaseTrajSeq_t_init(BaseTrajSeq_t *seq);
+    void BaseTrajSeq_t_release(BaseTrajSeq_t *seq);
 
     /**
      * @brief Appends a new element to the end of the sequence.
      * @param seq Pointer to the sequence structure.
      * @return int 0 on success, -1 on memory allocation error or NULL pointer.
      */
-    int BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+    ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
 
     /**
      * @brief Checks and ensures the minimum buffer capacity.
@@ -93,7 +67,7 @@ extern "C"
      * @param min_capacity The minimum required capacity.
      * @return int 0 on success, -1 on memory allocation error.
      */
-    int BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
+    ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
 
     ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq);
 
@@ -103,14 +77,14 @@ extern "C"
      * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
      * @return 1 on success, 0 on failure.
      */
-    int BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out);
-
-    BaseTraj_t *BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx);
-    ssize_t BaseTrajSeq_t_bisect_center_idx_buf(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value);
-    ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(const BaseTrajSeq_t *seq, double ca, double sa, double value);
+    ErrorType BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
+    BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t idx);
+    ErrorType BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out);
+    ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out);
+    ErrorType BaseTrajSeq_t_get_at(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value, double start_from_time, BaseTrajData_t *out);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif // BASETRAJ_SEQ_H
+#endif // BCLIB_BASE_TRAJ_SEQ_H

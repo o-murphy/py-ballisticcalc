@@ -1,10 +1,38 @@
 #include "bclib.h"
 #include "v3d.h"
+#include "interp.h"
 #include <math.h>
 #include <stddef.h> // For size_t
 #include <stdio.h>  // For warnings (printf used here)
 #include <float.h>  // For fabs()
 #include <stdlib.h>
+
+LogLevel global_log_level = LOG_LEVEL_CRITICAL; // DIsabled by default
+
+void setLogLevel(LogLevel level)
+{
+    global_log_level = level;
+    C_LOG(LOG_LEVEL_INFO, "Log level set to %d\n", level);
+}
+
+void initLogLevel()
+{
+    const char *env_level_str = getenv("BCLIB_LOG_LEVEL");
+
+    if (env_level_str != NULL)
+    {
+        int env_level = atoi(env_level_str);
+
+        if (env_level >= 0)
+        {
+            global_log_level = env_level;
+            C_LOG(LOG_LEVEL_INFO, "Log level set from environment variable BCLIB_LOG_LEVEL to %d\n", global_log_level);
+            return;
+        }
+    }
+
+    C_LOG(LOG_LEVEL_INFO, "Log level defaulted to %d\n", global_log_level);
+}
 
 // Constants for unit conversions and atmospheric calculations
 const double cEarthAngularVelocityRadS = 7.2921159e-5;
@@ -92,8 +120,13 @@ double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
     return 0.0;
 }
 
-int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
+ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
+    if (shot_props_ptr == NULL)
+    {
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        return T_INPUT_ERROR;
+    }
     /* Miller stability coefficient */
     double twist_rate, length, sd, fv, ft, pt, ftp;
 
@@ -120,7 +153,8 @@ int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            return -1; // Exit if denominator is zero
+            C_LOG(LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
+            return T_ZERO_DIVISION_ERROR; // Exit if denominator is zero
         }
 
         fv = pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
@@ -135,7 +169,8 @@ int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            return -1; // Exit if pt is zero
+            C_LOG(LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
+            return T_ZERO_DIVISION_ERROR; // Exit if pt is zero
         }
 
         shot_props_ptr->stability_coefficient = sd * fv * ftp;
@@ -144,7 +179,8 @@ int ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
     {
         shot_props_ptr->stability_coefficient = 0.0;
     }
-    return 0;
+    C_LOG(LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
+    return T_NO_ERROR;
 }
 
 double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
@@ -245,19 +281,19 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     if (altitude > 36089.0)
     {
         // Warning: altitude above troposphere
-        fprintf(stderr, "Warning: Density request for altitude above troposphere. Atmospheric model not valid here.\n");
+        C_LOG(LOG_LEVEL_WARNING, "Density request for altitude above troposphere. Atmospheric model not valid here.");
     }
 
     if (celsius < -cDegreesCtoK)
     {
-        fprintf(stderr, "Warning: Invalid temperature %.2f °C. Adjusted to absolute zero %.2f °C to avoid domain error.\n",
-                celsius, -cDegreesCtoK);
+        C_LOG(LOG_LEVEL_WARNING, "Invalid temperature %.2f °C. Adjusted to absolute zero %.2f °C to avoid domain error.",
+              celsius, -cDegreesCtoK);
         celsius = -cDegreesCtoK;
     }
     else if (celsius < atmo_ptr->cLowestTempC)
     {
         celsius = atmo_ptr->cLowestTempC;
-        fprintf(stderr, "Warning: Reached minimum temperature limit. Adjusted to %.2f °C. Redefine 'cLowestTempF' constant to increase it.\n", celsius);
+        C_LOG(LOG_LEVEL_WARNING, "Reached minimum temperature limit. Adjusted to %.2f °C. Redefine 'cLowestTempF' constant to increase it.", celsius);
     }
 
     kelvin = celsius + cDegreesCtoK;
@@ -274,31 +310,8 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     // Mach 1 speed at altitude (fps)
     *mach_ptr = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet;
 
-    // Optional debug print (uncomment if needed)
-    // printf("Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
-    //        altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
-}
-
-BaseTrajData_t *BaseTrajData_t_create(double time, V3dT position, V3dT velocity, double mach)
-{
-    BaseTrajData_t *ptr = calloc(1, sizeof(BaseTrajData_t));
-    if (ptr == NULL)
-    {
-        return NULL;
-    }
-    ptr->time = time;
-    ptr->position = position;
-    ptr->velocity = velocity;
-    ptr->mach = mach;
-    return ptr;
-}
-
-void BaseTrajData_t_destroy(BaseTrajData_t *ptr)
-{
-    if (ptr != NULL)
-    {
-        free(ptr);
-    }
+    C_LOG(LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
+          altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
 V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
@@ -309,8 +322,13 @@ V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
         .z = wind_ptr->velocity * sin(wind_ptr->direction_from)};
 }
 
-void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
+ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
+    if (ws == NULL)
+    {
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        return T_INPUT_ERROR;
+    }
 
     ws->length = (int)length;
     ws->winds = winds;
@@ -322,7 +340,7 @@ void WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     ws->last_vector_cache.y = 0.0;
     ws->last_vector_cache.z = 0.0;
 
-    WindSock_t_updateCache(ws);
+    return WindSock_t_updateCache(ws);
 }
 
 void WindSock_t_release(WindSock_t *ws)
@@ -349,11 +367,12 @@ V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
     return wind_sock->last_vector_cache;
 }
 
-int WindSock_t_updateCache(WindSock_t *ws)
+ErrorType WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
-        return -1;
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        return T_INPUT_ERROR;
     }
 
     if (ws->current < ws->length)
@@ -369,7 +388,7 @@ int WindSock_t_updateCache(WindSock_t *ws)
         ws->last_vector_cache.z = 0.0;
         ws->next_range = cMaxWindDistanceFeet;
     }
-    return 0;
+    return T_NO_ERROR;
 }
 
 V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
@@ -393,9 +412,9 @@ V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
         else
         {
             // If cache update fails, return zero vector
-            if (WindSock_t_updateCache(ws) < 0)
+            if (WindSock_t_updateCache(ws) != T_NO_ERROR)
             {
-                fprintf(stderr, "Warning: WindSock_t_updateCache failed. Returning zero vector.\n");
+                C_LOG(LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                 return zero_vector;
             }
         }
@@ -411,7 +430,7 @@ double getCorrection(double distance, double offset)
     {
         return atan2(offset, distance);
     }
-    // fprintf(stderr, "Error: Division by zero in getCorrection.\n");
+    C_LOG(LOG_LEVEL_ERROR, "Division by zero in getCorrection.");
     return 0.0;
 }
 
@@ -463,4 +482,104 @@ void Coriolis_t_coriolis_acceleration_local(
     accel_ptr->x = accel_range;
     accel_ptr->y = accel_up;
     accel_ptr->z = accel_cross;
+}
+
+ErrorType BaseTrajData_t_interpolate(
+    InterpKey key_kind,
+    double key_value,
+    const BaseTrajData_t *p0,
+    const BaseTrajData_t *p1,
+    const BaseTrajData_t *p2,
+    BaseTrajData_t *out)
+{
+
+    if (!p0 || !p1 || !p2 || !out)
+    {
+        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        return T_INPUT_ERROR;
+    }
+
+    double x0, x1, x2;
+    double time, mach;
+    V3dT position, velocity;
+    V3dT vp0, vp1, vp2, vv0, vv1, vv2;
+    BaseTrajData_t _p0 = *p0;
+    BaseTrajData_t _p1 = *p1;
+    BaseTrajData_t _p2 = *p2;
+
+    vp0 = _p0.position;
+    vp1 = _p1.position;
+    vp2 = _p2.position;
+    vv0 = _p0.velocity;
+    vv1 = _p1.velocity;
+    vv2 = _p2.velocity;
+
+    // Determine independent variable values from key_kind
+    switch (key_kind)
+    {
+    case KEY_TIME:
+        x0 = _p0.time;
+        x1 = _p1.time;
+        x2 = _p2.time;
+        break;
+    case KEY_MACH:
+        x0 = _p0.mach;
+        x1 = _p1.mach;
+        x2 = _p2.mach;
+        break;
+    case KEY_POS_X:
+        x0 = vp0.x;
+        x1 = vp1.x;
+        x2 = vp2.x;
+        break;
+    case KEY_POS_Y:
+        x0 = vp0.y;
+        x1 = vp1.y;
+        x2 = vp2.y;
+        break;
+    case KEY_POS_Z:
+        x0 = vp0.z;
+        x1 = vp1.z;
+        x2 = vp2.z;
+        break;
+    case KEY_VEL_X:
+        x0 = vv0.x;
+        x1 = vv1.x;
+        x2 = vv2.x;
+        break;
+    case KEY_VEL_Y:
+        x0 = vv0.y;
+        x1 = vv1.y;
+        x2 = vv2.y;
+        break;
+    case KEY_VEL_Z:
+        x0 = vv0.z;
+        x1 = vv1.z;
+        x2 = vv2.z;
+        break;
+    default:
+        return T_KEY_ERROR;
+    }
+
+    // Guard against degenerate segments
+    if (x0 == x1 || x0 == x2 || x1 == x2)
+    {
+        return T_ZERO_DIVISION_ERROR;
+    }
+
+    // Scalar interpolation using PCHIP
+
+    // Interpolate all scalar fields
+    out->time = key_kind == KEY_TIME ? key_value : interpolate_3_pt(key_value, x0, x1, x2, _p0.time, _p1.time, _p2.time);
+    out->position = (V3dT){
+        interpolate_3_pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
+        interpolate_3_pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
+        interpolate_3_pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
+    out->velocity = (V3dT){
+        interpolate_3_pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
+        interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
+        interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
+    out->mach = key_kind == KEY_MACH ? key_value : interpolate_3_pt(key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach);
+
+    return T_NO_ERROR;
 }
