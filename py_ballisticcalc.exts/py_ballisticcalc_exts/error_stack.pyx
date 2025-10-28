@@ -1,3 +1,4 @@
+# cython: freethreading_compatible=True
 import inspect
 from cpython.bytes cimport PyBytes_AsString
 from libc.stdlib cimport malloc, free

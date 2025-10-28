@@ -7,14 +7,30 @@
 #include <float.h>  // For fabs()
 #include <stdlib.h>
 
+/**
+ * @brief Global log level control.
+ *
+ * Defaults to LOG_LEVEL_CRITICAL (disabled by default).
+ */
 LogLevel global_log_level = LOG_LEVEL_CRITICAL; // DIsabled by default
 
+/**
+ * @brief Sets the global log level.
+ * @param level The new LogLevel to set (e.g., LOG_LEVEL_INFO, LOG_LEVEL_DEBUG).
+ */
 void setLogLevel(LogLevel level)
 {
     global_log_level = level;
     C_LOG(LOG_LEVEL_INFO, "Log level set to %d\n", level);
 }
 
+/**
+ * @brief Initializes the global log level, potentially from an environment variable.
+ *
+ * Checks the environment variable BCLIB_LOG_LEVEL. If it's set and contains a
+ * non-negative integer, the log level is set to that value. Otherwise, it defaults
+ * to the value of global_log_level (which is LOG_LEVEL_CRITICAL initially).
+ */
 void initLogLevel()
 {
     const char *env_level_str = getenv("BCLIB_LOG_LEVEL");
@@ -35,18 +51,65 @@ void initLogLevel()
 }
 
 // Constants for unit conversions and atmospheric calculations
+/**
+ * @brief Earth's angular velocity in radians per second.
+ */
 const double cEarthAngularVelocityRadS = 7.2921159e-5;
+/**
+ * @brief Conversion factor from degrees Fahrenheit to degrees Rankine.
+ */
 const double cDegreesFtoR = 459.67;
+/**
+ * @brief Conversion factor from degrees Celsius to Kelvin.
+ */
 const double cDegreesCtoK = 273.15;
+/**
+ * @brief Constant for speed of sound calculation in Imperial units (fps).
+ *
+ * (Approx. $\sqrt{\gamma R}$)
+ */
 const double cSpeedOfSoundImperial = 49.0223;
+/**
+ * @brief Constant for speed of sound calculation in Metric units.
+ *
+ * (Approx. $\sqrt{\gamma R}$)
+ */
 const double cSpeedOfSoundMetric = 20.0467;
+/**
+ * @brief Standard lapse rate in Kelvin per foot in the troposphere.
+ */
 const double cLapseRateKperFoot = -0.0019812;
+/**
+ * @brief Standard lapse rate in Imperial units (degrees per foot).
+ */
 const double cLapseRateImperial = -0.00356616;
+/**
+ * @brief Exponent used in the barometric formula for pressure calculation.
+ *
+ * (Approx. $g / (L \cdot R)$)
+ */
 const double cPressureExponent = 5.255876;
+/**
+ * @brief Lowest allowed temperature in Fahrenheit for atmospheric model.
+ */
 const double cLowestTempF = -130.0;
+/**
+ * @brief Conversion factor from meters to feet.
+ */
 const double mToFeet = 3.280839895;
+/**
+ * @brief Maximum distance in feet for a wind segment (used as a sentinel value).
+ */
 const double cMaxWindDistanceFeet = 1e8;
 
+/**
+ * @brief Releases memory associated with a Curve_t structure.
+ *
+ * Frees the dynamically allocated array of points and resets the length to 0.
+ * Handles NULL pointer gracefully.
+ *
+ * @param curve_ptr Pointer to the Curve_t structure to release.
+ */
 void Curve_t_release(Curve_t *curve_ptr)
 {
     if (curve_ptr == NULL)
@@ -61,6 +124,14 @@ void Curve_t_release(Curve_t *curve_ptr)
     curve_ptr->length = 0;
 }
 
+/**
+ * @brief Releases memory associated with a MachList_t structure.
+ *
+ * Frees the dynamically allocated array of Mach numbers and resets the length to 0.
+ * Handles NULL pointer gracefully.
+ *
+ * @param mach_list_ptr Pointer to the MachList_t structure to release.
+ */
 void MachList_t_release(MachList_t *mach_list_ptr)
 {
     if (mach_list_ptr == NULL)
@@ -75,6 +146,13 @@ void MachList_t_release(MachList_t *mach_list_ptr)
     mach_list_ptr->length = 0;
 }
 
+/**
+ * @brief Releases all dynamically allocated resources within a ShotProps_t structure.
+ *
+ * Calls release functions for the internal Curve_t, MachList_t, and WindSock_t components.
+ *
+ * @param shot_props_ptr Pointer to the ShotProps_t structure to release.
+ */
 void ShotProps_t_release(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
@@ -87,9 +165,18 @@ void ShotProps_t_release(ShotProps_t *shot_props_ptr)
 
 /**
  * @brief Litz spin-drift approximation
- * @param shot_props_ptr Pointer to ShotProps_t containing shot parameters.
+ *
+ * Calculates the lateral displacement (windage) due to spin drift using
+ * Litz's approximation formula. This formula provides an estimate based on
+ * the stability coefficient and time of flight.
+ *
+ * Formula used (converted to feet):
+ * $\text{Spin Drift (ft)} = \text{sign} \cdot \frac{1.25 \cdot (S_g + 1.2) \cdot \text{time}^{1.83}}{12.0}$
+ * where $S_g$ is the stability coefficient.
+ *
+ * @param shot_props_ptr Pointer to ShotProps_t containing shot parameters (twist, stability_coefficient).
  * @param time Time of flight in seconds.
- * @return Windage due to spin drift, in feet.
+ * @return Windage due to spin drift, in feet. Returns 0.0 if twist or stability_coefficient is zero.
  */
 double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
 {
@@ -120,6 +207,22 @@ double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
     return 0.0;
 }
 
+/**
+ * @brief Updates the Miller stability coefficient ($S_g$) for the projectile.
+ *
+ * Calculates the Miller stability coefficient based on bullet dimensions, weight,
+ * muzzle velocity, and atmospheric conditions ($\text{temperature, pressure}$).
+ * The result is stored in `shot_props_ptr->stability_coefficient`.
+ *
+ * Formula components:
+ * - $\text{sd}$ (Stability Divisor)
+ * - $\text{fv}$ (Velocity Factor)
+ * - $\text{ftp}$ (Temperature/Pressure Factor)
+ * - $S_g = \text{sd} \cdot \text{fv} \cdot \text{ftp}$
+ *
+ * @param shot_props_ptr Pointer to ShotProps_t containing parameters like twist, length, diameter, weight, muzzle_velocity, and atmo.
+ * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input, T_ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
+ */
 ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
@@ -177,12 +280,27 @@ ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
     }
     else
     {
+        // If critical parameters are zero, stability coefficient is meaningless or zero
         shot_props_ptr->stability_coefficient = 0.0;
     }
     C_LOG(LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
     return T_NO_ERROR;
 }
 
+/**
+ * @brief Interpolates a value from a Mach list and a curve using the PCHIP method.
+ *
+ * This function performs an optimized binary search to find the correct segment
+ * in the `mach_list_ptr` and then uses the corresponding cubic polynomial segment
+ * from `curve_ptr` (Horner's method) to interpolate the value at the given Mach number.
+ *
+ * The curve is assumed to represent the ballistic coefficient or a drag curve.
+ *
+ * @param mach_list_ptr Pointer to the MachList_t containing the Mach segment endpoints (x values).
+ * @param curve_ptr Pointer to the Curve_t containing the PCHIP cubic segment coefficients (a, b, c, d).
+ * @param mach The Mach number at which to interpolate.
+ * @return The interpolated value (e.g., drag coefficient or BC factor). Returns 0.0 if insufficient data or out of range.
+ */
 static inline double calculateByCurveAndMachList(
     const MachList_t *restrict mach_list_ptr,
     const Curve_t *restrict curve_ptr,
@@ -227,30 +345,27 @@ static inline double calculateByCurveAndMachList(
     const CurvePoint_t seg = curve_ptr->points[i];
     const double dx = mach - xs[i];
 
-    // Horner's method
+    // Horner's method for PCHIP interpolation:
+    // $y = d + dx \cdot (c + dx \cdot (b + dx \cdot a))$
     return seg.d + dx * (seg.c + dx * (seg.b + dx * seg.a));
 }
 
 /**
- * @brief Computes the drag force coefficient (Cd) for a projectile at a given Mach number.
+ * @brief Computes the scaled drag force coefficient ($C_d$) for a projectile at a given Mach number.
  *
- * This function calculates the drag coefficient based on the bullet's ballistic coefficient (BC)
- * and an empirical drag curve interpolated at the given Mach value.
+ * This function calculates the drag coefficient using a cubic spline interpolation
+ * (via `calculateByCurveAndMachList`) and scales it by a constant factor and the
+ * bullet's ballistic coefficient (BC). The result is $\frac{C_d}{\text{BC} \cdot \text{scale\_factor}}$.
  *
- * The drag force is derived from the formula:
- *     Fd = V^2 * Cd * AirDensity * S / (2 * m)
- * where:
- *     - Standard air density is assumed to be 0.076474 lb/ft³,
- *     - S is cross-sectional area (π * d² / 4), where d is in inches,
- *     - m is mass in pounds,
- *     - BC encodes m/d² in lb/in² and is converted using factor 144 in²/ft².
+ * The constant $2.08551\text{e-}04$ is a combination of standard air density,
+ * cross-sectional area conversion, and mass conversion factors.
  *
- * The constant 2.08551e-04 comes from:
- *     0.076474 * π / (4 * 2 * 144)
+ * Formula used:
+ * $\text{Scaled } C_d = \frac{C_d(\text{Mach}) \cdot 2.08551\text{e-}04}{\text{BC}}$
  *
  * @param shot_props_ptr Pointer to the ShotProps_t structure containing BC, drag curve, and Mach list.
  * @param mach Mach number at which to evaluate the drag.
- * @return Drag coefficient Cd scaled by BC.
+ * @return Drag coefficient $C_d$ scaled by $\text{BC}$ and conversion factors, in units suitable for the trajectory calculation.
  */
 double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach)
 {
@@ -261,6 +376,20 @@ double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach)
     return cd * 2.08551e-04 / shot_props_ptr->bc;
 }
 
+/**
+ * @brief Updates the density ratio and speed of sound (Mach 1) for a given altitude.
+ *
+ * This function calculates the new atmospheric pressure, temperature, and resulting
+ * density ratio and speed of sound (Mach 1) at a given altitude using the
+ * Standard Atmosphere model for the troposphere, adjusted for base conditions ($\text{atmo\_ptr->_t0, atmo\_ptr->_p0, atmo\_ptr->_a0}$).
+ *
+ * The barometric formula is used for pressure, and the lapse rate for temperature.
+ *
+ * @param atmo_ptr Pointer to the base Atmosphere_t structure.
+ * @param altitude The new altitude in feet.
+ * @param density_ratio_ptr Pointer to store the calculated density ratio ($\rho / \rho_{\text{std}}$).
+ * @param mach_ptr Pointer to store the calculated speed of sound (Mach 1) in feet per second (fps).
+ */
 void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     const Atmosphere_t *restrict atmo_ptr,
     double altitude,
@@ -269,7 +398,7 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
 {
     const double alt_diff = altitude - atmo_ptr->_a0;
 
-    // Fast check
+    // Fast check: if altitude is close to base altitude, use stored values
     if (fabs(alt_diff) < 30.0)
     {
         // Close enough to base altitude, use stored values
@@ -282,11 +411,11 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
 
     if (altitude > 36089.0)
     {
-        // Warning: altitude above troposphere
+        // Warning: altitude above standard troposphere height
         C_LOG(LOG_LEVEL_WARNING, "Density request for altitude above troposphere. Atmospheric model not valid here.");
     }
 
-    // Clamp temperature
+    // Clamp temperature to prevent non-physical results
     const double min_temp = -cDegreesCtoK;
     if (celsius < min_temp)
     {
@@ -302,33 +431,61 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     const double kelvin = celsius + cDegreesCtoK;
     const double base_kelvin = atmo_ptr->_t0 + cDegreesCtoK;
 
-    // Pressure calculation using barometric formula
+    // Pressure calculation using barometric formula for the troposphere
+    // $P = P_0 \cdot (1 + \frac{L \cdot \Delta h}{T_0})^ {g / (L \cdot R)}$
     const double pressure = atmo_ptr->_p0 * pow(
                                                 1.0 + cLapseRateKperFoot * alt_diff / base_kelvin,
                                                 cPressureExponent);
 
+    // Density ratio calculation: $\frac{\rho}{\rho_{\text{std}}} = \frac{\rho_0}{\rho_{\text{std}}} \cdot \frac{P \cdot T_0}{P_0 \cdot T}$
     const double density_delta = (base_kelvin * pressure) / (atmo_ptr->_p0 * kelvin);
 
     *density_ratio_ptr = atmo_ptr->density_ratio * density_delta;
 
-    // Mach 1 speed at altitude (fps)
+    // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
     *mach_ptr = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet;
 
     C_LOG(LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
           altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
+/**
+ * @brief Converts a Wind_t structure to a V3dT vector.
+ *
+ * The wind vector components are calculated assuming a standard coordinate system
+ * where x is positive downrange and z is positive across-range (windage).
+ * Wind direction is 'from' the specified direction (e.g., $0^\circ$ is tailwind, $90^\circ$ is wind from the right).
+ *
+ * @param wind_ptr Pointer to the Wind_t structure.
+ * @return A V3dT structure representing the wind velocity vector (x=downrange, y=vertical, z=crossrange).
+ */
 static inline V3dT Wind_t_to_V3dT(const Wind_t *restrict wind_ptr)
 {
     const double dir = wind_ptr->direction_from;
     const double vel = wind_ptr->velocity;
 
+    // Wind direction is from:
+    // x = vel * cos(dir) (Downrange, positive is tailwind)
+    // z = vel * sin(dir) (Crossrange, positive is wind from right)
     return (V3dT){
         .x = vel * cos(dir),
         .y = 0.0,
         .z = vel * sin(dir)};
 }
 
+/**
+ * @brief Initializes a WindSock_t structure.
+ *
+ * Sets up the internal state, including the array of wind segments, the current
+ * segment index, the range for the next segment, and initializes the wind vector cache.
+ * Note: The `winds` array memory is expected to be managed externally or by a
+ * higher-level function if it was dynamically allocated before calling this.
+ *
+ * @param ws Pointer to the WindSock_t structure to initialize.
+ * @param length The number of wind segments in the `winds` array.
+ * @param winds Pointer to the array of Wind_t structures.
+ * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input.
+ */
 ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
@@ -350,6 +507,14 @@ ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
     return WindSock_t_updateCache(ws);
 }
 
+/**
+ * @brief Releases memory associated with a WindSock_t structure and resets state.
+ *
+ * Frees the dynamically allocated `winds` array and calls `WindSock_t_init`
+ * to reset the internal state to empty/safe values.
+ *
+ * @param ws Pointer to the WindSock_t structure to release.
+ */
 void WindSock_t_release(WindSock_t *ws)
 {
     if (ws == NULL)
@@ -362,9 +527,18 @@ void WindSock_t_release(WindSock_t *ws)
         free(ws->winds);
         ws->winds = NULL;
     }
+    // Initialize to empty state after freeing
     WindSock_t_init(ws, 0, NULL);
 }
 
+/**
+ * @brief Returns the wind vector for the currently active wind segment.
+ *
+ * The vector is pre-calculated and stored in the cache.
+ *
+ * @param wind_sock Pointer to the WindSock_t structure.
+ * @return The current wind velocity vector (V3dT). Returns a zero vector if the pointer is NULL.
+ */
 V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
 {
     if (wind_sock == NULL)
@@ -374,6 +548,16 @@ V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
     return wind_sock->last_vector_cache;
 }
 
+/**
+ * @brief Updates the internal wind vector cache and next range threshold.
+ *
+ * Fetches the data for the wind segment at `ws->current`, converts it to a vector,
+ * and updates `ws->last_vector_cache` and `ws->next_range`.
+ * If `ws->current` is out of bounds, the cache is set to a zero vector and the next range to `cMaxWindDistanceFeet`.
+ *
+ * @param ws Pointer to the WindSock_t structure.
+ * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input.
+ */
 ErrorType WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
@@ -390,6 +574,7 @@ ErrorType WindSock_t_updateCache(WindSock_t *ws)
     }
     else
     {
+        // No more wind segments; set to zero wind
         ws->last_vector_cache.x = 0.0;
         ws->last_vector_cache.y = 0.0;
         ws->last_vector_cache.z = 0.0;
@@ -398,6 +583,18 @@ ErrorType WindSock_t_updateCache(WindSock_t *ws)
     return T_NO_ERROR;
 }
 
+/**
+ * @brief Gets the current wind vector, updating to the next segment if necessary.
+ *
+ * Compares the given `next_range_param` (the current range in the simulation)
+ * against the threshold for the current wind segment (`ws->next_range`).
+ * If the threshold is met or exceeded, it advances to the next wind segment
+ * and updates the cache.
+ *
+ * @param ws Pointer to the WindSock_t structure.
+ * @param next_range_param The current range (distance from muzzle) of the projectile.
+ * @return The wind velocity vector (V3dT) for the current or next applicable segment. Returns a zero vector if the pointer is NULL or an update fails.
+ */
 V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
 {
     V3dT zero_vector = {0.0, 0.0, 0.0};
@@ -413,11 +610,13 @@ V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
 
         if (ws->current >= ws->length)
         {
+            // Reached the end of the wind segments
             ws->last_vector_cache = zero_vector;
             ws->next_range = cMaxWindDistanceFeet;
         }
         else
         {
+            // Move to the next wind segment
             // If cache update fails, return zero vector
             if (WindSock_t_updateCache(ws) != T_NO_ERROR)
             {
@@ -431,6 +630,16 @@ V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
 }
 
 // helpers
+/**
+ * @brief Calculates the angular correction needed to hit a target.
+ *
+ * Computes the angle (in radians) to correct a shot based on the linear offset
+ * at a given distance using the arc tangent function ($\arctan(\text{offset}/\text{distance})$).
+ *
+ * @param distance The distance to the target (or the point of offset).
+ * @param offset The linear offset (e.g., vertical drop or windage).
+ * @return The correction angle in radians. Returns 0.0 if distance is zero (to avoid division by zero).
+ */
 double getCorrection(double distance, double offset)
 {
     if (distance != 0.0)
@@ -441,28 +650,55 @@ double getCorrection(double distance, double offset)
     return 0.0;
 }
 
+/**
+ * @brief Calculates the kinetic energy of the projectile.
+ *
+ * Uses the formula: $\text{Energy (ft-lbs)} = \frac{\text{Weight (grains)} \cdot \text{Velocity (fps)}^2}{450400}$.
+ *
+ * @param bulletWeight Bullet weight in grains.
+ * @param velocity Projectile velocity in feet per second (fps).
+ * @return Kinetic energy in foot-pounds (ft-lbs).
+ */
 double calculateEnergy(double bulletWeight, double velocity)
 {
     return bulletWeight * velocity * velocity / 450400.0;
 }
 
+/**
+ * @brief Calculates the Optimum Game Weight (OGW) factor.
+ *
+ * OGW is a metric that attempts to combine kinetic energy and momentum into a single number.
+ * Formula used: $\text{OGW} = \text{Weight (grains)}^2 \cdot \text{Velocity (fps)}^3 \cdot 1.5\text{e-}12$.
+ *
+ * @param bulletWeight Bullet weight in grains.
+ * @param velocity Projectile velocity in feet per second (fps).
+ * @return The Optimum Game Weight (OGW) factor.
+ */
 double calculateOgw(double bulletWeight, double velocity)
 {
     return bulletWeight * bulletWeight * velocity * velocity * velocity * 1.5e-12;
 }
 
 /**
- * @brief Calculate Coriolis acceleration in local coordinates
- * @param coriolis_ptr Pointer to Coriolis_t containing precomputed transformation data
- * @param velocity Pointer to ground velocity of projectile
- * @param accel_ptr Pointer to store acceleration in local coordinates
+ * @brief Calculate Coriolis acceleration in local coordinates (range, up, crossrange).
+ *
+ * Transforms the projectile's ground velocity (local coordinates) to the
+ * Earth-North-Up (ENU) coordinate system, calculates the Coriolis acceleration
+ * in ENU, and then transforms the acceleration back to local coordinates.
+ *
+ * Coriolis acceleration formula in ENU:
+ * - $\mathbf{a}_{\text{coriolis}} = -2 \cdot \mathbf{\omega}_{\text{earth}} \times \mathbf{v}_{\text{ENU}}$
+ *
+ * @param coriolis_ptr Pointer to Coriolis_t containing precomputed transformation data ($\sin(\text{lat}), \cos(\text{lat})$, range/cross factors).
+ * @param velocity_ptr Pointer to the projectile's ground velocity vector (local coordinates: x=range, y=up, z=crossrange).
+ * @param accel_ptr Pointer to store the calculated Coriolis acceleration vector (local coordinates).
  */
 void Coriolis_t_coriolis_acceleration_local(
     const Coriolis_t *restrict coriolis_ptr,
     const V3dT *restrict velocity_ptr,
     V3dT *restrict accel_ptr)
 {
-    // Early exit for most common case
+    // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
     if (coriolis_ptr->flat_fire_only)
     {
         *accel_ptr = (V3dT){0.0, 0.0, 0.0};
@@ -479,7 +715,7 @@ void Coriolis_t_coriolis_acceleration_local(
     const double cross_east = coriolis_ptr->cross_east;
     const double cross_north = coriolis_ptr->cross_north;
 
-    // Transform velocity to ENU
+    // Transform velocity to ENU (East, North, Up)
     const double vel_east = vx * range_east + vz * cross_east;
     const double vel_north = vx * range_north + vz * cross_north;
     const double vel_up = vy;
@@ -489,17 +725,28 @@ void Coriolis_t_coriolis_acceleration_local(
     const double sin_lat = coriolis_ptr->sin_lat;
     const double cos_lat = coriolis_ptr->cos_lat;
 
+    // $\mathbf{a}_{\text{coriolis}} = -2 \cdot \mathbf{\omega}_{\text{earth}} \times \mathbf{v}_{\text{ENU}}$
+    // $\mathbf{\omega}_{\text{earth}} = \omega_e \cdot (0, \cos(\text{lat}), \sin(\text{lat}))$
     const double accel_east = factor * (cos_lat * vel_up - sin_lat * vel_north);
     const double accel_north = factor * sin_lat * vel_east;
     const double accel_up = factor * (-cos_lat * vel_east);
 
-    // Transform back to local coordinates
+    // Transform back to local coordinates (x=range, y=up, z=crossrange)
     accel_ptr->x = accel_east * range_east + accel_north * range_north;
     accel_ptr->y = accel_up;
     accel_ptr->z = accel_east * cross_east + accel_north * cross_north;
 }
 
-// Lookup table
+/**
+ * @brief Lookup table helper to retrieve a specific scalar value from BaseTrajData_t.
+ *
+ * Used internally by the interpolation function to get the correct 'x' values
+ * for the interpolation key.
+ *
+ * @param p Pointer to the BaseTrajData_t structure.
+ * @param key_kind The InterpKey specifying which field to retrieve (e.g., KEY_TIME, KEY_MACH, KEY_POS_X).
+ * @return The value of the requested field. Returns 0.0 for an unknown key.
+ */
 static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey key_kind)
 {
     switch (key_kind)
@@ -525,6 +772,21 @@ static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey k
     }
 }
 
+/**
+ * @brief Interpolates a BaseTrajData_t structure using three surrounding data points.
+ *
+ * Performs a 3-point interpolation (likely PCHIP or similar cubic spline variant)
+ * on all fields of the trajectory data (`time, position, velocity, mach`) based on
+ * a specified `key_kind` (the independent variable for interpolation) and its target `key_value`.
+ *
+ * @param key_kind The field to use as the independent variable for interpolation (x-axis).
+ * @param key_value The target value for the independent variable at which to interpolate.
+ * @param p0 Pointer to the first data point (before or at the start of the segment).
+ * @param p1 Pointer to the second data point.
+ * @param p2 Pointer to the third data point (after or at the end of the segment).
+ * @param out Pointer to the BaseTrajData_t structure where the interpolated result will be stored.
+ * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input, T_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
+ */
 ErrorType BaseTrajData_t_interpolate(
     InterpKey key_kind,
     double key_value,
