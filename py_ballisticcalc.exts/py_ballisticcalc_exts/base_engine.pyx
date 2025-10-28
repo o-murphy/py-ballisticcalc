@@ -622,7 +622,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        TrajFlag_t filter_flags
+        TrajFlag_t filter_flags,
     ):
         """
         Internal method to perform trajectory integration.
@@ -697,8 +697,10 @@ cdef class CythonizedBaseIntegrationEngine:
         error_stack_to_string(stack, trace, sizeof(trace))
 
         cdef str trace_str = trace.decode('utf-8', 'ignore')
-        cdef list lines = [("=> " if i==len(trace_str.splitlines())-1 else "   ") + line
-                            for i, line in enumerate(trace_str.splitlines()) if line]
+        cdef list lines = [
+            ("=> " if i==len(trace_str.splitlines())-1 else "   ") + line
+            for i, line in enumerate(trace_str.splitlines()) if line
+        ]
 
         trace_str = "Trace:\n" + "\n".join(lines)
 

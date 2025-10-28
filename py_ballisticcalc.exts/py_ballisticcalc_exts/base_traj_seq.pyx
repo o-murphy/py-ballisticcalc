@@ -60,7 +60,9 @@ cdef class BaseTrajSeqT:
             raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
         if err == ErrorType.T_VALUE_ERROR:
             raise ValueError('Invalid BaseTrajSeq_t_ensure_capacity input')
-        raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_ensure_capacity, error code: {err}")
+        raise RuntimeError(
+            f"undefined error occured during BaseTrajSeq_t_ensure_capacity, error code: {err}"
+        )
 
     def __len__(self):
         """Number of points in the sequence."""
@@ -95,7 +97,9 @@ cdef class BaseTrajSeqT:
             )
         if err == ErrorType.T_KEY_ERROR:
             raise AttributeError("invalid InterpKey")
-        raise RuntimeError(f"undefined error occured during BaseTrajSeq_t_interpolate_at, error code: {err}")
+        raise RuntimeError(
+            f"undefined error occured during BaseTrajSeq_t_interpolate_at, error code: {err}"
+        )
 
     def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> BaseTrajDataT:
         """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
@@ -110,7 +114,9 @@ cdef class BaseTrajSeqT:
         cdef double _start_from_time = 0.0
         if start_from_time is not None:
             _start_from_time = <double>start_from_time
-        cdef ErrorType err = BaseTrajSeq_t_get_at(&self._c_view, key_kind, key_value, _start_from_time, &out)
+        cdef ErrorType err = BaseTrajSeq_t_get_at(
+            &self._c_view, key_kind, key_value, _start_from_time, &out
+        )
         if err == ErrorType.T_NO_ERROR:
             return BaseTrajDataT(out)
 
