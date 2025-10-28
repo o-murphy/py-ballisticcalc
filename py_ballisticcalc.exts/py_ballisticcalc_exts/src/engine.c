@@ -895,11 +895,12 @@ StatusCode Engine_t_find_zero_angle(
         // s is the updated point using the root of the linear function
         // through (low_angle, f_low) and (high_angle, f_high)
         // and the quadratic function that passes through those points and (mid_angle, f_mid)
-        s = sqrt(f_mid * f_mid - f_low * f_high);
-        if (s == 0.0)
+        double _inner = f_mid * f_mid - f_low * f_high;
+        if (_inner <= 0.0)
         {
             break; // Should not happen if f_low and f_high have opposite signs
         }
+        s = sqrt(_inner);
 
         next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s);
         if (fabs(next_angle - mid_angle) < eng->config.cZeroFindingAccuracy)
@@ -923,20 +924,24 @@ StatusCode Engine_t_find_zero_angle(
         // Update the bracket
         if (f_mid * f_next < 0)
         {
-            low_angle, f_low = mid_angle, f_mid;
-            high_angle, f_high = next_angle, f_next;
+            low_angle = mid_angle;
+            f_low = f_mid;
+            high_angle = next_angle;
+            f_high = f_next;
         }
         else if (f_low * f_next < 0)
         {
-            high_angle, f_high = next_angle, f_next;
+            high_angle = next_angle;
+            f_high = f_next;
         }
         else if (f_high * f_next < 0)
         {
-            low_angle, f_low = next_angle, f_next;
+            low_angle = next_angle;
+            f_low = f_next;
         }
         else
         {
-            break; // If we are here, something is wrong, the root is not bracketed anymore
+            break;
         }
 
         if (fabs(high_angle - low_angle) < eng->config.cZeroFindingAccuracy)
