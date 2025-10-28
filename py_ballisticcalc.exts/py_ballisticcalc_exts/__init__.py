@@ -12,6 +12,7 @@ from .euler_engine import (
     CythonizedEulerCromerIntegrationEngine
 )
 from .rk4_engine import CythonizedRK4IntegrationEngine
+# from .rk45_engine import CythonizedRK45IntegrationEngine
 from .test_engine import CythonEngineTestHarness
 
 
@@ -36,8 +37,9 @@ if __core_version != __exts_version:
 
 
 __all__ = (
-    "CythonizedEulerCromerIntegrationEngine",
     "CythonizedEulerIntegrationEngine",
+    "CythonizedEulerCromerIntegrationEngine",
     "CythonizedRK4IntegrationEngine",
+    # "CythonizedRK45IntegrationEngine"
     "CythonEngineTestHarness",
 )

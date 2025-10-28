@@ -74,6 +74,7 @@ C_SOURCES = {
     "euler": os.path.join(ext_base_dir, "src", "euler.c"),
     "euler_cromer": os.path.join(ext_base_dir, "src", "euler_cromer.c"),
     "rk4": os.path.join(ext_base_dir, "src", "rk4.c"),
+    "rk45": os.path.join(ext_base_dir, "src", "rk45.c"),
     "base_traj_seq": os.path.join(ext_base_dir, "src", "base_traj_seq.c"),
     "engine": os.path.join(ext_base_dir, "src", "engine.c"),
     # Add any other C source files here
@@ -88,6 +89,7 @@ EXTENSION_DEPS = {
     "base_engine": ["interp", "bclib", "engine", "base_traj_seq", "error_stack"],
     "euler_engine": ["v3d", "bclib", "euler", "euler_cromer", "interp", "base_traj_seq", "engine", "error_stack"],
     "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine", "error_stack"],
+    "rk45_engine": ["v3d", "bclib", "rk45", "interp", "base_traj_seq", "engine", "error_stack"],
     "trajectory_data": ["interp", "bclib"],
     # Test modules (expose internal C functions for tests only)
     "test_helpers": ["bclib", "interp"],

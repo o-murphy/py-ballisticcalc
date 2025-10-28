@@ -13,6 +13,7 @@ from py_ballisticcalc_exts.bclib cimport initLogLevel
 
 __all__ = [
     'CythonizedEulerIntegrationEngine',
+    'CythonizedEulerCromerIntegrationEngine',
 ]
 
 initLogLevel()
