@@ -8,74 +8,26 @@ Engine_t_find_zero_angle
  │    └─> Engine_t_find_apex
  │         └─> Engine_t_integrate
  │              └─> eng->integrate_func_ptr
- │              └─> Engine_t_log_and_save_error
  │         └─> BaseTrajSeq_t_init / get_at / release
  │
  ├─> Engine_t_find_max_range
  │    ├─> Engine_t_find_apex
  │    │    └─> Engine_t_integrate
  │    │         └─> eng->integrate_func_ptr
- │    │         └─> Engine_t_log_and_save_error
  │    └─> Engine_t_range_for_angle (static)
  │         └─> Engine_t_integrate
  │              └─> eng->integrate_func_ptr
  │         └─> BaseTrajSeq_t_get_raw_item
- │         └─> Engine_t_log_and_save_error
  │
  └─> Engine_t_error_at_distance
       └─> Engine_t_integrate
       └─> BaseTrajSeq_t_get_at / get_raw_item
-      └─> Engine_t_log_and_save_error
 
 Engine_t_zero_angle
  ├─> Engine_t_init_zero_calculation
  ├─> Engine_t_integrate
  ├─> BaseTrajSeq_t_init / get_at / release
- └─> Engine_t_log_and_save_error
 */
-
-ErrorType Engine_t_log_and_save_error(
-    Engine_t *eng,
-    ErrorType code,
-    const char *file,
-    int line,
-    const char *func,
-    const char *format,
-    ...)
-{
-    va_list args;
-    char log_buffer[MAX_ERROR_MSG_LEN];
-
-    // Format the message
-    va_start(args, format);
-    vsnprintf(log_buffer, MAX_ERROR_MSG_LEN, format, args);
-    va_end(args);
-
-    // Log with the REAL location (passed from macro)
-    if (LOG_LEVEL_ERROR >= global_log_level)
-    {
-        fprintf(stderr, "[ERROR] %s:%d in %s: %s\n", file, line, func, log_buffer);
-    }
-
-    // Save error message to engine
-    if (eng != NULL && code != STATUS_SUCCESS)
-    {
-        strncpy(eng->err_msg, log_buffer, MAX_ERROR_MSG_LEN - 1);
-        eng->err_msg[MAX_ERROR_MSG_LEN - 1] = '\0';
-    }
-
-    return code;
-}
-
-int isSequenceError(ErrorType err)
-{
-    return (err & SEQUENCE_ERROR) != 0;
-}
-
-int isIntegrateComplete(StatusCode status)
-{
-    return (status == STATUS_SUCCESS) != 0;
-}
 
 void Engine_t_release_trajectory(Engine_t *eng)
 {
@@ -118,7 +70,7 @@ StatusCode Engine_t_integrate(
         return STATUS_SUCCESS;
     }
 
-    PUSH_ERR(&eng->err_stack, T_RUNTIME_ERROR, SRC_INTEGRATE, "Integration failed: %s", eng->err_msg);
+    PUSH_ERR(&eng->err_stack, T_RUNTIME_ERROR, SRC_INTEGRATE, "Integration failed");
     return STATUS_ERROR;
 }
 
@@ -212,7 +164,7 @@ StatusCode Engine_t_error_at_distance(
 
     if (status != STATUS_SUCCESS)
     {
-        PUSH_ERR(&eng->err_stack, T_RUNTIME_ERROR, SRC_ERROR_AT_DISTANCE, "Find apex error: %s: error code: %d", eng->err_msg, status);
+        PUSH_ERR(&eng->err_stack, T_RUNTIME_ERROR, SRC_ERROR_AT_DISTANCE, "Find apex error");
     }
     else
     {
@@ -405,9 +357,9 @@ StatusCode Engine_t_zero_angle(
         TerminationReason reason;
         status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq, &reason);
 
-        if (!isIntegrateComplete(status))
+        if (status != STATUS_SUCCESS)
         {
-            status = Engine_t_LOG_AND_SAVE_ERR(eng, status, "Critical: integration error: %s, error code: %d", eng->err_msg, status);
+            status = STATUS_ERROR;
             break;
         }
 

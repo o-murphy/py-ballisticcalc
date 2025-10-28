@@ -8,7 +8,7 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
 # noinspection PyUnresolvedReferences
-from libc.math cimport fabs, sin, cos, atan2, sqrt, copysign
+from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
 # noinspection PyUnresolvedReferences
@@ -43,7 +43,6 @@ from py_ballisticcalc_exts.error_stack cimport (
     ErrorFrame,
     ErrorType,
     last_err,
-    print_error_stack,
     error_stack_to_string,
 )
 
@@ -113,27 +112,6 @@ cdef class CythonizedBaseIntegrationEngine:
             int: The number of integration steps.
         """
         return self._engine.integration_step_count
-
-    @property
-    def error_message(self) -> str:
-        """
-        Gets the last error message from the engine.
-
-        Returns:
-            str: The error message.
-        """
-        return self.get_error_message()
-
-    cdef str get_error_message(CythonizedBaseIntegrationEngine self):
-        """
-        Gets the last error message from the engine.
-
-        Returns:
-            str: The error message.
-        """
-        # Get length up to first null terminator
-        cdef Py_ssize_t n = strlen(self._engine.err_msg)
-        return self._engine.err_msg[:n].decode('utf-8', 'ignore')
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
         """Gets the calculation step size in feet."""
@@ -266,7 +244,6 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             TerminationReason reason
             StatusCode status
-            ErrorFrame *err
             BaseTrajSeqT trajectory
             BaseTrajDataT init, fin
             double range_limit_ft = max_range._feet
@@ -363,14 +340,14 @@ cdef class CythonizedBaseIntegrationEngine:
 
         if status == StatusCode.STATUS_SUCCESS:
             return out_error_ft
-        
+
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
 
         if err.src == ErrorSource.SRC_FIND_APEX:
             self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
             self._raise_on_integrate_error(err.code)
-        self._raise_solver_runtime_error()           
+        self._raise_solver_runtime_error()
 
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
         """
@@ -495,7 +472,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
             self._raise_on_integrate_error(err.code)
-        self._raise_solver_runtime_error()           
+        self._raise_solver_runtime_error()
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -538,7 +515,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_zero_finding_error(err, &zero_error)
         if err.src == ErrorSource.SRC_FIND_APEX:
             self._raise_on_apex_error(err.code)
-        
+
     cdef MaxRangeResult_t _find_max_range(
         CythonizedBaseIntegrationEngine self,
         double low_angle_deg,
@@ -570,16 +547,15 @@ cdef class CythonizedBaseIntegrationEngine:
         if status == StatusCode.STATUS_SUCCESS:
             return result
 
-
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
-        
+
         if err.src == ErrorSource.SRC_FIND_APEX:
             self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
             self._raise_on_integrate_error(err.code)
         # ErrorSource.SRC_FIND_MAX_RANGE
         # ErrorSource.SRC_RANGE_FOR_ANGLE
-        self._raise_solver_runtime_error()           
+        self._raise_solver_runtime_error()
 
     cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
@@ -600,14 +576,14 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef StatusCode status = Engine_t_find_apex(&self._engine, &apex)
         if status == StatusCode.STATUS_SUCCESS:
             return apex
-        
+
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
 
         if err.src == ErrorSource.SRC_FIND_APEX:
             self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
             self._raise_on_integrate_error(err.code)
-        self._raise_solver_runtime_error()           
+        self._raise_solver_runtime_error()
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -655,7 +631,7 @@ cdef class CythonizedBaseIntegrationEngine:
         self._raise_on_apex_error(err.code)
         self._raise_on_integrate_error(err.code)
         self._raise_on_zero_finding_error(err, &zero_error)
-        self._raise_solver_runtime_error()           
+        self._raise_solver_runtime_error()
 
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -697,15 +673,13 @@ cdef class CythonizedBaseIntegrationEngine:
 
         if status == StatusCode.STATUS_SUCCESS:
             return traj_seq, reason
-        
-        cdef ErrorFrame *err = last_err(&self._engine.err_stack)
-        self._raise_solver_runtime_error()           
+
+        self._raise_solver_runtime_error()
 
     cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorType err):
         if err == ErrorType.T_INPUT_ERROR:
             raise TypeError(
                 f"Invalid input (NULL pointer): {self.error_message}: error code: {err}")
-        pass
 
     cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorType err):
         self._raise_on_input_error(err)
@@ -716,7 +690,7 @@ cdef class CythonizedBaseIntegrationEngine:
         # if err & ErrorType.T_ZERO_DIVISION_ERROR:
         #     raise ZeroDivisionError(self.error_message)
 
-        self._raise_solver_runtime_error()           
+        self._raise_solver_runtime_error()
 
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorType err):
 
@@ -766,7 +740,7 @@ cdef class CythonizedBaseIntegrationEngine:
             else:
                 lines[i] = f"   {lines[i]}"
 
-        cdef trace_str = "\n".join(lines) 
+        cdef trace_str = "\n".join(lines)
 
         cdef str err_msg = (
             f"error code: {hex(f.code)}, "

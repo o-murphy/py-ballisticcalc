@@ -82,11 +82,7 @@ cdef extern from "include/engine.h" nogil:
         Config_t config
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr
-        char err_msg[MAX_ERR_MSG_LEN]
         ErrorStack err_stack
-
-    int isSequenceError(ErrorType err) noexcept nogil
-    int isIntegrateComplete(StatusCode status) noexcept nogil
 
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 
@@ -168,8 +164,6 @@ cdef class CythonizedBaseIntegrationEngine:
         public object _config
         list _table_data  # list[object]
         Engine_t _engine
-
-    cdef str get_error_message(CythonizedBaseIntegrationEngine self)
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
 

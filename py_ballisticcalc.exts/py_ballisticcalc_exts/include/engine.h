@@ -76,14 +76,8 @@ typedef struct Engine_s
     Config_t config;
     ShotProps_t shot;
     IntegrateFuncPtr integrate_func_ptr;
-    char err_msg[MAX_ERROR_MSG_LEN];
     ErrorStack err_stack;
 } Engine_t;
-
-// Cross-platform Engine_t_LOG_AND_SAVE_ERR macro
-// This macro logs the error and saves it to the engine, then evaluates to the error code.
-#define Engine_t_LOG_AND_SAVE_ERR(eng, code, format, ...) \
-    Engine_t_log_and_save_error((eng), (code), __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle, y_out) \
     do                                                                    \
@@ -97,19 +91,8 @@ typedef struct Engine_s
 extern "C"
 {
 #endif
-    ErrorType Engine_t_log_and_save_error(
-        Engine_t *eng,
-        ErrorType code,
-        const char *file,
-        int line,
-        const char *func,
-        const char *format,
-        ...);
 
     void Engine_t_release_trajectory(Engine_t *eng);
-
-    int isSequenceError(ErrorType err);
-    int isIntegrateComplete(StatusCode status);
 
     StatusCode Engine_t_integrate(
         Engine_t *eng,
