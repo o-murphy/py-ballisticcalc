@@ -5,7 +5,7 @@ Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport InterpKey, ErrorCode
+from py_ballisticcalc_exts.bclib cimport InterpKey, ErrorType
 
 
 cdef extern from "include/base_traj_seq.h" nogil:
@@ -24,7 +24,7 @@ cdef extern from "include/base_traj_seq.h" nogil:
         size_t length
         size_t capacity
 
-    ErrorCode BaseTrajSeq_t_interpolate_at(
+    ErrorType BaseTrajSeq_t_interpolate_at(
         const BaseTrajSeq_t *seq,
         ssize_t idx,
         InterpKey key_kind,
@@ -37,8 +37,8 @@ cdef extern from "include/base_traj_seq.h" nogil:
 
     Py_ssize_t BaseTrajSeq_t_len(BaseTrajSeq_t *seq) noexcept nogil
     BaseTraj_t* BaseTrajSeq_t_get_raw_item(BaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
-    ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil
-    ErrorCode BaseTrajSeq_t_append(
+    ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil
+    ErrorType BaseTrajSeq_t_append(
         BaseTrajSeq_t *seq,
         double time,
         double px,
@@ -49,17 +49,17 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double vz,
         double mach
     ) noexcept nogil
-    ErrorCode BaseTrajSeq_t_get_at_slant_height(
+    ErrorType BaseTrajSeq_t_get_at_slant_height(
         const BaseTrajSeq_t *seq,
         double look_angle_rad,
         double value,
         BaseTrajData_t *out
     ) noexcept nogil
-    ErrorCode BaseTrajSeq_t_get_item(
+    ErrorType BaseTrajSeq_t_get_item(
         const BaseTrajSeq_t *seq,
         ssize_t idx, BaseTrajData_t *out
     ) noexcept nogil
-    ErrorCode BaseTrajSeq_t_get_at(
+    ErrorType BaseTrajSeq_t_get_at(
         const BaseTrajSeq_t *seq,
         InterpKey key_kind,
         double key_value,

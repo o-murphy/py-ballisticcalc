@@ -1,5 +1,7 @@
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport V3dT
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.error_stack cimport ErrorType
 
 
 cdef extern from "include/bclib.h" nogil:
@@ -24,24 +26,6 @@ cdef extern from "include/bclib.h" nogil:
     cdef const double cLowestTempF
     cdef const double mToFeet
     cdef const double cMaxWindDistanceFeet
-
-    ctypedef enum ErrorCode:
-        # General error codes
-        NO_ERROR
-        ZERO_DIVISION_ERROR
-        VALUE_ERROR
-        KEY_ERROR
-        INDEX_ERROR
-        MEMORY_ERROR
-        ARITHMETIC_ERROR
-        INPUT_ERROR
-        RUNTIME_ERROR
-
-        T_OUT_OF_RANGE_ERROR
-
-        T_ZERO_FINDING_ERROR
-
-        UNDEFINED_ERROR
 
     ctypedef struct Config_t:
         double cStepMultiplier
@@ -119,10 +103,10 @@ cdef extern from "include/bclib.h" nogil:
         double next_range
         V3dT last_vector_cache
 
-    ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
+    ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
     void WindSock_t_release(WindSock_t *ws) noexcept nogil
     V3dT WindSock_t_currentVector(WindSock_t *wind_sock) noexcept nogil
-    ErrorCode WindSock_t_updateCache(WindSock_t *ws) noexcept nogil
+    ErrorType WindSock_t_updateCache(WindSock_t *ws) noexcept nogil
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param) noexcept nogil
 
     ctypedef enum TrajFlag_t:
@@ -167,7 +151,7 @@ cdef extern from "include/bclib.h" nogil:
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
-    ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
+    ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
 
     ctypedef enum InterpKey:
@@ -185,7 +169,7 @@ cdef extern from "include/bclib.h" nogil:
     double calculateEnergy(double bulletWeight, double velocity) noexcept nogil
     double calculateOgw(double bulletWeight, double velocity) noexcept nogil
 
-    ErrorCode BaseTrajData_t_interpolate(
+    ErrorType BaseTrajData_t_interpolate(
         InterpKey key_kind,
         double key_value,
         const BaseTrajData_t *p0,

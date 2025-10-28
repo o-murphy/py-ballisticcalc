@@ -19,32 +19,6 @@ extern const double mToFeet;
 extern const double cMaxWindDistanceFeet;
 extern const double cEarthAngularVelocityRadS;
 
-typedef enum
-{
-    // General error flags (bitmask)
-    NO_ERROR = 0x0000,            // (0)
-    ZERO_DIVISION_ERROR = 0x0001, // (1 << 0)
-    VALUE_ERROR = 0x0002,         // (1 << 1)
-    KEY_ERROR = 0x0004,           // (1 << 2)
-    INDEX_ERROR = 0x0008,         // (1 << 3)
-    MEMORY_ERROR = 0x0010,        // (1 << 4)
-    ARITHMETIC_ERROR = 0x0020,    // (1 << 5)
-    INPUT_ERROR = 0x0040,         // (1 << 6)
-    RUNTIME_ERROR = 0x0080,       // (1 << 7)
-
-    // Sequence (BaseTrajSeq_t) specific flags
-    SEQUENCE_ERROR = 0x0100,                                       // (1 << 8)
-    SEQUENCE_INPUT_ERROR = SEQUENCE_ERROR | INPUT_ERROR,           // 0x0100 | 0x0040 = 0x0140  -> (1 << 8) | (1 << 6)
-    SEQUENCE_VALUE_ERROR = SEQUENCE_ERROR | VALUE_ERROR,           // 0x0100 | 0x0002 = 0x0102  -> (1 << 8) | (1 << 1)
-    SEQUENCE_KEY_ERROR = SEQUENCE_ERROR | KEY_ERROR,               // 0x0100 | 0x0004 = 0x0104  -> (1 << 8) | (1 << 2)
-    SEQUENCE_MEMORY_ERROR = SEQUENCE_ERROR | MEMORY_ERROR,         // 0x0100 | 0x0010 = 0x0110  -> (1 << 8) | (1 << 4)
-    SEQUENCE_INDEX_ERROR = SEQUENCE_ERROR | INDEX_ERROR,           // 0x0100 | 0x0008 = 0x0108  -> (1 << 8) | (1 << 3)
-    SEQUENCE_ARITHMETIC_ERROR = SEQUENCE_ERROR | ARITHMETIC_ERROR, // 0x0100 | 0x0020 = 0x0120  -> (1 << 8) | (1 << 5)
-
-    // Undefined
-    UNDEFINED_ERROR = 0x40000 // (1 << 18)
-} ErrorCode;
-
 typedef struct
 {
     double cStepMultiplier;
@@ -198,7 +172,7 @@ extern "C"
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr);
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
-    ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
+    ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
 
     double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
@@ -207,10 +181,10 @@ extern "C"
 
     V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr);
 
-    ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
+    ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);
     V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
-    ErrorCode WindSock_t_updateCache(WindSock_t *ws);
+    ErrorType WindSock_t_updateCache(WindSock_t *ws);
     V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
     // helpers
@@ -223,7 +197,7 @@ extern "C"
         const V3dT *velocity_ptr,
         V3dT *accel_ptr);
 
-    ErrorCode BaseTrajData_t_interpolate(
+    ErrorType BaseTrajData_t_interpolate(
         InterpKey key_kind,
         double key_value,
         const BaseTrajData_t *p0,

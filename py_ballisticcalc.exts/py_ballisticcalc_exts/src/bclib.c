@@ -120,12 +120,12 @@ double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
     return 0.0;
 }
 
-ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
+ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
     /* Miller stability coefficient */
     double twist_rate, length, sd, fv, ft, pt, ftp;
@@ -154,7 +154,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         {
             shot_props_ptr->stability_coefficient = 0.0;
             C_LOG(LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
-            return ZERO_DIVISION_ERROR; // Exit if denominator is zero
+            return T_ZERO_DIVISION_ERROR; // Exit if denominator is zero
         }
 
         fv = pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
@@ -170,7 +170,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         {
             shot_props_ptr->stability_coefficient = 0.0;
             C_LOG(LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
-            return ZERO_DIVISION_ERROR; // Exit if pt is zero
+            return T_ZERO_DIVISION_ERROR; // Exit if pt is zero
         }
 
         shot_props_ptr->stability_coefficient = sd * fv * ftp;
@@ -180,7 +180,7 @@ ErrorCode ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         shot_props_ptr->stability_coefficient = 0.0;
     }
     C_LOG(LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 double calculateByCurveAndMachList(const MachList_t *mach_list_ptr,
@@ -322,12 +322,12 @@ V3dT Wind_t_to_V3dT(const Wind_t *wind_ptr)
         .z = wind_ptr->velocity * sin(wind_ptr->direction_from)};
 }
 
-ErrorCode WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
+ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     ws->length = (int)length;
@@ -367,12 +367,12 @@ V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
     return wind_sock->last_vector_cache;
 }
 
-ErrorCode WindSock_t_updateCache(WindSock_t *ws)
+ErrorType WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     if (ws->current < ws->length)
@@ -388,7 +388,7 @@ ErrorCode WindSock_t_updateCache(WindSock_t *ws)
         ws->last_vector_cache.z = 0.0;
         ws->next_range = cMaxWindDistanceFeet;
     }
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
@@ -412,7 +412,7 @@ V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
         else
         {
             // If cache update fails, return zero vector
-            if (WindSock_t_updateCache(ws) != NO_ERROR)
+            if (WindSock_t_updateCache(ws) != T_NO_ERROR)
             {
                 C_LOG(LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                 return zero_vector;
@@ -484,7 +484,7 @@ void Coriolis_t_coriolis_acceleration_local(
     accel_ptr->z = accel_cross;
 }
 
-ErrorCode BaseTrajData_t_interpolate(
+ErrorType BaseTrajData_t_interpolate(
     InterpKey key_kind,
     double key_value,
     const BaseTrajData_t *p0,
@@ -496,7 +496,7 @@ ErrorCode BaseTrajData_t_interpolate(
     if (!p0 || !p1 || !p2 || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     double x0, x1, x2;
@@ -558,13 +558,13 @@ ErrorCode BaseTrajData_t_interpolate(
         x2 = vv2.z;
         break;
     default:
-        return KEY_ERROR;
+        return T_KEY_ERROR;
     }
 
     // Guard against degenerate segments
     if (x0 == x1 || x0 == x2 || x1 == x2)
     {
-        return ZERO_DIVISION_ERROR;
+        return T_ZERO_DIVISION_ERROR;
     }
 
     // Scalar interpolation using PCHIP
@@ -581,5 +581,5 @@ ErrorCode BaseTrajData_t_interpolate(
         interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
     out->mach = key_kind == KEY_MACH ? key_value : interpolate_3_pt(key_value, x0, x1, x2, _p0.mach, _p1.mach, _p2.mach);
 
-    return NO_ERROR;
+    return T_NO_ERROR;
 }

@@ -71,14 +71,14 @@ static double BaseTraj_t_slant_val_buf(const BaseTraj_t *p, double ca, double sa
  * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
  * @param key_value The target value of the key to interpolate at.
  * @param out Pointer to a BaseTraj_t struct where the interpolated result will be stored.
- * @return NO_ERROR on success, or an ErrorCode on failure.
+ * @return T_NO_ERROR on success, or an ErrorType on failure.
  */
-static ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
+static ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
 {
     if (!seq || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     BaseTraj_t *buffer = seq->buffer;
@@ -92,7 +92,7 @@ static ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     if (idx < 1 || idx >= length - 1)
     {
         C_LOG(LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
-        return SEQUENCE_VALUE_ERROR;
+        return T_VALUE_ERROR;
     }
 
     BaseTraj_t *p0 = &buffer[idx - 1];
@@ -108,7 +108,7 @@ static ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
     {
         C_LOG(LOG_LEVEL_ERROR, "Duplicate key values detected; cannot interpolate.");
-        return SEQUENCE_VALUE_ERROR;
+        return T_VALUE_ERROR;
     }
 
     // Interpolate all trajectory components
@@ -132,27 +132,27 @@ static ErrorCode BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     out->vz = vz;
     out->mach = mach;
 
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
-ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+ErrorType BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
 {
     if (!seq || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR; // Invalid input
+        return T_INPUT_ERROR; // Invalid input
     }
     BaseTraj_t raw_output;
     int err = BaseTrajSeq_t_interpolate_raw(seq, idx, key_kind, key_value, &raw_output);
-    if (err != NO_ERROR)
+    if (err != T_NO_ERROR)
     {
-        return err; // SEQUENCE_INDEX_ERROR or SEQUENCE_VALUE_ERROR or SEQUENCE_KEY_ERROR
+        return err; // T_INDEX_ERROR or T_VALUE_ERROR or T_KEY_ERROR
     }
     out->time = raw_output.time;
     out->position = (V3dT){raw_output.px, raw_output.py, raw_output.pz};
     out->velocity = (V3dT){raw_output.vx, raw_output.vy, raw_output.vz};
     out->mach = raw_output.mach;
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 /**
@@ -244,22 +244,22 @@ inline BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t 
  *
  * @param seq Pointer to the BaseTrajSeq_t structure.
  * @param min_capacity Minimum required number of elements.
- * @return ErrorCode NO_ERROR on success, SEQUENCE_MEMORY_ERROR on allocation failure,
- *         SEQUENCE_INPUT_ERROR if seq is NULL.
+ * @return ErrorType T_NO_ERROR on success, T_MEMORY_ERROR on allocation failure,
+ *         T_INPUT_ERROR if seq is NULL.
  */
-ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
+ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
     if (!seq)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     // If current capacity is enough, do nothing
     if (min_capacity <= seq->capacity)
     {
         C_LOG(LOG_LEVEL_DEBUG, "Current capacity sufficient (%zu >= %zu).", seq->capacity, min_capacity);
-        return NO_ERROR;
+        return T_NO_ERROR;
     }
 
     // Determine new capacity: double current or start from 64
@@ -272,7 +272,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
     if (!new_buffer)
     {
         C_LOG(LOG_LEVEL_ERROR, "Memory allocation failed for capacity %zu.", new_capacity);
-        return SEQUENCE_MEMORY_ERROR;
+        return T_MEMORY_ERROR;
     }
 
     // Copy existing data safely
@@ -289,7 +289,7 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
     seq->capacity = new_capacity;
 
     C_LOG(LOG_LEVEL_DEBUG, "Capacity increased to %zu.", new_capacity);
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 /**
@@ -307,21 +307,21 @@ ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
  * @param vy Y velocity.
  * @param vz Z velocity.
  * @param mach Mach number.
- * @return ErrorCode NO_ERROR on success, SEQUENCE_MEMORY_ERROR if allocation fails,
- *         SEQUENCE_INPUT_ERROR if seq is NULL.
+ * @return ErrorType T_NO_ERROR on success, T_MEMORY_ERROR if allocation fails,
+ *         T_INPUT_ERROR if seq is NULL.
  */
-ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz,
+ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz,
                                double vx, double vy, double vz, double mach)
 {
     if (!seq)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     // Ensure enough capacity for the new element
-    ErrorCode err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
-    if (err != NO_ERROR)
+    ErrorType err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
+    if (err != T_NO_ERROR)
     {
         return err;
     }
@@ -339,7 +339,7 @@ ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
 
     seq->length += 1;
 
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 /**
@@ -467,11 +467,11 @@ static ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
  * @param look_angle_rad Look angle in radians.
  * @param value Target slant height for interpolation.
  * @param out Pointer to BaseTrajData_t where interpolated results will be stored.
- * @return NO_ERROR on success, or an appropriate ErrorCode on failure:
- *         SEQUENCE_INPUT_ERROR if seq or out is NULL,
- *         SEQUENCE_VALUE_ERROR if not enough points or interpolation fails.
+ * @return T_NO_ERROR on success, or an appropriate ErrorType on failure:
+ *         T_INPUT_ERROR if seq or out is NULL,
+ *         T_VALUE_ERROR if not enough points or interpolation fails.
  */
-ErrorCode BaseTrajSeq_t_get_at_slant_height(
+ErrorType BaseTrajSeq_t_get_at_slant_height(
     const BaseTrajSeq_t *seq,
     double look_angle_rad,
     double value,
@@ -480,7 +480,7 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(
     if (!seq || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     double ca = cos(look_angle_rad);
@@ -490,14 +490,14 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(
     if (n < 3)
     {
         C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
-        return SEQUENCE_VALUE_ERROR;
+        return T_VALUE_ERROR;
     }
 
     ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(seq, ca, sa, value);
     if (center < 0)
     {
         C_LOG(LOG_LEVEL_ERROR, "Failed to find center index for interpolation.");
-        return SEQUENCE_VALUE_ERROR;
+        return T_VALUE_ERROR;
     }
 
     const BaseTraj_t *buf = seq->buffer;
@@ -520,7 +520,7 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(
         interpolate_3_pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz)};
     out->mach = interpolate_3_pt(value, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
 
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 /**
@@ -532,23 +532,23 @@ ErrorCode BaseTrajSeq_t_get_at_slant_height(
  * @param seq Pointer to the BaseTrajSeq_t sequence.
  * @param idx Index of the trajectory point to retrieve.
  * @param out Pointer to BaseTrajData_t where results will be stored.
- * @return NO_ERROR on success, or an appropriate ErrorCode on failure:
- *         SEQUENCE_INPUT_ERROR if seq or out is NULL,
- *         SEQUENCE_INDEX_ERROR if idx is out of bounds.
+ * @return T_NO_ERROR on success, or an appropriate ErrorType on failure:
+ *         T_INPUT_ERROR if seq or out is NULL,
+ *         T_INDEX_ERROR if idx is out of bounds.
  */
-ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out)
+ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out)
 {
     if (!seq || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     const BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
     if (!entry_ptr)
     {
         C_LOG(LOG_LEVEL_ERROR, "Index out of bounds.");
-        return SEQUENCE_INDEX_ERROR;
+        return T_INDEX_ERROR;
     }
 
     out->time = entry_ptr->time;
@@ -556,7 +556,7 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
     out->velocity = (V3dT){entry_ptr->vx, entry_ptr->vy, entry_ptr->vz};
     out->mach = entry_ptr->mach;
 
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 /**
@@ -567,23 +567,23 @@ ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
  * @param key_kind Kind of interpolation key.
  * @param key_value Key value to interpolate at.
  * @param out Output trajectory data.
- * @return ErrorCode NO_ERROR if successful, otherwise error code.
+ * @return ErrorType T_NO_ERROR if successful, otherwise error code.
  */
-static ErrorCode BaseTrajSeq_t_interpolate_at_center_with_log(
+static ErrorType BaseTrajSeq_t_interpolate_at_center_with_log(
     const BaseTrajSeq_t *seq,
     ssize_t idx,
     InterpKey key_kind,
     double key_value,
     BaseTrajData_t *out)
 {
-    ErrorCode err = BaseTrajSeq_t_interpolate_at(seq, idx, key_kind, key_value, out);
-    if (err != NO_ERROR)
+    ErrorType err = BaseTrajSeq_t_interpolate_at(seq, idx, key_kind, key_value, out);
+    if (err != T_NO_ERROR)
     {
         C_LOG(LOG_LEVEL_ERROR, "Interpolation failed at center index %zd, error code: 0x%X", idx, err);
-        return err; // SEQUENCE_INDEX_ERROR or SEQUENCE_VALUE_ERROR or SEQUENCE_KEY_ERROR
+        return err; // T_INDEX_ERROR or T_VALUE_ERROR or T_KEY_ERROR
     }
     C_LOG(LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", idx);
-    return NO_ERROR;
+    return T_NO_ERROR;
 }
 
 /**
@@ -671,33 +671,33 @@ static ssize_t BaseTrajSeq_t_find_target_index(const BaseTraj_t *buf, ssize_t n,
 }
 
 /**
- * @brief Try to get exact value at index, return NO_ERROR if successful.
+ * @brief Try to get exact value at index, return T_NO_ERROR if successful.
  *
  * @param seq Pointer to trajectory sequence.
  * @param idx Index to check.
  * @param key_kind Kind of key.
  * @param key_value Key value to match.
  * @param out Output trajectory data.
- * @return NO_ERROR if exact match found, otherwise SEQUENCE_VALUE_ERROR.
+ * @return T_NO_ERROR if exact match found, otherwise T_VALUE_ERROR.
  */
-static ErrorCode BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+static ErrorType BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
 {
     const BaseTraj_t *buf = seq->buffer;
     double epsilon = 1e-9;
 
     if (BaseTrajSeq_t_is_close(BaseTraj_t_key_val(&buf[idx], key_kind), key_value, epsilon))
     {
-        ErrorCode err = BaseTrajSeq_t_get_item(seq, idx, out);
-        if (err != NO_ERROR)
+        ErrorType err = BaseTrajSeq_t_get_item(seq, idx, out);
+        if (err != T_NO_ERROR)
         {
             C_LOG(LOG_LEVEL_ERROR, "Failed to get item at index %zd.", idx);
-            return SEQUENCE_INDEX_ERROR;
+            return T_INDEX_ERROR;
         }
         C_LOG(LOG_LEVEL_DEBUG, "Exact match found at index %zd.", idx);
-        return NO_ERROR;
+        return T_NO_ERROR;
     }
 
-    return SEQUENCE_VALUE_ERROR; // not an exact match
+    return T_VALUE_ERROR; // not an exact match
 }
 
 /**
@@ -708,9 +708,9 @@ static ErrorCode BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t i
  * @param key_value Key value to get.
  * @param start_from_time Optional start time (use -1 if not used).
  * @param out Output trajectory data.
- * @return ErrorCode NO_ERROR if successful, otherwise error code.
+ * @return ErrorType T_NO_ERROR if successful, otherwise error code.
  */
-ErrorCode BaseTrajSeq_t_get_at(
+ErrorType BaseTrajSeq_t_get_at(
     const BaseTrajSeq_t *seq,
     InterpKey key_kind,
     double key_value,
@@ -720,14 +720,14 @@ ErrorCode BaseTrajSeq_t_get_at(
     if (!seq || !out)
     {
         C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return SEQUENCE_INPUT_ERROR;
+        return T_INPUT_ERROR;
     }
 
     ssize_t n = seq->length;
     if (n < 3)
     {
         C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
-        return SEQUENCE_VALUE_ERROR;
+        return T_VALUE_ERROR;
     }
 
     BaseTraj_t *buf = seq->buffer;
@@ -739,9 +739,9 @@ ErrorCode BaseTrajSeq_t_get_at(
         ssize_t start_idx = BaseTrajSeq_t_find_start_index(buf, n, start_from_time);
 
         // Try exact match at start index
-        ErrorCode exact_err = BaseTrajSeq_t_try_get_exact(seq, start_idx, key_kind, key_value, out);
-        if (exact_err == NO_ERROR)
-            return NO_ERROR;
+        ErrorType exact_err = BaseTrajSeq_t_try_get_exact(seq, start_idx, key_kind, key_value, out);
+        if (exact_err == T_NO_ERROR)
+            return T_NO_ERROR;
 
         // Find target index for interpolation
         target_idx = BaseTrajSeq_t_find_target_index(buf, n, key_kind, key_value, start_idx);
@@ -754,15 +754,15 @@ ErrorCode BaseTrajSeq_t_get_at(
         if (center < 0)
         {
             C_LOG(LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
-            return SEQUENCE_VALUE_ERROR;
+            return T_VALUE_ERROR;
         }
         target_idx = center < n - 1 ? center : n - 2;
     }
 
     // Try exact match at target index
-    ErrorCode exact_err = BaseTrajSeq_t_try_get_exact(seq, target_idx, key_kind, key_value, out);
-    if (exact_err == NO_ERROR)
-        return NO_ERROR;
+    ErrorType exact_err = BaseTrajSeq_t_try_get_exact(seq, target_idx, key_kind, key_value, out);
+    if (exact_err == T_NO_ERROR)
+        return T_NO_ERROR;
 
     // Otherwise interpolate at center
     ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;

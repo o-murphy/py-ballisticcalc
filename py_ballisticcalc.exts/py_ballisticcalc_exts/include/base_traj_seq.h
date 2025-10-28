@@ -58,7 +58,7 @@ extern "C"
      * @param seq Pointer to the sequence structure.
      * @return int 0 on success, -1 on memory allocation error or NULL pointer.
      */
-    ErrorCode BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+    ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
 
     /**
      * @brief Checks and ensures the minimum buffer capacity.
@@ -67,7 +67,7 @@ extern "C"
      * @param min_capacity The minimum required capacity.
      * @return int 0 on success, -1 on memory allocation error.
      */
-    ErrorCode BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
+    ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
 
     ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq);
 
@@ -77,11 +77,11 @@ extern "C"
      * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
      * @return 1 on success, 0 on failure.
      */
-    ErrorCode BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
+    ErrorType BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
     BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t idx);
-    ErrorCode BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out);
-    ErrorCode BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out);
-    ErrorCode BaseTrajSeq_t_get_at(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value, double start_from_time, BaseTrajData_t *out);
+    ErrorType BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out);
+    ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out);
+    ErrorType BaseTrajSeq_t_get_at(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value, double start_from_time, BaseTrajData_t *out);
 
 #ifdef __cplusplus
 }

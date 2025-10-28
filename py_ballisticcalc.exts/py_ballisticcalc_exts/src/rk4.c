@@ -305,7 +305,7 @@ StatusCode _integrate_rk4(
             *reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
         }
 
-        if (*reason != NO_ERROR)
+        if (*reason != NO_TERMINATE)
         {
             break;
         }
