@@ -220,11 +220,11 @@ StatusCode _integrate_rk4(
               relative_speed, mach);
 
         // Check for division by zero
-        if (mach == 0.0)
-        {
-            PUSH_ERR(&eng->err_stack, T_ZERO_DIVISION_ERROR, SRC_INTEGRATE, "Integration error: Mach number is zero cannot divide!");
-            return STATUS_ERROR;
-        }
+        // if (mach == 0.0)
+        // {
+        //     PUSH_ERR(&eng->err_stack, T_ZERO_DIVISION_ERROR, SRC_INTEGRATE, "Integration error: Mach number is zero cannot divide!");
+        //     return STATUS_ERROR;
+        // }
 
         km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
         C_LOG(LOG_LEVEL_DEBUG, "Calculated drag coefficient km=%f\n", km);
@@ -296,7 +296,7 @@ StatusCode _integrate_rk4(
         {
             *reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
         }
-        else if (velocity_vector.y <= 0 && range_vector.y < _cMaximumDrop)
+        else if (range_vector.y < _cMaximumDrop)
         {
             *reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
         }

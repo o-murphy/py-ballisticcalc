@@ -186,7 +186,7 @@ StatusCode _integrate_euler(
         {
             *reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
         }
-        else if (velocity_vector.y <= 0 && range_vector.y < _cMaximumDrop)
+        else if (range_vector.y < _cMaximumDrop)
         {
             *reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
         }

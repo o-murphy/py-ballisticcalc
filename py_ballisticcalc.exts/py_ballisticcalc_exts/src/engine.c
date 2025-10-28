@@ -63,7 +63,7 @@ StatusCode Engine_t_integrate(
 
     if (status != STATUS_ERROR)
     {
-        if (reason == NO_TERMINATE)
+        if (*reason == NO_TERMINATE)
         {
             C_LOG(LOG_LEVEL_INFO, "Integration completed successfully: (%d).", *reason);
         }
@@ -186,9 +186,7 @@ StatusCode Engine_t_error_at_distance(
                 }
                 else
                 {
-                    // FIXME: possible fix ?
-                    // *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
-                    *out_error_ft = hit.position.y - target_y_ft;
+                    *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
                     status = STATUS_SUCCESS;
                 }
             }
@@ -896,10 +894,20 @@ StatusCode Engine_t_find_zero_angle(
         // through (low_angle, f_low) and (high_angle, f_high)
         // and the quadratic function that passes through those points and (mid_angle, f_mid)
         double _inner = f_mid * f_mid - f_low * f_high;
-        if (_inner <= 0.0)
+
+        // Log values for debugging
+        C_LOG(LOG_LEVEL_DEBUG,
+              "Ridder iteration %d: low_angle=%.12f, high_angle=%.12f, mid_angle=%.12f, "
+              "f_low=%.12f, f_high=%.12f, f_mid=%.12f, _inner=%.12e",
+              i, low_angle, high_angle, mid_angle, f_low, f_high, f_mid, _inner);
+
+        // Clamp _inner to a small positive minimum to avoid sqrt of negative numbers
+        const double MIN_INNER = 1e-14;
+        if (_inner < MIN_INNER)
         {
-            break; // Should not happen if f_low and f_high have opposite signs
+            _inner = MIN_INNER;
         }
+
         s = sqrt(_inner);
 
         next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s);
