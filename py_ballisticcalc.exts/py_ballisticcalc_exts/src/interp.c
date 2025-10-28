@@ -3,13 +3,13 @@
 #include "interp.h"
 
 // Internal helpers for PCHIP
-int _sign(double a)
+static inline int _sign(double a)
 {
     return (a > 0.0) ? 1 : ((a < 0.0) ? -1 : 0);
 }
 
 // Internal helpers for PCHIP used by base_traj_seq
-void _sort3(double *xs, double *ys)
+static void _sort3(double *xs, double *ys)
 {
     int i, j, min_idx;
     double tx, ty;
@@ -39,7 +39,7 @@ void _sort3(double *xs, double *ys)
     }
 }
 
-void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2, double y2,
+static void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2, double y2,
                     double *m0, double *m1, double *m2)
 {
     double h0 = x1 - x0;

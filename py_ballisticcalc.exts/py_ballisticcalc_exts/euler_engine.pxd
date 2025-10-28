@@ -32,3 +32,20 @@ cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef tuple _integrate(CythonizedEulerIntegrationEngine self,
                           double range_limit_ft, double range_step_ft,
                           double time_step, TrajFlag_t filter_flags)
+
+
+cdef extern from "include/euler_cromer.h" nogil:
+
+    StatusCode _integrate_euler_cromer(
+        Engine_t *eng,
+        double range_limit_ft, double range_step_ft,
+        double time_step, TrajFlag_t filter_flags,
+        BaseTrajSeq_t *traj_seq_ptr,
+        TerminationReason *reason,
+    ) noexcept nogil
+
+cdef class CythonizedEulerCromerIntegrationEngine(CythonizedBaseIntegrationEngine):
+    cdef double get_calc_step(CythonizedEulerCromerIntegrationEngine self)
+    cdef tuple _integrate(CythonizedEulerCromerIntegrationEngine self,
+                          double range_limit_ft, double range_step_ft,
+                          double time_step, TrajFlag_t filter_flags)

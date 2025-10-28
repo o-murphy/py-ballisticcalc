@@ -37,6 +37,7 @@ classifiers = [
 dependencies = []
 
 [project.entry-points.py_ballisticcalc]
+cythonized_euler_cromer_engine = "py_ballisticcalc_exts:CythonizedEulerCromerIntegrationEngine"
 cythonized_euler_engine = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
 cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
 

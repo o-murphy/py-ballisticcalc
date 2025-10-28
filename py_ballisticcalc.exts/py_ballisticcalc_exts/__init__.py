@@ -7,7 +7,10 @@ __copyright__ = (
 __credits__ = ["o-murphy", "dbookstaber"]
 
 
-from .euler_engine import CythonizedEulerIntegrationEngine
+from .euler_engine import (
+    CythonizedEulerIntegrationEngine,
+    CythonizedEulerCromerIntegrationEngine
+)
 from .rk4_engine import CythonizedRK4IntegrationEngine
 from .test_engine import CythonEngineTestHarness
 
@@ -33,6 +36,7 @@ if __core_version != __exts_version:
 
 
 __all__ = (
+    "CythonizedEulerCromerIntegrationEngine",
     "CythonizedEulerIntegrationEngine",
     "CythonizedRK4IntegrationEngine",
     "CythonEngineTestHarness",
