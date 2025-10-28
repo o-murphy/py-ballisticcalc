@@ -2,7 +2,7 @@
 """setup.py script for py_ballisticcalc library"""
 
 import os
-
+import platform
 from setuptools import setup, Extension
 
 try:
@@ -106,6 +106,12 @@ include_dirs = [
 # Initialize extensions list
 extensions = []
 
+extra_args = ["-g", "-O0", "-std=c99"]
+
+# Crucial for MSVC on ARM
+if platform.system() == "Windows" and platform.machine().startswith("ARM"):
+    extra_args.append("/fp:precise")  # або /fp:fast
+
 # Dynamically create extensions for names in extension_names
 for name, deps in EXTENSION_DEPS.items():
     # Use subproject-local .pyx paths (these exist during build)
@@ -130,7 +136,7 @@ for name, deps in EXTENSION_DEPS.items():
             sources=sources,
             include_dirs=include_dirs,
             define_macros=define_macros,
-            extra_compile_args=["-g", "-O0", "-std=c99"],
+            extra_compile_args=extra_args,
             # extra_compile_args=["-std=c99"], # Uncomment if needed for specific C standards
             # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
         )
