@@ -58,3 +58,4 @@ cdef extern from "error_stack.h":
     void clear_err(ErrorStack *stack)
     const ErrorFrame *last_err(const ErrorStack *stack)
     void print_error_stack(const ErrorStack *stack)
+    void error_stack_to_string(const ErrorStack *stack, char *out, size_t out_size)

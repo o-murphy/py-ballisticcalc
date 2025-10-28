@@ -329,5 +329,8 @@ StatusCode _integrate_rk4(
 
     C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
+    // PUSH_ERR(&eng->err_stack, ZERO_DIVISION_ERROR, SRC_INTEGRATE, "fake error");
+    // return STATUS_ERROR;
+
     return STATUS_SUCCESS;
 }

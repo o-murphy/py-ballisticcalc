@@ -37,7 +37,15 @@ from py_ballisticcalc_exts.bind cimport (
     _new_feet,
     _new_rad,
 )
-from py_ballisticcalc_exts.error_stack cimport StatusCode, ErrorSource, ErrorFrame, ErrorType, last_err
+from py_ballisticcalc_exts.error_stack cimport (
+    StatusCode,
+    ErrorSource,
+    ErrorFrame,
+    ErrorType,
+    last_err,
+    print_error_stack,
+    error_stack_to_string,
+)
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
@@ -281,13 +289,7 @@ cdef class CythonizedBaseIntegrationEngine:
             )
 
             if status == StatusCode.STATUS_ERROR:
-                err = last_err(&self._engine.err_stack)
-                raise SolverRuntimeError(
-                    f"unhandled error in integrate_func, "
-                    f"error code: {hex(err.code)}, "
-                    f"source: {err.src}: "
-                    f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
-                )
+                self._raise_solver_runtime_error()
         finally:
             # Always release C resources
             self._release_trajectory()
@@ -368,12 +370,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
             self._raise_on_integrate_error(err.code)
-        raise SolverRuntimeError(
-            f"unhandled error in integrate_func, "
-            f"error code: {hex(err.code)}, "
-            f"source: {err.src}: "
-            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
-        )            
+        self._raise_solver_runtime_error()           
 
     cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
         """
@@ -498,12 +495,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
             self._raise_on_integrate_error(err.code)
-        raise SolverRuntimeError(
-            f"unhandled error in integrate_func, "
-            f"error code: {hex(err.code)}, "
-            f"source: {err.src}: "
-            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
-        )
+        self._raise_solver_runtime_error()           
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -579,23 +571,6 @@ cdef class CythonizedBaseIntegrationEngine:
             return result
 
 
-        # cdef process_err_stack(idx: int = 0):
-        #     cdef int last_idx = self._engine.err_stack.top-1
-
-        #     if idx > last_idx:
-        #         return None
-
-        #     cdef ErrorFrame *cur_frame = self._engine.err_stack.frames[last_idx-idx]
-        #     Exception prev_err = resolve_error_type(cur_frame)            
-        #     try:
-        #         process_err_stack(idx+1)
-        #     except Exception as next_err:
-        #         raise prev_err from next_err
-        #     raise prev_err
-        
-        # process_err_stack(0)
-
-
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
         
         if err.src == ErrorSource.SRC_FIND_APEX:
@@ -604,12 +579,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_integrate_error(err.code)
         # ErrorSource.SRC_FIND_MAX_RANGE
         # ErrorSource.SRC_RANGE_FOR_ANGLE
-        raise SolverRuntimeError(
-            f"unhandled error in integrate_func, "
-            f"error code: {hex(err.code)}, "
-            f"source: {err.src}: "
-            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
-        )
+        self._raise_solver_runtime_error()           
 
     cdef BaseTrajData_t _find_apex(
         CythonizedBaseIntegrationEngine self,
@@ -637,12 +607,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_apex_error(err.code)
         elif err.src == ErrorSource.SRC_INTEGRATE:
             self._raise_on_integrate_error(err.code)
-        raise SolverRuntimeError(
-            f"unhandled error in integrate_func, "
-            f"error code: {hex(err.code)}, "
-            f"source: {err.src}: "
-            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
-        )
+        self._raise_solver_runtime_error()           
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -684,17 +649,13 @@ cdef class CythonizedBaseIntegrationEngine:
         #     self._raise_on_apex_error(<ErrorType>err.code)
         # elif err.src == ErrorSource.SRC_INTEGRATE:
         #     self._raise_on_integrate_error(<ErrorType>err.code)
-        # raise SolverRuntimeError(
-        #     f"unhandled error in integrate_func, "
-        #     f"error code: {hex(err.code)}, "
-        #     f"source: {err.src}: "
-        #     f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
 
         self._raise_on_input_error(err.code)
         self._raise_on_init_zero_error(err, &range_error)
         self._raise_on_apex_error(err.code)
         self._raise_on_integrate_error(err.code)
         self._raise_on_zero_finding_error(err, &zero_error)
+        self._raise_solver_runtime_error()           
 
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -738,12 +699,7 @@ cdef class CythonizedBaseIntegrationEngine:
             return traj_seq, reason
         
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
-        raise SolverRuntimeError(
-            f"unhandled error in integrate_func, "
-            f"error code: {hex(err.code)}, "
-            f"source: {err.src}: "
-            f"{err.msg.decode('utf-8', 'ignore') if err.msg is not NULL else ''}"
-        )
+        self._raise_solver_runtime_error()           
 
     cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorType err):
         if err == ErrorType.T_INPUT_ERROR:
@@ -757,13 +713,10 @@ cdef class CythonizedBaseIntegrationEngine:
         if err == ErrorType.T_NO_ERROR:
             return
 
-        if err & ErrorType.T_ZERO_DIVISION_ERROR:
-            raise ZeroDivisionError(self.error_message)
+        # if err & ErrorType.T_ZERO_DIVISION_ERROR:
+        #     raise ZeroDivisionError(self.error_message)
 
-        raise SolverRuntimeError(
-            f"unhandled error in integrate_func, "
-            f"error code: {hex(err)}, {self.error_message}"
-        )
+        self._raise_solver_runtime_error()           
 
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorType err):
 
@@ -772,9 +725,6 @@ cdef class CythonizedBaseIntegrationEngine:
 
         if (err & ErrorType.T_VALUE_ERROR):
             raise ValueError("Barrel elevation must be greater than 0 to find apex.")
-
-        if (err & ErrorType.T_RUNTIME_ERROR):
-            raise SolverRuntimeError("No apex flagged in trajectory data")
 
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
@@ -800,3 +750,31 @@ cdef class CythonizedBaseIntegrationEngine:
                 _new_rad(zero_error.last_barrel_elevation_rad),
                 err.msg.decode('utf-8')
             )
+
+    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self):
+        cdef ErrorStack *stack = &self._engine.err_stack
+
+        cdef ErrorFrame *f = last_err(stack)
+        cdef char trace[4096]
+        error_stack_to_string(stack, trace, sizeof(trace))
+
+        cdef list lines = [line for line in trace.decode('utf-8', 'ignore').split("\n") if line]
+
+        for i in range(len(lines)):
+            if i == len(lines)-1:
+                lines[i] = f"=> {lines[i]}"
+            else:
+                lines[i] = f"   {lines[i]}"
+
+        cdef trace_str = "\n".join(lines) 
+
+        cdef str err_msg = (
+            f"error code: {hex(f.code)}, "
+            f"source: {f.file.decode('utf-8', 'ignore')}:{f.line} "
+            f"({f.func.decode('utf-8', 'ignore')}) "
+            f"{f.msg.decode('utf-8', 'ignore') if f.msg is not NULL else ''}\n"
+            f"Trace:\n"
+            f"{trace_str}"
+        )
+
+        raise SolverRuntimeError(err_msg)

@@ -235,3 +235,4 @@ cdef class CythonizedBaseIntegrationEngine:
         ErrorFrame *err,
         ZeroFindingError_t *zero_error
     )
+    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self)
