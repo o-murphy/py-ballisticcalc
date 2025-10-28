@@ -14,12 +14,6 @@ typedef enum
 {
     STATUS_SUCCESS = 0x0000,
     STATUS_ERROR = 0x0001,
-
-    // Solver specific flags (always include RANGE_ERROR)
-    STATUS_RANGE_ERROR = 0x0400,                             // 0x0400 -> (1 << 10)
-    STATUS_RANGE_ERROR_MINIMUM_VELOCITY_REACHED = STATUS_RANGE_ERROR | 0x0800, // 0x0400 | 0x0800 = 0x0C00 -> (1 << 10) | (1 << 11)
-    STATUS_RANGE_ERROR_MAXIMUM_DROP_REACHED = STATUS_RANGE_ERROR | 0x1000,     // 0x0400 | 0x1000 = 0x1400 -> (1 << 10) | (1 << 12)
-    STATUS_RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = STATUS_RANGE_ERROR | 0x2000, // 0x0400 | 0x2000 = 0x2400 -> (1 << 10) | (1 << 13)
 } StatusCode;
 
 typedef enum

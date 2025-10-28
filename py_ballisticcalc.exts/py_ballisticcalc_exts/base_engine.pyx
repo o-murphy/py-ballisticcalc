@@ -257,6 +257,7 @@ cdef class CythonizedBaseIntegrationEngine:
             HitResult: Object for describing the trajectory.
         """
         cdef:
+            TerminationReason reason
             StatusCode status
             ErrorFrame *err
             BaseTrajSeqT trajectory
@@ -277,6 +278,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 time_step,
                 <TrajFlag_t>filter_flags,
                 &trajectory._c_view,
+                &reason,
             )
 
             if status == StatusCode.STATUS_ERROR:
@@ -296,11 +298,11 @@ cdef class CythonizedBaseIntegrationEngine:
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
 
         # Extract termination_reason from the result
-        if status == StatusCode.STATUS_RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
+        if reason == TerminationReason.RANGE_ERROR_MINIMUM_VELOCITY_REACHED:
             termination_reason = RangeError.MinimumVelocityReached
-        elif status == StatusCode.STATUS_RANGE_ERROR_MAXIMUM_DROP_REACHED:
+        elif reason == TerminationReason.RANGE_ERROR_MAXIMUM_DROP_REACHED:
             termination_reason = RangeError.MaximumDropReached
-        elif status == StatusCode.STATUS_RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
+        elif reason == TerminationReason.RANGE_ERROR_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
 
         init = trajectory[0]
@@ -702,7 +704,10 @@ cdef class CythonizedBaseIntegrationEngine:
         if self._engine.integrate_func_ptr is NULL:
             raise NotImplementedError("integrate_func not implemented or not provided")
 
-        cdef BaseTrajSeqT traj_seq = BaseTrajSeqT()
+        cdef:
+            BaseTrajSeqT traj_seq = BaseTrajSeqT()
+            TerminationReason reason
+
         cdef StatusCode status = Engine_t_integrate(
             &self._engine,
             range_limit_ft,
@@ -710,10 +715,11 @@ cdef class CythonizedBaseIntegrationEngine:
             time_step,
             filter_flags,
             &traj_seq._c_view,
+            &reason,
         )
 
         if status != StatusCode.STATUS_ERROR:
-            return traj_seq, status
+            return traj_seq, reason
         
         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
         raise SolverRuntimeError(
@@ -733,9 +739,6 @@ cdef class CythonizedBaseIntegrationEngine:
         if err == ErrorCode.NO_ERROR:
             return
 
-        if isRangeError(err):
-            return
-
         if err & ErrorCode.ZERO_DIVISION_ERROR:
             raise ZeroDivisionError(self.error_message)
 
@@ -747,9 +750,6 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorCode err):
 
         if err == ErrorCode.NO_ERROR:
-            return
-
-        if isRangeError(err):
             return
 
         if (err & ErrorCode.VALUE_ERROR):

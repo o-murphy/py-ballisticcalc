@@ -6,11 +6,6 @@ cdef extern from "error_stack.h":
         STATUS_SUCCESS
         STATUS_ERROR
 
-        STATUS_RANGE_ERROR
-        STATUS_RANGE_ERROR_MINIMUM_VELOCITY_REACHED
-        STATUS_RANGE_ERROR_MAXIMUM_DROP_REACHED
-        STATUS_RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
-
     ctypedef enum ErrorSource:
         SRC_INTEGRATE
         SRC_FIND_APEX

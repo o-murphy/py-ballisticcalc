@@ -37,12 +37,6 @@ cdef extern from "include/bclib.h" nogil:
         INPUT_ERROR
         RUNTIME_ERROR
 
-        # Solver specific, not real errors, just termination reasons!
-        RANGE_ERROR
-        RANGE_ERROR_MINIMUM_VELOCITY_REACHED
-        RANGE_ERROR_MAXIMUM_DROP_REACHED
-        RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
-
         OUT_OF_RANGE_ERROR
 
         ZERO_FINDING_ERROR

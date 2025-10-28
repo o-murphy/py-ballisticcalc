@@ -67,11 +67,6 @@ ErrorCode Engine_t_log_and_save_error(
     return code;
 }
 
-int isRangeError(ErrorCode err)
-{
-    return (err & RANGE_ERROR) != 0;
-}
-
 int isSequenceError(ErrorCode err)
 {
     return (err & SEQUENCE_ERROR) != 0;
@@ -79,7 +74,7 @@ int isSequenceError(ErrorCode err)
 
 int isIntegrateComplete(StatusCode status)
 {
-    return (status == STATUS_SUCCESS || status & STATUS_RANGE_ERROR) != 0;
+    return (status == STATUS_SUCCESS) != 0;
 }
 
 void Engine_t_release_trajectory(Engine_t *eng)
@@ -98,29 +93,32 @@ StatusCode Engine_t_integrate(
     double range_step_ft,
     double time_step,
     TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr)
+    BaseTrajSeq_t *traj_seq_ptr,
+    TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr)
+    if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr || !reason)
     {
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
     C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
-    StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr);
+    StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr, reason);
 
-    if (status == STATUS_SUCCESS)
+    if (status != STATUS_ERROR)
     {
-        C_LOG(LOG_LEVEL_INFO, "Integration completed successfully: (%d).", status);
+        if (reason == NO_TERMINATE)
+        {
+            C_LOG(LOG_LEVEL_INFO, "Integration completed successfully: (%d).", *reason);
+        }
+        else
+        {
+            C_LOG(LOG_LEVEL_INFO, "Integration completed with acceptable termination reason: (%d).", *reason);
+        }
         return STATUS_SUCCESS;
     }
 
-    if (isRangeError(status))
-    {
-        C_LOG(LOG_LEVEL_INFO, "Integration completed with acceptable termination code: (%d).", status);
-        return status;
-    }
-    PUSH_ERR(&eng->err_stack, status, SRC_INTEGRATE, "Integration failed: %s: error code: %d", eng->err_msg, status);
+    PUSH_ERR(&eng->err_stack, status, SRC_INTEGRATE, "Integration failed: %s", eng->err_msg);
     return STATUS_ERROR;
 }
 
@@ -154,9 +152,10 @@ StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     }
 
     // try
-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result);
+    TerminationReason reason;
+    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result, &reason);
 
-    if (!isIntegrateComplete(status))
+    if (status != STATUS_SUCCESS)
     {
         status = STATUS_ERROR;
     }
@@ -208,9 +207,10 @@ StatusCode Engine_t_error_at_distance(
 
     eng->shot.barrel_elevation = angle_rad;
 
-    StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory);
+    TerminationReason reason;
+    StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory, &reason);
 
-    if (!isIntegrateComplete(status))
+    if (status != STATUS_SUCCESS)
     {
         PUSH_ERR(&eng->err_stack, status, SRC_ERROR_AT_DISTANCE, "Find apex error: %s: error code: %d", eng->err_msg, status);
     }
@@ -339,7 +339,7 @@ ErrorCode Engine_t_zero_angle(
 
     if (status != STATUS_SUCCESS)
     {
-        return status;
+        return STATUS_ERROR;
     }
 
     double look_angle_rad = init_data.look_angle_rad;
@@ -401,7 +401,8 @@ ErrorCode Engine_t_zero_angle(
         BaseTrajSeq_t_release(&seq);
         BaseTrajSeq_t_init(&seq);
 
-        err = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq);
+        TerminationReason reason;
+        err = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq, &reason);
 
         if (!isIntegrateComplete(err))
         {
@@ -576,8 +577,10 @@ static StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doub
     // try:
     *result = -9e9;
     BaseTrajSeq_t_init(&trajectory);
-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory);
-    if (!isIntegrateComplete(status))
+
+    TerminationReason reason;
+    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory, &reason);
+    if (status != STATUS_SUCCESS)
     {
         status = STATUS_ERROR;
     }
@@ -768,7 +771,7 @@ ErrorCode Engine_t_find_zero_angle(
 
     if (status != STATUS_SUCCESS)
     {
-        return status;
+        return STATUS_ERROR;
     }
 
     double look_angle_rad = init_data.look_angle_rad;
@@ -791,9 +794,9 @@ ErrorCode Engine_t_find_zero_angle(
         90,
         APEX_IS_MAX_RANGE_RADIANS,
         &max_range_result);
-    if (!isIntegrateComplete(status))
+    if (status != STATUS_SUCCESS)
     {
-        return status;
+        return STATUS_ERROR;
     }
 
     double max_range_ft = max_range_result.max_range_ft;
@@ -856,7 +859,7 @@ ErrorCode Engine_t_find_zero_angle(
         target_x_ft,
         target_y_ft,
         &f_low);
-    if (!isIntegrateComplete(status))
+    if (status != STATUS_SUCCESS)
     {
         goto finally;
     }
@@ -871,7 +874,7 @@ ErrorCode Engine_t_find_zero_angle(
             target_x_ft,
             target_y_ft,
             &f_low);
-        if (!isIntegrateComplete(status))
+        if (status != STATUS_SUCCESS)
         {
             goto finally;
         }
@@ -883,7 +886,7 @@ ErrorCode Engine_t_find_zero_angle(
         target_x_ft,
         target_y_ft,
         &f_high);
-    if (!isIntegrateComplete(status))
+    if (status != STATUS_SUCCESS)
     {
         goto finally;
     }
@@ -922,7 +925,7 @@ ErrorCode Engine_t_find_zero_angle(
             target_x_ft,
             target_y_ft,
             &f_mid);
-        if (!isIntegrateComplete(status))
+        if (status != STATUS_SUCCESS)
         {
             goto finally;
         }
@@ -950,7 +953,7 @@ ErrorCode Engine_t_find_zero_angle(
             target_x_ft,
             target_y_ft,
             &f_next);
-        if (!isIntegrateComplete(status))
+        if (status != STATUS_SUCCESS)
         {
             goto finally;
         }

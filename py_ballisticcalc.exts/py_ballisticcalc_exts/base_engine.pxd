@@ -27,6 +27,13 @@ cdef extern from "include/engine.h" nogil:
         ZERO_INIT_CONTINUE
         ZERO_INIT_DONE
 
+    ctypedef enum TerminationReason:
+        # Solver specific, not real errors, just termination reasons!
+        NO_TERMINATE
+        RANGE_ERROR_MINIMUM_VELOCITY_REACHED
+        RANGE_ERROR_MAXIMUM_DROP_REACHED
+        RANGE_ERROR_MINIMUM_ALTITUDE_REACHED
+
     ctypedef struct ZeroInitialData_t:
         ZeroInitialStatus status
         double look_angle_rad
@@ -56,13 +63,14 @@ cdef extern from "include/engine.h" nogil:
     ctypedef Engine_s Engine_t
 
     # Declare the function signature type (not a pointer yet)
-    ctypedef ErrorCode IntegrateFunc(
+    ctypedef StatusCode IntegrateFunc(
         Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr
+        BaseTrajSeq_t *traj_seq_ptr,
+        TerminationReason *reason,
     ) noexcept nogil
 
     # Declare pointer to function
@@ -78,7 +86,6 @@ cdef extern from "include/engine.h" nogil:
         char err_msg[MAX_ERR_MSG_LEN]
         ErrorStack err_stack
 
-    int isRangeError(ErrorCode err) noexcept nogil
     int isSequenceError(ErrorCode err) noexcept nogil
     int isIntegrateComplete(StatusCode status) noexcept nogil
 
@@ -90,7 +97,8 @@ cdef extern from "include/engine.h" nogil:
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr
+        BaseTrajSeq_t *traj_seq_ptr,
+        TerminationReason *reason,
     ) noexcept nogil
 
     StatusCode Engine_t_find_apex(

@@ -32,7 +32,7 @@ typedef enum
     RUNTIME_ERROR = 0x0080,       // (1 << 7)
 
     // Sequence (BaseTrajSeq_t) specific flags
-    SEQUENCE_ERROR = 0x0100,                                     // (1 << 8)
+    SEQUENCE_ERROR = 0x0100,                                       // (1 << 8)
     SEQUENCE_INPUT_ERROR = SEQUENCE_ERROR | INPUT_ERROR,           // 0x0100 | 0x0040 = 0x0140  -> (1 << 8) | (1 << 6)
     SEQUENCE_VALUE_ERROR = SEQUENCE_ERROR | VALUE_ERROR,           // 0x0100 | 0x0002 = 0x0102  -> (1 << 8) | (1 << 1)
     SEQUENCE_KEY_ERROR = SEQUENCE_ERROR | KEY_ERROR,               // 0x0100 | 0x0004 = 0x0104  -> (1 << 8) | (1 << 2)
@@ -43,14 +43,8 @@ typedef enum
     // Interpolation specific flag
     INTERPOLATION_ERROR = 0x0200, // (1 << 9)
 
-    // Solver specific flags (always include RANGE_ERROR)
-    RANGE_ERROR = 0x0400,                             // 0x0400 -> (1 << 10)
-    RANGE_ERROR_MINIMUM_VELOCITY_REACHED = RANGE_ERROR | 0x0800, // 0x0400 | 0x0800 = 0x0C00 -> (1 << 10) | (1 << 11)
-    RANGE_ERROR_MAXIMUM_DROP_REACHED = RANGE_ERROR | 0x1000,     // 0x0400 | 0x1000 = 0x1400 -> (1 << 10) | (1 << 12)
-    RANGE_ERROR_MINIMUM_ALTITUDE_REACHED = RANGE_ERROR | 0x2000, // 0x0400 | 0x2000 = 0x2400 -> (1 << 10) | (1 << 13)
-
     // Zero init specific flags
-    OUT_OF_RANGE_ERROR = 0x4000,            // (1 << 14)
+    OUT_OF_RANGE_ERROR = 0x4000, // (1 << 14)
 
     // Zero finding error flag
     ZERO_FINDING_ERROR = 0x20000, // (1 << 17)

@@ -6,22 +6,26 @@ from py_ballisticcalc_exts.base_engine cimport (
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     TrajFlag_t,
-    ErrorCode,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport Engine_t
+from py_ballisticcalc_exts.base_engine cimport (
+    Engine_t,
+    StatusCode,
+    TerminationReason,
+)
 
 
 cdef extern from "include/euler.h" nogil:
     double _euler_time_step(double base_step, double velocity) noexcept nogil
 
-    ErrorCode _integrate_euler(
+    StatusCode _integrate_euler(
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr
+        BaseTrajSeq_t *traj_seq_ptr,
+        TerminationReason *reason,
     ) noexcept nogil
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):

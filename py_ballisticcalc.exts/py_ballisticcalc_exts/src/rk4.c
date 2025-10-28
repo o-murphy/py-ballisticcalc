@@ -75,12 +75,14 @@ V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double k
  * @return ErrorCode An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on successful completion).
  */
-ErrorCode _integrate_rk4(Engine_t *eng,
-                         double range_limit_ft, double range_step_ft,
-                         double time_step, TrajFlag_t filter_flags,
-                         BaseTrajSeq_t *traj_seq_ptr)
+StatusCode _integrate_rk4(
+    Engine_t *eng,
+    double range_limit_ft, double range_step_ft,
+    double time_step, TrajFlag_t filter_flags,
+    BaseTrajSeq_t *traj_seq_ptr,
+    TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr)
+    if (!eng || !traj_seq_ptr || !reason)
     {
         return Engine_t_LOG_AND_SAVE_ERR(eng, INPUT_ERROR, "Invalid input (NULL pointer).");
     };
@@ -108,7 +110,7 @@ ErrorCode _integrate_rk4(Engine_t *eng,
           _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
 
     // Working variables
-    ErrorCode termination_reason = NO_ERROR;
+    *reason = NO_TERMINATE;
     // ErrorCode err = NO_ERROR;
     double relative_speed;
     V3dT _dir_vector;
@@ -291,18 +293,18 @@ ErrorCode _integrate_rk4(Engine_t *eng,
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
         {
-            termination_reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
+            *reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
         }
         else if (velocity_vector.y <= 0 && range_vector.y < _cMaximumDrop)
         {
-            termination_reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
+            *reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
         }
         else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
-            termination_reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
+            *reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
         }
 
-        if (termination_reason != NO_ERROR)
+        if (*reason != NO_ERROR)
         {
             break;
         }
@@ -324,7 +326,7 @@ ErrorCode _integrate_rk4(Engine_t *eng,
     //     return err;
     // }
 
-    C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", termination_reason);
+    C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
-    return termination_reason;
+    return STATUS_SUCCESS;
 }
