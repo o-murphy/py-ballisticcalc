@@ -119,18 +119,24 @@ void error_stack_to_string(const ErrorStack *stack, char *out, size_t out_size)
     for (int i = 0; i < stack->top; i++)
     {
         const ErrorFrame *f = &stack->frames[i];
-        char line[256];
+        char line[MAX_ERROR_MSG_LEN];
+
+        const int FILE_WIDTH = 50;
+        const int FUNC_WIDTH = 25;
+
+        // Формуємо рядок
         snprintf(line, sizeof(line),
-                 "[%d] %s:%d (%s): [src=%d (%s), code=%d (%s)] %s\n",
+                 "[%d] %-*s :%-4d (%s) : [src=%-2d (%s), code=%-2d (%s)] %s\n",
                  i,
-                 f->file,
+                 FILE_WIDTH, f->file,
                  f->line,
-                 f->func,
+                 f->func,   // тут дужки без вирівнювання всередині
                  f->src,
                  error_source_to_string(f->src),
                  f->code,
                  error_type_to_string(f->code),
                  f->msg);
+
         strncat(out, line, out_size - strlen(out) - 1);
     }
 }

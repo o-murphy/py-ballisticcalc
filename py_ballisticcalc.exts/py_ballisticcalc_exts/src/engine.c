@@ -540,7 +540,7 @@ StatusCode Engine_t_zero_angle(
         zero_error->zero_finding_error = height_error_ft;
         zero_error->iterations_count = iterations_count;
         zero_error->last_barrel_elevation_rad = eng->shot.barrel_elevation;
-        PUSH_ERR(&eng->err_stack, T_ZERO_FINDING_ERROR, SRC_ZERO_ANGLE, "");
+        PUSH_ERR(&eng->err_stack, T_ZERO_FINDING_ERROR, SRC_ZERO_ANGLE, "Zero finding error");
         return STATUS_ERROR;
     }
 
