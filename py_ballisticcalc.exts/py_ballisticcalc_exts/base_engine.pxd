@@ -216,9 +216,6 @@ cdef class CythonizedBaseIntegrationEngine:
         TrajFlag_t filter_flags
     )
 
-    cdef void _raise_on_input_error(CythonizedBaseIntegrationEngine self, ErrorType err)
-    cdef void _raise_on_integrate_error(CythonizedBaseIntegrationEngine self, ErrorType err)
-    cdef void _raise_on_apex_error(CythonizedBaseIntegrationEngine self, ErrorType err)
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
         ErrorFrame *err,
@@ -229,4 +226,4 @@ cdef class CythonizedBaseIntegrationEngine:
         ErrorFrame *err,
         ZeroFindingError_t *zero_error
     )
-    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self)
+    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self, ErrorFrame *err)

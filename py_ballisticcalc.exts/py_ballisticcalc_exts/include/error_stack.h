@@ -19,12 +19,12 @@ typedef enum
 {
     SRC_INTEGRATE,
     SRC_FIND_APEX,
+    SRC_INIT_ZERO,
     SRC_ZERO_ANGLE,
     SRC_FIND_ZERO_ANGLE,
     SRC_ERROR_AT_DISTANCE,
     SRC_FIND_MAX_RANGE,
     SRC_RANGE_FOR_ANGLE,
-    SRC_INIT_ZERO,
 } ErrorSource;
 
 typedef enum
