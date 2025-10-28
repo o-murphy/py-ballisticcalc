@@ -901,16 +901,24 @@ StatusCode Engine_t_find_zero_angle(
               "f_low=%.12f, f_high=%.12f, f_mid=%.12f, _inner=%.12e",
               i, low_angle, high_angle, mid_angle, f_low, f_high, f_mid, _inner);
 
-        // Clamp _inner to a small positive minimum to avoid sqrt of negative numbers
-        const double MIN_INNER = 1e-14;
-        if (_inner < MIN_INNER)
+        // Check for invalid sqrt argument - break instead of clamping
+        if (_inner <= 0.0)
         {
-            _inner = MIN_INNER;
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: _inner <= 0 (%.12e), breaking iteration", _inner);
+            break; // Should not happen if f_low and f_high have opposite signs
         }
 
         s = sqrt(_inner);
 
+        // Additional check: if s is zero or too small, break
+        if (s == 0.0)
+        {
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: s == 0, breaking iteration");
+            break;
+        }
+
         next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s);
+
         if (fabs(next_angle - mid_angle) < eng->config.cZeroFindingAccuracy)
         {
             *result = next_angle;
@@ -949,17 +957,20 @@ StatusCode Engine_t_find_zero_angle(
         }
         else
         {
+            // If we are here, something is wrong, the root is not bracketed anymore
+            C_LOG(LOG_LEVEL_DEBUG, "Ridder: root not bracketed, breaking");
             break;
         }
 
         if (fabs(high_angle - low_angle) < eng->config.cZeroFindingAccuracy)
         {
-            *result = (low_angle + high_angle) / 2;
+            *result = (low_angle + high_angle) / 2.0;
             status = STATUS_SUCCESS;
             goto finally;
         }
     }
 
+    // If we exited the loop without finding a solution
     if (status != STATUS_SUCCESS)
     {
         zero_error->zero_finding_error = target_y_ft;
