@@ -17,9 +17,9 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 
 
-cdef extern from "include/euler.h" nogil:
+cdef extern from "include/euler_cromer.h" nogil:
 
-    StatusCode _integrate_euler(
+    StatusCode _integrate_euler_cromer(
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, TrajFlag_t filter_flags,
@@ -27,8 +27,8 @@ cdef extern from "include/euler.h" nogil:
         TerminationReason *reason,
     ) noexcept nogil
 
-cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
-    cdef double get_calc_step(CythonizedEulerIntegrationEngine self)
-    cdef tuple _integrate(CythonizedEulerIntegrationEngine self,
+cdef class CythonizedEulerCromerIntegrationEngine(CythonizedBaseIntegrationEngine):
+    cdef double get_calc_step(CythonizedEulerCromerIntegrationEngine self)
+    cdef tuple _integrate(CythonizedEulerCromerIntegrationEngine self,
                           double range_limit_ft, double range_step_ft,
                           double time_step, TrajFlag_t filter_flags)
