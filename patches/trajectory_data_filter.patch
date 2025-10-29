@@ -1,0 +1,224 @@
+diff --git a/py_ballisticcalc/engines/base_engine.py b/py_ballisticcalc/engines/base_engine.py
+index fc78457..78eb3c2 100644
+--- a/py_ballisticcalc/engines/base_engine.py
++++ b/py_ballisticcalc/engines/base_engine.py
+@@ -271,122 +271,163 @@ class TrajectoryDataFilter:
+                 # If shot starts below zero and barrel points below line of sight we won't look for any crossings.
+                 self.filter &= ~(TrajFlag.ZERO | TrajFlag.MRT)
+ 
++    @classmethod
++    def _insert_or_merge_by_time(cls, records_list: List, new_item, time_getter, flag_getter, flag_setter):
++        """Helper to insert or merge records by time, avoiding duplicates."""
++        new_time = time_getter(new_item)
++
++        # Optimization: check the last element first (most common case)
++        if records_list:
++            last_time = time_getter(records_list[-1])
++            if abs(last_time - new_time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
++                records_list[-1] = flag_setter(records_list[-1], flag_getter(records_list[-1]) | flag_getter(new_item))
++                return
++
++        idx = bisect_left(records_list, new_time, key=time_getter)
++
++        # Check if it doesn't match an existing element
++        if idx < len(records_list):
++            if abs(time_getter(records_list[idx]) - new_time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
++                records_list[idx] = flag_setter(
++                    records_list[idx], flag_getter(records_list[idx]) | flag_getter(new_item)
++                )
++                return
++            if (
++                idx > 0
++                and abs(time_getter(records_list[idx - 1]) - new_time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA
++            ):
++                records_list[idx - 1] = flag_setter(
++                    records_list[idx - 1], flag_getter(records_list[idx - 1]) | flag_getter(new_item)
++                )
++                return
++
++        records_list.insert(idx, new_item)
++
++    @classmethod
++    def add_row(cls, rows, data: BaseTrajData, flag: Union[TrajFlag, int]):
++        """Add data, keeping `rows` sorted by time."""
++        cls._insert_or_merge_by_time(
++            rows, (data, flag), lambda r: r[0].time, lambda r: r[1], lambda r, new_flag: (r[0], new_flag)
++        )
++
+     def record(self, new_data: BaseTrajData):
+         """For each integration step, creates TrajectoryData records based on filter/step criteria."""
+         rows: List[Tuple[BaseTrajData, Union[TrajFlag, int]]] = []
+ 
+-        def add_row(data: BaseTrajData, flag: Union[TrajFlag, int]):
+-            """Add data, keeping `rows` sorted by time."""
+-            idx = bisect_left(rows, data.time, key=lambda r: r[0].time)
+-            if idx < len(rows):
+-                # If we match existing row's time then just add this flag to the row
+-                if abs(rows[idx][0].time - data.time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
+-                    rows[idx] = (rows[idx][0], rows[idx][1] | flag)
+-                    return
+-                if idx > 0 and abs(rows[idx - 1][0].time - data.time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
+-                    rows[idx - 1] = (rows[idx - 1][0], rows[idx - 1][1] | flag)
+-                    return
+-            rows.insert(idx, (data, flag))  # Insert at sorted position
+-
+-        if new_data.time == 0.0:
++        # Caching frequently used values
++        new_time = new_data.time
++        pos_x = new_data.position.x
++        pos_y = new_data.position.y
++        velocity_mag = new_data.velocity.magnitude()
++        has_prev_data = self.prev_data is not None and self.prev_prev_data is not None
++
++        if new_time == 0.0:
+             # Always record starting point
+-            add_row(new_data, TrajFlag.RANGE if (self.range_step > 0 or self.time_step > 0) else TrajFlag.NONE)
++            self.add_row(
++                rows, new_data, TrajFlag.RANGE if (self.range_step > 0 or self.time_step > 0) else TrajFlag.NONE
++            )
+         else:
+             # region RANGE steps
+             if self.range_step > 0:
+-                while self.next_record_distance + self.range_step <= new_data.position.x:
+-                    new_row = None
++                while self.next_record_distance + self.range_step <= pos_x:
+                     record_distance = self.next_record_distance + self.range_step
++
+                     if record_distance > self.range_limit + self.EPSILON:
+                         self.range_step = -1  # Don't calculate range steps past range_limit
+                         break
+-                    if abs(record_distance - new_data.position.x) < self.EPSILON:
++
++                    new_row = None
++                    if abs(record_distance - pos_x) < self.EPSILON:
+                         new_row = new_data
+-                    elif self.prev_data is not None and self.prev_prev_data is not None:
++                    elif has_prev_data:
+                         new_row = BaseTrajData.interpolate(
+                             "position.x", record_distance, self.prev_prev_data, self.prev_data, new_data
+                         )
++
+                     if new_row is not None:
+                         self.next_record_distance += self.range_step
+-                        add_row(new_row, TrajFlag.RANGE)
++                        self.add_row(rows, new_row, TrajFlag.RANGE)
+                         self.time_of_last_record = new_row.time
+                     else:
+                         break  # Can't interpolate without previous data
+             # endregion RANGE steps
++
+             # region Time steps
+-            if self.time_step > 0 and self.prev_data is not None and self.prev_prev_data is not None:
+-                while self.time_of_last_record + self.time_step <= new_data.time:
++            if self.time_step > 0 and has_prev_data:
++                while self.time_of_last_record + self.time_step <= new_time:
+                     self.time_of_last_record += self.time_step
+                     new_row = BaseTrajData.interpolate(
+                         "time", self.time_of_last_record, self.prev_prev_data, self.prev_data, new_data
+                     )
+-                    add_row(new_row, TrajFlag.RANGE)
++                    self.add_row(rows, new_row, TrajFlag.RANGE)
+             # endregion Time steps
++
++            # region APEX check
+             if (
+                 self.filter & TrajFlag.APEX
+-                and self.prev_data is not None
+-                and self.prev_prev_data is not None
++                and has_prev_data
+                 and self.prev_data.velocity.y > 0
+                 and new_data.velocity.y <= 0
+             ):
+                 # "Apex" is the point where the vertical component of velocity goes from positive to negative.
+                 new_row = BaseTrajData.interpolate("velocity.y", 0.0, self.prev_prev_data, self.prev_data, new_data)
+-                add_row(new_row, TrajFlag.APEX)
++                self.add_row(rows, new_row, TrajFlag.APEX)
+                 self.filter &= ~TrajFlag.APEX  # Don't look for more apices
++            # endregion APEX check
+ 
+         self.records.extend([TrajectoryData.from_base_data(self.props, data, flag) for data, flag in rows])
+ 
+         # region Points that must be interpolated on TrajectoryData instances
+-        if self.prev_data is not None and self.prev_prev_data is not None:
++        if has_prev_data:
+             compute_flags = TrajFlag.NONE
+-            if (
+-                self.filter & TrajFlag.MACH
+-                and self.prev_data is not None
+-                and new_data.velocity.magnitude() < new_data.mach
+-            ):
++
++            # region MACH check
++            if self.filter & TrajFlag.MACH and velocity_mag < new_data.mach:
+                 compute_flags |= TrajFlag.MACH
+                 self.filter &= ~TrajFlag.MACH  # Don't look for more Mach crossings
++            # endregion MACH check
++
+             # region ZERO checks (done on TrajectoryData objects so we can interpolate for .slant_height)
+             if self.filter & TrajFlag.ZERO:
+                 # Zero reference line is the sight line defined by look_angle
+-                reference_height = new_data.position.x * self.look_angle_tangent
++                reference_height = pos_x * self.look_angle_tangent
++
+                 # If we haven't seen ZERO_UP, we look for that first
+                 if self.filter & TrajFlag.ZERO_UP:
+-                    if new_data.position.y >= reference_height:
++                    if pos_y >= reference_height:
+                         compute_flags |= TrajFlag.ZERO_UP
+                         self.filter &= ~TrajFlag.ZERO_UP
+                 # We've crossed above sight line; now look for crossing back through it
+                 elif self.filter & TrajFlag.ZERO_DOWN:
+-                    if new_data.position.y < reference_height:
++                    if pos_y < reference_height:
+                         compute_flags |= TrajFlag.ZERO_DOWN
+                         self.filter &= ~TrajFlag.ZERO_DOWN
+             # endregion ZERO checks
++
+             if compute_flags:
+-                # Instantiate TrajectoryData and interpolate
++                # Lazy creation of TrajectoryData only when needed
+                 t0 = TrajectoryData.from_base_data(self.props, new_data)
+                 t1 = TrajectoryData.from_base_data(self.props, self.prev_data)
+                 t2 = TrajectoryData.from_base_data(self.props, self.prev_prev_data)
+-                add_td = []
+-                if compute_flags & TrajFlag.MACH:
+-                    add_td.append(TrajectoryData.interpolate("mach", 1.0, t0, t1, t2, TrajFlag.MACH))
+-                    compute_flags &= ~TrajFlag.MACH
+-                if compute_flags & TrajFlag.ZERO:
+-                    add_td.append(TrajectoryData.interpolate("slant_height", 0.0, t0, t1, t2, compute_flags))
+-                for td in add_td:  # Add TrajectoryData, keeping `results` sorted by time.
+-                    idx = bisect_left(self.records, td.time, key=lambda r: r.time)
+-                    if idx < len(self.records):  # If we match existing row's time then just add this flag to the row
+-                        if abs(self.records[idx].time - td.time) < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA:
+-                            self.records[idx] = td._replace(flag=self.records[idx].flag | td.flag)
+-                            continue
+-                        elif (
+-                            idx > 0
+-                            and abs(self.records[idx - 1].time - td.time)
+-                            < BaseIntegrationEngine.SEPARATE_ROW_TIME_DELTA
+-                        ):
+-                            self.records[idx - 1] = td._replace(flag=self.records[idx - 1].flag | td.flag)
+-                            continue
+-                    self.records.insert(idx, td)  # Insert at sorted position
++
++                # Generator for TrajectoryData records
++                def generate_trajectory_data():
++                    if compute_flags & TrajFlag.MACH:
++                        yield TrajectoryData.interpolate("mach", 1.0, t0, t1, t2, TrajFlag.MACH)
++                    if compute_flags & TrajFlag.ZERO:
++                        zero_flag = compute_flags & TrajFlag.ZERO
++                        yield TrajectoryData.interpolate("slant_height", 0.0, t0, t1, t2, zero_flag)
++
++                for td in generate_trajectory_data():
++                    self._insert_or_merge_by_time(
++                        self.records,
++                        td,
++                        lambda r: r.time,
++                        lambda r: r.flag,
++                        lambda r, new_flag: r._replace(flag=new_flag),
++                    )
+         # endregion
++
+         self.prev_prev_data = self.prev_data
+         self.prev_data = new_data
+ 
