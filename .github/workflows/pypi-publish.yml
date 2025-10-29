@@ -63,6 +63,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          github-token: ${{ github.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v5

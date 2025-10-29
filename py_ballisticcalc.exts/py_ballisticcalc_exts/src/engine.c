@@ -33,6 +33,16 @@ Engine_t_zero_angle
           -> eng->integrate_func_ptr
 */
 
+void require_non_null_fatal(const void *ptr, const char *file, int line, const char *func)
+{
+    if (!ptr)
+    {
+        fprintf(stderr, "FATAL: NULL pointer at %s:%d in %s\n", file, line, func);
+        fflush(stderr);
+        abort();
+    }
+}
+
 void Engine_t_release_trajectory(Engine_t *eng)
 {
     if (eng == NULL)
@@ -52,8 +62,9 @@ StatusCode Engine_t_integrate(
     BaseTrajSeq_t *traj_seq_ptr,
     TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr || !eng->integrate_func_ptr || !reason)
+    if (!eng || !traj_seq_ptr || !reason || !eng->integrate_func_ptr)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
@@ -82,6 +93,7 @@ StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
 {
     if (!eng || !out)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_FIND_APEX, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
@@ -149,6 +161,7 @@ StatusCode Engine_t_error_at_distance(
 
     if (!eng || !out_error_ft)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_ERROR_AT_DISTANCE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
@@ -214,6 +227,7 @@ StatusCode Engine_t_init_zero_calculation(
 
     if (!eng || !result || !error)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INIT_ZERO, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
@@ -248,7 +262,7 @@ StatusCode Engine_t_init_zero_calculation(
     {
         // Compute slant distance at apex using robust accessor
         status = Engine_t_find_apex(eng, &apex);
-        if (status == STATUS_ERROR)
+        if (status != STATUS_SUCCESS)
         {
             return STATUS_ERROR; // Redirect apex finding error
         }
@@ -268,6 +282,47 @@ StatusCode Engine_t_init_zero_calculation(
     return STATUS_SUCCESS;
 }
 
+StatusCode Engine_t_zero_angle_with_fallback(
+    Engine_t *eng,
+    double distance,
+    double APEX_IS_MAX_RANGE_RADIANS,
+    double ALLOWED_ZERO_ERROR_FEET,
+    double *result,
+    OutOfRangeError_t *range_error,
+    ZeroFindingError_t *zero_error)
+{
+    if (!eng || !result || !range_error || !zero_error)
+    {
+        REQUIRE_NON_NULL(eng);
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_ZERO_ANGLE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
+    }
+
+    StatusCode status;
+
+    status = Engine_t_zero_angle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, result, range_error, zero_error);
+    if (status == STATUS_SUCCESS)
+    {
+        return STATUS_SUCCESS;
+    }
+    C_LOG(LOG_LEVEL_WARNING, "Primary zero-finding failed, switching to fallback.");
+
+    // Clean error stack
+    CLEAR_ERR(&eng->err_stack);
+
+    // Fallback to guaranteed method
+    int lofted = 0; // default
+
+    status = Engine_t_find_zero_angle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, result, range_error, zero_error);
+    if (status == STATUS_SUCCESS)
+    {
+        return STATUS_SUCCESS;
+    }
+
+    // Return error if no found
+    return STATUS_ERROR;
+}
+
 StatusCode Engine_t_zero_angle(
     Engine_t *eng,
     double distance,
@@ -279,6 +334,7 @@ StatusCode Engine_t_zero_angle(
 {
     if (!eng || !result || !range_error || !zero_error)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_ZERO_ANGLE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
@@ -510,6 +566,7 @@ static StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doub
 {
     if (!eng || !result)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_RANGE_FOR_ANGLE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
@@ -600,6 +657,7 @@ StatusCode Engine_t_find_max_range(
 
     if (!eng || !result)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_FIND_MAX_RANGE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
@@ -716,6 +774,7 @@ StatusCode Engine_t_find_zero_angle(
 
     if (!eng || !result || !range_error || !zero_error)
     {
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_FIND_ZERO_ANGLE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }

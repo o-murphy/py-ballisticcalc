@@ -128,6 +128,16 @@ cdef extern from "include/engine.h" nogil:
         ZeroFindingError_t *zero_error
     ) noexcept nogil
 
+    StatusCode Engine_t_zero_angle_with_fallback(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error
+    ) noexcept nogil
+
     StatusCode Engine_t_find_max_range(
         Engine_t *eng,
         double low_angle_deg,
@@ -146,16 +156,6 @@ cdef extern from "include/engine.h" nogil:
         OutOfRangeError_t *range_error,
         ZeroFindingError_t *zero_error
     )
-
-    StatusCode Engine_t_find_zero_angle(
-        Engine_t *eng,
-        double distance,
-        int lofted,
-        double APEX_IS_MAX_RANGE_RADIANS,
-        double ALLOWED_ZERO_ERROR_FEET,
-        double *result,
-        OutOfRangeError_t *range_error,
-        ZeroFindingError_t *zero_error)
 
 
 cdef class CythonizedBaseIntegrationEngine:

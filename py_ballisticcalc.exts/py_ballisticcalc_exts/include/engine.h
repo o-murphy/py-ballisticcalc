@@ -10,6 +10,7 @@
 #include <stdarg.h> // for va_list, va_start, va_end, va_copy
 #include <stdio.h>  // for fprintf
 #include <string.h> // for vsnprintf
+#include <stdlib.h> // for abort
 
 typedef enum
 {
@@ -79,18 +80,12 @@ typedef struct Engine_s
     ErrorStack err_stack;
 } Engine_t;
 
-#define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle, y_out) \
-    do                                                                    \
-    {                                                                     \
-        (status) = Engine_t_range_for_angle((eng), (angle), (y_out));     \
-        if ((status) != STATUS_SUCCESS)                                   \
-            return (status);                                              \
-    } while (0)
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+    void require_non_null_fatal(const void *ptr, const char *file, int line, const char *func);
 
     void Engine_t_release_trajectory(Engine_t *eng);
 
@@ -119,6 +114,15 @@ extern "C"
         double ALLOWED_ZERO_ERROR_FEET,
         ZeroInitialData_t *result,
         OutOfRangeError_t *error);
+
+    StatusCode Engine_t_zero_angle_with_fallback(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error);
 
     StatusCode Engine_t_zero_angle(
         Engine_t *eng,
@@ -149,5 +153,16 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#define REQUIRE_NON_NULL(ptr) \
+    require_non_null_fatal((ptr), __FILE__, __LINE__, __func__)
+
+#define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle, y_out) \
+    do                                                                    \
+    {                                                                     \
+        (status) = Engine_t_range_for_angle((eng), (angle), (y_out));     \
+        if ((status) != STATUS_SUCCESS)                                   \
+            return (status);                                              \
+    } while (0)
 
 #endif // BCLIB_ENGINE_H

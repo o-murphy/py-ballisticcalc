@@ -17,6 +17,7 @@ jobs:
       with:
         python-version: "3.11"
         activate-environment: "true"
+        github-token: ${{ github.token }}
 
     - name: Validate exts version matching
       run: uv run hooks/version_check.py
