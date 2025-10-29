@@ -219,7 +219,7 @@ cdef class CythonizedBaseIntegrationEngine:
             OutOfRangeError_t range_error
             ZeroFindingError_t zero_error
             ErrorFrame *err
-            
+
         try:
             status = Engine_t_zero_angle_with_fallback(
                 &self._engine,
