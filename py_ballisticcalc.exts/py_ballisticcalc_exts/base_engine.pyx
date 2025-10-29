@@ -212,15 +212,37 @@ cdef class CythonizedBaseIntegrationEngine:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
         self._init_trajectory(shot_info)
-        cdef double zero_angle
+
+        cdef:
+            StatusCode status
+            double result
+            OutOfRangeError_t range_error
+            ZeroFindingError_t zero_error
+            ErrorFrame *err
+            
         try:
-            zero_angle = self._zero_angle(distance._feet)
-            return _new_rad(zero_angle)
-        except ZeroFindingError:
-            # Fallback to guaranteed method
-            self._init_trajectory(shot_info)
-            zero_angle = self._find_zero_angle(distance._feet, False)
-            return _new_rad(zero_angle)
+            status = Engine_t_zero_angle_with_fallback(
+                &self._engine,
+                distance._feet,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+                &result,
+                &range_error,
+                &zero_error,
+            )
+
+            if status == StatusCode.STATUS_SUCCESS:
+                return _new_rad(result)
+
+            err = last_err(&self._engine.err_stack)
+
+            if err.src == ErrorSource.SRC_INIT_ZERO:
+                self._raise_on_init_zero_error(err, &range_error)
+            if err.src == ErrorSource.SRC_FIND_ZERO_ANGLE:
+                self._raise_on_init_zero_error(err, &range_error)
+                self._raise_on_zero_finding_error(err, &zero_error)
+            self._raise_solver_runtime_error(err)
+
         finally:
             self._release_trajectory()
 
