@@ -23,21 +23,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
 
-    - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v7
-      with:
-        python-version: "3.10"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.10'
+          github-token: ${{ github.token }}
 
-    - name: Validate exts version matching
-      run: uv run hooks/version_check.py
-      shell: bash
-    
-    - name: Install the project
-      run: uv sync --dev
-      shell: bash
+      - name: Validate exts version matching
+        run: uv run hooks/version_check.py
+        shell: bash
+      
+      - name: Install the project
+        run: uv sync --dev
+        shell: bash
 
-    - name: Analysing the code with pylint
-      run: uv run pylint ./py_ballisticcalc 
-      shell: bash
+      - name: Analysing the code with pylint
+        run: uv run pylint ./py_ballisticcalc 
+        shell: bash

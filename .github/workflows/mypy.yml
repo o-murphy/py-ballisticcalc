@@ -18,24 +18,22 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v5
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
       - name: Install uv
         uses: astral-sh/setup-uv@v7
+        with:
+          python-version: '3.10'
+          github-token: ${{ github.token }}
 
-      - name: Install dependencies
+      - name: Install the project
         run: uv sync --dev
         shell: bash
-      
-      - name: Run tests
+
+      - name: Run mypy checks
         run: uv run mypy
         shell: bash

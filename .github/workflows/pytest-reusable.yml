@@ -36,7 +36,8 @@ jobs:
         with:
           python-version: ${{ inputs.python_version }} # Use the Python version passed via inputs
           activate-environment: "true"
-      
+          github-token: ${{ github.token }}
+
       - name: Validate extensions version matching
         # Install tomli (if not already present) to parse pyproject.toml
         # Then run your custom version check hook
