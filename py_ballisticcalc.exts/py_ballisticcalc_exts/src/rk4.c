@@ -85,11 +85,7 @@ StatusCode _integrate_rk4(
 {
     if (!eng || !traj_seq_ptr || !reason)
     {
-        if (!eng)
-        {
-            C_LOG(LOG_LEVEL_CRITICAL, "Invalid input (NULL pointer).");
-            abort();
-        }
+        REQUIRE_NON_NULL(eng);
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     };
