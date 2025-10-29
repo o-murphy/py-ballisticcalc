@@ -12,7 +12,6 @@ cdef extern from "error_stack.h":
         SRC_INIT_ZERO
         SRC_ZERO_ANGLE
         SRC_FIND_ZERO_ANGLE
-        SRC_FIND_ZERO_ANGLE
         SRC_ERROR_AT_DISTANCE
         SRC_FIND_MAX_RANGE
         SRC_RANGE_FOR_ANGLE

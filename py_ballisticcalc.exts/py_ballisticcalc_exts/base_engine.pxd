@@ -155,7 +155,7 @@ cdef extern from "include/engine.h" nogil:
         double *result,
         OutOfRangeError_t *range_error,
         ZeroFindingError_t *zero_error
-    )
+    ) noexcept nogil
 
 
 cdef class CythonizedBaseIntegrationEngine:

@@ -44,7 +44,6 @@ StatusCode _integrate_euler(
     BaseTrajSeq_t *traj_seq_ptr,
     TerminationReason *reason)
 {
-
     if (!eng || !traj_seq_ptr || !reason)
     {
         REQUIRE_NON_NULL(eng);
