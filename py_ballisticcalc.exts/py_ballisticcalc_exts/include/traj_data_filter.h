@@ -6,6 +6,11 @@
 
 #define TDF_EPSILON 1e-6
 
+// typedef struct {
+//     BaseTrajData_t data;
+//     TrajFlag_t flag;
+// } TrajDataRow_t;
+
 typedef struct
 {
     ShotProps_t *props;
@@ -41,14 +46,9 @@ extern "C"
         double range_step,
         double time_step);
 
-    void TrajectoryDataFilter_t_record(
-        TrajectoryDataFilter_t *tdf,
-        const BaseTrajData_t *new_data);
-
-    static inline void TrajectoryDataFilter_t_add_row(
-        TrajectoryDataFilter_t *tdf,
-        const BaseTrajData_t *data,
-        TrajFlag_t flag);
+    // void TrajectoryDataFilter_t_record(
+    //     TrajectoryDataFilter_t *tdf,
+    //     const BaseTrajData_t *new_data);
 
 #ifdef __cplusplus
 }
