@@ -1,5 +1,4 @@
 #include "engine.h"
-#include <stdlib.h>
 
 /*
 Possible call chains:
@@ -287,6 +286,51 @@ StatusCode Engine_t_init_zero_calculation(
 
     result->status = ZERO_INIT_CONTINUE;
     return STATUS_SUCCESS;
+}
+
+StatusCode Engine_t_zero_angle_with_fallback(
+    Engine_t *eng,
+    double distance,
+    double APEX_IS_MAX_RANGE_RADIANS,
+    double ALLOWED_ZERO_ERROR_FEET,
+    double *result,
+    OutOfRangeError_t *range_error,
+    ZeroFindingError_t *zero_error)
+{
+    if (!eng || !result || !range_error || !zero_error)
+    {
+        if (!eng)
+        {
+            C_LOG(LOG_LEVEL_CRITICAL, "Invalid input (NULL pointer).");
+            abort();
+        }
+        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_ZERO_ANGLE, "Invalid input (NULL pointer).");
+        return STATUS_ERROR;
+    }
+
+    StatusCode status;
+
+    status = Engine_t_zero_angle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, result, range_error, zero_error);
+    if (status == STATUS_SUCCESS)
+    {
+        return STATUS_SUCCESS;
+    }
+    C_LOG(LOG_LEVEL_WARNING, "Primary zero-finding failed, switching to fallback.");
+
+    // Clean error stack
+    CLEAR_ERR(&eng->err_stack);
+
+    // Fallback to guaranteed method
+    int lofted = 0; // default
+
+    status = Engine_t_find_zero_angle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, result, range_error, zero_error);
+    if (status == STATUS_SUCCESS)
+    {
+        return STATUS_SUCCESS;
+    }
+
+    // Return error if no found
+    return STATUS_ERROR;
 }
 
 StatusCode Engine_t_zero_angle(

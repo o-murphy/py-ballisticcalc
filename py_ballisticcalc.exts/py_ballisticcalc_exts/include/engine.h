@@ -10,6 +10,7 @@
 #include <stdarg.h> // for va_list, va_start, va_end, va_copy
 #include <stdio.h>  // for fprintf
 #include <string.h> // for vsnprintf
+#include <stdlib.h> // for abort
 
 typedef enum
 {
@@ -119,6 +120,15 @@ extern "C"
         double ALLOWED_ZERO_ERROR_FEET,
         ZeroInitialData_t *result,
         OutOfRangeError_t *error);
+
+    StatusCode Engine_t_zero_angle_with_fallback(
+        Engine_t *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        OutOfRangeError_t *range_error,
+        ZeroFindingError_t *zero_error);
 
     StatusCode Engine_t_zero_angle(
         Engine_t *eng,
