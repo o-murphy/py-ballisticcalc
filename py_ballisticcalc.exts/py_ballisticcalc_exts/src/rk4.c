@@ -7,7 +7,7 @@
  * * Assumes all necessary types (V3dT, ShotProps_t, Coriolis_t) and vector
  * functions (mulS, mag, sub, add, Coriolis_t_coriolis_acceleration_local)
  * are declared and defined in relevant C headers.
- * 
+ *
  * @param v_ptr Pointer to the relative velocity vector (velocity - wind).
  * @param gravity_vector_ptr Pointer to the gravity vector.
  * @param km_coeff Drag coefficient.
@@ -16,7 +16,7 @@
  * @return V3dT The acceleration vector (dv/dt).
  */
 static inline V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff,
-                     const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr)
+                                   const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr)
 {
     // Local variables for components and result
     V3dT drag_force_component;
@@ -85,6 +85,11 @@ StatusCode _integrate_rk4(
 {
     if (!eng || !traj_seq_ptr || !reason)
     {
+        if (!eng)
+        {
+            C_LOG(LOG_LEVEL_CRITICAL, "Invalid input (NULL pointer).");
+            abort();
+        }
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     };
