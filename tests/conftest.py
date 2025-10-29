@@ -43,7 +43,7 @@ def pytest_addoption(parser):
         "--engine",
         action="store",
         default=None,  # be sure to use the default value from _EngeneLoader
-        help="Specify the engine entry point name"
+        help="Specify the engine entry point name",
     )
 
 
@@ -57,4 +57,6 @@ def loaded_engine_instance(request):
         print(f"Successfully loaded engine: {engine_name}")
         yield engine
     except Exception as e:
-        pytest.fail(f"Failed to load engine '{engine_name}' via _EngineLoader: {e}")
+        pytest.exit(
+            f"❌ Cannot start tests:\nFailed to load engine via _EngineLoader: {e}", returncode=1
+        )
