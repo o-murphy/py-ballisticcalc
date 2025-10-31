@@ -50,13 +50,11 @@ def pytest_addoption(parser):
 @pytest.fixture(scope="class")
 def loaded_engine_instance(request):
     engine_name = request.config.getoption("--engine", None)
-    print(f"\nAttempting to load engine: '{engine_name}'")
+    logger.info(f"Attempting to load engine: '{engine_name}'")
 
     try:
         engine = _EngineLoader.load(engine_name)
         print(f"Successfully loaded engine: {engine_name}")
         yield engine
     except Exception as e:
-        pytest.exit(
-            f"❌ Cannot start tests:\nFailed to load engine via _EngineLoader: {e}", returncode=1
-        )
+        pytest.exit(f"❌ Cannot start tests:\nFailed to load engine via _EngineLoader: {e}", returncode=1)

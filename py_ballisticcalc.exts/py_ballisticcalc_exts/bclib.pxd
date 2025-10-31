@@ -13,9 +13,6 @@ cdef extern from "include/bclib.h" nogil:
         LOG_LEVEL_DEBUG,
         LOG_LEVEL_NOTSET
 
-    void setLogLevel(LogLevel level) noexcept nogil
-    void initLogLevel()
-
     cdef const double cDegreesFtoR
     cdef const double cDegreesCtoK
     cdef const double cSpeedOfSoundImperial
@@ -43,7 +40,7 @@ cdef extern from "include/bclib.h" nogil:
         CurvePoint_t * points
         size_t length
 
-    void Curve_t_release(Curve_t *curve_ptr)
+    void Curve_t_release(Curve_t *curve_ptr) noexcept nogil
 
     ctypedef struct MachList_t:
         double * array

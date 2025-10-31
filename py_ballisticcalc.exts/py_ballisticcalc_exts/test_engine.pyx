@@ -18,14 +18,10 @@ from py_ballisticcalc_exts.bclib cimport (
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
     calculateEnergy,
     calculateOgw,
-    initLogLevel,
     ErrorType,
 )
 
 __all__ = ["CythonEngineTestHarness"]
-
-
-initLogLevel()
 
 
 @final

@@ -24,7 +24,6 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t,
     ShotProps_t_updateStabilityCoefficient,
     TrajFlag_t,
-    initLogLevel,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport (
@@ -37,6 +36,7 @@ from py_ballisticcalc_exts.bind cimport (
     _new_feet,
     _new_rad,
 )
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport (
     StatusCode,
     ErrorSource,
@@ -45,6 +45,8 @@ from py_ballisticcalc_exts.error_stack cimport (
     last_err,
     error_stack_to_string,
 )
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.log cimport initLogLevel
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
@@ -59,7 +61,9 @@ __all__ = (
 )
 
 
+# force initLogLevel
 initLogLevel()
+
 
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS

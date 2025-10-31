@@ -9,14 +9,11 @@ we always run with "dense_output=True".
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
-from py_ballisticcalc_exts.bclib cimport initLogLevel
 
 
 __all__ = [
     'CythonizedRK4IntegrationEngine',
 ]
-
-initLogLevel()
 
 
 @final

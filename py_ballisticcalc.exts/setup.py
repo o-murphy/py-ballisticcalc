@@ -67,6 +67,7 @@ ext_base_dir = "py_ballisticcalc_exts"
 # Define all C source files and their paths
 C_SOURCES = {
     "v3d": os.path.join(ext_base_dir, "src", "v3d.c"),
+    "log": os.path.join(ext_base_dir, "src", "log.c"),
     "error_stack": os.path.join(ext_base_dir, "src", "error_stack.c"),
     "bclib": os.path.join(ext_base_dir, "src", "bclib.c"),
     "bind": os.path.join(ext_base_dir, "src", "bind.c"),
@@ -82,17 +83,16 @@ C_SOURCES = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from C_SOURCES that they depend on.
 EXTENSION_DEPS = {
-    "bind": ["interp", "bclib", "bind"],
-    "base_traj_seq": ["interp", "bclib", "base_traj_seq"],
-    "base_engine": ["interp", "bclib", "engine", "base_traj_seq", "error_stack"],
-    "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine", "error_stack"],
-    "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine", "error_stack"],
-    "trajectory_data": ["interp", "bclib"],
+    "bind": ["interp", "bclib", "bind", "log"],
+    "base_traj_seq": ["interp", "bclib", "base_traj_seq", "log"],
+    "base_engine": ["interp", "bclib", "engine", "base_traj_seq", "error_stack", "log"],
+    "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine", "error_stack", "log"],
+    "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine", "error_stack", "log"],
+    "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
-    "test_helpers": ["bclib", "interp"],
-    "test_engine": ["bclib", "interp"],
-    # error stack
-    "error_stack": ["v3d", "error_stack", "bclib", "interp"]
+    "test_helpers": ["bclib", "interp", "log"],
+    "test_engine": ["bclib", "interp", "log"],
+    "test_error_stack": ["error_stack", "log"]
 }
 
 

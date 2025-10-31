@@ -1,4 +1,3 @@
-
 #include "error_stack.h"
 
 void push_err(

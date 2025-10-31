@@ -82,6 +82,12 @@ StatusCode Engine_t_integrate(
         {
             C_LOG(LOG_LEVEL_INFO, "Integration completed with acceptable termination reason: (%d).", *reason);
         }
+        C_LOG(
+            LOG_LEVEL_DEBUG, 
+            "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes", 
+            traj_seq_ptr->length, traj_seq_ptr->capacity,
+            traj_seq_ptr->length * sizeof(BaseTraj_t)
+        );
         return STATUS_SUCCESS;
     }
 

@@ -54,9 +54,68 @@ __all__ = (
     "disable_file_logging",
 )
 
-formatter = logging.Formatter("%(levelname)s:%(name)s:%(message)s")
+
+class ANSIColorCodes:
+    """Містить ANSI escape-коди для кольорів та форматування."""
+
+    GREY = "\x1b[38;20m"
+    BLUE = "\x1b[34m"
+    CYAN = "\x1b[36m"
+    YELLOW = "\x1b[33m"
+    RED = "\x1b[31m"
+
+    BOLD_RED = "\x1b[1;31m"
+    RESET = "\x1b[0m"
+
+
+COLOR_MAP = {
+    logging.CRITICAL: ANSIColorCodes.BOLD_RED,
+    logging.ERROR: ANSIColorCodes.RED,
+    logging.WARNING: ANSIColorCodes.YELLOW,
+    logging.INFO: ANSIColorCodes.CYAN,
+    logging.DEBUG: ANSIColorCodes.BLUE,
+}
+
+
+LOG_FORMAT = "%(levelname)s:%(name)s:%(message)s"
+
+
+class ColoredFormatter(logging.Formatter):
+    """Форматувальник, який додає ANSI кольори до логів консолі."""
+
+    def __init__(self, fmt, datefmt=None, style="%"):
+        super().__init__(fmt, datefmt, style)
+        self.fmt = fmt
+        # Перевіряємо, чи є в форматі місце для кольорового рівня
+        if "(levelname)" not in fmt:
+            raise ValueError("Formatter must contain '(levelname)' placeholder.")
+
+    def format(self, record):
+        """Перевизначає метод форматування для додавання кольору."""
+
+        # 1. Отримуємо відповідний кольоровий код
+        log_color = COLOR_MAP.get(record.levelno, ANSIColorCodes.RESET)
+
+        # 2. Створюємо кольоровий рядок для рівня логування
+        colored_levelname = f"{log_color}{record.levelname}{ANSIColorCodes.RESET}"
+
+        # 3. Тимчасово замінюємо рівень логування на кольоровий рядок
+        #    для формування всього повідомлення.
+        original_levelname = record.levelname
+        record.levelname = colored_levelname
+
+        # 4. Форматуємо повідомлення за допомогою батьківського класу
+        formatted_message = super().format(record)
+
+        # 5. Відновлюємо оригінальний рівень, щоб не впливати на інші обробники
+        record.levelname = original_levelname
+
+        return formatted_message
+
+
+cpnsole_formatter = ColoredFormatter(LOG_FORMAT)
 console_handler = logging.StreamHandler()
-console_handler.setFormatter(formatter)
+console_handler.setFormatter(cpnsole_formatter)
 console_handler.setLevel(logging.DEBUG)  # Lowest level for console
 
 logger: logging.Logger = logging.getLogger("py_balcalc")
@@ -104,7 +163,7 @@ def enable_file_logging(filename: str = "debug.log") -> None:
     # Add a new file handler
     file_handler = logging.FileHandler(filename)
     file_handler.setLevel(logging.DEBUG)  # Log everything to the file
-    file_formatter = logging.Formatter("%(asctime)s:%(levelname)s:%(message)s")
+    file_formatter = logging.Formatter(LOG_FORMAT)
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 

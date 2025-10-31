@@ -3,6 +3,16 @@
 
 #include <stdio.h> // For fprintf
 
+#define ANSI_COLOR_RED "\x1b[31m"
+#define ANSI_COLOR_YELLOW "\x1b[33m"
+#define ANSI_COLOR_BLUE "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN "\x1b[36m"
+#define ANSI_COLOR_RESET "\x1b[0m"
+
+#define ANSI_BOLD_RED "\x1b[1;31m"
+#define ANSI_BOLD_MAGENTA "\x1b[1;35m"
+
 // Define Log Levels (matching Python's logging module for consistency)
 typedef enum
 {
@@ -17,23 +27,6 @@ typedef enum
 // Global variable to hold the currently configured minimum level
 extern LogLevel global_log_level;
 
-#define C_LOG(level, format, ...)                                 \
-    do                                                            \
-    {                                                             \
-        if ((level) >= global_log_level)                          \
-        {                                                         \
-            fprintf(stderr, "[%s] %s:%d in %s: " format "\n",     \
-                    ((level) >= LOG_LEVEL_CRITICAL)  ? "CRITICAL" \
-                    : ((level) >= LOG_LEVEL_ERROR)   ? "ERROR"    \
-                    : ((level) >= LOG_LEVEL_WARNING) ? "WARNING"  \
-                    : ((level) >= LOG_LEVEL_INFO)    ? "INFO"     \
-                    : ((level) >= LOG_LEVEL_DEBUG)   ? "DEBUG"    \
-                                                     : "NOTSET",    \
-                    __FILE__, __LINE__, __func__,                 \
-                    ##__VA_ARGS__);                               \
-        }                                                         \
-    } while (0)
-
 /*
  * Example output:
  * [ERROR] bclib.c:123 in ShotProps_t_updateStabilityCoefficient: Division by zero in ftp calculation.
@@ -47,6 +40,67 @@ extern LogLevel global_log_level;
 #else
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    void initLogLevel();
+
+#ifdef __cplusplus
+}
+#endif
+
+// Colored log macro
+#define C_LOG(level, format, ...)                                    \
+    do                                                               \
+    {                                                                \
+        if ((level) >= global_log_level)                             \
+        {                                                            \
+            const char *color_code =                                 \
+                ((level) >= LOG_LEVEL_CRITICAL)  ? ANSI_BOLD_RED     \
+                : ((level) >= LOG_LEVEL_ERROR)   ? ANSI_COLOR_RED    \
+                : ((level) >= LOG_LEVEL_WARNING) ? ANSI_COLOR_YELLOW \
+                : ((level) >= LOG_LEVEL_INFO)    ? ANSI_COLOR_CYAN   \
+                : ((level) >= LOG_LEVEL_DEBUG)   ? ANSI_COLOR_BLUE   \
+                                                 : ANSI_COLOR_RESET;   \
+                                                                     \
+            fprintf(stderr, "%s%s%s: %s:%d in %s: " format "\n",    \
+                    color_code,                                      \
+                    ((level) >= LOG_LEVEL_CRITICAL)  ? "CRITICAL"    \
+                    : ((level) >= LOG_LEVEL_ERROR)   ? "ERROR"       \
+                    : ((level) >= LOG_LEVEL_WARNING) ? "WARNING"     \
+                    : ((level) >= LOG_LEVEL_INFO)    ? "INFO"        \
+                    : ((level) >= LOG_LEVEL_DEBUG)   ? "DEBUG"       \
+                                                     : "NOTSET",       \
+                    ANSI_COLOR_RESET, /* <-- Новий параметр */       \
+                    __FILE__, __LINE__, __func__,                    \
+                    ##__VA_ARGS__);                                  \
+        }                                                            \
+    } while (0)
+
+// #define C_LOG(level, format, ...)                                 \
+//     do                                                            \
+//     {                                                             \
+//         if ((level) >= global_log_level)                          \
+//         {                                                         \
+//             fprintf(stderr, "[%s] %s:%d in %s: " format "\n",     \
+//                     ((level) >= LOG_LEVEL_CRITICAL)  ? "CRITICAL" \
+//                     : ((level) >= LOG_LEVEL_ERROR)   ? "ERROR"    \
+//                     : ((level) >= LOG_LEVEL_WARNING) ? "WARNING"  \
+//                     : ((level) >= LOG_LEVEL_INFO)    ? "INFO"     \
+//                     : ((level) >= LOG_LEVEL_DEBUG)   ? "DEBUG"    \
+//                                                      : "NOTSET",    \
+//                     __FILE__, __LINE__, __func__,                 \
+//                     ##__VA_ARGS__);                               \
+//         }                                                         \
+//     } while (0)
+
+/*
+ * Example output (shorter):
+ * [ERROR] bclib.c:123 ShotProps_t_updateStabilityCoefficient() Division by zero in ftp calculation.
+ */
 
 #define C_LOG_SHORT(level, format, ...)                           \
     do                                                            \
@@ -66,11 +120,11 @@ extern LogLevel global_log_level;
     } while (0)
 
 /*
- * Example output (shorter):
- * [ERROR] bclib.c:123 ShotProps_t_updateStabilityCoefficient() Division by zero in ftp calculation.
+ * Example output (smart - location only for errors):
+ * [ERROR] bclib.c:123 in ShotProps_t_updateStabilityCoefficient: Division by zero.
+ * [INFO] Log level set to 20
+ * [DEBUG] Altitude: 1000.00, Density ratio: 0.950000
  */
-
-// Optional: Conditional location info (only for ERROR and above)
 #define C_LOG_SMART(level, format, ...)                                         \
     do                                                                          \
     {                                                                           \
@@ -94,12 +148,5 @@ extern LogLevel global_log_level;
             }                                                                   \
         }                                                                       \
     } while (0)
-
-/*
- * Example output (smart - location only for errors):
- * [ERROR] bclib.c:123 in ShotProps_t_updateStabilityCoefficient: Division by zero.
- * [INFO] Log level set to 20
- * [DEBUG] Altitude: 1000.00, Density ratio: 0.950000
- */
 
 #endif // BCLIB_LOG_H
