@@ -66,7 +66,7 @@ extern "C"
                 : ((level) >= LOG_LEVEL_DEBUG)   ? ANSI_COLOR_BLUE   \
                                                  : ANSI_COLOR_RESET;   \
                                                                      \
-            fprintf(stderr, "%s[%s] %s:%d in %s: " format "%s\n",    \
+            fprintf(stderr, "%s%s%s: %s:%d in %s: " format "\n",    \
                     color_code,                                      \
                     ((level) >= LOG_LEVEL_CRITICAL)  ? "CRITICAL"    \
                     : ((level) >= LOG_LEVEL_ERROR)   ? "ERROR"       \
@@ -74,9 +74,9 @@ extern "C"
                     : ((level) >= LOG_LEVEL_INFO)    ? "INFO"        \
                     : ((level) >= LOG_LEVEL_DEBUG)   ? "DEBUG"       \
                                                      : "NOTSET",       \
+                    ANSI_COLOR_RESET, /* <-- Новий параметр */       \
                     __FILE__, __LINE__, __func__,                    \
-                    ##__VA_ARGS__,                                   \
-                    ANSI_COLOR_RESET);                               \
+                    ##__VA_ARGS__);                                  \
         }                                                            \
     } while (0)
 
