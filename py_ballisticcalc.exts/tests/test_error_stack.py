@@ -5,8 +5,6 @@ def test_error_stack():
     test_msg = "test"
     stack = ErrorStackT()
     stack.push(0, 0, test_msg)
-    print(stack)
-
 
     assert stack.top == 1
     first = stack.last()
