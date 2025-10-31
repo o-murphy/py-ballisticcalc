@@ -2,27 +2,23 @@
 """setup.py script for py_ballisticcalc library"""
 
 import os
+import sys
 import platform
+from pathlib import Path
 from setuptools import setup, Extension
 
 try:
     from Cython.Build import cythonize
 except ImportError:
-    import sys
-
     # use this command to skip building wheel and compiling modules on unsupported platforms
     # pip install --no-build-isolation --no-binary :all: py-ballisticcalc.exts
     setup()
-    sys.exit(0)  # Stop installation
+    sys.exit(0)
 
 ENABLE_CYTHON_COVERAGE = os.environ.get("CYTHON_COVERAGE", "0").lower() in {"1", "true", "yes", "on"}
 ENABLE_CYTHON_SAFETY = os.environ.get("CYTHON_SAFETY", "0").lower() in {"1", "true", "yes", "on"}
 # When coverage is requested, force Cython to regenerate C code to avoid stale builds
 CYTHON_FORCE_REGEN = os.environ.get("CYTHON_FORCE_REGEN", "0").lower() in {"1", "true", "yes", "on"}
-
-# Important paths
-THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-REPO_ROOT = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
 
 compiler_directives = {
     "language_level": 3,
@@ -63,6 +59,7 @@ if ENABLE_CYTHON_SAFETY:
     )
 
 ext_base_dir = "py_ballisticcalc_exts"
+tests_ext_base_dir = "tests"
 
 # Define all C source files and their paths
 C_SOURCES = {
@@ -89,18 +86,22 @@ EXTENSION_DEPS = {
     "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine", "error_stack", "log"],
     "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine", "error_stack", "log"],
     "trajectory_data": ["interp", "bclib", "log"],
+}
+
+
+TESTS_EXTENSION_DEPS = {
     # Test modules (expose internal C functions for tests only)
     "test_helpers": ["bclib", "interp", "log"],
     "test_engine": ["bclib", "interp", "log"],
-    "test_error_stack": ["error_stack", "log"]
+    "test_error_stack": ["error_stack", "log"],
 }
 
 
 # added 'include' to include_dirs for searching headers ***
 include_dirs = [
-    os.path.join(THIS_DIR, ext_base_dir),  # For .pxd files
-    os.path.join(THIS_DIR, ext_base_dir, "src"),
-    os.path.join(THIS_DIR, ext_base_dir, "include"),
+    ext_base_dir,
+    os.path.join(ext_base_dir, "src"),
+    os.path.join(ext_base_dir, "include"),
 ]
 
 # Initialize extensions list
@@ -112,43 +113,52 @@ extra_args = ["-g", "-O0", "-std=c99"]
 if platform.system() == "Windows" and platform.machine().startswith("ARM"):
     extra_args.append("/fp:precise")  # або /fp:fast
 
-# Dynamically create extensions for names in extension_names
-for name, deps in EXTENSION_DEPS.items():
-    # Use subproject-local .pyx paths (these exist during build)
-    sources = [os.path.join(ext_base_dir, name + ".pyx")]
 
-    # Add dependent C source files from the EXTENSION_DEPS dictionary
-    # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
-    for dep_key in deps:
-        if dep_key in C_SOURCES:
-            sources.append(C_SOURCES[dep_key])
-        else:
-            print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
+def collect_exts(deps_dict, base_path):
+    # Dynamically create extensions for names in extension_names
+    for name, deps in deps_dict.items():
+        # Use subproject-local .pyx paths (these exist during build)
+        sources = [os.path.join(base_path, name + ".pyx")]
 
-    define_macros = []
-    if ENABLE_CYTHON_COVERAGE:
-        # Enable tracing in both with-GIL and nogil regions
-        define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
+        # Add dependent C source files from the EXTENSION_DEPS dictionary
+        # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
+        for dep_key in deps:
+            if dep_key in C_SOURCES:
+                sources.append(C_SOURCES[dep_key])
+            else:
+                print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
-    extensions.append(
-        Extension(
-            "py_ballisticcalc_exts." + name,
-            sources=sources,
-            include_dirs=include_dirs,
-            define_macros=define_macros,
-            extra_compile_args=extra_args,
-            # extra_compile_args=["-std=c99"], # Uncomment if needed for specific C standards
-            # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
+        define_macros = []
+        if ENABLE_CYTHON_COVERAGE:
+            # Enable tracing in both with-GIL and nogil regions
+            define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
+
+        extensions.append(
+            Extension(
+                "py_ballisticcalc_exts." + name,
+                sources=sources,
+                include_dirs=include_dirs,
+                define_macros=define_macros,
+                extra_compile_args=extra_args,
+                # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
+            )
         )
-    )
+
+
+collect_exts(EXTENSION_DEPS, ext_base_dir)
+collect_exts(TESTS_EXTENSION_DEPS, tests_ext_base_dir)
+
 
 # Standard cythonize with a clean in-project build dir; annotate only if coverage requested
 extensions = cythonize(
     extensions,
     compiler_directives=compiler_directives,
     annotate=True,  # ENABLE_CYTHON_COVERAGE, # whether to generate .html annotations
-    build_dir=os.path.join(ext_base_dir, "build"),
     force=ENABLE_CYTHON_COVERAGE or CYTHON_FORCE_REGEN,
+    nthreads=0,
 )
+
+for ext in extensions:
+    ext.sources = [os.path.relpath(src, start=".") if os.path.isabs(src) else src for src in ext.sources]
 
 setup(ext_modules=extensions)
