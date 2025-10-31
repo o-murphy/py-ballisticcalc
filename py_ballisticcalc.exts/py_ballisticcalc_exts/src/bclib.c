@@ -21,7 +21,12 @@ LogLevel global_log_level = LOG_LEVEL_CRITICAL; // DIsabled by default
 void setLogLevel(LogLevel level)
 {
     global_log_level = level;
-    C_LOG(LOG_LEVEL_INFO, "Log level set to %d\n", level);
+
+    if (global_log_level != level)
+    {
+        global_log_level = level;
+        C_LOG(LOG_LEVEL_INFO, "Log level set to %d\n", level);
+    }
 }
 
 /**
@@ -41,13 +46,16 @@ void initLogLevel()
 
         if (env_level >= 0)
         {
-            global_log_level = env_level;
-            C_LOG(LOG_LEVEL_INFO, "Log level set from environment variable BCLIB_LOG_LEVEL to %d\n", global_log_level);
+            if (global_log_level != env_level)
+            {
+                global_log_level = env_level;
+                C_LOG(LOG_LEVEL_DEBUG, "Log level set from environment variable BCLIB_LOG_LEVEL to %d\n", global_log_level);
+            }
             return;
         }
     }
 
-    C_LOG(LOG_LEVEL_INFO, "Log level defaulted to %d\n", global_log_level);
+    C_LOG(LOG_LEVEL_DEBUG, "Log level defaulted to %d\n", global_log_level);
 }
 
 // Constants for unit conversions and atmospheric calculations
