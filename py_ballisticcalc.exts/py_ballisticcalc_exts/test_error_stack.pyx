@@ -2,7 +2,15 @@
 import inspect
 from cpython.bytes cimport PyBytes_AsString
 from libc.stdlib cimport malloc, free
-
+from py_ballisticcalc_exts.error_stack cimport (
+    ErrorStack,
+    ErrorFrame,
+    print_error_stack,
+    push_err,
+    clear_err,
+    pop_err,
+    last_err,
+)
 
 cdef class ErrorStackT:
     cdef ErrorStack* _c_stack_ptr

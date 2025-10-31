@@ -9,9 +9,6 @@ from cython cimport final
 from cpython.object cimport PyObject
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    setLogLevel,
-    initLogLevel,
-    LogLevel,
     MachList_t,
     Curve_t,
     Config_t,
@@ -32,13 +29,6 @@ from py_ballisticcalc.unit import (
 from py_ballisticcalc_exts.v3d cimport V3dT
 
 from py_ballisticcalc.vector import Vector
-
-initLogLevel()
-
-
-def set_log_level(int level):
-    """Set the global log level for the C library."""
-    setLogLevel(<LogLevel>level)
 
 
 @final

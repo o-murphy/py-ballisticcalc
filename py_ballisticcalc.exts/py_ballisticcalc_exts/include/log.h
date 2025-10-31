@@ -48,6 +48,17 @@ extern LogLevel global_log_level;
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    void initLogLevel();
+
+#ifdef __cplusplus
+}
+#endif
+
 #define C_LOG_SHORT(level, format, ...)                           \
     do                                                            \
     {                                                             \

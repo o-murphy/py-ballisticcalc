@@ -8,16 +8,6 @@
 # NOTE: These C types (MachList_t, Config_t, etc.) are opaque objects in Python,
 # but we define them here for completeness.
 
-class LogLevel:
-    """Equivalent to the C enum LogLevel."""
-
-    LOG_LEVEL_CRITICAL: int = 50
-    LOG_LEVEL_ERROR: int = 40
-    LOG_LEVEL_WARNING: int = 30
-    LOG_LEVEL_INFO: int = 20
-    LOG_LEVEL_DEBUG: int = 10
-    LOG_LEVEL_NOTSET: int = 0
-
 class MachList_t: ...
 class Curve_t: ...
 class Config_t: ...
@@ -27,23 +17,6 @@ class Coriolis_t: ...
 class V3dT: ...
 class InterpKey: ...
 
-# --- Public Python Functions ---
-
-def initLogLevel() -> None:
-    """
-    Initializes the global log level, typically by checking environment variables.
-    This function is called automatically upon module import in the .pyx file.
-    """
-    ...
-
-def set_log_level(level: int) -> None:
-    """
-    Set the global log level for the C library.
-
-    Args:
-        level: The desired log level (e.g., LogLevel.LOG_LEVEL_DEBUG, which is 10).
-    """
-    ...
 
 # --- Non-Public Cython-Only Helpers (Optional for .pyi) ---
 # NOTE: The following cdef functions (Config_t_from_pyobject, _v3d_to_vector, etc.)
