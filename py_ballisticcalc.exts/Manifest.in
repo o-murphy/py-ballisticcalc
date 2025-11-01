@@ -1,7 +1,0 @@
-recursive-include py_ballisticcalc_exts *.pyi
-recursive-include py_ballisticcalc_exts *.pyd
-recursive-include py_ballisticcalc_exts *.pyx
-recursive-include py_ballisticcalc_exts *.pxd
-include py.typed
-include LICENSE
-include README.md

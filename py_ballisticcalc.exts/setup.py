@@ -3,7 +3,9 @@
 
 import os
 import platform
+from typing import Dict
 from setuptools import setup, Extension
+from pathlib import Path
 
 try:
     from Cython.Build import cythonize
@@ -15,14 +17,23 @@ except ImportError:
     setup()
     sys.exit(0)  # Stop installation
 
-ENABLE_CYTHON_COVERAGE = os.environ.get("CYTHON_COVERAGE", "0").lower() in {"1", "true", "yes", "on"}
-ENABLE_CYTHON_SAFETY = os.environ.get("CYTHON_SAFETY", "0").lower() in {"1", "true", "yes", "on"}
-# When coverage is requested, force Cython to regenerate C code to avoid stale builds
-CYTHON_FORCE_REGEN = os.environ.get("CYTHON_FORCE_REGEN", "0").lower() in {"1", "true", "yes", "on"}
+_ENV_VAR_IS_ON = {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
 
-# Important paths
-THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-REPO_ROOT = os.path.abspath(os.path.join(THIS_DIR, os.pardir))
+
+def env_var_is_enabled(var: str):
+    return os.environ.get(var, "0").lower() in _ENV_VAR_IS_ON
+
+
+ENABLE_CYTHON_COVERAGE = env_var_is_enabled("CYTHON_COVERAGE")
+ENABLE_CYTHON_SAFETY = env_var_is_enabled("CYTHON_SAFETY")
+
+# When coverage is requested, force Cython to regenerate C code to avoid stale builds
+CYTHON_FORCE_REGEN = env_var_is_enabled("CYTHON_FORCE_REGEN")
 
 compiler_directives = {
     "language_level": 3,
@@ -62,20 +73,24 @@ if ENABLE_CYTHON_SAFETY:
         }
     )
 
-ext_base_dir = "py_ballisticcalc_exts"
+EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
+TEST_EXTENSIONS_DIR = EXTENSIONS_BASE_DIR / "tests"
+
+C_SRC_DIR = EXTENSIONS_BASE_DIR / "src"
+C_INCLUDE_DIR = EXTENSIONS_BASE_DIR / "include"
 
 # Define all C source files and their paths
 C_SOURCES = {
-    "v3d": os.path.join(ext_base_dir, "src", "v3d.c"),
-    "log": os.path.join(ext_base_dir, "src", "log.c"),
-    "error_stack": os.path.join(ext_base_dir, "src", "error_stack.c"),
-    "bclib": os.path.join(ext_base_dir, "src", "bclib.c"),
-    "bind": os.path.join(ext_base_dir, "src", "bind.c"),
-    "interp": os.path.join(ext_base_dir, "src", "interp.c"),
-    "euler": os.path.join(ext_base_dir, "src", "euler.c"),
-    "rk4": os.path.join(ext_base_dir, "src", "rk4.c"),
-    "base_traj_seq": os.path.join(ext_base_dir, "src", "base_traj_seq.c"),
-    "engine": os.path.join(ext_base_dir, "src", "engine.c"),
+    "v3d": C_SRC_DIR / "v3d.c",
+    "log": C_SRC_DIR / "log.c",
+    "error_stack": C_SRC_DIR / "error_stack.c",
+    "bclib": C_SRC_DIR / "bclib.c",
+    "bind": C_SRC_DIR / "bind.c",
+    "interp": C_SRC_DIR / "interp.c",
+    "euler": C_SRC_DIR / "euler.c",
+    "rk4": C_SRC_DIR / "rk4.c",
+    "base_traj_seq": C_SRC_DIR / "base_traj_seq.c",
+    "engine": C_SRC_DIR / "engine.c",
     # Add any other C source files here
 }
 
@@ -86,68 +101,107 @@ EXTENSION_DEPS = {
     "bind": ["interp", "bclib", "bind", "log"],
     "base_traj_seq": ["interp", "bclib", "base_traj_seq", "log"],
     "base_engine": ["interp", "bclib", "engine", "base_traj_seq", "error_stack", "log"],
-    "euler_engine": ["v3d", "bclib", "euler", "interp", "base_traj_seq", "engine", "error_stack", "log"],
-    "rk4_engine": ["v3d", "bclib", "rk4", "interp", "base_traj_seq", "engine", "error_stack", "log"],
+    "euler_engine": [
+        "v3d",
+        "bclib",
+        "euler",
+        "interp",
+        "base_traj_seq",
+        "engine",
+        "error_stack",
+        "log",
+    ],
+    "rk4_engine": [
+        "v3d",
+        "bclib",
+        "rk4",
+        "interp",
+        "base_traj_seq",
+        "engine",
+        "error_stack",
+        "log",
+    ],
     "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
     "test_helpers": ["bclib", "interp", "log"],
     "test_engine": ["bclib", "interp", "log"],
-    "test_error_stack": ["error_stack", "log"]
+    "test_error_stack": ["error_stack", "log"],
 }
 
+TEST_EXTENSIONS_DEPS = {}
 
-# added 'include' to include_dirs for searching headers ***
+# Use absolute paths for include directories
 include_dirs = [
-    os.path.join(THIS_DIR, ext_base_dir),  # For .pxd files
-    os.path.join(THIS_DIR, ext_base_dir, "src"),
-    os.path.join(THIS_DIR, ext_base_dir, "include"),
+    EXTENSIONS_BASE_DIR.as_posix(),  # For .pxd files
+    C_SRC_DIR.as_posix(),  # For source-level headers
+    C_INCLUDE_DIR.as_posix(),  # For public headers
 ]
 
-# Initialize extensions list
-extensions = []
+# Platform-specific compiler flags
+is_msvc = platform.system() == "Windows"
 
-extra_args = ["-g", "-O0", "-std=c99"]
+if is_msvc:
+    # MSVC-specific flags
+    extra_compile_args = [
+        "/O2",  # Optimize for speed (or /Od for debug)
+        "/W3",  # Warning level 3
+    ]
+    # Crucial for MSVC on ARM
+    if platform.machine().startswith("ARM"):
+        extra_compile_args.append("/fp:precise")
+else:
+    # GCC/Clang flags
+    extra_compile_args = [
+        "-g",
+        "-O0",
+        "-std=c99",
+    ]
 
-# Crucial for MSVC on ARM
-if platform.system() == "Windows" and platform.machine().startswith("ARM"):
-    extra_args.append("/fp:precise")  # або /fp:fast
 
 # Dynamically create extensions for names in extension_names
-for name, deps in EXTENSION_DEPS.items():
-    # Use subproject-local .pyx paths (these exist during build)
-    sources = [os.path.join(ext_base_dir, name + ".pyx")]
+def collect_extensions(deps: Dict[str, Path], path: Path):
+    extensions_local = []
+    for name, deps in deps.items():
+        # Use subproject-local .pyx paths (these exist during build)
+        sources = [(path / name).with_suffix(".pyx")]
 
-    # Add dependent C source files from the EXTENSION_DEPS dictionary
-    # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
-    for dep_key in deps:
-        if dep_key in C_SOURCES:
-            sources.append(C_SOURCES[dep_key])
-        else:
-            print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
+        # Add dependent C source files from the EXTENSION_DEPS dictionary
+        # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
+        for dep_key in deps:
+            if dep_key in C_SOURCES:
+                sources.append(C_SOURCES[dep_key])
+            else:
+                print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
-    define_macros = []
-    if ENABLE_CYTHON_COVERAGE:
-        # Enable tracing in both with-GIL and nogil regions
-        define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
+        define_macros = []
+        if ENABLE_CYTHON_COVERAGE:
+            # Enable tracing in both with-GIL and nogil regions
+            define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
 
-    extensions.append(
-        Extension(
-            "py_ballisticcalc_exts." + name,
-            sources=sources,
-            include_dirs=include_dirs,
-            define_macros=define_macros,
-            extra_compile_args=extra_args,
-            # extra_compile_args=["-std=c99"], # Uncomment if needed for specific C standards
-            # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
+        extensions_local.append(
+            Extension(
+                "py_ballisticcalc_exts." + name,
+                sources=[s.as_posix() for s in sources],
+                include_dirs=include_dirs,
+                define_macros=define_macros,
+                extra_compile_args=extra_compile_args,
+                # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
+            )
         )
-    )
+    return extensions_local
+
+
+# Initialize extensions list
+extensions_list = []
+extensions_list.extend(collect_extensions(EXTENSION_DEPS, EXTENSIONS_BASE_DIR))
+extensions_list.extend(collect_extensions(TEST_EXTENSIONS_DEPS, TEST_EXTENSIONS_DIR))
 
 # Standard cythonize with a clean in-project build dir; annotate only if coverage requested
 extensions = cythonize(
-    extensions,
+    extensions_list,
     compiler_directives=compiler_directives,
     annotate=True,  # ENABLE_CYTHON_COVERAGE, # whether to generate .html annotations
-    build_dir=os.path.join(ext_base_dir, "build"),
+    build_dir="build",  # to keep built data
     force=ENABLE_CYTHON_COVERAGE or CYTHON_FORCE_REGEN,
 )
 

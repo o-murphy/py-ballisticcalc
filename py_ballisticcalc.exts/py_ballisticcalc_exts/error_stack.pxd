@@ -1,4 +1,4 @@
-cdef extern from "error_stack.h":
+cdef extern from "include/error_stack.h":
     DEF MAX_ERROR_STACK = 16
     DEF MAX_ERROR_MSG_LEN = 256
 
