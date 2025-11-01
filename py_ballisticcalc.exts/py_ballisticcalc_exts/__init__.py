@@ -9,7 +9,6 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
-from .test_engine import CythonEngineTestHarness
 
 
 # Version matching guard
@@ -35,5 +34,4 @@ if __core_version != __exts_version:
 __all__ = (
     "CythonizedEulerIntegrationEngine",
     "CythonizedRK4IntegrationEngine",
-    "CythonEngineTestHarness",
 )

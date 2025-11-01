@@ -1,4 +1,4 @@
-from py_ballisticcalc_exts.test_error_stack import ErrorStackT
+from py_ballisticcalc_exts._test_error_stack import ErrorStackT
 
 
 def test_error_stack():

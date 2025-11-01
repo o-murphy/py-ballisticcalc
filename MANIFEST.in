@@ -1,6 +1,6 @@
 prune py_ballisticcalc.exts
 prune tests
-include py.typed
+recursive-include py.typed
 include LICENSE
 include README.md
 recursive-include */assets *.toml
