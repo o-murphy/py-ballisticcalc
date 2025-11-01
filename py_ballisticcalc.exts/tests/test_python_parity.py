@@ -17,7 +17,7 @@ from py_ballisticcalc.shot import Shot, ShotProps
 from py_ballisticcalc.trajectory_data import TrajectoryData
 from py_ballisticcalc.unit import Velocity, Distance, Weight
 
-from py_ballisticcalc_exts import CythonEngineTestHarness
+from py_ballisticcalc_exts._test_engine import CythonEngineTestHarness
 
 DRAG_CONST = 2.08551e-04
 RND = random.Random(42)

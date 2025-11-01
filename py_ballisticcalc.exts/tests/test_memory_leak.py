@@ -25,8 +25,8 @@ from py_ballisticcalc.drag_model import DragModel
 from py_ballisticcalc.munition import Ammo, Weapon
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.unit import Velocity
-from py_ballisticcalc_exts.test_engine import CythonEngineTestHarness
-from py_ballisticcalc_exts.test_helpers import free_shot, shot_props_addr, introspect_shot
+from py_ballisticcalc_exts._test_engine import CythonEngineTestHarness
+from py_ballisticcalc_exts._test_helpers import free_shot, shot_props_addr, introspect_shot
 
 pytestmark = pytest.mark.stress
 

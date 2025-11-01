@@ -74,7 +74,6 @@ if ENABLE_CYTHON_SAFETY:
     )
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
-TEST_EXTENSIONS_DIR = EXTENSIONS_BASE_DIR / "tests"
 
 C_SRC_DIR = EXTENSIONS_BASE_DIR / "src"
 C_INCLUDE_DIR = EXTENSIONS_BASE_DIR / "include"
@@ -123,9 +122,9 @@ EXTENSION_DEPS = {
     ],
     "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
-    "test_helpers": ["bclib", "interp", "log"],
-    "test_engine": ["bclib", "interp", "log"],
-    "test_error_stack": ["error_stack", "log"],
+    "_test_helpers": ["bclib", "interp", "log"],
+    "_test_engine": ["bclib", "interp", "log"],
+    "_test_error_stack": ["error_stack", "log"],
 }
 
 TEST_EXTENSIONS_DEPS = {}
@@ -194,7 +193,6 @@ def collect_extensions(deps: Dict[str, Path], path: Path):
 # Initialize extensions list
 extensions_list = []
 extensions_list.extend(collect_extensions(EXTENSION_DEPS, EXTENSIONS_BASE_DIR))
-extensions_list.extend(collect_extensions(TEST_EXTENSIONS_DEPS, TEST_EXTENSIONS_DIR))
 
 # Standard cythonize with a clean in-project build dir; annotate only if coverage requested
 extensions = cythonize(
