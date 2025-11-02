@@ -1,8 +1,11 @@
 **/__pycache__
+**/.mypy_cache/
+**/.ruff_cache/
 **/.pytest_cache/
 **/.idea
 **/*.pyd
 **/*.so
+**/*.dylib
 **/build
 **/dist
 **/*.egg-info

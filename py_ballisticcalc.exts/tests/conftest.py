@@ -16,7 +16,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--engine",
         action="store",
-        default=None,  # be sure to use the default value from _EngeneLoader
+        default=None,
         help="Specify the engine entry point name",
     )
 
@@ -24,6 +24,9 @@ def pytest_addoption(parser):
 @pytest.fixture(scope="class")
 def loaded_engine_instance(request):
     engine_name = request.config.getoption("--engine", None)
+    # be sure to use the default cythonized engine
+    if engine_name is None:
+        engine_name = "cythonized_rk4_engine"
     logger.info(f"Attempting to load engine: '{engine_name}'")
     try:
         engine = _EngineLoader.load(engine_name)
@@ -31,8 +34,8 @@ def loaded_engine_instance(request):
             # probe:
             engine({})
         except Exception as e:
-            raise Exception(f"Engine {engine_name} loaded but probe failed: {e}")
-        print(f"Successfully loaded engine: {engine_name}")
+            raise Exception(f"Engine {engine} loaded but probe failed: {e}")
+        print(f"Successfully loaded engine: {engine}")
         yield engine
     except Exception as e:
         pytest.exit(f"❌ Cannot start tests:\nFailed to load engine via _EngineLoader: {e}", returncode=1)

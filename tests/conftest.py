@@ -57,8 +57,8 @@ def loaded_engine_instance(request):
             # probe:
             engine({})
         except Exception as e:
-            raise Exception(f"Engine {engine_name} loaded but probe failed: {e}")
-        print(f"Successfully loaded engine: {engine_name}")
+            raise Exception(f"Engine {engine} loaded but probe failed: {e}")
+        print(f"Successfully loaded engine: {engine}")
         yield engine
     except Exception as e:
         pytest.exit(f"❌ Cannot start tests:\nFailed to load engine via _EngineLoader: {e}", returncode=1)
