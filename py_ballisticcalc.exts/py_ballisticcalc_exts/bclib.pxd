@@ -141,9 +141,15 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         BCLIBC_TrajFlag filter_flags
 
     void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr) noexcept nogil
-    double BCLIBC_ShotProps_spinDrift(const BCLIBC_ShotProps *shot_props_ptr, double time) noexcept nogil
-    BCLIBC_ErrorType BCLIBC_ShotProps_updateStabilityCoefficient(BCLIBC_ShotProps *shot_props_ptr) noexcept nogil
-    double BCLIBC_ShotProps_dragByMach(const BCLIBC_ShotProps *shot_props_ptr, double mach) noexcept nogil
+    double BCLIBC_ShotProps_spinDrift(
+        const BCLIBC_ShotProps *shot_props_ptr, double time
+    ) noexcept nogil
+    BCLIBC_ErrorType BCLIBC_ShotProps_updateStabilityCoefficient(
+        BCLIBC_ShotProps *shot_props_ptr
+    ) noexcept nogil
+    double BCLIBC_ShotProps_dragByMach(
+        const BCLIBC_ShotProps *shot_props_ptr, double mach
+    ) noexcept nogil
 
     ctypedef enum BCLIBC_InterpKey:
         BCLIBC_INTERP_KEY_TIME

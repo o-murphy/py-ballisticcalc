@@ -81,7 +81,9 @@ cdef class BaseTrajSeqT:
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         cdef BCLIBC_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BCLIBC_BaseTrajData output
-        cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_interpolateAt(&self._c_view, idx, key_kind, key_value, &output)
+        cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_interpolateAt(
+            &self._c_view, idx, key_kind, key_value, &output
+        )
 
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             return BaseTrajDataT(output)

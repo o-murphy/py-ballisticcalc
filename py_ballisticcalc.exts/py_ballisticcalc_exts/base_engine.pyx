@@ -460,7 +460,9 @@ cdef class CythonizedBaseIntegrationEngine:
             )
 
             # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-            if BCLIBC_ShotProps_updateStabilityCoefficient(&self._engine.shot) != <int>BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+            if BCLIBC_ShotProps_updateStabilityCoefficient(
+                &self._engine.shot
+            ) != <int>BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
                 raise ZeroDivisionError(
                     "Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient")
 

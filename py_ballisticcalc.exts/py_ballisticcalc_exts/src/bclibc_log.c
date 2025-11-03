@@ -36,5 +36,3 @@ void BCLIBC_LogLevel_init()
 
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Log level defaulted to %d\n", BCLIBC_global_log_level);
 }
-
-// Force log level initialisation
