@@ -68,7 +68,7 @@ StatusCode Engine_t_integrate(
         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return STATUS_ERROR;
     }
-    C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
     StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr, reason);
 
@@ -76,14 +76,14 @@ StatusCode Engine_t_integrate(
     {
         if (*reason == NO_TERMINATE)
         {
-            C_LOG(LOG_LEVEL_INFO, "Integration completed successfully: (%d).", *reason);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed successfully: (%d).", *reason);
         }
         else
         {
-            C_LOG(LOG_LEVEL_INFO, "Integration completed with acceptable termination reason: (%d).", *reason);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed with acceptable termination reason: (%d).", *reason);
         }
-        C_LOG(
-            LOG_LEVEL_DEBUG, 
+        BCLIBC_LOG(
+            BCLIBC_LOG_LEVEL_DEBUG, 
             "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes", 
             traj_seq_ptr->length, traj_seq_ptr->capacity,
             traj_seq_ptr->length * sizeof(BaseTraj_t)
@@ -311,7 +311,7 @@ StatusCode Engine_t_zero_angle_with_fallback(
     {
         return STATUS_SUCCESS;
     }
-    C_LOG(LOG_LEVEL_WARNING, "Primary zero-finding failed, switching to fallback.");
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Primary zero-finding failed, switching to fallback.");
 
     // Clean error stack
     CLEAR_ERR(&eng->err_stack);
@@ -955,7 +955,7 @@ StatusCode Engine_t_find_zero_angle(
         // Check if we found exact solution at midpoint
         if (fabs(f_mid) < eng->config.cZeroFindingAccuracy)
         {
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: found exact solution at mid_angle=%.6f", mid_angle);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: found exact solution at mid_angle=%.6f", mid_angle);
             *result = mid_angle;
             converged = 1;
             status = STATUS_SUCCESS;
@@ -967,7 +967,7 @@ StatusCode Engine_t_find_zero_angle(
         // and the quadratic function that passes through those points and (mid_angle, f_mid)
         double _inner = f_mid * f_mid - f_low * f_high;
 
-        C_LOG(LOG_LEVEL_DEBUG,
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG,
               "Ridder iteration %d: low_angle=%.12f, high_angle=%.12f, mid_angle=%.12f, "
               "f_low=%.12f, f_high=%.12f, f_mid=%.12f, _inner=%.12e",
               i, low_angle, high_angle, mid_angle, f_low, f_high, f_mid, _inner);
@@ -975,7 +975,7 @@ StatusCode Engine_t_find_zero_angle(
         // Check for invalid sqrt argument - should not happen if bracket is valid
         if (_inner <= 0.0)
         {
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: _inner <= 0 (%.12e), breaking iteration", _inner);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: _inner <= 0 (%.12e), breaking iteration", _inner);
             break;
         }
 
@@ -984,7 +984,7 @@ StatusCode Engine_t_find_zero_angle(
         // Should not happen if f_low and f_high have opposite signs
         if (s == 0.0)
         {
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: s == 0, breaking iteration");
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: s == 0, breaking iteration");
             break;
         }
 
@@ -1012,7 +1012,7 @@ StatusCode Engine_t_find_zero_angle(
         // Check if we found exact solution at next_angle
         if (fabs(f_next) < eng->config.cZeroFindingAccuracy)
         {
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: found exact solution at next_angle=%.6f", next_angle);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: found exact solution at next_angle=%.6f", next_angle);
             *result = next_angle;
             converged = 1;
             status = STATUS_SUCCESS;
@@ -1040,7 +1040,7 @@ StatusCode Engine_t_find_zero_angle(
         else
         {
             // If we are here, something is wrong, the root is not bracketed anymore
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: root not bracketed anymore, breaking");
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: root not bracketed anymore, breaking");
             break;
         }
 
@@ -1062,7 +1062,7 @@ StatusCode Engine_t_find_zero_angle(
         if (fabs(high_angle - low_angle) < 10.0 * eng->config.cZeroFindingAccuracy)
         {
             *result = (low_angle + high_angle) / 2.0;
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: accepting solution from small bracket: %.6f", *result);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting solution from small bracket: %.6f", *result);
             status = STATUS_SUCCESS;
             goto finally;
         }
@@ -1071,14 +1071,14 @@ StatusCode Engine_t_find_zero_angle(
         if (fabs(f_low) < 10.0 * eng->config.cZeroFindingAccuracy)
         {
             *result = low_angle;
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: accepting low_angle due to small f_low: %.6f", *result);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting low_angle due to small f_low: %.6f", *result);
             status = STATUS_SUCCESS;
             goto finally;
         }
         if (fabs(f_high) < 10.0 * eng->config.cZeroFindingAccuracy)
         {
             *result = high_angle;
-            C_LOG(LOG_LEVEL_DEBUG, "Ridder: accepting high_angle due to small f_high: %.6f", *result);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting high_angle due to small f_high: %.6f", *result);
             status = STATUS_SUCCESS;
             goto finally;
         }

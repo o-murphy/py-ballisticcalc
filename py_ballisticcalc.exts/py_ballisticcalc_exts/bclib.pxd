@@ -5,13 +5,13 @@ from py_ballisticcalc_exts.error_stack cimport ErrorType
 
 
 cdef extern from "include/bclib.h" nogil:
-    ctypedef enum LogLevel:
-        LOG_LEVEL_CRITICAL,
-        LOG_LEVEL_ERROR,
-        LOG_LEVEL_WARNING,
-        LOG_LEVEL_INFO,
-        LOG_LEVEL_DEBUG,
-        LOG_LEVEL_NOTSET
+    ctypedef enum BCLIBC_LogLevel:
+        BCLIBC_LOG_LEVEL_CRITICAL,
+        BCLIBC_LOG_LEVEL_ERROR,
+        BCLIBC_LOG_LEVEL_WARNING,
+        BCLIBC_LOG_LEVEL_INFO,
+        BCLIBC_LOG_LEVEL_DEBUG,
+        BCLIBC_LOG_LEVEL_NOTSET
 
     cdef const double cDegreesFtoR
     cdef const double cDegreesCtoK

@@ -184,7 +184,7 @@ ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
     /* Miller stability coefficient */
@@ -213,7 +213,7 @@ ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            C_LOG(LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
             return T_ZERO_DIVISION_ERROR; // Exit if denominator is zero
         }
 
@@ -229,7 +229,7 @@ ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         else
         {
             shot_props_ptr->stability_coefficient = 0.0;
-            C_LOG(LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
             return T_ZERO_DIVISION_ERROR; // Exit if pt is zero
         }
 
@@ -240,7 +240,7 @@ ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
         // If critical parameters are zero, stability coefficient is meaningless or zero
         shot_props_ptr->stability_coefficient = 0.0;
     }
-    C_LOG(LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
     return T_NO_ERROR;
 }
 
@@ -369,20 +369,20 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     if (altitude > 36089.0)
     {
         // Warning: altitude above standard troposphere height
-        C_LOG(LOG_LEVEL_WARNING, "Density request for altitude above troposphere. Atmospheric model not valid here.");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Density request for altitude above troposphere. Atmospheric model not valid here.");
     }
 
     // Clamp temperature to prevent non-physical results
     const double min_temp = -cDegreesCtoK;
     if (celsius < min_temp)
     {
-        C_LOG(LOG_LEVEL_WARNING, "Invalid temperature %.2f °C. Adjusted to %.2f °C.", celsius, min_temp);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Invalid temperature %.2f °C. Adjusted to %.2f °C.", celsius, min_temp);
         celsius = min_temp;
     }
     else if (celsius < atmo_ptr->cLowestTempC)
     {
         celsius = atmo_ptr->cLowestTempC;
-        C_LOG(LOG_LEVEL_WARNING, "Reached minimum temperature limit. Adjusted to %.2f °C.", celsius);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Reached minimum temperature limit. Adjusted to %.2f °C.", celsius);
     }
 
     const double kelvin = celsius + cDegreesCtoK;
@@ -402,7 +402,7 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
     // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
     *mach_ptr = sqrt(kelvin) * cSpeedOfSoundMetric * mToFeet;
 
-    C_LOG(LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
           altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
@@ -447,7 +447,7 @@ ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
@@ -519,7 +519,7 @@ ErrorType WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
@@ -577,7 +577,7 @@ BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
             // If cache update fails, return zero vector
             if (WindSock_t_updateCache(ws) != T_NO_ERROR)
             {
-                C_LOG(LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
+                BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                 return zero_vector;
             }
         }
@@ -603,7 +603,7 @@ double getCorrection(double distance, double offset)
     {
         return atan2(offset, distance);
     }
-    C_LOG(LOG_LEVEL_ERROR, "Division by zero in getCorrection.");
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in getCorrection.");
     return 0.0;
 }
 
@@ -754,7 +754,7 @@ ErrorType BaseTrajData_t_interpolate(
 {
     if (!p0 || !p1 || !p2 || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 

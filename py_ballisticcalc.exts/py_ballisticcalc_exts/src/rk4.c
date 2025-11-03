@@ -102,14 +102,14 @@ StatusCode _integrate_rk4(
     BCLIBC_V3dT wind_vector;
     double calc_step;
 
-    C_LOG(LOG_LEVEL_DEBUG, "Variables declared\n");
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Variables declared\n");
 
     // Early binding of configuration constants
     double _cMinimumVelocity = eng->config.cMinimumVelocity;
     double _cMinimumAltitude = eng->config.cMinimumAltitude;
     double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
 
-    C_LOG(LOG_LEVEL_DEBUG, "Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
           _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
 
     // Working variables
@@ -131,18 +131,18 @@ StatusCode _integrate_rk4(
     gravity_vector.y = eng->config.cGravityConstant;
     gravity_vector.z = 0.0;
 
-    C_LOG(LOG_LEVEL_DEBUG, "Gravity initialized: %f\n", gravity_vector.y);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Gravity initialized: %f\n", gravity_vector.y);
 
     // Initialize wind vector
-    C_LOG(LOG_LEVEL_DEBUG, "About to call WindSock_t_currentVector\n");
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call WindSock_t_currentVector\n");
     wind_vector = WindSock_t_currentVector(&eng->shot.wind_sock);
-    C_LOG(LOG_LEVEL_DEBUG, "Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
 
     // Initialize velocity and position vectors
     velocity = eng->shot.muzzle_velocity;
     calc_step = eng->shot.calc_step;
 
-    C_LOG(LOG_LEVEL_DEBUG, "Velocity=%f, Calc Step=%f\n", velocity, calc_step);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Velocity=%f, Calc Step=%f\n", velocity, calc_step);
 
     // Set range_vector components directly
     range_vector.x = 0.0;
@@ -150,41 +150,41 @@ StatusCode _integrate_rk4(
     range_vector.z = -eng->shot.cant_sine * eng->shot.sight_height;
     _cMaximumDrop += fmin(0.0, range_vector.y);
 
-    C_LOG(LOG_LEVEL_DEBUG, "Range vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Range vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
 
     // Set direction vector components
     _dir_vector.x = cos(eng->shot.barrel_elevation) * cos(eng->shot.barrel_azimuth);
     _dir_vector.y = sin(eng->shot.barrel_elevation);
     _dir_vector.z = cos(eng->shot.barrel_elevation) * sin(eng->shot.barrel_azimuth);
 
-    C_LOG(LOG_LEVEL_DEBUG, "Direction vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Direction vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
 
     // Calculate velocity vector
-    C_LOG(LOG_LEVEL_DEBUG, "About to call mulS\n");
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call mulS\n");
     velocity_vector = BCLIBC_V3dT_mulS(&_dir_vector, velocity);
 
-    C_LOG(LOG_LEVEL_DEBUG, "Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
     Atmosphere_t_updateDensityFactorAndMachForAltitude(
         &eng->shot.atmo,
         eng->shot.alt0 + range_vector.y,
         &density_ratio,
         &mach);
-    C_LOG(LOG_LEVEL_DEBUG, "Density ratio: %f, Mach: %f\n", density_ratio, mach);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Density ratio: %f, Mach: %f\n", density_ratio, mach);
 
     // Trajectory Loop
-    C_LOG(LOG_LEVEL_DEBUG, "Entering main loop, range_limit_ft=%f\n", range_limit_ft);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Entering main loop, range_limit_ft=%f\n", range_limit_ft);
 
     while (range_vector.x <= range_limit_ft || eng->integration_step_count < 3)
     {
-        C_LOG(LOG_LEVEL_DEBUG, "Loop iteration %d, range_x=%f\n", eng->integration_step_count, range_vector.x);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Loop iteration %d, range_x=%f\n", eng->integration_step_count, range_vector.x);
 
         eng->integration_step_count++;
 
         // Update wind reading at current point in trajectory
         if (range_vector.x >= eng->shot.wind_sock.next_range)
         {
-            C_LOG(LOG_LEVEL_DEBUG, "Updating wind vector\n");
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updating wind vector\n");
             wind_vector = WindSock_t_vectorForRange(&eng->shot.wind_sock, range_vector.x);
         }
 
@@ -196,7 +196,7 @@ StatusCode _integrate_rk4(
             &mach);
 
         // Store point in trajectory sequence
-        C_LOG(LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
 
         // err =
         BaseTrajSeq_t_append(
@@ -210,7 +210,7 @@ StatusCode _integrate_rk4(
         //     return err;
         // }
 
-        C_LOG(LOG_LEVEL_DEBUG, "Append successful\n");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Append successful\n");
 
         // Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
         relative_velocity = BCLIBC_V3dT_sub(&velocity_vector, &wind_vector);
@@ -218,7 +218,7 @@ StatusCode _integrate_rk4(
 
         delta_time = calc_step;
 
-        C_LOG(LOG_LEVEL_DEBUG, "About to call ShotProps_t_dragByMach, relative_speed=%f, mach=%f\n",
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call ShotProps_t_dragByMach, relative_speed=%f, mach=%f\n",
               relative_speed, mach);
 
         // Check for division by zero
@@ -229,10 +229,10 @@ StatusCode _integrate_rk4(
         // }
 
         km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
-        C_LOG(LOG_LEVEL_DEBUG, "Calculated drag coefficient km=%f\n", km);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Calculated drag coefficient km=%f\n", km);
 
         // region RK4 integration
-        C_LOG(LOG_LEVEL_DEBUG, "Starting RK4 integration\n");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Starting RK4 integration\n");
 
         // v1 = f(relative_velocity)
         v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, &eng->shot, &velocity_vector);
@@ -285,13 +285,13 @@ StatusCode _integrate_rk4(
         _p_sum_intermediate = BCLIBC_V3dT_mulS(&_p_sum_intermediate, (delta_time / 6.0));
         range_vector = BCLIBC_V3dT_add(&range_vector, &_p_sum_intermediate);
 
-        C_LOG(LOG_LEVEL_DEBUG, "RK4 integration complete\n");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "RK4 integration complete\n");
 
         // Update time and velocity magnitude
         velocity = BCLIBC_V3dT_mag(&velocity_vector);
         time += delta_time;
 
-        C_LOG(LOG_LEVEL_DEBUG, "Velocity=%f, Time=%f\n", velocity, time);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Velocity=%f, Time=%f\n", velocity, time);
 
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
@@ -313,7 +313,7 @@ StatusCode _integrate_rk4(
         }
     }
 
-    C_LOG(LOG_LEVEL_DEBUG, "Loop exited, appending final point\n");
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Loop exited, appending final point\n");
 
     // Process final data point
 
@@ -329,7 +329,7 @@ StatusCode _integrate_rk4(
     //     return err;
     // }
 
-    C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
     // PUSH_ERR(&eng->err_stack, ZERO_DIVISION_ERROR, SRC_INTEGRATE, "fake error");
     // return STATUS_ERROR;

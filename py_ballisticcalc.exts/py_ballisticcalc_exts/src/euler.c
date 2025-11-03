@@ -214,7 +214,7 @@ StatusCode _integrate_euler(
     //     return err;
     // }
 
-    C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
     return STATUS_SUCCESS;
 }

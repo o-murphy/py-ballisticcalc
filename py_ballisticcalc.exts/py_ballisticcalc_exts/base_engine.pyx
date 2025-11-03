@@ -46,7 +46,7 @@ from py_ballisticcalc_exts.error_stack cimport (
     error_stack_to_string,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.log cimport initLogLevel
+from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
@@ -61,8 +61,8 @@ __all__ = (
 )
 
 
-# force initLogLevel
-initLogLevel()
+# force BCLIBC_LogLevel_init
+BCLIBC_LogLevel_init()
 
 
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET

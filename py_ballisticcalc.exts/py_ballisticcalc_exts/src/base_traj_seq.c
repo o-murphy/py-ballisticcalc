@@ -114,7 +114,7 @@ static ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
@@ -128,7 +128,7 @@ static ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     // Ensure we have valid points on both sides
     if (idx < 1 || idx >= length - 1)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
         return T_VALUE_ERROR;
     }
 
@@ -144,7 +144,7 @@ static ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     // Check for duplicate key values (would cause division by zero)
     if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Duplicate key values detected; cannot interpolate.");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Duplicate key values detected; cannot interpolate.");
         return T_VALUE_ERROR;
     }
 
@@ -160,7 +160,7 @@ ErrorType BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, In
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR; // Invalid input
     }
     BaseTraj_t raw_output;
@@ -272,14 +272,14 @@ ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
     if (!seq)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
     // If current capacity is enough, do nothing
     if (min_capacity <= seq->capacity)
     {
-        C_LOG(LOG_LEVEL_DEBUG, "Current capacity sufficient (%zu >= %zu).", seq->capacity, min_capacity);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Current capacity sufficient (%zu >= %zu).", seq->capacity, min_capacity);
         return T_NO_ERROR;
     }
 
@@ -294,7 +294,7 @@ ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
     BaseTraj_t *new_buffer = (BaseTraj_t *)malloc(new_capacity * sizeof(BaseTraj_t));
     if (!new_buffer)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Memory allocation failed for capacity %zu.", new_capacity);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Memory allocation failed for capacity %zu.", new_capacity);
         return T_MEMORY_ERROR;
     }
 
@@ -311,7 +311,7 @@ ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
     seq->buffer = new_buffer;
     seq->capacity = new_capacity;
 
-    C_LOG(LOG_LEVEL_DEBUG, "Capacity increased to %zu.", new_capacity);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Capacity increased to %zu.", new_capacity);
     return T_NO_ERROR;
 }
 
@@ -338,7 +338,7 @@ ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
 {
     if (!seq)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
@@ -504,7 +504,7 @@ ErrorType BaseTrajSeq_t_get_at_slant_height(
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
@@ -514,14 +514,14 @@ ErrorType BaseTrajSeq_t_get_at_slant_height(
 
     if (n < 3)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
         return T_VALUE_ERROR;
     }
 
     ssize_t center = BaseTrajSeq_t_bisect_center_idx_slant_buf(seq, ca, sa, value);
     if (center < 0)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Failed to find center index for interpolation.");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Failed to find center index for interpolation.");
         return T_VALUE_ERROR;
     }
 
@@ -565,14 +565,14 @@ ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
     const BaseTraj_t *entry_ptr = BaseTrajSeq_t_get_raw_item(seq, idx);
     if (!entry_ptr)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Index out of bounds.");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Index out of bounds.");
         return T_INDEX_ERROR;
     }
 
@@ -604,10 +604,10 @@ static ErrorType BaseTrajSeq_t_interpolate_at_center_with_log(
     ErrorType err = BaseTrajSeq_t_interpolate_at(seq, idx, key_kind, key_value, out);
     if (err != T_NO_ERROR)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Interpolation failed at center index %zd, error code: 0x%X", idx, err);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Interpolation failed at center index %zd, error code: 0x%X", idx, err);
         return err; // T_INDEX_ERROR or T_VALUE_ERROR or T_KEY_ERROR
     }
-    C_LOG(LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", idx);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", idx);
     return T_NO_ERROR;
 }
 
@@ -734,10 +734,10 @@ static ErrorType BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t i
         ErrorType err = BaseTrajSeq_t_get_item(seq, idx, out);
         if (err != T_NO_ERROR)
         {
-            C_LOG(LOG_LEVEL_ERROR, "Failed to get item at index %zd.", idx);
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Failed to get item at index %zd.", idx);
             return T_INDEX_ERROR;
         }
-        C_LOG(LOG_LEVEL_DEBUG, "Exact match found at index %zd.", idx);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Exact match found at index %zd.", idx);
         return T_NO_ERROR;
     }
 
@@ -763,14 +763,14 @@ ErrorType BaseTrajSeq_t_get_at(
 {
     if (!seq || !out)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
         return T_INPUT_ERROR;
     }
 
     ssize_t n = seq->length;
     if (n < 3)
     {
-        C_LOG(LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
         return T_VALUE_ERROR;
     }
 
@@ -797,7 +797,7 @@ ErrorType BaseTrajSeq_t_get_at(
         ssize_t center = BaseTrajSeq_t_bisect_center_idx_buf(seq, key_kind, key_value);
         if (center < 0)
         {
-            C_LOG(LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
             return T_VALUE_ERROR;
         }
         target_idx = center < n - 1 ? center : n - 2;

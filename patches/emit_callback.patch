@@ -278,7 +278,7 @@ index b737dac..406dd02 100644
          PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
 @@ -70,7 +90,13 @@ StatusCode Engine_t_integrate(
      }
-     C_LOG(LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
+     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
  
 -    StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr, reason);
 +    StatusCode status = eng->integrate_func_ptr(
@@ -398,7 +398,7 @@ index 8413eb1..bb0a05e 100644
          REQUIRE_NON_NULL(eng);
          PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
 @@ -199,8 +200,8 @@ StatusCode _integrate_rk4(
-         C_LOG(LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
+         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
  
          // err =
 -        BaseTrajSeq_t_append(
