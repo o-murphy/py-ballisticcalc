@@ -10,7 +10,7 @@ from py_ballisticcalc_exts.bclib cimport (
     TrajFlag_t,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
@@ -78,7 +78,7 @@ cdef extern from "include/engine.h" nogil:
     # Full struct definition
     struct Engine_s:
         int integration_step_count
-        V3dT gravity_vector
+        BCLIBC_V3dT gravity_vector
         Config_t config
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr

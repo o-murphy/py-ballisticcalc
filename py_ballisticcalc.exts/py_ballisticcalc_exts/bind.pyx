@@ -26,7 +26,7 @@ from py_ballisticcalc.unit import (
     Unit,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 
 from py_ballisticcalc.vector import Vector
 
@@ -125,8 +125,8 @@ cdef object _new_rad(double val):
     return Angular(val, Unit.Radian)
 
 
-cdef object _v3d_to_vector(const V3dT *v):
-    """Convert C V3dT -> Python Vector"""
+cdef object _v3d_to_vector(const BCLIBC_V3dT *v):
+    """Convert C BCLIBC_V3dT -> Python Vector"""
     return Vector(v.x, v.y, v.z)
 
 

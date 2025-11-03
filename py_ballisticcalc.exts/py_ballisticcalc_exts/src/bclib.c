@@ -407,16 +407,16 @@ void Atmosphere_t_updateDensityFactorAndMachForAltitude(
 }
 
 /**
- * @brief Converts a Wind_t structure to a V3dT vector.
+ * @brief Converts a Wind_t structure to a BCLIBC_V3dT vector.
  *
  * The wind vector components are calculated assuming a standard coordinate system
  * where x is positive downrange and z is positive across-range (windage).
  * Wind direction is 'from' the specified direction (e.g., $0^\circ$ is tailwind, $90^\circ$ is wind from the right).
  *
  * @param wind_ptr Pointer to the Wind_t structure.
- * @return A V3dT structure representing the wind velocity vector (x=downrange, y=vertical, z=crossrange).
+ * @return A BCLIBC_V3dT structure representing the wind velocity vector (x=downrange, y=vertical, z=crossrange).
  */
-static inline V3dT Wind_t_to_V3dT(const Wind_t *restrict wind_ptr)
+static inline BCLIBC_V3dT Wind_t_to_V3dT(const Wind_t *restrict wind_ptr)
 {
     const double dir = wind_ptr->direction_from;
     const double vel = wind_ptr->velocity;
@@ -424,7 +424,7 @@ static inline V3dT Wind_t_to_V3dT(const Wind_t *restrict wind_ptr)
     // Wind direction is from:
     // x = vel * cos(dir) (Downrange, positive is tailwind)
     // z = vel * sin(dir) (Crossrange, positive is wind from right)
-    return (V3dT){
+    return (BCLIBC_V3dT){
         .x = vel * cos(dir),
         .y = 0.0,
         .z = vel * sin(dir)};
@@ -494,13 +494,13 @@ void WindSock_t_release(WindSock_t *ws)
  * The vector is pre-calculated and stored in the cache.
  *
  * @param wind_sock Pointer to the WindSock_t structure.
- * @return The current wind velocity vector (V3dT). Returns a zero vector if the pointer is NULL.
+ * @return The current wind velocity vector (BCLIBC_V3dT). Returns a zero vector if the pointer is NULL.
  */
-V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
+BCLIBC_V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
 {
     if (wind_sock == NULL)
     {
-        return (V3dT){0.0, 0.0, 0.0};
+        return (BCLIBC_V3dT){0.0, 0.0, 0.0};
     }
     return wind_sock->last_vector_cache;
 }
@@ -550,11 +550,11 @@ ErrorType WindSock_t_updateCache(WindSock_t *ws)
  *
  * @param ws Pointer to the WindSock_t structure.
  * @param next_range_param The current range (distance from muzzle) of the projectile.
- * @return The wind velocity vector (V3dT) for the current or next applicable segment. Returns a zero vector if the pointer is NULL or an update fails.
+ * @return The wind velocity vector (BCLIBC_V3dT) for the current or next applicable segment. Returns a zero vector if the pointer is NULL or an update fails.
  */
-V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
+BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
 {
-    V3dT zero_vector = {0.0, 0.0, 0.0};
+    BCLIBC_V3dT zero_vector = {0.0, 0.0, 0.0};
 
     if (ws == NULL)
     {
@@ -652,13 +652,13 @@ double calculateOgw(double bulletWeight, double velocity)
  */
 void Coriolis_t_coriolis_acceleration_local(
     const Coriolis_t *restrict coriolis_ptr,
-    const V3dT *restrict velocity_ptr,
-    V3dT *restrict accel_ptr)
+    const BCLIBC_V3dT *restrict velocity_ptr,
+    BCLIBC_V3dT *restrict accel_ptr)
 {
     // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
     if (coriolis_ptr->flat_fire_only)
     {
-        *accel_ptr = (V3dT){0.0, 0.0, 0.0};
+        *accel_ptr = (BCLIBC_V3dT){0.0, 0.0, 0.0};
         return;
     }
 
@@ -770,22 +770,22 @@ ErrorType BaseTrajData_t_interpolate(
     }
 
     // Cache position and velocity
-    const V3dT vp0 = p0->position;
-    const V3dT vp1 = p1->position;
-    const V3dT vp2 = p2->position;
-    const V3dT vv0 = p0->velocity;
-    const V3dT vv1 = p1->velocity;
-    const V3dT vv2 = p2->velocity;
+    const BCLIBC_V3dT vp0 = p0->position;
+    const BCLIBC_V3dT vp1 = p1->position;
+    const BCLIBC_V3dT vp2 = p2->position;
+    const BCLIBC_V3dT vv0 = p0->velocity;
+    const BCLIBC_V3dT vv1 = p1->velocity;
+    const BCLIBC_V3dT vv2 = p2->velocity;
 
     // Scalar interpolation using PCHIP
 
     // Interpolate all scalar fields
     out->time = (key_kind == KEY_TIME) ? key_value : interpolate_3_pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
-    out->position = (V3dT){
+    out->position = (BCLIBC_V3dT){
         interpolate_3_pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
         interpolate_3_pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
         interpolate_3_pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
-    out->velocity = (V3dT){
+    out->velocity = (BCLIBC_V3dT){
         interpolate_3_pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
         interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
         interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};

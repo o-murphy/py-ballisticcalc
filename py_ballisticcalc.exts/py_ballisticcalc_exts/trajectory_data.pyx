@@ -3,7 +3,7 @@
 Lightweight Cython data types for trajectory rows and interpolation helpers.
 
 This module mirrors a subset of the Python API in py_ballisticcalc.trajectory_data:
- - BaseTrajDataT: minimal row with time, position (V3dT), velocity (V3dT), mach.
+ - BaseTrajDataT: minimal row with time, position (BCLIBC_V3dT), velocity (BCLIBC_V3dT), mach.
 
 Primary producer/consumer is the Cython engines which operate on a dense C buffer
 and convert to these types as needed for interpolation or presentation.

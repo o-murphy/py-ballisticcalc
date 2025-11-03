@@ -4,7 +4,7 @@
 
 /**
  * @brief Calculate the derivative of velocity with respect to time (acceleration).
- * * Assumes all necessary types (V3dT, ShotProps_t, Coriolis_t) and vector
+ * * Assumes all necessary types (BCLIBC_V3dT, ShotProps_t, Coriolis_t) and vector
  * functions (mulS, mag, sub, add, Coriolis_t_coriolis_acceleration_local)
  * are declared and defined in relevant C headers.
  *
@@ -13,24 +13,24 @@
  * @param km_coeff Drag coefficient.
  * @param shot_props_ptr Pointer to shot properties (for Coriolis data).
  * @param ground_velocity_ptr Pointer to ground velocity vector (for Coriolis calculation).
- * @return V3dT The acceleration vector (dv/dt).
+ * @return BCLIBC_V3dT The acceleration vector (dv/dt).
  */
-static inline V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector_ptr, double km_coeff,
-                                   const ShotProps_t *shot_props_ptr, const V3dT *ground_velocity_ptr)
+static inline BCLIBC_V3dT _calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC_V3dT *gravity_vector_ptr, double km_coeff,
+                                   const ShotProps_t *shot_props_ptr, const BCLIBC_V3dT *ground_velocity_ptr)
 {
     // Local variables for components and result
-    V3dT drag_force_component;
-    V3dT coriolis_acceleration;
-    V3dT acceleration; // The return value
+    BCLIBC_V3dT drag_force_component;
+    BCLIBC_V3dT coriolis_acceleration;
+    BCLIBC_V3dT acceleration; // The return value
 
     // Bullet velocity changes due to drag and gravity
-    // drag_force_component = mulS(v_ptr, km_coeff * mag(v_ptr))
-    // Note: Assuming mulS and mag operate on V3dT and double types respectively
-    drag_force_component = mulS(v_ptr, km_coeff * mag(v_ptr));
+    // drag_force_component = BCLIBC_V3dT_mulS(v_ptr, km_coeff * BCLIBC_V3dT_mag(v_ptr))
+    // Note: Assuming mulS and mag operate on BCLIBC_V3dT and double types respectively
+    drag_force_component = BCLIBC_V3dT_mulS(v_ptr, km_coeff * BCLIBC_V3dT_mag(v_ptr));
 
-    // acceleration = sub(gravity_vector_ptr, &drag_force_component)
-    // Note: Assuming sub takes two const V3dT* and returns V3dT
-    acceleration = sub(gravity_vector_ptr, &drag_force_component);
+    // acceleration = BCLIBC_V3dT_sub(gravity_vector_ptr, &drag_force_component)
+    // Note: Assuming sub takes two const BCLIBC_V3dT* and returns BCLIBC_V3dT
+    acceleration = BCLIBC_V3dT_sub(gravity_vector_ptr, &drag_force_component);
 
     // Add Coriolis acceleration if available
     // Check the flat_fire_only flag within the Coriolis structure
@@ -43,9 +43,9 @@ static inline V3dT _calculate_dvdt(const V3dT *v_ptr, const V3dT *gravity_vector
         Coriolis_t_coriolis_acceleration_local(
             &shot_props_ptr->coriolis, ground_velocity_ptr, &coriolis_acceleration);
 
-        // acceleration = add(&acceleration, &coriolis_acceleration)
-        // Note: Assuming add takes two const V3dT* and returns V3dT
-        acceleration = add(&acceleration, &coriolis_acceleration);
+        // acceleration = BCLIBC_V3dT_add(&acceleration, &coriolis_acceleration)
+        // Note: Assuming add takes two const BCLIBC_V3dT* and returns BCLIBC_V3dT
+        acceleration = BCLIBC_V3dT_add(&acceleration, &coriolis_acceleration);
     }
 
     return acceleration;
@@ -95,11 +95,11 @@ StatusCode _integrate_rk4(
     double mach = 0.0;
     double time = 0.0;
     double km = 0.0;
-    V3dT range_vector;
-    V3dT velocity_vector;
-    V3dT relative_velocity;
-    V3dT gravity_vector;
-    V3dT wind_vector;
+    BCLIBC_V3dT range_vector;
+    BCLIBC_V3dT velocity_vector;
+    BCLIBC_V3dT relative_velocity;
+    BCLIBC_V3dT gravity_vector;
+    BCLIBC_V3dT wind_vector;
     double calc_step;
 
     C_LOG(LOG_LEVEL_DEBUG, "Variables declared\n");
@@ -115,16 +115,16 @@ StatusCode _integrate_rk4(
     // Working variables
     *reason = NO_TERMINATE;
     double relative_speed;
-    V3dT _dir_vector;
+    BCLIBC_V3dT _dir_vector;
     eng->integration_step_count = 0;
 
     // RK4 specific variables
-    V3dT _temp_add_operand;
-    V3dT _temp_v_result;
-    V3dT _v_sum_intermediate;
-    V3dT _p_sum_intermediate;
-    V3dT v1, v2, v3, v4;
-    V3dT p1, p2, p3, p4;
+    BCLIBC_V3dT _temp_add_operand;
+    BCLIBC_V3dT _temp_v_result;
+    BCLIBC_V3dT _v_sum_intermediate;
+    BCLIBC_V3dT _p_sum_intermediate;
+    BCLIBC_V3dT v1, v2, v3, v4;
+    BCLIBC_V3dT p1, p2, p3, p4;
 
     // Initialize gravity vector
     gravity_vector.x = 0.0;
@@ -161,7 +161,7 @@ StatusCode _integrate_rk4(
 
     // Calculate velocity vector
     C_LOG(LOG_LEVEL_DEBUG, "About to call mulS\n");
-    velocity_vector = mulS(&_dir_vector, velocity);
+    velocity_vector = BCLIBC_V3dT_mulS(&_dir_vector, velocity);
 
     C_LOG(LOG_LEVEL_DEBUG, "Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
@@ -213,8 +213,8 @@ StatusCode _integrate_rk4(
         C_LOG(LOG_LEVEL_DEBUG, "Append successful\n");
 
         // Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
-        relative_velocity = sub(&velocity_vector, &wind_vector);
-        relative_speed = mag(&relative_velocity);
+        relative_velocity = BCLIBC_V3dT_sub(&velocity_vector, &wind_vector);
+        relative_speed = BCLIBC_V3dT_mag(&relative_velocity);
 
         delta_time = calc_step;
 
@@ -238,57 +238,57 @@ StatusCode _integrate_rk4(
         v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v2 = f(relative_velocity + 0.5 * delta_time * v1)
-        _temp_add_operand = mulS(&v1, 0.5 * delta_time);
-        _temp_v_result = add(&relative_velocity, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v1, 0.5 * delta_time);
+        _temp_v_result = BCLIBC_V3dT_add(&relative_velocity, &_temp_add_operand);
         v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v3 = f(relative_velocity + 0.5 * delta_time * v2)
-        _temp_add_operand = mulS(&v2, 0.5 * delta_time);
-        _temp_v_result = add(&relative_velocity, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v2, 0.5 * delta_time);
+        _temp_v_result = BCLIBC_V3dT_add(&relative_velocity, &_temp_add_operand);
         v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v4 = f(relative_velocity + delta_time * v3)
-        _temp_add_operand = mulS(&v3, delta_time);
-        _temp_v_result = add(&relative_velocity, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v3, delta_time);
+        _temp_v_result = BCLIBC_V3dT_add(&relative_velocity, &_temp_add_operand);
         v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // p1 = velocity_vector
         p1 = velocity_vector;
 
         // p2 = (velocity_vector + 0.5 * delta_time * v1)
-        _temp_add_operand = mulS(&v1, 0.5 * delta_time);
-        p2 = add(&velocity_vector, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v1, 0.5 * delta_time);
+        p2 = BCLIBC_V3dT_add(&velocity_vector, &_temp_add_operand);
 
         // p3 = (velocity_vector + 0.5 * delta_time * v2)
-        _temp_add_operand = mulS(&v2, 0.5 * delta_time);
-        p3 = add(&velocity_vector, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v2, 0.5 * delta_time);
+        p3 = BCLIBC_V3dT_add(&velocity_vector, &_temp_add_operand);
 
         // p4 = (velocity_vector + delta_time * v3)
-        _temp_add_operand = mulS(&v3, delta_time);
-        p4 = add(&velocity_vector, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v3, delta_time);
+        p4 = BCLIBC_V3dT_add(&velocity_vector, &_temp_add_operand);
 
         // velocity_vector += (v1 + 2 * v2 + 2 * v3 + v4) * (delta_time / 6.0)
-        _temp_add_operand = mulS(&v2, 2.0);
-        _v_sum_intermediate = add(&v1, &_temp_add_operand);
-        _temp_add_operand = mulS(&v3, 2.0);
-        _v_sum_intermediate = add(&_v_sum_intermediate, &_temp_add_operand);
-        _v_sum_intermediate = add(&_v_sum_intermediate, &v4);
-        _v_sum_intermediate = mulS(&_v_sum_intermediate, (delta_time / 6.0));
-        velocity_vector = add(&velocity_vector, &_v_sum_intermediate);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v2, 2.0);
+        _v_sum_intermediate = BCLIBC_V3dT_add(&v1, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&v3, 2.0);
+        _v_sum_intermediate = BCLIBC_V3dT_add(&_v_sum_intermediate, &_temp_add_operand);
+        _v_sum_intermediate = BCLIBC_V3dT_add(&_v_sum_intermediate, &v4);
+        _v_sum_intermediate = BCLIBC_V3dT_mulS(&_v_sum_intermediate, (delta_time / 6.0));
+        velocity_vector = BCLIBC_V3dT_add(&velocity_vector, &_v_sum_intermediate);
 
         // range_vector += (p1 + 2 * p2 + 2 * p3 + p4) * (delta_time / 6.0)
-        _temp_add_operand = mulS(&p2, 2.0);
-        _p_sum_intermediate = add(&p1, &_temp_add_operand);
-        _temp_add_operand = mulS(&p3, 2.0);
-        _p_sum_intermediate = add(&_p_sum_intermediate, &_temp_add_operand);
-        _p_sum_intermediate = add(&_p_sum_intermediate, &p4);
-        _p_sum_intermediate = mulS(&_p_sum_intermediate, (delta_time / 6.0));
-        range_vector = add(&range_vector, &_p_sum_intermediate);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&p2, 2.0);
+        _p_sum_intermediate = BCLIBC_V3dT_add(&p1, &_temp_add_operand);
+        _temp_add_operand = BCLIBC_V3dT_mulS(&p3, 2.0);
+        _p_sum_intermediate = BCLIBC_V3dT_add(&_p_sum_intermediate, &_temp_add_operand);
+        _p_sum_intermediate = BCLIBC_V3dT_add(&_p_sum_intermediate, &p4);
+        _p_sum_intermediate = BCLIBC_V3dT_mulS(&_p_sum_intermediate, (delta_time / 6.0));
+        range_vector = BCLIBC_V3dT_add(&range_vector, &_p_sum_intermediate);
 
         C_LOG(LOG_LEVEL_DEBUG, "RK4 integration complete\n");
 
         // Update time and velocity magnitude
-        velocity = mag(&velocity_vector);
+        velocity = BCLIBC_V3dT_mag(&velocity_vector);
         time += delta_time;
 
         C_LOG(LOG_LEVEL_DEBUG, "Velocity=%f, Time=%f\n", velocity, time);

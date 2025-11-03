@@ -11,7 +11,7 @@ from py_ballisticcalc_exts.bclib cimport (
     InterpKey,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 
 
 cdef extern from "include/bind.h" nogil:
@@ -34,7 +34,7 @@ cdef WindSock_t WindSock_t_from_pylist(object winds_py_list)
 cdef object _new_feet(double val)
 cdef object _new_rad(double val)
 
-cdef object _v3d_to_vector(const V3dT *v)
+cdef object _v3d_to_vector(const BCLIBC_V3dT *v)
 
 cdef InterpKey _attribute_to_key(str key_attribute)
 cdef str _key_to_attribute(InterpKey key_kind)

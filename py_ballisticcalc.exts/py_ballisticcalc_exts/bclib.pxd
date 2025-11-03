@@ -1,5 +1,5 @@
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport ErrorType
 
@@ -77,8 +77,8 @@ cdef extern from "include/bclib.h" nogil:
 
     void Coriolis_t_coriolis_acceleration_local(
         const Coriolis_t *coriolis_ptr,
-        V3dT *velocity_ptr,
-        V3dT *accel_ptr
+        BCLIBC_V3dT *velocity_ptr,
+        BCLIBC_V3dT *accel_ptr
     ) noexcept nogil
 
     ctypedef struct Wind_t:
@@ -92,13 +92,13 @@ cdef extern from "include/bclib.h" nogil:
         int current
         int length
         double next_range
-        V3dT last_vector_cache
+        BCLIBC_V3dT last_vector_cache
 
     ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
     void WindSock_t_release(WindSock_t *ws) noexcept nogil
-    V3dT WindSock_t_currentVector(WindSock_t *wind_sock) noexcept nogil
+    BCLIBC_V3dT WindSock_t_currentVector(WindSock_t *wind_sock) noexcept nogil
     ErrorType WindSock_t_updateCache(WindSock_t *ws) noexcept nogil
-    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param) noexcept nogil
+    BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param) noexcept nogil
 
     ctypedef enum TrajFlag_t:
         TFLAG_NONE = 0,
@@ -113,8 +113,8 @@ cdef extern from "include/bclib.h" nogil:
 
     ctypedef struct BaseTrajData_t:
         double time
-        V3dT position
-        V3dT velocity
+        BCLIBC_V3dT position
+        BCLIBC_V3dT velocity
         double mach
 
     ctypedef struct ShotProps_t:

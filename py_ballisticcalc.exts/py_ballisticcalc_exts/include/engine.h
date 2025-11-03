@@ -73,7 +73,7 @@ typedef IntegrateFunc *IntegrateFuncPtr;
 typedef struct Engine_s
 {
     int integration_step_count;
-    V3dT gravity_vector;
+    BCLIBC_V3dT gravity_vector;
     Config_t config;
     ShotProps_t shot;
     IntegrateFuncPtr integrate_func_ptr;

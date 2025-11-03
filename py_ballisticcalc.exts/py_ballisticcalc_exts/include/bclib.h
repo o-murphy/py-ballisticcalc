@@ -98,8 +98,8 @@ typedef enum
 typedef struct
 {
     double time;
-    V3dT position;
-    V3dT velocity;
+    BCLIBC_V3dT position;
+    BCLIBC_V3dT velocity;
     double mach;
 } BaseTrajData_t;
 
@@ -109,7 +109,7 @@ typedef struct
     int current;
     int length;
     double next_range;
-    V3dT last_vector_cache;
+    BCLIBC_V3dT last_vector_cache;
 } WindSock_t;
 
 typedef struct
@@ -175,9 +175,9 @@ extern "C"
 
     ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);
-    V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
+    BCLIBC_V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
     ErrorType WindSock_t_updateCache(WindSock_t *ws);
-    V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
+    BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
     // helpers
     double getCorrection(double distance, double offset);
@@ -186,8 +186,8 @@ extern "C"
 
     void Coriolis_t_coriolis_acceleration_local(
         const Coriolis_t *coriolis_ptr,
-        const V3dT *velocity_ptr,
-        V3dT *accel_ptr);
+        const BCLIBC_V3dT *velocity_ptr,
+        BCLIBC_V3dT *accel_ptr);
 
     ErrorType BaseTrajData_t_interpolate(
         InterpKey key_kind,

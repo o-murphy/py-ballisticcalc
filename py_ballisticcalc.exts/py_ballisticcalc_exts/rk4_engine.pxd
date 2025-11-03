@@ -9,7 +9,7 @@ from py_ballisticcalc_exts.bclib cimport (
     TrajFlag_t,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 # noinspection PyUnresolvedReferences

@@ -57,12 +57,12 @@ StatusCode _integrate_euler(
     double time = 0.0;
     double drag = 0.0;
     double km = 0.0;
-    V3dT range_vector;
-    V3dT velocity_vector;
-    V3dT relative_velocity;
-    V3dT gravity_vector;
-    V3dT wind_vector;
-    V3dT coriolis_accel;
+    BCLIBC_V3dT range_vector;
+    BCLIBC_V3dT velocity_vector;
+    BCLIBC_V3dT relative_velocity;
+    BCLIBC_V3dT gravity_vector;
+    BCLIBC_V3dT wind_vector;
+    BCLIBC_V3dT coriolis_accel;
     double calc_step = eng->shot.calc_step;
 
     // Early binding of configuration constants
@@ -73,9 +73,9 @@ StatusCode _integrate_euler(
     // Working variables
     *reason = NO_TERMINATE;
     double relative_speed;
-    V3dT _dir_vector;
-    V3dT _tv;
-    V3dT delta_range_vector;
+    BCLIBC_V3dT _dir_vector;
+    BCLIBC_V3dT _tv;
+    BCLIBC_V3dT delta_range_vector;
     eng->integration_step_count = 0;
 
     // Initialize gravity vector
@@ -101,7 +101,7 @@ StatusCode _integrate_euler(
     _dir_vector.z = cos(eng->shot.barrel_elevation) * sin(eng->shot.barrel_azimuth);
 
     // Calculate velocity vector
-    velocity_vector = mulS(&_dir_vector, velocity);
+    velocity_vector = BCLIBC_V3dT_mulS(&_dir_vector, velocity);
 
     // Trajectory Loop
 
@@ -147,8 +147,8 @@ StatusCode _integrate_euler(
         // Euler integration step
 
         // 1. Calculate relative velocity (projectile velocity - wind)
-        relative_velocity = sub(&velocity_vector, &wind_vector);
-        relative_speed = mag(&relative_velocity);
+        relative_velocity = BCLIBC_V3dT_sub(&velocity_vector, &wind_vector);
+        relative_speed = BCLIBC_V3dT_mag(&relative_velocity);
 
         // 2. Calculate time step (adaptive based on velocity)
         delta_time = _euler_time_step(calc_step, relative_speed);
@@ -158,26 +158,26 @@ StatusCode _integrate_euler(
         drag = km * relative_speed;
 
         // 4. Apply drag, gravity, and Coriolis to velocity
-        _tv = mulS(&relative_velocity, drag);
-        _tv = sub(&gravity_vector, &_tv);
+        _tv = BCLIBC_V3dT_mulS(&relative_velocity, drag);
+        _tv = BCLIBC_V3dT_sub(&gravity_vector, &_tv);
 
         // Check the flat_fire_only flag within the Coriolis structure
         if (!eng->shot.coriolis.flat_fire_only)
         {
             Coriolis_t_coriolis_acceleration_local(
                 &eng->shot.coriolis, &velocity_vector, &coriolis_accel);
-            _tv = add(&_tv, &coriolis_accel);
+            _tv = BCLIBC_V3dT_add(&_tv, &coriolis_accel);
         }
 
-        _tv = mulS(&_tv, delta_time);
-        velocity_vector = add(&velocity_vector, &_tv);
+        _tv = BCLIBC_V3dT_mulS(&_tv, delta_time);
+        velocity_vector = BCLIBC_V3dT_add(&velocity_vector, &_tv);
 
         // 5. Update position based on new velocity
-        delta_range_vector = mulS(&velocity_vector, delta_time);
-        range_vector = add(&range_vector, &delta_range_vector);
+        delta_range_vector = BCLIBC_V3dT_mulS(&velocity_vector, delta_time);
+        range_vector = BCLIBC_V3dT_add(&range_vector, &delta_range_vector);
 
         // 6. Update time and velocity magnitude
-        velocity = mag(&velocity_vector);
+        velocity = BCLIBC_V3dT_mag(&velocity_vector);
         time += delta_time;
 
         // Check termination conditions

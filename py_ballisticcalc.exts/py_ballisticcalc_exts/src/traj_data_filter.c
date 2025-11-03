@@ -7,8 +7,8 @@ void TrajectoryDataFilter_t_init(
     TrajectoryDataFilter_t *tdf,
     ShotProps_t *props,
     TrajFlag_t filter_flags,
-    V3dT initial_position,
-    V3dT initial_velocity,
+    BCLIBC_V3dT initial_position,
+    BCLIBC_V3dT initial_velocity,
     double barrel_angle_rad,
     double look_angle_rad,
     double range_limit,
@@ -36,7 +36,7 @@ void TrajectoryDataFilter_t_init(
             &tdf->props->atmo,
             initial_position.y,
             &density, &mach);
-        if (mag(&initial_velocity) < mach)
+        if (BCLIBC_V3dT_mag(&initial_velocity) < mach)
         {
             // If we start below Mach 1, we won't look for Mach crossings
             tdf->filter &= ~TFLAG_MACH;

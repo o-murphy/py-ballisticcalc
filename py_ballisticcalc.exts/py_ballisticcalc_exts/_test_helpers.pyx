@@ -27,7 +27,7 @@ from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 
 __all__ = [
     'init_shot',
@@ -49,7 +49,7 @@ __all__ = [
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
-    return BaseTrajDataT(BaseTrajData_t(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach))
+    return BaseTrajDataT(BaseTrajData_t(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach))
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.

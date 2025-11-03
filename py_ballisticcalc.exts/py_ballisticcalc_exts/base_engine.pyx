@@ -10,7 +10,7 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 # noinspection PyUnresolvedReferences
 from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTrajSeqT,
@@ -111,7 +111,7 @@ cdef class CythonizedBaseIntegrationEngine:
             The Engine_t is built-in to CythonizedBaseIntegrationEngine,
             so we are need no set it's fields to null
         """
-        # self._engine.gravity_vector = V3dT(.0, .0, .0)
+        # self._engine.gravity_vector = BCLIBC_V3dT(.0, .0, .0)
         # self._engine.integration_step_count = 0
         pass
 
@@ -410,7 +410,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         # hack to reload config if it was changed explicit on existed instance
         self._engine.config = Config_t_from_pyobject(self._config)
-        self._engine.gravity_vector = V3dT(.0, self._engine.config.cGravityConstant, .0)
+        self._engine.gravity_vector = BCLIBC_V3dT(.0, self._engine.config.cGravityConstant, .0)
 
         self._table_data = shot_info.ammo.dm.drag_table
         # Build C shot struct with robust cleanup on any error that follows
@@ -592,7 +592,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         # FIXME: possibly needs to be initialised with zeros
         # apex = BaseTrajData_t(
-        #     0.0, V3dT(0.0, 0.0, 0.0), V3dT(0.0, 0.0, 0.0), 0.0)
+        #     0.0, BCLIBC_V3dT(0.0, 0.0, 0.0), BCLIBC_V3dT(0.0, 0.0, 0.0), 0.0)
 
         cdef StatusCode status = Engine_t_find_apex(&self._engine, &apex)
         if status == StatusCode.STATUS_SUCCESS:
