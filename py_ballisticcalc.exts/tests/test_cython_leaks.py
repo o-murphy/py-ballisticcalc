@@ -116,18 +116,18 @@ def test_invalid_wind_entry_cleanup(loaded_engine_instance):
 
     class BadWind:
         # Provide until_distance.raw_value so Shot.winds sorting works,
-        # but omit attributes required by Wind_t_from_py to force failure later.
+        # but omit attributes required by BCLIBC_Wind_from_py to force failure later.
         def __init__(self):
             self.until_distance = _AD(0.0)  # Intentionally missing '_feet'
 
     calc = Calculator(config=_base_config(), engine=loaded_engine_instance)
     shot = create_7_62_mm_shot()
 
-    # Inject an invalid wind to trigger cleanup in WindSock_t_from_pylist
+    # Inject an invalid wind to trigger cleanup in BCLIBC_WindSock_from_pylist
     winds = list(shot.winds)
     winds.append(BadWind())  # type: ignore[arg-type]
     shot.winds = winds  # type: ignore[assignment]
-    # Fails when converting Python winds to C Wind_t (AttributeError) or raises RuntimeError wrapper
+    # Fails when converting Python winds to C BCLIBC_Wind (AttributeError) or raises RuntimeError wrapper
     with pytest.raises((RuntimeError, AttributeError)):
         _ = calc.integrate(shot, Distance.Yard(50), Distance.Yard(25))
 
