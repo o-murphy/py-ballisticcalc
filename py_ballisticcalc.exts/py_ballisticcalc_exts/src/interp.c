@@ -95,7 +95,7 @@ static void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2
     }
 }
 
-double _hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1)
+double BCLIBC_hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1)
 {
     // xk1 - xk
     double h = xk1 - xk;
@@ -126,7 +126,7 @@ double _hermite(double x, double xk, double xk1, double yk, double yk1, double m
 // Monotone PCHIP interpolation for a single component using 3 support points.
 // Sorts (x*, y*) by x*, computes PCHIP slopes, and evaluates the Hermite piece
 // containing x. Assumes all x* distinct. Returns interpolated y.
-double interpolate_3_pt(double x, double x0, double x1, double x2, double y0, double y1, double y2)
+double BCLIBC_interpolate3pt(double x, double x0, double x1, double x2, double y0, double y1, double y2)
 {
 
     // Sort without copying
@@ -163,17 +163,17 @@ double interpolate_3_pt(double x, double x0, double x1, double x2, double y0, do
     double m0, m1, m2;
     _pchip_slopes3(x0, y0, x1, y1, x2, y2, &m0, &m1, &m2);
 
-    return (x <= x1) ? _hermite(x, x0, x1, y0, y1, m0, m1)
-                     : _hermite(x, x1, x2, y1, y2, m1, m2);
+    return (x <= x1) ? BCLIBC_hermite(x, x0, x1, y0, y1, m0, m1)
+                     : BCLIBC_hermite(x, x1, x2, y1, y2, m1, m2);
 }
 
 // Declaration for 2-point interpolation
-int interpolate_2_pt(double x, double x0, double y0, double x1, double y1, double *result)
+int BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double *result)
 {
     if (x1 == x0)
     {
-        return INTERP_ERROR_ZERODIVISION;
+        return BCLIBC_INTERP_ERROR_ZERODIVISION;
     }
     *result = y0 + (y1 - y0) * (x - x0) / (x1 - x0);
-    return INTERP_SUCCESS;
+    return BCLIBC_INTERP_SUCCESS;
 }

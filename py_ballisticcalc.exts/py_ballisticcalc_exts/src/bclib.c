@@ -780,17 +780,17 @@ BCLIBC_ErrorType BaseTrajData_t_interpolate(
     // Scalar interpolation using PCHIP
 
     // Interpolate all scalar fields
-    out->time = (key_kind == KEY_TIME) ? key_value : interpolate_3_pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
+    out->time = (key_kind == KEY_TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
     out->position = (BCLIBC_V3dT){
-        interpolate_3_pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
-        interpolate_3_pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
-        interpolate_3_pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
+        BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
+        BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
+        BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
     out->velocity = (BCLIBC_V3dT){
-        interpolate_3_pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
-        interpolate_3_pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
-        interpolate_3_pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
+        BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
+        BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
+        BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
 
-    out->mach = (key_kind == KEY_MACH) ? key_value : interpolate_3_pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
+    out->mach = (key_kind == KEY_MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
 
     return BCLIBC_E_NO_ERROR;
 }

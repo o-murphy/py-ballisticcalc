@@ -70,7 +70,7 @@ static inline double BCLIBC_BaseTraj_slant_val_buf(const BCLIBC_BaseTraj *p, dou
  * @param out Pointer to output BCLIBC_BaseTraj where results will be stored.
  * @param skip_key InterpKey indicating which field is the interpolation key.
  */
-static void interpolate_3_pt_vectorized(
+static void BCLIBC_interpolate3pt_vectorized(
     double x, double ox0, double ox1, double ox2,
     const BCLIBC_BaseTraj *p0, const BCLIBC_BaseTraj *p1, const BCLIBC_BaseTraj *p2,
     BCLIBC_BaseTraj *out, InterpKey skip_key)
@@ -78,22 +78,22 @@ static void interpolate_3_pt_vectorized(
     // Time: either use x directly (if interpolating by time) or interpolate
     out->time = (skip_key == KEY_TIME)
                     ? x
-                    : interpolate_3_pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+                    : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
 
     // Position components - always interpolate
-    out->px = interpolate_3_pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
-    out->py = interpolate_3_pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
-    out->pz = interpolate_3_pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
+    out->px = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
+    out->py = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
+    out->pz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
 
     // Velocity components - always interpolate
-    out->vx = interpolate_3_pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
-    out->vy = interpolate_3_pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
-    out->vz = interpolate_3_pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
+    out->vx = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
+    out->vy = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
+    out->vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
 
     // Mach: either use x directly (if interpolating by mach) or interpolate
     out->mach = (skip_key == KEY_MACH)
                     ? x
-                    : interpolate_3_pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
+                    : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
 }
 
 /**
@@ -151,7 +151,7 @@ static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolate_raw(const BCLIBC_BaseTraj
     // Interpolate all trajectory components
     // Vectorized interpolation
     // Store results
-    interpolate_3_pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
+    BCLIBC_interpolate3pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
 
     return BCLIBC_E_NO_ERROR;
 }
@@ -534,16 +534,16 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAtSlantHeight(
     double ox1 = BCLIBC_BaseTraj_slant_val_buf(p1, ca, sa);
     double ox2 = BCLIBC_BaseTraj_slant_val_buf(p2, ca, sa);
 
-    out->time = interpolate_3_pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+    out->time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
     out->position = (BCLIBC_V3dT){
-        interpolate_3_pt(value, ox0, ox1, ox2, p0->px, p1->px, p2->px),
-        interpolate_3_pt(value, ox0, ox1, ox2, p0->py, p1->py, p2->py),
-        interpolate_3_pt(value, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz)};
+        BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->px, p1->px, p2->px),
+        BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->py, p1->py, p2->py),
+        BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz)};
     out->velocity = (BCLIBC_V3dT){
-        interpolate_3_pt(value, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx),
-        interpolate_3_pt(value, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy),
-        interpolate_3_pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz)};
-    out->mach = interpolate_3_pt(value, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
+        BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx),
+        BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy),
+        BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz)};
+    out->mach = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
 
     return BCLIBC_E_NO_ERROR;
 }
