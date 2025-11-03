@@ -156,7 +156,7 @@ static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolate_raw(const BCLIBC_BaseTraj
     return BCLIBC_E_NO_ERROR;
 }
 
-BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out)
 {
     if (!seq || !out)
     {
@@ -491,7 +491,7 @@ static ssize_t BCLIBC_BaseTrajSeq_bisect_center_idx_slant_buf(
  * @param seq Pointer to the BCLIBC_BaseTrajSeq sequence.
  * @param look_angle_rad Look angle in radians.
  * @param value Target slant height for interpolation.
- * @param out Pointer to BaseTrajData_t where interpolated results will be stored.
+ * @param out Pointer to BCLIBC_BaseTrajData where interpolated results will be stored.
  * @return BCLIBC_E_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
  *         BCLIBC_E_INPUT_ERROR if seq or out is NULL,
  *         BCLIBC_E_VALUE_ERROR if not enough points or interpolation fails.
@@ -500,7 +500,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAtSlantHeight(
     const BCLIBC_BaseTrajSeq *seq,
     double look_angle_rad,
     double value,
-    BaseTrajData_t *out)
+    BCLIBC_BaseTrajData *out)
 {
     if (!seq || !out)
     {
@@ -556,12 +556,12 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAtSlantHeight(
  *
  * @param seq Pointer to the BCLIBC_BaseTrajSeq sequence.
  * @param idx Index of the trajectory point to retrieve.
- * @param out Pointer to BaseTrajData_t where results will be stored.
+ * @param out Pointer to BCLIBC_BaseTrajData where results will be stored.
  * @return BCLIBC_E_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
  *         BCLIBC_E_INPUT_ERROR if seq or out is NULL,
  *         BCLIBC_E_INDEX_ERROR if idx is out of bounds.
  */
-BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BaseTrajData_t *out)
+BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_BaseTrajData *out)
 {
     if (!seq || !out)
     {
@@ -599,7 +599,7 @@ static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt_center_with_log(
     ssize_t idx,
     InterpKey key_kind,
     double key_value,
-    BaseTrajData_t *out)
+    BCLIBC_BaseTrajData *out)
 {
     BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_interpolateAt(seq, idx, key_kind, key_value, out);
     if (err != BCLIBC_E_NO_ERROR)
@@ -724,7 +724,7 @@ static ssize_t BCLIBC_BaseTrajSeq_find_target_index(const BCLIBC_BaseTraj *buf, 
  * @param out Output trajectory data.
  * @return BCLIBC_E_NO_ERROR if exact match found, otherwise BCLIBC_E_VALUE_ERROR.
  */
-static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_try_get_exact(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_try_get_exact(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out)
 {
     const BCLIBC_BaseTraj *buf = seq->buffer;
     double epsilon = 1e-9;
@@ -759,7 +759,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(
     InterpKey key_kind,
     double key_value,
     double start_from_time,
-    BaseTrajData_t *out)
+    BCLIBC_BaseTrajData *out)
 {
     if (!seq || !out)
     {

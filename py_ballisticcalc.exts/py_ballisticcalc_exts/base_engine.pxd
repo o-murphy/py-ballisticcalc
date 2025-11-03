@@ -7,12 +7,12 @@ from py_ballisticcalc_exts.bclib cimport (
     Config_t,
     ShotProps_t,
     WindSock_t,
-    TrajFlag_t,
+    BCLIBC_TrajFlag,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
+from py_ballisticcalc_exts.trajectory_data cimport BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
 
@@ -67,7 +67,7 @@ cdef extern from "include/engine.h" nogil:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        TrajFlag_t filter_flags,
+        BCLIBC_TrajFlag filter_flags,
         BCLIBC_BaseTrajSeq *traj_seq_ptr,
         TerminationReason *reason,
     ) noexcept nogil
@@ -91,14 +91,14 @@ cdef extern from "include/engine.h" nogil:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        TrajFlag_t filter_flags,
+        BCLIBC_TrajFlag filter_flags,
         BCLIBC_BaseTrajSeq *traj_seq_ptr,
         TerminationReason *reason,
     ) noexcept nogil
 
     BCLIBC_StatusCode Engine_t_find_apex(
         Engine_t *eng,
-        BaseTrajData_t *out
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil
 
     BCLIBC_StatusCode Engine_t_error_at_distance(
@@ -198,7 +198,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double low_angle_deg,
         double high_angle_deg,
     )
-    cdef BaseTrajData_t _find_apex(
+    cdef BCLIBC_BaseTrajData _find_apex(
         CythonizedBaseIntegrationEngine self,
     )
     cdef double _error_at_distance(
@@ -213,7 +213,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        TrajFlag_t filter_flags
+        BCLIBC_TrajFlag filter_flags
     )
 
     cdef void _raise_on_init_zero_error(

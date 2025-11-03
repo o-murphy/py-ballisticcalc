@@ -58,7 +58,7 @@ BCLIBC_StatusCode Engine_t_integrate(
     double range_limit_ft,
     double range_step_ft,
     double time_step,
-    TrajFlag_t filter_flags,
+    BCLIBC_TrajFlag filter_flags,
     BCLIBC_BaseTrajSeq *traj_seq_ptr,
     TerminationReason *reason)
 {
@@ -95,7 +95,7 @@ BCLIBC_StatusCode Engine_t_integrate(
     return BCLIBC_STATUS_ERROR;
 }
 
-BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
+BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out)
 {
     if (!eng || !out)
     {
@@ -127,7 +127,7 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
 
     // try
     TerminationReason reason;
-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result, &reason);
+    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &result, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -173,7 +173,7 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
     }
 
     BCLIBC_BaseTrajSeq trajectory;
-    BaseTrajData_t hit;
+    BCLIBC_BaseTrajData hit;
     BCLIBC_BaseTraj *last_ptr;
 
     BCLIBC_BaseTrajSeq_init(&trajectory);
@@ -183,7 +183,7 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
     eng->shot.barrel_elevation = angle_rad;
 
     TerminationReason reason;
-    BCLIBC_StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory, &reason);
+    BCLIBC_StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &trajectory, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -239,7 +239,7 @@ BCLIBC_StatusCode Engine_t_init_zero_calculation(
     }
 
     BCLIBC_StatusCode status;
-    BaseTrajData_t apex;
+    BCLIBC_BaseTrajData apex;
     double apex_slant_ft;
 
     result->status = ZERO_INIT_DONE;
@@ -370,7 +370,7 @@ BCLIBC_StatusCode Engine_t_zero_angle(
         return BCLIBC_STATUS_SUCCESS; // immediately return when already done
     }
 
-    BaseTrajData_t hit;
+    BCLIBC_BaseTrajData hit;
     BCLIBC_BaseTrajSeq seq;
     status = BCLIBC_STATUS_SUCCESS; // initialize
     BCLIBC_BaseTrajSeq_init(&seq);
@@ -419,7 +419,7 @@ BCLIBC_StatusCode Engine_t_zero_angle(
         BCLIBC_BaseTrajSeq_init(&seq);
 
         TerminationReason reason;
-        status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq, &reason);
+        status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE, &seq, &reason);
 
         if (status != BCLIBC_STATUS_SUCCESS)
         {
@@ -601,7 +601,7 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_ra
     BCLIBC_BaseTrajSeq_init(&trajectory);
 
     TerminationReason reason;
-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory, &reason);
+    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE, &trajectory, &reason);
     if (status != BCLIBC_STATUS_SUCCESS)
     {
         status = BCLIBC_STATUS_ERROR;
@@ -671,7 +671,7 @@ BCLIBC_StatusCode Engine_t_find_max_range(
     double look_angle_rad = eng->shot.look_angle;
     double max_range_ft;
     double angle_at_max_rad;
-    BaseTrajData_t apex;
+    BCLIBC_BaseTrajData apex;
     BCLIBC_StatusCode status;
     double sdist;
 

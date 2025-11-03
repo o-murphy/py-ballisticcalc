@@ -14,7 +14,7 @@ extern "C"
     BCLIBC_StatusCode _integrate_euler(
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
-        double time_step, TrajFlag_t filter_flags,
+        double time_step, BCLIBC_TrajFlag filter_flags,
         BCLIBC_BaseTrajSeq *traj_seq_ptr,
         TerminationReason *reason);
 

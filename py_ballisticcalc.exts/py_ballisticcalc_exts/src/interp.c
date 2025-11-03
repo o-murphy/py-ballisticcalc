@@ -9,7 +9,7 @@ static inline int _sign(double a)
 }
 
 // Internal helpers for PCHIP used by base_traj_seq
-static void _sort3(double *xs, double *ys)
+static void BCLIBC_Sort3(double *xs, double *ys)
 {
     // Sort the first two elements
     if (xs[1] < xs[0])
@@ -45,7 +45,7 @@ static void _sort3(double *xs, double *ys)
     }
 }
 
-static void _pchip_slopes3(double x0, double y0, double x1, double y1, double x2, double y2,
+static void BCLIBC_PchipSlopes3(double x0, double y0, double x1, double y1, double x2, double y2,
                            double *m0, double *m1, double *m2)
 {
     double h0 = x1 - x0;
@@ -161,7 +161,7 @@ double BCLIBC_interpolate3pt(double x, double x0, double x1, double x2, double y
     }
 
     double m0, m1, m2;
-    _pchip_slopes3(x0, y0, x1, y1, x2, y2, &m0, &m1, &m2);
+    BCLIBC_PchipSlopes3(x0, y0, x1, y1, x2, y2, &m0, &m1, &m2);
 
     return (x <= x1) ? BCLIBC_hermite(x, x0, x1, y0, y1, m0, m1)
                      : BCLIBC_hermite(x, x1, x2, y1, y2, m1, m2);

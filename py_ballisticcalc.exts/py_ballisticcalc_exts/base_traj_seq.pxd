@@ -3,7 +3,7 @@ Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 """
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport InterpKey, BCLIBC_ErrorType
 
@@ -29,7 +29,7 @@ cdef extern from "include/base_traj_seq.h" nogil:
         ssize_t idx,
         InterpKey key_kind,
         double key_value,
-        BaseTrajData_t *out
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil
 
     void BCLIBC_BaseTrajSeq_init(BCLIBC_BaseTrajSeq *seq) noexcept nogil
@@ -53,18 +53,18 @@ cdef extern from "include/base_traj_seq.h" nogil:
         const BCLIBC_BaseTrajSeq *seq,
         double look_angle_rad,
         double value,
-        BaseTrajData_t *out
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(
         const BCLIBC_BaseTrajSeq *seq,
-        ssize_t idx, BaseTrajData_t *out
+        ssize_t idx, BCLIBC_BaseTrajData *out
     ) noexcept nogil
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(
         const BCLIBC_BaseTrajSeq *seq,
         InterpKey key_kind,
         double key_value,
         double start_from_time,
-        BaseTrajData_t *out
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil
 
 

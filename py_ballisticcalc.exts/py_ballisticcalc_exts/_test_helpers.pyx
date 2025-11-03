@@ -16,12 +16,12 @@ from py_ballisticcalc_exts.bclib cimport (
     ShotProps_t_spinDrift,
     ShotProps_t_updateStabilityCoefficient,
     Atmosphere_t_updateDensityFactorAndMachForAltitude,
-    TrajFlag_t,
+    BCLIBC_TrajFlag,
     calculateEnergy,
     calculateOgw,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
@@ -49,7 +49,7 @@ __all__ = [
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
-    return BaseTrajDataT(BaseTrajData_t(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach))
+    return BaseTrajDataT(BCLIBC_BaseTrajData(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach))
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
@@ -130,7 +130,7 @@ cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
                                 double range_limit_ft, double range_step_ft, double time_step):
     """Call engine._integrate directly with current shot props."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return e._integrate(range_limit_ft, range_step_ft, time_step, TrajFlag_t.TFLAG_NONE)
+    return e._integrate(range_limit_ft, range_step_ft, time_step, BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE)
 
 cpdef int step_count(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine

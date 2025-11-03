@@ -1,6 +1,6 @@
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport BaseTrajData_t
+from py_ballisticcalc_exts.bclib cimport BCLIBC_BaseTrajData
 
 cdef class BaseTrajDataT:
     cdef:
-        BaseTrajData_t _c_view
+        BCLIBC_BaseTrajData _c_view

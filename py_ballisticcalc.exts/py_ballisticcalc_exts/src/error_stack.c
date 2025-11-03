@@ -74,7 +74,7 @@ void BCLIBC_ErrorStack_print(const BCLIBC_ErrorStack *stack)
     }
 }
 
-static const char *error_type_to_string(BCLIBC_ErrorType code)
+static const char *BCLIBC_ErrorType_toString(BCLIBC_ErrorType code)
 {
     switch (code)
     {
@@ -105,7 +105,7 @@ static const char *error_type_to_string(BCLIBC_ErrorType code)
     }
 }
 
-static const char *error_source_to_string(BCLIBC_ErrorSource src)
+static const char *BCLIBC_ErrorSource_toString(BCLIBC_ErrorSource src)
 {
     switch (src)
     {
@@ -152,9 +152,9 @@ void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_
                  f->line,
                  f->func, // тут дужки без вирівнювання всередині
                  f->src,
-                 error_source_to_string(f->src),
+                 BCLIBC_ErrorSource_toString(f->src),
                  f->code,
-                 error_type_to_string(f->code),
+                 BCLIBC_ErrorType_toString(f->code),
                  f->msg);
 
         strncat(out, line, out_size - strlen(out) - 1);

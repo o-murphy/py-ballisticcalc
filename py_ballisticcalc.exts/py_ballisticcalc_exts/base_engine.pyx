@@ -16,14 +16,14 @@ from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTrajSeqT,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     # types and methods
     Atmosphere_t,
     ShotProps_t,
     ShotProps_t_updateStabilityCoefficient,
-    TrajFlag_t,
+    BCLIBC_TrajFlag,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport (
@@ -299,7 +299,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 range_limit_ft,
                 range_step_ft,
                 time_step,
-                <TrajFlag_t>filter_flags,
+                <BCLIBC_TrajFlag>filter_flags,
                 &trajectory._c_view,
                 &reason,
             )
@@ -339,13 +339,13 @@ cdef class CythonizedBaseIntegrationEngine:
                 tdf.records.append(TrajectoryData.from_props(
                     props,
                     fin.time, fin.position, fin.velocity, fin.mach,
-                    TrajFlag_t.TFLAG_NONE
+                    BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE
                 ))
         return HitResult(
             props,
             tdf.records,
             trajectory if dense_output else None,
-            filter_flags != TrajFlag_t.TFLAG_NONE,
+            filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
         )
 
@@ -456,7 +456,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 ),
                 coriolis=Coriolis_t_from_pyobject(coriolis_obj),
                 wind_sock=WindSock_t_from_pylist(shot_info.winds),
-                filter_flags=TrajFlag_t.TFLAG_NONE,
+                filter_flags=BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             )
 
             # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
@@ -578,20 +578,20 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
         self._raise_solver_runtime_error(err)
 
-    cdef BaseTrajData_t _find_apex(
+    cdef BCLIBC_BaseTrajData _find_apex(
         CythonizedBaseIntegrationEngine self,
     ):
         """
         Internal implementation to find the apex of the trajectory.
 
         Returns:
-            BaseTrajData_t: The trajectory data at the apex.
+            BCLIBC_BaseTrajData: The trajectory data at the apex.
         """
 
-        cdef BaseTrajData_t apex
+        cdef BCLIBC_BaseTrajData apex
 
         # FIXME: possibly needs to be initialised with zeros
-        # apex = BaseTrajData_t(
+        # apex = BCLIBC_BaseTrajData(
         #     0.0, BCLIBC_V3dT(0.0, 0.0, 0.0), BCLIBC_V3dT(0.0, 0.0, 0.0), 0.0)
 
         cdef BCLIBC_StatusCode status = Engine_t_find_apex(&self._engine, &apex)
@@ -648,7 +648,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        TrajFlag_t filter_flags,
+        BCLIBC_TrajFlag filter_flags,
     ):
         """
         Internal method to perform trajectory integration.
@@ -657,7 +657,7 @@ cdef class CythonizedBaseIntegrationEngine:
             range_limit_ft (double): Maximum range limit in feet.
             range_step_ft (double): Range step in feet.
             time_step (double): Time step in seconds.
-            filter_flags (TrajFlag_t): Flags to filter trajectory data.
+            filter_flags (BCLIBC_TrajFlag): Flags to filter trajectory data.
 
         Returns:
             tuple: (BaseTrajSeqT, str or None)

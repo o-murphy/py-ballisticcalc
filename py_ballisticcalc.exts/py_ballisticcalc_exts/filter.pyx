@@ -1,9 +1,9 @@
 from libc.stdlib cimport malloc, free
 from libc.math cimport tan
 from py_ballisticcalc_exts.bclib cimport (
-    TrajFlag_t,
+    BCLIBC_TrajFlag,
     ShotProps_t,
-    BaseTrajData_t,
+    BCLIBC_BaseTrajData,
     Atmosphere_t_updateDensityFactorAndMachForAltitude
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT, mag
@@ -15,14 +15,14 @@ DEF EPSILON = 1e6
 cdef struct TDF:
     # TDF struct definition ...
     ShotProps_t props
-    TrajFlag_t filter_flags
-    TrajFlag_t current_flag
-    TrajFlag_t seen_zero
+    BCLIBC_TrajFlag filter_flags
+    BCLIBC_TrajFlag current_flag
+    BCLIBC_TrajFlag seen_zero
     double time_of_last_record
     double time_step
     double range_step
     double range_limit
-    BaseTrajData_t data[2]
+    BCLIBC_BaseTrajData data[2]
     double next_record_distance
     double look_angle_rad
     double look_angle_tangent
@@ -37,7 +37,7 @@ cdef TDF *TDF_create():
 cdef TDF *TDF_init( # Function returns a pointer (TDF*)
     TDF *f,
     ShotProps_t props,
-    TrajFlag_t filter_flags,
+    BCLIBC_TrajFlag filter_flags,
     BCLIBC_V3dT initial_position,
     BCLIBC_V3dT initial_velocity,
     double barrel_angle_rad,
@@ -52,7 +52,7 @@ cdef TDF *TDF_init( # Function returns a pointer (TDF*)
     # 2. Assign to the dereferenced pointer f
     f.props = props
     f.filter_flags = filter_flags
-    f.seen_zero = TrajFlag_t.TFLAG_NONE
+    f.seen_zero = BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE
     f.time_step = time_step
     f.range_step = range_step
     f.range_limit = range_limit
@@ -64,7 +64,7 @@ cdef TDF *TDF_init( # Function returns a pointer (TDF*)
     cdef double mach = 0.0
     cdef double density_ratio = 0.0
 
-    if f.filter_flags & TrajFlag_t.TFLAG_MACH:
+    if f.filter_flags & BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_MACH:
         Atmosphere_t_updateDensityFactorAndMachForAltitude(
             &f.props.atmo,
             initial_position.y,
@@ -72,16 +72,16 @@ cdef TDF *TDF_init( # Function returns a pointer (TDF*)
             &mach,
         )
         if BCLIBC_V3dBCLIBC_E_mag(&initial_velocity) < mach:
-            # Cast still required: f.filter_flags &= <TrajFlag_t>(~TrajFlag_t.TFLAG_MACH)
-            f.filter_flags = <TrajFlag_t>(f.filter_flags & ~TrajFlag_t.TFLAG_MACH)
+            # Cast still required: f.filter_flags &= <BCLIBC_TrajFlag>(~BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_MACH)
+            f.filter_flags = <BCLIBC_TrajFlag>(f.filter_flags & ~BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_MACH)
 
-    if f.filter_flags & TrajFlag_t.TFLAG_ZERO:
+    if f.filter_flags & BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_ZERO:
         if initial_position.y >= 0:
             # Cast still required
-            f.filter_flags = <TrajFlag_t>(f.filter_flags & ~TrajFlag_t.TFLAG_ZERO_UP)
+            f.filter_flags = <BCLIBC_TrajFlag>(f.filter_flags & ~BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_ZERO_UP)
         elif initial_position.y < 0 and barrel_angle_rad <= f.look_angle_rad:
             # Cast still required
-            f.filter_flags = <TrajFlag_t>(f.filter_flags & ~(TrajFlag_t.TFLAG_ZERO | TrajFlag_t.TFLAG_MRT))
+            f.filter_flags = <BCLIBC_TrajFlag>(f.filter_flags & ~(BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_MRT))
 
     # 3. Return the pointer
     return f
@@ -94,8 +94,8 @@ cdef void TDF_free(TDF *f):
 
 
 cdef struct BaseTrajRow_t:
-    BaseTrajData_t data
-    TrajFlag_t flag
+    BCLIBC_BaseTrajData data
+    BCLIBC_TrajFlag flag
 
 cdef int compare_records(const void *target, const void *element) noexcept nogil:
     cdef double target_val = (<const double *>target)[0]
@@ -130,7 +130,7 @@ cdef class TDFWrapper:
 
     cdef init(self,
         ShotProps_t props,
-        TrajFlag_t filter_flags,
+        BCLIBC_TrajFlag filter_flags,
         BCLIBC_V3dT initial_position,
         BCLIBC_V3dT initial_velocity,
         double barrel_angle_rad,

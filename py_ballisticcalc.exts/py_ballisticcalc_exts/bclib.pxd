@@ -100,18 +100,18 @@ cdef extern from "include/bclib.h" nogil:
     BCLIBC_ErrorType WindSock_t_updateCache(WindSock_t *ws) noexcept nogil
     BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param) noexcept nogil
 
-    ctypedef enum TrajFlag_t:
-        TFLAG_NONE = 0,
-        TFLAG_ZERO_UP = 1,
-        TFLAG_ZERO_DOWN = 2,
-        TFLAG_ZERO = TFLAG_ZERO_UP | TFLAG_ZERO_DOWN,
-        TFLAG_MACH = 4,
-        TFLAG_RANGE = 8,
-        TFLAG_APEX = 16,
-        TFLAG_ALL = TFLAG_RANGE | TFLAG_ZERO_UP | TFLAG_ZERO_DOWN | TFLAG_MACH | TFLAG_APEX
-        TFLAG_MRT = 32
+    ctypedef enum BCLIBC_TrajFlag:
+        BCLIBC_TRAJ_FLAG_NONE = 0,
+        BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
+        BCLIBC_TRAJ_FLAG_ZERO_DOWN = 2,
+        BCLIBC_TRAJ_FLAG_ZERO = BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN,
+        BCLIBC_TRAJ_FLAG_MACH = 4,
+        BCLIBC_TRAJ_FLAG_RANGE = 8,
+        BCLIBC_TRAJ_FLAG_APEX = 16,
+        BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX
+        BCLIBC_TRAJ_FLAG_MRT = 32
 
-    ctypedef struct BaseTrajData_t:
+    ctypedef struct BCLIBC_BaseTrajData:
         double time
         BCLIBC_V3dT position
         BCLIBC_V3dT velocity
@@ -138,7 +138,7 @@ cdef extern from "include/bclib.h" nogil:
         Atmosphere_t atmo
         Coriolis_t coriolis
         WindSock_t wind_sock
-        TrajFlag_t filter_flags
+        BCLIBC_TrajFlag filter_flags
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr) noexcept nogil
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
@@ -160,11 +160,11 @@ cdef extern from "include/bclib.h" nogil:
     double calculateEnergy(double bulletWeight, double velocity) noexcept nogil
     double calculateOgw(double bulletWeight, double velocity) noexcept nogil
 
-    BCLIBC_ErrorType BaseTrajData_t_interpolate(
+    BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
         InterpKey key_kind,
         double key_value,
-        const BaseTrajData_t *p0,
-        const BaseTrajData_t *p1,
-        const BaseTrajData_t *p2,
-        BaseTrajData_t *out
+        const BCLIBC_BaseTrajData *p0,
+        const BCLIBC_BaseTrajData *p1,
+        const BCLIBC_BaseTrajData *p2,
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil

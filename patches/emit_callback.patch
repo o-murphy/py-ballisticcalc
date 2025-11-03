@@ -26,7 +26,7 @@ index 8335858..282dba1 100644
 @@ -68,7 +82,8 @@ cdef extern from "include/engine.h" nogil:
          double range_step_ft,
          double time_step,
-         TrajFlag_t filter_flags,
+         BCLIBC_TrajFlag filter_flags,
 -        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
@@ -55,7 +55,7 @@ index 8335858..282dba1 100644
 @@ -92,7 +119,8 @@ cdef extern from "include/engine.h" nogil:
          double range_step_ft,
          double time_step,
-         TrajFlag_t filter_flags,
+         BCLIBC_TrajFlag filter_flags,
 -        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
@@ -68,7 +68,7 @@ index e6f4b6a..36b5cad 100644
 +++ b/py_ballisticcalc.exts/py_ballisticcalc_exts/base_engine.pyx
 @@ -297,6 +297,7 @@ cdef class CythonizedBaseIntegrationEngine:
                  time_step,
-                 <TrajFlag_t>filter_flags,
+                 <BCLIBC_TrajFlag>filter_flags,
                  &trajectory._c_view,
 +                BCLIBC_BaseTrajSeq_append_wrapper,
                  &reason,
@@ -114,7 +114,7 @@ index b3e6131..0cf2787 100644
 @@ -23,7 +24,8 @@ cdef extern from "include/euler.h" nogil:
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
-         double time_step, TrajFlag_t filter_flags,
+         double time_step, BCLIBC_TrajFlag filter_flags,
 -        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
@@ -147,7 +147,7 @@ index 6d1804d..f79c8fc 100644
      double range_limit_ft,
      double range_step_ft,
      double time_step,
-     TrajFlag_t filter_flags,
+     BCLIBC_TrajFlag filter_flags,
 -    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,
@@ -175,13 +175,13 @@ index 6d1804d..f79c8fc 100644
 @@ -95,7 +120,8 @@ extern "C"
          double range_step_ft,
          double time_step,
-         TrajFlag_t filter_flags,
+         BCLIBC_TrajFlag filter_flags,
 -        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason);
  
-     BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out);
+     BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out);
 diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/include/euler.h b/py_ballisticcalc.exts/py_ballisticcalc_exts/include/euler.h
 index a38c8cb..0282298 100644
 --- a/py_ballisticcalc.exts/py_ballisticcalc_exts/include/euler.h
@@ -189,7 +189,7 @@ index a38c8cb..0282298 100644
 @@ -15,7 +15,8 @@ extern "C"
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
-         double time_step, TrajFlag_t filter_flags,
+         double time_step, BCLIBC_TrajFlag filter_flags,
 -        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
@@ -203,7 +203,7 @@ index b3d713d..b9507b9 100644
 @@ -15,7 +15,8 @@ extern "C"
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
-         double time_step, TrajFlag_t filter_flags,
+         double time_step, BCLIBC_TrajFlag filter_flags,
 -        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
@@ -225,7 +225,7 @@ index 220226f..7b53765 100644
 @@ -25,7 +26,8 @@ cdef extern from "include/rk4.h" nogil:
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
-         double time_step, TrajFlag_t filter_flags,
+         double time_step, BCLIBC_TrajFlag filter_flags,
 -        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
@@ -265,7 +265,7 @@ index b737dac..406dd02 100644
 @@ -59,10 +78,11 @@ BCLIBC_StatusCode Engine_t_integrate(
      double range_step_ft,
      double time_step,
-     TrajFlag_t filter_flags,
+     BCLIBC_TrajFlag filter_flags,
 -    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,
@@ -291,13 +291,13 @@ index b737dac..406dd02 100644
  
      if (status != BCLIBC_STATUS_ERROR)
      {
-@@ -121,7 +147,10 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
+@@ -121,7 +147,10 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out)
  
      // try
      TerminationReason reason;
--    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result, &reason);
+-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &result, &reason);
 +    status = Engine_t_integrate(
-+        eng, 9e9, 9e9, 0.0, TFLAG_APEX,
++        eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX,
 +        &result, BCLIBC_BaseTrajSeq_append_wrapper,
 +        &reason);
  
@@ -307,9 +307,9 @@ index b737dac..406dd02 100644
      eng->shot.barrel_elevation = angle_rad;
  
      TerminationReason reason;
--    BCLIBC_StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory, &reason);
+-    BCLIBC_StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &trajectory, &reason);
 +    BCLIBC_StatusCode status = Engine_t_integrate(
-+        eng, 9e9, 9e9, 0.0, TFLAG_APEX,
++        eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX,
 +        &trajectory, BCLIBC_BaseTrajSeq_append_wrapper,
 +        &reason);
  
@@ -319,9 +319,9 @@ index b737dac..406dd02 100644
          BCLIBC_BaseTrajSeq_init(&seq);
  
          TerminationReason reason;
--        status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq, &reason);
+-        status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE, &seq, &reason);
 +        status = Engine_t_integrate(
-+            eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE,
++            eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE,
 +            &seq, BCLIBC_BaseTrajSeq_append_wrapper, &reason);
  
          if (status != BCLIBC_STATUS_SUCCESS)
@@ -330,9 +330,9 @@ index b737dac..406dd02 100644
      BCLIBC_BaseTrajSeq_init(&trajectory);
  
      TerminationReason reason;
--    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory, &reason);
+-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE, &trajectory, &reason);
 +    status = Engine_t_integrate(
-+        eng, 9e9, 9e9, 0.0, TFLAG_NONE,
++        eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE,
 +        &trajectory, BCLIBC_BaseTrajSeq_append_wrapper,
 +        &reason);
 +
@@ -346,7 +346,7 @@ index 98eb200..bd2d3b1 100644
 @@ -41,10 +41,11 @@ BCLIBC_StatusCode _integrate_euler(
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
-     double time_step, TrajFlag_t filter_flags,
+     double time_step, BCLIBC_TrajFlag filter_flags,
 -    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,
@@ -386,7 +386,7 @@ index 8413eb1..bb0a05e 100644
 @@ -80,10 +80,11 @@ BCLIBC_StatusCode _integrate_rk4(
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
-     double time_step, TrajFlag_t filter_flags,
+     double time_step, BCLIBC_TrajFlag filter_flags,
 -    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,

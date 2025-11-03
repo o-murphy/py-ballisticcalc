@@ -695,16 +695,16 @@ void Coriolis_t_coriolis_acceleration_local(
 }
 
 /**
- * @brief Lookup table helper to retrieve a specific scalar value from BaseTrajData_t.
+ * @brief Lookup table helper to retrieve a specific scalar value from BCLIBC_BaseTrajData.
  *
  * Used internally by the interpolation function to get the correct 'x' values
  * for the interpolation key.
  *
- * @param p Pointer to the BaseTrajData_t structure.
+ * @param p Pointer to the BCLIBC_BaseTrajData structure.
  * @param key_kind The InterpKey specifying which field to retrieve (e.g., KEY_TIME, KEY_MACH, KEY_POS_X).
  * @return The value of the requested field. Returns 0.0 for an unknown key.
  */
-static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey key_kind)
+static inline double get_key_value(const BCLIBC_BaseTrajData *restrict p, InterpKey key_kind)
 {
     switch (key_kind)
     {
@@ -730,7 +730,7 @@ static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey k
 }
 
 /**
- * @brief Interpolates a BaseTrajData_t structure using three surrounding data points.
+ * @brief Interpolates a BCLIBC_BaseTrajData structure using three surrounding data points.
  *
  * Performs a 3-point interpolation (likely PCHIP or similar cubic spline variant)
  * on all fields of the trajectory data (`time, position, velocity, mach`) based on
@@ -741,16 +741,16 @@ static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey k
  * @param p0 Pointer to the first data point (before or at the start of the segment).
  * @param p1 Pointer to the second data point.
  * @param p2 Pointer to the third data point (after or at the end of the segment).
- * @param out Pointer to the BaseTrajData_t structure where the interpolated result will be stored.
+ * @param out Pointer to the BCLIBC_BaseTrajData structure where the interpolated result will be stored.
  * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
  */
-BCLIBC_ErrorType BaseTrajData_t_interpolate(
+BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
     InterpKey key_kind,
     double key_value,
-    const BaseTrajData_t *restrict p0,
-    const BaseTrajData_t *restrict p1,
-    const BaseTrajData_t *restrict p2,
-    BaseTrajData_t *restrict out)
+    const BCLIBC_BaseTrajData *restrict p0,
+    const BCLIBC_BaseTrajData *restrict p1,
+    const BCLIBC_BaseTrajData *restrict p2,
+    BCLIBC_BaseTrajData *restrict out)
 {
     if (!p0 || !p1 || !p2 || !out)
     {

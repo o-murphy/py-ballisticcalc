@@ -14,7 +14,7 @@ passing Python cdef-class instances into nogil code paths.
 """
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport InterpKey
 # noinspection PyUnresolvedReferences
@@ -71,7 +71,7 @@ cdef class BaseTrajSeqT:
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
         cdef Py_ssize_t _i = <Py_ssize_t>idx
-        cdef BaseTrajData_t out
+        cdef BCLIBC_BaseTrajData out
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getItem(&self._c_view, _i, &out)
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             return BaseTrajDataT(out)
@@ -80,7 +80,7 @@ cdef class BaseTrajSeqT:
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         cdef InterpKey key_kind = _attribute_to_key(key_attribute)
-        cdef BaseTrajData_t output
+        cdef BCLIBC_BaseTrajData output
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_interpolateAt(&self._c_view, idx, key_kind, key_value, &output)
 
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
@@ -107,7 +107,7 @@ cdef class BaseTrajSeqT:
         """
         cdef InterpKey key_kind = _attribute_to_key(key_attribute)
 
-        cdef BaseTrajData_t out
+        cdef BCLIBC_BaseTrajData out
         cdef double _start_from_time = 0.0
         if start_from_time is not None:
             _start_from_time = <double>start_from_time
@@ -127,7 +127,7 @@ cdef class BaseTrajSeqT:
     def get_at_slant_height(self, double look_angle_rad, double value):
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
 
-        cdef BaseTrajData_t out
+        cdef BCLIBC_BaseTrajData out
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getAtSlantHeight(&self._c_view, look_angle_rad, value, &out)
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             return BaseTrajDataT(out)

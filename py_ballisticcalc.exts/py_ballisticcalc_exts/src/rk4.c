@@ -69,7 +69,7 @@ static inline BCLIBC_V3dT _calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC
  * @param range_step_ft The distance interval for recording filtered points (not used
  * for the integration step size).
  * @param time_step The base time step (dt) used for the RK4 calculation.
- * @param filter_flags Flags (TrajFlag_t) specifying special points to record
+ * @param filter_flags Flags (BCLIBC_TrajFlag) specifying special points to record
  * (e.g., ZERO, MACH, APEX).
  * @param traj_seq_ptr Pointer to the BCLIBC_BaseTrajSeq buffer where dense trajectory
  * data points will be stored.
@@ -79,7 +79,7 @@ static inline BCLIBC_V3dT _calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC
 BCLIBC_StatusCode _integrate_rk4(
     Engine_t *eng,
     double range_limit_ft, double range_step_ft,
-    double time_step, TrajFlag_t filter_flags,
+    double time_step, BCLIBC_TrajFlag filter_flags,
     BCLIBC_BaseTrajSeq *traj_seq_ptr,
     TerminationReason *reason)
 {

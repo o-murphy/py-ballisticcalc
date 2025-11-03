@@ -6,7 +6,7 @@
 void TrajectoryDataFilter_t_init(
     TrajectoryDataFilter_t *tdf,
     ShotProps_t *props,
-    TrajFlag_t filter_flags,
+    BCLIBC_TrajFlag filter_flags,
     BCLIBC_V3dT initial_position,
     BCLIBC_V3dT initial_velocity,
     double barrel_angle_rad,
@@ -18,7 +18,7 @@ void TrajectoryDataFilter_t_init(
     // tdf->records
     tdf->props = props;
     tdf->filter = filter_flags;
-    tdf->seen_zero = TFLAG_NONE;
+    tdf->seen_zero = BCLIBC_TRAJ_FLAG_NONE;
     tdf->time_step = time_step;
     tdf->range_step = range_step;
     tdf->range_limit = range_limit;
@@ -28,7 +28,7 @@ void TrajectoryDataFilter_t_init(
     tdf->prev_prev_data = NULL;
     tdf->look_angle_rad = look_angle_rad;
     tdf->look_angle_tangent = tan(look_angle_rad);
-    if (tdf->filter & TFLAG_MACH)
+    if (tdf->filter & BCLIBC_TRAJ_FLAG_MACH)
     {
         double mach;
         double density;
@@ -39,20 +39,20 @@ void TrajectoryDataFilter_t_init(
         if (BCLIBC_V3dT_mag(&initial_velocity) < mach)
         {
             // If we start below Mach 1, we won't look for Mach crossings
-            tdf->filter &= ~TFLAG_MACH;
+            tdf->filter &= ~BCLIBC_TRAJ_FLAG_MACH;
         }
     }
-    if (tdf->filter * TFLAG_ZERO)
+    if (tdf->filter * BCLIBC_TRAJ_FLAG_ZERO)
     {
         if (initial_position.y >= 0)
         {
             // If shot starts above zero then we will only look for a ZERO_DOWN crossing through the line of sight.
-            tdf->filter &= ~TFLAG_ZERO_UP;
+            tdf->filter &= ~BCLIBC_TRAJ_FLAG_ZERO_UP;
         }
         else if (initial_position.y < 0 && barrel_angle_rad <= tdf->look_angle_rad)
         {
             // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
-            tdf->filter &= ~(TFLAG_ZERO | TFLAG_MRT);
+            tdf->filter &= ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT);
         }
     }
 }

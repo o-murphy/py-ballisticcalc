@@ -31,7 +31,7 @@ static inline double _euler_time_step(double base_step, double velocity)
  * @param range_step_ft The distance step for recording trajectory points
  * (not used for integration step size).
  * @param time_step The base time step for integration (can be adaptive).
- * @param filter_flags Flags (TrajFlag_t) specifying additional points to record.
+ * @param filter_flags Flags (BCLIBC_TrajFlag) specifying additional points to record.
  * @param traj_seq_ptr Pointer to the BCLIBC_BaseTrajSeq buffer where trajectory
  * data points will be stored.
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
@@ -40,7 +40,7 @@ static inline double _euler_time_step(double base_step, double velocity)
 BCLIBC_StatusCode _integrate_euler(
     Engine_t *eng,
     double range_limit_ft, double range_step_ft,
-    double time_step, TrajFlag_t filter_flags,
+    double time_step, BCLIBC_TrajFlag filter_flags,
     BCLIBC_BaseTrajSeq *traj_seq_ptr,
     TerminationReason *reason)
 {
