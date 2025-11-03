@@ -33,32 +33,32 @@ typedef struct
     double vy;   /* Velocity y-component */
     double vz;   /* Velocity z-component */
     double mach; /* Mach number */
-} BaseTraj_t;
+} BCLIBC_BaseTraj;
 
 /**
- * Internal view structure for a sequence (buffer) of BaseTraj_t points.
+ * Internal view structure for a sequence (buffer) of BCLIBC_BaseTraj points.
  */
 typedef struct
 {
-    BaseTraj_t *buffer;
+    BCLIBC_BaseTraj *buffer;
     size_t length;
     size_t capacity;
-} BaseTrajSeq_t;
+} BCLIBC_BaseTrajSeq;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    void BaseTrajSeq_t_init(BaseTrajSeq_t *seq);
-    void BaseTrajSeq_t_release(BaseTrajSeq_t *seq);
+    void BCLIBC_BaseTrajSeq_init(BCLIBC_BaseTrajSeq *seq);
+    void BCLIBC_BaseTrajSeq_release(BCLIBC_BaseTrajSeq *seq);
 
     /**
      * @brief Appends a new element to the end of the sequence.
      * @param seq Pointer to the sequence structure.
      * @return int 0 on success, -1 on memory allocation error or NULL pointer.
      */
-    BCLIBC_ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_append(BCLIBC_BaseTrajSeq *seq, double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
 
     /**
      * @brief Checks and ensures the minimum buffer capacity.
@@ -67,9 +67,9 @@ extern "C"
      * @param min_capacity The minimum required capacity.
      * @return int 0 on success, -1 on memory allocation error.
      */
-    BCLIBC_ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_ensureCapacity(BCLIBC_BaseTrajSeq *seq, size_t min_capacity);
 
-    ssize_t BaseTrajSeq_t_len(const BaseTrajSeq_t *seq);
+    ssize_t BCLIBC_BaseTrajSeq_len(const BCLIBC_BaseTrajSeq *seq);
 
     /**
      * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
@@ -77,11 +77,11 @@ extern "C"
      * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
      * @return 1 on success, 0 on failure.
      */
-    BCLIBC_ErrorType BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
-    BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t idx);
-    BCLIBC_ErrorType BaseTrajSeq_t_get_at_slant_height(const BaseTrajSeq_t *seq, double look_angle_rad, double value, BaseTrajData_t *out);
-    BCLIBC_ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out);
-    BCLIBC_ErrorType BaseTrajSeq_t_get_at(const BaseTrajSeq_t *seq, InterpKey key_kind, double key_value, double start_from_time, BaseTrajData_t *out);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out);
+    BCLIBC_BaseTraj *BCLIBC_BaseTrajSeq_getRawItem(const BCLIBC_BaseTrajSeq *seq, ssize_t idx);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAtSlantHeight(const BCLIBC_BaseTrajSeq *seq, double look_angle_rad, double value, BaseTrajData_t *out);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BaseTrajData_t *out);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(const BCLIBC_BaseTrajSeq *seq, InterpKey key_kind, double key_value, double start_from_time, BaseTrajData_t *out);
 
 #ifdef __cplusplus
 }

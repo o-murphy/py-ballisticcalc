@@ -32,7 +32,7 @@ static inline double _euler_time_step(double base_step, double velocity)
  * (not used for integration step size).
  * @param time_step The base time step for integration (can be adaptive).
  * @param filter_flags Flags (TrajFlag_t) specifying additional points to record.
- * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where trajectory
+ * @param traj_seq_ptr Pointer to the BCLIBC_BaseTrajSeq buffer where trajectory
  * data points will be stored.
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
@@ -41,7 +41,7 @@ BCLIBC_StatusCode _integrate_euler(
     Engine_t *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr,
+    BCLIBC_BaseTrajSeq *traj_seq_ptr,
     TerminationReason *reason)
 {
     if (!eng || !traj_seq_ptr || !reason)
@@ -133,7 +133,7 @@ BCLIBC_StatusCode _integrate_euler(
         // Store point in trajectory sequence
 
         // err =
-        BaseTrajSeq_t_append(
+        BCLIBC_BaseTrajSeq_append(
             traj_seq_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
@@ -203,7 +203,7 @@ BCLIBC_StatusCode _integrate_euler(
     // Add final data point
 
     // err =
-    BaseTrajSeq_t_append(
+    BCLIBC_BaseTrajSeq_append(
         traj_seq_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,

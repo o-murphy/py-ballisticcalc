@@ -138,7 +138,7 @@ typedef struct
 } ShotProps_t;
 
 /**
- * Keys used to look up specific values within a BaseTraj_t struct.
+ * Keys used to look up specific values within a BCLIBC_BaseTraj struct.
  */
 typedef enum
 {

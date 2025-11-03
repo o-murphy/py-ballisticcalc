@@ -27,7 +27,7 @@ index 8335858..282dba1 100644
          double range_step_ft,
          double time_step,
          TrajFlag_t filter_flags,
--        BaseTrajSeq_t *traj_seq_ptr,
+-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason,
@@ -37,7 +37,7 @@ index 8335858..282dba1 100644
          IntegrateFuncPtr integrate_func_ptr
          BCLIBC_ErrorStack err_stack
  
-+    BCLIBC_ErrorType BaseTrajSeq_t_append_wrapper(
++    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_append_wrapper(
 +        void *user_data,
 +        double time,
 +        double px,
@@ -56,7 +56,7 @@ index 8335858..282dba1 100644
          double range_step_ft,
          double time_step,
          TrajFlag_t filter_flags,
--        BaseTrajSeq_t *traj_seq_ptr,
+-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason,
@@ -70,7 +70,7 @@ index e6f4b6a..36b5cad 100644
                  time_step,
                  <TrajFlag_t>filter_flags,
                  &trajectory._c_view,
-+                BaseTrajSeq_t_append_wrapper,
++                BCLIBC_BaseTrajSeq_append_wrapper,
                  &reason,
              )
  
@@ -89,7 +89,7 @@ index e6f4b6a..36b5cad 100644
              filter_flags,
 -            &traj_seq._c_view,
 +            &trajectory._c_view,
-+            BaseTrajSeq_t_append_wrapper,
++            BCLIBC_BaseTrajSeq_append_wrapper,
              &reason,
          )
  
@@ -115,7 +115,7 @@ index b3e6131..0cf2787 100644
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
          double time_step, TrajFlag_t filter_flags,
--        BaseTrajSeq_t *traj_seq_ptr,
+-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason,
@@ -148,7 +148,7 @@ index 6d1804d..f79c8fc 100644
      double range_step_ft,
      double time_step,
      TrajFlag_t filter_flags,
--    BaseTrajSeq_t *traj_seq_ptr,
+-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,
      TerminationReason *reason);
@@ -158,7 +158,7 @@ index 6d1804d..f79c8fc 100644
  
      void require_non_null_fatal(const void *ptr, const char *file, int line, const char *func);
  
-+    BCLIBC_ErrorType BaseTrajSeq_t_append_wrapper(
++    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_append_wrapper(
 +        void *user_data,
 +        double time,
 +        double px,
@@ -176,7 +176,7 @@ index 6d1804d..f79c8fc 100644
          double range_step_ft,
          double time_step,
          TrajFlag_t filter_flags,
--        BaseTrajSeq_t *traj_seq_ptr,
+-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason);
@@ -190,7 +190,7 @@ index a38c8cb..0282298 100644
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
          double time_step, TrajFlag_t filter_flags,
--        BaseTrajSeq_t *traj_seq_ptr,
+-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason);
@@ -204,7 +204,7 @@ index b3d713d..b9507b9 100644
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
          double time_step, TrajFlag_t filter_flags,
--        BaseTrajSeq_t *traj_seq_ptr,
+-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason);
@@ -214,7 +214,7 @@ diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/rk4_engine.pxd b/py_bal
 index 220226f..7b53765 100644
 --- a/py_ballisticcalc.exts/py_ballisticcalc_exts/rk4_engine.pxd
 +++ b/py_ballisticcalc.exts/py_ballisticcalc_exts/rk4_engine.pxd
-@@ -16,6 +16,7 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
+@@ -16,6 +16,7 @@ from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
  from py_ballisticcalc_exts.base_engine cimport (
      Engine_t,
      BCLIBC_StatusCode,
@@ -226,7 +226,7 @@ index 220226f..7b53765 100644
          Engine_t *eng,
          double range_limit_ft, double range_step_ft,
          double time_step, TrajFlag_t filter_flags,
--        BaseTrajSeq_t *traj_seq_ptr,
+-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +        void *emiter,
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason,
@@ -240,7 +240,7 @@ index b737dac..406dd02 100644
      }
  }
  
-+BCLIBC_ErrorType BaseTrajSeq_t_append_wrapper(
++BCLIBC_ErrorType BCLIBC_BaseTrajSeq_append_wrapper(
 +    void *user_data,
 +    double time,
 +    double px,
@@ -251,8 +251,8 @@ index b737dac..406dd02 100644
 +    double vz,
 +    double mach)
 +{
-+    return BaseTrajSeq_t_append(
-+        (BaseTrajSeq_t *)user_data,
++    return BCLIBC_BaseTrajSeq_append(
++        (BCLIBC_BaseTrajSeq *)user_data,
 +        time,
 +        px, py, pz,
 +        vx, vy, vz,
@@ -266,7 +266,7 @@ index b737dac..406dd02 100644
      double range_step_ft,
      double time_step,
      TrajFlag_t filter_flags,
--    BaseTrajSeq_t *traj_seq_ptr,
+-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,
      TerminationReason *reason)
@@ -298,7 +298,7 @@ index b737dac..406dd02 100644
 -    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &result, &reason);
 +    status = Engine_t_integrate(
 +        eng, 9e9, 9e9, 0.0, TFLAG_APEX,
-+        &result, BaseTrajSeq_t_append_wrapper,
++        &result, BCLIBC_BaseTrajSeq_append_wrapper,
 +        &reason);
  
      if (status != BCLIBC_STATUS_SUCCESS)
@@ -310,30 +310,30 @@ index b737dac..406dd02 100644
 -    BCLIBC_StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory, &reason);
 +    BCLIBC_StatusCode status = Engine_t_integrate(
 +        eng, 9e9, 9e9, 0.0, TFLAG_APEX,
-+        &trajectory, BaseTrajSeq_t_append_wrapper,
++        &trajectory, BCLIBC_BaseTrajSeq_append_wrapper,
 +        &reason);
  
      if (status != BCLIBC_STATUS_SUCCESS)
      {
 @@ -413,7 +445,9 @@ BCLIBC_StatusCode Engine_t_zero_angle(
-         BaseTrajSeq_t_init(&seq);
+         BCLIBC_BaseTrajSeq_init(&seq);
  
          TerminationReason reason;
 -        status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq, &reason);
 +        status = Engine_t_integrate(
 +            eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE,
-+            &seq, BaseTrajSeq_t_append_wrapper, &reason);
++            &seq, BCLIBC_BaseTrajSeq_append_wrapper, &reason);
  
          if (status != BCLIBC_STATUS_SUCCESS)
          {
 @@ -595,7 +629,11 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doub
-     BaseTrajSeq_t_init(&trajectory);
+     BCLIBC_BaseTrajSeq_init(&trajectory);
  
      TerminationReason reason;
 -    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory, &reason);
 +    status = Engine_t_integrate(
 +        eng, 9e9, 9e9, 0.0, TFLAG_NONE,
-+        &trajectory, BaseTrajSeq_t_append_wrapper,
++        &trajectory, BCLIBC_BaseTrajSeq_append_wrapper,
 +        &reason);
 +
      if (status != BCLIBC_STATUS_SUCCESS)
@@ -347,7 +347,7 @@ index 98eb200..bd2d3b1 100644
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
      double time_step, TrajFlag_t filter_flags,
--    BaseTrajSeq_t *traj_seq_ptr,
+-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,
      TerminationReason *reason)
@@ -361,7 +361,7 @@ index 98eb200..bd2d3b1 100644
          // Store point in trajectory sequence
  
          // err =
--        BaseTrajSeq_t_append(
+-        BCLIBC_BaseTrajSeq_append(
 -            traj_seq_ptr,
 +        emiter_callback(
 +            emiter,
@@ -372,7 +372,7 @@ index 98eb200..bd2d3b1 100644
      // Add final data point
  
      // err =
--    BaseTrajSeq_t_append(
+-    BCLIBC_BaseTrajSeq_append(
 -        traj_seq_ptr,
 +    emiter_callback(
 +        emiter,
@@ -387,7 +387,7 @@ index 8413eb1..bb0a05e 100644
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
      double time_step, TrajFlag_t filter_flags,
--    BaseTrajSeq_t *traj_seq_ptr,
+-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
 +    void *emiter,
 +    EmitCallbackPtr emiter_callback,
      TerminationReason *reason)
@@ -401,7 +401,7 @@ index 8413eb1..bb0a05e 100644
          BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
  
          // err =
--        BaseTrajSeq_t_append(
+-        BCLIBC_BaseTrajSeq_append(
 -            traj_seq_ptr,
 +        emiter_callback(
 +            emiter,
@@ -412,7 +412,7 @@ index 8413eb1..bb0a05e 100644
      // Process final data point
  
      // err =
--    BaseTrajSeq_t_append(
+-    BCLIBC_BaseTrajSeq_append(
 -        traj_seq_ptr,
 +    emiter_callback(
 +        emiter,

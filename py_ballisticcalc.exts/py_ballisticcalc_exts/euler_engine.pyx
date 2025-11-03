@@ -2,7 +2,7 @@
 """
 Cythonized Euler Integration Engine
 
-Because storing each step in a BaseTrajSeq_t is practically costless,
+Because storing each step in a BCLIBC_BaseTrajSeq is practically costless,
 we always run with "dense_output=True".
 """
 # noinspection PyUnresolvedReferences

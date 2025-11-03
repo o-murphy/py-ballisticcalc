@@ -13,7 +13,7 @@ from py_ballisticcalc_exts.bclib cimport (
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
-from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
+from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
@@ -68,7 +68,7 @@ cdef extern from "include/engine.h" nogil:
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr,
+        BCLIBC_BaseTrajSeq *traj_seq_ptr,
         TerminationReason *reason,
     ) noexcept nogil
 
@@ -92,7 +92,7 @@ cdef extern from "include/engine.h" nogil:
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr,
+        BCLIBC_BaseTrajSeq *traj_seq_ptr,
         TerminationReason *reason,
     ) noexcept nogil
 

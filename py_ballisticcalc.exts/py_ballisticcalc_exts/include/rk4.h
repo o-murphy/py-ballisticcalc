@@ -15,7 +15,7 @@ extern "C"
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr,
+        BCLIBC_BaseTrajSeq *traj_seq_ptr,
         TerminationReason *reason);
 
 #ifdef __cplusplus

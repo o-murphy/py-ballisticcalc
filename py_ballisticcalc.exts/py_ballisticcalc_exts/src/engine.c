@@ -17,12 +17,12 @@ Engine_t_find_zero_angle
  │              └─> eng->integrate_func_ptr
  └─> Engine_t_error_at_distance
       └─> Engine_t_integrate
-      └─> BaseTrajSeq_t_get_at / get_raw_item
+      └─> BCLIBC_BaseTrajSeq_getAt / get_raw_item
 
 Engine_t_zero_angle
  ├─> Engine_t_init_zero_calculation
  ├─> Engine_t_integrate
- └─> BaseTrajSeq_t_init / get_at / release
+ └─> BCLIBC_BaseTrajSeq_init / get_at / release
 
  Longest callstack:
 
@@ -59,7 +59,7 @@ BCLIBC_StatusCode Engine_t_integrate(
     double range_step_ft,
     double time_step,
     TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr,
+    BCLIBC_BaseTrajSeq *traj_seq_ptr,
     TerminationReason *reason)
 {
     if (!eng || !traj_seq_ptr || !reason || !eng->integrate_func_ptr)
@@ -86,7 +86,7 @@ BCLIBC_StatusCode Engine_t_integrate(
             BCLIBC_LOG_LEVEL_DEBUG, 
             "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes", 
             traj_seq_ptr->length, traj_seq_ptr->capacity,
-            traj_seq_ptr->length * sizeof(BaseTraj_t)
+            traj_seq_ptr->length * sizeof(BCLIBC_BaseTraj)
         );
         return BCLIBC_STATUS_SUCCESS;
     }
@@ -113,10 +113,10 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     // Have to ensure cMinimumVelocity is 0 for this to work
     double restore_min_velocity = 0.0;
     int has_restore_min_velocity = 0;
-    BaseTrajSeq_t result;
+    BCLIBC_BaseTrajSeq result;
     BCLIBC_StatusCode status;
 
-    BaseTrajSeq_t_init(&result);
+    BCLIBC_BaseTrajSeq_init(&result);
 
     if (eng->config.cMinimumVelocity > 0.0)
     {
@@ -135,7 +135,7 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
     }
     else
     {
-        status = BaseTrajSeq_t_get_at(&result, KEY_VEL_Y, 0.0, -1, out);
+        status = BCLIBC_BaseTrajSeq_getAt(&result, KEY_VEL_Y, 0.0, -1, out);
         if (status != BCLIBC_STATUS_SUCCESS)
         {
             BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
@@ -152,7 +152,7 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
         eng->config.cMinimumVelocity = restore_min_velocity;
     }
 
-    BaseTrajSeq_t_release(&result);
+    BCLIBC_BaseTrajSeq_release(&result);
     return status;
 }
 
@@ -172,11 +172,11 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
         return BCLIBC_STATUS_ERROR;
     }
 
-    BaseTrajSeq_t trajectory;
+    BCLIBC_BaseTrajSeq trajectory;
     BaseTrajData_t hit;
-    BaseTraj_t *last_ptr;
+    BCLIBC_BaseTraj *last_ptr;
 
-    BaseTrajSeq_t_init(&trajectory);
+    BCLIBC_BaseTrajSeq_init(&trajectory);
 
     // try
 
@@ -194,10 +194,10 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
         // If trajectory is too short for cubic interpolation, treat as unreachable
         if (trajectory.length >= 3)
         {
-            last_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, -1);
+            last_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, -1);
             if (last_ptr != NULL && last_ptr->time != 0.0)
             {
-                status = BaseTrajSeq_t_get_at(&trajectory, KEY_POS_X, target_x_ft, -1, &hit);
+                status = BCLIBC_BaseTrajSeq_getAt(&trajectory, KEY_POS_X, target_x_ft, -1, &hit);
                 if (status != BCLIBC_STATUS_SUCCESS)
                 {
                     BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
@@ -218,7 +218,7 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
     }
 
     // finally:
-    BaseTrajSeq_t_release(&trajectory);
+    BCLIBC_BaseTrajSeq_release(&trajectory);
     return status;
 };
 
@@ -371,9 +371,9 @@ BCLIBC_StatusCode Engine_t_zero_angle(
     }
 
     BaseTrajData_t hit;
-    BaseTrajSeq_t seq;
+    BCLIBC_BaseTrajSeq seq;
     status = BCLIBC_STATUS_SUCCESS; // initialize
-    BaseTrajSeq_t_init(&seq);
+    BCLIBC_BaseTrajSeq_init(&seq);
 
     double _cZeroFindingAccuracy = eng->config.cZeroFindingAccuracy;
     int _cMaxIterations = eng->config.cMaxIterations;
@@ -415,8 +415,8 @@ BCLIBC_StatusCode Engine_t_zero_angle(
     while (iterations_count < _cMaxIterations)
     {
         // reset seq for integration result
-        BaseTrajSeq_t_release(&seq);
-        BaseTrajSeq_t_init(&seq);
+        BCLIBC_BaseTrajSeq_release(&seq);
+        BCLIBC_BaseTrajSeq_init(&seq);
 
         TerminationReason reason;
         status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE, &seq, &reason);
@@ -428,7 +428,7 @@ BCLIBC_StatusCode Engine_t_zero_angle(
         }
 
         // interpolate trajectory at target_x_ft using the sequence we just filled
-        status = BaseTrajSeq_t_get_at(&seq, KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
+        status = BCLIBC_BaseTrajSeq_getAt(&seq, KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
         if (status != BCLIBC_STATUS_SUCCESS)
         {
             BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ZERO_ANGLE, "Failed to interpolate trajectory at target distance");
@@ -538,7 +538,7 @@ BCLIBC_StatusCode Engine_t_zero_angle(
     // finally:
 
     // Always release seq if it was allocated
-    BaseTrajSeq_t_release(&seq);
+    BCLIBC_BaseTrajSeq_release(&seq);
 
     // Restore original constraints
     if (has_restore_cMaximumDrop)
@@ -586,19 +586,19 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_ra
     double ix;
     double iy;
     double sdist;
-    BaseTrajSeq_t trajectory;
+    BCLIBC_BaseTrajSeq trajectory;
     BCLIBC_StatusCode status;
     ssize_t n;
     ssize_t i;
-    BaseTraj_t *prev_ptr;
-    BaseTraj_t *cur_ptr;
+    BCLIBC_BaseTraj *prev_ptr;
+    BCLIBC_BaseTraj *cur_ptr;
 
     // Update shot data
     eng->shot.barrel_elevation = angle_rad;
 
     // try:
     *result = -9e9;
-    BaseTrajSeq_t_init(&trajectory);
+    BCLIBC_BaseTrajSeq_init(&trajectory);
 
     TerminationReason reason;
     status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_NONE, &trajectory, &reason);
@@ -616,17 +616,17 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_ra
             // Linear search from end of trajectory for zero-down crossing
             for (i = n - 1; i > 0; i--)
             {
-                prev_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i - 1);
+                prev_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, i - 1);
                 if (prev_ptr == NULL)
                 {
-                    BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+                    BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE, "Index error in BCLIBC_BaseTrajSeq_getRawItem");
                     status = BCLIBC_STATUS_ERROR;
                     break; // assume INDEX_ERROR
                 }
-                cur_ptr = BaseTrajSeq_t_get_raw_item(&trajectory, i);
+                cur_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, i);
                 if (cur_ptr == NULL)
                 {
-                    BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE, "Index error in BaseTrajSeq_t_get_raw_item");
+                    BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE, "Index error in BCLIBC_BaseTrajSeq_getRawItem");
                     status = BCLIBC_STATUS_ERROR;
                     break; // assume INDEX_ERROR
                 }
@@ -649,7 +649,7 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_ra
         }
     }
 
-    BaseTrajSeq_t_release(&trajectory);
+    BCLIBC_BaseTrajSeq_release(&trajectory);
     return status;
 }
 

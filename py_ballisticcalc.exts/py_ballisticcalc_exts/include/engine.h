@@ -65,7 +65,7 @@ typedef BCLIBC_StatusCode IntegrateFunc(
     double range_step_ft,
     double time_step,
     TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr,
+    BCLIBC_BaseTrajSeq *traj_seq_ptr,
     TerminationReason *reason);
 
 typedef IntegrateFunc *IntegrateFuncPtr;
@@ -95,7 +95,7 @@ extern "C"
         double range_step_ft,
         double time_step,
         TrajFlag_t filter_flags,
-        BaseTrajSeq_t *traj_seq_ptr,
+        BCLIBC_BaseTrajSeq *traj_seq_ptr,
         TerminationReason *reason);
 
     BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out);

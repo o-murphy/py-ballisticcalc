@@ -71,7 +71,7 @@ static inline BCLIBC_V3dT _calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC
  * @param time_step The base time step (dt) used for the RK4 calculation.
  * @param filter_flags Flags (TrajFlag_t) specifying special points to record
  * (e.g., ZERO, MACH, APEX).
- * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where dense trajectory
+ * @param traj_seq_ptr Pointer to the BCLIBC_BaseTrajSeq buffer where dense trajectory
  * data points will be stored.
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on successful completion).
@@ -80,7 +80,7 @@ BCLIBC_StatusCode _integrate_rk4(
     Engine_t *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr,
+    BCLIBC_BaseTrajSeq *traj_seq_ptr,
     TerminationReason *reason)
 {
     if (!eng || !traj_seq_ptr || !reason)
@@ -199,7 +199,7 @@ BCLIBC_StatusCode _integrate_rk4(
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
 
         // err =
-        BaseTrajSeq_t_append(
+        BCLIBC_BaseTrajSeq_append(
             traj_seq_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
@@ -318,7 +318,7 @@ BCLIBC_StatusCode _integrate_rk4(
     // Process final data point
 
     // err =
-    BaseTrajSeq_t_append(
+    BCLIBC_BaseTrajSeq_append(
         traj_seq_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,
