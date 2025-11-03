@@ -9,7 +9,7 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorStack_pushErr,
     BCLIBC_ErrorStack_clearErr,
     BCLIBC_ErrorStack_popErr,
-    last_err,
+    BCLIBC_ErrorStack_lastErr,
 )
 
 cdef class BCLIBC_ErrorStackT:
@@ -92,7 +92,7 @@ cdef class BCLIBC_ErrorStackT:
         BCLIBC_ErrorStack_clearErr(self._c_stack_ptr)
 
     def last(self):
-        cdef const BCLIBC_ErrorFrame *f = last_err(self._c_stack_ptr)
+        cdef const BCLIBC_ErrorFrame *f = BCLIBC_ErrorStack_lastErr(self._c_stack_ptr)
         if f is NULL:
             return None
         # return f[0]

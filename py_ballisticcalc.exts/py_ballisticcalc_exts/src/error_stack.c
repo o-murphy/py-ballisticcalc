@@ -55,7 +55,7 @@ void BCLIBC_ErrorStack_clearErr(BCLIBC_ErrorStack *stack)
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Error stack cleared");
 }
 
-const BCLIBC_ErrorFrame *last_err(const BCLIBC_ErrorStack *stack)
+const BCLIBC_ErrorFrame *BCLIBC_ErrorStack_lastErr(const BCLIBC_ErrorStack *stack)
 {
     if (!stack || stack->top <= 0)
         return NULL;
@@ -78,28 +78,28 @@ static const char *error_type_to_string(BCLIBC_ErrorType code)
 {
     switch (code)
     {
-    case T_NO_ERROR:
-        return "T_NO_ERROR";
-    case T_ZERO_DIVISION_ERROR:
-        return "T_ZERO_DIVISION_ERROR";
-    case T_VALUE_ERROR:
-        return "T_VALUE_ERROR";
-    case T_KEY_ERROR:
-        return "T_KEY_ERROR";
-    case T_INDEX_ERROR:
-        return "T_INDEX_ERROR";
-    case T_MEMORY_ERROR:
-        return "T_MEMORY_ERROR";
-    case T_ARITHMETIC_ERROR:
-        return "T_ARITHMETIC_ERROR";
-    case T_INPUT_ERROR:
-        return "T_INPUT_ERROR";
-    case T_RUNTIME_ERROR:
-        return "T_RUNTIME_ERROR";
-    case T_ZERO_FINDING_ERROR:
-        return "T_ZERO_FINDING_ERROR";
-    case T_OUT_OF_RANGE_ERROR:
-        return "T_OUT_OF_RANGE_ERROR";
+    case BCLIBC_T_NO_ERROR:
+        return "BCLIBC_T_NO_ERROR";
+    case BCLIBC_T_ZERO_DIVISION_ERROR:
+        return "BCLIBC_T_ZERO_DIVISION_ERROR";
+    case BCLIBC_T_VALUE_ERROR:
+        return "BCLIBC_T_VALUE_ERROR";
+    case BCLIBC_T_KEY_ERROR:
+        return "BCLIBC_T_KEY_ERROR";
+    case BCLIBC_T_INDEX_ERROR:
+        return "BCLIBC_T_INDEX_ERROR";
+    case BCLIBC_T_MEMORY_ERROR:
+        return "BCLIBC_T_MEMORY_ERROR";
+    case BCLIBC_T_ARITHMETIC_ERROR:
+        return "BCLIBC_T_ARITHMETIC_ERROR";
+    case BCLIBC_T_INPUT_ERROR:
+        return "BCLIBC_T_INPUT_ERROR";
+    case BCLIBC_T_RUNTIME_ERROR:
+        return "BCLIBC_T_RUNTIME_ERROR";
+    case BCLIBC_T_ZERO_FINDING_ERROR:
+        return "BCLIBC_T_ZERO_FINDING_ERROR";
+    case BCLIBC_T_OUT_OF_RANGE_ERROR:
+        return "BCLIBC_T_OUT_OF_RANGE_ERROR";
     default:
         return "UNKNOWN_ERROR";
     }

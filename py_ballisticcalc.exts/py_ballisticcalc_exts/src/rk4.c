@@ -86,7 +86,7 @@ BCLIBC_StatusCode _integrate_rk4(
     if (!eng || !traj_seq_ptr || !reason)
     {
         REQUIRE_NON_NULL(eng);
-        BCLIBC_PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+        BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_T_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return BCLIBC_STATUS_ERROR;
     };
 
@@ -224,7 +224,7 @@ BCLIBC_StatusCode _integrate_rk4(
         // Check for division by zero
         // if (mach == 0.0)
         // {
-        //     BCLIBC_PUSH_ERR(&eng->err_stack, T_ZERO_DIVISION_ERROR, BCLIBC_SRC_INTEGRATE, "Integration error: Mach number is zero cannot divide!");
+        //     BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_T_ZERO_DIVISION_ERROR, BCLIBC_SRC_INTEGRATE, "Integration error: Mach number is zero cannot divide!");
         //     return BCLIBC_STATUS_ERROR;
         // }
 

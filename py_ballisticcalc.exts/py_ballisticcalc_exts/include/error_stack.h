@@ -30,18 +30,18 @@ typedef enum
 typedef enum
 {
     // General
-    T_NO_ERROR,
-    T_ZERO_DIVISION_ERROR,
-    T_VALUE_ERROR,
-    T_KEY_ERROR,
-    T_INDEX_ERROR,
-    T_MEMORY_ERROR,
-    T_ARITHMETIC_ERROR,
-    T_INPUT_ERROR,
-    T_RUNTIME_ERROR,
+    BCLIBC_T_NO_ERROR,
+    BCLIBC_T_ZERO_DIVISION_ERROR,
+    BCLIBC_T_VALUE_ERROR,
+    BCLIBC_T_KEY_ERROR,
+    BCLIBC_T_INDEX_ERROR,
+    BCLIBC_T_MEMORY_ERROR,
+    BCLIBC_T_ARITHMETIC_ERROR,
+    BCLIBC_T_INPUT_ERROR,
+    BCLIBC_T_RUNTIME_ERROR,
     // Special
-    T_ZERO_FINDING_ERROR,
-    T_OUT_OF_RANGE_ERROR,
+    BCLIBC_T_ZERO_FINDING_ERROR,
+    BCLIBC_T_OUT_OF_RANGE_ERROR,
 } BCLIBC_ErrorType;
 
 typedef struct
@@ -76,7 +76,7 @@ extern "C"
         ...);
     void BCLIBC_ErrorStack_popErr(BCLIBC_ErrorStack *stack);
     void BCLIBC_ErrorStack_clearErr(BCLIBC_ErrorStack *stack);
-    const BCLIBC_ErrorFrame *last_err(const BCLIBC_ErrorStack *stack);
+    const BCLIBC_ErrorFrame *BCLIBC_ErrorStack_lastErr(const BCLIBC_ErrorStack *stack);
     void BCLIBC_ErrorStack_print(const BCLIBC_ErrorStack *stack);
     void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_t out_size);
 

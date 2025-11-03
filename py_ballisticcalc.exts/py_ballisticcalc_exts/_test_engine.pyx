@@ -61,7 +61,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != BCLIBC_ErrorType.T_NO_ERROR:
+        if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != BCLIBC_ErrorType.BCLIBC_T_NO_ERROR:
             raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
         return self._engine.shot.stability_coefficient
 

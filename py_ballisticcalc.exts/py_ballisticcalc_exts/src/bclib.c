@@ -178,14 +178,14 @@ double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
  * - $S_g = \text{sd} \cdot \text{fv} \cdot \text{ftp}$
  *
  * @param shot_props_ptr Pointer to ShotProps_t containing parameters like twist, length, diameter, weight, muzzle_velocity, and atmo.
- * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input, T_ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
+ * @return BCLIBC_T_NO_ERROR on success, BCLIBC_T_INPUT_ERROR for NULL input, BCLIBC_T_ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
  */
 BCLIBC_ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
     {
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return T_INPUT_ERROR;
+        return BCLIBC_T_INPUT_ERROR;
     }
     /* Miller stability coefficient */
     double twist_rate, length, sd, fv, ft, pt, ftp;
@@ -214,7 +214,7 @@ BCLIBC_ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_
         {
             shot_props_ptr->stability_coefficient = 0.0;
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
-            return T_ZERO_DIVISION_ERROR; // Exit if denominator is zero
+            return BCLIBC_T_ZERO_DIVISION_ERROR; // Exit if denominator is zero
         }
 
         fv = pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
@@ -230,7 +230,7 @@ BCLIBC_ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_
         {
             shot_props_ptr->stability_coefficient = 0.0;
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
-            return T_ZERO_DIVISION_ERROR; // Exit if pt is zero
+            return BCLIBC_T_ZERO_DIVISION_ERROR; // Exit if pt is zero
         }
 
         shot_props_ptr->stability_coefficient = sd * fv * ftp;
@@ -241,7 +241,7 @@ BCLIBC_ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_
         shot_props_ptr->stability_coefficient = 0.0;
     }
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
-    return T_NO_ERROR;
+    return BCLIBC_T_NO_ERROR;
 }
 
 /**
@@ -441,14 +441,14 @@ static inline BCLIBC_V3dT Wind_t_to_V3dT(const Wind_t *restrict wind_ptr)
  * @param ws Pointer to the WindSock_t structure to initialize.
  * @param length The number of wind segments in the `winds` array.
  * @param winds Pointer to the array of Wind_t structures.
- * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input.
+ * @return BCLIBC_T_NO_ERROR on success, BCLIBC_T_INPUT_ERROR for NULL input.
  */
 BCLIBC_ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
     {
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return T_INPUT_ERROR;
+        return BCLIBC_T_INPUT_ERROR;
     }
 
     ws->length = (int)length;
@@ -513,14 +513,14 @@ BCLIBC_V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
  * If `ws->current` is out of bounds, the cache is set to a zero vector and the next range to `cMaxWindDistanceFeet`.
  *
  * @param ws Pointer to the WindSock_t structure.
- * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input.
+ * @return BCLIBC_T_NO_ERROR on success, BCLIBC_T_INPUT_ERROR for NULL input.
  */
 BCLIBC_ErrorType WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return T_INPUT_ERROR;
+        return BCLIBC_T_INPUT_ERROR;
     }
 
     if (ws->current < ws->length)
@@ -537,7 +537,7 @@ BCLIBC_ErrorType WindSock_t_updateCache(WindSock_t *ws)
         ws->last_vector_cache.z = 0.0;
         ws->next_range = cMaxWindDistanceFeet;
     }
-    return T_NO_ERROR;
+    return BCLIBC_T_NO_ERROR;
 }
 
 /**
@@ -575,7 +575,7 @@ BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param)
         {
             // Move to the next wind segment
             // If cache update fails, return zero vector
-            if (WindSock_t_updateCache(ws) != T_NO_ERROR)
+            if (WindSock_t_updateCache(ws) != BCLIBC_T_NO_ERROR)
             {
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                 return zero_vector;
@@ -742,7 +742,7 @@ static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey k
  * @param p1 Pointer to the second data point.
  * @param p2 Pointer to the third data point (after or at the end of the segment).
  * @param out Pointer to the BaseTrajData_t structure where the interpolated result will be stored.
- * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input, T_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
+ * @return BCLIBC_T_NO_ERROR on success, BCLIBC_T_INPUT_ERROR for NULL input, BCLIBC_T_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
  */
 BCLIBC_ErrorType BaseTrajData_t_interpolate(
     InterpKey key_kind,
@@ -755,7 +755,7 @@ BCLIBC_ErrorType BaseTrajData_t_interpolate(
     if (!p0 || !p1 || !p2 || !out)
     {
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-        return T_INPUT_ERROR;
+        return BCLIBC_T_INPUT_ERROR;
     }
 
     // Get key values
@@ -766,7 +766,7 @@ BCLIBC_ErrorType BaseTrajData_t_interpolate(
     // Guard against degenerate segments
     if (x0 == x1 || x0 == x2 || x1 == x2)
     {
-        return T_ZERO_DIVISION_ERROR;
+        return BCLIBC_T_ZERO_DIVISION_ERROR;
     }
 
     // Cache position and velocity
@@ -792,5 +792,5 @@ BCLIBC_ErrorType BaseTrajData_t_interpolate(
 
     out->mach = (key_kind == KEY_MACH) ? key_value : interpolate_3_pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
 
-    return T_NO_ERROR;
+    return BCLIBC_T_NO_ERROR;
 }
