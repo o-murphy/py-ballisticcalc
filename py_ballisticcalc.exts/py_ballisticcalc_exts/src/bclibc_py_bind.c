@@ -1,12 +1,12 @@
 #include <Python.h>
 #include <stdlib.h>
 #include <math.h>
-#include "bclib.h"
-#include "bind.h"
+#include "bclibc_bclib.h"
+#include "bclibc_py_bind.h"
 
-Config_t Config_t_fromPyObject(PyObject *config)
+BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject *config)
 {
-    Config_t c;
+    BCLIBC_Config c;
 
     PyObject *tmp;
 
@@ -42,13 +42,13 @@ Config_t Config_t_fromPyObject(PyObject *config)
 }
 
 /**
- * Create MachList_t from a Python list of objects with `.Mach` attribute.
- * Returns MachList_t with allocated array or with array==NULL on error.
+ * Create BCLIBC_MachList from a Python list of objects with `.Mach` attribute.
+ * Returns BCLIBC_MachList with allocated array or with array==NULL on error.
  * Caller responsible for freeing ml.array.
  */
-MachList_t MachList_t_fromPylist(PyObject *pylist)
+BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist)
 {
-    MachList_t ml = {NULL, 0};
+    BCLIBC_MachList ml = {NULL, 0};
     Py_ssize_t len = PyList_Size(pylist);
     if (len < 0)
         return ml; // error
@@ -97,9 +97,9 @@ MachList_t MachList_t_fromPylist(PyObject *pylist)
     return ml;
 }
 
-Curve_t Curve_t_fromPylist(PyObject *data_points)
+BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points)
 {
-    Curve_t curve = {NULL, 0};
+    BCLIBC_Curve curve = {NULL, 0};
     Py_ssize_t n = PyList_Size(data_points);
     if (n < 2) // need at least 2 points
         return curve;
@@ -149,7 +149,7 @@ Curve_t Curve_t_fromPylist(PyObject *data_points)
     }
 
     // Allocate segment coefficients (n-1 segments)
-    CurvePoint_t *curve_points = (CurvePoint_t *)malloc((size_t)(n - 1) * sizeof(CurvePoint_t));
+    BCLIBC_CurvePoint *curve_points = (BCLIBC_CurvePoint *)malloc((size_t)(n - 1) * sizeof(BCLIBC_CurvePoint));
     if (!curve_points)
     {
         free(x);
@@ -248,10 +248,10 @@ Curve_t Curve_t_fromPylist(PyObject *data_points)
     return curve;
 }
 
-Wind_t Wind_t_fromPyObject(PyObject *w)
+BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w)
 {
     // Initialize the C structure to zero values in case of error.
-    Wind_t wind_c = {0.0, 0.0, 0.0, 0.0};
+    BCLIBC_Wind wind_c = {0.0, 0.0, 0.0, 0.0};
 
     // Temporary variables for Python objects during attribute lookup.
     // Initialized to NULL for safety, although the current flow relies on Py_DECREF.
@@ -335,7 +335,7 @@ Wind_t Wind_t_fromPyObject(PyObject *w)
     {
         // If an error is set, return the zeroed structure.
         // The calling Cython code is responsible for checking PyErr_Occurred() and raising the exception.
-        Wind_t err_wind = {0.0, 0.0, 0.0, 0.0};
+        BCLIBC_Wind err_wind = {0.0, 0.0, 0.0, 0.0};
         return err_wind;
     }
 

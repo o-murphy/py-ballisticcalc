@@ -49,7 +49,7 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 - Interpolation (nogil core):
 ```python
 cdef enum InterpKey: KEY_TIME, KEY_MACH, KEY_POS_X, ...
-cdef BaseTraj_t* _interpolate_nogil(self, Py_ssize_t idx, InterpKey key_kind, double key_value) nogil
+cdef BCLIBC_BaseTraj* _interpolate_nogil(self, Py_ssize_t idx, InterpKey key_kind, double key_value) nogil
 
 def interpolate_at(self, idx, key_attribute, key_value):
     # map key_attribute -> InterpKey
@@ -114,10 +114,10 @@ def append(self, time, ...):
 
 For any object in the hot path we create a C helper as follows:
 
-1. Define a C struct in `bclib.h`, and list helper functions.  Example: `typedef struct ... ShotProps_t` and `void ShotProps_t_release(ShotProps_t*shot_props_ptr)`
-2. Implement any helper functions in `bclib.c`.  These are typically to allocate and free memory.  Example: `ShotProps_t_release()`.
+1. Define a C struct in `bclib.h`, and list helper functions.  Example: `typedef struct ... BCLIBC_ShotProps` and `void BCLIBC_ShotProps_release(BCLIBC_ShotProps*shot_props_ptr)`
+2. Implement any helper functions in `bclib.c`.  These are typically to allocate and free memory.  Example: `BCLIBC_ShotProps_release()`.
 3. Copy the `struct` as a `ctypedef` to `bclib.pxd`.  (This could be automated at compile time but is not at present.)
-4. Put any conversion logic in `bclib.pyx`.  E.g., `cdef ShotProps_t ShotProps_t_from_pyshot(object shot_props):`
+4. Put any conversion logic in `bclib.pyx`.  E.g., `cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):`
 
 ## Memory / leak detection strategy
 

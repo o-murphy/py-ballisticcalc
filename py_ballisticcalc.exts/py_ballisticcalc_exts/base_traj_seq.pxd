@@ -3,13 +3,13 @@ Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 """
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport InterpKey, ErrorType
+from py_ballisticcalc_exts.bclib cimport BCLIBC_InterpKey, BCLIBC_ErrorType
 
 
-cdef extern from "include/base_traj_seq.h" nogil:
-    ctypedef struct BaseTraj_t:
+cdef extern from "include/bclibc_base_traj_seq.h" nogil:
+    ctypedef struct BCLIBC_BaseTraj:
         double time
         double px
         double py
@@ -19,27 +19,27 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double vz
         double mach
 
-    ctypedef struct BaseTrajSeq_t:
-        BaseTraj_t* buffer
+    ctypedef struct BCLIBC_BaseTrajSeq:
+        BCLIBC_BaseTraj* buffer
         size_t length
         size_t capacity
 
-    ErrorType BaseTrajSeq_t_interpolate_at(
-        const BaseTrajSeq_t *seq,
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(
+        const BCLIBC_BaseTrajSeq *seq,
         ssize_t idx,
-        InterpKey key_kind,
+        BCLIBC_InterpKey key_kind,
         double key_value,
-        BaseTrajData_t *out
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil
 
-    void BaseTrajSeq_t_init(BaseTrajSeq_t *seq) noexcept nogil
-    void BaseTrajSeq_t_release(BaseTrajSeq_t *seq) noexcept nogil
+    void BCLIBC_BaseTrajSeq_init(BCLIBC_BaseTrajSeq *seq) noexcept nogil
+    void BCLIBC_BaseTrajSeq_release(BCLIBC_BaseTrajSeq *seq) noexcept nogil
 
-    Py_ssize_t BaseTrajSeq_t_len(BaseTrajSeq_t *seq) noexcept nogil
-    BaseTraj_t* BaseTrajSeq_t_get_raw_item(BaseTrajSeq_t *seq, Py_ssize_t idx) noexcept nogil
-    ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity) noexcept nogil
-    ErrorType BaseTrajSeq_t_append(
-        BaseTrajSeq_t *seq,
+    Py_ssize_t BCLIBC_BaseTrajSeq_len(BCLIBC_BaseTrajSeq *seq) noexcept nogil
+    BCLIBC_BaseTraj* BCLIBC_BaseTrajSeq_getRawItem(BCLIBC_BaseTrajSeq *seq, Py_ssize_t idx) noexcept nogil
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_ensureCapacity(BCLIBC_BaseTrajSeq *seq, size_t min_capacity) noexcept nogil
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_append(
+        BCLIBC_BaseTrajSeq *seq,
         double time,
         double px,
         double py,
@@ -49,24 +49,24 @@ cdef extern from "include/base_traj_seq.h" nogil:
         double vz,
         double mach
     ) noexcept nogil
-    ErrorType BaseTrajSeq_t_get_at_slant_height(
-        const BaseTrajSeq_t *seq,
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAtSlantHeight(
+        const BCLIBC_BaseTrajSeq *seq,
         double look_angle_rad,
         double value,
-        BaseTrajData_t *out
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil
-    ErrorType BaseTrajSeq_t_get_item(
-        const BaseTrajSeq_t *seq,
-        ssize_t idx, BaseTrajData_t *out
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(
+        const BCLIBC_BaseTrajSeq *seq,
+        ssize_t idx, BCLIBC_BaseTrajData *out
     ) noexcept nogil
-    ErrorType BaseTrajSeq_t_get_at(
-        const BaseTrajSeq_t *seq,
-        InterpKey key_kind,
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(
+        const BCLIBC_BaseTrajSeq *seq,
+        BCLIBC_InterpKey key_kind,
         double key_value,
         double start_from_time,
-        BaseTrajData_t *out
+        BCLIBC_BaseTrajData *out
     ) noexcept nogil
 
 
 cdef class BaseTrajSeqT:
-    cdef BaseTrajSeq_t _c_view
+    cdef BCLIBC_BaseTrajSeq _c_view

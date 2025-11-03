@@ -1,9 +1,9 @@
-from py_ballisticcalc_exts._test_error_stack import ErrorStackT
+from py_ballisticcalc_exts._test_error_stack import BCLIBC_ErrorStackT
 
 
 def test_error_stack():
     test_msg = "test"
-    stack = ErrorStackT()
+    stack = BCLIBC_ErrorStackT()
     stack.push(0, 0, test_msg)
 
     assert stack.top == 1

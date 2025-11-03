@@ -1,6 +1,6 @@
 #include <math.h>
-#include "euler.h"
-// #include "bclib.h"  // for C_LOG
+#include "bclibc_euler.h"
+// #include "bclibc_bclib.h"  // for C_LOG
 
 /**
  * @brief Calculate time step based on current projectile speed.
@@ -8,7 +8,7 @@
  * @param velocity The current projectile speed (magnitude of velocity).
  * @return double The calculated time step.
  */
-static inline double _euler_time_step(double base_step, double velocity)
+static inline double BCLIBC_euler_time_step(double base_step, double velocity)
 {
     // C equivalent of fmax(1.0, velocity)
     // fmax is defined in <math.h>
@@ -23,32 +23,32 @@ static inline double _euler_time_step(double base_step, double velocity)
  * range, minimum velocity, or max drop). It accounts for gravity, drag (using
  * Mach number), wind, and Coriolis effects.
  *
- * @param shot_props_ptr Pointer to the ShotProps_t structure containing
+ * @param shot_props_ptr Pointer to the BCLIBC_ShotProps structure containing
  * muzzle conditions, drag curve, and atmospheric data.
- * @param wind_sock_ptr Pointer to the WindSock_t structure for wind interpolation.
+ * @param wind_sock_ptr Pointer to the BCLIBC_WindSock structure for wind interpolation.
  * @param config_ptr Pointer to the global configuration constants (e.g., gravity).
  * @param range_limit_ft The maximum horizontal range (in feet) to simulate.
  * @param range_step_ft The distance step for recording trajectory points
  * (not used for integration step size).
  * @param time_step The base time step for integration (can be adaptive).
- * @param filter_flags Flags (TrajFlag_t) specifying additional points to record.
- * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where trajectory
+ * @param filter_flags Flags (BCLIBC_TrajFlag) specifying additional points to record.
+ * @param traj_seq_ptr Pointer to the BCLIBC_BaseTrajSeq buffer where trajectory
  * data points will be stored.
- * @return ErrorType An enumeration value indicating why the integration
+ * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
  */
-StatusCode _integrate_euler(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_integrateEULER(
+    BCLIBC_EngineT *eng,
     double range_limit_ft, double range_step_ft,
-    double time_step, TrajFlag_t filter_flags,
-    BaseTrajSeq_t *traj_seq_ptr,
-    TerminationReason *reason)
+    double time_step, BCLIBC_TrajFlag filter_flags,
+    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    BCLIBC_TerminationReason *reason)
 {
     if (!eng || !traj_seq_ptr || !reason)
     {
         REQUIRE_NON_NULL(eng);
-        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
-        return STATUS_ERROR;
+        BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+        return BCLIBC_STATUS_ERROR;
     }
 
     double velocity, delta_time;
@@ -57,12 +57,12 @@ StatusCode _integrate_euler(
     double time = 0.0;
     double drag = 0.0;
     double km = 0.0;
-    V3dT range_vector;
-    V3dT velocity_vector;
-    V3dT relative_velocity;
-    V3dT gravity_vector;
-    V3dT wind_vector;
-    V3dT coriolis_accel;
+    BCLIBC_V3dT range_vector;
+    BCLIBC_V3dT velocity_vector;
+    BCLIBC_V3dT relative_velocity;
+    BCLIBC_V3dT gravity_vector;
+    BCLIBC_V3dT wind_vector;
+    BCLIBC_V3dT coriolis_accel;
     double calc_step = eng->shot.calc_step;
 
     // Early binding of configuration constants
@@ -71,11 +71,11 @@ StatusCode _integrate_euler(
     double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
 
     // Working variables
-    *reason = NO_TERMINATE;
+    *reason = BCLIBC_TERM_REASON_NO_TERMINATE;
     double relative_speed;
-    V3dT _dir_vector;
-    V3dT _tv;
-    V3dT delta_range_vector;
+    BCLIBC_V3dT _dir_vector;
+    BCLIBC_V3dT _tv;
+    BCLIBC_V3dT delta_range_vector;
     eng->integration_step_count = 0;
 
     // Initialize gravity vector
@@ -84,7 +84,7 @@ StatusCode _integrate_euler(
     gravity_vector.z = 0.0;
 
     // Initialize wind vector
-    wind_vector = WindSock_t_currentVector(&eng->shot.wind_sock);
+    wind_vector = BCLIBC_WindSock_currentVector(&eng->shot.wind_sock);
 
     // Initialize velocity and position vectors
     velocity = eng->shot.muzzle_velocity;
@@ -101,12 +101,12 @@ StatusCode _integrate_euler(
     _dir_vector.z = cos(eng->shot.barrel_elevation) * sin(eng->shot.barrel_azimuth);
 
     // Calculate velocity vector
-    velocity_vector = mulS(&_dir_vector, velocity);
+    velocity_vector = BCLIBC_V3dT_mulS(&_dir_vector, velocity);
 
     // Trajectory Loop
 
     // Update air density and mach at initial altitude
-    Atmosphere_t_updateDensityFactorAndMachForAltitude(
+    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
         &eng->shot.atmo,
         eng->shot.alt0 + range_vector.y,
         &density_ratio,
@@ -120,11 +120,11 @@ StatusCode _integrate_euler(
         // Update wind reading at current point in trajectory
         if (range_vector.x >= eng->shot.wind_sock.next_range)
         {
-            wind_vector = WindSock_t_vectorForRange(&eng->shot.wind_sock, range_vector.x);
+            wind_vector = BCLIBC_WindSock_vectorForRange(&eng->shot.wind_sock, range_vector.x);
         }
 
         // Update air density and mach at current altitude
-        Atmosphere_t_updateDensityFactorAndMachForAltitude(
+        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
             &eng->shot.atmo,
             eng->shot.alt0 + range_vector.y,
             &density_ratio,
@@ -133,7 +133,7 @@ StatusCode _integrate_euler(
         // Store point in trajectory sequence
 
         // err =
-        BaseTrajSeq_t_append(
+        BCLIBC_BaseTrajSeq_append(
             traj_seq_ptr,
             time,
             range_vector.x, range_vector.y, range_vector.z,
@@ -147,54 +147,54 @@ StatusCode _integrate_euler(
         // Euler integration step
 
         // 1. Calculate relative velocity (projectile velocity - wind)
-        relative_velocity = sub(&velocity_vector, &wind_vector);
-        relative_speed = mag(&relative_velocity);
+        relative_velocity = BCLIBC_V3dT_sub(&velocity_vector, &wind_vector);
+        relative_speed = BCLIBC_V3dT_mag(&relative_velocity);
 
         // 2. Calculate time step (adaptive based on velocity)
-        delta_time = _euler_time_step(calc_step, relative_speed);
+        delta_time = BCLIBC_euler_time_step(calc_step, relative_speed);
 
         // 3. Calculate drag coefficient and drag force
-        km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
+        km = density_ratio * BCLIBC_ShotProps_dragByMach(&eng->shot, relative_speed / mach);
         drag = km * relative_speed;
 
         // 4. Apply drag, gravity, and Coriolis to velocity
-        _tv = mulS(&relative_velocity, drag);
-        _tv = sub(&gravity_vector, &_tv);
+        _tv = BCLIBC_V3dT_mulS(&relative_velocity, drag);
+        _tv = BCLIBC_V3dT_sub(&gravity_vector, &_tv);
 
         // Check the flat_fire_only flag within the Coriolis structure
         if (!eng->shot.coriolis.flat_fire_only)
         {
-            Coriolis_t_coriolis_acceleration_local(
+            BCLIBC_Coriolis_coriolisAccelerationLocal(
                 &eng->shot.coriolis, &velocity_vector, &coriolis_accel);
-            _tv = add(&_tv, &coriolis_accel);
+            _tv = BCLIBC_V3dT_add(&_tv, &coriolis_accel);
         }
 
-        _tv = mulS(&_tv, delta_time);
-        velocity_vector = add(&velocity_vector, &_tv);
+        _tv = BCLIBC_V3dT_mulS(&_tv, delta_time);
+        velocity_vector = BCLIBC_V3dT_add(&velocity_vector, &_tv);
 
         // 5. Update position based on new velocity
-        delta_range_vector = mulS(&velocity_vector, delta_time);
-        range_vector = add(&range_vector, &delta_range_vector);
+        delta_range_vector = BCLIBC_V3dT_mulS(&velocity_vector, delta_time);
+        range_vector = BCLIBC_V3dT_add(&range_vector, &delta_range_vector);
 
         // 6. Update time and velocity magnitude
-        velocity = mag(&velocity_vector);
+        velocity = BCLIBC_V3dT_mag(&velocity_vector);
         time += delta_time;
 
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
         {
-            *reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
+            *reason = BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED;
         }
         else if (range_vector.y < _cMaximumDrop)
         {
-            *reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
+            *reason = BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED;
         }
         else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
-            *reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
+            *reason = BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED;
         }
 
-        if (*reason != NO_TERMINATE)
+        if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
         {
             break;
         }
@@ -203,7 +203,7 @@ StatusCode _integrate_euler(
     // Add final data point
 
     // err =
-    BaseTrajSeq_t_append(
+    BCLIBC_BaseTrajSeq_append(
         traj_seq_ptr,
         time,
         range_vector.x, range_vector.y, range_vector.z,
@@ -214,7 +214,7 @@ StatusCode _integrate_euler(
     //     return err;
     // }
 
-    C_LOG(LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
-    return STATUS_SUCCESS;
+    return BCLIBC_STATUS_SUCCESS;
 }

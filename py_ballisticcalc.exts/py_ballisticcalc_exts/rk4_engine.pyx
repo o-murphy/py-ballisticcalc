@@ -2,7 +2,7 @@
 """
 Cythonized RK4 Integration Engine
 
-Because storing each step in a BaseTrajSeq_t is practically costless,
+Because storing each step in a BCLIBC_BaseTrajSeq is practically costless,
 we always run with "dense_output=True".
 """
 # noinspection PyUnresolvedReferences
@@ -22,7 +22,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     DEFAULT_TIME_STEP = 0.0025
 
     def __cinit__(self, object _config):
-        self._engine.integrate_func_ptr = _integrate_rk4
+        self._engine.integrate_func_ptr = BCLIBC_integrateRK4
 
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self):
         """Calculate the step size for integration."""

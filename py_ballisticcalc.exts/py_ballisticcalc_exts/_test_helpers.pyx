@@ -2,7 +2,7 @@
 """Test helper accessors for Cython-specific tests.
 
 This module is NOT part of the public API. It provides a minimal surface for
-tests to directly evaluate the C-side drag interpolation (ShotProps_t_dragByMach)
+tests to directly evaluate the C-side drag interpolation (BCLIBC_ShotProps_dragByMach)
 and inspect underlying prepared spline coefficients (a,b,c,d) plus Mach knots.
 
 We deliberately keep this separate from production engine modules to avoid
@@ -11,23 +11,23 @@ polluting hot paths or public symbols. Import only inside test code.
 
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    ShotProps_t,
-    ShotProps_t_dragByMach,
-    ShotProps_t_spinDrift,
-    ShotProps_t_updateStabilityCoefficient,
-    Atmosphere_t_updateDensityFactorAndMachForAltitude,
-    TrajFlag_t,
+    BCLIBC_ShotProps,
+    BCLIBC_ShotProps_dragByMach,
+    BCLIBC_ShotProps_spinDrift,
+    BCLIBC_ShotProps_updateStabilityCoefficient,
+    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
+    BCLIBC_TrajFlag,
     calculateEnergy,
     calculateOgw,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BaseTrajData_t
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.v3d cimport V3dT
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 
 __all__ = [
     'init_shot',
@@ -49,13 +49,13 @@ __all__ = [
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
-    return BaseTrajDataT(BaseTrajData_t(time, V3dT(px, py, pz), V3dT(vx, vy, vz), mach))
+    return BaseTrajDataT(BCLIBC_BaseTrajData(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach))
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
 
     Args:
-        shot_props_addr: `id()` of an internal ShotProps_t struct exposed via engine._engine.shot
+        shot_props_addr: `id()` of an internal BCLIBC_ShotProps struct exposed via engine._engine.shot
         mach: Mach number to evaluate
 
     Returns:
@@ -65,16 +65,16 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
         We pass a raw address obtained from a Cython engine instance to avoid adding
         a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._engine.shot`.
     """
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
-    return ShotProps_t_dragByMach(sp_ptr, mach)
+    cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
+    return BCLIBC_ShotProps_dragByMach(sp_ptr, mach)
 
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return ShotProps_t_dragByMach(&e._engine.shot, mach)
+    return BCLIBC_ShotProps_dragByMach(&e._engine.shot, mach)
 
 cpdef size_t shot_props_addr(object engine):
-    """Return raw address of the engine's internal ShotProps_t struct.
+    """Return raw address of the engine's internal BCLIBC_ShotProps struct.
 
     Engine must have performed at least one initialization (e.g., integrate or zeroing)
     so that its _engine.shot contains prepared curve + mach list.
@@ -88,7 +88,7 @@ cpdef size_t init_shot(object engine, object shot):
     Leaves the trajectory allocated for further direct C access.
     """
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    cdef ShotProps_t *ptr = e._init_trajectory(shot)
+    cdef BCLIBC_ShotProps *ptr = e._init_trajectory(shot)
     return <size_t>ptr
 
 cpdef void free_shot(object engine):
@@ -96,41 +96,41 @@ cpdef void free_shot(object engine):
     e._release_trajectory()
 
 cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
-    return ShotProps_t_spinDrift(sp_ptr, time_s)
+    cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
+    return BCLIBC_ShotProps_spinDrift(sp_ptr, time_s)
 
 cpdef double stability_update_eval(size_t shot_props_addr):
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
-    ShotProps_t_updateStabilityCoefficient(sp_ptr)
+    cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
+    BCLIBC_ShotProps_updateStabilityCoefficient(sp_ptr)
     return sp_ptr.stability_coefficient
 
 cpdef dict introspect_shot(size_t shot_props_addr):
-    """Return basic structural info about ShotProps_t for debugging."""
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
+    """Return basic structural info about BCLIBC_ShotProps for debugging."""
+    cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     if not sp_ptr:
         return {'null': True}
     return {'bc': sp_ptr.bc, 'curve_len': sp_ptr.curve.length, 'mach_len': sp_ptr.mach_list.length}
 
 cpdef double energy_eval(size_t shot_props_addr, double velocity_fps):
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
+    cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     return calculateEnergy(sp_ptr.weight, velocity_fps)
 
 cpdef double ogw_eval(size_t shot_props_addr, double velocity_fps):
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
+    cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     return calculateOgw(sp_ptr.weight, velocity_fps)
 
 cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
-    cdef ShotProps_t *sp_ptr = <ShotProps_t *> shot_props_addr
+    cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     cdef double density_ratio = 0.0
     cdef double mach = 0.0
-    Atmosphere_t_updateDensityFactorAndMachForAltitude(&sp_ptr.atmo, altitude_ft, &density_ratio, &mach)
+    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(&sp_ptr.atmo, altitude_ft, &density_ratio, &mach)
     return density_ratio, mach
 
 cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
                                 double range_limit_ft, double range_step_ft, double time_step):
     """Call engine._integrate directly with current shot props."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return e._integrate(range_limit_ft, range_step_ft, time_step, TrajFlag_t.TFLAG_NONE)
+    return e._integrate(range_limit_ft, range_step_ft, time_step, BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE)
 
 cpdef int step_count(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
