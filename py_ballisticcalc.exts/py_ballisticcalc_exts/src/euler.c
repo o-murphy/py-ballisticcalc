@@ -47,7 +47,7 @@ BCLIBC_StatusCode _integrate_euler(
     if (!eng || !traj_seq_ptr || !reason)
     {
         REQUIRE_NON_NULL(eng);
-        BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_T_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+        BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
         return BCLIBC_STATUS_ERROR;
     }
 

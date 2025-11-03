@@ -70,15 +70,15 @@ cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RA
 
 
 cdef dict ERROR_TYPE_TO_EXCEPTION = {
-    BCLIBC_ErrorType.BCLIBC_T_INPUT_ERROR: TypeError,
-    BCLIBC_ErrorType.BCLIBC_T_ZERO_FINDING_ERROR: ZeroFindingError,
-    BCLIBC_ErrorType.BCLIBC_T_OUT_OF_RANGE_ERROR: OutOfRangeError,
-    BCLIBC_ErrorType.BCLIBC_T_VALUE_ERROR: ValueError,
-    BCLIBC_ErrorType.BCLIBC_T_INDEX_ERROR: IndexError,
-    BCLIBC_ErrorType.BCLIBC_T_KEY_ERROR: AttributeError,
-    BCLIBC_ErrorType.BCLIBC_T_MEMORY_ERROR: MemoryError,
-    BCLIBC_ErrorType.BCLIBC_T_ARITHMETIC_ERROR: ArithmeticError,
-    BCLIBC_ErrorType.BCLIBC_T_RUNTIME_ERROR: SolverRuntimeError,
+    BCLIBC_ErrorType.BCLIBC_E_INPUT_ERROR: TypeError,
+    BCLIBC_ErrorType.BCLIBC_E_ZERO_FINDING_ERROR: ZeroFindingError,
+    BCLIBC_ErrorType.BCLIBC_E_OUT_OF_RANGE_ERROR: OutOfRangeError,
+    BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR: ValueError,
+    BCLIBC_ErrorType.BCLIBC_E_INDEX_ERROR: IndexError,
+    BCLIBC_ErrorType.BCLIBC_E_KEY_ERROR: AttributeError,
+    BCLIBC_ErrorType.BCLIBC_E_MEMORY_ERROR: MemoryError,
+    BCLIBC_ErrorType.BCLIBC_E_ARITHMETIC_ERROR: ArithmeticError,
+    BCLIBC_ErrorType.BCLIBC_E_RUNTIME_ERROR: SolverRuntimeError,
 }
 
 cdef class CythonizedBaseIntegrationEngine:
@@ -460,7 +460,7 @@ cdef class CythonizedBaseIntegrationEngine:
             )
 
             # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != <int>BCLIBC_ErrorType.BCLIBC_T_NO_ERROR:
+            if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != <int>BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
                 raise ZeroDivisionError(
                     "Zero division detected in ShotProps_t_updateStabilityCoefficient")
 
@@ -691,7 +691,7 @@ cdef class CythonizedBaseIntegrationEngine:
         BCLIBC_ErrorFrame *err,
         OutOfRangeError_t *err_data
     ):
-        if err.code == BCLIBC_ErrorType.BCLIBC_T_OUT_OF_RANGE_ERROR:
+        if err.code == BCLIBC_ErrorType.BCLIBC_E_OUT_OF_RANGE_ERROR:
             raise OutOfRangeError(
                 _new_feet(err_data.requested_distance_ft),
                 _new_feet(err_data.max_range_ft),
@@ -703,7 +703,7 @@ cdef class CythonizedBaseIntegrationEngine:
         BCLIBC_ErrorFrame *err,
         ZeroFindingError_t *zero_error
     ):
-        if err.code == BCLIBC_ErrorType.BCLIBC_T_ZERO_FINDING_ERROR:
+        if err.code == BCLIBC_ErrorType.BCLIBC_E_ZERO_FINDING_ERROR:
             raise ZeroFindingError(
                 zero_error.zero_finding_error,
                 zero_error.iterations_count,
@@ -713,7 +713,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self, BCLIBC_ErrorFrame *f):
         cdef BCLIBC_ErrorStack *stack = &self._engine.err_stack
-        if stack.top <= 0 or f.code == BCLIBC_ErrorType.BCLIBC_T_NO_ERROR:
+        if stack.top <= 0 or f.code == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             return
 
         # Отримуємо exception, дефолт – RuntimeError

@@ -74,13 +74,13 @@ cdef class BaseTrajDataT:
             &out
         )
 
-        if err == BCLIBC_ErrorType.BCLIBC_T_NO_ERROR:
+        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             return BaseTrajDataT(out)
 
-        if err == BCLIBC_ErrorType.BCLIBC_T_VALUE_ERROR:
+        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
             raise ValueError("invalid BaseTrajData_t_interpolate input")
-        if err == BCLIBC_ErrorType.BCLIBC_T_KEY_ERROR:
+        if err == BCLIBC_ErrorType.BCLIBC_E_KEY_ERROR:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
-        if err == BCLIBC_ErrorType.BCLIBC_T_ZERO_DIVISION_ERROR:
+        if err == BCLIBC_ErrorType.BCLIBC_E_ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
         raise RuntimeError("unknown error in BaseTrajData_t_interpolate")

@@ -71,7 +71,7 @@ cdef TDF *TDF_init( # Function returns a pointer (TDF*)
             &density_ratio,
             &mach,
         )
-        if BCLIBC_V3dBCLIBC_T_mag(&initial_velocity) < mach:
+        if BCLIBC_V3dBCLIBC_E_mag(&initial_velocity) < mach:
             # Cast still required: f.filter_flags &= <TrajFlag_t>(~TrajFlag_t.TFLAG_MACH)
             f.filter_flags = <TrajFlag_t>(f.filter_flags & ~TrajFlag_t.TFLAG_MACH)
 

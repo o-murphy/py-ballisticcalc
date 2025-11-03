@@ -78,28 +78,28 @@ static const char *error_type_to_string(BCLIBC_ErrorType code)
 {
     switch (code)
     {
-    case BCLIBC_T_NO_ERROR:
-        return "BCLIBC_T_NO_ERROR";
-    case BCLIBC_T_ZERO_DIVISION_ERROR:
-        return "BCLIBC_T_ZERO_DIVISION_ERROR";
-    case BCLIBC_T_VALUE_ERROR:
-        return "BCLIBC_T_VALUE_ERROR";
-    case BCLIBC_T_KEY_ERROR:
-        return "BCLIBC_T_KEY_ERROR";
-    case BCLIBC_T_INDEX_ERROR:
-        return "BCLIBC_T_INDEX_ERROR";
-    case BCLIBC_T_MEMORY_ERROR:
-        return "BCLIBC_T_MEMORY_ERROR";
-    case BCLIBC_T_ARITHMETIC_ERROR:
-        return "BCLIBC_T_ARITHMETIC_ERROR";
-    case BCLIBC_T_INPUT_ERROR:
-        return "BCLIBC_T_INPUT_ERROR";
-    case BCLIBC_T_RUNTIME_ERROR:
-        return "BCLIBC_T_RUNTIME_ERROR";
-    case BCLIBC_T_ZERO_FINDING_ERROR:
-        return "BCLIBC_T_ZERO_FINDING_ERROR";
-    case BCLIBC_T_OUT_OF_RANGE_ERROR:
-        return "BCLIBC_T_OUT_OF_RANGE_ERROR";
+    case BCLIBC_E_NO_ERROR:
+        return "BCLIBC_E_NO_ERROR";
+    case BCLIBC_E_ZERO_DIVISION_ERROR:
+        return "BCLIBC_E_ZERO_DIVISION_ERROR";
+    case BCLIBC_E_VALUE_ERROR:
+        return "BCLIBC_E_VALUE_ERROR";
+    case BCLIBC_E_KEY_ERROR:
+        return "BCLIBC_E_KEY_ERROR";
+    case BCLIBC_E_INDEX_ERROR:
+        return "BCLIBC_E_INDEX_ERROR";
+    case BCLIBC_E_MEMORY_ERROR:
+        return "BCLIBC_E_MEMORY_ERROR";
+    case BCLIBC_E_ARITHMETIC_ERROR:
+        return "BCLIBC_E_ARITHMETIC_ERROR";
+    case BCLIBC_E_INPUT_ERROR:
+        return "BCLIBC_E_INPUT_ERROR";
+    case BCLIBC_E_RUNTIME_ERROR:
+        return "BCLIBC_E_RUNTIME_ERROR";
+    case BCLIBC_E_ZERO_FINDING_ERROR:
+        return "BCLIBC_E_ZERO_FINDING_ERROR";
+    case BCLIBC_E_OUT_OF_RANGE_ERROR:
+        return "BCLIBC_E_OUT_OF_RANGE_ERROR";
     default:
         return "UNKNOWN_ERROR";
     }
