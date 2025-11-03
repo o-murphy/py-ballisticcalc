@@ -343,7 +343,7 @@ diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/euler.c b/py_ballis
 index 98eb200..bd2d3b1 100644
 --- a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/euler.c
 +++ b/py_ballisticcalc.exts/py_ballisticcalc_exts/src/euler.c
-@@ -41,10 +41,11 @@ BCLIBC_StatusCode _integrate_euler(
+@@ -41,10 +41,11 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
      double time_step, BCLIBC_TrajFlag filter_flags,
@@ -357,7 +357,7 @@ index 98eb200..bd2d3b1 100644
      {
          REQUIRE_NON_NULL(eng);
          BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
-@@ -133,8 +134,8 @@ BCLIBC_StatusCode _integrate_euler(
+@@ -133,8 +134,8 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
          // Store point in trajectory sequence
  
          // err =
@@ -368,7 +368,7 @@ index 98eb200..bd2d3b1 100644
              time,
              range_vector.x, range_vector.y, range_vector.z,
              velocity_vector.x, velocity_vector.y, velocity_vector.z,
-@@ -203,8 +204,8 @@ BCLIBC_StatusCode _integrate_euler(
+@@ -203,8 +204,8 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
      // Add final data point
  
      // err =
@@ -383,7 +383,7 @@ diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/rk4.c b/py_ballisti
 index 8413eb1..bb0a05e 100644
 --- a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/rk4.c
 +++ b/py_ballisticcalc.exts/py_ballisticcalc_exts/src/rk4.c
-@@ -80,10 +80,11 @@ BCLIBC_StatusCode _integrate_rk4(
+@@ -80,10 +80,11 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
      double time_step, BCLIBC_TrajFlag filter_flags,
@@ -397,7 +397,7 @@ index 8413eb1..bb0a05e 100644
      {
          REQUIRE_NON_NULL(eng);
          BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
-@@ -199,8 +200,8 @@ BCLIBC_StatusCode _integrate_rk4(
+@@ -199,8 +200,8 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
          BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
  
          // err =
@@ -408,7 +408,7 @@ index 8413eb1..bb0a05e 100644
              time,
              range_vector.x, range_vector.y, range_vector.z,
              velocity_vector.x, velocity_vector.y, velocity_vector.z,
-@@ -318,8 +319,8 @@ BCLIBC_StatusCode _integrate_rk4(
+@@ -318,8 +319,8 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
      // Process final data point
  
      // err =

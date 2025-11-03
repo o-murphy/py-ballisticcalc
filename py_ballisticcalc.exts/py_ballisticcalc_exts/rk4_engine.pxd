@@ -21,7 +21,7 @@ from py_ballisticcalc_exts.base_engine cimport (
 
 cdef extern from "include/rk4.h" nogil:
 
-    BCLIBC_StatusCode _integrate_rk4(
+    BCLIBC_StatusCode BCLIBC_integrate_rk4(
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, BCLIBC_TrajFlag filter_flags,

@@ -11,7 +11,7 @@ extern "C"
 {
 #endif
 
-    BCLIBC_StatusCode _integrate_rk4(
+    BCLIBC_StatusCode BCLIBC_integrate_rk4(
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, BCLIBC_TrajFlag filter_flags,

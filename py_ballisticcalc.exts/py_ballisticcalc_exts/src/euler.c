@@ -8,7 +8,7 @@
  * @param velocity The current projectile speed (magnitude of velocity).
  * @return double The calculated time step.
  */
-static inline double _euler_time_step(double base_step, double velocity)
+static inline double BCLIBC_euler_time_step(double base_step, double velocity)
 {
     // C equivalent of fmax(1.0, velocity)
     // fmax is defined in <math.h>
@@ -37,7 +37,7 @@ static inline double _euler_time_step(double base_step, double velocity)
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
  */
-BCLIBC_StatusCode _integrate_euler(
+BCLIBC_StatusCode BCLIBC_integrate_euler(
     Engine_t *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, BCLIBC_TrajFlag filter_flags,
@@ -151,7 +151,7 @@ BCLIBC_StatusCode _integrate_euler(
         relative_speed = BCLIBC_V3dT_mag(&relative_velocity);
 
         // 2. Calculate time step (adaptive based on velocity)
-        delta_time = _euler_time_step(calc_step, relative_speed);
+        delta_time = BCLIBC_euler_time_step(calc_step, relative_speed);
 
         // 3. Calculate drag coefficient and drag force
         km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);

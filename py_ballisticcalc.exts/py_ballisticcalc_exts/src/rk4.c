@@ -15,7 +15,7 @@
  * @param ground_velocity_ptr Pointer to ground velocity vector (for Coriolis calculation).
  * @return BCLIBC_V3dT The acceleration vector (dv/dt).
  */
-static inline BCLIBC_V3dT _calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC_V3dT *gravity_vector_ptr, double km_coeff,
+static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC_V3dT *gravity_vector_ptr, double km_coeff,
                                    const ShotProps_t *shot_props_ptr, const BCLIBC_V3dT *ground_velocity_ptr)
 {
     // Local variables for components and result
@@ -76,7 +76,7 @@ static inline BCLIBC_V3dT _calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on successful completion).
  */
-BCLIBC_StatusCode _integrate_rk4(
+BCLIBC_StatusCode BCLIBC_integrate_rk4(
     Engine_t *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, BCLIBC_TrajFlag filter_flags,
@@ -235,22 +235,22 @@ BCLIBC_StatusCode _integrate_rk4(
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Starting RK4 integration\n");
 
         // v1 = f(relative_velocity)
-        v1 = _calculate_dvdt(&relative_velocity, &gravity_vector, km, &eng->shot, &velocity_vector);
+        v1 = BCLIBC_calculate_dvdt(&relative_velocity, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v2 = f(relative_velocity + 0.5 * delta_time * v1)
         _temp_add_operand = BCLIBC_V3dT_mulS(&v1, 0.5 * delta_time);
         _temp_v_result = BCLIBC_V3dT_add(&relative_velocity, &_temp_add_operand);
-        v2 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
+        v2 = BCLIBC_calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v3 = f(relative_velocity + 0.5 * delta_time * v2)
         _temp_add_operand = BCLIBC_V3dT_mulS(&v2, 0.5 * delta_time);
         _temp_v_result = BCLIBC_V3dT_add(&relative_velocity, &_temp_add_operand);
-        v3 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
+        v3 = BCLIBC_calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // v4 = f(relative_velocity + delta_time * v3)
         _temp_add_operand = BCLIBC_V3dT_mulS(&v3, delta_time);
         _temp_v_result = BCLIBC_V3dT_add(&relative_velocity, &_temp_add_operand);
-        v4 = _calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
+        v4 = BCLIBC_calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
 
         // p1 = velocity_vector
         p1 = velocity_vector;
