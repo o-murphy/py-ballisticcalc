@@ -158,11 +158,11 @@ extern "C"
     BCLIBC_requireNonNullFatal((ptr), __FILE__, __LINE__, __func__)
 
 #define BCLIBC_EngineT_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle, y_out) \
-    do                                                                    \
-    {                                                                     \
-        (status) = BCLIBC_EngineT_rangeForAngle((eng), (angle), (y_out));     \
-        if ((status) != BCLIBC_STATUS_SUCCESS)                                   \
-            return (status);                                              \
+    do                                                                          \
+    {                                                                           \
+        (status) = BCLIBC_EngineT_rangeForAngle((eng), (angle), (y_out));       \
+        if ((status) != BCLIBC_STATUS_SUCCESS)                                  \
+            return (status);                                                    \
     } while (0)
 
 #endif // BCLIBC_ENGINE_H

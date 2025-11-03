@@ -46,7 +46,7 @@ static void BCLIBC_Sort3(double *xs, double *ys)
 }
 
 static void BCLIBC_PchipSlopes3(double x0, double y0, double x1, double y1, double x2, double y2,
-                           double *m0, double *m1, double *m2)
+                                double *m0, double *m1, double *m2)
 {
     double h0 = x1 - x0;
     double h1 = x2 - x1;

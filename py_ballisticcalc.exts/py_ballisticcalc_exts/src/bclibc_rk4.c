@@ -16,7 +16,7 @@
  * @return BCLIBC_V3dT The acceleration vector (dv/dt).
  */
 static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC_V3dT *gravity_vector_ptr, double km_coeff,
-                                   const BCLIBC_ShotProps *shot_props_ptr, const BCLIBC_V3dT *ground_velocity_ptr)
+                                                const BCLIBC_ShotProps *shot_props_ptr, const BCLIBC_V3dT *ground_velocity_ptr)
 {
     // Local variables for components and result
     BCLIBC_V3dT drag_force_component;
@@ -110,7 +110,7 @@ BCLIBC_StatusCode BCLIBC_integrateRK4(
     double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
 
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
-          _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
+               _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
 
     // Working variables
     *reason = BCLIBC_TERM_REASON_NO_TERMINATE;
@@ -219,7 +219,7 @@ BCLIBC_StatusCode BCLIBC_integrateRK4(
         delta_time = calc_step;
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call BCLIBC_ShotProps_dragByMach, relative_speed=%f, mach=%f\n",
-              relative_speed, mach);
+                   relative_speed, mach);
 
         // Check for division by zero
         // if (mach == 0.0)

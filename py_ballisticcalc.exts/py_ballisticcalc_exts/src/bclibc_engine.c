@@ -83,11 +83,10 @@ BCLIBC_StatusCode BCLIBC_EngineT_integrate(
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed with acceptable termination reason: (%d).", *reason);
         }
         BCLIBC_LOG(
-            BCLIBC_LOG_LEVEL_DEBUG, 
-            "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes", 
+            BCLIBC_LOG_LEVEL_DEBUG,
+            "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
             traj_seq_ptr->length, traj_seq_ptr->capacity,
-            traj_seq_ptr->length * sizeof(BCLIBC_BaseTraj)
-        );
+            traj_seq_ptr->length * sizeof(BCLIBC_BaseTraj));
         return BCLIBC_STATUS_SUCCESS;
     }
 
@@ -968,9 +967,9 @@ BCLIBC_StatusCode BCLIBC_EngineT_findZeroAngle(
         double _inner = f_mid * f_mid - f_low * f_high;
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG,
-              "Ridder iteration %d: low_angle=%.12f, high_angle=%.12f, mid_angle=%.12f, "
-              "f_low=%.12f, f_high=%.12f, f_mid=%.12f, _inner=%.12e",
-              i, low_angle, high_angle, mid_angle, f_low, f_high, f_mid, _inner);
+                   "Ridder iteration %d: low_angle=%.12f, high_angle=%.12f, mid_angle=%.12f, "
+                   "f_low=%.12f, f_high=%.12f, f_mid=%.12f, _inner=%.12e",
+                   i, low_angle, high_angle, mid_angle, f_low, f_high, f_mid, _inner);
 
         // Check for invalid sqrt argument - should not happen if bracket is valid
         if (_inner <= 0.0)

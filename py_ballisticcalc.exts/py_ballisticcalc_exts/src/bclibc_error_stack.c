@@ -39,8 +39,8 @@ void BCLIBC_ErrorStack_popErr(BCLIBC_ErrorStack *stack)
         // memset(&stack->frames[stack->top], 0, sizeof(BCLIBC_ErrorFrame));
         BCLIBC_ErrorFrame *f = &stack->frames[--stack->top];
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Popped error frame [%d/%d]: %s:%d (%s): [%d/%d] %s",
-              stack->top, BCLIBC_MAX_ERROR_STACK,
-              f->file, f->line, f->func, f->src, f->code, f->msg);
+                   stack->top, BCLIBC_MAX_ERROR_STACK,
+                   f->file, f->line, f->func, f->src, f->code, f->msg);
         memset(&stack->frames[stack->top], 0, sizeof(BCLIBC_ErrorFrame));
     }
 }

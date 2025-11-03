@@ -403,7 +403,7 @@ void BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
     *mach_ptr = sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
 
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
-          altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
+               altitude, atmo_ptr->_t0, celsius, atmo_ptr->_p0, pressure, *density_ratio_ptr);
 }
 
 /**
