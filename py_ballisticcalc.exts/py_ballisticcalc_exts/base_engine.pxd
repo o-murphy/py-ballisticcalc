@@ -14,7 +14,7 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.trajectory_data cimport BaseTrajData_t
 from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
-from py_ballisticcalc_exts.error_stack cimport ErrorStack, StatusCode, ErrorType, ErrorFrame
+from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
@@ -62,7 +62,7 @@ cdef extern from "include/engine.h" nogil:
     ctypedef Engine_s Engine_t
 
     # Declare the function signature type (not a pointer yet)
-    ctypedef StatusCode IntegrateFunc(
+    ctypedef BCLIBC_StatusCode IntegrateFunc(
         Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
@@ -82,11 +82,11 @@ cdef extern from "include/engine.h" nogil:
         Config_t config
         ShotProps_t shot
         IntegrateFuncPtr integrate_func_ptr
-        ErrorStack err_stack
+        BCLIBC_ErrorStack err_stack
 
     void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
 
-    StatusCode Engine_t_integrate(
+    BCLIBC_StatusCode Engine_t_integrate(
         Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
@@ -96,12 +96,12 @@ cdef extern from "include/engine.h" nogil:
         TerminationReason *reason,
     ) noexcept nogil
 
-    StatusCode Engine_t_find_apex(
+    BCLIBC_StatusCode Engine_t_find_apex(
         Engine_t *eng,
         BaseTrajData_t *out
     ) noexcept nogil
 
-    StatusCode Engine_t_error_at_distance(
+    BCLIBC_StatusCode Engine_t_error_at_distance(
         Engine_t *eng,
         double angle_rad,
         double target_x_ft,
@@ -109,7 +109,7 @@ cdef extern from "include/engine.h" nogil:
         double *out_error_ft
     ) noexcept nogil
 
-    StatusCode Engine_t_init_zero_calculation(
+    BCLIBC_StatusCode Engine_t_init_zero_calculation(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -118,7 +118,7 @@ cdef extern from "include/engine.h" nogil:
         OutOfRangeError_t *error
     ) noexcept nogil
 
-    StatusCode Engine_t_zero_angle(
+    BCLIBC_StatusCode Engine_t_zero_angle(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -128,7 +128,7 @@ cdef extern from "include/engine.h" nogil:
         ZeroFindingError_t *zero_error
     ) noexcept nogil
 
-    StatusCode Engine_t_zero_angle_with_fallback(
+    BCLIBC_StatusCode Engine_t_zero_angle_with_fallback(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -138,7 +138,7 @@ cdef extern from "include/engine.h" nogil:
         ZeroFindingError_t *zero_error
     ) noexcept nogil
 
-    StatusCode Engine_t_find_max_range(
+    BCLIBC_StatusCode Engine_t_find_max_range(
         Engine_t *eng,
         double low_angle_deg,
         double high_angle_deg,
@@ -146,7 +146,7 @@ cdef extern from "include/engine.h" nogil:
         MaxRangeResult_t *result
     ) noexcept nogil
 
-    StatusCode Engine_t_find_zero_angle(
+    BCLIBC_StatusCode Engine_t_find_zero_angle(
         Engine_t *eng,
         double distance,
         int lofted,
@@ -179,7 +179,7 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         object shot_info
     )
-    cdef StatusCode _init_zero_calculation(
+    cdef BCLIBC_StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
         double distance,
         ZeroInitialData_t *out,
@@ -218,12 +218,12 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
-        ErrorFrame *err,
+        BCLIBC_ErrorFrame *err,
         OutOfRangeError_t *err_data
     )
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
-        ErrorFrame *err,
+        BCLIBC_ErrorFrame *err,
         ZeroFindingError_t *zero_error
     )
-    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self, ErrorFrame *err)
+    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self, BCLIBC_ErrorFrame *err)

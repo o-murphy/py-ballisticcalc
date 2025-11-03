@@ -170,13 +170,13 @@ extern "C"
 
     void ShotProps_t_release(ShotProps_t *shot_props_ptr);
     double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time);
-    ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
+    BCLIBC_ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr);
     double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach);
 
-    ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
+    BCLIBC_ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds);
     void WindSock_t_release(WindSock_t *ws);
     BCLIBC_V3dT WindSock_t_currentVector(const WindSock_t *wind_sock);
-    ErrorType WindSock_t_updateCache(WindSock_t *ws);
+    BCLIBC_ErrorType WindSock_t_updateCache(WindSock_t *ws);
     BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param);
 
     // helpers
@@ -189,7 +189,7 @@ extern "C"
         const BCLIBC_V3dT *velocity_ptr,
         BCLIBC_V3dT *accel_ptr);
 
-    ErrorType BaseTrajData_t_interpolate(
+    BCLIBC_ErrorType BaseTrajData_t_interpolate(
         InterpKey key_kind,
         double key_value,
         const BaseTrajData_t *p0,

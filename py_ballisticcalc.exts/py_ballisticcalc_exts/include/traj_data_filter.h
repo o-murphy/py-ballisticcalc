@@ -26,7 +26,7 @@ typedef struct
     double next_record_distance;
     double look_angle_rad;
     double look_angle_tangent;
-    ErrorStack error_stack;
+    BCLIBC_ErrorStack error_stack;
 } TrajectoryDataFilter_t;
 
 #ifdef __cplusplus

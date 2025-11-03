@@ -11,7 +11,7 @@ and convert to these types as needed for interpolation or presentation.
 from cython cimport final
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    ErrorType,
+    BCLIBC_ErrorType,
     BaseTrajData_t,
     InterpKey,
     BaseTrajData_t_interpolate,
@@ -68,19 +68,19 @@ cdef class BaseTrajDataT:
         """
         cdef InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BaseTrajData_t out
-        cdef ErrorType err = BaseTrajData_t_interpolate(
+        cdef BCLIBC_ErrorType err = BaseTrajData_t_interpolate(
             key_kind, key_value,
             &p0._c_view, &p1._c_view, &p2._c_view,
             &out
         )
 
-        if err == ErrorType.T_NO_ERROR:
+        if err == BCLIBC_ErrorType.T_NO_ERROR:
             return BaseTrajDataT(out)
 
-        if err == ErrorType.T_VALUE_ERROR:
+        if err == BCLIBC_ErrorType.T_VALUE_ERROR:
             raise ValueError("invalid BaseTrajData_t_interpolate input")
-        if err == ErrorType.T_KEY_ERROR:
+        if err == BCLIBC_ErrorType.T_KEY_ERROR:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
-        if err == ErrorType.T_ZERO_DIVISION_ERROR:
+        if err == BCLIBC_ErrorType.T_ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
         raise RuntimeError("unknown error in BaseTrajData_t_interpolate")

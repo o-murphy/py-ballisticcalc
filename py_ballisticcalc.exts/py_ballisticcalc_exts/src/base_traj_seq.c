@@ -108,9 +108,9 @@ static void interpolate_3_pt_vectorized(
  * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
  * @param key_value The target value of the key to interpolate at.
  * @param out Pointer to a BaseTraj_t struct where the interpolated result will be stored.
- * @return T_NO_ERROR on success, or an ErrorType on failure.
+ * @return T_NO_ERROR on success, or an BCLIBC_ErrorType on failure.
  */
-static ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
+static BCLIBC_ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTraj_t *out)
 {
     if (!seq || !out)
     {
@@ -156,7 +156,7 @@ static ErrorType BaseTrajSeq_t_interpolate_raw(const BaseTrajSeq_t *seq, ssize_t
     return T_NO_ERROR;
 }
 
-ErrorType BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+BCLIBC_ErrorType BaseTrajSeq_t_interpolate_at(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
 {
     if (!seq || !out)
     {
@@ -265,10 +265,10 @@ inline BaseTraj_t *BaseTrajSeq_t_get_raw_item(const BaseTrajSeq_t *seq, ssize_t 
  *
  * @param seq Pointer to the BaseTrajSeq_t structure.
  * @param min_capacity Minimum required number of elements.
- * @return ErrorType T_NO_ERROR on success, T_MEMORY_ERROR on allocation failure,
+ * @return BCLIBC_ErrorType T_NO_ERROR on success, T_MEMORY_ERROR on allocation failure,
  *         T_INPUT_ERROR if seq is NULL.
  */
-ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
+BCLIBC_ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
 {
     if (!seq)
     {
@@ -330,10 +330,10 @@ ErrorType BaseTrajSeq_t_ensure_capacity(BaseTrajSeq_t *seq, size_t min_capacity)
  * @param vy Y velocity.
  * @param vz Z velocity.
  * @param mach Mach number.
- * @return ErrorType T_NO_ERROR on success, T_MEMORY_ERROR if allocation fails,
+ * @return BCLIBC_ErrorType T_NO_ERROR on success, T_MEMORY_ERROR if allocation fails,
  *         T_INPUT_ERROR if seq is NULL.
  */
-ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz,
+BCLIBC_ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, double py, double pz,
                                double vx, double vy, double vz, double mach)
 {
     if (!seq)
@@ -343,7 +343,7 @@ ErrorType BaseTrajSeq_t_append(BaseTrajSeq_t *seq, double time, double px, doubl
     }
 
     // Ensure enough capacity for the new element
-    ErrorType err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
+    BCLIBC_ErrorType err = BaseTrajSeq_t_ensure_capacity(seq, seq->length + 1);
     if (err != T_NO_ERROR)
     {
         return err;
@@ -492,11 +492,11 @@ static ssize_t BaseTrajSeq_t_bisect_center_idx_slant_buf(
  * @param look_angle_rad Look angle in radians.
  * @param value Target slant height for interpolation.
  * @param out Pointer to BaseTrajData_t where interpolated results will be stored.
- * @return T_NO_ERROR on success, or an appropriate ErrorType on failure:
+ * @return T_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
  *         T_INPUT_ERROR if seq or out is NULL,
  *         T_VALUE_ERROR if not enough points or interpolation fails.
  */
-ErrorType BaseTrajSeq_t_get_at_slant_height(
+BCLIBC_ErrorType BaseTrajSeq_t_get_at_slant_height(
     const BaseTrajSeq_t *seq,
     double look_angle_rad,
     double value,
@@ -557,11 +557,11 @@ ErrorType BaseTrajSeq_t_get_at_slant_height(
  * @param seq Pointer to the BaseTrajSeq_t sequence.
  * @param idx Index of the trajectory point to retrieve.
  * @param out Pointer to BaseTrajData_t where results will be stored.
- * @return T_NO_ERROR on success, or an appropriate ErrorType on failure:
+ * @return T_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
  *         T_INPUT_ERROR if seq or out is NULL,
  *         T_INDEX_ERROR if idx is out of bounds.
  */
-ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out)
+BCLIBC_ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTrajData_t *out)
 {
     if (!seq || !out)
     {
@@ -592,16 +592,16 @@ ErrorType BaseTrajSeq_t_get_item(const BaseTrajSeq_t *seq, ssize_t idx, BaseTraj
  * @param key_kind Kind of interpolation key.
  * @param key_value Key value to interpolate at.
  * @param out Output trajectory data.
- * @return ErrorType T_NO_ERROR if successful, otherwise error code.
+ * @return BCLIBC_ErrorType T_NO_ERROR if successful, otherwise error code.
  */
-static ErrorType BaseTrajSeq_t_interpolate_at_center_with_log(
+static BCLIBC_ErrorType BaseTrajSeq_t_interpolate_at_center_with_log(
     const BaseTrajSeq_t *seq,
     ssize_t idx,
     InterpKey key_kind,
     double key_value,
     BaseTrajData_t *out)
 {
-    ErrorType err = BaseTrajSeq_t_interpolate_at(seq, idx, key_kind, key_value, out);
+    BCLIBC_ErrorType err = BaseTrajSeq_t_interpolate_at(seq, idx, key_kind, key_value, out);
     if (err != T_NO_ERROR)
     {
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Interpolation failed at center index %zd, error code: 0x%X", idx, err);
@@ -724,14 +724,14 @@ static ssize_t BaseTrajSeq_t_find_target_index(const BaseTraj_t *buf, ssize_t n,
  * @param out Output trajectory data.
  * @return T_NO_ERROR if exact match found, otherwise T_VALUE_ERROR.
  */
-static ErrorType BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
+static BCLIBC_ErrorType BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t idx, InterpKey key_kind, double key_value, BaseTrajData_t *out)
 {
     const BaseTraj_t *buf = seq->buffer;
     double epsilon = 1e-9;
 
     if (BaseTrajSeq_t_is_close(BaseTraj_t_key_val(&buf[idx], key_kind), key_value, epsilon))
     {
-        ErrorType err = BaseTrajSeq_t_get_item(seq, idx, out);
+        BCLIBC_ErrorType err = BaseTrajSeq_t_get_item(seq, idx, out);
         if (err != T_NO_ERROR)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Failed to get item at index %zd.", idx);
@@ -752,9 +752,9 @@ static ErrorType BaseTrajSeq_t_try_get_exact(const BaseTrajSeq_t *seq, ssize_t i
  * @param key_value Key value to get.
  * @param start_from_time Optional start time (use -1 if not used).
  * @param out Output trajectory data.
- * @return ErrorType T_NO_ERROR if successful, otherwise error code.
+ * @return BCLIBC_ErrorType T_NO_ERROR if successful, otherwise error code.
  */
-ErrorType BaseTrajSeq_t_get_at(
+BCLIBC_ErrorType BaseTrajSeq_t_get_at(
     const BaseTrajSeq_t *seq,
     InterpKey key_kind,
     double key_value,
@@ -783,7 +783,7 @@ ErrorType BaseTrajSeq_t_get_at(
         ssize_t start_idx = BaseTrajSeq_t_find_start_index(buf, n, start_from_time);
 
         // Try exact match at start index
-        ErrorType exact_err = BaseTrajSeq_t_try_get_exact(seq, start_idx, key_kind, key_value, out);
+        BCLIBC_ErrorType exact_err = BaseTrajSeq_t_try_get_exact(seq, start_idx, key_kind, key_value, out);
         if (exact_err == T_NO_ERROR)
             return T_NO_ERROR;
 
@@ -804,7 +804,7 @@ ErrorType BaseTrajSeq_t_get_at(
     }
 
     // Try exact match at target index
-    ErrorType exact_err = BaseTrajSeq_t_try_get_exact(seq, target_idx, key_kind, key_value, out);
+    BCLIBC_ErrorType exact_err = BaseTrajSeq_t_try_get_exact(seq, target_idx, key_kind, key_value, out);
     if (exact_err == T_NO_ERROR)
         return T_NO_ERROR;
 

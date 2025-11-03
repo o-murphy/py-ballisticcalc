@@ -34,10 +34,10 @@ static inline double _euler_time_step(double base_step, double velocity)
  * @param filter_flags Flags (TrajFlag_t) specifying additional points to record.
  * @param traj_seq_ptr Pointer to the BaseTrajSeq_t buffer where trajectory
  * data points will be stored.
- * @return ErrorType An enumeration value indicating why the integration
+ * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
  */
-StatusCode _integrate_euler(
+BCLIBC_StatusCode _integrate_euler(
     Engine_t *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, TrajFlag_t filter_flags,
@@ -47,8 +47,8 @@ StatusCode _integrate_euler(
     if (!eng || !traj_seq_ptr || !reason)
     {
         REQUIRE_NON_NULL(eng);
-        PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
-        return STATUS_ERROR;
+        BCLIBC_PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+        return BCLIBC_STATUS_ERROR;
     }
 
     double velocity, delta_time;
@@ -216,5 +216,5 @@ StatusCode _integrate_euler(
 
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
-    return STATUS_SUCCESS;
+    return BCLIBC_STATUS_SUCCESS;
 }

@@ -6,26 +6,26 @@
 #include <string.h>
 #include "log.h"
 
-#define MAX_ERROR_STACK 16
-#define MAX_ERROR_MSG_LEN 256
+#define BCLIBC_MAX_ERROR_STACK 16
+#define BCLIBC_MAX_ERROR_MSG_LEN 256
 
 typedef enum
 {
-    STATUS_SUCCESS = 0x0000,
-    STATUS_ERROR = 0x0001,
-} StatusCode;
+    BCLIBC_STATUS_SUCCESS = 0x0000,
+    BCLIBC_STATUS_ERROR = 0x0001,
+} BCLIBC_StatusCode;
 
 typedef enum
 {
-    SRC_INTEGRATE,
-    SRC_FIND_APEX,
-    SRC_INIT_ZERO,
-    SRC_ZERO_ANGLE,
-    SRC_FIND_ZERO_ANGLE,
-    SRC_ERROR_AT_DISTANCE,
-    SRC_FIND_MAX_RANGE,
-    SRC_RANGE_FOR_ANGLE,
-} ErrorSource;
+    BCLIBC_SRC_INTEGRATE,
+    BCLIBC_SRC_FIND_APEX,
+    BCLIBC_SRC_INIT_ZERO,
+    BCLIBC_SRC_ZERO_ANGLE,
+    BCLIBC_SRC_FIND_ZERO_ANGLE,
+    BCLIBC_SRC_ERROR_AT_DISTANCE,
+    BCLIBC_SRC_FIND_MAX_RANGE,
+    BCLIBC_SRC_RANGE_FOR_ANGLE,
+} BCLIBC_ErrorSource;
 
 typedef enum
 {
@@ -42,59 +42,59 @@ typedef enum
     // Special
     T_ZERO_FINDING_ERROR,
     T_OUT_OF_RANGE_ERROR,
-} ErrorType;
+} BCLIBC_ErrorType;
 
 typedef struct
 {
-    ErrorType code;
-    ErrorSource src;
+    BCLIBC_ErrorType code;
+    BCLIBC_ErrorSource src;
     const char *func;
     const char *file;
     int line;
-    char msg[MAX_ERROR_MSG_LEN];
-} ErrorFrame;
+    char msg[BCLIBC_MAX_ERROR_MSG_LEN];
+} BCLIBC_ErrorFrame;
 
 typedef struct
 {
-    ErrorFrame frames[MAX_ERROR_STACK];
+    BCLIBC_ErrorFrame frames[BCLIBC_MAX_ERROR_STACK];
     int top;
-} ErrorStack;
+} BCLIBC_ErrorStack;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    void push_err(
-        ErrorStack *stack,
-        ErrorType code,
-        ErrorSource src,
+    void BCLIBC_ErrorStack_pushErr(
+        BCLIBC_ErrorStack *stack,
+        BCLIBC_ErrorType code,
+        BCLIBC_ErrorSource src,
         const char *func,
         const char *file,
         int line,
         const char *fmt,
         ...);
-    void pop_err(ErrorStack *stack);
-    void clear_err(ErrorStack *stack);
-    const ErrorFrame *last_err(const ErrorStack *stack);
-    void print_error_stack(const ErrorStack *stack);
-    void error_stack_to_string(const ErrorStack *stack, char *out, size_t out_size);
+    void BCLIBC_ErrorStack_popErr(BCLIBC_ErrorStack *stack);
+    void BCLIBC_ErrorStack_clearErr(BCLIBC_ErrorStack *stack);
+    const BCLIBC_ErrorFrame *last_err(const BCLIBC_ErrorStack *stack);
+    void BCLIBC_ErrorStack_print(const BCLIBC_ErrorStack *stack);
+    void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_t out_size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#define PUSH_ERR(stack, code, src, format, ...) \
-    push_err((stack), (code), (src), __func__, __FILE__, __LINE__, format, ##__VA_ARGS__)
+#define BCLIBC_PUSH_ERR(stack, code, src, format, ...) \
+    BCLIBC_ErrorStack_pushErr((stack), (code), (src), __func__, __FILE__, __LINE__, format, ##__VA_ARGS__)
 
-// #define RETURN_ERR(stack, code, src, format, ...)          \
+// #define BCLIBC_RETURN_ERR(stack, code, src, format, ...)          \
 //     do                                                     \
 //     {                                                      \
-//         PUSH_ERR(stack, code, src, format, ##__VA_ARGS__); \
+//         BCLIBC_PUSH_ERR(stack, code, src, format, ##__VA_ARGS__); \
 //         return ERROR;                                      \
 //     } while (0)
 
-#define POP_ERR(stack) pop_err(stack)
-#define CLEAR_ERR(stack) clear_err(stack)
+#define BCLIBC_POP_ERR(stack) BCLIBC_ErrorStack_popErr(stack)
+#define BCLIBC_CLEAR_ERR(stack) BCLIBC_ErrorStack_clearErr(stack)
 
 #endif // BCLIBC_ERROR_STACK_H

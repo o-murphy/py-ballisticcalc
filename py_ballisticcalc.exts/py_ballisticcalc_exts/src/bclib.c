@@ -180,7 +180,7 @@ double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time)
  * @param shot_props_ptr Pointer to ShotProps_t containing parameters like twist, length, diameter, weight, muzzle_velocity, and atmo.
  * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input, T_ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
  */
-ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
+BCLIBC_ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr)
 {
     if (shot_props_ptr == NULL)
     {
@@ -443,7 +443,7 @@ static inline BCLIBC_V3dT Wind_t_to_V3dT(const Wind_t *restrict wind_ptr)
  * @param winds Pointer to the array of Wind_t structures.
  * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input.
  */
-ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
+BCLIBC_ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds)
 {
     if (ws == NULL)
     {
@@ -515,7 +515,7 @@ BCLIBC_V3dT WindSock_t_currentVector(const WindSock_t *wind_sock)
  * @param ws Pointer to the WindSock_t structure.
  * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input.
  */
-ErrorType WindSock_t_updateCache(WindSock_t *ws)
+BCLIBC_ErrorType WindSock_t_updateCache(WindSock_t *ws)
 {
     if (ws == NULL)
     {
@@ -744,7 +744,7 @@ static inline double get_key_value(const BaseTrajData_t *restrict p, InterpKey k
  * @param out Pointer to the BaseTrajData_t structure where the interpolated result will be stored.
  * @return T_NO_ERROR on success, T_INPUT_ERROR for NULL input, T_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
  */
-ErrorType BaseTrajData_t_interpolate(
+BCLIBC_ErrorType BaseTrajData_t_interpolate(
     InterpKey key_kind,
     double key_value,
     const BaseTrajData_t *restrict p0,

@@ -1,19 +1,19 @@
 #include "error_stack.h"
 
-void push_err(
-    ErrorStack *stack,
-    ErrorType code,
-    ErrorSource src,
+void BCLIBC_ErrorStack_pushErr(
+    BCLIBC_ErrorStack *stack,
+    BCLIBC_ErrorType code,
+    BCLIBC_ErrorSource src,
     const char *func,
     const char *file,
     int line,
     const char *fmt,
     ...)
 {
-    if (!stack || stack->top >= MAX_ERROR_STACK)
+    if (!stack || stack->top >= BCLIBC_MAX_ERROR_STACK)
         return;
 
-    ErrorFrame *f = &stack->frames[stack->top++];
+    BCLIBC_ErrorFrame *f = &stack->frames[stack->top++];
 
     f->code = code;
     f->src = src;
@@ -31,21 +31,21 @@ void push_err(
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "%s:%d (%s): %s", file, line, func, f->msg);
 }
 
-void pop_err(ErrorStack *stack)
+void BCLIBC_ErrorStack_popErr(BCLIBC_ErrorStack *stack)
 {
     if (stack && stack->top > 0)
     {
         // stack->top--;
-        // memset(&stack->frames[stack->top], 0, sizeof(ErrorFrame));
-        ErrorFrame *f = &stack->frames[--stack->top];
+        // memset(&stack->frames[stack->top], 0, sizeof(BCLIBC_ErrorFrame));
+        BCLIBC_ErrorFrame *f = &stack->frames[--stack->top];
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Popped error frame [%d/%d]: %s:%d (%s): [%d/%d] %s",
-              stack->top, MAX_ERROR_STACK,
+              stack->top, BCLIBC_MAX_ERROR_STACK,
               f->file, f->line, f->func, f->src, f->code, f->msg);
-        memset(&stack->frames[stack->top], 0, sizeof(ErrorFrame));
+        memset(&stack->frames[stack->top], 0, sizeof(BCLIBC_ErrorFrame));
     }
 }
 
-void clear_err(ErrorStack *stack)
+void BCLIBC_ErrorStack_clearErr(BCLIBC_ErrorStack *stack)
 {
     if (!stack)
         return;
@@ -55,26 +55,26 @@ void clear_err(ErrorStack *stack)
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Error stack cleared");
 }
 
-const ErrorFrame *last_err(const ErrorStack *stack)
+const BCLIBC_ErrorFrame *last_err(const BCLIBC_ErrorStack *stack)
 {
     if (!stack || stack->top <= 0)
         return NULL;
     return &stack->frames[stack->top - 1];
 }
 
-void print_error_stack(const ErrorStack *stack)
+void BCLIBC_ErrorStack_print(const BCLIBC_ErrorStack *stack)
 {
     if (!stack)
         return;
     for (int i = stack->top - 1; i >= 0; i--)
     {
-        const ErrorFrame *f = &stack->frames[i];
+        const BCLIBC_ErrorFrame *f = &stack->frames[i];
         fprintf(stderr, "[%d] %s:%d (%s): [%d/%d] %s\n",
                 i, f->file, f->line, f->func, f->src, f->code, f->msg);
     }
 }
 
-static const char *error_type_to_string(ErrorType code)
+static const char *error_type_to_string(BCLIBC_ErrorType code)
 {
     switch (code)
     {
@@ -105,32 +105,32 @@ static const char *error_type_to_string(ErrorType code)
     }
 }
 
-static const char *error_source_to_string(ErrorSource src)
+static const char *error_source_to_string(BCLIBC_ErrorSource src)
 {
     switch (src)
     {
-    case SRC_INTEGRATE:
-        return "SRC_INTEGRATE";
-    case SRC_FIND_APEX:
-        return "SRC_FIND_APEX";
-    case SRC_ZERO_ANGLE:
-        return "SRC_ZERO_ANGLE";
-    case SRC_FIND_ZERO_ANGLE:
-        return "SRC_FIND_ZERO_ANGLE";
-    case SRC_ERROR_AT_DISTANCE:
-        return "SRC_ERROR_AT_DISTANCE";
-    case SRC_FIND_MAX_RANGE:
-        return "SRC_FIND_MAX_RANGE";
-    case SRC_RANGE_FOR_ANGLE:
-        return "SRC_RANGE_FOR_ANGLE";
-    case SRC_INIT_ZERO:
-        return "SRC_INIT_ZERO";
+    case BCLIBC_SRC_INTEGRATE:
+        return "BCLIBC_SRC_INTEGRATE";
+    case BCLIBC_SRC_FIND_APEX:
+        return "BCLIBC_SRC_FIND_APEX";
+    case BCLIBC_SRC_ZERO_ANGLE:
+        return "BCLIBC_SRC_ZERO_ANGLE";
+    case BCLIBC_SRC_FIND_ZERO_ANGLE:
+        return "BCLIBC_SRC_FIND_ZERO_ANGLE";
+    case BCLIBC_SRC_ERROR_AT_DISTANCE:
+        return "BCLIBC_SRC_ERROR_AT_DISTANCE";
+    case BCLIBC_SRC_FIND_MAX_RANGE:
+        return "BCLIBC_SRC_FIND_MAX_RANGE";
+    case BCLIBC_SRC_RANGE_FOR_ANGLE:
+        return "BCLIBC_SRC_RANGE_FOR_ANGLE";
+    case BCLIBC_SRC_INIT_ZERO:
+        return "BCLIBC_SRC_INIT_ZERO";
     default:
         return "UNKNOWN_SOURCE";
     }
 }
 
-void error_stack_to_string(const ErrorStack *stack, char *out, size_t out_size)
+void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_t out_size)
 {
     if (!stack || !out || out_size == 0)
         return;
@@ -138,8 +138,8 @@ void error_stack_to_string(const ErrorStack *stack, char *out, size_t out_size)
     out[0] = '\0';
     for (int i = 0; i < stack->top; i++)
     {
-        const ErrorFrame *f = &stack->frames[i];
-        char line[MAX_ERROR_MSG_LEN];
+        const BCLIBC_ErrorFrame *f = &stack->frames[i];
+        char line[BCLIBC_MAX_ERROR_MSG_LEN];
 
         const int FILE_WIDTH = 50;
         const int FUNC_WIDTH = 25;

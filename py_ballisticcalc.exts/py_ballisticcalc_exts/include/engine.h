@@ -59,7 +59,7 @@ typedef struct
 
 typedef struct Engine_s Engine_t;
 
-typedef StatusCode IntegrateFunc(
+typedef BCLIBC_StatusCode IntegrateFunc(
     Engine_t *eng,
     double range_limit_ft,
     double range_step_ft,
@@ -77,7 +77,7 @@ typedef struct Engine_s
     Config_t config;
     ShotProps_t shot;
     IntegrateFuncPtr integrate_func_ptr;
-    ErrorStack err_stack;
+    BCLIBC_ErrorStack err_stack;
 } Engine_t;
 
 #ifdef __cplusplus
@@ -89,7 +89,7 @@ extern "C"
 
     void Engine_t_release_trajectory(Engine_t *eng);
 
-    StatusCode Engine_t_integrate(
+    BCLIBC_StatusCode Engine_t_integrate(
         Engine_t *eng,
         double range_limit_ft,
         double range_step_ft,
@@ -98,16 +98,16 @@ extern "C"
         BaseTrajSeq_t *traj_seq_ptr,
         TerminationReason *reason);
 
-    StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out);
+    BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out);
 
-    StatusCode Engine_t_error_at_distance(
+    BCLIBC_StatusCode Engine_t_error_at_distance(
         Engine_t *eng,
         double angle_rad,
         double target_x_ft,
         double target_y_ft,
         double *out_error_ft);
 
-    StatusCode Engine_t_init_zero_calculation(
+    BCLIBC_StatusCode Engine_t_init_zero_calculation(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -115,7 +115,7 @@ extern "C"
         ZeroInitialData_t *result,
         OutOfRangeError_t *error);
 
-    StatusCode Engine_t_zero_angle_with_fallback(
+    BCLIBC_StatusCode Engine_t_zero_angle_with_fallback(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -124,7 +124,7 @@ extern "C"
         OutOfRangeError_t *range_error,
         ZeroFindingError_t *zero_error);
 
-    StatusCode Engine_t_zero_angle(
+    BCLIBC_StatusCode Engine_t_zero_angle(
         Engine_t *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -133,14 +133,14 @@ extern "C"
         OutOfRangeError_t *range_error,
         ZeroFindingError_t *zero_error);
 
-    StatusCode Engine_t_find_max_range(
+    BCLIBC_StatusCode Engine_t_find_max_range(
         Engine_t *eng,
         double low_angle_deg,
         double high_angle_deg,
         double APEX_IS_MAX_RANGE_RADIANS,
         MaxRangeResult_t *result);
 
-    StatusCode Engine_t_find_zero_angle(
+    BCLIBC_StatusCode Engine_t_find_zero_angle(
         Engine_t *eng,
         double distance,
         int lofted,
@@ -161,7 +161,7 @@ extern "C"
     do                                                                    \
     {                                                                     \
         (status) = Engine_t_range_for_angle((eng), (angle), (y_out));     \
-        if ((status) != STATUS_SUCCESS)                                   \
+        if ((status) != BCLIBC_STATUS_SUCCESS)                                   \
             return (status);                                              \
     } while (0)
 

@@ -6,7 +6,7 @@ index 8335858..282dba1 100644
      # Typedef alias
      ctypedef Engine_s Engine_t
  
-+    ctypedef ErrorType EmitCallback(
++    ctypedef BCLIBC_ErrorType EmitCallback(
 +        void *user_data,
 +        double time,
 +        double px,
@@ -21,7 +21,7 @@ index 8335858..282dba1 100644
 +    ctypedef EmitCallback *EmitCallbackPtr
 +
      # Declare the function signature type (not a pointer yet)
-     ctypedef StatusCode IntegrateFunc(
+     ctypedef BCLIBC_StatusCode IntegrateFunc(
          Engine_t *eng,
 @@ -68,7 +82,8 @@ cdef extern from "include/engine.h" nogil:
          double range_step_ft,
@@ -35,9 +35,9 @@ index 8335858..282dba1 100644
  
 @@ -84,6 +99,18 @@ cdef extern from "include/engine.h" nogil:
          IntegrateFuncPtr integrate_func_ptr
-         ErrorStack err_stack
+         BCLIBC_ErrorStack err_stack
  
-+    ErrorType BaseTrajSeq_t_append_wrapper(
++    BCLIBC_ErrorType BaseTrajSeq_t_append_wrapper(
 +        void *user_data,
 +        double time,
 +        double px,
@@ -51,7 +51,7 @@ index 8335858..282dba1 100644
 +
      void Engine_t_release_trajectory(Engine_t *eng) noexcept nogil
  
-     StatusCode Engine_t_integrate(
+     BCLIBC_StatusCode Engine_t_integrate(
 @@ -92,7 +119,8 @@ cdef extern from "include/engine.h" nogil:
          double range_step_ft,
          double time_step,
@@ -82,7 +82,7 @@ index e6f4b6a..36b5cad 100644
 +            BaseTrajSeqT trajectory = BaseTrajSeqT()
              TerminationReason reason
  
-         cdef StatusCode status = Engine_t_integrate(
+         cdef BCLIBC_StatusCode status = Engine_t_integrate(
 @@ -673,12 +674,13 @@ cdef class CythonizedBaseIntegrationEngine:
              range_step_ft,
              time_step,
@@ -93,10 +93,10 @@ index e6f4b6a..36b5cad 100644
              &reason,
          )
  
-         if status == StatusCode.STATUS_SUCCESS:
+         if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
 -            return traj_seq, reason
 +            return trajectory, reason
-         cdef ErrorFrame *err = last_err(&self._engine.err_stack)
+         cdef BCLIBC_ErrorFrame *err = last_err(&self._engine.err_stack)
          self._raise_solver_runtime_error(err)
  
 diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/euler_engine.pxd b/py_ballisticcalc.exts/py_ballisticcalc_exts/euler_engine.pxd
@@ -105,7 +105,7 @@ index b3e6131..0cf2787 100644
 +++ b/py_ballisticcalc.exts/py_ballisticcalc_exts/euler_engine.pxd
 @@ -14,6 +14,7 @@ from py_ballisticcalc_exts.base_engine cimport (
      Engine_t,
-     StatusCode,
+     BCLIBC_StatusCode,
      TerminationReason,
 +    EmitCallbackPtr,
  )
@@ -129,7 +129,7 @@ index 6d1804d..f79c8fc 100644
  
  typedef struct Engine_s Engine_t;
  
-+typedef ErrorType EmitCallback(
++typedef BCLIBC_ErrorType EmitCallback(
 +    void *user_data,
 +    double time,
 +    double px,
@@ -142,7 +142,7 @@ index 6d1804d..f79c8fc 100644
 +
 +typedef EmitCallback *EmitCallbackPtr;
 +
- typedef StatusCode IntegrateFunc(
+ typedef BCLIBC_StatusCode IntegrateFunc(
      Engine_t *eng,
      double range_limit_ft,
      double range_step_ft,
@@ -158,7 +158,7 @@ index 6d1804d..f79c8fc 100644
  
      void require_non_null_fatal(const void *ptr, const char *file, int line, const char *func);
  
-+    ErrorType BaseTrajSeq_t_append_wrapper(
++    BCLIBC_ErrorType BaseTrajSeq_t_append_wrapper(
 +        void *user_data,
 +        double time,
 +        double px,
@@ -171,7 +171,7 @@ index 6d1804d..f79c8fc 100644
 +
      void Engine_t_release_trajectory(Engine_t *eng);
  
-     StatusCode Engine_t_integrate(
+     BCLIBC_StatusCode Engine_t_integrate(
 @@ -95,7 +120,8 @@ extern "C"
          double range_step_ft,
          double time_step,
@@ -181,7 +181,7 @@ index 6d1804d..f79c8fc 100644
 +        EmitCallbackPtr emiter_callback,
          TerminationReason *reason);
  
-     StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out);
+     BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out);
 diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/include/euler.h b/py_ballisticcalc.exts/py_ballisticcalc_exts/include/euler.h
 index a38c8cb..0282298 100644
 --- a/py_ballisticcalc.exts/py_ballisticcalc_exts/include/euler.h
@@ -217,7 +217,7 @@ index 220226f..7b53765 100644
 @@ -16,6 +16,7 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
  from py_ballisticcalc_exts.base_engine cimport (
      Engine_t,
-     StatusCode,
+     BCLIBC_StatusCode,
 +    EmitCallbackPtr,
      TerminationReason,
  )
@@ -240,7 +240,7 @@ index b737dac..406dd02 100644
      }
  }
  
-+ErrorType BaseTrajSeq_t_append_wrapper(
++BCLIBC_ErrorType BaseTrajSeq_t_append_wrapper(
 +    void *user_data,
 +    double time,
 +    double px,
@@ -262,7 +262,7 @@ index b737dac..406dd02 100644
  void Engine_t_release_trajectory(Engine_t *eng)
  {
      if (eng == NULL)
-@@ -59,10 +78,11 @@ StatusCode Engine_t_integrate(
+@@ -59,10 +78,11 @@ BCLIBC_StatusCode Engine_t_integrate(
      double range_step_ft,
      double time_step,
      TrajFlag_t filter_flags,
@@ -275,13 +275,13 @@ index b737dac..406dd02 100644
 +    if (!eng || !emiter || !emiter_callback || !reason || !eng->integrate_func_ptr)
      {
          REQUIRE_NON_NULL(eng);
-         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
-@@ -70,7 +90,13 @@ StatusCode Engine_t_integrate(
+         BCLIBC_PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+@@ -70,7 +90,13 @@ BCLIBC_StatusCode Engine_t_integrate(
      }
      BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
  
--    StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr, reason);
-+    StatusCode status = eng->integrate_func_ptr(
+-    BCLIBC_StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr, reason);
++    BCLIBC_StatusCode status = eng->integrate_func_ptr(
 +        eng,
 +        range_limit_ft, range_step_ft,
 +        time_step, filter_flags,
@@ -289,9 +289,9 @@ index b737dac..406dd02 100644
 +        emiter_callback,
 +        reason);
  
-     if (status != STATUS_ERROR)
+     if (status != BCLIBC_STATUS_ERROR)
      {
-@@ -121,7 +147,10 @@ StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
+@@ -121,7 +147,10 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BaseTrajData_t *out)
  
      // try
      TerminationReason reason;
@@ -301,21 +301,21 @@ index b737dac..406dd02 100644
 +        &result, BaseTrajSeq_t_append_wrapper,
 +        &reason);
  
-     if (status != STATUS_SUCCESS)
+     if (status != BCLIBC_STATUS_SUCCESS)
      {
-@@ -177,7 +206,10 @@ StatusCode Engine_t_error_at_distance(
+@@ -177,7 +206,10 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
      eng->shot.barrel_elevation = angle_rad;
  
      TerminationReason reason;
--    StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory, &reason);
-+    StatusCode status = Engine_t_integrate(
+-    BCLIBC_StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, TFLAG_APEX, &trajectory, &reason);
++    BCLIBC_StatusCode status = Engine_t_integrate(
 +        eng, 9e9, 9e9, 0.0, TFLAG_APEX,
 +        &trajectory, BaseTrajSeq_t_append_wrapper,
 +        &reason);
  
-     if (status != STATUS_SUCCESS)
+     if (status != BCLIBC_STATUS_SUCCESS)
      {
-@@ -413,7 +445,9 @@ StatusCode Engine_t_zero_angle(
+@@ -413,7 +445,9 @@ BCLIBC_StatusCode Engine_t_zero_angle(
          BaseTrajSeq_t_init(&seq);
  
          TerminationReason reason;
@@ -324,9 +324,9 @@ index b737dac..406dd02 100644
 +            eng, target_x_ft, target_x_ft, 0.0, TFLAG_NONE,
 +            &seq, BaseTrajSeq_t_append_wrapper, &reason);
  
-         if (status != STATUS_SUCCESS)
+         if (status != BCLIBC_STATUS_SUCCESS)
          {
-@@ -595,7 +629,11 @@ static StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doub
+@@ -595,7 +629,11 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, doub
      BaseTrajSeq_t_init(&trajectory);
  
      TerminationReason reason;
@@ -336,14 +336,14 @@ index b737dac..406dd02 100644
 +        &trajectory, BaseTrajSeq_t_append_wrapper,
 +        &reason);
 +
-     if (status != STATUS_SUCCESS)
+     if (status != BCLIBC_STATUS_SUCCESS)
      {
-         status = STATUS_ERROR;
+         status = BCLIBC_STATUS_ERROR;
 diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/euler.c b/py_ballisticcalc.exts/py_ballisticcalc_exts/src/euler.c
 index 98eb200..bd2d3b1 100644
 --- a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/euler.c
 +++ b/py_ballisticcalc.exts/py_ballisticcalc_exts/src/euler.c
-@@ -41,10 +41,11 @@ StatusCode _integrate_euler(
+@@ -41,10 +41,11 @@ BCLIBC_StatusCode _integrate_euler(
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
      double time_step, TrajFlag_t filter_flags,
@@ -356,8 +356,8 @@ index 98eb200..bd2d3b1 100644
 +    if (!eng || !emiter || !emiter_callback || !reason)
      {
          REQUIRE_NON_NULL(eng);
-         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
-@@ -133,8 +134,8 @@ StatusCode _integrate_euler(
+         BCLIBC_PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+@@ -133,8 +134,8 @@ BCLIBC_StatusCode _integrate_euler(
          // Store point in trajectory sequence
  
          // err =
@@ -368,7 +368,7 @@ index 98eb200..bd2d3b1 100644
              time,
              range_vector.x, range_vector.y, range_vector.z,
              velocity_vector.x, velocity_vector.y, velocity_vector.z,
-@@ -203,8 +204,8 @@ StatusCode _integrate_euler(
+@@ -203,8 +204,8 @@ BCLIBC_StatusCode _integrate_euler(
      // Add final data point
  
      // err =
@@ -383,7 +383,7 @@ diff --git a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/rk4.c b/py_ballisti
 index 8413eb1..bb0a05e 100644
 --- a/py_ballisticcalc.exts/py_ballisticcalc_exts/src/rk4.c
 +++ b/py_ballisticcalc.exts/py_ballisticcalc_exts/src/rk4.c
-@@ -80,10 +80,11 @@ StatusCode _integrate_rk4(
+@@ -80,10 +80,11 @@ BCLIBC_StatusCode _integrate_rk4(
      Engine_t *eng,
      double range_limit_ft, double range_step_ft,
      double time_step, TrajFlag_t filter_flags,
@@ -396,8 +396,8 @@ index 8413eb1..bb0a05e 100644
 +    if (!eng || !emiter || !emiter_callback || !reason)
      {
          REQUIRE_NON_NULL(eng);
-         PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, SRC_INTEGRATE, "Invalid input (NULL pointer).");
-@@ -199,8 +200,8 @@ StatusCode _integrate_rk4(
+         BCLIBC_PUSH_ERR(&eng->err_stack, T_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+@@ -199,8 +200,8 @@ BCLIBC_StatusCode _integrate_rk4(
          BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
  
          // err =
@@ -408,7 +408,7 @@ index 8413eb1..bb0a05e 100644
              time,
              range_vector.x, range_vector.y, range_vector.z,
              velocity_vector.x, velocity_vector.y, velocity_vector.z,
-@@ -318,8 +319,8 @@ StatusCode _integrate_rk4(
+@@ -318,8 +319,8 @@ BCLIBC_StatusCode _integrate_rk4(
      // Process final data point
  
      // err =

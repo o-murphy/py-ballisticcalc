@@ -12,14 +12,14 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeq_t
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     Engine_t,
-    StatusCode,
+    BCLIBC_StatusCode,
     TerminationReason,
 )
 
 
 cdef extern from "include/euler.h" nogil:
 
-    StatusCode _integrate_euler(
+    BCLIBC_StatusCode _integrate_euler(
         Engine_t *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, TrajFlag_t filter_flags,
