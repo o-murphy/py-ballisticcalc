@@ -1,5 +1,5 @@
-#ifndef BCLIB_ERROR_STACK_H
-#define BCLIB_ERROR_STACK_H
+#ifndef BCLIBC_ERROR_STACK_H
+#define BCLIBC_ERROR_STACK_H
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -97,4 +97,4 @@ extern "C"
 #define POP_ERR(stack) pop_err(stack)
 #define CLEAR_ERR(stack) clear_err(stack)
 
-#endif // BCLIB_ERROR_STACK_H
+#endif // BCLIBC_ERROR_STACK_H

@@ -1,5 +1,5 @@
-#ifndef BCLIB_BIND_H
-#define BCLIB_BIND_H
+#ifndef BCLIBC_BIND_H
+#define BCLIBC_BIND_H
 
 #include <Python.h>
 #include "bclib.h" // MachList_t typedef must be here
@@ -18,4 +18,4 @@ extern "C"
 }
 #endif
 
-#endif // BCLIB_BIND_H
+#endif // BCLIBC_BIND_H

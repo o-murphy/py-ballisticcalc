@@ -1,5 +1,5 @@
-#ifndef BCLIB_LOG_H
-#define BCLIB_LOG_H
+#ifndef BCLIBC_LOG_H
+#define BCLIBC_LOG_H
 
 #include <stdio.h> // For fprintf
 
@@ -149,4 +149,4 @@ extern "C"
         }                                                                       \
     } while (0)
 
-#endif // BCLIB_LOG_H
+#endif // BCLIBC_LOG_H

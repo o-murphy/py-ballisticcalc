@@ -1,5 +1,5 @@
-#ifndef BCLIB_TYPES_H
-#define BCLIB_TYPES_H
+#ifndef BCLIBC_BCLIB_H
+#define BCLIBC_BCLIB_H
 
 #include "v3d.h"
 #include "log.h"
@@ -201,4 +201,4 @@ extern "C"
 }
 #endif
 
-#endif // BCLIB_TYPES_H
+#endif // BCLIBC_BCLIB_H

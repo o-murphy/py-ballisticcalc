@@ -1,5 +1,5 @@
-#ifndef BCLIB_EULER_H
-#define BCLIB_EULER_H
+#ifndef BCLIBC_EULER_H
+#define BCLIBC_EULER_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -22,4 +22,4 @@ extern "C"
 }
 #endif
 
-#endif // BCLIB_EULER_H
+#endif // BCLIBC_EULER_H

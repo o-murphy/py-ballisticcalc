@@ -1,5 +1,5 @@
-#ifndef BCLIB_ENGINE_H
-#define BCLIB_ENGINE_H
+#ifndef BCLIBC_ENGINE_H
+#define BCLIBC_ENGINE_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -165,4 +165,4 @@ extern "C"
             return (status);                                              \
     } while (0)
 
-#endif // BCLIB_ENGINE_H
+#endif // BCLIBC_ENGINE_H

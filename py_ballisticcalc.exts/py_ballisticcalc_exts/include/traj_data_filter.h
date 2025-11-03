@@ -1,5 +1,5 @@
-#ifndef BCLIB_TDF_H
-#define BCLIB_TDF_H
+#ifndef BCLIBC_TDF_H
+#define BCLIBC_TDF_H
 
 #include "v3d.h"
 #include "bclib.h"
@@ -54,4 +54,4 @@ extern "C"
 }
 #endif
 
-#endif // BCLIB_TDF_H
+#endif // BCLIBC_TDF_H
