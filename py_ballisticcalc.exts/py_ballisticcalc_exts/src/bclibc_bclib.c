@@ -1,6 +1,6 @@
-#include "bclib.h"
-#include "v3d.h"
-#include "interp.h"
+#include "bclibc_bclib.h"
+#include "bclibc_v3d.h"
+#include "bclibc_interp.h"
 #include <math.h>
 #include <stddef.h> // For size_t
 #include <stdio.h>  // For warnings (printf used here)

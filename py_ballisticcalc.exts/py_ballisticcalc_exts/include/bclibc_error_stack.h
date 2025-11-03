@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include "log.h"
+#include "bclibc_log.h"
 
 #define BCLIBC_MAX_ERROR_STACK 16
 #define BCLIBC_MAX_ERROR_MSG_LEN 256

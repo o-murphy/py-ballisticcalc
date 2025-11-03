@@ -80,16 +80,16 @@ C_INCLUDE_DIR = EXTENSIONS_BASE_DIR / "include"
 
 # Define all C source files and their paths
 C_SOURCES = {
-    "v3d": C_SRC_DIR / "v3d.c",
-    "log": C_SRC_DIR / "log.c",
-    "error_stack": C_SRC_DIR / "error_stack.c",
-    "bclib": C_SRC_DIR / "bclib.c",
-    "bind": C_SRC_DIR / "bind.c",
-    "interp": C_SRC_DIR / "interp.c",
-    "euler": C_SRC_DIR / "euler.c",
-    "rk4": C_SRC_DIR / "rk4.c",
-    "base_traj_seq": C_SRC_DIR / "base_traj_seq.c",
-    "engine": C_SRC_DIR / "engine.c",
+    "v3d": C_SRC_DIR / "bclibc_v3d.c",
+    "log": C_SRC_DIR / "bclibc_log.c",
+    "error_stack": C_SRC_DIR / "bclibc_error_stack.c",
+    "bclib": C_SRC_DIR / "bclibc_bclib.c",
+    "bind": C_SRC_DIR / "bclibc_py_bind.c",
+    "interp": C_SRC_DIR / "bclibc_interp.c",
+    "euler": C_SRC_DIR / "bclibc_euler.c",
+    "rk4": C_SRC_DIR / "bclibc_rk4.c",
+    "base_traj_seq": C_SRC_DIR / "bclibc_base_traj_seq.c",
+    "engine": C_SRC_DIR / "bclibc_engine.c",
     # Add any other C source files here
 }
 

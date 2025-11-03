@@ -19,7 +19,7 @@ from py_ballisticcalc_exts.base_engine cimport (
     TerminationReason,
 )
 
-cdef extern from "include/rk4.h" nogil:
+cdef extern from "include/bclibc_rk4.h" nogil:
 
     BCLIBC_StatusCode BCLIBC_integrate_rk4(
         Engine_t *eng,

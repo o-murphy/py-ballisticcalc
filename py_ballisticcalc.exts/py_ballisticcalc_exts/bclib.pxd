@@ -4,7 +4,7 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
 
-cdef extern from "include/bclib.h" nogil:
+cdef extern from "include/bclibc_bclib.h" nogil:
     ctypedef enum BCLIBC_LogLevel:
         BCLIBC_LOG_LEVEL_CRITICAL,
         BCLIBC_LOG_LEVEL_ERROR,

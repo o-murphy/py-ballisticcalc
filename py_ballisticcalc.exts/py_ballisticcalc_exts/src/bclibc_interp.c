@@ -1,6 +1,6 @@
 #include <math.h>
 #include <stddef.h>
-#include "interp.h"
+#include "bclibc_interp.h"
 
 // Internal helpers for PCHIP
 static inline int _sign(double a)
@@ -8,7 +8,7 @@ static inline int _sign(double a)
     return (a > 0.0) - (a < 0.0);
 }
 
-// Internal helpers for PCHIP used by base_traj_seq
+// Internal helpers for PCHIP used by bclibc_base_traj_seq
 static void BCLIBC_Sort3(double *xs, double *ys)
 {
     // Sort the first two elements

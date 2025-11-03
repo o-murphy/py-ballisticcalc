@@ -1,9 +1,9 @@
 #ifndef BCLIBC_BCLIB_H
 #define BCLIBC_BCLIB_H
 
-#include "v3d.h"
-#include "log.h"
-#include "error_stack.h"
+#include "bclibc_v3d.h"
+#include "bclibc_log.h"
+#include "bclibc_error_stack.h"
 #include <stddef.h>
 
 extern const double cDegreesFtoR;

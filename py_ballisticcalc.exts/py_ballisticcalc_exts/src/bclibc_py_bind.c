@@ -1,8 +1,8 @@
 #include <Python.h>
 #include <stdlib.h>
 #include <math.h>
-#include "bclib.h"
-#include "bind.h"
+#include "bclibc_bclib.h"
+#include "bclibc_py_bind.h"
 
 Config_t Config_t_fromPyObject(PyObject *config)
 {

@@ -1,4 +1,4 @@
-#include "log.h"
+#include "bclibc_log.h"
 #include <stdlib.h>
 
 /**

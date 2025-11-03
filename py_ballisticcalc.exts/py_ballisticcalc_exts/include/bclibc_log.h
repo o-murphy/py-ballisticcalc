@@ -30,7 +30,7 @@ extern BCLIBC_LogLevel BCLIBC_global_log_level;
 /*
  * Example output:
  * [ERROR] bclib.c:123 in ShotProps_t_updateStabilityCoefficient: Division by zero in ftp calculation.
- * [DEBUG] engine.c:45 in Engine_t_integrate: Using integration function pointer 0x12345678.
+ * [DEBUG] bclibc_engine.h:45 in Engine_t_integrate: Using integration function pointer 0x12345678.
  * [WARNING] bclib.c:234 in Atmosphere_t_updateDensityFactorAndMachForAltitude: Density request for altitude above troposphere.
  */
 

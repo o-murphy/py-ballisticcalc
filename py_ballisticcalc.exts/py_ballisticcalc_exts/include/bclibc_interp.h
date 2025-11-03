@@ -1,4 +1,4 @@
-// interp.h (Виправлено)
+// bclibc_interp.h (Виправлено)
 #ifndef BCLIBC_INTERP_H
 #define BCLIBC_INTERP_H
 

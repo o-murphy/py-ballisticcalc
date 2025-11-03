@@ -1,5 +1,5 @@
 # Declare the C header file
-cdef extern from "include/v3d.h" nogil:
+cdef extern from "include/bclibc_v3d.h" nogil:
     # Declare the BCLIBC_V3dT structure
     ctypedef struct BCLIBC_V3dT:
         double x

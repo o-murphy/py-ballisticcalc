@@ -19,7 +19,7 @@ from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusC
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
-cdef extern from "include/engine.h" nogil:
+cdef extern from "include/bclibc_engine.h" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
     ctypedef enum ZeroInitialStatus:

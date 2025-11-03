@@ -1,6 +1,6 @@
 #include <math.h>
-#include "rk4.h"
-#include "bclib.h"
+#include "bclibc_rk4.h"
+#include "bclibc_bclib.h"
 
 /**
  * @brief Calculate the derivative of velocity with respect to time (acceleration).

@@ -17,7 +17,7 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 
 
-cdef extern from "include/euler.h" nogil:
+cdef extern from "include/bclibc_euler.h" nogil:
 
     BCLIBC_StatusCode BCLIBC_integrate_euler(
         Engine_t *eng,

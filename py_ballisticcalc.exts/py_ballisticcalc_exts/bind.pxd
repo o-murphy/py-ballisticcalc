@@ -14,7 +14,7 @@ from py_ballisticcalc_exts.bclib cimport (
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 
 
-cdef extern from "include/bind.h" nogil:
+cdef extern from "include/bclibc_py_bind.h" nogil:
     MachList_t MachList_t_fromPylist(PyObject *pylist) noexcept nogil
     Curve_t Curve_t_fromPylist(PyObject *data_points) noexcept nogil
     Config_t Config_t_fromPyObject(PyObject * config) noexcept nogil

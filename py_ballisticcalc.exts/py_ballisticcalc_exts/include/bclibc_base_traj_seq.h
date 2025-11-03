@@ -4,7 +4,7 @@
 #include <stddef.h>    // Required for size_t
 #include <sys/types.h> // Required for ssize_t
 
-#include "bclib.h"
+#include "bclibc_bclib.h"
 
 // --- START CROSS-PLATFORM FIX ---
 // The manylinux build environment failed due to redefinition.

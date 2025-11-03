@@ -1,10 +1,10 @@
 #ifndef BCLIBC_ENGINE_H
 #define BCLIBC_ENGINE_H
 
-#include "v3d.h"
-#include "bclib.h"
-#include "base_traj_seq.h"
-#include "error_stack.h"
+#include "bclibc_v3d.h"
+#include "bclibc_bclib.h"
+#include "bclibc_base_traj_seq.h"
+#include "bclibc_error_stack.h"
 
 #include <math.h>
 #include <stdarg.h> // for va_list, va_start, va_end, va_copy

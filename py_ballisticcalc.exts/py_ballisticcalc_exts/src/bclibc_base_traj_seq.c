@@ -1,9 +1,9 @@
 #include <math.h>
 #include <stdlib.h> // Required for calloc, malloc, free
 #include <string.h> // Required for memcpy
-#include "interp.h"
-#include "bclib.h"
-#include "base_traj_seq.h"
+#include "bclibc_interp.h"
+#include "bclibc_bclib.h"
+#include "bclibc_base_traj_seq.h"
 
 // Lookup table
 static const size_t key_offsets[] = {

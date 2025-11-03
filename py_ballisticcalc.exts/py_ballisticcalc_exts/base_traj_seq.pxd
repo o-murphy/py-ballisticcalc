@@ -8,7 +8,7 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTra
 from py_ballisticcalc_exts.bclib cimport InterpKey, BCLIBC_ErrorType
 
 
-cdef extern from "include/base_traj_seq.h" nogil:
+cdef extern from "include/bclibc_base_traj_seq.h" nogil:
     ctypedef struct BCLIBC_BaseTraj:
         double time
         double px

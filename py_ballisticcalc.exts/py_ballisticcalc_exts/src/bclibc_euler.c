@@ -1,6 +1,6 @@
 #include <math.h>
-#include "euler.h"
-// #include "bclib.h"  // for C_LOG
+#include "bclibc_euler.h"
+// #include "bclibc_bclib.h"  // for C_LOG
 
 /**
  * @brief Calculate time step based on current projectile speed.
