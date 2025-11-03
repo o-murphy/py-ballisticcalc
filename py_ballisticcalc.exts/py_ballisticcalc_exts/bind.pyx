@@ -9,14 +9,14 @@ from cython cimport final
 from cpython.object cimport PyObject
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    MachList_t,
-    Curve_t,
-    Config_t,
-    Wind_t,
-    WindSock_t,
-    Coriolis_t,
-    WindSock_t_init,
-    InterpKey,
+    BCLIBC_MachList,
+    BCLIBC_Curve,
+    BCLIBC_Config,
+    BCLIBC_Wind,
+    BCLIBC_WindSock,
+    BCLIBC_Coriolis,
+    BCLIBC_WindSock_init,
+    BCLIBC_InterpKey,
 )
 
 # noinspection PyUnresolvedReferences
@@ -32,46 +32,46 @@ from py_ballisticcalc.vector import Vector
 
 
 @final
-cdef Config_t Config_t_from_pyobject(object config):
-    cdef Config_t result = Config_t_fromPyObject(<PyObject *>config)
+cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config):
+    cdef BCLIBC_Config result = BCLIBC_Config_fromPyObject(<PyObject *>config)
     if PyErr_Occurred():
         raise
     return result
 
 
 @final
-cdef MachList_t MachList_t_from_pylist(list[object] data):
-    cdef MachList_t ml = MachList_t_fromPylist(<PyObject *>data)
+cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data):
+    cdef BCLIBC_MachList ml = BCLIBC_MachList_fromPylist(<PyObject *>data)
     if ml.array is NULL:
         if PyErr_Occurred():
             raise
         else:
-            raise MemoryError("Failed to create MachList_t from Python list")
+            raise MemoryError("Failed to create BCLIBC_MachList from Python list")
     return ml
 
 
 @final
-cdef Curve_t Curve_t_from_pylist(list[object] data_points):
-    cdef Curve_t result = Curve_t_fromPylist(<PyObject *>data_points)
+cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
+    cdef BCLIBC_Curve result = BCLIBC_Curve_fromPylist(<PyObject *>data_points)
     if PyErr_Occurred():
         raise
     return result
 
 
-# We still need a way to get data from Python objects into Wind_t structs.
+# We still need a way to get data from Python objects into BCLIBC_Wind structs.
 # This internal helper function is used by WindSockT_create.
 # It assumes 'w' is a Python object that conforms to the interface needed.
 @final
-cdef Wind_t Wind_t_from_py(object w):
-    cdef Wind_t result
-    result = Wind_t_fromPyObject(<PyObject *>w)
+cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):
+    cdef BCLIBC_Wind result
+    result = BCLIBC_Wind_fromPyObject(<PyObject *>w)
     if PyErr_Occurred():
         raise
     return result
 
 
-cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj):
-    cdef Coriolis_t coriolis
+cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
+    cdef BCLIBC_Coriolis coriolis
 
     if coriolis_obj:
         coriolis.sin_lat = coriolis_obj.sin_lat
@@ -89,31 +89,31 @@ cdef Coriolis_t Coriolis_t_from_pyobject(object coriolis_obj):
     return coriolis
 
 
-cdef WindSock_t WindSock_t_from_pylist(object winds_py_list):
+cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
     """
-    Creates and initializes a WindSock_t structure.
+    Creates and initializes a BCLIBC_WindSock structure.
     Processes the Python list, then delegates initialization to C.
     """
     cdef size_t length = <size_t> len(winds_py_list)
-    cdef WindSock_t ws
-    # Memory allocation for the Wind_t array (remains in Cython)
-    cdef Wind_t * winds_array = <Wind_t *> calloc(<size_t> length, sizeof(Wind_t))
+    cdef BCLIBC_WindSock ws
+    # Memory allocation for the BCLIBC_Wind array (remains in Cython)
+    cdef BCLIBC_Wind * winds_array = <BCLIBC_Wind *> calloc(<size_t> length, sizeof(BCLIBC_Wind))
     if <void *> winds_array is NULL:
-        raise MemoryError("Failed to allocate internal Wind_t array.")
+        raise MemoryError("Failed to allocate internal BCLIBC_Wind array.")
 
     # Copying data from Python objects to C structures (must remain in Cython)
     cdef int i
     try:
         for i in range(<int>length):
-            # Wind_t_from_py interacts with a Python object, so it remains here
-            winds_array[i] = Wind_t_from_py(winds_py_list[i])
+            # BCLIBC_Wind_from_py interacts with a Python object, so it remains here
+            winds_array[i] = BCLIBC_Wind_from_py(winds_py_list[i])
     except Exception:
         # Error handling
         free(<void *> winds_array)
         raise RuntimeError("Invalid wind entry in winds list")
 
     # 4. Structure initialization (calling the C function)
-    WindSock_t_init(&ws, length, winds_array)
+    BCLIBC_WindSock_init(&ws, length, winds_array)
 
     return ws
 
@@ -130,50 +130,50 @@ cdef object _v3d_to_vector(const BCLIBC_V3dT *v):
     return Vector(v.x, v.y, v.z)
 
 
-cdef InterpKey _attribute_to_key(str key_attribute):
-    cdef InterpKey key_kind
+cdef BCLIBC_InterpKey _attribute_to_key(str key_attribute):
+    cdef BCLIBC_InterpKey key_kind
 
     if key_attribute == 'time':
-        key_kind = InterpKey.KEY_TIME
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_TIME
     elif key_attribute == 'mach':
-        key_kind = InterpKey.KEY_MACH
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_MACH
     elif key_attribute == 'position.x':
-        key_kind = InterpKey.KEY_POS_X
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_X
     elif key_attribute == 'position.y':
-        key_kind = InterpKey.KEY_POS_Y
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Y
     elif key_attribute == 'position.z':
-        key_kind = InterpKey.KEY_POS_Z
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Z
     elif key_attribute == 'velocity.x':
-        key_kind = InterpKey.KEY_VEL_X
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_X
     elif key_attribute == 'velocity.y':
-        key_kind = InterpKey.KEY_VEL_Y
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Y
     elif key_attribute == 'velocity.z':
-        key_kind = InterpKey.KEY_VEL_Z
+        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Z
     else:
         raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
     return key_kind
 
-cdef str _key_to_attribute(InterpKey key_kind):
+cdef str _key_to_attribute(BCLIBC_InterpKey key_kind):
     cdef str key_attribute
 
-    if key_kind == InterpKey.KEY_TIME:
+    if key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_TIME:
         key_attribute = 'time'
-    elif key_kind == InterpKey.KEY_MACH:
+    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_MACH:
         key_attribute = 'mach'
-    elif key_kind == InterpKey.KEY_POS_X:
+    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_X:
         key_attribute = 'position.x'
-    elif key_kind == InterpKey.KEY_POS_Y:
+    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Y:
         key_attribute = 'position.y'
-    elif key_kind == InterpKey.KEY_POS_Z:
+    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Z:
         key_attribute = 'position.z'
-    elif key_kind == InterpKey.KEY_VEL_X:
+    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_X:
         key_attribute = 'velocity.x'
-    elif key_kind == InterpKey.KEY_VEL_Y:
+    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Y:
         key_attribute = 'velocity.y'
-    elif key_kind == InterpKey.KEY_VEL_Z:
+    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Z:
         key_attribute = 'velocity.z'
     else:
-        raise ValueError(f"Unknown InterpKey value: {key_kind}")
+        raise ValueError(f"Unknown BCLIBC_InterpKey value: {key_kind}")
 
     return key_attribute

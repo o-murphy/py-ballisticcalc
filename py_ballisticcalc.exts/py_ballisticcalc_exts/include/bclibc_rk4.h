@@ -11,12 +11,12 @@ extern "C"
 {
 #endif
 
-    BCLIBC_StatusCode BCLIBC_integrate_rk4(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_integrateRK4(
+        BCLIBC_EngineT *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, BCLIBC_TrajFlag filter_flags,
         BCLIBC_BaseTrajSeq *traj_seq_ptr,
-        TerminationReason *reason);
+        BCLIBC_TerminationReason *reason);
 
 #ifdef __cplusplus
 }

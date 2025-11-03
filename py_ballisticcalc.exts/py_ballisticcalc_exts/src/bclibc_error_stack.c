@@ -84,8 +84,8 @@ static const char *BCLIBC_ErrorType_toString(BCLIBC_ErrorType code)
         return "BCLIBC_E_ZERO_DIVISION_ERROR";
     case BCLIBC_E_VALUE_ERROR:
         return "BCLIBC_E_VALUE_ERROR";
-    case BCLIBC_E_KEY_ERROR:
-        return "BCLIBC_E_KEY_ERROR";
+    case BCLIBC_E_BCLIBC_INTERP_KEY_ERROR:
+        return "BCLIBC_E_BCLIBC_INTERP_KEY_ERROR";
     case BCLIBC_E_INDEX_ERROR:
         return "BCLIBC_E_INDEX_ERROR";
     case BCLIBC_E_MEMORY_ERROR:

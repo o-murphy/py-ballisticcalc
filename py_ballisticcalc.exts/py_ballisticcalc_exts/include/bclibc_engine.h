@@ -14,153 +14,153 @@
 
 typedef enum
 {
-    ZERO_INIT_CONTINUE,
-    ZERO_INIT_DONE,
-} ZeroInitialStatus;
+    BCLIBC_ZERO_INIT_CONTINUE,
+    BCLIBC_ZERO_INIT_DONE,
+} BCLIBC_ZeroInitialStatus;
 
 typedef enum
 {
     // Solver specific flags (always include RANGE_ERROR)
-    NO_TERMINATE,
-    RANGE_ERROR_MINIMUM_VELOCITY_REACHED,
-    RANGE_ERROR_MAXIMUM_DROP_REACHED,
-    RANGE_ERROR_MINIMUM_ALTITUDE_REACHED,
-} TerminationReason;
+    BCLIBC_TERM_REASON_NO_TERMINATE,
+    BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED,
+    BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED,
+    BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED,
+} BCLIBC_TerminationReason;
 
 typedef struct
 {
-    ZeroInitialStatus status;
+    BCLIBC_ZeroInitialStatus status;
     double look_angle_rad;
     double slant_range_ft;
     double target_x_ft;
     double target_y_ft;
     double start_height_ft;
-} ZeroInitialData_t;
+} BCLIBC_ZeroInitialData;
 
 typedef struct
 {
     double requested_distance_ft;
     double max_range_ft;
     double look_angle_rad;
-} OutOfRangeError_t;
+} BCLIBC_OutOfRangeError;
 
 typedef struct
 {
     double max_range_ft;
     double angle_at_max_rad;
-} MaxRangeResult_t;
+} BCLIBC_MaxRangeResult;
 
 typedef struct
 {
     double zero_finding_error;
     int iterations_count;
     double last_barrel_elevation_rad;
-} ZeroFindingError_t;
+} BCLIBC_ZeroFindingError;
 
-typedef struct Engine_s Engine_t;
+typedef struct BCLIBC_EngineS BCLIBC_EngineT;
 
-typedef BCLIBC_StatusCode IntegrateFunc(
-    Engine_t *eng,
+typedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
+    BCLIBC_EngineT *eng,
     double range_limit_ft,
     double range_step_ft,
     double time_step,
     BCLIBC_TrajFlag filter_flags,
     BCLIBC_BaseTrajSeq *traj_seq_ptr,
-    TerminationReason *reason);
+    BCLIBC_TerminationReason *reason);
 
-typedef IntegrateFunc *IntegrateFuncPtr;
+typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;
 
-typedef struct Engine_s
+typedef struct BCLIBC_EngineS
 {
     int integration_step_count;
     BCLIBC_V3dT gravity_vector;
-    Config_t config;
-    ShotProps_t shot;
-    IntegrateFuncPtr integrate_func_ptr;
+    BCLIBC_Config config;
+    BCLIBC_ShotProps shot;
+    BCLIBC_IntegrateFuncPtr integrate_func_ptr;
     BCLIBC_ErrorStack err_stack;
-} Engine_t;
+} BCLIBC_EngineT;
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    void require_non_null_fatal(const void *ptr, const char *file, int line, const char *func);
+    void BCLIBC_requireNonNullFatal(const void *ptr, const char *file, int line, const char *func);
 
-    void Engine_t_release_trajectory(Engine_t *eng);
+    void BCLIBC_EngineT_releaseTrajectory(BCLIBC_EngineT *eng);
 
-    BCLIBC_StatusCode Engine_t_integrate(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_EngineT_integrate(
+        BCLIBC_EngineT *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
         BCLIBC_TrajFlag filter_flags,
         BCLIBC_BaseTrajSeq *traj_seq_ptr,
-        TerminationReason *reason);
+        BCLIBC_TerminationReason *reason);
 
-    BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out);
+    BCLIBC_StatusCode BCLIBC_EngineT_findApex(BCLIBC_EngineT *eng, BCLIBC_BaseTrajData *out);
 
-    BCLIBC_StatusCode Engine_t_error_at_distance(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_EngineT_errorAtDistance(
+        BCLIBC_EngineT *eng,
         double angle_rad,
         double target_x_ft,
         double target_y_ft,
         double *out_error_ft);
 
-    BCLIBC_StatusCode Engine_t_init_zero_calculation(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_EngineT_initZeroCalculation(
+        BCLIBC_EngineT *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        ZeroInitialData_t *result,
-        OutOfRangeError_t *error);
+        BCLIBC_ZeroInitialData *result,
+        BCLIBC_OutOfRangeError *error);
 
-    BCLIBC_StatusCode Engine_t_zero_angle_with_fallback(
-        Engine_t *eng,
-        double distance,
-        double APEX_IS_MAX_RANGE_RADIANS,
-        double ALLOWED_ZERO_ERROR_FEET,
-        double *result,
-        OutOfRangeError_t *range_error,
-        ZeroFindingError_t *zero_error);
-
-    BCLIBC_StatusCode Engine_t_zero_angle(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_EngineT_zeroAngleWithFallback(
+        BCLIBC_EngineT *eng,
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
         double *result,
-        OutOfRangeError_t *range_error,
-        ZeroFindingError_t *zero_error);
+        BCLIBC_OutOfRangeError *range_error,
+        BCLIBC_ZeroFindingError *zero_error);
 
-    BCLIBC_StatusCode Engine_t_find_max_range(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_EngineT_zeroAngle(
+        BCLIBC_EngineT *eng,
+        double distance,
+        double APEX_IS_MAX_RANGE_RADIANS,
+        double ALLOWED_ZERO_ERROR_FEET,
+        double *result,
+        BCLIBC_OutOfRangeError *range_error,
+        BCLIBC_ZeroFindingError *zero_error);
+
+    BCLIBC_StatusCode BCLIBC_EngineT_findMaxRange(
+        BCLIBC_EngineT *eng,
         double low_angle_deg,
         double high_angle_deg,
         double APEX_IS_MAX_RANGE_RADIANS,
-        MaxRangeResult_t *result);
+        BCLIBC_MaxRangeResult *result);
 
-    BCLIBC_StatusCode Engine_t_find_zero_angle(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_EngineT_findZeroAngle(
+        BCLIBC_EngineT *eng,
         double distance,
         int lofted,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
         double *result,
-        OutOfRangeError_t *range_error,
-        ZeroFindingError_t *zero_error);
+        BCLIBC_OutOfRangeError *range_error,
+        BCLIBC_ZeroFindingError *zero_error);
 
 #ifdef __cplusplus
 }
 #endif
 
 #define REQUIRE_NON_NULL(ptr) \
-    require_non_null_fatal((ptr), __FILE__, __LINE__, __func__)
+    BCLIBC_requireNonNullFatal((ptr), __FILE__, __LINE__, __func__)
 
-#define Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle, y_out) \
+#define BCLIBC_EngineT_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle, y_out) \
     do                                                                    \
     {                                                                     \
-        (status) = Engine_t_range_for_angle((eng), (angle), (y_out));     \
+        (status) = BCLIBC_EngineT_rangeForAngle((eng), (angle), (y_out));     \
         if ((status) != BCLIBC_STATUS_SUCCESS)                                   \
             return (status);                                              \
     } while (0)

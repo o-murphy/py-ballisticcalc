@@ -29,9 +29,9 @@ extern BCLIBC_LogLevel BCLIBC_global_log_level;
 
 /*
  * Example output:
- * [ERROR] bclib.c:123 in ShotProps_t_updateStabilityCoefficient: Division by zero in ftp calculation.
- * [DEBUG] bclibc_engine.h:45 in Engine_t_integrate: Using integration function pointer 0x12345678.
- * [WARNING] bclib.c:234 in Atmosphere_t_updateDensityFactorAndMachForAltitude: Density request for altitude above troposphere.
+ * [ERROR] bclib.c:123 in BCLIBC_ShotProps_updateStabilityCoefficient: Division by zero in ftp calculation.
+ * [DEBUG] bclibc_engine.h:45 in BCLIBC_EngineT_integrate: Using integration function pointer 0x12345678.
+ * [WARNING] bclib.c:234 in BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude: Density request for altitude above troposphere.
  */
 
 // Alternative: Shorter format (just filename without path)
@@ -99,7 +99,7 @@ extern "C"
 
 // /*
 //  * Example output (shorter):
-//  * [ERROR] bclib.c:123 ShotProps_t_updateStabilityCoefficient() Division by zero in ftp calculation.
+//  * [ERROR] bclib.c:123 BCLIBC_ShotProps_updateStabilityCoefficient() Division by zero in ftp calculation.
 //  */
 
 // #define C_LOG_SHORT(level, format, ...)                           \
@@ -121,7 +121,7 @@ extern "C"
 
 // /*
 //  * Example output (smart - location only for errors):
-//  * [ERROR] bclib.c:123 in ShotProps_t_updateStabilityCoefficient: Division by zero.
+//  * [ERROR] bclib.c:123 in BCLIBC_ShotProps_updateStabilityCoefficient: Division by zero.
 //  * [INFO] Log level set to 20
 //  * [DEBUG] Altitude: 1000.00, Density ratio: 0.950000
 //  */

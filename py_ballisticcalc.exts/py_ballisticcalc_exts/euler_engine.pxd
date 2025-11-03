@@ -11,20 +11,20 @@ from py_ballisticcalc_exts.bclib cimport (
 from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
-    Engine_t,
+    BCLIBC_EngineT,
     BCLIBC_StatusCode,
-    TerminationReason,
+    BCLIBC_TerminationReason,
 )
 
 
 cdef extern from "include/bclibc_euler.h" nogil:
 
-    BCLIBC_StatusCode BCLIBC_integrate_euler(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_integrateEULER(
+        BCLIBC_EngineT *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, BCLIBC_TrajFlag filter_flags,
         BCLIBC_BaseTrajSeq *traj_seq_ptr,
-        TerminationReason *reason,
+        BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):

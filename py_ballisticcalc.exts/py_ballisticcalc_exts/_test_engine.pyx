@@ -12,10 +12,10 @@ from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
 from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    ShotProps_t_dragByMach,
-    ShotProps_t_spinDrift,
-    ShotProps_t_updateStabilityCoefficient,
-    Atmosphere_t_updateDensityFactorAndMachForAltitude,
+    BCLIBC_ShotProps_dragByMach,
+    BCLIBC_ShotProps_spinDrift,
+    BCLIBC_ShotProps_updateStabilityCoefficient,
+    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
     calculateEnergy,
     calculateOgw,
     BCLIBC_ErrorType,
@@ -38,14 +38,14 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double drag(self, double mach):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return ShotProps_t_dragByMach(&self._engine.shot, mach)
+        return BCLIBC_ShotProps_dragByMach(&self._engine.shot, mach)
 
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
         cdef double density_ratio = 0.0
         cdef double mach = 0.0
-        Atmosphere_t_updateDensityFactorAndMachForAltitude(
+        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
             &self._engine.shot.atmo,
             altitude_ft,
             &density_ratio,
@@ -56,13 +56,13 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double spin_drift(self, double time_s):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return ShotProps_t_spinDrift(&self._engine.shot, time_s)
+        return BCLIBC_ShotProps_spinDrift(&self._engine.shot, time_s)
 
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        if ShotProps_t_updateStabilityCoefficient(&self._engine.shot) != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            raise ZeroDivisionError("Zero division detected in ShotProps_t_updateStabilityCoefficient")
+        if BCLIBC_ShotProps_updateStabilityCoefficient(&self._engine.shot) != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+            raise ZeroDivisionError("Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient")
         return self._engine.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):

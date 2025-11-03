@@ -4,8 +4,8 @@
 
 /**
  * @brief Calculate the derivative of velocity with respect to time (acceleration).
- * * Assumes all necessary types (BCLIBC_V3dT, ShotProps_t, Coriolis_t) and vector
- * functions (mulS, mag, sub, add, Coriolis_t_coriolis_acceleration_local)
+ * * Assumes all necessary types (BCLIBC_V3dT, BCLIBC_ShotProps, BCLIBC_Coriolis) and vector
+ * functions (mulS, mag, sub, add, BCLIBC_Coriolis_coriolisAccelerationLocal)
  * are declared and defined in relevant C headers.
  *
  * @param v_ptr Pointer to the relative velocity vector (velocity - wind).
@@ -16,7 +16,7 @@
  * @return BCLIBC_V3dT The acceleration vector (dv/dt).
  */
 static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC_V3dT *gravity_vector_ptr, double km_coeff,
-                                   const ShotProps_t *shot_props_ptr, const BCLIBC_V3dT *ground_velocity_ptr)
+                                   const BCLIBC_ShotProps *shot_props_ptr, const BCLIBC_V3dT *ground_velocity_ptr)
 {
     // Local variables for components and result
     BCLIBC_V3dT drag_force_component;
@@ -36,11 +36,11 @@ static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const 
     // Check the flat_fire_only flag within the Coriolis structure
     if (!shot_props_ptr->coriolis.flat_fire_only)
     {
-        // Coriolis_t_coriolis_acceleration_local(
+        // BCLIBC_Coriolis_coriolisAccelerationLocal(
         //     &shot_props_ptr->coriolis, ground_velocity_ptr, &coriolis_acceleration
         // )
         // Note: Assuming this function calculates Coriolis acceleration and stores it in the third argument
-        Coriolis_t_coriolis_acceleration_local(
+        BCLIBC_Coriolis_coriolisAccelerationLocal(
             &shot_props_ptr->coriolis, ground_velocity_ptr, &coriolis_acceleration);
 
         // acceleration = BCLIBC_V3dT_add(&acceleration, &coriolis_acceleration)
@@ -59,11 +59,11 @@ static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const 
  * or max drop). It integrates over time steps, accounting for gravity, drag,
  * wind, and Coriolis effects.
  *
- * @param shot_props_ptr Pointer to the ShotProps_t structure containing projectile
+ * @param shot_props_ptr Pointer to the BCLIBC_ShotProps structure containing projectile
  * and atmospheric properties, and the drag curve.
- * @param wind_sock_ptr Pointer to the WindSock_t structure used for wind interpolation
+ * @param wind_sock_ptr Pointer to the BCLIBC_WindSock structure used for wind interpolation
  * along the trajectory.
- * @param config_ptr Pointer to the global Config_t structure holding constant parameters
+ * @param config_ptr Pointer to the global BCLIBC_Config structure holding constant parameters
  * (e.g., gravity constant, termination thresholds).
  * @param range_limit_ft The maximum horizontal range (in feet) to simulate.
  * @param range_step_ft The distance interval for recording filtered points (not used
@@ -76,12 +76,12 @@ static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const 
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on successful completion).
  */
-BCLIBC_StatusCode BCLIBC_integrate_rk4(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_integrateRK4(
+    BCLIBC_EngineT *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, BCLIBC_TrajFlag filter_flags,
     BCLIBC_BaseTrajSeq *traj_seq_ptr,
-    TerminationReason *reason)
+    BCLIBC_TerminationReason *reason)
 {
     if (!eng || !traj_seq_ptr || !reason)
     {
@@ -113,7 +113,7 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
           _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
 
     // Working variables
-    *reason = NO_TERMINATE;
+    *reason = BCLIBC_TERM_REASON_NO_TERMINATE;
     double relative_speed;
     BCLIBC_V3dT _dir_vector;
     eng->integration_step_count = 0;
@@ -134,8 +134,8 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Gravity initialized: %f\n", gravity_vector.y);
 
     // Initialize wind vector
-    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call WindSock_t_currentVector\n");
-    wind_vector = WindSock_t_currentVector(&eng->shot.wind_sock);
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call BCLIBC_WindSock_currentVector\n");
+    wind_vector = BCLIBC_WindSock_currentVector(&eng->shot.wind_sock);
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
 
     // Initialize velocity and position vectors
@@ -165,7 +165,7 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
 
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
-    Atmosphere_t_updateDensityFactorAndMachForAltitude(
+    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
         &eng->shot.atmo,
         eng->shot.alt0 + range_vector.y,
         &density_ratio,
@@ -185,11 +185,11 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
         if (range_vector.x >= eng->shot.wind_sock.next_range)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updating wind vector\n");
-            wind_vector = WindSock_t_vectorForRange(&eng->shot.wind_sock, range_vector.x);
+            wind_vector = BCLIBC_WindSock_vectorForRange(&eng->shot.wind_sock, range_vector.x);
         }
 
         // Update air density and mach at current altitude
-        Atmosphere_t_updateDensityFactorAndMachForAltitude(
+        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
             &eng->shot.atmo,
             eng->shot.alt0 + range_vector.y,
             &density_ratio,
@@ -218,7 +218,7 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
 
         delta_time = calc_step;
 
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call ShotProps_t_dragByMach, relative_speed=%f, mach=%f\n",
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call BCLIBC_ShotProps_dragByMach, relative_speed=%f, mach=%f\n",
               relative_speed, mach);
 
         // Check for division by zero
@@ -228,7 +228,7 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
         //     return BCLIBC_STATUS_ERROR;
         // }
 
-        km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
+        km = density_ratio * BCLIBC_ShotProps_dragByMach(&eng->shot, relative_speed / mach);
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Calculated drag coefficient km=%f\n", km);
 
         // region RK4 integration
@@ -296,18 +296,18 @@ BCLIBC_StatusCode BCLIBC_integrate_rk4(
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
         {
-            *reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
+            *reason = BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED;
         }
         else if (range_vector.y < _cMaximumDrop)
         {
-            *reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
+            *reason = BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED;
         }
         else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
-            *reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
+            *reason = BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED;
         }
 
-        if (*reason != NO_TERMINATE)
+        if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
         {
             break;
         }

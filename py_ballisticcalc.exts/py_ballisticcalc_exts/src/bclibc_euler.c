@@ -23,9 +23,9 @@ static inline double BCLIBC_euler_time_step(double base_step, double velocity)
  * range, minimum velocity, or max drop). It accounts for gravity, drag (using
  * Mach number), wind, and Coriolis effects.
  *
- * @param shot_props_ptr Pointer to the ShotProps_t structure containing
+ * @param shot_props_ptr Pointer to the BCLIBC_ShotProps structure containing
  * muzzle conditions, drag curve, and atmospheric data.
- * @param wind_sock_ptr Pointer to the WindSock_t structure for wind interpolation.
+ * @param wind_sock_ptr Pointer to the BCLIBC_WindSock structure for wind interpolation.
  * @param config_ptr Pointer to the global configuration constants (e.g., gravity).
  * @param range_limit_ft The maximum horizontal range (in feet) to simulate.
  * @param range_step_ft The distance step for recording trajectory points
@@ -37,12 +37,12 @@ static inline double BCLIBC_euler_time_step(double base_step, double velocity)
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
  */
-BCLIBC_StatusCode BCLIBC_integrate_euler(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_integrateEULER(
+    BCLIBC_EngineT *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, BCLIBC_TrajFlag filter_flags,
     BCLIBC_BaseTrajSeq *traj_seq_ptr,
-    TerminationReason *reason)
+    BCLIBC_TerminationReason *reason)
 {
     if (!eng || !traj_seq_ptr || !reason)
     {
@@ -71,7 +71,7 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
     double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
 
     // Working variables
-    *reason = NO_TERMINATE;
+    *reason = BCLIBC_TERM_REASON_NO_TERMINATE;
     double relative_speed;
     BCLIBC_V3dT _dir_vector;
     BCLIBC_V3dT _tv;
@@ -84,7 +84,7 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
     gravity_vector.z = 0.0;
 
     // Initialize wind vector
-    wind_vector = WindSock_t_currentVector(&eng->shot.wind_sock);
+    wind_vector = BCLIBC_WindSock_currentVector(&eng->shot.wind_sock);
 
     // Initialize velocity and position vectors
     velocity = eng->shot.muzzle_velocity;
@@ -106,7 +106,7 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
     // Trajectory Loop
 
     // Update air density and mach at initial altitude
-    Atmosphere_t_updateDensityFactorAndMachForAltitude(
+    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
         &eng->shot.atmo,
         eng->shot.alt0 + range_vector.y,
         &density_ratio,
@@ -120,11 +120,11 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
         // Update wind reading at current point in trajectory
         if (range_vector.x >= eng->shot.wind_sock.next_range)
         {
-            wind_vector = WindSock_t_vectorForRange(&eng->shot.wind_sock, range_vector.x);
+            wind_vector = BCLIBC_WindSock_vectorForRange(&eng->shot.wind_sock, range_vector.x);
         }
 
         // Update air density and mach at current altitude
-        Atmosphere_t_updateDensityFactorAndMachForAltitude(
+        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
             &eng->shot.atmo,
             eng->shot.alt0 + range_vector.y,
             &density_ratio,
@@ -154,7 +154,7 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
         delta_time = BCLIBC_euler_time_step(calc_step, relative_speed);
 
         // 3. Calculate drag coefficient and drag force
-        km = density_ratio * ShotProps_t_dragByMach(&eng->shot, relative_speed / mach);
+        km = density_ratio * BCLIBC_ShotProps_dragByMach(&eng->shot, relative_speed / mach);
         drag = km * relative_speed;
 
         // 4. Apply drag, gravity, and Coriolis to velocity
@@ -164,7 +164,7 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
         // Check the flat_fire_only flag within the Coriolis structure
         if (!eng->shot.coriolis.flat_fire_only)
         {
-            Coriolis_t_coriolis_acceleration_local(
+            BCLIBC_Coriolis_coriolisAccelerationLocal(
                 &eng->shot.coriolis, &velocity_vector, &coriolis_accel);
             _tv = BCLIBC_V3dT_add(&_tv, &coriolis_accel);
         }
@@ -183,18 +183,18 @@ BCLIBC_StatusCode BCLIBC_integrate_euler(
         // Check termination conditions
         if (velocity < _cMinimumVelocity)
         {
-            *reason = RANGE_ERROR_MINIMUM_VELOCITY_REACHED;
+            *reason = BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED;
         }
         else if (range_vector.y < _cMaximumDrop)
         {
-            *reason = RANGE_ERROR_MAXIMUM_DROP_REACHED;
+            *reason = BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED;
         }
         else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
         {
-            *reason = RANGE_ERROR_MINIMUM_ALTITUDE_REACHED;
+            *reason = BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED;
         }
 
-        if (*reason != NO_TERMINATE)
+        if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
         {
             break;
         }

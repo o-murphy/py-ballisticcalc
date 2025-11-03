@@ -5,7 +5,7 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    ShotProps_t,
+    BCLIBC_ShotProps,
     BCLIBC_TrajFlag,
 )
 # noinspection PyUnresolvedReferences
@@ -14,19 +14,19 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
-    Engine_t,
+    BCLIBC_EngineT,
     BCLIBC_StatusCode,
-    TerminationReason,
+    BCLIBC_TerminationReason,
 )
 
 cdef extern from "include/bclibc_rk4.h" nogil:
 
-    BCLIBC_StatusCode BCLIBC_integrate_rk4(
-        Engine_t *eng,
+    BCLIBC_StatusCode BCLIBC_integrateRK4(
+        BCLIBC_EngineT *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, BCLIBC_TrajFlag filter_flags,
         BCLIBC_BaseTrajSeq *traj_seq_ptr,
-        TerminationReason *reason,
+        BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):

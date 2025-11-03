@@ -3,37 +3,37 @@
 /*
 Possible call chains:
 
-Engine_t_find_zero_angle
- ├─> Engine_t_init_zero_calculation
- │    └─> Engine_t_find_apex
- │         └─> Engine_t_integrate
+BCLIBC_EngineT_findZeroAngle
+ ├─> BCLIBC_EngineT_initZeroCalculation
+ │    └─> BCLIBC_EngineT_findApex
+ │         └─> BCLIBC_EngineT_integrate
  │              └─> eng->integrate_func_ptr
- ├─> Engine_t_find_max_range
- │    ├─> Engine_t_find_apex
- │    │    └─> Engine_t_integrate
+ ├─> BCLIBC_EngineT_findMaxRange
+ │    ├─> BCLIBC_EngineT_findApex
+ │    │    └─> BCLIBC_EngineT_integrate
  │    │         └─> eng->integrate_func_ptr
- │    └─> Engine_t_range_for_angle
- │         └─> Engine_t_integrate
+ │    └─> BCLIBC_EngineT_rangeForAngle
+ │         └─> BCLIBC_EngineT_integrate
  │              └─> eng->integrate_func_ptr
- └─> Engine_t_error_at_distance
-      └─> Engine_t_integrate
+ └─> BCLIBC_EngineT_errorAtDistance
+      └─> BCLIBC_EngineT_integrate
       └─> BCLIBC_BaseTrajSeq_getAt / get_raw_item
 
-Engine_t_zero_angle
- ├─> Engine_t_init_zero_calculation
- ├─> Engine_t_integrate
+BCLIBC_EngineT_zeroAngle
+ ├─> BCLIBC_EngineT_initZeroCalculation
+ ├─> BCLIBC_EngineT_integrate
  └─> BCLIBC_BaseTrajSeq_init / get_at / release
 
  Longest callstack:
 
- Engine_t_find_zero_angle
- -> Engine_t_init_zero_calculation
-    -> Engine_t_find_apex
-       -> Engine_t_integrate
+ BCLIBC_EngineT_findZeroAngle
+ -> BCLIBC_EngineT_initZeroCalculation
+    -> BCLIBC_EngineT_findApex
+       -> BCLIBC_EngineT_integrate
           -> eng->integrate_func_ptr
 */
 
-void require_non_null_fatal(const void *ptr, const char *file, int line, const char *func)
+void BCLIBC_requireNonNullFatal(const void *ptr, const char *file, int line, const char *func)
 {
     if (!ptr)
     {
@@ -43,24 +43,24 @@ void require_non_null_fatal(const void *ptr, const char *file, int line, const c
     }
 }
 
-void Engine_t_release_trajectory(Engine_t *eng)
+void BCLIBC_EngineT_releaseTrajectory(BCLIBC_EngineT *eng)
 {
     if (eng == NULL)
     {
         return;
     }
-    ShotProps_t_release(&eng->shot);
+    BCLIBC_ShotProps_release(&eng->shot);
     // NOTE: It is not neccessary to NULLIFY integrate_func_ptr
 }
 
-BCLIBC_StatusCode Engine_t_integrate(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_EngineT_integrate(
+    BCLIBC_EngineT *eng,
     double range_limit_ft,
     double range_step_ft,
     double time_step,
     BCLIBC_TrajFlag filter_flags,
     BCLIBC_BaseTrajSeq *traj_seq_ptr,
-    TerminationReason *reason)
+    BCLIBC_TerminationReason *reason)
 {
     if (!eng || !traj_seq_ptr || !reason || !eng->integrate_func_ptr)
     {
@@ -74,7 +74,7 @@ BCLIBC_StatusCode Engine_t_integrate(
 
     if (status != BCLIBC_STATUS_ERROR)
     {
-        if (*reason == NO_TERMINATE)
+        if (*reason == BCLIBC_TERM_REASON_NO_TERMINATE)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed successfully: (%d).", *reason);
         }
@@ -95,7 +95,7 @@ BCLIBC_StatusCode Engine_t_integrate(
     return BCLIBC_STATUS_ERROR;
 }
 
-BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out)
+BCLIBC_StatusCode BCLIBC_EngineT_findApex(BCLIBC_EngineT *eng, BCLIBC_BaseTrajData *out)
 {
     if (!eng || !out)
     {
@@ -126,8 +126,8 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out)
     }
 
     // try
-    TerminationReason reason;
-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &result, &reason);
+    BCLIBC_TerminationReason reason;
+    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &result, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -135,7 +135,7 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out)
     }
     else
     {
-        status = BCLIBC_BaseTrajSeq_getAt(&result, KEY_VEL_Y, 0.0, -1, out);
+        status = BCLIBC_BaseTrajSeq_getAt(&result, BCLIBC_INTERP_KEY_VEL_Y, 0.0, -1, out);
         if (status != BCLIBC_STATUS_SUCCESS)
         {
             BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
@@ -156,8 +156,8 @@ BCLIBC_StatusCode Engine_t_find_apex(Engine_t *eng, BCLIBC_BaseTrajData *out)
     return status;
 }
 
-BCLIBC_StatusCode Engine_t_error_at_distance(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_EngineT_errorAtDistance(
+    BCLIBC_EngineT *eng,
     double angle_rad,
     double target_x_ft,
     double target_y_ft,
@@ -182,8 +182,8 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
 
     eng->shot.barrel_elevation = angle_rad;
 
-    TerminationReason reason;
-    BCLIBC_StatusCode status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &trajectory, &reason);
+    BCLIBC_TerminationReason reason;
+    BCLIBC_StatusCode status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &trajectory, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -197,7 +197,7 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
             last_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, -1);
             if (last_ptr != NULL && last_ptr->time != 0.0)
             {
-                status = BCLIBC_BaseTrajSeq_getAt(&trajectory, KEY_POS_X, target_x_ft, -1, &hit);
+                status = BCLIBC_BaseTrajSeq_getAt(&trajectory, BCLIBC_INTERP_KEY_POS_X, target_x_ft, -1, &hit);
                 if (status != BCLIBC_STATUS_SUCCESS)
                 {
                     BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
@@ -222,13 +222,13 @@ BCLIBC_StatusCode Engine_t_error_at_distance(
     return status;
 };
 
-BCLIBC_StatusCode Engine_t_init_zero_calculation(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_EngineT_initZeroCalculation(
+    BCLIBC_EngineT *eng,
     double distance,
     double APEX_IS_MAX_RANGE_RADIANS,
     double ALLOWED_ZERO_ERROR_FEET,
-    ZeroInitialData_t *result,
-    OutOfRangeError_t *error)
+    BCLIBC_ZeroInitialData *result,
+    BCLIBC_OutOfRangeError *error)
 {
 
     if (!eng || !result || !error)
@@ -242,7 +242,7 @@ BCLIBC_StatusCode Engine_t_init_zero_calculation(
     BCLIBC_BaseTrajData apex;
     double apex_slant_ft;
 
-    result->status = ZERO_INIT_DONE;
+    result->status = BCLIBC_ZERO_INIT_DONE;
     result->slant_range_ft = distance;
     result->look_angle_rad = eng->shot.look_angle;
     result->target_x_ft = result->slant_range_ft * cos(result->look_angle_rad);
@@ -267,7 +267,7 @@ BCLIBC_StatusCode Engine_t_init_zero_calculation(
     if (fabs(result->look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
     {
         // Compute slant distance at apex using robust accessor
-        status = Engine_t_find_apex(eng, &apex);
+        status = BCLIBC_EngineT_findApex(eng, &apex);
         if (status != BCLIBC_STATUS_SUCCESS)
         {
             return BCLIBC_STATUS_ERROR; // Redirect apex finding error
@@ -284,18 +284,18 @@ BCLIBC_StatusCode Engine_t_init_zero_calculation(
         return BCLIBC_STATUS_SUCCESS;
     }
 
-    result->status = ZERO_INIT_CONTINUE;
+    result->status = BCLIBC_ZERO_INIT_CONTINUE;
     return BCLIBC_STATUS_SUCCESS;
 }
 
-BCLIBC_StatusCode Engine_t_zero_angle_with_fallback(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_EngineT_zeroAngleWithFallback(
+    BCLIBC_EngineT *eng,
     double distance,
     double APEX_IS_MAX_RANGE_RADIANS,
     double ALLOWED_ZERO_ERROR_FEET,
     double *result,
-    OutOfRangeError_t *range_error,
-    ZeroFindingError_t *zero_error)
+    BCLIBC_OutOfRangeError *range_error,
+    BCLIBC_ZeroFindingError *zero_error)
 {
     if (!eng || !result || !range_error || !zero_error)
     {
@@ -306,7 +306,7 @@ BCLIBC_StatusCode Engine_t_zero_angle_with_fallback(
 
     BCLIBC_StatusCode status;
 
-    status = Engine_t_zero_angle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, result, range_error, zero_error);
+    status = BCLIBC_EngineT_zeroAngle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, result, range_error, zero_error);
     if (status == BCLIBC_STATUS_SUCCESS)
     {
         return BCLIBC_STATUS_SUCCESS;
@@ -319,7 +319,7 @@ BCLIBC_StatusCode Engine_t_zero_angle_with_fallback(
     // Fallback to guaranteed method
     int lofted = 0; // default
 
-    status = Engine_t_find_zero_angle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, result, range_error, zero_error);
+    status = BCLIBC_EngineT_findZeroAngle(eng, distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, result, range_error, zero_error);
     if (status == BCLIBC_STATUS_SUCCESS)
     {
         return BCLIBC_STATUS_SUCCESS;
@@ -329,14 +329,14 @@ BCLIBC_StatusCode Engine_t_zero_angle_with_fallback(
     return BCLIBC_STATUS_ERROR;
 }
 
-BCLIBC_StatusCode Engine_t_zero_angle(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_EngineT_zeroAngle(
+    BCLIBC_EngineT *eng,
     double distance,
     double APEX_IS_MAX_RANGE_RADIANS,
     double ALLOWED_ZERO_ERROR_FEET,
     double *result,
-    OutOfRangeError_t *range_error,
-    ZeroFindingError_t *zero_error)
+    BCLIBC_OutOfRangeError *range_error,
+    BCLIBC_ZeroFindingError *zero_error)
 {
     if (!eng || !result || !range_error || !zero_error)
     {
@@ -345,8 +345,8 @@ BCLIBC_StatusCode Engine_t_zero_angle(
         return BCLIBC_STATUS_ERROR;
     }
 
-    ZeroInitialData_t init_data;
-    BCLIBC_StatusCode status = Engine_t_init_zero_calculation(
+    BCLIBC_ZeroInitialData init_data;
+    BCLIBC_StatusCode status = BCLIBC_EngineT_initZeroCalculation(
         eng,
         distance,
         APEX_IS_MAX_RANGE_RADIANS,
@@ -364,7 +364,7 @@ BCLIBC_StatusCode Engine_t_zero_angle(
     double target_x_ft = init_data.target_x_ft;
     double target_y_ft = init_data.target_y_ft;
 
-    if (init_data.status == ZERO_INIT_DONE)
+    if (init_data.status == BCLIBC_ZERO_INIT_DONE)
     {
         *result = look_angle_rad;
         return BCLIBC_STATUS_SUCCESS; // immediately return when already done
@@ -418,8 +418,8 @@ BCLIBC_StatusCode Engine_t_zero_angle(
         BCLIBC_BaseTrajSeq_release(&seq);
         BCLIBC_BaseTrajSeq_init(&seq);
 
-        TerminationReason reason;
-        status = Engine_t_integrate(eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE, &seq, &reason);
+        BCLIBC_TerminationReason reason;
+        status = BCLIBC_EngineT_integrate(eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE, &seq, &reason);
 
         if (status != BCLIBC_STATUS_SUCCESS)
         {
@@ -428,7 +428,7 @@ BCLIBC_StatusCode Engine_t_zero_angle(
         }
 
         // interpolate trajectory at target_x_ft using the sequence we just filled
-        status = BCLIBC_BaseTrajSeq_getAt(&seq, KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
+        status = BCLIBC_BaseTrajSeq_getAt(&seq, BCLIBC_INTERP_KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
         if (status != BCLIBC_STATUS_SUCCESS)
         {
             BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ZERO_ANGLE, "Failed to interpolate trajectory at target distance");
@@ -568,7 +568,7 @@ BCLIBC_StatusCode Engine_t_zero_angle(
 // Returns max slant-distance for given launch angle in radians.
 // Robust ZERO_DOWN detection: scan from the end and find the first slant-height
 // crossing where the previous point is positive and current is non-positive.
-static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_rad, double *result)
+static BCLIBC_StatusCode BCLIBC_EngineT_rangeForAngle(BCLIBC_EngineT *eng, double angle_rad, double *result)
 {
     if (!eng || !result)
     {
@@ -600,8 +600,8 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_ra
     *result = -9e9;
     BCLIBC_BaseTrajSeq_init(&trajectory);
 
-    TerminationReason reason;
-    status = Engine_t_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE, &trajectory, &reason);
+    BCLIBC_TerminationReason reason;
+    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE, &trajectory, &reason);
     if (status != BCLIBC_STATUS_SUCCESS)
     {
         status = BCLIBC_STATUS_ERROR;
@@ -653,12 +653,12 @@ static BCLIBC_StatusCode Engine_t_range_for_angle(Engine_t *eng, double angle_ra
     return status;
 }
 
-BCLIBC_StatusCode Engine_t_find_max_range(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_EngineT_findMaxRange(
+    BCLIBC_EngineT *eng,
     double low_angle_deg,
     double high_angle_deg,
     double APEX_IS_MAX_RANGE_RADIANS,
-    MaxRangeResult_t *result)
+    BCLIBC_MaxRangeResult *result)
 {
 
     if (!eng || !result)
@@ -685,7 +685,7 @@ BCLIBC_StatusCode Engine_t_find_max_range(
     // π/2 radians = 90 degrees
     if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
     {
-        status = Engine_t_find_apex(eng, &apex);
+        status = BCLIBC_EngineT_findApex(eng, &apex);
         if (status != BCLIBC_STATUS_SUCCESS)
         {
             return BCLIBC_STATUS_ERROR; // Redirect apex finding error
@@ -719,8 +719,8 @@ BCLIBC_StatusCode Engine_t_find_max_range(
     double d = a + inv_phi * h;
     double yc, yd;
 
-    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, c, &yc);
-    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, d, &yd);
+    BCLIBC_EngineT_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, c, &yc);
+    BCLIBC_EngineT_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, d, &yd);
 
     // Golden-section search
     for (int i = 0; i < 100; i++)
@@ -736,7 +736,7 @@ BCLIBC_StatusCode Engine_t_find_max_range(
             yd = yc;
             h = b - a;
             c = a + inv_phi_sq * h;
-            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, c, &yc);
+            BCLIBC_EngineT_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, c, &yc);
         }
         else
         {
@@ -745,12 +745,12 @@ BCLIBC_StatusCode Engine_t_find_max_range(
             yc = yd;
             h = b - a;
             d = a + inv_phi * h;
-            Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, d, &yd);
+            BCLIBC_EngineT_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, d, &yd);
         }
     }
 
     angle_at_max_rad = (a + b) / 2;
-    Engine_t_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle_at_max_rad, &max_range_ft);
+    BCLIBC_EngineT_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, eng, angle_at_max_rad, &max_range_ft);
 
     // Restore original constraints
     if (has_restore_cMaximumDrop)
@@ -767,15 +767,15 @@ BCLIBC_StatusCode Engine_t_find_max_range(
     return BCLIBC_STATUS_SUCCESS;
 }
 
-BCLIBC_StatusCode Engine_t_find_zero_angle(
-    Engine_t *eng,
+BCLIBC_StatusCode BCLIBC_EngineT_findZeroAngle(
+    BCLIBC_EngineT *eng,
     double distance,
     int lofted,
     double APEX_IS_MAX_RANGE_RADIANS,
     double ALLOWED_ZERO_ERROR_FEET,
     double *result,
-    OutOfRangeError_t *range_error,
-    ZeroFindingError_t *zero_error)
+    BCLIBC_OutOfRangeError *range_error,
+    BCLIBC_ZeroFindingError *zero_error)
 {
 
     if (!eng || !result || !range_error || !zero_error)
@@ -785,8 +785,8 @@ BCLIBC_StatusCode Engine_t_find_zero_angle(
         return BCLIBC_STATUS_ERROR;
     }
 
-    ZeroInitialData_t init_data;
-    BCLIBC_StatusCode status = Engine_t_init_zero_calculation(
+    BCLIBC_ZeroInitialData init_data;
+    BCLIBC_StatusCode status = BCLIBC_EngineT_initZeroCalculation(
         eng,
         distance,
         APEX_IS_MAX_RANGE_RADIANS,
@@ -805,15 +805,15 @@ BCLIBC_StatusCode Engine_t_find_zero_angle(
     double target_y_ft = init_data.target_y_ft;
     double start_height_ft = init_data.start_height_ft;
 
-    if (init_data.status == ZERO_INIT_DONE)
+    if (init_data.status == BCLIBC_ZERO_INIT_DONE)
     {
         *result = look_angle_rad;
         return BCLIBC_STATUS_SUCCESS;
     }
 
     // 1. Find the maximum possible range to establish a search bracket.
-    MaxRangeResult_t max_range_result;
-    status = Engine_t_find_max_range(
+    BCLIBC_MaxRangeResult max_range_result;
+    status = BCLIBC_EngineT_findMaxRange(
         eng,
         0,
         90,
@@ -876,7 +876,7 @@ BCLIBC_StatusCode Engine_t_find_zero_angle(
     double mid_angle, f_mid, s, next_angle, f_next;
     int converged = 0;
 
-    status = Engine_t_error_at_distance(
+    status = BCLIBC_EngineT_errorAtDistance(
         eng,
         low_angle,
         target_x_ft,
@@ -891,7 +891,7 @@ BCLIBC_StatusCode Engine_t_find_zero_angle(
     if (f_low > 1e8 && fabs(low_angle - look_angle_rad) < 1e-9)
     {
         low_angle = look_angle_rad + 1e-3;
-        status = Engine_t_error_at_distance(
+        status = BCLIBC_EngineT_errorAtDistance(
             eng,
             low_angle,
             target_x_ft,
@@ -903,7 +903,7 @@ BCLIBC_StatusCode Engine_t_find_zero_angle(
         }
     }
 
-    status = Engine_t_error_at_distance(
+    status = BCLIBC_EngineT_errorAtDistance(
         eng,
         high_angle,
         target_x_ft,
@@ -941,7 +941,7 @@ BCLIBC_StatusCode Engine_t_find_zero_angle(
     {
         mid_angle = (low_angle + high_angle) / 2.0;
 
-        status = Engine_t_error_at_distance(
+        status = BCLIBC_EngineT_errorAtDistance(
             eng,
             mid_angle,
             target_x_ft,
@@ -998,7 +998,7 @@ BCLIBC_StatusCode Engine_t_find_zero_angle(
             goto finally;
         }
 
-        status = Engine_t_error_at_distance(
+        status = BCLIBC_EngineT_errorAtDistance(
             eng,
             next_angle,
             target_x_ft,

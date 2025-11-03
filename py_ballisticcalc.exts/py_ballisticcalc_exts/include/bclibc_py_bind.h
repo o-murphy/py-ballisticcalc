@@ -2,17 +2,17 @@
 #define BCLIBC_PY_BIND_H
 
 #include <Python.h>
-#include "bclibc_bclib.h" // MachList_t typedef must be here
+#include "bclibc_bclib.h" // BCLIBC_MachList typedef must be here
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    Config_t Config_t_fromPyObject(PyObject *config);
-    MachList_t MachList_t_fromPylist(PyObject *pylist);
-    Curve_t Curve_t_fromPylist(PyObject *data_points);
-    Wind_t Wind_t_fromPyObject(PyObject *w);
+    BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject *config);
+    BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist);
+    BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points);
+    BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w);
 
 #ifdef __cplusplus
 }

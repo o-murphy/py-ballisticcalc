@@ -13,18 +13,18 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         BCLIBC_LOG_LEVEL_DEBUG,
         BCLIBC_LOG_LEVEL_NOTSET
 
-    cdef const double cDegreesFtoR
-    cdef const double cDegreesCtoK
-    cdef const double cSpeedOfSoundImperial
-    cdef const double cSpeedOfSoundMetric
-    cdef const double cLapseRateKperFoot
-    cdef const double cLapseRateImperial
-    cdef const double cPressureExponent
-    cdef const double cLowestTempF
-    cdef const double mToFeet
-    cdef const double cMaxWindDistanceFeet
+    cdef const double BCLIBC_cDegreesFtoR
+    cdef const double BCLIBC_cDegreesCtoK
+    cdef const double BCLIBC_cSpeedOfSoundImperial
+    cdef const double BCLIBC_cSpeedOfSoundMetric
+    cdef const double BCLIBC_cLapseRateKperFoot
+    cdef const double BCLIBC_cLapseRateImperial
+    cdef const double BCLIBC_cPressureExponent
+    cdef const double BCLIBC_cLowestTempF
+    cdef const double BCLIBC_mToFeet
+    cdef const double BCLIBC_cMaxWindDistanceFeet
 
-    ctypedef struct Config_t:
+    ctypedef struct BCLIBC_Config:
         double cStepMultiplier
         double cZeroFindingAccuracy
         double cMinimumVelocity
@@ -33,22 +33,22 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         double cGravityConstant
         double cMinimumAltitude
 
-    ctypedef struct CurvePoint_t:
+    ctypedef struct BCLIBC_CurvePoint:
         double a, b, c, d
 
-    ctypedef struct Curve_t:
-        CurvePoint_t * points
+    ctypedef struct BCLIBC_Curve:
+        BCLIBC_CurvePoint * points
         size_t length
 
-    void Curve_t_release(Curve_t *curve_ptr) noexcept nogil
+    void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr) noexcept nogil
 
-    ctypedef struct MachList_t:
+    ctypedef struct BCLIBC_MachList:
         double * array
         size_t length
 
-    void MachList_t_release(MachList_t *mach_list_ptr) noexcept nogil
+    void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr) noexcept nogil
 
-    ctypedef struct Atmosphere_t:
+    ctypedef struct BCLIBC_Atmosphere:
         double _t0
         double _a0
         double _p0
@@ -56,14 +56,14 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         double density_ratio
         double cLowestTempC
 
-    void Atmosphere_t_updateDensityFactorAndMachForAltitude(
-        const Atmosphere_t *atmo_ptr,
+    void BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
+        const BCLIBC_Atmosphere *atmo_ptr,
         double altitude,
         double *density_ratio_ptr,
         double *mach_ptr
     ) noexcept nogil
 
-    ctypedef struct Coriolis_t:
+    ctypedef struct BCLIBC_Coriolis:
         double sin_lat
         double cos_lat
         double sin_az
@@ -75,30 +75,30 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         int flat_fire_only
         double muzzle_velocity_fps
 
-    void Coriolis_t_coriolis_acceleration_local(
-        const Coriolis_t *coriolis_ptr,
+    void BCLIBC_Coriolis_coriolisAccelerationLocal(
+        const BCLIBC_Coriolis *coriolis_ptr,
         BCLIBC_V3dT *velocity_ptr,
         BCLIBC_V3dT *accel_ptr
     ) noexcept nogil
 
-    ctypedef struct Wind_t:
+    ctypedef struct BCLIBC_Wind:
         double velocity
         double direction_from
         double until_distance
         double MAX_DISTANCE_FEET
 
-    ctypedef struct WindSock_t:
-        Wind_t *winds
+    ctypedef struct BCLIBC_WindSock:
+        BCLIBC_Wind *winds
         int current
         int length
         double next_range
         BCLIBC_V3dT last_vector_cache
 
-    BCLIBC_ErrorType WindSock_t_init(WindSock_t *ws, size_t length, Wind_t *winds) noexcept nogil
-    void WindSock_t_release(WindSock_t *ws) noexcept nogil
-    BCLIBC_V3dT WindSock_t_currentVector(WindSock_t *wind_sock) noexcept nogil
-    BCLIBC_ErrorType WindSock_t_updateCache(WindSock_t *ws) noexcept nogil
-    BCLIBC_V3dT WindSock_t_vectorForRange(WindSock_t *ws, double next_range_param) noexcept nogil
+    BCLIBC_ErrorType BCLIBC_WindSock_init(BCLIBC_WindSock *ws, size_t length, BCLIBC_Wind *winds) noexcept nogil
+    void BCLIBC_WindSock_release(BCLIBC_WindSock *ws) noexcept nogil
+    BCLIBC_V3dT BCLIBC_WindSock_currentVector(BCLIBC_WindSock *wind_sock) noexcept nogil
+    BCLIBC_ErrorType BCLIBC_WindSock_updateCache(BCLIBC_WindSock *ws) noexcept nogil
+    BCLIBC_V3dT BCLIBC_WindSock_vectorForRange(BCLIBC_WindSock *ws, double next_range_param) noexcept nogil
 
     ctypedef enum BCLIBC_TrajFlag:
         BCLIBC_TRAJ_FLAG_NONE = 0,
@@ -117,7 +117,7 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         BCLIBC_V3dT velocity
         double mach
 
-    ctypedef struct ShotProps_t:
+    ctypedef struct BCLIBC_ShotProps:
         double bc
         double look_angle
         double twist
@@ -133,27 +133,27 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         double calc_step
         double muzzle_velocity
         double stability_coefficient
-        Curve_t curve
-        MachList_t mach_list
-        Atmosphere_t atmo
-        Coriolis_t coriolis
-        WindSock_t wind_sock
+        BCLIBC_Curve curve
+        BCLIBC_MachList mach_list
+        BCLIBC_Atmosphere atmo
+        BCLIBC_Coriolis coriolis
+        BCLIBC_WindSock wind_sock
         BCLIBC_TrajFlag filter_flags
 
-    void ShotProps_t_release(ShotProps_t *shot_props_ptr) noexcept nogil
-    double ShotProps_t_spinDrift(const ShotProps_t *shot_props_ptr, double time) noexcept nogil
-    BCLIBC_ErrorType ShotProps_t_updateStabilityCoefficient(ShotProps_t *shot_props_ptr) noexcept nogil
-    double ShotProps_t_dragByMach(const ShotProps_t *shot_props_ptr, double mach) noexcept nogil
+    void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr) noexcept nogil
+    double BCLIBC_ShotProps_spinDrift(const BCLIBC_ShotProps *shot_props_ptr, double time) noexcept nogil
+    BCLIBC_ErrorType BCLIBC_ShotProps_updateStabilityCoefficient(BCLIBC_ShotProps *shot_props_ptr) noexcept nogil
+    double BCLIBC_ShotProps_dragByMach(const BCLIBC_ShotProps *shot_props_ptr, double mach) noexcept nogil
 
-    ctypedef enum InterpKey:
-        KEY_TIME
-        KEY_MACH
-        KEY_POS_X
-        KEY_POS_Y
-        KEY_POS_Z
-        KEY_VEL_X
-        KEY_VEL_Y
-        KEY_VEL_Z
+    ctypedef enum BCLIBC_InterpKey:
+        BCLIBC_INTERP_KEY_TIME
+        BCLIBC_INTERP_KEY_MACH
+        BCLIBC_INTERP_KEY_POS_X
+        BCLIBC_INTERP_KEY_POS_Y
+        BCLIBC_INTERP_KEY_POS_Z
+        BCLIBC_INTERP_KEY_VEL_X
+        BCLIBC_INTERP_KEY_VEL_Y
+        BCLIBC_INTERP_KEY_VEL_Z
 
     # helpers
     double getCorrection(double distance, double offset) noexcept nogil
@@ -161,7 +161,7 @@ cdef extern from "include/bclibc_bclib.h" nogil:
     double calculateOgw(double bulletWeight, double velocity) noexcept nogil
 
     BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
-        InterpKey key_kind,
+        BCLIBC_InterpKey key_kind,
         double key_value,
         const BCLIBC_BaseTrajData *p0,
         const BCLIBC_BaseTrajData *p1,
