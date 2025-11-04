@@ -160,6 +160,8 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         BCLIBC_INTERP_KEY_VEL_X
         BCLIBC_INTERP_KEY_VEL_Y
         BCLIBC_INTERP_KEY_VEL_Z
+        # TrajectoryData only keys
+        BCLIBC_INTERP_KEY_SLANT_HEIGHT
 
     # helpers
     double getCorrection(double distance, double offset) noexcept nogil

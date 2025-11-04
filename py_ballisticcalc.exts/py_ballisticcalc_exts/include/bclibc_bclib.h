@@ -149,7 +149,9 @@ typedef enum
     BCLIBC_INTERP_KEY_POS_Z,
     BCLIBC_INTERP_KEY_VEL_X,
     BCLIBC_INTERP_KEY_VEL_Y,
-    BCLIBC_INTERP_KEY_VEL_Z
+    BCLIBC_INTERP_KEY_VEL_Z,
+    // TrajectoryData only keys
+    BCLIBC_INTERP_KEY_SLANT_HEIGHT,
 } BCLIBC_InterpKey;
 
 #ifdef __cplusplus

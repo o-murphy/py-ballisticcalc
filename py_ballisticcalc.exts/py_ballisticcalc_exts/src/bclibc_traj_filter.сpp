@@ -59,6 +59,12 @@ BCLIBC_TrajectoryDataFilter::BCLIBC_TrajectoryDataFilter(
     }
 };
 
+bool BCLIBC_TrajectoryDataFilter::can_interpolate(const BCLIBC_BaseTrajData *new_data) const
+{
+    return (this->prev_data.time < new_data->time) &&
+           (this->prev_prev_data.time < this->prev_data.time);
+}
+
 void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
 {
     if (new_data == nullptr)
@@ -67,6 +73,7 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
     };
 
     std::vector<BCLIBC_FlaggedData> rows;
+    bool is_can_interpolate = this->can_interpolate(new_data);
 
     if (new_data->time == 0.0)
     {
@@ -80,20 +87,20 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
         {
             while (this->next_record_distance + this->range_step - this->EPSILON <= new_data->position.x)
             {
-                BCLIBC_BaseTrajData interpolated_data;
-                bool successful_interpolation = false;
+                BCLIBC_BaseTrajData result_data = {};
+                bool found_data = false;
                 double record_distance = this->next_record_distance + this->range_step;
                 if (record_distance > this->range_limit + this->EPSILON)
                 {
                     this->range_step = -1;
                     break;
                 }
-                if (std::fabs(record_distance > this->range_limit + this->EPSILON))
+                if (std::fabs(record_distance - new_data->position.x) < this->EPSILON)
                 {
-                    interpolated_data = *new_data;
-                    successful_interpolation;
+                    result_data = *new_data;
+                    found_data = true;
                 }
-                else if (this->prev_data.time < new_data->time) /* if (this->prev_data && this->prev_prev_data) */
+                else if (is_can_interpolate) /* if (this->prev_data && this->prev_prev_data) */
                 {
                     BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
                         BCLIBC_INTERP_KEY_POS_X,
@@ -101,17 +108,17 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
                         &this->prev_prev_data,
                         &this->prev_data,
                         new_data,
-                        &interpolated_data);
+                        &result_data);
                     if (err == BCLIBC_E_NO_ERROR)
                     {
-                        successful_interpolation = true;
+                        found_data = true;
                     }
                 }
-                if (successful_interpolation)
+                if (found_data)
                 {
                     this->next_record_distance += this->range_step;
-                    this->add_row(&rows, &interpolated_data, BCLIBC_TRAJ_FLAG_RANGE);
-                    this->time_of_last_record = interpolated_data.time;
+                    this->add_row(&rows, &result_data, BCLIBC_TRAJ_FLAG_RANGE);
+                    this->time_of_last_record = result_data.time;
                 }
                 else
                 {
@@ -122,13 +129,13 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
         }
         // endregion RANGE steps
         // region Time steps
-        if (this->time_step > this->EPSILON && this->prev_data.time < new_data->time)
+        if (is_can_interpolate && this->time_step > 0.0)
         {
             while (this->time_of_last_record + this->time_step - this->EPSILON <= new_data->time)
             {
 
                 this->time_of_last_record += this->time_step;
-                BCLIBC_BaseTrajData interpolated_data;
+                BCLIBC_BaseTrajData result_data = {};
 
                 BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
                     BCLIBC_INTERP_KEY_TIME,
@@ -136,11 +143,11 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
                     &this->prev_prev_data,
                     &this->prev_data,
                     new_data,
-                    &interpolated_data);
+                    &result_data);
 
                 if (err == BCLIBC_E_NO_ERROR)
                 {
-                    this->add_row(&rows, &interpolated_data, BCLIBC_TRAJ_FLAG_RANGE);
+                    this->add_row(&rows, &result_data, BCLIBC_TRAJ_FLAG_RANGE);
                 }
                 else
                 {
@@ -151,20 +158,24 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
         }
         // endregion Time steps
         if (
-            this->filter & BCLIBC_TRAJ_FLAG_APEX && this->prev_data.velocity.y > 0 && new_data->velocity.y <= 0)
+            is_can_interpolate &&
+            this->filter & BCLIBC_TRAJ_FLAG_APEX &&
+            this->prev_data.velocity.y > 0 &&
+            new_data->velocity.y <= 0)
         {
             // "Apex" is the point where the vertical component of velocity goes from positive to negative.
-            BCLIBC_BaseTrajData interpolated_data;
+            BCLIBC_BaseTrajData result_data = {};
             BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
                 BCLIBC_INTERP_KEY_VEL_Y,
                 0.0,
                 &this->prev_prev_data,
                 &this->prev_data,
                 new_data,
-                &interpolated_data);
+                &result_data);
             if (err == BCLIBC_E_NO_ERROR)
             {
-                this->add_row(&rows, &interpolated_data, BCLIBC_TRAJ_FLAG_APEX);
+                // "Apex" is the point where the vertical component of velocity goes from positive to negative.
+                this->add_row(&rows, &result_data, BCLIBC_TRAJ_FLAG_APEX);
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_APEX);
             }
             /* Ignore error */
@@ -178,13 +189,109 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
         // Commit
         if (!rows.empty())
         {
-            for (const auto &flagged_data : rows)
+            for (const auto &new_row : rows)
             {
-                BCLIBC_TrajectoryData final_record = BCLIBC_TrajectoryData::from_base_data(this->props, &flagged_data);
+                // FIXME: can be replaced with this->records.emplace_back(this->props, &new_flagged_data_row);
+                BCLIBC_TrajectoryData final_record(this->props, &new_row);
                 this->records.push_back(final_record);
             }
         }
 
+        // region Points that must be interpolated on TrajectoryData instances
+        if (is_can_interpolate)
+        {
+            BCLIBC_TrajFlag compute_flags = BCLIBC_TRAJ_FLAG_NONE;
+            if (
+                this->filter & BCLIBC_TRAJ_FLAG_MACH &&
+                BCLIBC_V3dT_mag(&new_data->velocity) < new_data->mach)
+            {
+                compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_MACH);
+                this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_MACH); // Don't look for more Mach crossings
+            }
+            // region ZERO checks (done on TrajectoryData objects so we can interpolate for .slant_height)
+            if (this->filter & BCLIBC_TRAJ_FLAG_ZERO)
+            {
+                // Zero reference line is the sight line defined by look_angle
+                double reference_height = new_data->position.x * this->look_angle_tangent;
+                // If we haven't seen ZERO_UP, we look for that first
+                if (this->filter & BCLIBC_TRAJ_FLAG_ZERO_UP)
+                {
+                    if (new_data->position.y >= reference_height)
+                    {
+                        compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_ZERO_UP);
+                        this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_UP);
+                    }
+                }
+                // We've crossed above sight line; now look for crossing back through it
+                else if (this->filter & BCLIBC_TRAJ_FLAG_ZERO_DOWN)
+                {
+                    if (new_data->position.y < reference_height)
+                    {
+                        compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_ZERO_DOWN);
+                        this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_DOWN);
+                    }
+                }
+            }
+            // endregion ZERO checks
+            if (compute_flags)
+            {
+                // Instantiate TrajectoryData and interpolate
+                BCLIBC_TrajectoryData t0(this->props, new_data);
+                BCLIBC_TrajectoryData t1(this->props, &this->prev_data);
+                BCLIBC_TrajectoryData t2(this->props, &this->prev_prev_data);
+                std::vector<BCLIBC_TrajectoryData> add_td;
+                if (compute_flags & BCLIBC_TRAJ_FLAG_MACH)
+                {
+                    add_td.push_back(
+                        BCLIBC_TrajectoryData::interpolate(
+                            BCLIBC_INTERP_KEY_MACH,
+                            1.0,
+                            &t0, &t1, &t2,
+                            BCLIBC_TRAJ_FLAG_MACH));
+                }
+                if (compute_flags & BCLIBC_TRAJ_FLAG_ZERO)
+                {
+                    add_td.push_back(
+                        BCLIBC_TrajectoryData::interpolate(
+                            BCLIBC_INTERP_KEY_SLANT_HEIGHT,
+                            0.0,
+                            &t0, &t1, &t2,
+                            compute_flags));
+                }
+                // Add TrajectoryData, keeping `results` sorted by time.
+                for (const auto &td : add_td)
+                {
+                    // bisect_left
+                    auto it = std::lower_bound(
+                        this->records.begin(),
+                        this->records.end(),
+                        td.time,
+                        [](const BCLIBC_TrajectoryData &record_data, double time_to_find)
+                        {
+                            return record_data.time < time_to_find;
+                        });
+
+                    if (it != this->records.end() && std::fabs(it->time - td.time) < this->SEPARATE_ROW_TIME_DELTA)
+                    {
+                        it->flag = (BCLIBC_TrajFlag)(it->flag | td.flag);
+                        continue;
+                    }
+
+                    if (it != this->records.begin())
+                    {
+                        auto prev_it = std::prev(it);
+
+                        if (std::fabs(prev_it->time - td.time) < this->SEPARATE_ROW_TIME_DELTA)
+                        {
+                            prev_it->flag = (BCLIBC_TrajFlag)(prev_it->flag | td.flag);
+                            continue;
+                        }
+                    }
+
+                    this->records.insert(it, td);
+                }
+            }
+        }
         // ...
 
         // endregion
