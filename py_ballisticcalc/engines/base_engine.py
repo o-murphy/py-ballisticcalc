@@ -288,6 +288,8 @@ class TrajectoryDataFilter:
                     return
             rows.insert(idx, (data, flag))  # Insert at sorted position
 
+        is_can_interpolate = self.prev_data is not None and self.prev_prev_data is not None
+
         if new_data.time == 0.0:
             # Always record starting point
             add_row(new_data, TrajFlag.RANGE if (self.range_step > 0 or self.time_step > 0) else TrajFlag.NONE)
@@ -302,7 +304,7 @@ class TrajectoryDataFilter:
                         break
                     if abs(record_distance - new_data.position.x) < self.EPSILON:
                         new_row = new_data
-                    elif self.prev_data is not None and self.prev_prev_data is not None:
+                    elif is_can_interpolate:
                         new_row = BaseTrajData.interpolate(
                             "position.x", record_distance, self.prev_prev_data, self.prev_data, new_data
                         )
@@ -314,7 +316,7 @@ class TrajectoryDataFilter:
                         break  # Can't interpolate without previous data
             # endregion RANGE steps
             # region Time steps
-            if self.time_step > 0 and self.prev_data is not None and self.prev_prev_data is not None:
+            if is_can_interpolate and self.time_step:
                 while self.time_of_last_record + self.time_step <= new_data.time:
                     self.time_of_last_record += self.time_step
                     new_row = BaseTrajData.interpolate(
@@ -323,9 +325,8 @@ class TrajectoryDataFilter:
                     add_row(new_row, TrajFlag.RANGE)
             # endregion Time steps
             if (
-                self.filter & TrajFlag.APEX
-                and self.prev_data is not None
-                and self.prev_prev_data is not None
+                is_can_interpolate
+                and self.filter & TrajFlag.APEX
                 and self.prev_data.velocity.y > 0
                 and new_data.velocity.y <= 0
             ):
@@ -337,13 +338,9 @@ class TrajectoryDataFilter:
         self.records.extend([TrajectoryData.from_base_data(self.props, data, flag) for data, flag in rows])
 
         # region Points that must be interpolated on TrajectoryData instances
-        if self.prev_data is not None and self.prev_prev_data is not None:
+        if is_can_interpolate:
             compute_flags = TrajFlag.NONE
-            if (
-                self.filter & TrajFlag.MACH
-                and self.prev_data is not None
-                and new_data.velocity.magnitude() < new_data.mach
-            ):
+            if self.filter & TrajFlag.MACH and new_data.velocity.magnitude() < new_data.mach:
                 compute_flags |= TrajFlag.MACH
                 self.filter &= ~TrajFlag.MACH  # Don't look for more Mach crossings
             # region ZERO checks (done on TrajectoryData objects so we can interpolate for .slant_height)
