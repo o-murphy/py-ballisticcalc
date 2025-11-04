@@ -67,7 +67,7 @@ cdef class BCLIBC_ErrorStackT:
     def push(self, code, src, msg):
         cdef bytes msg_bytes = msg.encode('utf-8')
         cdef frame = inspect.currentframe()
-        cdef frameinfo = inspect.getframeinfo(frame.f_back)  # батьківський фрейм
+        cdef frameinfo = inspect.getframeinfo(frame.f_back)
 
         # cdef bytes func_bytes = frameinfo.function.encode('utf-8')
         # cdef bytes file_bytes = frameinfo.filename.encode('utf-8')
