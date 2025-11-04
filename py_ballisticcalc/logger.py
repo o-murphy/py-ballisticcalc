@@ -77,8 +77,8 @@ COLOR_MAP = {
 }
 
 
-LOG_FORMAT = "%(levelname)s:%(name)s:%(message)s"
-
+CLI_LOG_FORMAT = "%(levelname)s:%(name)s:%(message)s"
+FILE_LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s:%(message)s"
 
 class ColoredFormatter(logging.Formatter):
     """Форматувальник, який додає ANSI кольори до логів консолі."""
@@ -113,7 +113,7 @@ class ColoredFormatter(logging.Formatter):
         return formatted_message
 
 
-cpnsole_formatter = ColoredFormatter(LOG_FORMAT)
+cpnsole_formatter = ColoredFormatter(CLI_LOG_FORMAT)
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(cpnsole_formatter)
 console_handler.setLevel(logging.DEBUG)  # Lowest level for console
@@ -163,7 +163,7 @@ def enable_file_logging(filename: str = "debug.log") -> None:
     # Add a new file handler
     file_handler = logging.FileHandler(filename)
     file_handler.setLevel(logging.DEBUG)  # Log everything to the file
-    file_formatter = logging.Formatter(LOG_FORMAT)
+    file_formatter = logging.Formatter(FILE_LOG_FORMAT)
     file_handler.setFormatter(file_formatter)
     logger.addHandler(file_handler)
 
