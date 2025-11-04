@@ -220,7 +220,6 @@ class TrajectoryDataFilter:
     records: List[TrajectoryData] = []
     props: ShotProps
     filter: Union[TrajFlag, int]
-    current_flag: Union[TrajFlag, int]
     seen_zero: Union[TrajFlag, int]
     time_of_last_record: float
     time_step: float
@@ -316,7 +315,7 @@ class TrajectoryDataFilter:
                         break  # Can't interpolate without previous data
             # endregion RANGE steps
             # region Time steps
-            if is_can_interpolate and self.time_step:
+            if is_can_interpolate and self.time_step > 0:
                 while self.time_of_last_record + self.time_step <= new_data.time:
                     self.time_of_last_record += self.time_step
                     new_row = BaseTrajData.interpolate(
