@@ -121,8 +121,75 @@ void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
             }
         }
         // endregion RANGE steps
+        // region Time steps
+        if (this->time_step > this->EPSILON && this->prev_data.time < new_data->time)
+        {
+            while (this->time_of_last_record + this->time_step - this->EPSILON <= new_data->time)
+            {
+
+                this->time_of_last_record += this->time_step;
+                BCLIBC_BaseTrajData interpolated_data;
+
+                BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
+                    BCLIBC_INTERP_KEY_TIME,
+                    this->time_of_last_record,
+                    &this->prev_prev_data,
+                    &this->prev_data,
+                    new_data,
+                    &interpolated_data);
+
+                if (err == BCLIBC_E_NO_ERROR)
+                {
+                    this->add_row(&rows, &interpolated_data, BCLIBC_TRAJ_FLAG_RANGE);
+                }
+                else
+                {
+                    // Can't interpolate without valid data/segment
+                    break;
+                }
+            }
+        }
+        // endregion Time steps
+        if (
+            this->filter & BCLIBC_TRAJ_FLAG_APEX && this->prev_data.velocity.y > 0 && new_data->velocity.y <= 0)
+        {
+            // "Apex" is the point where the vertical component of velocity goes from positive to negative.
+            BCLIBC_BaseTrajData interpolated_data;
+            BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
+                BCLIBC_INTERP_KEY_VEL_Y,
+                0.0,
+                &this->prev_prev_data,
+                &this->prev_data,
+                new_data,
+                &interpolated_data);
+            if (err == BCLIBC_E_NO_ERROR)
+            {
+                this->add_row(&rows, &interpolated_data, BCLIBC_TRAJ_FLAG_APEX);
+                this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_APEX);
+            }
+            /* Ignore error */
+            // else
+            // {
+            //     // Can't interpolate without valid data/segment
+            //     return;
+            // }
+        }
+
+        // Commit
+        if (!rows.empty())
+        {
+            for (const auto &flagged_data : rows)
+            {
+                BCLIBC_TrajectoryData final_record = BCLIBC_TrajectoryData::from_base_data(this->props, &flagged_data);
+                this->records.push_back(final_record);
+            }
+        }
 
         // ...
+
+        // endregion
+        this->prev_prev_data = this->prev_data;
+        this->prev_data = *new_data;
     }
 };
 
