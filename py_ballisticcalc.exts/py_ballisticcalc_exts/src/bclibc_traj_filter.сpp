@@ -1,0 +1,179 @@
+#include <cmath>
+#include <algorithm>
+#include <vector>
+#include "bclibc_base_traj_seq.h"
+#include "bclibc_traj_filter.hpp"
+
+BCLIBC_TrajectoryDataFilter::BCLIBC_TrajectoryDataFilter(
+    const BCLIBC_ShotProps *props,
+    BCLIBC_TrajFlag filter_flags,
+    BCLIBC_V3dT initial_position,
+    BCLIBC_V3dT initial_velocity,
+    double barrel_angle_rad,
+    double look_angle_rad,
+    double range_limit,
+    double range_step,
+    double time_step)
+    : props(props),
+      filter(filter_flags),
+      seen_zero(BCLIBC_TRAJ_FLAG_NONE),
+      time_of_last_record(0.0),
+      time_step(time_step),
+      range_step(range_step),
+      range_limit(range_limit),
+      prev_data(),
+      prev_prev_data(),
+      next_record_distance(0.0),
+      look_angle_rad(look_angle_rad),
+      look_angle_tangent(std::tan(look_angle_rad))
+{
+    if (filter & BCLIBC_TRAJ_FLAG_MACH)
+    {
+        double mach;
+        double density_ratio;
+        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
+            &props->atmo,
+            initial_position.y,
+            &density_ratio,
+            &mach);
+
+        if (BCLIBC_V3dT_mag(&initial_velocity) < mach)
+        {
+            // If we start below Mach 1, we won't look for Mach crossings
+            this->filter = (BCLIBC_TrajFlag)((int)this->filter & ~(int)BCLIBC_TRAJ_FLAG_MACH);
+        }
+    }
+
+    if (filter & BCLIBC_TRAJ_FLAG_ZERO)
+    {
+        if (initial_position.y >= 0)
+        {
+            // If shot starts above zero then we will only look for a ZERO_DOWN crossing through the line of sight.
+            this->filter = (BCLIBC_TrajFlag)(this->filter & BCLIBC_TRAJ_FLAG_ZERO_UP);
+        }
+        else if (initial_position.y < 0 && barrel_angle_rad <= look_angle_rad)
+        {
+            // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
+            this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT));
+        }
+    }
+};
+
+void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
+{
+    if (new_data == nullptr)
+    {
+        return;
+    };
+
+    std::vector<BCLIBC_FlaggedData> rows;
+
+    if (new_data->time == 0.0)
+    {
+        // Always record starting point
+        this->add_row(&rows, new_data, (this->range_step > 0 || this->time_step) ? BCLIBC_TRAJ_FLAG_RANGE : BCLIBC_TRAJ_FLAG_NONE);
+    }
+    else
+    {
+        // region RANGE steps
+        if (this->range_step > 0.0)
+        {
+            while (this->next_record_distance + this->range_step - this->EPSILON <= new_data->position.x)
+            {
+                BCLIBC_BaseTrajData interpolated_data;
+                bool successful_interpolation = false;
+                double record_distance = this->next_record_distance + this->range_step;
+                if (record_distance > this->range_limit + this->EPSILON)
+                {
+                    this->range_step = -1;
+                    break;
+                }
+                if (std::fabs(record_distance > this->range_limit + this->EPSILON))
+                {
+                    interpolated_data = *new_data;
+                    successful_interpolation;
+                }
+                else if (this->prev_data.time < new_data->time) /* if (this->prev_data && this->prev_prev_data) */
+                {
+                    BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
+                        BCLIBC_INTERP_KEY_POS_X,
+                        record_distance,
+                        &this->prev_prev_data,
+                        &this->prev_data,
+                        new_data,
+                        &interpolated_data);
+                    if (err == BCLIBC_E_NO_ERROR)
+                    {
+                        successful_interpolation = true;
+                    }
+                }
+                if (successful_interpolation)
+                {
+                    this->next_record_distance += this->range_step;
+                    this->add_row(&rows, &interpolated_data, BCLIBC_TRAJ_FLAG_RANGE);
+                    this->time_of_last_record = interpolated_data.time;
+                }
+                else
+                {
+                    // Can't interpolate without valid data/segment
+                    break;
+                }
+            }
+        }
+        // endregion RANGE steps
+
+        // ...
+    }
+};
+
+void BCLIBC_TrajectoryDataFilter::add_row(std::vector<BCLIBC_FlaggedData> *rows, BCLIBC_BaseTrajData *data, BCLIBC_TrajFlag flag)
+{
+    if (rows == nullptr || data == nullptr)
+    {
+        return;
+    }
+
+    // Find index by time (std::lower_bound - equal bisect_left)
+    auto it = std::lower_bound(
+        rows->begin(),
+        rows->end(),
+        data->time,
+        // C++ lambda-comparison index:
+        [](const BCLIBC_FlaggedData &row_data, double time_to_find)
+        {
+            return row_data.data.time < time_to_find;
+        });
+
+    size_t idx = std::distance(rows->begin(), it);
+
+    // If we match existing row's time then just add this flag to the row
+
+    if (idx < rows->size())
+    {
+        double time_at_idx = it->data.time;
+
+        if (std::fabs(time_at_idx - data->time) < this->SEPARATE_ROW_TIME_DELTA)
+        {
+            it->flag = (BCLIBC_TrajFlag)(it->flag | flag);
+            return;
+        }
+    }
+
+    if (idx > 0)
+    {
+        BCLIBC_FlaggedData &prev_row = (*rows)[idx - 1];
+
+        if (std::fabs(prev_row.data.time - data->time) < this->SEPARATE_ROW_TIME_DELTA)
+        {
+            prev_row.flag = (BCLIBC_TrajFlag)(prev_row.flag | flag);
+            return;
+        }
+    }
+
+    // Insert at sorted position
+    BCLIBC_FlaggedData new_row;
+    new_row.data = *data;
+    new_row.flag = flag;
+
+    rows->insert(it, new_row);
+}

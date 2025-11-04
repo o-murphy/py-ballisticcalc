@@ -220,7 +220,6 @@ class TrajectoryDataFilter:
     records: List[TrajectoryData] = []
     props: ShotProps
     filter: Union[TrajFlag, int]
-    current_flag: Union[TrajFlag, int]
     seen_zero: Union[TrajFlag, int]
     time_of_last_record: float
     time_step: float

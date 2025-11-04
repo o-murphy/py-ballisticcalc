@@ -153,6 +153,10 @@ typedef enum
 } BCLIBC_InterpKey;
 
 #ifdef __cplusplus
+#define restrict
+#endif
+
+#ifdef __cplusplus
 extern "C"
 {
 #endif
