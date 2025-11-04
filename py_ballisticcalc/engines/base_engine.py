@@ -304,8 +304,12 @@ class TrajectoryDataFilter:
                     if abs(record_distance - new_data.position.x) < self.EPSILON:
                         new_row = new_data
                     elif is_can_interpolate:
-                        new_row = BaseTrajData.interpolate(
-                            "position.x", record_distance, self.prev_prev_data, self.prev_data, new_data
+                        new_row = BaseTrajData.interpolate(  # type: ignore[arg-type]
+                            "position.x",
+                            record_distance,
+                            self.prev_prev_data,  # type: ignore[arg-type]
+                            self.prev_data,  # type: ignore[arg-type]
+                            new_data,
                         )
                     if new_row is not None:
                         self.next_record_distance += self.range_step
@@ -319,18 +323,28 @@ class TrajectoryDataFilter:
                 while self.time_of_last_record + self.time_step <= new_data.time:
                     self.time_of_last_record += self.time_step
                     new_row = BaseTrajData.interpolate(
-                        "time", self.time_of_last_record, self.prev_prev_data, self.prev_data, new_data
+                        "time",
+                        self.time_of_last_record,
+                        self.prev_prev_data,  # type: ignore[arg-type]
+                        self.prev_data,  # type: ignore[arg-type]
+                        new_data,
                     )
                     add_row(new_row, TrajFlag.RANGE)
             # endregion Time steps
             if (
                 is_can_interpolate
                 and self.filter & TrajFlag.APEX
-                and self.prev_data.velocity.y > 0
+                and self.prev_data.velocity.y > 0  # type: ignore[union-attr]
                 and new_data.velocity.y <= 0
             ):
                 # "Apex" is the point where the vertical component of velocity goes from positive to negative.
-                new_row = BaseTrajData.interpolate("velocity.y", 0.0, self.prev_prev_data, self.prev_data, new_data)
+                new_row = BaseTrajData.interpolate(
+                    "velocity.y",
+                    0.0,
+                    self.prev_prev_data,  # type: ignore[arg-type]
+                    self.prev_data,  # type: ignore[arg-type]
+                    new_data,
+                )
                 add_row(new_row, TrajFlag.APEX)
                 self.filter &= ~TrajFlag.APEX  # Don't look for more apices
 
@@ -360,8 +374,8 @@ class TrajectoryDataFilter:
             if compute_flags:
                 # Instantiate TrajectoryData and interpolate
                 t0 = TrajectoryData.from_base_data(self.props, new_data)
-                t1 = TrajectoryData.from_base_data(self.props, self.prev_data)
-                t2 = TrajectoryData.from_base_data(self.props, self.prev_prev_data)
+                t1 = TrajectoryData.from_base_data(self.props, self.prev_data) # type: ignore[arg-type]
+                t2 = TrajectoryData.from_base_data(self.props, self.prev_prev_data) # type: ignore[arg-type]
                 add_td = []
                 if compute_flags & TrajFlag.MACH:
                     add_td.append(TrajectoryData.interpolate("mach", 1.0, t0, t1, t2, TrajFlag.MACH))
