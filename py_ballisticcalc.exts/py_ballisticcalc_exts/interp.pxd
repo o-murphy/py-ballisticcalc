@@ -1,6 +1,10 @@
 cdef extern from "include/bclibc_interp.h" nogil:
     cdef int BCLIBC_INTERP_ERROR_ZERODIVISION
 
+    ctypedef enum BCLIBC_InterpMethod:
+        BCLIBC_INTERP_METHOD_PCHIP
+        BCLIBC_INTERP_METHOD_LINEAR
+
     # Internal nogil helpers for PCHIP used by base_traj_seq
     double BCLIBC_hermite(
         double x, double xk, double xk1, double yk, double yk1, double mk, double mk1

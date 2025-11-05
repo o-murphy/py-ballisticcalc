@@ -24,9 +24,6 @@ typedef enum
     BCLIBC_LOG_LEVEL_NOTSET = 0
 } BCLIBC_LogLevel;
 
-// Global variable to hold the currently configured minimum level
-extern BCLIBC_LogLevel BCLIBC_global_log_level;
-
 /*
  * Example output:
  * [ERROR] bclib.c:123 in BCLIBC_ShotProps_updateStabilityCoefficient: Division by zero in ftp calculation.
@@ -45,6 +42,8 @@ extern BCLIBC_LogLevel BCLIBC_global_log_level;
 extern "C"
 {
 #endif
+    // Global variable to hold the currently configured minimum level
+    extern BCLIBC_LogLevel BCLIBC_global_log_level;
 
     void BCLIBC_LogLevel_init();
 

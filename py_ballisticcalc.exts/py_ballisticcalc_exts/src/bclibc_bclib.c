@@ -59,6 +59,8 @@ const double BCLIBC_mToFeet = 3.280839895;
  */
 const double BCLIBC_cMaxWindDistanceFeet = 1e8;
 
+const double BCLIBC_cGravityImperial = 32.17405;
+
 /**
  * @brief Releases memory associated with a BCLIBC_Curve structure.
  *
@@ -597,13 +599,13 @@ BCLIBC_V3dT BCLIBC_WindSock_vectorForRange(BCLIBC_WindSock *ws, double next_rang
  * @param offset The linear offset (e.g., vertical drop or windage).
  * @return The correction angle in radians. Returns 0.0 if distance is zero (to avoid division by zero).
  */
-double getCorrection(double distance, double offset)
+double BCLIBC_getCorrection(double distance, double offset)
 {
     if (distance != 0.0)
     {
         return atan2(offset, distance);
     }
-    BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in getCorrection.");
+    BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in BCLIBC_getCorrection.");
     return 0.0;
 }
 
@@ -616,7 +618,7 @@ double getCorrection(double distance, double offset)
  * @param velocity Projectile velocity in feet per second (fps).
  * @return Kinetic energy in foot-pounds (ft-lbs).
  */
-double calculateEnergy(double bulletWeight, double velocity)
+double BCLIBC_calculateEnergy(double bulletWeight, double velocity)
 {
     return bulletWeight * velocity * velocity / 450400.0;
 }
@@ -631,9 +633,52 @@ double calculateEnergy(double bulletWeight, double velocity)
  * @param velocity Projectile velocity in feet per second (fps).
  * @return The Optimum Game Weight (OGW) factor.
  */
-double calculateOgw(double bulletWeight, double velocity)
+double BCLIBC_calculateOgw(double bulletWeight, double velocity)
 {
     return bulletWeight * bulletWeight * velocity * velocity * velocity * 1.5e-12;
+}
+
+void BCLIBC_Coriolis_flatFireOffsets(const BCLIBC_Coriolis *coriolis, double time, double distance_ft, double drop_ft, double *delta_y, double *delta_z)
+{
+    if (!coriolis->flat_fire_only)
+    {
+        *delta_y = 0.0;
+        *delta_z = 0.0;
+    }
+
+    double horizontal = BCLIBC_cEarthAngularVelocityRadS * distance_ft * coriolis->sin_lat * time;
+    double vertical = 0.0;
+    if (coriolis->sin_az)
+    {
+        double vertical_factor = -2.0 * BCLIBC_cEarthAngularVelocityRadS * coriolis->muzzle_velocity_fps * coriolis->cos_lat * coriolis->sin_az;
+        vertical = drop_ft * (vertical_factor / BCLIBC_cGravityImperial);
+    }
+    *delta_y = vertical;
+    *delta_z = horizontal;
+}
+
+BCLIBC_V3dT BCLIBC_Coriolis_adjustRange(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector)
+{
+    if (!coriolis || !coriolis->flat_fire_only)
+    {
+        return *range_vector;
+    }
+
+    double delta_y, delta_z;
+    BCLIBC_Coriolis_flatFireOffsets(coriolis, time, range_vector->x, range_vector->y, &delta_y, &delta_z);
+    if (delta_y == 0.0 && delta_z == 0.0)
+    {
+        return (BCLIBC_V3dT){range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
+    }
+}
+
+BCLIBC_V3dT BCLIBC_adjustRangeFromCoriolis(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector)
+{
+    if (!coriolis)
+    {
+        return *range_vector;
+    }
+    return BCLIBC_Coriolis_adjustRange(coriolis, time, range_vector);
 }
 
 /**
@@ -701,28 +746,28 @@ void BCLIBC_Coriolis_coriolisAccelerationLocal(
  * for the interpolation key.
  *
  * @param p Pointer to the BCLIBC_BaseTrajData structure.
- * @param key_kind The BCLIBC_InterpKey specifying which field to retrieve (e.g., BCLIBC_INTERP_KEY_TIME, BCLIBC_INTERP_KEY_MACH, BCLIBC_INTERP_KEY_POS_X).
+ * @param key_kind The BCLIBC_BaseTrajSeq_InterpKey specifying which field to retrieve (e.g., BCLIBC_BASE_TRAJ_INTERP_KEY_TIME, BCLIBC_BASE_TRAJ_INTERP_KEY_MACH, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X).
  * @return The value of the requested field. Returns 0.0 for an unknown key.
  */
-static inline double get_key_value(const BCLIBC_BaseTrajData *restrict p, BCLIBC_InterpKey key_kind)
+static inline double get_key_value(const BCLIBC_BaseTrajData *restrict p, BCLIBC_BaseTrajSeq_InterpKey key_kind)
 {
     switch (key_kind)
     {
-    case BCLIBC_INTERP_KEY_TIME:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_TIME:
         return p->time;
-    case BCLIBC_INTERP_KEY_MACH:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_MACH:
         return p->mach;
-    case BCLIBC_INTERP_KEY_POS_X:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X:
         return p->position.x;
-    case BCLIBC_INTERP_KEY_POS_Y:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y:
         return p->position.y;
-    case BCLIBC_INTERP_KEY_POS_Z:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z:
         return p->position.z;
-    case BCLIBC_INTERP_KEY_VEL_X:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X:
         return p->velocity.x;
-    case BCLIBC_INTERP_KEY_VEL_Y:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y:
         return p->velocity.y;
-    case BCLIBC_INTERP_KEY_VEL_Z:
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z:
         return p->velocity.z;
     default:
         return 0.0;
@@ -745,7 +790,7 @@ static inline double get_key_value(const BCLIBC_BaseTrajData *restrict p, BCLIBC
  * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
  */
 BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
-    BCLIBC_InterpKey key_kind,
+    BCLIBC_BaseTrajSeq_InterpKey key_kind,
     double key_value,
     const BCLIBC_BaseTrajData *restrict p0,
     const BCLIBC_BaseTrajData *restrict p1,
@@ -780,7 +825,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
     // Scalar interpolation using PCHIP
 
     // Interpolate all scalar fields
-    out->time = (key_kind == BCLIBC_INTERP_KEY_TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
+    out->time = (key_kind == BCLIBC_BASE_TRAJ_INTERP_KEY_TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
     out->position = (BCLIBC_V3dT){
         BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
         BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
@@ -790,7 +835,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
         BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
         BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
 
-    out->mach = (key_kind == BCLIBC_INTERP_KEY_MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
+    out->mach = (key_kind == BCLIBC_BASE_TRAJ_INTERP_KEY_MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
 
     return BCLIBC_E_NO_ERROR;
 }
