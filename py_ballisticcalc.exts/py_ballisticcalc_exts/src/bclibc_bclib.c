@@ -663,13 +663,13 @@ BCLIBC_V3dT BCLIBC_Coriolis_adjustRange(const BCLIBC_Coriolis *coriolis, double 
     {
         return *range_vector;
     }
-
     double delta_y, delta_z;
     BCLIBC_Coriolis_flatFireOffsets(coriolis, time, range_vector->x, range_vector->y, &delta_y, &delta_z);
     if (delta_y == 0.0 && delta_z == 0.0)
     {
-        return (BCLIBC_V3dT){range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
+        return *range_vector;
     }
+    return (BCLIBC_V3dT){range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
 }
 
 BCLIBC_V3dT BCLIBC_adjustRangeFromCoriolis(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector)
