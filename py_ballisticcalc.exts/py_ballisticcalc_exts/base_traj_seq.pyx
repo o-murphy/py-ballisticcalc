@@ -14,13 +14,15 @@ passing Python cdef-class instances into nogil code paths.
 """
 
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport BCLIBC_InterpKey
+from py_ballisticcalc_exts.bclib cimport (
+    BCLIBC_BaseTrajData,
+    BCLIBC_BaseTrajSeq_InterpKey,
+    BCLIBC_ErrorType,
+)
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport _attribute_to_key, _key_to_attribute
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
 __all__ = ('BaseTrajSeqT')
 
@@ -79,7 +81,7 @@ cdef class BaseTrajSeqT:
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
-        cdef BCLIBC_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BCLIBC_BaseTrajData output
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_interpolateAt(
             &self._c_view, idx, key_kind, key_value, &output
@@ -94,8 +96,8 @@ cdef class BaseTrajSeqT:
             raise IndexError(
                 "BCLIBC_BaseTrajSeq_interpolateAt requires idx with valid neighbors (idx-1, idx, idx+1)"
             )
-        if err == BCLIBC_ErrorType.BCLIBC_E_BCLIBC_INTERP_KEY_ERROR:
-            raise AttributeError("invalid BCLIBC_InterpKey")
+        if err == BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR:
+            raise AttributeError("invalid BCLIBC_BaseTrajSeq_InterpKey")
         raise RuntimeError(
             f"undefined error occured during BCLIBC_BaseTrajSeq_interpolateAt, error code: {err}"
         )
@@ -107,7 +109,7 @@ cdef class BaseTrajSeqT:
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
-        cdef BCLIBC_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
 
         cdef BCLIBC_BaseTrajData out
         cdef double _start_from_time = 0.0

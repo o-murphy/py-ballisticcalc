@@ -16,8 +16,8 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps_spinDrift,
     BCLIBC_ShotProps_updateStabilityCoefficient,
     BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
-    calculateEnergy,
-    calculateOgw,
+    BCLIBC_calculateEnergy,
+    BCLIBC_calculateOgw,
     BCLIBC_ErrorType,
 )
 
@@ -68,12 +68,12 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double energy(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return calculateEnergy(self._engine.shot.weight, velocity_fps)
+        return BCLIBC_calculateEnergy(self._engine.shot.weight, velocity_fps)
 
     cpdef double ogw(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return calculateOgw(self._engine.shot.weight, velocity_fps)
+        return BCLIBC_calculateOgw(self._engine.shot.weight, velocity_fps)
 
     cpdef int step_count(self):
         return self.integration_step_count

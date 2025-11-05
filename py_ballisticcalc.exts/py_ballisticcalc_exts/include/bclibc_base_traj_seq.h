@@ -77,11 +77,11 @@ extern "C"
      * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
      * @return 1 on success, 0 on failure.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out);
     BCLIBC_BaseTraj *BCLIBC_BaseTrajSeq_getRawItem(const BCLIBC_BaseTrajSeq *seq, ssize_t idx);
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAtSlantHeight(const BCLIBC_BaseTrajSeq *seq, double look_angle_rad, double value, BCLIBC_BaseTrajData *out);
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_BaseTrajData *out);
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(const BCLIBC_BaseTrajSeq *seq, BCLIBC_InterpKey key_kind, double key_value, double start_from_time, BCLIBC_BaseTrajData *out);
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(const BCLIBC_BaseTrajSeq *seq, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, double start_from_time, BCLIBC_BaseTrajData *out);
 
 #ifdef __cplusplus
 }

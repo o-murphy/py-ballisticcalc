@@ -16,7 +16,7 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_WindSock,
     BCLIBC_Coriolis,
     BCLIBC_WindSock_init,
-    BCLIBC_InterpKey,
+    BCLIBC_BaseTrajSeq_InterpKey,
 )
 
 # noinspection PyUnresolvedReferences
@@ -130,50 +130,50 @@ cdef object _v3d_to_vector(const BCLIBC_V3dT *v):
     return Vector(v.x, v.y, v.z)
 
 
-cdef BCLIBC_InterpKey _attribute_to_key(str key_attribute):
-    cdef BCLIBC_InterpKey key_kind
+cdef BCLIBC_BaseTrajSeq_InterpKey _attribute_to_key(str key_attribute):
+    cdef BCLIBC_BaseTrajSeq_InterpKey key_kind
 
     if key_attribute == 'time':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_TIME
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_TIME
     elif key_attribute == 'mach':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_MACH
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_MACH
     elif key_attribute == 'position.x':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_X
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X
     elif key_attribute == 'position.y':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Y
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y
     elif key_attribute == 'position.z':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Z
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z
     elif key_attribute == 'velocity.x':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_X
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X
     elif key_attribute == 'velocity.y':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Y
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y
     elif key_attribute == 'velocity.z':
-        key_kind = BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Z
+        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z
     else:
         raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
     return key_kind
 
-cdef str _key_to_attribute(BCLIBC_InterpKey key_kind):
+cdef str _key_to_attribute(BCLIBC_BaseTrajSeq_InterpKey key_kind):
     cdef str key_attribute
 
-    if key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_TIME:
+    if key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_TIME:
         key_attribute = 'time'
-    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_MACH:
+    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_MACH:
         key_attribute = 'mach'
-    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_X:
+    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X:
         key_attribute = 'position.x'
-    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Y:
+    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y:
         key_attribute = 'position.y'
-    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_POS_Z:
+    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z:
         key_attribute = 'position.z'
-    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_X:
+    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X:
         key_attribute = 'velocity.x'
-    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Y:
+    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y:
         key_attribute = 'velocity.y'
-    elif key_kind == BCLIBC_InterpKey.BCLIBC_INTERP_KEY_VEL_Z:
+    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z:
         key_attribute = 'velocity.z'
     else:
-        raise ValueError(f"Unknown BCLIBC_InterpKey value: {key_kind}")
+        raise ValueError(f"Unknown BCLIBC_BaseTrajSeq_InterpKey value: {key_kind}")
 
     return key_attribute

@@ -8,7 +8,7 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_Wind,
     BCLIBC_Coriolis,
     BCLIBC_WindSock,
-    BCLIBC_InterpKey,
+    BCLIBC_BaseTrajSeq_InterpKey,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
@@ -36,5 +36,5 @@ cdef object _new_rad(double val)
 
 cdef object _v3d_to_vector(const BCLIBC_V3dT *v)
 
-cdef BCLIBC_InterpKey _attribute_to_key(str key_attribute)
-cdef str _key_to_attribute(BCLIBC_InterpKey key_kind)
+cdef BCLIBC_BaseTrajSeq_InterpKey _attribute_to_key(str key_attribute)
+cdef str _key_to_attribute(BCLIBC_BaseTrajSeq_InterpKey key_kind)

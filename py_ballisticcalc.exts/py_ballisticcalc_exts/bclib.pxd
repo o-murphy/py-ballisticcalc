@@ -151,23 +151,23 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         const BCLIBC_ShotProps *shot_props_ptr, double mach
     ) noexcept nogil
 
-    ctypedef enum BCLIBC_InterpKey:
-        BCLIBC_INTERP_KEY_TIME
-        BCLIBC_INTERP_KEY_MACH
-        BCLIBC_INTERP_KEY_POS_X
-        BCLIBC_INTERP_KEY_POS_Y
-        BCLIBC_INTERP_KEY_POS_Z
-        BCLIBC_INTERP_KEY_VEL_X
-        BCLIBC_INTERP_KEY_VEL_Y
-        BCLIBC_INTERP_KEY_VEL_Z
+    ctypedef enum BCLIBC_BaseTrajSeq_InterpKey:
+        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME
+        BCLIBC_BASE_TRAJ_INTERP_KEY_MACH
+        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X
+        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y
+        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z
+        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X
+        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y
+        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z
 
     # helpers
-    double getCorrection(double distance, double offset) noexcept nogil
-    double calculateEnergy(double bulletWeight, double velocity) noexcept nogil
-    double calculateOgw(double bulletWeight, double velocity) noexcept nogil
+    double BCLIBC_getCorrection(double distance, double offset) noexcept nogil
+    double BCLIBC_calculateEnergy(double bulletWeight, double velocity) noexcept nogil
+    double BCLIBC_calculateOgw(double bulletWeight, double velocity) noexcept nogil
 
     BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
-        BCLIBC_InterpKey key_kind,
+        BCLIBC_BaseTrajSeq_InterpKey key_kind,
         double key_value,
         const BCLIBC_BaseTrajData *p0,
         const BCLIBC_BaseTrajData *p1,

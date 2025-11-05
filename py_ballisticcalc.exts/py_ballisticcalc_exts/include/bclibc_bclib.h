@@ -142,15 +142,19 @@ typedef struct
  */
 typedef enum
 {
-    BCLIBC_INTERP_KEY_TIME,
-    BCLIBC_INTERP_KEY_MACH,
-    BCLIBC_INTERP_KEY_POS_X,
-    BCLIBC_INTERP_KEY_POS_Y,
-    BCLIBC_INTERP_KEY_POS_Z,
-    BCLIBC_INTERP_KEY_VEL_X,
-    BCLIBC_INTERP_KEY_VEL_Y,
-    BCLIBC_INTERP_KEY_VEL_Z
-} BCLIBC_InterpKey;
+    BCLIBC_BASE_TRAJ_INTERP_KEY_TIME,
+    BCLIBC_BASE_TRAJ_INTERP_KEY_MACH,
+    BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X,
+    BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y,
+    BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z,
+    BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X,
+    BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y,
+    BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z,
+} BCLIBC_BaseTrajSeq_InterpKey;
+
+#ifdef __cplusplus
+#define restrict
+#endif
 
 #ifdef __cplusplus
 extern "C"
@@ -179,18 +183,22 @@ extern "C"
     BCLIBC_ErrorType BCLIBC_WindSock_updateCache(BCLIBC_WindSock *ws);
     BCLIBC_V3dT BCLIBC_WindSock_vectorForRange(BCLIBC_WindSock *ws, double next_range_param);
 
-    // helpers
-    double getCorrection(double distance, double offset);
-    double calculateEnergy(double bulletWeight, double velocity);
-    double calculateOgw(double bulletWeight, double velocity);
-
+    BCLIBC_V3dT BCLIBC_adjustRangeFromCoriolis(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector);
     void BCLIBC_Coriolis_coriolisAccelerationLocal(
         const BCLIBC_Coriolis *restrict coriolis_ptr,
         const BCLIBC_V3dT *restrict velocity_ptr,
         BCLIBC_V3dT *restrict accel_ptr);
 
+    // helpers
+    double BCLIBC_getCorrection(double distance, double offset);
+    double BCLIBC_calculateEnergy(double bulletWeight, double velocity);
+    double BCLIBC_calculateOgw(double bulletWeight, double velocity);
+
+    void BCLIBC_Coriolis_flatFireOffsets(const BCLIBC_Coriolis *coriolis, double time, double distance_ft, double drop_ft, double *delta_y, double *delta_z);
+    BCLIBC_V3dT BCLIBC_Coriolis_adjustRange(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector);
+
     BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
-        BCLIBC_InterpKey key_kind,
+        BCLIBC_BaseTrajSeq_InterpKey key_kind,
         double key_value,
         const BCLIBC_BaseTrajData *restrict p0,
         const BCLIBC_BaseTrajData *restrict p1,

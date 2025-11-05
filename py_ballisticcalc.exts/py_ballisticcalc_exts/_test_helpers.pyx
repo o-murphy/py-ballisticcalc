@@ -17,11 +17,12 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps_updateStabilityCoefficient,
     BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
     BCLIBC_TrajFlag,
-    calculateEnergy,
-    calculateOgw,
+    BCLIBC_calculateEnergy,
+    BCLIBC_calculateOgw,
+    BCLIBC_BaseTrajData,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT, BCLIBC_BaseTrajData
+from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
@@ -113,11 +114,11 @@ cpdef dict introspect_shot(size_t shot_props_addr):
 
 cpdef double energy_eval(size_t shot_props_addr, double velocity_fps):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    return calculateEnergy(sp_ptr.weight, velocity_fps)
+    return BCLIBC_calculateEnergy(sp_ptr.weight, velocity_fps)
 
 cpdef double ogw_eval(size_t shot_props_addr, double velocity_fps):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    return calculateOgw(sp_ptr.weight, velocity_fps)
+    return BCLIBC_calculateOgw(sp_ptr.weight, velocity_fps)
 
 cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr

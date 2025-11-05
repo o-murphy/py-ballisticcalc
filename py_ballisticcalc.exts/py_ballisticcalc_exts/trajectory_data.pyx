@@ -13,7 +13,7 @@ from cython cimport final
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ErrorType,
     BCLIBC_BaseTrajData,
-    BCLIBC_InterpKey,
+    BCLIBC_BaseTrajSeq_InterpKey,
     BCLIBC_BaseTrajData_interpolate,
 )
 # noinspection PyUnresolvedReferences
@@ -66,7 +66,7 @@ cdef class BaseTrajDataT:
             ZeroDivisionError: If the interpolation fails due to zero division.
                                (This will result if two of the points are identical).
         """
-        cdef BCLIBC_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BCLIBC_BaseTrajData out
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
             key_kind, key_value,
@@ -79,7 +79,7 @@ cdef class BaseTrajDataT:
 
         if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
             raise ValueError("invalid BCLIBC_BaseTrajData_interpolate input")
-        if err == BCLIBC_ErrorType.BCLIBC_E_BCLIBC_INTERP_KEY_ERROR:
+        if err == BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
         if err == BCLIBC_ErrorType.BCLIBC_E_ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")

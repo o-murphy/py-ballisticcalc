@@ -8,12 +8,13 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps,
     BCLIBC_WindSock,
     BCLIBC_TrajFlag,
+    BCLIBC_BaseTrajData,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
 
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
@@ -218,12 +219,15 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,
-        BCLIBC_ErrorFrame *err,
-        BCLIBC_OutOfRangeError *err_data
+        const BCLIBC_ErrorFrame *err,
+        const BCLIBC_OutOfRangeError *err_data
     )
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
-        BCLIBC_ErrorFrame *err,
-        BCLIBC_ZeroFindingError *zero_error
+        const BCLIBC_ErrorFrame *err,
+        const BCLIBC_ZeroFindingError *zero_error
     )
-    cdef void _raise_solver_runtime_error(CythonizedBaseIntegrationEngine self, BCLIBC_ErrorFrame *err)
+    cdef void _raise_solver_runtime_error(
+        CythonizedBaseIntegrationEngine self,
+        const BCLIBC_ErrorFrame *err
+    )

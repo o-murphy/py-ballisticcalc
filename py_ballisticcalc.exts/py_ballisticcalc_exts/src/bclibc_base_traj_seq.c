@@ -6,30 +6,30 @@
 #include "bclibc_base_traj_seq.h"
 
 // Lookup table
-static const size_t BCLIBC_interp_key_offsets[] = {
-    [BCLIBC_INTERP_KEY_TIME] = offsetof(BCLIBC_BaseTraj, time),
-    [BCLIBC_INTERP_KEY_MACH] = offsetof(BCLIBC_BaseTraj, mach),
-    [BCLIBC_INTERP_KEY_POS_X] = offsetof(BCLIBC_BaseTraj, px),
-    [BCLIBC_INTERP_KEY_POS_Y] = offsetof(BCLIBC_BaseTraj, py),
-    [BCLIBC_INTERP_KEY_POS_Z] = offsetof(BCLIBC_BaseTraj, pz),
-    [BCLIBC_INTERP_KEY_VEL_X] = offsetof(BCLIBC_BaseTraj, vx),
-    [BCLIBC_INTERP_KEY_VEL_Y] = offsetof(BCLIBC_BaseTraj, vy),
-    [BCLIBC_INTERP_KEY_VEL_Z] = offsetof(BCLIBC_BaseTraj, vz),
+static const size_t BCLIBC_BaseTraj_InterpKey_offsets[] = {
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_TIME] = offsetof(BCLIBC_BaseTraj, time),
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_MACH] = offsetof(BCLIBC_BaseTraj, mach),
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X] = offsetof(BCLIBC_BaseTraj, px),
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y] = offsetof(BCLIBC_BaseTraj, py),
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z] = offsetof(BCLIBC_BaseTraj, pz),
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X] = offsetof(BCLIBC_BaseTraj, vx),
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y] = offsetof(BCLIBC_BaseTraj, vy),
+    [BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z] = offsetof(BCLIBC_BaseTraj, vz),
 };
 
 /**
- * Retrieves a specific double value from a BCLIBC_BaseTraj struct using an BCLIBC_InterpKey.
+ * Retrieves a specific double value from a BCLIBC_BaseTraj struct using an BCLIBC_BaseTrajSeq_InterpKey.
  *
  * @param p A pointer to the BCLIBC_BaseTraj struct.
- * @param key_kind The BCLIBC_InterpKey indicating which value to retrieve.
+ * @param key_kind The BCLIBC_BaseTrajSeq_InterpKey indicating which value to retrieve.
  * @return The corresponding double value, or 0.0 if the key is unrecognized.
  */
 static inline double BCLIBC_BaseTraj_keyValFromKindBuf(
-    const BCLIBC_BaseTraj *p, BCLIBC_InterpKey key_kind)
+    const BCLIBC_BaseTraj *p, BCLIBC_BaseTrajSeq_InterpKey key_kind)
 {
-    if (key_kind < 0 || key_kind >= sizeof(BCLIBC_interp_key_offsets) / sizeof(BCLIBC_interp_key_offsets[0]))
+    if (key_kind < 0 || key_kind >= sizeof(BCLIBC_BaseTraj_InterpKey_offsets) / sizeof(BCLIBC_BaseTraj_InterpKey_offsets[0]))
         return 0.0;
-    return *(const double *)((const char *)p + BCLIBC_interp_key_offsets[key_kind]);
+    return *(const double *)((const char *)p + BCLIBC_BaseTraj_InterpKey_offsets[key_kind]);
 }
 
 /**
@@ -57,8 +57,8 @@ static inline double BCLIBC_BaseTraj_slantValBuf(const BCLIBC_BaseTraj *p, doubl
  * Vectorized 3-point interpolation for all trajectory components.
  *
  * Performs PCHIP interpolation for all fields of BCLIBC_BaseTraj in a single pass.
- * When interpolating by BCLIBC_INTERP_KEY_TIME, the time field is set directly to x.
- * When interpolating by BCLIBC_INTERP_KEY_MACH, the mach field is set directly to x.
+ * When interpolating by BCLIBC_BASE_TRAJ_INTERP_KEY_TIME, the time field is set directly to x.
+ * When interpolating by BCLIBC_BASE_TRAJ_INTERP_KEY_MACH, the mach field is set directly to x.
  *
  * @param x The target value to interpolate at.
  * @param ox0 Key value at point 0.
@@ -68,15 +68,15 @@ static inline double BCLIBC_BaseTraj_slantValBuf(const BCLIBC_BaseTraj *p, doubl
  * @param p1 Pointer to trajectory point 1.
  * @param p2 Pointer to trajectory point 2.
  * @param out Pointer to output BCLIBC_BaseTraj where results will be stored.
- * @param skip_key BCLIBC_InterpKey indicating which field is the interpolation key.
+ * @param skip_key BCLIBC_BaseTrajSeq_InterpKey indicating which field is the interpolation key.
  */
 static void BCLIBC_interpolate3ptVectorized(
     double x, double ox0, double ox1, double ox2,
     const BCLIBC_BaseTraj *p0, const BCLIBC_BaseTraj *p1, const BCLIBC_BaseTraj *p2,
-    BCLIBC_BaseTraj *out, BCLIBC_InterpKey skip_key)
+    BCLIBC_BaseTraj *out, BCLIBC_BaseTrajSeq_InterpKey skip_key)
 {
     // Time: either use x directly (if interpolating by time) or interpolate
-    out->time = (skip_key == BCLIBC_INTERP_KEY_TIME)
+    out->time = (skip_key == BCLIBC_BASE_TRAJ_INTERP_KEY_TIME)
                     ? x
                     : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
 
@@ -91,7 +91,7 @@ static void BCLIBC_interpolate3ptVectorized(
     out->vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
 
     // Mach: either use x directly (if interpolating by mach) or interpolate
-    out->mach = (skip_key == BCLIBC_INTERP_KEY_MACH)
+    out->mach = (skip_key == BCLIBC_BASE_TRAJ_INTERP_KEY_MACH)
                     ? x
                     : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
 }
@@ -110,7 +110,7 @@ static void BCLIBC_interpolate3ptVectorized(
  * @param out Pointer to a BCLIBC_BaseTraj struct where the interpolated result will be stored.
  * @return BCLIBC_E_NO_ERROR on success, or an BCLIBC_ErrorType on failure.
  */
-static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateRaw(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_InterpKey key_kind, double key_value, BCLIBC_BaseTraj *out)
+static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateRaw(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, BCLIBC_BaseTraj *out)
 {
     if (!seq || !out)
     {
@@ -156,7 +156,7 @@ static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateRaw(const BCLIBC_BaseTrajS
     return BCLIBC_E_NO_ERROR;
 }
 
-BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out)
+BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out)
 {
     if (!seq || !out)
     {
@@ -167,7 +167,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq,
     int err = BCLIBC_BaseTrajSeq_interpolateRaw(seq, idx, key_kind, key_value, &raw_output);
     if (err != BCLIBC_E_NO_ERROR)
     {
-        return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BCLIBC_INTERP_KEY_ERROR
+        return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR
     }
     out->time = raw_output.time;
     out->position = (BCLIBC_V3dT){raw_output.px, raw_output.py, raw_output.pz};
@@ -374,13 +374,13 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_append(BCLIBC_BaseTrajSeq *seq, double time,
  *   or first <= key_value (if decreasing).
  *
  * @param seq Pointer to the BCLIBC_BaseTrajSeq sequence.
- * @param key_kind The BCLIBC_InterpKey specifying which component to search by.
+ * @param key_kind The BCLIBC_BaseTrajSeq_InterpKey specifying which component to search by.
  * @param key_value The value to locate.
  * @return The center index for interpolation, or -1 if sequence is too short or NULL.
  */
 static ssize_t BCLIBC_BaseTrajSeq_bisectCenterIdxBuf(
     const BCLIBC_BaseTrajSeq *seq,
-    BCLIBC_InterpKey key_kind,
+    BCLIBC_BaseTrajSeq_InterpKey key_kind,
     double key_value)
 {
     if (!seq || seq->length < 3)
@@ -597,7 +597,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(const BCLIBC_BaseTrajSeq *seq, ssize
 static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAtCenterWithLog(
     const BCLIBC_BaseTrajSeq *seq,
     ssize_t idx,
-    BCLIBC_InterpKey key_kind,
+    BCLIBC_BaseTrajSeq_InterpKey key_kind,
     double key_value,
     BCLIBC_BaseTrajData *out)
 {
@@ -605,7 +605,7 @@ static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAtCenterWithLog(
     if (err != BCLIBC_E_NO_ERROR)
     {
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Interpolation failed at center index %zd, error code: 0x%X", idx, err);
-        return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BCLIBC_INTERP_KEY_ERROR
+        return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR
     }
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", idx);
     return BCLIBC_E_NO_ERROR;
@@ -631,7 +631,7 @@ static int BCLIBC_BaseTrajSeq_isClose(double a, double b, double epsilon)
  * @param key_kind Kind of key.
  * @return Value of the key.
  */
-static double BCLIBC_BaseTraj_keyVal(const BCLIBC_BaseTraj *elem, BCLIBC_InterpKey key_kind)
+static double BCLIBC_BaseTraj_keyVal(const BCLIBC_BaseTraj *elem, BCLIBC_BaseTrajSeq_InterpKey key_kind)
 {
     return BCLIBC_BaseTraj_keyValFromKindBuf(elem, key_kind);
 }
@@ -685,7 +685,7 @@ static ssize_t BCLIBC_BaseTrajSeq_findStartIndex(const BCLIBC_BaseTraj *buf, ssi
  * @param start_idx Index to start searching from.
  * @return Target index for interpolation, -1 if not found.
  */
-static ssize_t BCLIBC_BaseTrajSeq_findTargetIndex(const BCLIBC_BaseTraj *buf, ssize_t n, BCLIBC_InterpKey key_kind, double key_value, ssize_t start_idx)
+static ssize_t BCLIBC_BaseTrajSeq_findTargetIndex(const BCLIBC_BaseTraj *buf, ssize_t n, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, ssize_t start_idx)
 {
     double a, b;
 
@@ -724,7 +724,7 @@ static ssize_t BCLIBC_BaseTrajSeq_findTargetIndex(const BCLIBC_BaseTraj *buf, ss
  * @param out Output trajectory data.
  * @return BCLIBC_E_NO_ERROR if exact match found, otherwise BCLIBC_E_VALUE_ERROR.
  */
-static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_tryGetExact(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out)
+static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_tryGetExact(const BCLIBC_BaseTrajSeq *seq, ssize_t idx, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, BCLIBC_BaseTrajData *out)
 {
     const BCLIBC_BaseTraj *buf = seq->buffer;
     double epsilon = 1e-9;
@@ -756,7 +756,7 @@ static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_tryGetExact(const BCLIBC_BaseTrajSeq 
  */
 BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(
     const BCLIBC_BaseTrajSeq *seq,
-    BCLIBC_InterpKey key_kind,
+    BCLIBC_BaseTrajSeq_InterpKey key_kind,
     double key_value,
     double start_from_time,
     BCLIBC_BaseTrajData *out)
@@ -778,7 +778,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(
     ssize_t target_idx = -1;
 
     // Search from start_from_time if provided
-    if (start_from_time > 0.0 && key_kind != BCLIBC_INTERP_KEY_TIME)
+    if (start_from_time > 0.0 && key_kind != BCLIBC_BASE_TRAJ_INTERP_KEY_TIME)
     {
         ssize_t start_idx = BCLIBC_BaseTrajSeq_findStartIndex(buf, n, start_from_time);
 
