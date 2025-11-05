@@ -157,6 +157,10 @@ typedef enum
 #endif
 
 #ifdef __cplusplus
+#define restrict
+#endif
+
+#ifdef __cplusplus
 extern "C"
 {
 #endif
