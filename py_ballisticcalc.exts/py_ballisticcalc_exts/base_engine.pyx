@@ -43,6 +43,7 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorSource,
     BCLIBC_ErrorFrame,
     BCLIBC_ErrorType,
+    BCLIBC_ErrorStack,
     BCLIBC_ErrorStack_lastErr,
     BCLIBC_ErrorStack_toString,
 )
