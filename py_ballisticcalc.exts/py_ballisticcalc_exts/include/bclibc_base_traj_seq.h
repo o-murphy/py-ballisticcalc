@@ -20,6 +20,8 @@ typedef long ssize_t;
 #endif
 // --- END CROSS-PLATFORM FIX ---
 
+#define BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT 8
+
 /**
  * Simple C struct for trajectory data points used in the contiguous buffer.
  */

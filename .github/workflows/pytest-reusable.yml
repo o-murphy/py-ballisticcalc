@@ -100,24 +100,6 @@ jobs:
           uv sync -p ${{ inputs.python_version }} --no-dev --group test --extra exts
         shell: bash # Ensure this command runs in a bash shell environment
 
-      - name: Run tests with ${{ inputs.engine_name }}
-        # Execute pytest using the engine name provided as an input.
-        # --no-header for cleaner output, -v for verbose output, -n auto for parallel execution if applicable.
-        run: |
-          # 1. Run tests and save the exit code, suppressing the default failure behavior
-          pytest tests --no-header -v -n auto --engine=${{ inputs.engine_name }} || EXIT_CODE=$?
-          
-          # 2. Check the saved exit code. 
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
-            # Run again without parallelization (-n auto)
-            pytest tests -v -s -q --engine=${{ inputs.engine_name }}
-            # If the second attempt also fails, the script will exit with the non-zero code of this last command.
-          else
-            echo "Pytest succeeded on the first attempt."
-          fi
-        shell: bash # Ensure this command runs in a bash shell environment
-
       - name: Test Cythonized code (if applicable)
         if: startsWith(inputs.engine_name, 'cythonized_')
         run: |
@@ -130,6 +112,24 @@ jobs:
             echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
             # Run again without parallelization (-n auto)
             pytest ./py_ballisticcalc.exts/tests -v -s -q --engine=${{ inputs.engine_name }}
+            # If the second attempt also fails, the script will exit with the non-zero code of this last command.
+          else
+            echo "Pytest succeeded on the first attempt."
+          fi
+        shell: bash # Ensure this command runs in a bash shell environment
+
+      - name: Run tests with ${{ inputs.engine_name }}
+        # Execute pytest using the engine name provided as an input.
+        # --no-header for cleaner output, -v for verbose output, -n auto for parallel execution if applicable.
+        run: |
+          # 1. Run tests and save the exit code, suppressing the default failure behavior
+          pytest tests --no-header -v -n auto --engine=${{ inputs.engine_name }} || EXIT_CODE=$?
+          
+          # 2. Check the saved exit code. 
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
+            # Run again without parallelization (-n auto)
+            pytest tests -v -s -q --engine=${{ inputs.engine_name }}
             # If the second attempt also fails, the script will exit with the non-zero code of this last command.
           else
             echo "Pytest succeeded on the first attempt."

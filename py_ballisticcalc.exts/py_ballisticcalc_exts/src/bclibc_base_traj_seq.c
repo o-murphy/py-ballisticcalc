@@ -5,18 +5,6 @@
 #include "bclibc_bclib.h"
 #include "bclibc_base_traj_seq.h"
 
-// Lookup table
-static const size_t BCLIBC_BaseTraj_InterpKey_offsets[] = {
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_TIME] = offsetof(BCLIBC_BaseTraj, time),
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_MACH] = offsetof(BCLIBC_BaseTraj, mach),
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X] = offsetof(BCLIBC_BaseTraj, px),
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y] = offsetof(BCLIBC_BaseTraj, py),
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z] = offsetof(BCLIBC_BaseTraj, pz),
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X] = offsetof(BCLIBC_BaseTraj, vx),
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y] = offsetof(BCLIBC_BaseTraj, vy),
-    [BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z] = offsetof(BCLIBC_BaseTraj, vz),
-};
-
 /**
  * Retrieves a specific double value from a BCLIBC_BaseTraj struct using an BCLIBC_BaseTrajSeq_InterpKey.
  *
@@ -27,9 +15,32 @@ static const size_t BCLIBC_BaseTraj_InterpKey_offsets[] = {
 static inline double BCLIBC_BaseTraj_keyValFromKindBuf(
     const BCLIBC_BaseTraj *p, BCLIBC_BaseTrajSeq_InterpKey key_kind)
 {
-    if (key_kind < 0 || key_kind >= sizeof(BCLIBC_BaseTraj_InterpKey_offsets) / sizeof(BCLIBC_BaseTraj_InterpKey_offsets[0]))
+    if (key_kind < 0 || key_kind > BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT)
+    {
         return 0.0;
-    return *(const double *)((const char *)p + BCLIBC_BaseTraj_InterpKey_offsets[key_kind]);
+    }
+
+    switch (key_kind)
+    {
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_TIME:
+        return p->time;
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_MACH:
+        return p->mach;
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X:
+        return p->px;
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y:
+        return p->py;
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z:
+        return p->pz;
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X:
+        return p->vx;
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y:
+        return p->vy;
+    case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z:
+        return p->vz;
+    default:
+        return 0.0;
+    }
 }
 
 /**
