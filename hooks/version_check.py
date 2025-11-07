@@ -8,7 +8,6 @@
 import sys
 import os
 
-# Додаємо import io для примусового встановлення кодування
 import io 
 
 try:
@@ -46,15 +45,13 @@ def extract_dep_version(data, name):
 
 def main():
     # --- FIX for UnicodeEncodeError on Windows ---
-    # Примусово встановлюємо sys.stdout та sys.stderr на UTF-8 для коректного виводу емодзі
-    # Це допомагає обійти обмеження консолі cp1252 на Windows.
+    # Force set sys.stdout and sys.stderr to UTF-8
+    # for cp1252 on Windows.
     if sys.stdout.encoding.lower() not in ('utf-8', 'utf8'):
         try:
             sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
             sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
         except AttributeError:
-            # У деяких середовищах (наприклад, деякі CI), буфер може бути недоступний,
-            # але ми все одно намагаємося встановити кодування, якщо це можливо.
             pass
     # --- END FIX ---
     

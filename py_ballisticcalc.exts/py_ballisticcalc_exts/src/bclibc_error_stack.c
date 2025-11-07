@@ -144,13 +144,12 @@ void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_
         const int FILE_WIDTH = 50;
         const int FUNC_WIDTH = 25;
 
-        // Формуємо рядок
         snprintf(line, sizeof(line),
                  "[%d] %-*s :%-4d (%s) : [src=%-2d (%s), code=%-2d (%s)] %s\n",
                  i,
                  FILE_WIDTH, f->file,
                  f->line,
-                 f->func, // тут дужки без вирівнювання всередині
+                 f->func,
                  f->src,
                  BCLIBC_ErrorSource_toString(f->src),
                  f->code,

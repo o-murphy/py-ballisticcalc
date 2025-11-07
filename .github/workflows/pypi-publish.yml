@@ -28,7 +28,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            cibw_archs: "i686,x86_64" # x64 native, i686 через QEMU
+            cibw_archs: "i686,x86_64" # x64 native, i686 over QEMU
             needs_qemu: true
             
           - os: ubuntu-24.04-arm

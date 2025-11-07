@@ -648,7 +648,7 @@ UnitAliases: UnitAliasesType = {
     ("centimeter", "cm"): Unit.Centimeter,
     ("meter", "m"): Unit.Meter,
     ("kilometer", "km"): Unit.Kilometer,
-    ("line", "ln", "liniа"): Unit.Line,
+    ("line", "ln", "linia"): Unit.Line,
     ("footpound", "foot-pound", "ft⋅lbf", "ft⋅lb", "foot*pound", "ft*lbf", "ft*lb"): Unit.FootPound,
     ("joule", "J"): Unit.Joule,
     ("mmHg",): Unit.MmHg,

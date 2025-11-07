@@ -73,7 +73,7 @@ extern "C"
                     : ((level) >= BCLIBC_LOG_LEVEL_INFO)    ? "INFO"               \
                     : ((level) >= BCLIBC_LOG_LEVEL_DEBUG)   ? "DEBUG"              \
                                                             : "NOTSET",              \
-                    BCLIBC_ANSI_COLOR_RESET, /* <-- Новий параметр */              \
+                    BCLIBC_ANSI_COLOR_RESET,                                       \
                     __FILE__, __LINE__, __func__,                                  \
                     ##__VA_ARGS__);                                                \
         }                                                                          \
