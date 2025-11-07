@@ -74,52 +74,31 @@ if ENABLE_CYTHON_SAFETY:
     )
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
-
-C_SRC_DIR = EXTENSIONS_BASE_DIR / "src"
-C_INCLUDE_DIR = EXTENSIONS_BASE_DIR / "include"
+SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
+INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
 
 # Define all C source files and their paths
-C_SOURCES = {
-    "v3d": C_SRC_DIR / "bclibc_v3d.c",
-    "log": C_SRC_DIR / "bclibc_log.c",
-    "error_stack": C_SRC_DIR / "bclibc_error_stack.c",
-    "bclib": C_SRC_DIR / "bclibc_bclib.c",
-    "bind": C_SRC_DIR / "bclibc_py_bind.c",
-    "interp": C_SRC_DIR / "bclibc_interp.c",
-    "euler": C_SRC_DIR / "bclibc_euler.c",
-    "rk4": C_SRC_DIR / "bclibc_rk4.c",
-    "base_traj_seq": C_SRC_DIR / "bclibc_base_traj_seq.c",
-    "engine": C_SRC_DIR / "bclibc_engine.c",
-    # Add any other C source files here
+SOURCE_PATHS = {
+    "v3d": SRC_DIR_PATH / "bclibc_v3d.c",
+    "log": SRC_DIR_PATH / "bclibc_log.c",
+    "error_stack": SRC_DIR_PATH / "bclibc_error_stack.c",
+    "bclib": SRC_DIR_PATH / "bclibc_bclib.c",
+    "bind": SRC_DIR_PATH / "bclibc_py_bind.c",
+    "interp": SRC_DIR_PATH / "bclibc_interp.c",
+    "euler": SRC_DIR_PATH / "bclibc_euler.c",
+    "rk4": SRC_DIR_PATH / "bclibc_rk4.c",
+    "base_traj_seq": SRC_DIR_PATH / "bclibc_base_traj_seq.c",
+    "engine": SRC_DIR_PATH / "bclibc_engine.c",
+    # C++ Sources:
+    "traj_filter": SRC_DIR_PATH / "bclibc_traj_filter.cpp",
 }
 
 # Define dependencies for each extension as a dictionary
 # Keys are extension names (as in extension_names list)
-# Values are lists of C source file keys from C_SOURCES that they depend on.
-EXTENSION_DEPS = {
+# Values are lists of C source file keys from SOURCE_PATHS that they depend on.
+C_EXTENSION_DEPS = {
     "bind": ["interp", "bclib", "bind", "log"],
     "base_traj_seq": ["interp", "bclib", "base_traj_seq", "log"],
-    "base_engine": ["interp", "bclib", "engine", "base_traj_seq", "error_stack", "log"],
-    "euler_engine": [
-        "v3d",
-        "bclib",
-        "euler",
-        "interp",
-        "base_traj_seq",
-        "engine",
-        "error_stack",
-        "log",
-    ],
-    "rk4_engine": [
-        "v3d",
-        "bclib",
-        "rk4",
-        "interp",
-        "base_traj_seq",
-        "engine",
-        "error_stack",
-        "log",
-    ],
     "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
     "_test_helpers": ["bclib", "interp", "log"],
@@ -127,13 +106,21 @@ EXTENSION_DEPS = {
     "_test_error_stack": ["error_stack", "log"],
 }
 
+_CPP_DEPS_BASIC = ["v3d", "bclib", "log", "error_stack", "interp", "base_traj_seq", "traj_filter"]
+CPP_EXTENSION_DEPS = {
+    "traj_filter": [*_CPP_DEPS_BASIC],
+    "base_engine": [*_CPP_DEPS_BASIC, "engine"],
+    "rk4_engine": [*_CPP_DEPS_BASIC, "engine", "rk4"],
+    "euler_engine": [*_CPP_DEPS_BASIC, "engine", "euler"],
+}
+
 TEST_EXTENSIONS_DEPS = {}
 
 # Use absolute paths for include directories
 include_dirs = [
     EXTENSIONS_BASE_DIR.as_posix(),  # For .pxd files
-    C_SRC_DIR.as_posix(),  # For source-level headers
-    C_INCLUDE_DIR.as_posix(),  # For public headers
+    SRC_DIR_PATH.as_posix(),  # For source-level headers
+    INCLUDE_DIR_PATH.as_posix(),  # For public headers
 ]
 
 # Platform-specific compiler flags
@@ -141,24 +128,38 @@ is_msvc = platform.system() == "Windows"
 
 if is_msvc:
     # MSVC-specific flags
-    extra_compile_args = [
-        "/O2",  # Optimize for speed (or /Od for debug)
-        "/W3",  # Warning level 3
-    ]
+    c_compile_args = ["/O2", "/W3"]
+    cpp_compile_args = ["/std:c++11", "/O2", "/W3"]
     # Crucial for MSVC on ARM
     if platform.machine().startswith("ARM"):
-        extra_compile_args.append("/fp:precise")
+        c_compile_args.append("/fp:precise")
+        cpp_compile_args.append("/fp:precise")
 else:
     # GCC/Clang flags
-    extra_compile_args = [
-        "-g",
-        "-O0",
-        "-std=c99",
-    ]
+    c_compile_args = ["-g", "-O0", "-std=c99"]
+    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall"]
+
+Extension(
+    "bclibc_core",
+    sources=[
+        "src/bclibc_core.pyx",
+        "src/bclibc_math.c",      # will be treated as C++
+        "src/bclibc_utils.c",
+        "src/bclibc_main.cpp",
+    ],
+    include_dirs=["include"],
+    language="c++",
+    extra_compile_args=cpp_compile_args,
+)
+
+
+cpp_extra_link_args = []
+if platform.system() == "Darwin":
+    cpp_extra_link_args = ["-stdlib=libc++"]
 
 
 # Dynamically create extensions for names in extension_names
-def collect_extensions(deps: Dict[str, Path], path: Path):
+def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = False):
     extensions_local = []
     for name, deps in deps.items():
         # Use subproject-local .pyx paths (these exist during build)
@@ -167,8 +168,8 @@ def collect_extensions(deps: Dict[str, Path], path: Path):
         # Add dependent C source files from the EXTENSION_DEPS dictionary
         # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
         for dep_key in deps:
-            if dep_key in C_SOURCES:
-                sources.append(C_SOURCES[dep_key])
+            if dep_key in SOURCE_PATHS:
+                sources.append(SOURCE_PATHS[dep_key])
             else:
                 print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
@@ -177,22 +178,40 @@ def collect_extensions(deps: Dict[str, Path], path: Path):
             # Enable tracing in both with-GIL and nogil regions
             define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
 
-        extensions_local.append(
-            Extension(
-                "py_ballisticcalc_exts." + name,
-                sources=[s.as_posix() for s in sources],
-                include_dirs=include_dirs,
-                define_macros=define_macros,
-                extra_compile_args=extra_compile_args,
-                # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
+        sources = [s.as_posix() for s in sources]
+
+        if not is_cpp:
+            extensions_local.append(
+                Extension(
+                    "py_ballisticcalc_exts." + name,
+                    sources=sources,
+                    include_dirs=include_dirs,
+                    language="c",
+                    define_macros=define_macros,
+                    extra_compile_args=c_compile_args,
+                    # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
+                )
             )
-        )
+        else:
+            extensions_local.append(
+                Extension(
+                    "py_ballisticcalc_exts." + name,
+                    sources=sources,
+                    include_dirs=include_dirs,
+                    # extra_objects=[],
+                    language="c++",
+                    extra_compile_args=cpp_compile_args,
+                    extra_link_args=cpp_extra_link_args,
+                )
+            )
+
     return extensions_local
 
 
 # Initialize extensions list
 extensions_list = []
-extensions_list.extend(collect_extensions(EXTENSION_DEPS, EXTENSIONS_BASE_DIR))
+extensions_list.extend(collect_extensions(C_EXTENSION_DEPS, EXTENSIONS_BASE_DIR))
+extensions_list.extend(collect_extensions(CPP_EXTENSION_DEPS, EXTENSIONS_BASE_DIR, is_cpp=True))
 
 # Standard cythonize with a clean in-project build dir; annotate only if coverage requested
 extensions = cythonize(

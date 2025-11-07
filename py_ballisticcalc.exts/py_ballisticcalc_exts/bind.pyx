@@ -76,7 +76,7 @@ cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
     cdef BCLIBC_Coriolis coriolis = {}  # << CRITICAL! should be defined
     memset(&coriolis, 0, sizeof(coriolis))  # CRITICAL: use memset to ensure initialized with zeros
-    
+
     if coriolis_obj:
         coriolis.sin_lat = coriolis_obj.sin_lat
         coriolis.cos_lat = coriolis_obj.cos_lat
