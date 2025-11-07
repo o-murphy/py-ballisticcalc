@@ -125,33 +125,32 @@ include_dirs = [
 
 # Platform-specific compiler flags
 is_msvc = platform.system() == "Windows"
+is_macos = platform.system() == "Darwin"
+
 
 if is_msvc:
     # MSVC-specific flags
     c_compile_args = ["/O2", "/W3"]
     cpp_compile_args = ["/std:c++11", "/O2", "/W3"]
+    cpp_extra_link_args = []
     # Crucial for MSVC on ARM
     if platform.machine().startswith("ARM"):
         c_compile_args.append("/fp:precise")
         cpp_compile_args.append("/fp:precise")
-else:
-    # GCC/Clang flags
+elif is_macos:
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall"]
-
-
-cpp_extra_link_args = []
-if platform.system() == "Darwin":
+    cpp_compile_args = ["-O2", "-Wall"]  # assumes it uses -std=c++14 or newer
     cpp_extra_link_args = ["-stdlib=libc++"]
-
-
-# --- macOS compiler sanity ---
-if platform.system() == "Darwin":
     os.environ["CC"] = "clang"
     os.environ["CXX"] = "clang++"
     import sysconfig
     sysconfig.get_config_vars()["CC"] = "clang"
     sysconfig.get_config_vars()["CXX"] = "clang++"
+else:
+    # GCC/Clang flags
+    c_compile_args = ["-g", "-O0", "-std=c99"]
+    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall"]
+    cpp_extra_link_args = []
 
 
 # Dynamically create extensions for names in extension_names
