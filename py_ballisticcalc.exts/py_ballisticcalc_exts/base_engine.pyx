@@ -16,9 +16,8 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTrajSeqT,
+    BCLIBC_BaseTrajSeq_getItem,
 )
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     # types and methods
@@ -52,13 +51,15 @@ from py_ballisticcalc_exts.error_stack cimport (
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.traj_filter cimport TrajectoryDataFilterT, BCLIBC_TrajectoryData
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
-from py_ballisticcalc.engines.base_engine import create_base_engine_config, TrajectoryDataFilter
+from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
-from py_ballisticcalc.trajectory_data import HitResult, BaseTrajData, TrajectoryData
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 from py_ballisticcalc.unit import Angular
 
 __all__ = (
@@ -293,14 +294,25 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_TerminationReason reason
             BCLIBC_StatusCode status
             BaseTrajSeqT trajectory
-            BaseTrajDataT init, fin
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
-            object props, tdf
+            object props
             object termination_reason = None
+            TrajectoryDataFilterT tdf
+            BCLIBC_BaseTrajData init = {}
+            BCLIBC_BaseTrajData fin = {}
+            BCLIBC_BaseTrajData temp_btd = {}
+            BCLIBC_TrajectoryData temp_td
+
+        # TODO: possible to make same using single BCLIBC_BaseTrajData struct
+        # CRITICAL: use memset to ensure initialized with zeros
+        memset(&init, 0, sizeof(init))
+        memset(&fin, 0, sizeof(fin))
+        memset(&temp_btd, 0, sizeof(temp_btd))
 
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
+        cdef BCLIBC_ErrorType err_t
 
         try:
             trajectory = BaseTrajSeqT()
@@ -321,10 +333,6 @@ cdef class CythonizedBaseIntegrationEngine:
             # Always release C resources
             self._release_trajectory()
 
-        props = ShotProps.from_shot(shot_info)
-        props.filter_flags = filter_flags
-        props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
-
         # Extract termination_reason from the result
         if reason == BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED:
             termination_reason = RangeError.MinimumVelocityReached
@@ -333,27 +341,46 @@ cdef class CythonizedBaseIntegrationEngine:
         elif reason == BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
 
-        init = trajectory[0]
-        tdf = TrajectoryDataFilter(props, filter_flags, init.position, init.velocity,
-                                   props.barrel_elevation_rad, props.look_angle_rad,
-                                   range_limit_ft, range_step_ft, time_step)
+        BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, 0, &init)
+
+        tdf = TrajectoryDataFilterT()
+        tdf.init(
+            &self._engine.shot, filter_flags, init.position, init.velocity,
+            self._engine.shot.barrel_elevation, self._engine.shot.look_angle,
+            range_limit_ft, range_step_ft, time_step
+        )
 
         # Feed step_data through TrajectoryDataFilter to get TrajectoryData
-        for _, d in enumerate(trajectory):
-            tdf.record(BaseTrajData(d.time, d.position, d.velocity, d.mach))
+        for i in range(len(trajectory)):
+            err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, i, &temp_btd)
+            if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+                raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
+            tdf.record(&temp_btd)
+
         if termination_reason is not None:
-            termination_reason = RangeError(termination_reason, tdf.records)
+            termination_reason = RangeError(termination_reason, tdf.get_records())
             # For incomplete trajectories we add last point, so long as it isn't a duplicate
-            fin = trajectory[-1]
-            if fin.time > tdf.records[-1].time:
-                tdf.records.append(TrajectoryData.from_props(
-                    props,
-                    fin.time, fin.position, fin.velocity, fin.mach,
+            err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, -1, &fin)
+            if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+                raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
+
+            if fin.time > tdf.get_record(-1).time:
+                temp_td = BCLIBC_TrajectoryData(
+                    &self._engine.shot,
+                    fin.time,
+                    &fin.position,
+                    &fin.velocity,
+                    fin.mach,
                     BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE
-                ))
+                )
+                tdf.append(&temp_td)
+
+        props = ShotProps.from_shot(shot_info)
+        props.filter_flags = filter_flags
+        props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
         return HitResult(
             props,
-            tdf.records,
+            tdf.get_records(),
             trajectory if dense_output else None,
             filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
@@ -712,12 +739,17 @@ cdef class CythonizedBaseIntegrationEngine:
         const BCLIBC_ErrorFrame *err,
         const BCLIBC_ZeroFindingError *zero_error
     ):
+        cdef const char* c_msg
+        cdef object error_message
+
         if err.code == BCLIBC_ErrorType.BCLIBC_E_ZERO_FINDING_ERROR:
+            c_msg = <const char*>err.msg
+            error_message = c_msg.decode('utf-8', 'replace') if c_msg is not NULL else "C-level error message was NULL"
             raise ZeroFindingError(
                 zero_error.zero_finding_error,
                 zero_error.iterations_count,
                 rad_from_c(zero_error.last_barrel_elevation_rad),
-                err.msg.decode('utf-8')
+                error_message
             )
 
     cdef void _raise_solver_runtime_error(

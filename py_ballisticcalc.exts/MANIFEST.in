@@ -6,6 +6,8 @@ recursive-include py_ballisticcalc_exts *.so
 recursive-include py_ballisticcalc_exts *.dylib
 recursive-include py_ballisticcalc_exts/include *.h
 recursive-include py_ballisticcalc_exts/src *.c
+recursive-include py_ballisticcalc_exts/include *.hpp
+recursive-include py_ballisticcalc_exts/src *.cpp
 recursive-include py.typed
 include LICENSE
 include README.md
