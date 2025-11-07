@@ -143,9 +143,6 @@ elif is_macos:
     cpp_extra_link_args = ["-stdlib=libc++"]
     os.environ["CC"] = "clang"
     os.environ["CXX"] = "clang++"
-    import sysconfig
-    sysconfig.get_config_vars()["CC"] = "clang"
-    sysconfig.get_config_vars()["CXX"] = "clang++"
 else:
     # GCC/Clang flags
     c_compile_args = ["-g", "-O0", "-std=c99"]
