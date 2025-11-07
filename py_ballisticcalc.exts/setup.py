@@ -139,23 +139,19 @@ else:
     c_compile_args = ["-g", "-O0", "-std=c99"]
     cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall"]
 
-Extension(
-    "bclibc_core",
-    sources=[
-        "src/bclibc_core.pyx",
-        "src/bclibc_math.c",      # will be treated as C++
-        "src/bclibc_utils.c",
-        "src/bclibc_main.cpp",
-    ],
-    include_dirs=["include"],
-    language="c++",
-    extra_compile_args=cpp_compile_args,
-)
-
 
 cpp_extra_link_args = []
 if platform.system() == "Darwin":
     cpp_extra_link_args = ["-stdlib=libc++"]
+
+
+# --- macOS compiler sanity ---
+if platform.system() == "Darwin":
+    os.environ["CC"] = "clang"
+    os.environ["CXX"] = "clang++"
+    import sysconfig
+    sysconfig.get_config_vars()["CC"] = "clang"
+    sysconfig.get_config_vars()["CXX"] = "clang++"
 
 
 # Dynamically create extensions for names in extension_names
