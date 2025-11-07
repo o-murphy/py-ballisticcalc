@@ -644,6 +644,7 @@ void BCLIBC_Coriolis_flatFireOffsets(const BCLIBC_Coriolis *coriolis, double tim
     {
         *delta_y = 0.0;
         *delta_z = 0.0;
+        return;
     }
 
     double horizontal = BCLIBC_cEarthAngularVelocityRadS * distance_ft * coriolis->sin_lat * time;

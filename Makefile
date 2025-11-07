@@ -25,7 +25,7 @@ sync-dev:
 # Action: Runs uv sync --dev --extra exts --no-cache to install extensions.
 sync-exts: clean-exts
 	@echo "--- Running full sync with extras and no-cache ---"
-	uv sync --dev --extra exts --no-cache
+	uv sync --dev --extra exts --reinstall --group test
 	@echo "✅ Exts sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # -------------------------------------------------------------

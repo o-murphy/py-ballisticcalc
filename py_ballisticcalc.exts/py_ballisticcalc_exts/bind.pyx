@@ -71,7 +71,7 @@ cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):
 
 
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
-    cdef BCLIBC_Coriolis coriolis
+    cdef BCLIBC_Coriolis coriolis = {}  # << CRITICAL! should be defined
 
     if coriolis_obj:
         coriolis.sin_lat = coriolis_obj.sin_lat
@@ -95,7 +95,7 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
     Processes the Python list, then delegates initialization to C.
     """
     cdef size_t length = <size_t> len(winds_py_list)
-    cdef BCLIBC_WindSock ws
+    cdef BCLIBC_WindSock ws = {}  # << CRITICAL! should be defined
     # Memory allocation for the BCLIBC_Wind array (remains in Cython)
     cdef BCLIBC_Wind * winds_array = <BCLIBC_Wind *> calloc(<size_t> length, sizeof(BCLIBC_Wind))
     if <void *> winds_array is NULL:

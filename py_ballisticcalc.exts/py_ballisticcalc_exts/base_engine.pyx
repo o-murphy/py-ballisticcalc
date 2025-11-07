@@ -36,6 +36,7 @@ from py_ballisticcalc_exts.bind cimport (
     BCLIBC_WindSock_from_pylist,
     _new_feet,
     _new_rad,
+    _v3d_to_vector,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport (
@@ -149,7 +150,7 @@ cdef class CythonizedBaseIntegrationEngine:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         self._init_trajectory(shot_info)
-        cdef BCLIBC_MaxRangeResult res
+        cdef BCLIBC_MaxRangeResult res = {}
         try:
             res = self._find_max_range(
                 angle_bracket_deg[0], angle_bracket_deg[1]
@@ -191,13 +192,17 @@ cdef class CythonizedBaseIntegrationEngine:
             TrajectoryData: The trajectory data at the apex.
         """
         self._init_trajectory(shot_info)
-        cdef BaseTrajDataT result
+        cdef BCLIBC_BaseTrajData result  # FIXME: in future int can be BCLIBC_TrajectoryData
         cdef object props
         try:
-            result = BaseTrajDataT(self._find_apex())
+            result = self._find_apex()
             props = ShotProps.from_shot(shot_info)
             return TrajectoryData.from_props(
-                props, result.time, result.position, result.velocity, result.mach)
+                props,
+                result.time,
+                _v3d_to_vector(&result.position),
+                _v3d_to_vector(&result.velocity),
+                result.mach)
         finally:
             self._release_trajectory()
 
@@ -592,11 +597,7 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_BaseTrajData: The trajectory data at the apex.
         """
 
-        cdef BCLIBC_BaseTrajData apex
-
-        # FIXME: possibly needs to be initialised with zeros
-        # apex = BCLIBC_BaseTrajData(
-        #     0.0, BCLIBC_V3dT(0.0, 0.0, 0.0), BCLIBC_V3dT(0.0, 0.0, 0.0), 0.0)
+        cdef BCLIBC_BaseTrajData apex = {}  # initialize with zeros
 
         cdef BCLIBC_StatusCode status = BCLIBC_EngineT_findApex(&self._engine, &apex)
         if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
@@ -723,7 +724,6 @@ cdef class CythonizedBaseIntegrationEngine:
         if stack.top <= 0 or f.code == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             return
 
-        # Отримуємо exception, дефолт – RuntimeError
         cdef object exception_type = ERROR_TYPE_TO_EXCEPTION.get(f.code, RuntimeError)
 
         cdef char trace[4096]

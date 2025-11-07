@@ -56,8 +56,6 @@ __all__ = (
 
 
 class ANSIColorCodes:
-    """Містить ANSI escape-коди для кольорів та форматування."""
-
     GREY = "\x1b[38;20m"
     BLUE = "\x1b[34m"
     CYAN = "\x1b[36m"
@@ -80,34 +78,20 @@ COLOR_MAP = {
 CLI_LOG_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 FILE_LOG_FORMAT = "%(asctime)s:%(levelname)s:%(name)s:%(message)s"
 
-class ColoredFormatter(logging.Formatter):
-    """Форматувальник, який додає ANSI кольори до логів консолі."""
 
+class ColoredFormatter(logging.Formatter):
     def __init__(self, fmt, datefmt=None, style="%"):
         super().__init__(fmt, datefmt, style)
         self.fmt = fmt
-        # Перевіряємо, чи є в форматі місце для кольорового рівня
         if "(levelname)" not in fmt:
             raise ValueError("Formatter must contain '(levelname)' placeholder.")
 
     def format(self, record):
-        """Перевизначає метод форматування для додавання кольору."""
-
-        # 1. Отримуємо відповідний кольоровий код
         log_color = COLOR_MAP.get(record.levelno, ANSIColorCodes.RESET)
-
-        # 2. Створюємо кольоровий рядок для рівня логування
         colored_levelname = f"{log_color}{record.levelname}{ANSIColorCodes.RESET}"
-
-        # 3. Тимчасово замінюємо рівень логування на кольоровий рядок
-        #    для формування всього повідомлення.
         original_levelname = record.levelname
         record.levelname = colored_levelname
-
-        # 4. Форматуємо повідомлення за допомогою батьківського класу
         formatted_message = super().format(record)
-
-        # 5. Відновлюємо оригінальний рівень, щоб не впливати на інші обробники
         record.levelname = original_levelname
 
         return formatted_message

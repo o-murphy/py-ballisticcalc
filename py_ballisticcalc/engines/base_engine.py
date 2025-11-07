@@ -220,7 +220,6 @@ class TrajectoryDataFilter:
     records: List[TrajectoryData] = []
     props: ShotProps
     filter: Union[TrajFlag, int]
-    seen_zero: Union[TrajFlag, int]
     time_of_last_record: float
     time_step: float
     range_step: float
@@ -247,7 +246,6 @@ class TrajectoryDataFilter:
         self.records = []
         self.props = props
         self.filter = filter_flags
-        self.seen_zero = TrajFlag.NONE
         self.time_step = time_step
         self.range_step = range_step
         self.range_limit = range_limit
