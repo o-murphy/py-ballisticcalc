@@ -17,7 +17,7 @@ VENV_DIR = .venv
 # Action: Runs uv sync --dev to install base dependencies.
 sync-dev:
 	@echo "--- Running standard dev sync (uv sync --dev) ---"
-	uv sync --dev
+	uv sync --no-dev --reinstall --group test
 	@echo "✅ Dev sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # Target 2: Full sync with cleanup and extras
@@ -25,7 +25,7 @@ sync-dev:
 # Action: Runs uv sync --dev --extra exts --no-cache to install extensions.
 sync-exts: clean-exts
 	@echo "--- Running full sync with extras and no-cache ---"
-	uv sync --dev --extra exts --reinstall --group test
+	uv sync --no-dev --extra exts --reinstall --group test
 	@echo "✅ Exts sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # -------------------------------------------------------------

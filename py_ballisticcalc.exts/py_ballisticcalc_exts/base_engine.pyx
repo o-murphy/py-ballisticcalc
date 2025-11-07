@@ -10,6 +10,8 @@ TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 # noinspection PyUnresolvedReferences
 from libc.math cimport sin, cos
 # noinspection PyUnresolvedReferences
+from libc.string cimport memset
+# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport (
@@ -34,9 +36,9 @@ from py_ballisticcalc_exts.bind cimport (
     BCLIBC_Curve_from_pylist,
     BCLIBC_Coriolis_from_pyobject,
     BCLIBC_WindSock_from_pylist,
-    _new_feet,
-    _new_rad,
-    _v3d_to_vector,
+    feet_from_c,
+    rad_from_c,
+    v3d_to_vector,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport (
@@ -155,7 +157,7 @@ cdef class CythonizedBaseIntegrationEngine:
             res = self._find_max_range(
                 angle_bracket_deg[0], angle_bracket_deg[1]
             )
-            return _new_feet(res.max_range_ft), _new_rad(res.angle_at_max_rad)
+            return feet_from_c(res.max_range_ft), rad_from_c(res.angle_at_max_rad)
         finally:
             self._release_trajectory()
 
@@ -176,7 +178,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef double zero_angle
         try:
             zero_angle = self._find_zero_angle(distance._feet, lofted)
-            return _new_rad(zero_angle)
+            return rad_from_c(zero_angle)
         finally:
             self._release_trajectory()
 
@@ -192,7 +194,8 @@ cdef class CythonizedBaseIntegrationEngine:
             TrajectoryData: The trajectory data at the apex.
         """
         self._init_trajectory(shot_info)
-        cdef BCLIBC_BaseTrajData result  # FIXME: in future int can be BCLIBC_TrajectoryData
+        cdef BCLIBC_BaseTrajData result = {}  # FIXME: in future int can be BCLIBC_TrajectoryData
+        memset(&result, 0, sizeof(result))  # CRITICAL: use memset to ensure initialized with zeros
         cdef object props
         try:
             result = self._find_apex()
@@ -200,8 +203,8 @@ cdef class CythonizedBaseIntegrationEngine:
             return TrajectoryData.from_props(
                 props,
                 result.time,
-                _v3d_to_vector(&result.position),
-                _v3d_to_vector(&result.velocity),
+                v3d_to_vector(&result.position),
+                v3d_to_vector(&result.velocity),
                 result.mach)
         finally:
             self._release_trajectory()
@@ -227,8 +230,8 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             BCLIBC_StatusCode status
             double result
-            BCLIBC_OutOfRangeError range_error
-            BCLIBC_ZeroFindingError zero_error
+            BCLIBC_OutOfRangeError range_error = {}
+            BCLIBC_ZeroFindingError zero_error = {}
             const BCLIBC_ErrorFrame *err
 
         try:
@@ -243,7 +246,7 @@ cdef class CythonizedBaseIntegrationEngine:
             )
 
             if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
-                return _new_rad(result)
+                return rad_from_c(result)
 
             err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
 
@@ -497,7 +500,7 @@ cdef class CythonizedBaseIntegrationEngine:
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
 
-        cdef BCLIBC_OutOfRangeError err_data
+        cdef BCLIBC_OutOfRangeError err_data = {}
         cdef BCLIBC_StatusCode status = BCLIBC_EngineT_initZeroCalculation(
             &self._engine,
             distance,
@@ -530,8 +533,8 @@ cdef class CythonizedBaseIntegrationEngine:
             double: The calculated zero angle in radians.
         """
 
-        cdef BCLIBC_OutOfRangeError range_error
-        cdef BCLIBC_ZeroFindingError zero_error
+        cdef BCLIBC_OutOfRangeError range_error = {}
+        cdef BCLIBC_ZeroFindingError zero_error = {}
         cdef double result
         cdef BCLIBC_StatusCode status = BCLIBC_EngineT_findZeroAngle(
             &self._engine,
@@ -572,7 +575,7 @@ cdef class CythonizedBaseIntegrationEngine:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
 
-        cdef BCLIBC_MaxRangeResult result
+        cdef BCLIBC_MaxRangeResult result = {}
         cdef BCLIBC_StatusCode status = BCLIBC_EngineT_findMaxRange(
             &self._engine,
             low_angle_deg,
@@ -597,7 +600,8 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_BaseTrajData: The trajectory data at the apex.
         """
 
-        cdef BCLIBC_BaseTrajData apex = {}  # initialize with zeros
+        cdef BCLIBC_BaseTrajData apex = {}
+        memset(&apex, 0, sizeof(apex))
 
         cdef BCLIBC_StatusCode status = BCLIBC_EngineT_findApex(&self._engine, &apex)
         if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
@@ -624,8 +628,8 @@ cdef class CythonizedBaseIntegrationEngine:
 
         cdef:
             double result
-            BCLIBC_OutOfRangeError range_error
-            BCLIBC_ZeroFindingError zero_error
+            BCLIBC_OutOfRangeError range_error = {}
+            BCLIBC_ZeroFindingError zero_error = {}
 
         cdef BCLIBC_StatusCode status = BCLIBC_EngineT_zeroAngle(
             &self._engine,
@@ -698,9 +702,9 @@ cdef class CythonizedBaseIntegrationEngine:
     ):
         if err.code == BCLIBC_ErrorType.BCLIBC_E_OUT_OF_RANGE_ERROR:
             raise OutOfRangeError(
-                _new_feet(err_data.requested_distance_ft),
-                _new_feet(err_data.max_range_ft),
-                _new_rad(err_data.look_angle_rad)
+                feet_from_c(err_data.requested_distance_ft),
+                feet_from_c(err_data.max_range_ft),
+                rad_from_c(err_data.look_angle_rad)
             )
 
     cdef void _raise_on_zero_finding_error(
@@ -712,7 +716,7 @@ cdef class CythonizedBaseIntegrationEngine:
             raise ZeroFindingError(
                 zero_error.zero_finding_error,
                 zero_error.iterations_count,
-                _new_rad(zero_error.last_barrel_elevation_rad),
+                rad_from_c(zero_error.last_barrel_elevation_rad),
                 err.msg.decode('utf-8')
             )
 

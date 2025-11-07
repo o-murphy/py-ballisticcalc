@@ -31,10 +31,10 @@ cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj)
 cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list)
 
 # Helper functions to create unit objects
-cdef object _new_feet(double val)
-cdef object _new_rad(double val)
+cdef object feet_from_c(double val)
+cdef object rad_from_c(double val)
 
-cdef object _v3d_to_vector(const BCLIBC_V3dT *v)
+cdef object v3d_to_vector(const BCLIBC_V3dT *v)
 
 cdef BCLIBC_BaseTrajSeq_InterpKey _attribute_to_key(str key_attribute)
 cdef str _key_to_attribute(BCLIBC_BaseTrajSeq_InterpKey key_kind)

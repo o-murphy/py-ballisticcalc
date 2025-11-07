@@ -2,6 +2,8 @@
 # noinspection PyUnresolvedReferences
 from libc.stdlib cimport calloc, free
 # noinspection PyUnresolvedReferences
+from libc.string cimport memset
+# noinspection PyUnresolvedReferences
 from cpython.exc cimport PyErr_Occurred
 # noinspection PyUnresolvedReferences
 from cython cimport final
@@ -63,20 +65,22 @@ cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
 # It assumes 'w' is a Python object that conforms to the interface needed.
 @final
 cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):
-    cdef BCLIBC_Wind result
-    result = BCLIBC_Wind_fromPyObject(<PyObject *>w)
+    cdef BCLIBC_Wind wind = {}
+    memset(&wind, 0, sizeof(wind))  # CRITICAL: use memset to ensure initialized with zeros
+    wind = BCLIBC_Wind_fromPyObject(<PyObject *>w)
     if PyErr_Occurred():
         raise
-    return result
+    return wind
 
 
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
     cdef BCLIBC_Coriolis coriolis = {}  # << CRITICAL! should be defined
-
+    memset(&coriolis, 0, sizeof(coriolis))  # CRITICAL: use memset to ensure initialized with zeros
+    
     if coriolis_obj:
         coriolis.sin_lat = coriolis_obj.sin_lat
         coriolis.cos_lat = coriolis_obj.cos_lat
-        coriolis.flat_fire_only = coriolis_obj.flat_fire_only
+        coriolis.flat_fire_only = <int>coriolis_obj.flat_fire_only
         coriolis.muzzle_velocity_fps = coriolis_obj.muzzle_velocity_fps
 
         coriolis.sin_az = coriolis_obj.sin_az if coriolis_obj.sin_az is not None else 0.0
@@ -85,7 +89,6 @@ cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
         coriolis.range_north = coriolis_obj.range_north if coriolis_obj.range_north is not None else 0.0
         coriolis.cross_east = coriolis_obj.cross_east if coriolis_obj.cross_east is not None else 0.0
         coriolis.cross_north = coriolis_obj.cross_north if coriolis_obj.cross_north is not None else 0.0
-
     return coriolis
 
 
@@ -95,7 +98,8 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
     Processes the Python list, then delegates initialization to C.
     """
     cdef size_t length = <size_t> len(winds_py_list)
-    cdef BCLIBC_WindSock ws = {}  # << CRITICAL! should be defined
+    cdef BCLIBC_WindSock ws = {}
+    memset(&ws, 0, sizeof(ws))  # CRITICAL: use memset to ensure initialized with zeros
     # Memory allocation for the BCLIBC_Wind array (remains in Cython)
     cdef BCLIBC_Wind * winds_array = <BCLIBC_Wind *> calloc(<size_t> length, sizeof(BCLIBC_Wind))
     if <void *> winds_array is NULL:
@@ -119,13 +123,13 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
 
 
 # Helper functions to create unit objects
-cdef object _new_feet(double val):
+cdef object feet_from_c(double val):
     return Distance(val, Unit.Foot)
-cdef object _new_rad(double val):
+cdef object rad_from_c(double val):
     return Angular(val, Unit.Radian)
 
 
-cdef object _v3d_to_vector(const BCLIBC_V3dT *v):
+cdef object v3d_to_vector(const BCLIBC_V3dT *v):
     """Convert C BCLIBC_V3dT -> Python Vector"""
     return Vector(v.x, v.y, v.z)
 

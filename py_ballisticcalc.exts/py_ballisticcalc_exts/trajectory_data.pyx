@@ -17,7 +17,7 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_BaseTrajData_interpolate,
 )
 # noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bind cimport _attribute_to_key, _v3d_to_vector
+from py_ballisticcalc_exts.bind cimport _attribute_to_key, v3d_to_vector
 
 
 @final
@@ -38,11 +38,11 @@ cdef class BaseTrajDataT:
     # Python-facing properties return Vector, not dict
     @property
     def position(self):
-        return _v3d_to_vector(&self._c_view.position)
+        return v3d_to_vector(&self._c_view.position)
 
     @property
     def velocity(self):
-        return _v3d_to_vector(&self._c_view.velocity)
+        return v3d_to_vector(&self._c_view.velocity)
 
     @staticmethod
     def interpolate(str key_attribute, double key_value,
