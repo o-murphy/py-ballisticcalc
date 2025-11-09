@@ -33,6 +33,9 @@ cdef class BaseTrajSeqT:
     Python-facing access lazily creates lightweight BaseTrajDataT objects; internal
         nogil helpers work directly on the C buffer for speed.
     """
+    def __cinit__(self):
+        BCLIBC_BaseTrajSeq_init(&self._c_view)
+
     def __dealloc__(self):
         BCLIBC_BaseTrajSeq_release(&self._c_view)
 
