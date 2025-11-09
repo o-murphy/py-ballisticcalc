@@ -36,9 +36,10 @@ namespace bclibc
         BCLIBC_TrajFlag flag;
     } BCLIBC_FlaggedData;
 
-    class BCLIBC_TrajectoryData
+    typedef struct BCLIBC_TrajectoryData
     {
     public:
+        // data fields
         double time = 0.0;                            // Flight time in seconds
         double distance_ft = 0.0;                     // Down-range (x-axis) coordinate of this point
         double velocity_fps = 0.0;                    // Velocity
@@ -56,6 +57,7 @@ namespace bclibc
         double ogw_lb = 0.0;                          // Optimal game weight, given .energy
         BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE; // Row type
 
+        // methods
         BCLIBC_TrajectoryData() = default;
         BCLIBC_TrajectoryData(const BCLIBC_TrajectoryData &) = default;
         BCLIBC_TrajectoryData &operator=(const BCLIBC_TrajectoryData &) = default;
@@ -116,24 +118,6 @@ namespace bclibc
 
     class BCLIBC_TrajectoryDataFilter
     {
-    private:
-        static constexpr double EPSILON = 1e-6;
-        static constexpr double SEPARATE_ROW_TIME_DELTA = 1e-5;
-
-    private:
-        std::vector<BCLIBC_TrajectoryData> records;
-        const BCLIBC_ShotProps *props;
-        BCLIBC_TrajFlag filter;
-        double time_of_last_record;
-        double time_step;
-        double range_step;
-        double range_limit;
-        BCLIBC_BaseTrajData prev_data;
-        BCLIBC_BaseTrajData prev_prev_data;
-        double next_record_distance;
-        double look_angle_rad;
-        double look_angle_tangent;
-
     public:
         BCLIBC_TrajectoryDataFilter(
             const BCLIBC_ShotProps *props,
@@ -153,6 +137,25 @@ namespace bclibc
         BCLIBC_TrajectoryData get_record(std::ptrdiff_t index) const;
 
     private:
+        // constants
+        static constexpr double EPSILON = 1e-6;
+        static constexpr double SEPARATE_ROW_TIME_DELTA = 1e-5;
+
+        // data fields
+        std::vector<BCLIBC_TrajectoryData> records;
+        const BCLIBC_ShotProps *props;
+        BCLIBC_TrajFlag filter;
+        double time_of_last_record;
+        double time_step;
+        double range_step;
+        double range_limit;
+        BCLIBC_BaseTrajData prev_data;
+        BCLIBC_BaseTrajData prev_prev_data;
+        double next_record_distance;
+        double look_angle_rad;
+        double look_angle_tangent;
+
+        // internal helpers
         template <typename T, typename TimeAccessor>
         void merge_sorted_record(
             std::vector<T> &container,
