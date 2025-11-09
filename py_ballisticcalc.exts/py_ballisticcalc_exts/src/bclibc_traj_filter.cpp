@@ -571,7 +571,7 @@ namespace bclibc
         this->records.insert(position_iterator, *new_data);
     };
 
-    BCLIBC_TrajectoryData BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const
+    const BCLIBC_TrajectoryData &BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const
     {
         const size_t size_t_size = this->records.size();
         const std::ptrdiff_t signed_size = (std::ptrdiff_t)size_t_size;

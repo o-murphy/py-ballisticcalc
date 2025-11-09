@@ -67,11 +67,11 @@ cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
             double range_step,
             double time_step) except +
 
-        void record(BCLIBC_BaseTrajData *new_data)
+        void record(BCLIBC_BaseTrajData *new_data) except +
         const vector[BCLIBC_TrajectoryData]& get_records() const
         void append(BCLIBC_TrajectoryData *new_data)
         void insert(BCLIBC_TrajectoryData *new_data, size_t index)
-        BCLIBC_TrajectoryData get_record(ptrdiff_t index) const
+        const BCLIBC_TrajectoryData& get_record(ptrdiff_t index) const
 
 cdef class TrajectoryDataFilterT:
     cdef BCLIBC_TrajectoryDataFilter *thisptr
