@@ -343,7 +343,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, 0, &init)
         if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
+            raise IndexError(f"Unexpected failure retrieving element {0} (C Error: {err_t})")
             
         tdf = TrajectoryDataFilterT()
         tdf.init(
