@@ -9,10 +9,10 @@ namespace bclibc
     {
 
     public:
-        void release_trajectory() {
+        void release_trajectory()
+        {
             BCLIBC_EngineT_releaseTrajectory(
-                this
-            );
+                this);
         };
 
         BCLIBC_StatusCode integrate(

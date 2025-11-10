@@ -134,7 +134,7 @@ namespace bclibc
         std::vector<BCLIBC_TrajectoryData> const &get_records() const;
         void append(const BCLIBC_TrajectoryData *new_data);
         void insert(const BCLIBC_TrajectoryData *new_data, size_t index);
-        const BCLIBC_TrajectoryData& get_record(std::ptrdiff_t index) const;
+        const BCLIBC_TrajectoryData &get_record(std::ptrdiff_t index) const;
 
     private:
         // constants

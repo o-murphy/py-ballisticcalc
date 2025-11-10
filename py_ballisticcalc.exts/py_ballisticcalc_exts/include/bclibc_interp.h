@@ -4,7 +4,8 @@
 #define BCLIBC_INTERP_SUCCESS 0
 #define BCLIBC_INTERP_ERROR_ZERODIVISION -1
 
-typedef enum {
+typedef enum
+{
     BCLIBC_INTERP_METHOD_PCHIP,
     BCLIBC_INTERP_METHOD_LINEAR,
 } BCLIBC_InterpMethod;
