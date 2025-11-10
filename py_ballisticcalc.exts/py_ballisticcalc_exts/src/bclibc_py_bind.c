@@ -1,7 +1,5 @@
-#include <Python.h>
 #include <stdlib.h>
 #include <math.h>
-#include "bclibc_bclib.h"
 #include "bclibc_py_bind.h"
 
 BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject *config)

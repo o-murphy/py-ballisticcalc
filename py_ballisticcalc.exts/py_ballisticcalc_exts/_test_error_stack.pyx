@@ -102,10 +102,6 @@ cdef class BCLIBC_ErrorStackT:
         BCLIBC_ErrorStack_print(self._c_stack_ptr)
 
 
-# def raise_exception(self):
-#     pass  # FIXME: redirect frames to python Exceptions
-
-
 cdef object _frame_as_dict(BCLIBC_ErrorFrame *f):
     return {
         "code": f.code,

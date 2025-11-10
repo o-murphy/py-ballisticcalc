@@ -4,7 +4,6 @@ CythonizedBaseIntegrationEngine
 
 Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
     feeds it through the Python TrajectoryDataFilter to build List[TrajectoryData].
-TODO: Implement a Cython TrajectoryDataFilter for increased speed?
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
 # noinspection PyUnresolvedReferences
@@ -16,6 +15,8 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTrajSeqT,
+    BCLIBC_BaseTrajSeq,
+    BCLIBC_BaseTrajSeq_len,
     BCLIBC_BaseTrajSeq_getItem,
 )
 # noinspection PyUnresolvedReferences
@@ -290,23 +291,23 @@ cdef class CythonizedBaseIntegrationEngine:
             HitResult: Object for describing the trajectory.
         """
         cdef:
-            BCLIBC_TerminationReason reason
-            BCLIBC_StatusCode status
-            BaseTrajSeqT trajectory
-            double range_limit_ft = max_range._feet
-            double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             object props
             object termination_reason = None
+            BCLIBC_TerminationReason reason
+            BCLIBC_StatusCode status
+            BaseTrajSeqT trajectory = BaseTrajSeqT()
+            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
+            double range_limit_ft = max_range._feet
+            double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             TrajectoryDataFilterT tdf
-            BCLIBC_BaseTrajData init = {}
-            BCLIBC_BaseTrajData fin = {}
-            BCLIBC_BaseTrajData temp_btd = {}
             BCLIBC_TrajectoryData temp_td
 
-        # TODO: possible to make same using single BCLIBC_BaseTrajData struct
+            # use same temp var 
+            BCLIBC_BaseTrajData temp_btd = {}
+            BCLIBC_BaseTrajData *init = &temp_btd
+            BCLIBC_BaseTrajData *fin = &temp_btd
+            
         # CRITICAL: use memset to ensure initialized with zeros
-        memset(&init, 0, sizeof(init))
-        memset(&fin, 0, sizeof(fin))
         memset(&temp_btd, 0, sizeof(temp_btd))
 
         self._init_trajectory(shot_info)
@@ -314,13 +315,12 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BCLIBC_ErrorType err_t
 
         try:
-            trajectory = BaseTrajSeqT()
             status = self._engine.integrate(
                 range_limit_ft,
                 range_step_ft,
                 time_step,
                 <BCLIBC_TrajFlag>filter_flags,
-                &trajectory._c_view,
+                trajectory_ptr,
                 &reason,
             )
 
@@ -339,7 +339,7 @@ cdef class CythonizedBaseIntegrationEngine:
         elif reason == BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
 
-        err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, 0, &init)
+        err_t = BCLIBC_BaseTrajSeq_getItem(trajectory_ptr, 0, init)
         if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             raise IndexError(f"Unexpected failure retrieving element {0} (C Error: {err_t})")
             
@@ -351,8 +351,8 @@ cdef class CythonizedBaseIntegrationEngine:
         )
 
         # Feed step_data through TrajectoryDataFilter to get TrajectoryData
-        for i in range(len(trajectory)):
-            err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, i, &temp_btd)
+        for i in range(BCLIBC_BaseTrajSeq_len(trajectory_ptr)):
+            err_t = BCLIBC_BaseTrajSeq_getItem(trajectory_ptr, i, &temp_btd)
             if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
                 raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
             tdf.record(&temp_btd)
@@ -360,7 +360,7 @@ cdef class CythonizedBaseIntegrationEngine:
         if termination_reason is not None:
             termination_reason = RangeError(termination_reason, tdf.get_records())
             # For incomplete trajectories we add last point, so long as it isn't a duplicate
-            err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, -1, &fin)
+            err_t = BCLIBC_BaseTrajSeq_getItem(trajectory_ptr, -1, fin)
             if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
                 raise IndexError(f"Unexpected failure retrieving element {-1} (C Error: {err_t})")
 
@@ -700,7 +700,8 @@ cdef class CythonizedBaseIntegrationEngine:
             raise NotImplementedError("integrate_func not implemented or not provided")
 
         cdef:
-            BaseTrajSeqT traj_seq = BaseTrajSeqT()
+            BaseTrajSeqT trajectory = BaseTrajSeqT()
+            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
             BCLIBC_TerminationReason reason
 
         cdef BCLIBC_StatusCode status = self._engine.integrate(
@@ -708,12 +709,12 @@ cdef class CythonizedBaseIntegrationEngine:
             range_step_ft,
             time_step,
             filter_flags,
-            &traj_seq._c_view,
+            trajectory_ptr,
             &reason,
         )
 
         if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
-            return traj_seq, reason
+            return trajectory, reason
         cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
         self._raise_solver_runtime_error(err)
 
