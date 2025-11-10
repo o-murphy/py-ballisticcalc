@@ -101,8 +101,6 @@ C_EXTENSION_DEPS = {
     "base_traj_seq": ["interp", "bclib", "base_traj_seq", "log"],
     "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
-    "_test_helpers": ["bclib", "interp", "log"],
-    "_test_engine": ["bclib", "interp", "log"],
     "_test_error_stack": ["error_stack", "log"],
 }
 
@@ -112,6 +110,9 @@ CPP_EXTENSION_DEPS = {
     "base_engine": [*_CPP_DEPS_BASIC, "engine"],
     "rk4_engine": [*_CPP_DEPS_BASIC, "engine", "rk4"],
     "euler_engine": [*_CPP_DEPS_BASIC, "engine", "euler"],
+    # Test modules (expose internal C++ functions for tests only)
+    "_test_helpers": ["bclib", "interp", "log"],
+    "_test_engine": ["bclib", "interp", "log"],
 }
 
 TEST_EXTENSIONS_DEPS = {}
