@@ -90,7 +90,7 @@ extern "C"
     void BCLIBC_EngineT_releaseTrajectory(BCLIBC_EngineT *eng);
 
     BCLIBC_StatusCode BCLIBC_EngineT_integrate(
-        const BCLIBC_EngineT *eng,
+        BCLIBC_EngineT *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,

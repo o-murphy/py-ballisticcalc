@@ -362,7 +362,7 @@ cdef class CythonizedBaseIntegrationEngine:
             # For incomplete trajectories we add last point, so long as it isn't a duplicate
             err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, -1, &fin)
             if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-                raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
+                raise IndexError(f"Unexpected failure retrieving element {-1} (C Error: {err_t})")
 
             if fin.time > tdf.get_record(-1).time:
                 temp_td = BCLIBC_TrajectoryData(
