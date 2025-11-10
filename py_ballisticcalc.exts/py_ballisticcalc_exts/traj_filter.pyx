@@ -53,7 +53,7 @@ cdef class TrajectoryDataFilterT:
             del self.thisptr
             self.thisptr = NULL
 
-    cdef void record(self, BCLIBC_BaseTrajData *new_data):
+    cdef void record(self, BCLIBC_BaseTrajData *new_data) except +:
         if self.thisptr is NULL:
             raise MemoryError("BCLIBC_TrajectoryDataFilter allocation error")
         self.thisptr.record(new_data)
@@ -76,10 +76,10 @@ cdef class TrajectoryDataFilterT:
 
         return py_list
 
-    cdef void append(self, BCLIBC_TrajectoryData *new_data):
+    cdef void append(self, BCLIBC_TrajectoryData *new_data) except +:
         self.thisptr.append(new_data)
 
-    cdef void insert(self, BCLIBC_TrajectoryData *new_data, size_t index):
+    cdef void insert(self, BCLIBC_TrajectoryData *new_data, size_t index) except +:
         self.thisptr.insert(new_data, index)
 
     cdef BCLIBC_TrajectoryData get_record(self, Py_ssize_t index) except +:

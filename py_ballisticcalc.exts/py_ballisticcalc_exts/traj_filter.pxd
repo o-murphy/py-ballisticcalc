@@ -23,9 +23,23 @@ cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
     # --- C++ Class BCLIBC_TrajectoryData ---
     cdef cppclass BCLIBC_TrajectoryData:
         BCLIBC_TrajectoryData() except +
-        BCLIBC_TrajectoryData(const BCLIBC_ShotProps *props, double time, const BCLIBC_V3dT *range_vector, const BCLIBC_V3dT *velocity_vector, double mach, BCLIBC_TrajFlag flag) except +
-        BCLIBC_TrajectoryData(const BCLIBC_ShotProps *props, const BCLIBC_BaseTrajData *data, BCLIBC_TrajFlag flag) except +
-        BCLIBC_TrajectoryData(const BCLIBC_ShotProps *props, const BCLIBC_FlaggedData *data) except +
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps *props,
+            double time,
+            const BCLIBC_V3dT *range_vector,
+            const BCLIBC_V3dT *velocity_vector,
+            double mach,
+            BCLIBC_TrajFlag flag
+        ) except +
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps *props,
+            const BCLIBC_BaseTrajData *data,
+            BCLIBC_TrajFlag flag
+        ) except +
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps *props,
+            const BCLIBC_FlaggedData *data
+        ) except +
 
         double time
         double distance_ft
@@ -52,7 +66,8 @@ cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
             const BCLIBC_TrajectoryData *t1,
             const BCLIBC_TrajectoryData *t2,
             BCLIBC_TrajFlag flag,
-            BCLIBC_InterpMethod method) except +
+            BCLIBC_InterpMethod method
+        ) except +
 
     # --- C++ Class BCLIBC_TrajectoryDataFilter ---
     cdef cppclass BCLIBC_TrajectoryDataFilter:
@@ -69,9 +84,9 @@ cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
 
         void record(BCLIBC_BaseTrajData *new_data) except +
         const vector[BCLIBC_TrajectoryData]& get_records() const
-        void append(BCLIBC_TrajectoryData *new_data)
-        void insert(BCLIBC_TrajectoryData *new_data, size_t index)
-        const BCLIBC_TrajectoryData& get_record(ptrdiff_t index) const
+        void append(BCLIBC_TrajectoryData *new_data) except +
+        void insert(BCLIBC_TrajectoryData *new_data, size_t index) except +
+        const BCLIBC_TrajectoryData& get_record(ptrdiff_t index) except +
 
 cdef class TrajectoryDataFilterT:
     cdef BCLIBC_TrajectoryDataFilter *thisptr
@@ -88,10 +103,10 @@ cdef class TrajectoryDataFilterT:
         double range_step=*,
         double time_step=*
     )
-    cdef void record(self, BCLIBC_BaseTrajData *new_data)
+    cdef void record(self, BCLIBC_BaseTrajData *new_data) except +
     cdef list get_records(self)
-    cdef void append(self, BCLIBC_TrajectoryData *new_data)
-    cdef void insert(self, BCLIBC_TrajectoryData *new_data, size_t index)
+    cdef void append(self, BCLIBC_TrajectoryData *new_data) except +
+    cdef void insert(self, BCLIBC_TrajectoryData *new_data, size_t index) except +
     cdef BCLIBC_TrajectoryData get_record(self, Py_ssize_t index) except +
 
 

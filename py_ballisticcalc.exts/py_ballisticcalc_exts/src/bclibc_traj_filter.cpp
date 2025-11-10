@@ -124,7 +124,7 @@ namespace bclibc
 
         if (key < 0 || key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
-            throw std::runtime_error("Can't interpolate");
+            throw std::runtime_error("Can't interpolate by unsupported key");
         }
 
         for (int field_key = 0; field_key < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; field_key++)
@@ -159,7 +159,7 @@ namespace bclibc
                     }
                     if (err != BCLIBC_E_NO_ERROR)
                     {
-                        throw std::invalid_argument("Zero division error");
+                        throw std::domain_error("Zero division error");
                     }
                 }
                 else
