@@ -341,8 +341,10 @@ cdef class CythonizedBaseIntegrationEngine:
         elif reason == BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED:
             termination_reason = RangeError.MinimumAltitudeReached
 
-        BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, 0, &init)
-
+        err_t = BCLIBC_BaseTrajSeq_getItem(&trajectory._c_view, 0, &init)
+        if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+            raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
+            
         tdf = TrajectoryDataFilterT()
         tdf.init(
             &self._engine.shot, filter_flags, init.position, init.velocity,
