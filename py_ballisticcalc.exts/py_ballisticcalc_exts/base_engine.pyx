@@ -123,7 +123,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         """Frees any allocated resources."""
-        BCLIBC_EngineT_releaseTrajectory(&self._engine)
+        self._engine.release_trajectory()
 
     @property
     def integration_step_count(self) -> int:
@@ -236,8 +236,7 @@ cdef class CythonizedBaseIntegrationEngine:
             const BCLIBC_ErrorFrame *err
 
         try:
-            status = BCLIBC_EngineT_zeroAngleWithFallback(
-                &self._engine,
+            status = self._engine.zero_angle_with_fallback(
                 distance._feet,
                 _APEX_IS_MAX_RANGE_RADIANS,
                 _ALLOWED_ZERO_ERROR_FEET,
@@ -316,8 +315,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         try:
             trajectory = BaseTrajSeqT()
-            status = BCLIBC_EngineT_integrate(
-                &self._engine,
+            status = self._engine.integrate(
                 range_limit_ft,
                 range_step_ft,
                 time_step,
@@ -409,8 +407,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             double out_error_ft
 
-        cdef BCLIBC_StatusCode status = BCLIBC_EngineT_errorAtDistance(
-            &self._engine,
+        cdef BCLIBC_StatusCode status = self._engine.error_at_distance(
             angle_rad,
             target_x_ft,
             target_y_ft,
@@ -427,7 +424,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         Releases the resources held by the trajectory.
         """
-        BCLIBC_EngineT_releaseTrajectory(&self._engine)
+        self._engine.release_trajectory()
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
@@ -530,8 +527,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         cdef BCLIBC_OutOfRangeError err_data = {}
-        cdef BCLIBC_StatusCode status = BCLIBC_EngineT_initZeroCalculation(
-            &self._engine,
+        cdef BCLIBC_StatusCode status = self._engine.init_zero_calculation(
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
@@ -565,8 +561,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BCLIBC_OutOfRangeError range_error = {}
         cdef BCLIBC_ZeroFindingError zero_error = {}
         cdef double result
-        cdef BCLIBC_StatusCode status = BCLIBC_EngineT_findZeroAngle(
-            &self._engine,
+        cdef BCLIBC_StatusCode status = self._engine.find_zero_angle(
             distance,
             lofted,
             _APEX_IS_MAX_RANGE_RADIANS,
@@ -605,8 +600,8 @@ cdef class CythonizedBaseIntegrationEngine:
         """
 
         cdef BCLIBC_MaxRangeResult result = {}
-        cdef BCLIBC_StatusCode status = BCLIBC_EngineT_findMaxRange(
-            &self._engine,
+
+        cdef BCLIBC_StatusCode status = self._engine.find_max_range(
             low_angle_deg,
             high_angle_deg,
             _APEX_IS_MAX_RANGE_RADIANS,
@@ -632,7 +627,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BCLIBC_BaseTrajData apex = {}
         memset(&apex, 0, sizeof(apex))
 
-        cdef BCLIBC_StatusCode status = BCLIBC_EngineT_findApex(&self._engine, &apex)
+        cdef BCLIBC_StatusCode status = self._engine.find_apex(&apex)
         if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
             return apex
 
@@ -660,8 +655,7 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_OutOfRangeError range_error = {}
             BCLIBC_ZeroFindingError zero_error = {}
 
-        cdef BCLIBC_StatusCode status = BCLIBC_EngineT_zeroAngle(
-            &self._engine,
+        cdef BCLIBC_StatusCode status = self._engine.zero_angle(
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
@@ -709,8 +703,7 @@ cdef class CythonizedBaseIntegrationEngine:
             BaseTrajSeqT traj_seq = BaseTrajSeqT()
             BCLIBC_TerminationReason reason
 
-        cdef BCLIBC_StatusCode status = BCLIBC_EngineT_integrate(
-            &self._engine,
+        cdef BCLIBC_StatusCode status = self._engine.integrate(
             range_limit_ft,
             range_step_ft,
             time_step,
