@@ -68,8 +68,7 @@ cdef extern from "include/bclibc_engine.h" nogil:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_TrajFlag filter_flags,
-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        BCLIBC_BaseTrajSeq *trajectory,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 
@@ -101,8 +100,7 @@ cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_TrajFlag filter_flags,
-            BCLIBC_BaseTrajSeq *traj_seq_ptr,
+            BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason) noexcept nogil
         
         BCLIBC_StatusCode find_apex(
@@ -207,7 +205,6 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_TrajFlag filter_flags
     )
 
     cdef void _raise_on_init_zero_error(

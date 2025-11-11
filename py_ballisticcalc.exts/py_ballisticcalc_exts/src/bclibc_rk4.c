@@ -71,7 +71,7 @@ static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const 
  * @param time_step The base time step (dt) used for the RK4 calculation.
  * @param filter_flags Flags (BCLIBC_TrajFlag) specifying special points to record
  * (e.g., ZERO, MACH, APEX).
- * @param traj_seq_ptr Pointer to the BCLIBC_BaseTrajSeq buffer where dense trajectory
+ * @param trajectory Pointer to the BCLIBC_BaseTrajSeq buffer where dense trajectory
  * data points will be stored.
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on successful completion).
@@ -79,11 +79,11 @@ static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const 
 BCLIBC_StatusCode BCLIBC_integrateRK4(
     BCLIBC_EngineT *eng,
     double range_limit_ft, double range_step_ft,
-    double time_step, BCLIBC_TrajFlag filter_flags,
-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    double time_step,
+    BCLIBC_BaseTrajSeq *trajectory,
     BCLIBC_TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr || !reason)
+    if (!eng || !trajectory || !reason)
     {
         REQUIRE_NON_NULL(eng);
         BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
@@ -200,7 +200,7 @@ BCLIBC_StatusCode BCLIBC_integrateRK4(
 
         // err =
         BCLIBC_BaseTrajSeq_append(
-            traj_seq_ptr,
+            trajectory,
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
@@ -319,7 +319,7 @@ BCLIBC_StatusCode BCLIBC_integrateRK4(
 
     // err =
     BCLIBC_BaseTrajSeq_append(
-        traj_seq_ptr,
+        trajectory,
         time,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,

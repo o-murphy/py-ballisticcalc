@@ -23,14 +23,12 @@ cdef extern from "include/bclibc_rk4.h" nogil:
 
     BCLIBC_StatusCode BCLIBC_integrateRK4(
         BCLIBC_EngineT *eng,
-        double range_limit_ft, double range_step_ft,
-        double time_step, BCLIBC_TrajFlag filter_flags,
-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        double range_limit_ft,
+        double range_step_ft,
+        double time_step,
+        BCLIBC_BaseTrajSeq *trajectory,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self)
-    cdef tuple _integrate(CythonizedRK4IntegrationEngine self,
-                          double range_limit_ft, double range_step_ft,
-                          double time_step, BCLIBC_TrajFlag filter_flags)

@@ -2,6 +2,7 @@
 #define BCLIBC_ENGINE_HPP
 
 #include "bclibc_engine.h"
+#include "bclibc_traj_filter.hpp"
 
 namespace bclibc
 {
@@ -15,12 +16,29 @@ namespace bclibc
                 this);
         };
 
+        // BCLIBC_StatusCode integrate_filtered(
+        //     double range_limit_ft,
+        //     double range_step_ft,
+        //     double time_step,
+        //     BCLIBC_TrajFlag filter_flags,
+        //     BCLIBC_TrajectoryDataFilter filter,
+        //     BCLIBC_BaseTrajSeq *trajectory,
+        //     BCLIBC_TerminationReason *reason
+        // ) {
+        //     BCLIBC_StatusCode status = this->integrate(
+        //         range_limit_ft,
+        //         range_step_ft,
+        //         time_step,
+        //         trajectory,
+        //         reason
+        //     );
+        // };
+
         BCLIBC_StatusCode integrate(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_TrajFlag filter_flags,
-            BCLIBC_BaseTrajSeq *traj_seq_ptr,
+            BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason)
         {
             return BCLIBC_EngineT_integrate(
@@ -28,8 +46,7 @@ namespace bclibc
                 range_limit_ft,
                 range_step_ft,
                 time_step,
-                filter_flags,
-                traj_seq_ptr,
+                trajectory,
                 reason);
         };
 

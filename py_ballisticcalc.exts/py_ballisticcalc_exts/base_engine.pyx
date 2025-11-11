@@ -325,7 +325,6 @@ cdef class CythonizedBaseIntegrationEngine:
                 range_limit_ft,
                 range_step_ft,
                 time_step,
-                <BCLIBC_TrajFlag>filter_flags,
                 trajectory_ptr,
                 &reason,
             )
@@ -681,7 +680,6 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_TrajFlag filter_flags,
     ):
         """
         Internal method to perform trajectory integration.
@@ -709,7 +707,6 @@ cdef class CythonizedBaseIntegrationEngine:
             range_limit_ft,
             range_step_ft,
             time_step,
-            filter_flags,
             trajectory_ptr,
             &reason,
         )

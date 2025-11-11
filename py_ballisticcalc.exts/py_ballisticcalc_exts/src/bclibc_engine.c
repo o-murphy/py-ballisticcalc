@@ -58,11 +58,10 @@ BCLIBC_StatusCode BCLIBC_EngineT_integrate(
     double range_limit_ft,
     double range_step_ft,
     double time_step,
-    BCLIBC_TrajFlag filter_flags,
-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    BCLIBC_BaseTrajSeq *trajectory,
     BCLIBC_TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr || !reason || !eng->integrate_func_ptr)
+    if (!eng || !trajectory || !reason || !eng->integrate_func_ptr)
     {
         REQUIRE_NON_NULL(eng);
         BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
@@ -70,7 +69,7 @@ BCLIBC_StatusCode BCLIBC_EngineT_integrate(
     }
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
-    BCLIBC_StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr, reason);
+    BCLIBC_StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, trajectory, reason);
 
     if (status != BCLIBC_STATUS_ERROR)
     {
@@ -85,8 +84,8 @@ BCLIBC_StatusCode BCLIBC_EngineT_integrate(
         BCLIBC_LOG(
             BCLIBC_LOG_LEVEL_DEBUG,
             "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
-            traj_seq_ptr->length, traj_seq_ptr->capacity,
-            traj_seq_ptr->length * sizeof(BCLIBC_BaseTraj));
+            trajectory->length, trajectory->capacity,
+            trajectory->length * sizeof(BCLIBC_BaseTraj));
         return BCLIBC_STATUS_SUCCESS;
     }
 
@@ -126,7 +125,7 @@ BCLIBC_StatusCode BCLIBC_EngineT_findApex(BCLIBC_EngineT *eng, BCLIBC_BaseTrajDa
 
     // try
     BCLIBC_TerminationReason reason;
-    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &result, &reason);
+    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, &result, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -182,7 +181,7 @@ BCLIBC_StatusCode BCLIBC_EngineT_errorAtDistance(
     eng->shot.barrel_elevation = angle_rad;
 
     BCLIBC_TerminationReason reason;
-    BCLIBC_StatusCode status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &trajectory, &reason);
+    BCLIBC_StatusCode status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, &trajectory, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -418,7 +417,7 @@ BCLIBC_StatusCode BCLIBC_EngineT_zeroAngle(
         BCLIBC_BaseTrajSeq_init(&seq);
 
         BCLIBC_TerminationReason reason;
-        status = BCLIBC_EngineT_integrate(eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE, &seq, &reason);
+        status = BCLIBC_EngineT_integrate(eng, target_x_ft, target_x_ft, 0.0, &seq, &reason);
 
         if (status != BCLIBC_STATUS_SUCCESS)
         {
@@ -600,7 +599,7 @@ static BCLIBC_StatusCode BCLIBC_EngineT_rangeForAngle(BCLIBC_EngineT *eng, doubl
     BCLIBC_BaseTrajSeq_init(&trajectory);
 
     BCLIBC_TerminationReason reason;
-    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE, &trajectory, &reason);
+    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, &trajectory, &reason);
     if (status != BCLIBC_STATUS_SUCCESS)
     {
         status = BCLIBC_STATUS_ERROR;
