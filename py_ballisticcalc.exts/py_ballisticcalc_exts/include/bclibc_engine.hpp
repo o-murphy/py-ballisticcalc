@@ -20,7 +20,8 @@ namespace bclibc
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            BCLIBC_BaseTrajSeq *traj_seq_ptr,
+            // BCLIBC_BaseTrajSeq *traj_seq_ptr,
+            BCLIBC_TrajectoryDataHandler *data_handler,
             BCLIBC_TerminationReason *reason)
         {
             return BCLIBC_EngineT_integrate(
@@ -29,7 +30,8 @@ namespace bclibc
                 range_step_ft,
                 time_step,
                 filter_flags,
-                traj_seq_ptr,
+                // traj_seq_ptr,
+                data_handler,
                 reason);
         };
 

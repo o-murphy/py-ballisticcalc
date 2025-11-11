@@ -59,10 +59,11 @@ BCLIBC_StatusCode BCLIBC_EngineT_integrate(
     double range_step_ft,
     double time_step,
     BCLIBC_TrajFlag filter_flags,
-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    // BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    BCLIBC_TrajectoryDataHandler *data_handler,
     BCLIBC_TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr || !reason || !eng->integrate_func_ptr)
+    if (!eng || !reason || !data_handler || !data_handler->handler, !data_handler->callback || !eng->integrate_func_ptr)
     {
         REQUIRE_NON_NULL(eng);
         BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
@@ -70,7 +71,7 @@ BCLIBC_StatusCode BCLIBC_EngineT_integrate(
     }
     BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)eng->integrate_func_ptr);
 
-    BCLIBC_StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, traj_seq_ptr, reason);
+    BCLIBC_StatusCode status = eng->integrate_func_ptr(eng, range_limit_ft, range_step_ft, time_step, filter_flags, data_handler, reason);
 
     if (status != BCLIBC_STATUS_ERROR)
     {
@@ -82,11 +83,11 @@ BCLIBC_StatusCode BCLIBC_EngineT_integrate(
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed with acceptable termination reason: (%d).", *reason);
         }
-        BCLIBC_LOG(
-            BCLIBC_LOG_LEVEL_DEBUG,
-            "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
-            traj_seq_ptr->length, traj_seq_ptr->capacity,
-            traj_seq_ptr->length * sizeof(BCLIBC_BaseTraj));
+        // BCLIBC_LOG(
+        //     BCLIBC_LOG_LEVEL_DEBUG,
+        //     "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
+        //     traj_seq_ptr->length, traj_seq_ptr->capacity,
+        //     traj_seq_ptr->length * sizeof(BCLIBC_BaseTraj));
         return BCLIBC_STATUS_SUCCESS;
     }
 
@@ -126,7 +127,10 @@ BCLIBC_StatusCode BCLIBC_EngineT_findApex(BCLIBC_EngineT *eng, BCLIBC_BaseTrajDa
 
     // try
     BCLIBC_TerminationReason reason;
-    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &result, &reason);
+    BCLIBC_TrajectoryDataHandler data_handler = (BCLIBC_TrajectoryDataHandler){
+        &result,
+        (BCLIBC_TrajectoryDataHandlerCallbackPtr)BCLIBC_BaseTrajSeq_append};
+    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &data_handler, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -182,7 +186,10 @@ BCLIBC_StatusCode BCLIBC_EngineT_errorAtDistance(
     eng->shot.barrel_elevation = angle_rad;
 
     BCLIBC_TerminationReason reason;
-    BCLIBC_StatusCode status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &trajectory, &reason);
+    BCLIBC_TrajectoryDataHandler data_handler = (BCLIBC_TrajectoryDataHandler){
+        &trajectory,
+        (BCLIBC_TrajectoryDataHandlerCallbackPtr)BCLIBC_BaseTrajSeq_append};
+    BCLIBC_StatusCode status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_APEX, &data_handler, &reason);
 
     if (status != BCLIBC_STATUS_SUCCESS)
     {
@@ -418,7 +425,10 @@ BCLIBC_StatusCode BCLIBC_EngineT_zeroAngle(
         BCLIBC_BaseTrajSeq_init(&seq);
 
         BCLIBC_TerminationReason reason;
-        status = BCLIBC_EngineT_integrate(eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE, &seq, &reason);
+        BCLIBC_TrajectoryDataHandler data_handler = (BCLIBC_TrajectoryDataHandler){
+            &seq,
+            (BCLIBC_TrajectoryDataHandlerCallbackPtr)BCLIBC_BaseTrajSeq_append};
+        status = BCLIBC_EngineT_integrate(eng, target_x_ft, target_x_ft, 0.0, BCLIBC_TRAJ_FLAG_NONE, &data_handler, &reason);
 
         if (status != BCLIBC_STATUS_SUCCESS)
         {
@@ -600,7 +610,10 @@ static BCLIBC_StatusCode BCLIBC_EngineT_rangeForAngle(BCLIBC_EngineT *eng, doubl
     BCLIBC_BaseTrajSeq_init(&trajectory);
 
     BCLIBC_TerminationReason reason;
-    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE, &trajectory, &reason);
+    BCLIBC_TrajectoryDataHandler data_handler = (BCLIBC_TrajectoryDataHandler){
+        &trajectory,
+        (BCLIBC_TrajectoryDataHandlerCallbackPtr)BCLIBC_BaseTrajSeq_append};
+    status = BCLIBC_EngineT_integrate(eng, 9e9, 9e9, 0.0, BCLIBC_TRAJ_FLAG_NONE, &data_handler, &reason);
     if (status != BCLIBC_STATUS_SUCCESS)
     {
         status = BCLIBC_STATUS_ERROR;

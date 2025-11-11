@@ -14,6 +14,7 @@ from py_ballisticcalc_exts.base_engine cimport (
     BCLIBC_EngineT,
     BCLIBC_StatusCode,
     BCLIBC_TerminationReason,
+    BCLIBC_TrajectoryDataHandler,
 )
 
 
@@ -23,7 +24,8 @@ cdef extern from "include/bclibc_euler.h" nogil:
         BCLIBC_EngineT *eng,
         double range_limit_ft, double range_step_ft,
         double time_step, BCLIBC_TrajFlag filter_flags,
-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        # BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        BCLIBC_TrajectoryDataHandler *data_handler,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 

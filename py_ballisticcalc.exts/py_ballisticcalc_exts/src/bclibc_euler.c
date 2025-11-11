@@ -41,10 +41,11 @@ BCLIBC_StatusCode BCLIBC_integrateEULER(
     BCLIBC_EngineT *eng,
     double range_limit_ft, double range_step_ft,
     double time_step, BCLIBC_TrajFlag filter_flags,
-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    // BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    BCLIBC_TrajectoryDataHandler *data_handler,
     BCLIBC_TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr || !reason)
+    if (!eng || !reason || !data_handler || !data_handler->handler || !data_handler->callback)
     {
         REQUIRE_NON_NULL(eng);
         BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
@@ -133,8 +134,8 @@ BCLIBC_StatusCode BCLIBC_integrateEULER(
         // Store point in trajectory sequence
 
         // err =
-        BCLIBC_BaseTrajSeq_append(
-            traj_seq_ptr,
+        data_handler->callback(
+            data_handler,
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
@@ -203,8 +204,8 @@ BCLIBC_StatusCode BCLIBC_integrateEULER(
     // Add final data point
 
     // err =
-    BCLIBC_BaseTrajSeq_append(
-        traj_seq_ptr,
+    data_handler->callback(
+        data_handler,
         time,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,

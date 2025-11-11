@@ -59,13 +59,27 @@ typedef struct
 
 typedef struct BCLIBC_EngineS BCLIBC_EngineT;
 
+
+typedef void BCLIBC_TrajectoryDataHandlerCallback(
+    void *handler,
+    double time, double px, double py, double pz,
+    double vx, double vy, double vz, double mach);
+
+typedef BCLIBC_TrajectoryDataHandlerCallback *BCLIBC_TrajectoryDataHandlerCallbackPtr;
+
+typedef struct {
+    void *handler;
+    BCLIBC_TrajectoryDataHandlerCallbackPtr callback; 
+} BCLIBC_TrajectoryDataHandler;
+
 typedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
     BCLIBC_EngineT *eng,
     double range_limit_ft,
     double range_step_ft,
     double time_step,
     BCLIBC_TrajFlag filter_flags,
-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    // BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    BCLIBC_TrajectoryDataHandler *data_handler,
     BCLIBC_TerminationReason *reason);
 
 typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;
@@ -95,7 +109,8 @@ extern "C"
         double range_step_ft,
         double time_step,
         BCLIBC_TrajFlag filter_flags,
-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        // BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        BCLIBC_TrajectoryDataHandler *data_handler,
         BCLIBC_TerminationReason *reason);
 
     BCLIBC_StatusCode BCLIBC_EngineT_findApex(BCLIBC_EngineT *eng, BCLIBC_BaseTrajData *out);

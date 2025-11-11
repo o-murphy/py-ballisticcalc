@@ -16,6 +16,7 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTrajSeqT,
     BCLIBC_BaseTrajSeq,
+    BCLIBC_BaseTrajSeq_append,
     BCLIBC_BaseTrajSeq_len,
     BCLIBC_BaseTrajSeq_getItem,
 )
@@ -297,6 +298,10 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_StatusCode status
             BaseTrajSeqT trajectory = BaseTrajSeqT()
             BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
+            BCLIBC_TrajectoryDataHandler data_handler = BCLIBC_TrajectoryDataHandler(
+                trajectory_ptr,
+                <BCLIBC_TrajectoryDataHandlerCallbackPtr>BCLIBC_BaseTrajSeq_append,
+            )
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             TrajectoryDataFilterT tdf
@@ -320,7 +325,8 @@ cdef class CythonizedBaseIntegrationEngine:
                 range_step_ft,
                 time_step,
                 <BCLIBC_TrajFlag>filter_flags,
-                trajectory_ptr,
+                # trajectory_ptr,
+                &data_handler,
                 &reason,
             )
 
@@ -701,7 +707,11 @@ cdef class CythonizedBaseIntegrationEngine:
 
         cdef:
             BaseTrajSeqT trajectory = BaseTrajSeqT()
-            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
+            # BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
+            BCLIBC_TrajectoryDataHandler data_handler = BCLIBC_TrajectoryDataHandler(
+                &trajectory._c_view,
+                <BCLIBC_TrajectoryDataHandlerCallbackPtr>BCLIBC_BaseTrajSeq_append,
+            )
             BCLIBC_TerminationReason reason
 
         cdef BCLIBC_StatusCode status = self._engine.integrate(
@@ -709,7 +719,8 @@ cdef class CythonizedBaseIntegrationEngine:
             range_step_ft,
             time_step,
             filter_flags,
-            trajectory_ptr,
+            # trajectory_ptr,
+            &data_handler,
             &reason,
         )
 

@@ -62,6 +62,18 @@ cdef extern from "include/bclibc_engine.h" nogil:
     # Typedef alias
     ctypedef BCLIBC_EngineS BCLIBC_EngineT
 
+    ctypedef void BCLIBC_TrajectoryDataHandlerCallback(
+        void *handler,
+        double time, double px, double py, double pz,
+        double vx, double vy, double vz, double mach
+    )
+
+    ctypedef BCLIBC_TrajectoryDataHandlerCallback *BCLIBC_TrajectoryDataHandlerCallbackPtr
+
+    ctypedef struct BCLIBC_TrajectoryDataHandler:
+        void *handler
+        BCLIBC_TrajectoryDataHandlerCallbackPtr callback
+
     # Declare the function signature type (not a pointer yet)
     ctypedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
         BCLIBC_EngineT *eng,
@@ -69,7 +81,8 @@ cdef extern from "include/bclibc_engine.h" nogil:
         double range_step_ft,
         double time_step,
         BCLIBC_TrajFlag filter_flags,
-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        # BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        BCLIBC_TrajectoryDataHandler *data_handler,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 
@@ -102,7 +115,8 @@ cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            BCLIBC_BaseTrajSeq *traj_seq_ptr,
+            # BCLIBC_BaseTrajSeq *traj_seq_ptr,
+            BCLIBC_TrajectoryDataHandler *data_handler,
             BCLIBC_TerminationReason *reason) noexcept nogil
         
         BCLIBC_StatusCode find_apex(
