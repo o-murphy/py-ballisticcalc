@@ -302,30 +302,21 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_TerminationReason reason
             BCLIBC_StatusCode status
             BaseTrajSeqT trajectory = BaseTrajSeqT()
-            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
-            TrajectoryDataFilterT tdf
-            BCLIBC_TrajectoryData temp_td
-
-            # use same temp var 
-            BCLIBC_BaseTrajData temp_btd = {}
-            BCLIBC_BaseTrajData *init = &temp_btd
-            BCLIBC_BaseTrajData *fin = &temp_btd
+            TrajectoryDataFilterT tdf = TrajectoryDataFilterT()
             
-        # CRITICAL: use memset to ensure initialized with zeros
-        memset(&temp_btd, 0, sizeof(temp_btd))
-
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
-        cdef BCLIBC_ErrorType err_t
 
         try:
-            status = self._engine.integrate(
+            status = self._engine.integrate_filtered(
                 range_limit_ft,
                 range_step_ft,
                 time_step,
-                trajectory_ptr,
+                <BCLIBC_TrajFlag>filter_flags,
+                &tdf.thisptr,
+                &trajectory._c_view,
                 &reason,
             )
 
@@ -336,44 +327,11 @@ cdef class CythonizedBaseIntegrationEngine:
             # Always release C resources
             self._release_trajectory()
 
-        err_t = BCLIBC_BaseTrajSeq_getItem(trajectory_ptr, 0, init)
-        if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            raise IndexError(f"Unexpected failure retrieving element {0} (C Error: {err_t})")
-            
-        tdf = TrajectoryDataFilterT()
-        tdf.init(
-            &self._engine.shot, filter_flags, init.position, init.velocity,
-            self._engine.shot.barrel_elevation, self._engine.shot.look_angle,
-            range_limit_ft, range_step_ft, time_step
-        )
-
-        # Feed step_data through TrajectoryDataFilter to get TrajectoryData
-        for i in range(BCLIBC_BaseTrajSeq_len(trajectory_ptr)):
-            err_t = BCLIBC_BaseTrajSeq_getItem(trajectory_ptr, i, &temp_btd)
-            if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-                raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
-            tdf.record(&temp_btd)
-
         # Extract termination_reason from the result
         termination_reason = TERMINATION_REASON_MAP.get(reason)
 
         if termination_reason is not None:
             termination_reason = RangeError(termination_reason, tdf.get_records())
-            # For incomplete trajectories we add last point, so long as it isn't a duplicate
-            err_t = BCLIBC_BaseTrajSeq_getItem(trajectory_ptr, -1, fin)
-            if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-                raise IndexError(f"Unexpected failure retrieving element {-1} (C Error: {err_t})")
-
-            if fin.time > tdf.get_record(-1).time:
-                temp_td = BCLIBC_TrajectoryData(
-                    &self._engine.shot,
-                    fin.time,
-                    &fin.position,
-                    &fin.velocity,
-                    fin.mach,
-                    BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE
-                )
-                tdf.append(&temp_td)
 
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags

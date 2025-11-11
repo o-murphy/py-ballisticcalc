@@ -12,7 +12,7 @@ namespace bclibc
     // BCLIBC_TrajectoryData::BCLIBC_TrajectoryData() {};
 
     // guarantee complete C struct initialisation BCLIBC_BaseTrajData
-    static inline BCLIBC_BaseTrajData BCLIBC_BaseTrajData_init(void)
+    BCLIBC_BaseTrajData BCLIBC_BaseTrajData_init(void)
     {
         BCLIBC_BaseTrajData data; // = {} possibly can not work on MSVC, use memset
         std::memset(&data, 0, sizeof(data));

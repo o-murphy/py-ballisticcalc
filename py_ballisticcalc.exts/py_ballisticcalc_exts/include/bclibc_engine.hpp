@@ -16,23 +16,98 @@ namespace bclibc
                 this);
         };
 
-        // BCLIBC_StatusCode integrate_filtered(
-        //     double range_limit_ft,
-        //     double range_step_ft,
-        //     double time_step,
-        //     BCLIBC_TrajFlag filter_flags,
-        //     BCLIBC_TrajectoryDataFilter filter,
-        //     BCLIBC_BaseTrajSeq *trajectory,
-        //     BCLIBC_TerminationReason *reason
-        // ) {
-        //     BCLIBC_StatusCode status = this->integrate(
-        //         range_limit_ft,
-        //         range_step_ft,
-        //         time_step,
-        //         trajectory,
-        //         reason
-        //     );
-        // };
+        BCLIBC_StatusCode integrate_filtered(
+            double range_limit_ft,
+            double range_step_ft,
+            double time_step,
+            BCLIBC_TrajFlag filter_flags,
+            BCLIBC_TrajectoryDataFilter **data_filter,
+            BCLIBC_BaseTrajSeq *trajectory,
+            BCLIBC_TerminationReason *reason)
+        {
+            if (!trajectory || !reason || !data_filter || !this->integrate_func_ptr)
+            {
+                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
+                return BCLIBC_STATUS_ERROR;
+            }
+
+            BCLIBC_StatusCode status = this->integrate(
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                trajectory,
+                reason);
+            if (status == BCLIBC_STATUS_ERROR)
+            {
+                return BCLIBC_STATUS_ERROR;
+            }
+
+            BCLIBC_ErrorType err;
+            BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData_init();
+            BCLIBC_BaseTrajData *init = &temp_btd;
+            BCLIBC_BaseTrajData *fin = &temp_btd;
+
+            err = BCLIBC_BaseTrajSeq_getItem(trajectory, 0, init);
+            if (err != BCLIBC_E_NO_ERROR)
+            {
+                BCLIBC_PUSH_ERR(
+                    &this->err_stack,
+                    BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_INTEGRATE,
+                    "Unexpected failure retrieving element 0");
+                return BCLIBC_STATUS_ERROR;
+            }
+
+            *data_filter = new BCLIBC_TrajectoryDataFilter(
+                &this->shot,
+                filter_flags,
+                init->position,
+                init->velocity,
+                this->shot.barrel_elevation,
+                this->shot.look_angle,
+                range_limit_ft,
+                range_step_ft,
+                time_step);
+
+            for (int i = 0; i < BCLIBC_BaseTrajSeq_len(trajectory); i++)
+            {
+                err = BCLIBC_BaseTrajSeq_getItem(trajectory, i, &temp_btd);
+                if (err != BCLIBC_E_NO_ERROR)
+                {
+                    BCLIBC_PUSH_ERR(
+                        &this->err_stack,
+                        BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_INTEGRATE,
+                        "Unexpected failure retrieving element %d", i);
+                    return BCLIBC_STATUS_ERROR;
+                }
+                (*data_filter)->record(&temp_btd);
+            }
+
+            if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
+            {
+                err = BCLIBC_BaseTrajSeq_getItem(trajectory, -1, fin);
+                if (err != BCLIBC_E_NO_ERROR)
+                {
+                    BCLIBC_PUSH_ERR(
+                        &this->err_stack,
+                        BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_INTEGRATE,
+                        "Unexpected failure retrieving element -1");
+                    return BCLIBC_STATUS_ERROR;
+                }
+
+                if (fin->time > (*data_filter)->get_record(-1).time)
+                {
+                    BCLIBC_TrajectoryData temp_td = BCLIBC_TrajectoryData(
+                        &this->shot,
+                        fin->time,
+                        &fin->position,
+                        &fin->velocity,
+                        fin->mach,
+                        BCLIBC_TRAJ_FLAG_NONE);
+                    (*data_filter)->append(&temp_td);
+                }
+            }
+            return BCLIBC_STATUS_SUCCESS;
+        };
 
         BCLIBC_StatusCode integrate(
             double range_limit_ft,

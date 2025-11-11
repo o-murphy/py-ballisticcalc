@@ -16,7 +16,8 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
-
+# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryDataFilter
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
@@ -95,6 +96,15 @@ cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
         BCLIBC_ErrorStack err_stack
         
         void release_trajectory() noexcept nogil
+
+        BCLIBC_StatusCode integrate_filtered(
+            double range_limit_ft,
+            double range_step_ft,
+            double time_step,
+            BCLIBC_TrajFlag filter_flags,
+            BCLIBC_TrajectoryDataFilter **data_filter,
+            BCLIBC_BaseTrajSeq *trajectory,
+            BCLIBC_TerminationReason *reason) except +
 
         BCLIBC_StatusCode integrate(
             double range_limit_ft,
