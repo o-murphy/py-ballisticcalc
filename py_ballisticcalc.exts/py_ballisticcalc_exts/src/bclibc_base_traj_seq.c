@@ -175,7 +175,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq,
         return BCLIBC_E_INPUT_ERROR; // Invalid input
     }
     BCLIBC_BaseTraj raw_output;
-    int err = BCLIBC_BaseTrajSeq_interpolateRaw(seq, idx, key_kind, key_value, &raw_output);
+    BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_interpolateRaw(seq, idx, key_kind, key_value, &raw_output);
     if (err != BCLIBC_E_NO_ERROR)
     {
         return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR

@@ -8,6 +8,7 @@
 
 #define BCLIBC_MAX_ERROR_STACK 16
 #define BCLIBC_MAX_ERROR_MSG_LEN 256
+#define BCLIBC_MAX_ERROR_TRACE_LEN 4096
 
 typedef enum
 {

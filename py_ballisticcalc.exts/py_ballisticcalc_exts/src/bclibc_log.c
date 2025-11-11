@@ -27,7 +27,7 @@ void BCLIBC_LogLevel_init()
         {
             if ((int)BCLIBC_global_log_level != env_level)
             {
-                BCLIBC_global_log_level = env_level;
+                BCLIBC_global_log_level = (BCLIBC_LogLevel)env_level;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Log level set from environment variable BCLIBC_LOG_LEVEL to %d\n", BCLIBC_global_log_level);
             }
             return;

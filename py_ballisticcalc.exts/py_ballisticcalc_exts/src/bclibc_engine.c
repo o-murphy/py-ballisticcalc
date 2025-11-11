@@ -134,8 +134,8 @@ BCLIBC_StatusCode BCLIBC_EngineT_findApex(BCLIBC_EngineT *eng, BCLIBC_BaseTrajDa
     }
     else
     {
-        status = BCLIBC_BaseTrajSeq_getAt(&result, BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y, 0.0, -1, out);
-        if (status != BCLIBC_STATUS_SUCCESS)
+        BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getAt(&result, BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y, 0.0, -1, out);
+        if (err != BCLIBC_E_NO_ERROR)
         {
             BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
             status = BCLIBC_STATUS_ERROR;
@@ -196,8 +196,8 @@ BCLIBC_StatusCode BCLIBC_EngineT_errorAtDistance(
             last_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, -1);
             if (last_ptr != NULL && last_ptr->time != 0.0)
             {
-                status = BCLIBC_BaseTrajSeq_getAt(&trajectory, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit);
-                if (status != BCLIBC_STATUS_SUCCESS)
+                BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getAt(&trajectory, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit);
+                if (err != BCLIBC_E_NO_ERROR)
                 {
                     BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
                     status = BCLIBC_STATUS_ERROR;
@@ -427,8 +427,8 @@ BCLIBC_StatusCode BCLIBC_EngineT_zeroAngle(
         }
 
         // interpolate trajectory at target_x_ft using the sequence we just filled
-        status = BCLIBC_BaseTrajSeq_getAt(&seq, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
-        if (status != BCLIBC_STATUS_SUCCESS)
+        BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getAt(&seq, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
+        if (err != BCLIBC_E_NO_ERROR)
         {
             BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ZERO_ANGLE, "Failed to interpolate trajectory at target distance");
             status = BCLIBC_STATUS_SUCCESS;

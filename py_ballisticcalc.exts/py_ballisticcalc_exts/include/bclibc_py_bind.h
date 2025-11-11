@@ -1,6 +1,9 @@
 #ifndef BCLIBC_PY_BIND_H
 #define BCLIBC_PY_BIND_H
 
+// Cython only bindings
+#ifdef __CYTHON__
+
 #include <Python.h>
 #include "bclibc_bclib.h" // BCLIBC_MachList typedef must be here
 
@@ -17,5 +20,7 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#endif // __CYTHON__
 
 #endif // BCLIBC_PY_BIND_H

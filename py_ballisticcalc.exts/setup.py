@@ -73,6 +73,8 @@ if ENABLE_CYTHON_SAFETY:
         }
     )
 
+FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
+
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
 INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
@@ -146,8 +148,8 @@ elif is_macos:
     os.environ["CXX"] = "clang++"
 else:
     # GCC/Clang flags
-    c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall"]
+    c_compile_args = ["-g", "-O0", "-std=c99", "-g"]
+    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
     cpp_extra_link_args = []
 
 
@@ -167,6 +169,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                 print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
         define_macros = []
+        define_macros.extend(FORCE_CYTHON_MACROS)
         if ENABLE_CYTHON_COVERAGE:
             # Enable tracing in both with-GIL and nogil regions
             define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])

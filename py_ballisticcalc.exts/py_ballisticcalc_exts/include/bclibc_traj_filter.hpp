@@ -36,7 +36,7 @@ namespace bclibc
         BCLIBC_TrajFlag flag;
     } BCLIBC_FlaggedData;
 
-    typedef struct BCLIBC_TrajectoryData
+    struct BCLIBC_TrajectoryData
     {
     public:
         // data fields

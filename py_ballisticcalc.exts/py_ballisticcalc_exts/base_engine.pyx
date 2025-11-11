@@ -88,6 +88,12 @@ cdef dict ERROR_TYPE_TO_EXCEPTION = {
     BCLIBC_ErrorType.BCLIBC_E_RUNTIME_ERROR: SolverRuntimeError,
 }
 
+cdef dict TERMINATION_REASON_MAP = {
+    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
+    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
+    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
+}
+
 cdef class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""
     # Expose Python-visible constants to match BaseIntegrationEngine API
@@ -331,14 +337,6 @@ cdef class CythonizedBaseIntegrationEngine:
             # Always release C resources
             self._release_trajectory()
 
-        # Extract termination_reason from the result
-        if reason == BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED:
-            termination_reason = RangeError.MinimumVelocityReached
-        elif reason == BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED:
-            termination_reason = RangeError.MaximumDropReached
-        elif reason == BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED:
-            termination_reason = RangeError.MinimumAltitudeReached
-
         err_t = BCLIBC_BaseTrajSeq_getItem(trajectory_ptr, 0, init)
         if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             raise IndexError(f"Unexpected failure retrieving element {0} (C Error: {err_t})")
@@ -356,6 +354,9 @@ cdef class CythonizedBaseIntegrationEngine:
             if err_t != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
                 raise IndexError(f"Unexpected failure retrieving element {i} (C Error: {err_t})")
             tdf.record(&temp_btd)
+
+        # Extract termination_reason from the result
+        termination_reason = TERMINATION_REASON_MAP.get(reason)
 
         if termination_reason is not None:
             termination_reason = RangeError(termination_reason, tdf.get_records())
