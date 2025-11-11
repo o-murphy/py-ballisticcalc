@@ -54,6 +54,11 @@ ifeq ($(PLATFORM),windows)
     LDFLAGS = $(LDFLAGS_COMMON)
 endif
 
+# ===== Python headers autodetection =====
+PYTHON_INCLUDE := $(shell python3 -c "from sysconfig import get_paths; print(get_paths()['include'])")
+CFLAGS += -I$(PYTHON_INCLUDE)
+CXXFLAGS += -I$(PYTHON_INCLUDE)
+
 # ===== Sources =====
 C_SOURCES := $(wildcard $(SRC_DIR)/*.c)
 CPP_SOURCES := $(wildcard $(SRC_DIR)/*.cpp)
@@ -94,6 +99,11 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 rebuild: clean all
+
+# ===== Cython build (adds __CYTHON__ define) =====
+build-cython:
+	@echo "Building for Cython integration..."
+	$(MAKE) all CFLAGS="$(CFLAGS) -D__CYTHON__" CXXFLAGS="$(CXXFLAGS) -D__CYTHON__"
 
 # ===== Info =====
 info:
