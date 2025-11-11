@@ -2,7 +2,9 @@
 """setup.py script for py_ballisticcalc library"""
 
 import os
+import sys
 import platform
+import subprocess
 from typing import Dict
 from setuptools import setup, Extension
 from pathlib import Path
@@ -76,9 +78,11 @@ if ENABLE_CYTHON_SAFETY:
 
 FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
 
-EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
+THIS_DIR = Path(".")
+EXTENSIONS_BASE_DIR = THIS_DIR / "py_ballisticcalc_exts"
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
 INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
+BCLIBC_LIB_PATH = THIS_DIR / "build" / "lib" / "libbclibc.a"
 
 # Define all C source files and their paths
 SOURCE_PATHS = {
@@ -159,6 +163,15 @@ else:
         cpp_extra_link_args = ["-Wl,-strip-all"]
 
 
+def build_native_lib():
+    print("Building native C/C++ library using Makefile...")
+    try:
+        subprocess.run(["make", "-C", str(THIS_DIR), "build-cython"], check=True)
+    except subprocess.CalledProcessError as e:
+        print("Error: native build failed:", e)
+        sys.exit(1)
+
+
 # Dynamically create extensions for names in extension_names
 def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = False):
     extensions_local = []
@@ -168,11 +181,11 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
 
         # Add dependent C source files from the EXTENSION_DEPS dictionary
         # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
-        for dep_key in deps:
-            if dep_key in SOURCE_PATHS:
-                sources.append(SOURCE_PATHS[dep_key])
-            else:
-                print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
+        # for dep_key in deps:
+        #     if dep_key in SOURCE_PATHS:
+        #         sources.append(SOURCE_PATHS[dep_key])
+        #     else:
+        #         print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
         define_macros = []
         define_macros.extend(FORCE_CYTHON_MACROS)
@@ -188,6 +201,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     "py_ballisticcalc_exts." + name,
                     sources=sources,
                     include_dirs=include_dirs,
+                    extra_objects=[str(BCLIBC_LIB_PATH)],
                     language="c",
                     define_macros=define_macros,
                     extra_compile_args=c_compile_args,
@@ -200,7 +214,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     "py_ballisticcalc_exts." + name,
                     sources=sources,
                     include_dirs=include_dirs,
-                    # extra_objects=[],
+                    extra_objects=[str(BCLIBC_LIB_PATH)],
                     language="c++",
                     extra_compile_args=cpp_compile_args,
                     extra_link_args=cpp_extra_link_args,
@@ -224,4 +238,5 @@ extensions = cythonize(
     force=ENABLE_CYTHON_COVERAGE or CYTHON_FORCE_REGEN,
 )
 
+build_native_lib()
 setup(ext_modules=extensions)
