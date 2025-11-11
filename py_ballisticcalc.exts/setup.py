@@ -29,6 +29,7 @@ def env_var_is_enabled(var: str):
     return os.environ.get(var, "0").lower() in _ENV_VAR_IS_ON
 
 
+DISABLE_SHARED_STRIP = env_var_is_enabled("DISABLE_SHARED_STRIP")
 ENABLE_CYTHON_COVERAGE = env_var_is_enabled("CYTHON_COVERAGE")
 ENABLE_CYTHON_SAFETY = env_var_is_enabled("CYTHON_SAFETY")
 
@@ -148,9 +149,14 @@ elif is_macos:
     os.environ["CXX"] = "clang++"
 else:
     # GCC/Clang flags
-    c_compile_args = ["-g", "-O0", "-std=c99", "-g"]
+    c_compile_args = ["-g", "-O0", "-std=c99"]
     cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
-    cpp_extra_link_args = []
+    if DISABLE_SHARED_STRIP:
+        cpp_extra_link_args = []
+    else:
+        # c_compile_args = ["-O3", "-std=c99", "-DNDEBUG"]
+        # cpp_compile_args = ["-x", "c++", "-std=c++11", "-O3", "-Wall", "-DNDEBUG"]
+        cpp_extra_link_args = ["-Wl,-strip-all"]
 
 
 # Dynamically create extensions for names in extension_names
