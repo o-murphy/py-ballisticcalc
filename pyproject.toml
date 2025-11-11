@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.2.4rc1"
+version = "2.2.5b1"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
@@ -91,7 +91,7 @@ line-length = 120
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 
 [project.optional-dependencies]
-exts = ["py_ballisticcalc.exts==2.2.4rc1"]
+exts = ["py_ballisticcalc.exts==2.2.5b1"]
 charts = [
     "matplotlib>=3.10.7",
     "pillow>=11.3.0; python_version>='3.13' and sys_platform == 'win32'", # minimal wheel required for matplotlib with python 3.13+ in windows

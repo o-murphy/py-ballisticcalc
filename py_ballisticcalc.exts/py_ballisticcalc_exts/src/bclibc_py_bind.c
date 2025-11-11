@@ -1,7 +1,8 @@
-#include <Python.h>
+// Cython only bindings
+#ifdef __CYTHON__
+
 #include <stdlib.h>
 #include <math.h>
-#include "bclibc_bclib.h"
 #include "bclibc_py_bind.h"
 
 BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject *config)
@@ -341,3 +342,5 @@ BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w)
 
     return wind_c;
 }
+
+#endif // __CYTHON__

@@ -131,7 +131,7 @@ cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
                                 double range_limit_ft, double range_step_ft, double time_step):
     """Call engine._integrate directly with current shot props."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return e._integrate(range_limit_ft, range_step_ft, time_step, BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE)
+    return e._integrate(range_limit_ft, range_step_ft, time_step)
 
 cpdef int step_count(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine

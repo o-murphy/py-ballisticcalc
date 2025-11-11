@@ -22,13 +22,10 @@ cdef extern from "include/bclibc_euler.h" nogil:
     BCLIBC_StatusCode BCLIBC_integrateEULER(
         BCLIBC_EngineT *eng,
         double range_limit_ft, double range_step_ft,
-        double time_step, BCLIBC_TrajFlag filter_flags,
-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        double time_step,
+        BCLIBC_BaseTrajSeq *trajectory,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     cdef double get_calc_step(CythonizedEulerIntegrationEngine self)
-    cdef tuple _integrate(CythonizedEulerIntegrationEngine self,
-                          double range_limit_ft, double range_step_ft,
-                          double time_step, BCLIBC_TrajFlag filter_flags)

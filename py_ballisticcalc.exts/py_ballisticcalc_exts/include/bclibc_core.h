@@ -12,7 +12,7 @@
 #include "bclibc_euler.h"
 
 // Cython only bindings
-#ifdef CYTHON_COMPILING_IN_CPYTHON
+#ifdef __CYTHON__
 #include "bclibc_py_bind.h"
 #endif
 

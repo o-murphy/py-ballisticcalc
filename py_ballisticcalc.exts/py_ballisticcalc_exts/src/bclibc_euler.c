@@ -31,8 +31,7 @@ static inline double BCLIBC_euler_time_step(double base_step, double velocity)
  * @param range_step_ft The distance step for recording trajectory points
  * (not used for integration step size).
  * @param time_step The base time step for integration (can be adaptive).
- * @param filter_flags Flags (BCLIBC_TrajFlag) specifying additional points to record.
- * @param traj_seq_ptr Pointer to the BCLIBC_BaseTrajSeq buffer where trajectory
+ * @param trajectory Pointer to the BCLIBC_BaseTrajSeq buffer where trajectory
  * data points will be stored.
  * @return BCLIBC_ErrorType An enumeration value indicating why the integration
  * loop was terminated (e.g., NO_ERROR on success).
@@ -40,11 +39,11 @@ static inline double BCLIBC_euler_time_step(double base_step, double velocity)
 BCLIBC_StatusCode BCLIBC_integrateEULER(
     BCLIBC_EngineT *eng,
     double range_limit_ft, double range_step_ft,
-    double time_step, BCLIBC_TrajFlag filter_flags,
-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    double time_step,
+    BCLIBC_BaseTrajSeq *trajectory,
     BCLIBC_TerminationReason *reason)
 {
-    if (!eng || !traj_seq_ptr || !reason)
+    if (!eng || !trajectory || !reason)
     {
         REQUIRE_NON_NULL(eng);
         BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
@@ -134,7 +133,7 @@ BCLIBC_StatusCode BCLIBC_integrateEULER(
 
         // err =
         BCLIBC_BaseTrajSeq_append(
-            traj_seq_ptr,
+            trajectory,
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,
@@ -204,7 +203,7 @@ BCLIBC_StatusCode BCLIBC_integrateEULER(
 
     // err =
     BCLIBC_BaseTrajSeq_append(
-        traj_seq_ptr,
+        trajectory,
         time,
         range_vector.x, range_vector.y, range_vector.z,
         velocity_vector.x, velocity_vector.y, velocity_vector.z,

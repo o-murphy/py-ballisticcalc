@@ -175,7 +175,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAt(const BCLIBC_BaseTrajSeq *seq,
         return BCLIBC_E_INPUT_ERROR; // Invalid input
     }
     BCLIBC_BaseTraj raw_output;
-    int err = BCLIBC_BaseTrajSeq_interpolateRaw(seq, idx, key_kind, key_value, &raw_output);
+    BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_interpolateRaw(seq, idx, key_kind, key_value, &raw_output);
     if (err != BCLIBC_E_NO_ERROR)
     {
         return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR
@@ -295,7 +295,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_ensureCapacity(BCLIBC_BaseTrajSeq *seq, size
     }
 
     // Determine new capacity: ^2 current or start from 64
-    size_t new_capacity = seq->capacity > 0 ? seq->capacity : 64;
+    size_t new_capacity = seq->capacity > 0 ? seq->capacity : BCLIBC_BASE_TRAJ_SEQ_MIN_CAPACITY;
     while (new_capacity < min_capacity)
     {
         new_capacity <<= 1; // Faster than *= 2
@@ -605,7 +605,7 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getItem(const BCLIBC_BaseTrajSeq *seq, ssize
  * @param out Output trajectory data.
  * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR if successful, otherwise error code.
  */
-static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAtCenterWithLog(
+static BCLIBC_ErrorType BCLIBC_BaseTrajSeq_interpolateAtCenter(
     const BCLIBC_BaseTrajSeq *seq,
     ssize_t idx,
     BCLIBC_BaseTrajSeq_InterpKey key_kind,
@@ -657,23 +657,23 @@ static double BCLIBC_BaseTraj_keyVal(const BCLIBC_BaseTraj *elem, BCLIBC_BaseTra
  */
 static ssize_t BCLIBC_BaseTrajSeq_findStartIndex(const BCLIBC_BaseTraj *buf, ssize_t n, double start_time)
 {
-    // // FIXME: possibly use Binary search
-    // if (n > 10 && buf[0].time <= buf[n-1].time)
-    // {
-    //     ssize_t lo = 0, hi = n - 1;
+    // Binary search
+    if (n > 10 && buf[0].time <= buf[n - 1].time)
+    {
+        ssize_t lo = 0, hi = n - 1;
 
-    //     while (lo < hi)
-    //     {
-    //         ssize_t mid = lo + ((hi - lo) >> 1);
+        while (lo < hi)
+        {
+            ssize_t mid = lo + ((hi - lo) >> 1);
 
-    //         if (buf[mid].time < start_time)
-    //             lo = mid + 1;
-    //         else
-    //             hi = mid;
-    //     }
+            if (buf[mid].time < start_time)
+                lo = mid + 1;
+            else
+                hi = mid;
+        }
 
-    //     return lo;
-    // }
+        return lo;
+    }
 
     // Fallback for small arrays
     for (ssize_t i = 0; i < n; i++)
@@ -696,34 +696,103 @@ static ssize_t BCLIBC_BaseTrajSeq_findStartIndex(const BCLIBC_BaseTraj *buf, ssi
  * @param start_idx Index to start searching from.
  * @return Target index for interpolation, -1 if not found.
  */
-static ssize_t BCLIBC_BaseTrajSeq_findTargetIndex(const BCLIBC_BaseTraj *buf, ssize_t n, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, ssize_t start_idx)
+static ssize_t BCLIBC_BaseTrajSeq_findTargetIndex(
+    const BCLIBC_BaseTraj *buf,
+    ssize_t n,
+    BCLIBC_BaseTrajSeq_InterpKey key_kind,
+    double key_value,
+    ssize_t start_idx)
 {
-    double a, b;
-
-    // Forward search
-    for (ssize_t i = start_idx; i < n - 1; i++)
+    // Minimal requirement for 3-point interpolation is 3 points.
+    if (n < 3)
     {
-        a = BCLIBC_BaseTraj_keyVal(&buf[i], key_kind);
-        b = BCLIBC_BaseTraj_keyVal(&buf[i + 1], key_kind);
-        if ((a <= key_value && key_value <= b) || (b <= key_value && key_value <= a))
+        return -1;
+    }
+
+    double v0 = BCLIBC_BaseTraj_keyValFromKindBuf(&buf[0], key_kind);
+    double vN = BCLIBC_BaseTraj_keyValFromKindBuf(&buf[n - 1], key_kind);
+    // Determine the array's monotonicity (increasing or decreasing)
+    int increasing = (vN >= v0) ? 1 : 0;
+
+    ssize_t lo = 0;
+    ssize_t hi = n - 1;
+
+    // Handle extrapolation cases: if the value is outside the trajectory range,
+    // we clamp the index to the nearest valid interpolation center (1 or n-2).
+    if (increasing)
+    {
+        if (key_value <= v0)
+            return 1;
+        if (key_value >= vN)
+            return n - 2;
+    }
+    else
+    { // Decreasing
+        if (key_value >= v0)
+            return 1;
+        if (key_value <= vN)
+            return n - 2;
+    }
+
+    // ------------------------------------
+    // Binary Search (O(log N))
+    // ------------------------------------
+    while (lo < hi)
+    {
+        // Calculate the midpoint: lo + (hi - lo) / 2
+        ssize_t mid = lo + ((hi - lo) >> 1);
+        double vm = BCLIBC_BaseTraj_keyValFromKindBuf(&buf[mid], key_kind);
+
+        // Adjust the search bounds based on monotonicity and target value
+        if ((increasing && vm < key_value) || (!increasing && vm > key_value))
         {
-            return i + 1;
+            lo = mid + 1;
+        }
+        else
+        {
+            hi = mid;
         }
     }
 
-    // Backward search
-    for (ssize_t i = start_idx; i > 0; i--)
-    {
-        a = BCLIBC_BaseTraj_keyVal(&buf[i], key_kind);
-        b = BCLIBC_BaseTraj_keyVal(&buf[i - 1], key_kind);
-        if ((b <= key_value && key_value <= a) || (a <= key_value && key_value <= b))
-        {
-            return i;
-        }
-    }
+    // 'lo' is now the index of the first element satisfying the search condition.
 
-    return -1; // not found
+    // Clamp the index to the valid range [1, n-2] required for 3-point interpolation.
+    if (lo < 1)
+        return 1;
+    if (lo > n - 2)
+        return n - 2;
+
+    return lo;
 }
+
+// static ssize_t BCLIBC_BaseTrajSeq_findTargetIndex(const BCLIBC_BaseTraj *buf, ssize_t n, BCLIBC_BaseTrajSeq_InterpKey key_kind, double key_value, ssize_t start_idx)
+// {
+//     double a, b;
+
+//     // Forward search
+//     for (ssize_t i = start_idx; i < n - 1; i++)
+//     {
+//         a = BCLIBC_BaseTraj_keyVal(&buf[i], key_kind);
+//         b = BCLIBC_BaseTraj_keyVal(&buf[i + 1], key_kind);
+//         if ((a <= key_value && key_value <= b) || (b <= key_value && key_value <= a))
+//         {
+//             return i + 1;
+//         }
+//     }
+
+//     // Backward search
+//     for (ssize_t i = start_idx; i > 0; i--)
+//     {
+//         a = BCLIBC_BaseTraj_keyVal(&buf[i], key_kind);
+//         b = BCLIBC_BaseTraj_keyVal(&buf[i - 1], key_kind);
+//         if ((b <= key_value && key_value <= a) || (a <= key_value && key_value <= b))
+//         {
+//             return i;
+//         }
+//     }
+
+//     return -1; // not found
+// }
 
 /**
  * @brief Try to get exact value at index, return BCLIBC_E_NO_ERROR if successful.
@@ -821,5 +890,5 @@ BCLIBC_ErrorType BCLIBC_BaseTrajSeq_getAt(
 
     // Otherwise interpolate at center
     ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;
-    return BCLIBC_BaseTrajSeq_interpolateAtCenterWithLog(seq, center_idx, key_kind, key_value, out);
+    return BCLIBC_BaseTrajSeq_interpolateAtCenter(seq, center_idx, key_kind, key_value, out);
 }

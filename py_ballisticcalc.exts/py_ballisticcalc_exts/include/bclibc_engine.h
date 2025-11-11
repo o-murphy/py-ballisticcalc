@@ -64,8 +64,7 @@ typedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
     double range_limit_ft,
     double range_step_ft,
     double time_step,
-    BCLIBC_TrajFlag filter_flags,
-    BCLIBC_BaseTrajSeq *traj_seq_ptr,
+    BCLIBC_BaseTrajSeq *trajectory,
     BCLIBC_TerminationReason *reason);
 
 typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;
@@ -94,8 +93,7 @@ extern "C"
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_TrajFlag filter_flags,
-        BCLIBC_BaseTrajSeq *traj_seq_ptr,
+        BCLIBC_BaseTrajSeq *trajectory,
         BCLIBC_TerminationReason *reason);
 
     BCLIBC_StatusCode BCLIBC_EngineT_findApex(BCLIBC_EngineT *eng, BCLIBC_BaseTrajData *out);

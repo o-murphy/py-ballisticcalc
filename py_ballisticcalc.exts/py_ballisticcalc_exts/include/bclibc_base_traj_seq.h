@@ -20,6 +20,9 @@ typedef long ssize_t;
 #endif
 // --- END CROSS-PLATFORM FIX ---
 
+// Min capacity starts from 64
+// maybe beter to use at least 192 byte min capacity as a 3-point buffer required for interpolation
+#define BCLIBC_BASE_TRAJ_SEQ_MIN_CAPACITY 256 // 64
 #define BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT 8
 
 /**

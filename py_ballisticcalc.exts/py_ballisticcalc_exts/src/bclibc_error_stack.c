@@ -139,7 +139,7 @@ void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_
     for (int i = 0; i < stack->top; i++)
     {
         const BCLIBC_ErrorFrame *f = &stack->frames[i];
-        char line[BCLIBC_MAX_ERROR_MSG_LEN];
+        char line[BCLIBC_MAX_ERROR_TRACE_LEN];
 
         const int FILE_WIDTH = 50;
         const int FUNC_WIDTH = 25;

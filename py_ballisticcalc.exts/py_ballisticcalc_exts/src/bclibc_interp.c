@@ -8,42 +8,42 @@ static inline int _sign(double a)
     return (a > 0.0) - (a < 0.0);
 }
 
-// Internal helpers for PCHIP used by bclibc_base_traj_seq
-static void BCLIBC_Sort3(double *xs, double *ys)
-{
-    // Sort the first two elements
-    if (xs[1] < xs[0])
-    {
-        double tx = xs[0];
-        xs[0] = xs[1];
-        xs[1] = tx;
-        double ty = ys[0];
-        ys[0] = ys[1];
-        ys[1] = ty;
-    }
-    // Insert the third element in the correct position
-    if (xs[2] < xs[1])
-    {
-        double tx = xs[2];
-        double ty = ys[2];
-        if (xs[2] < xs[0])
-        {
-            xs[2] = xs[1];
-            xs[1] = xs[0];
-            xs[0] = tx;
-            ys[2] = ys[1];
-            ys[1] = ys[0];
-            ys[0] = ty;
-        }
-        else
-        {
-            xs[2] = xs[1];
-            xs[1] = tx;
-            ys[2] = ys[1];
-            ys[1] = ty;
-        }
-    }
-}
+// // Internal helpers for PCHIP used by bclibc_base_traj_seq
+// static void BCLIBC_Sort3(double *xs, double *ys)
+// {
+//     // Sort the first two elements
+//     if (xs[1] < xs[0])
+//     {
+//         double tx = xs[0];
+//         xs[0] = xs[1];
+//         xs[1] = tx;
+//         double ty = ys[0];
+//         ys[0] = ys[1];
+//         ys[1] = ty;
+//     }
+//     // Insert the third element in the correct position
+//     if (xs[2] < xs[1])
+//     {
+//         double tx = xs[2];
+//         double ty = ys[2];
+//         if (xs[2] < xs[0])
+//         {
+//             xs[2] = xs[1];
+//             xs[1] = xs[0];
+//             xs[0] = tx;
+//             ys[2] = ys[1];
+//             ys[1] = ys[0];
+//             ys[0] = ty;
+//         }
+//         else
+//         {
+//             xs[2] = xs[1];
+//             xs[1] = tx;
+//             ys[2] = ys[1];
+//             ys[1] = ty;
+//         }
+//     }
+// }
 
 static void BCLIBC_PchipSlopes3(double x0, double y0, double x1, double y1, double x2, double y2,
                                 double *m0, double *m1, double *m2)
