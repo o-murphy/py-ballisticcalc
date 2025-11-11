@@ -168,11 +168,11 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
 
         # Add dependent C source files from the EXTENSION_DEPS dictionary
         # Use .get(name, []) to safely get an empty list if an extension has no explicit C dependencies
-        for dep_key in deps:
-            if dep_key in SOURCE_PATHS:
-                sources.append(SOURCE_PATHS[dep_key])
-            else:
-                print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
+        # for dep_key in deps:
+        #     if dep_key in SOURCE_PATHS:
+        #         sources.append(SOURCE_PATHS[dep_key])
+        #     else:
+        #         print(f"Warning: C source '{dep_key}' not found in C_SOURCES dictionary for extension '{name}'.")
 
         define_macros = []
         define_macros.extend(FORCE_CYTHON_MACROS)
@@ -188,6 +188,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     "py_ballisticcalc_exts." + name,
                     sources=sources,
                     include_dirs=include_dirs,
+                    extra_objects=[str(SRC_DIR_PATH.parent.parent / "build/lib/libbclibc.a")],
                     language="c",
                     define_macros=define_macros,
                     extra_compile_args=c_compile_args,
@@ -200,7 +201,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     "py_ballisticcalc_exts." + name,
                     sources=sources,
                     include_dirs=include_dirs,
-                    # extra_objects=[],
+                    extra_objects=[str(SRC_DIR_PATH.parent.parent / "build/lib/libbclibc.a")],
                     language="c++",
                     extra_compile_args=cpp_compile_args,
                     extra_link_args=cpp_extra_link_args,
@@ -223,5 +224,17 @@ extensions = cythonize(
     build_dir="build",  # to keep built data
     force=ENABLE_CYTHON_COVERAGE or CYTHON_FORCE_REGEN,
 )
+
+import subprocess
+
+def build_native_lib():
+    print("Building native C/C++ library using Makefile...")
+    try:
+        subprocess.run(["make", "-C", str(SRC_DIR_PATH.parent.parent)], check=True)
+    except subprocess.CalledProcessError as e:
+        print("Error: native build failed:", e)
+        sys.exit(1)
+
+build_native_lib()
 
 setup(ext_modules=extensions)
