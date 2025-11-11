@@ -82,6 +82,8 @@ THIS_DIR = Path(".")
 EXTENSIONS_BASE_DIR = THIS_DIR / "py_ballisticcalc_exts"
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
 INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
+BCLIBC_LIB_NAME = "bclibc"
+BCLIBC_LIB_DIR = THIS_DIR / "build" / "lib"
 BCLIBC_LIB_PATH = THIS_DIR / "build" / "lib" / "libbclibc.a"
 
 # Define all C source files and their paths
@@ -140,7 +142,7 @@ if is_msvc:
     # MSVC-specific flags
     c_compile_args = ["/O2", "/W3"]
     cpp_compile_args = ["/std:c++11", "/O2", "/W3"]
-    cpp_extra_link_args = []
+    extra_link_args = []
     # Crucial for MSVC on ARM
     if platform.machine().startswith("ARM"):
         c_compile_args.append("/fp:precise")
@@ -148,7 +150,7 @@ if is_msvc:
 elif is_macos:
     c_compile_args = ["-g", "-O0", "-std=c99"]
     cpp_compile_args = ["-O2", "-Wall"]  # assumes it uses -std=c++14 or newer
-    cpp_extra_link_args = ["-stdlib=libc++"]
+    extra_link_args = ["-stdlib=libc++"]
     os.environ["CC"] = "clang"
     os.environ["CXX"] = "clang++"
 else:
@@ -156,17 +158,48 @@ else:
     c_compile_args = ["-g", "-O0", "-std=c99"]
     cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
     if DISABLE_SHARED_STRIP:
-        cpp_extra_link_args = []
+        extra_link_args = []
     else:
         # c_compile_args = ["-O3", "-std=c99", "-DNDEBUG"]
         # cpp_compile_args = ["-x", "c++", "-std=c++11", "-O3", "-Wall", "-DNDEBUG"]
-        cpp_extra_link_args = ["-Wl,-strip-all"]
+        extra_link_args = ["-Wl,-strip-all"]
+
+
+extra_link_args.extend(["-L" + str(BCLIBC_LIB_PATH.parent)])
+extra_link_args.extend(
+    [
+        # !!! НОВІ РЯДКИ !!!
+        "-Wl,--enable-new-dtags",
+        # $ORIGIN означає "той же каталог, що й поточна бібліотека (.so)"
+        "-Wl,-rpath,$ORIGIN",
+    ]
+)
 
 
 def build_native_lib():
     print("Building native C/C++ library using Makefile...")
     try:
         subprocess.run(["make", "-C", str(THIS_DIR), "build-cython"], check=True)
+        if platform.system() == "Linux":
+            shared_lib_name = "libbclibc.so"
+        elif platform.system() == "Darwin":
+            shared_lib_name = "libbclibc.dylib"
+        elif platform.system() == "Windows":
+            shared_lib_name = "libbclibc.dll"
+        else:
+            return
+
+        source_path = BCLIBC_LIB_DIR / shared_lib_name
+
+        # 2. Каталог, куди має потрапити бібліотека (всередині вашого пакета)
+        target_dir = Path(EXTENSIONS_BASE_DIR)  # 'py_ballisticcalc_exts'
+        import shutil
+
+        if source_path.exists():
+            print(f"Копіювання нативної бібліотеки з {source_path} до {target_dir}")
+            shutil.copy2(source_path, target_dir)
+        else:
+            sys.exit(1)
     except subprocess.CalledProcessError as e:
         print("Error: native build failed:", e)
         sys.exit(1)
@@ -201,10 +234,13 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     "py_ballisticcalc_exts." + name,
                     sources=sources,
                     include_dirs=include_dirs,
-                    extra_objects=[str(BCLIBC_LIB_PATH)],
+                    # extra_objects=[str(BCLIBC_LIB_PATH)],
+                    library_dirs=[str(BCLIBC_LIB_DIR)],
+                    libraries=[BCLIBC_LIB_NAME],
                     language="c",
                     define_macros=define_macros,
                     extra_compile_args=c_compile_args,
+                    extra_link_args=extra_link_args,
                     # libraries=['m'] # For Linux/macOS, add 'm' for math functions. For Windows, usually not needed or part of default C runtime.
                 )
             )
@@ -214,10 +250,12 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     "py_ballisticcalc_exts." + name,
                     sources=sources,
                     include_dirs=include_dirs,
-                    extra_objects=[str(BCLIBC_LIB_PATH)],
+                    # extra_objects=[str(BCLIBC_LIB_PATH)],
+                    library_dirs=[str(BCLIBC_LIB_DIR)],
+                    libraries=[BCLIBC_LIB_NAME],
                     language="c++",
                     extra_compile_args=cpp_compile_args,
-                    extra_link_args=cpp_extra_link_args,
+                    extra_link_args=extra_link_args,
                 )
             )
 

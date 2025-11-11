@@ -50,7 +50,7 @@ cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
 py-modules = ["py_ballisticcalc_exts"]
 
 [tool.setuptools.package-data]
-py_ballisticcalc_exts = ["py.typed"]
+py_ballisticcalc_exts = ["py.typed", "bclibclib.so", "bclibclib.dll", "bclibclib.dylib"]
 
 
 [tool.setuptools.packages.find]

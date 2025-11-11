@@ -103,7 +103,11 @@ rebuild: clean all
 # ===== Cython build (adds __CYTHON__ define) =====
 build-cython:
 	@echo "Building for Cython integration..."
-	$(MAKE) all CFLAGS="$(CFLAGS) -D__CYTHON__" CXXFLAGS="$(CXXFLAGS) -D__CYTHON__"
+	$(MAKE) SHARED=1 BUILD_MODE=cython \
+		CFLAGS="$(CFLAGS) -D__CYTHON__" \
+		CXXFLAGS="$(CXXFLAGS) -D__CYTHON__" \
+		$(LIB_DIR)/lib$(PROJECT_NAME).so
+# $(MAKE) all CFLAGS="$(CFLAGS) -D__CYTHON__" CXXFLAGS="$(CXXFLAGS) -D__CYTHON__"
 
 # ===== Info =====
 info:
