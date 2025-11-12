@@ -1,9 +1,9 @@
 #ifndef BCLIBC_TRAJ_FILTER_HPP
 #define BCLIBC_TRAJ_FILTER_HPP
 
-#include "bclibc_base_traj_seq.h"
-#include "bclibc_interp.h"
 #include <vector>
+#include "bclibc_interp.h"
+#include "bclibc_seq.hpp"
 
 namespace bclibc
 {

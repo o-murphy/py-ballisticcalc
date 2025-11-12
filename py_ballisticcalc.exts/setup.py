@@ -88,8 +88,8 @@ SOURCE_PATHS = {
     "bclib": SRC_DIR_PATH / "bclibc_bclib.c",
     "bind": SRC_DIR_PATH / "bclibc_py_bind.c",
     "interp": SRC_DIR_PATH / "bclibc_interp.c",
-    "base_traj_seq": SRC_DIR_PATH / "bclibc_base_traj_seq.c",
     # C++ Sources:
+    "seq": SRC_DIR_PATH / "bclibc_seq.cpp",
     "traj_filter": SRC_DIR_PATH / "bclibc_traj_filter.cpp",
     "engine": SRC_DIR_PATH / "bclibc_engine.cpp",
     "euler": SRC_DIR_PATH / "bclibc_euler.cpp",
@@ -101,14 +101,14 @@ SOURCE_PATHS = {
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 C_EXTENSION_DEPS = {
     "bind": ["interp", "bclib", "bind", "log"],
-    "base_traj_seq": ["interp", "bclib", "base_traj_seq", "log"],
     "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
     "_test_error_stack": ["error_stack", "log"],
 }
 
-_CPP_DEPS_BASIC = ["v3d", "bclib", "log", "error_stack", "interp", "base_traj_seq", "traj_filter"]
+_CPP_DEPS_BASIC = ["v3d", "bclib", "log", "error_stack", "interp", "seq", "traj_filter"]
 CPP_EXTENSION_DEPS = {
+    "base_traj_seq": ["interp", "bclib", "seq", "log"],
     "traj_filter": [*_CPP_DEPS_BASIC],
     "base_engine": [*_CPP_DEPS_BASIC, "engine"],
     "rk4_engine": [*_CPP_DEPS_BASIC, "engine", "rk4"],

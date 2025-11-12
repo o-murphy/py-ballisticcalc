@@ -4,7 +4,7 @@
 #include "bclibc_v3d.h"
 #include "bclibc_bclib.h"
 #include "bclibc_engine.hpp"
-#include "bclibc_base_traj_seq.h"
+#include "bclibc_seq.hpp"
 
 #ifdef __cplusplus
 extern "C"

@@ -6,7 +6,7 @@
 #include "bclibc_log.h"
 #include "bclibc_error_stack.h"
 #include "bclibc_bclib.h"
-#include "bclibc_base_traj_seq.h"
+#include "bclibc_seq.hpp"
 #include "bclibc_traj_filter.hpp"
 #include "bclibc_engine.hpp"
 #include "bclibc_rk4.hpp"
