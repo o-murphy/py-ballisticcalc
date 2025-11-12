@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "bclibc_error_stack.h"
 
 void BCLIBC_ErrorStack_pushErr(
@@ -157,5 +158,15 @@ void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_
                  f->msg);
 
         strncat(out, line, out_size - strlen(out) - 1);
+    }
+}
+
+void BCLIBC_requireNonNullFatal(const void *ptr, const char *file, int line, const char *func)
+{
+    if (!ptr)
+    {
+        fprintf(stderr, "FATAL: NULL pointer at %s:%d in %s\n", file, line, func);
+        fflush(stderr);
+        abort();
     }
 }
