@@ -5,7 +5,6 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
-    BCLIBC_ShotProps,
     BCLIBC_TrajFlag,
 )
 # noinspection PyUnresolvedReferences
@@ -14,15 +13,15 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
-    BCLIBC_EngineT,
+    BCLIBC_Engine,
     BCLIBC_StatusCode,
     BCLIBC_TerminationReason,
 )
 
-cdef extern from "include/bclibc_rk4.h" nogil:
+cdef extern from "include/bclibc_rk4.hpp" namespace "bclibc" nogil:
 
     BCLIBC_StatusCode BCLIBC_integrateRK4(
-        BCLIBC_EngineT *eng,
+        BCLIBC_Engine *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,

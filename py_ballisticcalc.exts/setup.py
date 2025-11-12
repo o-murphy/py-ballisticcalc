@@ -88,12 +88,12 @@ SOURCE_PATHS = {
     "bclib": SRC_DIR_PATH / "bclibc_bclib.c",
     "bind": SRC_DIR_PATH / "bclibc_py_bind.c",
     "interp": SRC_DIR_PATH / "bclibc_interp.c",
-    "euler": SRC_DIR_PATH / "bclibc_euler.c",
-    "rk4": SRC_DIR_PATH / "bclibc_rk4.c",
     "base_traj_seq": SRC_DIR_PATH / "bclibc_base_traj_seq.c",
-    "engine": SRC_DIR_PATH / "bclibc_engine.c",
     # C++ Sources:
     "traj_filter": SRC_DIR_PATH / "bclibc_traj_filter.cpp",
+    "engine": SRC_DIR_PATH / "bclibc_engine.cpp",
+    "euler": SRC_DIR_PATH / "bclibc_euler.cpp",
+    "rk4": SRC_DIR_PATH / "bclibc_rk4.cpp",
 }
 
 # Define dependencies for each extension as a dictionary

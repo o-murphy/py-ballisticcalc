@@ -661,7 +661,7 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
             BCLIBC_TerminationReason reason
 
-        cdef BCLIBC_StatusCode status = self._engine.integrate(
+        cdef BCLIBC_StatusCode status = self._engine.integrate_dense(
             range_limit_ft,
             range_step_ft,
             time_step,
