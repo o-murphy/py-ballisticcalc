@@ -14,7 +14,7 @@ from py_ballisticcalc_exts.bclib cimport (
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 
 
-cdef extern from "include/bclibc_py_bind.h" nogil:
+cdef extern from "include/bclibc_py_bind.hpp" namespace "bclibc" nogil:
     BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) noexcept nogil
     BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) noexcept nogil
     BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) noexcept nogil
