@@ -102,12 +102,16 @@ cdef class BCLIBC_ErrorStackT:
         BCLIBC_ErrorStack_print(self._c_stack_ptr)
 
 
-cdef object _frame_as_dict(BCLIBC_ErrorFrame *f):
+cdef object _frame_as_dict(const BCLIBC_ErrorFrame *f):
+    cdef const char* c_msg
+    cdef object error_message
+    c_msg = <const char*>f.msg
+    error_message = c_msg.decode('utf-8', 'replace') if c_msg is not NULL else "C-level error message was NULL"
     return {
         "code": f.code,
         "src": f.src,
         "func": f.func.decode('utf-8', 'ignore') if f.func is not NULL else "",
         "file": f.file.decode('utf-8', 'ignore') if f.file is not NULL else "",
         "line": f.line,
-        "msg": f.msg.decode('utf-8', 'ignore') if f.msg is not NULL else ""
+        "msg": error_message
     }

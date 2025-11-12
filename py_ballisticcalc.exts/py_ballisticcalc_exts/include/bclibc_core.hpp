@@ -14,7 +14,7 @@
 
 // Cython only bindings
 #ifdef __CYTHON__
-#include "bclibc_py_bind.h"
+#include "bclibc_py_bind.hpp"
 #endif
 
 #endif // BCLIBC_CORE_H

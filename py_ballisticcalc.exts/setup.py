@@ -86,9 +86,9 @@ SOURCE_PATHS = {
     "log": SRC_DIR_PATH / "bclibc_log.c",
     "error_stack": SRC_DIR_PATH / "bclibc_error_stack.c",
     "bclib": SRC_DIR_PATH / "bclibc_bclib.c",
-    "bind": SRC_DIR_PATH / "bclibc_py_bind.c",
     "interp": SRC_DIR_PATH / "bclibc_interp.c",
     # C++ Sources:
+    "bind": SRC_DIR_PATH / "bclibc_py_bind.cpp",
     "seq": SRC_DIR_PATH / "bclibc_seq.cpp",
     "traj_filter": SRC_DIR_PATH / "bclibc_traj_filter.cpp",
     "engine": SRC_DIR_PATH / "bclibc_engine.cpp",
@@ -99,23 +99,34 @@ SOURCE_PATHS = {
 # Define dependencies for each extension as a dictionary
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
+
+_INTERP_DEPS = set(["interp"])
+_ERR_STACK_DEPS = set(["log", "error_stack"])
+_BCLIBC_DEPS = set([*_INTERP_DEPS, *_ERR_STACK_DEPS, "v3d", "bclib"])
+_SEQ_DEPS = set([*_BCLIBC_DEPS, "seq"])
+_FILTER_DEPS = set([*_SEQ_DEPS, "traj_filter"])
+_BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
+_ENGINE_DEPS = set([*_BIND_DEPS, *_FILTER_DEPS, "engine"])
+_RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
+_EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
+_TEST_DEPS = set([*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS])
+
 C_EXTENSION_DEPS = {
-    "bind": ["interp", "bclib", "bind", "log"],
-    "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
-    "_test_error_stack": ["error_stack", "log"],
 }
 
-_CPP_DEPS_BASIC = ["v3d", "bclib", "log", "error_stack", "interp", "seq", "traj_filter"]
 CPP_EXTENSION_DEPS = {
-    "base_traj_seq": ["interp", "bclib", "seq", "log"],
-    "traj_filter": [*_CPP_DEPS_BASIC],
-    "base_engine": [*_CPP_DEPS_BASIC, "engine"],
-    "rk4_engine": [*_CPP_DEPS_BASIC, "engine", "rk4"],
-    "euler_engine": [*_CPP_DEPS_BASIC, "engine", "euler"],
+    "bind": _BIND_DEPS,
+    "trajectory_data": _BCLIBC_DEPS,
+    "base_traj_seq": _SEQ_DEPS,
+    "traj_filter": _FILTER_DEPS,
+    "base_engine": _ENGINE_DEPS,
+    "rk4_engine": _RK4_DEPS,
+    "euler_engine": _EULER_DEPS,
     # Test modules (expose internal C++ functions for tests only)
-    "_test_helpers": ["bclib", "interp", "log"],
-    "_test_engine": ["bclib", "interp", "log"],
+    "_test_helpers": _TEST_DEPS,
+    "_test_engine": _TEST_DEPS,
+    "_test_error_stack": _ERR_STACK_DEPS,
 }
 
 TEST_EXTENSIONS_DEPS = {}
@@ -202,6 +213,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     include_dirs=include_dirs,
                     # extra_objects=[],
                     language="c++",
+                    define_macros=define_macros,
                     extra_compile_args=cpp_compile_args,
                     extra_link_args=cpp_extra_link_args,
                 )
