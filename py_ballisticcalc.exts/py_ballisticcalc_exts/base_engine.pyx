@@ -16,8 +16,6 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.base_traj_seq cimport (
     BaseTrajSeqT,
     BCLIBC_BaseTrajSeq,
-    BCLIBC_BaseTrajSeq_len,
-    BCLIBC_BaseTrajSeq_getItem,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
@@ -121,7 +119,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Override this method to setup integrate_func_ptr and other fields.
 
         NOTE:
-            The BCLIBC_EngineT is built-in to CythonizedBaseIntegrationEngine,
+            The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,
             so we are need no set it's fields to null
         """
         # self._engine.gravity_vector = BCLIBC_V3dT(.0, .0, .0)
@@ -315,8 +313,8 @@ cdef class CythonizedBaseIntegrationEngine:
                 range_step_ft,
                 time_step,
                 <BCLIBC_TrajFlag>filter_flags,
-                &tdf.thisptr,
-                &trajectory._c_view,
+                &tdf._thisptr,
+                &trajectory._this,
                 &reason,
             )
 
@@ -658,7 +656,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
         cdef:
             BaseTrajSeqT trajectory = BaseTrajSeqT()
-            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
+            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._this
             BCLIBC_TerminationReason reason
 
         cdef BCLIBC_StatusCode status = self._engine.integrate_dense(

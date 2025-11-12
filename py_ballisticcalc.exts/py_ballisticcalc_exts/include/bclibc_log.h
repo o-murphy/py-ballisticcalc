@@ -27,7 +27,7 @@ typedef enum
 /*
  * Example output:
  * [ERROR] bclib.c:123 in BCLIBC_ShotProps_updateStabilityCoefficient: Division by zero in ftp calculation.
- * [DEBUG] bclibc_engine.h:45 in BCLIBC_EngineT_integrate: Using integration function pointer 0x12345678.
+ * [DEBUG] bclibc_engine.h:45 in BCLIBC_Engine.integrate: Using integration function pointer 0x12345678.
  * [WARNING] bclib.c:234 in BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude: Density request for altitude above troposphere.
  */
 

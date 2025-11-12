@@ -200,8 +200,7 @@ namespace bclibc
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to append to trajectory sequence\n");
 
             // err =
-            BCLIBC_BaseTrajSeq_append(
-                trajectory,
+            trajectory->append(
                 time,
                 range_vector.x, range_vector.y, range_vector.z,
                 velocity_vector.x, velocity_vector.y, velocity_vector.z,
@@ -319,8 +318,7 @@ namespace bclibc
         // Process final data point
 
         // err =
-        BCLIBC_BaseTrajSeq_append(
-            trajectory,
+        trajectory->append(
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,

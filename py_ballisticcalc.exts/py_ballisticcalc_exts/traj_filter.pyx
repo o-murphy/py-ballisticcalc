@@ -36,7 +36,7 @@ cdef class TrajectoryDataFilterT:
         double time_step=0.0
     ):
 
-        self.thisptr = new BCLIBC_TrajectoryDataFilter(
+        self._thisptr = new BCLIBC_TrajectoryDataFilter(
             props,
             <BCLIBC_TrajFlag>filter_flags,
             initial_position,
@@ -49,20 +49,20 @@ cdef class TrajectoryDataFilterT:
         )
 
     def __dealloc__(self):
-        if self.thisptr is not NULL:
-            del self.thisptr
-            self.thisptr = NULL
+        if self._thisptr is not NULL:
+            del self._thisptr
+            self._thisptr = NULL
 
     cdef void record(self, BCLIBC_BaseTrajData *new_data) except +:
-        if self.thisptr is NULL:
+        if self._thisptr is NULL:
             raise MemoryError("BCLIBC_TrajectoryDataFilter allocation error")
-        self.thisptr.record(new_data)
+        self._thisptr.record(new_data)
 
     cdef list get_records(self):
         cdef list py_list = []
 
         cdef const vector[BCLIBC_TrajectoryData]* cpp_records_ptr
-        cpp_records_ptr = &self.thisptr.get_records()
+        cpp_records_ptr = &self._thisptr.get_records()
 
         cdef vector[BCLIBC_TrajectoryData].const_iterator it
         cdef vector[BCLIBC_TrajectoryData].const_iterator end
@@ -77,13 +77,13 @@ cdef class TrajectoryDataFilterT:
         return py_list
 
     cdef void append(self, BCLIBC_TrajectoryData *new_data) except +:
-        self.thisptr.append(new_data)
+        self._thisptr.append(new_data)
 
     cdef void insert(self, BCLIBC_TrajectoryData *new_data, size_t index) except +:
-        self.thisptr.insert(new_data, index)
+        self._thisptr.insert(new_data, index)
 
     cdef BCLIBC_TrajectoryData get_record(self, Py_ssize_t index) except +:
-        return self.thisptr.get_record(<ptrdiff_t>index)
+        return self._thisptr.get_record(<ptrdiff_t>index)
 
 
 cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):

@@ -6,33 +6,33 @@
 /*
 Possible call chains:
 
-BCLIBC_EngineT_findZeroAngle
- ├─> BCLIBC_EngineT_initZeroCalculation
- │    └─> BCLIBC_EngineT_findApex
- │         └─> BCLIBC_EngineT_integrate
+BCLIBC_Engine.find_zero_angle
+ ├─> BCLIBC_Engine.init_zero_calculation
+ │    └─> BCLIBC_Engine.find_apex
+ │         └─> BCLIBC_Engine.integrate
  │              └─> eng->integrate_func_ptr
- ├─> BCLIBC_EngineT_findMaxRange
- │    ├─> BCLIBC_EngineT_findApex
- │    │    └─> BCLIBC_EngineT_integrate
+ ├─> BCLIBC_Engine.find_max_range
+ │    ├─> BCLIBC_Engine.find_apex
+ │    │    └─> BCLIBC_Engine.integrate
  │    │         └─> eng->integrate_func_ptr
- │    └─> BCLIBC_EngineT_rangeForAngle
- │         └─> BCLIBC_EngineT_integrate
+ │    └─> BCLIBC_Engine.range_for_angle
+ │         └─> BCLIBC_Engine.integrate
  │              └─> eng->integrate_func_ptr
- └─> BCLIBC_EngineT_errorAtDistance
-      └─> BCLIBC_EngineT_integrate
-      └─> BCLIBC_BaseTrajSeq_getAt / get_raw_item
+ └─> BCLIBC_Engine.error_at_distance
+      └─> BCLIBC_Engine.integrate
+      └─> BCLIBC_BaseTrajSeq / get_at / get_raw_item
 
-BCLIBC_EngineT_zeroAngle
- ├─> BCLIBC_EngineT_initZeroCalculation
- ├─> BCLIBC_EngineT_integrate
- └─> BCLIBC_BaseTrajSeq_init / get_at / release
+BCLIBC_Engine.zero_angle
+ ├─> BCLIBC_Engine.init_zero_calculation
+ ├─> BCLIBC_Engine.integrate
+ └─> BCLIBC_BaseTrajSeq / get_at / release
 
  Longest callstack:
 
- BCLIBC_EngineT_findZeroAngle
- -> BCLIBC_EngineT_initZeroCalculation
-    -> BCLIBC_EngineT_findApex
-       -> BCLIBC_EngineT_integrate
+ BCLIBC_Engine.find_zero_angle
+ -> BCLIBC_Engine.init_zero_calculation
+    -> BCLIBC_Engine.find_apex
+       -> BCLIBC_Engine.integrate
           -> eng->integrate_func_ptr
 */
 
