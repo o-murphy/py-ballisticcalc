@@ -25,24 +25,24 @@ cdef class BaseTrajDataT:
     __slots__ = ('time', '_position', '_velocity', 'mach')
 
     def __cinit__(self, BCLIBC_BaseTrajData data):
-        self._c_view = data
+        self._this = data
 
     @property
     def time(self):
-        return self._c_view.time
+        return self._this.time
 
     @property
     def mach(self):
-        return self._c_view.mach
+        return self._this.mach
 
     # Python-facing properties return Vector, not dict
     @property
     def position(self):
-        return v3d_to_vector(&self._c_view.position)
+        return v3d_to_vector(&self._this.position)
 
     @property
     def velocity(self):
-        return v3d_to_vector(&self._c_view.velocity)
+        return v3d_to_vector(&self._this.velocity)
 
     @staticmethod
     def interpolate(str key_attribute, double key_value,
@@ -70,7 +70,7 @@ cdef class BaseTrajDataT:
         cdef BCLIBC_BaseTrajData out
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
             key_kind, key_value,
-            &p0._c_view, &p1._c_view, &p2._c_view,
+            &p0._this, &p1._this, &p2._this,
             &out
         )
 

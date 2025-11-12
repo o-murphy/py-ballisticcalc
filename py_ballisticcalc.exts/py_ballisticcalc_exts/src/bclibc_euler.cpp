@@ -135,8 +135,7 @@ namespace bclibc
             // Store point in trajectory sequence
 
             // err =
-            BCLIBC_BaseTrajSeq_append(
-                trajectory,
+            trajectory->append(
                 time,
                 range_vector.x, range_vector.y, range_vector.z,
                 velocity_vector.x, velocity_vector.y, velocity_vector.z,
@@ -205,8 +204,7 @@ namespace bclibc
         // Add final data point
 
         // err =
-        BCLIBC_BaseTrajSeq_append(
-            trajectory,
+        trajectory->append(
             time,
             range_vector.x, range_vector.y, range_vector.z,
             velocity_vector.x, velocity_vector.y, velocity_vector.z,

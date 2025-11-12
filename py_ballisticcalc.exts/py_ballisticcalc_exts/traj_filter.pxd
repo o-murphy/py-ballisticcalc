@@ -89,7 +89,7 @@ cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
         const BCLIBC_TrajectoryData& get_record(ptrdiff_t index) except +
 
 cdef class TrajectoryDataFilterT:
-    cdef BCLIBC_TrajectoryDataFilter *thisptr
+    cdef BCLIBC_TrajectoryDataFilter *_thisptr
 
     cdef init(
         self,

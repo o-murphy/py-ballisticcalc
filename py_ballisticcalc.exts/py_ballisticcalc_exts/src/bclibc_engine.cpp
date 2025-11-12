@@ -4,33 +4,33 @@
 /*
 Possible call chains:
 
-BCLIBC_EngineT_findZeroAngle
- ├─> BCLIBC_EngineT_initZeroCalculation
- │    └─> BCLIBC_EngineT_findApex
- │         └─> BCLIBC_EngineT_integrate
- │              └─> eng->integrate_func_ptr
- ├─> BCLIBC_EngineT_findMaxRange
- │    ├─> BCLIBC_EngineT_findApex
- │    │    └─> BCLIBC_EngineT_integrate
+BCLIBC_Engine.find_zero_angle
+ ├─> BCLIBC_Engine.init_zero_calculation
+ │    └─> BCLIBC_Engine.find_apex
+ │         └─> BCLIBC_Engine.integrate
+ │              └─> BCLIBC_Engine->integrate_func_ptr
+ ├─> BCLIBC_Engine.find_max_range
+ │    ├─> BCLIBC_Engine.find_apex
+ │    │    └─> BCLIBC_Engine.integrate
  │    │         └─> eng->integrate_func_ptr
- │    └─> BCLIBC_EngineT_rangeForAngle
- │         └─> BCLIBC_EngineT_integrate
- │              └─> eng->integrate_func_ptr
- └─> BCLIBC_EngineT_errorAtDistance
-      └─> BCLIBC_EngineT_integrate
-      └─> BCLIBC_BaseTrajSeq_getAt / get_raw_item
+ │    └─> BCLIBC_Engine.range_for_angle
+ │         └─> BCLIBC_Engine.integrate
+ │              └─> BCLIBC_Engine->integrate_func_ptr
+ └─> BCLIBC_Engine.error_at_distance
+      └─> BCLIBC_Engine.integrate
+      └─> BCLIBC_BaseTrajSeq.get_at / get_raw_item
 
-BCLIBC_EngineT_zeroAngle
- ├─> BCLIBC_EngineT_initZeroCalculation
- ├─> BCLIBC_EngineT_integrate
- └─> BCLIBC_BaseTrajSeq_init / get_at / release
+BCLIBC_Engine.zero_angle
+ ├─> BCLIBC_Engine.init_zero_calculation
+ ├─> BCLIBC_Engine.integrate
+ └─> BCLIBC_BaseTrajSeq / get_at / release
 
  Longest callstack:
 
- BCLIBC_EngineT_findZeroAngle
- -> BCLIBC_EngineT_initZeroCalculation
-    -> BCLIBC_EngineT_findApex
-       -> BCLIBC_EngineT_integrate
+ BCLIBC_Engine.find_zero_angle
+ -> BCLIBC_Engine.init_zero_calculation
+    -> BCLIBC_Engine.find_apex
+       -> BCLIBC_Engine.integrate
           -> eng->integrate_func_ptr
 */
 
@@ -72,7 +72,7 @@ namespace bclibc
         BCLIBC_BaseTrajData *init = &temp_btd;
         BCLIBC_BaseTrajData *fin = &temp_btd;
 
-        err = BCLIBC_BaseTrajSeq_getItem(trajectory, 0, init);
+        err = trajectory->get_item(0, init);
         if (err != BCLIBC_E_NO_ERROR)
         {
             BCLIBC_PUSH_ERR(
@@ -93,9 +93,9 @@ namespace bclibc
             range_step_ft,
             time_step);
 
-        for (int i = 0; i < BCLIBC_BaseTrajSeq_len(trajectory); i++)
+        for (int i = 0; i < trajectory->get_length(); i++)
         {
-            err = BCLIBC_BaseTrajSeq_getItem(trajectory, i, &temp_btd);
+            err = trajectory->get_item(i, &temp_btd);
             if (err != BCLIBC_E_NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(
@@ -109,7 +109,7 @@ namespace bclibc
 
         if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
         {
-            err = BCLIBC_BaseTrajSeq_getItem(trajectory, -1, fin);
+            err = trajectory->get_item(-1, fin);
             if (err != BCLIBC_E_NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(
@@ -163,8 +163,8 @@ namespace bclibc
             BCLIBC_LOG(
                 BCLIBC_LOG_LEVEL_DEBUG,
                 "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
-                trajectory->length, trajectory->capacity,
-                trajectory->length * sizeof(BCLIBC_BaseTraj));
+                trajectory->get_length(), trajectory->get_capacity(),
+                trajectory->get_length() * sizeof(BCLIBC_BaseTraj));
             return BCLIBC_STATUS_SUCCESS;
         }
 
@@ -190,10 +190,8 @@ namespace bclibc
         // Have to ensure cMinimumVelocity is 0 for this to work
         double restore_min_velocity = 0.0;
         int has_restore_min_velocity = 0;
-        BCLIBC_BaseTrajSeq result;
         BCLIBC_StatusCode status;
-
-        BCLIBC_BaseTrajSeq_init(&result);
+        BCLIBC_BaseTrajSeq result = BCLIBC_BaseTrajSeq();
 
         if (this->config.cMinimumVelocity > 0.0)
         {
@@ -212,7 +210,7 @@ namespace bclibc
         }
         else
         {
-            BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getAt(&result, BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y, 0.0, -1, out);
+            BCLIBC_ErrorType err = result.get_at(BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y, 0.0, -1, out);
             if (err != BCLIBC_E_NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
@@ -229,7 +227,6 @@ namespace bclibc
             this->config.cMinimumVelocity = restore_min_velocity;
         }
 
-        BCLIBC_BaseTrajSeq_release(&result);
         return status;
     };
 
@@ -247,11 +244,9 @@ namespace bclibc
 
         *out_error_ft = 9e9;
 
-        BCLIBC_BaseTrajSeq trajectory;
         BCLIBC_BaseTrajData hit;
         BCLIBC_BaseTraj *last_ptr;
-
-        BCLIBC_BaseTrajSeq_init(&trajectory);
+        BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         // try
 
@@ -267,12 +262,12 @@ namespace bclibc
         else
         {
             // If trajectory is too short for cubic interpolation, treat as unreachable
-            if (trajectory.length >= 3)
+            if (trajectory.get_length() >= 3)
             {
-                last_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, -1);
+                last_ptr = trajectory.get_raw_item(-1);
                 if (last_ptr != NULL && last_ptr->time != 0.0)
                 {
-                    BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getAt(&trajectory, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit);
+                    BCLIBC_ErrorType err = trajectory.get_at(BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit);
                     if (err != BCLIBC_E_NO_ERROR)
                     {
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
@@ -293,7 +288,6 @@ namespace bclibc
         }
 
         // finally:
-        BCLIBC_BaseTrajSeq_release(&trajectory);
         return status;
     };
 
@@ -329,7 +323,7 @@ namespace bclibc
 
         // Edge case: Very close shot; ignore gravity and drag
         if (std::fabs(result->slant_range_ft) < 2.0 * std::fmax(std::fabs(result->start_height_ft),
-                                                      this->config.cStepMultiplier))
+                                                                this->config.cStepMultiplier))
         {
             result->look_angle_rad = std::atan2(result->target_y_ft + result->start_height_ft, result->target_x_ft);
             return BCLIBC_STATUS_SUCCESS;
@@ -437,10 +431,8 @@ namespace bclibc
             return BCLIBC_STATUS_SUCCESS; // immediately return when already done
         }
 
-        BCLIBC_BaseTrajData hit;
-        BCLIBC_BaseTrajSeq seq;
         status = BCLIBC_STATUS_SUCCESS; // initialize
-        BCLIBC_BaseTrajSeq_init(&seq);
+        BCLIBC_BaseTrajData hit;
 
         double _cZeroFindingAccuracy = this->config.cZeroFindingAccuracy;
         int _cMaxIterations = this->config.cMaxIterations;
@@ -482,10 +474,9 @@ namespace bclibc
         while (iterations_count < _cMaxIterations)
         {
             // reset seq for integration result
-            BCLIBC_BaseTrajSeq_release(&seq);
-            BCLIBC_BaseTrajSeq_init(&seq);
-
             BCLIBC_TerminationReason reason;
+            BCLIBC_BaseTrajSeq seq = BCLIBC_BaseTrajSeq();
+
             status = this->integrate_dense(target_x_ft, target_x_ft, 0.0, &seq, &reason);
 
             if (status != BCLIBC_STATUS_SUCCESS)
@@ -495,7 +486,7 @@ namespace bclibc
             }
 
             // interpolate trajectory at target_x_ft using the sequence we just filled
-            BCLIBC_ErrorType err = BCLIBC_BaseTrajSeq_getAt(&seq, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit); // <--- FIXED: pass &seq, not &result
+            BCLIBC_ErrorType err = seq.get_at(BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X, target_x_ft, -1, &hit);
             if (err != BCLIBC_E_NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_RUNTIME_ERROR, BCLIBC_SRC_ZERO_ANGLE, "Failed to interpolate trajectory at target distance");
@@ -604,9 +595,6 @@ namespace bclibc
 
         // finally:
 
-        // Always release seq if it was allocated
-        BCLIBC_BaseTrajSeq_release(&seq);
-
         // Restore original constraints
         if (has_restore_cMaximumDrop)
         {
@@ -649,7 +637,6 @@ namespace bclibc
         double ix;
         double iy;
         double sdist;
-        BCLIBC_BaseTrajSeq trajectory;
         BCLIBC_StatusCode status;
         ssize_t n;
         ssize_t i;
@@ -661,7 +648,7 @@ namespace bclibc
 
         // try:
         *result = -9e9;
-        BCLIBC_BaseTrajSeq_init(&trajectory);
+        BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         BCLIBC_TerminationReason reason;
         status = this->integrate_dense(9e9, 9e9, 0.0, &trajectory, &reason);
@@ -673,23 +660,25 @@ namespace bclibc
         {
             ca = std::cos(this->shot.look_angle);
             sa = std::sin(this->shot.look_angle);
-            n = trajectory.length;
+            n = trajectory.get_length();
             if (n >= 2)
             {
                 // Linear search from end of trajectory for zero-down crossing
                 for (i = n - 1; i > 0; i--)
                 {
-                    prev_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, i - 1);
+                    prev_ptr = trajectory.get_raw_item(i - 1);
                     if (prev_ptr == NULL)
                     {
-                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE, "Index error in BCLIBC_BaseTrajSeq_getRawItem");
+                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE,
+                                        "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                         status = BCLIBC_STATUS_ERROR;
                         break; // assume INDEX_ERROR
                     }
-                    cur_ptr = BCLIBC_BaseTrajSeq_getRawItem(&trajectory, i);
+                    cur_ptr = trajectory.get_raw_item(i);
                     if (cur_ptr == NULL)
                     {
-                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE, "Index error in BCLIBC_BaseTrajSeq_getRawItem");
+                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE,
+                                        "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                         status = BCLIBC_STATUS_ERROR;
                         break; // assume INDEX_ERROR
                     }
@@ -712,7 +701,6 @@ namespace bclibc
             }
         }
 
-        BCLIBC_BaseTrajSeq_release(&trajectory);
         return status;
     };
 
