@@ -38,7 +38,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double drag(self, double mach):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_ShotProps_dragByMach(&self._engine.shot, mach)
+        return BCLIBC_ShotProps_dragByMach(&self._this.shot, mach)
 
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
@@ -46,7 +46,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         cdef double density_ratio = 0.0
         cdef double mach = 0.0
         BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-            &self._engine.shot.atmo,
+            &self._this.shot.atmo,
             altitude_ft,
             &density_ratio,
             &mach
@@ -56,24 +56,24 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double spin_drift(self, double time_s):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_ShotProps_spinDrift(&self._engine.shot, time_s)
+        return BCLIBC_ShotProps_spinDrift(&self._this.shot, time_s)
 
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        if BCLIBC_ShotProps_updateStabilityCoefficient(&self._engine.shot) != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        if BCLIBC_ShotProps_updateStabilityCoefficient(&self._this.shot) != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
             raise ZeroDivisionError("Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient")
-        return self._engine.shot.stability_coefficient
+        return self._this.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_calculateEnergy(self._engine.shot.weight, velocity_fps)
+        return BCLIBC_calculateEnergy(self._this.shot.weight, velocity_fps)
 
     cpdef double ogw(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_calculateOgw(self._engine.shot.weight, velocity_fps)
+        return BCLIBC_calculateOgw(self._this.shot.weight, velocity_fps)
 
     cpdef int step_count(self):
         return self.integration_step_count
@@ -88,17 +88,17 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
         cdef BaseTrajSeqT seq = BaseTrajSeqT()
-        cdef double v = self._engine.shot.muzzle_velocity
-        cdef double be = self._engine.shot.barrel_elevation
-        cdef double az = self._engine.shot.barrel_azimuth
+        cdef double v = self._this.shot.muzzle_velocity
+        cdef double be = self._this.shot.barrel_elevation
+        cdef double az = self._this.shot.barrel_azimuth
         cdef double vx = v * cos(be) * cos(az)
         cdef double vy = v * sin(be)
         cdef double vz = v * cos(be) * sin(az)
         # initial point
         seq.append(
             0.0, 0.0,
-            -self._engine.shot.cant_cosine * self._engine.shot.sight_height,
-            -self._engine.shot.cant_sine * self._engine.shot.sight_height,
+            -self._this.shot.cant_cosine * self._this.shot.sight_height,
+            -self._this.shot.cant_sine * self._this.shot.sight_height,
             vx, vy, vz, 1.0
         )
         # second point simple Euler step without drag / gravity for minimal path
@@ -109,8 +109,8 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
             dt = 0.001
         seq.append(
             dt, vx * dt,
-            -self._engine.shot.cant_cosine * self._engine.shot.sight_height + vy * dt,
-            -self._engine.shot.cant_sine * self._engine.shot.sight_height + vz * dt,
+            -self._this.shot.cant_cosine * self._this.shot.sight_height + vy * dt,
+            -self._this.shot.cant_sine * self._this.shot.sight_height + vz * dt,
             vx, vy, vz, 1.0
         )
         self.integration_step_count = <int>seq._length
