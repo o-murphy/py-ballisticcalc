@@ -272,8 +272,8 @@ namespace bclibc
             return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR
         }
         out->time = raw_output.time;
-        out->position = (BCLIBC_V3dT){raw_output.px, raw_output.py, raw_output.pz};
-        out->velocity = (BCLIBC_V3dT){raw_output.vx, raw_output.vy, raw_output.vz};
+        out->position = BCLIBC_V3dT{raw_output.px, raw_output.py, raw_output.pz};
+        out->velocity = BCLIBC_V3dT{raw_output.vx, raw_output.vy, raw_output.vz};
         out->mach = raw_output.mach;
         return BCLIBC_E_NO_ERROR;
     };
@@ -339,8 +339,8 @@ namespace bclibc
         }
 
         out->time = entry_ptr->time;
-        out->position = (BCLIBC_V3dT){entry_ptr->px, entry_ptr->py, entry_ptr->pz};
-        out->velocity = (BCLIBC_V3dT){entry_ptr->vx, entry_ptr->vy, entry_ptr->vz};
+        out->position = BCLIBC_V3dT{entry_ptr->px, entry_ptr->py, entry_ptr->pz};
+        out->velocity = BCLIBC_V3dT{entry_ptr->vx, entry_ptr->vy, entry_ptr->vz};
         out->mach = entry_ptr->mach;
 
         return BCLIBC_E_NO_ERROR;
@@ -466,11 +466,11 @@ namespace bclibc
         double ox2 = p2->slant_val_buf(ca, sa);
 
         out->time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
-        out->position = (BCLIBC_V3dT){
+        out->position = BCLIBC_V3dT{
             BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->px, p1->px, p2->px),
             BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->py, p1->py, p2->py),
             BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz)};
-        out->velocity = (BCLIBC_V3dT){
+        out->velocity = BCLIBC_V3dT{
             BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx),
             BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy),
             BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz)};
