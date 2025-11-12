@@ -151,7 +151,7 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef:
         public object _config
         list _table_data  # list[object]
-        BCLIBC_Engine _engine
+        BCLIBC_Engine _this
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
 

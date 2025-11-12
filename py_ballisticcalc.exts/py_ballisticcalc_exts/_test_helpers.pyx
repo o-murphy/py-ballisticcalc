@@ -56,7 +56,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
 
     Args:
-        shot_props_addr: `id()` of an internal BCLIBC_ShotProps struct exposed via engine._engine.shot
+        shot_props_addr: `id()` of an internal BCLIBC_ShotProps struct exposed via engine._this.shot
         mach: Mach number to evaluate
 
     Returns:
@@ -64,7 +64,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
 
     Notes:
         We pass a raw address obtained from a Cython engine instance to avoid adding
-        a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._engine.shot`.
+        a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._this.shot`.
     """
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     return BCLIBC_ShotProps_dragByMach(sp_ptr, mach)
@@ -72,7 +72,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return BCLIBC_ShotProps_dragByMach(&e._engine.shot, mach)
+    return BCLIBC_ShotProps_dragByMach(&e._this.shot, mach)
 
 cpdef size_t shot_props_addr(object engine):
     """Return raw address of the engine's internal BCLIBC_ShotProps struct.
@@ -81,7 +81,7 @@ cpdef size_t shot_props_addr(object engine):
     so that its _engine.shot contains prepared curve + mach list.
     """
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return <size_t>&e._engine.shot
+    return <size_t>&e._this.shot
 
 cpdef size_t init_shot(object engine, object shot):
     """Initialize shot props inside engine and return its address.
