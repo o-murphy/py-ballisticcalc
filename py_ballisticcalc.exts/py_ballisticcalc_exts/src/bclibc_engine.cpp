@@ -55,7 +55,7 @@ namespace bclibc
             return BCLIBC_STATUS_ERROR;
         }
 
-        BCLIBC_StatusCode status = this->integrate(
+        BCLIBC_StatusCode status = this->integrate_dense(
             range_limit_ft,
             range_step_ft,
             time_step,
@@ -133,7 +133,7 @@ namespace bclibc
         return BCLIBC_STATUS_SUCCESS;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::integrate(
+    BCLIBC_StatusCode BCLIBC_Engine::integrate_dense(
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -203,7 +203,7 @@ namespace bclibc
 
         // try
         BCLIBC_TerminationReason reason;
-        status = this->integrate(9e9, 9e9, 0.0, &result, &reason);
+        status = this->integrate_dense(9e9, 9e9, 0.0, &result, &reason);
 
         if (status != BCLIBC_STATUS_SUCCESS)
         {
@@ -257,7 +257,7 @@ namespace bclibc
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
-        BCLIBC_StatusCode status = this->integrate(9e9, 9e9, 0.0, &trajectory, &reason);
+        BCLIBC_StatusCode status = this->integrate_dense(9e9, 9e9, 0.0, &trajectory, &reason);
 
         if (status != BCLIBC_STATUS_SUCCESS)
         {
@@ -485,7 +485,7 @@ namespace bclibc
             BCLIBC_BaseTrajSeq_init(&seq);
 
             BCLIBC_TerminationReason reason;
-            status = this->integrate(target_x_ft, target_x_ft, 0.0, &seq, &reason);
+            status = this->integrate_dense(target_x_ft, target_x_ft, 0.0, &seq, &reason);
 
             if (status != BCLIBC_STATUS_SUCCESS)
             {
@@ -663,7 +663,7 @@ namespace bclibc
         BCLIBC_BaseTrajSeq_init(&trajectory);
 
         BCLIBC_TerminationReason reason;
-        status = this->integrate(9e9, 9e9, 0.0, &trajectory, &reason);
+        status = this->integrate_dense(9e9, 9e9, 0.0, &trajectory, &reason);
         if (status != BCLIBC_STATUS_SUCCESS)
         {
             status = BCLIBC_STATUS_ERROR;

@@ -21,7 +21,7 @@ from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryDataFilter
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
-cdef extern from "include/bclibc_engine.h" nogil:
+cdef extern from "include/bclibc_engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
     ctypedef enum BCLIBC_ZeroInitialStatus:
@@ -58,14 +58,11 @@ cdef extern from "include/bclibc_engine.h" nogil:
         double last_barrel_elevation_rad
 
     # Forward declaration
-    struct BCLIBC_EngineT
-
-    # Typedef alias
-    ctypedef BCLIBC_EngineS BCLIBC_EngineT
+    cdef cppclass BCLIBC_Engine
 
     # Declare the function signature type (not a pointer yet)
     ctypedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
-        BCLIBC_EngineT *eng,
+        BCLIBC_Engine *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -76,17 +73,6 @@ cdef extern from "include/bclibc_engine.h" nogil:
     # Declare pointer to function
     ctypedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr
 
-    # Full struct definition
-    struct BCLIBC_EngineS:
-        int integration_step_count
-        BCLIBC_V3dT gravity_vector
-        BCLIBC_Config config
-        BCLIBC_ShotProps shot
-        BCLIBC_IntegrateFuncPtr integrate_func_ptr
-        BCLIBC_ErrorStack err_stack
-
-
-cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
     cdef cppclass BCLIBC_Engine:
         int integration_step_count
         BCLIBC_V3dT gravity_vector
@@ -106,7 +92,7 @@ cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason) except +
 
-        BCLIBC_StatusCode integrate(
+        BCLIBC_StatusCode integrate_dense(
             double range_limit_ft,
             double range_step_ft,
             double time_step,

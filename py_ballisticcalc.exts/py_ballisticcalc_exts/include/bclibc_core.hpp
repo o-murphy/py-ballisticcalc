@@ -7,9 +7,10 @@
 #include "bclibc_error_stack.h"
 #include "bclibc_bclib.h"
 #include "bclibc_base_traj_seq.h"
-#include "bclibc_engine.h"
-#include "bclibc_rk4.h"
-#include "bclibc_euler.h"
+#include "bclibc_traj_filter.hpp"
+#include "bclibc_engine.hpp"
+#include "bclibc_rk4.hpp"
+#include "bclibc_euler.hpp"
 
 // Cython only bindings
 #ifdef __CYTHON__
