@@ -11,7 +11,7 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ErrorType,
 )
 
-cdef extern from "include/bclibc_base_traj_seq.h" nogil:
+cdef extern from "include/bclibc_seq.hpp" namespace "bclibc" nogil:
     ctypedef struct BCLIBC_BaseTraj:
         double time
         double px
@@ -69,6 +69,37 @@ cdef extern from "include/bclibc_base_traj_seq.h" nogil:
         double start_from_time,
         BCLIBC_BaseTrajData *out
     ) noexcept nogil
+
+    cdef cppclass BCLIBC_BaseTrajSeqWrapper:
+        BCLIBC_BaseTraj* buffer
+        size_t length
+        size_t capacity
+
+        BCLIBC_ErrorType append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
+        BCLIBC_ErrorType ensure_capacity(size_t min_capacity)
+        ssize_t len() const
+        BCLIBC_ErrorType interpolate_at(
+            ssize_t idx,
+            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            double key_value,
+            BCLIBC_BaseTrajData *out
+        )
+        BCLIBC_BaseTraj *get_raw_item(ssize_t idx) const
+        BCLIBC_ErrorType get_at_slant_height(
+            double look_angle_rad,
+            double value,
+            BCLIBC_BaseTrajData *out
+        ) const
+        BCLIBC_ErrorType get_item(
+            ssize_t idx,
+            BCLIBC_BaseTrajData *out
+        ) const
+        BCLIBC_ErrorType get_at(
+            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            double key_value,
+            double start_from_time,
+            BCLIBC_BaseTrajData *out
+        ) const
 
 
 cdef class BaseTrajSeqT:

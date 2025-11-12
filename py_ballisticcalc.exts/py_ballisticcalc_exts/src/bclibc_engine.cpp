@@ -1,3 +1,4 @@
+#include <cmath>
 #include "bclibc_engine.hpp"
 
 /*
@@ -279,7 +280,7 @@ namespace bclibc
                     }
                     else
                     {
-                        *out_error_ft = (hit.position.y - target_y_ft) - fabs(hit.position.x - target_x_ft);
+                        *out_error_ft = (hit.position.y - target_y_ft) - std::fabs(hit.position.x - target_x_ft);
                         status = BCLIBC_STATUS_SUCCESS;
                     }
                 }
@@ -316,26 +317,26 @@ namespace bclibc
         result->status = BCLIBC_ZERO_INIT_DONE;
         result->slant_range_ft = distance;
         result->look_angle_rad = this->shot.look_angle;
-        result->target_x_ft = result->slant_range_ft * cos(result->look_angle_rad);
-        result->target_y_ft = result->slant_range_ft * sin(result->look_angle_rad);
+        result->target_x_ft = result->slant_range_ft * std::cos(result->look_angle_rad);
+        result->target_y_ft = result->slant_range_ft * std::sin(result->look_angle_rad);
         result->start_height_ft = -this->shot.sight_height * this->shot.cant_cosine;
 
         // Edge case: Very close shot
-        if (fabs(result->slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
+        if (std::fabs(result->slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
             return BCLIBC_STATUS_SUCCESS;
         }
 
         // Edge case: Very close shot; ignore gravity and drag
-        if (fabs(result->slant_range_ft) < 2.0 * fmax(fabs(result->start_height_ft),
+        if (std::fabs(result->slant_range_ft) < 2.0 * std::fmax(std::fabs(result->start_height_ft),
                                                       this->config.cStepMultiplier))
         {
-            result->look_angle_rad = atan2(result->target_y_ft + result->start_height_ft, result->target_x_ft);
+            result->look_angle_rad = std::atan2(result->target_y_ft + result->start_height_ft, result->target_x_ft);
             return BCLIBC_STATUS_SUCCESS;
         }
 
         // Edge case: Virtually vertical shot; just check if it can reach the target
-        if (fabs(result->look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+        if (std::fabs(result->look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
         {
             // Compute slant distance at apex using robust accessor
             status = this->find_apex(&apex);
@@ -343,7 +344,7 @@ namespace bclibc
             {
                 return BCLIBC_STATUS_ERROR; // Redirect apex finding error
             }
-            apex_slant_ft = apex.position.x * cos(result->look_angle_rad) + apex.position.y * sin(result->look_angle_rad);
+            apex_slant_ft = apex.position.x * std::cos(result->look_angle_rad) + apex.position.y * std::sin(result->look_angle_rad);
             if (apex_slant_ft < result->slant_range_ft)
             {
                 error->requested_distance_ft = result->slant_range_ft;
@@ -463,7 +464,7 @@ namespace bclibc
         double trajectory_angle = 0.0;
 
         // Backup and adjust constraints if needed
-        if (fabs(this->config.cMaximumDrop) < required_drop_ft)
+        if (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
         {
             restore_cMaximumDrop = this->config.cMaximumDrop;
             this->config.cMaximumDrop = required_drop_ft;
@@ -516,16 +517,16 @@ namespace bclibc
                 continue;
             }
 
-            double ca = cos(look_angle_rad);
-            double sa = sin(look_angle_rad);
+            double ca = std::cos(look_angle_rad);
+            double sa = std::sin(look_angle_rad);
             double height_diff_ft = hit.position.y * ca - hit.position.x * sa;
             double look_dist_ft = hit.position.x * ca + hit.position.y * sa;
             double range_diff_ft = look_dist_ft - slant_range_ft;
-            range_error_ft = fabs(range_diff_ft);
-            height_error_ft = fabs(height_diff_ft);
-            trajectory_angle = atan2(hit.velocity.y, hit.velocity.x);
+            range_error_ft = std::fabs(range_diff_ft);
+            height_error_ft = std::fabs(height_diff_ft);
+            trajectory_angle = std::atan2(hit.velocity.y, hit.velocity.x);
 
-            double sensitivity = (tan(this->shot.barrel_elevation - look_angle_rad) * tan(trajectory_angle - look_angle_rad));
+            double sensitivity = (std::tan(this->shot.barrel_elevation - look_angle_rad) * std::tan(trajectory_angle - look_angle_rad));
             double denominator;
             if (sensitivity < -0.5)
             {
@@ -536,7 +537,7 @@ namespace bclibc
                 denominator = look_dist_ft * (1 + sensitivity);
             }
 
-            if (fabs(denominator) > 1e-9)
+            if (std::fabs(denominator) > 1e-9)
             {
                 double correction = -height_diff_ft / denominator;
 
@@ -552,7 +553,7 @@ namespace bclibc
                         break;
                     }
                 }
-                else if (height_error_ft > fabs(prev_height_error_ft))
+                else if (height_error_ft > std::fabs(prev_height_error_ft))
                 {
                     damping_factor *= damping_rate;
                     if (damping_factor < 0.3)
@@ -670,8 +671,8 @@ namespace bclibc
         }
         else
         {
-            ca = cos(this->shot.look_angle);
-            sa = sin(this->shot.look_angle);
+            ca = std::cos(this->shot.look_angle);
+            sa = std::sin(this->shot.look_angle);
             n = trajectory.length;
             if (n >= 2)
             {
@@ -699,7 +700,7 @@ namespace bclibc
                         // Interpolate for slant_distance
                         denom = h_prev - h_cur;
                         t = denom == 0.0 ? 0.0 : h_prev / denom;
-                        t = fmax(0.0, fmin(1.0, t));
+                        t = std::fmax(0.0, std::fmin(1.0, t));
                         ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
                         iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
                         sdist = ix * ca + iy * sa;
@@ -742,14 +743,14 @@ namespace bclibc
 
         // Virtually vertical shot
         // π/2 radians = 90 degrees
-        if (fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+        if (std::fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
         {
             status = this->find_apex(&apex);
             if (status != BCLIBC_STATUS_SUCCESS)
             {
                 return BCLIBC_STATUS_ERROR; // Redirect apex finding error
             }
-            sdist = apex.position.x * cos(look_angle_rad) + apex.position.y * sin(look_angle_rad);
+            sdist = apex.position.x * std::cos(look_angle_rad) + apex.position.y * std::sin(look_angle_rad);
             result->max_range_ft = sdist;
             result->angle_at_max_rad = look_angle_rad;
             return BCLIBC_STATUS_SUCCESS;
@@ -769,7 +770,7 @@ namespace bclibc
             has_restore_cMinimumVelocity = 1;
         }
 
-        double inv_phi = 0.6180339887498949;              // (sqrt(5) - 1) / 2
+        double inv_phi = 0.6180339887498949;              // (std::sqrt(5) - 1) / 2
         double inv_phi_sq = 0.38196601125010515;          // inv_phi^2
         double a = low_angle_deg * 0.017453292519943295;  // Convert to radians
         double b = high_angle_deg * 0.017453292519943295; // Convert to radians
@@ -890,7 +891,7 @@ namespace bclibc
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_OUT_OF_RANGE_ERROR, BCLIBC_SRC_FIND_ZERO_ANGLE, "Out of range");
             return BCLIBC_STATUS_ERROR;
         }
-        if (fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
+        if (std::fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
             *result = angle_at_max_rad;
             return BCLIBC_STATUS_SUCCESS;
@@ -920,7 +921,7 @@ namespace bclibc
         {
             if (start_height_ft > 0.0)
             {
-                sight_height_adjust = atan2(start_height_ft, target_x_ft);
+                sight_height_adjust = std::atan2(start_height_ft, target_x_ft);
             }
             low_angle = look_angle_rad - sight_height_adjust;
             high_angle = angle_at_max_rad;
@@ -941,7 +942,7 @@ namespace bclibc
         }
 
         // If low is exactly look angle and failed to evaluate, nudge slightly upward to bracket
-        if (f_low > 1e8 && fabs(low_angle - look_angle_rad) < 1e-9)
+        if (f_low > 1e8 && std::fabs(low_angle - look_angle_rad) < 1e-9)
         {
             low_angle = look_angle_rad + 1e-3;
             status = this->error_at_distance(
@@ -1003,7 +1004,7 @@ namespace bclibc
             }
 
             // Check if we found exact solution at midpoint
-            if (fabs(f_mid) < this->config.cZeroFindingAccuracy)
+            if (std::fabs(f_mid) < this->config.cZeroFindingAccuracy)
             {
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: found exact solution at mid_angle=%.6f", mid_angle);
                 *result = mid_angle;
@@ -1029,7 +1030,7 @@ namespace bclibc
                 break;
             }
 
-            s = sqrt(_inner);
+            s = std::sqrt(_inner);
 
             // Should not happen if f_low and f_high have opposite signs
             if (s == 0.0)
@@ -1040,7 +1041,7 @@ namespace bclibc
 
             next_angle = mid_angle + (mid_angle - low_angle) * (copysign(1.0, f_low - f_high) * f_mid / s);
 
-            if (fabs(next_angle - mid_angle) < this->config.cZeroFindingAccuracy)
+            if (std::fabs(next_angle - mid_angle) < this->config.cZeroFindingAccuracy)
             {
                 *result = next_angle;
                 converged = 1;
@@ -1059,7 +1060,7 @@ namespace bclibc
             }
 
             // Check if we found exact solution at next_angle
-            if (fabs(f_next) < this->config.cZeroFindingAccuracy)
+            if (std::fabs(f_next) < this->config.cZeroFindingAccuracy)
             {
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: found exact solution at next_angle=%.6f", next_angle);
                 *result = next_angle;
@@ -1093,7 +1094,7 @@ namespace bclibc
                 break;
             }
 
-            if (fabs(high_angle - low_angle) < this->config.cZeroFindingAccuracy)
+            if (std::fabs(high_angle - low_angle) < this->config.cZeroFindingAccuracy)
             {
                 *result = (low_angle + high_angle) / 2.0;
                 converged = 1;
@@ -1108,7 +1109,7 @@ namespace bclibc
             // Try fallback strategies before giving up
 
             // If we have a very small bracket, consider it converged
-            if (fabs(high_angle - low_angle) < 10.0 * this->config.cZeroFindingAccuracy)
+            if (std::fabs(high_angle - low_angle) < 10.0 * this->config.cZeroFindingAccuracy)
             {
                 *result = (low_angle + high_angle) / 2.0;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting solution from small bracket: %.6f", *result);
@@ -1117,14 +1118,14 @@ namespace bclibc
             }
 
             // If we have very small errors, consider it converged
-            if (fabs(f_low) < 10.0 * this->config.cZeroFindingAccuracy)
+            if (std::fabs(f_low) < 10.0 * this->config.cZeroFindingAccuracy)
             {
                 *result = low_angle;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting low_angle due to small f_low: %.6f", *result);
                 status = BCLIBC_STATUS_SUCCESS;
                 goto finally;
             }
-            if (fabs(f_high) < 10.0 * this->config.cZeroFindingAccuracy)
+            if (std::fabs(f_high) < 10.0 * this->config.cZeroFindingAccuracy)
             {
                 *result = high_angle;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting high_angle due to small f_high: %.6f", *result);

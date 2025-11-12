@@ -1,10 +1,8 @@
 #include <cmath>
 #include <algorithm>
-#include <vector>
 #include <stdexcept>
-#include "bclibc_base_traj_seq.h"
-#include "bclibc_traj_filter.hpp"
 #include <cstring>
+#include "bclibc_traj_filter.hpp"
 
 namespace bclibc
 {
