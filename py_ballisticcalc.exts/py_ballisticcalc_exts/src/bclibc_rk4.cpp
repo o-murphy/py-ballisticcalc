@@ -1,4 +1,4 @@
-#include <math.h>
+#include <cmath>
 #include "bclibc_rk4.hpp"
 #include "bclibc_bclib.hpp"
 
@@ -108,7 +108,7 @@ namespace bclibc
         // Early binding of configuration constants
         double _cMinimumVelocity = eng->config.cMinimumVelocity;
         double _cMinimumAltitude = eng->config.cMinimumAltitude;
-        double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
+        double _cMaximumDrop = -std::fabs(eng->config.cMaximumDrop);
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
                    _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
@@ -149,14 +149,14 @@ namespace bclibc
         range_vector.x = 0.0;
         range_vector.y = -eng->shot.cant_cosine * eng->shot.sight_height;
         range_vector.z = -eng->shot.cant_sine * eng->shot.sight_height;
-        _cMaximumDrop += fmin(0.0, range_vector.y);
+        _cMaximumDrop += std::fmin(0.0, range_vector.y);
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Range vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
 
         // Set direction vector components
-        _dir_vector.x = cos(eng->shot.barrel_elevation) * cos(eng->shot.barrel_azimuth);
-        _dir_vector.y = sin(eng->shot.barrel_elevation);
-        _dir_vector.z = cos(eng->shot.barrel_elevation) * sin(eng->shot.barrel_azimuth);
+        _dir_vector.x = std::cos(eng->shot.barrel_elevation) * std::cos(eng->shot.barrel_azimuth);
+        _dir_vector.y = std::sin(eng->shot.barrel_elevation);
+        _dir_vector.z = std::cos(eng->shot.barrel_elevation) * std::sin(eng->shot.barrel_azimuth);
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Direction vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
 

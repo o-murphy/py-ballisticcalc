@@ -1,10 +1,9 @@
 #include "bclibc_bclib.hpp"
 #include "bclibc_v3d.h"
 #include "bclibc_interp.h"
-#include <math.h>
+#include <cmath>
 #include <stddef.h> // For size_t
 #include <stdio.h>  // For warnings (printf used here)
-#include <float.h>  // For fabs()
 #include <stdlib.h>
 
 namespace bclibc
@@ -220,7 +219,7 @@ namespace bclibc
             shot_props_ptr->diameter != 0.0 &&
             shot_props_ptr->atmo._p0 != 0.0)
         {
-            twist_rate = fabs(shot_props_ptr->twist) / shot_props_ptr->diameter;
+            twist_rate = std::fabs(shot_props_ptr->twist) / shot_props_ptr->diameter;
             length = shot_props_ptr->length / shot_props_ptr->diameter;
 
             // Ensure denominator components are non-zero to avoid division by zero
@@ -392,7 +391,7 @@ namespace bclibc
         const double alt_diff = altitude - this->_a0;
 
         // Fast check: if altitude is close to base altitude, use stored values
-        if (fabs(alt_diff) < 30.0)
+        if (std::fabs(alt_diff) < 30.0)
         {
             // Close enough to base altitude, use stored values
             *density_ratio_ptr = this->density_ratio;
@@ -436,7 +435,7 @@ namespace bclibc
         *density_ratio_ptr = this->density_ratio * density_delta;
 
         // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
-        *mach_ptr = sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
+        *mach_ptr = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
                    altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
@@ -461,9 +460,9 @@ namespace bclibc
         // x = vel * cos(dir) (Downrange, positive is tailwind)
         // z = vel * sin(dir) (Crossrange, positive is wind from right)
         return (BCLIBC_V3dT){
-            .x = vel * cos(dir),
+            .x = vel * std::cos(dir),
             .y = 0.0,
-            .z = vel * sin(dir)};
+            .z = vel * std::sin(dir)};
     }
 
     /**

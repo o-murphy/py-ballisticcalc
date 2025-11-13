@@ -1,4 +1,4 @@
-#include <math.h>
+#include <cmath>
 #include "bclibc_euler.hpp"
 // #include "bclibc_bclib.hpp"  // for C_LOG
 
@@ -14,7 +14,7 @@ namespace bclibc
     static inline double BCLIBC_euler_time_step(double base_step, double velocity)
     {
         // C equivalent of fmax(1.0, velocity)
-        // fmax is defined in <math.h>
+        // fmax is defined in <cmath>
         double divisor = velocity > 1.0 ? velocity : 1.0;
         return base_step / divisor;
     };
@@ -70,7 +70,7 @@ namespace bclibc
         // Early binding of configuration constants
         double _cMinimumVelocity = eng->config.cMinimumVelocity;
         double _cMinimumAltitude = eng->config.cMinimumAltitude;
-        double _cMaximumDrop = -fabs(eng->config.cMaximumDrop);
+        double _cMaximumDrop = -std::fabs(eng->config.cMaximumDrop);
 
         // Working variables
         *reason = BCLIBC_TERM_REASON_NO_TERMINATE;
@@ -95,12 +95,12 @@ namespace bclibc
         range_vector.x = 0.0;
         range_vector.y = -eng->shot.cant_cosine * eng->shot.sight_height;
         range_vector.z = -eng->shot.cant_sine * eng->shot.sight_height;
-        _cMaximumDrop += fmin(0.0, range_vector.y); // Adjust max drop downward (only) for muzzle height
+        _cMaximumDrop += std::fmin(0.0, range_vector.y); // Adjust max drop downward (only) for muzzle height
 
         // Set direction vector components
-        _dir_vector.x = cos(eng->shot.barrel_elevation) * cos(eng->shot.barrel_azimuth);
-        _dir_vector.y = sin(eng->shot.barrel_elevation);
-        _dir_vector.z = cos(eng->shot.barrel_elevation) * sin(eng->shot.barrel_azimuth);
+        _dir_vector.x = std::cos(eng->shot.barrel_elevation) * std::cos(eng->shot.barrel_azimuth);
+        _dir_vector.y = std::sin(eng->shot.barrel_elevation);
+        _dir_vector.z = std::cos(eng->shot.barrel_elevation) * std::sin(eng->shot.barrel_azimuth);
 
         // Calculate velocity vector
         velocity_vector = BCLIBC_V3dT_mulS(&_dir_vector, velocity);
