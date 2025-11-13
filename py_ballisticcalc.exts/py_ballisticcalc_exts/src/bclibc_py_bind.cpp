@@ -10,39 +10,24 @@ namespace bclibc
 
     BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject *config)
     {
-        BCLIBC_Config c;
+        return BCLIBC_Config{
+            PyFloat_AsDouble(PyObject_GetAttrString(config, "cStepMultiplier")),
+            PyFloat_AsDouble(PyObject_GetAttrString(config, "cZeroFindingAccuracy")),
+            PyFloat_AsDouble(PyObject_GetAttrString(config, "cMinimumVelocity")),
+            PyFloat_AsDouble(PyObject_GetAttrString(config, "cMaximumDrop")),
+            (int)PyLong_AsLong(PyObject_GetAttrString(config, "cMaxIterations")),
+            PyFloat_AsDouble(PyObject_GetAttrString(config, "cGravityConstant")),
+            PyFloat_AsDouble(PyObject_GetAttrString(config, "cMinimumAltitude"))};
+    };
 
-        PyObject *tmp;
-
-        tmp = PyObject_GetAttrString(config, "cStepMultiplier");
-        c.cStepMultiplier = PyFloat_AsDouble(tmp);
-        Py_XDECREF(tmp);
-
-        tmp = PyObject_GetAttrString(config, "cZeroFindingAccuracy");
-        c.cZeroFindingAccuracy = PyFloat_AsDouble(tmp);
-        Py_XDECREF(tmp);
-
-        tmp = PyObject_GetAttrString(config, "cMinimumVelocity");
-        c.cMinimumVelocity = PyFloat_AsDouble(tmp);
-        Py_XDECREF(tmp);
-
-        tmp = PyObject_GetAttrString(config, "cMaximumDrop");
-        c.cMaximumDrop = PyFloat_AsDouble(tmp);
-        Py_XDECREF(tmp);
-
-        tmp = PyObject_GetAttrString(config, "cMaxIterations");
-        c.cMaxIterations = (int)PyLong_AsLong(tmp);
-        Py_XDECREF(tmp);
-
-        tmp = PyObject_GetAttrString(config, "cGravityConstant");
-        c.cGravityConstant = PyFloat_AsDouble(tmp);
-        Py_XDECREF(tmp);
-
-        tmp = PyObject_GetAttrString(config, "cMinimumAltitude");
-        c.cMinimumAltitude = PyFloat_AsDouble(tmp);
-        Py_XDECREF(tmp);
-
-        return c;
+    BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) {
+        return BCLIBC_Atmosphere(
+            PyFloat_AsDouble(PyObject_GetAttrString(atmo, "_t0")),
+            PyFloat_AsDouble(PyObject_GetAttrString(atmo, "_a0")),
+            PyFloat_AsDouble(PyObject_GetAttrString(atmo, "_p0")),
+            PyFloat_AsDouble(PyObject_GetAttrString(atmo, "_mach")),
+            PyFloat_AsDouble(PyObject_GetAttrString(atmo, "density_ratio")),
+            PyFloat_AsDouble(PyObject_GetAttrString(atmo, "cLowestTempC")));
     };
 
     /**

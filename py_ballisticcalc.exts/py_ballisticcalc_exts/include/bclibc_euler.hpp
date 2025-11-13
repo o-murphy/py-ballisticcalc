@@ -2,7 +2,7 @@
 #define BCLIBC_EULER_H
 
 #include "bclibc_v3d.h"
-#include "bclibc_bclib.h"
+#include "bclibc_bclib.hpp"
 #include "bclibc_engine.hpp"
 #include "bclibc_seq.hpp"
 

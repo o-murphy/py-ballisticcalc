@@ -5,7 +5,7 @@
 #include "bclibc_interp.h"
 #include "bclibc_log.h"
 #include "bclibc_error_stack.h"
-#include "bclibc_bclib.h"
+#include "bclibc_bclib.hpp"
 #include "bclibc_seq.hpp"
 #include "bclibc_traj_filter.hpp"
 #include "bclibc_engine.hpp"

@@ -1,6 +1,6 @@
 #include <math.h>
 #include "bclibc_rk4.hpp"
-#include "bclibc_bclib.h"
+#include "bclibc_bclib.hpp"
 
 namespace bclibc
 {
@@ -166,8 +166,7 @@ namespace bclibc
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
-        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-            &eng->shot.atmo,
+        eng->shot.atmo.update_density_factor_and_mach_for_altitude(
             eng->shot.alt0 + range_vector.y,
             &density_ratio,
             &mach);
@@ -190,8 +189,7 @@ namespace bclibc
             }
 
             // Update air density and mach at current altitude
-            BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-                &eng->shot.atmo,
+            eng->shot.atmo.update_density_factor_and_mach_for_altitude(
                 eng->shot.alt0 + range_vector.y,
                 &density_ratio,
                 &mach);

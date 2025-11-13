@@ -2,7 +2,7 @@
 #include <stdlib.h> // Required for calloc, malloc, free
 #include <string.h> // Required for memcpy
 #include "bclibc_interp.h"
-#include "bclibc_bclib.h"
+#include "bclibc_bclib.hpp"
 #include "bclibc_seq.hpp"
 
 namespace bclibc

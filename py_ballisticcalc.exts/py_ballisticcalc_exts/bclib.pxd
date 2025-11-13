@@ -4,7 +4,7 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
 
-cdef extern from "include/bclibc_bclib.h" nogil:
+cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
     ctypedef enum BCLIBC_LogLevel:
         BCLIBC_LOG_LEVEL_CRITICAL,
         BCLIBC_LOG_LEVEL_ERROR,
@@ -24,7 +24,7 @@ cdef extern from "include/bclibc_bclib.h" nogil:
     cdef const double BCLIBC_mToFeet
     cdef const double BCLIBC_cMaxWindDistanceFeet
 
-    ctypedef struct BCLIBC_Config:
+    cdef cppclass BCLIBC_Config:
         double cStepMultiplier
         double cZeroFindingAccuracy
         double cMinimumVelocity
@@ -33,8 +33,27 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         double cGravityConstant
         double cMinimumAltitude
 
-    ctypedef struct BCLIBC_CurvePoint:
+        BCLIBC_Config() except+
+        BCLIBC_Config(
+            double cStepMultiplier,
+            double cZeroFindingAccuracy,
+            double cMinimumVelocity,
+            double cMaximumDrop,
+            int cMaxIterations,
+            double cGravityConstant,
+            double cMinimumAltitude
+        ) except+
+
+    cdef cppclass BCLIBC_CurvePoint:
         double a, b, c, d
+
+        BCLIBC_CurvePoint() except +
+        BCLIBC_CurvePoint(
+            double a,
+            double b,
+            double c,
+            double d
+        ) except +
 
     ctypedef struct BCLIBC_Curve:
         BCLIBC_CurvePoint * points
@@ -48,7 +67,7 @@ cdef extern from "include/bclibc_bclib.h" nogil:
 
     void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr) noexcept nogil
 
-    ctypedef struct BCLIBC_Atmosphere:
+    cdef cppclass BCLIBC_Atmosphere:
         double _t0
         double _a0
         double _p0
@@ -56,12 +75,21 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         double density_ratio
         double cLowestTempC
 
-    void BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-        const BCLIBC_Atmosphere *atmo_ptr,
-        double altitude,
-        double *density_ratio_ptr,
-        double *mach_ptr
-    ) noexcept nogil
+        BCLIBC_Atmosphere() except+
+        BCLIBC_Atmosphere(
+            double _t0,
+            double _a0,
+            double _p0,
+            double _mach,
+            double density_ratio,
+            double cLowestTempC
+        ) except+
+
+        void update_density_factor_and_mach_for_altitude(
+            double altitude,
+            double *density_ratio_ptr,
+            double *mach_ptr
+        ) const
 
     ctypedef struct BCLIBC_Coriolis:
         double sin_lat

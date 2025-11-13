@@ -15,7 +15,6 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps_dragByMach,
     BCLIBC_ShotProps_spinDrift,
     BCLIBC_ShotProps_updateStabilityCoefficient,
-    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
     BCLIBC_ErrorType,
@@ -45,8 +44,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
             raise RuntimeError("prepare() must be called first")
         cdef double density_ratio = 0.0
         cdef double mach = 0.0
-        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-            &self._this.shot.atmo,
+        self._this.shot.atmo.update_density_factor_and_mach_for_altitude(
             altitude_ft,
             &density_ratio,
             &mach
