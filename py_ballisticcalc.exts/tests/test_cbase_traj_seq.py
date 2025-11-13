@@ -1,6 +1,6 @@
 import pytest
 
-from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_seq import BaseTrajSeqT
 
 
 def test_reserve_and_append_growth():

@@ -14,7 +14,7 @@ from py_ballisticcalc_exts.traj_seq cimport (
     BCLIBC_BaseTrajSeq,
     BCLIBC_BaseTrajData,
 )
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     # types and methods
     BCLIBC_Atmosphere,
     BCLIBC_ShotProps,

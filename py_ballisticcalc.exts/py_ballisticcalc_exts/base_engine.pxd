@@ -1,7 +1,7 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
 from libc.string cimport strlen
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Config,
     BCLIBC_ShotProps,
     BCLIBC_WindSock,
@@ -14,7 +14,7 @@ from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryDataFilter
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
-cdef extern from "include/bclibc_engine.hpp" namespace "bclibc" nogil:
+cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
     ctypedef enum BCLIBC_ZeroInitialStatus:

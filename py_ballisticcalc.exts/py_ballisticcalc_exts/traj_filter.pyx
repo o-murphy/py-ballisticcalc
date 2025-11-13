@@ -4,7 +4,7 @@ from libcpp.vector cimport vector
 from libc.stddef cimport ptrdiff_t
 from cython.operator cimport dereference as deref, preincrement as inc
 
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
     BCLIBC_TrajFlag,
 )

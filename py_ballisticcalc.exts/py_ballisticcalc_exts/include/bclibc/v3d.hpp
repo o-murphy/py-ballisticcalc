@@ -1,18 +1,16 @@
-#ifndef BCLIBC_V3dT_H
-#define BCLIBC_V3dT_H
+#ifndef BCLIBC_V3dT_HPP
+#define BCLIBC_V3dT_HPP
 
-// Structure definition and typedef for BCLIBC_V3dT
-typedef struct
+namespace bclibc
 {
-    double x;
-    double y;
-    double z;
-} BCLIBC_V3dT;
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif
+    // Structure definition and typedef for BCLIBC_V3dT
+    typedef struct
+    {
+        double x;
+        double y;
+        double z;
+    } BCLIBC_V3dT;
 
     // Function Prototypes (Declarations) - UPDATED TO USE CONST POINTERS FOR INPUTS
     BCLIBC_V3dT BCLIBC_V3dT_new(double x, double y, double z);                 // Still takes values, creates new BCLIBC_V3dT
@@ -37,8 +35,6 @@ extern "C"
     // BCLIBC_V3dT* BCLIBC_V3dT_imulSc(BCLIBC_V3dT *v, double scalar);
     // BCLIBC_V3dT* BCLIBC_V3dT_iNormc(BCLIBC_V3dT *v);
 
-#ifdef __cplusplus
-}
-#endif
+};
 
-#endif // BCLIBC_V3dT_H
+#endif // BCLIBC_V3dT_HPP

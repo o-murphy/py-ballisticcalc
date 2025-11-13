@@ -9,7 +9,7 @@ We deliberately keep this separate from production engine modules to avoid
 polluting hot paths or public symbols. Import only inside test code.
 """
 
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
     BCLIBC_ShotProps_dragByMach,
     BCLIBC_ShotProps_spinDrift,

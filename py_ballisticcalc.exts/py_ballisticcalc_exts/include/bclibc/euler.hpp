@@ -1,10 +1,10 @@
-#ifndef BCLIBC_RK4_H
-#define BCLIBC_RK4_H
+#ifndef BCLIBC_EULER_HPP
+#define BCLIBC_EULER_HPP
 
-#include "bclibc_v3d.h"
-#include "bclibc_bclib.hpp"
-#include "bclibc_engine.hpp"
-#include "bclibc_seq.hpp"
+#include "v3d.hpp"
+#include "base_types.hpp"
+#include "engine.hpp"
+#include "traj_seq.hpp"
 
 #ifdef __cplusplus
 extern "C"
@@ -14,7 +14,7 @@ extern "C"
     namespace bclibc
     {
 
-        BCLIBC_StatusCode BCLIBC_integrateRK4(
+        BCLIBC_StatusCode BCLIBC_integrateEULER(
             BCLIBC_Engine *eng,
             double range_limit_ft,
             double range_step_ft,
@@ -28,4 +28,4 @@ extern "C"
 }
 #endif
 
-#endif // BCLIBC_RK4_H
+#endif // BCLIBC_EULER_HPP

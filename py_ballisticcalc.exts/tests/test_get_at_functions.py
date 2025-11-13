@@ -1,7 +1,7 @@
 import math
 import pytest
 
-from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_seq import BaseTrajSeqT
 
 
 def make_linear_seq(n=5):

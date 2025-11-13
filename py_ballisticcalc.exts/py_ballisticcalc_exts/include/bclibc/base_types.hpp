@@ -1,9 +1,9 @@
-#ifndef BCLIBC_BCLIB_H
-#define BCLIBC_BCLIB_H
+#ifndef BCLIBC_BASE_TYPES_H
+#define BCLIBC_BASE_TYPES_H
 
 #include <cstddef>
-#include "bclibc_v3d.h"
-#include "bclibc_error_stack.h"
+#include "v3d.hpp"
+#include "error_stack.h"
 
 namespace bclibc
 {
@@ -220,4 +220,4 @@ namespace bclibc
 
 }; // namespace bclibc
 
-#endif // BCLIBC_BCLIB_H
+#endif // BCLIBC_BASE_TYPES_H

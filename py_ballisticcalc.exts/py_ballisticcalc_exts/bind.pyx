@@ -4,7 +4,7 @@ from libc.string cimport memset
 from cpython.exc cimport PyErr_Occurred
 from cython cimport final
 from cpython.object cimport PyObject
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_MachList,
     BCLIBC_Curve,
     BCLIBC_Config,
