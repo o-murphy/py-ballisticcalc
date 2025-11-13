@@ -163,8 +163,8 @@ namespace bclibc
             // Check the flat_fire_only flag within the Coriolis structure
             if (!eng->shot.coriolis.flat_fire_only)
             {
-                BCLIBC_Coriolis_coriolisAccelerationLocal(
-                    &eng->shot.coriolis, &velocity_vector, &coriolis_accel);
+                eng->shot.coriolis.coriolis_acceleration_local(
+                    &velocity_vector, &coriolis_accel);
                 _tv = BCLIBC_V3dT_add(&_tv, &coriolis_accel);
             }
 

@@ -91,7 +91,7 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
             double *mach_ptr
         ) const
 
-    ctypedef struct BCLIBC_Coriolis:
+    cdef cppclass BCLIBC_Coriolis:
         double sin_lat
         double cos_lat
         double sin_az
@@ -103,11 +103,37 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
         int flat_fire_only
         double muzzle_velocity_fps
 
-    void BCLIBC_Coriolis_coriolisAccelerationLocal(
-        const BCLIBC_Coriolis *coriolis_ptr,
-        BCLIBC_V3dT *velocity_ptr,
-        BCLIBC_V3dT *accel_ptr
-    ) noexcept nogil
+        BCLIBC_Coriolis() except+
+
+        BCLIBC_Coriolis(
+            double sin_lat,
+            double cos_lat,
+            double sin_az,
+            double cos_az,
+            double range_east,
+            double range_north,
+            double cross_east,
+            double cross_north,
+            int flat_fire_only,
+            double muzzle_velocity_fps
+        ) except+
+
+        void flat_fire_offsets(
+            double time,
+            double distance_ft,
+            double drop_ft,
+            double *delta_y,
+            double *delta_z
+        ) const
+            
+        BCLIBC_V3dT adjust_range(
+            double time, const BCLIBC_V3dT *range_vector
+        ) const
+
+        void coriolis_acceleration_local(
+            const BCLIBC_V3dT *velocity_ptr,
+            BCLIBC_V3dT *accel_ptr
+        ) const
 
     ctypedef struct BCLIBC_Wind:
         double velocity

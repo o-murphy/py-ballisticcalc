@@ -83,22 +83,20 @@ cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):
 
 
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
-    cdef BCLIBC_Coriolis coriolis = {}  # << CRITICAL! should be defined
-    memset(&coriolis, 0, sizeof(coriolis))  # CRITICAL: use memset to ensure initialized with zeros
-
     if coriolis_obj:
-        coriolis.sin_lat = coriolis_obj.sin_lat
-        coriolis.cos_lat = coriolis_obj.cos_lat
-        coriolis.flat_fire_only = <int>coriolis_obj.flat_fire_only
-        coriolis.muzzle_velocity_fps = coriolis_obj.muzzle_velocity_fps
-
-        coriolis.sin_az = coriolis_obj.sin_az if coriolis_obj.sin_az is not None else 0.0
-        coriolis.cos_az = coriolis_obj.cos_az if coriolis_obj.cos_az is not None else 0.0
-        coriolis.range_east = coriolis_obj.range_east if coriolis_obj.range_east is not None else 0.0
-        coriolis.range_north = coriolis_obj.range_north if coriolis_obj.range_north is not None else 0.0
-        coriolis.cross_east = coriolis_obj.cross_east if coriolis_obj.cross_east is not None else 0.0
-        coriolis.cross_north = coriolis_obj.cross_north if coriolis_obj.cross_north is not None else 0.0
-    return coriolis
+        return BCLIBC_Coriolis(
+            coriolis_obj.sin_lat,
+            coriolis_obj.cos_lat,
+            coriolis_obj.sin_az if coriolis_obj.sin_az is not None else 0.0,
+            coriolis_obj.cos_az if coriolis_obj.cos_az is not None else 0.0,
+            coriolis_obj.range_east if coriolis_obj.range_east is not None else 0.0,
+            coriolis_obj.range_north if coriolis_obj.range_north is not None else 0.0,
+            coriolis_obj.cross_east if coriolis_obj.cross_east is not None else 0.0,
+            coriolis_obj.cross_north if coriolis_obj.cross_north is not None else 0.0,
+            coriolis_obj.flat_fire_only,
+            coriolis_obj.muzzle_velocity_fps,
+        )
+    return BCLIBC_Coriolis()
 
 
 cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
