@@ -1,7 +1,7 @@
 // Cython only bindings
 #ifdef __CYTHON__
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <cmath>
 #include "bclibc_py_bind.hpp"
 
@@ -197,14 +197,14 @@ namespace bclibc
             double m0 = ((2.0 * h[0] + h[1]) * d[0] - h[0] * d[1]) / (h[0] + h[1]);
             if (m0 * d[0] <= 0.0)
                 m0 = 0.0;
-            else if ((d[0] * d[1] < 0.0) && (fabs(m0) > 3.0 * fabs(d[0])))
+            else if ((d[0] * d[1] < 0.0) && (fabs(m0) > 3.0 * std::fabs(d[0])))
                 m0 = 3.0 * d[0];
             m[0] = m0;
             // Endpoint m[n-1]
             double mn = ((2.0 * h[n - 2] + h[n - 3]) * d[n - 2] - h[n - 2] * d[n - 3]) / (h[n - 2] + h[n - 3]);
             if (mn * d[n - 2] <= 0.0)
                 mn = 0.0;
-            else if ((d[n - 2] * d[n - 3] < 0.0) && (fabs(mn) > 3.0 * fabs(d[n - 2])))
+            else if ((d[n - 2] * d[n - 3] < 0.0) && (fabs(mn) > 3.0 * std::fabs(d[n - 2])))
                 mn = 3.0 * d[n - 2];
             m[n - 1] = mn;
         }

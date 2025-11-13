@@ -1,8 +1,7 @@
 #ifndef BCLIBC_BASE_TRAJ_SEQ_HPP
 #define BCLIBC_BASE_TRAJ_SEQ_HPP
 
-#include <stddef.h>    // Required for size_t
-#include <sys/types.h> // Required for ssize_t
+#include <cstddef>    // Required for size_t
 
 #include "bclibc_bclib.hpp"
 #include "bclibc_interp.hpp"
@@ -16,7 +15,10 @@
 #if defined(_WIN64)
 typedef __int64 ssize_t;
 #else
-typedef long ssize_t;
+
+#include <sys/types.h> // Required for ssize_t
+// or
+// typedef long ssize_t;
 #endif
 #endif
 // --- END CROSS-PLATFORM FIX ---

@@ -1,5 +1,5 @@
 #include <cmath>
-#include <stddef.h>
+#include <cstddef>
 #include "bclibc_interp.hpp"
 
 namespace bclibc
@@ -81,7 +81,7 @@ namespace bclibc
         }
         else
         {
-            double abs_d0 = fabs(d0);
+            double abs_d0 = std::fabs(d0);
             *m0 = (fabs(m0l) > 3.0 * abs_d0) ? 3.0 * d0 : m0l;
         }
 
@@ -93,7 +93,7 @@ namespace bclibc
         }
         else
         {
-            double abs_d1 = fabs(d1);
+            double abs_d1 = std::fabs(d1);
             *m2 = (fabs(m2l) > 3.0 * abs_d1) ? 3.0 * d1 : m2l;
         }
     }
