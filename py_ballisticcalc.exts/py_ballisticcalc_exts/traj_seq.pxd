@@ -2,16 +2,45 @@
 Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
 """
 
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
-    BCLIBC_BaseTraj_InterpKey,
-    BCLIBC_BaseTrajData,
-    BCLIBC_ErrorType,
-)
+from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.bclib cimport BCLIBC_ErrorType
 
 cdef extern from "include/bclibc_seq.hpp" namespace "bclibc" nogil:
+
+    cdef enum class BCLIBC_BaseTraj_InterpKey:
+        TIME
+        MACH
+        POS_X
+        POS_Y
+        POS_Z
+        VEL_X
+        VEL_Y
+        VEL_Z
+
+    cdef cppclass BCLIBC_BaseTrajData:
+        double time
+        BCLIBC_V3dT position
+        BCLIBC_V3dT velocity
+        double mach
+
+        BCLIBC_BaseTrajData() except+
+        BCLIBC_BaseTrajData(
+            double time,
+            BCLIBC_V3dT position,
+            BCLIBC_V3dT velocity,
+            double mach
+        ) except+
+
+        @staticmethod
+        BCLIBC_ErrorType interpolate(
+            BCLIBC_BaseTraj_InterpKey key_kind,
+            double key_value,
+            const BCLIBC_BaseTrajData *p0,
+            const BCLIBC_BaseTrajData *p1,
+            const BCLIBC_BaseTrajData *p2,
+            BCLIBC_BaseTrajData *out
+        )
+
     cdef cppclass BCLIBC_BaseTraj:
         double time
         double px
@@ -62,3 +91,6 @@ cdef extern from "include/bclibc_seq.hpp" namespace "bclibc" nogil:
 
 cdef class BaseTrajSeqT:
     cdef BCLIBC_BaseTrajSeq _this
+
+cdef class BaseTrajDataT:
+    cdef BCLIBC_BaseTrajData _this

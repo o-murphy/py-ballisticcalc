@@ -9,7 +9,6 @@ We deliberately keep this separate from production engine modules to avoid
 polluting hot paths or public symbols. Import only inside test code.
 """
 
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps,
     BCLIBC_ShotProps_dragByMach,
@@ -18,16 +17,12 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_TrajFlag,
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
-    BCLIBC_BaseTrajData,
 )
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajData, BaseTrajDataT
 
 __all__ = [
     'init_shot',

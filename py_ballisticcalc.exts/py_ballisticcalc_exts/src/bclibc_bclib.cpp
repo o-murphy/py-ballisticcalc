@@ -2,9 +2,8 @@
 #include <cstdio>  // For warnings (printf used here)
 #include <cstdlib>
 #include <cmath>
-#include "bclibc_bclib.hpp"
-#include "bclibc_v3d.h"
 #include "bclibc_interp.hpp"
+#include "bclibc_bclib.hpp"
 
 namespace bclibc
 {
@@ -796,116 +795,5 @@ namespace bclibc
         accel_ptr->y = accel_up;
         accel_ptr->z = accel_east * cross_east + accel_north * cross_north;
     }
-
-    /**
-     * @brief Lookup table helper to retrieve a specific scalar value from BCLIBC_BaseTrajData.
-     *
-     * Used internally by the interpolation function to get the correct 'x' values
-     * for the interpolation key.
-     *
-     * @param p Pointer to the BCLIBC_BaseTrajData structure.
-     * @param key_kind The BCLIBC_BaseTraj_InterpKey specifying which field to retrieve (e.g., BCLIBC_BaseTraj_InterpKey::TIME, BCLIBC_BaseTraj_InterpKey::MACH, BCLIBC_BaseTraj_InterpKey::POS_X).
-     * @return The value of the requested field. Returns 0.0 for an unknown key.
-     */
-    static inline double get_key_value(const BCLIBC_BaseTrajData *p, BCLIBC_BaseTraj_InterpKey key_kind)
-    {
-        switch (key_kind)
-        {
-        case BCLIBC_BaseTraj_InterpKey::TIME:
-            return p->time;
-        case BCLIBC_BaseTraj_InterpKey::MACH:
-            return p->mach;
-        case BCLIBC_BaseTraj_InterpKey::POS_X:
-            return p->position.x;
-        case BCLIBC_BaseTraj_InterpKey::POS_Y:
-            return p->position.y;
-        case BCLIBC_BaseTraj_InterpKey::POS_Z:
-            return p->position.z;
-        case BCLIBC_BaseTraj_InterpKey::VEL_X:
-            return p->velocity.x;
-        case BCLIBC_BaseTraj_InterpKey::VEL_Y:
-            return p->velocity.y;
-        case BCLIBC_BaseTraj_InterpKey::VEL_Z:
-            return p->velocity.z;
-        default:
-            return 0.0;
-        }
-    }
-
-    BCLIBC_BaseTrajData::BCLIBC_BaseTrajData(
-        double time,
-        BCLIBC_V3dT position,
-        BCLIBC_V3dT velocity,
-        double mach)
-        : time(time),
-          position(position),
-          velocity(velocity),
-          mach(mach) {};
-
-    /**
-     * @brief Interpolates a BCLIBC_BaseTrajData structure using three surrounding data points.
-     *
-     * Performs a 3-point interpolation (likely PCHIP or similar cubic spline variant)
-     * on all fields of the trajectory data (`time, position, velocity, mach`) based on
-     * a specified `key_kind` (the independent variable for interpolation) and its target `key_value`.
-     *
-     * @param key_kind The field to use as the independent variable for interpolation (x-axis).
-     * @param key_value The target value for the independent variable at which to interpolate.
-     * @param p0 Pointer to the first data point (before or at the start of the segment).
-     * @param p1 Pointer to the second data point.
-     * @param p2 Pointer to the third data point (after or at the end of the segment).
-     * @param out Pointer to the BCLIBC_BaseTrajData structure where the interpolated result will be stored.
-     * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
-     */
-    BCLIBC_ErrorType BCLIBC_BaseTrajData::interpolate(
-        BCLIBC_BaseTraj_InterpKey key_kind,
-        double key_value,
-        const BCLIBC_BaseTrajData *p0,
-        const BCLIBC_BaseTrajData *p1,
-        const BCLIBC_BaseTrajData *p2,
-        BCLIBC_BaseTrajData *out)
-    {
-        if (!p0 || !p1 || !p2 || !out)
-        {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
-        }
-
-        // Get key values
-        const double x0 = get_key_value(p0, key_kind);
-        const double x1 = get_key_value(p1, key_kind);
-        const double x2 = get_key_value(p2, key_kind);
-
-        // Guard against degenerate segments
-        if (x0 == x1 || x0 == x2 || x1 == x2)
-        {
-            return BCLIBC_E_ZERO_DIVISION_ERROR;
-        }
-
-        // Cache position and velocity
-        const BCLIBC_V3dT vp0 = p0->position;
-        const BCLIBC_V3dT vp1 = p1->position;
-        const BCLIBC_V3dT vp2 = p2->position;
-        const BCLIBC_V3dT vv0 = p0->velocity;
-        const BCLIBC_V3dT vv1 = p1->velocity;
-        const BCLIBC_V3dT vv2 = p2->velocity;
-
-        // Scalar interpolation using PCHIP
-
-        // Interpolate all scalar fields
-        out->time = (key_kind == BCLIBC_BaseTraj_InterpKey::TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
-        out->position = BCLIBC_V3dT{
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
-        out->velocity = BCLIBC_V3dT{
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
-
-        out->mach = (key_kind == BCLIBC_BaseTraj_InterpKey::MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
-
-        return BCLIBC_E_NO_ERROR;
-    };
 
 }; // namespace bclibc

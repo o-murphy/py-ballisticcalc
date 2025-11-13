@@ -13,20 +13,14 @@ Design note: nogil helpers operate on a tiny C struct view of the sequence to av
 passing Python cdef-class instances into nogil code paths.
 """
 
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
-    BCLIBC_BaseTrajData,
-    BCLIBC_BaseTraj_InterpKey,
-    BCLIBC_ErrorType,
-)
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bind cimport _attribute_to_key, _key_to_attribute
+from cython cimport final
+from py_ballisticcalc_exts.bclib cimport BCLIBC_ErrorType
+from py_ballisticcalc_exts.bind cimport _attribute_to_key, _key_to_attribute, v3d_to_vector
 
 __all__ = ('BaseTrajSeqT')
 
 
+@final
 cdef class BaseTrajSeqT:
     """Contiguous C buffer of BCLIBC_BaseTraj points with fast append and interpolation.
 
@@ -144,3 +138,66 @@ cdef class BaseTrajSeqT:
         if err == BCLIBC_ErrorType.BCLIBC_E_ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
         raise RuntimeError(f"undefined error in BCLIBC_BaseTrajSeq.get_at_slant_height, error code: {err}")
+
+
+@final
+cdef class BaseTrajDataT:
+    __slots__ = ('time', '_position', '_velocity', 'mach')
+
+    @property
+    def time(self):
+        return self._this.time
+
+    @property
+    def mach(self):
+        return self._this.mach
+
+    # Python-facing properties return Vector, not dict
+    @property
+    def position(self):
+        return v3d_to_vector(&self._this.position)
+
+    @property
+    def velocity(self):
+        return v3d_to_vector(&self._this.velocity)
+
+    @staticmethod
+    def interpolate(str key_attribute, double key_value,
+                    BaseTrajDataT p0, BaseTrajDataT p1, BaseTrajDataT p2):
+        """
+        Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation
+        of a BaseTrajData point.
+
+        Args:
+            key_attribute (str): Can be 'time', 'mach',
+                or a vector component like 'position.x' or 'velocity.z'.
+            key_value (float): The value to interpolate.
+            p0, p1, p2 (BaseTrajDataT):
+                Any three points surrounding the point where key_attribute==value.
+
+        Returns:
+            BaseTrajData: The interpolated data point.
+
+        Raises:
+            AttributeError: If the key_attribute is not a member of BaseTrajData.
+            ZeroDivisionError: If the interpolation fails due to zero division.
+                               (This will result if two of the points are identical).
+        """
+        cdef BCLIBC_BaseTraj_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BaseTrajDataT out = BaseTrajDataT()
+        cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData.interpolate(
+            key_kind, key_value,
+            &p0._this, &p1._this, &p2._this,
+            &out._this
+        )
+
+        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+            return out
+
+        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
+            raise ValueError("invalid BCLIBC_BaseTrajData.interpolate input")
+        if err == BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR:
+            raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
+        if err == BCLIBC_ErrorType.BCLIBC_E_ZERO_DIVISION_ERROR:
+            raise ZeroDivisionError("Duplicate x for interpolation")
+        raise RuntimeError("unknown error in BCLIBC_BaseTrajData.interpolate")

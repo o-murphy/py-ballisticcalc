@@ -1,6 +1,4 @@
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
 
@@ -23,16 +21,6 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
     cdef const double BCLIBC_cLowestTempF
     cdef const double BCLIBC_mToFeet
     cdef const double BCLIBC_cMaxWindDistanceFeet
-
-    cdef enum class BCLIBC_BaseTraj_InterpKey:
-        TIME
-        MACH
-        POS_X
-        POS_Y
-        POS_Z
-        VEL_X
-        VEL_Y
-        VEL_Z
 
     cdef cppclass BCLIBC_Config:
         double cStepMultiplier
@@ -183,30 +171,6 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
         BCLIBC_TRAJ_FLAG_APEX = 16,
         BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX
         BCLIBC_TRAJ_FLAG_MRT = 32
-
-    cdef cppclass BCLIBC_BaseTrajData:
-        double time
-        BCLIBC_V3dT position
-        BCLIBC_V3dT velocity
-        double mach
-
-        BCLIBC_BaseTrajData() except+
-        BCLIBC_BaseTrajData(
-            double time,
-            BCLIBC_V3dT position,
-            BCLIBC_V3dT velocity,
-            double mach
-        ) except+
-
-        @staticmethod
-        BCLIBC_ErrorType interpolate(
-            BCLIBC_BaseTraj_InterpKey key_kind,
-            double key_value,
-            const BCLIBC_BaseTrajData *p0,
-            const BCLIBC_BaseTrajData *p1,
-            const BCLIBC_BaseTrajData *p2,
-            BCLIBC_BaseTrajData *out
-        )
 
     ctypedef struct BCLIBC_ShotProps:
         double bc

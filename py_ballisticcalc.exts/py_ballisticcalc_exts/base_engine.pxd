@@ -1,22 +1,15 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
-# noinspection PyUnresolvedReferences
 from libc.string cimport strlen
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_Config,
     BCLIBC_ShotProps,
     BCLIBC_WindSock,
     BCLIBC_TrajFlag,
-    BCLIBC_BaseTrajData,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
-# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryDataFilter
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 

@@ -6,27 +6,21 @@ Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
     feeds it through the Python TrajectoryDataFilter to build List[TrajectoryData].
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
-# noinspection PyUnresolvedReferences
 from libc.math cimport sin, cos
-# noinspection PyUnresolvedReferences
 from libc.string cimport memset
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport (
+from py_ballisticcalc_exts.traj_seq cimport (
     BaseTrajSeqT,
     BCLIBC_BaseTrajSeq,
+    BCLIBC_BaseTrajData,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     # types and methods
     BCLIBC_Atmosphere,
     BCLIBC_ShotProps,
     BCLIBC_ShotProps_updateStabilityCoefficient,
     BCLIBC_TrajFlag,
-    BCLIBC_BaseTrajData,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport (
     # factory funcs
     BCLIBC_Config_from_pyobject,
@@ -39,7 +33,6 @@ from py_ballisticcalc_exts.bind cimport (
     rad_from_c,
     v3d_to_vector,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_StatusCode,
     BCLIBC_ErrorSource,
@@ -49,9 +42,7 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorStack_lastErr,
     BCLIBC_ErrorStack_toString,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.traj_filter cimport TrajectoryDataFilterT, BCLIBC_TrajectoryData
 
 from py_ballisticcalc.shot import ShotProps

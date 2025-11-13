@@ -1,6 +1,4 @@
-# noinspection PyUnresolvedReferences
 from cpython.object cimport PyObject
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_MachList,
     BCLIBC_Curve,
@@ -9,10 +7,9 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_Wind,
     BCLIBC_Coriolis,
     BCLIBC_WindSock,
-    BCLIBC_BaseTraj_InterpKey,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTraj_InterpKey
 
 
 cdef extern from "include/bclibc_py_bind.hpp" namespace "bclibc" nogil:

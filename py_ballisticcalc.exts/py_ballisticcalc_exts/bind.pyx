@@ -1,15 +1,9 @@
 # cython: freethreading_compatible=True
-# noinspection PyUnresolvedReferences
 from libc.stdlib cimport calloc, free
-# noinspection PyUnresolvedReferences
 from libc.string cimport memset
-# noinspection PyUnresolvedReferences
 from cpython.exc cimport PyErr_Occurred
-# noinspection PyUnresolvedReferences
 from cython cimport final
-# noinspection PyUnresolvedReferences
 from cpython.object cimport PyObject
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_MachList,
     BCLIBC_Curve,
@@ -19,17 +13,14 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_WindSock,
     BCLIBC_Coriolis,
     BCLIBC_WindSock_init,
-    BCLIBC_BaseTraj_InterpKey,
 )
-
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc.unit import (
     Angular,
     Distance,
     Unit,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTraj_InterpKey
 
 from py_ballisticcalc.vector import Vector
 

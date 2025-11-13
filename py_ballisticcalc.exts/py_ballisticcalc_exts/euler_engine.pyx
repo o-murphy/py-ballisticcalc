@@ -5,9 +5,7 @@ Cythonized Euler Integration Engine
 Because storing each step in a BCLIBC_BaseTrajSeq is practically costless,
 we always run with "dense_output=True".
 """
-# noinspection PyUnresolvedReferences
 from cython cimport final
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 
 __all__ = [
