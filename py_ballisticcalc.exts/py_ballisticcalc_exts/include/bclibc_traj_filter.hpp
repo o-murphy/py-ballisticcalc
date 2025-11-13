@@ -10,8 +10,6 @@ namespace bclibc
 
 #define BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT 15
 
-    BCLIBC_BaseTrajData BCLIBC_BaseTrajData_init(void);
-
     typedef enum
     {
         BCLIBC_TRAJECTORY_DATA_INTERP_KEY_TIME,

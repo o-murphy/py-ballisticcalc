@@ -9,16 +9,6 @@ namespace bclibc
 
     // BCLIBC_TrajectoryData::BCLIBC_TrajectoryData() {};
 
-    // guarantee complete C struct initialisation BCLIBC_BaseTrajData
-    BCLIBC_BaseTrajData BCLIBC_BaseTrajData_init(void)
-    {
-        BCLIBC_BaseTrajData data; // = {} possibly can not work on MSVC, use memset
-        std::memset(&data, 0, sizeof(data));
-        data.time = -1.0;
-        data.mach = -1.0;
-        return data;
-    };
-
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
         const BCLIBC_ShotProps *props,
         double time,
@@ -276,8 +266,8 @@ namespace bclibc
           time_step(time_step),
           range_step(range_step),
           range_limit(range_limit),
-          prev_data{BCLIBC_BaseTrajData_init()},
-          prev_prev_data{BCLIBC_BaseTrajData_init()},
+          prev_data(prev_data),
+          prev_prev_data(prev_prev_data),
           next_record_distance(0.0),
           look_angle_rad(look_angle_rad),
           look_angle_tangent(std::tan(look_angle_rad))
@@ -344,7 +334,7 @@ namespace bclibc
             {
                 while (this->next_record_distance + this->range_step - this->EPSILON <= new_data->position.x)
                 {
-                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData_init();
+                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
                     bool found_data = false;
                     double record_distance = this->next_record_distance + this->range_step;
@@ -360,7 +350,7 @@ namespace bclibc
                     }
                     else if (is_can_interpolate) /* if (this->prev_data && this->prev_prev_data) */
                     {
-                        BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
+                        BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
                             BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X,
                             record_distance,
                             &this->prev_prev_data,
@@ -394,9 +384,9 @@ namespace bclibc
 
                     this->time_of_last_record += this->time_step;
 
-                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData_init();
+                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
-                    BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
+                    BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
                         BCLIBC_BASE_TRAJ_INTERP_KEY_TIME,
                         this->time_of_last_record,
                         &this->prev_prev_data,
@@ -423,9 +413,9 @@ namespace bclibc
                 new_data->velocity.y <= 0)
             {
                 // "Apex" is the point where the vertical component of velocity goes from positive to negative.
-                BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData_init();
+                BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
-                BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
+                BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
                     BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y,
                     0.0,
                     &this->prev_prev_data,

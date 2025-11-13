@@ -174,11 +174,29 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
         BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX
         BCLIBC_TRAJ_FLAG_MRT = 32
 
-    ctypedef struct BCLIBC_BaseTrajData:
+    cdef cppclass BCLIBC_BaseTrajData:
         double time
         BCLIBC_V3dT position
         BCLIBC_V3dT velocity
         double mach
+
+        BCLIBC_BaseTrajData() except+
+        BCLIBC_BaseTrajData(
+            double time,
+            BCLIBC_V3dT position,
+            BCLIBC_V3dT velocity,
+            double mach
+        ) except+
+
+        @staticmethod
+        BCLIBC_ErrorType interpolate(
+            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            double key_value,
+            const BCLIBC_BaseTrajData *p0,
+            const BCLIBC_BaseTrajData *p1,
+            const BCLIBC_BaseTrajData *p2,
+            BCLIBC_BaseTrajData *out
+        )
 
     ctypedef struct BCLIBC_ShotProps:
         double bc
@@ -228,12 +246,3 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil
     double BCLIBC_calculateEnergy(double bulletWeight, double velocity) noexcept nogil
     double BCLIBC_calculateOgw(double bulletWeight, double velocity) noexcept nogil
-
-    BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
-        double key_value,
-        const BCLIBC_BaseTrajData *p0,
-        const BCLIBC_BaseTrajData *p1,
-        const BCLIBC_BaseTrajData *p2,
-        BCLIBC_BaseTrajData *out
-    ) noexcept nogil

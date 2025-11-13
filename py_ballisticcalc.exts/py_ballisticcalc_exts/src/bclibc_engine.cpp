@@ -68,7 +68,7 @@ namespace bclibc
         }
 
         BCLIBC_ErrorType err;
-        BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData_init();
+        BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData();
         BCLIBC_BaseTrajData *init = &temp_btd;
         BCLIBC_BaseTrajData *fin = &temp_btd;
 

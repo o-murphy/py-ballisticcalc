@@ -49,7 +49,9 @@ __all__ = [
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
-    return BaseTrajDataT(BCLIBC_BaseTrajData(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach))
+    cdef BaseTrajDataT data = BaseTrajDataT()
+    data._this = BCLIBC_BaseTrajData(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach)
+    return data
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
