@@ -1,4 +1,4 @@
-cdef extern from "include/bclibc_interp.h" nogil:
+cdef extern from "include/bclibc_interp.hpp" namespace "bclibc" nogil:
     cdef int BCLIBC_INTERP_ERROR_ZERODIVISION
 
     ctypedef enum BCLIBC_InterpMethod:

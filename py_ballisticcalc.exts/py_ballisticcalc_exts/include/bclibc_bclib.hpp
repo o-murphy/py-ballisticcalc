@@ -1,10 +1,10 @@
 #ifndef BCLIBC_BCLIB_H
 #define BCLIBC_BCLIB_H
 
+#include <stddef.h>
 #include "bclibc_v3d.h"
 #include "bclibc_log.h"
 #include "bclibc_error_stack.h"
-#include <stddef.h>
 
 namespace bclibc
 {

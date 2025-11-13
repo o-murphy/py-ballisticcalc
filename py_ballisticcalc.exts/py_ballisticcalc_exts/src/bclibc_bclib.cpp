@@ -1,10 +1,10 @@
-#include "bclibc_bclib.hpp"
-#include "bclibc_v3d.h"
-#include "bclibc_interp.h"
-#include <cmath>
 #include <stddef.h> // For size_t
 #include <stdio.h>  // For warnings (printf used here)
 #include <stdlib.h>
+#include <cmath>
+#include "bclibc_bclib.hpp"
+#include "bclibc_v3d.h"
+#include "bclibc_interp.hpp"
 
 namespace bclibc
 {
@@ -181,7 +181,7 @@ namespace bclibc
             }
             // Calculate the spin drift using the Litz approximation formula.
             // The division by 12 converts the result from inches (implied by Litz formula) to feet.
-            return sign * (1.25 * (shot_props_ptr->stability_coefficient + 1.2) * pow(time, 1.83)) / 12.0;
+            return sign * (1.25 * (shot_props_ptr->stability_coefficient + 1.2) * std::pow(time, 1.83)) / 12.0;
         }
         // If either twist or stability_coefficient is zero, return 0.
         return 0.0;
@@ -224,10 +224,10 @@ namespace bclibc
 
             // Ensure denominator components are non-zero to avoid division by zero
             // This check is crucial for robustness in C
-            double denom_part1 = pow(twist_rate, 2);
-            double denom_part2 = pow(shot_props_ptr->diameter, 3);
+            double denom_part1 = std::pow(twist_rate, 2);
+            double denom_part2 = std::pow(shot_props_ptr->diameter, 3);
             double denom_part3 = length;
-            double denom_part4 = (1 + pow(length, 2));
+            double denom_part4 = (1 + std::pow(length, 2));
 
             if (denom_part1 != 0.0 && denom_part2 != 0.0 && denom_part3 != 0.0 && denom_part4 != 0.0)
             {
@@ -240,7 +240,7 @@ namespace bclibc
                 return BCLIBC_E_ZERO_DIVISION_ERROR; // Exit if denominator is zero
             }
 
-            fv = pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
+            fv = std::pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
             ft = (shot_props_ptr->atmo._t0 * 9.0 / 5.0) + 32.0; // Convert from Celsius to Fahrenheit
             pt = shot_props_ptr->atmo._p0 / 33.863881565591;    // Convert hPa to inHg
 
@@ -425,7 +425,7 @@ namespace bclibc
 
         // Pressure calculation using barometric formula for the troposphere
         // $P = P_0 \cdot (1 + \frac{L \cdot \Delta h}{T_0})^ {g / (L \cdot R)}$
-        const double pressure = this->_p0 * pow(
+        const double pressure = this->_p0 * std::pow(
                                                     1.0 + BCLIBC_cLapseRateKperFoot * alt_diff / base_kelvin,
                                                     BCLIBC_cPressureExponent);
 
