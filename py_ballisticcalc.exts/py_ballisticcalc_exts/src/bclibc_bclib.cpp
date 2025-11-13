@@ -426,8 +426,8 @@ namespace bclibc
         // Pressure calculation using barometric formula for the troposphere
         // $P = P_0 \cdot (1 + \frac{L \cdot \Delta h}{T_0})^ {g / (L \cdot R)}$
         const double pressure = this->_p0 * std::pow(
-                                                    1.0 + BCLIBC_cLapseRateKperFoot * alt_diff / base_kelvin,
-                                                    BCLIBC_cPressureExponent);
+                                                1.0 + BCLIBC_cLapseRateKperFoot * alt_diff / base_kelvin,
+                                                BCLIBC_cPressureExponent);
 
         // Density ratio calculation: $\frac{\rho}{\rho_{\text{std}}} = \frac{\rho_0}{\rho_{\text{std}}} \cdot \frac{P \cdot T_0}{P_0 \cdot T}$
         const double density_delta = (base_kelvin * pressure) / (this->_p0 * kelvin);
@@ -671,48 +671,67 @@ namespace bclibc
         return bulletWeight * bulletWeight * velocity * velocity * velocity * 1.5e-12;
     }
 
-    void BCLIBC_Coriolis_flatFireOffsets(const BCLIBC_Coriolis *coriolis, double time, double distance_ft, double drop_ft, double *delta_y, double *delta_z)
+    BCLIBC_Coriolis::BCLIBC_Coriolis(
+        double sin_lat,
+        double cos_lat,
+        double sin_az,
+        double cos_az,
+        double range_east,
+        double range_north,
+        double cross_east,
+        double cross_north,
+        int flat_fire_only,
+        double muzzle_velocity_fps)
+        : sin_lat(sin_lat),
+          cos_lat(cos_lat),
+          sin_az(sin_az),
+          cos_az(cos_az),
+          range_east(range_east),
+          range_north(range_north),
+          cross_east(cross_east),
+          cross_north(cross_north),
+          flat_fire_only(flat_fire_only),
+          muzzle_velocity_fps(muzzle_velocity_fps) {};
+
+    void BCLIBC_Coriolis::flat_fire_offsets(
+        double time,
+        double distance_ft,
+        double drop_ft,
+        double *delta_y,
+        double *delta_z) const
     {
-        if (!coriolis->flat_fire_only)
+        if (!this->flat_fire_only)
         {
             *delta_y = 0.0;
             *delta_z = 0.0;
             return;
         }
 
-        double horizontal = BCLIBC_cEarthAngularVelocityRadS * distance_ft * coriolis->sin_lat * time;
+        double horizontal = BCLIBC_cEarthAngularVelocityRadS * distance_ft * this->sin_lat * time;
         double vertical = 0.0;
-        if (coriolis->sin_az)
+        if (this->sin_az)
         {
-            double vertical_factor = -2.0 * BCLIBC_cEarthAngularVelocityRadS * coriolis->muzzle_velocity_fps * coriolis->cos_lat * coriolis->sin_az;
+            double vertical_factor = -2.0 * BCLIBC_cEarthAngularVelocityRadS * this->muzzle_velocity_fps * this->cos_lat * this->sin_az;
             vertical = drop_ft * (vertical_factor / BCLIBC_cGravityImperial);
         }
         *delta_y = vertical;
         *delta_z = horizontal;
-    }
+    };
 
-    BCLIBC_V3dT BCLIBC_Coriolis_adjustRange(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector)
+    BCLIBC_V3dT BCLIBC_Coriolis::adjust_range(
+        double time, const BCLIBC_V3dT *range_vector) const
     {
-        if (!coriolis || !coriolis->flat_fire_only)
+        if (!this || !this->flat_fire_only)
         {
             return *range_vector;
         }
         double delta_y, delta_z;
-        BCLIBC_Coriolis_flatFireOffsets(coriolis, time, range_vector->x, range_vector->y, &delta_y, &delta_z);
+        this->flat_fire_offsets(time, range_vector->x, range_vector->y, &delta_y, &delta_z);
         if (delta_y == 0.0 && delta_z == 0.0)
         {
             return *range_vector;
         }
         return (BCLIBC_V3dT){range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
-    }
-
-    BCLIBC_V3dT BCLIBC_adjustRangeFromCoriolis(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector)
-    {
-        if (!coriolis)
-        {
-            return *range_vector;
-        }
-        return BCLIBC_Coriolis_adjustRange(coriolis, time, range_vector);
     }
 
     /**
@@ -725,17 +744,15 @@ namespace bclibc
      * Coriolis acceleration formula in ENU:
      * - $\mathbf{a}_{\text{coriolis}} = -2 \cdot \mathbf{\omega}_{\text{earth}} \times \mathbf{v}_{\text{ENU}}$
      *
-     * @param coriolis_ptr Pointer to BCLIBC_Coriolis containing precomputed transformation data ($\sin(\text{lat}), \cos(\text{lat})$, range/cross factors).
      * @param velocity_ptr Pointer to the projectile's ground velocity vector (local coordinates: x=range, y=up, z=crossrange).
      * @param accel_ptr Pointer to store the calculated Coriolis acceleration vector (local coordinates).
      */
-    void BCLIBC_Coriolis_coriolisAccelerationLocal(
-        const BCLIBC_Coriolis *coriolis_ptr,
+    void BCLIBC_Coriolis::coriolis_acceleration_local(
         const BCLIBC_V3dT *velocity_ptr,
-        BCLIBC_V3dT *accel_ptr)
+        BCLIBC_V3dT *accel_ptr) const
     {
         // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
-        if (coriolis_ptr->flat_fire_only)
+        if (this->flat_fire_only)
         {
             *accel_ptr = (BCLIBC_V3dT){0.0, 0.0, 0.0};
             return;
@@ -746,10 +763,10 @@ namespace bclibc
         const double vy = velocity_ptr->y;
         const double vz = velocity_ptr->z;
 
-        const double range_east = coriolis_ptr->range_east;
-        const double range_north = coriolis_ptr->range_north;
-        const double cross_east = coriolis_ptr->cross_east;
-        const double cross_north = coriolis_ptr->cross_north;
+        const double range_east = this->range_east;
+        const double range_north = this->range_north;
+        const double cross_east = this->cross_east;
+        const double cross_north = this->cross_north;
 
         // Transform velocity to ENU (East, North, Up)
         const double vel_east = vx * range_east + vz * cross_east;
@@ -758,8 +775,8 @@ namespace bclibc
 
         // Coriolis acceleration in ENU
         const double factor = -2.0 * BCLIBC_cEarthAngularVelocityRadS;
-        const double sin_lat = coriolis_ptr->sin_lat;
-        const double cos_lat = coriolis_ptr->cos_lat;
+        const double sin_lat = this->sin_lat;
+        const double cos_lat = this->cos_lat;
 
         // $\mathbf{a}_{\text{coriolis}} = -2 \cdot \mathbf{\omega}_{\text{earth}} \times \mathbf{v}_{\text{ENU}}$
         // $\mathbf{\omega}_{\text{earth}} = \omega_e \cdot (0, \cos(\text{lat}), \sin(\text{lat}))$

@@ -8,7 +8,7 @@ namespace bclibc
     /**
      * @brief Calculate the derivative of velocity with respect to time (acceleration).
      * * Assumes all necessary types (BCLIBC_V3dT, BCLIBC_ShotProps, BCLIBC_Coriolis) and vector
-     * functions (mulS, mag, sub, add, BCLIBC_Coriolis_coriolisAccelerationLocal)
+     * functions (mulS, mag, sub, add, Coriolis.coriolis_acceleration_local)
      * are declared and defined in relevant C headers.
      *
      * @param v_ptr Pointer to the relative velocity vector (velocity - wind).
@@ -39,12 +39,12 @@ namespace bclibc
         // Check the flat_fire_only flag within the Coriolis structure
         if (!shot_props_ptr->coriolis.flat_fire_only)
         {
-            // BCLIBC_Coriolis_coriolisAccelerationLocal(
-            //     &shot_props_ptr->coriolis, ground_velocity_ptr, &coriolis_acceleration
+            // shot_props_ptr->coriolis.coriolis_acceleration_local(
+            //     ground_velocity_ptr, &coriolis_acceleration
             // )
             // Note: Assuming this function calculates Coriolis acceleration and stores it in the third argument
-            BCLIBC_Coriolis_coriolisAccelerationLocal(
-                &shot_props_ptr->coriolis, ground_velocity_ptr, &coriolis_acceleration);
+            shot_props_ptr->coriolis.coriolis_acceleration_local(
+                ground_velocity_ptr, &coriolis_acceleration);
 
             // acceleration = BCLIBC_V3dT_add(&acceleration, &coriolis_acceleration)
             // Note: Assuming add takes two const BCLIBC_V3dT* and returns BCLIBC_V3dT

@@ -97,8 +97,9 @@ namespace bclibc
             double *mach_ptr) const;
     };
 
-    typedef struct
+    struct BCLIBC_Coriolis
     {
+    public:
         double sin_lat;
         double cos_lat;
         double sin_az;
@@ -109,7 +110,36 @@ namespace bclibc
         double cross_north;
         int flat_fire_only;
         double muzzle_velocity_fps;
-    } BCLIBC_Coriolis;
+
+        BCLIBC_Coriolis() = default;
+        BCLIBC_Coriolis(
+            double sin_lat,
+            double cos_lat,
+            double sin_az,
+            double cos_az,
+            double range_east,
+            double range_north,
+            double cross_east,
+            double cross_north,
+            int flat_fire_only,
+            double muzzle_velocity_fps);
+
+        void flat_fire_offsets(
+            double time,
+            double distance_ft,
+            double drop_ft,
+            double *delta_y,
+            double *delta_z) const;
+        
+        BCLIBC_V3dT adjust_range(
+            double time, const BCLIBC_V3dT *range_vector
+        ) const;
+
+        void coriolis_acceleration_local(
+            const BCLIBC_V3dT *velocity_ptr,
+            BCLIBC_V3dT *accel_ptr
+        ) const;
+    };
 
     typedef struct
     {
@@ -202,19 +232,10 @@ namespace bclibc
     BCLIBC_ErrorType BCLIBC_WindSock_updateCache(BCLIBC_WindSock *ws);
     BCLIBC_V3dT BCLIBC_WindSock_vectorForRange(BCLIBC_WindSock *ws, double next_range_param);
 
-    BCLIBC_V3dT BCLIBC_adjustRangeFromCoriolis(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector);
-    void BCLIBC_Coriolis_coriolisAccelerationLocal(
-        const BCLIBC_Coriolis *coriolis_ptr,
-        const BCLIBC_V3dT *velocity_ptr,
-        BCLIBC_V3dT *accel_ptr);
-
     // helpers
     double BCLIBC_getCorrection(double distance, double offset);
     double BCLIBC_calculateEnergy(double bulletWeight, double velocity);
     double BCLIBC_calculateOgw(double bulletWeight, double velocity);
-
-    void BCLIBC_Coriolis_flatFireOffsets(const BCLIBC_Coriolis *coriolis, double time, double distance_ft, double drop_ft, double *delta_y, double *delta_z);
-    BCLIBC_V3dT BCLIBC_Coriolis_adjustRange(const BCLIBC_Coriolis *coriolis, double time, const BCLIBC_V3dT *range_vector);
 
     BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
         BCLIBC_BaseTrajSeq_InterpKey key_kind,

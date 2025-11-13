@@ -42,14 +42,10 @@ namespace bclibc
         //     c->flat_fire_only,
         //     c->muzzle_velocity_fps
         // );
-        BCLIBC_V3dT adjusted_range = BCLIBC_adjustRangeFromCoriolis(&props->coriolis, time, range_vector);
-        // BCLIBC_V3dT adjusted_range = *range_vector;
+        
+        BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
         double spin_drift = BCLIBC_ShotProps_spinDrift(props, time);
         double velocity = BCLIBC_V3dT_mag(velocity_vector);
-
-        // if (velocity < -1e6 || velocity > 1e6 || spin_drift < -1e6 || spin_drift > 1e6) {
-        //     fprintf(stdout, "MEMERR: adjusted_range.z=%.6f, spin_drift=%.6f", adjusted_range.z, spin_drift);
-        // }
 
         this->windage_ft = adjusted_range.z + spin_drift;
 
