@@ -5,12 +5,9 @@ Provides direct C-layer accessors for parity tests without modifying production
 engine modules. Not part of the public API.
 """
 from cython cimport final
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
+from py_ballisticcalc_exts.traj_seq cimport BaseTrajSeqT
 from libc.math cimport sin, cos
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps_dragByMach,
     BCLIBC_ShotProps_spinDrift,

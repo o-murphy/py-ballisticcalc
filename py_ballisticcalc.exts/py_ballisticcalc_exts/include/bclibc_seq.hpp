@@ -1,10 +1,8 @@
 #ifndef BCLIBC_BASE_TRAJ_SEQ_HPP
 #define BCLIBC_BASE_TRAJ_SEQ_HPP
 
-#include <cstddef>    // Required for size_t
-
+#include <cstddef> // Required for size_t
 #include "bclibc_bclib.hpp"
-#include "bclibc_interp.hpp"
 
 // --- START CROSS-PLATFORM FIX ---
 // The manylinux build environment failed due to redefinition.
@@ -30,6 +28,44 @@ typedef __int64 ssize_t;
 
 namespace bclibc
 {
+    /**
+     * Keys used to look up specific values within a BCLIBC_BaseTraj struct.
+     */
+    enum class BCLIBC_BaseTraj_InterpKey
+    {
+        TIME,
+        MACH,
+        POS_X,
+        POS_Y,
+        POS_Z,
+        VEL_X,
+        VEL_Y,
+        VEL_Z,
+    };
+
+    struct BCLIBC_BaseTrajData
+    {
+        double time;
+        BCLIBC_V3dT position;
+        BCLIBC_V3dT velocity;
+        double mach;
+
+        BCLIBC_BaseTrajData() = default;
+        BCLIBC_BaseTrajData(
+            double time,
+            BCLIBC_V3dT position,
+            BCLIBC_V3dT velocity,
+            double mach);
+
+        static BCLIBC_ErrorType interpolate(
+            BCLIBC_BaseTraj_InterpKey key_kind,
+            double key_value,
+            const BCLIBC_BaseTrajData *p0,
+            const BCLIBC_BaseTrajData *p1,
+            const BCLIBC_BaseTrajData *p2,
+            BCLIBC_BaseTrajData *out);
+    };
+
     /**
      * Simple C struct for trajectory data points used in the contiguous buffer.
      */

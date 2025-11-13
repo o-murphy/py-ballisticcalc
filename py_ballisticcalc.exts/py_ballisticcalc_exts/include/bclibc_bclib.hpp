@@ -3,7 +3,6 @@
 
 #include <cstddef>
 #include "bclibc_v3d.h"
-#include "bclibc_log.h"
 #include "bclibc_error_stack.h"
 
 namespace bclibc
@@ -22,20 +21,18 @@ namespace bclibc
     extern const double BCLIBC_cMaxWindDistanceFeet;
     extern const double BCLIBC_cEarthAngularVelocityRadS;
 
-    /**
-     * Keys used to look up specific values within a BCLIBC_BaseTraj struct.
-     */
-    enum class BCLIBC_BaseTraj_InterpKey
+    typedef enum
     {
-        TIME,
-        MACH,
-        POS_X,
-        POS_Y,
-        POS_Z,
-        VEL_X,
-        VEL_Y,
-        VEL_Z,
-    };
+        BCLIBC_TRAJ_FLAG_NONE = 0,
+        BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
+        BCLIBC_TRAJ_FLAG_ZERO_DOWN = 2,
+        BCLIBC_TRAJ_FLAG_ZERO = BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN,
+        BCLIBC_TRAJ_FLAG_MACH = 4,
+        BCLIBC_TRAJ_FLAG_RANGE = 8,
+        BCLIBC_TRAJ_FLAG_APEX = 16,
+        BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX,
+        BCLIBC_TRAJ_FLAG_MRT = 32
+    } BCLIBC_TrajFlag;
 
     struct BCLIBC_Config
     {
@@ -167,42 +164,6 @@ namespace bclibc
                     double direction_from,
                     double until_distance,
                     double MAX_DISTANCE_FEET);
-    };
-
-    typedef enum
-    {
-        BCLIBC_TRAJ_FLAG_NONE = 0,
-        BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
-        BCLIBC_TRAJ_FLAG_ZERO_DOWN = 2,
-        BCLIBC_TRAJ_FLAG_ZERO = BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN,
-        BCLIBC_TRAJ_FLAG_MACH = 4,
-        BCLIBC_TRAJ_FLAG_RANGE = 8,
-        BCLIBC_TRAJ_FLAG_APEX = 16,
-        BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX,
-        BCLIBC_TRAJ_FLAG_MRT = 32
-    } BCLIBC_TrajFlag;
-
-    struct BCLIBC_BaseTrajData
-    {
-        double time;
-        BCLIBC_V3dT position;
-        BCLIBC_V3dT velocity;
-        double mach;
-
-        BCLIBC_BaseTrajData() = default;
-        BCLIBC_BaseTrajData(
-            double time,
-            BCLIBC_V3dT position,
-            BCLIBC_V3dT velocity,
-            double mach);
-
-        static BCLIBC_ErrorType interpolate(
-            BCLIBC_BaseTraj_InterpKey key_kind,
-            double key_value,
-            const BCLIBC_BaseTrajData *p0,
-            const BCLIBC_BaseTrajData *p1,
-            const BCLIBC_BaseTrajData *p2,
-            BCLIBC_BaseTrajData *out);
     };
 
     typedef struct

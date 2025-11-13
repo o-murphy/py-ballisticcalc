@@ -117,8 +117,7 @@ C_EXTENSION_DEPS = {
 
 CPP_EXTENSION_DEPS = {
     "bind": _BIND_DEPS,
-    "trajectory_data": _BCLIBC_DEPS,
-    "base_traj_seq": _SEQ_DEPS,
+    "traj_seq": _SEQ_DEPS,
     "traj_filter": _FILTER_DEPS,
     "base_engine": _ENGINE_DEPS,
     "rk4_engine": _RK4_DEPS,

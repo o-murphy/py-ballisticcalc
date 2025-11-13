@@ -4,13 +4,11 @@ from libcpp.vector cimport vector
 from libc.stddef cimport ptrdiff_t
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps,
-    BCLIBC_BaseTrajData,
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.interp cimport (
-    BCLIBC_InterpMethod,
-)
+from py_ballisticcalc_exts.interp cimport BCLIBC_InterpMethod
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajData
 
 cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
 

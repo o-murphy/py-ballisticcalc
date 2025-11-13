@@ -1,4 +1,4 @@
-# distutils: language = c++
+# cython: freethreading_compatible=True
 
 from libcpp.vector cimport vector
 from libc.stddef cimport ptrdiff_t
@@ -6,7 +6,6 @@ from cython.operator cimport dereference as deref, preincrement as inc
 
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps,
-    BCLIBC_BaseTrajData,
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
@@ -15,6 +14,8 @@ from py_ballisticcalc_exts.traj_filter cimport (
     BCLIBC_TrajectoryData,
     BCLIBC_TrajectoryDataFilter,
 )
+
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajData
 
 from py_ballisticcalc.trajectory_data import TrajectoryData
 

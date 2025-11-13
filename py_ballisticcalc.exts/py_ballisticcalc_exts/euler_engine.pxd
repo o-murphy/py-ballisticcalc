@@ -1,15 +1,11 @@
 # pxd for rk4_engine to expose CythonizedRK4IntegrationEngine
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_TrajFlag,
 )
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
-# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajSeq
 from py_ballisticcalc_exts.base_engine cimport (
     BCLIBC_Engine,
     BCLIBC_StatusCode,
