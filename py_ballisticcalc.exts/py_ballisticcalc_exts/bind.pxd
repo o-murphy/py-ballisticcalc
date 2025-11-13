@@ -1,5 +1,5 @@
 from cpython.object cimport PyObject
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_MachList,
     BCLIBC_Curve,
     BCLIBC_Atmosphere,
@@ -12,7 +12,7 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTraj_InterpKey
 
 
-cdef extern from "include/bclibc_py_bind.hpp" namespace "bclibc" nogil:
+cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:
     BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) noexcept nogil
     BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) noexcept nogil
     BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) noexcept nogil

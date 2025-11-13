@@ -8,7 +8,7 @@ from cython cimport final
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 from py_ballisticcalc_exts.traj_seq cimport BaseTrajSeqT
 from libc.math cimport sin, cos
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps_dragByMach,
     BCLIBC_ShotProps_spinDrift,
     BCLIBC_ShotProps_updateStabilityCoefficient,

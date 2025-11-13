@@ -2,7 +2,7 @@
 from py_ballisticcalc_exts.base_engine cimport (
     CythonizedBaseIntegrationEngine,
 )
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajSeq
@@ -13,7 +13,7 @@ from py_ballisticcalc_exts.base_engine cimport (
 )
 
 
-cdef extern from "include/bclibc_euler.hpp" namespace "bclibc" nogil:
+cdef extern from "include/bclibc/euler.hpp" namespace "bclibc" nogil:
 
     BCLIBC_StatusCode BCLIBC_integrateEULER(
         BCLIBC_Engine *eng,

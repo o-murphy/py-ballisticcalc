@@ -1,6 +1,6 @@
 #include <cmath>
-#include "bclibc_euler.hpp"
-// #include "bclibc_bclib.hpp"  // for C_LOG
+#include "euler.hpp"
+// #include "base_types.hpp"  // for C_LOG
 
 namespace bclibc
 {

@@ -78,22 +78,29 @@ FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
-INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
+INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include" / "bclibc"
+
+# Use absolute paths for include directories
+include_dirs = [
+    str(EXTENSIONS_BASE_DIR),  # For .pxd files
+    str(SRC_DIR_PATH),  # For source-level headers
+    str(INCLUDE_DIR_PATH),  # For public headers
+]
 
 # Define all C source files and their paths
 SOURCE_PATHS = {
-    "v3d": SRC_DIR_PATH / "bclibc_v3d.c",
-    "log": SRC_DIR_PATH / "bclibc_log.c",
-    "error_stack": SRC_DIR_PATH / "bclibc_error_stack.c",
+    "log": SRC_DIR_PATH / "log.c",
+    "error_stack": SRC_DIR_PATH / "error_stack.c",
     # C++ Sources:
-    "interp": SRC_DIR_PATH / "bclibc_interp.cpp",
-    "bclib": SRC_DIR_PATH / "bclibc_bclib.cpp",
-    "bind": SRC_DIR_PATH / "bclibc_py_bind.cpp",
-    "seq": SRC_DIR_PATH / "bclibc_seq.cpp",
-    "traj_filter": SRC_DIR_PATH / "bclibc_traj_filter.cpp",
-    "engine": SRC_DIR_PATH / "bclibc_engine.cpp",
-    "euler": SRC_DIR_PATH / "bclibc_euler.cpp",
-    "rk4": SRC_DIR_PATH / "bclibc_rk4.cpp",
+    "v3d": SRC_DIR_PATH / "v3d.cpp",
+    "interp": SRC_DIR_PATH / "interp.cpp",
+    "types": SRC_DIR_PATH / "base_types.cpp",
+    "bind": SRC_DIR_PATH / "py_bind.cpp",
+    "seq": SRC_DIR_PATH / "traj_seq.cpp",
+    "traj_filter": SRC_DIR_PATH / "traj_filter.cpp",
+    "engine": SRC_DIR_PATH / "engine.cpp",
+    "euler": SRC_DIR_PATH / "euler.cpp",
+    "rk4": SRC_DIR_PATH / "rk4.cpp",
 }
 
 # Define dependencies for each extension as a dictionary
@@ -102,7 +109,7 @@ SOURCE_PATHS = {
 
 _INTERP_DEPS = set(["interp"])
 _ERR_STACK_DEPS = set(["log", "error_stack"])
-_BCLIBC_DEPS = set([*_INTERP_DEPS, *_ERR_STACK_DEPS, "v3d", "bclib"])
+_BCLIBC_DEPS = set([*_INTERP_DEPS, *_ERR_STACK_DEPS, "v3d", "types"])
 _SEQ_DEPS = set([*_BCLIBC_DEPS, "seq"])
 _FILTER_DEPS = set([*_SEQ_DEPS, "traj_filter"])
 _BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
@@ -129,13 +136,6 @@ CPP_EXTENSION_DEPS = {
 }
 
 TEST_EXTENSIONS_DEPS = {}
-
-# Use absolute paths for include directories
-include_dirs = [
-    EXTENSIONS_BASE_DIR.as_posix(),  # For .pxd files
-    SRC_DIR_PATH.as_posix(),  # For source-level headers
-    INCLUDE_DIR_PATH.as_posix(),  # For public headers
-]
 
 # Platform-specific compiler flags
 is_msvc = platform.system() == "Windows"
@@ -190,7 +190,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
             # Enable tracing in both with-GIL and nogil regions
             define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
 
-        sources = [s.as_posix() for s in sources]
+        sources = [str(s) for s in sources]
 
         if not is_cpp:
             extensions_local.append(

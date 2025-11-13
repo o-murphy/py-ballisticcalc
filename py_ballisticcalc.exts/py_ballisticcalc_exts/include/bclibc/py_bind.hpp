@@ -1,11 +1,11 @@
-#ifndef BCLIBC_PY_BIND_H
-#define BCLIBC_PY_BIND_H
+#ifndef BCLIBC_PY_BIND_HPP
+#define BCLIBC_PY_BIND_HPP
 
 // Cython only bindings
 #ifdef __CYTHON__
 
 #include <Python.h>
-#include "bclibc_bclib.hpp" // BCLIBC_MachList typedef must be here
+#include "base_types.hpp" // BCLIBC_MachList typedef must be here
 
 namespace bclibc
 {
@@ -20,4 +20,4 @@ namespace bclibc
 
 #endif // __CYTHON__
 
-#endif // BCLIBC_PY_BIND_H
+#endif // BCLIBC_PY_BIND_HPP

@@ -1,6 +1,6 @@
 #include <cmath>
-#include "bclibc_rk4.hpp"
-#include "bclibc_bclib.hpp"
+#include "rk4.hpp"
+#include "base_types.hpp"
 
 namespace bclibc
 {

@@ -1,11 +1,11 @@
 """
-Header file for base_traj_seq.pyx - C Buffer Trajectory Sequence
+Header file for traj_seq.pyx - C Buffer Trajectory Sequence
 """
 
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.bclib cimport BCLIBC_ErrorType
+from py_ballisticcalc_exts.base_types cimport BCLIBC_ErrorType
 
-cdef extern from "include/bclibc_seq.hpp" namespace "bclibc" nogil:
+cdef extern from "include/bclibc/traj_seq.hpp" namespace "bclibc" nogil:
 
     cdef enum class BCLIBC_BaseTraj_InterpKey:
         TIME

@@ -1,6 +1,6 @@
 #include <cmath>
 #include <cstddef>
-#include "bclibc_interp.hpp"
+#include "interp.hpp"
 
 namespace bclibc
 {
