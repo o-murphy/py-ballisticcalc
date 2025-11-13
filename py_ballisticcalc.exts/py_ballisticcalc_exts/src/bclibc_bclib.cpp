@@ -834,6 +834,16 @@ namespace bclibc
         }
     }
 
+    BCLIBC_BaseTrajData::BCLIBC_BaseTrajData(
+        double time,
+        BCLIBC_V3dT position,
+        BCLIBC_V3dT velocity,
+        double mach)
+        : time(time),
+          position(position),
+          velocity(velocity),
+          mach(mach) {};
+
     /**
      * @brief Interpolates a BCLIBC_BaseTrajData structure using three surrounding data points.
      *
@@ -849,7 +859,7 @@ namespace bclibc
      * @param out Pointer to the BCLIBC_BaseTrajData structure where the interpolated result will be stored.
      * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
+    BCLIBC_ErrorType BCLIBC_BaseTrajData::interpolate(
         BCLIBC_BaseTrajSeq_InterpKey key_kind,
         double key_value,
         const BCLIBC_BaseTrajData *p0,

@@ -22,6 +22,21 @@ namespace bclibc
     extern const double BCLIBC_cMaxWindDistanceFeet;
     extern const double BCLIBC_cEarthAngularVelocityRadS;
 
+    /**
+     * Keys used to look up specific values within a BCLIBC_BaseTraj struct.
+     */
+    typedef enum
+    {
+        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME,
+        BCLIBC_BASE_TRAJ_INTERP_KEY_MACH,
+        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X,
+        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y,
+        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z,
+        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X,
+        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y,
+        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z,
+    } BCLIBC_BaseTrajSeq_InterpKey;
+
     struct BCLIBC_Config
     {
     public:
@@ -167,13 +182,28 @@ namespace bclibc
         BCLIBC_TRAJ_FLAG_MRT = 32
     } BCLIBC_TrajFlag;
 
-    typedef struct
+    struct BCLIBC_BaseTrajData
     {
         double time;
         BCLIBC_V3dT position;
         BCLIBC_V3dT velocity;
         double mach;
-    } BCLIBC_BaseTrajData;
+
+        BCLIBC_BaseTrajData() = default;
+        BCLIBC_BaseTrajData(
+            double time,
+            BCLIBC_V3dT position,
+            BCLIBC_V3dT velocity,
+            double mach);
+
+        static BCLIBC_ErrorType interpolate(
+            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            double key_value,
+            const BCLIBC_BaseTrajData *p0,
+            const BCLIBC_BaseTrajData *p1,
+            const BCLIBC_BaseTrajData *p2,
+            BCLIBC_BaseTrajData *out);
+    };
 
     typedef struct
     {
@@ -209,21 +239,6 @@ namespace bclibc
         BCLIBC_TrajFlag filter_flags;
     } BCLIBC_ShotProps;
 
-    /**
-     * Keys used to look up specific values within a BCLIBC_BaseTraj struct.
-     */
-    typedef enum
-    {
-        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_MACH,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z,
-    } BCLIBC_BaseTrajSeq_InterpKey;
-
     void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr);
     void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr);
     void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr);
@@ -241,14 +256,6 @@ namespace bclibc
     double BCLIBC_getCorrection(double distance, double offset);
     double BCLIBC_calculateEnergy(double bulletWeight, double velocity);
     double BCLIBC_calculateOgw(double bulletWeight, double velocity);
-
-    BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
-        double key_value,
-        const BCLIBC_BaseTrajData *p0,
-        const BCLIBC_BaseTrajData *p1,
-        const BCLIBC_BaseTrajData *p2,
-        BCLIBC_BaseTrajData *out);
 
 }; // namespace bclibc
 

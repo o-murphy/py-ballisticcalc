@@ -76,22 +76,22 @@ cdef class BaseTrajSeqT:
     def __getitem__(self, idx: int) -> BaseTrajDataT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
         cdef Py_ssize_t _i = <Py_ssize_t>idx
-        cdef BCLIBC_BaseTrajData out
-        cdef BCLIBC_ErrorType err = self._this.get_item(_i, &out)
+        cdef BaseTrajDataT out = BaseTrajDataT()
+        cdef BCLIBC_ErrorType err = self._this.get_item(_i, &out._this)
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            return BaseTrajDataT(out)
+            return out
         raise IndexError("Index out of range")
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
-        cdef BCLIBC_BaseTrajData out
+        cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = self._this.interpolate_at(
-            idx, key_kind, key_value, &out
+            idx, key_kind, key_value, &out._this
         )
 
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            return BaseTrajDataT(out)
+            return out
 
         if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
             raise ValueError("invalid BCLIBC_BaseTrajSeq.interpolate_at input")
@@ -114,15 +114,15 @@ cdef class BaseTrajSeqT:
         """
         cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
 
-        cdef BCLIBC_BaseTrajData out
+        cdef BaseTrajDataT out = BaseTrajDataT()
         cdef double _start_from_time = 0.0
         if start_from_time is not None:
             _start_from_time = <double>start_from_time
         cdef BCLIBC_ErrorType err = self._this.get_at(
-            key_kind, key_value, _start_from_time, &out
+            key_kind, key_value, _start_from_time, &out._this
         )
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            return BaseTrajDataT(out)
+            return out
 
         if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
@@ -134,10 +134,10 @@ cdef class BaseTrajSeqT:
     def get_at_slant_height(self, double look_angle_rad, double value):
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
 
-        cdef BCLIBC_BaseTrajData out
-        cdef BCLIBC_ErrorType err = self._this.get_at_slant_height(look_angle_rad, value, &out)
+        cdef BaseTrajDataT out = BaseTrajDataT()
+        cdef BCLIBC_ErrorType err = self._this.get_at_slant_height(look_angle_rad, value, &out._this)
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            return BaseTrajDataT(out)
+            return out
 
         if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")

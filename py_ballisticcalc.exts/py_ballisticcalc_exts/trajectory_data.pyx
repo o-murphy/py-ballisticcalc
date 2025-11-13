@@ -14,7 +14,6 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ErrorType,
     BCLIBC_BaseTrajData,
     BCLIBC_BaseTrajSeq_InterpKey,
-    BCLIBC_BaseTrajData_interpolate,
 )
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bind cimport _attribute_to_key, v3d_to_vector
@@ -23,9 +22,6 @@ from py_ballisticcalc_exts.bind cimport _attribute_to_key, v3d_to_vector
 @final
 cdef class BaseTrajDataT:
     __slots__ = ('time', '_position', '_velocity', 'mach')
-
-    def __cinit__(self, BCLIBC_BaseTrajData data):
-        self._this = data
 
     @property
     def time(self):
@@ -67,20 +63,20 @@ cdef class BaseTrajDataT:
                                (This will result if two of the points are identical).
         """
         cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
-        cdef BCLIBC_BaseTrajData out
-        cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
+        cdef BaseTrajDataT out = BaseTrajDataT()
+        cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData.interpolate(
             key_kind, key_value,
             &p0._this, &p1._this, &p2._this,
-            &out
+            &out._this
         )
 
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            return BaseTrajDataT(out)
+            return out
 
         if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
-            raise ValueError("invalid BCLIBC_BaseTrajData_interpolate input")
+            raise ValueError("invalid BCLIBC_BaseTrajData.interpolate input")
         if err == BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
         if err == BCLIBC_ErrorType.BCLIBC_E_ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
-        raise RuntimeError("unknown error in BCLIBC_BaseTrajData_interpolate")
+        raise RuntimeError("unknown error in BCLIBC_BaseTrajData.interpolate")
