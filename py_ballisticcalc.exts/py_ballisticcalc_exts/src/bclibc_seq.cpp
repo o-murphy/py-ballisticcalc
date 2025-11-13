@@ -14,30 +14,31 @@ namespace bclibc
      * @param key_kind Kind of key.
      * @return Value of the key.
      */
-    double BCLIBC_BaseTraj::key_val(BCLIBC_BaseTrajSeq_InterpKey key_kind) const
+    double BCLIBC_BaseTraj::key_val(BCLIBC_BaseTraj_InterpKey key_kind) const
     {
-        if (key_kind < 0 || key_kind > BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT)
+        int k = (int)key_kind;
+        if ((int)key_kind < 0 || (int)key_kind > BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT)
         {
             return 0.0;
         }
 
         switch (key_kind)
         {
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_TIME:
+        case BCLIBC_BaseTraj_InterpKey::TIME:
             return this->time;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_MACH:
+        case BCLIBC_BaseTraj_InterpKey::MACH:
             return this->mach;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X:
+        case BCLIBC_BaseTraj_InterpKey::POS_X:
             return this->px;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y:
+        case BCLIBC_BaseTraj_InterpKey::POS_Y:
             return this->py;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z:
+        case BCLIBC_BaseTraj_InterpKey::POS_Z:
             return this->pz;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X:
+        case BCLIBC_BaseTraj_InterpKey::VEL_X:
             return this->vx;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y:
+        case BCLIBC_BaseTraj_InterpKey::VEL_Y:
             return this->vy;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z:
+        case BCLIBC_BaseTraj_InterpKey::VEL_Z:
             return this->vz;
         default:
             return 0.0;
@@ -64,8 +65,8 @@ namespace bclibc
      * Vectorized 3-point interpolation for all trajectory components.
      *
      * Performs PCHIP interpolation for all fields of BCLIBC_BaseTraj in a single pass.
-     * When interpolating by BCLIBC_BASE_TRAJ_INTERP_KEY_TIME, the time field is set directly to x.
-     * When interpolating by BCLIBC_BASE_TRAJ_INTERP_KEY_MACH, the mach field is set directly to x.
+     * When interpolating by BCLIBC_BaseTraj_InterpKey::TIME, the time field is set directly to x.
+     * When interpolating by BCLIBC_BaseTraj_InterpKey::MACH, the mach field is set directly to x.
      *
      * @param x The target value to interpolate at.
      * @param ox0 Key value at point 0.
@@ -75,15 +76,15 @@ namespace bclibc
      * @param p1 Pointer to trajectory point 1.
      * @param p2 Pointer to trajectory point 2.
      * @param out Pointer to output BCLIBC_BaseTraj where results will be stored.
-     * @param skip_key BCLIBC_BaseTrajSeq_InterpKey indicating which field is the interpolation key.
+     * @param skip_key BCLIBC_BaseTraj_InterpKey indicating which field is the interpolation key.
      */
     void BCLIBC_BaseTraj::interpolate3pt_vectorized(
         double x, double ox0, double ox1, double ox2,
         const BCLIBC_BaseTraj *p0, const BCLIBC_BaseTraj *p1, const BCLIBC_BaseTraj *p2,
-        BCLIBC_BaseTraj *out, BCLIBC_BaseTrajSeq_InterpKey skip_key)
+        BCLIBC_BaseTraj *out, BCLIBC_BaseTraj_InterpKey skip_key)
     {
         // Time: either use x directly (if interpolating by time) or interpolate
-        out->time = (skip_key == BCLIBC_BASE_TRAJ_INTERP_KEY_TIME)
+        out->time = (skip_key == BCLIBC_BaseTraj_InterpKey::TIME)
                         ? x
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
 
@@ -98,7 +99,7 @@ namespace bclibc
         out->vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
 
         // Mach: either use x directly (if interpolating by mach) or interpolate
-        out->mach = (skip_key == BCLIBC_BASE_TRAJ_INTERP_KEY_MACH)
+        out->mach = (skip_key == BCLIBC_BaseTraj_InterpKey::MACH)
                         ? x
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
     }
@@ -256,7 +257,7 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_at(
         ssize_t idx,
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
         BCLIBC_BaseTrajData *out) const
     {
@@ -356,7 +357,7 @@ namespace bclibc
      * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR if successful, otherwise error code.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at(
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
         double start_from_time,
         BCLIBC_BaseTrajData *out) const
@@ -378,7 +379,7 @@ namespace bclibc
         ssize_t target_idx = -1;
 
         // Search from start_from_time if provided
-        if (start_from_time > 0.0 && key_kind != BCLIBC_BASE_TRAJ_INTERP_KEY_TIME)
+        if (start_from_time > 0.0 && key_kind != BCLIBC_BaseTraj_InterpKey::TIME)
         {
             ssize_t start_idx = this->find_start_index(buf, n, start_from_time);
 
@@ -490,7 +491,7 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_at_center(
         ssize_t idx,
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
         BCLIBC_BaseTrajData *out) const
     {
@@ -519,7 +520,7 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_raw(
         ssize_t idx,
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
         BCLIBC_BaseTraj *out) const
     {
@@ -578,7 +579,7 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::try_get_exact(
         ssize_t idx,
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
         BCLIBC_BaseTrajData *out) const
     {
@@ -607,12 +608,12 @@ namespace bclibc
      * - the key value at buf[lo] is the first >= key_value (if increasing)
      *   or first <= key_value (if decreasing).
      *
-     * @param key_kind The BCLIBC_BaseTrajSeq_InterpKey specifying which component to search by.
+     * @param key_kind The BCLIBC_BaseTraj_InterpKey specifying which component to search by.
      * @param key_value The value to locate.
      * @return The center index for interpolation, or -1 if sequence is too short or NULL.
      */
     ssize_t BCLIBC_BaseTrajSeq::bisect_center_idx_buf(
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value) const
     {
         if (this->length < 3)
@@ -762,7 +763,7 @@ namespace bclibc
     ssize_t BCLIBC_BaseTrajSeq::find_target_index(
         const BCLIBC_BaseTraj *buf,
         ssize_t n,
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
         ssize_t start_idx)
     {

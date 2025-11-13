@@ -43,13 +43,13 @@ namespace bclibc
         double vz;   /* Velocity z-component */
         double mach; /* Mach number */
 
-        double key_val(BCLIBC_BaseTrajSeq_InterpKey key_kind) const;
+        double key_val(BCLIBC_BaseTraj_InterpKey key_kind) const;
         double slant_val_buf(double ca, double sa) const;
 
         static void interpolate3pt_vectorized(
             double x, double ox0, double ox1, double ox2,
             const BCLIBC_BaseTraj *p0, const BCLIBC_BaseTraj *p1, const BCLIBC_BaseTraj *p2,
-            BCLIBC_BaseTraj *out, BCLIBC_BaseTrajSeq_InterpKey skip_key);
+            BCLIBC_BaseTraj *out, BCLIBC_BaseTraj_InterpKey skip_key);
     };
 
     /**
@@ -123,7 +123,7 @@ namespace bclibc
          */
         BCLIBC_ErrorType interpolate_at(
             ssize_t idx,
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             BCLIBC_BaseTrajData *out) const;
 
@@ -162,7 +162,7 @@ namespace bclibc
          * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR if successful, otherwise error code.
          */
         BCLIBC_ErrorType get_at(
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             double start_from_time,
             BCLIBC_BaseTrajData *out) const;
@@ -199,7 +199,7 @@ namespace bclibc
          */
         BCLIBC_ErrorType interpolate_at_center(
             ssize_t idx,
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             BCLIBC_BaseTrajData *out) const;
 
@@ -218,7 +218,7 @@ namespace bclibc
          */
         BCLIBC_ErrorType interpolate_raw(
             ssize_t idx,
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             BCLIBC_BaseTraj *out) const;
 
@@ -233,7 +233,7 @@ namespace bclibc
          */
         BCLIBC_ErrorType try_get_exact(
             ssize_t idx,
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             BCLIBC_BaseTrajData *out) const;
 
@@ -245,12 +245,12 @@ namespace bclibc
          * - the key value at buf[lo] is the first >= key_value (if increasing)
          *   or first <= key_value (if decreasing).
          *
-         * @param key_kind The BCLIBC_BaseTrajSeq_InterpKey specifying which component to search by.
+         * @param key_kind The BCLIBC_BaseTraj_InterpKey specifying which component to search by.
          * @param key_value The value to locate.
          * @return The center index for interpolation, or -1 if sequence is too short or NULL.
          */
         ssize_t bisect_center_idx_buf(
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value) const;
 
         /**
@@ -295,7 +295,7 @@ namespace bclibc
         static ssize_t find_target_index(
             const BCLIBC_BaseTraj *buf,
             ssize_t n,
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             ssize_t start_idx);
 

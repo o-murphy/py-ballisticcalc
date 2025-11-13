@@ -24,6 +24,16 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
     cdef const double BCLIBC_mToFeet
     cdef const double BCLIBC_cMaxWindDistanceFeet
 
+    cdef enum class BCLIBC_BaseTraj_InterpKey:
+        TIME
+        MACH
+        POS_X
+        POS_Y
+        POS_Z
+        VEL_X
+        VEL_Y
+        VEL_Z
+
     cdef cppclass BCLIBC_Config:
         double cStepMultiplier
         double cZeroFindingAccuracy
@@ -190,7 +200,7 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
 
         @staticmethod
         BCLIBC_ErrorType interpolate(
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             const BCLIBC_BaseTrajData *p0,
             const BCLIBC_BaseTrajData *p1,
@@ -231,16 +241,6 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
     double BCLIBC_ShotProps_dragByMach(
         const BCLIBC_ShotProps *shot_props_ptr, double mach
     ) noexcept nogil
-
-    ctypedef enum BCLIBC_BaseTrajSeq_InterpKey:
-        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME
-        BCLIBC_BASE_TRAJ_INTERP_KEY_MACH
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z
 
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil
