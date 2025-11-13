@@ -468,7 +468,7 @@ namespace bclibc
         // Wind direction is from:
         // x = vel * cos(dir) (Downrange, positive is tailwind)
         // z = vel * sin(dir) (Crossrange, positive is wind from right)
-        return (BCLIBC_V3dT){
+        return BCLIBC_V3dT{
             .x = vel * std::cos(dir),
             .y = 0.0,
             .z = vel * std::sin(dir)};
@@ -544,7 +544,7 @@ namespace bclibc
     {
         if (wind_sock == NULL)
         {
-            return (BCLIBC_V3dT){0.0, 0.0, 0.0};
+            return BCLIBC_V3dT{0.0, 0.0, 0.0};
         }
         return wind_sock->last_vector_cache;
     }
@@ -740,7 +740,7 @@ namespace bclibc
         {
             return *range_vector;
         }
-        return (BCLIBC_V3dT){range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
+        return BCLIBC_V3dT{range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
     }
 
     /**
@@ -763,7 +763,7 @@ namespace bclibc
         // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
         if (this->flat_fire_only)
         {
-            *accel_ptr = (BCLIBC_V3dT){0.0, 0.0, 0.0};
+            *accel_ptr = BCLIBC_V3dT{0.0, 0.0, 0.0};
             return;
         }
 
@@ -886,11 +886,11 @@ namespace bclibc
 
         // Interpolate all scalar fields
         out->time = (key_kind == BCLIBC_BASE_TRAJ_INTERP_KEY_TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
-        out->position = (BCLIBC_V3dT){
+        out->position = BCLIBC_V3dT{
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
-        out->velocity = (BCLIBC_V3dT){
+        out->velocity = BCLIBC_V3dT{
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
