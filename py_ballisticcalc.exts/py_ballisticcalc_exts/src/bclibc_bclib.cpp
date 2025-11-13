@@ -1,6 +1,6 @@
-#include <stddef.h> // For size_t
-#include <stdio.h>  // For warnings (printf used here)
-#include <stdlib.h>
+#include <cstddef> // For size_t
+#include <cstdio>  // For warnings (printf used here)
+#include <cstdlib>
 #include <cmath>
 #include "bclibc_bclib.hpp"
 #include "bclibc_v3d.h"
@@ -643,7 +643,7 @@ namespace bclibc
     {
         if (distance != 0.0)
         {
-            return atan2(offset, distance);
+            return std::atan2(offset, distance);
         }
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in BCLIBC_getCorrection.");
         return 0.0;

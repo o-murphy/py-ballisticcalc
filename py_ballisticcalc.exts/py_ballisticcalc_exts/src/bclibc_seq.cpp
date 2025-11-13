@@ -1,6 +1,6 @@
 #include <cmath>
-#include <stdlib.h> // Required for calloc, malloc, free
-#include <string.h> // Required for memcpy
+#include <cstdlib> // Required for calloc, malloc, free
+#include <cstring> // Required for memcpy
 #include "bclibc_interp.hpp"
 #include "bclibc_bclib.hpp"
 #include "bclibc_seq.hpp"
@@ -440,8 +440,8 @@ namespace bclibc
             return BCLIBC_E_INPUT_ERROR;
         }
 
-        double ca = cos(look_angle_rad);
-        double sa = sin(look_angle_rad);
+        double ca = std::cos(look_angle_rad);
+        double sa = std::sin(look_angle_rad);
         ssize_t n = this->length;
 
         if (n < 3)
@@ -839,6 +839,6 @@ namespace bclibc
      */
     int BCLIBC_BaseTrajSeq::is_close(double a, double b, double epsilon)
     {
-        return fabs(a - b) < epsilon;
+        return std::fabs(a - b) < epsilon;
     };
 };
