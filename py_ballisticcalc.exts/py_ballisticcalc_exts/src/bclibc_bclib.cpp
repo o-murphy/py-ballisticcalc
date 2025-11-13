@@ -469,9 +469,7 @@ namespace bclibc
         // x = vel * cos(dir) (Downrange, positive is tailwind)
         // z = vel * sin(dir) (Crossrange, positive is wind from right)
         return BCLIBC_V3dT{
-            .x = vel * std::cos(dir),
-            .y = 0.0,
-            .z = vel * std::sin(dir)};
+            vel * std::cos(dir), 0.0, vel * std::sin(dir)};
     }
 
     /**
