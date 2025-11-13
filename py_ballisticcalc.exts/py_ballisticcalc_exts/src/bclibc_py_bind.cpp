@@ -20,7 +20,8 @@ namespace bclibc
             PyFloat_AsDouble(PyObject_GetAttrString(config, "cMinimumAltitude"))};
     };
 
-    BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) {
+    BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo)
+    {
         return BCLIBC_Atmosphere(
             PyFloat_AsDouble(PyObject_GetAttrString(atmo, "_t0")),
             PyFloat_AsDouble(PyObject_GetAttrString(atmo, "_a0")),

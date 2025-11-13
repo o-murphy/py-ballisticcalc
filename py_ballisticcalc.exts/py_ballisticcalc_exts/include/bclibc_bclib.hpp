@@ -130,24 +130,29 @@ namespace bclibc
             double drop_ft,
             double *delta_y,
             double *delta_z) const;
-        
+
         BCLIBC_V3dT adjust_range(
-            double time, const BCLIBC_V3dT *range_vector
-        ) const;
+            double time, const BCLIBC_V3dT *range_vector) const;
 
         void coriolis_acceleration_local(
             const BCLIBC_V3dT *velocity_ptr,
-            BCLIBC_V3dT *accel_ptr
-        ) const;
+            BCLIBC_V3dT *accel_ptr) const;
     };
 
-    typedef struct
+    struct BCLIBC_Wind
     {
+    public:
         double velocity;
         double direction_from;
         double until_distance;
         double MAX_DISTANCE_FEET;
-    } BCLIBC_Wind;
+
+        BCLIBC_Wind() = default;
+        BCLIBC_Wind(double velocity,
+                    double direction_from,
+                    double until_distance,
+                    double MAX_DISTANCE_FEET);
+    };
 
     typedef enum
     {

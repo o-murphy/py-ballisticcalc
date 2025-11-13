@@ -135,11 +135,20 @@ cdef extern from "include/bclibc_bclib.hpp" namespace "bclibc" nogil:
             BCLIBC_V3dT *accel_ptr
         ) const
 
-    ctypedef struct BCLIBC_Wind:
+    cdef cppclass BCLIBC_Wind:
         double velocity
         double direction_from
         double until_distance
         double MAX_DISTANCE_FEET
+
+        BCLIBC_Wind() except+
+
+        BCLIBC_Wind(
+            double velocity,
+            double direction_from,
+            double until_distance,
+            double MAX_DISTANCE_FEET
+        ) except+
 
     ctypedef struct BCLIBC_WindSock:
         BCLIBC_Wind *winds
