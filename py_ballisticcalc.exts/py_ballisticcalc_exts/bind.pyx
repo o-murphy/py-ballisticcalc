@@ -73,10 +73,8 @@ cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
 # This internal helper function is used by WindSockT_create.
 # It assumes 'w' is a Python object that conforms to the interface needed.
 @final
-cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):
-    cdef BCLIBC_Wind wind = {}
-    memset(&wind, 0, sizeof(wind))  # CRITICAL: use memset to ensure initialized with zeros
-    wind = BCLIBC_Wind_fromPyObject(<PyObject *>w)
+cdef BCLIBC_Wind BCLIBC_Wind_from_pyobject(object w):
+    cdef BCLIBC_Wind wind = BCLIBC_Wind_fromPyObject(<PyObject *>w)
     if PyErr_Occurred():
         raise
     return wind
@@ -116,8 +114,8 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
     cdef int i
     try:
         for i in range(<int>length):
-            # BCLIBC_Wind_from_py interacts with a Python object, so it remains here
-            winds_array[i] = BCLIBC_Wind_from_py(winds_py_list[i])
+            # BCLIBC_Wind_from_pyobject interacts with a Python object, so it remains here
+            winds_array[i] = BCLIBC_Wind_from_pyobject(winds_py_list[i])
     except Exception:
         # Error handling
         free(<void *> winds_array)

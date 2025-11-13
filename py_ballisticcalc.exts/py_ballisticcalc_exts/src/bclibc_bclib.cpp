@@ -441,6 +441,15 @@ namespace bclibc
                    altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
     };
 
+    BCLIBC_Wind::BCLIBC_Wind(double velocity,
+                             double direction_from,
+                             double until_distance,
+                             double MAX_DISTANCE_FEET)
+        : velocity(velocity),
+          direction_from(direction_from),
+          until_distance(until_distance),
+          MAX_DISTANCE_FEET(MAX_DISTANCE_FEET) {};
+
     /**
      * @brief Converts a BCLIBC_Wind structure to a BCLIBC_V3dT vector.
      *
