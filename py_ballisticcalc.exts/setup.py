@@ -85,8 +85,8 @@ SOURCE_PATHS = {
     "v3d": SRC_DIR_PATH / "bclibc_v3d.c",
     "log": SRC_DIR_PATH / "bclibc_log.c",
     "error_stack": SRC_DIR_PATH / "bclibc_error_stack.c",
-    "interp": SRC_DIR_PATH / "bclibc_interp.c",
     # C++ Sources:
+    "interp": SRC_DIR_PATH / "bclibc_interp.cpp",
     "bclib": SRC_DIR_PATH / "bclibc_bclib.cpp",
     "bind": SRC_DIR_PATH / "bclibc_py_bind.cpp",
     "seq": SRC_DIR_PATH / "bclibc_seq.cpp",

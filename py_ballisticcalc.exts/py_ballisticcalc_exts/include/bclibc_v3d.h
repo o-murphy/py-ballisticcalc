@@ -1,8 +1,6 @@
 #ifndef BCLIBC_V3dT_H
 #define BCLIBC_V3dT_H
 
-#include <math.h> // For sqrt (for double precision)
-
 // Structure definition and typedef for BCLIBC_V3dT
 typedef struct
 {

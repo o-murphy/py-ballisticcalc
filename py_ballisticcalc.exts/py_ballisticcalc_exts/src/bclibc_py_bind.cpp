@@ -2,7 +2,7 @@
 #ifdef __CYTHON__
 
 #include <stdlib.h>
-#include <math.h>
+#include <cmath>
 #include "bclibc_py_bind.hpp"
 
 namespace bclibc

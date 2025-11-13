@@ -1,11 +1,10 @@
-#include "bclibc_bclib.hpp"
-#include "bclibc_v3d.h"
-#include "bclibc_interp.h"
-#include <math.h>
 #include <stddef.h> // For size_t
 #include <stdio.h>  // For warnings (printf used here)
-#include <float.h>  // For fabs()
 #include <stdlib.h>
+#include <cmath>
+#include "bclibc_bclib.hpp"
+#include "bclibc_v3d.h"
+#include "bclibc_interp.hpp"
 
 namespace bclibc
 {
@@ -182,7 +181,7 @@ namespace bclibc
             }
             // Calculate the spin drift using the Litz approximation formula.
             // The division by 12 converts the result from inches (implied by Litz formula) to feet.
-            return sign * (1.25 * (shot_props_ptr->stability_coefficient + 1.2) * pow(time, 1.83)) / 12.0;
+            return sign * (1.25 * (shot_props_ptr->stability_coefficient + 1.2) * std::pow(time, 1.83)) / 12.0;
         }
         // If either twist or stability_coefficient is zero, return 0.
         return 0.0;
@@ -220,15 +219,15 @@ namespace bclibc
             shot_props_ptr->diameter != 0.0 &&
             shot_props_ptr->atmo._p0 != 0.0)
         {
-            twist_rate = fabs(shot_props_ptr->twist) / shot_props_ptr->diameter;
+            twist_rate = std::fabs(shot_props_ptr->twist) / shot_props_ptr->diameter;
             length = shot_props_ptr->length / shot_props_ptr->diameter;
 
             // Ensure denominator components are non-zero to avoid division by zero
             // This check is crucial for robustness in C
-            double denom_part1 = pow(twist_rate, 2);
-            double denom_part2 = pow(shot_props_ptr->diameter, 3);
+            double denom_part1 = std::pow(twist_rate, 2);
+            double denom_part2 = std::pow(shot_props_ptr->diameter, 3);
             double denom_part3 = length;
-            double denom_part4 = (1 + pow(length, 2));
+            double denom_part4 = (1 + std::pow(length, 2));
 
             if (denom_part1 != 0.0 && denom_part2 != 0.0 && denom_part3 != 0.0 && denom_part4 != 0.0)
             {
@@ -241,7 +240,7 @@ namespace bclibc
                 return BCLIBC_E_ZERO_DIVISION_ERROR; // Exit if denominator is zero
             }
 
-            fv = pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
+            fv = std::pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
             ft = (shot_props_ptr->atmo._t0 * 9.0 / 5.0) + 32.0; // Convert from Celsius to Fahrenheit
             pt = shot_props_ptr->atmo._p0 / 33.863881565591;    // Convert hPa to inHg
 
@@ -392,7 +391,7 @@ namespace bclibc
         const double alt_diff = altitude - this->_a0;
 
         // Fast check: if altitude is close to base altitude, use stored values
-        if (fabs(alt_diff) < 30.0)
+        if (std::fabs(alt_diff) < 30.0)
         {
             // Close enough to base altitude, use stored values
             *density_ratio_ptr = this->density_ratio;
@@ -426,7 +425,7 @@ namespace bclibc
 
         // Pressure calculation using barometric formula for the troposphere
         // $P = P_0 \cdot (1 + \frac{L \cdot \Delta h}{T_0})^ {g / (L \cdot R)}$
-        const double pressure = this->_p0 * pow(
+        const double pressure = this->_p0 * std::pow(
                                                     1.0 + BCLIBC_cLapseRateKperFoot * alt_diff / base_kelvin,
                                                     BCLIBC_cPressureExponent);
 
@@ -436,7 +435,7 @@ namespace bclibc
         *density_ratio_ptr = this->density_ratio * density_delta;
 
         // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
-        *mach_ptr = sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
+        *mach_ptr = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
                    altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
@@ -461,9 +460,9 @@ namespace bclibc
         // x = vel * cos(dir) (Downrange, positive is tailwind)
         // z = vel * sin(dir) (Crossrange, positive is wind from right)
         return (BCLIBC_V3dT){
-            .x = vel * cos(dir),
+            .x = vel * std::cos(dir),
             .y = 0.0,
-            .z = vel * sin(dir)};
+            .z = vel * std::sin(dir)};
     }
 
     /**

@@ -1,7 +1,7 @@
-#include <math.h>
+#include <cmath>
 #include <stdlib.h> // Required for calloc, malloc, free
 #include <string.h> // Required for memcpy
-#include "bclibc_interp.h"
+#include "bclibc_interp.hpp"
 #include "bclibc_bclib.hpp"
 #include "bclibc_seq.hpp"
 
