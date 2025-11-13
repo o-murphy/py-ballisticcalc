@@ -1,6 +1,6 @@
 #include <math.h>
 #include "bclibc_euler.hpp"
-// #include "bclibc_bclib.h"  // for C_LOG
+// #include "bclibc_bclib.hpp"  // for C_LOG
 
 namespace bclibc
 {
@@ -108,8 +108,7 @@ namespace bclibc
         // Trajectory Loop
 
         // Update air density and mach at initial altitude
-        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-            &eng->shot.atmo,
+        eng->shot.atmo.update_density_factor_and_mach_for_altitude(
             eng->shot.alt0 + range_vector.y,
             &density_ratio,
             &mach);
@@ -126,8 +125,7 @@ namespace bclibc
             }
 
             // Update air density and mach at current altitude
-            BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-                &eng->shot.atmo,
+            eng->shot.atmo.update_density_factor_and_mach_for_altitude(
                 eng->shot.alt0 + range_vector.y,
                 &density_ratio,
                 &mach);

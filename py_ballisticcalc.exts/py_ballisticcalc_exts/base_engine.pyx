@@ -30,6 +30,7 @@ from py_ballisticcalc_exts.bclib cimport (
 from py_ballisticcalc_exts.bind cimport (
     # factory funcs
     BCLIBC_Config_from_pyobject,
+    BCLIBC_Atmosphere_from_pyobject,
     BCLIBC_MachList_from_pylist,
     BCLIBC_Curve_from_pylist,
     BCLIBC_Coriolis_from_pyobject,
@@ -438,14 +439,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 stability_coefficient=0.0,
                 curve=BCLIBC_Curve_from_pylist(self._table_data),
                 mach_list=BCLIBC_MachList_from_pylist(self._table_data),
-                atmo=BCLIBC_Atmosphere(
-                    _t0=shot_info.atmo._t0,
-                    _a0=shot_info.atmo._a0,
-                    _p0=shot_info.atmo._p0,
-                    _mach=shot_info.atmo._mach,
-                    density_ratio=shot_info.atmo.density_ratio,
-                    cLowestTempC=shot_info.atmo.cLowestTempC,
-                ),
+                atmo=BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
                 coriolis=BCLIBC_Coriolis_from_pyobject(coriolis_obj),
                 wind_sock=BCLIBC_WindSock_from_pylist(shot_info.winds),
                 filter_flags=BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,

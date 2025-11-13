@@ -14,6 +14,7 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_MachList,
     BCLIBC_Curve,
     BCLIBC_Config,
+    BCLIBC_Atmosphere,
     BCLIBC_Wind,
     BCLIBC_WindSock,
     BCLIBC_Coriolis,
@@ -36,6 +37,14 @@ from py_ballisticcalc.vector import Vector
 @final
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config):
     cdef BCLIBC_Config result = BCLIBC_Config_fromPyObject(<PyObject *>config)
+    if PyErr_Occurred():
+        raise
+    return result
+
+
+@final
+cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_pyobject(object atmo):
+    cdef BCLIBC_Atmosphere result = BCLIBC_Atmosphere_fromPyObject(<PyObject *>atmo)
     if PyErr_Occurred():
         raise
     return result

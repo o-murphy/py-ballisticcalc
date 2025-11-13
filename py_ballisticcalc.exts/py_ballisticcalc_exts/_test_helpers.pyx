@@ -15,7 +15,6 @@ from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_ShotProps_dragByMach,
     BCLIBC_ShotProps_spinDrift,
     BCLIBC_ShotProps_updateStabilityCoefficient,
-    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
     BCLIBC_TrajFlag,
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
@@ -124,7 +123,7 @@ cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     cdef double density_ratio = 0.0
     cdef double mach = 0.0
-    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(&sp_ptr.atmo, altitude_ft, &density_ratio, &mach)
+    sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, &density_ratio, &mach)
     return density_ratio, mach
 
 cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
