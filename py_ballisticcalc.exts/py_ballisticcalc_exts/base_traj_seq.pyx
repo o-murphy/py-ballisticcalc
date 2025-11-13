@@ -85,13 +85,13 @@ cdef class BaseTrajSeqT:
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
-        cdef BCLIBC_BaseTrajData output
+        cdef BCLIBC_BaseTrajData out
         cdef BCLIBC_ErrorType err = self._this.interpolate_at(
-            idx, key_kind, key_value, &output
+            idx, key_kind, key_value, &out
         )
 
         if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            return BaseTrajDataT(output)
+            return BaseTrajDataT(out)
 
         if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
             raise ValueError("invalid BCLIBC_BaseTrajSeq.interpolate_at input")
