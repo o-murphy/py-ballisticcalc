@@ -804,28 +804,28 @@ namespace bclibc
      * for the interpolation key.
      *
      * @param p Pointer to the BCLIBC_BaseTrajData structure.
-     * @param key_kind The BCLIBC_BaseTrajSeq_InterpKey specifying which field to retrieve (e.g., BCLIBC_BASE_TRAJ_INTERP_KEY_TIME, BCLIBC_BASE_TRAJ_INTERP_KEY_MACH, BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X).
+     * @param key_kind The BCLIBC_BaseTraj_InterpKey specifying which field to retrieve (e.g., BCLIBC_BaseTraj_InterpKey::TIME, BCLIBC_BaseTraj_InterpKey::MACH, BCLIBC_BaseTraj_InterpKey::POS_X).
      * @return The value of the requested field. Returns 0.0 for an unknown key.
      */
-    static inline double get_key_value(const BCLIBC_BaseTrajData *p, BCLIBC_BaseTrajSeq_InterpKey key_kind)
+    static inline double get_key_value(const BCLIBC_BaseTrajData *p, BCLIBC_BaseTraj_InterpKey key_kind)
     {
         switch (key_kind)
         {
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_TIME:
+        case BCLIBC_BaseTraj_InterpKey::TIME:
             return p->time;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_MACH:
+        case BCLIBC_BaseTraj_InterpKey::MACH:
             return p->mach;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X:
+        case BCLIBC_BaseTraj_InterpKey::POS_X:
             return p->position.x;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y:
+        case BCLIBC_BaseTraj_InterpKey::POS_Y:
             return p->position.y;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z:
+        case BCLIBC_BaseTraj_InterpKey::POS_Z:
             return p->position.z;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X:
+        case BCLIBC_BaseTraj_InterpKey::VEL_X:
             return p->velocity.x;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y:
+        case BCLIBC_BaseTraj_InterpKey::VEL_Y:
             return p->velocity.y;
-        case BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z:
+        case BCLIBC_BaseTraj_InterpKey::VEL_Z:
             return p->velocity.z;
         default:
             return 0.0;
@@ -858,7 +858,7 @@ namespace bclibc
      * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajData::interpolate(
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
+        BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
         const BCLIBC_BaseTrajData *p0,
         const BCLIBC_BaseTrajData *p1,
@@ -893,7 +893,7 @@ namespace bclibc
         // Scalar interpolation using PCHIP
 
         // Interpolate all scalar fields
-        out->time = (key_kind == BCLIBC_BASE_TRAJ_INTERP_KEY_TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
+        out->time = (key_kind == BCLIBC_BaseTraj_InterpKey::TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
         out->position = BCLIBC_V3dT{
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
@@ -903,7 +903,7 @@ namespace bclibc
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
 
-        out->mach = (key_kind == BCLIBC_BASE_TRAJ_INTERP_KEY_MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
+        out->mach = (key_kind == BCLIBC_BaseTraj_InterpKey::MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
 
         return BCLIBC_E_NO_ERROR;
     };

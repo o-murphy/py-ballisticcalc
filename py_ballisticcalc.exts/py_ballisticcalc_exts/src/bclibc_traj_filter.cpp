@@ -32,7 +32,7 @@ namespace bclibc
         //     c->flat_fire_only,
         //     c->muzzle_velocity_fps
         // );
-        
+
         BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
         double spin_drift = BCLIBC_ShotProps_spinDrift(props, time);
         double velocity = BCLIBC_V3dT_mag(velocity_vector);
@@ -96,9 +96,9 @@ namespace bclibc
 
         // The independent variable for interpolation (x-axis)
         double x_val = value;
-        double x0 = p0->get_key_val((BCLIBC_TrajectoryData_InterpKey)key);
-        double x1 = p1->get_key_val((BCLIBC_TrajectoryData_InterpKey)key);
-        double x2 = p2->get_key_val((BCLIBC_TrajectoryData_InterpKey)key);
+        double x0 = p0->get_key_val(key);
+        double x1 = p1->get_key_val(key);
+        double x2 = p2->get_key_val(key);
 
         // Use reflection to build the new TrajectoryData object
 
@@ -106,16 +106,17 @@ namespace bclibc
         // BCLIBC_TrajectoryData interpolated_data;  // = {} possibly can not work on MSVC, use memset;
         BCLIBC_TrajectoryData interpolated_data = *p0;
 
-        if (key < 0 || key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
+        if ((int)key < 0 || (int)key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
             throw std::runtime_error("Can't interpolate by unsupported key");
         }
 
-        for (int field_key = 0; field_key < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; field_key++)
+        for (int k = 0; k < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; k++)
         {
-            double y0 = p0->get_key_val((BCLIBC_TrajectoryData_InterpKey)field_key);
-            double y1 = p1->get_key_val((BCLIBC_TrajectoryData_InterpKey)field_key);
-            double y2 = p2->get_key_val((BCLIBC_TrajectoryData_InterpKey)field_key);
+            BCLIBC_TrajectoryData_InterpKey field_key = (BCLIBC_TrajectoryData_InterpKey)k;
+            double y0 = p0->get_key_val(field_key);
+            double y1 = p1->get_key_val(field_key);
+            double y2 = p2->get_key_val(field_key);
 
             double interpolated_value = 0.0;
             BCLIBC_ErrorType err = BCLIBC_E_NO_ERROR;
@@ -158,92 +159,92 @@ namespace bclibc
         return interpolated_data;
     };
 
-    double BCLIBC_TrajectoryData::get_key_val(int key) const
+    double BCLIBC_TrajectoryData::get_key_val(BCLIBC_TrajectoryData_InterpKey key) const
     {
-        switch ((BCLIBC_TrajectoryData_InterpKey)key)
+        switch (key)
         {
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_TIME:
+        case BCLIBC_TrajectoryData_InterpKey::TIME:
             return this->time;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::DISTANCE:
             return this->distance_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_VELOCITY:
+        case BCLIBC_TrajectoryData_InterpKey::VELOCITY:
             return this->velocity_fps;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_MACH:
+        case BCLIBC_TrajectoryData_InterpKey::MACH:
             return this->mach;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::HEIGHT:
             return this->height_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT:
             return this->slant_height_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DROP_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::DROP_ANGLE:
             return this->drop_angle_rad;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE:
             return this->windage_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE_ANGLE:
             return this->windage_angle_rad;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_DISTANCE:
             return this->slant_distance_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::ANGLE:
             return this->angle_rad;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DENSITY_RATIO:
+        case BCLIBC_TrajectoryData_InterpKey::DENSITY_RATIO:
             return this->density_ratio;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DRAG:
+        case BCLIBC_TrajectoryData_InterpKey::DRAG:
             return this->drag;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ENERGY:
+        case BCLIBC_TrajectoryData_InterpKey::ENERGY:
             return this->energy_ft_lb;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_OGW:
+        case BCLIBC_TrajectoryData_InterpKey::OGW:
             return this->ogw_lb;
         default:
             return 0.0; // Error or unexpected key
         }
     };
 
-    void BCLIBC_TrajectoryData::set_key_val(int key, double value)
+    void BCLIBC_TrajectoryData::set_key_val(BCLIBC_TrajectoryData_InterpKey key, double value)
     {
-        switch ((BCLIBC_TrajectoryData_InterpKey)key)
+        switch (key)
         {
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_TIME:
+        case BCLIBC_TrajectoryData_InterpKey::TIME:
             this->time = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::DISTANCE:
             this->distance_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_VELOCITY:
+        case BCLIBC_TrajectoryData_InterpKey::VELOCITY:
             this->velocity_fps = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_MACH:
+        case BCLIBC_TrajectoryData_InterpKey::MACH:
             this->mach = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::HEIGHT:
             this->height_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT:
             this->slant_height_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DROP_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::DROP_ANGLE:
             this->drop_angle_rad = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE:
             this->windage_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE_ANGLE:
             this->windage_angle_rad = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_DISTANCE:
             this->slant_distance_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::ANGLE:
             this->angle_rad = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DENSITY_RATIO:
+        case BCLIBC_TrajectoryData_InterpKey::DENSITY_RATIO:
             this->density_ratio = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DRAG:
+        case BCLIBC_TrajectoryData_InterpKey::DRAG:
             this->drag = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ENERGY:
+        case BCLIBC_TrajectoryData_InterpKey::ENERGY:
             this->energy_ft_lb = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_OGW:
+        case BCLIBC_TrajectoryData_InterpKey::OGW:
             this->ogw_lb = value;
             break;
             // No default needed
@@ -351,7 +352,7 @@ namespace bclibc
                     else if (is_can_interpolate) /* if (this->prev_data && this->prev_prev_data) */
                     {
                         BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                            BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X,
+                            BCLIBC_BaseTraj_InterpKey::POS_X,
                             record_distance,
                             &this->prev_prev_data,
                             &this->prev_data,
@@ -387,7 +388,7 @@ namespace bclibc
                     BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
                     BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME,
+                        BCLIBC_BaseTraj_InterpKey::TIME,
                         this->time_of_last_record,
                         &this->prev_prev_data,
                         &this->prev_data,
@@ -416,7 +417,7 @@ namespace bclibc
                 BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
                 BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                    BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y,
+                    BCLIBC_BaseTraj_InterpKey::VEL_Y,
                     0.0,
                     &this->prev_prev_data,
                     &this->prev_data,
@@ -491,7 +492,7 @@ namespace bclibc
                 {
                     add_td.push_back(
                         BCLIBC_TrajectoryData::interpolate(
-                            BCLIBC_TRAJECTORY_DATA_INTERP_KEY_MACH,
+                            BCLIBC_TrajectoryData_InterpKey::MACH,
                             1.0,
                             &t0, &t1, &t2,
                             BCLIBC_TRAJ_FLAG_MACH));
@@ -500,7 +501,7 @@ namespace bclibc
                 {
                     add_td.push_back(
                         BCLIBC_TrajectoryData::interpolate(
-                            BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_HEIGHT,
+                            BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT,
                             0.0,
                             &t0, &t1, &t2,
                             compute_flags));

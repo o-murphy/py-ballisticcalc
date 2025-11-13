@@ -18,7 +18,7 @@ from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
 # noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.bclib cimport (
     BCLIBC_BaseTrajData,
-    BCLIBC_BaseTrajSeq_InterpKey,
+    BCLIBC_BaseTraj_InterpKey,
     BCLIBC_ErrorType,
 )
 # noinspection PyUnresolvedReferences
@@ -84,7 +84,7 @@ cdef class BaseTrajSeqT:
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
-        cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTraj_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = self._this.interpolate_at(
             idx, key_kind, key_value, &out._this
@@ -100,7 +100,7 @@ cdef class BaseTrajSeqT:
                 "BCLIBC_BaseTrajSeq.interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)"
             )
         if err == BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR:
-            raise AttributeError("invalid BCLIBC_BaseTrajSeq_InterpKey")
+            raise AttributeError("invalid BCLIBC_BaseTraj_InterpKey")
         raise RuntimeError(
             f"undefined error occured during BCLIBC_BaseTrajSeq.interpolate_at, error code: {err}"
         )
@@ -112,7 +112,7 @@ cdef class BaseTrajSeqT:
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
-        cdef BCLIBC_BaseTrajSeq_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTraj_InterpKey key_kind = _attribute_to_key(key_attribute)
 
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef double _start_from_time = 0.0

@@ -25,17 +25,17 @@ namespace bclibc
     /**
      * Keys used to look up specific values within a BCLIBC_BaseTraj struct.
      */
-    typedef enum
+    enum class BCLIBC_BaseTraj_InterpKey
     {
-        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_MACH,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y,
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z,
-    } BCLIBC_BaseTrajSeq_InterpKey;
+        TIME,
+        MACH,
+        POS_X,
+        POS_Y,
+        POS_Z,
+        VEL_X,
+        VEL_Y,
+        VEL_Z,
+    };
 
     struct BCLIBC_Config
     {
@@ -197,7 +197,7 @@ namespace bclibc
             double mach);
 
         static BCLIBC_ErrorType interpolate(
-            BCLIBC_BaseTrajSeq_InterpKey key_kind,
+            BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
             const BCLIBC_BaseTrajData *p0,
             const BCLIBC_BaseTrajData *p1,
