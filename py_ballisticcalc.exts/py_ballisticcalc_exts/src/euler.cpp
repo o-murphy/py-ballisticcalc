@@ -1,5 +1,5 @@
 #include <cmath>
-#include "euler.hpp"
+#include "bclibc/euler.hpp"
 // #include "base_types.hpp"  // for C_LOG
 
 namespace bclibc

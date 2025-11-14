@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "log.h"
+#include "bclibc/log.h"
 
 /**
  * @brief Global log level control.

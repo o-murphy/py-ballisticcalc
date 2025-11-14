@@ -1,8 +1,8 @@
 #include <cmath>
 #include <cstdlib> // Required for calloc, malloc, free
 #include <cstring> // Required for memcpy
-#include "interp.hpp"
-#include "traj_seq.hpp"
+#include "bclibc/interp.hpp"
+#include "bclibc/traj_seq.hpp"
 
 namespace bclibc
 {

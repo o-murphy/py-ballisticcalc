@@ -1,10 +1,10 @@
 #ifndef BCLIBC_RK4_HPP
 #define BCLIBC_RK4_HPP
 
-#include "v3d.hpp"
-#include "base_types.hpp"
-#include "engine.hpp"
-#include "traj_seq.hpp"
+#include "bclibc/v3d.hpp"
+#include "bclibc/base_types.hpp"
+#include "bclibc/engine.hpp"
+#include "bclibc/traj_seq.hpp"
 
 #ifdef __cplusplus
 extern "C"

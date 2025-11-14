@@ -78,7 +78,7 @@ FORCE_CYTHON_MACROS = [("__CYTHON__", "1")]
 
 EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
-INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include" / "bclibc"
+INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
 
 # Use absolute paths for include directories
 include_dirs = [
