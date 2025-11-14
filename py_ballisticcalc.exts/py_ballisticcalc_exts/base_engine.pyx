@@ -8,6 +8,7 @@ Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
 from libc.math cimport sin, cos
 from libc.string cimport memset
+from libcpp.vector cimport vector
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_seq cimport (
     BaseTrajSeqT,
@@ -16,7 +17,6 @@ from py_ballisticcalc_exts.traj_seq cimport (
 )
 from py_ballisticcalc_exts.base_types cimport (
     # types and methods
-    BCLIBC_Atmosphere,
     BCLIBC_ShotProps,
     BCLIBC_ShotProps_updateStabilityCoefficient,
     BCLIBC_TrajFlag,
@@ -43,7 +43,7 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorStack_toString,
 )
 from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
-from py_ballisticcalc_exts.traj_filter cimport TrajectoryDataFilterT, BCLIBC_TrajectoryData
+from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryData, get_records
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
@@ -291,11 +291,11 @@ cdef class CythonizedBaseIntegrationEngine:
             object termination_reason = None
             BCLIBC_TerminationReason reason
             BCLIBC_StatusCode status
-            BaseTrajSeqT trajectory = BaseTrajSeqT()
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
-            TrajectoryDataFilterT tdf = TrajectoryDataFilterT()
-            
+            vector[BCLIBC_TrajectoryData] records
+            BaseTrajSeqT trajectory = BaseTrajSeqT()
+
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
 
@@ -305,7 +305,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 range_step_ft,
                 time_step,
                 <BCLIBC_TrajFlag>filter_flags,
-                &tdf._thisptr,
+                &records,
                 &trajectory._this,
                 &reason,
             )
@@ -321,14 +321,14 @@ cdef class CythonizedBaseIntegrationEngine:
         termination_reason = TERMINATION_REASON_MAP.get(reason)
 
         if termination_reason is not None:
-            termination_reason = RangeError(termination_reason, tdf.get_records())
+            termination_reason = RangeError(termination_reason, get_records(&records))
 
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
         return HitResult(
             props,
-            tdf.get_records(),
+            get_records(&records),
             trajectory if dense_output else None,
             filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
