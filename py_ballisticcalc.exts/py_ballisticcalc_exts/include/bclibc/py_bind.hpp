@@ -5,7 +5,7 @@
 #ifdef __CYTHON__
 
 #include <Python.h>
-#include "base_types.hpp" // BCLIBC_MachList typedef must be here
+#include "bclibc/base_types.hpp" // BCLIBC_MachList typedef must be here
 
 namespace bclibc
 {

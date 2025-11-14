@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <cstring>
-#include "traj_filter.hpp"
+#include "bclibc/traj_filter.hpp"
 
 namespace bclibc
 {

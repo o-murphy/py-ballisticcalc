@@ -2,7 +2,7 @@
 #define BCLIBC_BASE_TRAJ_SEQ_HPP
 
 #include <cstddef> // Required for size_t
-#include "base_types.hpp"
+#include "bclibc/base_types.hpp"
 
 // --- START CROSS-PLATFORM FIX ---
 // The manylinux build environment failed due to redefinition.

@@ -3,7 +3,7 @@
 
 #include <cstdlib>
 #include <cmath>
-#include "py_bind.hpp"
+#include "bclibc/py_bind.hpp"
 
 namespace bclibc
 {

@@ -1,6 +1,6 @@
-#include "v3d.hpp" // Include your own header file
-#include <math.h>  // Required for fabs and sqrt
-#include <stdio.h> // Required for printf (if print_vec is kept)
+#include <cmath>  // Required for fabs and sqrt
+#include <cstdio> // Required for printf (if print_vec is kept)
+#include "bclibc/v3d.hpp" // Include your own header file
 
 namespace bclibc
 {
@@ -58,7 +58,7 @@ namespace bclibc
     // Computes the magnitude (length) of a BCLIBC_V3dT vector (takes const pointer for efficiency)
     double BCLIBC_V3dT_mag(const BCLIBC_V3dT *v)
     {
-        return sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
+        return std::sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
     }
 
     // Normalizes a BCLIBC_V3dT vector in place (modifies the original vector)
@@ -66,7 +66,7 @@ namespace bclibc
     {
         double m = BCLIBC_V3dT_mag(v);
 
-        if (fabs(m) < 1e-10)
+        if (std::fabs(m) < 1e-10)
         {
             return; // Do nothing if magnitude is near zero (matching Cython behavior)
         }
@@ -81,7 +81,7 @@ namespace bclibc
     {
         double m = BCLIBC_V3dT_mag(v);
 
-        if (fabs(m) < 1e-10)
+        if (std::fabs(m) < 1e-10)
         {
             // Return the original vector unchanged if magnitude is near zero (matching Cython behavior)
             return BCLIBC_V3dT{v->x, v->y, v->z};
