@@ -1,6 +1,7 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
 from libc.string cimport strlen
+from libcpp.vector cimport vector
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Config,
     BCLIBC_ShotProps,
@@ -10,7 +11,7 @@ from py_ballisticcalc_exts.base_types cimport (
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
-from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryDataFilter
+from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryData
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
@@ -73,7 +74,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_ShotProps shot
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
         BCLIBC_ErrorStack err_stack
-        
+
         void release_trajectory() noexcept nogil
 
         BCLIBC_StatusCode integrate_filtered(
@@ -81,7 +82,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            BCLIBC_TrajectoryDataFilter **data_filter,
+            vector[BCLIBC_TrajectoryData] *records,
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason) except +
 
@@ -91,7 +92,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double time_step,
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason) noexcept nogil
-        
+
         BCLIBC_StatusCode find_apex(
             BCLIBC_BaseTrajData *out) noexcept nogil
 
@@ -123,7 +124,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double *result,
             BCLIBC_OutOfRangeError *range_error,
             BCLIBC_ZeroFindingError *zero_error) noexcept nogil
-        
+
         BCLIBC_StatusCode find_max_range(
             double low_angle_deg,
             double high_angle_deg,

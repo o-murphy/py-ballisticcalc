@@ -252,6 +252,7 @@ namespace bclibc
     };
 
     BCLIBC_TrajectoryDataFilter::BCLIBC_TrajectoryDataFilter(
+        std::vector<BCLIBC_TrajectoryData> *records,
         const BCLIBC_ShotProps *props,
         BCLIBC_TrajFlag filter_flags,
         BCLIBC_V3dT initial_position,
@@ -261,7 +262,8 @@ namespace bclibc
         double range_limit,
         double range_step,
         double time_step)
-        : props(props),
+        : records(records),
+          props(props),
           filter(filter_flags),
           time_of_last_record(0.0),
           time_step(time_step),
@@ -273,6 +275,16 @@ namespace bclibc
           look_angle_rad(look_angle_rad),
           look_angle_tangent(std::tan(look_angle_rad))
     {
+
+        if (this->records == nullptr)
+        {
+            throw std::invalid_argument("Records pointer cannot be null during construction.");
+        }
+
+        if (this->props == nullptr)
+        {
+            throw std::invalid_argument("Shot props pointer cannot be null during construction.");
+        }
 
         if (filter & BCLIBC_TRAJ_FLAG_MACH)
         {
@@ -318,7 +330,12 @@ namespace bclibc
         if (new_data == nullptr)
         {
             return;
-        };
+        }
+
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
 
         std::vector<BCLIBC_FlaggedData> rows;
         bool is_can_interpolate = this->can_interpolate(new_data);
@@ -441,7 +458,7 @@ namespace bclibc
         {
             for (const auto &new_row : rows)
             {
-                this->records.emplace_back(this->props, &new_row);
+                this->records->emplace_back(this->props, &new_row);
             }
         }
 
@@ -510,7 +527,7 @@ namespace bclibc
                 for (const auto &td : add_td)
                 {
                     this->merge_sorted_record(
-                        this->records,
+                        *this->records,
                         td,
                         [](const BCLIBC_TrajectoryData &t)
                         { return t.time; });
@@ -525,7 +542,11 @@ namespace bclibc
 
     std::vector<BCLIBC_TrajectoryData> const &BCLIBC_TrajectoryDataFilter::get_records() const
     {
-        return this->records;
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
+        return *this->records;
     };
 
     void BCLIBC_TrajectoryDataFilter::append(const BCLIBC_TrajectoryData *new_data)
@@ -535,7 +556,12 @@ namespace bclibc
             return;
         }
 
-        this->records.push_back(*new_data);
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
+
+        this->records->push_back(*new_data);
     };
 
     void BCLIBC_TrajectoryDataFilter::insert(const BCLIBC_TrajectoryData *new_data, size_t index)
@@ -545,19 +571,29 @@ namespace bclibc
             return;
         }
 
-        if (index > this->records.size())
+        if (this->records == nullptr)
         {
-            index = this->records.size();
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
         }
 
-        auto position_iterator = this->records.begin() + index;
+        if (index > this->records->size())
+        {
+            index = this->records->size();
+        }
 
-        this->records.insert(position_iterator, *new_data);
+        auto position_iterator = this->records->begin() + index;
+
+        this->records->insert(position_iterator, *new_data);
     };
 
     const BCLIBC_TrajectoryData &BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const
     {
-        const size_t size_t_size = this->records.size();
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
+
+        const size_t size_t_size = this->records->size();
         const std::ptrdiff_t signed_size = (std::ptrdiff_t)size_t_size;
         std::ptrdiff_t signed_effective_index;
         if (signed_size == 0)
@@ -576,7 +612,7 @@ namespace bclibc
         {
             throw std::out_of_range("Index is out of bounds.");
         }
-        return this->records.at((size_t)signed_effective_index);
+        return this->records->at((size_t)signed_effective_index);
     };
 
     template <typename T, typename TimeAccessor>

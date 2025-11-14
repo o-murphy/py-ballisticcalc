@@ -114,7 +114,7 @@ namespace bclibc
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            BCLIBC_TrajectoryDataFilter **data_filter,
+            std::vector<BCLIBC_TrajectoryData> *records,
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason);
 

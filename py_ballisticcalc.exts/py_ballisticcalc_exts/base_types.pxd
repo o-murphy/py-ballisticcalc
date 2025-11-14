@@ -123,7 +123,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double *delta_y,
             double *delta_z
         ) const
-            
+
         BCLIBC_V3dT adjust_range(
             double time, const BCLIBC_V3dT *range_vector
         ) const

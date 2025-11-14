@@ -46,11 +46,11 @@ namespace bclibc
         double range_step_ft,
         double time_step,
         BCLIBC_TrajFlag filter_flags,
-        BCLIBC_TrajectoryDataFilter **data_filter,
+        std::vector<BCLIBC_TrajectoryData> *records,
         BCLIBC_BaseTrajSeq *trajectory,
         BCLIBC_TerminationReason *reason)
     {
-        if (!trajectory || !reason || !data_filter || !this->integrate_func_ptr)
+        if (!trajectory || !reason || !records || !trajectory || !this->integrate_func_ptr)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
             return BCLIBC_STATUS_ERROR;
@@ -82,7 +82,8 @@ namespace bclibc
             return BCLIBC_STATUS_ERROR;
         }
 
-        *data_filter = new BCLIBC_TrajectoryDataFilter(
+        BCLIBC_TrajectoryDataFilter data_filter = BCLIBC_TrajectoryDataFilter(
+            records,
             &this->shot,
             filter_flags,
             init->position,
@@ -104,7 +105,7 @@ namespace bclibc
                     "Unexpected failure retrieving element %d", i);
                 return BCLIBC_STATUS_ERROR;
             }
-            (*data_filter)->record(&temp_btd);
+            data_filter.record(&temp_btd);
         }
 
         if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
@@ -119,7 +120,7 @@ namespace bclibc
                 return BCLIBC_STATUS_ERROR;
             }
 
-            if (fin->time > (*data_filter)->get_record(-1).time)
+            if (fin->time > data_filter.get_record(-1).time)
             {
                 BCLIBC_TrajectoryData temp_td = BCLIBC_TrajectoryData(
                     &this->shot,
@@ -128,7 +129,7 @@ namespace bclibc
                     &fin->velocity,
                     fin->mach,
                     BCLIBC_TRAJ_FLAG_NONE);
-                (*data_filter)->append(&temp_td);
+                data_filter.append(&temp_td);
             }
         }
         return BCLIBC_STATUS_SUCCESS;
