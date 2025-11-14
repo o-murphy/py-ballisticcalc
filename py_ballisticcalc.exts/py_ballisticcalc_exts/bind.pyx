@@ -1,34 +1,26 @@
 # cython: freethreading_compatible=True
-# noinspection PyUnresolvedReferences
 from libc.stdlib cimport calloc, free
-# noinspection PyUnresolvedReferences
 from libc.string cimport memset
-# noinspection PyUnresolvedReferences
 from cpython.exc cimport PyErr_Occurred
-# noinspection PyUnresolvedReferences
 from cython cimport final
-# noinspection PyUnresolvedReferences
 from cpython.object cimport PyObject
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_MachList,
     BCLIBC_Curve,
     BCLIBC_Config,
+    BCLIBC_Atmosphere,
     BCLIBC_Wind,
     BCLIBC_WindSock,
     BCLIBC_Coriolis,
     BCLIBC_WindSock_init,
-    BCLIBC_BaseTrajSeq_InterpKey,
 )
-
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc.unit import (
     Angular,
     Distance,
     Unit,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTraj_InterpKey
 
 from py_ballisticcalc.vector import Vector
 
@@ -36,6 +28,14 @@ from py_ballisticcalc.vector import Vector
 @final
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config):
     cdef BCLIBC_Config result = BCLIBC_Config_fromPyObject(<PyObject *>config)
+    if PyErr_Occurred():
+        raise
+    return result
+
+
+@final
+cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_pyobject(object atmo):
+    cdef BCLIBC_Atmosphere result = BCLIBC_Atmosphere_fromPyObject(<PyObject *>atmo)
     if PyErr_Occurred():
         raise
     return result
@@ -64,32 +64,28 @@ cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
 # This internal helper function is used by WindSockT_create.
 # It assumes 'w' is a Python object that conforms to the interface needed.
 @final
-cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):
-    cdef BCLIBC_Wind wind = {}
-    memset(&wind, 0, sizeof(wind))  # CRITICAL: use memset to ensure initialized with zeros
-    wind = BCLIBC_Wind_fromPyObject(<PyObject *>w)
+cdef BCLIBC_Wind BCLIBC_Wind_from_pyobject(object w):
+    cdef BCLIBC_Wind wind = BCLIBC_Wind_fromPyObject(<PyObject *>w)
     if PyErr_Occurred():
         raise
     return wind
 
 
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
-    cdef BCLIBC_Coriolis coriolis = {}  # << CRITICAL! should be defined
-    memset(&coriolis, 0, sizeof(coriolis))  # CRITICAL: use memset to ensure initialized with zeros
-
     if coriolis_obj:
-        coriolis.sin_lat = coriolis_obj.sin_lat
-        coriolis.cos_lat = coriolis_obj.cos_lat
-        coriolis.flat_fire_only = <int>coriolis_obj.flat_fire_only
-        coriolis.muzzle_velocity_fps = coriolis_obj.muzzle_velocity_fps
-
-        coriolis.sin_az = coriolis_obj.sin_az if coriolis_obj.sin_az is not None else 0.0
-        coriolis.cos_az = coriolis_obj.cos_az if coriolis_obj.cos_az is not None else 0.0
-        coriolis.range_east = coriolis_obj.range_east if coriolis_obj.range_east is not None else 0.0
-        coriolis.range_north = coriolis_obj.range_north if coriolis_obj.range_north is not None else 0.0
-        coriolis.cross_east = coriolis_obj.cross_east if coriolis_obj.cross_east is not None else 0.0
-        coriolis.cross_north = coriolis_obj.cross_north if coriolis_obj.cross_north is not None else 0.0
-    return coriolis
+        return BCLIBC_Coriolis(
+            coriolis_obj.sin_lat,
+            coriolis_obj.cos_lat,
+            coriolis_obj.sin_az if coriolis_obj.sin_az is not None else 0.0,
+            coriolis_obj.cos_az if coriolis_obj.cos_az is not None else 0.0,
+            coriolis_obj.range_east if coriolis_obj.range_east is not None else 0.0,
+            coriolis_obj.range_north if coriolis_obj.range_north is not None else 0.0,
+            coriolis_obj.cross_east if coriolis_obj.cross_east is not None else 0.0,
+            coriolis_obj.cross_north if coriolis_obj.cross_north is not None else 0.0,
+            coriolis_obj.flat_fire_only,
+            coriolis_obj.muzzle_velocity_fps,
+        )
+    return BCLIBC_Coriolis()
 
 
 cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
@@ -109,8 +105,8 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
     cdef int i
     try:
         for i in range(<int>length):
-            # BCLIBC_Wind_from_py interacts with a Python object, so it remains here
-            winds_array[i] = BCLIBC_Wind_from_py(winds_py_list[i])
+            # BCLIBC_Wind_from_pyobject interacts with a Python object, so it remains here
+            winds_array[i] = BCLIBC_Wind_from_pyobject(winds_py_list[i])
     except Exception:
         # Error handling
         free(<void *> winds_array)
@@ -134,50 +130,50 @@ cdef object v3d_to_vector(const BCLIBC_V3dT *v):
     return Vector(v.x, v.y, v.z)
 
 
-cdef BCLIBC_BaseTrajSeq_InterpKey _attribute_to_key(str key_attribute):
-    cdef BCLIBC_BaseTrajSeq_InterpKey key_kind
+cdef BCLIBC_BaseTraj_InterpKey _attribute_to_key(str key_attribute):
+    cdef BCLIBC_BaseTraj_InterpKey key_kind
 
     if key_attribute == 'time':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_TIME
+        key_kind = BCLIBC_BaseTraj_InterpKey.TIME
     elif key_attribute == 'mach':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_MACH
+        key_kind = BCLIBC_BaseTraj_InterpKey.MACH
     elif key_attribute == 'position.x':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X
+        key_kind = BCLIBC_BaseTraj_InterpKey.POS_X
     elif key_attribute == 'position.y':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y
+        key_kind = BCLIBC_BaseTraj_InterpKey.POS_Y
     elif key_attribute == 'position.z':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z
+        key_kind = BCLIBC_BaseTraj_InterpKey.POS_Z
     elif key_attribute == 'velocity.x':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X
+        key_kind = BCLIBC_BaseTraj_InterpKey.VEL_X
     elif key_attribute == 'velocity.y':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y
+        key_kind = BCLIBC_BaseTraj_InterpKey.VEL_Y
     elif key_attribute == 'velocity.z':
-        key_kind = BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z
+        key_kind = BCLIBC_BaseTraj_InterpKey.VEL_Z
     else:
         raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
     return key_kind
 
-cdef str _key_to_attribute(BCLIBC_BaseTrajSeq_InterpKey key_kind):
+cdef str _key_to_attribute(BCLIBC_BaseTraj_InterpKey key_kind):
     cdef str key_attribute
 
-    if key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_TIME:
+    if key_kind == BCLIBC_BaseTraj_InterpKey.TIME:
         key_attribute = 'time'
-    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_MACH:
+    elif key_kind == BCLIBC_BaseTraj_InterpKey.MACH:
         key_attribute = 'mach'
-    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X:
+    elif key_kind == BCLIBC_BaseTraj_InterpKey.POS_X:
         key_attribute = 'position.x'
-    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y:
+    elif key_kind == BCLIBC_BaseTraj_InterpKey.POS_Y:
         key_attribute = 'position.y'
-    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z:
+    elif key_kind == BCLIBC_BaseTraj_InterpKey.POS_Z:
         key_attribute = 'position.z'
-    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X:
+    elif key_kind == BCLIBC_BaseTraj_InterpKey.VEL_X:
         key_attribute = 'velocity.x'
-    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y:
+    elif key_kind == BCLIBC_BaseTraj_InterpKey.VEL_Y:
         key_attribute = 'velocity.y'
-    elif key_kind == BCLIBC_BaseTrajSeq_InterpKey.BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z:
+    elif key_kind == BCLIBC_BaseTraj_InterpKey.VEL_Z:
         key_attribute = 'velocity.z'
     else:
-        raise ValueError(f"Unknown BCLIBC_BaseTrajSeq_InterpKey value: {key_kind}")
+        raise ValueError(f"Unknown BCLIBC_BaseTraj_InterpKey value: {key_kind}")
 
     return key_attribute

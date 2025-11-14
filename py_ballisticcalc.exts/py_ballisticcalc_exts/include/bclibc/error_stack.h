@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include "bclibc_log.h"
+#include "bclibc/log.h"
 
 #define BCLIBC_MAX_ERROR_STACK 16
 #define BCLIBC_MAX_ERROR_MSG_LEN 256
@@ -81,6 +81,8 @@ extern "C"
     void BCLIBC_ErrorStack_print(const BCLIBC_ErrorStack *stack);
     void BCLIBC_ErrorStack_toString(const BCLIBC_ErrorStack *stack, char *out, size_t out_size);
 
+    void BCLIBC_requireNonNullFatal(const void *ptr, const char *file, int line, const char *func);
+
 #ifdef __cplusplus
 }
 #endif
@@ -97,5 +99,8 @@ extern "C"
 
 #define BCLIBC_POP_ERR(stack) BCLIBC_ErrorStack_popErr(stack)
 #define BCLIBC_CLEAR_ERR(stack) BCLIBC_ErrorStack_clearErr(stack)
+
+#define REQUIRE_NON_NULL(ptr) \
+    BCLIBC_requireNonNullFatal((ptr), __FILE__, __LINE__, __func__)
 
 #endif // BCLIBC_ERROR_STACK_H

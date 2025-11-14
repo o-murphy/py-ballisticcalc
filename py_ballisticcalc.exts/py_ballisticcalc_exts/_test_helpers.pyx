@@ -9,26 +9,17 @@ We deliberately keep this separate from production engine modules to avoid
 polluting hot paths or public symbols. Import only inside test code.
 """
 
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
     BCLIBC_ShotProps_dragByMach,
     BCLIBC_ShotProps_spinDrift,
     BCLIBC_ShotProps_updateStabilityCoefficient,
-    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
-    BCLIBC_TrajFlag,
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
-    BCLIBC_BaseTrajData,
 )
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.trajectory_data cimport BaseTrajDataT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_engine cimport (
-    CythonizedBaseIntegrationEngine,
-)
-# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajData, BaseTrajDataT
 
 __all__ = [
     'init_shot',
@@ -50,13 +41,15 @@ __all__ = [
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
-    return BaseTrajDataT(BCLIBC_BaseTrajData(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach))
+    cdef BaseTrajDataT data = BaseTrajDataT()
+    data._this = BCLIBC_BaseTrajData(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach)
+    return data
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
     """Evaluate drag (standard drag factor / ballistic coefficient scaling) for a Mach.
 
     Args:
-        shot_props_addr: `id()` of an internal BCLIBC_ShotProps struct exposed via engine._engine.shot
+        shot_props_addr: `id()` of an internal BCLIBC_ShotProps struct exposed via engine._this.shot
         mach: Mach number to evaluate
 
     Returns:
@@ -64,7 +57,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
 
     Notes:
         We pass a raw address obtained from a Cython engine instance to avoid adding
-        a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._engine.shot`.
+        a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._this.shot`.
     """
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     return BCLIBC_ShotProps_dragByMach(sp_ptr, mach)
@@ -72,7 +65,7 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return BCLIBC_ShotProps_dragByMach(&e._engine.shot, mach)
+    return BCLIBC_ShotProps_dragByMach(&e._this.shot, mach)
 
 cpdef size_t shot_props_addr(object engine):
     """Return raw address of the engine's internal BCLIBC_ShotProps struct.
@@ -81,7 +74,7 @@ cpdef size_t shot_props_addr(object engine):
     so that its _engine.shot contains prepared curve + mach list.
     """
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return <size_t>&e._engine.shot
+    return <size_t>&e._this.shot
 
 cpdef size_t init_shot(object engine, object shot):
     """Initialize shot props inside engine and return its address.
@@ -124,7 +117,7 @@ cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     cdef double density_ratio = 0.0
     cdef double mach = 0.0
-    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(&sp_ptr.atmo, altitude_ft, &density_ratio, &mach)
+    sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, &density_ratio, &mach)
     return density_ratio, mach
 
 cpdef tuple integration_minimal(object engine, size_t shot_props_addr,

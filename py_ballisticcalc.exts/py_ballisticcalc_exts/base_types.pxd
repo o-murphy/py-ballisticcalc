@@ -1,10 +1,8 @@
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
 
-cdef extern from "include/bclibc_bclib.h" nogil:
+cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
     ctypedef enum BCLIBC_LogLevel:
         BCLIBC_LOG_LEVEL_CRITICAL,
         BCLIBC_LOG_LEVEL_ERROR,
@@ -24,7 +22,7 @@ cdef extern from "include/bclibc_bclib.h" nogil:
     cdef const double BCLIBC_mToFeet
     cdef const double BCLIBC_cMaxWindDistanceFeet
 
-    ctypedef struct BCLIBC_Config:
+    cdef cppclass BCLIBC_Config:
         double cStepMultiplier
         double cZeroFindingAccuracy
         double cMinimumVelocity
@@ -33,8 +31,27 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         double cGravityConstant
         double cMinimumAltitude
 
-    ctypedef struct BCLIBC_CurvePoint:
+        BCLIBC_Config() except+
+        BCLIBC_Config(
+            double cStepMultiplier,
+            double cZeroFindingAccuracy,
+            double cMinimumVelocity,
+            double cMaximumDrop,
+            int cMaxIterations,
+            double cGravityConstant,
+            double cMinimumAltitude
+        ) except+
+
+    cdef cppclass BCLIBC_CurvePoint:
         double a, b, c, d
+
+        BCLIBC_CurvePoint() except +
+        BCLIBC_CurvePoint(
+            double a,
+            double b,
+            double c,
+            double d
+        ) except +
 
     ctypedef struct BCLIBC_Curve:
         BCLIBC_CurvePoint * points
@@ -48,7 +65,7 @@ cdef extern from "include/bclibc_bclib.h" nogil:
 
     void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr) noexcept nogil
 
-    ctypedef struct BCLIBC_Atmosphere:
+    cdef cppclass BCLIBC_Atmosphere:
         double _t0
         double _a0
         double _p0
@@ -56,14 +73,23 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         double density_ratio
         double cLowestTempC
 
-    void BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-        const BCLIBC_Atmosphere *atmo_ptr,
-        double altitude,
-        double *density_ratio_ptr,
-        double *mach_ptr
-    ) noexcept nogil
+        BCLIBC_Atmosphere() except+
+        BCLIBC_Atmosphere(
+            double _t0,
+            double _a0,
+            double _p0,
+            double _mach,
+            double density_ratio,
+            double cLowestTempC
+        ) except+
 
-    ctypedef struct BCLIBC_Coriolis:
+        void update_density_factor_and_mach_for_altitude(
+            double altitude,
+            double *density_ratio_ptr,
+            double *mach_ptr
+        ) const
+
+    cdef cppclass BCLIBC_Coriolis:
         double sin_lat
         double cos_lat
         double sin_az
@@ -75,17 +101,52 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         int flat_fire_only
         double muzzle_velocity_fps
 
-    void BCLIBC_Coriolis_coriolisAccelerationLocal(
-        const BCLIBC_Coriolis *coriolis_ptr,
-        BCLIBC_V3dT *velocity_ptr,
-        BCLIBC_V3dT *accel_ptr
-    ) noexcept nogil
+        BCLIBC_Coriolis() except+
 
-    ctypedef struct BCLIBC_Wind:
+        BCLIBC_Coriolis(
+            double sin_lat,
+            double cos_lat,
+            double sin_az,
+            double cos_az,
+            double range_east,
+            double range_north,
+            double cross_east,
+            double cross_north,
+            int flat_fire_only,
+            double muzzle_velocity_fps
+        ) except+
+
+        void flat_fire_offsets(
+            double time,
+            double distance_ft,
+            double drop_ft,
+            double *delta_y,
+            double *delta_z
+        ) const
+
+        BCLIBC_V3dT adjust_range(
+            double time, const BCLIBC_V3dT *range_vector
+        ) const
+
+        void coriolis_acceleration_local(
+            const BCLIBC_V3dT *velocity_ptr,
+            BCLIBC_V3dT *accel_ptr
+        ) const
+
+    cdef cppclass BCLIBC_Wind:
         double velocity
         double direction_from
         double until_distance
         double MAX_DISTANCE_FEET
+
+        BCLIBC_Wind() except+
+
+        BCLIBC_Wind(
+            double velocity,
+            double direction_from,
+            double until_distance,
+            double MAX_DISTANCE_FEET
+        ) except+
 
     ctypedef struct BCLIBC_WindSock:
         BCLIBC_Wind *winds
@@ -110,12 +171,6 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         BCLIBC_TRAJ_FLAG_APEX = 16,
         BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX
         BCLIBC_TRAJ_FLAG_MRT = 32
-
-    ctypedef struct BCLIBC_BaseTrajData:
-        double time
-        BCLIBC_V3dT position
-        BCLIBC_V3dT velocity
-        double mach
 
     ctypedef struct BCLIBC_ShotProps:
         double bc
@@ -151,26 +206,7 @@ cdef extern from "include/bclibc_bclib.h" nogil:
         const BCLIBC_ShotProps *shot_props_ptr, double mach
     ) noexcept nogil
 
-    ctypedef enum BCLIBC_BaseTrajSeq_InterpKey:
-        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME
-        BCLIBC_BASE_TRAJ_INTERP_KEY_MACH
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Y
-        BCLIBC_BASE_TRAJ_INTERP_KEY_POS_Z
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_X
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y
-        BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Z
-
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil
     double BCLIBC_calculateEnergy(double bulletWeight, double velocity) noexcept nogil
     double BCLIBC_calculateOgw(double bulletWeight, double velocity) noexcept nogil
-
-    BCLIBC_ErrorType BCLIBC_BaseTrajData_interpolate(
-        BCLIBC_BaseTrajSeq_InterpKey key_kind,
-        double key_value,
-        const BCLIBC_BaseTrajData *p0,
-        const BCLIBC_BaseTrajData *p1,
-        const BCLIBC_BaseTrajData *p2,
-        BCLIBC_BaseTrajData *out
-    ) noexcept nogil

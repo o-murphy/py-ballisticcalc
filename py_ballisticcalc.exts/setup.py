@@ -80,52 +80,62 @@ EXTENSIONS_BASE_DIR = Path("py_ballisticcalc_exts")
 SRC_DIR_PATH = EXTENSIONS_BASE_DIR / "src"
 INCLUDE_DIR_PATH = EXTENSIONS_BASE_DIR / "include"
 
+# Use absolute paths for include directories
+include_dirs = [
+    str(EXTENSIONS_BASE_DIR),  # For .pxd files
+    str(SRC_DIR_PATH),  # For source-level headers
+    str(INCLUDE_DIR_PATH),  # For public headers
+]
+
 # Define all C source files and their paths
 SOURCE_PATHS = {
-    "v3d": SRC_DIR_PATH / "bclibc_v3d.c",
-    "log": SRC_DIR_PATH / "bclibc_log.c",
-    "error_stack": SRC_DIR_PATH / "bclibc_error_stack.c",
-    "bclib": SRC_DIR_PATH / "bclibc_bclib.c",
-    "bind": SRC_DIR_PATH / "bclibc_py_bind.c",
-    "interp": SRC_DIR_PATH / "bclibc_interp.c",
-    "euler": SRC_DIR_PATH / "bclibc_euler.c",
-    "rk4": SRC_DIR_PATH / "bclibc_rk4.c",
-    "base_traj_seq": SRC_DIR_PATH / "bclibc_base_traj_seq.c",
-    "engine": SRC_DIR_PATH / "bclibc_engine.c",
+    "log": SRC_DIR_PATH / "log.c",
+    "error_stack": SRC_DIR_PATH / "error_stack.c",
     # C++ Sources:
-    "traj_filter": SRC_DIR_PATH / "bclibc_traj_filter.cpp",
+    "v3d": SRC_DIR_PATH / "v3d.cpp",
+    "interp": SRC_DIR_PATH / "interp.cpp",
+    "types": SRC_DIR_PATH / "base_types.cpp",
+    "bind": SRC_DIR_PATH / "py_bind.cpp",
+    "seq": SRC_DIR_PATH / "traj_seq.cpp",
+    "traj_filter": SRC_DIR_PATH / "traj_filter.cpp",
+    "engine": SRC_DIR_PATH / "engine.cpp",
+    "euler": SRC_DIR_PATH / "euler.cpp",
+    "rk4": SRC_DIR_PATH / "rk4.cpp",
 }
 
 # Define dependencies for each extension as a dictionary
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
+
+_INTERP_DEPS = set(["interp"])
+_ERR_STACK_DEPS = set(["log", "error_stack"])
+_BCLIBC_DEPS = set([*_INTERP_DEPS, *_ERR_STACK_DEPS, "v3d", "types"])
+_SEQ_DEPS = set([*_BCLIBC_DEPS, "seq"])
+_FILTER_DEPS = set([*_SEQ_DEPS, "traj_filter"])
+_BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
+_ENGINE_DEPS = set([*_BIND_DEPS, *_FILTER_DEPS, "engine"])
+_RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
+_EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
+_TEST_DEPS = set([*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS])
+
 C_EXTENSION_DEPS = {
-    "bind": ["interp", "bclib", "bind", "log"],
-    "base_traj_seq": ["interp", "bclib", "base_traj_seq", "log"],
-    "trajectory_data": ["interp", "bclib", "log"],
     # Test modules (expose internal C functions for tests only)
-    "_test_error_stack": ["error_stack", "log"],
 }
 
-_CPP_DEPS_BASIC = ["v3d", "bclib", "log", "error_stack", "interp", "base_traj_seq", "traj_filter"]
 CPP_EXTENSION_DEPS = {
-    "traj_filter": [*_CPP_DEPS_BASIC],
-    "base_engine": [*_CPP_DEPS_BASIC, "engine"],
-    "rk4_engine": [*_CPP_DEPS_BASIC, "engine", "rk4"],
-    "euler_engine": [*_CPP_DEPS_BASIC, "engine", "euler"],
+    "bind": _BIND_DEPS,
+    "traj_seq": _SEQ_DEPS,
+    "traj_filter": _FILTER_DEPS,
+    "base_engine": _ENGINE_DEPS,
+    "rk4_engine": _RK4_DEPS,
+    "euler_engine": _EULER_DEPS,
     # Test modules (expose internal C++ functions for tests only)
-    "_test_helpers": ["bclib", "interp", "log"],
-    "_test_engine": ["bclib", "interp", "log"],
+    "_test_helpers": _TEST_DEPS,
+    "_test_engine": _TEST_DEPS,
+    "_test_error_stack": _ERR_STACK_DEPS,
 }
 
 TEST_EXTENSIONS_DEPS = {}
-
-# Use absolute paths for include directories
-include_dirs = [
-    EXTENSIONS_BASE_DIR.as_posix(),  # For .pxd files
-    SRC_DIR_PATH.as_posix(),  # For source-level headers
-    INCLUDE_DIR_PATH.as_posix(),  # For public headers
-]
 
 # Platform-specific compiler flags
 is_msvc = platform.system() == "Windows"
@@ -180,7 +190,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
             # Enable tracing in both with-GIL and nogil regions
             define_macros.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
 
-        sources = [s.as_posix() for s in sources]
+        sources = [str(s) for s in sources]
 
         if not is_cpp:
             extensions_local.append(
@@ -202,6 +212,7 @@ def collect_extensions(deps: Dict[str, Path], path: Path, *, is_cpp: bool = Fals
                     include_dirs=include_dirs,
                     # extra_objects=[],
                     language="c++",
+                    define_macros=define_macros,
                     extra_compile_args=cpp_compile_args,
                     extra_link_args=cpp_extra_link_args,
                 )

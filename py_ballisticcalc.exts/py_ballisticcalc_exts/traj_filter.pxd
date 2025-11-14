@@ -2,17 +2,15 @@
 
 from libcpp.vector cimport vector
 from libc.stddef cimport ptrdiff_t
-from py_ballisticcalc_exts.bclib cimport (
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
-    BCLIBC_BaseTrajData,
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.interp cimport (
-    BCLIBC_InterpMethod,
-)
+from py_ballisticcalc_exts.interp cimport BCLIBC_InterpMethod
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajData
 
-cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
+cdef extern from "include/bclibc/traj_filter.hpp" namespace "bclibc":
 
     ctypedef enum BCLIBC_TrajectoryData_InterpKey:
         pass
@@ -69,45 +67,7 @@ cdef extern from "include/bclibc_traj_filter.hpp" namespace "bclibc":
             BCLIBC_InterpMethod method
         ) except +
 
-    # --- C++ Class BCLIBC_TrajectoryDataFilter ---
-    cdef cppclass BCLIBC_TrajectoryDataFilter:
-        BCLIBC_TrajectoryDataFilter(
-            const BCLIBC_ShotProps *props,
-            BCLIBC_TrajFlag filter_flags,
-            BCLIBC_V3dT initial_position,
-            BCLIBC_V3dT initial_velocity,
-            double barrel_angle_rad,
-            double look_angle_rad,
-            double range_limit,
-            double range_step,
-            double time_step) except +
 
-        void record(BCLIBC_BaseTrajData *new_data) except +
-        const vector[BCLIBC_TrajectoryData]& get_records() const
-        void append(BCLIBC_TrajectoryData *new_data) except +
-        void insert(BCLIBC_TrajectoryData *new_data, size_t index) except +
-        const BCLIBC_TrajectoryData& get_record(ptrdiff_t index) except +
-
-cdef class TrajectoryDataFilterT:
-    cdef BCLIBC_TrajectoryDataFilter *thisptr
-
-    cdef init(
-        self,
-        BCLIBC_ShotProps *props,
-        int filter_flags,
-        BCLIBC_V3dT initial_position,
-        BCLIBC_V3dT initial_velocity,
-        double barrel_angle_rad,
-        double look_angle_rad=*,
-        double range_limit=*,
-        double range_step=*,
-        double time_step=*
-    )
-    cdef void record(self, BCLIBC_BaseTrajData *new_data) except +
-    cdef list get_records(self)
-    cdef void append(self, BCLIBC_TrajectoryData *new_data) except +
-    cdef void insert(self, BCLIBC_TrajectoryData *new_data, size_t index) except +
-    cdef BCLIBC_TrajectoryData get_record(self, Py_ssize_t index) except +
-
+cdef list get_records(const vector[BCLIBC_TrajectoryData] *records)
 
 cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)

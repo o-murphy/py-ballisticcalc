@@ -1,25 +1,13 @@
 #include <cmath>
 #include <algorithm>
-#include <vector>
 #include <stdexcept>
-#include "bclibc_base_traj_seq.h"
-#include "bclibc_traj_filter.hpp"
 #include <cstring>
+#include "bclibc/traj_filter.hpp"
 
 namespace bclibc
 {
 
     // BCLIBC_TrajectoryData::BCLIBC_TrajectoryData() {};
-
-    // guarantee complete C struct initialisation BCLIBC_BaseTrajData
-    BCLIBC_BaseTrajData BCLIBC_BaseTrajData_init(void)
-    {
-        BCLIBC_BaseTrajData data; // = {} possibly can not work on MSVC, use memset
-        std::memset(&data, 0, sizeof(data));
-        data.time = -1.0;
-        data.mach = -1.0;
-        return data;
-    };
 
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
         const BCLIBC_ShotProps *props,
@@ -44,14 +32,10 @@ namespace bclibc
         //     c->flat_fire_only,
         //     c->muzzle_velocity_fps
         // );
-        BCLIBC_V3dT adjusted_range = BCLIBC_adjustRangeFromCoriolis(&props->coriolis, time, range_vector);
-        // BCLIBC_V3dT adjusted_range = *range_vector;
+
+        BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
         double spin_drift = BCLIBC_ShotProps_spinDrift(props, time);
         double velocity = BCLIBC_V3dT_mag(velocity_vector);
-
-        // if (velocity < -1e6 || velocity > 1e6 || spin_drift < -1e6 || spin_drift > 1e6) {
-        //     fprintf(stdout, "MEMERR: adjusted_range.z=%.6f, spin_drift=%.6f", adjusted_range.z, spin_drift);
-        // }
 
         this->windage_ft = adjusted_range.z + spin_drift;
 
@@ -60,8 +44,8 @@ namespace bclibc
         //         time, range_vector->z, adjusted_range.z, spin_drift);
 
         double density_ratio_out, mach_out;
-        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-            &props->atmo, range_vector->y, &density_ratio_out, &mach_out);
+        props->atmo.update_density_factor_and_mach_for_altitude(
+            range_vector->y, &density_ratio_out, &mach_out);
 
         double trajectory_angle = std::atan2(velocity_vector->y, velocity_vector->x);
         double look_angle_cos = std::cos(props->look_angle);
@@ -112,9 +96,9 @@ namespace bclibc
 
         // The independent variable for interpolation (x-axis)
         double x_val = value;
-        double x0 = p0->get_key_val((BCLIBC_TrajectoryData_InterpKey)key);
-        double x1 = p1->get_key_val((BCLIBC_TrajectoryData_InterpKey)key);
-        double x2 = p2->get_key_val((BCLIBC_TrajectoryData_InterpKey)key);
+        double x0 = p0->get_key_val(key);
+        double x1 = p1->get_key_val(key);
+        double x2 = p2->get_key_val(key);
 
         // Use reflection to build the new TrajectoryData object
 
@@ -122,16 +106,17 @@ namespace bclibc
         // BCLIBC_TrajectoryData interpolated_data;  // = {} possibly can not work on MSVC, use memset;
         BCLIBC_TrajectoryData interpolated_data = *p0;
 
-        if (key < 0 || key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
+        if ((int)key < 0 || (int)key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
             throw std::runtime_error("Can't interpolate by unsupported key");
         }
 
-        for (int field_key = 0; field_key < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; field_key++)
+        for (int k = 0; k < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; k++)
         {
-            double y0 = p0->get_key_val((BCLIBC_TrajectoryData_InterpKey)field_key);
-            double y1 = p1->get_key_val((BCLIBC_TrajectoryData_InterpKey)field_key);
-            double y2 = p2->get_key_val((BCLIBC_TrajectoryData_InterpKey)field_key);
+            BCLIBC_TrajectoryData_InterpKey field_key = (BCLIBC_TrajectoryData_InterpKey)k;
+            double y0 = p0->get_key_val(field_key);
+            double y1 = p1->get_key_val(field_key);
+            double y2 = p2->get_key_val(field_key);
 
             double interpolated_value = 0.0;
             BCLIBC_ErrorType err = BCLIBC_E_NO_ERROR;
@@ -174,92 +159,92 @@ namespace bclibc
         return interpolated_data;
     };
 
-    double BCLIBC_TrajectoryData::get_key_val(int key) const
+    double BCLIBC_TrajectoryData::get_key_val(BCLIBC_TrajectoryData_InterpKey key) const
     {
-        switch ((BCLIBC_TrajectoryData_InterpKey)key)
+        switch (key)
         {
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_TIME:
+        case BCLIBC_TrajectoryData_InterpKey::TIME:
             return this->time;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::DISTANCE:
             return this->distance_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_VELOCITY:
+        case BCLIBC_TrajectoryData_InterpKey::VELOCITY:
             return this->velocity_fps;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_MACH:
+        case BCLIBC_TrajectoryData_InterpKey::MACH:
             return this->mach;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::HEIGHT:
             return this->height_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT:
             return this->slant_height_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DROP_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::DROP_ANGLE:
             return this->drop_angle_rad;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE:
             return this->windage_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE_ANGLE:
             return this->windage_angle_rad;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_DISTANCE:
             return this->slant_distance_ft;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::ANGLE:
             return this->angle_rad;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DENSITY_RATIO:
+        case BCLIBC_TrajectoryData_InterpKey::DENSITY_RATIO:
             return this->density_ratio;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DRAG:
+        case BCLIBC_TrajectoryData_InterpKey::DRAG:
             return this->drag;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ENERGY:
+        case BCLIBC_TrajectoryData_InterpKey::ENERGY:
             return this->energy_ft_lb;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_OGW:
+        case BCLIBC_TrajectoryData_InterpKey::OGW:
             return this->ogw_lb;
         default:
             return 0.0; // Error or unexpected key
         }
     };
 
-    void BCLIBC_TrajectoryData::set_key_val(int key, double value)
+    void BCLIBC_TrajectoryData::set_key_val(BCLIBC_TrajectoryData_InterpKey key, double value)
     {
-        switch ((BCLIBC_TrajectoryData_InterpKey)key)
+        switch (key)
         {
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_TIME:
+        case BCLIBC_TrajectoryData_InterpKey::TIME:
             this->time = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::DISTANCE:
             this->distance_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_VELOCITY:
+        case BCLIBC_TrajectoryData_InterpKey::VELOCITY:
             this->velocity_fps = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_MACH:
+        case BCLIBC_TrajectoryData_InterpKey::MACH:
             this->mach = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::HEIGHT:
             this->height_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_HEIGHT:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT:
             this->slant_height_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DROP_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::DROP_ANGLE:
             this->drop_angle_rad = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE:
             this->windage_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE_ANGLE:
             this->windage_angle_rad = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_DISTANCE:
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_DISTANCE:
             this->slant_distance_ft = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ANGLE:
+        case BCLIBC_TrajectoryData_InterpKey::ANGLE:
             this->angle_rad = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DENSITY_RATIO:
+        case BCLIBC_TrajectoryData_InterpKey::DENSITY_RATIO:
             this->density_ratio = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DRAG:
+        case BCLIBC_TrajectoryData_InterpKey::DRAG:
             this->drag = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ENERGY:
+        case BCLIBC_TrajectoryData_InterpKey::ENERGY:
             this->energy_ft_lb = value;
             break;
-        case BCLIBC_TRAJECTORY_DATA_INTERP_KEY_OGW:
+        case BCLIBC_TrajectoryData_InterpKey::OGW:
             this->ogw_lb = value;
             break;
             // No default needed
@@ -267,6 +252,7 @@ namespace bclibc
     };
 
     BCLIBC_TrajectoryDataFilter::BCLIBC_TrajectoryDataFilter(
+        std::vector<BCLIBC_TrajectoryData> *records,
         const BCLIBC_ShotProps *props,
         BCLIBC_TrajFlag filter_flags,
         BCLIBC_V3dT initial_position,
@@ -276,25 +262,35 @@ namespace bclibc
         double range_limit,
         double range_step,
         double time_step)
-        : props(props),
+        : records(records),
+          props(props),
           filter(filter_flags),
           time_of_last_record(0.0),
           time_step(time_step),
           range_step(range_step),
           range_limit(range_limit),
-          prev_data{BCLIBC_BaseTrajData_init()},
-          prev_prev_data{BCLIBC_BaseTrajData_init()},
+          prev_data(prev_data),
+          prev_prev_data(prev_prev_data),
           next_record_distance(0.0),
           look_angle_rad(look_angle_rad),
           look_angle_tangent(std::tan(look_angle_rad))
     {
 
+        if (this->records == nullptr)
+        {
+            throw std::invalid_argument("Records pointer cannot be null during construction.");
+        }
+
+        if (this->props == nullptr)
+        {
+            throw std::invalid_argument("Shot props pointer cannot be null during construction.");
+        }
+
         if (filter & BCLIBC_TRAJ_FLAG_MACH)
         {
             double mach;
             double density_ratio;
-            BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-                &props->atmo,
+            props->atmo.update_density_factor_and_mach_for_altitude(
                 initial_position.y,
                 &density_ratio,
                 &mach);
@@ -334,7 +330,12 @@ namespace bclibc
         if (new_data == nullptr)
         {
             return;
-        };
+        }
+
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
 
         std::vector<BCLIBC_FlaggedData> rows;
         bool is_can_interpolate = this->can_interpolate(new_data);
@@ -351,7 +352,7 @@ namespace bclibc
             {
                 while (this->next_record_distance + this->range_step - this->EPSILON <= new_data->position.x)
                 {
-                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData_init();
+                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
                     bool found_data = false;
                     double record_distance = this->next_record_distance + this->range_step;
@@ -367,8 +368,8 @@ namespace bclibc
                     }
                     else if (is_can_interpolate) /* if (this->prev_data && this->prev_prev_data) */
                     {
-                        BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
-                            BCLIBC_BASE_TRAJ_INTERP_KEY_POS_X,
+                        BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
+                            BCLIBC_BaseTraj_InterpKey::POS_X,
                             record_distance,
                             &this->prev_prev_data,
                             &this->prev_data,
@@ -401,10 +402,10 @@ namespace bclibc
 
                     this->time_of_last_record += this->time_step;
 
-                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData_init();
+                    BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
-                    BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
-                        BCLIBC_BASE_TRAJ_INTERP_KEY_TIME,
+                    BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
+                        BCLIBC_BaseTraj_InterpKey::TIME,
                         this->time_of_last_record,
                         &this->prev_prev_data,
                         &this->prev_data,
@@ -430,10 +431,10 @@ namespace bclibc
                 new_data->velocity.y <= 0)
             {
                 // "Apex" is the point where the vertical component of velocity goes from positive to negative.
-                BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData_init();
+                BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
-                BCLIBC_ErrorType err = BCLIBC_BaseTrajData_interpolate(
-                    BCLIBC_BASE_TRAJ_INTERP_KEY_VEL_Y,
+                BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
+                    BCLIBC_BaseTraj_InterpKey::VEL_Y,
                     0.0,
                     &this->prev_prev_data,
                     &this->prev_data,
@@ -457,7 +458,7 @@ namespace bclibc
         {
             for (const auto &new_row : rows)
             {
-                this->records.emplace_back(this->props, &new_row);
+                this->records->emplace_back(this->props, &new_row);
             }
         }
 
@@ -508,7 +509,7 @@ namespace bclibc
                 {
                     add_td.push_back(
                         BCLIBC_TrajectoryData::interpolate(
-                            BCLIBC_TRAJECTORY_DATA_INTERP_KEY_MACH,
+                            BCLIBC_TrajectoryData_InterpKey::MACH,
                             1.0,
                             &t0, &t1, &t2,
                             BCLIBC_TRAJ_FLAG_MACH));
@@ -517,7 +518,7 @@ namespace bclibc
                 {
                     add_td.push_back(
                         BCLIBC_TrajectoryData::interpolate(
-                            BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_HEIGHT,
+                            BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT,
                             0.0,
                             &t0, &t1, &t2,
                             compute_flags));
@@ -526,7 +527,7 @@ namespace bclibc
                 for (const auto &td : add_td)
                 {
                     this->merge_sorted_record(
-                        this->records,
+                        *this->records,
                         td,
                         [](const BCLIBC_TrajectoryData &t)
                         { return t.time; });
@@ -541,7 +542,11 @@ namespace bclibc
 
     std::vector<BCLIBC_TrajectoryData> const &BCLIBC_TrajectoryDataFilter::get_records() const
     {
-        return this->records;
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
+        return *this->records;
     };
 
     void BCLIBC_TrajectoryDataFilter::append(const BCLIBC_TrajectoryData *new_data)
@@ -551,7 +556,12 @@ namespace bclibc
             return;
         }
 
-        this->records.push_back(*new_data);
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
+
+        this->records->push_back(*new_data);
     };
 
     void BCLIBC_TrajectoryDataFilter::insert(const BCLIBC_TrajectoryData *new_data, size_t index)
@@ -561,19 +571,29 @@ namespace bclibc
             return;
         }
 
-        if (index > this->records.size())
+        if (this->records == nullptr)
         {
-            index = this->records.size();
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
         }
 
-        auto position_iterator = this->records.begin() + index;
+        if (index > this->records->size())
+        {
+            index = this->records->size();
+        }
 
-        this->records.insert(position_iterator, *new_data);
+        auto position_iterator = this->records->begin() + index;
+
+        this->records->insert(position_iterator, *new_data);
     };
 
     const BCLIBC_TrajectoryData &BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const
     {
-        const size_t size_t_size = this->records.size();
+        if (this->records == nullptr)
+        {
+            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
+        }
+
+        const size_t size_t_size = this->records->size();
         const std::ptrdiff_t signed_size = (std::ptrdiff_t)size_t_size;
         std::ptrdiff_t signed_effective_index;
         if (signed_size == 0)
@@ -592,7 +612,7 @@ namespace bclibc
         {
             throw std::out_of_range("Index is out of bounds.");
         }
-        return this->records.at((size_t)signed_effective_index);
+        return this->records->at((size_t)signed_effective_index);
     };
 
     template <typename T, typename TimeAccessor>

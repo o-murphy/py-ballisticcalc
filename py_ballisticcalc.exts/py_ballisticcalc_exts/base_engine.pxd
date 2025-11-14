@@ -1,27 +1,21 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
-# noinspection PyUnresolvedReferences
 from libc.string cimport strlen
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
+from libcpp.vector cimport vector
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Config,
     BCLIBC_ShotProps,
     BCLIBC_WindSock,
     BCLIBC_TrajFlag,
-    BCLIBC_BaseTrajData,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
-# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryDataFilter
+from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryData
 # __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
-cdef extern from "include/bclibc_engine.h" nogil:
+cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
     ctypedef enum BCLIBC_ZeroInitialStatus:
@@ -58,14 +52,11 @@ cdef extern from "include/bclibc_engine.h" nogil:
         double last_barrel_elevation_rad
 
     # Forward declaration
-    struct BCLIBC_EngineT
-
-    # Typedef alias
-    ctypedef BCLIBC_EngineS BCLIBC_EngineT
+    cdef cppclass BCLIBC_Engine
 
     # Declare the function signature type (not a pointer yet)
     ctypedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
-        BCLIBC_EngineT *eng,
+        BCLIBC_Engine *eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -76,17 +67,6 @@ cdef extern from "include/bclibc_engine.h" nogil:
     # Declare pointer to function
     ctypedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr
 
-    # Full struct definition
-    struct BCLIBC_EngineS:
-        int integration_step_count
-        BCLIBC_V3dT gravity_vector
-        BCLIBC_Config config
-        BCLIBC_ShotProps shot
-        BCLIBC_IntegrateFuncPtr integrate_func_ptr
-        BCLIBC_ErrorStack err_stack
-
-
-cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
     cdef cppclass BCLIBC_Engine:
         int integration_step_count
         BCLIBC_V3dT gravity_vector
@@ -94,7 +74,7 @@ cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
         BCLIBC_ShotProps shot
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
         BCLIBC_ErrorStack err_stack
-        
+
         void release_trajectory() noexcept nogil
 
         BCLIBC_StatusCode integrate_filtered(
@@ -102,17 +82,17 @@ cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            BCLIBC_TrajectoryDataFilter **data_filter,
+            vector[BCLIBC_TrajectoryData] *records,
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason) except +
 
-        BCLIBC_StatusCode integrate(
+        BCLIBC_StatusCode integrate_dense(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason) noexcept nogil
-        
+
         BCLIBC_StatusCode find_apex(
             BCLIBC_BaseTrajData *out) noexcept nogil
 
@@ -144,7 +124,7 @@ cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
             double *result,
             BCLIBC_OutOfRangeError *range_error,
             BCLIBC_ZeroFindingError *zero_error) noexcept nogil
-        
+
         BCLIBC_StatusCode find_max_range(
             double low_angle_deg,
             double high_angle_deg,
@@ -165,7 +145,7 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef:
         public object _config
         list _table_data  # list[object]
-        BCLIBC_Engine _engine
+        BCLIBC_Engine _this
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
 

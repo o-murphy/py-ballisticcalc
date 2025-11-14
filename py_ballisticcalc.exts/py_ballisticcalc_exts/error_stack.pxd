@@ -1,4 +1,4 @@
-cdef extern from "include/bclibc_error_stack.h":
+cdef extern from "include/bclibc/error_stack.h":
     DEF BCLIBC_MAX_ERROR_STACK = 16
     DEF BCLIBC_MAX_ERROR_MSG_LEN = 256
     DEF BCLIBC_MAX_ERROR_TRACE_LEN = 4096

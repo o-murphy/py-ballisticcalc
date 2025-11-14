@@ -1,36 +1,34 @@
 #ifndef BCLIBC_TRAJ_FILTER_HPP
 #define BCLIBC_TRAJ_FILTER_HPP
 
-#include "bclibc_base_traj_seq.h"
-#include "bclibc_interp.h"
 #include <vector>
+#include "bclibc/interp.hpp"
+#include "bclibc/traj_seq.hpp"
 
 namespace bclibc
 {
 
 #define BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT 15
 
-    BCLIBC_BaseTrajData BCLIBC_BaseTrajData_init(void);
-
-    typedef enum
+    enum class BCLIBC_TrajectoryData_InterpKey
     {
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_TIME,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DISTANCE,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_VELOCITY,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_MACH,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_HEIGHT,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_HEIGHT,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DROP_ANGLE,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_WINDAGE_ANGLE,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_SLANT_DISTANCE,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ANGLE,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DENSITY_RATIO,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_DRAG,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ENERGY,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_OGW,
-        BCLIBC_TRAJECTORY_DATA_INTERP_KEY_FLAG
-    } BCLIBC_TrajectoryData_InterpKey;
+        TIME,
+        DISTANCE,
+        VELOCITY,
+        MACH,
+        HEIGHT,
+        SLANT_HEIGHT,
+        DROP_ANGLE,
+        WINDAGE,
+        WINDAGE_ANGLE,
+        SLANT_DISTANCE,
+        ANGLE,
+        DENSITY_RATIO,
+        DRAG,
+        ENERGY,
+        OGW,
+        FLAG
+    };
 
     typedef struct
     {
@@ -114,14 +112,15 @@ namespace bclibc
             BCLIBC_TrajFlag flag,
             BCLIBC_InterpMethod method = BCLIBC_INTERP_METHOD_PCHIP);
 
-        double get_key_val(int key) const;
-        void set_key_val(int key, double value);
+        double get_key_val(BCLIBC_TrajectoryData_InterpKey key) const;
+        void set_key_val(BCLIBC_TrajectoryData_InterpKey key, double value);
     };
 
     class BCLIBC_TrajectoryDataFilter
     {
     public:
         BCLIBC_TrajectoryDataFilter(
+            std::vector<BCLIBC_TrajectoryData> *records,
             const BCLIBC_ShotProps *props,
             BCLIBC_TrajFlag filter_flags,
             BCLIBC_V3dT initial_position,
@@ -144,7 +143,7 @@ namespace bclibc
         static constexpr double SEPARATE_ROW_TIME_DELTA = 1e-5;
 
         // data fields
-        std::vector<BCLIBC_TrajectoryData> records;
+        std::vector<BCLIBC_TrajectoryData> *records;
         const BCLIBC_ShotProps *props;
         BCLIBC_TrajFlag filter;
         double time_of_last_record;
