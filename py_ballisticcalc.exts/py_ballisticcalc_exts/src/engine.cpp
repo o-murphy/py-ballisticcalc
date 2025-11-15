@@ -108,7 +108,7 @@ namespace bclibc
             data_filter.record(&temp_btd);
         }
 
-        if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
+        if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
         {
             err = trajectory->get_item(-1, fin);
             if (err != BCLIBC_E_NO_ERROR)
@@ -153,7 +153,7 @@ namespace bclibc
 
         if (status != BCLIBC_STATUS_ERROR)
         {
-            if (*reason == BCLIBC_TERM_REASON_NO_TERMINATE)
+            if (*reason == BCLIBC_TerminationReason::NO_TERMINATE)
             {
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed successfully: (%d).", *reason);
             }

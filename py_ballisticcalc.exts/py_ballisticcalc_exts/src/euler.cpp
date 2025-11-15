@@ -73,7 +73,7 @@ namespace bclibc
         double _cMaximumDrop = -std::fabs(eng->config.cMaximumDrop);
 
         // Working variables
-        *reason = BCLIBC_TERM_REASON_NO_TERMINATE;
+        *reason = BCLIBC_TerminationReason::NO_TERMINATE;
         double relative_speed;
         BCLIBC_V3dT _dir_vector;
         BCLIBC_V3dT _tv;
@@ -182,18 +182,18 @@ namespace bclibc
             // Check termination conditions
             if (velocity < _cMinimumVelocity)
             {
-                *reason = BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED;
+                *reason = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
             }
             else if (range_vector.y < _cMaximumDrop)
             {
-                *reason = BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED;
+                *reason = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
             }
             else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
             {
-                *reason = BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED;
+                *reason = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
             }
 
-            if (*reason != BCLIBC_TERM_REASON_NO_TERMINATE)
+            if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
             {
                 break;
             }

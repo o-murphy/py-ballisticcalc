@@ -44,14 +44,14 @@ namespace bclibc
         BCLIBC_ZERO_INIT_DONE,
     } BCLIBC_ZeroInitialStatus;
 
-    typedef enum
+    enum class BCLIBC_TerminationReason
     {
         // Solver specific flags (always include RANGE_ERROR)
-        BCLIBC_TERM_REASON_NO_TERMINATE,
-        BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED,
-        BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED,
-        BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED,
-    } BCLIBC_TerminationReason;
+        NO_TERMINATE,
+        MINIMUM_VELOCITY_REACHED,
+        MAXIMUM_DROP_REACHED,
+        MINIMUM_ALTITUDE_REACHED,
+    };
 
     typedef struct
     {

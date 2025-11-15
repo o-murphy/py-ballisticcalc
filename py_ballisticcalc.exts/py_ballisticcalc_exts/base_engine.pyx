@@ -79,9 +79,9 @@ cdef dict ERROR_TYPE_TO_EXCEPTION = {
 }
 
 cdef dict TERMINATION_REASON_MAP = {
-    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
-    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
-    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
+    BCLIBC_TerminationReason.MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
+    BCLIBC_TerminationReason.MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
+    BCLIBC_TerminationReason.MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
 }
 
 cdef class CythonizedBaseIntegrationEngine:

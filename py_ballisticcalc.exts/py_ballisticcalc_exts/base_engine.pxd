@@ -22,12 +22,12 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_ZERO_INIT_CONTINUE
         BCLIBC_ZERO_INIT_DONE
 
-    ctypedef enum BCLIBC_TerminationReason:
+    cdef enum class BCLIBC_TerminationReason:
         # Solver specific, not real errors, just termination reasons!
-        BCLIBC_TERM_REASON_NO_TERMINATE
-        BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED
-        BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED
-        BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED
+        NO_TERMINATE
+        MINIMUM_VELOCITY_REACHED
+        MAXIMUM_DROP_REACHED
+        MINIMUM_ALTITUDE_REACHED
 
     ctypedef struct BCLIBC_ZeroInitialData:
         BCLIBC_ZeroInitialStatus status
