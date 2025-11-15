@@ -18,9 +18,9 @@ from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryData
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
-    ctypedef enum BCLIBC_ZeroInitialStatus:
-        BCLIBC_ZERO_INIT_CONTINUE
-        BCLIBC_ZERO_INIT_DONE
+    cdef enum class BCLIBC_ZeroInitialStatus:
+        CONTINUE
+        DONE
 
     cdef enum class BCLIBC_TerminationReason:
         # Solver specific, not real errors, just termination reasons!

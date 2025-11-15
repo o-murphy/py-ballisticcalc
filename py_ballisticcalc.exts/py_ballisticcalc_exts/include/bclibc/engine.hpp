@@ -38,11 +38,11 @@ BCLIBC_Engine.zero_angle
 
 namespace bclibc
 {
-    typedef enum
+    enum class BCLIBC_ZeroInitialStatus
     {
-        BCLIBC_ZERO_INIT_CONTINUE,
-        BCLIBC_ZERO_INIT_DONE,
-    } BCLIBC_ZeroInitialStatus;
+        CONTINUE,
+        DONE,
+    };
 
     enum class BCLIBC_TerminationReason
     {

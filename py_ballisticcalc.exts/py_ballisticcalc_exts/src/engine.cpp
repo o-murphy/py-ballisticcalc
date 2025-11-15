@@ -309,7 +309,7 @@ namespace bclibc
         BCLIBC_BaseTrajData apex;
         double apex_slant_ft;
 
-        result->status = BCLIBC_ZERO_INIT_DONE;
+        result->status = BCLIBC_ZeroInitialStatus::DONE;
         result->slant_range_ft = distance;
         result->look_angle_rad = this->shot.look_angle;
         result->target_x_ft = result->slant_range_ft * std::cos(result->look_angle_rad);
@@ -351,7 +351,7 @@ namespace bclibc
             return BCLIBC_STATUS_SUCCESS;
         }
 
-        result->status = BCLIBC_ZERO_INIT_CONTINUE;
+        result->status = BCLIBC_ZeroInitialStatus::CONTINUE;
         return BCLIBC_STATUS_SUCCESS;
     };
 
@@ -426,7 +426,7 @@ namespace bclibc
         double target_x_ft = init_data.target_x_ft;
         double target_y_ft = init_data.target_y_ft;
 
-        if (init_data.status == BCLIBC_ZERO_INIT_DONE)
+        if (init_data.status == BCLIBC_ZeroInitialStatus::DONE)
         {
             *result = look_angle_rad;
             return BCLIBC_STATUS_SUCCESS; // immediately return when already done
@@ -850,7 +850,7 @@ namespace bclibc
         double target_y_ft = init_data.target_y_ft;
         double start_height_ft = init_data.start_height_ft;
 
-        if (init_data.status == BCLIBC_ZERO_INIT_DONE)
+        if (init_data.status == BCLIBC_ZeroInitialStatus::DONE)
         {
             *result = look_angle_rad;
             return BCLIBC_STATUS_SUCCESS;
