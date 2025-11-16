@@ -170,9 +170,9 @@ namespace bclibc
           filter_flags(filter_flags)
     {
         // Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-        if (BCLIBC_ShotProps_updateStabilityCoefficient(this) != BCLIBC_E_NO_ERROR)
+        if (this->update_stability_coefficient() != BCLIBC_E_NO_ERROR)
         {
-            throw std::runtime_error("Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient");
+            throw std::runtime_error("Zero division detected in BCLIBC_ShotProps.update_stability_coefficient");
         };
     };
 
@@ -207,11 +207,10 @@ namespace bclibc
      * $\text{Spin Drift (ft)} = \text{sign} \cdot \frac{1.25 \cdot (S_g + 1.2) \cdot \text{time}^{1.83}}{12.0}$
      * where $S_g$ is the stability coefficient.
      *
-     * @param shot_props_ptr Pointer to BCLIBC_ShotProps containing shot parameters (twist, stability_coefficient).
      * @param time Time of flight in seconds.
      * @return Windage due to spin drift, in feet. Returns 0.0 if twist or stability_coefficient is zero.
      */
-    double BCLIBC_ShotProps_spinDrift(const BCLIBC_ShotProps *shot_props_ptr, double time)
+    double BCLIBC_ShotProps::spin_drift(double time) const
     {
         double sign;
 
@@ -221,10 +220,10 @@ namespace bclibc
         // comparison with 0 is often acceptable if the values are expected to be
         // exactly 0 or significantly non-zero. If extreme precision is needed for
         // checking "effectively zero", you might use an epsilon (e.g., fabs(val) > EPSILON).
-        if (shot_props_ptr->twist != 0 && shot_props_ptr->stability_coefficient != 0)
+        if (this->twist != 0 && this->stability_coefficient != 0)
         {
             // Determine the sign based on twist direction.
-            if (shot_props_ptr->twist > 0)
+            if (this->twist > 0)
             {
                 sign = 1.0;
             }
@@ -234,7 +233,7 @@ namespace bclibc
             }
             // Calculate the spin drift using the Litz approximation formula.
             // The division by 12 converts the result from inches (implied by Litz formula) to feet.
-            return sign * (1.25 * (shot_props_ptr->stability_coefficient + 1.2) * std::pow(time, 1.83)) / 12.0;
+            return sign * (1.25 * (this->stability_coefficient + 1.2) * std::pow(time, 1.83)) / 12.0;
         }
         // If either twist or stability_coefficient is zero, return 0.
         return 0.0;
@@ -245,7 +244,7 @@ namespace bclibc
      *
      * Calculates the Miller stability coefficient based on bullet dimensions, weight,
      * muzzle velocity, and atmospheric conditions ($\text{temperature, pressure}$).
-     * The result is stored in `shot_props_ptr->stability_coefficient`.
+     * The result is stored in `this->stability_coefficient`.
      *
      * Formula components:
      * - $\text{sd}$ (Stability Divisor)
@@ -253,49 +252,43 @@ namespace bclibc
      * - $\text{ftp}$ (Temperature/Pressure Factor)
      * - $S_g = \text{sd} \cdot \text{fv} \cdot \text{ftp}$
      *
-     * @param shot_props_ptr Pointer to BCLIBC_ShotProps containing parameters like twist, length, diameter, weight, muzzle_velocity, and atmo.
      * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
      */
-    BCLIBC_ErrorType BCLIBC_ShotProps_updateStabilityCoefficient(BCLIBC_ShotProps *shot_props_ptr)
+    BCLIBC_ErrorType BCLIBC_ShotProps::update_stability_coefficient()
     {
-        if (shot_props_ptr == nullptr)
-        {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
-        }
         /* Miller stability coefficient */
         double twist_rate, length, sd, fv, ft, pt, ftp;
 
         // Check for non-zero or valid input values before calculation
-        if (shot_props_ptr->twist != 0.0 &&
-            shot_props_ptr->length != 0.0 &&
-            shot_props_ptr->diameter != 0.0 &&
-            shot_props_ptr->atmo._p0 != 0.0)
+        if (this->twist != 0.0 &&
+            this->length != 0.0 &&
+            this->diameter != 0.0 &&
+            this->atmo._p0 != 0.0)
         {
-            twist_rate = std::fabs(shot_props_ptr->twist) / shot_props_ptr->diameter;
-            length = shot_props_ptr->length / shot_props_ptr->diameter;
+            twist_rate = std::fabs(this->twist) / this->diameter;
+            length = this->length / this->diameter;
 
             // Ensure denominator components are non-zero to avoid division by zero
             // This check is crucial for robustness in C
             double denom_part1 = std::pow(twist_rate, 2);
-            double denom_part2 = std::pow(shot_props_ptr->diameter, 3);
+            double denom_part2 = std::pow(this->diameter, 3);
             double denom_part3 = length;
             double denom_part4 = (1 + std::pow(length, 2));
 
             if (denom_part1 != 0.0 && denom_part2 != 0.0 && denom_part3 != 0.0 && denom_part4 != 0.0)
             {
-                sd = 30.0 * shot_props_ptr->weight / (denom_part1 * denom_part2 * denom_part3 * denom_part4);
+                sd = 30.0 * this->weight / (denom_part1 * denom_part2 * denom_part3 * denom_part4);
             }
             else
             {
-                shot_props_ptr->stability_coefficient = 0.0;
+                this->stability_coefficient = 0.0;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
                 return BCLIBC_E_ZERO_DIVISION_ERROR; // Exit if denominator is zero
             }
 
-            fv = std::pow(shot_props_ptr->muzzle_velocity / 2800.0, 1.0 / 3.0);
-            ft = (shot_props_ptr->atmo._t0 * 9.0 / 5.0) + 32.0; // Convert from Celsius to Fahrenheit
-            pt = shot_props_ptr->atmo._p0 / 33.863881565591;    // Convert hPa to inHg
+            fv = std::pow(this->muzzle_velocity / 2800.0, 1.0 / 3.0);
+            ft = (this->atmo._t0 * 9.0 / 5.0) + 32.0; // Convert from Celsius to Fahrenheit
+            pt = this->atmo._p0 / 33.863881565591;    // Convert hPa to inHg
 
             // Ensure pt is not zero before division
             if (pt != 0.0)
@@ -304,21 +297,21 @@ namespace bclibc
             }
             else
             {
-                shot_props_ptr->stability_coefficient = 0.0;
+                this->stability_coefficient = 0.0;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
                 return BCLIBC_E_ZERO_DIVISION_ERROR; // Exit if pt is zero
             }
 
-            shot_props_ptr->stability_coefficient = sd * fv * ftp;
+            this->stability_coefficient = sd * fv * ftp;
         }
         else
         {
             // If critical parameters are zero, stability coefficient is meaningless or zero
-            shot_props_ptr->stability_coefficient = 0.0;
+            this->stability_coefficient = 0.0;
         }
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", shot_props_ptr->stability_coefficient);
+        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", this->stability_coefficient);
         return BCLIBC_E_NO_ERROR;
-    }
+    };
 
     /**
      * @brief Interpolates a value from a Mach list and a curve using the PCHIP method.
@@ -396,17 +389,16 @@ namespace bclibc
      * Formula used:
      * $\text{Scaled } C_d = \frac{C_d(\text{Mach}) \cdot 2.08551\text{e-}04}{\text{BC}}$
      *
-     * @param shot_props_ptr Pointer to the BCLIBC_ShotProps structure containing BC, drag curve, and Mach list.
      * @param mach Mach number at which to evaluate the drag.
      * @return Drag coefficient $C_d$ scaled by $\text{BC}$ and conversion factors, in units suitable for the trajectory calculation.
      */
-    double BCLIBC_ShotProps_dragByMach(const BCLIBC_ShotProps *shot_props_ptr, double mach)
+    double BCLIBC_ShotProps::drag_by_mach(double mach) const
     {
         double cd = calculateByCurveAndMachList(
-            &shot_props_ptr->mach_list,
-            &shot_props_ptr->curve,
+            &this->mach_list,
+            &this->curve,
             mach);
-        return cd * 2.08551e-04 / shot_props_ptr->bc;
+        return cd * 2.08551e-04 / this->bc;
     }
 
     BCLIBC_Atmosphere::BCLIBC_Atmosphere(

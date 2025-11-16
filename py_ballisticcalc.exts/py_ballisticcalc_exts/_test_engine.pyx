@@ -9,9 +9,6 @@ from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT
 from libc.math cimport sin, cos
 from py_ballisticcalc_exts.base_types cimport (
-    BCLIBC_ShotProps_dragByMach,
-    BCLIBC_ShotProps_spinDrift,
-    BCLIBC_ShotProps_updateStabilityCoefficient,
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
     BCLIBC_ErrorType,
@@ -34,7 +31,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double drag(self, double mach):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_ShotProps_dragByMach(&self._this.shot, mach)
+        return self._this.shot.drag_by_mach(mach)
 
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
@@ -51,13 +48,13 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double spin_drift(self, double time_s):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_ShotProps_spinDrift(&self._this.shot, time_s)
+        return self._this.shot.spin_drift(time_s)
 
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        if BCLIBC_ShotProps_updateStabilityCoefficient(&self._this.shot) != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            raise ZeroDivisionError("Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient")
+        if self._this.shot.update_stability_coefficient() != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+            raise ZeroDivisionError("Zero division detected in BCLIBC_ShotProps.update_stability_coefficient")
         return self._this.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):

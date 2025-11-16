@@ -216,7 +216,7 @@ namespace bclibc
 
             delta_time = calc_step;
 
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call BCLIBC_ShotProps_dragByMach, relative_speed=%f, mach=%f\n",
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call BCLIBC_ShotProps.drag_by_mach, relative_speed=%f, mach=%f\n",
                        relative_speed, mach);
 
             // Check for division by zero
@@ -226,7 +226,7 @@ namespace bclibc
             //     return BCLIBC_STATUS_ERROR;
             // }
 
-            km = density_ratio * BCLIBC_ShotProps_dragByMach(&eng->shot, relative_speed / mach);
+            km = density_ratio * eng->shot.drag_by_mach(relative_speed / mach);
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Calculated drag coefficient km=%f\n", km);
 
             // region RK4 integration

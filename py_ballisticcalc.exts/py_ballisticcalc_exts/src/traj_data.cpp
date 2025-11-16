@@ -979,7 +979,7 @@ namespace bclibc
         // );
 
         BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
-        double spin_drift = BCLIBC_ShotProps_spinDrift(props, time);
+        double spin_drift = props->spin_drift(time);
         double velocity = velocity_vector->mag();
 
         this->windage_ft = adjusted_range.z + spin_drift;
@@ -1009,7 +1009,7 @@ namespace bclibc
         this->slant_distance_ft = adjusted_range.x * look_angle_cos + adjusted_range.y * look_angle_sin;
         this->angle_rad = trajectory_angle;
         this->density_ratio = density_ratio_out;
-        this->drag = BCLIBC_ShotProps_dragByMach(props, this->mach);
+        this->drag = props->drag_by_mach(this->mach);
         this->energy_ft_lb = BCLIBC_calculateEnergy(props->weight, velocity);
         this->ogw_lb = BCLIBC_calculateOgw(props->weight, velocity);
     };

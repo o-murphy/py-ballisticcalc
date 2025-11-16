@@ -153,7 +153,7 @@ namespace bclibc
             delta_time = BCLIBC_euler_time_step(calc_step, relative_speed);
 
             // 3. Calculate drag coefficient and drag force
-            km = density_ratio * BCLIBC_ShotProps_dragByMach(&eng->shot, relative_speed / mach);
+            km = density_ratio * eng->shot.drag_by_mach(relative_speed / mach);
             drag = km * relative_speed;
 
             // 4. Apply drag, gravity, and Coriolis to velocity

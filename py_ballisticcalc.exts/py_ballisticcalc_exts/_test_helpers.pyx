@@ -2,7 +2,7 @@
 """Test helper accessors for Cython-specific tests.
 
 This module is NOT part of the public API. It provides a minimal surface for
-tests to directly evaluate the C-side drag interpolation (BCLIBC_ShotProps_dragByMach)
+tests to directly evaluate the C-side drag interpolation (BCLIBC_ShotProps.drag_by_mach)
 and inspect underlying prepared spline coefficients (a,b,c,d) plus Mach knots.
 
 We deliberately keep this separate from production engine modules to avoid
@@ -11,9 +11,6 @@ polluting hot paths or public symbols. Import only inside test code.
 
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
-    BCLIBC_ShotProps_dragByMach,
-    BCLIBC_ShotProps_spinDrift,
-    BCLIBC_ShotProps_updateStabilityCoefficient,
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
 )
@@ -60,12 +57,12 @@ cpdef double drag_eval(size_t shot_props_addr, double mach):
         a new public attribute. Tests obtain it with `shot_props_addr = <long>&engine._this.shot`.
     """
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    return BCLIBC_ShotProps_dragByMach(sp_ptr, mach)
+    return sp_ptr.drag_by_mach(mach)
 
 cpdef double drag_eval_current(object engine, double mach):
     """Evaluate drag using engine's current in-memory ShotProps without exposing raw pointer."""
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return BCLIBC_ShotProps_dragByMach(&e._this.shot, mach)
+    return e._this.shot.drag_by_mach(mach)
 
 cpdef size_t shot_props_addr(object engine):
     """Return raw address of the engine's internal BCLIBC_ShotProps struct.
@@ -91,11 +88,11 @@ cpdef void free_shot(object engine):
 
 cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    return BCLIBC_ShotProps_spinDrift(sp_ptr, time_s)
+    return sp_ptr.spin_drift(time_s)
 
 cpdef double stability_update_eval(size_t shot_props_addr):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
-    BCLIBC_ShotProps_updateStabilityCoefficient(sp_ptr)
+    sp_ptr.update_stability_coefficient()
     return sp_ptr.stability_coefficient
 
 cpdef dict introspect_shot(size_t shot_props_addr):

@@ -26,7 +26,7 @@ typedef enum
 
 /*
  * Example output:
- * [ERROR] bclib.c:123 in BCLIBC_ShotProps_updateStabilityCoefficient: Division by zero in ftp calculation.
+ * [ERROR] bclib.c:123 in BCLIBC_ShotProps.update_stability_coefficient: Division by zero in ftp calculation.
  * [DEBUG] bclibc_engine.h:45 in BCLIBC_Engine.integrate: Using integration function pointer 0x12345678.
  */
 
@@ -97,7 +97,7 @@ extern "C"
 
 // /*
 //  * Example output (shorter):
-//  * [ERROR] bclib.c:123 BCLIBC_ShotProps_updateStabilityCoefficient() Division by zero in ftp calculation.
+//  * [ERROR] bclib.c:123 BCLIBC_ShotProps.update_stability_coefficient() Division by zero in ftp calculation.
 //  */
 
 // #define C_LOG_SHORT(level, format, ...)                           \
@@ -119,7 +119,7 @@ extern "C"
 
 // /*
 //  * Example output (smart - location only for errors):
-//  * [ERROR] bclib.c:123 in BCLIBC_ShotProps_updateStabilityCoefficient: Division by zero.
+//  * [ERROR] bclib.c:123 in BCLIBC_ShotProps.update_stability_coefficient: Division by zero.
 //  * [INFO] Log level set to 20
 //  * [DEBUG] Altitude: 1000.00, Density ratio: 0.950000
 //  */

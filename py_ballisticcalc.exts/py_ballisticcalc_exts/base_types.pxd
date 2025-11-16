@@ -220,16 +220,11 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             BCLIBC_WindSock wind_sock,
             BCLIBC_TrajFlag filter_flags) except+
 
+        BCLIBC_ErrorType update_stability_coefficient() noexcept nogil
+        double spin_drift(double time) const
+        double drag_by_mach(double mach) const
+
     void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr) noexcept nogil
-    double BCLIBC_ShotProps_spinDrift(
-        const BCLIBC_ShotProps *shot_props_ptr, double time
-    ) noexcept nogil
-    BCLIBC_ErrorType BCLIBC_ShotProps_updateStabilityCoefficient(
-        BCLIBC_ShotProps *shot_props_ptr
-    ) noexcept nogil
-    double BCLIBC_ShotProps_dragByMach(
-        const BCLIBC_ShotProps *shot_props_ptr, double mach
-    ) noexcept nogil
 
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil

@@ -20,7 +20,6 @@ from py_ballisticcalc_exts.traj_data cimport (
 from py_ballisticcalc_exts.base_types cimport (
     # types and methods
     BCLIBC_ShotProps,
-    BCLIBC_ShotProps_updateStabilityCoefficient,
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.bind cimport (

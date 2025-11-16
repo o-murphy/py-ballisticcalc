@@ -225,14 +225,15 @@ namespace bclibc
             BCLIBC_TrajFlag filter_flags);
 
         ~BCLIBC_ShotProps();
+
+        BCLIBC_ErrorType update_stability_coefficient();
+        double spin_drift(double time) const;
+        double drag_by_mach(double mach) const;
     };
 
     void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr);
     void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr);
     void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr);
-    double BCLIBC_ShotProps_spinDrift(const BCLIBC_ShotProps *shot_props_ptr, double time);
-    BCLIBC_ErrorType BCLIBC_ShotProps_updateStabilityCoefficient(BCLIBC_ShotProps *shot_props_ptr);
-    double BCLIBC_ShotProps_dragByMach(const BCLIBC_ShotProps *shot_props_ptr, double mach);
 
     BCLIBC_ErrorType BCLIBC_WindSock_init(BCLIBC_WindSock *ws, size_t length, BCLIBC_Wind *winds);
     void BCLIBC_WindSock_release(BCLIBC_WindSock *ws);
