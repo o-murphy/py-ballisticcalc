@@ -50,7 +50,7 @@ namespace bclibc
                 &density_ratio,
                 &mach);
 
-            if (BCLIBC_V3dT_mag(&initial_velocity) < mach)
+            if (initial_velocity.mag() < mach)
             {
                 // If we start below Mach 1, we won't look for Mach crossings
                 this->filter = (BCLIBC_TrajFlag)((int)this->filter & ~(int)BCLIBC_TRAJ_FLAG_MACH);
@@ -223,7 +223,7 @@ namespace bclibc
             BCLIBC_TrajFlag compute_flags = BCLIBC_TRAJ_FLAG_NONE;
             if (
                 this->filter & BCLIBC_TRAJ_FLAG_MACH &&
-                BCLIBC_V3dT_mag(&new_data->velocity) < new_data->mach)
+                new_data->velocity.mag() < new_data->mach)
             {
                 compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_MACH);
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_MACH); // Don't look for more Mach crossings

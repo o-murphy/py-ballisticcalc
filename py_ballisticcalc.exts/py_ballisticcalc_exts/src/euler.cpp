@@ -103,7 +103,7 @@ namespace bclibc
         _dir_vector.z = std::cos(eng->shot.barrel_elevation) * std::sin(eng->shot.barrel_azimuth);
 
         // Calculate velocity vector
-        velocity_vector = BCLIBC_V3dT_mulS(&_dir_vector, velocity);
+        velocity_vector = _dir_vector * velocity;
 
         // Trajectory Loop
 
@@ -146,8 +146,8 @@ namespace bclibc
             // Euler integration step
 
             // 1. Calculate relative velocity (projectile velocity - wind)
-            relative_velocity = BCLIBC_V3dT_sub(&velocity_vector, &wind_vector);
-            relative_speed = BCLIBC_V3dT_mag(&relative_velocity);
+            relative_velocity = velocity_vector - wind_vector;
+            relative_speed = relative_velocity.mag();
 
             // 2. Calculate time step (adaptive based on velocity)
             delta_time = BCLIBC_euler_time_step(calc_step, relative_speed);
@@ -157,26 +157,26 @@ namespace bclibc
             drag = km * relative_speed;
 
             // 4. Apply drag, gravity, and Coriolis to velocity
-            _tv = BCLIBC_V3dT_mulS(&relative_velocity, drag);
-            _tv = BCLIBC_V3dT_sub(&gravity_vector, &_tv);
+            _tv = relative_velocity * drag;
+            _tv = gravity_vector - _tv;
 
             // Check the flat_fire_only flag within the Coriolis structure
             if (!eng->shot.coriolis.flat_fire_only)
             {
                 eng->shot.coriolis.coriolis_acceleration_local(
                     &velocity_vector, &coriolis_accel);
-                _tv = BCLIBC_V3dT_add(&_tv, &coriolis_accel);
+                _tv = _tv + coriolis_accel;
             }
 
-            _tv = BCLIBC_V3dT_mulS(&_tv, delta_time);
-            velocity_vector = BCLIBC_V3dT_add(&velocity_vector, &_tv);
+            _tv = _tv * delta_time;
+            velocity_vector = velocity_vector + _tv;
 
             // 5. Update position based on new velocity
-            delta_range_vector = BCLIBC_V3dT_mulS(&velocity_vector, delta_time);
-            range_vector = BCLIBC_V3dT_add(&range_vector, &delta_range_vector);
+            delta_range_vector = velocity_vector * delta_time;
+            range_vector = range_vector + delta_range_vector;
 
             // 6. Update time and velocity magnitude
-            velocity = BCLIBC_V3dT_mag(&velocity_vector);
+            velocity = velocity_vector.mag();
             time += delta_time;
 
             // Check termination conditions

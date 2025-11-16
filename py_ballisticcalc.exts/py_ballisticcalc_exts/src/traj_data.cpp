@@ -980,7 +980,7 @@ namespace bclibc
 
         BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
         double spin_drift = BCLIBC_ShotProps_spinDrift(props, time);
-        double velocity = BCLIBC_V3dT_mag(velocity_vector);
+        double velocity = velocity_vector->mag();
 
         this->windage_ft = adjusted_range.z + spin_drift;
 

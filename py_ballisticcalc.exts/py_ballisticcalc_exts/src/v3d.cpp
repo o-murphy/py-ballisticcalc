@@ -1,5 +1,4 @@
-#include <cmath>  // Required for fabs and sqrt
-#include <cstdio> // Required for printf (if print_vec is kept)
+#include <cmath>          // Required for fabs and sqrt
 #include "bclibc/v3d.hpp" // Include your own header file
 
 namespace bclibc
@@ -7,156 +6,97 @@ namespace bclibc
 
     // Function Implementations
 
-    // Creates a new BCLIBC_V3dT from given components
-    BCLIBC_V3dT BCLIBC_V3dT_new(double x, double y, double z)
+    BCLIBC_V3dT::BCLIBC_V3dT(double x, double y, double z)
+        : x(x), y(y), z(z) {};
+
+    BCLIBC_V3dT BCLIBC_V3dT::operator+(const BCLIBC_V3dT &other) const
     {
-        return BCLIBC_V3dT{x, y, z};
+        return BCLIBC_V3dT(x + other.x, y + other.y, z + other.z);
     }
 
-    // Adds two BCLIBC_V3dT vectors (takes const pointers for efficiency)
-    BCLIBC_V3dT BCLIBC_V3dT_add(const BCLIBC_V3dT *v1, const BCLIBC_V3dT *v2)
+    BCLIBC_V3dT BCLIBC_V3dT::operator-() const
     {
-        return BCLIBC_V3dT{
-            v1->x + v2->x,
-            v1->y + v2->y,
-            v1->z + v2->z};
+        return BCLIBC_V3dT(-x, -y, -z);
     }
 
-    // Subtracts two BCLIBC_V3dT vectors (takes const pointers for efficiency)
-    BCLIBC_V3dT BCLIBC_V3dT_sub(const BCLIBC_V3dT *v1, const BCLIBC_V3dT *v2)
+    BCLIBC_V3dT BCLIBC_V3dT::operator-(const BCLIBC_V3dT &other) const
     {
-        return BCLIBC_V3dT{
-            v1->x - v2->x,
-            v1->y - v2->y,
-            v1->z - v2->z};
+        return BCLIBC_V3dT(x - other.x, y - other.y, z - other.z);
     }
 
-    // Negates a BCLIBC_V3dT vector (multiplies by -1)
-    BCLIBC_V3dT BCLIBC_V3dT_neg(const BCLIBC_V3dT *v)
+    BCLIBC_V3dT BCLIBC_V3dT::operator*(double scalar) const
     {
-        return BCLIBC_V3dT{
-            -v->x,
-            -v->y,
-            -v->z};
+        return BCLIBC_V3dT(x * scalar, y * scalar, z * scalar);
     }
 
-    // Multiplies a BCLIBC_V3dT vector by a scalar (takes const pointer for efficiency)
-    BCLIBC_V3dT BCLIBC_V3dT_mulS(const BCLIBC_V3dT *v, double scalar)
+    BCLIBC_V3dT BCLIBC_V3dT::operator/(double scalar) const
     {
-        return BCLIBC_V3dT{
-            v->x * scalar,
-            v->y * scalar,
-            v->z * scalar};
+        if (std::fabs(scalar) < 1e-10)
+        {
+            return *this;
+        }
+        return (*this) * (1.0 / scalar);
     }
 
-    // Computes the dot product of two BCLIBC_V3dT vectors (takes const pointers for efficiency)
-    double BCLIBC_V3dT_dot(const BCLIBC_V3dT *v1, const BCLIBC_V3dT *v2)
+    double BCLIBC_V3dT::operator*(const BCLIBC_V3dT &other) const
     {
-        return (v1->x * v2->x) + (v1->y * v2->y) + (v1->z * v2->z);
+        return (x * other.x) + (y * other.y) + (z * other.z);
     }
 
-    // Computes the magnitude (length) of a BCLIBC_V3dT vector (takes const pointer for efficiency)
-    double BCLIBC_V3dT_mag(const BCLIBC_V3dT *v)
+    BCLIBC_V3dT &BCLIBC_V3dT::operator+=(const BCLIBC_V3dT &other)
     {
-        return std::sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
+        x += other.x;
+        y += other.y;
+        z += other.z;
+        return *this;
     }
 
-    // Normalizes a BCLIBC_V3dT vector in place (modifies the original vector)
-    void BCLIBC_V3dT_iNorm(BCLIBC_V3dT *v)
+    BCLIBC_V3dT &BCLIBC_V3dT::operator-=(const BCLIBC_V3dT &other)
     {
-        double m = BCLIBC_V3dT_mag(v);
+        x -= other.x;
+        y -= other.y;
+        z -= other.z;
+        return *this;
+    }
 
+    BCLIBC_V3dT &BCLIBC_V3dT::operator*=(double scalar)
+    {
+        x *= scalar;
+        y *= scalar;
+        z *= scalar;
+        return *this;
+    }
+
+    BCLIBC_V3dT &BCLIBC_V3dT::operator/=(double scalar)
+    {
+        if (std::fabs(scalar) < 1e-10)
+        {
+            return *this;
+        }
+
+        return (*this) *= (1.0 / scalar);
+    }
+
+    double BCLIBC_V3dT::mag() const
+    {
+        return std::sqrt((*this) * (*this));
+    }
+
+    BCLIBC_V3dT BCLIBC_V3dT::norm() const
+    {
+        double m = mag();
         if (std::fabs(m) < 1e-10)
         {
-            return; // Do nothing if magnitude is near zero (matching Cython behavior)
+            return *this;
         }
         else
         {
-            *v = BCLIBC_V3dT_mulS(v, 1.0 / m); // Reuse mulS for in-place normalization
+            return (*this) * (1.0 / m);
         }
     }
 
-    // Returns a new normalized BCLIBC_V3dT vector (does not modify the original)
-    BCLIBC_V3dT BCLIBC_V3dT_norm(const BCLIBC_V3dT *v)
+    BCLIBC_V3dT operator*(double scalar, const BCLIBC_V3dT &vec)
     {
-        double m = BCLIBC_V3dT_mag(v);
-
-        if (std::fabs(m) < 1e-10)
-        {
-            // Return the original vector unchanged if magnitude is near zero (matching Cython behavior)
-            return BCLIBC_V3dT{v->x, v->y, v->z};
-        }
-        else
-        {
-            return BCLIBC_V3dT_mulS(v, 1.0 / m); // Reuse mulS for normalization
-        }
+        return vec * scalar;
     }
-
-    // Prints a BCLIBC_V3dT vector to the console
-    void BCLIBC_V3dT_print(const char *name, const BCLIBC_V3dT *v)
-    {
-        printf("%s = (%.2f, %.2f, %.2f)\n", name, v->x, v->y, v->z);
-    }
-
-    //// --- New In-place Functions ---
-    //
-    //// Adds v2 to v1 in-place (modifies v1)
-    // void BCLIBC_V3dT_iadd(BCLIBC_V3dT *v1, const BCLIBC_V3dT *v2) {
-    //     v1->x += v2->x;
-    //     v1->y += v2->y;
-    //     v1->z += v2->z;
-    // }
-    //
-    //// Subtracts v2 from v1 in-place (modifies v1)
-    // void isub(BCLIBC_V3dT *v1, const BCLIBC_V3dT *v2) {
-    //     v1->x -= v2->x;
-    //     v1->y -= v2->y;
-    //     v1->z -= v2->z;
-    // }
-    //
-    //// Multiplies v by scalar in-place (modifies v)
-    // void BCLIBC_V3dT_imulS(BCLIBC_V3dT *v, double scalar) {
-    //     v->x *= scalar;
-    //     v->y *= scalar;
-    //     v->z *= scalar;
-    // }
-    //
-    //// --- New chainable In-place Functions ---
-    //
-    //// Adds v2 to v1 in-place (modifies v1)
-    // BCLIBC_V3dT* BCLIBC_V3dT_iaddc(BCLIBC_V3dT *v1, const BCLIBC_V3dT *v2) {
-    //     v1->x += v2->x;
-    //     v1->y += v2->y;
-    //     v1->z += v2->z;
-    //     return v1;
-    // }
-    //
-    //// Subtracts v2 from v1 in-place (modifies v1)
-    // BCLIBC_V3dT* BCLIBC_V3dT_isubc(BCLIBC_V3dT *v1, const BCLIBC_V3dT *v2) {
-    //     v1->x -= v2->x;
-    //     v1->y -= v2->y;
-    //     v1->z -= v2->z;
-    //     return v1;
-    // }
-    //
-    //// Multiplies v by scalar in-place (modifies v)
-    // BCLIBC_V3dT* BCLIBC_V3dT_imulSc(BCLIBC_V3dT *v, double scalar) {
-    //     v->x *= scalar;
-    //     v->y *= scalar;
-    //     v->z *= scalar;
-    //     return v;
-    // }
-    //
-    //// Normalizes a BCLIBC_V3dT vector in place (modifies the original vector)
-    // BCLIBC_V3dT* BCLIBC_V3dT_iNormc(BCLIBC_V3dT *v) {
-    //     double m = BCLIBC_V3dT_mag(v);
-    //
-    //     if (fabs(m) < 1e-10) {
-    //         return v; // Do nothing if magnitude is near zero (matching Cython behavior)
-    //     } else {
-    //         *v = BCLIBC_V3dT_mulS(v, 1.0 / m); // Reuse mulS for in-place normalization
-    //         return v;
-    //     }
-    // }
-
 };
