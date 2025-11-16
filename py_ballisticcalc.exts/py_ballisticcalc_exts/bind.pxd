@@ -13,8 +13,8 @@ from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTraj_InterpKey
 
 
 cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:
-    BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) noexcept nogil
-    BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) noexcept nogil
+    BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) except+
+    BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) except+
     BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) noexcept nogil
     BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w) noexcept nogil
     BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) noexcept nogil
@@ -22,8 +22,8 @@ cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:
 # python to C objects conversion
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config)
 cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_pyobject(object atmo)
-cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data)
-cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points)
+cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data) except+
+cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points) except+
 cdef BCLIBC_Wind BCLIBC_Wind_from_pyobject(object w)
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj)
 # Function to create and initialize a BCLIBC_WindSock

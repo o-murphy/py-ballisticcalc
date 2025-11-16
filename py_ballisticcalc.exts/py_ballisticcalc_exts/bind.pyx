@@ -42,21 +42,33 @@ cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_pyobject(object atmo):
 
 
 @final
-cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data):
+cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data) except+:
     cdef BCLIBC_MachList ml = BCLIBC_MachList_fromPylist(<PyObject *>data)
-    if ml.array is NULL:
+    if ml.empty():
         if PyErr_Occurred():
             raise
         else:
-            raise MemoryError("Failed to create BCLIBC_MachList from Python list")
+            pass
     return ml
 
 
 @final
-cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
+cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points) except+:
+    # Call the C++ function. 'except *' handles Python exceptions 
+    # and 'except +' (assumed in .pxd) handles C++ exceptions (like std::bad_alloc).
     cdef BCLIBC_Curve result = BCLIBC_Curve_fromPylist(<PyObject *>data_points)
+    
+    # Check if a Python exception was set during processing
     if PyErr_Occurred():
+        # If an error was set (e.g., AttributeError, ValueError, IndexError), propagate it
         raise
+        
+    # Check for empty result after successful execution (e.g., input list size < 2)
+    # The C++ function now sets a ValueError if n < 2, so this check is mostly for 
+    # completeness or if the user passed an empty list.
+    if result.empty():
+        pass # If PyErr_Occurred() was false, and it's empty, it means the input was handled gracefully.
+        
     return result
 
 

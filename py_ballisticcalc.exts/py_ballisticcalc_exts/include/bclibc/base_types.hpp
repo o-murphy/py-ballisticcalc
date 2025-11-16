@@ -2,12 +2,12 @@
 #define BCLIBC_BASE_TYPES_H
 
 #include <cstddef>
+#include <vector>
 #include "v3d.hpp"
 #include "bclibc/error_stack.h"
 
 namespace bclibc
 {
-
     extern const double BCLIBC_cDegreesFtoR;
     extern const double BCLIBC_cDegreesCtoK;
     extern const double BCLIBC_cSpeedOfSoundImperial;
@@ -72,17 +72,8 @@ namespace bclibc
             double d);
     };
 
-    typedef struct
-    {
-        BCLIBC_CurvePoint *points;
-        size_t length;
-    } BCLIBC_Curve;
-
-    typedef struct
-    {
-        double *array;
-        size_t length;
-    } BCLIBC_MachList;
+    using BCLIBC_Curve = std::vector<BCLIBC_CurvePoint>;
+    using BCLIBC_MachList = std::vector<double>;
 
     struct BCLIBC_Atmosphere
     {
@@ -231,8 +222,6 @@ namespace bclibc
         double drag_by_mach(double mach) const;
     };
 
-    void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr);
-    void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr);
     void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr);
 
     BCLIBC_ErrorType BCLIBC_WindSock_init(BCLIBC_WindSock *ws, size_t length, BCLIBC_Wind *winds);

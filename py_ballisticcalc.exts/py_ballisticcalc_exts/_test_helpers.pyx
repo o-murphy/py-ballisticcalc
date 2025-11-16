@@ -100,7 +100,7 @@ cpdef dict introspect_shot(size_t shot_props_addr):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     if not sp_ptr:
         return {'null': True}
-    return {'bc': sp_ptr.bc, 'curve_len': sp_ptr.curve.length, 'mach_len': sp_ptr.mach_list.length}
+    return {'bc': sp_ptr.bc, 'curve_len': sp_ptr.curve.size(), 'mach_len': sp_ptr.mach_list.size()}
 
 cpdef double energy_eval(size_t shot_props_addr, double velocity_fps):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr

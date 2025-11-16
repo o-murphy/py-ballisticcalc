@@ -1,3 +1,4 @@
+from libcpp.vector cimport vector
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
@@ -53,17 +54,8 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double d
         ) except +
 
-    ctypedef struct BCLIBC_Curve:
-        BCLIBC_CurvePoint * points
-        size_t length
-
-    void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr) noexcept nogil
-
-    ctypedef struct BCLIBC_MachList:
-        double * array
-        size_t length
-
-    void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr) noexcept nogil
+    ctypedef vector[BCLIBC_CurvePoint] BCLIBC_Curve
+    ctypedef vector[double] BCLIBC_MachList
 
     cdef cppclass BCLIBC_Atmosphere:
         double _t0

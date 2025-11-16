@@ -81,50 +81,6 @@ namespace bclibc
     BCLIBC_CurvePoint::BCLIBC_CurvePoint(
         double a, double b, double c, double d) : a(a), b(b), c(c), d(d) {};
 
-    /**
-     * @brief Releases memory associated with a BCLIBC_Curve structure.
-     *
-     * Frees the dynamically allocated array of points and resets the length to 0.
-     * Handles NULL pointer gracefully.
-     *
-     * @param curve_ptr Pointer to the BCLIBC_Curve structure to release.
-     */
-    void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr)
-    {
-        if (curve_ptr == nullptr)
-            return;
-
-        if (curve_ptr->points != nullptr)
-        {
-            free(curve_ptr->points);
-            curve_ptr->points = nullptr;
-        }
-
-        curve_ptr->length = 0;
-    }
-
-    /**
-     * @brief Releases memory associated with a BCLIBC_MachList structure.
-     *
-     * Frees the dynamically allocated array of Mach numbers and resets the length to 0.
-     * Handles NULL pointer gracefully.
-     *
-     * @param mach_list_ptr Pointer to the BCLIBC_MachList structure to release.
-     */
-    void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr)
-    {
-        if (mach_list_ptr == nullptr)
-            return;
-
-        if (mach_list_ptr->array != nullptr)
-        {
-            free(mach_list_ptr->array);
-            mach_list_ptr->array = nullptr;
-        }
-
-        mach_list_ptr->length = 0;
-    }
-
     BCLIBC_ShotProps::BCLIBC_ShotProps(
         double bc,
         double look_angle,
@@ -191,8 +147,6 @@ namespace bclibc
     {
         if (shot_props_ptr == nullptr)
             return;
-        BCLIBC_Curve_release(&shot_props_ptr->curve);
-        BCLIBC_MachList_release(&shot_props_ptr->mach_list);
         BCLIBC_WindSock_release(&shot_props_ptr->wind_sock);
     }
 
@@ -328,12 +282,14 @@ namespace bclibc
      * @return The interpolated value (e.g., drag coefficient or BC factor). Returns 0.0 if insufficient data or out of range.
      */
     static inline double calculateByCurveAndMachList(
-        const BCLIBC_MachList *mach_list_ptr,
-        const BCLIBC_Curve *curve_ptr,
+        const BCLIBC_MachList *mach_list_ptr, // const std::vector<double>*
+        const BCLIBC_Curve *curve_ptr,        // const std::vector<BCLIBC_CurvePoint>*
         double mach)
     {
-        const double *xs = mach_list_ptr->array;
-        const int n = (int)mach_list_ptr->length;
+        // Access Mach data (x-coordinates) using std::vector::data()
+        const double *xs = mach_list_ptr->data();
+        const size_t n_size_t = mach_list_ptr->size();
+        const int n = (int)n_size_t;
 
         if (n < 2)
         {
@@ -357,7 +313,7 @@ namespace bclibc
             int lo = 0, hi = n - 1;
             while (lo < hi)
             {
-                int mid = lo + ((hi - lo) >> 1); // Bitshift is fater
+                int mid = lo + ((hi - lo) >> 1); // Bitshift is faster
                 if (xs[mid] < mach)
                     lo = mid + 1;
                 else
@@ -368,7 +324,8 @@ namespace bclibc
         }
 
         // Storing struct locally for better access
-        const BCLIBC_CurvePoint seg = curve_ptr->points[i];
+        const BCLIBC_CurvePoint seg = (*curve_ptr)[i];
+
         const double dx = mach - xs[i];
 
         // Horner's method for PCHIP interpolation:
