@@ -155,15 +155,16 @@ namespace bclibc
                     double direction_from,
                     double until_distance,
                     double MAX_DISTANCE_FEET);
+        BCLIBC_V3dT as_vector() const;
     };
 
     struct BCLIBC_WindSock
     {
-        public:
-            std::vector<BCLIBC_Wind> winds;
-            size_t current;
-            double next_range;
-            BCLIBC_V3dT last_vector_cache;
+    public:
+        std::vector<BCLIBC_Wind> winds;
+        size_t current;
+        double next_range;
+        BCLIBC_V3dT last_vector_cache;
 
         BCLIBC_WindSock();
         void push(BCLIBC_Wind wind);

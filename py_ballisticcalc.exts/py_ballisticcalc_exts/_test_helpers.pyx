@@ -83,7 +83,13 @@ cpdef size_t init_shot(object engine, object shot):
     return <size_t>ptr
 
 cpdef void free_shot(object engine):
+    import warnings
+    warnings.warn("free_shot is deprecated due to auto resources manage for the ShotProps")
+
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
+    e._this.shot.curve.clear()
+    e._this.shot.mach_list.clear()
+    # e._this.shot.wind_sock.winds.clear()
 
 cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr

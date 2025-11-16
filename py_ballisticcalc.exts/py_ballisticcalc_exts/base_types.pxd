@@ -140,12 +140,14 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double MAX_DISTANCE_FEET
         ) except+
 
+        BCLIBC_V3dT as_vector() const
+
     cdef cppclass BCLIBC_WindSock:
         vector[BCLIBC_Wind] *winds
         int current
         double next_range
         BCLIBC_V3dT last_vector_cache
-        
+
         BCLIBC_WindSock() except+
         void push(BCLIBC_Wind wind)
         BCLIBC_ErrorType update_cache()

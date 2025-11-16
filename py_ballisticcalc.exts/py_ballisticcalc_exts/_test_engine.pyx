@@ -7,7 +7,7 @@ engine modules. Not part of the public API.
 from cython cimport final
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
 from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT
-from libc.math cimport sin, cos
+from libcpp.cmath cimport sin, cos
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,

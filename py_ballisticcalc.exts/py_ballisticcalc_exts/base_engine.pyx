@@ -6,7 +6,6 @@ Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
     feeds it through the Python TrajectoryDataFilter to build List[TrajectoryData].
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
-from libc.math cimport sin, cos
 from libc.string cimport memset
 from libcpp.vector cimport vector
 from cython.operator cimport dereference as deref, preincrement as inc
@@ -25,11 +24,7 @@ from py_ballisticcalc_exts.base_types cimport (
 from py_ballisticcalc_exts.bind cimport (
     # factory funcs
     BCLIBC_Config_from_pyobject,
-    BCLIBC_Atmosphere_from_pyobject,
-    BCLIBC_MachList_from_pylist,
-    BCLIBC_Curve_from_pylist,
-    BCLIBC_Coriolis_from_pyobject,
-    BCLIBC_WindSock_from_pylist,
+    BCLIBC_ShotProps_from_pyobject,
     feet_from_c,
     rad_from_c,
     v3d_to_vector,
@@ -46,7 +41,6 @@ from py_ballisticcalc_exts.error_stack cimport (
 from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
 
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.conditions import Coriolis
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
@@ -372,41 +366,7 @@ cdef class CythonizedBaseIntegrationEngine:
         self._table_data = shot_info.ammo.dm.drag_table
         # Build C shot struct with robust cleanup on any error that follows
 
-        # WARNING: Avoid calling Python attributes in a chain!
-        # Cython may forget to add DECREF, so memory leaks are possible
-        cdef object velocity_obj = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)
-        cdef double muzzle_velocity_fps = velocity_obj._fps
-
-        # Create coriolis object from shot parameters
-        cdef object coriolis_obj = Coriolis.create(
-            shot_info.latitude,
-            shot_info.azimuth,
-            muzzle_velocity_fps
-        )
-
-        self._this.shot = BCLIBC_ShotProps(
-            shot_info.ammo.dm.BC,
-            shot_info.look_angle._rad,
-            shot_info.weapon.twist._inch,
-            shot_info.ammo.dm.length._inch,
-            shot_info.ammo.dm.diameter._inch,
-            shot_info.ammo.dm.weight._grain,
-            shot_info.barrel_elevation._rad,
-            shot_info.barrel_azimuth._rad,
-            shot_info.weapon.sight_height._feet,
-            cos(shot_info.cant_angle._rad),
-            sin(shot_info.cant_angle._rad),
-            shot_info.atmo.altitude._feet,
-            self.get_calc_step(),
-            muzzle_velocity_fps,
-            0.0,
-            BCLIBC_Curve_from_pylist(self._table_data),
-            BCLIBC_MachList_from_pylist(self._table_data),
-            BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
-            BCLIBC_Coriolis_from_pyobject(coriolis_obj),
-            BCLIBC_WindSock_from_pylist(shot_info.winds),
-            <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
-        )
+        self._this.shot = BCLIBC_ShotProps_from_pyobject(shot_info, self.get_calc_step())
 
         return &self._this.shot
 

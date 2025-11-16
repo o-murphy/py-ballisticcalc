@@ -270,26 +270,43 @@ namespace bclibc
         const BCLIBC_Curve *curve_ptr,        // const std::vector<BCLIBC_CurvePoint>*
         double mach)
     {
-        // Access Mach data (x-coordinates) using std::vector::data()
-        const double *xs = mach_list_ptr->data();
-        const size_t n_size_t = mach_list_ptr->size();
-        const int n = (int)n_size_t;
-
-        if (n < 2)
+        // Curve has (n-1) segments. MachList has n nodes.
+        const size_t nm1_size_t = curve_ptr->size(); // number of segments (n-1)
+        if (nm1_size_t == 0)
         {
-            // insufficient data; return 0
+            // insufficient curve data
             return 0.0;
         }
 
-        // Clamp to range endpoints
+        const size_t n_size_t = mach_list_ptr->size(); // number of Mach nodes (n)
+        if (n_size_t != nm1_size_t + 1)
+        {
+            // data mismatch; cannot interpolate safely
+            return 0.0;
+        }
+
+        const int nm1 = (int)nm1_size_t; // n-1
+        const int n = nm1 + 1;           // n
+
+        const double *xs = mach_list_ptr->data();
+
+        if (n < 2)
+        {
+            // insufficient Mach data
+            return 0.0;
+        }
+
+        // Determine segment index i such that xs[i] <= mach <= xs[i+1]
         int i;
+
+        // Clamp to range endpoints
         if (mach <= xs[0])
         {
-            i = 0;
+            i = 0; // use first segment
         }
         else if (mach >= xs[n - 1])
         {
-            i = n - 2;
+            i = nm1 - 1; // last valid segment index = (n-1)-1 = n-2
         }
         else
         {
@@ -297,23 +314,28 @@ namespace bclibc
             int lo = 0, hi = n - 1;
             while (lo < hi)
             {
-                int mid = lo + ((hi - lo) >> 1); // Bitshift is faster
+                int mid = lo + ((hi - lo) >> 1);
                 if (xs[mid] < mach)
                     lo = mid + 1;
                 else
                     hi = mid;
             }
             i = lo - 1;
-            // Clamping not needed more
+
+            // Ensure index in valid segment range
+            if (i < 0)
+                i = 0;
+            else if (i > nm1 - 1)
+                i = nm1 - 1;
         }
 
-        // Storing struct locally for better access
+        // Access the corresponding segment safely
         const BCLIBC_CurvePoint seg = (*curve_ptr)[i];
 
         const double dx = mach - xs[i];
 
         // Horner's method for PCHIP interpolation:
-        // $y = d + dx \cdot (c + dx \cdot (b + dx \cdot a))$
+        // y = d + dx * (c + dx * (b + dx * a))
         return seg.d + dx * (seg.c + dx * (seg.b + dx * seg.a));
     }
 
@@ -443,13 +465,12 @@ namespace bclibc
      * where x is positive downrange and z is positive across-range (windage).
      * Wind direction is 'from' the specified direction (e.g., $0^\circ$ is tailwind, $90^\circ$ is wind from the right).
      *
-     * @param wind_ptr Pointer to the BCLIBC_Wind structure.
      * @return A BCLIBC_V3dT structure representing the wind velocity vector (x=downrange, y=vertical, z=crossrange).
      */
-    static inline BCLIBC_V3dT BCLIBC_WindToV3dT(const BCLIBC_Wind *wind_ptr)
+    BCLIBC_V3dT BCLIBC_Wind::as_vector() const
     {
-        const double dir = wind_ptr->direction_from;
-        const double vel = wind_ptr->velocity;
+        const double dir = this->direction_from;
+        const double vel = this->velocity;
 
         // Wind direction is from:
         // x = vel * cos(dir) (Downrange, positive is tailwind)
@@ -505,7 +526,7 @@ namespace bclibc
         if (this->current < this->winds.size())
         {
             const BCLIBC_Wind &cur_wind = this->winds[this->current];
-            this->last_vector_cache = BCLIBC_WindToV3dT(&cur_wind);
+            this->last_vector_cache = cur_wind.as_vector();
             this->next_range = cur_wind.until_distance;
         }
         else

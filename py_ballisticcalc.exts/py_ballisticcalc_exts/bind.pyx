@@ -1,6 +1,5 @@
 # cython: freethreading_compatible=True
-from libc.stdlib cimport calloc, free
-from libc.string cimport memset
+from libcpp.cmath cimport sin, cos
 from cpython.exc cimport PyErr_Occurred
 from cython cimport final
 from cpython.object cimport PyObject
@@ -12,6 +11,8 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Wind,
     BCLIBC_WindSock,
     BCLIBC_Coriolis,
+    BCLIBC_ShotProps,
+    BCLIBC_TrajFlag,
     BCLIBC_ErrorType,
 )
 from py_ballisticcalc.unit import (
@@ -23,6 +24,7 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTraj_InterpKey
 
 from py_ballisticcalc.vector import Vector
+from py_ballisticcalc.conditions import Coriolis
 
 
 @final
@@ -42,7 +44,7 @@ cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_pyobject(object atmo):
 
 
 @final
-cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data) except+:
+cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data):
     cdef BCLIBC_MachList ml = BCLIBC_MachList_fromPylist(<PyObject *>data)
     if ml.empty():
         if PyErr_Occurred():
@@ -53,22 +55,22 @@ cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data) except+:
 
 
 @final
-cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points) except+:
-    # Call the C++ function. 'except *' handles Python exceptions 
+cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
+    # Call the C++ function. 'except *' handles Python exceptions
     # and 'except +' (assumed in .pxd) handles C++ exceptions (like std::bad_alloc).
     cdef BCLIBC_Curve result = BCLIBC_Curve_fromPylist(<PyObject *>data_points)
-    
+
     # Check if a Python exception was set during processing
     if PyErr_Occurred():
         # If an error was set (e.g., AttributeError, ValueError, IndexError), propagate it
         raise
-        
+
     # Check for empty result after successful execution (e.g., input list size < 2)
-    # The C++ function now sets a ValueError if n < 2, so this check is mostly for 
+    # The C++ function now sets a ValueError if n < 2, so this check is mostly for
     # completeness or if the user passed an empty list.
     if result.empty():
-        pass # If PyErr_Occurred() was false, and it's empty, it means the input was handled gracefully.
-        
+        pass  # If PyErr_Occurred() was false, and it's empty, it means the input was handled gracefully.
+
     return result
 
 
@@ -100,32 +102,32 @@ cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
     return BCLIBC_Coriolis()
 
 
-cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list) except+:
+cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
     """
-    Creates and initializes a BCLIBC_WindSock structure 
+    Creates and initializes a BCLIBC_WindSock structure
     by iterating over the Python list and calling push() for each element.
-    
-    This function uses the BCLIBC_WindSock constructor and the push() method to add 
+
+    This function uses the BCLIBC_WindSock constructor and the push() method to add
     elements to the internal std::vector, consistent with the C++ design.
     """
     cdef size_t length = <size_t> len(winds_py_list)
-    
+
     # 1. Creating the C++ BCLIBC_WindSock object (constructor is called, handled by except+)
     cdef BCLIBC_WindSock ws = BCLIBC_WindSock()
-    
+
     # 2. Copying data from Python objects
-    cdef size_t i 
-    cdef BCLIBC_Wind c_wind_segment # Temporary variable for storing the converted object
-    
+    cdef size_t i
+    cdef BCLIBC_Wind c_wind_segment  # Temporary variable for storing the converted object
+
     try:
-        for i in range(length): 
+        for i in range(length):
             # BCLIBC_Wind_from_pyobject converts the Python object to a C structure
             # This call can raise Python exceptions
             c_wind_segment = BCLIBC_Wind_from_pyobject(winds_py_list[i])
-            
+
             # Add the segment to the internal C++ vector via the push method (handled by outer except+)
-            ws.push(c_wind_segment) 
-            
+            ws.push(c_wind_segment)
+
     except Exception:
         # Error handling for Python-level errors (like attribute/type conversion failure)
         raise RuntimeError("Invalid wind entry in winds list during conversion")
@@ -137,6 +139,46 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list) except+:
         raise RuntimeError("BCLIBC_WindSock initialization error during final cache update.")
 
     return ws
+
+
+cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double calc_step = 1.0):
+    # WARNING: Avoid calling Python attributes in a chain!
+    # Cython may forget to add DECREF, so memory leaks are possible
+    cdef object velocity_obj = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)
+    cdef double muzzle_velocity_fps = velocity_obj._fps
+
+    # Create coriolis object from shot parameters
+    cdef object coriolis_obj = Coriolis.create(
+        shot_info.latitude,
+        shot_info.azimuth,
+        muzzle_velocity_fps
+    )
+
+    cdef list[object] table_data = shot_info.ammo.dm.drag_table
+
+    return BCLIBC_ShotProps(
+        shot_info.ammo.dm.BC,
+        shot_info.look_angle._rad,
+        shot_info.weapon.twist._inch,
+        shot_info.ammo.dm.length._inch,
+        shot_info.ammo.dm.diameter._inch,
+        shot_info.ammo.dm.weight._grain,
+        shot_info.barrel_elevation._rad,
+        shot_info.barrel_azimuth._rad,
+        shot_info.weapon.sight_height._feet,
+        cos(<double>shot_info.cant_angle._rad),
+        sin(<double>shot_info.cant_angle._rad),
+        shot_info.atmo.altitude._feet,
+        calc_step,
+        muzzle_velocity_fps,
+        0.0,
+        BCLIBC_Curve_from_pylist(table_data),
+        BCLIBC_MachList_from_pylist(table_data),
+        BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
+        BCLIBC_Coriolis_from_pyobject(coriolis_obj),
+        BCLIBC_WindSock_from_pylist(shot_info.winds),
+        <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
+    )
 
 
 # Helper functions to create unit objects
