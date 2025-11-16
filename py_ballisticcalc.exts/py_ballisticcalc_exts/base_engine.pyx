@@ -414,35 +414,28 @@ cdef class CythonizedBaseIntegrationEngine:
 
         try:
             self._this.shot = BCLIBC_ShotProps(
-                bc=shot_info.ammo.dm.BC,
-                look_angle=shot_info.look_angle._rad,
-                twist=shot_info.weapon.twist._inch,
-                length=shot_info.ammo.dm.length._inch,
-                diameter=shot_info.ammo.dm.diameter._inch,
-                weight=shot_info.ammo.dm.weight._grain,
-                barrel_elevation=shot_info.barrel_elevation._rad,
-                barrel_azimuth=shot_info.barrel_azimuth._rad,
-                sight_height=shot_info.weapon.sight_height._feet,
-                cant_cosine=cos(shot_info.cant_angle._rad),
-                cant_sine=sin(shot_info.cant_angle._rad),
-                alt0=shot_info.atmo.altitude._feet,
-                calc_step=self.get_calc_step(),
-                muzzle_velocity=muzzle_velocity_fps,
-                stability_coefficient=0.0,
-                curve=BCLIBC_Curve_from_pylist(self._table_data),
-                mach_list=BCLIBC_MachList_from_pylist(self._table_data),
-                atmo=BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
-                coriolis=BCLIBC_Coriolis_from_pyobject(coriolis_obj),
-                wind_sock=BCLIBC_WindSock_from_pylist(shot_info.winds),
-                filter_flags=BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
+                shot_info.ammo.dm.BC,
+                shot_info.look_angle._rad,
+                shot_info.weapon.twist._inch,
+                shot_info.ammo.dm.length._inch,
+                shot_info.ammo.dm.diameter._inch,
+                shot_info.ammo.dm.weight._grain,
+                shot_info.barrel_elevation._rad,
+                shot_info.barrel_azimuth._rad,
+                shot_info.weapon.sight_height._feet,
+                cos(shot_info.cant_angle._rad),
+                sin(shot_info.cant_angle._rad),
+                shot_info.atmo.altitude._feet,
+                self.get_calc_step(),
+                muzzle_velocity_fps,
+                0.0,
+                BCLIBC_Curve_from_pylist(self._table_data),
+                BCLIBC_MachList_from_pylist(self._table_data),
+                BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
+                BCLIBC_Coriolis_from_pyobject(coriolis_obj),
+                BCLIBC_WindSock_from_pylist(shot_info.winds),
+                <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             )
-
-            # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-            if BCLIBC_ShotProps_updateStabilityCoefficient(
-                &self._this.shot
-            ) != <int>BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-                raise ZeroDivisionError(
-                    "Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient")
 
         except Exception:
             # Ensure we free any partially allocated arrays inside _shot_s

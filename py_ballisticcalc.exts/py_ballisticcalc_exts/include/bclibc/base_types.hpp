@@ -175,7 +175,7 @@ namespace bclibc
         BCLIBC_V3dT last_vector_cache;
     } BCLIBC_WindSock;
 
-    typedef struct
+    struct BCLIBC_ShotProps
     {
         double bc;
         double look_angle;
@@ -198,7 +198,34 @@ namespace bclibc
         BCLIBC_Coriolis coriolis;
         BCLIBC_WindSock wind_sock;
         BCLIBC_TrajFlag filter_flags;
-    } BCLIBC_ShotProps;
+
+        BCLIBC_ShotProps() = default;
+
+        BCLIBC_ShotProps(
+            double bc,
+            double look_angle,
+            double twist,
+            double length,
+            double diameter,
+            double weight,
+            double barrel_elevation,
+            double barrel_azimuth,
+            double sight_height,
+            double cant_cosine,
+            double cant_sine,
+            double alt0,
+            double calc_step,
+            double muzzle_velocity,
+            double stability_coefficient,
+            BCLIBC_Curve curve,
+            BCLIBC_MachList mach_list,
+            BCLIBC_Atmosphere atmo,
+            BCLIBC_Coriolis coriolis,
+            BCLIBC_WindSock wind_sock,
+            BCLIBC_TrajFlag filter_flags);
+
+        ~BCLIBC_ShotProps();
+    };
 
     void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr);
     void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr);

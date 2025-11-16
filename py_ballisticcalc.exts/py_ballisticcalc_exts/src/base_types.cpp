@@ -2,6 +2,7 @@
 #include <cstdio>  // For warnings (printf used here)
 #include <cstdlib>
 #include <cmath>
+#include <stdexcept>
 #include "bclibc/base_types.hpp"
 
 namespace bclibc
@@ -123,6 +124,61 @@ namespace bclibc
 
         mach_list_ptr->length = 0;
     }
+
+    BCLIBC_ShotProps::BCLIBC_ShotProps(
+        double bc,
+        double look_angle,
+        double twist,
+        double length,
+        double diameter,
+        double weight,
+        double barrel_elevation,
+        double barrel_azimuth,
+        double sight_height,
+        double cant_cosine,
+        double cant_sine,
+        double alt0,
+        double calc_step,
+        double muzzle_velocity,
+        double stability_coefficient,
+        BCLIBC_Curve curve,
+        BCLIBC_MachList mach_list,
+        BCLIBC_Atmosphere atmo,
+        BCLIBC_Coriolis coriolis,
+        BCLIBC_WindSock wind_sock,
+        BCLIBC_TrajFlag filter_flags)
+        : bc(bc),
+          look_angle(look_angle),
+          twist(twist),
+          length(length),
+          diameter(diameter),
+          weight(weight),
+          barrel_elevation(barrel_elevation),
+          barrel_azimuth(barrel_azimuth),
+          sight_height(sight_height),
+          cant_cosine(cant_cosine),
+          cant_sine(cant_sine),
+          alt0(alt0),
+          calc_step(calc_step),
+          muzzle_velocity(muzzle_velocity),
+          stability_coefficient(stability_coefficient),
+          curve(curve),
+          mach_list(mach_list),
+          atmo(atmo),
+          coriolis(coriolis),
+          wind_sock(wind_sock),
+          filter_flags(filter_flags)
+    {
+        // Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
+        if (BCLIBC_ShotProps_updateStabilityCoefficient(this) != BCLIBC_E_NO_ERROR)
+        {
+            throw std::runtime_error("Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient");
+        };
+    };
+
+    BCLIBC_ShotProps::~BCLIBC_ShotProps() {
+        // BCLIBC_ShotProps_release(this);
+    };
 
     /**
      * @brief Releases all dynamically allocated resources within a BCLIBC_ShotProps structure.

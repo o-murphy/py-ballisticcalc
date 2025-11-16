@@ -172,7 +172,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX
         BCLIBC_TRAJ_FLAG_MRT = 32
 
-    ctypedef struct BCLIBC_ShotProps:
+    cdef cppclass BCLIBC_ShotProps:
         double bc
         double look_angle
         double twist
@@ -194,6 +194,31 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_Coriolis coriolis
         BCLIBC_WindSock wind_sock
         BCLIBC_TrajFlag filter_flags
+
+        BCLIBC_ShotProps() except+
+
+        BCLIBC_ShotProps(
+            double bc,
+            double look_angle,
+            double twist,
+            double length,
+            double diameter,
+            double weight,
+            double barrel_elevation,
+            double barrel_azimuth,
+            double sight_height,
+            double cant_cosine,
+            double cant_sine,
+            double alt0,
+            double calc_step,
+            double muzzle_velocity,
+            double stability_coefficient,
+            BCLIBC_Curve curve,
+            BCLIBC_MachList mach_list,
+            BCLIBC_Atmosphere atmo,
+            BCLIBC_Coriolis coriolis,
+            BCLIBC_WindSock wind_sock,
+            BCLIBC_TrajFlag filter_flags) except+
 
     void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr) noexcept nogil
     double BCLIBC_ShotProps_spinDrift(
