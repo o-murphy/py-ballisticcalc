@@ -136,7 +136,7 @@ namespace bclibc
 
         // Initialize wind vector
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "About to call BCLIBC_WindSock_currentVector\n");
-        wind_vector = BCLIBC_WindSock_currentVector(&eng->shot.wind_sock);
+        wind_vector = eng->shot.wind_sock.current_vector();
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
 
         // Initialize velocity and position vectors
@@ -185,7 +185,7 @@ namespace bclibc
             if (range_vector.x >= eng->shot.wind_sock.next_range)
             {
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updating wind vector\n");
-                wind_vector = BCLIBC_WindSock_vectorForRange(&eng->shot.wind_sock, range_vector.x);
+                wind_vector = eng->shot.wind_sock.vector_for_range(range_vector.x);
             }
 
             // Update air density and mach at current altitude

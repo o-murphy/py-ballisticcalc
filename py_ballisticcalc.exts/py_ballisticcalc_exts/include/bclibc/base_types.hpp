@@ -157,14 +157,20 @@ namespace bclibc
                     double MAX_DISTANCE_FEET);
     };
 
-    typedef struct
+    struct BCLIBC_WindSock
     {
-        BCLIBC_Wind *winds;
-        int current;
-        int length;
-        double next_range;
-        BCLIBC_V3dT last_vector_cache;
-    } BCLIBC_WindSock;
+        public:
+            std::vector<BCLIBC_Wind> winds;
+            size_t current;
+            double next_range;
+            BCLIBC_V3dT last_vector_cache;
+
+        BCLIBC_WindSock();
+        void push(BCLIBC_Wind wind);
+        BCLIBC_ErrorType update_cache();
+        BCLIBC_V3dT current_vector() const;
+        BCLIBC_V3dT vector_for_range(double next_range_param);
+    };
 
     struct BCLIBC_ShotProps
     {
@@ -221,14 +227,6 @@ namespace bclibc
         double spin_drift(double time) const;
         double drag_by_mach(double mach) const;
     };
-
-    void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr);
-
-    BCLIBC_ErrorType BCLIBC_WindSock_init(BCLIBC_WindSock *ws, size_t length, BCLIBC_Wind *winds);
-    void BCLIBC_WindSock_release(BCLIBC_WindSock *ws);
-    BCLIBC_V3dT BCLIBC_WindSock_currentVector(const BCLIBC_WindSock *wind_sock);
-    BCLIBC_ErrorType BCLIBC_WindSock_updateCache(BCLIBC_WindSock *ws);
-    BCLIBC_V3dT BCLIBC_WindSock_vectorForRange(BCLIBC_WindSock *ws, double next_range_param);
 
     // helpers
     double BCLIBC_getCorrection(double distance, double offset);

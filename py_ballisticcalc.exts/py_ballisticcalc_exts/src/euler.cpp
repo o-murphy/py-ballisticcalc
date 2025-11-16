@@ -86,7 +86,7 @@ namespace bclibc
         gravity_vector.z = 0.0;
 
         // Initialize wind vector
-        wind_vector = BCLIBC_WindSock_currentVector(&eng->shot.wind_sock);
+        wind_vector = eng->shot.wind_sock.current_vector();
 
         // Initialize velocity and position vectors
         velocity = eng->shot.muzzle_velocity;
@@ -121,7 +121,7 @@ namespace bclibc
             // Update wind reading at current point in trajectory
             if (range_vector.x >= eng->shot.wind_sock.next_range)
             {
-                wind_vector = BCLIBC_WindSock_vectorForRange(&eng->shot.wind_sock, range_vector.x);
+                wind_vector = eng->shot.wind_sock.vector_for_range(range_vector.x);
             }
 
             // Update air density and mach at current altitude

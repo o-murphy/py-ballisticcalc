@@ -27,7 +27,7 @@ cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points) except+
 cdef BCLIBC_Wind BCLIBC_Wind_from_pyobject(object w)
 cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj)
 # Function to create and initialize a BCLIBC_WindSock
-cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list)
+cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list) except+
 
 # Helper functions to create unit objects
 cdef object feet_from_c(double val)

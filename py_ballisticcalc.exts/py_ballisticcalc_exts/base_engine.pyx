@@ -120,7 +120,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         """Frees any allocated resources."""
-        self._this.release_trajectory()
+        pass
 
     @property
     def integration_step_count(self) -> int:
@@ -151,13 +151,10 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_MaxRangeResult res = {}
-        try:
-            res = self._find_max_range(
-                angle_bracket_deg[0], angle_bracket_deg[1]
-            )
-            return feet_from_c(res.max_range_ft), rad_from_c(res.angle_at_max_rad)
-        finally:
-            self._release_trajectory()
+        res = self._find_max_range(
+            angle_bracket_deg[0], angle_bracket_deg[1]
+        )
+        return feet_from_c(res.max_range_ft), rad_from_c(res.angle_at_max_rad)
 
     def find_zero_angle(self, object shot_info, object distance, bint lofted = False):
         """
@@ -174,11 +171,8 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef double zero_angle
-        try:
-            zero_angle = self._find_zero_angle(distance._feet, lofted)
-            return rad_from_c(zero_angle)
-        finally:
-            self._release_trajectory()
+        zero_angle = self._find_zero_angle(distance._feet, lofted)
+        return rad_from_c(zero_angle)
 
     def find_apex(self, object shot_info) -> TrajectoryData:
         """
@@ -194,17 +188,15 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData result = BCLIBC_BaseTrajData()
         cdef object props
-        try:
-            result = self._find_apex()
-            props = ShotProps.from_shot(shot_info)
-            return TrajectoryData.from_props(
-                props,
-                result.time,
-                v3d_to_vector(&result.position),
-                v3d_to_vector(&result.velocity),
-                result.mach)
-        finally:
-            self._release_trajectory()
+
+        result = self._find_apex()
+        props = ShotProps.from_shot(shot_info)
+        return TrajectoryData.from_props(
+            props,
+            result.time,
+            v3d_to_vector(&result.position),
+            v3d_to_vector(&result.velocity),
+            result.mach)
 
     def zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -231,30 +223,26 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_ZeroFindingError zero_error = {}
             const BCLIBC_ErrorFrame *err
 
-        try:
-            status = self._this.zero_angle_with_fallback(
-                distance._feet,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                &result,
-                &range_error,
-                &zero_error,
-            )
+        status = self._this.zero_angle_with_fallback(
+            distance._feet,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            &result,
+            &range_error,
+            &zero_error,
+        )
 
-            if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
-                return rad_from_c(result)
+        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+            return rad_from_c(result)
 
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+        err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
 
-            if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_INIT_ZERO:
-                self._raise_on_init_zero_error(err, &range_error)
-            if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_FIND_ZERO_ANGLE:
-                self._raise_on_init_zero_error(err, &range_error)
-                self._raise_on_zero_finding_error(err, &zero_error)
-            self._raise_solver_runtime_error(err)
-
-        finally:
-            self._release_trajectory()
+        if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_INIT_ZERO:
+            self._raise_on_init_zero_error(err, &range_error)
+        if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_FIND_ZERO_ANGLE:
+            self._raise_on_init_zero_error(err, &range_error)
+            self._raise_on_zero_finding_error(err, &zero_error)
+        self._raise_solver_runtime_error(err)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,
@@ -298,23 +286,19 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
 
-        try:
-            status = self._this.integrate_filtered(
-                range_limit_ft,
-                range_step_ft,
-                time_step,
-                <BCLIBC_TrajFlag>filter_flags,
-                &records,
-                &trajectory._this,
-                &reason,
-            )
+        status = self._this.integrate_filtered(
+            range_limit_ft,
+            range_step_ft,
+            time_step,
+            <BCLIBC_TrajFlag>filter_flags,
+            &records,
+            &trajectory._this,
+            &reason,
+        )
 
-            if status == BCLIBC_StatusCode.BCLIBC_STATUS_ERROR:
-                err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-                self._raise_solver_runtime_error(err)
-        finally:
-            # Always release C resources
-            self._release_trajectory()
+        if status == BCLIBC_StatusCode.BCLIBC_STATUS_ERROR:
+            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+            self._raise_solver_runtime_error(err)
 
         # Extract termination_reason from the result
         termination_reason = TERMINATION_REASON_MAP.get(reason)
@@ -367,12 +351,6 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
         self._raise_solver_runtime_error(err)
 
-    cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
-        """
-        Releases the resources held by the trajectory.
-        """
-        self._this.release_trajectory()
-
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
         object shot_info
@@ -386,10 +364,6 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             BCLIBC_ShotProps*: Pointer to the initialized shot properties.
         """
-
-        # --- 🛑 CRITICAL FIX: FREE OLD RESOURCES FIRST ---
-        self._release_trajectory()
-        # ---------------------------------------------------
 
         # hack to reload config if it was changed explicit on existed instance
         self._this.config = BCLIBC_Config_from_pyobject(self._config)
@@ -410,35 +384,29 @@ cdef class CythonizedBaseIntegrationEngine:
             muzzle_velocity_fps
         )
 
-        try:
-            self._this.shot = BCLIBC_ShotProps(
-                shot_info.ammo.dm.BC,
-                shot_info.look_angle._rad,
-                shot_info.weapon.twist._inch,
-                shot_info.ammo.dm.length._inch,
-                shot_info.ammo.dm.diameter._inch,
-                shot_info.ammo.dm.weight._grain,
-                shot_info.barrel_elevation._rad,
-                shot_info.barrel_azimuth._rad,
-                shot_info.weapon.sight_height._feet,
-                cos(shot_info.cant_angle._rad),
-                sin(shot_info.cant_angle._rad),
-                shot_info.atmo.altitude._feet,
-                self.get_calc_step(),
-                muzzle_velocity_fps,
-                0.0,
-                BCLIBC_Curve_from_pylist(self._table_data),
-                BCLIBC_MachList_from_pylist(self._table_data),
-                BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
-                BCLIBC_Coriolis_from_pyobject(coriolis_obj),
-                BCLIBC_WindSock_from_pylist(shot_info.winds),
-                <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
-            )
-
-        except Exception:
-            # Ensure we free any partially allocated arrays inside _shot_s
-            self._release_trajectory()
-            raise
+        self._this.shot = BCLIBC_ShotProps(
+            shot_info.ammo.dm.BC,
+            shot_info.look_angle._rad,
+            shot_info.weapon.twist._inch,
+            shot_info.ammo.dm.length._inch,
+            shot_info.ammo.dm.diameter._inch,
+            shot_info.ammo.dm.weight._grain,
+            shot_info.barrel_elevation._rad,
+            shot_info.barrel_azimuth._rad,
+            shot_info.weapon.sight_height._feet,
+            cos(shot_info.cant_angle._rad),
+            sin(shot_info.cant_angle._rad),
+            shot_info.atmo.altitude._feet,
+            self.get_calc_step(),
+            muzzle_velocity_fps,
+            0.0,
+            BCLIBC_Curve_from_pylist(self._table_data),
+            BCLIBC_MachList_from_pylist(self._table_data),
+            BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
+            BCLIBC_Coriolis_from_pyobject(coriolis_obj),
+            BCLIBC_WindSock_from_pylist(shot_info.winds),
+            <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
+        )
 
         return &self._this.shot
 

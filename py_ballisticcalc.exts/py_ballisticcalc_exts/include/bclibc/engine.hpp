@@ -107,7 +107,6 @@ namespace bclibc
         BCLIBC_ErrorStack err_stack;
 
     public:
-        void release_trajectory();
 
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,

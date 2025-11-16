@@ -140,18 +140,17 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double MAX_DISTANCE_FEET
         ) except+
 
-    ctypedef struct BCLIBC_WindSock:
-        BCLIBC_Wind *winds
+    cdef cppclass BCLIBC_WindSock:
+        vector[BCLIBC_Wind] *winds
         int current
-        int length
         double next_range
         BCLIBC_V3dT last_vector_cache
-
-    BCLIBC_ErrorType BCLIBC_WindSock_init(BCLIBC_WindSock *ws, size_t length, BCLIBC_Wind *winds) noexcept nogil
-    void BCLIBC_WindSock_release(BCLIBC_WindSock *ws) noexcept nogil
-    BCLIBC_V3dT BCLIBC_WindSock_currentVector(BCLIBC_WindSock *wind_sock) noexcept nogil
-    BCLIBC_ErrorType BCLIBC_WindSock_updateCache(BCLIBC_WindSock *ws) noexcept nogil
-    BCLIBC_V3dT BCLIBC_WindSock_vectorForRange(BCLIBC_WindSock *ws, double next_range_param) noexcept nogil
+        
+        BCLIBC_WindSock() except+
+        void push(BCLIBC_Wind wind)
+        BCLIBC_ErrorType update_cache()
+        BCLIBC_V3dT current_vector() const
+        BCLIBC_V3dT vector_for_range(double next_range_param)
 
     ctypedef enum BCLIBC_TrajFlag:
         BCLIBC_TRAJ_FLAG_NONE = 0,
@@ -215,8 +214,6 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_ErrorType update_stability_coefficient() noexcept nogil
         double spin_drift(double time) const
         double drag_by_mach(double mach) const
-
-    void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr) noexcept nogil
 
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil

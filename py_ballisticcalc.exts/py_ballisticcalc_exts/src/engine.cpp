@@ -36,11 +36,6 @@ BCLIBC_Engine.zero_angle
 
 namespace bclibc
 {
-    void BCLIBC_Engine::release_trajectory()
-    {
-        BCLIBC_ShotProps_release(&this->shot);
-    };
-
     BCLIBC_StatusCode BCLIBC_Engine::integrate_filtered(
         double range_limit_ft,
         double range_step_ft,

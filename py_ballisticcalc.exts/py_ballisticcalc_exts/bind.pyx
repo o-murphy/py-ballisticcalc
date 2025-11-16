@@ -12,7 +12,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Wind,
     BCLIBC_WindSock,
     BCLIBC_Coriolis,
-    BCLIBC_WindSock_init,
+    BCLIBC_ErrorType,
 )
 from py_ballisticcalc.unit import (
     Angular,
@@ -100,32 +100,41 @@ cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
     return BCLIBC_Coriolis()
 
 
-cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
+cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list) except+:
     """
-    Creates and initializes a BCLIBC_WindSock structure.
-    Processes the Python list, then delegates initialization to C.
+    Creates and initializes a BCLIBC_WindSock structure 
+    by iterating over the Python list and calling push() for each element.
+    
+    This function uses the BCLIBC_WindSock constructor and the push() method to add 
+    elements to the internal std::vector, consistent with the C++ design.
     """
     cdef size_t length = <size_t> len(winds_py_list)
-    cdef BCLIBC_WindSock ws = {}
-    memset(&ws, 0, sizeof(ws))  # CRITICAL: use memset to ensure initialized with zeros
-    # Memory allocation for the BCLIBC_Wind array (remains in Cython)
-    cdef BCLIBC_Wind * winds_array = <BCLIBC_Wind *> calloc(<size_t> length, sizeof(BCLIBC_Wind))
-    if <void *> winds_array is NULL:
-        raise MemoryError("Failed to allocate internal BCLIBC_Wind array.")
-
-    # Copying data from Python objects to C structures (must remain in Cython)
-    cdef int i
+    
+    # 1. Creating the C++ BCLIBC_WindSock object (constructor is called, handled by except+)
+    cdef BCLIBC_WindSock ws = BCLIBC_WindSock()
+    
+    # 2. Copying data from Python objects
+    cdef size_t i 
+    cdef BCLIBC_Wind c_wind_segment # Temporary variable for storing the converted object
+    
     try:
-        for i in range(<int>length):
-            # BCLIBC_Wind_from_pyobject interacts with a Python object, so it remains here
-            winds_array[i] = BCLIBC_Wind_from_pyobject(winds_py_list[i])
+        for i in range(length): 
+            # BCLIBC_Wind_from_pyobject converts the Python object to a C structure
+            # This call can raise Python exceptions
+            c_wind_segment = BCLIBC_Wind_from_pyobject(winds_py_list[i])
+            
+            # Add the segment to the internal C++ vector via the push method (handled by outer except+)
+            ws.push(c_wind_segment) 
+            
     except Exception:
-        # Error handling
-        free(<void *> winds_array)
-        raise RuntimeError("Invalid wind entry in winds list")
+        # Error handling for Python-level errors (like attribute/type conversion failure)
+        raise RuntimeError("Invalid wind entry in winds list during conversion")
 
-    # 4. Structure initialization (calling the C function)
-    BCLIBC_WindSock_init(&ws, length, winds_array)
+    # 3. Update the cache for the first (zero) wind element after filling the vector
+    cdef BCLIBC_ErrorType error_code = ws.update_cache()
+    if error_code != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        # This is a BCLIBC error, not a C++ exception, so no except+ is needed here.
+        raise RuntimeError("BCLIBC_WindSock initialization error during final cache update.")
 
     return ws
 

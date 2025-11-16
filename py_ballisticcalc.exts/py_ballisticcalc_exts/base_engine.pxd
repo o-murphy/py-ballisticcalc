@@ -73,8 +73,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
         BCLIBC_ErrorStack err_stack
 
-        void release_trajectory() noexcept nogil
-
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,
             double range_step_ft,
@@ -146,14 +144,6 @@ cdef class CythonizedBaseIntegrationEngine:
         BCLIBC_Engine _this
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
-
-    # Note: Properties are Python-level constructs and are not typically declared in .pxd files
-    # unless you are exposing the underlying cdef attribute directly.
-    # For _table_data, the declaration above (cdef list _table_data) makes it accessible.
-
-    # Python 'def' methods are not exposed in the C interface defined by a .pxd.
-    # Only 'cdef' or 'cpdef' methods are declared here.
-    cdef void _release_trajectory(CythonizedBaseIntegrationEngine self)
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,

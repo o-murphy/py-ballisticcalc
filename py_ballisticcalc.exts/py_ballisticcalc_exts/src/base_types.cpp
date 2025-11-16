@@ -132,23 +132,7 @@ namespace bclibc
         };
     };
 
-    BCLIBC_ShotProps::~BCLIBC_ShotProps() {
-        // BCLIBC_ShotProps_release(this);  // FIXME: require copy method!
-    };
-
-    /**
-     * @brief Releases all dynamically allocated resources within a BCLIBC_ShotProps structure.
-     *
-     * Calls release functions for the internal BCLIBC_Curve, BCLIBC_MachList, and BCLIBC_WindSock components.
-     *
-     * @param shot_props_ptr Pointer to the BCLIBC_ShotProps structure to release.
-     */
-    void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr)
-    {
-        if (shot_props_ptr == nullptr)
-            return;
-        BCLIBC_WindSock_release(&shot_props_ptr->wind_sock);
-    }
+    BCLIBC_ShotProps::~BCLIBC_ShotProps() {};
 
     /**
      * @brief Litz spin-drift approximation
@@ -475,61 +459,24 @@ namespace bclibc
     }
 
     /**
-     * @brief Initializes a BCLIBC_WindSock structure.
+     * @brief Default constructor for BCLIBC_WindSock.
      *
-     * Sets up the internal state, including the array of wind segments, the current
-     * segment index, the range for the next segment, and initializes the wind vector cache.
-     * Note: The `winds` array memory is expected to be managed externally or by a
-     * higher-level function if it was dynamically allocated before calling this.
-     *
-     * @param ws Pointer to the BCLIBC_WindSock structure to initialize.
-     * @param length The number of wind segments in the `winds` array.
-     * @param winds Pointer to the array of BCLIBC_Wind structures.
-     * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input.
+     * Initializes state variables to their defaults and calculates the initial cache.
      */
-    BCLIBC_ErrorType BCLIBC_WindSock_init(BCLIBC_WindSock *ws, size_t length, BCLIBC_Wind *winds)
+    BCLIBC_WindSock::BCLIBC_WindSock()
+        // Використовуємо список ініціалізації для гарантованого встановлення значень
+        : current(0),
+          next_range(BCLIBC_cMaxWindDistanceFeet),
+          last_vector_cache({0.0, 0.0, 0.0})
     {
-        if (ws == nullptr)
-        {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
-        }
-
-        ws->length = (int)length;
-        ws->winds = winds;
-
-        ws->current = 0;
-        ws->next_range = BCLIBC_cMaxWindDistanceFeet;
-
-        ws->last_vector_cache.x = 0.0;
-        ws->last_vector_cache.y = 0.0;
-        ws->last_vector_cache.z = 0.0;
-
-        return BCLIBC_WindSock_updateCache(ws);
+        // C++ конструктори не можуть повертати значення.
+        // update_cache() викликається тут для початкового стану (який буде нульовим, оскільки winds порожній).
+        update_cache();
     }
 
-    /**
-     * @brief Releases memory associated with a BCLIBC_WindSock structure and resets state.
-     *
-     * Frees the dynamically allocated `winds` array and calls `BCLIBC_WindSock_init`
-     * to reset the internal state to empty/safe values.
-     *
-     * @param ws Pointer to the BCLIBC_WindSock structure to release.
-     */
-    void BCLIBC_WindSock_release(BCLIBC_WindSock *ws)
+    void BCLIBC_WindSock::push(BCLIBC_Wind wind)
     {
-        if (ws == nullptr)
-        {
-            return;
-        }
-
-        if (ws->winds != nullptr)
-        {
-            free(ws->winds);
-            ws->winds = nullptr;
-        }
-        // Initialize to empty state after freeing
-        BCLIBC_WindSock_init(ws, 0, nullptr);
+        this->winds.push_back(wind);
     }
 
     /**
@@ -537,16 +484,11 @@ namespace bclibc
      *
      * The vector is pre-calculated and stored in the cache.
      *
-     * @param wind_sock Pointer to the BCLIBC_WindSock structure.
      * @return The current wind velocity vector (BCLIBC_V3dT). Returns a zero vector if the pointer is NULL.
      */
-    BCLIBC_V3dT BCLIBC_WindSock_currentVector(const BCLIBC_WindSock *wind_sock)
+    BCLIBC_V3dT BCLIBC_WindSock::current_vector() const
     {
-        if (wind_sock == nullptr)
-        {
-            return BCLIBC_V3dT{0.0, 0.0, 0.0};
-        }
-        return wind_sock->last_vector_cache;
+        return this->last_vector_cache;
     }
 
     /**
@@ -556,30 +498,22 @@ namespace bclibc
      * and updates `ws->last_vector_cache` and `ws->next_range`.
      * If `ws->current` is out of bounds, the cache is set to a zero vector and the next range to `BCLIBC_cMaxWindDistanceFeet`.
      *
-     * @param ws Pointer to the BCLIBC_WindSock structure.
      * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input.
      */
-    BCLIBC_ErrorType BCLIBC_WindSock_updateCache(BCLIBC_WindSock *ws)
+    BCLIBC_ErrorType BCLIBC_WindSock::update_cache()
     {
-        if (ws == nullptr)
+        if (this->current < this->winds.size())
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
-        }
-
-        if (ws->current < ws->length)
-        {
-            BCLIBC_Wind cur_wind = ws->winds[ws->current];
-            ws->last_vector_cache = BCLIBC_WindToV3dT(&cur_wind);
-            ws->next_range = cur_wind.until_distance;
+            const BCLIBC_Wind &cur_wind = this->winds[this->current];
+            this->last_vector_cache = BCLIBC_WindToV3dT(&cur_wind);
+            this->next_range = cur_wind.until_distance;
         }
         else
         {
-            // No more wind segments; set to zero wind
-            ws->last_vector_cache.x = 0.0;
-            ws->last_vector_cache.y = 0.0;
-            ws->last_vector_cache.z = 0.0;
-            ws->next_range = BCLIBC_cMaxWindDistanceFeet;
+            this->last_vector_cache.x = 0.0;
+            this->last_vector_cache.y = 0.0;
+            this->last_vector_cache.z = 0.0;
+            this->next_range = BCLIBC_cMaxWindDistanceFeet;
         }
         return BCLIBC_E_NO_ERROR;
     }
@@ -596,30 +530,25 @@ namespace bclibc
      * @param next_range_param The current range (distance from muzzle) of the projectile.
      * @return The wind velocity vector (BCLIBC_V3dT) for the current or next applicable segment. Returns a zero vector if the pointer is NULL or an update fails.
      */
-    BCLIBC_V3dT BCLIBC_WindSock_vectorForRange(BCLIBC_WindSock *ws, double next_range_param)
+    BCLIBC_V3dT BCLIBC_WindSock::vector_for_range(double next_range_param)
     {
         BCLIBC_V3dT zero_vector = {0.0, 0.0, 0.0};
 
-        if (ws == nullptr)
+        if (next_range_param >= this->next_range)
         {
-            return zero_vector;
-        }
+            this->current += 1;
 
-        if (next_range_param >= ws->next_range)
-        {
-            ws->current += 1;
-
-            if (ws->current >= ws->length)
+            if (this->current >= this->winds.size())
             {
                 // Reached the end of the wind segments
-                ws->last_vector_cache = zero_vector;
-                ws->next_range = BCLIBC_cMaxWindDistanceFeet;
+                this->last_vector_cache = zero_vector;
+                this->next_range = BCLIBC_cMaxWindDistanceFeet;
             }
             else
             {
                 // Move to the next wind segment
                 // If cache update fails, return zero vector
-                if (BCLIBC_WindSock_updateCache(ws) != BCLIBC_E_NO_ERROR)
+                if (this->update_cache() != BCLIBC_E_NO_ERROR)
                 {
                     BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                     return zero_vector;
@@ -627,7 +556,7 @@ namespace bclibc
             }
         }
 
-        return ws->last_vector_cache;
+        return this->last_vector_cache;
     }
 
     // helpers
