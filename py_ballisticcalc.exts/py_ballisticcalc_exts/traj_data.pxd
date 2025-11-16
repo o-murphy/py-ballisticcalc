@@ -96,30 +96,9 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
     cdef enum class BCLIBC_TrajectoryData_InterpKey:
         pass
-    ctypedef struct BCLIBC_FlaggedData:
-        pass
 
     # --- C++ Class BCLIBC_TrajectoryData ---
     cdef cppclass BCLIBC_TrajectoryData:
-        BCLIBC_TrajectoryData() except +
-        BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
-            double time,
-            const BCLIBC_V3dT *range_vector,
-            const BCLIBC_V3dT *velocity_vector,
-            double mach,
-            BCLIBC_TrajFlag flag
-        ) except +
-        BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
-            const BCLIBC_BaseTrajData *data,
-            BCLIBC_TrajFlag flag
-        ) except +
-        BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
-            const BCLIBC_FlaggedData *data
-        ) except +
-
         double time
         double distance_ft
         double velocity_fps

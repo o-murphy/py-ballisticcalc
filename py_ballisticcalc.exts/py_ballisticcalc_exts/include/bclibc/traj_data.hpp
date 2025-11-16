@@ -370,11 +370,11 @@ namespace bclibc
         static int is_close(double a, double b, double epsilon);
     };
 
-    typedef struct
+    struct BCLIBC_FlaggedData
     {
         BCLIBC_BaseTrajData data;
         BCLIBC_TrajFlag flag;
-    } BCLIBC_FlaggedData;
+    };
 
     struct BCLIBC_TrajectoryData
     {
