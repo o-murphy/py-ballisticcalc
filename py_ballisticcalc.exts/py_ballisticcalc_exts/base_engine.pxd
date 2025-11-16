@@ -209,3 +209,7 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         const BCLIBC_ErrorFrame *err
     )
+
+
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records)
+cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)

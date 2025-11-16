@@ -9,6 +9,7 @@ Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
 from libc.math cimport sin, cos
 from libc.string cimport memset
 from libcpp.vector cimport vector
+from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport (
     BaseTrajSeqT,
@@ -44,7 +45,6 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorStack_toString,
 )
 from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
-from py_ballisticcalc_exts.traj_filter cimport get_records
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis
@@ -322,14 +322,14 @@ cdef class CythonizedBaseIntegrationEngine:
         termination_reason = TERMINATION_REASON_MAP.get(reason)
 
         if termination_reason is not None:
-            termination_reason = RangeError(termination_reason, get_records(&records))
+            termination_reason = RangeError(termination_reason, TrajectoryData_list_from_cpp(&records))
 
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
         return HitResult(
             props,
-            get_records(&records),
+            TrajectoryData_list_from_cpp(&records),
             trajectory if dense_output else None,
             filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
@@ -710,3 +710,37 @@ cdef class CythonizedBaseIntegrationEngine:
         trace_str = "Trace:\n" + "\n".join(lines)
 
         raise exception_type(trace_str)
+
+
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records):
+    cdef list py_list = []
+    cdef vector[BCLIBC_TrajectoryData].const_iterator it = records.begin()
+    cdef vector[BCLIBC_TrajectoryData].const_iterator end = records.end()
+
+    while it != end:
+        py_list.append(TrajectoryData_from_cpp(deref(it)))
+        inc(it)
+
+    return py_list
+
+
+cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):
+    cdef object pydata = TrajectoryData(
+        time=cpp_data.time,
+        distance=TrajectoryData._new_feet(cpp_data.distance_ft),
+        velocity=TrajectoryData._new_fps(cpp_data.velocity_fps),
+        mach=cpp_data.mach,
+        height=TrajectoryData._new_feet(cpp_data.height_ft),
+        slant_height=TrajectoryData._new_feet(cpp_data.slant_height_ft),
+        drop_angle=TrajectoryData._new_rad(cpp_data.drop_angle_rad),
+        windage=TrajectoryData._new_feet(cpp_data.windage_ft),
+        windage_angle=TrajectoryData._new_rad(cpp_data.windage_angle_rad),
+        slant_distance=TrajectoryData._new_feet(cpp_data.slant_distance_ft),
+        angle=TrajectoryData._new_rad(cpp_data.angle_rad),
+        density_ratio=cpp_data.density_ratio,
+        drag=cpp_data.drag,
+        energy=TrajectoryData._new_ft_lb(cpp_data.energy_ft_lb),
+        ogw=TrajectoryData._new_lb(cpp_data.ogw_lb),
+        flag=cpp_data.flag
+    )
+    return pydata

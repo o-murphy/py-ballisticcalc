@@ -94,9 +94,8 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             BCLIBC_BaseTrajData *out
         ) const
 
-    ctypedef enum BCLIBC_TrajectoryData_InterpKey:
+    cdef enum class BCLIBC_TrajectoryData_InterpKey:
         pass
-
     ctypedef struct BCLIBC_FlaggedData:
         pass
 

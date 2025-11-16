@@ -111,9 +111,8 @@ _ERR_STACK_DEPS = set(["log", "error_stack"])
 _BCLIBC_DEPS = set([*_ERR_STACK_DEPS, "v3d", "types"])
 _INTERP_DEPS = set(["interp"])
 _TRAJ_DATA_DEPS = set([*_BCLIBC_DEPS, *_INTERP_DEPS, "traj_data"])
-_FILTER_DEPS = set([*_TRAJ_DATA_DEPS, "traj_filter"])
 _BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
-_ENGINE_DEPS = set([*_BIND_DEPS, *_FILTER_DEPS, "engine"])
+_ENGINE_DEPS = set([*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"])
 _RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
 _EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
 _TEST_DEPS = set([*_ENGINE_DEPS, *_RK4_DEPS, *_EULER_DEPS])
@@ -125,7 +124,6 @@ C_EXTENSION_DEPS = {
 CPP_EXTENSION_DEPS = {
     "bind": _BIND_DEPS,
     "traj_data": _TRAJ_DATA_DEPS,
-    "traj_filter": _FILTER_DEPS,
     "base_engine": _ENGINE_DEPS,
     "rk4_engine": _RK4_DEPS,
     "euler_engine": _EULER_DEPS,
