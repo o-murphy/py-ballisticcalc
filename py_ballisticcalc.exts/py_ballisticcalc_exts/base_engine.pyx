@@ -193,8 +193,7 @@ cdef class CythonizedBaseIntegrationEngine:
             TrajectoryData: The trajectory data at the apex.
         """
         self._init_trajectory(shot_info)
-        cdef BCLIBC_BaseTrajData result = BCLIBC_BaseTrajData()  # FIXME: in future int can be BCLIBC_TrajectoryData
-        memset(&result, 0, sizeof(result))  # CRITICAL: use memset to ensure initialized with zeros
+        cdef BCLIBC_BaseTrajData result = BCLIBC_BaseTrajData()
         cdef object props
         try:
             result = self._find_apex()

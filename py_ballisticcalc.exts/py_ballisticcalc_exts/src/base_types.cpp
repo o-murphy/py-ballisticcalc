@@ -91,13 +91,13 @@ namespace bclibc
      */
     void BCLIBC_Curve_release(BCLIBC_Curve *curve_ptr)
     {
-        if (curve_ptr == NULL)
+        if (curve_ptr == nullptr)
             return;
 
-        if (curve_ptr->points != NULL)
+        if (curve_ptr->points != nullptr)
         {
             free(curve_ptr->points);
-            curve_ptr->points = NULL;
+            curve_ptr->points = nullptr;
         }
 
         curve_ptr->length = 0;
@@ -113,13 +113,13 @@ namespace bclibc
      */
     void BCLIBC_MachList_release(BCLIBC_MachList *mach_list_ptr)
     {
-        if (mach_list_ptr == NULL)
+        if (mach_list_ptr == nullptr)
             return;
 
-        if (mach_list_ptr->array != NULL)
+        if (mach_list_ptr->array != nullptr)
         {
             free(mach_list_ptr->array);
-            mach_list_ptr->array = NULL;
+            mach_list_ptr->array = nullptr;
         }
 
         mach_list_ptr->length = 0;
@@ -177,7 +177,7 @@ namespace bclibc
     };
 
     BCLIBC_ShotProps::~BCLIBC_ShotProps() {
-        // BCLIBC_ShotProps_release(this);
+        // BCLIBC_ShotProps_release(this);  // FIXME: require copy method!
     };
 
     /**
@@ -189,9 +189,8 @@ namespace bclibc
      */
     void BCLIBC_ShotProps_release(BCLIBC_ShotProps *shot_props_ptr)
     {
-        if (shot_props_ptr == NULL)
+        if (shot_props_ptr == nullptr)
             return;
-
         BCLIBC_Curve_release(&shot_props_ptr->curve);
         BCLIBC_MachList_release(&shot_props_ptr->mach_list);
         BCLIBC_WindSock_release(&shot_props_ptr->wind_sock);
@@ -259,7 +258,7 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_ShotProps_updateStabilityCoefficient(BCLIBC_ShotProps *shot_props_ptr)
     {
-        if (shot_props_ptr == NULL)
+        if (shot_props_ptr == nullptr)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
             return BCLIBC_E_INPUT_ERROR;
@@ -541,7 +540,7 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_WindSock_init(BCLIBC_WindSock *ws, size_t length, BCLIBC_Wind *winds)
     {
-        if (ws == NULL)
+        if (ws == nullptr)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
             return BCLIBC_E_INPUT_ERROR;
@@ -570,18 +569,18 @@ namespace bclibc
      */
     void BCLIBC_WindSock_release(BCLIBC_WindSock *ws)
     {
-        if (ws == NULL)
+        if (ws == nullptr)
         {
             return;
         }
 
-        if (ws->winds != NULL)
+        if (ws->winds != nullptr)
         {
             free(ws->winds);
-            ws->winds = NULL;
+            ws->winds = nullptr;
         }
         // Initialize to empty state after freeing
-        BCLIBC_WindSock_init(ws, 0, NULL);
+        BCLIBC_WindSock_init(ws, 0, nullptr);
     }
 
     /**
@@ -594,7 +593,7 @@ namespace bclibc
      */
     BCLIBC_V3dT BCLIBC_WindSock_currentVector(const BCLIBC_WindSock *wind_sock)
     {
-        if (wind_sock == NULL)
+        if (wind_sock == nullptr)
         {
             return BCLIBC_V3dT{0.0, 0.0, 0.0};
         }
@@ -613,7 +612,7 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_WindSock_updateCache(BCLIBC_WindSock *ws)
     {
-        if (ws == NULL)
+        if (ws == nullptr)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
             return BCLIBC_E_INPUT_ERROR;
@@ -652,7 +651,7 @@ namespace bclibc
     {
         BCLIBC_V3dT zero_vector = {0.0, 0.0, 0.0};
 
-        if (ws == NULL)
+        if (ws == nullptr)
         {
             return zero_vector;
         }

@@ -223,7 +223,7 @@ namespace bclibc
 
     BCLIBC_BaseTrajSeq::BCLIBC_BaseTrajSeq()
     {
-        this->buffer = NULL;
+        this->buffer = nullptr;
         this->length = 0;
         this->capacity = 0;
     };
@@ -237,7 +237,7 @@ namespace bclibc
     BCLIBC_BaseTrajSeq::~BCLIBC_BaseTrajSeq()
     {
         free(this->buffer); // safe even if buffer is NULL
-        this->buffer = NULL;
+        this->buffer = nullptr;
         this->length = 0;
         this->capacity = 0;
     };

@@ -266,7 +266,7 @@ namespace bclibc
             if (trajectory.get_length() >= 3)
             {
                 last_ptr = trajectory.get_raw_item(-1);
-                if (last_ptr != NULL && last_ptr->time != 0.0)
+                if (last_ptr != nullptr && last_ptr->time != 0.0)
                 {
                     BCLIBC_ErrorType err = trajectory.get_at(BCLIBC_BaseTraj_InterpKey::POS_X, target_x_ft, -1, &hit);
                     if (err != BCLIBC_E_NO_ERROR)
@@ -668,7 +668,7 @@ namespace bclibc
                 for (i = n - 1; i > 0; i--)
                 {
                     prev_ptr = trajectory.get_raw_item(i - 1);
-                    if (prev_ptr == NULL)
+                    if (prev_ptr == nullptr)
                     {
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE,
                                         "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
@@ -676,7 +676,7 @@ namespace bclibc
                         break; // assume INDEX_ERROR
                     }
                     cur_ptr = trajectory.get_raw_item(i);
-                    if (cur_ptr == NULL)
+                    if (cur_ptr == nullptr)
                     {
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_E_INDEX_ERROR, BCLIBC_SRC_RANGE_FOR_ANGLE,
                                         "Index error in BCLIBC_BaseTrajSeq.get_raw_item");

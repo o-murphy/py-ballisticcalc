@@ -44,7 +44,7 @@ namespace bclibc
             return ml; // error
 
         ml.array = (double *)malloc(len * sizeof(double));
-        if (ml.array == NULL)
+        if (ml.array == nullptr)
             return ml;
 
         ml.length = (size_t)len;
@@ -52,20 +52,20 @@ namespace bclibc
         for (Py_ssize_t i = 0; i < len; i++)
         {
             PyObject *item = PyList_GetItem(pylist, i); // borrowed ref
-            if (item == NULL)
+            if (item == nullptr)
             {
                 free(ml.array);
-                ml.array = NULL;
+                ml.array = nullptr;
                 ml.length = 0;
                 return ml;
             }
 
             // Get .Mach attribute (assumes it exists and is float convertible)
             PyObject *mach_obj = PyObject_GetAttrString(item, "Mach");
-            if (mach_obj == NULL)
+            if (mach_obj == nullptr)
             {
                 free(ml.array);
-                ml.array = NULL;
+                ml.array = nullptr;
                 ml.length = 0;
                 return ml;
             }
@@ -76,7 +76,7 @@ namespace bclibc
             if (PyErr_Occurred())
             {
                 free(ml.array);
-                ml.array = NULL;
+                ml.array = nullptr;
                 ml.length = 0;
                 return ml;
             }
@@ -89,7 +89,7 @@ namespace bclibc
 
     BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points)
     {
-        BCLIBC_Curve curve = {NULL, 0};
+        BCLIBC_Curve curve = {nullptr, 0};
         Py_ssize_t n = PyList_Size(data_points);
         if (n < 2) // need at least 2 points
             return curve;
@@ -97,7 +97,7 @@ namespace bclibc
         // Allocate arrays for knots and values
         double *x = (double *)malloc((size_t)n * sizeof(double));
         double *y = (double *)malloc((size_t)n * sizeof(double));
-        if (x == NULL || y == NULL)
+        if (x == nullptr || y == nullptr)
         {
             if (x)
                 free(x);
@@ -110,7 +110,7 @@ namespace bclibc
         for (Py_ssize_t i = 0; i < n; ++i)
         {
             PyObject *item = PyList_GetItem(data_points, i); // borrowed
-            if (item == NULL)
+            if (item == nullptr)
             {
                 free(x);
                 free(y);
@@ -118,7 +118,7 @@ namespace bclibc
             }
             PyObject *xobj = PyObject_GetAttrString(item, "Mach");
             PyObject *yobj = PyObject_GetAttrString(item, "CD");
-            if (xobj == NULL || yobj == NULL)
+            if (xobj == nullptr || yobj == nullptr)
             {
                 Py_XDECREF(xobj);
                 Py_XDECREF(yobj);
@@ -152,7 +152,7 @@ namespace bclibc
         double *h = (double *)malloc((size_t)nm1 * sizeof(double));
         double *d = (double *)malloc((size_t)nm1 * sizeof(double));
         double *m = (double *)malloc((size_t)n * sizeof(double));
-        if (h == NULL || d == NULL || m == NULL)
+        if (h == nullptr || d == nullptr || m == nullptr)
         {
             if (h)
                 free(h);
@@ -245,28 +245,28 @@ namespace bclibc
 
         // Temporary variables for Python objects during attribute lookup.
         // Initialized to NULL for safety, although the current flow relies on Py_DECREF.
-        PyObject *tmp_vel = NULL;
-        PyObject *tmp_dir = NULL;
-        PyObject *tmp_dist = NULL;
-        PyObject *tmp_max = NULL;
+        PyObject *tmp_vel = nullptr;
+        PyObject *tmp_dir = nullptr;
+        PyObject *tmp_dist = nullptr;
+        PyObject *tmp_max = nullptr;
 
         // Temporary variables for the final attribute values (e.g., _fps, _rad, _feet)
-        PyObject *fps_obj = NULL;
-        PyObject *rad_obj = NULL;
-        PyObject *feet_obj = NULL;
+        PyObject *fps_obj = nullptr;
+        PyObject *rad_obj = nullptr;
+        PyObject *feet_obj = nullptr;
 
         // --- 1. Get w.velocity._fps ---
         // Check if an error occurred in a previous step before proceeding.
-        if (PyErr_Occurred() == NULL)
+        if (PyErr_Occurred() == nullptr)
         {
             // Get the 'velocity' attribute (returns a new reference)
             tmp_vel = PyObject_GetAttrString(w, "velocity");
-            if (tmp_vel != NULL)
+            if (tmp_vel != nullptr)
             {
                 // Get the '_fps' attribute (returns a new reference)
                 fps_obj = PyObject_GetAttrString(tmp_vel, "_fps");
                 Py_DECREF(tmp_vel); // Release the reference to the intermediate 'velocity' object
-                if (fps_obj != NULL)
+                if (fps_obj != nullptr)
                 {
                     // Convert to double. PyFloat_AsDouble checks for errors internally.
                     wind_c.velocity = PyFloat_AsDouble(fps_obj);
@@ -277,14 +277,14 @@ namespace bclibc
         }
 
         // --- 2. Get w.direction_from._rad ---
-        if (PyErr_Occurred() == NULL)
+        if (PyErr_Occurred() == nullptr)
         {
             tmp_dir = PyObject_GetAttrString(w, "direction_from");
-            if (tmp_dir != NULL)
+            if (tmp_dir != nullptr)
             {
                 rad_obj = PyObject_GetAttrString(tmp_dir, "_rad");
                 Py_DECREF(tmp_dir);
-                if (rad_obj != NULL)
+                if (rad_obj != nullptr)
                 {
                     wind_c.direction_from = PyFloat_AsDouble(rad_obj);
                     Py_DECREF(rad_obj);
@@ -293,14 +293,14 @@ namespace bclibc
         }
 
         // --- 3. Get w.until_distance._feet ---
-        if (PyErr_Occurred() == NULL)
+        if (PyErr_Occurred() == nullptr)
         {
             tmp_dist = PyObject_GetAttrString(w, "until_distance");
-            if (tmp_dist != NULL)
+            if (tmp_dist != nullptr)
             {
                 feet_obj = PyObject_GetAttrString(tmp_dist, "_feet");
                 Py_DECREF(tmp_dist);
-                if (feet_obj != NULL)
+                if (feet_obj != nullptr)
                 {
                     wind_c.until_distance = PyFloat_AsDouble(feet_obj);
                     Py_DECREF(feet_obj);
@@ -309,11 +309,11 @@ namespace bclibc
         }
 
         // --- 4. Get w.MAX_DISTANCE_FEET ---
-        if (PyErr_Occurred() == NULL)
+        if (PyErr_Occurred() == nullptr)
         {
             // Get the direct attribute (returns a new reference)
             tmp_max = PyObject_GetAttrString(w, "MAX_DISTANCE_FEET");
-            if (tmp_max != NULL)
+            if (tmp_max != nullptr)
             {
                 wind_c.MAX_DISTANCE_FEET = PyFloat_AsDouble(tmp_max);
                 Py_DECREF(tmp_max);
