@@ -15,7 +15,7 @@ from py_ballisticcalc import (
     Weight,
 )
 
-from py_ballisticcalc_exts.traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data import BaseTrajSeqT
 
 
 pytestmark = pytest.mark.stress

@@ -1,6 +1,6 @@
 import time
 
-from py_ballisticcalc_exts.traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data import BaseTrajSeqT
 
 
 def bench(n=100000):
