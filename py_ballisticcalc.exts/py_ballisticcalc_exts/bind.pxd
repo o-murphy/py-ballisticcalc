@@ -9,7 +9,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_WindSock,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTraj_InterpKey
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTraj_InterpKey
 
 
 cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:

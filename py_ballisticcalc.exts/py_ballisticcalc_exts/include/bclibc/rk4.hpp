@@ -4,7 +4,7 @@
 #include "bclibc/v3d.hpp"
 #include "bclibc/base_types.hpp"
 #include "bclibc/engine.hpp"
-#include "bclibc/traj_seq.hpp"
+#include "bclibc/traj_data.hpp"
 
 #ifdef __cplusplus
 extern "C"

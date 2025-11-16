@@ -7,11 +7,11 @@
 namespace bclibc
 {
 
-    typedef enum
+    enum class BCLIBC_InterpMethod
     {
-        BCLIBC_INTERP_METHOD_PCHIP,
-        BCLIBC_INTERP_METHOD_LINEAR,
-    } BCLIBC_InterpMethod;
+        PCHIP,
+        LINEAR,
+    };
 
     double BCLIBC_hermite(double x, double xk, double xk1, double yk, double yk1, double mk, double mk1);
 

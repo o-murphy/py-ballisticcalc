@@ -10,10 +10,11 @@ from libc.math cimport sin, cos
 from libc.string cimport memset
 from libcpp.vector cimport vector
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_seq cimport (
+from py_ballisticcalc_exts.traj_data cimport (
     BaseTrajSeqT,
     BCLIBC_BaseTrajSeq,
     BCLIBC_BaseTrajData,
+    BCLIBC_TrajectoryData,
 )
 from py_ballisticcalc_exts.base_types cimport (
     # types and methods
@@ -43,7 +44,7 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorStack_toString,
 )
 from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
-from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryData, get_records
+from py_ballisticcalc_exts.traj_filter cimport get_records
 
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.conditions import Coriolis

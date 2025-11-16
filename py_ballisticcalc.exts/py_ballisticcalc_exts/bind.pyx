@@ -20,7 +20,7 @@ from py_ballisticcalc.unit import (
     Unit,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTraj_InterpKey
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTraj_InterpKey
 
 from py_ballisticcalc.vector import Vector
 

@@ -96,7 +96,7 @@ SOURCE_PATHS = {
     "interp": SRC_DIR_PATH / "interp.cpp",
     "types": SRC_DIR_PATH / "base_types.cpp",
     "bind": SRC_DIR_PATH / "py_bind.cpp",
-    "seq": SRC_DIR_PATH / "traj_seq.cpp",
+    "traj_data": SRC_DIR_PATH / "traj_data.cpp",
     "traj_filter": SRC_DIR_PATH / "traj_filter.cpp",
     "engine": SRC_DIR_PATH / "engine.cpp",
     "euler": SRC_DIR_PATH / "euler.cpp",
@@ -107,11 +107,11 @@ SOURCE_PATHS = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
-_INTERP_DEPS = set(["interp"])
 _ERR_STACK_DEPS = set(["log", "error_stack"])
-_BCLIBC_DEPS = set([*_INTERP_DEPS, *_ERR_STACK_DEPS, "v3d", "types"])
-_SEQ_DEPS = set([*_BCLIBC_DEPS, "seq"])
-_FILTER_DEPS = set([*_SEQ_DEPS, "traj_filter"])
+_BCLIBC_DEPS = set([*_ERR_STACK_DEPS, "v3d", "types"])
+_INTERP_DEPS = set(["interp"])
+_TRAJ_DATA_DEPS = set([*_BCLIBC_DEPS, *_INTERP_DEPS, "traj_data"])
+_FILTER_DEPS = set([*_TRAJ_DATA_DEPS, "traj_filter"])
 _BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
 _ENGINE_DEPS = set([*_BIND_DEPS, *_FILTER_DEPS, "engine"])
 _RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
@@ -124,7 +124,7 @@ C_EXTENSION_DEPS = {
 
 CPP_EXTENSION_DEPS = {
     "bind": _BIND_DEPS,
-    "traj_seq": _SEQ_DEPS,
+    "traj_data": _TRAJ_DATA_DEPS,
     "traj_filter": _FILTER_DEPS,
     "base_engine": _ENGINE_DEPS,
     "rk4_engine": _RK4_DEPS,

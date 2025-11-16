@@ -9,10 +9,8 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData, BCLIBC_TrajectoryData
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
-from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryData
-# __all__ definitions belong in .pyx/.py files, not .pxd headers.
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:

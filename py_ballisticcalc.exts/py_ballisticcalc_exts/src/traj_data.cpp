@@ -1,13 +1,13 @@
 #include <cmath>
 #include <cstdlib> // Required for calloc, malloc, free
 #include <cstring> // Required for memcpy
-#include "bclibc/interp.hpp"
-#include "bclibc/traj_seq.hpp"
+#include <stdexcept>
+#include "bclibc/traj_data.hpp"
 
 namespace bclibc
 {
 
-        /**
+    /**
      * @brief Lookup table helper to retrieve a specific scalar value from BCLIBC_BaseTrajData.
      *
      * Used internally by the interpolation function to get the correct 'x' values
@@ -950,5 +950,249 @@ namespace bclibc
     int BCLIBC_BaseTrajSeq::is_close(double a, double b, double epsilon)
     {
         return std::fabs(a - b) < epsilon;
+    };
+
+    // BCLIBC_TrajectoryData::BCLIBC_TrajectoryData() {};
+
+    BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
+        const BCLIBC_ShotProps *props,
+        double time,
+        const BCLIBC_V3dT *range_vector,
+        const BCLIBC_V3dT *velocity_vector,
+        double mach_arg,
+        BCLIBC_TrajFlag flag)
+        : time(time), flag(flag)
+    {
+        // BCLIBC_Coriolis const *c = &props->coriolis;
+        // fprintf(stderr,
+        //     "%.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %d %.10f\n",
+        //     c->sin_lat,
+        //     c->cos_lat,
+        //     c->sin_az,
+        //     c->cos_az,
+        //     c->range_east,
+        //     c->range_north,
+        //     c->cross_east,
+        //     c->cross_north,
+        //     c->flat_fire_only,
+        //     c->muzzle_velocity_fps
+        // );
+
+        BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
+        double spin_drift = BCLIBC_ShotProps_spinDrift(props, time);
+        double velocity = BCLIBC_V3dT_mag(velocity_vector);
+
+        this->windage_ft = adjusted_range.z + spin_drift;
+
+        // fprintf(stderr,
+        //         "DEBUG_WINDAGE: time=%.6f, InputZ=%.6f, AdjustedZ=%.6f, SpinDrift=%.6f\n",
+        //         time, range_vector->z, adjusted_range.z, spin_drift);
+
+        double density_ratio_out, mach_out;
+        props->atmo.update_density_factor_and_mach_for_altitude(
+            range_vector->y, &density_ratio_out, &mach_out);
+
+        double trajectory_angle = std::atan2(velocity_vector->y, velocity_vector->x);
+        double look_angle_cos = std::cos(props->look_angle);
+        double look_angle_sin = std::sin(props->look_angle);
+
+        this->distance_ft = adjusted_range.x;
+        this->velocity_fps = velocity;
+
+        this->mach = velocity / (mach_arg != 0.0 ? mach_arg : mach_out);
+
+        this->height_ft = adjusted_range.y;
+        this->slant_height_ft = adjusted_range.y * look_angle_cos - adjusted_range.x * look_angle_sin;
+        this->drop_angle_rad = BCLIBC_getCorrection(adjusted_range.x, adjusted_range.y) -
+                               (adjusted_range.x ? props->look_angle : 0.0);
+        this->windage_angle_rad = BCLIBC_getCorrection(adjusted_range.x, this->windage_ft);
+        this->slant_distance_ft = adjusted_range.x * look_angle_cos + adjusted_range.y * look_angle_sin;
+        this->angle_rad = trajectory_angle;
+        this->density_ratio = density_ratio_out;
+        this->drag = BCLIBC_ShotProps_dragByMach(props, this->mach);
+        this->energy_ft_lb = BCLIBC_calculateEnergy(props->weight, velocity);
+        this->ogw_lb = BCLIBC_calculateOgw(props->weight, velocity);
+    };
+
+    BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
+        const BCLIBC_ShotProps *props,
+        const BCLIBC_BaseTrajData *data,
+        BCLIBC_TrajFlag flag)
+        : BCLIBC_TrajectoryData(props, data->time, &data->position, &data->velocity, data->mach, flag) {};
+
+    BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
+        const BCLIBC_ShotProps *props,
+        const BCLIBC_FlaggedData *data)
+        : BCLIBC_TrajectoryData(props, &data->data, data->flag) {};
+
+    BCLIBC_TrajectoryData BCLIBC_TrajectoryData::interpolate(
+        BCLIBC_TrajectoryData_InterpKey key,
+        double value,
+        const BCLIBC_TrajectoryData *p0,
+        const BCLIBC_TrajectoryData *p1,
+        const BCLIBC_TrajectoryData *p2,
+        BCLIBC_TrajFlag flag,
+        BCLIBC_InterpMethod method)
+    {
+        if (p0 == nullptr || p1 == nullptr || p2 == nullptr)
+        {
+            throw std::invalid_argument("Interpolation points (p0, p1, p2) cannot be NULL.");
+        }
+
+        // The independent variable for interpolation (x-axis)
+        double x_val = value;
+        double x0 = p0->get_key_val(key);
+        double x1 = p1->get_key_val(key);
+        double x2 = p2->get_key_val(key);
+
+        // Use reflection to build the new TrajectoryData object
+
+        // // Better copy data from p0 to fill uninterpolated or derived fields
+        // BCLIBC_TrajectoryData interpolated_data;  // = {} possibly can not work on MSVC, use memset;
+        BCLIBC_TrajectoryData interpolated_data = *p0;
+
+        if ((int)key < 0 || (int)key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
+        {
+            throw std::runtime_error("Can't interpolate by unsupported key");
+        }
+
+        for (int k = 0; k < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; k++)
+        {
+            BCLIBC_TrajectoryData_InterpKey field_key = (BCLIBC_TrajectoryData_InterpKey)k;
+            double y0 = p0->get_key_val(field_key);
+            double y1 = p1->get_key_val(field_key);
+            double y2 = p2->get_key_val(field_key);
+
+            double interpolated_value = 0.0;
+            BCLIBC_ErrorType err = BCLIBC_E_NO_ERROR;
+
+            if (field_key == key)
+            {
+                interpolated_value = x_val;
+            }
+            else
+            {
+                if (method == BCLIBC_InterpMethod::PCHIP)
+                {
+                    interpolated_value = BCLIBC_interpolate3pt(
+                        x_val, x0, x1, x2, y0, y1, y2);
+                }
+                else if (method == BCLIBC_InterpMethod::LINEAR)
+                {
+                    if (x_val <= x1)
+                    {
+                        err = (BCLIBC_ErrorType)BCLIBC_interpolate2pt(x_val, x0, y0, x1, y1, &interpolated_value);
+                    }
+                    else
+                    {
+                        err = (BCLIBC_ErrorType)BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, &interpolated_value);
+                    }
+                    if (err != BCLIBC_E_NO_ERROR)
+                    {
+                        throw std::domain_error("Zero division error");
+                    }
+                }
+                else
+                {
+                    throw std::invalid_argument("Invalid interpolation method provided.");
+                }
+            }
+
+            interpolated_data.set_key_val(field_key, interpolated_value);
+        }
+        interpolated_data.flag = flag;
+        return interpolated_data;
+    };
+
+    double BCLIBC_TrajectoryData::get_key_val(BCLIBC_TrajectoryData_InterpKey key) const
+    {
+        switch (key)
+        {
+        case BCLIBC_TrajectoryData_InterpKey::TIME:
+            return this->time;
+        case BCLIBC_TrajectoryData_InterpKey::DISTANCE:
+            return this->distance_ft;
+        case BCLIBC_TrajectoryData_InterpKey::VELOCITY:
+            return this->velocity_fps;
+        case BCLIBC_TrajectoryData_InterpKey::MACH:
+            return this->mach;
+        case BCLIBC_TrajectoryData_InterpKey::HEIGHT:
+            return this->height_ft;
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT:
+            return this->slant_height_ft;
+        case BCLIBC_TrajectoryData_InterpKey::DROP_ANGLE:
+            return this->drop_angle_rad;
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE:
+            return this->windage_ft;
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE_ANGLE:
+            return this->windage_angle_rad;
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_DISTANCE:
+            return this->slant_distance_ft;
+        case BCLIBC_TrajectoryData_InterpKey::ANGLE:
+            return this->angle_rad;
+        case BCLIBC_TrajectoryData_InterpKey::DENSITY_RATIO:
+            return this->density_ratio;
+        case BCLIBC_TrajectoryData_InterpKey::DRAG:
+            return this->drag;
+        case BCLIBC_TrajectoryData_InterpKey::ENERGY:
+            return this->energy_ft_lb;
+        case BCLIBC_TrajectoryData_InterpKey::OGW:
+            return this->ogw_lb;
+        default:
+            return 0.0; // Error or unexpected key
+        }
+    };
+
+    void BCLIBC_TrajectoryData::set_key_val(BCLIBC_TrajectoryData_InterpKey key, double value)
+    {
+        switch (key)
+        {
+        case BCLIBC_TrajectoryData_InterpKey::TIME:
+            this->time = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::DISTANCE:
+            this->distance_ft = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::VELOCITY:
+            this->velocity_fps = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::MACH:
+            this->mach = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::HEIGHT:
+            this->height_ft = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT:
+            this->slant_height_ft = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::DROP_ANGLE:
+            this->drop_angle_rad = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE:
+            this->windage_ft = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::WINDAGE_ANGLE:
+            this->windage_angle_rad = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::SLANT_DISTANCE:
+            this->slant_distance_ft = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::ANGLE:
+            this->angle_rad = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::DENSITY_RATIO:
+            this->density_ratio = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::DRAG:
+            this->drag = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::ENERGY:
+            this->energy_ft_lb = value;
+            break;
+        case BCLIBC_TrajectoryData_InterpKey::OGW:
+            this->ogw_lb = value;
+            break;
+            // No default needed
+        }
     };
 };

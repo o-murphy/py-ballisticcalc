@@ -2,7 +2,6 @@
 #include <cstdio>  // For warnings (printf used here)
 #include <cstdlib>
 #include <cmath>
-#include "bclibc/interp.hpp"
 #include "bclibc/base_types.hpp"
 
 namespace bclibc

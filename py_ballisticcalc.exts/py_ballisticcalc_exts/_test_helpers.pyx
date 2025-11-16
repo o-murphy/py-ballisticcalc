@@ -19,7 +19,7 @@ from py_ballisticcalc_exts.base_types cimport (
 )
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajData, BaseTrajDataT
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData, BaseTrajDataT
 
 __all__ = [
     'init_shot',

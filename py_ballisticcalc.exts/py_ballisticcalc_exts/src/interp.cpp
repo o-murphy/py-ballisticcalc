@@ -11,7 +11,7 @@ namespace bclibc
         return (a > 0.0) - (a < 0.0);
     }
 
-    // // Internal helpers for PCHIP used by bclibc_base_traj_seq
+    // // Internal helpers for PCHIP used by traj_data
     // static void BCLIBC_Sort3(double *xs, double *ys)
     // {
     //     // Sort the first two elements

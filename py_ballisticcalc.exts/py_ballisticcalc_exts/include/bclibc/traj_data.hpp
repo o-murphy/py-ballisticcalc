@@ -3,6 +3,7 @@
 
 #include <cstddef> // Required for size_t
 #include "bclibc/base_types.hpp"
+#include "bclibc/interp.hpp"
 
 // --- START CROSS-PLATFORM FIX ---
 // The manylinux build environment failed due to redefinition.
@@ -25,6 +26,7 @@ typedef __int64 ssize_t;
 // maybe beter to use at least 192 byte min capacity as a 3-point buffer required for interpolation
 #define BCLIBC_BASE_TRAJ_SEQ_MIN_CAPACITY 256 // 64
 #define BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT 8
+#define BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT 15
 
 namespace bclibc
 {
@@ -41,6 +43,26 @@ namespace bclibc
         VEL_X,
         VEL_Y,
         VEL_Z,
+    };
+
+    enum class BCLIBC_TrajectoryData_InterpKey
+    {
+        TIME,
+        DISTANCE,
+        VELOCITY,
+        MACH,
+        HEIGHT,
+        SLANT_HEIGHT,
+        DROP_ANGLE,
+        WINDAGE,
+        WINDAGE_ANGLE,
+        SLANT_DISTANCE,
+        ANGLE,
+        DENSITY_RATIO,
+        DRAG,
+        ENERGY,
+        OGW,
+        FLAG
     };
 
     struct BCLIBC_BaseTrajData
@@ -347,6 +369,93 @@ namespace bclibc
          */
         static int is_close(double a, double b, double epsilon);
     };
+
+    typedef struct
+    {
+        BCLIBC_BaseTrajData data;
+        BCLIBC_TrajFlag flag;
+    } BCLIBC_FlaggedData;
+
+    struct BCLIBC_TrajectoryData
+    {
+    public:
+        // data fields
+        double time = 0.0;                            // Flight time in seconds
+        double distance_ft = 0.0;                     // Down-range (x-axis) coordinate of this point
+        double velocity_fps = 0.0;                    // Velocity
+        double mach = 0.0;                            // Velocity in Mach terms
+        double height_ft = 0.0;                       // Vertical (y-axis) coordinate of this point
+        double slant_height_ft = 0.0;                 // Distance orthogonal to sight-line
+        double drop_angle_rad = 0.0;                  // Slant_height in angular terms
+        double windage_ft = 0.0;                      // Windage (z-axis) coordinate of this point
+        double windage_angle_rad = 0.0;               // Windage in angular terms
+        double slant_distance_ft = 0.0;               // Distance along sight line that is closest to this point
+        double angle_rad = 0.0;                       // Angle of velocity vector relative to x-axis
+        double density_ratio = 0.0;                   // Ratio of air density here to standard density
+        double drag = 0.0;                            // Standard Drag Factor at this point
+        double energy_ft_lb = 0.0;                    // Energy of bullet at this point
+        double ogw_lb = 0.0;                          // Optimal game weight, given .energy
+        BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE; // Row type
+
+        // methods
+        BCLIBC_TrajectoryData() = default;
+        BCLIBC_TrajectoryData(const BCLIBC_TrajectoryData &) = default;
+        BCLIBC_TrajectoryData &operator=(const BCLIBC_TrajectoryData &) = default;
+        BCLIBC_TrajectoryData(BCLIBC_TrajectoryData &&) noexcept = default;
+        BCLIBC_TrajectoryData &operator=(BCLIBC_TrajectoryData &&) noexcept = default;
+        ~BCLIBC_TrajectoryData() = default;
+
+        // BCLIBC_TrajectoryData(
+        //     double time,              // Flight time in seconds
+        //     double distance_ft,       // Down-range (x-axis) coordinate of this point
+        //     double velocity_fps,      // Velocity
+        //     double mach,              // Velocity in Mach terms
+        //     double height_ft,         // Vertical (y-axis) coordinate of this point
+        //     double slant_height_ft,   // Distance  # Distance orthogonal to sight-line
+        //     double drop_angle_rad,    // Slant_height in angular terms
+        //     double windage_ft,        // Windage (z-axis) coordinate of this point
+        //     double windage_angle_rad, // Windage in angular terms
+        //     double slant_distance_ft, // Distance along sight line that is closest to this point
+        //     double angle_rad,         // Angle of velocity vector relative to x-axis
+        //     double density_ratio,     // Ratio of air density here to standard density
+        //     double drag,              // Standard Drag Factor at this point
+        //     double energy_ft_lb,      // Energy of bullet at this point
+        //     double ogw_lb,            // Optimal game weight, given .energy
+        //     BCLIBC_TrajFlag flag      // Row type
+        // );
+
+        // BCLIBC_TrajectoryData();
+
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps *props,
+            double time,
+            const BCLIBC_V3dT *range_vector,
+            const BCLIBC_V3dT *velocity_vector,
+            double mach,
+            BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
+
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps *props,
+            const BCLIBC_BaseTrajData *data,
+            BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
+
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps *props,
+            const BCLIBC_FlaggedData *data);
+
+        static BCLIBC_TrajectoryData interpolate(
+            BCLIBC_TrajectoryData_InterpKey key,
+            double value,
+            const BCLIBC_TrajectoryData *t0,
+            const BCLIBC_TrajectoryData *t1,
+            const BCLIBC_TrajectoryData *t2,
+            BCLIBC_TrajFlag flag,
+            BCLIBC_InterpMethod method = BCLIBC_InterpMethod::PCHIP);
+
+        double get_key_val(BCLIBC_TrajectoryData_InterpKey key) const;
+        void set_key_val(BCLIBC_TrajectoryData_InterpKey key, double value);
+    };
+
 };
 
 #endif // BCLIBC_BASE_TRAJ_SEQ_HPP

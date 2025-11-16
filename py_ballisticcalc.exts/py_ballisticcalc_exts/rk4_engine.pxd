@@ -6,7 +6,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_seq cimport BCLIBC_BaseTrajSeq
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq
 from py_ballisticcalc_exts.base_engine cimport (
     BCLIBC_Engine,
     BCLIBC_StatusCode,
