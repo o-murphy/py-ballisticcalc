@@ -24,12 +24,12 @@ typedef __int64 ssize_t;
 
 // Min capacity starts from 64
 // maybe beter to use at least 192 byte min capacity as a 3-point buffer required for interpolation
-#define BCLIBC_BASE_TRAJ_SEQ_MIN_CAPACITY 256 // 64
-#define BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT 8
-#define BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT 15
 
 namespace bclibc
 {
+    constexpr int BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT = 8;
+    constexpr int BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT = 15;
+
     /**
      * Keys used to look up specific values within a BCLIBC_BaseTraj struct.
      */

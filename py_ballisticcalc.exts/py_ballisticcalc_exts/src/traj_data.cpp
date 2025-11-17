@@ -145,7 +145,7 @@ namespace bclibc
     double BCLIBC_BaseTraj::key_val(BCLIBC_BaseTraj_InterpKey key_kind) const
     {
         int k = (int)key_kind;
-        if ((int)key_kind < 0 || (int)key_kind > BCLIBC_BASE_TRAJ_SEQ_INTERP_KEY_ACTIVE_COUNT)
+        if ((int)key_kind < 0 || (int)key_kind > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
             return 0.0;
         }
