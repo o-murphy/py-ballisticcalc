@@ -156,20 +156,24 @@ cdef class CythonizedBaseIntegrationEngine:
     )
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double distance,
         bint lofted
     )
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double distance
     )
     cdef BCLIBC_MaxRangeResult _find_max_range(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double low_angle_deg,
         double high_angle_deg,
     )
     cdef BCLIBC_BaseTrajData _find_apex(
         CythonizedBaseIntegrationEngine self,
+        object shot_info
     )
     cdef double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
@@ -180,6 +184,7 @@ cdef class CythonizedBaseIntegrationEngine:
     # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double range_limit_ft,
         double range_step_ft,
         double time_step,

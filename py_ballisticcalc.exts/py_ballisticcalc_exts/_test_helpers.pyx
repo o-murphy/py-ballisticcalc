@@ -122,11 +122,11 @@ cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, &density_ratio, &mach)
     return density_ratio, mach
 
-cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
-                                double range_limit_ft, double range_step_ft, double time_step):
-    """Call engine._integrate directly with current shot props."""
-    cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return e._integrate(range_limit_ft, range_step_ft, time_step)
+# cpdef tuple integration_minimal(object engine, size_t shot_props_addr,
+#                                 double range_limit_ft, double range_step_ft, double time_step):
+#     """Call engine._integrate directly with current shot props."""
+#     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
+#     return e._integrate(range_limit_ft, range_step_ft, time_step)
 
 cpdef int step_count(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
