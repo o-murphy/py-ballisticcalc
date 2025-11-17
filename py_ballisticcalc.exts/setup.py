@@ -90,7 +90,6 @@ include_dirs = [
 # Define all C source files and their paths
 SOURCE_PATHS = {
     # C++ Sources:
-    "log": SRC_DIR_PATH / "log.cpp",
     "error_stack": SRC_DIR_PATH / "error_stack.cpp",
     "v3d": SRC_DIR_PATH / "v3d.cpp",
     "interp": SRC_DIR_PATH / "interp.cpp",
@@ -107,7 +106,7 @@ SOURCE_PATHS = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
-_ERR_STACK_DEPS = set(["log", "error_stack"])
+_ERR_STACK_DEPS = set(["error_stack"])
 _BCLIBC_DEPS = set([*_ERR_STACK_DEPS, "v3d", "types"])
 _INTERP_DEPS = set(["interp"])
 _TRAJ_DATA_DEPS = set([*_BCLIBC_DEPS, *_INTERP_DEPS, "traj_data"])

@@ -142,7 +142,7 @@ namespace bclibc
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
         }
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Using integration function pointer %p.", (void *)this->integrate_func_ptr);
+        BCLIBC_DEBUG("Using integration function pointer %p.", (void *)this->integrate_func_ptr);
 
         BCLIBC_StatusCode status = this->integrate_func_ptr(this, range_limit_ft, range_step_ft, time_step, trajectory, reason);
 
@@ -150,14 +150,14 @@ namespace bclibc
         {
             if (*reason == BCLIBC_TerminationReason::NO_TERMINATE)
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed successfully: (%d).", *reason);
+                BCLIBC_INFO("Integration completed successfully: (%d).", *reason);
             }
             else
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_INFO, "Integration completed with acceptable termination reason: (%d).", *reason);
+                BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", *reason);
             }
             BCLIBC_LOG(
-                BCLIBC_LOG_LEVEL_DEBUG,
+                BCLIBC_LogLevel::DEBUG,
                 "Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
                 trajectory->get_length(), trajectory->get_capacity(),
                 trajectory->get_length() * sizeof(BCLIBC_BaseTraj));
@@ -371,7 +371,7 @@ namespace bclibc
         {
             return BCLIBC_StatusCode::SUCCESS;
         }
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Primary zero-finding failed, switching to fallback.");
+        BCLIBC_WARN("Primary zero-finding failed, switching to fallback.");
 
         // Clean error stack
         BCLIBC_CLEAR_ERR(&this->err_stack);
@@ -990,7 +990,7 @@ namespace bclibc
             // Check if we found exact solution at midpoint
             if (std::fabs(f_mid) < this->config.cZeroFindingAccuracy)
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: found exact solution at mid_angle=%.6f", mid_angle);
+                BCLIBC_DEBUG("Ridder: found exact solution at mid_angle=%.6f", mid_angle);
                 *result = mid_angle;
                 converged = 1;
                 status = BCLIBC_StatusCode::SUCCESS;
@@ -1002,7 +1002,7 @@ namespace bclibc
             // and the quadratic function that passes through those points and (mid_angle, f_mid)
             double _inner = f_mid * f_mid - f_low * f_high;
 
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG,
+            BCLIBC_LOG(BCLIBC_LogLevel::DEBUG,
                        "Ridder iteration %d: low_angle=%.12f, high_angle=%.12f, mid_angle=%.12f, "
                        "f_low=%.12f, f_high=%.12f, f_mid=%.12f, _inner=%.12e",
                        i, low_angle, high_angle, mid_angle, f_low, f_high, f_mid, _inner);
@@ -1010,7 +1010,7 @@ namespace bclibc
             // Check for invalid sqrt argument - should not happen if bracket is valid
             if (_inner <= 0.0)
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: _inner <= 0 (%.12e), breaking iteration", _inner);
+                BCLIBC_DEBUG("Ridder: _inner <= 0 (%.12e), breaking iteration", _inner);
                 break;
             }
 
@@ -1019,7 +1019,7 @@ namespace bclibc
             // Should not happen if f_low and f_high have opposite signs
             if (s == 0.0)
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: s == 0, breaking iteration");
+                BCLIBC_DEBUG("Ridder: s == 0, breaking iteration");
                 break;
             }
 
@@ -1046,7 +1046,7 @@ namespace bclibc
             // Check if we found exact solution at next_angle
             if (std::fabs(f_next) < this->config.cZeroFindingAccuracy)
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: found exact solution at next_angle=%.6f", next_angle);
+                BCLIBC_DEBUG("Ridder: found exact solution at next_angle=%.6f", next_angle);
                 *result = next_angle;
                 converged = 1;
                 status = BCLIBC_StatusCode::SUCCESS;
@@ -1074,7 +1074,7 @@ namespace bclibc
             else
             {
                 // If we are here, something is wrong, the root is not bracketed anymore
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: root not bracketed anymore, breaking");
+                BCLIBC_DEBUG("Ridder: root not bracketed anymore, breaking");
                 break;
             }
 
@@ -1096,7 +1096,7 @@ namespace bclibc
             if (std::fabs(high_angle - low_angle) < 10.0 * this->config.cZeroFindingAccuracy)
             {
                 *result = (low_angle + high_angle) / 2.0;
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting solution from small bracket: %.6f", *result);
+                BCLIBC_DEBUG("Ridder: accepting solution from small bracket: %.6f", *result);
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
             }
@@ -1105,14 +1105,14 @@ namespace bclibc
             if (std::fabs(f_low) < 10.0 * this->config.cZeroFindingAccuracy)
             {
                 *result = low_angle;
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting low_angle due to small f_low: %.6f", *result);
+                BCLIBC_DEBUG("Ridder: accepting low_angle due to small f_low: %.6f", *result);
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
             }
             if (std::fabs(f_high) < 10.0 * this->config.cZeroFindingAccuracy)
             {
                 *result = high_angle;
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Ridder: accepting high_angle due to small f_high: %.6f", *result);
+                BCLIBC_DEBUG("Ridder: accepting high_angle due to small f_high: %.6f", *result);
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
             }

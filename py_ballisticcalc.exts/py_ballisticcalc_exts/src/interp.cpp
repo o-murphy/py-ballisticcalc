@@ -171,13 +171,13 @@ namespace bclibc
     }
 
     // Declaration for 2-point interpolation
-    int BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double *result)
+    BCLIBC_InterpStatus BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double *result)
     {
         if (x1 == x0)
         {
-            return BCLIBC_INTERP_ERROR_ZERODIVISION;
+            return BCLIBC_InterpStatus::ZERODIVISION;
         }
         *result = y0 + (y1 - y0) * (x - x0) / (x1 - x0);
-        return BCLIBC_INTERP_SUCCESS;
+        return BCLIBC_InterpStatus::SUCCESS;
     }
 };

@@ -77,7 +77,7 @@ namespace bclibc
     {
         if (!p0 || !p1 || !p2 || !out)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+            BCLIBC_ERROR("Invalid input (NULL pointer).");
             return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
@@ -298,7 +298,7 @@ namespace bclibc
     {
         if (!out)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+            BCLIBC_ERROR("Invalid input (NULL pointer).");
             return BCLIBC_ErrorType::INPUT_ERROR; // Invalid input
         }
         BCLIBC_BaseTraj raw_output;
@@ -361,14 +361,14 @@ namespace bclibc
     {
         if (!out)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+            BCLIBC_ERROR("Invalid input (NULL pointer).");
             return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
         const BCLIBC_BaseTraj *entry_ptr = this->get_raw_item(idx);
         if (!entry_ptr)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Index out of bounds.");
+            BCLIBC_ERROR("Index out of bounds.");
             return BCLIBC_ErrorType::INDEX_ERROR;
         }
 
@@ -397,7 +397,7 @@ namespace bclibc
     {
         if (!out)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+            BCLIBC_ERROR("Invalid input (NULL pointer).");
             return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
@@ -405,7 +405,7 @@ namespace bclibc
 
         if (n < 3)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
+            BCLIBC_ERROR("Not enough data points for interpolation.");
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
@@ -431,7 +431,7 @@ namespace bclibc
             ssize_t center = this->bisect_center_idx_buf(key_kind, key_value);
             if (center < 0)
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
+                BCLIBC_ERROR("Bisecting failed; not enough data points.");
                 return BCLIBC_ErrorType::VALUE_ERROR;
             }
             target_idx = center < n - 1 ? center : n - 2;
@@ -469,7 +469,7 @@ namespace bclibc
     {
         if (!out)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+            BCLIBC_ERROR("Invalid input (NULL pointer).");
             return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
@@ -480,20 +480,20 @@ namespace bclibc
 
         if (n < 3)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
+            BCLIBC_ERROR("Not enough data points for interpolation.");
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         ssize_t center = this->bisect_center_idx_slant_buf(ca, sa, value);
         if (center < 0)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Failed to find center index for interpolation.");
+            BCLIBC_ERROR("Failed to find center index for interpolation.");
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         if (center < 1 || center >= n - 1)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Calculated center index out of safe interpolation range.");
+            BCLIBC_ERROR("Calculated center index out of safe interpolation range.");
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
@@ -508,7 +508,7 @@ namespace bclibc
 
         if (ox0 == ox1 || ox1 == ox2)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Duplicate slant key values detected; cannot interpolate.");
+            BCLIBC_ERROR("Duplicate slant key values detected; cannot interpolate.");
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
@@ -544,10 +544,10 @@ namespace bclibc
         BCLIBC_ErrorType err = this->interpolate_at(idx, key_kind, key_value, out);
         if (err != BCLIBC_ErrorType::NO_ERROR)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Interpolation failed at center index %zd, error code: 0x%X", idx, err);
+            BCLIBC_ERROR("Interpolation failed at center index %zd, error code: 0x%X", idx, err);
             return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
         }
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", idx);
+        BCLIBC_DEBUG("Interpolation successful at center index %zd.", idx);
         return BCLIBC_ErrorType::NO_ERROR;
     };
 
@@ -572,7 +572,7 @@ namespace bclibc
     {
         if (!out)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
+            BCLIBC_ERROR("Invalid input (NULL pointer).");
             return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
@@ -586,7 +586,7 @@ namespace bclibc
         // Ensure we have valid points on both sides (idx-1, idx, idx+1)
         if (idx < 1 || idx >= length - 1)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
+            BCLIBC_ERROR("Index out of bounds for interpolation.");
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
@@ -602,7 +602,7 @@ namespace bclibc
         // Check for duplicate key values (would cause division by zero)
         if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Duplicate key values detected; cannot interpolate.");
+            BCLIBC_ERROR("Duplicate key values detected; cannot interpolate.");
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
@@ -641,10 +641,10 @@ namespace bclibc
             BCLIBC_ErrorType err = this->get_item(idx, out);
             if (err != BCLIBC_ErrorType::NO_ERROR)
             {
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Failed to get item at index %zd.", idx);
+                BCLIBC_ERROR("Failed to get item at index %zd.", idx);
                 return BCLIBC_ErrorType::INDEX_ERROR;
             }
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Exact match found at index %zd.", idx);
+            BCLIBC_DEBUG("Exact match found at index %zd.", idx);
             return BCLIBC_ErrorType::NO_ERROR;
         }
 
@@ -1025,15 +1025,16 @@ namespace bclibc
                 }
                 else if (method == BCLIBC_InterpMethod::LINEAR)
                 {
+                    BCLIBC_InterpStatus interp_status;
                     if (x_val <= x1)
                     {
-                        err = (BCLIBC_ErrorType)BCLIBC_interpolate2pt(x_val, x0, y0, x1, y1, &interpolated_value);
+                        interp_status = BCLIBC_interpolate2pt(x_val, x0, y0, x1, y1, &interpolated_value);
                     }
                     else
                     {
-                        err = (BCLIBC_ErrorType)BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, &interpolated_value);
+                        interp_status = BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, &interpolated_value);
                     }
-                    if (err != BCLIBC_ErrorType::NO_ERROR)
+                    if (interp_status != BCLIBC_InterpStatus::SUCCESS)
                     {
                         throw std::domain_error("Zero division error");
                     }

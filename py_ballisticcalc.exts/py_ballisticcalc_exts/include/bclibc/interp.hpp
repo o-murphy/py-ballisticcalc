@@ -1,11 +1,13 @@
 #ifndef BCLIBC_INTERP_HPP
 #define BCLIBC_INTERP_HPP
 
-#define BCLIBC_INTERP_SUCCESS 0
-#define BCLIBC_INTERP_ERROR_ZERODIVISION -1
-
 namespace bclibc
 {
+    enum class BCLIBC_InterpStatus
+    {
+        SUCCESS,
+        ZERODIVISION,
+    };
 
     enum class BCLIBC_InterpMethod
     {
@@ -22,7 +24,7 @@ namespace bclibc
     double BCLIBC_interpolate3pt(double x, double x0, double x1, double x2, double y0, double y1, double y2);
 
     // Declaration for 2-point interpolation
-    int BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double *result);
+    BCLIBC_InterpStatus BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double *result);
 
 };
 

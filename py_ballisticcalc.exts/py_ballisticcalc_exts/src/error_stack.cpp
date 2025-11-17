@@ -31,7 +31,7 @@ namespace bclibc
 
         f->msg[sizeof(f->msg) - 1] = '\0';
 
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "%s:%d (%s): %s", file, line, func, f->msg);
+        BCLIBC_ERROR("%s:%d (%s): %s", file, line, func, f->msg);
     };
 
     void BCLIBC_ErrorStack_popErr(BCLIBC_ErrorStack *stack)
@@ -41,9 +41,9 @@ namespace bclibc
             // stack->top--;
             // memset(&stack->frames[stack->top], 0, sizeof(BCLIBC_ErrorFrame));
             BCLIBC_ErrorFrame *f = &stack->frames[--stack->top];
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Popped error frame [%d/%d]: %s:%d (%s): [%d/%d] %s",
-                       stack->top, BCLIBC_MAX_ERROR_STACK,
-                       f->file, f->line, f->func, f->src, f->code, f->msg);
+            BCLIBC_DEBUG("Popped error frame [%d/%d]: %s:%d (%s): [%d/%d] %s",
+                         stack->top, BCLIBC_MAX_ERROR_STACK,
+                         f->file, f->line, f->func, f->src, f->code, f->msg);
             memset(&stack->frames[stack->top], 0, sizeof(BCLIBC_ErrorFrame));
         }
     };
@@ -55,7 +55,7 @@ namespace bclibc
         memset(stack->frames, 0, sizeof(stack->frames));
         stack->top = 0;
 
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Error stack cleared");
+        BCLIBC_DEBUG("Error stack cleared");
     };
 
     const BCLIBC_ErrorFrame *BCLIBC_ErrorStack_lastErr(const BCLIBC_ErrorStack *stack)
@@ -167,7 +167,7 @@ namespace bclibc
     {
         if (!ptr)
         {
-            fprintf(stderr, "FATAL: NULL pointer at %s:%d in %s\n", file, line, func);
+            BCLIBC_CRITICAL("FATAL: NULL pointer at %s:%d in %s\n", file, line, func);
             fflush(stderr);
             abort();
         }

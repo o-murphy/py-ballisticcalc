@@ -36,8 +36,6 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorStack_lastErr,
     BCLIBC_ErrorStack_toString,
 )
-from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
-
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
@@ -48,10 +46,6 @@ from py_ballisticcalc.unit import Angular
 __all__ = (
     'CythonizedBaseIntegrationEngine',
 )
-
-
-# force BCLIBC_LogLevel_init
-BCLIBC_LogLevel_init()
 
 
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET

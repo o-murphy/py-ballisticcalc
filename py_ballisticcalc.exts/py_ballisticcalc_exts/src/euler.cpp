@@ -212,7 +212,7 @@ namespace bclibc
         //     return err;
         // }
 
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
+        BCLIBC_DEBUG("Function exit, reason=%d\n", *reason);
 
         return BCLIBC_StatusCode::SUCCESS;
     };

@@ -219,7 +219,7 @@ namespace bclibc
             else
             {
                 this->stability_coefficient = 0.0;
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
+                BCLIBC_ERROR("Division by zero in stability coefficient calculation.");
                 return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if denominator is zero
             }
 
@@ -235,7 +235,7 @@ namespace bclibc
             else
             {
                 this->stability_coefficient = 0.0;
-                BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
+                BCLIBC_ERROR("Division by zero in ftp calculation.");
                 return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if pt is zero
             }
 
@@ -246,7 +246,7 @@ namespace bclibc
             // If critical parameters are zero, stability coefficient is meaningless or zero
             this->stability_coefficient = 0.0;
         }
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", this->stability_coefficient);
+        BCLIBC_DEBUG("Updated stability coefficient: %.6f", this->stability_coefficient);
         return BCLIBC_ErrorType::NO_ERROR;
     };
 
@@ -411,20 +411,20 @@ namespace bclibc
         if (altitude > 36089.0)
         {
             // Warning: altitude above standard troposphere height
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Density request for altitude above troposphere. Atmospheric model not valid here.");
+            BCLIBC_WARN("Density request for altitude above troposphere. Atmospheric model not valid here.");
         }
 
         // Clamp temperature to prevent non-physical results
         const double min_temp = -BCLIBC_cDegreesCtoK;
         if (celsius < min_temp)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Invalid temperature %.2f °C. Adjusted to %.2f °C.", celsius, min_temp);
+            BCLIBC_WARN("Invalid temperature %.2f °C. Adjusted to %.2f °C.", celsius, min_temp);
             celsius = min_temp;
         }
         else if (celsius < this->cLowestTempC)
         {
             celsius = this->cLowestTempC;
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Reached minimum temperature limit. Adjusted to %.2f °C.", celsius);
+            BCLIBC_WARN("Reached minimum temperature limit. Adjusted to %.2f °C.", celsius);
         }
 
         const double kelvin = celsius + BCLIBC_cDegreesCtoK;
@@ -444,8 +444,8 @@ namespace bclibc
         // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
         *mach_ptr = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
 
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
-                   altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
+        BCLIBC_DEBUG("Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
+                     altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
     };
 
     BCLIBC_Wind::BCLIBC_Wind(double velocity,
@@ -570,7 +570,7 @@ namespace bclibc
                 // If cache update fails, return zero vector
                 if (this->update_cache() != BCLIBC_ErrorType::NO_ERROR)
                 {
-                    BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
+                    BCLIBC_WARN("Failed. Returning zero vector.");
                     return zero_vector;
                 }
             }
@@ -596,7 +596,7 @@ namespace bclibc
         {
             return std::atan2(offset, distance);
         }
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in BCLIBC_getCorrection.");
+        BCLIBC_ERROR("Division by zero in BCLIBC_getCorrection.");
         return 0.0;
     }
 
