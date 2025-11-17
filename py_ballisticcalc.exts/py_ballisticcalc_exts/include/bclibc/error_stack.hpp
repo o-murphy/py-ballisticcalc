@@ -1,7 +1,6 @@
 #ifndef BCLIBC_ERROR_STACK_HPP
 #define BCLIBC_ERROR_STACK_HPP
 
-#include <cstdio>
 #include <cstdarg>
 #include <cstring>
 #include "bclibc/log.hpp"

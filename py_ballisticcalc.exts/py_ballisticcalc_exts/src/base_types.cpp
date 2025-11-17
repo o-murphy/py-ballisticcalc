@@ -1,5 +1,4 @@
 #include <cstddef> // For size_t
-#include <cstdio>  // For warnings (printf used here)
 #include <cstdlib>
 #include <cmath>
 #include <stdexcept>

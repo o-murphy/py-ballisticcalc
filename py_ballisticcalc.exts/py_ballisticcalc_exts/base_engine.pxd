@@ -1,6 +1,5 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
-from libc.string cimport strlen
 from libcpp.vector cimport vector
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Config,
