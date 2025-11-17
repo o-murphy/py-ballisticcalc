@@ -118,6 +118,24 @@ namespace bclibc
         return BCLIBC_E_NO_ERROR;
     };
 
+    BCLIBC_BaseTraj::BCLIBC_BaseTraj(
+        double time,
+        double px,
+        double py,
+        double pz,
+        double vx,
+        double vy,
+        double vz,
+        double mach)
+        : time(time),
+          px(px),
+          py(py),
+          pz(pz),
+          vx(vx),
+          vy(vy),
+          vz(vz),
+          mach(mach) {};
+
     /**
      * @brief Get the key value of a BaseTraj element.
      *
@@ -215,34 +233,6 @@ namespace bclibc
     }
 
     /**
-     * Initializes a BCLIBC_BaseTrajSeq structure.
-     *
-     * Sets the buffer to NULL and length/capacity to 0.
-     *
-     */
-
-    BCLIBC_BaseTrajSeq::BCLIBC_BaseTrajSeq()
-    {
-        this->buffer = nullptr;
-        this->length = 0;
-        this->capacity = 0;
-    };
-
-    /**
-     * Releases resources used by a BCLIBC_BaseTrajSeq structure.
-     *
-     * Frees the internal buffer and resets all fields to default values.
-     *
-     */
-    BCLIBC_BaseTrajSeq::~BCLIBC_BaseTrajSeq()
-    {
-        free(this->buffer); // safe even if buffer is NULL
-        this->buffer = nullptr;
-        this->length = 0;
-        this->capacity = 0;
-    };
-
-    /**
      * @brief Appends a new trajectory point to the end of the sequence.
      *
      * This function ensures that the sequence has enough capacity, then
@@ -262,80 +252,15 @@ namespace bclibc
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
     {
 
-        // Ensure enough capacity for the new element
-        BCLIBC_ErrorType err = this->ensure_capacity(this->length + 1);
-        if (err != BCLIBC_E_NO_ERROR)
+        try
         {
-            return err;
+            this->buffer.push_back(
+                BCLIBC_BaseTraj(time, px, py, pz, vx, vy, vz, mach));
         }
-
-        // Append the new element at the end
-        BCLIBC_BaseTraj *entry = &this->buffer[this->length];
-        entry->time = time;
-        entry->px = px;
-        entry->py = py;
-        entry->pz = pz;
-        entry->vx = vx;
-        entry->vy = vy;
-        entry->vz = vz;
-        entry->mach = mach;
-
-        this->length += 1;
-
-        return BCLIBC_E_NO_ERROR;
-    };
-
-    /**
-     * @brief Ensure that the sequence has at least `min_capacity` slots.
-     *
-     * This function safely allocates a new buffer if the current capacity is insufficient,
-     * copies existing elements to the new buffer, and frees the old buffer.
-     *
-     * It avoids using realloc to ensure that existing memory is not invalidated in case
-     * of allocation failure.
-     *
-     * @param min_capacity Minimum required number of elements.
-     * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR on success, BCLIBC_E_MEMORY_ERROR on allocation failure,
-     *         BCLIBC_E_INPUT_ERROR if seq is NULL.
-     */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::ensure_capacity(size_t min_capacity)
-    {
-        // If current capacity is enough, do nothing
-        if (min_capacity <= this->capacity)
+        catch (...)
         {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Current capacity sufficient (%zu >= %zu).", this->capacity, min_capacity);
-            return BCLIBC_E_NO_ERROR;
+            return BCLIBC_E_RUNTIME_ERROR;
         }
-
-        // Determine new capacity: ^2 current or start from 64
-        size_t new_capacity = this->capacity > 0 ? this->capacity : BCLIBC_BASE_TRAJ_SEQ_MIN_CAPACITY;
-        while (new_capacity < min_capacity)
-        {
-            new_capacity <<= 1; // Faster than *= 2
-        }
-
-        // Allocate a new buffer (zero-initialized)
-        BCLIBC_BaseTraj *new_buffer = (BCLIBC_BaseTraj *)malloc(new_capacity * sizeof(BCLIBC_BaseTraj));
-        if (!new_buffer)
-        {
-            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Memory allocation failed for capacity %zu.", new_capacity);
-            return BCLIBC_E_MEMORY_ERROR;
-        }
-
-        // Copy existing data safely
-        if (this->length > 0)
-        {
-            memcpy(new_buffer, this->buffer, this->length * sizeof(BCLIBC_BaseTraj));
-        }
-
-        // Free old buffer
-        free(this->buffer);
-
-        // Update sequence structure
-        this->buffer = new_buffer;
-        this->capacity = new_capacity;
-
-        BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Capacity increased to %zu.", new_capacity);
         return BCLIBC_E_NO_ERROR;
     };
 
@@ -346,7 +271,7 @@ namespace bclibc
      */
     ssize_t BCLIBC_BaseTrajSeq::get_length() const
     {
-        return (ssize_t)this->length;
+        return this->buffer.size();
     };
 
     /**
@@ -356,7 +281,7 @@ namespace bclibc
      */
     ssize_t BCLIBC_BaseTrajSeq::get_capacity() const
     {
-        return (ssize_t)this->capacity;
+        return this->buffer.capacity();
     };
 
     /**
@@ -398,12 +323,11 @@ namespace bclibc
      */
     BCLIBC_BaseTraj *BCLIBC_BaseTrajSeq::get_raw_item(ssize_t idx) const
     {
-        if (!this->buffer || this->length == 0)
+        ssize_t len = (ssize_t)this->buffer.size();
+        if (len == 0)
         {
             return NULL;
         }
-
-        ssize_t len = (ssize_t)this->length;
 
         // Adjust negative indices
         if (idx < 0)
@@ -412,12 +336,11 @@ namespace bclibc
         }
 
         // Out-of-bounds check
-        if ((size_t)idx >= (size_t)len)
+        if (idx < 0 || idx >= len)
         {
             return NULL;
         }
-
-        return &this->buffer[idx];
+        return const_cast<BCLIBC_BaseTraj *>(&this->buffer[idx]);
     };
 
     /**
@@ -478,14 +401,15 @@ namespace bclibc
             return BCLIBC_E_INPUT_ERROR;
         }
 
-        ssize_t n = this->length;
+        ssize_t n = (ssize_t)this->buffer.size();
+        const BCLIBC_BaseTraj *buf = this->buffer.data();
+
         if (n < 3)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
             return BCLIBC_E_VALUE_ERROR;
         }
 
-        BCLIBC_BaseTraj *buf = this->buffer;
         ssize_t target_idx = -1;
 
         // Search from start_from_time if provided
@@ -552,7 +476,8 @@ namespace bclibc
 
         double ca = std::cos(look_angle_rad);
         double sa = std::sin(look_angle_rad);
-        ssize_t n = this->length;
+
+        ssize_t n = (ssize_t)this->buffer.size();
 
         if (n < 3)
         {
@@ -567,14 +492,26 @@ namespace bclibc
             return BCLIBC_E_VALUE_ERROR;
         }
 
-        const BCLIBC_BaseTraj *buf = this->buffer;
-        const BCLIBC_BaseTraj *p0 = &buf[center - 1];
-        const BCLIBC_BaseTraj *p1 = &buf[center];
-        const BCLIBC_BaseTraj *p2 = &buf[center + 1];
+        if (center < 1 || center >= n - 1)
+        {
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Calculated center index out of safe interpolation range.");
+            return BCLIBC_E_VALUE_ERROR;
+        }
+
+        const auto &data_vector = this->buffer;
+        const BCLIBC_BaseTraj *p0 = &data_vector[center - 1];
+        const BCLIBC_BaseTraj *p1 = &data_vector[center];
+        const BCLIBC_BaseTraj *p2 = &data_vector[center + 1];
 
         double ox0 = p0->slant_val_buf(ca, sa);
         double ox1 = p1->slant_val_buf(ca, sa);
         double ox2 = p2->slant_val_buf(ca, sa);
+
+        if (ox0 == ox1 || ox1 == ox2)
+        {
+            BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Duplicate slant key values detected; cannot interpolate.");
+            return BCLIBC_E_VALUE_ERROR;
+        }
 
         out->time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
         out->position = BCLIBC_V3dT{
@@ -640,23 +577,23 @@ namespace bclibc
             return BCLIBC_E_INPUT_ERROR;
         }
 
-        BCLIBC_BaseTraj *buffer = this->buffer;
-        ssize_t length = this->length;
+        const auto &data_vector = this->buffer;
+        ssize_t length = (ssize_t)data_vector.size();
 
         // Handle negative indices
         if (idx < 0)
             idx += length;
 
-        // Ensure we have valid points on both sides
+        // Ensure we have valid points on both sides (idx-1, idx, idx+1)
         if (idx < 1 || idx >= length - 1)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
             return BCLIBC_E_VALUE_ERROR;
         }
 
-        BCLIBC_BaseTraj *p0 = &buffer[idx - 1];
-        BCLIBC_BaseTraj *p1 = &buffer[idx];
-        BCLIBC_BaseTraj *p2 = &buffer[idx + 1];
+        const BCLIBC_BaseTraj *p0 = &data_vector[idx - 1];
+        const BCLIBC_BaseTraj *p1 = &data_vector[idx];
+        const BCLIBC_BaseTraj *p2 = &data_vector[idx + 1];
 
         // Get key values from the three points using helper
         double ox0 = p0->key_val(key_kind);
@@ -693,6 +630,11 @@ namespace bclibc
         double key_value,
         BCLIBC_BaseTrajData *out) const
     {
+        if (idx < 0 || idx >= (ssize_t)this->buffer.size())
+        {
+            return BCLIBC_E_INDEX_ERROR;
+        }
+
         double epsilon = 1e-9;
 
         if (this->is_close(this->buffer[idx].key_val(key_kind), key_value, epsilon))
@@ -726,16 +668,17 @@ namespace bclibc
         BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value) const
     {
-        if (this->length < 3)
+        ssize_t n = (ssize_t)this->buffer.size();
+        if (n < 3)
         {
             return -1;
         }
 
-        const BCLIBC_BaseTraj *buf = this->buffer;
-        ssize_t n = this->length;
+        const auto &data_vector = this->buffer;
 
-        double v0 = buf[0].key_val(key_kind);
-        double vN = buf[n - 1].key_val(key_kind);
+        double v0 = data_vector[0].key_val(key_kind);
+        double vN = data_vector[n - 1].key_val(key_kind);
+
         int increasing = (vN >= v0) ? 1 : 0;
 
         ssize_t lo = 0;
@@ -747,7 +690,8 @@ namespace bclibc
         while (lo < hi)
         {
             ssize_t mid = lo + ((hi - lo) >> 1);
-            vm = buf[mid].key_val(key_kind);
+
+            vm = data_vector[mid].key_val(key_kind);
 
             if ((increasing && vm < key_value) || (!increasing && vm > key_value))
             {
@@ -759,7 +703,7 @@ namespace bclibc
             }
         }
 
-        // Clamp to valid center index for 3-point interpolation
+        // Clamp to valid center index for 3-point interpolation (idx-1, idx, idx+1)
         if (lo < 1)
             lo = 1;
         if (lo > n - 2)
@@ -787,14 +731,16 @@ namespace bclibc
         double sa,
         double value) const
     {
-        if (this->length < 3)
+        ssize_t n = (ssize_t)this->buffer.size();
+
+        if (n < 3)
             return -1;
 
-        const BCLIBC_BaseTraj *buf = this->buffer;
-        ssize_t n = this->length;
+        const auto &data_vector = this->buffer;
 
-        double v0 = buf[0].slant_val_buf(ca, sa);
-        double vN = buf[n - 1].slant_val_buf(ca, sa);
+        double v0 = data_vector[0].slant_val_buf(ca, sa);
+        double vN = data_vector[n - 1].slant_val_buf(ca, sa);
+
         int increasing = (vN >= v0) ? 1 : 0;
 
         ssize_t lo = 0;
@@ -804,7 +750,8 @@ namespace bclibc
         while (lo < hi)
         {
             ssize_t mid = lo + ((hi - lo) >> 1);
-            vm = buf[mid].slant_val_buf(ca, sa);
+
+            vm = data_vector[mid].slant_val_buf(ca, sa);
 
             if ((increasing && vm < value) || (!increasing && vm > value))
                 lo = mid + 1;
@@ -812,7 +759,7 @@ namespace bclibc
                 hi = mid;
         }
 
-        // Clamp to valid center index for 3-point interpolation
+        // Clamp to valid center index for 3-point interpolation (range [1, n-2])
         if (lo < 1)
             lo = 1;
         if (lo > n - 2)

@@ -47,18 +47,10 @@ cdef class BaseTrajSeqT:
 
     def reserve(self, int min_capacity):
         """Ensure capacity is at least min_capacity (no-op if already large enough)."""
+        import warnings
+        warnings.warn("reserve method deprecated due to auto resources manage")
         if min_capacity < 0:
             raise ValueError("min_capacity must be non-negative")
-        cdef BCLIBC_ErrorType err = self._this.ensure_capacity(<Py_ssize_t>min_capacity)
-        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            return
-        if err == BCLIBC_ErrorType.BCLIBC_E_MEMORY_ERROR:
-            raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
-        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
-            raise ValueError('Invalid BCLIBC_BaseTrajSeq.ensure_capacity input')
-        raise RuntimeError(
-            f"undefined error occured during BCLIBC_BaseTrajSeq.ensure_capacity, error code: {err}"
-        )
 
     def __len__(self):
         """Number of points in the sequence."""

@@ -68,7 +68,6 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double vx, double vy, double vz,
             double mach
         ) noexcept nogil
-        BCLIBC_ErrorType ensure_capacity(size_t min_capacity) noexcept nogil
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const
         BCLIBC_ErrorType interpolate_at(

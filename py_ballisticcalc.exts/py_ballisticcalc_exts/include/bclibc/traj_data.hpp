@@ -103,6 +103,17 @@ namespace bclibc
         double vz;   /* Velocity z-component */
         double mach; /* Mach number */
 
+        BCLIBC_BaseTraj() = default;
+        BCLIBC_BaseTraj(
+            double time,
+            double px,
+            double py,
+            double pz,
+            double vx,
+            double vy,
+            double vz,
+            double mach);
+
         double key_val(BCLIBC_BaseTraj_InterpKey key_kind) const;
         double slant_val_buf(double ca, double sa) const;
 
@@ -118,14 +129,10 @@ namespace bclibc
     class BCLIBC_BaseTrajSeq
     {
     private:
-        BCLIBC_BaseTraj *buffer;
-        size_t length;
-        size_t capacity;
+        std::vector<BCLIBC_BaseTraj> buffer;
 
     public:
-        BCLIBC_BaseTrajSeq();
-
-        ~BCLIBC_BaseTrajSeq();
+        BCLIBC_BaseTrajSeq() = default;
 
         /**
          * @brief Appends a new trajectory point to the end of the sequence.
@@ -145,21 +152,6 @@ namespace bclibc
          *         BCLIBC_E_INPUT_ERROR if seq is NULL.
          */
         BCLIBC_ErrorType append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
-
-        /**
-         * @brief Ensure that the sequence has at least `min_capacity` slots.
-         *
-         * This function safely allocates a new buffer if the current capacity is insufficient,
-         * copies existing elements to the new buffer, and frees the old buffer.
-         *
-         * It avoids using realloc to ensure that existing memory is not invalidated in case
-         * of allocation failure.
-         *
-         * @param min_capacity Minimum required number of elements.
-         * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR on success, BCLIBC_E_MEMORY_ERROR on allocation failure,
-         *         BCLIBC_E_INPUT_ERROR if seq is NULL.
-         */
-        BCLIBC_ErrorType ensure_capacity(size_t min_capacity);
 
         /**
          * Returns the length of the trajectory sequence.
