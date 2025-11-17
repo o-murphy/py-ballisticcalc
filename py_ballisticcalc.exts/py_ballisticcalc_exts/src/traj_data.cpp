@@ -402,7 +402,6 @@ namespace bclibc
         }
 
         ssize_t n = (ssize_t)this->buffer.size();
-        const BCLIBC_BaseTraj *buf = this->buffer.data();
 
         if (n < 3)
         {
@@ -415,7 +414,7 @@ namespace bclibc
         // Search from start_from_time if provided
         if (start_from_time > 0.0 && key_kind != BCLIBC_BaseTraj_InterpKey::TIME)
         {
-            ssize_t start_idx = this->find_start_index(buf, n, start_from_time);
+            ssize_t start_idx = this->find_start_index(start_from_time);
 
             // Try exact match at start index
             BCLIBC_ErrorType exact_err = this->try_get_exact(start_idx, key_kind, key_value, out);
@@ -423,7 +422,7 @@ namespace bclibc
                 return BCLIBC_E_NO_ERROR;
 
             // Find target index for interpolation
-            target_idx = this->find_target_index(buf, n, key_kind, key_value, start_idx);
+            ssize_t target_idx = this->find_target_index(key_kind, key_value, start_idx);
         }
 
         // If not found, bisect the whole range
@@ -771,13 +770,14 @@ namespace bclibc
     /**
      * @brief Find the starting index for a given start time.
      *
-     * @param buf Buffer of trajectory points.
-     * @param n Length of buffer.
      * @param start_time Start time to search from.
      * @return Index of the first element with time >= start_time.
      */
-    ssize_t BCLIBC_BaseTrajSeq::find_start_index(const BCLIBC_BaseTraj *buf, ssize_t n, double start_time)
+    ssize_t BCLIBC_BaseTrajSeq::find_start_index(double start_time) const
     {
+        ssize_t n = (ssize_t)this->buffer.size();
+        const BCLIBC_BaseTraj *buf = this->buffer.data();
+
         // Binary search
         if (n > 10 && buf[0].time <= buf[n - 1].time)
         {
@@ -810,20 +810,19 @@ namespace bclibc
     /**
      * @brief Find the target index covering key_value for interpolation.
      *
-     * @param buf Buffer of trajectory points.
-     * @param n Length of buffer.
      * @param key_kind Kind of key.
      * @param key_value Key value to interpolate.
      * @param start_idx Index to start searching from.
      * @return Target index for interpolation, -1 if not found.
      */
     ssize_t BCLIBC_BaseTrajSeq::find_target_index(
-        const BCLIBC_BaseTraj *buf,
-        ssize_t n,
         BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
-        ssize_t start_idx)
+        ssize_t start_idx) const
     {
+        ssize_t n = (ssize_t)this->buffer.size();
+        const BCLIBC_BaseTraj *buf = this->buffer.data();
+
         // Minimal requirement for 3-point interpolation is 3 points.
         if (n < 3)
         {

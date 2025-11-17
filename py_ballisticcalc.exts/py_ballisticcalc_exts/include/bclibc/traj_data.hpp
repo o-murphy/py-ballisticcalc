@@ -327,29 +327,23 @@ namespace bclibc
         /**
          * @brief Find the starting index for a given start time.
          *
-         * @param buf Buffer of trajectory points.
-         * @param n Length of buffer.
          * @param start_time Start time to search from.
          * @return Index of the first element with time >= start_time.
          */
-        static ssize_t find_start_index(const BCLIBC_BaseTraj *buf, ssize_t n, double start_time);
+        ssize_t find_start_index(double start_time) const;
 
         /**
          * @brief Find the target index covering key_value for interpolation.
          *
-         * @param buf Buffer of trajectory points.
-         * @param n Length of buffer.
          * @param key_kind Kind of key.
          * @param key_value Key value to interpolate.
          * @param start_idx Index to start searching from.
          * @return Target index for interpolation, -1 if not found.
          */
-        static ssize_t find_target_index(
-            const BCLIBC_BaseTraj *buf,
-            ssize_t n,
+        ssize_t find_target_index(
             BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
-            ssize_t start_idx);
+            ssize_t start_idx) const;
 
         /**
          * @brief Check if two double values are approximately equal.
