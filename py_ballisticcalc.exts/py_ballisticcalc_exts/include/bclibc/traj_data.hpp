@@ -6,24 +6,27 @@
 #include "bclibc/interp.hpp"
 
 // --- START CROSS-PLATFORM FIX ---
-// The manylinux build environment failed due to redefinition.
-// We only need to manually define ssize_t for MSVC (Windows).
-// For other platforms, we rely on the standard headers above.
+// ssize_t is a standard POSIX type. It must be defined manually only for MSVC.
 #if defined(_MSC_VER)
-// Robust definition for MSVC based on architecture
-#if defined(_WIN64)
-typedef __int64 ssize_t;
-#else
+// MSVC does not define ssize_t by default, but it defines specific types based on architecture.
+// Use ptrdiff_t as the closest standard C++ type for signed size difference,
+// which correctly resolves to __int64 on x64 and long on x86/ARM32.
+// However, for maximum compatibility with C/POSIX APIs, an explicit definition is safer.
 
-#include <sys/types.h> // Required for ssize_t
-// or
-// typedef long ssize_t;
+// Robust definition based on architecture:
+#if defined(_WIN64) // For 64-bit platforms (x64, ARM64)
+typedef __int64 ssize_t;
+#else // For 32-bit platforms (x86, ARM32)
+typedef long ssize_t;
 #endif
+
+#else
+// For POSIX-compliant systems (Linux, macOS, etc.) and other compilers (GCC, Clang),
+// ssize_t is included via standard headers like <sys/types.h> or <unistd.h>.
+// To ensure full POSIX compatibility without redundancy, explicitly include the required header:
+#include <sys/types.h>
 #endif
 // --- END CROSS-PLATFORM FIX ---
-
-// Min capacity starts from 64
-// maybe beter to use at least 192 byte min capacity as a 3-point buffer required for interpolation
 
 namespace bclibc
 {
