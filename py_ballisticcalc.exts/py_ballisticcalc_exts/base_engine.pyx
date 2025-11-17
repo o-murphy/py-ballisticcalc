@@ -11,7 +11,6 @@ from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport (
     BaseTrajSeqT,
-    BCLIBC_BaseTrajSeq,
     BCLIBC_BaseTrajData,
     BCLIBC_TrajectoryData,
 )
@@ -548,13 +547,12 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef:
             BaseTrajSeqT trajectory = BaseTrajSeqT()
-            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._this
             BCLIBC_TerminationReason reason
         cdef BCLIBC_StatusCode status = self._this.integrate_dense(
             range_limit_ft,
             range_step_ft,
             time_step,
-            trajectory_ptr,
+            &trajectory._this,
             &reason,
         )
 
