@@ -1,36 +1,36 @@
-cdef extern from "include/bclibc/error_stack.h":
+cdef extern from "include/bclibc/error_stack.hpp" namespace "bclibc" nogil:
     DEF BCLIBC_MAX_ERROR_STACK = 16
     DEF BCLIBC_MAX_ERROR_MSG_LEN = 256
     DEF BCLIBC_MAX_ERROR_TRACE_LEN = 4096
 
-    ctypedef enum BCLIBC_StatusCode:
-        BCLIBC_STATUS_SUCCESS
-        BCLIBC_STATUS_ERROR
+    cdef enum class BCLIBC_StatusCode:
+        SUCCESS
+        ERROR
 
-    ctypedef enum BCLIBC_ErrorSource:
-        BCLIBC_SRC_INTEGRATE
-        BCLIBC_SRC_FIND_APEX
-        BCLIBC_SRC_INIT_ZERO
-        BCLIBC_SRC_ZERO_ANGLE
-        BCLIBC_SRC_FIND_ZERO_ANGLE
-        BCLIBC_SRC_ERROR_AT_DISTANCE
-        BCLIBC_SRC_FIND_MAX_RANGE
-        BCLIBC_SRC_RANGE_FOR_ANGLE
+    cdef enum class BCLIBC_ErrorSource:
+        INTEGRATE
+        FIND_APEX
+        INIT_ZERO
+        ZERO_ANGLE
+        FIND_ZERO_ANGLE
+        ERROR_AT_DISTANCE
+        FIND_MAX_RANGE
+        RANGE_FOR_ANGLE
 
-    ctypedef enum BCLIBC_ErrorType:
-        BCLIBC_E_NO_ERROR
-        BCLIBC_E_ZERO_DIVISION_ERROR
-        BCLIBC_E_VALUE_ERROR
-        BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR
-        BCLIBC_E_INDEX_ERROR
-        BCLIBC_E_MEMORY_ERROR
-        BCLIBC_E_ARITHMETIC_ERROR
-        BCLIBC_E_INPUT_ERROR
-        BCLIBC_E_RUNTIME_ERROR
+    cdef enum class BCLIBC_ErrorType:
+        NO_ERROR
+        ZERO_DIVISION_ERROR
+        VALUE_ERROR
+        BASE_TRAJ_INTERP_KEY_ERROR
+        INDEX_ERROR
+        MEMORY_ERROR
+        ARITHMETIC_ERROR
+        INPUT_ERROR
+        RUNTIME_ERROR
 
-        BCLIBC_E_APEX_ERROR
-        BCLIBC_E_ZERO_FINDING_ERROR
-        BCLIBC_E_OUT_OF_RANGE_ERROR
+        APEX_ERROR
+        ZERO_FINDING_ERROR
+        OUT_OF_RANGE_ERROR
 
     ctypedef struct BCLIBC_ErrorFrame:
         BCLIBC_ErrorType code

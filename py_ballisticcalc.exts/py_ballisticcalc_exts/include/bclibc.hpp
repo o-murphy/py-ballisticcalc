@@ -2,8 +2,8 @@
 #define BCLIBC_H
 
 #include "bclibc/v3d.hpp"
-#include "bclibc/log.h"
-#include "bclibc/error_stack.h"
+#include "bclibc/log.hpp"
+#include "bclibc/error_stack.hpp"
 #include "bclibc/interp.hpp"
 #include "bclibc/base_types.hpp"
 #include "bclibc/traj_data.hpp"

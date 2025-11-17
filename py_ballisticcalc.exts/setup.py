@@ -89,9 +89,9 @@ include_dirs = [
 
 # Define all C source files and their paths
 SOURCE_PATHS = {
-    "log": SRC_DIR_PATH / "log.c",
-    "error_stack": SRC_DIR_PATH / "error_stack.c",
     # C++ Sources:
+    "log": SRC_DIR_PATH / "log.cpp",
+    "error_stack": SRC_DIR_PATH / "error_stack.cpp",
     "v3d": SRC_DIR_PATH / "v3d.cpp",
     "interp": SRC_DIR_PATH / "interp.cpp",
     "types": SRC_DIR_PATH / "base_types.cpp",
@@ -143,7 +143,7 @@ is_macos = platform.system() == "Darwin"
 if is_msvc:
     # MSVC-specific flags
     c_compile_args = ["/O2", "/W3"]
-    cpp_compile_args = ["/std:c++11", "/O2", "/W3"]
+    cpp_compile_args = ["/O2", "/W3"]  # "/std:c++11" flag is deprecated
     cpp_extra_link_args = []
     # Crucial for MSVC on ARM
     if platform.machine().startswith("ARM"):

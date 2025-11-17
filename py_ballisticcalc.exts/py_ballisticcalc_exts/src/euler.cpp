@@ -49,8 +49,8 @@ namespace bclibc
         if (!eng || !trajectory || !reason)
         {
             REQUIRE_NON_NULL(eng);
-            BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
-            return BCLIBC_STATUS_ERROR;
+            BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
+            return BCLIBC_StatusCode::ERROR;
         }
 
         double velocity, delta_time;
@@ -214,7 +214,7 @@ namespace bclibc
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
-        return BCLIBC_STATUS_SUCCESS;
+        return BCLIBC_StatusCode::SUCCESS;
     };
 
 };

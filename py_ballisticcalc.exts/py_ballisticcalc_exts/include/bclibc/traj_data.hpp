@@ -1,7 +1,7 @@
 #ifndef BCLIBC_BASE_TRAJ_SEQ_HPP
 #define BCLIBC_BASE_TRAJ_SEQ_HPP
 
-#include <cstddef> // Required for size_t
+#include <cstddef> // Required for std::ptrdiff_t
 #include "bclibc/base_types.hpp"
 #include "bclibc/interp.hpp"
 
@@ -24,7 +24,7 @@ typedef long ssize_t;
 // For POSIX-compliant systems (Linux, macOS, etc.) and other compilers (GCC, Clang),
 // ssize_t is included via standard headers like <sys/types.h> or <unistd.h>.
 // To ensure full POSIX compatibility without redundancy, explicitly include the required header:
-#include <sys/types.h>
+#include <unistd.h>
 #endif
 // --- END CROSS-PLATFORM FIX ---
 
@@ -151,8 +151,8 @@ namespace bclibc
          * @param vy Y velocity.
          * @param vz Z velocity.
          * @param mach Mach number.
-         * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR on success, BCLIBC_E_MEMORY_ERROR if allocation fails,
-         *         BCLIBC_E_INPUT_ERROR if seq is NULL.
+         * @return BCLIBC_ErrorType NO_ERROR on success, MEMORY_ERROR if allocation fails,
+         *         INPUT_ERROR if seq is NULL.
          */
         BCLIBC_ErrorType append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
 
@@ -199,9 +199,9 @@ namespace bclibc
          *
          * @param idx Index of the trajectory point to retrieve.
          * @param out Pointer to BCLIBC_BaseTrajData where results will be stored.
-         * @return BCLIBC_E_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-         *         BCLIBC_E_INPUT_ERROR if seq or out is NULL,
-         *         BCLIBC_E_INDEX_ERROR if idx is out of bounds.
+         * @return NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
+         *         INPUT_ERROR if seq or out is NULL,
+         *         INDEX_ERROR if idx is out of bounds.
          */
         BCLIBC_ErrorType get_item(
             ssize_t idx,
@@ -214,7 +214,7 @@ namespace bclibc
          * @param key_value Key value to get.
          * @param start_from_time Optional start time (use -1 if not used).
          * @param out Output trajectory data.
-         * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR if successful, otherwise error code.
+         * @return BCLIBC_ErrorType NO_ERROR if successful, otherwise error code.
          */
         BCLIBC_ErrorType get_at(
             BCLIBC_BaseTraj_InterpKey key_kind,
@@ -233,9 +233,9 @@ namespace bclibc
          * @param look_angle_rad Look angle in radians.
          * @param value Target slant height for interpolation.
          * @param out Pointer to BCLIBC_BaseTrajData where interpolated results will be stored.
-         * @return BCLIBC_E_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-         *         BCLIBC_E_INPUT_ERROR if seq or out is NULL,
-         *         BCLIBC_E_VALUE_ERROR if not enough points or interpolation fails.
+         * @return NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
+         *         INPUT_ERROR if seq or out is NULL,
+         *         VALUE_ERROR if not enough points or interpolation fails.
          */
         BCLIBC_ErrorType get_at_slant_height(
             double look_angle_rad,
@@ -250,7 +250,7 @@ namespace bclibc
          * @param key_kind Kind of interpolation key.
          * @param key_value Key value to interpolate at.
          * @param out Output trajectory data.
-         * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR if successful, otherwise error code.
+         * @return BCLIBC_ErrorType NO_ERROR if successful, otherwise error code.
          */
         BCLIBC_ErrorType interpolate_at_center(
             ssize_t idx,
@@ -269,7 +269,7 @@ namespace bclibc
          * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
          * @param key_value The target value of the key to interpolate at.
          * @param out Pointer to a BCLIBC_BaseTraj struct where the interpolated result will be stored.
-         * @return BCLIBC_E_NO_ERROR on success, or an BCLIBC_ErrorType on failure.
+         * @return NO_ERROR on success, or an BCLIBC_ErrorType on failure.
          */
         BCLIBC_ErrorType interpolate_raw(
             ssize_t idx,
@@ -278,13 +278,13 @@ namespace bclibc
             BCLIBC_BaseTraj *out) const;
 
         /**
-         * @brief Try to get exact value at index, return BCLIBC_E_NO_ERROR if successful.
+         * @brief Try to get exact value at index, return NO_ERROR if successful.
          *
          * @param idx Index to check.
          * @param key_kind Kind of key.
          * @param key_value Key value to match.
          * @param out Output trajectory data.
-         * @return BCLIBC_E_NO_ERROR if exact match found, otherwise BCLIBC_E_VALUE_ERROR.
+         * @return NO_ERROR if exact match found, otherwise VALUE_ERROR.
          */
         BCLIBC_ErrorType try_get_exact(
             ssize_t idx,

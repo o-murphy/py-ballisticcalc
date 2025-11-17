@@ -134,7 +134,7 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
 
     # 3. Update the cache for the first (zero) wind element after filling the vector
     cdef BCLIBC_ErrorType error_code = ws.update_cache()
-    if error_code != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+    if error_code != BCLIBC_ErrorType.NO_ERROR:
         # This is a BCLIBC error, not a C++ exception, so no except+ is needed here.
         raise RuntimeError("BCLIBC_WindSock initialization error during final cache update.")
 

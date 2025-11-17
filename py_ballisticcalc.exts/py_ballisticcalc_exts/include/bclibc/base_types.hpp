@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include "v3d.hpp"
-#include "bclibc/error_stack.h"
+#include "bclibc/error_stack.hpp"
 
 namespace bclibc
 {

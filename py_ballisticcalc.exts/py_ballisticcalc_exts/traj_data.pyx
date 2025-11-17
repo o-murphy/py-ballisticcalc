@@ -37,11 +37,11 @@ cdef class BaseTrajSeqT:
                double vx, double vy, double vz, double mach):
         """Append a new point to the sequence."""
         cdef BCLIBC_ErrorType err = self._this.append(time, px, py, pz, vx, vy, vz, mach)
-        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        if err == BCLIBC_ErrorType.NO_ERROR:
             return
-        if err == BCLIBC_ErrorType.BCLIBC_E_MEMORY_ERROR:
+        if err == BCLIBC_ErrorType.MEMORY_ERROR:
             raise MemoryError("Failed to (re)allocate memory for trajectory buffer")
-        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
+        if err == BCLIBC_ErrorType.VALUE_ERROR:
             raise ValueError('Invalid BCLIBC_BaseTrajSeq.append input')
         raise RuntimeError(f"undefined error occured during BCLIBC_BaseTrajSeq.append, error code: {err}")
 
@@ -64,7 +64,7 @@ cdef class BaseTrajSeqT:
         cdef Py_ssize_t _i = <Py_ssize_t>idx
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = self._this.get_item(_i, &out._this)
-        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        if err == BCLIBC_ErrorType.NO_ERROR:
             return out
         raise IndexError("Index out of range")
 
@@ -76,16 +76,16 @@ cdef class BaseTrajSeqT:
             idx, key_kind, key_value, &out._this
         )
 
-        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        if err == BCLIBC_ErrorType.NO_ERROR:
             return out
 
-        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
+        if err == BCLIBC_ErrorType.VALUE_ERROR:
             raise ValueError("invalid BCLIBC_BaseTrajSeq.interpolate_at input")
-        if err == BCLIBC_ErrorType.BCLIBC_E_INDEX_ERROR:
+        if err == BCLIBC_ErrorType.INDEX_ERROR:
             raise IndexError(
                 "BCLIBC_BaseTrajSeq.interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)"
             )
-        if err == BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR:
+        if err == BCLIBC_ErrorType.BASE_TRAJ_INTERP_KEY_ERROR:
             raise AttributeError("invalid BCLIBC_BaseTraj_InterpKey")
         raise RuntimeError(
             f"undefined error occured during BCLIBC_BaseTrajSeq.interpolate_at, error code: {err}"
@@ -107,12 +107,12 @@ cdef class BaseTrajSeqT:
         cdef BCLIBC_ErrorType err = self._this.get_at(
             key_kind, key_value, _start_from_time, &out._this
         )
-        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        if err == BCLIBC_ErrorType.NO_ERROR:
             return out
 
-        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
+        if err == BCLIBC_ErrorType.VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
-        if err == BCLIBC_ErrorType.BCLIBC_E_ARITHMETIC_ERROR:
+        if err == BCLIBC_ErrorType.ARITHMETIC_ERROR:
             raise ArithmeticError(
                 f"Trajectory does not reach {_key_to_attribute(key_kind)} = {key_value}")
         raise RuntimeError(f"undefined internal error in BCLIBC_BaseTrajSeq.get_at, error code: {err}")
@@ -122,12 +122,12 @@ cdef class BaseTrajSeqT:
 
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = self._this.get_at_slant_height(look_angle_rad, value, &out._this)
-        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        if err == BCLIBC_ErrorType.NO_ERROR:
             return out
 
-        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
+        if err == BCLIBC_ErrorType.VALUE_ERROR:
             raise ValueError("Interpolation requires at least 3 points")
-        if err == BCLIBC_ErrorType.BCLIBC_E_ZERO_DIVISION_ERROR:
+        if err == BCLIBC_ErrorType.ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
         raise RuntimeError(f"undefined error in BCLIBC_BaseTrajSeq.get_at_slant_height, error code: {err}")
 
@@ -183,13 +183,13 @@ cdef class BaseTrajDataT:
             &out._this
         )
 
-        if err == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        if err == BCLIBC_ErrorType.NO_ERROR:
             return out
 
-        if err == BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR:
+        if err == BCLIBC_ErrorType.VALUE_ERROR:
             raise ValueError("invalid BCLIBC_BaseTrajData.interpolate input")
-        if err == BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR:
+        if err == BCLIBC_ErrorType.BASE_TRAJ_INTERP_KEY_ERROR:
             raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
-        if err == BCLIBC_ErrorType.BCLIBC_E_ZERO_DIVISION_ERROR:
+        if err == BCLIBC_ErrorType.ZERO_DIVISION_ERROR:
             raise ZeroDivisionError("Duplicate x for interpolation")
         raise RuntimeError("unknown error in BCLIBC_BaseTrajData.interpolate")

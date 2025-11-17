@@ -1,6 +1,6 @@
 # cython: freethreading_compatible=True
 
-cdef extern from "include/bclibc/log.h" nogil:
+cdef extern from "include/bclibc/log.hpp" namespace "bclibc" nogil:
     ctypedef enum BCLIBC_LogLevel:
         BCLIBC_LOG_LEVEL_CRITICAL = 50
         BCLIBC_LOG_LEVEL_ERROR = 40

@@ -65,7 +65,7 @@ namespace bclibc
      * @param p1 Pointer to the second data point.
      * @param p2 Pointer to the third data point (after or at the end of the segment).
      * @param out Pointer to the BCLIBC_BaseTrajData structure where the interpolated result will be stored.
-     * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR for degenerate segments (identical key values).
+     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input, BCLIBC_ErrorType::ZERO_DIVISION_ERROR for degenerate segments (identical key values).
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajData::interpolate(
         BCLIBC_BaseTraj_InterpKey key_kind,
@@ -78,7 +78,7 @@ namespace bclibc
         if (!p0 || !p1 || !p2 || !out)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
+            return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
         // Get key values
@@ -89,7 +89,7 @@ namespace bclibc
         // Guard against degenerate segments
         if (x0 == x1 || x0 == x2 || x1 == x2)
         {
-            return BCLIBC_E_ZERO_DIVISION_ERROR;
+            return BCLIBC_ErrorType::ZERO_DIVISION_ERROR;
         }
 
         // Cache position and velocity
@@ -115,7 +115,7 @@ namespace bclibc
 
         out->mach = (key_kind == BCLIBC_BaseTraj_InterpKey::MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
 
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     BCLIBC_BaseTraj::BCLIBC_BaseTraj(
@@ -246,8 +246,8 @@ namespace bclibc
      * @param vy Y velocity.
      * @param vz Z velocity.
      * @param mach Mach number.
-     * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR on success, BCLIBC_E_MEMORY_ERROR if allocation fails,
-     *         BCLIBC_E_INPUT_ERROR if seq is NULL.
+     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::MEMORY_ERROR if allocation fails,
+     *         BCLIBC_ErrorType::INPUT_ERROR if seq is NULL.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
     {
@@ -259,9 +259,9 @@ namespace bclibc
         }
         catch (...)
         {
-            return BCLIBC_E_RUNTIME_ERROR;
+            return BCLIBC_ErrorType::RUNTIME_ERROR;
         }
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -299,19 +299,19 @@ namespace bclibc
         if (!out)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR; // Invalid input
+            return BCLIBC_ErrorType::INPUT_ERROR; // Invalid input
         }
         BCLIBC_BaseTraj raw_output;
         BCLIBC_ErrorType err = this->interpolate_raw(idx, key_kind, key_value, &raw_output);
-        if (err != BCLIBC_E_NO_ERROR)
+        if (err != BCLIBC_ErrorType::NO_ERROR)
         {
-            return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR
+            return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
         }
         out->time = raw_output.time;
         out->position = BCLIBC_V3dT{raw_output.px, raw_output.py, raw_output.pz};
         out->velocity = BCLIBC_V3dT{raw_output.vx, raw_output.vy, raw_output.vz};
         out->mach = raw_output.mach;
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -351,9 +351,9 @@ namespace bclibc
      *
      * @param idx Index of the trajectory point to retrieve.
      * @param out Pointer to BCLIBC_BaseTrajData where results will be stored.
-     * @return BCLIBC_E_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-     *         BCLIBC_E_INPUT_ERROR if seq or out is NULL,
-     *         BCLIBC_E_INDEX_ERROR if idx is out of bounds.
+     * @return BCLIBC_ErrorType::NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
+     *         BCLIBC_ErrorType::INPUT_ERROR if seq or out is NULL,
+     *         BCLIBC_ErrorType::INDEX_ERROR if idx is out of bounds.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_item(
         ssize_t idx,
@@ -362,14 +362,14 @@ namespace bclibc
         if (!out)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
+            return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
         const BCLIBC_BaseTraj *entry_ptr = this->get_raw_item(idx);
         if (!entry_ptr)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Index out of bounds.");
-            return BCLIBC_E_INDEX_ERROR;
+            return BCLIBC_ErrorType::INDEX_ERROR;
         }
 
         out->time = entry_ptr->time;
@@ -377,7 +377,7 @@ namespace bclibc
         out->velocity = BCLIBC_V3dT{entry_ptr->vx, entry_ptr->vy, entry_ptr->vz};
         out->mach = entry_ptr->mach;
 
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -387,7 +387,7 @@ namespace bclibc
      * @param key_value Key value to get.
      * @param start_from_time Optional start time (use -1 if not used).
      * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR if successful, otherwise error code.
+     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR if successful, otherwise error code.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at(
         BCLIBC_BaseTraj_InterpKey key_kind,
@@ -398,7 +398,7 @@ namespace bclibc
         if (!out)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
+            return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
         ssize_t n = (ssize_t)this->buffer.size();
@@ -406,7 +406,7 @@ namespace bclibc
         if (n < 3)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
-            return BCLIBC_E_VALUE_ERROR;
+            return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         ssize_t target_idx = -1;
@@ -418,8 +418,8 @@ namespace bclibc
 
             // Try exact match at start index
             BCLIBC_ErrorType exact_err = this->try_get_exact(start_idx, key_kind, key_value, out);
-            if (exact_err == BCLIBC_E_NO_ERROR)
-                return BCLIBC_E_NO_ERROR;
+            if (exact_err == BCLIBC_ErrorType::NO_ERROR)
+                return BCLIBC_ErrorType::NO_ERROR;
 
             // Find target index for interpolation
             ssize_t target_idx = this->find_target_index(key_kind, key_value, start_idx);
@@ -432,15 +432,15 @@ namespace bclibc
             if (center < 0)
             {
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Bisecting failed; not enough data points.");
-                return BCLIBC_E_VALUE_ERROR;
+                return BCLIBC_ErrorType::VALUE_ERROR;
             }
             target_idx = center < n - 1 ? center : n - 2;
         }
 
         // Try exact match at target index
         BCLIBC_ErrorType exact_err = this->try_get_exact(target_idx, key_kind, key_value, out);
-        if (exact_err == BCLIBC_E_NO_ERROR)
-            return BCLIBC_E_NO_ERROR;
+        if (exact_err == BCLIBC_ErrorType::NO_ERROR)
+            return BCLIBC_ErrorType::NO_ERROR;
 
         // Otherwise interpolate at center
         ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;
@@ -458,9 +458,9 @@ namespace bclibc
      * @param look_angle_rad Look angle in radians.
      * @param value Target slant height for interpolation.
      * @param out Pointer to BCLIBC_BaseTrajData where interpolated results will be stored.
-     * @return BCLIBC_E_NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-     *         BCLIBC_E_INPUT_ERROR if seq or out is NULL,
-     *         BCLIBC_E_VALUE_ERROR if not enough points or interpolation fails.
+     * @return BCLIBC_ErrorType::NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
+     *         BCLIBC_ErrorType::INPUT_ERROR if seq or out is NULL,
+     *         BCLIBC_ErrorType::VALUE_ERROR if not enough points or interpolation fails.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at_slant_height(
         double look_angle_rad,
@@ -470,7 +470,7 @@ namespace bclibc
         if (!out)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
+            return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
         double ca = std::cos(look_angle_rad);
@@ -481,20 +481,20 @@ namespace bclibc
         if (n < 3)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Not enough data points for interpolation.");
-            return BCLIBC_E_VALUE_ERROR;
+            return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         ssize_t center = this->bisect_center_idx_slant_buf(ca, sa, value);
         if (center < 0)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Failed to find center index for interpolation.");
-            return BCLIBC_E_VALUE_ERROR;
+            return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         if (center < 1 || center >= n - 1)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Calculated center index out of safe interpolation range.");
-            return BCLIBC_E_VALUE_ERROR;
+            return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         const auto &data_vector = this->buffer;
@@ -509,7 +509,7 @@ namespace bclibc
         if (ox0 == ox1 || ox1 == ox2)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Duplicate slant key values detected; cannot interpolate.");
-            return BCLIBC_E_VALUE_ERROR;
+            return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         out->time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
@@ -523,7 +523,7 @@ namespace bclibc
             BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz)};
         out->mach = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
 
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -533,7 +533,7 @@ namespace bclibc
      * @param key_kind Kind of interpolation key.
      * @param key_value Key value to interpolate at.
      * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType BCLIBC_E_NO_ERROR if successful, otherwise error code.
+     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR if successful, otherwise error code.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_at_center(
         ssize_t idx,
@@ -542,13 +542,13 @@ namespace bclibc
         BCLIBC_BaseTrajData *out) const
     {
         BCLIBC_ErrorType err = this->interpolate_at(idx, key_kind, key_value, out);
-        if (err != BCLIBC_E_NO_ERROR)
+        if (err != BCLIBC_ErrorType::NO_ERROR)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Interpolation failed at center index %zd, error code: 0x%X", idx, err);
-            return err; // BCLIBC_E_INDEX_ERROR or BCLIBC_E_VALUE_ERROR or BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR
+            return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
         }
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Interpolation successful at center index %zd.", idx);
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -562,7 +562,7 @@ namespace bclibc
      * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
      * @param key_value The target value of the key to interpolate at.
      * @param out Pointer to a BCLIBC_BaseTraj struct where the interpolated result will be stored.
-     * @return BCLIBC_E_NO_ERROR on success, or an BCLIBC_ErrorType on failure.
+     * @return BCLIBC_ErrorType::NO_ERROR on success, or an BCLIBC_ErrorType on failure.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_raw(
         ssize_t idx,
@@ -573,7 +573,7 @@ namespace bclibc
         if (!out)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Invalid input (NULL pointer).");
-            return BCLIBC_E_INPUT_ERROR;
+            return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
         const auto &data_vector = this->buffer;
@@ -587,7 +587,7 @@ namespace bclibc
         if (idx < 1 || idx >= length - 1)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Index out of bounds for interpolation.");
-            return BCLIBC_E_VALUE_ERROR;
+            return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         const BCLIBC_BaseTraj *p0 = &data_vector[idx - 1];
@@ -603,7 +603,7 @@ namespace bclibc
         if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
         {
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Duplicate key values detected; cannot interpolate.");
-            return BCLIBC_E_VALUE_ERROR;
+            return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
         // Interpolate all trajectory components
@@ -611,17 +611,17 @@ namespace bclibc
         // Store results
         BCLIBC_BaseTraj::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
 
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
-     * @brief Try to get exact value at index, return BCLIBC_E_NO_ERROR if successful.
+     * @brief Try to get exact value at index, return BCLIBC_ErrorType::NO_ERROR if successful.
      *
      * @param idx Index to check.
      * @param key_kind Kind of key.
      * @param key_value Key value to match.
      * @param out Output trajectory data.
-     * @return BCLIBC_E_NO_ERROR if exact match found, otherwise BCLIBC_E_VALUE_ERROR.
+     * @return BCLIBC_ErrorType::NO_ERROR if exact match found, otherwise BCLIBC_ErrorType::VALUE_ERROR.
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::try_get_exact(
         ssize_t idx,
@@ -631,7 +631,7 @@ namespace bclibc
     {
         if (idx < 0 || idx >= (ssize_t)this->buffer.size())
         {
-            return BCLIBC_E_INDEX_ERROR;
+            return BCLIBC_ErrorType::INDEX_ERROR;
         }
 
         double epsilon = 1e-9;
@@ -639,16 +639,16 @@ namespace bclibc
         if (this->is_close(this->buffer[idx].key_val(key_kind), key_value, epsilon))
         {
             BCLIBC_ErrorType err = this->get_item(idx, out);
-            if (err != BCLIBC_E_NO_ERROR)
+            if (err != BCLIBC_ErrorType::NO_ERROR)
             {
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Failed to get item at index %zd.", idx);
-                return BCLIBC_E_INDEX_ERROR;
+                return BCLIBC_ErrorType::INDEX_ERROR;
             }
             BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Exact match found at index %zd.", idx);
-            return BCLIBC_E_NO_ERROR;
+            return BCLIBC_ErrorType::NO_ERROR;
         }
 
-        return BCLIBC_E_VALUE_ERROR; // not an exact match
+        return BCLIBC_ErrorType::VALUE_ERROR; // not an exact match
     };
 
     /**
@@ -1010,7 +1010,7 @@ namespace bclibc
             double y2 = p2->get_key_val(field_key);
 
             double interpolated_value = 0.0;
-            BCLIBC_ErrorType err = BCLIBC_E_NO_ERROR;
+            BCLIBC_ErrorType err = BCLIBC_ErrorType::NO_ERROR;
 
             if (field_key == key)
             {
@@ -1033,7 +1033,7 @@ namespace bclibc
                     {
                         err = (BCLIBC_ErrorType)BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, &interpolated_value);
                     }
-                    if (err != BCLIBC_E_NO_ERROR)
+                    if (err != BCLIBC_ErrorType::NO_ERROR)
                     {
                         throw std::domain_error("Zero division error");
                     }

@@ -178,7 +178,7 @@ namespace bclibc
     do                                                                    \
     {                                                                     \
         (status) = this->range_for_angle((angle), (y_out));               \
-        if ((status) != BCLIBC_STATUS_SUCCESS)                            \
+        if ((status) != BCLIBC_StatusCode::SUCCESS)                            \
             return (status);                                              \
     } while (0)
 };

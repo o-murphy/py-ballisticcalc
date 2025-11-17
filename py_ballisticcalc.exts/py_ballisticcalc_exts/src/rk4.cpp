@@ -87,8 +87,8 @@ namespace bclibc
         if (!eng || !trajectory || !reason)
         {
             REQUIRE_NON_NULL(eng);
-            BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_INPUT_ERROR, BCLIBC_SRC_INTEGRATE, "Invalid input (NULL pointer).");
-            return BCLIBC_STATUS_ERROR;
+            BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
+            return BCLIBC_StatusCode::ERROR;
         };
 
         double velocity, delta_time;
@@ -222,8 +222,8 @@ namespace bclibc
             // Check for division by zero
             // if (mach == 0.0)
             // {
-            //     BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_E_ZERO_DIVISION_ERROR, BCLIBC_SRC_INTEGRATE, "Integration error: Mach number is zero cannot divide!");
-            //     return BCLIBC_STATUS_ERROR;
+            //     BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_ErrorType::ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "Integration error: Mach number is zero cannot divide!");
+            //     return BCLIBC_StatusCode::ERROR;
             // }
 
             km = density_ratio * eng->shot.drag_by_mach(relative_speed / mach);
@@ -328,10 +328,10 @@ namespace bclibc
 
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Function exit, reason=%d\n", *reason);
 
-        // BCLIBC_PUSH_ERR(&eng->err_stack, ZERO_DIVISION_ERROR, BCLIBC_SRC_INTEGRATE, "fake error");
-        // return BCLIBC_STATUS_ERROR;
+        // BCLIBC_PUSH_ERR(&eng->err_stack, ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "fake error");
+        // return BCLIBC_StatusCode::ERROR;
 
-        return BCLIBC_STATUS_SUCCESS;
+        return BCLIBC_StatusCode::SUCCESS;
     };
 
 };

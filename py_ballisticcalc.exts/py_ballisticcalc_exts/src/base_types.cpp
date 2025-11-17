@@ -126,7 +126,7 @@ namespace bclibc
           filter_flags(filter_flags)
     {
         // Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-        if (this->update_stability_coefficient() != BCLIBC_E_NO_ERROR)
+        if (this->update_stability_coefficient() != BCLIBC_ErrorType::NO_ERROR)
         {
             throw std::runtime_error("Zero division detected in BCLIBC_ShotProps.update_stability_coefficient");
         };
@@ -190,7 +190,7 @@ namespace bclibc
      * - $\text{ftp}$ (Temperature/Pressure Factor)
      * - $S_g = \text{sd} \cdot \text{fv} \cdot \text{ftp}$
      *
-     * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input, BCLIBC_E_ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
+     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input, BCLIBC_ErrorType::ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
      */
     BCLIBC_ErrorType BCLIBC_ShotProps::update_stability_coefficient()
     {
@@ -221,7 +221,7 @@ namespace bclibc
             {
                 this->stability_coefficient = 0.0;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in stability coefficient calculation.");
-                return BCLIBC_E_ZERO_DIVISION_ERROR; // Exit if denominator is zero
+                return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if denominator is zero
             }
 
             fv = std::pow(this->muzzle_velocity / 2800.0, 1.0 / 3.0);
@@ -237,7 +237,7 @@ namespace bclibc
             {
                 this->stability_coefficient = 0.0;
                 BCLIBC_LOG(BCLIBC_LOG_LEVEL_ERROR, "Division by zero in ftp calculation.");
-                return BCLIBC_E_ZERO_DIVISION_ERROR; // Exit if pt is zero
+                return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if pt is zero
             }
 
             this->stability_coefficient = sd * fv * ftp;
@@ -248,7 +248,7 @@ namespace bclibc
             this->stability_coefficient = 0.0;
         }
         BCLIBC_LOG(BCLIBC_LOG_LEVEL_DEBUG, "Updated stability coefficient: %.6f", this->stability_coefficient);
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -519,7 +519,7 @@ namespace bclibc
      * and updates `ws->last_vector_cache` and `ws->next_range`.
      * If `ws->current` is out of bounds, the cache is set to a zero vector and the next range to `BCLIBC_cMaxWindDistanceFeet`.
      *
-     * @return BCLIBC_E_NO_ERROR on success, BCLIBC_E_INPUT_ERROR for NULL input.
+     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input.
      */
     BCLIBC_ErrorType BCLIBC_WindSock::update_cache()
     {
@@ -536,7 +536,7 @@ namespace bclibc
             this->last_vector_cache.z = 0.0;
             this->next_range = BCLIBC_cMaxWindDistanceFeet;
         }
-        return BCLIBC_E_NO_ERROR;
+        return BCLIBC_ErrorType::NO_ERROR;
     }
 
     /**
@@ -569,7 +569,7 @@ namespace bclibc
             {
                 // Move to the next wind segment
                 // If cache update fails, return zero vector
-                if (this->update_cache() != BCLIBC_E_NO_ERROR)
+                if (this->update_cache() != BCLIBC_ErrorType::NO_ERROR)
                 {
                     BCLIBC_LOG(BCLIBC_LOG_LEVEL_WARNING, "Failed. Returning zero vector.");
                     return zero_vector;
