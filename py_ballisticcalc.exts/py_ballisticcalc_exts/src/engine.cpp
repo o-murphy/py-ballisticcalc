@@ -36,6 +36,58 @@ BCLIBC_Engine.zero_angle
 
 namespace bclibc
 {
+    BCLIBC_ApexScopeGuard::BCLIBC_ApexScopeGuard(BCLIBC_Config *config)
+        : config(config)
+    {
+        if (this->config->cMinimumVelocity > 0.0)
+        {
+            this->restore_cMinimumVelocity = this->config->cMinimumVelocity;
+            this->config->cMinimumVelocity = 0.0;
+            this->has_restore_cMinimumVelocity = 1;
+        }
+    };
+
+    BCLIBC_ApexScopeGuard::~BCLIBC_ApexScopeGuard()
+    {
+        if (this->has_restore_cMinimumVelocity)
+        {
+            this->config->cMinimumVelocity = restore_cMinimumVelocity;
+        }
+    };
+
+    BCLIBC_ZeroAngleScopeGuard::BCLIBC_ZeroAngleScopeGuard(
+        BCLIBC_Config *config, double required_drop_ft, double alt0)
+        : config(config)
+    {
+        if (std::fabs(this->config->cMaximumDrop) < required_drop_ft)
+        {
+            this->restore_cMaximumDrop = this->config->cMaximumDrop;
+            this->config->cMaximumDrop = required_drop_ft;
+            has_restore_cMaximumDrop = 1;
+        }
+
+        if ((this->config->cMinimumAltitude - alt0) > required_drop_ft)
+        {
+            restore_cMinimumAltitude = this->config->cMinimumAltitude;
+            this->config->cMinimumAltitude = alt0 - required_drop_ft;
+            has_restore_cMinimumAltitude = 1;
+        }
+    };
+
+    BCLIBC_ZeroAngleScopeGuard::~BCLIBC_ZeroAngleScopeGuard()
+    {
+        // Restore original constraints
+        // Restore original constraints
+        if (this->has_restore_cMaximumDrop)
+        {
+            this->config->cMaximumDrop = this->restore_cMaximumDrop;
+        }
+        if (has_restore_cMinimumAltitude)
+        {
+            this->config->cMinimumAltitude = this->restore_cMinimumAltitude;
+        }
+    };
+
     BCLIBC_StatusCode BCLIBC_Engine::integrate_filtered(
         double range_limit_ft,
         double range_step_ft,
@@ -139,17 +191,9 @@ namespace bclibc
         }
 
         // Have to ensure cMinimumVelocity is 0 for this to work
-        double restore_min_velocity = 0.0;
-        int has_restore_min_velocity = 0;
         BCLIBC_StatusCode status;
         BCLIBC_BaseTrajSeq result = BCLIBC_BaseTrajSeq();
-
-        if (this->config.cMinimumVelocity > 0.0)
-        {
-            restore_min_velocity = this->config.cMinimumVelocity;
-            this->config.cMinimumVelocity = 0.0;
-            has_restore_min_velocity = 1;
-        }
+        BCLIBC_ApexScopeGuard guard(&this->config);
 
         // try
         BCLIBC_TerminationReason reason;
@@ -173,10 +217,6 @@ namespace bclibc
             }
         }
         // finally
-        if (has_restore_min_velocity)
-        {
-            this->config.cMinimumVelocity = restore_min_velocity;
-        }
 
         return status;
     };
@@ -398,28 +438,12 @@ namespace bclibc
         double height_error_ft = _cZeroFindingAccuracy * 2;
 
         double required_drop_ft = target_x_ft / 2.0 - target_y_ft;
-        double restore_cMaximumDrop = 0.0;
-        double restore_cMinimumAltitude = 0.0;
-        int has_restore_cMaximumDrop = 0;
-        int has_restore_cMinimumAltitude = 0;
 
         double current_distance = 0.0;
         double trajectory_angle = 0.0;
 
         // Backup and adjust constraints if needed
-        if (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
-        {
-            restore_cMaximumDrop = this->config.cMaximumDrop;
-            this->config.cMaximumDrop = required_drop_ft;
-            has_restore_cMaximumDrop = 1;
-        }
-
-        if ((this->config.cMinimumAltitude - this->shot.alt0) > required_drop_ft)
-        {
-            restore_cMinimumAltitude = this->config.cMinimumAltitude;
-            this->config.cMinimumAltitude = this->shot.alt0 - required_drop_ft;
-            has_restore_cMinimumAltitude = 1;
-        }
+        BCLIBC_ZeroAngleScopeGuard guard(&this->config, required_drop_ft, this->shot.alt0);
 
         // Main iteration loop
         while (iterations_count < _cMaxIterations)
@@ -545,16 +569,6 @@ namespace bclibc
         }
 
         // finally:
-
-        // Restore original constraints
-        if (has_restore_cMaximumDrop)
-        {
-            this->config.cMaximumDrop = restore_cMaximumDrop;
-        }
-        if (has_restore_cMinimumAltitude)
-        {
-            this->config.cMinimumAltitude = restore_cMinimumAltitude;
-        }
 
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
