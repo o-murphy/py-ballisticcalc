@@ -136,7 +136,7 @@ namespace bclibc
     struct BCLIBC_BaseTrajHandlerInterface
     {
         virtual ~BCLIBC_BaseTrajHandlerInterface() = default;
-        virtual BCLIBC_ErrorType handle(const BCLIBC_BaseTraj data) = 0;
+        virtual BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) = 0;
     };
 
     /**
@@ -150,7 +150,7 @@ namespace bclibc
     public:
         BCLIBC_BaseTrajSeq() = default;
 
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj data) override;
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) override;
 
         /**
          * @brief Appends a new trajectory point to the end of the sequence.
@@ -169,7 +169,7 @@ namespace bclibc
          * @return BCLIBC_ErrorType NO_ERROR on success, MEMORY_ERROR if allocation fails,
          *         INPUT_ERROR if seq is NULL.
          */
-        BCLIBC_ErrorType append(const BCLIBC_BaseTraj data);
+        BCLIBC_ErrorType append(const BCLIBC_BaseTraj &data);
 
         /**
          * Returns the length of the trajectory sequence.

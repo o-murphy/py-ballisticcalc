@@ -78,7 +78,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
     cdef cppclass BCLIBC_BaseTrajHandlerInterface:
         BCLIBC_ErrorType handle(
-            const BCLIBC_BaseTraj data
+            const BCLIBC_BaseTraj &data
         ) noexcept nogil
 
     cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajHandlerInterface):
@@ -86,7 +86,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         BCLIBC_BaseTrajSeq() except +
 
         BCLIBC_ErrorType append(
-            const BCLIBC_BaseTraj data
+            const BCLIBC_BaseTraj &data
         ) noexcept nogil
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const

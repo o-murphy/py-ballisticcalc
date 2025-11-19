@@ -84,7 +84,7 @@ namespace bclibc
                     "Unexpected failure retrieving element %d", i);
                 return BCLIBC_StatusCode::ERROR;
             }
-            data_filter.record(&temp_btd);
+            data_filter.record(temp_btd);
         }
 
         if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)

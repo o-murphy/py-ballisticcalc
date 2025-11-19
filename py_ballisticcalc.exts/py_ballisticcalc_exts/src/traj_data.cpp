@@ -252,7 +252,7 @@ namespace bclibc
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
     }
 
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTraj data)
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTraj &data)
     {
         return this->append(data);
     };
@@ -274,7 +274,7 @@ namespace bclibc
      * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::MEMORY_ERROR if allocation fails,
      *         BCLIBC_ErrorType::INPUT_ERROR if seq is NULL.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(const BCLIBC_BaseTraj data)
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(const BCLIBC_BaseTraj &data)
     {
 
         try
