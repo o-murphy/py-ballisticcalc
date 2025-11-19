@@ -15,7 +15,7 @@ namespace bclibc
             PyFloat_AsDouble(PyObject_GetAttrString(config, "cZeroFindingAccuracy")),
             PyFloat_AsDouble(PyObject_GetAttrString(config, "cMinimumVelocity")),
             PyFloat_AsDouble(PyObject_GetAttrString(config, "cMaximumDrop")),
-            PyLong_AsLong(PyObject_GetAttrString(config, "cMaxIterations")),
+            (int)PyLong_AsLong(PyObject_GetAttrString(config, "cMaxIterations")),
             PyFloat_AsDouble(PyObject_GetAttrString(config, "cGravityConstant")),
             PyFloat_AsDouble(PyObject_GetAttrString(config, "cMinimumAltitude"))};
     };
