@@ -120,7 +120,7 @@ namespace bclibc
             double time_step,
             BCLIBC_TrajFlag filter_flags,
             std::vector<BCLIBC_TrajectoryData> *records,
-            BCLIBC_BaseTrajSeq *trajectory,
+            BCLIBC_BaseTrajSeq *dense_trajectory,
             BCLIBC_TerminationReason *reason);
 
         BCLIBC_StatusCode find_apex(

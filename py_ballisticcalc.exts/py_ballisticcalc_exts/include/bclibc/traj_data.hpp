@@ -141,6 +141,31 @@ namespace bclibc
         virtual BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) = 0;
     };
 
+    class BCLIBC_BaseTrajHandlerCompositor : public BCLIBC_BaseTrajHandlerInterface
+    {
+    private:
+        std::vector<BCLIBC_BaseTrajHandlerInterface *> handlers_;
+
+    public:
+        // Using Variadic Templates to accept any number of arguments
+        template <typename... Handlers>
+        BCLIBC_BaseTrajHandlerCompositor(Handlers *...args)
+            : handlers_{args...} {}
+
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) override;
+
+        void add_handler(BCLIBC_BaseTrajHandlerInterface *handler)
+        {
+            if (handler != nullptr)
+            {
+                // Просто додаємо покажчик, без std::unique_ptr
+                handlers_.push_back(handler);
+            }
+        }
+
+        ~BCLIBC_BaseTrajHandlerCompositor() override;
+    };
+
     /**
      * Internal view structure for a sequence (buffer) of BCLIBC_BaseTraj points.
      */
