@@ -26,10 +26,6 @@ namespace bclibc
      * range, minimum velocity, or max drop). It accounts for gravity, drag (using
      * Mach number), wind, and Coriolis effects.
      *
-     * @param shot_props_ptr Pointer to the BCLIBC_ShotProps structure containing
-     * muzzle conditions, drag curve, and atmospheric data.
-     * @param wind_sock_ptr Pointer to the BCLIBC_WindSock structure for wind interpolation.
-     * @param config_ptr Pointer to the global configuration constants (e.g., gravity).
      * @param range_limit_ft The maximum horizontal range (in feet) to simulate.
      * @param range_step_ft The distance step for recording trajectory points
      * (not used for integration step size).
@@ -41,7 +37,8 @@ namespace bclibc
      */
     BCLIBC_StatusCode BCLIBC_integrateEULER(
         BCLIBC_Engine *eng,
-        double range_limit_ft, double range_step_ft,
+        double range_limit_ft,
+        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajHandlerInterface *handler,
         BCLIBC_TerminationReason *reason)
