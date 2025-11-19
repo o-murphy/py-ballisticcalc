@@ -67,9 +67,6 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
             raise RuntimeError("prepare() must be called first")
         return BCLIBC_calculateOgw(self._this.shot.weight, velocity_fps)
 
-    cpdef int step_count(self):
-        return self.integration_step_count
-
     cpdef object integrate_minimal(self, double range_limit_ft, double range_step_ft, double time_step):
         """Very small dummy integration for test parity of step counting.
 
