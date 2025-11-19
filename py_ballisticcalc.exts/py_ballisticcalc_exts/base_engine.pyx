@@ -6,41 +6,27 @@ Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
     feeds it through the Python TrajectoryDataFilter to build List[TrajectoryData].
 """
 # (Avoid importing cpython.exc; raise Python exceptions directly in cdef functions where needed)
-# noinspection PyUnresolvedReferences
-from libc.math cimport sin, cos
-# noinspection PyUnresolvedReferences
-from libc.string cimport memset
-# noinspection PyUnresolvedReferences
+from libcpp.vector cimport vector
+from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport (
+from py_ballisticcalc_exts.traj_data cimport (
     BaseTrajSeqT,
-    BCLIBC_BaseTrajSeq,
-    BCLIBC_BaseTrajSeq_len,
-    BCLIBC_BaseTrajSeq_getItem,
-)
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
-    # types and methods
-    BCLIBC_Atmosphere,
-    BCLIBC_ShotProps,
-    BCLIBC_ShotProps_updateStabilityCoefficient,
-    BCLIBC_TrajFlag,
     BCLIBC_BaseTrajData,
+    BCLIBC_TrajectoryData,
 )
-# noinspection PyUnresolvedReferences
+from py_ballisticcalc_exts.base_types cimport (
+    # types and methods
+    BCLIBC_ShotProps,
+    BCLIBC_TrajFlag,
+)
 from py_ballisticcalc_exts.bind cimport (
     # factory funcs
     BCLIBC_Config_from_pyobject,
-    BCLIBC_MachList_from_pylist,
-    BCLIBC_Curve_from_pylist,
-    BCLIBC_Coriolis_from_pyobject,
-    BCLIBC_WindSock_from_pylist,
+    BCLIBC_ShotProps_from_pyobject,
     feet_from_c,
     rad_from_c,
     v3d_to_vector,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_StatusCode,
     BCLIBC_ErrorSource,
@@ -50,13 +36,7 @@ from py_ballisticcalc_exts.error_stack cimport (
     BCLIBC_ErrorStack_lastErr,
     BCLIBC_ErrorStack_toString,
 )
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.log cimport BCLIBC_LogLevel_init
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.traj_filter cimport TrajectoryDataFilterT, BCLIBC_TrajectoryData
-
 from py_ballisticcalc.shot import ShotProps
-from py_ballisticcalc.conditions import Coriolis
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
@@ -68,30 +48,26 @@ __all__ = (
 )
 
 
-# force BCLIBC_LogLevel_init
-BCLIBC_LogLevel_init()
-
-
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
 
 cdef dict ERROR_TYPE_TO_EXCEPTION = {
-    BCLIBC_ErrorType.BCLIBC_E_INPUT_ERROR: TypeError,
-    BCLIBC_ErrorType.BCLIBC_E_ZERO_FINDING_ERROR: ZeroFindingError,
-    BCLIBC_ErrorType.BCLIBC_E_OUT_OF_RANGE_ERROR: OutOfRangeError,
-    BCLIBC_ErrorType.BCLIBC_E_VALUE_ERROR: ValueError,
-    BCLIBC_ErrorType.BCLIBC_E_INDEX_ERROR: IndexError,
-    BCLIBC_ErrorType.BCLIBC_E_BASE_TRAJ_INTERP_KEY_ERROR: AttributeError,
-    BCLIBC_ErrorType.BCLIBC_E_MEMORY_ERROR: MemoryError,
-    BCLIBC_ErrorType.BCLIBC_E_ARITHMETIC_ERROR: ArithmeticError,
-    BCLIBC_ErrorType.BCLIBC_E_RUNTIME_ERROR: SolverRuntimeError,
+    BCLIBC_ErrorType.INPUT_ERROR: TypeError,
+    BCLIBC_ErrorType.ZERO_FINDING_ERROR: ZeroFindingError,
+    BCLIBC_ErrorType.OUT_OF_RANGE_ERROR: OutOfRangeError,
+    BCLIBC_ErrorType.VALUE_ERROR: ValueError,
+    BCLIBC_ErrorType.INDEX_ERROR: IndexError,
+    BCLIBC_ErrorType.BASE_TRAJ_INTERP_KEY_ERROR: AttributeError,
+    BCLIBC_ErrorType.MEMORY_ERROR: MemoryError,
+    BCLIBC_ErrorType.ARITHMETIC_ERROR: ArithmeticError,
+    BCLIBC_ErrorType.RUNTIME_ERROR: SolverRuntimeError,
 }
 
 cdef dict TERMINATION_REASON_MAP = {
-    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
-    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
-    BCLIBC_TerminationReason.BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
+    BCLIBC_TerminationReason.MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
+    BCLIBC_TerminationReason.MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
+    BCLIBC_TerminationReason.MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
 }
 
 cdef class CythonizedBaseIntegrationEngine:
@@ -121,16 +97,16 @@ cdef class CythonizedBaseIntegrationEngine:
         Override this method to setup integrate_func_ptr and other fields.
 
         NOTE:
-            The BCLIBC_EngineT is built-in to CythonizedBaseIntegrationEngine,
+            The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,
             so we are need no set it's fields to null
         """
-        # self._engine.gravity_vector = BCLIBC_V3dT(.0, .0, .0)
-        # self._engine.integration_step_count = 0
+        # self._this.gravity_vector = BCLIBC_V3dT(.0, .0, .0)
+        # self._this.integration_step_count = 0
         pass
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         """Frees any allocated resources."""
-        self._engine.release_trajectory()
+        pass
 
     @property
     def integration_step_count(self) -> int:
@@ -140,11 +116,11 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             int: The number of integration steps.
         """
-        return self._engine.integration_step_count
+        return self._this.integration_step_count
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
         """Gets the calculation step size in feet."""
-        return self._engine.config.cStepMultiplier
+        return self._this.config.cStepMultiplier
 
     def find_max_range(self, object shot_info, tuple angle_bracket_deg = (0, 90)):
         """
@@ -159,15 +135,12 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
-        self._init_trajectory(shot_info)
-        cdef BCLIBC_MaxRangeResult res = {}
-        try:
-            res = self._find_max_range(
-                angle_bracket_deg[0], angle_bracket_deg[1]
-            )
-            return feet_from_c(res.max_range_ft), rad_from_c(res.angle_at_max_rad)
-        finally:
-            self._release_trajectory()
+        cdef BCLIBC_MaxRangeResult res = self._find_max_range(
+            shot_info,
+            angle_bracket_deg[0],
+            angle_bracket_deg[1]
+        )
+        return feet_from_c(res.max_range_ft), rad_from_c(res.angle_at_max_rad)
 
     def find_zero_angle(self, object shot_info, object distance, bint lofted = False):
         """
@@ -182,13 +155,8 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Angular: The required barrel elevation angle.
         """
-        self._init_trajectory(shot_info)
-        cdef double zero_angle
-        try:
-            zero_angle = self._find_zero_angle(distance._feet, lofted)
-            return rad_from_c(zero_angle)
-        finally:
-            self._release_trajectory()
+        cdef double zero_angle = self._find_zero_angle(shot_info, distance._feet, lofted)
+        return rad_from_c(zero_angle)
 
     def find_apex(self, object shot_info) -> TrajectoryData:
         """
@@ -201,21 +169,14 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             TrajectoryData: The trajectory data at the apex.
         """
-        self._init_trajectory(shot_info)
-        cdef BCLIBC_BaseTrajData result = {}  # FIXME: in future int can be BCLIBC_TrajectoryData
-        memset(&result, 0, sizeof(result))  # CRITICAL: use memset to ensure initialized with zeros
-        cdef object props
-        try:
-            result = self._find_apex()
-            props = ShotProps.from_shot(shot_info)
-            return TrajectoryData.from_props(
-                props,
-                result.time,
-                v3d_to_vector(&result.position),
-                v3d_to_vector(&result.velocity),
-                result.mach)
-        finally:
-            self._release_trajectory()
+        cdef BCLIBC_BaseTrajData result = self._find_apex(shot_info)
+        cdef object props = ShotProps.from_shot(shot_info)
+        return TrajectoryData.from_props(
+            props,
+            result.time,
+            v3d_to_vector(&result.position),
+            v3d_to_vector(&result.velocity),
+            result.mach)
 
     def zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -234,38 +195,31 @@ cdef class CythonizedBaseIntegrationEngine:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
         self._init_trajectory(shot_info)
-
         cdef:
             BCLIBC_StatusCode status
             double result
             BCLIBC_OutOfRangeError range_error = {}
             BCLIBC_ZeroFindingError zero_error = {}
-            const BCLIBC_ErrorFrame *err
 
-        try:
-            status = self._engine.zero_angle_with_fallback(
-                distance._feet,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                &result,
-                &range_error,
-                &zero_error,
-            )
+        status = self._this.zero_angle_with_fallback(
+            distance._feet,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            &result,
+            &range_error,
+            &zero_error,
+        )
 
-            if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
-                return rad_from_c(result)
+        if status == BCLIBC_StatusCode.SUCCESS:
+            return rad_from_c(result)
 
-            err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
-
-            if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_INIT_ZERO:
-                self._raise_on_init_zero_error(err, &range_error)
-            if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_FIND_ZERO_ANGLE:
-                self._raise_on_init_zero_error(err, &range_error)
-                self._raise_on_zero_finding_error(err, &zero_error)
-            self._raise_solver_runtime_error(err)
-
-        finally:
-            self._release_trajectory()
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+        if err.src == BCLIBC_ErrorSource.INIT_ZERO:
+            self._raise_on_init_zero_error(err, &range_error)
+        if err.src == BCLIBC_ErrorSource.FIND_ZERO_ANGLE:
+            self._raise_on_init_zero_error(err, &range_error)
+            self._raise_on_zero_finding_error(err, &zero_error)
+        self._raise_solver_runtime_error(err)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,
@@ -301,44 +255,40 @@ cdef class CythonizedBaseIntegrationEngine:
             object termination_reason = None
             BCLIBC_TerminationReason reason
             BCLIBC_StatusCode status
-            BaseTrajSeqT trajectory = BaseTrajSeqT()
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
-            TrajectoryDataFilterT tdf = TrajectoryDataFilterT()
-            
+            vector[BCLIBC_TrajectoryData] records
+            BaseTrajSeqT trajectory = BaseTrajSeqT()
+
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
 
-        try:
-            status = self._engine.integrate_filtered(
-                range_limit_ft,
-                range_step_ft,
-                time_step,
-                <BCLIBC_TrajFlag>filter_flags,
-                &tdf.thisptr,
-                &trajectory._c_view,
-                &reason,
-            )
+        status = self._this.integrate_filtered(
+            range_limit_ft,
+            range_step_ft,
+            time_step,
+            <BCLIBC_TrajFlag>filter_flags,
+            &records,
+            &trajectory._this,
+            &reason,
+        )
 
-            if status == BCLIBC_StatusCode.BCLIBC_STATUS_ERROR:
-                err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
-                self._raise_solver_runtime_error(err)
-        finally:
-            # Always release C resources
-            self._release_trajectory()
+        if status == BCLIBC_StatusCode.ERROR:
+            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+            self._raise_solver_runtime_error(err)
 
         # Extract termination_reason from the result
         termination_reason = TERMINATION_REASON_MAP.get(reason)
 
         if termination_reason is not None:
-            termination_reason = RangeError(termination_reason, tdf.get_records())
+            termination_reason = RangeError(termination_reason, TrajectoryData_list_from_cpp(&records))
 
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
         return HitResult(
             props,
-            tdf.get_records(),
+            TrajectoryData_list_from_cpp(&records),
             trajectory if dense_output else None,
             filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
@@ -362,27 +312,19 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
-        cdef:
-            double out_error_ft
-
-        cdef BCLIBC_StatusCode status = self._engine.error_at_distance(
+        cdef double out_error_ft
+        cdef BCLIBC_StatusCode status = self._this.error_at_distance(
             angle_rad,
             target_x_ft,
             target_y_ft,
             &out_error_ft
         )
-
-        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+        
+        if status == BCLIBC_StatusCode.SUCCESS:
             return out_error_ft
-
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
+        
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
         self._raise_solver_runtime_error(err)
-
-    cdef void _release_trajectory(CythonizedBaseIntegrationEngine self):
-        """
-        Releases the resources held by the trajectory.
-        """
-        self._engine.release_trajectory()
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
@@ -398,74 +340,16 @@ cdef class CythonizedBaseIntegrationEngine:
             BCLIBC_ShotProps*: Pointer to the initialized shot properties.
         """
 
-        # --- 🛑 CRITICAL FIX: FREE OLD RESOURCES FIRST ---
-        self._release_trajectory()
-        # ---------------------------------------------------
-
         # hack to reload config if it was changed explicit on existed instance
-        self._engine.config = BCLIBC_Config_from_pyobject(self._config)
-        self._engine.gravity_vector = BCLIBC_V3dT(.0, self._engine.config.cGravityConstant, .0)
+        self._this.config = BCLIBC_Config_from_pyobject(self._config)
+        self._this.gravity_vector = BCLIBC_V3dT(.0, self._this.config.cGravityConstant, .0)
 
         self._table_data = shot_info.ammo.dm.drag_table
         # Build C shot struct with robust cleanup on any error that follows
 
-        # WARNING: Avoid calling Python attributes in a chain!
-        # Cython may forget to add DECREF, so memory leaks are possible
-        cdef object velocity_obj = shot_info.ammo.get_velocity_for_temp(shot_info.atmo.powder_temp)
-        cdef double muzzle_velocity_fps = velocity_obj._fps
+        self._this.shot = BCLIBC_ShotProps_from_pyobject(shot_info, self.get_calc_step())
 
-        # Create coriolis object from shot parameters
-        cdef object coriolis_obj = Coriolis.create(
-            shot_info.latitude,
-            shot_info.azimuth,
-            muzzle_velocity_fps
-        )
-
-        try:
-            self._engine.shot = BCLIBC_ShotProps(
-                bc=shot_info.ammo.dm.BC,
-                look_angle=shot_info.look_angle._rad,
-                twist=shot_info.weapon.twist._inch,
-                length=shot_info.ammo.dm.length._inch,
-                diameter=shot_info.ammo.dm.diameter._inch,
-                weight=shot_info.ammo.dm.weight._grain,
-                barrel_elevation=shot_info.barrel_elevation._rad,
-                barrel_azimuth=shot_info.barrel_azimuth._rad,
-                sight_height=shot_info.weapon.sight_height._feet,
-                cant_cosine=cos(shot_info.cant_angle._rad),
-                cant_sine=sin(shot_info.cant_angle._rad),
-                alt0=shot_info.atmo.altitude._feet,
-                calc_step=self.get_calc_step(),
-                muzzle_velocity=muzzle_velocity_fps,
-                stability_coefficient=0.0,
-                curve=BCLIBC_Curve_from_pylist(self._table_data),
-                mach_list=BCLIBC_MachList_from_pylist(self._table_data),
-                atmo=BCLIBC_Atmosphere(
-                    _t0=shot_info.atmo._t0,
-                    _a0=shot_info.atmo._a0,
-                    _p0=shot_info.atmo._p0,
-                    _mach=shot_info.atmo._mach,
-                    density_ratio=shot_info.atmo.density_ratio,
-                    cLowestTempC=shot_info.atmo.cLowestTempC,
-                ),
-                coriolis=BCLIBC_Coriolis_from_pyobject(coriolis_obj),
-                wind_sock=BCLIBC_WindSock_from_pylist(shot_info.winds),
-                filter_flags=BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
-            )
-
-            # Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-            if BCLIBC_ShotProps_updateStabilityCoefficient(
-                &self._engine.shot
-            ) != <int>BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-                raise ZeroDivisionError(
-                    "Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient")
-
-        except Exception:
-            # Ensure we free any partially allocated arrays inside _shot_s
-            self._release_trajectory()
-            raise
-
-        return &self._engine.shot
+        return &self._this.shot
 
     cdef BCLIBC_StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
@@ -483,25 +367,26 @@ cdef class CythonizedBaseIntegrationEngine:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
-
         cdef BCLIBC_OutOfRangeError err_data = {}
-        cdef BCLIBC_StatusCode status = self._engine.init_zero_calculation(
+        cdef BCLIBC_StatusCode status = self._this.init_zero_calculation(
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
             out,
             &err_data,
         )
-        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+
+        if status == BCLIBC_StatusCode.SUCCESS:
             return status
 
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
-        if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_INIT_ZERO:
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+        if err.src == BCLIBC_ErrorSource.INIT_ZERO:
             self._raise_on_init_zero_error(err, &err_data)
         self._raise_solver_runtime_error(err)
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double distance,
         bint lofted
     ):
@@ -515,11 +400,11 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The calculated zero angle in radians.
         """
-
+        self._init_trajectory(shot_info)
         cdef BCLIBC_OutOfRangeError range_error = {}
         cdef BCLIBC_ZeroFindingError zero_error = {}
         cdef double result
-        cdef BCLIBC_StatusCode status = self._engine.find_zero_angle(
+        cdef BCLIBC_StatusCode status = self._this.find_zero_angle(
             distance,
             lofted,
             _APEX_IS_MAX_RANGE_RADIANS,
@@ -528,20 +413,20 @@ cdef class CythonizedBaseIntegrationEngine:
             &range_error,
             &zero_error,
         )
-        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+        if status == BCLIBC_StatusCode.SUCCESS:
             return result
 
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
-
-        if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_INIT_ZERO:
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+        if err.src == BCLIBC_ErrorSource.INIT_ZERO:
             self._raise_on_init_zero_error(err, &range_error)
-        if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_FIND_ZERO_ANGLE:
+        if err.src == BCLIBC_ErrorSource.FIND_ZERO_ANGLE:
             self._raise_on_init_zero_error(err, &range_error)
             self._raise_on_zero_finding_error(err, &zero_error)
         self._raise_solver_runtime_error(err)
 
     cdef BCLIBC_MaxRangeResult _find_max_range(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double low_angle_deg,
         double high_angle_deg,
     ):
@@ -556,24 +441,24 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
-
+        self._init_trajectory(shot_info)
         cdef BCLIBC_MaxRangeResult result = {}
-
-        cdef BCLIBC_StatusCode status = self._engine.find_max_range(
+        cdef BCLIBC_StatusCode status = self._this.find_max_range(
             low_angle_deg,
             high_angle_deg,
             _APEX_IS_MAX_RANGE_RADIANS,
             &result
         )
 
-        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+        if status == BCLIBC_StatusCode.SUCCESS:
             return result
 
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
         self._raise_solver_runtime_error(err)
 
     cdef BCLIBC_BaseTrajData _find_apex(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
     ):
         """
         Internal implementation to find the apex of the trajectory.
@@ -581,19 +466,19 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             BCLIBC_BaseTrajData: The trajectory data at the apex.
         """
+        self._init_trajectory(shot_info)
+        cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
+        cdef BCLIBC_StatusCode status = self._this.find_apex(&apex)
 
-        cdef BCLIBC_BaseTrajData apex = {}
-        memset(&apex, 0, sizeof(apex))
-
-        cdef BCLIBC_StatusCode status = self._engine.find_apex(&apex)
-        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+        if status == BCLIBC_StatusCode.SUCCESS:
             return apex
 
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
         self._raise_solver_runtime_error(err)
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double distance
     ):
         """
@@ -607,13 +492,12 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
-
+        self._init_trajectory(shot_info)
         cdef:
             double result
             BCLIBC_OutOfRangeError range_error = {}
             BCLIBC_ZeroFindingError zero_error = {}
-
-        cdef BCLIBC_StatusCode status = self._engine.zero_angle(
+        cdef BCLIBC_StatusCode status = self._this.zero_angle(
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
@@ -622,19 +506,20 @@ cdef class CythonizedBaseIntegrationEngine:
             &zero_error,
         )
 
-        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+        if status == BCLIBC_StatusCode.SUCCESS:
             return result
 
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
-        if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_INIT_ZERO:
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+        if err.src == BCLIBC_ErrorSource.INIT_ZERO:
             self._raise_on_init_zero_error(err, &range_error)
-        if err.src == BCLIBC_ErrorSource.BCLIBC_SRC_ZERO_ANGLE:
+        if err.src == BCLIBC_ErrorSource.ZERO_ANGLE:
             self._raise_on_init_zero_error(err, &range_error)
             self._raise_on_zero_finding_error(err, &zero_error)
         self._raise_solver_runtime_error(err)
 
     cdef tuple _integrate(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -653,25 +538,22 @@ cdef class CythonizedBaseIntegrationEngine:
                 BaseTrajSeqT: The trajectory sequence.
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
-        if self._engine.integrate_func_ptr is NULL:
-            raise NotImplementedError("integrate_func not implemented or not provided")
-
+        self._init_trajectory(shot_info)
         cdef:
             BaseTrajSeqT trajectory = BaseTrajSeqT()
-            BCLIBC_BaseTrajSeq *trajectory_ptr = &trajectory._c_view
             BCLIBC_TerminationReason reason
-
-        cdef BCLIBC_StatusCode status = self._engine.integrate(
+        cdef BCLIBC_StatusCode status = self._this.integrate_dense(
             range_limit_ft,
             range_step_ft,
             time_step,
-            trajectory_ptr,
+            &trajectory._this,
             &reason,
         )
 
-        if status == BCLIBC_StatusCode.BCLIBC_STATUS_SUCCESS:
+        if status == BCLIBC_StatusCode.SUCCESS:
             return trajectory, reason
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._engine.err_stack)
+
+        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
         self._raise_solver_runtime_error(err)
 
     cdef void _raise_on_init_zero_error(
@@ -679,7 +561,7 @@ cdef class CythonizedBaseIntegrationEngine:
         const BCLIBC_ErrorFrame *err,
         const BCLIBC_OutOfRangeError *err_data
     ):
-        if err.code == BCLIBC_ErrorType.BCLIBC_E_OUT_OF_RANGE_ERROR:
+        if err.code == BCLIBC_ErrorType.OUT_OF_RANGE_ERROR:
             raise OutOfRangeError(
                 feet_from_c(err_data.requested_distance_ft),
                 feet_from_c(err_data.max_range_ft),
@@ -694,7 +576,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef const char* c_msg
         cdef object error_message
 
-        if err.code == BCLIBC_ErrorType.BCLIBC_E_ZERO_FINDING_ERROR:
+        if err.code == BCLIBC_ErrorType.ZERO_FINDING_ERROR:
             c_msg = <const char*>err.msg
             error_message = c_msg.decode('utf-8', 'replace') if c_msg is not NULL else "C-level error message was NULL"
             raise ZeroFindingError(
@@ -708,11 +590,9 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         const BCLIBC_ErrorFrame *f
     ):
-        cdef const BCLIBC_ErrorStack *stack = &self._engine.err_stack
-        if stack.top <= 0 or f.code == BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
+        cdef const BCLIBC_ErrorStack *stack = &self._this.err_stack
+        if stack.top <= 0 or f.code == BCLIBC_ErrorType.NO_ERROR:
             return
-
-        cdef object exception_type = ERROR_TYPE_TO_EXCEPTION.get(f.code, RuntimeError)
 
         cdef char trace[4096]
         BCLIBC_ErrorStack_toString(stack, trace, sizeof(trace))
@@ -725,4 +605,39 @@ cdef class CythonizedBaseIntegrationEngine:
 
         trace_str = "Trace:\n" + "\n".join(lines)
 
+        cdef object exception_type = ERROR_TYPE_TO_EXCEPTION.get(f.code, RuntimeError)
         raise exception_type(trace_str)
+
+
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records):
+    cdef list py_list = []
+    cdef vector[BCLIBC_TrajectoryData].const_iterator it = records.begin()
+    cdef vector[BCLIBC_TrajectoryData].const_iterator end = records.end()
+
+    while it != end:
+        py_list.append(TrajectoryData_from_cpp(deref(it)))
+        inc(it)
+
+    return py_list
+
+
+cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):
+    cdef object pydata = TrajectoryData(
+        time=cpp_data.time,
+        distance=TrajectoryData._new_feet(cpp_data.distance_ft),
+        velocity=TrajectoryData._new_fps(cpp_data.velocity_fps),
+        mach=cpp_data.mach,
+        height=TrajectoryData._new_feet(cpp_data.height_ft),
+        slant_height=TrajectoryData._new_feet(cpp_data.slant_height_ft),
+        drop_angle=TrajectoryData._new_rad(cpp_data.drop_angle_rad),
+        windage=TrajectoryData._new_feet(cpp_data.windage_ft),
+        windage_angle=TrajectoryData._new_rad(cpp_data.windage_angle_rad),
+        slant_distance=TrajectoryData._new_feet(cpp_data.slant_distance_ft),
+        angle=TrajectoryData._new_rad(cpp_data.angle_rad),
+        density_ratio=cpp_data.density_ratio,
+        drag=cpp_data.drag,
+        energy=TrajectoryData._new_ft_lb(cpp_data.energy_ft_lb),
+        ogw=TrajectoryData._new_lb(cpp_data.ogw_lb),
+        flag=cpp_data.flag
+    )
+    return pydata

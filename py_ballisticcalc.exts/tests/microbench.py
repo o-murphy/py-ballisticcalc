@@ -1,7 +1,7 @@
 import time
 from statistics import mean
 
-from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data import BaseTrajSeqT
 
 
 def bench_append(n, reserve_first=False):
