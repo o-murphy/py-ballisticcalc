@@ -6,7 +6,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajHandlerInterface
 from py_ballisticcalc_exts.base_engine cimport (
     BCLIBC_Engine,
     BCLIBC_StatusCode,
@@ -20,7 +20,7 @@ cdef extern from "include/bclibc/rk4.hpp" namespace "bclibc" nogil:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajSeq *trajectory,
+        BCLIBC_BaseTrajHandlerInterface *handler,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 

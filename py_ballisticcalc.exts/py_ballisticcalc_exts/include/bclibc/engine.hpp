@@ -90,7 +90,7 @@ namespace bclibc
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajSeq *trajectory,
+        BCLIBC_BaseTrajHandlerInterface *handler,
         BCLIBC_TerminationReason *reason);
 
     typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;

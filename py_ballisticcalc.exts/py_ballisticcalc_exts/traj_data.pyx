@@ -36,7 +36,9 @@ cdef class BaseTrajSeqT:
     def append(self, double time, double px, double py, double pz,
                double vx, double vy, double vz, double mach):
         """Append a new point to the sequence."""
-        cdef BCLIBC_ErrorType err = self._this.append(time, px, py, pz, vx, vy, vz, mach)
+        cdef BCLIBC_ErrorType err = self._this.append(
+            BCLIBC_BaseTraj(time, px, py, pz, vx, vy, vz, mach)
+        )
         if err == BCLIBC_ErrorType.NO_ERROR:
             return
         if err == BCLIBC_ErrorType.MEMORY_ERROR:

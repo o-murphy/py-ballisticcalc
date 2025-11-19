@@ -249,13 +249,12 @@ namespace bclibc
      * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::MEMORY_ERROR if allocation fails,
      *         BCLIBC_ErrorType::INPUT_ERROR if seq is NULL.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(BCLIBC_BaseTraj data)
     {
 
         try
         {
-            this->buffer.push_back(
-                BCLIBC_BaseTraj(time, px, py, pz, vx, vy, vz, mach));
+            this->buffer.push_back(data);
         }
         catch (...)
         {

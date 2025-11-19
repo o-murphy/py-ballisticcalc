@@ -126,16 +126,26 @@ namespace bclibc
             BCLIBC_BaseTraj *out, BCLIBC_BaseTraj_InterpKey skip_key);
     };
 
+    struct BCLIBC_BaseTrajHandlerInterface
+    {
+        virtual ~BCLIBC_BaseTrajHandlerInterface() = default;
+        virtual BCLIBC_ErrorType handle(BCLIBC_BaseTraj data) = 0;
+    };
+
     /**
      * Internal view structure for a sequence (buffer) of BCLIBC_BaseTraj points.
      */
-    class BCLIBC_BaseTrajSeq
+    class BCLIBC_BaseTrajSeq : public BCLIBC_BaseTrajHandlerInterface
     {
     private:
         std::vector<BCLIBC_BaseTraj> buffer;
 
     public:
         BCLIBC_BaseTrajSeq() = default;
+
+        BCLIBC_ErrorType handle(BCLIBC_BaseTraj data) override {
+            return this->append(data);
+        };
 
         /**
          * @brief Appends a new trajectory point to the end of the sequence.
@@ -154,7 +164,7 @@ namespace bclibc
          * @return BCLIBC_ErrorType NO_ERROR on success, MEMORY_ERROR if allocation fails,
          *         INPUT_ERROR if seq is NULL.
          */
-        BCLIBC_ErrorType append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach);
+        BCLIBC_ErrorType append(BCLIBC_BaseTraj data);
 
         /**
          * Returns the length of the trajectory sequence.

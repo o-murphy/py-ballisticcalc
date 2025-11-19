@@ -81,10 +81,10 @@ namespace bclibc
         BCLIBC_Engine *eng,
         double range_limit_ft, double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajSeq *trajectory,
+        BCLIBC_BaseTrajHandlerInterface *handler,
         BCLIBC_TerminationReason *reason)
     {
-        if (!eng || !trajectory || !reason)
+        if (!eng || !handler || !reason)
         {
             REQUIRE_NON_NULL(eng);
             BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
@@ -198,11 +198,11 @@ namespace bclibc
             BCLIBC_DEBUG("About to append to trajectory sequence\n");
 
             // err =
-            trajectory->append(
-                time,
-                range_vector.x, range_vector.y, range_vector.z,
-                velocity_vector.x, velocity_vector.y, velocity_vector.z,
-                mach);
+            handler->handle(
+                BCLIBC_BaseTraj(time,
+                                range_vector.x, range_vector.y, range_vector.z,
+                                velocity_vector.x, velocity_vector.y, velocity_vector.z,
+                                mach));
             // if (err != NO_ERROR)
             // {
             //     return err;
@@ -316,11 +316,11 @@ namespace bclibc
         // Process final data point
 
         // err =
-        trajectory->append(
-            time,
-            range_vector.x, range_vector.y, range_vector.z,
-            velocity_vector.x, velocity_vector.y, velocity_vector.z,
-            mach);
+        handler->handle(
+            BCLIBC_BaseTraj(time,
+                            range_vector.x, range_vector.y, range_vector.z,
+                            velocity_vector.x, velocity_vector.y, velocity_vector.z,
+                            mach));
         // if (err != NO_ERROR)
         // {
         //     return err;

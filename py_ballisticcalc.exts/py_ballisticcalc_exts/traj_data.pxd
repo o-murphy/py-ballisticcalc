@@ -57,16 +57,29 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         double vz
         double mach
 
-    # Forward ref
-    cdef cppclass BCLIBC_BaseTrajSeq:
+        BCLIBC_BaseTraj() except+
+        BCLIBC_BaseTraj(
+            double time,
+            double px,
+            double py,
+            double pz,
+            double vx,
+            double vy,
+            double vz,
+            double mach
+        ) except+
+
+    cdef cppclass BCLIBC_BaseTrajHandlerInterface:
+        BCLIBC_ErrorType handle(
+            BCLIBC_BaseTraj data
+        ) noexcept nogil
+
+    cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajHandlerInterface):
 
         BCLIBC_BaseTrajSeq() except +
 
         BCLIBC_ErrorType append(
-            double time,
-            double px, double py, double pz,
-            double vx, double vy, double vz,
-            double mach
+            BCLIBC_BaseTraj data
         ) noexcept nogil
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const
@@ -126,8 +139,10 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             BCLIBC_InterpMethod method
         ) except +
 
+
 cdef class BaseTrajSeqT:
     cdef BCLIBC_BaseTrajSeq _this
+
 
 cdef class BaseTrajDataT:
     cdef BCLIBC_BaseTrajData _this

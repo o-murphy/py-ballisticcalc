@@ -7,7 +7,7 @@ engine modules. Not part of the public API.
 from cython cimport final
 from libcpp.cmath cimport sin, cos
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
-from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT, BCLIBC_BaseTraj
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
@@ -87,11 +87,13 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         cdef double vy = v * sin(be)
         cdef double vz = v * cos(be) * sin(az)
         # initial point
-        seq.append(
-            0.0, 0.0,
-            -self._this.shot.cant_cosine * self._this.shot.sight_height,
-            -self._this.shot.cant_sine * self._this.shot.sight_height,
-            vx, vy, vz, 1.0
+        seq._this.append(
+            BCLIBC_BaseTraj(
+                0.0, 0.0,
+                -self._this.shot.cant_cosine * self._this.shot.sight_height,
+                -self._this.shot.cant_sine * self._this.shot.sight_height,
+                vx, vy, vz, 1.0
+            )
         )
         # second point simple Euler step without drag / gravity for minimal path
         cdef double dt
@@ -99,11 +101,13 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
             dt = time_step
         else:
             dt = 0.001
-        seq.append(
-            dt, vx * dt,
-            -self._this.shot.cant_cosine * self._this.shot.sight_height + vy * dt,
-            -self._this.shot.cant_sine * self._this.shot.sight_height + vz * dt,
-            vx, vy, vz, 1.0
+        seq._this.append(
+            BCLIBC_BaseTraj(
+                dt, vx * dt,
+                -self._this.shot.cant_cosine * self._this.shot.sight_height + vy * dt,
+                -self._this.shot.cant_sine * self._this.shot.sight_height + vz * dt,
+                vx, vy, vz, 1.0
+            )
         )
         self.integration_step_count = <int>seq._length
         return (seq, None)
