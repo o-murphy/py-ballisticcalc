@@ -121,7 +121,3 @@ cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef double mach = 0.0
     sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, &density_ratio, &mach)
     return density_ratio, mach
-
-cpdef int step_count(object engine):
-    cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return e.integration_step_count

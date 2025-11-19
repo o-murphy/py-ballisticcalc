@@ -158,7 +158,6 @@ namespace bclibc
         {
             if (handler != nullptr)
             {
-                // Просто додаємо покажчик, без std::unique_ptr
                 handlers_.push_back(handler);
             }
         }
