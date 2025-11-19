@@ -72,6 +72,13 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
         BCLIBC_ErrorStack err_stack
 
+        BCLIBC_StatusCode integrate(
+            double range_limit_ft,
+            double range_step_ft,
+            double time_step,
+            BCLIBC_BaseTrajHandlerInterface *handler,
+            BCLIBC_TerminationReason *reason) noexcept nogil
+
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,
             double range_step_ft,
@@ -80,13 +87,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             vector[BCLIBC_TrajectoryData] *records,
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason) except +
-
-        BCLIBC_StatusCode integrate_dense(
-            double range_limit_ft,
-            double range_step_ft,
-            double time_step,
-            BCLIBC_BaseTrajSeq *trajectory,
-            BCLIBC_TerminationReason *reason) noexcept nogil
 
         BCLIBC_StatusCode find_apex(
             BCLIBC_BaseTrajData *out) noexcept nogil
@@ -180,13 +180,15 @@ cdef class CythonizedBaseIntegrationEngine:
         double target_x_ft,
         double target_y_ft
     )
-    # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
-    cdef tuple _integrate(
+
+    cdef BCLIBC_StatusCode _integrate(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
+        BCLIBC_BaseTrajHandlerInterface *handler,
+        BCLIBC_TerminationReason *reason,
     )
 
     cdef void _raise_on_init_zero_error(

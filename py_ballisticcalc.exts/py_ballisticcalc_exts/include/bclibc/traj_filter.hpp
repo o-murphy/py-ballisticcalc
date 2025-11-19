@@ -58,7 +58,6 @@ namespace bclibc
         bool can_interpolate(const BCLIBC_BaseTrajData &new_data) const;
         void add_row(std::vector<BCLIBC_FlaggedData> *rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
     };
-
 };
 
 #endif // BCLIBC_TRAJ_FILTER_HPP

@@ -151,6 +151,7 @@ namespace bclibc
 
     public:
         BCLIBC_BaseTrajSeq() = default;
+        ~BCLIBC_BaseTrajSeq();
 
         BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) override;
 

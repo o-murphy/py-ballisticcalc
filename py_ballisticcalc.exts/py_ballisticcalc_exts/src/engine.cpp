@@ -45,25 +45,14 @@ namespace bclibc
         BCLIBC_BaseTrajSeq *trajectory,
         BCLIBC_TerminationReason *reason)
     {
-        if (!trajectory || !reason || !records || !trajectory || !this->integrate_func_ptr)
+        if (!reason || !records || !this->integrate_func_ptr)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
         }
 
-        BCLIBC_StatusCode status = this->integrate_dense(
-            range_limit_ft,
-            range_step_ft,
-            time_step,
-            trajectory,
-            reason);
-        if (status == BCLIBC_StatusCode::ERROR)
-        {
-            return BCLIBC_StatusCode::ERROR;
-        }
-
-        BCLIBC_ErrorType err;
-        BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData();
+        // Set flag to 1 if we need dense_output
+        int dense_output = trajectory != nullptr;
 
         BCLIBC_TrajectoryDataFilter data_filter = BCLIBC_TrajectoryDataFilter(
             records,
@@ -73,42 +62,73 @@ namespace bclibc
             range_step_ft,
             time_step);
 
-        for (int i = 0; i < trajectory->get_length(); i++)
+        if (!dense_output)
         {
-            err = trajectory->get_item(i, &temp_btd);
-            if (err != BCLIBC_ErrorType::NO_ERROR)
+            BCLIBC_StatusCode status = this->integrate(
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                &data_filter,
+                reason);
+            if (status == BCLIBC_StatusCode::ERROR)
             {
-                BCLIBC_PUSH_ERR(
-                    &this->err_stack,
-                    BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::INTEGRATE,
-                    "Unexpected failure retrieving element %d", i);
                 return BCLIBC_StatusCode::ERROR;
             }
-            data_filter.record(temp_btd);
+        }
+        else
+        {
+            BCLIBC_StatusCode status = this->integrate(
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                trajectory,
+                reason);
+            if (status == BCLIBC_StatusCode::ERROR)
+            {
+                return BCLIBC_StatusCode::ERROR;
+            }
+
+            BCLIBC_ErrorType err;
+            BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData();
+
+            for (int i = 0; i < trajectory->get_length(); i++)
+            {
+                err = trajectory->get_item(i, &temp_btd);
+                if (err != BCLIBC_ErrorType::NO_ERROR)
+                {
+                    BCLIBC_PUSH_ERR(
+                        &this->err_stack,
+                        BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::INTEGRATE,
+                        "Unexpected failure retrieving element %d", i);
+                    return BCLIBC_StatusCode::ERROR;
+                }
+                data_filter.record(temp_btd);
+            }
         }
 
         if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
         {
             data_filter.finalize();
-                }
+        }
+
         return BCLIBC_StatusCode::SUCCESS;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::integrate_dense(
+    BCLIBC_StatusCode BCLIBC_Engine::integrate(
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajSeq *trajectory,
+        BCLIBC_BaseTrajHandlerInterface *handler,
         BCLIBC_TerminationReason *reason)
     {
-        if (!trajectory || !reason || !this->integrate_func_ptr)
+        if (!handler || !reason || !this->integrate_func_ptr)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
         }
         BCLIBC_DEBUG("Using integration function pointer %p.", (void *)this->integrate_func_ptr);
 
-        BCLIBC_StatusCode status = this->integrate_func_ptr(this, range_limit_ft, range_step_ft, time_step, trajectory, reason);
+        BCLIBC_StatusCode status = this->integrate_func_ptr(this, range_limit_ft, range_step_ft, time_step, handler, reason);
 
         if (status != BCLIBC_StatusCode::ERROR)
         {
@@ -120,9 +140,6 @@ namespace bclibc
             {
                 BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", *reason);
             }
-            BCLIBC_DEBUG("Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
-                         trajectory->get_length(), trajectory->get_capacity(),
-                         trajectory->get_length() * sizeof(BCLIBC_BaseTraj));
             return BCLIBC_StatusCode::SUCCESS;
         }
 
@@ -160,7 +177,7 @@ namespace bclibc
 
         // try
         BCLIBC_TerminationReason reason;
-        status = this->integrate_dense(9e9, 9e9, 0.0, &result, &reason);
+        status = this->integrate(9e9, 9e9, 0.0, &result, &reason);
 
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
@@ -211,7 +228,7 @@ namespace bclibc
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
-        BCLIBC_StatusCode status = this->integrate_dense(9e9, 9e9, 0.0, &trajectory, &reason);
+        BCLIBC_StatusCode status = this->integrate(9e9, 9e9, 0.0, &trajectory, &reason);
 
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
@@ -435,7 +452,7 @@ namespace bclibc
             BCLIBC_TerminationReason reason;
             BCLIBC_BaseTrajSeq seq = BCLIBC_BaseTrajSeq();
 
-            status = this->integrate_dense(target_x_ft, target_x_ft, 0.0, &seq, &reason);
+            status = this->integrate(target_x_ft, target_x_ft, 0.0, &seq, &reason);
 
             if (status != BCLIBC_StatusCode::SUCCESS)
             {
@@ -609,7 +626,7 @@ namespace bclibc
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         BCLIBC_TerminationReason reason;
-        status = this->integrate_dense(9e9, 9e9, 0.0, &trajectory, &reason);
+        status = this->integrate(9e9, 9e9, 0.0, &trajectory, &reason);
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
             status = BCLIBC_StatusCode::ERROR;
