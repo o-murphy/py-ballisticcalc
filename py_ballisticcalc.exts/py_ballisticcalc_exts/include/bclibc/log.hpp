@@ -198,9 +198,9 @@ namespace bclibc
     bclibc::log(bclibc::BCLIBC_LogLevel::WARNING, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #define BCLIBC_ERROR(format, ...) \
-    bclibc::log(bclibc::BCLIBC_LogLevel::WARNING, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
+    bclibc::log(bclibc::BCLIBC_LogLevel::ERROR, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #define BCLIBC_CRITICAL(format, ...) \
-    bclibc::log(bclibc::BCLIBC_LogLevel::WARNING, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
+    bclibc::log(bclibc::BCLIBC_LogLevel::CRITICAL, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #endif // BCLIBC_LOG_HPP

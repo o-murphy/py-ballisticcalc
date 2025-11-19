@@ -69,6 +69,18 @@ namespace bclibc
         }
     };
 
+    void BCLIBC_TrajectoryDataFilter::finalize()
+    {
+        BCLIBC_DEBUG(
+            "Trajectory Filter Finalization check: prev_data.time=%.6f",
+            this->prev_data.time);
+        if (this->prev_data.time > this->get_record(-1).time)
+        {
+            BCLIBC_TrajectoryData fin(this->props, &this->prev_data);
+            this->append(&fin);
+        }
+    };
+
     BCLIBC_ErrorType BCLIBC_TrajectoryDataFilter::handle(const BCLIBC_BaseTraj data)
     {
         BCLIBC_BaseTrajData new_data = data.as_BaseTrajData();

@@ -64,7 +64,6 @@ namespace bclibc
 
         BCLIBC_ErrorType err;
         BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData();
-        BCLIBC_BaseTrajData *fin = &temp_btd;
 
         BCLIBC_TrajectoryDataFilter data_filter = BCLIBC_TrajectoryDataFilter(
             records,
@@ -90,28 +89,8 @@ namespace bclibc
 
         if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
         {
-            err = trajectory->get_item(-1, fin);
-            if (err != BCLIBC_ErrorType::NO_ERROR)
-            {
-                BCLIBC_PUSH_ERR(
-                    &this->err_stack,
-                    BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::INTEGRATE,
-                    "Unexpected failure retrieving element -1");
-                return BCLIBC_StatusCode::ERROR;
-            }
-
-            if (fin->time > data_filter.get_record(-1).time)
-            {
-                BCLIBC_TrajectoryData temp_td = BCLIBC_TrajectoryData(
-                    &this->shot,
-                    fin->time,
-                    &fin->position,
-                    &fin->velocity,
-                    fin->mach,
-                    BCLIBC_TRAJ_FLAG_NONE);
-                data_filter.append(&temp_td);
-            }
-        }
+            data_filter.finalize();
+                }
         return BCLIBC_StatusCode::SUCCESS;
     };
 
