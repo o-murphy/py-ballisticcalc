@@ -40,17 +40,18 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double mach
         ) except+
 
+        BCLIBC_BaseTraj as_BaseTraj() const
+        double get_key_value(BCLIBC_BaseTraj_InterpKey key_kind) const
+
         @staticmethod
         BCLIBC_ErrorType interpolate(
             BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
-            const BCLIBC_BaseTrajData *p0,
-            const BCLIBC_BaseTrajData *p1,
-            const BCLIBC_BaseTrajData *p2,
+            const BCLIBC_BaseTrajData &p0,
+            const BCLIBC_BaseTrajData &p1,
+            const BCLIBC_BaseTrajData &p2,
             BCLIBC_BaseTrajData *out
         )
-
-        BCLIBC_BaseTraj as_BaseTraj() const
 
     cdef cppclass BCLIBC_BaseTraj:
         double time
@@ -78,7 +79,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
     cdef cppclass BCLIBC_BaseTrajHandlerInterface:
         BCLIBC_ErrorType handle(
-            const BCLIBC_BaseTraj data
+            const BCLIBC_BaseTraj &data
         ) noexcept nogil
 
     cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajHandlerInterface):
@@ -86,7 +87,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         BCLIBC_BaseTrajSeq() except +
 
         BCLIBC_ErrorType append(
-            const BCLIBC_BaseTraj data
+            const BCLIBC_BaseTraj &data
         ) noexcept nogil
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const

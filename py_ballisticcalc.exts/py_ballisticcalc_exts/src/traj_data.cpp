@@ -13,30 +13,29 @@ namespace bclibc
      * Used internally by the interpolation function to get the correct 'x' values
      * for the interpolation key.
      *
-     * @param p Pointer to the BCLIBC_BaseTrajData structure.
      * @param key_kind The BCLIBC_BaseTraj_InterpKey specifying which field to retrieve (e.g., BCLIBC_BaseTraj_InterpKey::TIME, BCLIBC_BaseTraj_InterpKey::MACH, BCLIBC_BaseTraj_InterpKey::POS_X).
      * @return The value of the requested field. Returns 0.0 for an unknown key.
      */
-    static inline double get_key_value(const BCLIBC_BaseTrajData *p, BCLIBC_BaseTraj_InterpKey key_kind)
+    double BCLIBC_BaseTrajData::get_key_value(BCLIBC_BaseTraj_InterpKey key_kind) const
     {
         switch (key_kind)
         {
         case BCLIBC_BaseTraj_InterpKey::TIME:
-            return p->time;
+            return this->time;
         case BCLIBC_BaseTraj_InterpKey::MACH:
-            return p->mach;
+            return this->mach;
         case BCLIBC_BaseTraj_InterpKey::POS_X:
-            return p->position.x;
+            return this->position.x;
         case BCLIBC_BaseTraj_InterpKey::POS_Y:
-            return p->position.y;
+            return this->position.y;
         case BCLIBC_BaseTraj_InterpKey::POS_Z:
-            return p->position.z;
+            return this->position.z;
         case BCLIBC_BaseTraj_InterpKey::VEL_X:
-            return p->velocity.x;
+            return this->velocity.x;
         case BCLIBC_BaseTraj_InterpKey::VEL_Y:
-            return p->velocity.y;
+            return this->velocity.y;
         case BCLIBC_BaseTraj_InterpKey::VEL_Z:
-            return p->velocity.z;
+            return this->velocity.z;
         default:
             return 0.0;
         }
@@ -82,21 +81,21 @@ namespace bclibc
     BCLIBC_ErrorType BCLIBC_BaseTrajData::interpolate(
         BCLIBC_BaseTraj_InterpKey key_kind,
         double key_value,
-        const BCLIBC_BaseTrajData *p0,
-        const BCLIBC_BaseTrajData *p1,
-        const BCLIBC_BaseTrajData *p2,
+        const BCLIBC_BaseTrajData &p0,
+        const BCLIBC_BaseTrajData &p1,
+        const BCLIBC_BaseTrajData &p2,
         BCLIBC_BaseTrajData *out)
     {
-        if (!p0 || !p1 || !p2 || !out)
+        if (!out)
         {
             BCLIBC_ERROR("Invalid input (NULL pointer).");
             return BCLIBC_ErrorType::INPUT_ERROR;
         }
 
         // Get key values
-        const double x0 = get_key_value(p0, key_kind);
-        const double x1 = get_key_value(p1, key_kind);
-        const double x2 = get_key_value(p2, key_kind);
+        const double x0 = p0.get_key_value(key_kind);
+        const double x1 = p1.get_key_value(key_kind);
+        const double x2 = p2.get_key_value(key_kind);
 
         // Guard against degenerate segments
         if (x0 == x1 || x0 == x2 || x1 == x2)
@@ -105,17 +104,17 @@ namespace bclibc
         }
 
         // Cache position and velocity
-        const BCLIBC_V3dT vp0 = p0->position;
-        const BCLIBC_V3dT vp1 = p1->position;
-        const BCLIBC_V3dT vp2 = p2->position;
-        const BCLIBC_V3dT vv0 = p0->velocity;
-        const BCLIBC_V3dT vv1 = p1->velocity;
-        const BCLIBC_V3dT vv2 = p2->velocity;
+        const BCLIBC_V3dT vp0 = p0.position;
+        const BCLIBC_V3dT vp1 = p1.position;
+        const BCLIBC_V3dT vp2 = p2.position;
+        const BCLIBC_V3dT vv0 = p0.velocity;
+        const BCLIBC_V3dT vv1 = p1.velocity;
+        const BCLIBC_V3dT vv2 = p2.velocity;
 
         // Scalar interpolation using PCHIP
 
         // Interpolate all scalar fields
-        out->time = (key_kind == BCLIBC_BaseTraj_InterpKey::TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
+        out->time = (key_kind == BCLIBC_BaseTraj_InterpKey::TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.time, p1.time, p2.time);
         out->position = BCLIBC_V3dT{
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
@@ -125,7 +124,7 @@ namespace bclibc
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
             BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
 
-        out->mach = (key_kind == BCLIBC_BaseTraj_InterpKey::MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
+        out->mach = (key_kind == BCLIBC_BaseTraj_InterpKey::MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.mach, p1.mach, p2.mach);
 
         return BCLIBC_ErrorType::NO_ERROR;
     };
@@ -228,31 +227,31 @@ namespace bclibc
      */
     void BCLIBC_BaseTraj::interpolate3pt_vectorized(
         double x, double ox0, double ox1, double ox2,
-        const BCLIBC_BaseTraj *p0, const BCLIBC_BaseTraj *p1, const BCLIBC_BaseTraj *p2,
+        const BCLIBC_BaseTraj &p0, const BCLIBC_BaseTraj &p1, const BCLIBC_BaseTraj &p2,
         BCLIBC_BaseTraj *out, BCLIBC_BaseTraj_InterpKey skip_key)
     {
         // Time: either use x directly (if interpolating by time) or interpolate
         out->time = (skip_key == BCLIBC_BaseTraj_InterpKey::TIME)
                         ? x
-                        : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+                        : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.time, p1.time, p2.time);
 
         // Position components - always interpolate
-        out->px = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
-        out->py = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
-        out->pz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
+        out->px = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.px, p1.px, p2.px);
+        out->py = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.py, p1.py, p2.py);
+        out->pz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz);
 
         // Velocity components - always interpolate
-        out->vx = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
-        out->vy = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
-        out->vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
+        out->vx = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx);
+        out->vy = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy);
+        out->vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz);
 
         // Mach: either use x directly (if interpolating by mach) or interpolate
         out->mach = (skip_key == BCLIBC_BaseTraj_InterpKey::MACH)
                         ? x
-                        : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
+                        : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach);
     }
 
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTraj data)
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTraj &data)
     {
         return this->append(data);
     };
@@ -274,7 +273,7 @@ namespace bclibc
      * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::MEMORY_ERROR if allocation fails,
      *         BCLIBC_ErrorType::INPUT_ERROR if seq is NULL.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(const BCLIBC_BaseTraj data)
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(const BCLIBC_BaseTraj &data)
     {
 
         try
@@ -630,7 +629,7 @@ namespace bclibc
         // Interpolate all trajectory components
         // Vectorized interpolation
         // Store results
-        BCLIBC_BaseTraj::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
+        BCLIBC_BaseTraj::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, *p0, *p1, *p2, out, key_kind);
 
         return BCLIBC_ErrorType::NO_ERROR;
     };
@@ -995,28 +994,24 @@ namespace bclibc
     BCLIBC_TrajectoryData BCLIBC_TrajectoryData::interpolate(
         BCLIBC_TrajectoryData_InterpKey key,
         double value,
-        const BCLIBC_TrajectoryData *p0,
-        const BCLIBC_TrajectoryData *p1,
-        const BCLIBC_TrajectoryData *p2,
+        const BCLIBC_TrajectoryData &p0,
+        const BCLIBC_TrajectoryData &p1,
+        const BCLIBC_TrajectoryData &p2,
         BCLIBC_TrajFlag flag,
         BCLIBC_InterpMethod method)
     {
-        if (p0 == nullptr || p1 == nullptr || p2 == nullptr)
-        {
-            throw std::invalid_argument("Interpolation points (p0, p1, p2) cannot be NULL.");
-        }
 
         // The independent variable for interpolation (x-axis)
         double x_val = value;
-        double x0 = p0->get_key_val(key);
-        double x1 = p1->get_key_val(key);
-        double x2 = p2->get_key_val(key);
+        double x0 = p0.get_key_val(key);
+        double x1 = p1.get_key_val(key);
+        double x2 = p2.get_key_val(key);
 
         // Use reflection to build the new TrajectoryData object
 
         // // Better copy data from p0 to fill uninterpolated or derived fields
         // BCLIBC_TrajectoryData interpolated_data;  // = {} possibly can not work on MSVC, use memset;
-        BCLIBC_TrajectoryData interpolated_data = *p0;
+        BCLIBC_TrajectoryData interpolated_data = p0;
 
         if ((int)key < 0 || (int)key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
@@ -1026,9 +1021,9 @@ namespace bclibc
         for (int k = 0; k < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; k++)
         {
             BCLIBC_TrajectoryData_InterpKey field_key = (BCLIBC_TrajectoryData_InterpKey)k;
-            double y0 = p0->get_key_val(field_key);
-            double y1 = p1->get_key_val(field_key);
-            double y2 = p2->get_key_val(field_key);
+            double y0 = p0.get_key_val(field_key);
+            double y1 = p1.get_key_val(field_key);
+            double y2 = p2.get_key_val(field_key);
 
             double interpolated_value = 0.0;
             BCLIBC_ErrorType err = BCLIBC_ErrorType::NO_ERROR;

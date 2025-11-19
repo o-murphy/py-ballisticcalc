@@ -87,12 +87,14 @@ namespace bclibc
 
         BCLIBC_BaseTraj as_BaseTraj() const;
 
+        double get_key_value(BCLIBC_BaseTraj_InterpKey key_kind) const;
+
         static BCLIBC_ErrorType interpolate(
             BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
-            const BCLIBC_BaseTrajData *p0,
-            const BCLIBC_BaseTrajData *p1,
-            const BCLIBC_BaseTrajData *p2,
+            const BCLIBC_BaseTrajData &p0,
+            const BCLIBC_BaseTrajData &p1,
+            const BCLIBC_BaseTrajData &p2,
             BCLIBC_BaseTrajData *out);
     };
 
@@ -129,14 +131,14 @@ namespace bclibc
 
         static void interpolate3pt_vectorized(
             double x, double ox0, double ox1, double ox2,
-            const BCLIBC_BaseTraj *p0, const BCLIBC_BaseTraj *p1, const BCLIBC_BaseTraj *p2,
+            const BCLIBC_BaseTraj &p0, const BCLIBC_BaseTraj &p1, const BCLIBC_BaseTraj &p2,
             BCLIBC_BaseTraj *out, BCLIBC_BaseTraj_InterpKey skip_key);
     };
 
     struct BCLIBC_BaseTrajHandlerInterface
     {
         virtual ~BCLIBC_BaseTrajHandlerInterface() = default;
-        virtual BCLIBC_ErrorType handle(const BCLIBC_BaseTraj data) = 0;
+        virtual BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) = 0;
     };
 
     /**
@@ -150,7 +152,7 @@ namespace bclibc
     public:
         BCLIBC_BaseTrajSeq() = default;
 
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj data) override;
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) override;
 
         /**
          * @brief Appends a new trajectory point to the end of the sequence.
@@ -169,7 +171,7 @@ namespace bclibc
          * @return BCLIBC_ErrorType NO_ERROR on success, MEMORY_ERROR if allocation fails,
          *         INPUT_ERROR if seq is NULL.
          */
-        BCLIBC_ErrorType append(const BCLIBC_BaseTraj data);
+        BCLIBC_ErrorType append(const BCLIBC_BaseTraj &data);
 
         /**
          * Returns the length of the trajectory sequence.
@@ -450,9 +452,9 @@ namespace bclibc
         static BCLIBC_TrajectoryData interpolate(
             BCLIBC_TrajectoryData_InterpKey key,
             double value,
-            const BCLIBC_TrajectoryData *t0,
-            const BCLIBC_TrajectoryData *t1,
-            const BCLIBC_TrajectoryData *t2,
+            const BCLIBC_TrajectoryData &t0,
+            const BCLIBC_TrajectoryData &t1,
+            const BCLIBC_TrajectoryData &t2,
             BCLIBC_TrajFlag flag,
             BCLIBC_InterpMethod method = BCLIBC_InterpMethod::PCHIP);
 

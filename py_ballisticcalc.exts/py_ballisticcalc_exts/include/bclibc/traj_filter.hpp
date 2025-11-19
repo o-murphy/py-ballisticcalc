@@ -18,14 +18,14 @@ namespace bclibc
             double time_step = 0.0);
 
     private:
-        void init(const BCLIBC_BaseTrajData *data);
+        void init(const BCLIBC_BaseTrajData &data);
 
     public:
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj data) override;
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) override;
 
-        void record(const BCLIBC_BaseTrajData *new_data);
+        void record(const BCLIBC_BaseTrajData &new_data);
         std::vector<BCLIBC_TrajectoryData> const &get_records() const;
-        void append(const BCLIBC_TrajectoryData *new_data);
+        void append(const BCLIBC_TrajectoryData &new_data);
         const BCLIBC_TrajectoryData &get_record(std::ptrdiff_t index) const;
         void finalize();
 
@@ -55,8 +55,8 @@ namespace bclibc
             const T &new_record,
             TimeAccessor getTime);
 
-        bool can_interpolate(const BCLIBC_BaseTrajData *new_data) const;
-        void add_row(std::vector<BCLIBC_FlaggedData> *rows, const BCLIBC_BaseTrajData *data, BCLIBC_TrajFlag flag);
+        bool can_interpolate(const BCLIBC_BaseTrajData &new_data) const;
+        void add_row(std::vector<BCLIBC_FlaggedData> *rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
     };
 
 };
