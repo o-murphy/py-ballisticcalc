@@ -95,6 +95,32 @@ namespace bclibc
 
     typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;
 
+    class BCLIBC_ApexScopeGuard
+    {
+    private:
+        BCLIBC_Config *config;
+        double restore_cMinimumVelocity = 0.0;
+        int has_restore_cMinimumVelocity = 0;
+
+    public:
+        BCLIBC_ApexScopeGuard(BCLIBC_Config *config);
+        ~BCLIBC_ApexScopeGuard();
+    };
+
+    class BCLIBC_ZeroAngleScopeGuard
+    {
+    private:
+        BCLIBC_Config *config;
+        double restore_cMaximumDrop = 0.0;
+        int has_restore_cMaximumDrop = 0;
+        double restore_cMinimumAltitude = 0.0;
+        int has_restore_cMinimumAltitude = 0;
+
+    public:
+        BCLIBC_ZeroAngleScopeGuard(BCLIBC_Config *config, double required_drop_ft, double alt0);
+        ~BCLIBC_ZeroAngleScopeGuard();
+    };
+
     class BCLIBC_Engine
     {
 
