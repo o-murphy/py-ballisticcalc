@@ -1,5 +1,6 @@
 #include <cmath>
 #include "bclibc/engine.hpp"
+#include "bclibc/scope_guard.hpp"
 
 /*
 Possible call chains:
@@ -139,17 +140,15 @@ namespace bclibc
         }
 
         // Have to ensure cMinimumVelocity is 0 for this to work
-        double restore_min_velocity = 0.0;
-        int has_restore_min_velocity = 0;
         BCLIBC_StatusCode status;
         BCLIBC_BaseTrajSeq result = BCLIBC_BaseTrajSeq();
 
-        if (this->config.cMinimumVelocity > 0.0)
-        {
-            restore_min_velocity = this->config.cMinimumVelocity;
-            this->config.cMinimumVelocity = 0.0;
-            has_restore_min_velocity = 1;
-        }
+        // Backup, adjust and restore constraints (emulate @with_no_minimum_velocity)
+        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
+            &this->config.cMinimumVelocity,
+            this->config.cMinimumVelocity > 0.0
+                ? 0.0
+                : this->config.cMinimumVelocity);
 
         // try
         BCLIBC_TerminationReason reason;
@@ -173,10 +172,6 @@ namespace bclibc
             }
         }
         // finally
-        if (has_restore_min_velocity)
-        {
-            this->config.cMinimumVelocity = restore_min_velocity;
-        }
 
         return status;
     };
@@ -398,28 +393,22 @@ namespace bclibc
         double height_error_ft = _cZeroFindingAccuracy * 2;
 
         double required_drop_ft = target_x_ft / 2.0 - target_y_ft;
-        double restore_cMaximumDrop = 0.0;
-        double restore_cMinimumAltitude = 0.0;
-        int has_restore_cMaximumDrop = 0;
-        int has_restore_cMinimumAltitude = 0;
 
         double current_distance = 0.0;
         double trajectory_angle = 0.0;
 
-        // Backup and adjust constraints if needed
-        if (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
-        {
-            restore_cMaximumDrop = this->config.cMaximumDrop;
-            this->config.cMaximumDrop = required_drop_ft;
-            has_restore_cMaximumDrop = 1;
-        }
+        // Backup, adjust and restore constraints (emulate @with_max_drop_zero and @with_no_minimum_altitude)
+        BCLIBC_ValueGuard<double> cMaximumDrop_guard(
+            &this->config.cMaximumDrop,
+            (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
+                ? required_drop_ft
+                : this->config.cMaximumDrop);
 
-        if ((this->config.cMinimumAltitude - this->shot.alt0) > required_drop_ft)
-        {
-            restore_cMinimumAltitude = this->config.cMinimumAltitude;
-            this->config.cMinimumAltitude = this->shot.alt0 - required_drop_ft;
-            has_restore_cMinimumAltitude = 1;
-        }
+        BCLIBC_ValueGuard<double> cMinimumAltitude_guard(
+            &this->config.cMinimumAltitude,
+            (this->config.cMinimumAltitude - this->shot.alt0 > required_drop_ft)
+                ? this->shot.alt0 - required_drop_ft
+                : this->config.cMinimumAltitude);
 
         // Main iteration loop
         while (iterations_count < _cMaxIterations)
@@ -546,16 +535,6 @@ namespace bclibc
 
         // finally:
 
-        // Restore original constraints
-        if (has_restore_cMaximumDrop)
-        {
-            this->config.cMaximumDrop = restore_cMaximumDrop;
-        }
-        if (has_restore_cMinimumAltitude)
-        {
-            this->config.cMinimumAltitude = restore_cMinimumAltitude;
-        }
-
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
             // Fill zero_error if not already filled
@@ -674,12 +653,6 @@ namespace bclibc
         BCLIBC_StatusCode status;
         double sdist;
 
-        // Backup and adjust constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
-        double restore_cMaximumDrop = 0.0;
-        int has_restore_cMaximumDrop = 0;
-        double restore_cMinimumVelocity = 0.0;
-        int has_restore_cMinimumVelocity = 0;
-
         // Virtually vertical shot
         // π/2 radians = 90 degrees
         if (std::fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
@@ -695,19 +668,18 @@ namespace bclibc
             return BCLIBC_StatusCode::SUCCESS;
         }
 
-        if (this->config.cMaximumDrop != 0.0)
-        {
-            restore_cMaximumDrop = this->config.cMaximumDrop;
-            this->config.cMaximumDrop = 0.0; // We want to run trajectory until it returns to horizontal
-            has_restore_cMaximumDrop = 1;
-        }
+        // Backup, adjust and restore constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
+        BCLIBC_ValueGuard<double> cMaximumDrop_guard(
+            &this->config.cMaximumDrop,
+            this->config.cMaximumDrop != 0.0
+                ? 0.0
+                : this->config.cMaximumDrop);
 
-        if (this->config.cMinimumVelocity != 0.0)
-        {
-            restore_cMinimumVelocity = this->config.cMinimumVelocity;
-            this->config.cMinimumVelocity = 0.0; // We want to run trajectory until it returns to horizontal
-            has_restore_cMinimumVelocity = 1;
-        }
+        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
+            &this->config.cMinimumVelocity,
+            this->config.cMinimumVelocity != 0.0
+                ? 0.0
+                : this->config.cMinimumVelocity);
 
         double inv_phi = 0.6180339887498949;              // (std::sqrt(5) - 1) / 2
         double inv_phi_sq = 0.38196601125010515;          // inv_phi^2
@@ -750,16 +722,6 @@ namespace bclibc
 
         angle_at_max_rad = (a + b) / 2;
         BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, angle_at_max_rad, &max_range_ft);
-
-        // Restore original constraints
-        if (has_restore_cMaximumDrop)
-        {
-            this->config.cMaximumDrop = restore_cMaximumDrop;
-        }
-        if (has_restore_cMinimumVelocity)
-        {
-            this->config.cMinimumVelocity = restore_cMinimumVelocity;
-        }
 
         result->max_range_ft = max_range_ft;
         result->angle_at_max_rad = angle_at_max_rad;
@@ -836,15 +798,12 @@ namespace bclibc
             return BCLIBC_StatusCode::SUCCESS;
         }
 
-        // Backup and adjust constraints (emulate @with_no_minimum_velocity)
-        double restore_cMinimumVelocity__zero = 0.0;
-        int has_restore_cMinimumVelocity__zero = 0;
-        if (this->config.cMinimumVelocity != 0.0)
-        {
-            restore_cMinimumVelocity__zero = this->config.cMinimumVelocity;
-            this->config.cMinimumVelocity = 0.0;
-            has_restore_cMinimumVelocity__zero = 1;
-        }
+        // Backup, adjust and restore constraints (emulate @with_no_minimum_velocity)
+        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
+            &this->config.cMinimumVelocity,
+            this->config.cMinimumVelocity != 0.0
+                ? 0.0
+                : this->config.cMinimumVelocity);
 
         // 3. Establish search bracket for the zero angle.
         double low_angle, high_angle;
@@ -1080,10 +1039,6 @@ namespace bclibc
         }
 
     finally:
-        if (has_restore_cMinimumVelocity__zero)
-        {
-            this->config.cMinimumVelocity = restore_cMinimumVelocity__zero;
-        }
         return status;
     };
 

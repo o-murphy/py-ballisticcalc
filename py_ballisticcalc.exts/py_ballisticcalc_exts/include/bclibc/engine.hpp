@@ -173,6 +173,32 @@ namespace bclibc
             BCLIBC_ZeroFindingError *zero_error);
     };
 
+    // class BCLIBC_EngineProxy
+    // {
+    // private:
+    //     BCLIBC_Engine *eng;
+
+    //     int integration_step_count = 0;
+    //     BCLIBC_ErrorStack err_stack;
+
+    // public:
+    //     const BCLIBC_Config &config() const
+    //     {
+    //         return eng->config;
+    //     }
+
+    //     const BCLIBC_ShotProps &shot() const
+    //     {
+    //         return eng->shot;
+    //     }
+
+    //     void reset_iterations() { integration_step_count = 0; }
+    //     void inc_iterations() { integration_step_count++; }
+    //     int iterations() const { return integration_step_count; }
+
+    //     BCLIBC_ErrorStack *error_stack() { return &eng->err_stack; }
+    // };
+
 #define BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, angle, y_out) \
     do                                                                    \
     {                                                                     \
