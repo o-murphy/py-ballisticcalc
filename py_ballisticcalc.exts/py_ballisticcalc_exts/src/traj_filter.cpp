@@ -10,10 +10,6 @@ namespace bclibc
         std::vector<BCLIBC_TrajectoryData> *records,
         const BCLIBC_ShotProps *props,
         BCLIBC_TrajFlag filter_flags,
-        BCLIBC_V3dT initial_position,
-        BCLIBC_V3dT initial_velocity,
-        double barrel_angle_rad,
-        double look_angle_rad,
         double range_limit,
         double range_step,
         double time_step)
@@ -27,8 +23,9 @@ namespace bclibc
           prev_data(prev_data),
           prev_prev_data(prev_prev_data),
           next_record_distance(0.0),
-          look_angle_rad(look_angle_rad),
-          look_angle_tangent(std::tan(look_angle_rad))
+          look_angle_tangent(std::tan(props->look_angle)) {};
+
+    void BCLIBC_TrajectoryDataFilter::init(const BCLIBC_BaseTrajData *data)
     {
 
         if (this->records == nullptr)
@@ -45,12 +42,12 @@ namespace bclibc
         {
             double mach;
             double density_ratio;
-            props->atmo.update_density_factor_and_mach_for_altitude(
-                initial_position.y,
+            this->props->atmo.update_density_factor_and_mach_for_altitude(
+                data->position.y,
                 &density_ratio,
                 &mach);
 
-            if (initial_velocity.mag() < mach)
+            if (data->velocity.mag() < mach)
             {
                 // If we start below Mach 1, we won't look for Mach crossings
                 this->filter = (BCLIBC_TrajFlag)((int)this->filter & ~(int)BCLIBC_TRAJ_FLAG_MACH);
@@ -59,12 +56,12 @@ namespace bclibc
 
         if (filter & BCLIBC_TRAJ_FLAG_ZERO)
         {
-            if (initial_position.y >= 0)
+            if (data->position.y >= 0)
             {
                 // If shot starts above zero then we will only look for a ZERO_DOWN crossing through the line of sight.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_UP);
             }
-            else if (initial_position.y < 0 && barrel_angle_rad <= look_angle_rad)
+            else if (data->position.y < 0 && this->props->barrel_elevation <= this->props->look_angle)
             {
                 // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT));
@@ -72,7 +69,7 @@ namespace bclibc
         }
     };
 
-    BCLIBC_ErrorType BCLIBC_TrajectoryDataFilter::handle(BCLIBC_BaseTraj data)
+    BCLIBC_ErrorType BCLIBC_TrajectoryDataFilter::handle(const BCLIBC_BaseTraj data)
     {
         BCLIBC_BaseTrajData new_data = data.as_BaseTrajData();
         this->record(&new_data);
@@ -104,6 +101,8 @@ namespace bclibc
 
         if (new_data->time == 0.0)
         {
+            // Init on first point handle
+            this->init(new_data);
             // Always record starting point
             this->add_row(&rows, new_data, (this->range_step > 0 || this->time_step) ? BCLIBC_TRAJ_FLAG_RANGE : BCLIBC_TRAJ_FLAG_NONE);
         }
@@ -324,28 +323,6 @@ namespace bclibc
         }
 
         this->records->push_back(*new_data);
-    };
-
-    void BCLIBC_TrajectoryDataFilter::insert(const BCLIBC_TrajectoryData *new_data, size_t index)
-    {
-        if (new_data == nullptr)
-        {
-            return;
-        }
-
-        if (this->records == nullptr)
-        {
-            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
-        }
-
-        if (index > this->records->size())
-        {
-            index = this->records->size();
-        }
-
-        auto position_iterator = this->records->begin() + index;
-
-        this->records->insert(position_iterator, *new_data);
     };
 
     const BCLIBC_TrajectoryData &BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const

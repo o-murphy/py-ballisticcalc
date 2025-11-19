@@ -64,27 +64,12 @@ namespace bclibc
 
         BCLIBC_ErrorType err;
         BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData();
-        BCLIBC_BaseTrajData *init = &temp_btd;
         BCLIBC_BaseTrajData *fin = &temp_btd;
-
-        err = trajectory->get_item(0, init);
-        if (err != BCLIBC_ErrorType::NO_ERROR)
-        {
-            BCLIBC_PUSH_ERR(
-                &this->err_stack,
-                BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::INTEGRATE,
-                "Unexpected failure retrieving element 0");
-            return BCLIBC_StatusCode::ERROR;
-        }
 
         BCLIBC_TrajectoryDataFilter data_filter = BCLIBC_TrajectoryDataFilter(
             records,
             &this->shot,
             filter_flags,
-            init->position,
-            init->velocity,
-            this->shot.barrel_elevation,
-            this->shot.look_angle,
             range_limit_ft,
             range_step_ft,
             time_step);

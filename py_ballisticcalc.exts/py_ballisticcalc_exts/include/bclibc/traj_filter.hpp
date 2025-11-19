@@ -13,20 +13,19 @@ namespace bclibc
             std::vector<BCLIBC_TrajectoryData> *records,
             const BCLIBC_ShotProps *props,
             BCLIBC_TrajFlag filter_flags,
-            BCLIBC_V3dT initial_position,
-            BCLIBC_V3dT initial_velocity,
-            double barrel_angle_rad,
-            double look_angle_rad = 0.0,
             double range_limit = 0.0,
             double range_step = 0.0,
             double time_step = 0.0);
 
-        BCLIBC_ErrorType handle(BCLIBC_BaseTraj data) override;
+    private:
+        void init(const BCLIBC_BaseTrajData *data);
+
+    public:
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj data) override;
 
         void record(const BCLIBC_BaseTrajData *new_data);
         std::vector<BCLIBC_TrajectoryData> const &get_records() const;
         void append(const BCLIBC_TrajectoryData *new_data);
-        void insert(const BCLIBC_TrajectoryData *new_data, size_t index);
         const BCLIBC_TrajectoryData &get_record(std::ptrdiff_t index) const;
 
     private:
