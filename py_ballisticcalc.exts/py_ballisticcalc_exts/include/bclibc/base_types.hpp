@@ -227,6 +227,7 @@ namespace bclibc
         BCLIBC_ErrorType update_stability_coefficient();
         double spin_drift(double time) const;
         double drag_by_mach(double mach) const;
+        size_t size() const;
     };
 
     // helpers

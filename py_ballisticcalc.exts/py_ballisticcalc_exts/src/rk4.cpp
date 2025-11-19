@@ -62,12 +62,6 @@ namespace bclibc
      * or max drop). It integrates over time steps, accounting for gravity, drag,
      * wind, and Coriolis effects.
      *
-     * @param shot_props_ptr Pointer to the BCLIBC_ShotProps structure containing projectile
-     * and atmospheric properties, and the drag curve.
-     * @param wind_sock_ptr Pointer to the BCLIBC_WindSock structure used for wind interpolation
-     * along the trajectory.
-     * @param config_ptr Pointer to the global BCLIBC_Config structure holding constant parameters
-     * (e.g., gravity constant, termination thresholds).
      * @param range_limit_ft The maximum horizontal range (in feet) to simulate.
      * @param range_step_ft The distance interval for recording filtered points (not used
      * for the integration step size).
@@ -79,7 +73,8 @@ namespace bclibc
      */
     BCLIBC_StatusCode BCLIBC_integrateRK4(
         BCLIBC_Engine *eng,
-        double range_limit_ft, double range_step_ft,
+        double range_limit_ft,
+        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajHandlerInterface *handler,
         BCLIBC_TerminationReason *reason)

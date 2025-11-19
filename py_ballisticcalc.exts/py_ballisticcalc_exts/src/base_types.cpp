@@ -131,7 +131,9 @@ namespace bclibc
         };
     };
 
-    BCLIBC_ShotProps::~BCLIBC_ShotProps() {};
+    BCLIBC_ShotProps::~BCLIBC_ShotProps() {
+        BCLIBC_DEBUG("Approx size of shotprops in memory: %zu bytes", this->size());
+    };
 
     /**
      * @brief Litz spin-drift approximation
@@ -361,6 +363,15 @@ namespace bclibc
             &this->curve,
             mach);
         return cd * 2.08551e-04 / this->bc;
+    }
+
+    size_t BCLIBC_ShotProps::size() const
+    {
+        size_t total_size = sizeof(*this);
+        total_size += curve.size() * sizeof(BCLIBC_CurvePoint);
+        total_size += mach_list.size() * sizeof(double);
+        total_size += wind_sock.winds.size() * sizeof(BCLIBC_Wind);
+        return total_size;
     }
 
     BCLIBC_Atmosphere::BCLIBC_Atmosphere(
