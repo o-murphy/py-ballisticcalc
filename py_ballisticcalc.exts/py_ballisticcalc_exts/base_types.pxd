@@ -143,7 +143,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT as_vector() const
 
     cdef cppclass BCLIBC_WindSock:
-        vector[BCLIBC_Wind] *winds
+        vector[BCLIBC_Wind] winds
         int current
         double next_range
         BCLIBC_V3dT last_vector_cache

@@ -89,7 +89,7 @@ cpdef void free_shot(object engine):
     cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
     e._this.shot.curve.clear()
     e._this.shot.mach_list.clear()
-    # e._this.shot.wind_sock.winds.clear()
+    e._this.shot.wind_sock.winds.clear()
 
 cpdef double spin_drift_eval(size_t shot_props_addr, double time_s):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
