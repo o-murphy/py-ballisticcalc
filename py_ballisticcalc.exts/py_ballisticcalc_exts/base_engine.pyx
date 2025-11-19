@@ -259,10 +259,10 @@ cdef class CythonizedBaseIntegrationEngine:
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             vector[BCLIBC_TrajectoryData] records
-            BaseTrajSeqT trajectory
+            BaseTrajSeqT dense_trajectory
 
         if dense_output:
-            trajectory = BaseTrajSeqT()
+            dense_trajectory = BaseTrajSeqT()
 
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
@@ -273,7 +273,7 @@ cdef class CythonizedBaseIntegrationEngine:
             time_step,
             <BCLIBC_TrajFlag>filter_flags,
             &records,
-            &trajectory._this if dense_output else NULL,
+            &dense_trajectory._this if dense_output else NULL,
             &reason,
         )
 
@@ -293,7 +293,7 @@ cdef class CythonizedBaseIntegrationEngine:
         return HitResult(
             props,
             TrajectoryData_list_from_cpp(&records),
-            trajectory if dense_output else None,
+            dense_trajectory if dense_output else None,
             filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
         )

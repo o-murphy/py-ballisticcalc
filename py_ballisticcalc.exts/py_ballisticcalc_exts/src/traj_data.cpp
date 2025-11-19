@@ -253,6 +253,25 @@ namespace bclibc
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach);
     }
 
+    BCLIBC_BaseTrajHandlerCompositor::~BCLIBC_BaseTrajHandlerCompositor() {
+        // The body is empty.
+    };
+
+    BCLIBC_ErrorType BCLIBC_BaseTrajHandlerCompositor::handle(const BCLIBC_BaseTraj &data)
+    {
+        for (auto *handler : handlers_)
+        {
+            BCLIBC_ErrorType status = handler->handle(data);
+
+            if (status != BCLIBC_ErrorType::NO_ERROR)
+            {
+                BCLIBC_ERROR("Some handler returns error");
+                return status;
+            }
+        }
+        return BCLIBC_ErrorType::NO_ERROR;
+    };
+
     BCLIBC_BaseTrajSeq::~BCLIBC_BaseTrajSeq()
     {
         BCLIBC_DEBUG("Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",

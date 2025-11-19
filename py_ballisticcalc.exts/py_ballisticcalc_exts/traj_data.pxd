@@ -78,9 +78,12 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         BCLIBC_BaseTrajData as_BaseTrajData() const
 
     cdef cppclass BCLIBC_BaseTrajHandlerInterface:
-        BCLIBC_ErrorType handle(
-            const BCLIBC_BaseTraj &data
-        ) noexcept nogil
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) except+
+
+    cdef cppclass BCLIBC_BaseTrajHandlerCompositor(BCLIBC_BaseTrajHandlerInterface):
+        BCLIBC_BaseTrajHandlerCompositor() except +
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj& data) except +
+        void add_handler(BCLIBC_BaseTrajHandlerInterface* handler) except +
 
     cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajHandlerInterface):
 

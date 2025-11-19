@@ -42,19 +42,18 @@ namespace bclibc
         double time_step,
         BCLIBC_TrajFlag filter_flags,
         std::vector<BCLIBC_TrajectoryData> *records,
-        BCLIBC_BaseTrajSeq *trajectory,
+        BCLIBC_BaseTrajSeq *dense_trajectory,
         BCLIBC_TerminationReason *reason)
     {
         if (!reason || !records || !this->integrate_func_ptr)
         {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
+            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "1. Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
         }
 
-        // Set flag to 1 if we need dense_output
-        int dense_output = trajectory != nullptr;
-
-        BCLIBC_TrajectoryDataFilter data_filter = BCLIBC_TrajectoryDataFilter(
+        // 1. Create a mandatory filter/writer ON THE HEAP using unique_ptr.
+        // This ensures that a large object does not pollute the stack frame.
+        BCLIBC_TrajectoryDataFilter data_filter(
             records,
             &this->shot,
             filter_flags,
@@ -62,50 +61,27 @@ namespace bclibc
             range_step_ft,
             time_step);
 
-        if (!dense_output)
-        {
-            BCLIBC_StatusCode status = this->integrate(
-                range_limit_ft,
-                range_step_ft,
-                time_step,
-                &data_filter,
-                reason);
-            if (status == BCLIBC_StatusCode::ERROR)
-            {
-                return BCLIBC_StatusCode::ERROR;
-            }
-        }
-        else
-        {
-            BCLIBC_StatusCode status = this->integrate(
-                range_limit_ft,
-                range_step_ft,
-                time_step,
-                trajectory,
-                reason);
-            if (status == BCLIBC_StatusCode::ERROR)
-            {
-                return BCLIBC_StatusCode::ERROR;
-            }
+        // 2. Create the Composer (on the stack, it's small and now safer)
+        BCLIBC_BaseTrajHandlerCompositor composite_handler;
 
-            BCLIBC_ErrorType err;
-            BCLIBC_BaseTrajData temp_btd = BCLIBC_BaseTrajData();
+        // 3. Add a mandatory filter
+        composite_handler.add_handler(&data_filter);
 
-            for (int i = 0; i < trajectory->get_length(); i++)
-            {
-                err = trajectory->get_item(i, &temp_btd);
-                if (err != BCLIBC_ErrorType::NO_ERROR)
-                {
-                    BCLIBC_PUSH_ERR(
-                        &this->err_stack,
-                        BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::INTEGRATE,
-                        "Unexpected failure retrieving element %d", i);
-                    return BCLIBC_StatusCode::ERROR;
-                }
-                data_filter.record(temp_btd);
-            }
+        // 4. Add the optional trajectory
+        if (dense_trajectory != nullptr)
+        {
+            composite_handler.add_handler(dense_trajectory);
         }
 
+        // 5. Call integration ONCE, passing the composite
+        BCLIBC_StatusCode status = this->integrate(
+            range_limit_ft,
+            range_step_ft,
+            time_step,
+            &composite_handler,
+            reason);
+
+        // 6. Finalization
         if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
         {
             data_filter.finalize();

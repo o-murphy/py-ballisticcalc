@@ -85,7 +85,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double time_step,
             BCLIBC_TrajFlag filter_flags,
             vector[BCLIBC_TrajectoryData] *records,
-            BCLIBC_BaseTrajSeq *trajectory,
+            BCLIBC_BaseTrajSeq *dense_trajectory,
             BCLIBC_TerminationReason *reason) except +
 
         BCLIBC_StatusCode find_apex(
