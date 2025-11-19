@@ -6,7 +6,7 @@
 
 namespace bclibc
 {
-    class BCLIBC_TrajectoryDataFilter
+    class BCLIBC_TrajectoryDataFilter : public BCLIBC_BaseTrajHandlerInterface
     {
     public:
         BCLIBC_TrajectoryDataFilter(
@@ -21,7 +21,9 @@ namespace bclibc
             double range_step = 0.0,
             double time_step = 0.0);
 
-        void record(BCLIBC_BaseTrajData *new_data);
+        BCLIBC_ErrorType handle(BCLIBC_BaseTraj data) override;
+
+        void record(const BCLIBC_BaseTrajData *new_data);
         std::vector<BCLIBC_TrajectoryData> const &get_records() const;
         void append(const BCLIBC_TrajectoryData *new_data);
         void insert(const BCLIBC_TrajectoryData *new_data, size_t index);
@@ -54,7 +56,7 @@ namespace bclibc
             TimeAccessor getTime);
 
         bool can_interpolate(const BCLIBC_BaseTrajData *new_data) const;
-        void add_row(std::vector<BCLIBC_FlaggedData> *rows, BCLIBC_BaseTrajData *data, BCLIBC_TrajFlag flag);
+        void add_row(std::vector<BCLIBC_FlaggedData> *rows, const BCLIBC_BaseTrajData *data, BCLIBC_TrajFlag flag);
     };
 
 };

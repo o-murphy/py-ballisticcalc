@@ -52,6 +52,18 @@ namespace bclibc
           velocity(velocity),
           mach(mach) {};
 
+    BCLIBC_BaseTraj BCLIBC_BaseTrajData::as_BaseTraj() const {
+        return BCLIBC_BaseTraj(
+            time,
+            position.x,
+            position.x,
+            position.x,
+            velocity.x,
+            velocity.x,
+            velocity.x,
+            mach);
+    };
+
     /**
      * @brief Interpolates a BCLIBC_BaseTrajData structure using three surrounding data points.
      *
@@ -135,6 +147,14 @@ namespace bclibc
           vy(vy),
           vz(vz),
           mach(mach) {};
+
+    BCLIBC_BaseTrajData BCLIBC_BaseTraj::as_BaseTrajData() const {
+    return BCLIBC_BaseTrajData(
+        time,
+        BCLIBC_V3dT(px, py, pz),
+        BCLIBC_V3dT(vx, vy, vz),
+        mach);
+    };
 
     /**
      * @brief Get the key value of a BaseTraj element.
@@ -232,6 +252,11 @@ namespace bclibc
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
     }
 
+    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::handle(BCLIBC_BaseTraj data)
+    {
+        return this->append(data);
+    };
+
     /**
      * @brief Appends a new trajectory point to the end of the sequence.
      *
@@ -306,10 +331,7 @@ namespace bclibc
         {
             return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
         }
-        out->time = raw_output.time;
-        out->position = BCLIBC_V3dT{raw_output.px, raw_output.py, raw_output.pz};
-        out->velocity = BCLIBC_V3dT{raw_output.vx, raw_output.vy, raw_output.vz};
-        out->mach = raw_output.mach;
+        *out = raw_output.as_BaseTrajData();
         return BCLIBC_ErrorType::NO_ERROR;
     };
 

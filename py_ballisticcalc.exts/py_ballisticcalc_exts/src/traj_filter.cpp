@@ -72,6 +72,13 @@ namespace bclibc
         }
     };
 
+    BCLIBC_ErrorType BCLIBC_TrajectoryDataFilter::handle(BCLIBC_BaseTraj data)
+    {
+        BCLIBC_BaseTrajData new_data = data.as_BaseTrajData();
+        this->record(&new_data);
+        return BCLIBC_ErrorType::NO_ERROR;
+    };
+
     bool BCLIBC_TrajectoryDataFilter::can_interpolate(const BCLIBC_BaseTrajData *new_data) const
     {
         return (this->prev_prev_data.time >= 0.0) &&
@@ -80,7 +87,7 @@ namespace bclibc
                (this->prev_data.time < new_data->time);
     };
 
-    void BCLIBC_TrajectoryDataFilter::record(BCLIBC_BaseTrajData *new_data)
+    void BCLIBC_TrajectoryDataFilter::record(const BCLIBC_BaseTrajData *new_data)
     {
         if (new_data == nullptr)
         {
@@ -407,7 +414,7 @@ namespace bclibc
         container.insert(it, new_record);
     };
 
-    void BCLIBC_TrajectoryDataFilter::add_row(std::vector<BCLIBC_FlaggedData> *rows, BCLIBC_BaseTrajData *data, BCLIBC_TrajFlag flag)
+    void BCLIBC_TrajectoryDataFilter::add_row(std::vector<BCLIBC_FlaggedData> *rows, const BCLIBC_BaseTrajData *data, BCLIBC_TrajFlag flag)
     {
         if (rows == nullptr || data == nullptr)
         {

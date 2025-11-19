@@ -23,6 +23,9 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         VEL_Y
         VEL_Z
 
+    # Forward ref
+    cdef cppclass BCLIBC_BaseTraj
+
     cdef cppclass BCLIBC_BaseTrajData:
         double time
         BCLIBC_V3dT position
@@ -47,6 +50,8 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             BCLIBC_BaseTrajData *out
         )
 
+        BCLIBC_BaseTraj as_BaseTraj() const
+
     cdef cppclass BCLIBC_BaseTraj:
         double time
         double px
@@ -68,6 +73,8 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double vz,
             double mach
         ) except+
+
+        BCLIBC_BaseTrajData as_BaseTrajData() const
 
     cdef cppclass BCLIBC_BaseTrajHandlerInterface:
         BCLIBC_ErrorType handle(

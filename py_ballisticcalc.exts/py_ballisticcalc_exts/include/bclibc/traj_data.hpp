@@ -68,6 +68,9 @@ namespace bclibc
         FLAG
     };
 
+    // Forward ref
+    struct BCLIBC_BaseTraj;
+
     struct BCLIBC_BaseTrajData
     {
         double time;
@@ -81,6 +84,8 @@ namespace bclibc
             BCLIBC_V3dT position,
             BCLIBC_V3dT velocity,
             double mach);
+
+        BCLIBC_BaseTraj as_BaseTraj() const;
 
         static BCLIBC_ErrorType interpolate(
             BCLIBC_BaseTraj_InterpKey key_kind,
@@ -117,6 +122,8 @@ namespace bclibc
             double vz,
             double mach);
 
+        BCLIBC_BaseTrajData as_BaseTrajData() const;
+
         double key_val(BCLIBC_BaseTraj_InterpKey key_kind) const;
         double slant_val_buf(double ca, double sa) const;
 
@@ -143,9 +150,7 @@ namespace bclibc
     public:
         BCLIBC_BaseTrajSeq() = default;
 
-        BCLIBC_ErrorType handle(BCLIBC_BaseTraj data) override {
-            return this->append(data);
-        };
+        BCLIBC_ErrorType handle(BCLIBC_BaseTraj data) override;
 
         /**
          * @brief Appends a new trajectory point to the end of the sequence.
