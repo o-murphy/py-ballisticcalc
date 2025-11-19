@@ -227,17 +227,12 @@ class TrajectoryDataFilter:
     prev_data: Optional[BaseTrajData]
     prev_prev_data: Optional[BaseTrajData]
     next_record_distance: float
-    look_angle_rad: float
     look_angle_tangent: float
 
     def __init__(
         self,
         props: ShotProps,
         filter_flags: Union[TrajFlag, int],
-        initial_position: Vector,
-        initial_velocity: Vector,
-        barrel_angle_rad: float,
-        look_angle_rad: float = 0.0,
         range_limit: float = 0.0,
         range_step: float = 0.0,
         time_step: float = 0.0,
@@ -253,20 +248,34 @@ class TrajectoryDataFilter:
         self.next_record_distance = 0.0
         self.prev_data = None
         self.prev_prev_data = None
-        self.look_angle_rad = look_angle_rad
-        self.look_angle_tangent = math.tan(look_angle_rad)
+        self.look_angle_tangent = math.tan(props.look_angle_rad)
+
+    def init(self, data: BaseTrajData):
         if self.filter & TrajFlag.MACH:
-            mach = props.get_density_and_mach_for_altitude(initial_position.y)[1]
-            if initial_velocity.magnitude() < mach:
+            mach = self.props.get_density_and_mach_for_altitude(data.position.y)[1]
+            if data.velocity.magnitude() < mach:
                 # If we start below Mach 1, we won't look for Mach crossings
                 self.filter &= ~TrajFlag.MACH
         if self.filter & TrajFlag.ZERO:
-            if initial_position.y >= 0:
+            if data.position.y >= 0:
                 # If shot starts above zero then we will only look for a ZERO_DOWN crossing through the line of sight.
                 self.filter &= ~TrajFlag.ZERO_UP
-            elif initial_position.y < 0 and barrel_angle_rad <= self.look_angle_rad:
+            elif data.position.y < 0 and self.props.barrel_elevation_rad <= self.props.look_angle_rad:
                 # If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 self.filter &= ~(TrajFlag.ZERO | TrajFlag.MRT)
+
+    def finalize(self):
+        if self.prev_data is not None and self.prev_data.time > self.records[-1].time:
+            self.records.append(
+                TrajectoryData.from_props(
+                    self.props,
+                    self.prev_data.time,
+                    self.prev_data.position,
+                    self.prev_data.velocity,
+                    self.prev_data.mach,
+                    TrajFlag.NONE,
+                )
+            )
 
     def record(self, new_data: BaseTrajData):
         """For each integration step, creates TrajectoryData records based on filter/step criteria."""
@@ -288,6 +297,8 @@ class TrajectoryDataFilter:
         is_can_interpolate = self.prev_data is not None and self.prev_prev_data is not None
 
         if new_data.time == 0.0:
+            # Initial point
+            self.init(new_data)
             # Always record starting point
             add_row(new_data, TrajFlag.RANGE if (self.range_step > 0 or self.time_step > 0) else TrajFlag.NONE)
         else:
@@ -372,8 +383,8 @@ class TrajectoryDataFilter:
             if compute_flags:
                 # Instantiate TrajectoryData and interpolate
                 t0 = TrajectoryData.from_base_data(self.props, new_data)
-                t1 = TrajectoryData.from_base_data(self.props, self.prev_data) # type: ignore[arg-type]
-                t2 = TrajectoryData.from_base_data(self.props, self.prev_prev_data) # type: ignore[arg-type]
+                t1 = TrajectoryData.from_base_data(self.props, self.prev_data)  # type: ignore[arg-type]
+                t2 = TrajectoryData.from_base_data(self.props, self.prev_prev_data)  # type: ignore[arg-type]
                 add_td = []
                 if compute_flags & TrajFlag.MACH:
                     add_td.append(TrajectoryData.interpolate("mach", 1.0, t0, t1, t2, TrajFlag.MACH))
