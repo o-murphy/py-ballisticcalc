@@ -15,7 +15,7 @@ from py_ballisticcalc import (
     Weight,
 )
 
-from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data import BaseTrajSeqT
 
 
 pytestmark = pytest.mark.stress
@@ -71,7 +71,7 @@ def test_rss_stability_over_many_runs(loaded_engine_instance):
     assert after - baseline < 50 * 1024 * 1024  # < 50 MiB growth
 
 
-def test_cbase_traj_seq_append_and_get_at_edge_cases():
+def test_ctraj_seq_append_and_get_at_edge_cases():
     seq = BaseTrajSeqT()
     # Append many points to exercise reallocation logic
     n = 10_000
