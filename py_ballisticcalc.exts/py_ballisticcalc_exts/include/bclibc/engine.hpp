@@ -107,6 +107,12 @@ namespace bclibc
         BCLIBC_ErrorStack err_stack;
 
     public:
+        BCLIBC_StatusCode integrate(
+            double range_limit_ft,
+            double range_step_ft,
+            double time_step,
+            BCLIBC_BaseTrajHandlerInterface *handler,
+            BCLIBC_TerminationReason *reason);
 
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,
@@ -114,13 +120,6 @@ namespace bclibc
             double time_step,
             BCLIBC_TrajFlag filter_flags,
             std::vector<BCLIBC_TrajectoryData> *records,
-            BCLIBC_BaseTrajSeq *trajectory,
-            BCLIBC_TerminationReason *reason);
-
-        BCLIBC_StatusCode integrate_dense(
-            double range_limit_ft,
-            double range_step_ft,
-            double time_step,
             BCLIBC_BaseTrajSeq *trajectory,
             BCLIBC_TerminationReason *reason);
 
@@ -178,7 +177,7 @@ namespace bclibc
     do                                                                    \
     {                                                                     \
         (status) = this->range_for_angle((angle), (y_out));               \
-        if ((status) != BCLIBC_StatusCode::SUCCESS)                            \
+        if ((status) != BCLIBC_StatusCode::SUCCESS)                       \
             return (status);                                              \
     } while (0)
 };

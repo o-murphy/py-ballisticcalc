@@ -13,6 +13,7 @@ from py_ballisticcalc_exts.traj_data cimport (
     BaseTrajSeqT,
     BCLIBC_BaseTrajData,
     BCLIBC_TrajectoryData,
+    BCLIBC_BaseTrajHandlerInterface,
 )
 from py_ballisticcalc_exts.base_types cimport (
     # types and methods
@@ -258,7 +259,10 @@ cdef class CythonizedBaseIntegrationEngine:
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             vector[BCLIBC_TrajectoryData] records
-            BaseTrajSeqT trajectory = BaseTrajSeqT()
+            BaseTrajSeqT trajectory
+
+        if dense_output:
+            trajectory = BaseTrajSeqT()
 
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
@@ -269,7 +273,7 @@ cdef class CythonizedBaseIntegrationEngine:
             time_step,
             <BCLIBC_TrajFlag>filter_flags,
             &records,
-            &trajectory._this,
+            &trajectory._this if dense_output else NULL,
             &reason,
         )
 
@@ -517,12 +521,14 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_zero_finding_error(err, &zero_error)
         self._raise_solver_runtime_error(err)
 
-    cdef tuple _integrate(
+    cdef BCLIBC_StatusCode _integrate(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
+        BCLIBC_BaseTrajHandlerInterface *handler,
+        BCLIBC_TerminationReason *reason,
     ):
         """
         Internal method to perform trajectory integration.
@@ -539,19 +545,16 @@ cdef class CythonizedBaseIntegrationEngine:
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
         self._init_trajectory(shot_info)
-        cdef:
-            BaseTrajSeqT trajectory = BaseTrajSeqT()
-            BCLIBC_TerminationReason reason
-        cdef BCLIBC_StatusCode status = self._this.integrate_dense(
+        cdef BCLIBC_StatusCode status = self._this.integrate(
             range_limit_ft,
             range_step_ft,
             time_step,
-            &trajectory._this,
-            &reason,
+            handler,
+            reason,
         )
 
         if status == BCLIBC_StatusCode.SUCCESS:
-            return trajectory, reason
+            return status
 
         cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
         self._raise_solver_runtime_error(err)

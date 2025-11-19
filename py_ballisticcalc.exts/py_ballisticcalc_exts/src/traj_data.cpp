@@ -51,7 +51,8 @@ namespace bclibc
           velocity(velocity),
           mach(mach) {};
 
-    BCLIBC_BaseTraj BCLIBC_BaseTrajData::as_BaseTraj() const {
+    BCLIBC_BaseTraj BCLIBC_BaseTrajData::as_BaseTraj() const
+    {
         return BCLIBC_BaseTraj(
             time,
             position.x,
@@ -147,12 +148,13 @@ namespace bclibc
           vz(vz),
           mach(mach) {};
 
-    BCLIBC_BaseTrajData BCLIBC_BaseTraj::as_BaseTrajData() const {
-    return BCLIBC_BaseTrajData(
-        time,
-        BCLIBC_V3dT(px, py, pz),
-        BCLIBC_V3dT(vx, vy, vz),
-        mach);
+    BCLIBC_BaseTrajData BCLIBC_BaseTraj::as_BaseTrajData() const
+    {
+        return BCLIBC_BaseTrajData(
+            time,
+            BCLIBC_V3dT(px, py, pz),
+            BCLIBC_V3dT(vx, vy, vz),
+            mach);
     };
 
     /**
@@ -250,6 +252,13 @@ namespace bclibc
                         ? x
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach);
     }
+
+    BCLIBC_BaseTrajSeq::~BCLIBC_BaseTrajSeq()
+    {
+        BCLIBC_DEBUG("Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
+                     this->get_length(), this->get_capacity(),
+                     this->get_length() * sizeof(BCLIBC_BaseTraj));
+    };
 
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTraj &data)
     {
