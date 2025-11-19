@@ -40,17 +40,18 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double mach
         ) except+
 
+        BCLIBC_BaseTraj as_BaseTraj() const
+        double get_key_value(BCLIBC_BaseTraj_InterpKey key_kind) const
+
         @staticmethod
         BCLIBC_ErrorType interpolate(
             BCLIBC_BaseTraj_InterpKey key_kind,
             double key_value,
-            const BCLIBC_BaseTrajData *p0,
-            const BCLIBC_BaseTrajData *p1,
-            const BCLIBC_BaseTrajData *p2,
+            const BCLIBC_BaseTrajData &p0,
+            const BCLIBC_BaseTrajData &p1,
+            const BCLIBC_BaseTrajData &p2,
             BCLIBC_BaseTrajData *out
         )
-
-        BCLIBC_BaseTraj as_BaseTraj() const
 
     cdef cppclass BCLIBC_BaseTraj:
         double time

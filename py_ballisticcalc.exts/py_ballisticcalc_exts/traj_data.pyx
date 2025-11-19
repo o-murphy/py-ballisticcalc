@@ -181,7 +181,7 @@ cdef class BaseTrajDataT:
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData.interpolate(
             key_kind, key_value,
-            &p0._this, &p1._this, &p2._this,
+            p0._this, p1._this, p2._this,
             &out._this
         )
 

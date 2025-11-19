@@ -139,9 +139,9 @@ namespace bclibc
                         BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
                             BCLIBC_BaseTraj_InterpKey::POS_X,
                             record_distance,
-                            &this->prev_prev_data,
-                            &this->prev_data,
-                            &new_data,
+                            this->prev_prev_data,
+                            this->prev_data,
+                            new_data,
                             &result_data);
                         if (err == BCLIBC_ErrorType::NO_ERROR)
                         {
@@ -175,9 +175,9 @@ namespace bclibc
                     BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
                         BCLIBC_BaseTraj_InterpKey::TIME,
                         this->time_of_last_record,
-                        &this->prev_prev_data,
-                        &this->prev_data,
-                        &new_data,
+                        this->prev_prev_data,
+                        this->prev_data,
+                        new_data,
                         &result_data);
 
                     if (err == BCLIBC_ErrorType::NO_ERROR)
@@ -204,9 +204,9 @@ namespace bclibc
                 BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
                     BCLIBC_BaseTraj_InterpKey::VEL_Y,
                     0.0,
-                    &this->prev_prev_data,
-                    &this->prev_data,
-                    &new_data,
+                    this->prev_prev_data,
+                    this->prev_data,
+                    new_data,
                     &result_data);
                 if (err == BCLIBC_ErrorType::NO_ERROR)
                 {
@@ -279,7 +279,7 @@ namespace bclibc
                         BCLIBC_TrajectoryData::interpolate(
                             BCLIBC_TrajectoryData_InterpKey::MACH,
                             1.0,
-                            &t0, &t1, &t2,
+                            t0, t1, t2,
                             BCLIBC_TRAJ_FLAG_MACH));
                 }
                 if (compute_flags & BCLIBC_TRAJ_FLAG_ZERO)
@@ -288,7 +288,7 @@ namespace bclibc
                         BCLIBC_TrajectoryData::interpolate(
                             BCLIBC_TrajectoryData_InterpKey::SLANT_HEIGHT,
                             0.0,
-                            &t0, &t1, &t2,
+                            t0, t1, t2,
                             compute_flags));
                 }
                 // Add TrajectoryData, keeping `results` sorted by time.
