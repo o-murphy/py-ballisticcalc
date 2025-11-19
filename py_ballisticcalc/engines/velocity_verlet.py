@@ -170,10 +170,6 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
         data_filter = TrajectoryDataFilter(
             props=props,
             filter_flags=filter_flags,
-            initial_position=range_vector,
-            initial_velocity=velocity_vector,
-            barrel_angle_rad=props.barrel_elevation_rad,
-            look_angle_rad=props.look_angle_rad,
             range_limit=range_limit_ft,
             range_step=range_step_ft,
             time_step=time_step,
@@ -244,14 +240,10 @@ class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict
             step_data.append(data)
         # Ensure that we have at least two data points in trajectory,
         # ... as well as last point if we had an incomplete trajectory
+        if termination_reason:
+            data_filter.finalize()
+
         ranges = data_filter.records
-        if (filter_flags and ((len(ranges) < 2) or termination_reason)) or len(ranges) == 1:
-            if len(ranges) > 0 and ranges[-1].time == time:  # But don't duplicate the last point.
-                pass
-            else:
-                ranges.append(
-                    TrajectoryData.from_props(props, time, range_vector, velocity_vector, mach, TrajFlag.NONE)
-                )
         logger.debug(f"Velocity Verlet ran {integration_step_count} iterations")
         self.integration_step_count += integration_step_count
         error = None
