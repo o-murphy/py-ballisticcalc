@@ -18,8 +18,8 @@ namespace bclibc
      * @param ground_velocity_ptr Pointer to ground velocity vector (for Coriolis calculation).
      * @return BCLIBC_V3dT The acceleration vector (dv/dt).
      */
-    static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT *v_ptr, const BCLIBC_V3dT *gravity_vector_ptr, double km_coeff,
-                                                    const BCLIBC_ShotProps *shot_props_ptr, const BCLIBC_V3dT *ground_velocity_ptr)
+    static inline BCLIBC_V3dT BCLIBC_calculate_dvdt(const BCLIBC_V3dT &v, const BCLIBC_V3dT &gravity_vector, double km_coeff,
+                                                    const BCLIBC_ShotProps &shot_props, const BCLIBC_V3dT &ground_velocity)
     {
         // Local variables for components and result
         BCLIBC_V3dT drag_force_component;
@@ -29,22 +29,22 @@ namespace bclibc
         // Bullet velocity changes due to drag and gravity
         // drag_force_component = BCLIBC_V3dT_mulS(v_ptr, km_coeff * BCLIBC_V3dT_mag(v_ptr))
         // Note: Assuming mulS and mag operate on BCLIBC_V3dT and double types respectively
-        drag_force_component = (*v_ptr) * (km_coeff * v_ptr->mag());
+        drag_force_component = v * (km_coeff * v.mag());
 
         // acceleration = BCLIBC_V3dT_sub(gravity_vector_ptr, &drag_force_component)
         // Note: Assuming sub takes two const BCLIBC_V3dT* and returns BCLIBC_V3dT
-        acceleration = (*gravity_vector_ptr) - drag_force_component;
+        acceleration = gravity_vector - drag_force_component;
 
         // Add Coriolis acceleration if available
         // Check the flat_fire_only flag within the Coriolis structure
-        if (!shot_props_ptr->coriolis.flat_fire_only)
+        if (!shot_props.coriolis.flat_fire_only)
         {
             // shot_props_ptr->coriolis.coriolis_acceleration_local(
             //     ground_velocity_ptr, &coriolis_acceleration
             // )
             // Note: Assuming this function calculates Coriolis acceleration and stores it in the third argument
-            shot_props_ptr->coriolis.coriolis_acceleration_local(
-                ground_velocity_ptr, &coriolis_acceleration);
+            shot_props.coriolis.coriolis_acceleration_local(
+                &ground_velocity, &coriolis_acceleration);
 
             // acceleration = BCLIBC_V3dT_add(&acceleration, &coriolis_acceleration)
             // Note: Assuming add takes two const BCLIBC_V3dT* and returns BCLIBC_V3dT
@@ -226,22 +226,22 @@ namespace bclibc
             BCLIBC_DEBUG("Starting RK4 integration\n");
 
             // v1 = f(relative_velocity)
-            v1 = BCLIBC_calculate_dvdt(&relative_velocity, &gravity_vector, km, &eng->shot, &velocity_vector);
+            v1 = BCLIBC_calculate_dvdt(relative_velocity, gravity_vector, km, eng->shot, velocity_vector);
 
             // v2 = f(relative_velocity + 0.5 * delta_time * v1)
             _temp_add_operand = v1 * (0.5 * delta_time);
             _temp_v_result = relative_velocity + _temp_add_operand;
-            v2 = BCLIBC_calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
+            v2 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng->shot, velocity_vector);
 
             // v3 = f(relative_velocity + 0.5 * delta_time * v2)
             _temp_add_operand = v2 * (0.5 * delta_time);
             _temp_v_result = relative_velocity + _temp_add_operand;
-            v3 = BCLIBC_calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
+            v3 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng->shot, velocity_vector);
 
             // v4 = f(relative_velocity + delta_time * v3)
             _temp_add_operand = v3 * delta_time;
             _temp_v_result = relative_velocity + _temp_add_operand;
-            v4 = BCLIBC_calculate_dvdt(&_temp_v_result, &gravity_vector, km, &eng->shot, &velocity_vector);
+            v4 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng->shot, velocity_vector);
 
             // p1 = velocity_vector
             p1 = velocity_vector;

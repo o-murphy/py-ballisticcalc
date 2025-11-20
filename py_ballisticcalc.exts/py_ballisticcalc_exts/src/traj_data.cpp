@@ -1020,11 +1020,11 @@ namespace bclibc
                     BCLIBC_InterpStatus interp_status;
                     if (x_val <= x1)
                     {
-                        interp_status = BCLIBC_interpolate2pt(x_val, x0, y0, x1, y1, &interpolated_value);
+                        interp_status = BCLIBC_interpolate2pt(x_val, x0, y0, x1, y1, interpolated_value);
                     }
                     else
                     {
-                        interp_status = BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, &interpolated_value);
+                        interp_status = BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, interpolated_value);
                     }
                     if (interp_status != BCLIBC_InterpStatus::SUCCESS)
                     {
