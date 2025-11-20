@@ -530,8 +530,8 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *handler,
-        BCLIBC_TerminationReason *reason,
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason,
     ):
         """
         Internal method to perform trajectory integration.
@@ -552,8 +552,8 @@ cdef class CythonizedBaseIntegrationEngine:
             range_limit_ft,
             range_step_ft,
             time_step,
-            handler[0],
-            reason[0],
+            handler,
+            reason,
         )
 
         if status == BCLIBC_StatusCode.SUCCESS:
