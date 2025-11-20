@@ -845,7 +845,7 @@ namespace bclibc
     };
 
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
-        const BCLIBC_ShotProps *props,
+        const BCLIBC_ShotProps &props,
         double time,
         const BCLIBC_V3dT &range_vector,
         const BCLIBC_V3dT &velocity_vector,
@@ -868,8 +868,8 @@ namespace bclibc
         //     c->muzzle_velocity_fps
         // );
 
-        BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
-        double spin_drift = props->spin_drift(time);
+        BCLIBC_V3dT adjusted_range = props.coriolis.adjust_range(time, range_vector);
+        double spin_drift = props.spin_drift(time);
         double velocity = velocity_vector.mag();
 
         this->windage_ft = adjusted_range.z + spin_drift;
@@ -879,12 +879,12 @@ namespace bclibc
         //         time, range_vector->z, adjusted_range.z, spin_drift);
 
         double density_ratio_out, mach_out;
-        props->atmo.update_density_factor_and_mach_for_altitude(
+        props.atmo.update_density_factor_and_mach_for_altitude(
             range_vector.y, density_ratio_out, mach_out);
 
         double trajectory_angle = std::atan2(velocity_vector.y, velocity_vector.x);
-        double look_angle_cos = std::cos(props->look_angle);
-        double look_angle_sin = std::sin(props->look_angle);
+        double look_angle_cos = std::cos(props.look_angle);
+        double look_angle_sin = std::sin(props.look_angle);
 
         this->distance_ft = adjusted_range.x;
         this->velocity_fps = velocity;
@@ -894,24 +894,24 @@ namespace bclibc
         this->height_ft = adjusted_range.y;
         this->slant_height_ft = adjusted_range.y * look_angle_cos - adjusted_range.x * look_angle_sin;
         this->drop_angle_rad = BCLIBC_getCorrection(adjusted_range.x, adjusted_range.y) -
-                               (adjusted_range.x ? props->look_angle : 0.0);
+                               (adjusted_range.x ? props.look_angle : 0.0);
         this->windage_angle_rad = BCLIBC_getCorrection(adjusted_range.x, this->windage_ft);
         this->slant_distance_ft = adjusted_range.x * look_angle_cos + adjusted_range.y * look_angle_sin;
         this->angle_rad = trajectory_angle;
         this->density_ratio = density_ratio_out;
-        this->drag = props->drag_by_mach(this->mach);
-        this->energy_ft_lb = BCLIBC_calculateEnergy(props->weight, velocity);
-        this->ogw_lb = BCLIBC_calculateOgw(props->weight, velocity);
+        this->drag = props.drag_by_mach(this->mach);
+        this->energy_ft_lb = BCLIBC_calculateEnergy(props.weight, velocity);
+        this->ogw_lb = BCLIBC_calculateOgw(props.weight, velocity);
     };
 
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
-        const BCLIBC_ShotProps *props,
+        const BCLIBC_ShotProps &props,
         const BCLIBC_BaseTrajData &data,
         BCLIBC_TrajFlag flag)
         : BCLIBC_TrajectoryData(props, data.time, data.position(), data.velocity(), data.mach, flag) {};
 
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
-        const BCLIBC_ShotProps *props,
+        const BCLIBC_ShotProps &props,
         const BCLIBC_FlaggedData &data)
         : BCLIBC_TrajectoryData(props, data.data, data.flag) {};
 

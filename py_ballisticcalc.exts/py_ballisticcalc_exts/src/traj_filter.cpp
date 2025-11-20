@@ -76,7 +76,7 @@ namespace bclibc
             this->prev_data.time);
         if (this->prev_data.time > this->get_record(-1).time)
         {
-            BCLIBC_TrajectoryData fin(this->props, this->prev_data);
+            BCLIBC_TrajectoryData fin(*this->props, this->prev_data);
             this->append(fin);
         }
     };
@@ -225,7 +225,7 @@ namespace bclibc
         {
             for (const auto &new_row : rows)
             {
-                this->records->emplace_back(this->props, new_row);
+                this->records->emplace_back(*this->props, new_row);
             }
         }
 
@@ -268,9 +268,9 @@ namespace bclibc
             if (compute_flags)
             {
                 // Instantiate TrajectoryData and interpolate
-                BCLIBC_TrajectoryData t0(this->props, new_data);
-                BCLIBC_TrajectoryData t1(this->props, this->prev_data);
-                BCLIBC_TrajectoryData t2(this->props, this->prev_prev_data);
+                BCLIBC_TrajectoryData t0(*this->props, new_data);
+                BCLIBC_TrajectoryData t1(*this->props, this->prev_data);
+                BCLIBC_TrajectoryData t2(*this->props, this->prev_prev_data);
                 std::vector<BCLIBC_TrajectoryData> add_td;
                 if (compute_flags & BCLIBC_TRAJ_FLAG_MACH)
                 {

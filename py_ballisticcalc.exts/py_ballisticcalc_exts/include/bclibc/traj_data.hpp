@@ -442,7 +442,7 @@ namespace bclibc
         // BCLIBC_TrajectoryData();
 
         BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
+            const BCLIBC_ShotProps &props,
             double time,
             const BCLIBC_V3dT &range_vector,
             const BCLIBC_V3dT &velocity_vector,
@@ -450,12 +450,12 @@ namespace bclibc
             BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
 
         BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
+            const BCLIBC_ShotProps &props,
             const BCLIBC_BaseTrajData &data,
             BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
 
         BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
+            const BCLIBC_ShotProps &props,
             const BCLIBC_FlaggedData &data);
 
         static BCLIBC_TrajectoryData interpolate(
