@@ -76,8 +76,8 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_BaseTrajDataHandlerInterface *handler,
-            BCLIBC_TerminationReason *reason) noexcept nogil
+            BCLIBC_BaseTrajDataHandlerInterface &handler,
+            BCLIBC_TerminationReason &reason) noexcept nogil
 
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,

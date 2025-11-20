@@ -111,8 +111,8 @@ namespace bclibc
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_BaseTrajDataHandlerInterface *handler,
-            BCLIBC_TerminationReason *reason);
+            BCLIBC_BaseTrajDataHandlerInterface &handler,
+            BCLIBC_TerminationReason &reason);
 
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,

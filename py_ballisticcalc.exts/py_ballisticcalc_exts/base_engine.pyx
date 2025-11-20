@@ -552,8 +552,8 @@ cdef class CythonizedBaseIntegrationEngine:
             range_limit_ft,
             range_step_ft,
             time_step,
-            handler,
-            reason,
+            handler[0],
+            reason[0],
         )
 
         if status == BCLIBC_StatusCode.SUCCESS:

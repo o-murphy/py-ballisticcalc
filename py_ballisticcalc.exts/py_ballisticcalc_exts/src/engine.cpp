@@ -79,8 +79,8 @@ namespace bclibc
             range_limit_ft,
             range_step_ft,
             time_step,
-            &composite_handler,
-            &reason);
+            composite_handler,
+            reason);
 
         // 6. Finalization
         if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
@@ -95,27 +95,27 @@ namespace bclibc
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *handler,
-        BCLIBC_TerminationReason *reason)
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason)
     {
-        if (!handler || !reason || !this->integrate_func_ptr)
+        if (!this->integrate_func_ptr)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
         }
         BCLIBC_DEBUG("Using integration function pointer %p.", (void *)this->integrate_func_ptr);
 
-        BCLIBC_StatusCode status = this->integrate_func_ptr(this, range_limit_ft, range_step_ft, time_step, handler, reason);
+        BCLIBC_StatusCode status = this->integrate_func_ptr(this, range_limit_ft, range_step_ft, time_step, &handler, &reason);
 
         if (status != BCLIBC_StatusCode::ERROR)
         {
-            if (*reason == BCLIBC_TerminationReason::NO_TERMINATE)
+            if (reason == BCLIBC_TerminationReason::NO_TERMINATE)
             {
-                BCLIBC_INFO("Integration completed successfully: (%d).", *reason);
+                BCLIBC_INFO("Integration completed successfully: (%d).", reason);
             }
             else
             {
-                BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", *reason);
+                BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", reason);
             }
             return BCLIBC_StatusCode::SUCCESS;
         }
@@ -152,7 +152,7 @@ namespace bclibc
 
         // try
         BCLIBC_TerminationReason reason;
-        status = this->integrate(9e9, 9e9, 0.0, &result, &reason);
+        status = this->integrate(9e9, 9e9, 0.0, result, reason);
 
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
@@ -199,7 +199,7 @@ namespace bclibc
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
-        BCLIBC_StatusCode status = this->integrate(9e9, 9e9, 0.0, &trajectory, &reason);
+        BCLIBC_StatusCode status = this->integrate(9e9, 9e9, 0.0, trajectory, reason);
 
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
@@ -417,7 +417,7 @@ namespace bclibc
             BCLIBC_TerminationReason reason;
             BCLIBC_BaseTrajSeq seq = BCLIBC_BaseTrajSeq();
 
-            status = this->integrate(target_x_ft, target_x_ft, 0.0, &seq, &reason);
+            status = this->integrate(target_x_ft, target_x_ft, 0.0, seq, reason);
 
             if (status != BCLIBC_StatusCode::SUCCESS)
             {
@@ -581,7 +581,7 @@ namespace bclibc
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         BCLIBC_TerminationReason reason;
-        status = this->integrate(9e9, 9e9, 0.0, &trajectory, &reason);
+        status = this->integrate(9e9, 9e9, 0.0, trajectory, reason);
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
             status = BCLIBC_StatusCode::ERROR;
