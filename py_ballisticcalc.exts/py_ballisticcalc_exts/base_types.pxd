@@ -77,8 +77,8 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
 
         void update_density_factor_and_mach_for_altitude(
             double altitude,
-            double *density_ratio_ptr,
-            double *mach_ptr
+            double &density_ratio_out,
+            double &mach_out
         ) const
 
     cdef cppclass BCLIBC_Coriolis:
@@ -121,7 +121,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         ) const
 
         void coriolis_acceleration_local(
-            const BCLIBC_V3dT &velocity,
+            const BCLIBC_V3dT &velocity_vector,
             BCLIBC_V3dT &accel_out
         ) const
 

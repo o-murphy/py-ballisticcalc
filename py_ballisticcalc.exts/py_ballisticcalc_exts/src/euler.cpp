@@ -107,8 +107,8 @@ namespace bclibc
         // Update air density and mach at initial altitude
         eng->shot.atmo.update_density_factor_and_mach_for_altitude(
             eng->shot.alt0 + range_vector.y,
-            &density_ratio,
-            &mach);
+            density_ratio,
+            mach);
 
         // Cubic interpolation requires 3 points, so we will need at least 3 steps
         while (range_vector.x <= range_limit_ft || eng->integration_step_count < 3)
@@ -124,8 +124,8 @@ namespace bclibc
             // Update air density and mach at current altitude
             eng->shot.atmo.update_density_factor_and_mach_for_altitude(
                 eng->shot.alt0 + range_vector.y,
-                &density_ratio,
-                &mach);
+                density_ratio,
+                mach);
 
             // Store point in trajectory sequence
 

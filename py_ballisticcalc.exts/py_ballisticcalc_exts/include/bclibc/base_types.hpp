@@ -96,8 +96,8 @@ namespace bclibc
 
         void update_density_factor_and_mach_for_altitude(
             double altitude,
-            double *density_ratio_ptr,
-            double *mach_ptr) const;
+            double &density_ratio_out,
+            double &mach_out) const;
     };
 
     struct BCLIBC_Coriolis
@@ -138,8 +138,8 @@ namespace bclibc
             double time, const BCLIBC_V3dT &range_vector) const;
 
         void coriolis_acceleration_local(
-            const BCLIBC_V3dT &velocity_ptr,
-            BCLIBC_V3dT &accel_ptr) const;
+            const BCLIBC_V3dT &velocity_vector,
+            BCLIBC_V3dT &accel_out) const;
     };
 
     struct BCLIBC_Wind

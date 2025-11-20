@@ -163,8 +163,8 @@ namespace bclibc
 
         eng->shot.atmo.update_density_factor_and_mach_for_altitude(
             eng->shot.alt0 + range_vector.y,
-            &density_ratio,
-            &mach);
+            density_ratio,
+            mach);
         BCLIBC_DEBUG("Density ratio: %f, Mach: %f\n", density_ratio, mach);
 
         // Trajectory Loop
@@ -186,8 +186,8 @@ namespace bclibc
             // Update air density and mach at current altitude
             eng->shot.atmo.update_density_factor_and_mach_for_altitude(
                 eng->shot.alt0 + range_vector.y,
-                &density_ratio,
-                &mach);
+                density_ratio,
+                mach);
 
             // Store point in trajectory sequence
             BCLIBC_DEBUG("About to append to trajectory sequence\n");

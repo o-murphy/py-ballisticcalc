@@ -40,8 +40,8 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         cdef double mach = 0.0
         self._this.shot.atmo.update_density_factor_and_mach_for_altitude(
             altitude_ft,
-            &density_ratio,
-            &mach
+            density_ratio,
+            mach
         )
         return density_ratio, mach
 

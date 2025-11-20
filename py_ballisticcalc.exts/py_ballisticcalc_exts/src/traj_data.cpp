@@ -932,7 +932,7 @@ namespace bclibc
 
         double density_ratio_out, mach_out;
         props->atmo.update_density_factor_and_mach_for_altitude(
-            range_vector.y, &density_ratio_out, &mach_out);
+            range_vector.y, density_ratio_out, mach_out);
 
         double trajectory_angle = std::atan2(velocity_vector.y, velocity_vector.x);
         double look_angle_cos = std::cos(props->look_angle);

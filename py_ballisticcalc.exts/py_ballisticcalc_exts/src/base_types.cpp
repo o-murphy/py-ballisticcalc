@@ -403,8 +403,8 @@ namespace bclibc
      */
     void BCLIBC_Atmosphere::update_density_factor_and_mach_for_altitude(
         double altitude,
-        double *density_ratio_ptr,
-        double *mach_ptr) const
+        double &density_ratio_out,
+        double &mach_out) const
     {
         const double alt_diff = altitude - this->_a0;
 
@@ -412,8 +412,8 @@ namespace bclibc
         if (std::fabs(alt_diff) < 30.0)
         {
             // Close enough to base altitude, use stored values
-            *density_ratio_ptr = this->density_ratio;
-            *mach_ptr = this->_mach;
+            density_ratio_out = this->density_ratio;
+            mach_out = this->_mach;
             return;
         }
 
@@ -450,13 +450,13 @@ namespace bclibc
         // Density ratio calculation: $\frac{\rho}{\rho_{\text{std}}} = \frac{\rho_0}{\rho_{\text{std}}} \cdot \frac{P \cdot T_0}{P_0 \cdot T}$
         const double density_delta = (base_kelvin * pressure) / (this->_p0 * kelvin);
 
-        *density_ratio_ptr = this->density_ratio * density_delta;
+        density_ratio_out = this->density_ratio * density_delta;
 
         // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
-        *mach_ptr = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
+        mach_out = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
 
         BCLIBC_DEBUG("Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
-                     altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
+                     altitude, this->_t0, celsius, this->_p0, pressure, density_ratio_out);
     };
 
     BCLIBC_Wind::BCLIBC_Wind(double velocity,
@@ -717,7 +717,7 @@ namespace bclibc
      * @param accel_ptr Pointer to store the calculated Coriolis acceleration vector (local coordinates).
      */
     void BCLIBC_Coriolis::coriolis_acceleration_local(
-        const BCLIBC_V3dT &velocity,
+        const BCLIBC_V3dT &velocity_vector,
         BCLIBC_V3dT &accel_out) const
     {
         // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
@@ -728,9 +728,9 @@ namespace bclibc
         }
 
         // Cache frequently used values
-        const double vx = velocity.x;
-        const double vy = velocity.y;
-        const double vz = velocity.z;
+        const double vx = velocity_vector.x;
+        const double vy = velocity_vector.y;
+        const double vz = velocity_vector.z;
 
         const double range_east = this->range_east;
         const double range_north = this->range_north;

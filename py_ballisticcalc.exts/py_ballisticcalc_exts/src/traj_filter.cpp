@@ -44,8 +44,8 @@ namespace bclibc
             double density_ratio;
             this->props->atmo.update_density_factor_and_mach_for_altitude(
                 data.py,
-                &density_ratio,
-                &mach);
+                density_ratio,
+                mach);
 
             if (data.velocity().mag() < mach)
             {

@@ -119,5 +119,5 @@ cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     cdef double density_ratio = 0.0
     cdef double mach = 0.0
-    sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, &density_ratio, &mach)
+    sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, density_ratio, mach)
     return density_ratio, mach
