@@ -55,8 +55,8 @@ namespace bclibc
         // 1. Create a mandatory filter/writer ON THE HEAP using unique_ptr.
         // This ensures that a large object does not pollute the stack frame.
         BCLIBC_TrajectoryDataFilter data_filter(
-            records,
-            &this->shot,
+            *records,
+            this->shot,
             filter_flags,
             range_limit_ft,
             range_step_ft,

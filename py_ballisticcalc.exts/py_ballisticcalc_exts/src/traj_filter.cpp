@@ -7,8 +7,8 @@
 namespace bclibc
 {
     BCLIBC_TrajectoryDataFilter::BCLIBC_TrajectoryDataFilter(
-        std::vector<BCLIBC_TrajectoryData> *records,
-        const BCLIBC_ShotProps *props,
+        std::vector<BCLIBC_TrajectoryData> &records,
+        const BCLIBC_ShotProps &props,
         BCLIBC_TrajFlag filter_flags,
         double range_limit,
         double range_step,
@@ -23,26 +23,15 @@ namespace bclibc
           prev_data(prev_data),
           prev_prev_data(prev_prev_data),
           next_record_distance(0.0),
-          look_angle_tangent(std::tan(props->look_angle)) {};
+          look_angle_tangent(std::tan(props.look_angle)) {};
 
     void BCLIBC_TrajectoryDataFilter::init(const BCLIBC_BaseTrajData &data)
     {
-
-        if (this->records == nullptr)
-        {
-            throw std::invalid_argument("Records pointer cannot be null during construction.");
-        }
-
-        if (this->props == nullptr)
-        {
-            throw std::invalid_argument("Shot props pointer cannot be null during construction.");
-        }
-
         if (filter & BCLIBC_TRAJ_FLAG_MACH)
         {
             double mach;
             double density_ratio;
-            this->props->atmo.update_density_factor_and_mach_for_altitude(
+            this->props.atmo.update_density_factor_and_mach_for_altitude(
                 data.py,
                 density_ratio,
                 mach);
@@ -61,7 +50,7 @@ namespace bclibc
                 // If shot starts above zero then we will only look for a ZERO_DOWN crossing through the line of sight.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_UP);
             }
-            else if (data.py < 0 && this->props->barrel_elevation <= this->props->look_angle)
+            else if (data.py < 0 && this->props.barrel_elevation <= this->props.look_angle)
             {
                 // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT));
@@ -76,7 +65,7 @@ namespace bclibc
             this->prev_data.time);
         if (this->prev_data.time > this->get_record(-1).time)
         {
-            BCLIBC_TrajectoryData fin(*this->props, this->prev_data);
+            BCLIBC_TrajectoryData fin(this->props, this->prev_data);
             this->append(fin);
         }
     };
@@ -97,11 +86,6 @@ namespace bclibc
 
     void BCLIBC_TrajectoryDataFilter::record(const BCLIBC_BaseTrajData &new_data)
     {
-        if (this->records == nullptr)
-        {
-            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
-        }
-
         std::vector<BCLIBC_FlaggedData> rows;
         bool is_can_interpolate = this->can_interpolate(new_data);
 
@@ -225,7 +209,7 @@ namespace bclibc
         {
             for (const auto &new_row : rows)
             {
-                this->records->emplace_back(*this->props, new_row);
+                this->records.emplace_back(this->props, new_row);
             }
         }
 
@@ -268,9 +252,9 @@ namespace bclibc
             if (compute_flags)
             {
                 // Instantiate TrajectoryData and interpolate
-                BCLIBC_TrajectoryData t0(*this->props, new_data);
-                BCLIBC_TrajectoryData t1(*this->props, this->prev_data);
-                BCLIBC_TrajectoryData t2(*this->props, this->prev_prev_data);
+                BCLIBC_TrajectoryData t0(this->props, new_data);
+                BCLIBC_TrajectoryData t1(this->props, this->prev_data);
+                BCLIBC_TrajectoryData t2(this->props, this->prev_prev_data);
                 std::vector<BCLIBC_TrajectoryData> add_td;
                 if (compute_flags & BCLIBC_TRAJ_FLAG_MACH)
                 {
@@ -294,7 +278,7 @@ namespace bclibc
                 for (const auto &td : add_td)
                 {
                     this->merge_sorted_record(
-                        *this->records,
+                        this->records,
                         td,
                         [](const BCLIBC_TrajectoryData &t)
                         { return t.time; });
@@ -309,31 +293,17 @@ namespace bclibc
 
     std::vector<BCLIBC_TrajectoryData> const &BCLIBC_TrajectoryDataFilter::get_records() const
     {
-        if (this->records == nullptr)
-        {
-            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
-        }
-        return *this->records;
+        return this->records;
     };
 
     void BCLIBC_TrajectoryDataFilter::append(const BCLIBC_TrajectoryData &new_data)
     {
-        if (this->records == nullptr)
-        {
-            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
-        }
-
-        this->records->push_back(new_data);
+        this->records.push_back(new_data);
     };
 
     const BCLIBC_TrajectoryData &BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const
     {
-        if (this->records == nullptr)
-        {
-            throw std::runtime_error("Attempt to access records on a null pointer after construction.");
-        }
-
-        const size_t size_t_size = this->records->size();
+        const size_t size_t_size = this->records.size();
         const std::ptrdiff_t signed_size = (std::ptrdiff_t)size_t_size;
         std::ptrdiff_t signed_effective_index;
         if (signed_size == 0)
@@ -352,7 +322,7 @@ namespace bclibc
         {
             throw std::out_of_range("Index is out of bounds.");
         }
-        return this->records->at((size_t)signed_effective_index);
+        return this->records.at((size_t)signed_effective_index);
     };
 
     template <typename T, typename TimeAccessor>

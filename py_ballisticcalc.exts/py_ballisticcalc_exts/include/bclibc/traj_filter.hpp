@@ -10,8 +10,8 @@ namespace bclibc
     {
     public:
         BCLIBC_TrajectoryDataFilter(
-            std::vector<BCLIBC_TrajectoryData> *records,
-            const BCLIBC_ShotProps *props,
+            std::vector<BCLIBC_TrajectoryData> &records,
+            const BCLIBC_ShotProps &props,
             BCLIBC_TrajFlag filter_flags,
             double range_limit = 0.0,
             double range_step = 0.0,
@@ -35,8 +35,8 @@ namespace bclibc
         static constexpr double SEPARATE_ROW_TIME_DELTA = 1e-5;
 
         // data fields
-        std::vector<BCLIBC_TrajectoryData> *records;
-        const BCLIBC_ShotProps *props;
+        std::vector<BCLIBC_TrajectoryData> &records;
+        const BCLIBC_ShotProps &props;
         BCLIBC_TrajFlag filter;
         double time_of_last_record;
         double time_step;
