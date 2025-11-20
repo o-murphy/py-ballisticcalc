@@ -49,7 +49,7 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 - Interpolation (nogil core):
 ```python
 cdef enum InterpKey: KEY_TIME, KEY_MACH, KEY_POS_X, ...
-cdef BCLIBC_BaseTraj* _interpolate_nogil(self, Py_ssize_t idx, InterpKey key_kind, double key_value) nogil
+cdef BCLIBC_BaseTrajData* _interpolate_nogil(self, Py_ssize_t idx, InterpKey key_kind, double key_value) nogil
 
 def interpolate_at(self, idx, key_attribute, key_value):
     # map key_attribute -> InterpKey

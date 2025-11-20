@@ -76,7 +76,7 @@ namespace bclibc
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajHandlerInterface *handler,
+        BCLIBC_BaseTrajDataHandlerInterface *handler,
         BCLIBC_TerminationReason *reason)
     {
         if (!eng || !handler || !reason)
@@ -194,10 +194,8 @@ namespace bclibc
 
             // err =
             handler->handle(
-                BCLIBC_BaseTraj(time,
-                                range_vector.x, range_vector.y, range_vector.z,
-                                velocity_vector.x, velocity_vector.y, velocity_vector.z,
-                                mach));
+                BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach)
+            );
             // if (err != NO_ERROR)
             // {
             //     return err;
@@ -312,10 +310,8 @@ namespace bclibc
 
         // err =
         handler->handle(
-            BCLIBC_BaseTraj(time,
-                            range_vector.x, range_vector.y, range_vector.z,
-                            velocity_vector.x, velocity_vector.y, velocity_vector.z,
-                            mach));
+            BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach)
+        );
         // if (err != NO_ERROR)
         // {
         //     return err;

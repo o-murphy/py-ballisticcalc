@@ -13,7 +13,7 @@ from py_ballisticcalc_exts.interp cimport BCLIBC_InterpMethod
 
 cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
-    cdef enum class BCLIBC_BaseTraj_InterpKey:
+    cdef enum class BCLIBC_BaseTrajData_InterpKey:
         TIME
         MACH
         POS_X
@@ -23,37 +23,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         VEL_Y
         VEL_Z
 
-    # Forward ref
-    cdef cppclass BCLIBC_BaseTraj
-
     cdef cppclass BCLIBC_BaseTrajData:
-        double time
-        BCLIBC_V3dT position
-        BCLIBC_V3dT velocity
-        double mach
-
-        BCLIBC_BaseTrajData() except+
-        BCLIBC_BaseTrajData(
-            double time,
-            BCLIBC_V3dT position,
-            BCLIBC_V3dT velocity,
-            double mach
-        ) except+
-
-        BCLIBC_BaseTraj as_BaseTraj() const
-        double get_key_value(BCLIBC_BaseTraj_InterpKey key_kind) const
-
-        @staticmethod
-        BCLIBC_ErrorType interpolate(
-            BCLIBC_BaseTraj_InterpKey key_kind,
-            double key_value,
-            const BCLIBC_BaseTrajData &p0,
-            const BCLIBC_BaseTrajData &p1,
-            const BCLIBC_BaseTrajData &p2,
-            BCLIBC_BaseTrajData *out
-        )
-
-    cdef cppclass BCLIBC_BaseTraj:
         double time
         double px
         double py
@@ -63,8 +33,8 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         double vz
         double mach
 
-        BCLIBC_BaseTraj() except+
-        BCLIBC_BaseTraj(
+        BCLIBC_BaseTrajData() except+
+        BCLIBC_BaseTrajData(
             double time,
             double px,
             double py,
@@ -75,32 +45,53 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double mach
         ) except+
 
-        BCLIBC_BaseTrajData as_BaseTrajData() const
+        BCLIBC_BaseTrajData(
+            double time,
+            BCLIBC_V3dT &position,
+            BCLIBC_V3dT &velocity,
+            double mach
+        ) except+
 
-    cdef cppclass BCLIBC_BaseTrajHandlerInterface:
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) except+
+        BCLIBC_V3dT position() const
+        BCLIBC_V3dT velocity() const
 
-    cdef cppclass BCLIBC_BaseTrajHandlerCompositor(BCLIBC_BaseTrajHandlerInterface):
-        BCLIBC_BaseTrajHandlerCompositor() except +
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj& data) except +
-        void add_handler(BCLIBC_BaseTrajHandlerInterface* handler) except +
+        double get_key_val(BCLIBC_BaseTrajData_InterpKey key_kind) const
+        double slant_val_buf(double ca, double sa) const
 
-    cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajHandlerInterface):
+        @staticmethod
+        BCLIBC_ErrorType interpolate(
+            BCLIBC_BaseTrajData_InterpKey key_kind,
+            double key_value,
+            const BCLIBC_BaseTrajData &p0,
+            const BCLIBC_BaseTrajData &p1,
+            const BCLIBC_BaseTrajData &p2,
+            BCLIBC_BaseTrajData *out
+        )
+
+    cdef cppclass BCLIBC_BaseTrajDataHandlerInterface:
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData &data) except+
+
+    cdef cppclass BCLIBC_BaseTrajDataHandlerCompositor(BCLIBC_BaseTrajDataHandlerInterface):
+        BCLIBC_BaseTrajDataHandlerCompositor() except +
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData& data) except +
+        void add_handler(BCLIBC_BaseTrajDataHandlerInterface* handler) except +
+
+    cdef cppclass BCLIBC_BaseTrajSeq(BCLIBC_BaseTrajDataHandlerInterface):
 
         BCLIBC_BaseTrajSeq() except +
 
         BCLIBC_ErrorType append(
-            const BCLIBC_BaseTraj &data
+            const BCLIBC_BaseTrajData &data
         ) noexcept nogil
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const
         BCLIBC_ErrorType interpolate_at(
             Py_ssize_t idx,
-            BCLIBC_BaseTraj_InterpKey key_kind,
+            BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             BCLIBC_BaseTrajData *out
         ) noexcept nogil
-        BCLIBC_BaseTraj *get_raw_item(Py_ssize_t idx) const
+        BCLIBC_BaseTrajData *get_raw_item(Py_ssize_t idx) const
         BCLIBC_ErrorType get_at_slant_height(
             double look_angle_rad,
             double value,
@@ -111,7 +102,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             BCLIBC_BaseTrajData *out
         ) const
         BCLIBC_ErrorType get_at(
-            BCLIBC_BaseTraj_InterpKey key_kind,
+            BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             double start_from_time,
             BCLIBC_BaseTrajData *out
@@ -143,9 +134,9 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         BCLIBC_TrajectoryData interpolate(
             BCLIBC_TrajectoryData_InterpKey key,
             double value,
-            const BCLIBC_TrajectoryData *t0,
-            const BCLIBC_TrajectoryData *t1,
-            const BCLIBC_TrajectoryData *t2,
+            const BCLIBC_TrajectoryData &t0,
+            const BCLIBC_TrajectoryData &t1,
+            const BCLIBC_TrajectoryData &t2,
             BCLIBC_TrajFlag flag,
             BCLIBC_InterpMethod method
         ) except +
