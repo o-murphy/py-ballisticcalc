@@ -110,7 +110,7 @@ namespace bclibc
             // Init on first point handle
             this->init(new_data);
             // Always record starting point
-            this->add_row(&rows, new_data, (this->range_step > 0 || this->time_step) ? BCLIBC_TRAJ_FLAG_RANGE : BCLIBC_TRAJ_FLAG_NONE);
+            this->add_row(rows, new_data, (this->range_step > 0 || this->time_step) ? BCLIBC_TRAJ_FLAG_RANGE : BCLIBC_TRAJ_FLAG_NONE);
         }
         else
         {
@@ -150,7 +150,7 @@ namespace bclibc
                     if (found_data)
                     {
                         this->next_record_distance += this->range_step;
-                        this->add_row(&rows, result_data, BCLIBC_TRAJ_FLAG_RANGE);
+                        this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_RANGE);
                         this->time_of_last_record = result_data.time;
                     }
                     else
@@ -181,7 +181,7 @@ namespace bclibc
 
                     if (err == BCLIBC_ErrorType::NO_ERROR)
                     {
-                        this->add_row(&rows, result_data, BCLIBC_TRAJ_FLAG_RANGE);
+                        this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_RANGE);
                     }
                     else
                     {
@@ -210,7 +210,7 @@ namespace bclibc
                 if (err == BCLIBC_ErrorType::NO_ERROR)
                 {
                     // "Apex" is the point where the vertical component of velocity goes from positive to negative.
-                    this->add_row(&rows, result_data, BCLIBC_TRAJ_FLAG_APEX);
+                    this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_APEX);
                     this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_APEX);
                 }
                 else
@@ -392,12 +392,12 @@ namespace bclibc
         container.insert(it, new_record);
     };
 
-    void BCLIBC_TrajectoryDataFilter::add_row(std::vector<BCLIBC_FlaggedData> *rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag)
+    void BCLIBC_TrajectoryDataFilter::add_row(std::vector<BCLIBC_FlaggedData> &rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag)
     {
         BCLIBC_FlaggedData new_row = {data, flag};
 
         this->merge_sorted_record(
-            *rows,
+            rows,
             new_row,
             [](const BCLIBC_FlaggedData &f)
             { return f.data.time; });
