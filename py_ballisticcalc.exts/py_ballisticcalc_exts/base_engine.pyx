@@ -275,9 +275,9 @@ cdef class CythonizedBaseIntegrationEngine:
             range_step_ft,
             time_step,
             <BCLIBC_TrajFlag>filter_flags,
-            &records,
+            records,
+            reason,
             &dense_trajectory._this if dense_output else NULL,
-            &reason,
         )
 
         if status == BCLIBC_StatusCode.ERROR:

@@ -42,11 +42,11 @@ namespace bclibc
         double range_step_ft,
         double time_step,
         BCLIBC_TrajFlag filter_flags,
-        std::vector<BCLIBC_TrajectoryData> *records,
-        BCLIBC_BaseTrajSeq *dense_trajectory,
-        BCLIBC_TerminationReason *reason)
+        std::vector<BCLIBC_TrajectoryData> &records,
+        BCLIBC_TerminationReason &reason,
+        BCLIBC_BaseTrajSeq *dense_trajectory)
     {
-        if (!reason || !records || !this->integrate_func_ptr)
+        if (!this->integrate_func_ptr)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "1. Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
@@ -55,7 +55,7 @@ namespace bclibc
         // 1. Create a mandatory filter/writer ON THE HEAP using unique_ptr.
         // This ensures that a large object does not pollute the stack frame.
         BCLIBC_TrajectoryDataFilter data_filter(
-            *records,
+            records,
             this->shot,
             filter_flags,
             range_limit_ft,
@@ -80,10 +80,10 @@ namespace bclibc
             range_step_ft,
             time_step,
             &composite_handler,
-            reason);
+            &reason);
 
         // 6. Finalization
-        if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
+        if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
         {
             data_filter.finalize();
         }

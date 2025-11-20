@@ -119,9 +119,9 @@ namespace bclibc
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            std::vector<BCLIBC_TrajectoryData> *records,
-            BCLIBC_BaseTrajSeq *dense_trajectory,
-            BCLIBC_TerminationReason *reason);
+            std::vector<BCLIBC_TrajectoryData> &records,
+            BCLIBC_TerminationReason &reason,
+            BCLIBC_BaseTrajSeq *dense_trajectory);
 
         BCLIBC_StatusCode find_apex(
             BCLIBC_BaseTrajData *out);
