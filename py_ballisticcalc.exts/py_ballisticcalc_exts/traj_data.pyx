@@ -75,7 +75,7 @@ cdef class BaseTrajSeqT:
         cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = self._this.interpolate_at(
-            idx, key_kind, key_value, &out._this
+            idx, key_kind, key_value, out._this
         )
 
         if err == BCLIBC_ErrorType.NO_ERROR:

@@ -287,19 +287,9 @@ namespace bclibc
         ssize_t idx,
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR; // Invalid input
-        }
-        BCLIBC_ErrorType err = this->interpolate_raw(idx, key_kind, key_value, out);
-        if (err != BCLIBC_ErrorType::NO_ERROR)
-        {
-            return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
-        }
-        return BCLIBC_ErrorType::NO_ERROR;
+        return this->interpolate_raw(idx, key_kind, key_value, out);
     };
 
     /**
@@ -436,7 +426,7 @@ namespace bclibc
 
         // Otherwise interpolate at center
         ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;
-        return this->interpolate_at_center(center_idx, key_kind, key_value, out);
+        return this->interpolate_at_center(center_idx, key_kind, key_value, *out);
     };
 
     /**
@@ -529,7 +519,7 @@ namespace bclibc
         ssize_t idx,
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
         BCLIBC_ErrorType err = this->interpolate_at(idx, key_kind, key_value, out);
         if (err != BCLIBC_ErrorType::NO_ERROR)
@@ -537,8 +527,7 @@ namespace bclibc
             BCLIBC_ERROR("Interpolation failed at center index %zd, error code: 0x%X", idx, err);
             return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
         }
-        BCLIBC_DEBUG("Interpolation successful at center index %zd.", idx);
-        return BCLIBC_ErrorType::NO_ERROR;
+        return err;
     };
 
     /**
@@ -558,14 +547,8 @@ namespace bclibc
         ssize_t idx,
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
         const auto &data_vector = this->buffer;
         ssize_t length = (ssize_t)data_vector.size();
 
@@ -580,14 +563,14 @@ namespace bclibc
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
-        const BCLIBC_BaseTrajData *p0 = &data_vector[idx - 1];
-        const BCLIBC_BaseTrajData *p1 = &data_vector[idx];
-        const BCLIBC_BaseTrajData *p2 = &data_vector[idx + 1];
+        const BCLIBC_BaseTrajData &p0 = data_vector[idx - 1];
+        const BCLIBC_BaseTrajData &p1 = data_vector[idx];
+        const BCLIBC_BaseTrajData &p2 = data_vector[idx + 1];
 
         // Get key values from the three points using helper
-        double ox0 = p0->get_key_val(key_kind);
-        double ox1 = p1->get_key_val(key_kind);
-        double ox2 = p2->get_key_val(key_kind);
+        double ox0 = p0.get_key_val(key_kind);
+        double ox1 = p1.get_key_val(key_kind);
+        double ox2 = p2.get_key_val(key_kind);
 
         // Check for duplicate key values (would cause division by zero)
         if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
@@ -599,7 +582,7 @@ namespace bclibc
         // Interpolate all trajectory components
         // Vectorized interpolation
         // Store results
-        BCLIBC_BaseTrajData::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, *p0, *p1, *p2, *out, key_kind);
+        BCLIBC_BaseTrajData::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
 
         return BCLIBC_ErrorType::NO_ERROR;
     };
@@ -887,8 +870,6 @@ namespace bclibc
     {
         return std::fabs(a - b) < epsilon;
     };
-
-    // BCLIBC_TrajectoryData::BCLIBC_TrajectoryData() {};
 
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
         const BCLIBC_ShotProps *props,

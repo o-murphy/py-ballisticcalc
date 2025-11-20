@@ -206,7 +206,7 @@ namespace bclibc
             ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * Retrieve a pointer to a trajectory element at the given index.
@@ -282,7 +282,7 @@ namespace bclibc
             ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * Interpolates a trajectory point at a specific index using its neighbors.
@@ -301,7 +301,7 @@ namespace bclibc
             ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * @brief Try to get exact value at index, return NO_ERROR if successful.

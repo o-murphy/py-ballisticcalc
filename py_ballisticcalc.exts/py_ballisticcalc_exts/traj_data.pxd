@@ -89,7 +89,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             Py_ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
-            BCLIBC_BaseTrajData *out
+            BCLIBC_BaseTrajData &out
         ) noexcept nogil
         BCLIBC_BaseTrajData *get_raw_item(Py_ssize_t idx) const
         BCLIBC_ErrorType get_at_slant_height(
