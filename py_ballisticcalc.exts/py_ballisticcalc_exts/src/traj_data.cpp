@@ -920,7 +920,7 @@ namespace bclibc
         //     c->muzzle_velocity_fps
         // );
 
-        BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, &range_vector);
+        BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
         double spin_drift = props->spin_drift(time);
         double velocity = velocity_vector.mag();
 

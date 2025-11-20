@@ -44,7 +44,7 @@ namespace bclibc
             // )
             // Note: Assuming this function calculates Coriolis acceleration and stores it in the third argument
             shot_props.coriolis.coriolis_acceleration_local(
-                &ground_velocity, &coriolis_acceleration);
+                ground_velocity, coriolis_acceleration);
 
             // acceleration = BCLIBC_V3dT_add(&acceleration, &coriolis_acceleration)
             // Note: Assuming add takes two const BCLIBC_V3dT* and returns BCLIBC_V3dT

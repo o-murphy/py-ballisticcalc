@@ -159,7 +159,7 @@ namespace bclibc
             if (!eng->shot.coriolis.flat_fire_only)
             {
                 eng->shot.coriolis.coriolis_acceleration_local(
-                    &velocity_vector, &coriolis_accel);
+                    velocity_vector, coriolis_accel);
                 _tv = _tv + coriolis_accel;
             }
 

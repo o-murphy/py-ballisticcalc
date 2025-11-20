@@ -131,15 +131,15 @@ namespace bclibc
             double time,
             double distance_ft,
             double drop_ft,
-            double *delta_y,
-            double *delta_z) const;
+            double &delta_y,
+            double &delta_z) const;
 
         BCLIBC_V3dT adjust_range(
-            double time, const BCLIBC_V3dT *range_vector) const;
+            double time, const BCLIBC_V3dT &range_vector) const;
 
         void coriolis_acceleration_local(
-            const BCLIBC_V3dT *velocity_ptr,
-            BCLIBC_V3dT *accel_ptr) const;
+            const BCLIBC_V3dT &velocity_ptr,
+            BCLIBC_V3dT &accel_ptr) const;
     };
 
     struct BCLIBC_Wind

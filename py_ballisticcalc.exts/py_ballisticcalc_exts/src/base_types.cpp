@@ -666,13 +666,13 @@ namespace bclibc
         double time,
         double distance_ft,
         double drop_ft,
-        double *delta_y,
-        double *delta_z) const
+        double &delta_y,
+        double &delta_z) const
     {
         if (!this->flat_fire_only)
         {
-            *delta_y = 0.0;
-            *delta_z = 0.0;
+            delta_y = 0.0;
+            delta_z = 0.0;
             return;
         }
 
@@ -683,24 +683,24 @@ namespace bclibc
             double vertical_factor = -2.0 * BCLIBC_cEarthAngularVelocityRadS * this->muzzle_velocity_fps * this->cos_lat * this->sin_az;
             vertical = drop_ft * (vertical_factor / BCLIBC_cGravityImperial);
         }
-        *delta_y = vertical;
-        *delta_z = horizontal;
+        delta_y = vertical;
+        delta_z = horizontal;
     };
 
     BCLIBC_V3dT BCLIBC_Coriolis::adjust_range(
-        double time, const BCLIBC_V3dT *range_vector) const
+        double time, const BCLIBC_V3dT &range_vector) const
     {
         if (!this || !this->flat_fire_only)
         {
-            return *range_vector;
+            return range_vector;
         }
         double delta_y, delta_z;
-        this->flat_fire_offsets(time, range_vector->x, range_vector->y, &delta_y, &delta_z);
+        this->flat_fire_offsets(time, range_vector.x, range_vector.y, delta_y, delta_z);
         if (delta_y == 0.0 && delta_z == 0.0)
         {
-            return *range_vector;
+            return range_vector;
         }
-        return BCLIBC_V3dT{range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
+        return BCLIBC_V3dT{range_vector.x, range_vector.y + delta_y, range_vector.z + delta_z};
     }
 
     /**
@@ -717,20 +717,20 @@ namespace bclibc
      * @param accel_ptr Pointer to store the calculated Coriolis acceleration vector (local coordinates).
      */
     void BCLIBC_Coriolis::coriolis_acceleration_local(
-        const BCLIBC_V3dT *velocity_ptr,
-        BCLIBC_V3dT *accel_ptr) const
+        const BCLIBC_V3dT &velocity,
+        BCLIBC_V3dT &accel_out) const
     {
         // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
         if (this->flat_fire_only)
         {
-            *accel_ptr = BCLIBC_V3dT{0.0, 0.0, 0.0};
+            accel_out = BCLIBC_V3dT{0.0, 0.0, 0.0};
             return;
         }
 
         // Cache frequently used values
-        const double vx = velocity_ptr->x;
-        const double vy = velocity_ptr->y;
-        const double vz = velocity_ptr->z;
+        const double vx = velocity.x;
+        const double vy = velocity.y;
+        const double vz = velocity.z;
 
         const double range_east = this->range_east;
         const double range_north = this->range_north;
@@ -754,9 +754,9 @@ namespace bclibc
         const double accel_up = factor * (-cos_lat * vel_east);
 
         // Transform back to local coordinates (x=range, y=up, z=crossrange)
-        accel_ptr->x = accel_east * range_east + accel_north * range_north;
-        accel_ptr->y = accel_up;
-        accel_ptr->z = accel_east * cross_east + accel_north * cross_north;
+        accel_out.x = accel_east * range_east + accel_north * range_north;
+        accel_out.y = accel_up;
+        accel_out.z = accel_east * cross_east + accel_north * cross_north;
     }
 
 }; // namespace bclibc
