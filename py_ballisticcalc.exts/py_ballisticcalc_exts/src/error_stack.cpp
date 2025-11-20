@@ -61,7 +61,7 @@ namespace bclibc
     const BCLIBC_ErrorFrame *BCLIBC_ErrorStack_lastErr(const BCLIBC_ErrorStack *stack)
     {
         if (!stack || stack->top <= 0)
-            return NULL;
+            return nullptr;
         return &stack->frames[stack->top - 1];
     };
 

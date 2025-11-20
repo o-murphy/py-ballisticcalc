@@ -178,25 +178,25 @@ namespace bclibc
     void BCLIBC_BaseTrajData::interpolate3pt_vectorized(
         double x, double ox0, double ox1, double ox2,
         const BCLIBC_BaseTrajData &p0, const BCLIBC_BaseTrajData &p1, const BCLIBC_BaseTrajData &p2,
-        BCLIBC_BaseTrajData *out, BCLIBC_BaseTrajData_InterpKey skip_key)
+        BCLIBC_BaseTrajData &out, BCLIBC_BaseTrajData_InterpKey skip_key)
     {
         // Time: either use x directly (if interpolating by time) or interpolate
-        out->time = (skip_key == BCLIBC_BaseTrajData_InterpKey::TIME)
+        out.time = (skip_key == BCLIBC_BaseTrajData_InterpKey::TIME)
                         ? x
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.time, p1.time, p2.time);
 
         // Position components - always interpolate
-        out->px = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.px, p1.px, p2.px);
-        out->py = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.py, p1.py, p2.py);
-        out->pz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz);
+        out.px = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.px, p1.px, p2.px);
+        out.py = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.py, p1.py, p2.py);
+        out.pz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz);
 
         // Velocity components - always interpolate
-        out->vx = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx);
-        out->vy = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy);
-        out->vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz);
+        out.vx = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx);
+        out.vy = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy);
+        out.vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz);
 
         // Mach: either use x directly (if interpolating by mach) or interpolate
-        out->mach = (skip_key == BCLIBC_BaseTrajData_InterpKey::MACH)
+        out.mach = (skip_key == BCLIBC_BaseTrajData_InterpKey::MACH)
                         ? x
                         : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach);
     }
@@ -320,7 +320,7 @@ namespace bclibc
         ssize_t len = (ssize_t)this->buffer.size();
         if (len == 0)
         {
-            return NULL;
+            return nullptr;
         }
 
         // Adjust negative indices
@@ -332,7 +332,7 @@ namespace bclibc
         // Out-of-bounds check
         if (idx < 0 || idx >= len)
         {
-            return NULL;
+            return nullptr;
         }
         return const_cast<BCLIBC_BaseTrajData *>(&this->buffer[idx]);
     };
@@ -602,10 +602,10 @@ namespace bclibc
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
-        // Interpolate all trajectory components
+        // Interpolate all trajectory componentsinterpolate3pt_vectorized
         // Vectorized interpolation
         // Store results
-        BCLIBC_BaseTrajData::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, *p0, *p1, *p2, out, key_kind);
+        BCLIBC_BaseTrajData::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, *p0, *p1, *p2, *out, key_kind);
 
         return BCLIBC_ErrorType::NO_ERROR;
     };

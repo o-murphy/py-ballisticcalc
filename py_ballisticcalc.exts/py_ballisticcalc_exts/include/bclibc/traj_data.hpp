@@ -116,7 +116,7 @@ namespace bclibc
         static void interpolate3pt_vectorized(
             double x, double ox0, double ox1, double ox2,
             const BCLIBC_BaseTrajData &p0, const BCLIBC_BaseTrajData &p1, const BCLIBC_BaseTrajData &p2,
-            BCLIBC_BaseTrajData *out, BCLIBC_BaseTrajData_InterpKey skip_key);
+            BCLIBC_BaseTrajData &out, BCLIBC_BaseTrajData_InterpKey skip_key);
     };
 
     struct BCLIBC_BaseTrajDataHandlerInterface
