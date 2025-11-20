@@ -155,7 +155,7 @@ namespace bclibc
                     double direction_from,
                     double until_distance,
                     double MAX_DISTANCE_FEET);
-        BCLIBC_V3dT as_vector() const;
+        BCLIBC_V3dT as_V3dT() const;
     };
 
     struct BCLIBC_WindSock
@@ -167,7 +167,7 @@ namespace bclibc
         BCLIBC_V3dT last_vector_cache;
 
         BCLIBC_WindSock();
-        void push(BCLIBC_Wind wind);
+        void push(const BCLIBC_Wind &wind);
         BCLIBC_ErrorType update_cache();
         BCLIBC_V3dT current_vector() const;
         BCLIBC_V3dT vector_for_range(double next_range_param);

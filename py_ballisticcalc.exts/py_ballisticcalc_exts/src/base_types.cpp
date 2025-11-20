@@ -477,7 +477,7 @@ namespace bclibc
      *
      * @return A BCLIBC_V3dT structure representing the wind velocity vector (x=downrange, y=vertical, z=crossrange).
      */
-    BCLIBC_V3dT BCLIBC_Wind::as_vector() const
+    BCLIBC_V3dT BCLIBC_Wind::as_V3dT() const
     {
         const double dir = this->direction_from;
         const double vel = this->velocity;
@@ -505,7 +505,7 @@ namespace bclibc
         update_cache();
     }
 
-    void BCLIBC_WindSock::push(BCLIBC_Wind wind)
+    void BCLIBC_WindSock::push(const BCLIBC_Wind &wind)
     {
         this->winds.push_back(wind);
     }
@@ -536,7 +536,7 @@ namespace bclibc
         if (this->current < this->winds.size())
         {
             const BCLIBC_Wind &cur_wind = this->winds[this->current];
-            this->last_vector_cache = cur_wind.as_vector();
+            this->last_vector_cache = cur_wind.as_V3dT();
             this->next_range = cur_wind.until_distance;
         }
         else

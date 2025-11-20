@@ -140,7 +140,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double MAX_DISTANCE_FEET
         ) except+
 
-        BCLIBC_V3dT as_vector() const
+        BCLIBC_V3dT as_V3dT() const
 
     cdef cppclass BCLIBC_WindSock:
         vector[BCLIBC_Wind] winds
@@ -149,7 +149,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT last_vector_cache
 
         BCLIBC_WindSock() except+
-        void push(BCLIBC_Wind wind)
+        void push(const BCLIBC_Wind &wind)
         BCLIBC_ErrorType update_cache()
         BCLIBC_V3dT current_vector() const
         BCLIBC_V3dT vector_for_range(double next_range_param)
