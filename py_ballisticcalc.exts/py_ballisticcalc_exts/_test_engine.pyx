@@ -7,7 +7,7 @@ engine modules. Not part of the public API.
 from cython cimport final
 from libcpp.cmath cimport sin, cos
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
-from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT, BCLIBC_BaseTraj
+from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
@@ -85,7 +85,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         cdef double vz = v * cos(be) * sin(az)
         # initial point
         seq._this.append(
-            BCLIBC_BaseTraj(
+            BCLIBC_BaseTrajData(
                 0.0, 0.0,
                 -self._this.shot.cant_cosine * self._this.shot.sight_height,
                 -self._this.shot.cant_sine * self._this.shot.sight_height,
@@ -99,7 +99,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         else:
             dt = 0.001
         seq._this.append(
-            BCLIBC_BaseTraj(
+            BCLIBC_BaseTrajData(
                 dt, vx * dt,
                 -self._this.shot.cant_cosine * self._this.shot.sight_height + vy * dt,
                 -self._this.shot.cant_sine * self._this.shot.sight_height + vz * dt,

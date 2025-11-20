@@ -43,11 +43,11 @@ namespace bclibc
             double mach;
             double density_ratio;
             this->props->atmo.update_density_factor_and_mach_for_altitude(
-                data.position.y,
+                data.py,
                 &density_ratio,
                 &mach);
 
-            if (data.velocity.mag() < mach)
+            if (data.velocity().mag() < mach)
             {
                 // If we start below Mach 1, we won't look for Mach crossings
                 this->filter = (BCLIBC_TrajFlag)((int)this->filter & ~(int)BCLIBC_TRAJ_FLAG_MACH);
@@ -56,12 +56,12 @@ namespace bclibc
 
         if (filter & BCLIBC_TRAJ_FLAG_ZERO)
         {
-            if (data.position.y >= 0)
+            if (data.py >= 0)
             {
                 // If shot starts above zero then we will only look for a ZERO_DOWN crossing through the line of sight.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_UP);
             }
-            else if (data.position.y < 0 && this->props->barrel_elevation <= this->props->look_angle)
+            else if (data.py < 0 && this->props->barrel_elevation <= this->props->look_angle)
             {
                 // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT));
@@ -76,15 +76,14 @@ namespace bclibc
             this->prev_data.time);
         if (this->prev_data.time > this->get_record(-1).time)
         {
-            BCLIBC_TrajectoryData fin(this->props, &this->prev_data);
+            BCLIBC_TrajectoryData fin(this->props, this->prev_data);
             this->append(fin);
         }
     };
 
-    BCLIBC_ErrorType BCLIBC_TrajectoryDataFilter::handle(const BCLIBC_BaseTraj &data)
+    BCLIBC_ErrorType BCLIBC_TrajectoryDataFilter::handle(const BCLIBC_BaseTrajData &data)
     {
-        BCLIBC_BaseTrajData new_data = data.as_BaseTrajData();
-        this->record(new_data);
+        this->record(data);
         return BCLIBC_ErrorType::NO_ERROR;
     };
 
@@ -118,7 +117,7 @@ namespace bclibc
             // region RANGE steps
             if (this->range_step > 0.0)
             {
-                while (this->next_record_distance + this->range_step - this->EPSILON <= new_data.position.x)
+                while (this->next_record_distance + this->range_step - this->EPSILON <= new_data.px)
                 {
                     BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
@@ -129,7 +128,7 @@ namespace bclibc
                         this->range_step = -1;
                         break;
                     }
-                    if (std::fabs(record_distance - new_data.position.x) < this->EPSILON)
+                    if (std::fabs(record_distance - new_data.px) < this->EPSILON)
                     {
                         result_data = new_data;
                         found_data = true;
@@ -137,7 +136,7 @@ namespace bclibc
                     else if (is_can_interpolate) /* if (this->prev_data && this->prev_prev_data) */
                     {
                         BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                            BCLIBC_BaseTraj_InterpKey::POS_X,
+                            BCLIBC_BaseTrajData_InterpKey::POS_X,
                             record_distance,
                             this->prev_prev_data,
                             this->prev_data,
@@ -173,7 +172,7 @@ namespace bclibc
                     BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
                     BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                        BCLIBC_BaseTraj_InterpKey::TIME,
+                        BCLIBC_BaseTrajData_InterpKey::TIME,
                         this->time_of_last_record,
                         this->prev_prev_data,
                         this->prev_data,
@@ -195,14 +194,14 @@ namespace bclibc
             if (
                 is_can_interpolate &&
                 this->filter & BCLIBC_TRAJ_FLAG_APEX &&
-                this->prev_data.velocity.y > 0 &&
-                new_data.velocity.y <= 0)
+                this->prev_data.vy > 0 &&
+                new_data.vy <= 0)
             {
                 // "Apex" is the point where the vertical component of velocity goes from positive to negative.
                 BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
                 BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                    BCLIBC_BaseTraj_InterpKey::VEL_Y,
+                    BCLIBC_BaseTrajData_InterpKey::VEL_Y,
                     0.0,
                     this->prev_prev_data,
                     this->prev_data,
@@ -226,7 +225,7 @@ namespace bclibc
         {
             for (const auto &new_row : rows)
             {
-                this->records->emplace_back(this->props, &new_row);
+                this->records->emplace_back(this->props, new_row);
             }
         }
 
@@ -236,7 +235,7 @@ namespace bclibc
             BCLIBC_TrajFlag compute_flags = BCLIBC_TRAJ_FLAG_NONE;
             if (
                 this->filter & BCLIBC_TRAJ_FLAG_MACH &&
-                new_data.velocity.mag() < new_data.mach)
+                new_data.velocity().mag() < new_data.mach)
             {
                 compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_MACH);
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_MACH); // Don't look for more Mach crossings
@@ -245,11 +244,11 @@ namespace bclibc
             if (this->filter & BCLIBC_TRAJ_FLAG_ZERO)
             {
                 // Zero reference line is the sight line defined by look_angle
-                double reference_height = new_data.position.x * this->look_angle_tangent;
+                double reference_height = new_data.px * this->look_angle_tangent;
                 // If we haven't seen ZERO_UP, we look for that first
                 if (this->filter & BCLIBC_TRAJ_FLAG_ZERO_UP)
                 {
-                    if (new_data.position.y >= reference_height)
+                    if (new_data.py >= reference_height)
                     {
                         compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_ZERO_UP);
                         this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_UP);
@@ -258,7 +257,7 @@ namespace bclibc
                 // We've crossed above sight line; now look for crossing back through it
                 else if (this->filter & BCLIBC_TRAJ_FLAG_ZERO_DOWN)
                 {
-                    if (new_data.position.y < reference_height)
+                    if (new_data.py < reference_height)
                     {
                         compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_ZERO_DOWN);
                         this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_DOWN);
@@ -269,9 +268,9 @@ namespace bclibc
             if (compute_flags)
             {
                 // Instantiate TrajectoryData and interpolate
-                BCLIBC_TrajectoryData t0(this->props, &new_data);
-                BCLIBC_TrajectoryData t1(this->props, &this->prev_data);
-                BCLIBC_TrajectoryData t2(this->props, &this->prev_prev_data);
+                BCLIBC_TrajectoryData t0(this->props, new_data);
+                BCLIBC_TrajectoryData t1(this->props, this->prev_data);
+                BCLIBC_TrajectoryData t2(this->props, this->prev_prev_data);
                 std::vector<BCLIBC_TrajectoryData> add_td;
                 if (compute_flags & BCLIBC_TRAJ_FLAG_MACH)
                 {

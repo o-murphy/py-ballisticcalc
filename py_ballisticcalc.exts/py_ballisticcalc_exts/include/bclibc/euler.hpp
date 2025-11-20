@@ -19,7 +19,7 @@ extern "C"
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_BaseTrajHandlerInterface *handler,
+            BCLIBC_BaseTrajDataHandlerInterface *handler,
             BCLIBC_TerminationReason *reason);
 
     };
