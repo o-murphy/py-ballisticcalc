@@ -602,7 +602,7 @@ namespace bclibc
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
-        // Interpolate all trajectory componentsinterpolate3pt_vectorized
+        // Interpolate all trajectory components
         // Vectorized interpolation
         // Store results
         BCLIBC_BaseTrajData::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, *p0, *p1, *p2, *out, key_kind);
