@@ -6,7 +6,7 @@
 
 namespace bclibc
 {
-    class BCLIBC_TrajectoryDataFilter : public BCLIBC_BaseTrajHandlerInterface
+    class BCLIBC_TrajectoryDataFilter : public BCLIBC_BaseTrajDataHandlerInterface
     {
     public:
         BCLIBC_TrajectoryDataFilter(
@@ -21,7 +21,7 @@ namespace bclibc
         void init(const BCLIBC_BaseTrajData &data);
 
     public:
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTraj &data) override;
+        BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData &data) override;
 
         void record(const BCLIBC_BaseTrajData &new_data);
         std::vector<BCLIBC_TrajectoryData> const &get_records() const;

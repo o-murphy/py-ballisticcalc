@@ -63,7 +63,7 @@ namespace bclibc
             time_step);
 
         // 2. Create the Composer (on the stack, it's small and now safer)
-        BCLIBC_BaseTrajHandlerCompositor composite_handler;
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler;
 
         // 3. Add a mandatory filter
         composite_handler.add_handler(&data_filter);
@@ -95,7 +95,7 @@ namespace bclibc
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajHandlerInterface *handler,
+        BCLIBC_BaseTrajDataHandlerInterface *handler,
         BCLIBC_TerminationReason *reason)
     {
         if (!handler || !reason || !this->integrate_func_ptr)
@@ -160,7 +160,7 @@ namespace bclibc
         }
         else
         {
-            BCLIBC_ErrorType err = result.get_at(BCLIBC_BaseTraj_InterpKey::VEL_Y, 0.0, -1, out);
+            BCLIBC_ErrorType err = result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, out);
             if (err != BCLIBC_ErrorType::NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
@@ -191,7 +191,7 @@ namespace bclibc
         *out_error_ft = 9e9;
 
         BCLIBC_BaseTrajData hit;
-        BCLIBC_BaseTraj *last_ptr;
+        BCLIBC_BaseTrajData *last_ptr;
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         // try
@@ -213,7 +213,7 @@ namespace bclibc
                 last_ptr = trajectory.get_raw_item(-1);
                 if (last_ptr != nullptr && last_ptr->time != 0.0)
                 {
-                    BCLIBC_ErrorType err = trajectory.get_at(BCLIBC_BaseTraj_InterpKey::POS_X, target_x_ft, -1, &hit);
+                    BCLIBC_ErrorType err = trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, &hit);
                     if (err != BCLIBC_ErrorType::NO_ERROR)
                     {
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
@@ -221,7 +221,7 @@ namespace bclibc
                     }
                     else
                     {
-                        *out_error_ft = (hit.position.y - target_y_ft) - std::fabs(hit.position.x - target_x_ft);
+                        *out_error_ft = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
                         status = BCLIBC_StatusCode::SUCCESS;
                     }
                 }
@@ -284,7 +284,7 @@ namespace bclibc
             {
                 return BCLIBC_StatusCode::ERROR; // Redirect apex finding error
             }
-            apex_slant_ft = apex.position.x * std::cos(result->look_angle_rad) + apex.position.y * std::sin(result->look_angle_rad);
+            apex_slant_ft = apex.px * std::cos(result->look_angle_rad) + apex.py * std::sin(result->look_angle_rad);
             if (apex_slant_ft < result->slant_range_ft)
             {
                 error->requested_distance_ft = result->slant_range_ft;
@@ -426,7 +426,7 @@ namespace bclibc
             }
 
             // interpolate trajectory at target_x_ft using the sequence we just filled
-            BCLIBC_ErrorType err = seq.get_at(BCLIBC_BaseTraj_InterpKey::POS_X, target_x_ft, -1, &hit);
+            BCLIBC_ErrorType err = seq.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, &hit);
             if (err != BCLIBC_ErrorType::NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Failed to interpolate trajectory at target distance");
@@ -440,7 +440,7 @@ namespace bclibc
                 break;
             }
 
-            current_distance = hit.position.x;
+            current_distance = hit.px;
             if (2 * current_distance < target_x_ft && this->shot.barrel_elevation == 0.0 && look_angle_rad < 1.5)
             {
                 this->shot.barrel_elevation = 0.01;
@@ -450,12 +450,12 @@ namespace bclibc
 
             double ca = std::cos(look_angle_rad);
             double sa = std::sin(look_angle_rad);
-            double height_diff_ft = hit.position.y * ca - hit.position.x * sa;
-            double look_dist_ft = hit.position.x * ca + hit.position.y * sa;
+            double height_diff_ft = hit.py * ca - hit.px * sa;
+            double look_dist_ft = hit.px * ca + hit.py * sa;
             double range_diff_ft = look_dist_ft - slant_range_ft;
             range_error_ft = std::fabs(range_diff_ft);
             height_error_ft = std::fabs(height_diff_ft);
-            trajectory_angle = std::atan2(hit.velocity.y, hit.velocity.x);
+            trajectory_angle = std::atan2(hit.vy, hit.vx);
 
             double sensitivity = (std::tan(this->shot.barrel_elevation - look_angle_rad) * std::tan(trajectory_angle - look_angle_rad));
             double denominator;
@@ -570,8 +570,8 @@ namespace bclibc
         BCLIBC_StatusCode status;
         ssize_t n;
         ssize_t i;
-        BCLIBC_BaseTraj *prev_ptr;
-        BCLIBC_BaseTraj *cur_ptr;
+        BCLIBC_BaseTrajData *prev_ptr;
+        BCLIBC_BaseTrajData *cur_ptr;
 
         // Update shot data
         this->shot.barrel_elevation = angle_rad;
@@ -662,7 +662,7 @@ namespace bclibc
             {
                 return BCLIBC_StatusCode::ERROR; // Redirect apex finding error
             }
-            sdist = apex.position.x * std::cos(look_angle_rad) + apex.position.y * std::sin(look_angle_rad);
+            sdist = apex.px * std::cos(look_angle_rad) + apex.py * std::sin(look_angle_rad);
             result->max_range_ft = sdist;
             result->angle_at_max_rad = look_angle_rad;
             return BCLIBC_StatusCode::SUCCESS;

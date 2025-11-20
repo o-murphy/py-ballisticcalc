@@ -5,7 +5,7 @@ from py_ballisticcalc_exts.base_engine cimport (
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag,
 )
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajHandlerInterface
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajDataHandlerInterface
 from py_ballisticcalc_exts.base_engine cimport (
     BCLIBC_Engine,
     BCLIBC_StatusCode,
@@ -20,7 +20,7 @@ cdef extern from "include/bclibc/euler.hpp" namespace "bclibc" nogil:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajHandlerInterface *handler,
+        BCLIBC_BaseTrajDataHandlerInterface *handler,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 

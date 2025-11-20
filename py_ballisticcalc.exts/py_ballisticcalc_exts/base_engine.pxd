@@ -8,7 +8,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData, BCLIBC_TrajectoryData, BCLIBC_BaseTrajHandlerInterface
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData, BCLIBC_TrajectoryData, BCLIBC_BaseTrajDataHandlerInterface
 from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
 
 
@@ -57,7 +57,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajHandlerInterface *trajectory,
+        BCLIBC_BaseTrajDataHandlerInterface *trajectory,
         BCLIBC_TerminationReason *reason,
     ) noexcept nogil
 
@@ -76,7 +76,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_BaseTrajHandlerInterface *handler,
+            BCLIBC_BaseTrajDataHandlerInterface *handler,
             BCLIBC_TerminationReason *reason) noexcept nogil
 
         BCLIBC_StatusCode integrate_filtered(
@@ -187,7 +187,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajHandlerInterface *handler,
+        BCLIBC_BaseTrajDataHandlerInterface *handler,
         BCLIBC_TerminationReason *reason,
     )
 

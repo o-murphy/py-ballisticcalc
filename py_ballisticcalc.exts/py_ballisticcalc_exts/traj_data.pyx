@@ -3,7 +3,7 @@
 Low-level, high-performance trajectory buffer and interpolation helpers (Cython).
 
 This module provides:
-- BaseTrajSeqT: a contiguous C buffer of BCLIBC_BaseTraj items with append/reserve access.
+- BaseTrajSeqT: a contiguous C buffer of BCLIBC_BaseTrajData items with append/reserve access.
 - Monotone-preserving PCHIP (cubic Hermite) interpolation on the raw buffer without
     allocating Python objects.
 - Convenience methods to locate and interpolate a point by an independent variable
@@ -22,7 +22,7 @@ __all__ = ('BaseTrajSeqT')
 
 @final
 cdef class BaseTrajSeqT:
-    """Contiguous C buffer of BCLIBC_BaseTraj points with fast append and interpolation.
+    """Contiguous C buffer of BCLIBC_BaseTrajData points with fast append and interpolation.
 
     Python-facing access lazily creates lightweight BaseTrajDataT objects; internal
         nogil helpers work directly on the C buffer for speed.
@@ -37,7 +37,7 @@ cdef class BaseTrajSeqT:
                double vx, double vy, double vz, double mach):
         """Append a new point to the sequence."""
         cdef BCLIBC_ErrorType err = self._this.append(
-            BCLIBC_BaseTraj(time, px, py, pz, vx, vy, vz, mach)
+            BCLIBC_BaseTrajData(time, px, py, pz, vx, vy, vz, mach)
         )
         if err == BCLIBC_ErrorType.NO_ERROR:
             return
@@ -72,7 +72,7 @@ cdef class BaseTrajSeqT:
 
     def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
-        cdef BCLIBC_BaseTraj_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = self._this.interpolate_at(
             idx, key_kind, key_value, &out._this
@@ -88,7 +88,7 @@ cdef class BaseTrajSeqT:
                 "BCLIBC_BaseTrajSeq.interpolate_at requires idx with valid neighbors (idx-1, idx, idx+1)"
             )
         if err == BCLIBC_ErrorType.BASE_TRAJ_INTERP_KEY_ERROR:
-            raise AttributeError("invalid BCLIBC_BaseTraj_InterpKey")
+            raise AttributeError("invalid BCLIBC_BaseTrajData_InterpKey")
         raise RuntimeError(
             f"undefined error occured during BCLIBC_BaseTrajSeq.interpolate_at, error code: {err}"
         )
@@ -100,7 +100,7 @@ cdef class BaseTrajSeqT:
         and proceeds forward or backward depending on local direction, mirroring
         trajectory_data.HitResult.get_at().
         """
-        cdef BCLIBC_BaseTraj_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
 
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef double _start_from_time = 0.0
@@ -149,11 +149,13 @@ cdef class BaseTrajDataT:
     # Python-facing properties return Vector, not dict
     @property
     def position(self):
-        return v3d_to_vector(&self._this.position)
+        cdef BCLIBC_V3dT pos = self._this.position()
+        return v3d_to_vector(&pos)
 
     @property
     def velocity(self):
-        return v3d_to_vector(&self._this.velocity)
+        cdef BCLIBC_V3dT vel = self._this.velocity()
+        return v3d_to_vector(&vel)
 
     @staticmethod
     def interpolate(str key_attribute, double key_value,
@@ -177,7 +179,7 @@ cdef class BaseTrajDataT:
             ZeroDivisionError: If the interpolation fails due to zero division.
                                (This will result if two of the points are identical).
         """
-        cdef BCLIBC_BaseTraj_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData.interpolate(
             key_kind, key_value,

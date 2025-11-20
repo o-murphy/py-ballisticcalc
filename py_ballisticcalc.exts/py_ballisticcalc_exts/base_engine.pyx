@@ -13,12 +13,13 @@ from py_ballisticcalc_exts.traj_data cimport (
     BaseTrajSeqT,
     BCLIBC_BaseTrajData,
     BCLIBC_TrajectoryData,
-    BCLIBC_BaseTrajHandlerInterface,
+    BCLIBC_BaseTrajDataHandlerInterface,
 )
 from py_ballisticcalc_exts.base_types cimport (
     # types and methods
     BCLIBC_ShotProps,
     BCLIBC_TrajFlag,
+    BCLIBC_V3dT,
 )
 from py_ballisticcalc_exts.bind cimport (
     # factory funcs
@@ -172,11 +173,13 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         cdef BCLIBC_BaseTrajData result = self._find_apex(shot_info)
         cdef object props = ShotProps.from_shot(shot_info)
+        cdef BCLIBC_V3dT pos = result.position()
+        cdef BCLIBC_V3dT vel = result.velocity() 
         return TrajectoryData.from_props(
             props,
             result.time,
-            v3d_to_vector(&result.position),
-            v3d_to_vector(&result.velocity),
+            v3d_to_vector(&pos),
+            v3d_to_vector(&vel),
             result.mach)
 
     def zero_angle(
@@ -527,7 +530,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajHandlerInterface *handler,
+        BCLIBC_BaseTrajDataHandlerInterface *handler,
         BCLIBC_TerminationReason *reason,
     ):
         """
