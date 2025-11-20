@@ -184,7 +184,7 @@ cdef class BaseTrajDataT:
         cdef BCLIBC_ErrorType err = BCLIBC_BaseTrajData.interpolate(
             key_kind, key_value,
             p0._this, p1._this, p2._this,
-            &out._this
+            out._this
         )
 
         if err == BCLIBC_ErrorType.NO_ERROR:

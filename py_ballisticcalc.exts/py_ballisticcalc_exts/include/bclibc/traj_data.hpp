@@ -111,7 +111,7 @@ namespace bclibc
             const BCLIBC_BaseTrajData &p0,
             const BCLIBC_BaseTrajData &p1,
             const BCLIBC_BaseTrajData &p2,
-            BCLIBC_BaseTrajData *out);
+            BCLIBC_BaseTrajData &out);
 
         static void interpolate3pt_vectorized(
             double x, double ox0, double ox1, double ox2,

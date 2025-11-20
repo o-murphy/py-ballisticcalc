@@ -65,7 +65,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             const BCLIBC_BaseTrajData &p0,
             const BCLIBC_BaseTrajData &p1,
             const BCLIBC_BaseTrajData &p2,
-            BCLIBC_BaseTrajData *out
+            BCLIBC_BaseTrajData &out
         )
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerInterface:

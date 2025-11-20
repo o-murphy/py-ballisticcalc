@@ -141,7 +141,7 @@ namespace bclibc
                             this->prev_prev_data,
                             this->prev_data,
                             new_data,
-                            &result_data);
+                            result_data);
                         if (err == BCLIBC_ErrorType::NO_ERROR)
                         {
                             found_data = true;
@@ -177,7 +177,7 @@ namespace bclibc
                         this->prev_prev_data,
                         this->prev_data,
                         new_data,
-                        &result_data);
+                        result_data);
 
                     if (err == BCLIBC_ErrorType::NO_ERROR)
                     {
@@ -206,7 +206,7 @@ namespace bclibc
                     this->prev_prev_data,
                     this->prev_data,
                     new_data,
-                    &result_data);
+                    result_data);
                 if (err == BCLIBC_ErrorType::NO_ERROR)
                 {
                     // "Apex" is the point where the vertical component of velocity goes from positive to negative.
