@@ -343,16 +343,7 @@ namespace bclibc
             BCLIBC_ERROR("Index out of bounds.");
             return BCLIBC_ErrorType::INDEX_ERROR;
         }
-
-        out.time = entry_ptr->time;
-        out.px = entry_ptr->px;
-        out.py = entry_ptr->py;
-        out.pz = entry_ptr->pz;
-        out.vx = entry_ptr->vx;
-        out.vy = entry_ptr->vy;
-        out.vz = entry_ptr->vz;
-        out.mach = entry_ptr->mach;
-
+        out = *entry_ptr;
         return BCLIBC_ErrorType::NO_ERROR;
     };
 
