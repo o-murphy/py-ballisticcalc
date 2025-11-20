@@ -95,17 +95,17 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         BCLIBC_ErrorType get_at_slant_height(
             double look_angle_rad,
             double value,
-            BCLIBC_BaseTrajData *out
+            BCLIBC_BaseTrajData &out
         ) const
         BCLIBC_ErrorType get_item(
             Py_ssize_t idx,
-            BCLIBC_BaseTrajData *out
+            BCLIBC_BaseTrajData &out
         ) const
         BCLIBC_ErrorType get_at(
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             double start_from_time,
-            BCLIBC_BaseTrajData *out
+            BCLIBC_BaseTrajData &out
         ) const
 
     cdef enum class BCLIBC_TrajectoryData_InterpKey:

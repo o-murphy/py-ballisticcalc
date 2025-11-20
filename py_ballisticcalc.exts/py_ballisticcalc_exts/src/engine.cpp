@@ -160,7 +160,7 @@ namespace bclibc
         }
         else
         {
-            BCLIBC_ErrorType err = result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, out);
+            BCLIBC_ErrorType err = result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, *out);
             if (err != BCLIBC_ErrorType::NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
@@ -213,7 +213,7 @@ namespace bclibc
                 last_ptr = trajectory.get_raw_item(-1);
                 if (last_ptr != nullptr && last_ptr->time != 0.0)
                 {
-                    BCLIBC_ErrorType err = trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, &hit);
+                    BCLIBC_ErrorType err = trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
                     if (err != BCLIBC_ErrorType::NO_ERROR)
                     {
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
@@ -426,7 +426,7 @@ namespace bclibc
             }
 
             // interpolate trajectory at target_x_ft using the sequence we just filled
-            BCLIBC_ErrorType err = seq.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, &hit);
+            BCLIBC_ErrorType err = seq.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
             if (err != BCLIBC_ErrorType::NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Failed to interpolate trajectory at target distance");

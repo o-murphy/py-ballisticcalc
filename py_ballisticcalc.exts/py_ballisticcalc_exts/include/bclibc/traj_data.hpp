@@ -231,7 +231,7 @@ namespace bclibc
          */
         BCLIBC_ErrorType get_item(
             ssize_t idx,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * @brief Get trajectory data at a given key value, with optional start time.
@@ -246,7 +246,7 @@ namespace bclibc
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             double start_from_time,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * @brief Interpolates trajectory data at a given slant height.
@@ -266,7 +266,7 @@ namespace bclibc
         BCLIBC_ErrorType get_at_slant_height(
             double look_angle_rad,
             double value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
     private:
         /**
@@ -316,7 +316,7 @@ namespace bclibc
             ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * @brief Finds the center index for 3-point interpolation in a trajectory sequence.

@@ -335,14 +335,8 @@ namespace bclibc
      */
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_item(
         ssize_t idx,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
         const BCLIBC_BaseTrajData *entry_ptr = this->get_raw_item(idx);
         if (!entry_ptr)
         {
@@ -350,14 +344,14 @@ namespace bclibc
             return BCLIBC_ErrorType::INDEX_ERROR;
         }
 
-        out->time = entry_ptr->time;
-        out->px = entry_ptr->px;
-        out->py = entry_ptr->py;
-        out->pz = entry_ptr->pz;
-        out->vx = entry_ptr->vx;
-        out->vy = entry_ptr->vy;
-        out->vz = entry_ptr->vz;
-        out->mach = entry_ptr->mach;
+        out.time = entry_ptr->time;
+        out.px = entry_ptr->px;
+        out.py = entry_ptr->py;
+        out.pz = entry_ptr->pz;
+        out.vx = entry_ptr->vx;
+        out.vy = entry_ptr->vy;
+        out.vz = entry_ptr->vz;
+        out.mach = entry_ptr->mach;
 
         return BCLIBC_ErrorType::NO_ERROR;
     };
@@ -375,14 +369,8 @@ namespace bclibc
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
         double start_from_time,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
         ssize_t n = (ssize_t)this->buffer.size();
 
         if (n < 3)
@@ -426,7 +414,7 @@ namespace bclibc
 
         // Otherwise interpolate at center
         ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;
-        return this->interpolate_at_center(center_idx, key_kind, key_value, *out);
+        return this->interpolate_at_center(center_idx, key_kind, key_value, out);
     };
 
     /**
@@ -447,14 +435,8 @@ namespace bclibc
     BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at_slant_height(
         double look_angle_rad,
         double value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
         double ca = std::cos(look_angle_rad);
         double sa = std::sin(look_angle_rad);
 
@@ -480,13 +462,13 @@ namespace bclibc
         }
 
         const auto &data_vector = this->buffer;
-        const BCLIBC_BaseTrajData *p0 = &data_vector[center - 1];
-        const BCLIBC_BaseTrajData *p1 = &data_vector[center];
-        const BCLIBC_BaseTrajData *p2 = &data_vector[center + 1];
+        const BCLIBC_BaseTrajData &p0 = data_vector[center - 1];
+        const BCLIBC_BaseTrajData &p1 = data_vector[center];
+        const BCLIBC_BaseTrajData &p2 = data_vector[center + 1];
 
-        double ox0 = p0->slant_val_buf(ca, sa);
-        double ox1 = p1->slant_val_buf(ca, sa);
-        double ox2 = p2->slant_val_buf(ca, sa);
+        double ox0 = p0.slant_val_buf(ca, sa);
+        double ox1 = p1.slant_val_buf(ca, sa);
+        double ox2 = p2.slant_val_buf(ca, sa);
 
         if (ox0 == ox1 || ox1 == ox2)
         {
@@ -494,14 +476,14 @@ namespace bclibc
             return BCLIBC_ErrorType::VALUE_ERROR;
         }
 
-        out->time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
-        out->px = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->px, p1->px, p2->px);
-        out->py = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->py, p1->py, p2->py);
-        out->pz = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
-        out->vx = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
-        out->vy = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
-        out->vz = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
-        out->mach = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
+        out.time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time);
+        out.px = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.px, p1.px, p2.px);
+        out.py = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.py, p1.py, p2.py);
+        out.pz = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz);
+        out.vx = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx);
+        out.vy = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy);
+        out.vz = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz);
+        out.mach = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach);
 
         return BCLIBC_ErrorType::NO_ERROR;
     };
@@ -600,7 +582,7 @@ namespace bclibc
         ssize_t idx,
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
         if (idx < 0 || idx >= (ssize_t)this->buffer.size())
         {

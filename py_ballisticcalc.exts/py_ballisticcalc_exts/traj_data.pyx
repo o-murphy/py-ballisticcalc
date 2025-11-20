@@ -65,7 +65,7 @@ cdef class BaseTrajSeqT:
         """Return BaseTrajDataT for the given index.  Supports negative indices."""
         cdef Py_ssize_t _i = <Py_ssize_t>idx
         cdef BaseTrajDataT out = BaseTrajDataT()
-        cdef BCLIBC_ErrorType err = self._this.get_item(_i, &out._this)
+        cdef BCLIBC_ErrorType err = self._this.get_item(_i, out._this)
         if err == BCLIBC_ErrorType.NO_ERROR:
             return out
         raise IndexError("Index out of range")
@@ -107,7 +107,7 @@ cdef class BaseTrajSeqT:
         if start_from_time is not None:
             _start_from_time = <double>start_from_time
         cdef BCLIBC_ErrorType err = self._this.get_at(
-            key_kind, key_value, _start_from_time, &out._this
+            key_kind, key_value, _start_from_time, out._this
         )
         if err == BCLIBC_ErrorType.NO_ERROR:
             return out
@@ -123,7 +123,7 @@ cdef class BaseTrajSeqT:
         """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
 
         cdef BaseTrajDataT out = BaseTrajDataT()
-        cdef BCLIBC_ErrorType err = self._this.get_at_slant_height(look_angle_rad, value, &out._this)
+        cdef BCLIBC_ErrorType err = self._this.get_at_slant_height(look_angle_rad, value, out._this)
         if err == BCLIBC_ErrorType.NO_ERROR:
             return out
 
