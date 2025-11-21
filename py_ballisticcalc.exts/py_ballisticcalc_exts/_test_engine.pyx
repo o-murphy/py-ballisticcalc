@@ -11,7 +11,6 @@ from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
-    BCLIBC_ErrorType,
 )
 
 __all__ = ["CythonEngineTestHarness"]
@@ -53,8 +52,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        if self._this.shot.update_stability_coefficient() != BCLIBC_ErrorType.NO_ERROR:
-            raise ZeroDivisionError("Zero division detected in BCLIBC_ShotProps.update_stability_coefficient")
+        self._this.shot.update_stability_coefficient()
         return self._this.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):

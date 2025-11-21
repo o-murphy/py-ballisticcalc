@@ -55,14 +55,10 @@ cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RA
 
 
 cdef dict ERROR_TYPE_TO_EXCEPTION = {
-    BCLIBC_ErrorType.INPUT_ERROR: TypeError,
     BCLIBC_ErrorType.ZERO_FINDING_ERROR: ZeroFindingError,
     BCLIBC_ErrorType.OUT_OF_RANGE_ERROR: OutOfRangeError,
     BCLIBC_ErrorType.VALUE_ERROR: ValueError,
     BCLIBC_ErrorType.INDEX_ERROR: IndexError,
-    BCLIBC_ErrorType.BASE_TRAJ_INTERP_KEY_ERROR: AttributeError,
-    BCLIBC_ErrorType.MEMORY_ERROR: MemoryError,
-    BCLIBC_ErrorType.ARITHMETIC_ERROR: ArithmeticError,
     BCLIBC_ErrorType.RUNTIME_ERROR: SolverRuntimeError,
 }
 
@@ -597,7 +593,7 @@ cdef class CythonizedBaseIntegrationEngine:
         const BCLIBC_ErrorFrame *f
     ):
         cdef const BCLIBC_ErrorStack *stack = &self._this.err_stack
-        if stack.top <= 0 or f.code == BCLIBC_ErrorType.NO_ERROR:
+        if stack.top <= 0:
             return
 
         cdef char trace[4096]

@@ -21,7 +21,7 @@ namespace bclibc
         void init(const BCLIBC_BaseTrajData &data);
 
     public:
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData &data) override;
+        void handle(const BCLIBC_BaseTrajData &data) override;
 
         void record(const BCLIBC_BaseTrajData &new_data);
         std::vector<BCLIBC_TrajectoryData> const &get_records() const;

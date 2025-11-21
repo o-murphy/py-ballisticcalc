@@ -32,10 +32,8 @@ namespace bclibc
      * @param time_step The base time step for integration (can be adaptive).
      * @param trajectory Pointer to the BCLIBC_BaseTrajSeq buffer where trajectory
      * data points will be stored.
-     * @return BCLIBC_ErrorType An enumeration value indicating why the integration
-     * loop was terminated (e.g., NO_ERROR on success).
      */
-    BCLIBC_StatusCode BCLIBC_integrateEULER(
+    void BCLIBC_integrateEULER(
         BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
@@ -122,13 +120,8 @@ namespace bclibc
 
             // Store point in trajectory sequence
 
-            // err =
             handler.handle(
                 BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
-            // if (err != NO_ERROR)
-            // {
-            //     return err;
-            // }
 
             // Euler integration step
 
@@ -188,17 +181,9 @@ namespace bclibc
 
         // Add final data point
 
-        // err =
         handler.handle(
             BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
-        // if (err != NO_ERROR)
-        // {
-        //     return err;
-        // }
 
         BCLIBC_DEBUG("Function exit, reason=%d\n", reason);
-
-        return BCLIBC_StatusCode::SUCCESS;
     };
-
 };

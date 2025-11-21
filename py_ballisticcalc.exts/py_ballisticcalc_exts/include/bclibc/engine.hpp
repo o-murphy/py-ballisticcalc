@@ -1,6 +1,7 @@
 #ifndef BCLIBC_ENGINE_HPP
 #define BCLIBC_ENGINE_HPP
 
+#include "bclibc/error_stack.hpp"
 #include "bclibc/traj_filter.hpp"
 
 /*
@@ -85,7 +86,7 @@ namespace bclibc
 
     class BCLIBC_Engine;
 
-    using BCLIBC_IntegrateFunc = BCLIBC_StatusCode(
+    using BCLIBC_IntegrateFunc = void(
         BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,

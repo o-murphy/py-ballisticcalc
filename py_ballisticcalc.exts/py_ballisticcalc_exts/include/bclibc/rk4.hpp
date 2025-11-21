@@ -14,7 +14,7 @@ extern "C"
     namespace bclibc
     {
 
-        BCLIBC_StatusCode BCLIBC_integrateRK4(
+        void BCLIBC_integrateRK4(
             BCLIBC_Engine &eng,
             double range_limit_ft,
             double range_step_ft,

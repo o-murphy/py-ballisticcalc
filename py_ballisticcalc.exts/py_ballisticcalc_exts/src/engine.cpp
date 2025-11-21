@@ -48,7 +48,7 @@ namespace bclibc
     {
         if (!this->integrate_func_ptr)
         {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "1. Invalid input (NULL pointer).");
+            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
         }
 
@@ -100,25 +100,22 @@ namespace bclibc
     {
         if (!this->integrate_func_ptr)
         {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
+            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
             return BCLIBC_StatusCode::ERROR;
         }
         BCLIBC_DEBUG("Using integration function pointer %p.", (void *)this->integrate_func_ptr);
 
-        BCLIBC_StatusCode status = this->integrate_func_ptr(*this, range_limit_ft, range_step_ft, time_step, handler, reason);
+        this->integrate_func_ptr(*this, range_limit_ft, range_step_ft, time_step, handler, reason);
 
-        if (status != BCLIBC_StatusCode::ERROR)
+        if (reason == BCLIBC_TerminationReason::NO_TERMINATE)
         {
-            if (reason == BCLIBC_TerminationReason::NO_TERMINATE)
-            {
-                BCLIBC_INFO("Integration completed successfully: (%d).", reason);
-            }
-            else
-            {
-                BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", reason);
-            }
-            return BCLIBC_StatusCode::SUCCESS;
+            BCLIBC_INFO("Integration completed successfully: (%d).", reason);
         }
+        else
+        {
+            BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", reason);
+        }
+        return BCLIBC_StatusCode::SUCCESS;
 
         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Integration failed");
         return BCLIBC_StatusCode::ERROR;
@@ -154,15 +151,15 @@ namespace bclibc
         }
         else
         {
-            BCLIBC_ErrorType err = result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, apex_out);
-            if (err != BCLIBC_ErrorType::NO_ERROR)
+            try
+            {
+                result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, apex_out);
+                status = BCLIBC_StatusCode::SUCCESS;
+            }
+            catch (const std::exception &e)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
                 status = BCLIBC_StatusCode::ERROR;
-            }
-            else
-            {
-                status = BCLIBC_StatusCode::SUCCESS;
             }
         }
         // finally
@@ -201,16 +198,16 @@ namespace bclibc
                 last_ptr = trajectory.get_raw_item(-1);
                 if (last_ptr != nullptr && last_ptr->time != 0.0)
                 {
-                    BCLIBC_ErrorType err = trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
-                    if (err != BCLIBC_ErrorType::NO_ERROR)
+                    try
+                    {
+                        trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
+                        error_ft_out = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
+                        status = BCLIBC_StatusCode::SUCCESS;
+                    }
+                    catch (const std::exception &e)
                     {
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
                         status = BCLIBC_StatusCode::ERROR;
-                    }
-                    else
-                    {
-                        error_ft_out = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
-                        status = BCLIBC_StatusCode::SUCCESS;
                     }
                 }
                 else
@@ -251,7 +248,7 @@ namespace bclibc
 
         // Edge case: Very close shot; ignore gravity and drag
         if (std::fabs(result.slant_range_ft) < 2.0 * std::fmax(std::fabs(result.start_height_ft),
-                                                                this->config.cStepMultiplier))
+                                                               this->config.cStepMultiplier))
         {
             result.look_angle_rad = std::atan2(result.target_y_ft + result.start_height_ft, result.target_x_ft);
             return BCLIBC_StatusCode::SUCCESS;
@@ -396,8 +393,11 @@ namespace bclibc
             }
 
             // interpolate trajectory at target_x_ft using the sequence we just filled
-            BCLIBC_ErrorType err = seq.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
-            if (err != BCLIBC_ErrorType::NO_ERROR)
+            try
+            {
+                seq.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
+            }
+            catch (const std::exception &e)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Failed to interpolate trajectory at target distance");
                 status = BCLIBC_StatusCode::SUCCESS;

@@ -107,10 +107,10 @@ SOURCE_PATHS = {
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
 _ERR_STACK_DEPS = set(["error_stack"])
-_BCLIBC_DEPS = set([*_ERR_STACK_DEPS, "v3d", "types"])
+_BASE_TYPES_DEPS = set(["v3d", "types"])
 _INTERP_DEPS = set(["interp"])
-_TRAJ_DATA_DEPS = set([*_BCLIBC_DEPS, *_INTERP_DEPS, "traj_data"])
-_BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
+_TRAJ_DATA_DEPS = set([*_BASE_TYPES_DEPS, *_INTERP_DEPS, "traj_data"])
+_BIND_DEPS = set([*_ERR_STACK_DEPS, *_BASE_TYPES_DEPS, "bind"])
 _ENGINE_DEPS = set([*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"])
 _RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
 _EULER_DEPS = set([*_ENGINE_DEPS, "euler"])

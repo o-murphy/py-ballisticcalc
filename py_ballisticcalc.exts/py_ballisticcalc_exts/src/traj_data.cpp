@@ -51,9 +51,8 @@ namespace bclibc
      * @param p1 Pointer to the second data point.
      * @param p2 Pointer to the third data point (after or at the end of the segment).
      * @param out Pointer to the BCLIBC_BaseTrajData structure where the interpolated result will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input, BCLIBC_ErrorType::ZERO_DIVISION_ERROR for degenerate segments (identical key values).
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajData::interpolate(
+    void BCLIBC_BaseTrajData::interpolate(
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
         const BCLIBC_BaseTrajData &p0,
@@ -69,7 +68,7 @@ namespace bclibc
         // Guard against degenerate segments
         if (x0 == x1 || x0 == x2 || x1 == x2)
         {
-            return BCLIBC_ErrorType::ZERO_DIVISION_ERROR;
+            throw std::domain_error("Zero division error");
         }
 
         // Cache position and velocity
@@ -95,8 +94,6 @@ namespace bclibc
         out.mach = (key_kind == BCLIBC_BaseTrajData_InterpKey::MACH)
                        ? key_value
                        : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.mach, p1.mach, p2.mach);
-
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -199,19 +196,12 @@ namespace bclibc
         // The body is empty.
     };
 
-    BCLIBC_ErrorType BCLIBC_BaseTrajDataHandlerCompositor::handle(const BCLIBC_BaseTrajData &data)
+    void BCLIBC_BaseTrajDataHandlerCompositor::handle(const BCLIBC_BaseTrajData &data)
     {
         for (auto *handler : handlers_)
         {
-            BCLIBC_ErrorType status = handler->handle(data);
-
-            if (status != BCLIBC_ErrorType::NO_ERROR)
-            {
-                BCLIBC_ERROR("Some handler returns error");
-                return status;
-            }
+            handler->handle(data);
         }
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     BCLIBC_BaseTrajSeq::~BCLIBC_BaseTrajSeq()
@@ -221,9 +211,9 @@ namespace bclibc
                      this->get_length() * sizeof(BCLIBC_BaseTrajData));
     };
 
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTrajData &data)
+    void BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTrajData &data)
     {
-        return this->append(data);
+        this->append(data);
     };
 
     /**
@@ -240,21 +230,10 @@ namespace bclibc
      * @param vy Y velocity.
      * @param vz Z velocity.
      * @param mach Mach number.
-     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::MEMORY_ERROR if allocation fails,
-     *         BCLIBC_ErrorType::INPUT_ERROR if seq is NULL.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(const BCLIBC_BaseTrajData &data)
+    void BCLIBC_BaseTrajSeq::append(const BCLIBC_BaseTrajData &data)
     {
-
-        try
-        {
-            this->buffer.push_back(data);
-        }
-        catch (...)
-        {
-            return BCLIBC_ErrorType::RUNTIME_ERROR;
-        }
-        return BCLIBC_ErrorType::NO_ERROR;
+        this->buffer.push_back(data);
     };
 
     /**
@@ -275,21 +254,6 @@ namespace bclibc
     ssize_t BCLIBC_BaseTrajSeq::get_capacity() const
     {
         return this->buffer.capacity();
-    };
-
-    /**
-     * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
-     *
-     * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
-     * @return 1 on success, 0 on failure.
-     */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_at(
-        ssize_t idx,
-        BCLIBC_BaseTrajData_InterpKey key_kind,
-        double key_value,
-        BCLIBC_BaseTrajData &out) const
-    {
-        return this->interpolate_raw(idx, key_kind, key_value, out);
     };
 
     /**
@@ -329,22 +293,17 @@ namespace bclibc
      *
      * @param idx Index of the trajectory point to retrieve.
      * @param out Pointer to BCLIBC_BaseTrajData where results will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-     *         BCLIBC_ErrorType::INPUT_ERROR if seq or out is NULL,
-     *         BCLIBC_ErrorType::INDEX_ERROR if idx is out of bounds.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_item(
+    void BCLIBC_BaseTrajSeq::get_item(
         ssize_t idx,
         BCLIBC_BaseTrajData &out) const
     {
         const BCLIBC_BaseTrajData *entry_ptr = this->get_raw_item(idx);
         if (!entry_ptr)
         {
-            BCLIBC_ERROR("Index out of bounds.");
-            return BCLIBC_ErrorType::INDEX_ERROR;
+            throw std::out_of_range("Index out of bounds.");
         }
         out = *entry_ptr;
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -354,9 +313,8 @@ namespace bclibc
      * @param key_value Key value to get.
      * @param start_from_time Optional start time (use -1 if not used).
      * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR if successful, otherwise error code.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at(
+    void BCLIBC_BaseTrajSeq::get_at(
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
         double start_from_time,
@@ -366,8 +324,7 @@ namespace bclibc
 
         if (n < 3)
         {
-            BCLIBC_ERROR("Not enough data points for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::domain_error("Not enough data points for interpolation.");
         }
 
         ssize_t target_idx = -1;
@@ -378,9 +335,14 @@ namespace bclibc
             ssize_t start_idx = this->find_start_index(start_from_time);
 
             // Try exact match at start index
-            BCLIBC_ErrorType exact_err = this->try_get_exact(start_idx, key_kind, key_value, out);
-            if (exact_err == BCLIBC_ErrorType::NO_ERROR)
-                return BCLIBC_ErrorType::NO_ERROR;
+            try
+            {
+                this->try_get_exact(start_idx, key_kind, key_value, out);
+                return;
+            }
+            catch (const std::exception &e)
+            {
+            }
 
             // Find target index for interpolation
             ssize_t target_idx = this->find_target_index(key_kind, key_value, start_idx);
@@ -392,20 +354,24 @@ namespace bclibc
             ssize_t center = this->bisect_center_idx_buf(key_kind, key_value);
             if (center < 0)
             {
-                BCLIBC_ERROR("Bisecting failed; not enough data points.");
-                return BCLIBC_ErrorType::VALUE_ERROR;
+                throw std::domain_error("Bisecting failed; not enough data points.");
             }
             target_idx = center < n - 1 ? center : n - 2;
         }
 
         // Try exact match at target index
-        BCLIBC_ErrorType exact_err = this->try_get_exact(target_idx, key_kind, key_value, out);
-        if (exact_err == BCLIBC_ErrorType::NO_ERROR)
-            return BCLIBC_ErrorType::NO_ERROR;
+        try
+        {
+            this->try_get_exact(target_idx, key_kind, key_value, out);
+            return;
+        }
+        catch (const std::exception &e)
+        {
+        }
 
         // Otherwise interpolate at center
         ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;
-        return this->interpolate_at_center(center_idx, key_kind, key_value, out);
+        this->interpolate_at_center(center_idx, key_kind, key_value, out);
     };
 
     /**
@@ -419,11 +385,8 @@ namespace bclibc
      * @param look_angle_rad Look angle in radians.
      * @param value Target slant height for interpolation.
      * @param out Pointer to BCLIBC_BaseTrajData where interpolated results will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-     *         BCLIBC_ErrorType::INPUT_ERROR if seq or out is NULL,
-     *         BCLIBC_ErrorType::VALUE_ERROR if not enough points or interpolation fails.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at_slant_height(
+    void BCLIBC_BaseTrajSeq::get_at_slant_height(
         double look_angle_rad,
         double value,
         BCLIBC_BaseTrajData &out) const
@@ -435,21 +398,18 @@ namespace bclibc
 
         if (n < 3)
         {
-            BCLIBC_ERROR("Not enough data points for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            std::domain_error("Not enough data points for interpolation.");
         }
 
         ssize_t center = this->bisect_center_idx_slant_buf(ca, sa, value);
         if (center < 0)
         {
-            BCLIBC_ERROR("Failed to find center index for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            std::domain_error("Failed to find center index for interpolation.");
         }
 
         if (center < 1 || center >= n - 1)
         {
-            BCLIBC_ERROR("Calculated center index out of safe interpolation range.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            std::domain_error("Calculated center index out of safe interpolation range.");
         }
 
         const auto &data_vector = this->buffer;
@@ -463,8 +423,7 @@ namespace bclibc
 
         if (ox0 == ox1 || ox1 == ox2)
         {
-            BCLIBC_ERROR("Duplicate slant key values detected; cannot interpolate.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            std::domain_error("Duplicate slant key values detected; cannot interpolate.");
         }
 
         out.time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.time, p1.time, p2.time);
@@ -475,8 +434,6 @@ namespace bclibc
         out.vy = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy);
         out.vz = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz);
         out.mach = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach);
-
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -486,21 +443,14 @@ namespace bclibc
      * @param key_kind Kind of interpolation key.
      * @param key_value Key value to interpolate at.
      * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR if successful, otherwise error code.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_at_center(
+    void BCLIBC_BaseTrajSeq::interpolate_at_center(
         ssize_t idx,
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
         BCLIBC_BaseTrajData &out) const
     {
-        BCLIBC_ErrorType err = this->interpolate_at(idx, key_kind, key_value, out);
-        if (err != BCLIBC_ErrorType::NO_ERROR)
-        {
-            BCLIBC_ERROR("Interpolation failed at center index %zd, error code: 0x%X", idx, err);
-            return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
-        }
-        return err;
+        this->interpolate_at(idx, key_kind, key_value, out);
     };
 
     /**
@@ -514,9 +464,8 @@ namespace bclibc
      * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
      * @param key_value The target value of the key to interpolate at.
      * @param out Pointer to a BCLIBC_BaseTrajData struct where the interpolated result will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, or an BCLIBC_ErrorType on failure.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_raw(
+    void BCLIBC_BaseTrajSeq::interpolate_at(
         ssize_t idx,
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
@@ -532,8 +481,7 @@ namespace bclibc
         // Ensure we have valid points on both sides (idx-1, idx, idx+1)
         if (idx < 1 || idx >= length - 1)
         {
-            BCLIBC_ERROR("Index out of bounds for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::out_of_range("Index out of bounds for interpolation.");
         }
 
         const BCLIBC_BaseTrajData &p0 = data_vector[idx - 1];
@@ -548,28 +496,24 @@ namespace bclibc
         // Check for duplicate key values (would cause division by zero)
         if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
         {
-            BCLIBC_ERROR("Duplicate key values detected; cannot interpolate.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::invalid_argument("Duplicate key values detected; cannot interpolate.");
         }
 
         // Interpolate all trajectory components
         // Vectorized interpolation
         // Store results
         BCLIBC_BaseTrajData::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
-
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
-     * @brief Try to get exact value at index, return BCLIBC_ErrorType::NO_ERROR if successful.
+     * @brief Try to get exact value at index
      *
      * @param idx Index to check.
      * @param key_kind Kind of key.
      * @param key_value Key value to match.
      * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType::NO_ERROR if exact match found, otherwise BCLIBC_ErrorType::VALUE_ERROR.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::try_get_exact(
+    void BCLIBC_BaseTrajSeq::try_get_exact(
         ssize_t idx,
         BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
@@ -577,24 +521,17 @@ namespace bclibc
     {
         if (idx < 0 || idx >= (ssize_t)this->buffer.size())
         {
-            return BCLIBC_ErrorType::INDEX_ERROR;
+            throw std::out_of_range("Index out of bounds.");
         }
 
         double epsilon = 1e-9;
 
         if (this->is_close(this->buffer[idx].get_key_val(key_kind), key_value, epsilon))
         {
-            BCLIBC_ErrorType err = this->get_item(idx, out);
-            if (err != BCLIBC_ErrorType::NO_ERROR)
-            {
-                BCLIBC_ERROR("Failed to get item at index %zd.", idx);
-                return BCLIBC_ErrorType::INDEX_ERROR;
-            }
+            this->get_item(idx, out);
             BCLIBC_DEBUG("Exact match found at index %zd.", idx);
-            return BCLIBC_ErrorType::NO_ERROR;
         }
-
-        return BCLIBC_ErrorType::VALUE_ERROR; // not an exact match
+        throw std::domain_error("Not exact match.");
     };
 
     /**
@@ -950,7 +887,6 @@ namespace bclibc
             double y2 = p2.get_key_val(field_key);
 
             double interpolated_value = 0.0;
-            BCLIBC_ErrorType err = BCLIBC_ErrorType::NO_ERROR;
 
             if (field_key == key)
             {

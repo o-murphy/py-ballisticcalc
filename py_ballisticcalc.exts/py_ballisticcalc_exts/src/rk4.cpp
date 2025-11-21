@@ -68,10 +68,8 @@ namespace bclibc
      * @param time_step The base time step (dt) used for the RK4 calculation.
      * @param trajectory Pointer to the BCLIBC_BaseTrajSeq buffer where dense trajectory
      * data points will be stored.
-     * @return BCLIBC_ErrorType An enumeration value indicating why the integration
-     * loop was terminated (e.g., NO_ERROR on successful completion).
      */
-    BCLIBC_StatusCode BCLIBC_integrateRK4(
+    void BCLIBC_integrateRK4(
         BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
@@ -185,13 +183,8 @@ namespace bclibc
             // Store point in trajectory sequence
             BCLIBC_DEBUG("About to append to trajectory sequence\n");
 
-            // err =
             handler.handle(
                 BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
-            // if (err != NO_ERROR)
-            // {
-            //     return err;
-            // }
 
             BCLIBC_DEBUG("Append successful\n");
 
@@ -203,13 +196,6 @@ namespace bclibc
 
             BCLIBC_DEBUG("About to call BCLIBC_ShotProps.drag_by_mach, relative_speed=%f, mach=%f\n",
                          relative_speed, mach);
-
-            // Check for division by zero
-            // if (mach == 0.0)
-            // {
-            //     BCLIBC_PUSH_ERR(&eng.err_stack, BCLIBC_ErrorType::ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "Integration error: Mach number is zero cannot divide!");
-            //     return BCLIBC_StatusCode::ERROR;
-            // }
 
             km = density_ratio * eng.shot.drag_by_mach(relative_speed / mach);
             BCLIBC_DEBUG("Calculated drag coefficient km=%f\n", km);
@@ -300,20 +286,10 @@ namespace bclibc
 
         // Process final data point
 
-        // err =
         handler.handle(
             BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
-        // if (err != NO_ERROR)
-        // {
-        //     return err;
-        // }
 
         BCLIBC_DEBUG("Function exit, reason=%d\n", reason);
-
-        // BCLIBC_PUSH_ERR(&eng.err_stack, ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "fake error");
-        // return BCLIBC_StatusCode::ERROR;
-
-        return BCLIBC_StatusCode::SUCCESS;
     };
 
 };

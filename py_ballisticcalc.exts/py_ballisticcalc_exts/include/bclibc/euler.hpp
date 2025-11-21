@@ -14,7 +14,7 @@ extern "C"
     namespace bclibc
     {
 
-        BCLIBC_StatusCode BCLIBC_integrateEULER(
+        void BCLIBC_integrateEULER(
             BCLIBC_Engine &eng,
             double range_limit_ft,
             double range_step_ft,

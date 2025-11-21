@@ -9,7 +9,7 @@ from py_ballisticcalc_exts.base_types cimport (
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData, BCLIBC_TrajectoryData, BCLIBC_BaseTrajDataHandlerInterface
-from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
+from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorFrame
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
@@ -52,14 +52,14 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     cdef cppclass BCLIBC_Engine
 
     # Declare the function signature type (not a pointer yet)
-    ctypedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
+    ctypedef void BCLIBC_IntegrateFunc(
         BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &trajectory,
         BCLIBC_TerminationReason &reason,
-    ) noexcept nogil
+    ) except +
 
     # Declare pointer to function
     ctypedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr
@@ -77,7 +77,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double range_step_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
-            BCLIBC_TerminationReason &reason) noexcept nogil
+            BCLIBC_TerminationReason &reason) except +
 
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,
@@ -89,20 +89,20 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             BCLIBC_BaseTrajSeq *dense_trajectory) except +
 
         BCLIBC_StatusCode find_apex(
-            BCLIBC_BaseTrajData &apex_out) noexcept nogil
+            BCLIBC_BaseTrajData &apex_out) except +
 
         BCLIBC_StatusCode error_at_distance(
             double angle_rad,
             double target_x_ft,
             double target_y_ft,
-            double &error_ft_out) noexcept nogil
+            double &error_ft_out) except +
 
         BCLIBC_StatusCode init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
             BCLIBC_ZeroInitialData &result,
-            BCLIBC_OutOfRangeError &error) noexcept nogil
+            BCLIBC_OutOfRangeError &error) except +
 
         BCLIBC_StatusCode zero_angle_with_fallback(
             double distance,
@@ -110,7 +110,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double ALLOWED_ZERO_ERROR_FEET,
             double &result,
             BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error) noexcept nogil
+            BCLIBC_ZeroFindingError &zero_error) except +
 
         BCLIBC_StatusCode zero_angle(
             double distance,
@@ -118,13 +118,13 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double ALLOWED_ZERO_ERROR_FEET,
             double &result,
             BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error) noexcept nogil
+            BCLIBC_ZeroFindingError &zero_error) except +
 
         BCLIBC_StatusCode find_max_range(
             double low_angle_deg,
             double high_angle_deg,
             double APEX_IS_MAX_RANGE_RADIANS,
-            BCLIBC_MaxRangeResult &result) noexcept nogil
+            BCLIBC_MaxRangeResult &result) except +
 
         BCLIBC_StatusCode find_zero_angle(
             double distance,
@@ -133,7 +133,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double ALLOWED_ZERO_ERROR_FEET,
             double &result,
             BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error) noexcept nogil
+            BCLIBC_ZeroFindingError &zero_error) except +
 
 cdef class CythonizedBaseIntegrationEngine:
 

@@ -1,6 +1,5 @@
 from libcpp.vector cimport vector
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
 
 cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
@@ -149,10 +148,10 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT last_vector_cache
 
         BCLIBC_WindSock() except+
-        void push(const BCLIBC_Wind &wind)
-        BCLIBC_ErrorType update_cache()
+        void push(const BCLIBC_Wind &wind) except+
+        void update_cache() except+
         BCLIBC_V3dT current_vector() const
-        BCLIBC_V3dT vector_for_range(double next_range_param)
+        BCLIBC_V3dT vector_for_range(double next_range_param) except+
 
     ctypedef enum BCLIBC_TrajFlag:
         BCLIBC_TRAJ_FLAG_NONE = 0,
@@ -213,7 +212,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             BCLIBC_WindSock wind_sock,
             BCLIBC_TrajFlag filter_flags) except+
 
-        BCLIBC_ErrorType update_stability_coefficient() noexcept nogil
+        void update_stability_coefficient() except +ZeroDivisionError
         double spin_drift(double time) const
         double drag_by_mach(double mach) const
 

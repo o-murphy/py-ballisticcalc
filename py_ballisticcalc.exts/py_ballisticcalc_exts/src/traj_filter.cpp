@@ -70,10 +70,9 @@ namespace bclibc
         }
     };
 
-    BCLIBC_ErrorType BCLIBC_TrajectoryDataFilter::handle(const BCLIBC_BaseTrajData &data)
+    void BCLIBC_TrajectoryDataFilter::handle(const BCLIBC_BaseTrajData &data)
     {
         this->record(data);
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     bool BCLIBC_TrajectoryDataFilter::can_interpolate(const BCLIBC_BaseTrajData &new_data) const
@@ -119,16 +118,19 @@ namespace bclibc
                     }
                     else if (is_can_interpolate) /* if (this->prev_data && this->prev_prev_data) */
                     {
-                        BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                            BCLIBC_BaseTrajData_InterpKey::POS_X,
-                            record_distance,
-                            this->prev_prev_data,
-                            this->prev_data,
-                            new_data,
-                            result_data);
-                        if (err == BCLIBC_ErrorType::NO_ERROR)
+                        try
                         {
+                            BCLIBC_BaseTrajData::interpolate(
+                                BCLIBC_BaseTrajData_InterpKey::POS_X,
+                                record_distance,
+                                this->prev_prev_data,
+                                this->prev_data,
+                                new_data,
+                                result_data);
                             found_data = true;
+                        }
+                        catch (const std::domain_error &e)
+                        {
                         }
                     }
                     if (found_data)
@@ -155,19 +157,18 @@ namespace bclibc
 
                     BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
-                    BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                        BCLIBC_BaseTrajData_InterpKey::TIME,
-                        this->time_of_last_record,
-                        this->prev_prev_data,
-                        this->prev_data,
-                        new_data,
-                        result_data);
-
-                    if (err == BCLIBC_ErrorType::NO_ERROR)
+                    try
                     {
+                        BCLIBC_BaseTrajData::interpolate(
+                            BCLIBC_BaseTrajData_InterpKey::TIME,
+                            this->time_of_last_record,
+                            this->prev_prev_data,
+                            this->prev_data,
+                            new_data,
+                            result_data);
                         this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_RANGE);
                     }
-                    else
+                    catch (const std::domain_error &e)
                     {
                         // Can't interpolate without valid data/segment
                         break;
@@ -184,22 +185,21 @@ namespace bclibc
                 // "Apex" is the point where the vertical component of velocity goes from positive to negative.
                 BCLIBC_BaseTrajData result_data = BCLIBC_BaseTrajData();
 
-                BCLIBC_ErrorType err = BCLIBC_BaseTrajData::interpolate(
-                    BCLIBC_BaseTrajData_InterpKey::VEL_Y,
-                    0.0,
-                    this->prev_prev_data,
-                    this->prev_data,
-                    new_data,
-                    result_data);
-                if (err == BCLIBC_ErrorType::NO_ERROR)
+                try
                 {
+                    BCLIBC_BaseTrajData::interpolate(
+                        BCLIBC_BaseTrajData_InterpKey::VEL_Y,
+                        0.0,
+                        this->prev_prev_data,
+                        this->prev_data,
+                        new_data,
+                        result_data);
                     // "Apex" is the point where the vertical component of velocity goes from positive to negative.
                     this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_APEX);
                     this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_APEX);
                 }
-                else
+                catch (const std::domain_error &e)
                 {
-                    // pass
                 }
             }
         }
@@ -372,5 +372,4 @@ namespace bclibc
             [](const BCLIBC_FlaggedData &f)
             { return f.data.time; });
     };
-
 };

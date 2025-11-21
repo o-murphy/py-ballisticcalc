@@ -81,22 +81,10 @@ namespace bclibc
     {
         switch (code)
         {
-        case BCLIBC_ErrorType::NO_ERROR:
-            return "BCLIBC_ErrorType::NO_ERROR";
-        case BCLIBC_ErrorType::ZERO_DIVISION_ERROR:
-            return "BCLIBC_ErrorType::ZERO_DIVISION_ERROR";
         case BCLIBC_ErrorType::VALUE_ERROR:
             return "BCLIBC_ErrorType::VALUE_ERROR";
-        case BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR:
-            return "BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR";
         case BCLIBC_ErrorType::INDEX_ERROR:
             return "BCLIBC_ErrorType::INDEX_ERROR";
-        case BCLIBC_ErrorType::MEMORY_ERROR:
-            return "BCLIBC_ErrorType::MEMORY_ERROR";
-        case BCLIBC_ErrorType::ARITHMETIC_ERROR:
-            return "BCLIBC_ErrorType::ARITHMETIC_ERROR";
-        case BCLIBC_ErrorType::INPUT_ERROR:
-            return "BCLIBC_ErrorType::INPUT_ERROR";
         case BCLIBC_ErrorType::RUNTIME_ERROR:
             return "BCLIBC_ErrorType::RUNTIME_ERROR";
         case BCLIBC_ErrorType::ZERO_FINDING_ERROR:

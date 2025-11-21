@@ -13,7 +13,6 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Coriolis,
     BCLIBC_ShotProps,
     BCLIBC_TrajFlag,
-    BCLIBC_ErrorType,
 )
 from py_ballisticcalc.unit import (
     Angular,
@@ -133,11 +132,7 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
         raise RuntimeError("Invalid wind entry in winds list during conversion")
 
     # 3. Update the cache for the first (zero) wind element after filling the vector
-    cdef BCLIBC_ErrorType error_code = ws.update_cache()
-    if error_code != BCLIBC_ErrorType.NO_ERROR:
-        # This is a BCLIBC error, not a C++ exception, so no except+ is needed here.
-        raise RuntimeError("BCLIBC_WindSock initialization error during final cache update.")
-
+    ws.update_cache()
     return ws
 
 

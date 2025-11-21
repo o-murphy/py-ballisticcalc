@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include "v3d.hpp"
-#include "bclibc/error_stack.hpp"
+#include "bclibc/log.hpp"
 
 namespace bclibc
 {
@@ -168,7 +168,7 @@ namespace bclibc
 
         BCLIBC_WindSock();
         void push(const BCLIBC_Wind &wind);
-        BCLIBC_ErrorType update_cache();
+        void update_cache();
         BCLIBC_V3dT current_vector() const;
         BCLIBC_V3dT vector_for_range(double next_range_param);
     };
@@ -224,7 +224,7 @@ namespace bclibc
 
         ~BCLIBC_ShotProps();
 
-        BCLIBC_ErrorType update_stability_coefficient();
+        void update_stability_coefficient();
         double spin_drift(double time) const;
         double drag_by_mach(double mach) const;
         size_t size() const;
