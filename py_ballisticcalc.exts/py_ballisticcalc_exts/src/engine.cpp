@@ -260,14 +260,15 @@ namespace bclibc
         // Fallback to guaranteed method
         int lofted = 0; // default
 
-        status = this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, result, range_error, zero_error);
-        if (status == BCLIBC_StatusCode::SUCCESS)
+        try
         {
-            return result;
+            return this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, range_error, zero_error);
         }
-
-        // Return error if no found
-        throw std::runtime_error("Zero angle not found");
+        catch (const std::runtime_error &e)
+        {
+            // Return error if no found
+            throw std::runtime_error("Zero angle not found");
+        }
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::zero_angle(
@@ -616,30 +617,22 @@ namespace bclibc
         return BCLIBC_MaxRangeResult{max_range_ft, angle_at_max_rad};
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::find_zero_angle(
+    double BCLIBC_Engine::find_zero_angle(
         double distance,
         int lofted,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        double &result,
         BCLIBC_OutOfRangeError &range_error,
         BCLIBC_ZeroFindingError &zero_error)
     {
         BCLIBC_ZeroInitialData init_data;
-        // BCLIBC_StatusCode status =
-        try
-        {
-            this->init_zero_calculation(
-                distance,
-                APEX_IS_MAX_RANGE_RADIANS,
-                ALLOWED_ZERO_ERROR_FEET,
-                init_data,
-                range_error);
-        }
-        catch (const std::runtime_error)
-        {
-            return BCLIBC_StatusCode::ERROR;
-        }
+
+        this->init_zero_calculation(
+            distance,
+            APEX_IS_MAX_RANGE_RADIANS,
+            ALLOWED_ZERO_ERROR_FEET,
+            init_data,
+            range_error);
 
         double look_angle_rad = init_data.look_angle_rad;
         double slant_range_ft = init_data.slant_range_ft;
@@ -649,8 +642,7 @@ namespace bclibc
 
         if (init_data.status == BCLIBC_ZeroInitialStatus::DONE)
         {
-            result = look_angle_rad;
-            return BCLIBC_StatusCode::SUCCESS;
+            return look_angle_rad;
         }
 
         // 1. Find the maximum possible range to establish a search bracket.
@@ -669,12 +661,11 @@ namespace bclibc
             range_error.max_range_ft = max_range_ft;
             range_error.look_angle_rad = look_angle_rad;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::OUT_OF_RANGE_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Out of range");
-            return BCLIBC_StatusCode::ERROR;
+            throw std::runtime_error("Out of range");
         }
         if (std::fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
-            result = angle_at_max_rad;
-            return BCLIBC_StatusCode::SUCCESS;
+            return angle_at_max_rad;
         }
 
         // Backup, adjust and restore constraints (emulate @with_no_minimum_velocity)
@@ -746,7 +737,7 @@ namespace bclibc
             zero_error.iterations_count = 0;
             zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, reason);
-            return BCLIBC_StatusCode::ERROR;
+            throw std::runtime_error(reason);
         }
 
         // 4. Ridder's method implementation
@@ -763,9 +754,8 @@ namespace bclibc
             if (std::fabs(f_mid) < this->config.cZeroFindingAccuracy)
             {
                 BCLIBC_DEBUG("Ridder: found exact solution at mid_angle=%.6f", mid_angle);
-                result = mid_angle;
                 converged = 1;
-                return BCLIBC_StatusCode::SUCCESS;
+                return mid_angle;
             }
 
             // s is the updated point using the root of the linear function
@@ -797,9 +787,8 @@ namespace bclibc
 
             if (std::fabs(next_angle - mid_angle) < this->config.cZeroFindingAccuracy)
             {
-                result = next_angle;
                 converged = 1;
-                return BCLIBC_StatusCode::SUCCESS;
+                return next_angle;
             }
 
             f_next = this->error_at_distance(
@@ -811,9 +800,8 @@ namespace bclibc
             if (std::fabs(f_next) < this->config.cZeroFindingAccuracy)
             {
                 BCLIBC_DEBUG("Ridder: found exact solution at next_angle=%.6f", next_angle);
-                result = next_angle;
                 converged = 1;
-                return BCLIBC_StatusCode::SUCCESS;
+                return next_angle;
             }
 
             // Update the bracket
@@ -843,9 +831,8 @@ namespace bclibc
 
             if (std::fabs(high_angle - low_angle) < this->config.cZeroFindingAccuracy)
             {
-                result = (low_angle + high_angle) / 2.0;
                 converged = 1;
-                return BCLIBC_StatusCode::SUCCESS;
+                return (low_angle + high_angle) / 2.0;
             }
         }
 
@@ -857,23 +844,23 @@ namespace bclibc
             // If we have a very small bracket, consider it converged
             if (std::fabs(high_angle - low_angle) < 10.0 * this->config.cZeroFindingAccuracy)
             {
-                result = (low_angle + high_angle) / 2.0;
+                double result = (low_angle + high_angle) / 2.0;
                 BCLIBC_DEBUG("Ridder: accepting solution from small bracket: %.6f", result);
-                return BCLIBC_StatusCode::SUCCESS;
+                return result;
             }
 
             // If we have very small errors, consider it converged
             if (std::fabs(f_low) < 10.0 * this->config.cZeroFindingAccuracy)
             {
-                result = low_angle;
+                double result = low_angle;
                 BCLIBC_DEBUG("Ridder: accepting low_angle due to small f_low: %.6f", result);
-                return BCLIBC_StatusCode::SUCCESS;
+                return result;
             }
             if (std::fabs(f_high) < 10.0 * this->config.cZeroFindingAccuracy)
             {
-                result = high_angle;
+                double result = high_angle;
                 BCLIBC_DEBUG("Ridder: accepting high_angle due to small f_high: %.6f", result);
-                return BCLIBC_StatusCode::SUCCESS;
+                return result;
             }
 
             // All fallback strategies failed
@@ -881,7 +868,7 @@ namespace bclibc
             zero_error.iterations_count = this->config.cMaxIterations;
             zero_error.last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Ridder's method failed to converge.");
-            return BCLIBC_StatusCode::ERROR;
+            throw std::runtime_error("Ridder's method failed to converge.");
         }
     };
 

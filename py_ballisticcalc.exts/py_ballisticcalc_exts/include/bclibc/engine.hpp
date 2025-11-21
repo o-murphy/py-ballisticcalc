@@ -160,12 +160,11 @@ namespace bclibc
             double high_angle_deg,
             double APEX_IS_MAX_RANGE_RADIANS);
 
-        BCLIBC_StatusCode find_zero_angle(
+        double find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double &result,
             BCLIBC_OutOfRangeError &range_error,
             BCLIBC_ZeroFindingError &zero_error);
 
