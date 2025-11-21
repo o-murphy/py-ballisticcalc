@@ -124,8 +124,7 @@ namespace bclibc
             BCLIBC_TerminationReason &reason,
             BCLIBC_BaseTrajSeq *dense_trajectory);
 
-        BCLIBC_StatusCode find_apex(
-            BCLIBC_BaseTrajData &apex_out);
+        void find_apex(BCLIBC_BaseTrajData &apex_out);
 
         BCLIBC_StatusCode error_at_distance(
             double angle_rad,

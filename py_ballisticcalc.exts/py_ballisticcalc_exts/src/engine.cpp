@@ -110,7 +110,7 @@ namespace bclibc
         // throw std::runtime_error("Integration failed");
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::find_apex(
+    void BCLIBC_Engine::find_apex(
         BCLIBC_BaseTrajData &apex_out)
     {
         if (this->shot.barrel_elevation <= 0)
@@ -137,15 +137,12 @@ namespace bclibc
         try
         {
             result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, apex_out);
-            status = BCLIBC_StatusCode::SUCCESS;
         }
         catch (const std::exception &e)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
-            status = BCLIBC_StatusCode::ERROR;
+            throw std::runtime_error("Runtime error (No apex flagged in trajectory data)"); 
         }
-
-        return status;
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::error_at_distance(
@@ -241,11 +238,7 @@ namespace bclibc
         if (std::fabs(result.look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
         {
             // Compute slant distance at apex using robust accessor
-            status = this->find_apex(apex);
-            if (status != BCLIBC_StatusCode::SUCCESS)
-            {
-                return BCLIBC_StatusCode::ERROR; // Redirect apex finding error
-            }
+            this->find_apex(apex);
             apex_slant_ft = apex.px * std::cos(result.look_angle_rad) + apex.py * std::sin(result.look_angle_rad);
             if (apex_slant_ft < result.slant_range_ft)
             {
@@ -592,11 +585,7 @@ namespace bclibc
         // π/2 radians = 90 degrees
         if (std::fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
         {
-            status = this->find_apex(apex);
-            if (status != BCLIBC_StatusCode::SUCCESS)
-            {
-                return BCLIBC_StatusCode::ERROR; // Redirect apex finding error
-            }
+            this->find_apex(apex);
             sdist = apex.px * std::cos(look_angle_rad) + apex.py * std::sin(look_angle_rad);
             result.max_range_ft = sdist;
             result.angle_at_max_rad = look_angle_rad;

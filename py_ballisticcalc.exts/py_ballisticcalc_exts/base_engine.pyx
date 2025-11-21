@@ -471,13 +471,13 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
-        cdef BCLIBC_StatusCode status = self._this.find_apex(apex)
-
-        if status == BCLIBC_StatusCode.SUCCESS:
+        cdef const BCLIBC_ErrorFrame *err
+        try:
+            self._this.find_apex(apex)
             return apex
-
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-        self._raise_solver_runtime_error(err)
+        except RuntimeError as e:
+            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+            self._raise_solver_runtime_error(err)
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,

@@ -88,7 +88,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             BCLIBC_TerminationReason &reason,
             BCLIBC_BaseTrajSeq *dense_trajectory) except +
 
-        BCLIBC_StatusCode find_apex(
+        void find_apex(
             BCLIBC_BaseTrajData &apex_out) except +
 
         BCLIBC_StatusCode error_at_distance(
