@@ -96,7 +96,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double target_x_ft,
             double target_y_ft) except +
 
-        BCLIBC_StatusCode init_zero_calculation(
+        void init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
@@ -146,7 +146,7 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         object shot_info
     )
-    cdef BCLIBC_StatusCode _init_zero_calculation(
+    cdef void _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
         double distance,
         BCLIBC_ZeroInitialData &out,

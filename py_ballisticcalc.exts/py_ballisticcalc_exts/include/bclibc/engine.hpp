@@ -131,7 +131,7 @@ namespace bclibc
             double target_x_ft,
             double target_y_ft);
 
-        BCLIBC_StatusCode init_zero_calculation(
+        void init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,

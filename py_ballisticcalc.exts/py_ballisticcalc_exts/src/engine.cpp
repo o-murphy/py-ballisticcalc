@@ -155,7 +155,7 @@ namespace bclibc
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
-        
+
         integrate(9e9, 9e9, 0.0, trajectory, reason);
 
         // If trajectory is too short for cubic interpolation, treat as unreachable
@@ -185,7 +185,7 @@ namespace bclibc
         return 9e9;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::init_zero_calculation(
+    void BCLIBC_Engine::init_zero_calculation(
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
@@ -206,7 +206,7 @@ namespace bclibc
         // Edge case: Very close shot
         if (std::fabs(result.slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
-            return BCLIBC_StatusCode::SUCCESS;
+            return;
         }
 
         // Edge case: Very close shot; ignore gravity and drag
@@ -214,7 +214,7 @@ namespace bclibc
                                                                this->config.cStepMultiplier))
         {
             result.look_angle_rad = std::atan2(result.target_y_ft + result.start_height_ft, result.target_x_ft);
-            return BCLIBC_StatusCode::SUCCESS;
+            return;
         }
 
         // Edge case: Virtually vertical shot; just check if it can reach the target
@@ -229,13 +229,13 @@ namespace bclibc
                 error.max_range_ft = apex_slant_ft;
                 error.look_angle_rad = result.look_angle_rad;
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::OUT_OF_RANGE_ERROR, BCLIBC_ErrorSource::INIT_ZERO, "Out of range");
-                return BCLIBC_StatusCode::ERROR;
+                throw std::runtime_error("Out of range");
             }
-            return BCLIBC_StatusCode::SUCCESS;
+            return;
         }
 
         result.status = BCLIBC_ZeroInitialStatus::CONTINUE;
-        return BCLIBC_StatusCode::SUCCESS;
+        return;
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::zero_angle_with_fallback(
@@ -280,14 +280,17 @@ namespace bclibc
         BCLIBC_ZeroFindingError &zero_error)
     {
         BCLIBC_ZeroInitialData init_data;
-        BCLIBC_StatusCode status = this->init_zero_calculation(
-            distance,
-            APEX_IS_MAX_RANGE_RADIANS,
-            ALLOWED_ZERO_ERROR_FEET,
-            init_data,
-            range_error); // pass pointer directly, not &range_error
 
-        if (status != BCLIBC_StatusCode::SUCCESS)
+        try
+        {
+            this->init_zero_calculation(
+                distance,
+                APEX_IS_MAX_RANGE_RADIANS,
+                ALLOWED_ZERO_ERROR_FEET,
+                init_data,
+                range_error); // pass pointer directly, not &range_error
+        }
+        catch (const std::runtime_error &e)
         {
             return BCLIBC_StatusCode::ERROR;
         }
@@ -303,7 +306,7 @@ namespace bclibc
             return BCLIBC_StatusCode::SUCCESS; // immediately return when already done
         }
 
-        status = BCLIBC_StatusCode::SUCCESS; // initialize
+        BCLIBC_StatusCode status = BCLIBC_StatusCode::SUCCESS; // initialize
         BCLIBC_BaseTrajData hit;
 
         double _cZeroFindingAccuracy = this->config.cZeroFindingAccuracy;
@@ -624,14 +627,17 @@ namespace bclibc
         BCLIBC_ZeroFindingError &zero_error)
     {
         BCLIBC_ZeroInitialData init_data;
-        BCLIBC_StatusCode status = this->init_zero_calculation(
-            distance,
-            APEX_IS_MAX_RANGE_RADIANS,
-            ALLOWED_ZERO_ERROR_FEET,
-            init_data,
-            range_error);
-
-        if (status != BCLIBC_StatusCode::SUCCESS)
+        // BCLIBC_StatusCode status =
+        try
+        {
+            this->init_zero_calculation(
+                distance,
+                APEX_IS_MAX_RANGE_RADIANS,
+                ALLOWED_ZERO_ERROR_FEET,
+                init_data,
+                range_error);
+        }
+        catch (const std::runtime_error)
         {
             return BCLIBC_StatusCode::ERROR;
         }
@@ -653,7 +659,7 @@ namespace bclibc
             0,
             90,
             APEX_IS_MAX_RANGE_RADIANS);
-        
+
         double max_range_ft = max_range_result.max_range_ft;
         double angle_at_max_rad = max_range_result.angle_at_max_rad;
 
