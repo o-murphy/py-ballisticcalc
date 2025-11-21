@@ -1,6 +1,7 @@
 #ifndef BCLIBC_ENGINE_HPP
 #define BCLIBC_ENGINE_HPP
 
+#include "bclibc/error_stack.hpp"
 #include "bclibc/traj_filter.hpp"
 
 /*
@@ -85,15 +86,15 @@ namespace bclibc
 
     class BCLIBC_Engine;
 
-    typedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
-        BCLIBC_Engine *eng,
+    using BCLIBC_IntegrateFunc = void(
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *handler,
-        BCLIBC_TerminationReason *reason);
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason);
 
-    typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;
+    using BCLIBC_IntegrateFuncPtr = BCLIBC_IntegrateFunc *;
 
     class BCLIBC_Engine
     {
@@ -111,66 +112,66 @@ namespace bclibc
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_BaseTrajDataHandlerInterface *handler,
-            BCLIBC_TerminationReason *reason);
+            BCLIBC_BaseTrajDataHandlerInterface &handler,
+            BCLIBC_TerminationReason &reason);
 
         BCLIBC_StatusCode integrate_filtered(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            std::vector<BCLIBC_TrajectoryData> *records,
-            BCLIBC_BaseTrajSeq *dense_trajectory,
-            BCLIBC_TerminationReason *reason);
+            std::vector<BCLIBC_TrajectoryData> &records,
+            BCLIBC_TerminationReason &reason,
+            BCLIBC_BaseTrajSeq *dense_trajectory);
 
         BCLIBC_StatusCode find_apex(
-            BCLIBC_BaseTrajData *out);
+            BCLIBC_BaseTrajData &apex_out);
 
         BCLIBC_StatusCode error_at_distance(
             double angle_rad,
             double target_x_ft,
             double target_y_ft,
-            double *out_error_ft);
+            double &error_ft_out);
 
         BCLIBC_StatusCode init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData *result,
-            BCLIBC_OutOfRangeError *error);
+            BCLIBC_ZeroInitialData &result,
+            BCLIBC_OutOfRangeError &error);
 
         BCLIBC_StatusCode zero_angle_with_fallback(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error);
 
         BCLIBC_StatusCode zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error);
 
-        BCLIBC_StatusCode range_for_angle(double angle_rad, double *result);
+        BCLIBC_StatusCode range_for_angle(double angle_rad, double &result);
 
         BCLIBC_StatusCode find_max_range(
             double low_angle_deg,
             double high_angle_deg,
             double APEX_IS_MAX_RANGE_RADIANS,
-            BCLIBC_MaxRangeResult *result);
+            BCLIBC_MaxRangeResult &result);
 
         BCLIBC_StatusCode find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error);
     };
 };
 

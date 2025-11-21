@@ -31,14 +31,8 @@ namespace bclibc
     enum class BCLIBC_ErrorType
     {
         // General
-        NO_ERROR,
-        ZERO_DIVISION_ERROR,
         VALUE_ERROR,
-        BASE_TRAJ_INTERP_KEY_ERROR,
         INDEX_ERROR,
-        MEMORY_ERROR,
-        ARITHMETIC_ERROR,
-        INPUT_ERROR,
         RUNTIME_ERROR,
         // Special
         ZERO_FINDING_ERROR,

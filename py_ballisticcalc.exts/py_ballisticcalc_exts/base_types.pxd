@@ -1,6 +1,5 @@
 from libcpp.vector cimport vector
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorType
 
 
 cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
@@ -77,8 +76,8 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
 
         void update_density_factor_and_mach_for_altitude(
             double altitude,
-            double *density_ratio_ptr,
-            double *mach_ptr
+            double &density_ratio_out,
+            double &mach_out
         ) const
 
     cdef cppclass BCLIBC_Coriolis:
@@ -112,17 +111,17 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double time,
             double distance_ft,
             double drop_ft,
-            double *delta_y,
-            double *delta_z
+            double &delta_y,
+            double &delta_z
         ) const
 
         BCLIBC_V3dT adjust_range(
-            double time, const BCLIBC_V3dT *range_vector
+            double time, const BCLIBC_V3dT &range_vector
         ) const
 
         void coriolis_acceleration_local(
-            const BCLIBC_V3dT *velocity_ptr,
-            BCLIBC_V3dT *accel_ptr
+            const BCLIBC_V3dT &velocity_vector,
+            BCLIBC_V3dT &accel_out
         ) const
 
     cdef cppclass BCLIBC_Wind:
@@ -140,7 +139,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double MAX_DISTANCE_FEET
         ) except+
 
-        BCLIBC_V3dT as_vector() const
+        BCLIBC_V3dT as_V3dT() const
 
     cdef cppclass BCLIBC_WindSock:
         vector[BCLIBC_Wind] winds
@@ -149,10 +148,10 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT last_vector_cache
 
         BCLIBC_WindSock() except+
-        void push(BCLIBC_Wind wind)
-        BCLIBC_ErrorType update_cache()
+        void push(const BCLIBC_Wind &wind) except+
+        void update_cache() except+
         BCLIBC_V3dT current_vector() const
-        BCLIBC_V3dT vector_for_range(double next_range_param)
+        BCLIBC_V3dT vector_for_range(double next_range_param) except+
 
     ctypedef enum BCLIBC_TrajFlag:
         BCLIBC_TRAJ_FLAG_NONE = 0,
@@ -213,7 +212,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             BCLIBC_WindSock wind_sock,
             BCLIBC_TrajFlag filter_flags) except+
 
-        BCLIBC_ErrorType update_stability_coefficient() noexcept nogil
+        void update_stability_coefficient() except +ZeroDivisionError
         double spin_drift(double time) const
         double drag_by_mach(double mach) const
 

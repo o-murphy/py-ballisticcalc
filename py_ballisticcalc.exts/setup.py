@@ -29,7 +29,7 @@ def env_var_is_enabled(var: str):
     return os.environ.get(var, "0").lower() in _ENV_VAR_IS_ON
 
 
-DISABLE_SHARED_STRIP = env_var_is_enabled("DISABLE_SHARED_STRIP")
+DISABLE_STRIP = env_var_is_enabled("DISABLE_SHARED_STRIP")
 ENABLE_CYTHON_COVERAGE = env_var_is_enabled("CYTHON_COVERAGE")
 ENABLE_CYTHON_SAFETY = env_var_is_enabled("CYTHON_SAFETY")
 
@@ -107,10 +107,10 @@ SOURCE_PATHS = {
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
 _ERR_STACK_DEPS = set(["error_stack"])
-_BCLIBC_DEPS = set([*_ERR_STACK_DEPS, "v3d", "types"])
+_BASE_TYPES_DEPS = set(["v3d", "types"])
 _INTERP_DEPS = set(["interp"])
-_TRAJ_DATA_DEPS = set([*_BCLIBC_DEPS, *_INTERP_DEPS, "traj_data"])
-_BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
+_TRAJ_DATA_DEPS = set([*_BASE_TYPES_DEPS, *_INTERP_DEPS, "traj_data"])
+_BIND_DEPS = set([*_ERR_STACK_DEPS, *_BASE_TYPES_DEPS, "bind"])
 _ENGINE_DEPS = set([*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"])
 _RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
 _EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
@@ -157,8 +157,8 @@ elif is_macos:
 else:
     # GCC/Clang flags
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
-    if DISABLE_SHARED_STRIP:
+    cpp_compile_args = ["-fopenmp", "-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
+    if DISABLE_STRIP:
         cpp_extra_link_args = []
     else:
         # c_compile_args = ["-O3", "-std=c99", "-DNDEBUG"]

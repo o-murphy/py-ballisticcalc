@@ -10,8 +10,8 @@ namespace bclibc
     {
     public:
         BCLIBC_TrajectoryDataFilter(
-            std::vector<BCLIBC_TrajectoryData> *records,
-            const BCLIBC_ShotProps *props,
+            std::vector<BCLIBC_TrajectoryData> &records,
+            const BCLIBC_ShotProps &props,
             BCLIBC_TrajFlag filter_flags,
             double range_limit = 0.0,
             double range_step = 0.0,
@@ -21,7 +21,7 @@ namespace bclibc
         void init(const BCLIBC_BaseTrajData &data);
 
     public:
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData &data) override;
+        void handle(const BCLIBC_BaseTrajData &data) override;
 
         void record(const BCLIBC_BaseTrajData &new_data);
         std::vector<BCLIBC_TrajectoryData> const &get_records() const;
@@ -35,8 +35,8 @@ namespace bclibc
         static constexpr double SEPARATE_ROW_TIME_DELTA = 1e-5;
 
         // data fields
-        std::vector<BCLIBC_TrajectoryData> *records;
-        const BCLIBC_ShotProps *props;
+        std::vector<BCLIBC_TrajectoryData> &records;
+        const BCLIBC_ShotProps &props;
         BCLIBC_TrajFlag filter;
         double time_of_last_record;
         double time_step;
@@ -56,7 +56,7 @@ namespace bclibc
             TimeAccessor getTime);
 
         bool can_interpolate(const BCLIBC_BaseTrajData &new_data) const;
-        void add_row(std::vector<BCLIBC_FlaggedData> *rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
+        void add_row(std::vector<BCLIBC_FlaggedData> &rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
     };
 };
 

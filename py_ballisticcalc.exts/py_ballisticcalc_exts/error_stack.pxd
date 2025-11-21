@@ -18,17 +18,10 @@ cdef extern from "include/bclibc/error_stack.hpp" namespace "bclibc" nogil:
         RANGE_FOR_ANGLE
 
     cdef enum class BCLIBC_ErrorType:
-        NO_ERROR
-        ZERO_DIVISION_ERROR
         VALUE_ERROR
-        BASE_TRAJ_INTERP_KEY_ERROR
         INDEX_ERROR
-        MEMORY_ERROR
-        ARITHMETIC_ERROR
-        INPUT_ERROR
         RUNTIME_ERROR
 
-        APEX_ERROR
         ZERO_FINDING_ERROR
         OUT_OF_RANGE_ERROR
 

@@ -124,11 +124,7 @@ namespace bclibc
           wind_sock(wind_sock),
           filter_flags(filter_flags)
     {
-        // Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-        if (this->update_stability_coefficient() != BCLIBC_ErrorType::NO_ERROR)
-        {
-            throw std::runtime_error("Zero division detected in BCLIBC_ShotProps.update_stability_coefficient");
-        };
+        this->update_stability_coefficient();
     };
 
     BCLIBC_ShotProps::~BCLIBC_ShotProps() {
@@ -191,9 +187,8 @@ namespace bclibc
      * - $\text{ftp}$ (Temperature/Pressure Factor)
      * - $S_g = \text{sd} \cdot \text{fv} \cdot \text{ftp}$
      *
-     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input, BCLIBC_ErrorType::ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
      */
-    BCLIBC_ErrorType BCLIBC_ShotProps::update_stability_coefficient()
+    void BCLIBC_ShotProps::update_stability_coefficient()
     {
         /* Miller stability coefficient */
         double twist_rate, length, sd, fv, ft, pt, ftp;
@@ -221,8 +216,7 @@ namespace bclibc
             else
             {
                 this->stability_coefficient = 0.0;
-                BCLIBC_ERROR("Division by zero in stability coefficient calculation.");
-                return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if denominator is zero
+                throw std::domain_error("Division by zero in stability coefficient calculation.");
             }
 
             fv = std::pow(this->muzzle_velocity / 2800.0, 1.0 / 3.0);
@@ -237,8 +231,7 @@ namespace bclibc
             else
             {
                 this->stability_coefficient = 0.0;
-                BCLIBC_ERROR("Division by zero in ftp calculation.");
-                return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if pt is zero
+                throw std::domain_error("Division by zero in ftp calculation.");
             }
 
             this->stability_coefficient = sd * fv * ftp;
@@ -249,7 +242,6 @@ namespace bclibc
             this->stability_coefficient = 0.0;
         }
         BCLIBC_DEBUG("Updated stability coefficient: %.6f", this->stability_coefficient);
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
@@ -403,8 +395,8 @@ namespace bclibc
      */
     void BCLIBC_Atmosphere::update_density_factor_and_mach_for_altitude(
         double altitude,
-        double *density_ratio_ptr,
-        double *mach_ptr) const
+        double &density_ratio_out,
+        double &mach_out) const
     {
         const double alt_diff = altitude - this->_a0;
 
@@ -412,8 +404,8 @@ namespace bclibc
         if (std::fabs(alt_diff) < 30.0)
         {
             // Close enough to base altitude, use stored values
-            *density_ratio_ptr = this->density_ratio;
-            *mach_ptr = this->_mach;
+            density_ratio_out = this->density_ratio;
+            mach_out = this->_mach;
             return;
         }
 
@@ -450,13 +442,13 @@ namespace bclibc
         // Density ratio calculation: $\frac{\rho}{\rho_{\text{std}}} = \frac{\rho_0}{\rho_{\text{std}}} \cdot \frac{P \cdot T_0}{P_0 \cdot T}$
         const double density_delta = (base_kelvin * pressure) / (this->_p0 * kelvin);
 
-        *density_ratio_ptr = this->density_ratio * density_delta;
+        density_ratio_out = this->density_ratio * density_delta;
 
         // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
-        *mach_ptr = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
+        mach_out = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
 
         BCLIBC_DEBUG("Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
-                     altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
+                     altitude, this->_t0, celsius, this->_p0, pressure, density_ratio_out);
     };
 
     BCLIBC_Wind::BCLIBC_Wind(double velocity,
@@ -477,7 +469,7 @@ namespace bclibc
      *
      * @return A BCLIBC_V3dT structure representing the wind velocity vector (x=downrange, y=vertical, z=crossrange).
      */
-    BCLIBC_V3dT BCLIBC_Wind::as_vector() const
+    BCLIBC_V3dT BCLIBC_Wind::as_V3dT() const
     {
         const double dir = this->direction_from;
         const double vel = this->velocity;
@@ -495,17 +487,14 @@ namespace bclibc
      * Initializes state variables to their defaults and calculates the initial cache.
      */
     BCLIBC_WindSock::BCLIBC_WindSock()
-        // Використовуємо список ініціалізації для гарантованого встановлення значень
         : current(0),
           next_range(BCLIBC_cMaxWindDistanceFeet),
           last_vector_cache({0.0, 0.0, 0.0})
     {
-        // C++ конструктори не можуть повертати значення.
-        // update_cache() викликається тут для початкового стану (який буде нульовим, оскільки winds порожній).
         update_cache();
     }
 
-    void BCLIBC_WindSock::push(BCLIBC_Wind wind)
+    void BCLIBC_WindSock::push(const BCLIBC_Wind &wind)
     {
         this->winds.push_back(wind);
     }
@@ -528,15 +517,13 @@ namespace bclibc
      * Fetches the data for the wind segment at `ws->current`, converts it to a vector,
      * and updates `ws->last_vector_cache` and `ws->next_range`.
      * If `ws->current` is out of bounds, the cache is set to a zero vector and the next range to `BCLIBC_cMaxWindDistanceFeet`.
-     *
-     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input.
      */
-    BCLIBC_ErrorType BCLIBC_WindSock::update_cache()
+    void BCLIBC_WindSock::update_cache()
     {
         if (this->current < this->winds.size())
         {
             const BCLIBC_Wind &cur_wind = this->winds[this->current];
-            this->last_vector_cache = cur_wind.as_vector();
+            this->last_vector_cache = cur_wind.as_V3dT();
             this->next_range = cur_wind.until_distance;
         }
         else
@@ -546,7 +533,6 @@ namespace bclibc
             this->last_vector_cache.z = 0.0;
             this->next_range = BCLIBC_cMaxWindDistanceFeet;
         }
-        return BCLIBC_ErrorType::NO_ERROR;
     }
 
     /**
@@ -579,11 +565,7 @@ namespace bclibc
             {
                 // Move to the next wind segment
                 // If cache update fails, return zero vector
-                if (this->update_cache() != BCLIBC_ErrorType::NO_ERROR)
-                {
-                    BCLIBC_WARN("Failed. Returning zero vector.");
-                    return zero_vector;
-                }
+                this->update_cache();
             }
         }
 
@@ -666,13 +648,13 @@ namespace bclibc
         double time,
         double distance_ft,
         double drop_ft,
-        double *delta_y,
-        double *delta_z) const
+        double &delta_y,
+        double &delta_z) const
     {
         if (!this->flat_fire_only)
         {
-            *delta_y = 0.0;
-            *delta_z = 0.0;
+            delta_y = 0.0;
+            delta_z = 0.0;
             return;
         }
 
@@ -683,24 +665,24 @@ namespace bclibc
             double vertical_factor = -2.0 * BCLIBC_cEarthAngularVelocityRadS * this->muzzle_velocity_fps * this->cos_lat * this->sin_az;
             vertical = drop_ft * (vertical_factor / BCLIBC_cGravityImperial);
         }
-        *delta_y = vertical;
-        *delta_z = horizontal;
+        delta_y = vertical;
+        delta_z = horizontal;
     };
 
     BCLIBC_V3dT BCLIBC_Coriolis::adjust_range(
-        double time, const BCLIBC_V3dT *range_vector) const
+        double time, const BCLIBC_V3dT &range_vector) const
     {
         if (!this || !this->flat_fire_only)
         {
-            return *range_vector;
+            return range_vector;
         }
         double delta_y, delta_z;
-        this->flat_fire_offsets(time, range_vector->x, range_vector->y, &delta_y, &delta_z);
+        this->flat_fire_offsets(time, range_vector.x, range_vector.y, delta_y, delta_z);
         if (delta_y == 0.0 && delta_z == 0.0)
         {
-            return *range_vector;
+            return range_vector;
         }
-        return BCLIBC_V3dT{range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
+        return BCLIBC_V3dT{range_vector.x, range_vector.y + delta_y, range_vector.z + delta_z};
     }
 
     /**
@@ -717,20 +699,20 @@ namespace bclibc
      * @param accel_ptr Pointer to store the calculated Coriolis acceleration vector (local coordinates).
      */
     void BCLIBC_Coriolis::coriolis_acceleration_local(
-        const BCLIBC_V3dT *velocity_ptr,
-        BCLIBC_V3dT *accel_ptr) const
+        const BCLIBC_V3dT &velocity_vector,
+        BCLIBC_V3dT &accel_out) const
     {
         // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
         if (this->flat_fire_only)
         {
-            *accel_ptr = BCLIBC_V3dT{0.0, 0.0, 0.0};
+            accel_out = BCLIBC_V3dT{0.0, 0.0, 0.0};
             return;
         }
 
         // Cache frequently used values
-        const double vx = velocity_ptr->x;
-        const double vy = velocity_ptr->y;
-        const double vz = velocity_ptr->z;
+        const double vx = velocity_vector.x;
+        const double vy = velocity_vector.y;
+        const double vz = velocity_vector.z;
 
         const double range_east = this->range_east;
         const double range_north = this->range_north;
@@ -754,9 +736,9 @@ namespace bclibc
         const double accel_up = factor * (-cos_lat * vel_east);
 
         // Transform back to local coordinates (x=range, y=up, z=crossrange)
-        accel_ptr->x = accel_east * range_east + accel_north * range_north;
-        accel_ptr->y = accel_up;
-        accel_ptr->z = accel_east * cross_east + accel_north * cross_north;
+        accel_out.x = accel_east * range_east + accel_north * range_north;
+        accel_out.y = accel_up;
+        accel_out.z = accel_east * cross_east + accel_north * cross_north;
     }
 
 }; // namespace bclibc

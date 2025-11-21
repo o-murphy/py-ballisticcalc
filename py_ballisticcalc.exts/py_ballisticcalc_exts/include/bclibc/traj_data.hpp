@@ -105,24 +105,24 @@ namespace bclibc
         double get_key_val(BCLIBC_BaseTrajData_InterpKey key_kind) const;
         double slant_val_buf(double ca, double sa) const;
 
-        static BCLIBC_ErrorType interpolate(
+        static void interpolate(
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             const BCLIBC_BaseTrajData &p0,
             const BCLIBC_BaseTrajData &p1,
             const BCLIBC_BaseTrajData &p2,
-            BCLIBC_BaseTrajData *out);
+            BCLIBC_BaseTrajData &out);
 
         static void interpolate3pt_vectorized(
             double x, double ox0, double ox1, double ox2,
             const BCLIBC_BaseTrajData &p0, const BCLIBC_BaseTrajData &p1, const BCLIBC_BaseTrajData &p2,
-            BCLIBC_BaseTrajData *out, BCLIBC_BaseTrajData_InterpKey skip_key);
+            BCLIBC_BaseTrajData &out, BCLIBC_BaseTrajData_InterpKey skip_key);
     };
 
     struct BCLIBC_BaseTrajDataHandlerInterface
     {
         virtual ~BCLIBC_BaseTrajDataHandlerInterface() = default;
-        virtual BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData &data) = 0;
+        virtual void handle(const BCLIBC_BaseTrajData &data) = 0;
     };
 
     class BCLIBC_BaseTrajDataHandlerCompositor : public BCLIBC_BaseTrajDataHandlerInterface
@@ -136,7 +136,7 @@ namespace bclibc
         BCLIBC_BaseTrajDataHandlerCompositor(Handlers *...args)
             : handlers_{args...} {}
 
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData &data) override;
+        void handle(const BCLIBC_BaseTrajData &data) override;
 
         void add_handler(BCLIBC_BaseTrajDataHandlerInterface *handler)
         {
@@ -161,7 +161,7 @@ namespace bclibc
         BCLIBC_BaseTrajSeq() = default;
         ~BCLIBC_BaseTrajSeq();
 
-        BCLIBC_ErrorType handle(const BCLIBC_BaseTrajData &data) override;
+        void handle(const BCLIBC_BaseTrajData &data) override;
 
         /**
          * @brief Appends a new trajectory point to the end of the sequence.
@@ -177,10 +177,8 @@ namespace bclibc
          * @param vy Y velocity.
          * @param vz Z velocity.
          * @param mach Mach number.
-         * @return BCLIBC_ErrorType NO_ERROR on success, MEMORY_ERROR if allocation fails,
-         *         INPUT_ERROR if seq is NULL.
          */
-        BCLIBC_ErrorType append(const BCLIBC_BaseTrajData &data);
+        void append(const BCLIBC_BaseTrajData &data);
 
         /**
          * Returns the length of the trajectory sequence.
@@ -195,18 +193,6 @@ namespace bclibc
          * @return capacity of the trajectory sequence, or -1 if seq is NULL.
          */
         ssize_t get_capacity() const;
-
-        /**
-         * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
-         *
-         * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
-         * @return 1 on success, 0 on failure.
-         */
-        BCLIBC_ErrorType interpolate_at(
-            ssize_t idx,
-            BCLIBC_BaseTrajData_InterpKey key_kind,
-            double key_value,
-            BCLIBC_BaseTrajData *out) const;
 
         /**
          * Retrieve a pointer to a trajectory element at the given index.
@@ -225,13 +211,10 @@ namespace bclibc
          *
          * @param idx Index of the trajectory point to retrieve.
          * @param out Pointer to BCLIBC_BaseTrajData where results will be stored.
-         * @return NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-         *         INPUT_ERROR if seq or out is NULL,
-         *         INDEX_ERROR if idx is out of bounds.
          */
-        BCLIBC_ErrorType get_item(
+        void get_item(
             ssize_t idx,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * @brief Get trajectory data at a given key value, with optional start time.
@@ -240,13 +223,12 @@ namespace bclibc
          * @param key_value Key value to get.
          * @param start_from_time Optional start time (use -1 if not used).
          * @param out Output trajectory data.
-         * @return BCLIBC_ErrorType NO_ERROR if successful, otherwise error code.
          */
-        BCLIBC_ErrorType get_at(
+        void get_at(
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             double start_from_time,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * @brief Interpolates trajectory data at a given slant height.
@@ -259,30 +241,11 @@ namespace bclibc
          * @param look_angle_rad Look angle in radians.
          * @param value Target slant height for interpolation.
          * @param out Pointer to BCLIBC_BaseTrajData where interpolated results will be stored.
-         * @return NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-         *         INPUT_ERROR if seq or out is NULL,
-         *         VALUE_ERROR if not enough points or interpolation fails.
          */
-        BCLIBC_ErrorType get_at_slant_height(
+        void get_at_slant_height(
             double look_angle_rad,
             double value,
-            BCLIBC_BaseTrajData *out) const;
-
-    private:
-        /**
-         * @brief Interpolate at center index with logging.
-         *
-         * @param idx Center index for interpolation.
-         * @param key_kind Kind of interpolation key.
-         * @param key_value Key value to interpolate at.
-         * @param out Output trajectory data.
-         * @return BCLIBC_ErrorType NO_ERROR if successful, otherwise error code.
-         */
-        BCLIBC_ErrorType interpolate_at_center(
-            ssize_t idx,
-            BCLIBC_BaseTrajData_InterpKey key_kind,
-            double key_value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * Interpolates a trajectory point at a specific index using its neighbors.
@@ -295,28 +258,42 @@ namespace bclibc
          * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
          * @param key_value The target value of the key to interpolate at.
          * @param out Pointer to a BCLIBC_BaseTrajData struct where the interpolated result will be stored.
-         * @return NO_ERROR on success, or an BCLIBC_ErrorType on failure.
          */
-        BCLIBC_ErrorType interpolate_raw(
+
+        void interpolate_at(
             ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
+
+    private:
+        /**
+         * @brief Interpolate at center index with logging.
+         *
+         * @param idx Center index for interpolation.
+         * @param key_kind Kind of interpolation key.
+         * @param key_value Key value to interpolate at.
+         * @param out Output trajectory data.
+         */
+        void interpolate_at_center(
+            ssize_t idx,
+            BCLIBC_BaseTrajData_InterpKey key_kind,
+            double key_value,
+            BCLIBC_BaseTrajData &out) const;
 
         /**
-         * @brief Try to get exact value at index, return NO_ERROR if successful.
+         * @brief Try to get exact value at index
          *
          * @param idx Index to check.
          * @param key_kind Kind of key.
          * @param key_value Key value to match.
          * @param out Output trajectory data.
-         * @return NO_ERROR if exact match found, otherwise VALUE_ERROR.
          */
-        BCLIBC_ErrorType try_get_exact(
+        void try_get_exact(
             ssize_t idx,
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
-            BCLIBC_BaseTrajData *out) const;
+            BCLIBC_BaseTrajData &out) const;
 
         /**
          * @brief Finds the center index for 3-point interpolation in a trajectory sequence.
@@ -416,8 +393,8 @@ namespace bclibc
         BCLIBC_TrajectoryData() = default;
         BCLIBC_TrajectoryData(const BCLIBC_TrajectoryData &) = default;
         BCLIBC_TrajectoryData &operator=(const BCLIBC_TrajectoryData &) = default;
-        BCLIBC_TrajectoryData(BCLIBC_TrajectoryData &&) noexcept = default;
-        BCLIBC_TrajectoryData &operator=(BCLIBC_TrajectoryData &&) noexcept = default;
+        BCLIBC_TrajectoryData(BCLIBC_TrajectoryData &&) = default;
+        BCLIBC_TrajectoryData &operator=(BCLIBC_TrajectoryData &&) = default;
         ~BCLIBC_TrajectoryData() = default;
 
         // BCLIBC_TrajectoryData(
@@ -442,7 +419,7 @@ namespace bclibc
         // BCLIBC_TrajectoryData();
 
         BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
+            const BCLIBC_ShotProps &props,
             double time,
             const BCLIBC_V3dT &range_vector,
             const BCLIBC_V3dT &velocity_vector,
@@ -450,12 +427,12 @@ namespace bclibc
             BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
 
         BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
+            const BCLIBC_ShotProps &props,
             const BCLIBC_BaseTrajData &data,
             BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
 
         BCLIBC_TrajectoryData(
-            const BCLIBC_ShotProps *props,
+            const BCLIBC_ShotProps &props,
             const BCLIBC_FlaggedData &data);
 
         static BCLIBC_TrajectoryData interpolate(
