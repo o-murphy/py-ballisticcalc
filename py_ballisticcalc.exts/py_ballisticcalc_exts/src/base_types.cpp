@@ -127,7 +127,8 @@ namespace bclibc
         this->update_stability_coefficient();
     };
 
-    BCLIBC_ShotProps::~BCLIBC_ShotProps() {
+    BCLIBC_ShotProps::~BCLIBC_ShotProps()
+    {
         BCLIBC_DEBUG("Approx size of shotprops in memory: %zu bytes", this->size());
     };
 
@@ -245,90 +246,142 @@ namespace bclibc
     };
 
     /**
-     * @brief Interpolates a value from a Mach list and a curve using the PCHIP method.
+     * @brief Interpolates a value from a Mach list and curve using PCHIP cubic spline method.
      *
-     * This function performs an optimized binary search to find the correct segment
-     * in the `mach_list_ptr` and then uses the corresponding cubic polynomial segment
-     * from `curve_ptr` (Horner's method) to interpolate the value at the given Mach number.
+     * This function performs optimized interpolation of ballistic coefficients or drag values
+     * as a function of Mach number. It uses:
+     * - Hybrid search strategy (linear for small datasets, binary for large)
+     * - PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) representation
+     * - Horner's method for efficient polynomial evaluation
      *
-     * The curve is assumed to represent the ballistic coefficient or a drag curve.
+     * The algorithm operates in several stages:
+     * 1. Validates data consistency and caches array sizes
+     * 2. Handles boundary conditions (clamps to valid range)
+     * 3. Performs segment search using optimal algorithm based on data size
+     * 4. Evaluates cubic polynomial for the located segment
      *
-     * @param mach_list_ptr Pointer to the BCLIBC_MachList containing the Mach segment endpoints (x values).
-     * @param curve_ptr Pointer to the BCLIBC_Curve containing the PCHIP cubic segment coefficients (a, b, c, d).
-     * @param mach The Mach number at which to interpolate.
-     * @return The interpolated value (e.g., drag coefficient or BC factor). Returns 0.0 if insufficient data or out of range.
+     * @param mach_list_ptr Reference to the Mach number breakpoints (x-coordinates of spline nodes).
+     *                      Must be monotonically increasing.
+     * @param curve_ptr Reference to the PCHIP cubic polynomial coefficients for each segment.
+     *                  Each segment is defined by coefficients (a, b, c, d) representing:
+     *                  y(x) = a*(x-x_i)³ + b*(x-x_i)² + c*(x-x_i) + d
+     * @param mach The Mach number at which to interpolate the value.
+     *
+     * @return The interpolated drag coefficient or ballistic coefficient value.
+     *         Returns 0.0 if data is insufficient or inconsistent.
+     *
+     * @note Performance characteristics:
+     *       - O(1) for boundary values
+     *       - O(n) for datasets with n ≤ 15 (linear search)
+     *       - O(log n) for datasets with n > 15 (binary search)
+     *       - The threshold of 15 is empirically determined for typical ballistic curves
      */
-    static inline double calculateByCurveAndMachList(
-        const BCLIBC_MachList *mach_list_ptr, // const std::vector<double>*
-        const BCLIBC_Curve *curve_ptr,        // const std::vector<BCLIBC_CurvePoint>*
+    static inline double calculate_by_curve_and_mach_list(
+        const BCLIBC_MachList &mach_list_ptr,
+        const BCLIBC_Curve &curve_ptr,
         double mach)
     {
-        // Curve has (n-1) segments. MachList has n nodes.
-        const size_t nm1_size_t = curve_ptr->size(); // number of segments (n-1)
-        if (nm1_size_t == 0)
+        // === Data Validation and Caching ===
+        // Cache sizes to avoid repeated method calls
+        const size_t nm1_size_t = curve_ptr.size();   // Number of cubic segments (n-1)
+        const size_t n_size_t = mach_list_ptr.size(); // Number of Mach breakpoints (n)
+
+        // Validate data consistency
+        // For a valid PCHIP spline: n_segments = n_points - 1
+        if (n_size_t < 2 || n_size_t != nm1_size_t + 1)
         {
-            // insufficient curve data
+            // Insufficient data or size mismatch between breakpoints and segments
             return 0.0;
         }
 
-        const size_t n_size_t = mach_list_ptr->size(); // number of Mach nodes (n)
-        if (n_size_t != nm1_size_t + 1)
-        {
-            // data mismatch; cannot interpolate safely
-            return 0.0;
-        }
+        const int nm1 = (int)nm1_size_t; // Last valid segment index
+        const int n = (int)n_size_t;     // Total number of breakpoints
 
-        const int nm1 = (int)nm1_size_t; // n-1
-        const int n = nm1 + 1;           // n
+        // Cache raw pointers for faster array access
+        // Direct pointer access avoids bounds checking and iterator overhead
+        const double *xs = mach_list_ptr.data();
+        const BCLIBC_CurvePoint *segments = curve_ptr.data();
 
-        const double *xs = mach_list_ptr->data();
+        int i; // Index of the segment containing the interpolation point
 
-        if (n < 2)
-        {
-            // insufficient Mach data
-            return 0.0;
-        }
-
-        // Determine segment index i such that xs[i] <= mach <= xs[i+1]
-        int i;
-
-        // Clamp to range endpoints
+        // === Boundary Handling ===
+        // Clamp to valid range and avoid extrapolation
         if (mach <= xs[0])
         {
-            i = 0; // use first segment
+            // Value at or below lower bound: use first segment
+            i = 0;
         }
         else if (mach >= xs[n - 1])
         {
-            i = nm1 - 1; // last valid segment index = (n-1)-1 = n-2
+            // Value at or above upper bound: use last segment
+            i = nm1 - 1;
         }
         else
         {
-            // Optimized binary search
-            int lo = 0, hi = n - 1;
-            while (lo < hi)
-            {
-                int mid = lo + ((hi - lo) >> 1);
-                if (xs[mid] < mach)
-                    lo = mid + 1;
-                else
-                    hi = mid;
-            }
-            i = lo - 1;
+            // === Interior Point Search ===
+            // Goal: find segment i such that xs[i] <= mach < xs[i+1]
 
-            // Ensure index in valid segment range
-            if (i < 0)
-                i = 0;
-            else if (i > nm1 - 1)
-                i = nm1 - 1;
+            // Hybrid search strategy based on data size:
+            // For small datasets (typical ballistic curves with < 20 points),
+            // linear search outperforms binary search due to:
+            // - Better cache locality (sequential access)
+            // - Lower loop control overhead
+            // - Branch predictor friendly (predictable loop pattern)
+
+            if (n <= 15)
+            {
+                // Linear search for small datasets: O(n)
+                int idx = 0;
+                // Find the first breakpoint greater than mach
+                while (idx < nm1 && xs[idx + 1] < mach)
+                {
+                    idx++;
+                }
+                i = idx;
+            }
+            else
+            {
+                // Binary search for large datasets: O(log n)
+                // Find the leftmost breakpoint >= mach
+                int lo = 0, hi = n - 1;
+
+                while (lo < hi)
+                {
+                    // Use bit shift for division by 2 (compiler optimization hint)
+                    int mid = lo + ((hi - lo) >> 1);
+
+                    if (xs[mid] < mach)
+                        lo = mid + 1;
+                    else
+                        hi = mid;
+                }
+
+                // Adjust to get the segment index (interval to the left)
+                i = lo - 1;
+
+                // Boundary protection for edge cases
+                if (i < 0)
+                    i = 0;
+                else if (i > nm1 - 1)
+                    i = nm1 - 1;
+            }
         }
 
-        // Access the corresponding segment safely
-        const BCLIBC_CurvePoint seg = (*curve_ptr)[i];
+        // === Polynomial Evaluation ===
+        // Extract the cubic polynomial coefficients for the located segment
+        const BCLIBC_CurvePoint seg = segments[i];
 
+        // Calculate displacement from segment start
         const double dx = mach - xs[i];
 
-        // Horner's method for PCHIP interpolation:
-        // y = d + dx * (c + dx * (b + dx * a))
+        // Evaluate cubic polynomial using Horner's method
+        // Standard form: y = a*dx³ + b*dx² + c*dx + d
+        // Horner's form: y = d + dx*(c + dx*(b + dx*a))
+        //
+        // Horner's method reduces:
+        // - Multiplications: from 6 to 3
+        // - Additions: from 3 to 3 (same)
+        // - Improves numerical stability by reducing intermediate value magnitudes
         return seg.d + dx * (seg.c + dx * (seg.b + dx * seg.a));
     }
 
@@ -336,7 +389,7 @@ namespace bclibc
      * @brief Computes the scaled drag force coefficient ($C_d$) for a projectile at a given Mach number.
      *
      * This function calculates the drag coefficient using a cubic spline interpolation
-     * (via `calculateByCurveAndMachList`) and scales it by a constant factor and the
+     * (via `calculate_by_curve_and_mach_list`) and scales it by a constant factor and the
      * bullet's ballistic coefficient (BC). The result is $\frac{C_d}{\text{BC} \cdot \text{scale\_factor}}$.
      *
      * The constant $2.08551\text{e-}04$ is a combination of standard air density,
@@ -350,9 +403,9 @@ namespace bclibc
      */
     double BCLIBC_ShotProps::drag_by_mach(double mach) const
     {
-        double cd = calculateByCurveAndMachList(
-            &this->mach_list,
-            &this->curve,
+        double cd = calculate_by_curve_and_mach_list(
+            this->mach_list,
+            this->curve,
             mach);
         return cd * 2.08551e-04 / this->bc;
     }
