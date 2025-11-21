@@ -445,19 +445,16 @@ cdef class CythonizedBaseIntegrationEngine:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         self._init_trajectory(shot_info)
-        cdef BCLIBC_MaxRangeResult result = {}
-        cdef BCLIBC_StatusCode status = self._this.find_max_range(
-            low_angle_deg,
-            high_angle_deg,
-            _APEX_IS_MAX_RANGE_RADIANS,
-            result
-        )
-
-        if status == BCLIBC_StatusCode.SUCCESS:
-            return result
-
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-        self._raise_solver_runtime_error(err)
+        cdef const BCLIBC_ErrorFrame *err
+        try:
+            return self._this.find_max_range(
+                low_angle_deg,
+                high_angle_deg,
+                _APEX_IS_MAX_RANGE_RADIANS,
+            )
+        except RuntimeError as e:
+            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+            self._raise_solver_runtime_error(err)
 
     cdef BCLIBC_BaseTrajData _find_apex(
         CythonizedBaseIntegrationEngine self,

@@ -71,11 +71,11 @@ namespace bclibc
         double look_angle_rad;
     } BCLIBC_OutOfRangeError;
 
-    typedef struct
+    struct BCLIBC_MaxRangeResult
     {
         double max_range_ft;
         double angle_at_max_rad;
-    } BCLIBC_MaxRangeResult;
+    };
 
     typedef struct
     {
@@ -155,13 +155,12 @@ namespace bclibc
             BCLIBC_OutOfRangeError &range_error,
             BCLIBC_ZeroFindingError &zero_error);
 
-        BCLIBC_StatusCode range_for_angle(double angle_rad, double &result);
+        double range_for_angle(double angle_rad);
 
-        BCLIBC_StatusCode find_max_range(
+        BCLIBC_MaxRangeResult find_max_range(
             double low_angle_deg,
             double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            BCLIBC_MaxRangeResult &result);
+            double APEX_IS_MAX_RANGE_RADIANS);
 
         BCLIBC_StatusCode find_zero_angle(
             double distance,
@@ -176,13 +175,5 @@ namespace bclibc
         inline void integrate_func_ptr_not_null();
     };
 };
-
-#define BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, angle, y_out) \
-    do                                                                    \
-    {                                                                     \
-        (status) = this->range_for_angle((angle), (y_out));               \
-        if ((status) != BCLIBC_StatusCode::SUCCESS)                       \
-            return (status);                                              \
-    } while (0)
 
 #endif // BCLIBC_ENGINE_HPP

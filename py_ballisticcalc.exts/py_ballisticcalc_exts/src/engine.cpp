@@ -141,7 +141,7 @@ namespace bclibc
         catch (const std::exception &e)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
-            throw std::runtime_error("Runtime error (No apex flagged in trajectory data)"); 
+            throw std::runtime_error("Runtime error (No apex flagged in trajectory data)");
         }
     };
 
@@ -490,7 +490,7 @@ namespace bclibc
         return BCLIBC_StatusCode::SUCCESS;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::range_for_angle(double angle_rad, double &result)
+    double BCLIBC_Engine::range_for_angle(double angle_rad)
     {
         double ca;
         double sa;
@@ -510,19 +510,10 @@ namespace bclibc
         // Update shot data
         this->shot.barrel_elevation = angle_rad;
 
-        // try:
-        result = -9e9;
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         BCLIBC_TerminationReason reason;
-        try
-        {
-            this->integrate(9e9, 9e9, 0.0, trajectory, reason);
-        }
-        catch (const std::runtime_error &e)
-        {
-            return BCLIBC_StatusCode::ERROR;
-        }
+        this->integrate(9e9, 9e9, 0.0, trajectory, reason);
         ca = std::cos(this->shot.look_angle);
         sa = std::sin(this->shot.look_angle);
         n = trajectory.get_length();
@@ -536,16 +527,14 @@ namespace bclibc
                 {
                     BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
                                     "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
-                    status = BCLIBC_StatusCode::ERROR;
-                    break; // assume INDEX_ERROR
+                    throw std::out_of_range("Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                 }
                 cur_ptr = trajectory.get_raw_item(i);
                 if (cur_ptr == nullptr)
                 {
                     BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
                                     "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
-                    status = BCLIBC_StatusCode::ERROR;
-                    break; // assume INDEX_ERROR
+                    throw std::out_of_range("Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                 }
                 h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
                 h_cur = cur_ptr->py * ca - cur_ptr->px * sa;
@@ -558,27 +547,21 @@ namespace bclibc
                     ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
                     iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
                     sdist = ix * ca + iy * sa;
-                    result = sdist;
-                    status = BCLIBC_StatusCode::SUCCESS;
-                    break;
+                    return sdist;
                 }
             }
         }
-
-        return status;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::find_max_range(
+    BCLIBC_MaxRangeResult BCLIBC_Engine::find_max_range(
         double low_angle_deg,
         double high_angle_deg,
-        double APEX_IS_MAX_RANGE_RADIANS,
-        BCLIBC_MaxRangeResult &result)
+        double APEX_IS_MAX_RANGE_RADIANS)
     {
         double look_angle_rad = this->shot.look_angle;
         double max_range_ft;
         double angle_at_max_rad;
         BCLIBC_BaseTrajData apex;
-        BCLIBC_StatusCode status;
         double sdist;
 
         // Virtually vertical shot
@@ -587,9 +570,7 @@ namespace bclibc
         {
             this->find_apex(apex);
             sdist = apex.px * std::cos(look_angle_rad) + apex.py * std::sin(look_angle_rad);
-            result.max_range_ft = sdist;
-            result.angle_at_max_rad = look_angle_rad;
-            return BCLIBC_StatusCode::SUCCESS;
+            return BCLIBC_MaxRangeResult{sdist, look_angle_rad};
         }
 
         // Backup, adjust and restore constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
@@ -614,8 +595,8 @@ namespace bclibc
         double d = a + inv_phi * h;
         double yc, yd;
 
-        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, c, yc);
-        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, d, yd);
+        yc = this->range_for_angle(c);
+        yd = this->range_for_angle(d);
 
         // Golden-section search
         for (int i = 0; i < 100; i++)
@@ -631,7 +612,7 @@ namespace bclibc
                 yd = yc;
                 h = b - a;
                 c = a + inv_phi_sq * h;
-                BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, c, yc);
+                yc = this->range_for_angle(c);
             }
             else
             {
@@ -640,16 +621,14 @@ namespace bclibc
                 yc = yd;
                 h = b - a;
                 d = a + inv_phi * h;
-                BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, d, yd);
+                yd = this->range_for_angle(d);
             }
         }
 
         angle_at_max_rad = (a + b) / 2;
-        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, angle_at_max_rad, max_range_ft);
+        max_range_ft = this->range_for_angle(angle_at_max_rad);
 
-        result.max_range_ft = max_range_ft;
-        result.angle_at_max_rad = angle_at_max_rad;
-        return BCLIBC_StatusCode::SUCCESS;
+        return BCLIBC_MaxRangeResult{max_range_ft, angle_at_max_rad};
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::find_zero_angle(
@@ -687,17 +666,11 @@ namespace bclibc
         }
 
         // 1. Find the maximum possible range to establish a search bracket.
-        BCLIBC_MaxRangeResult max_range_result;
-        status = this->find_max_range(
+        BCLIBC_MaxRangeResult max_range_result = this->find_max_range(
             0,
             90,
-            APEX_IS_MAX_RANGE_RADIANS,
-            max_range_result);
-        if (status != BCLIBC_StatusCode::SUCCESS)
-        {
-            return BCLIBC_StatusCode::ERROR;
-        }
-
+            APEX_IS_MAX_RANGE_RADIANS);
+        
         double max_range_ft = max_range_result.max_range_ft;
         double angle_at_max_rad = max_range_result.angle_at_max_rad;
 
