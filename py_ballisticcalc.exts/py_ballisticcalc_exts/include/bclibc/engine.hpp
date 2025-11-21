@@ -115,7 +115,7 @@ namespace bclibc
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason);
 
-        BCLIBC_StatusCode integrate_filtered(
+        void integrate_filtered(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
@@ -126,11 +126,10 @@ namespace bclibc
 
         void find_apex(BCLIBC_BaseTrajData &apex_out);
 
-        BCLIBC_StatusCode error_at_distance(
+        double error_at_distance(
             double angle_rad,
             double target_x_ft,
-            double target_y_ft,
-            double &error_ft_out);
+            double target_y_ft);
 
         BCLIBC_StatusCode init_zero_calculation(
             double distance,

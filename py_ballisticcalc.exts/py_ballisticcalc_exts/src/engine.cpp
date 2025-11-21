@@ -37,7 +37,7 @@ BCLIBC_Engine.zero_angle
 
 namespace bclibc
 {
-    BCLIBC_StatusCode BCLIBC_Engine::integrate_filtered(
+    void BCLIBC_Engine::integrate_filtered(
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -83,8 +83,6 @@ namespace bclibc
         {
             data_filter.finalize();
         }
-
-        return BCLIBC_StatusCode::SUCCESS;
     };
 
     void BCLIBC_Engine::integrate(
@@ -145,33 +143,20 @@ namespace bclibc
         }
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::error_at_distance(
+    double BCLIBC_Engine::error_at_distance(
         double angle_rad,
         double target_x_ft,
-        double target_y_ft,
-        double &error_ft_out)
+        double target_y_ft)
     {
-        error_ft_out = 9e9;
-
         BCLIBC_BaseTrajData hit;
         BCLIBC_BaseTrajData *last_ptr;
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
-        // try
-
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
-        BCLIBC_StatusCode status;
-        try
-        {
-            integrate(9e9, 9e9, 0.0, trajectory, reason);
-        }
-        catch (const std::runtime_error &e)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Find apex error");
-            status = BCLIBC_StatusCode::ERROR;
-        }
+        
+        integrate(9e9, 9e9, 0.0, trajectory, reason);
 
         // If trajectory is too short for cubic interpolation, treat as unreachable
         if (trajectory.get_length() >= 3)
@@ -182,24 +167,22 @@ namespace bclibc
                 try
                 {
                     trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
-                    error_ft_out = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
-                    status = BCLIBC_StatusCode::SUCCESS;
+                    return (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
                 }
                 catch (const std::exception &e)
                 {
-                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
-                    status = BCLIBC_StatusCode::ERROR;
+                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Index out of bound.");
+                    throw std::out_of_range("Index out of bound.");
                 }
             }
             else
             {
-                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Trajectory sequence error, error code: %d", status);
-                status = BCLIBC_StatusCode::ERROR;
+                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Trajectory sequence error");
+                throw std::out_of_range("Trajectory sequence error");
             }
         }
 
-        // finally:
-        return status;
+        return 9e9;
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::init_zero_calculation(
@@ -720,40 +703,25 @@ namespace bclibc
         double mid_angle, f_mid, s, next_angle, f_next;
         int converged = 0;
 
-        status = this->error_at_distance(
+        f_low = this->error_at_distance(
             low_angle,
             target_x_ft,
-            target_y_ft,
-            f_low);
-        if (status != BCLIBC_StatusCode::SUCCESS)
-        {
-            goto finally;
-        }
+            target_y_ft);
 
         // If low is exactly look angle and failed to evaluate, nudge slightly upward to bracket
         if (f_low > 1e8 && std::fabs(low_angle - look_angle_rad) < 1e-9)
         {
             low_angle = look_angle_rad + 1e-3;
-            status = this->error_at_distance(
+            f_low = this->error_at_distance(
                 low_angle,
                 target_x_ft,
-                target_y_ft,
-                f_low);
-            if (status != BCLIBC_StatusCode::SUCCESS)
-            {
-                goto finally;
-            }
+                target_y_ft);
         }
 
-        status = this->error_at_distance(
+        f_high = this->error_at_distance(
             high_angle,
             target_x_ft,
-            target_y_ft,
-            f_high);
-        if (status != BCLIBC_StatusCode::SUCCESS)
-        {
-            goto finally;
-        }
+            target_y_ft);
 
         if (f_low * f_high >= 0)
         {
@@ -773,8 +741,7 @@ namespace bclibc
             zero_error.iterations_count = 0;
             zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, reason);
-            status = BCLIBC_StatusCode::ERROR;
-            goto finally;
+            return BCLIBC_StatusCode::ERROR;
         }
 
         // 4. Ridder's method implementation
@@ -782,15 +749,10 @@ namespace bclibc
         {
             mid_angle = (low_angle + high_angle) / 2.0;
 
-            status = this->error_at_distance(
+            f_mid = this->error_at_distance(
                 mid_angle,
                 target_x_ft,
-                target_y_ft,
-                f_mid);
-            if (status != BCLIBC_StatusCode::SUCCESS)
-            {
-                goto finally;
-            }
+                target_y_ft);
 
             // Check if we found exact solution at midpoint
             if (std::fabs(f_mid) < this->config.cZeroFindingAccuracy)
@@ -798,8 +760,7 @@ namespace bclibc
                 BCLIBC_DEBUG("Ridder: found exact solution at mid_angle=%.6f", mid_angle);
                 result = mid_angle;
                 converged = 1;
-                status = BCLIBC_StatusCode::SUCCESS;
-                goto finally;
+                return BCLIBC_StatusCode::SUCCESS;
             }
 
             // s is the updated point using the root of the linear function
@@ -833,19 +794,13 @@ namespace bclibc
             {
                 result = next_angle;
                 converged = 1;
-                status = BCLIBC_StatusCode::SUCCESS;
-                goto finally;
+                return BCLIBC_StatusCode::SUCCESS;
             }
 
-            status = this->error_at_distance(
+            f_next = this->error_at_distance(
                 next_angle,
                 target_x_ft,
-                target_y_ft,
-                f_next);
-            if (status != BCLIBC_StatusCode::SUCCESS)
-            {
-                goto finally;
-            }
+                target_y_ft);
 
             // Check if we found exact solution at next_angle
             if (std::fabs(f_next) < this->config.cZeroFindingAccuracy)
@@ -853,8 +808,7 @@ namespace bclibc
                 BCLIBC_DEBUG("Ridder: found exact solution at next_angle=%.6f", next_angle);
                 result = next_angle;
                 converged = 1;
-                status = BCLIBC_StatusCode::SUCCESS;
-                goto finally;
+                return BCLIBC_StatusCode::SUCCESS;
             }
 
             // Update the bracket
@@ -886,8 +840,7 @@ namespace bclibc
             {
                 result = (low_angle + high_angle) / 2.0;
                 converged = 1;
-                status = BCLIBC_StatusCode::SUCCESS;
-                goto finally;
+                return BCLIBC_StatusCode::SUCCESS;
             }
         }
 
@@ -901,8 +854,7 @@ namespace bclibc
             {
                 result = (low_angle + high_angle) / 2.0;
                 BCLIBC_DEBUG("Ridder: accepting solution from small bracket: %.6f", result);
-                status = BCLIBC_StatusCode::SUCCESS;
-                goto finally;
+                return BCLIBC_StatusCode::SUCCESS;
             }
 
             // If we have very small errors, consider it converged
@@ -910,15 +862,13 @@ namespace bclibc
             {
                 result = low_angle;
                 BCLIBC_DEBUG("Ridder: accepting low_angle due to small f_low: %.6f", result);
-                status = BCLIBC_StatusCode::SUCCESS;
-                goto finally;
+                return BCLIBC_StatusCode::SUCCESS;
             }
             if (std::fabs(f_high) < 10.0 * this->config.cZeroFindingAccuracy)
             {
                 result = high_angle;
                 BCLIBC_DEBUG("Ridder: accepting high_angle due to small f_high: %.6f", result);
-                status = BCLIBC_StatusCode::SUCCESS;
-                goto finally;
+                return BCLIBC_StatusCode::SUCCESS;
             }
 
             // All fallback strategies failed
@@ -926,11 +876,8 @@ namespace bclibc
             zero_error.iterations_count = this->config.cMaxIterations;
             zero_error.last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Ridder's method failed to converge.");
-            status = BCLIBC_StatusCode::ERROR;
+            return BCLIBC_StatusCode::ERROR;
         }
-
-    finally:
-        return status;
     };
 
     void BCLIBC_Engine::integrate_func_ptr_not_null()

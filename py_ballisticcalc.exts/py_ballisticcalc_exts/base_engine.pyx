@@ -266,17 +266,17 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef const BCLIBC_ErrorFrame *err
 
-        status = self._this.integrate_filtered(
-            range_limit_ft,
-            range_step_ft,
-            time_step,
-            <BCLIBC_TrajFlag>filter_flags,
-            records,
-            reason,
-            &dense_trajectory._this if dense_output else NULL,
-        )
-
-        if status == BCLIBC_StatusCode.ERROR:
+        try:
+            self._this.integrate_filtered(
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                <BCLIBC_TrajFlag>filter_flags,
+                records,
+                reason,
+                &dense_trajectory._this if dense_output else NULL,
+            )
+        except RuntimeError as e:
             err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
             self._raise_solver_runtime_error(err)
 
@@ -315,19 +315,16 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
-        cdef double error_ft
-        cdef BCLIBC_StatusCode status = self._this.error_at_distance(
-            angle_rad,
-            target_x_ft,
-            target_y_ft,
-            error_ft
-        )
-        
-        if status == BCLIBC_StatusCode.SUCCESS:
-            return error_ft
-        
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-        self._raise_solver_runtime_error(err)
+        cdef const BCLIBC_ErrorFrame *err
+        try:
+            return self._this.error_at_distance(
+                angle_rad,
+                target_x_ft,
+                target_y_ft,
+            )
+        except RuntimeError as e:
+            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+            self._raise_solver_runtime_error(err)
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
