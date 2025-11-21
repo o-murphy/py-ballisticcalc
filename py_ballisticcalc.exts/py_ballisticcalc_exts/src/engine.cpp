@@ -125,14 +125,8 @@ namespace bclibc
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::find_apex(
-        BCLIBC_BaseTrajData *out)
+        BCLIBC_BaseTrajData &apex_out)
     {
-        if (!out)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         if (this->shot.barrel_elevation <= 0)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Value error (Barrel elevation must be greater than 0 to find apex).");
@@ -160,7 +154,7 @@ namespace bclibc
         }
         else
         {
-            BCLIBC_ErrorType err = result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, *out);
+            BCLIBC_ErrorType err = result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, apex_out);
             if (err != BCLIBC_ErrorType::NO_ERROR)
             {
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
@@ -180,15 +174,9 @@ namespace bclibc
         double angle_rad,
         double target_x_ft,
         double target_y_ft,
-        double *out_error_ft)
+        double &error_ft_out)
     {
-        if (!out_error_ft)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
-        *out_error_ft = 9e9;
+        error_ft_out = 9e9;
 
         BCLIBC_BaseTrajData hit;
         BCLIBC_BaseTrajData *last_ptr;
@@ -221,7 +209,7 @@ namespace bclibc
                     }
                     else
                     {
-                        *out_error_ft = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
+                        error_ft_out = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
                         status = BCLIBC_StatusCode::SUCCESS;
                     }
                 }
@@ -241,62 +229,56 @@ namespace bclibc
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        BCLIBC_ZeroInitialData *result,
-        BCLIBC_OutOfRangeError *error)
+        BCLIBC_ZeroInitialData &result,
+        BCLIBC_OutOfRangeError &error)
     {
-        if (!result || !error)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INIT_ZERO, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         BCLIBC_StatusCode status;
         BCLIBC_BaseTrajData apex;
         double apex_slant_ft;
 
-        result->status = BCLIBC_ZeroInitialStatus::DONE;
-        result->slant_range_ft = distance;
-        result->look_angle_rad = this->shot.look_angle;
-        result->target_x_ft = result->slant_range_ft * std::cos(result->look_angle_rad);
-        result->target_y_ft = result->slant_range_ft * std::sin(result->look_angle_rad);
-        result->start_height_ft = -this->shot.sight_height * this->shot.cant_cosine;
+        result.status = BCLIBC_ZeroInitialStatus::DONE;
+        result.slant_range_ft = distance;
+        result.look_angle_rad = this->shot.look_angle;
+        result.target_x_ft = result.slant_range_ft * std::cos(result.look_angle_rad);
+        result.target_y_ft = result.slant_range_ft * std::sin(result.look_angle_rad);
+        result.start_height_ft = -this->shot.sight_height * this->shot.cant_cosine;
 
         // Edge case: Very close shot
-        if (std::fabs(result->slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
+        if (std::fabs(result.slant_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
             return BCLIBC_StatusCode::SUCCESS;
         }
 
         // Edge case: Very close shot; ignore gravity and drag
-        if (std::fabs(result->slant_range_ft) < 2.0 * std::fmax(std::fabs(result->start_height_ft),
+        if (std::fabs(result.slant_range_ft) < 2.0 * std::fmax(std::fabs(result.start_height_ft),
                                                                 this->config.cStepMultiplier))
         {
-            result->look_angle_rad = std::atan2(result->target_y_ft + result->start_height_ft, result->target_x_ft);
+            result.look_angle_rad = std::atan2(result.target_y_ft + result.start_height_ft, result.target_x_ft);
             return BCLIBC_StatusCode::SUCCESS;
         }
 
         // Edge case: Virtually vertical shot; just check if it can reach the target
-        if (std::fabs(result->look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
+        if (std::fabs(result.look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
         {
             // Compute slant distance at apex using robust accessor
-            status = this->find_apex(&apex);
+            status = this->find_apex(apex);
             if (status != BCLIBC_StatusCode::SUCCESS)
             {
                 return BCLIBC_StatusCode::ERROR; // Redirect apex finding error
             }
-            apex_slant_ft = apex.px * std::cos(result->look_angle_rad) + apex.py * std::sin(result->look_angle_rad);
-            if (apex_slant_ft < result->slant_range_ft)
+            apex_slant_ft = apex.px * std::cos(result.look_angle_rad) + apex.py * std::sin(result.look_angle_rad);
+            if (apex_slant_ft < result.slant_range_ft)
             {
-                error->requested_distance_ft = result->slant_range_ft;
-                error->max_range_ft = apex_slant_ft;
-                error->look_angle_rad = result->look_angle_rad;
+                error.requested_distance_ft = result.slant_range_ft;
+                error.max_range_ft = apex_slant_ft;
+                error.look_angle_rad = result.look_angle_rad;
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::OUT_OF_RANGE_ERROR, BCLIBC_ErrorSource::INIT_ZERO, "Out of range");
                 return BCLIBC_StatusCode::ERROR;
             }
             return BCLIBC_StatusCode::SUCCESS;
         }
 
-        result->status = BCLIBC_ZeroInitialStatus::CONTINUE;
+        result.status = BCLIBC_ZeroInitialStatus::CONTINUE;
         return BCLIBC_StatusCode::SUCCESS;
     };
 
@@ -304,16 +286,10 @@ namespace bclibc
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        double *result,
-        BCLIBC_OutOfRangeError *range_error,
-        BCLIBC_ZeroFindingError *zero_error)
+        double &result,
+        BCLIBC_OutOfRangeError &range_error,
+        BCLIBC_ZeroFindingError &zero_error)
     {
-        if (!result || !range_error || !zero_error)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         BCLIBC_StatusCode status;
 
         status = this->zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, result, range_error, zero_error);
@@ -343,22 +319,16 @@ namespace bclibc
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        double *result,
-        BCLIBC_OutOfRangeError *range_error,
-        BCLIBC_ZeroFindingError *zero_error)
+        double &result,
+        BCLIBC_OutOfRangeError &range_error,
+        BCLIBC_ZeroFindingError &zero_error)
     {
-        if (!result || !range_error || !zero_error)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         BCLIBC_ZeroInitialData init_data;
         BCLIBC_StatusCode status = this->init_zero_calculation(
             distance,
             APEX_IS_MAX_RANGE_RADIANS,
             ALLOWED_ZERO_ERROR_FEET,
-            &init_data,
+            init_data,
             range_error); // pass pointer directly, not &range_error
 
         if (status != BCLIBC_StatusCode::SUCCESS)
@@ -373,7 +343,7 @@ namespace bclibc
 
         if (init_data.status == BCLIBC_ZeroInitialStatus::DONE)
         {
-            *result = look_angle_rad;
+            result = look_angle_rad;
             return BCLIBC_StatusCode::SUCCESS; // immediately return when already done
         }
 
@@ -476,9 +446,9 @@ namespace bclibc
                 {
                     if (range_error_ft > prev_range_error_ft - 1e-6)
                     {
-                        zero_error->zero_finding_error = range_error_ft;
-                        zero_error->iterations_count = iterations_count;
-                        zero_error->last_barrel_elevation_rad = this->shot.barrel_elevation;
+                        zero_error.zero_finding_error = range_error_ft;
+                        zero_error.iterations_count = iterations_count;
+                        zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Distance non-convergent");
                         status = BCLIBC_StatusCode::ERROR;
                         break;
@@ -489,9 +459,9 @@ namespace bclibc
                     damping_factor *= damping_rate;
                     if (damping_factor < 0.3)
                     {
-                        zero_error->zero_finding_error = height_error_ft;
-                        zero_error->iterations_count = iterations_count;
-                        zero_error->last_barrel_elevation_rad = this->shot.barrel_elevation;
+                        zero_error.zero_finding_error = height_error_ft;
+                        zero_error.iterations_count = iterations_count;
+                        zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Error non-convergent");
                         status = BCLIBC_StatusCode::ERROR;
                         break;
@@ -522,9 +492,9 @@ namespace bclibc
             }
             else
             {
-                zero_error->zero_finding_error = height_error_ft;
-                zero_error->iterations_count = iterations_count;
-                zero_error->last_barrel_elevation_rad = this->shot.barrel_elevation;
+                zero_error.zero_finding_error = height_error_ft;
+                zero_error.iterations_count = iterations_count;
+                zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Correction denominator is zero");
                 status = BCLIBC_StatusCode::ERROR;
                 break;
@@ -538,26 +508,20 @@ namespace bclibc
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
             // Fill zero_error if not already filled
-            zero_error->zero_finding_error = height_error_ft;
-            zero_error->iterations_count = iterations_count;
-            zero_error->last_barrel_elevation_rad = this->shot.barrel_elevation;
+            zero_error.zero_finding_error = height_error_ft;
+            zero_error.iterations_count = iterations_count;
+            zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Zero finding error");
             return BCLIBC_StatusCode::ERROR;
         }
 
         // success
-        *result = this->shot.barrel_elevation;
+        result = this->shot.barrel_elevation;
         return BCLIBC_StatusCode::SUCCESS;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::range_for_angle(double angle_rad, double *result)
+    BCLIBC_StatusCode BCLIBC_Engine::range_for_angle(double angle_rad, double &result)
     {
-        if (!result)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         double ca;
         double sa;
         double h_prev;
@@ -577,7 +541,7 @@ namespace bclibc
         this->shot.barrel_elevation = angle_rad;
 
         // try:
-        *result = -9e9;
+        result = -9e9;
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         BCLIBC_TerminationReason reason;
@@ -623,7 +587,7 @@ namespace bclibc
                         ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
                         iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
                         sdist = ix * ca + iy * sa;
-                        *result = sdist;
+                        result = sdist;
                         status = BCLIBC_StatusCode::SUCCESS;
                         break;
                     }
@@ -638,14 +602,8 @@ namespace bclibc
         double low_angle_deg,
         double high_angle_deg,
         double APEX_IS_MAX_RANGE_RADIANS,
-        BCLIBC_MaxRangeResult *result)
+        BCLIBC_MaxRangeResult &result)
     {
-        if (!result)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::FIND_MAX_RANGE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         double look_angle_rad = this->shot.look_angle;
         double max_range_ft;
         double angle_at_max_rad;
@@ -657,14 +615,14 @@ namespace bclibc
         // π/2 radians = 90 degrees
         if (std::fabs(look_angle_rad - 1.5707963267948966) < APEX_IS_MAX_RANGE_RADIANS)
         {
-            status = this->find_apex(&apex);
+            status = this->find_apex(apex);
             if (status != BCLIBC_StatusCode::SUCCESS)
             {
                 return BCLIBC_StatusCode::ERROR; // Redirect apex finding error
             }
             sdist = apex.px * std::cos(look_angle_rad) + apex.py * std::sin(look_angle_rad);
-            result->max_range_ft = sdist;
-            result->angle_at_max_rad = look_angle_rad;
+            result.max_range_ft = sdist;
+            result.angle_at_max_rad = look_angle_rad;
             return BCLIBC_StatusCode::SUCCESS;
         }
 
@@ -690,8 +648,8 @@ namespace bclibc
         double d = a + inv_phi * h;
         double yc, yd;
 
-        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, c, &yc);
-        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, d, &yd);
+        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, c, yc);
+        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, d, yd);
 
         // Golden-section search
         for (int i = 0; i < 100; i++)
@@ -707,7 +665,7 @@ namespace bclibc
                 yd = yc;
                 h = b - a;
                 c = a + inv_phi_sq * h;
-                BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, c, &yc);
+                BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, c, yc);
             }
             else
             {
@@ -716,15 +674,15 @@ namespace bclibc
                 yc = yd;
                 h = b - a;
                 d = a + inv_phi * h;
-                BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, d, &yd);
+                BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, d, yd);
             }
         }
 
         angle_at_max_rad = (a + b) / 2;
-        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, angle_at_max_rad, &max_range_ft);
+        BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, angle_at_max_rad, max_range_ft);
 
-        result->max_range_ft = max_range_ft;
-        result->angle_at_max_rad = angle_at_max_rad;
+        result.max_range_ft = max_range_ft;
+        result.angle_at_max_rad = angle_at_max_rad;
         return BCLIBC_StatusCode::SUCCESS;
     };
 
@@ -733,22 +691,16 @@ namespace bclibc
         int lofted,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        double *result,
-        BCLIBC_OutOfRangeError *range_error,
-        BCLIBC_ZeroFindingError *zero_error)
+        double &result,
+        BCLIBC_OutOfRangeError &range_error,
+        BCLIBC_ZeroFindingError &zero_error)
     {
-        if (!result || !range_error || !zero_error)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         BCLIBC_ZeroInitialData init_data;
         BCLIBC_StatusCode status = this->init_zero_calculation(
             distance,
             APEX_IS_MAX_RANGE_RADIANS,
             ALLOWED_ZERO_ERROR_FEET,
-            &init_data,
+            init_data,
             range_error);
 
         if (status != BCLIBC_StatusCode::SUCCESS)
@@ -764,7 +716,7 @@ namespace bclibc
 
         if (init_data.status == BCLIBC_ZeroInitialStatus::DONE)
         {
-            *result = look_angle_rad;
+            result = look_angle_rad;
             return BCLIBC_StatusCode::SUCCESS;
         }
 
@@ -774,7 +726,7 @@ namespace bclibc
             0,
             90,
             APEX_IS_MAX_RANGE_RADIANS,
-            &max_range_result);
+            max_range_result);
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
             return BCLIBC_StatusCode::ERROR;
@@ -786,15 +738,15 @@ namespace bclibc
         // 2. Handle edge cases based on max range.
         if (slant_range_ft > max_range_ft)
         {
-            range_error->requested_distance_ft = distance;
-            range_error->max_range_ft = max_range_ft;
-            range_error->look_angle_rad = look_angle_rad;
+            range_error.requested_distance_ft = distance;
+            range_error.max_range_ft = max_range_ft;
+            range_error.look_angle_rad = look_angle_rad;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::OUT_OF_RANGE_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Out of range");
             return BCLIBC_StatusCode::ERROR;
         }
         if (std::fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
-            *result = angle_at_max_rad;
+            result = angle_at_max_rad;
             return BCLIBC_StatusCode::SUCCESS;
         }
 
@@ -833,7 +785,7 @@ namespace bclibc
             low_angle,
             target_x_ft,
             target_y_ft,
-            &f_low);
+            f_low);
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
             goto finally;
@@ -847,7 +799,7 @@ namespace bclibc
                 low_angle,
                 target_x_ft,
                 target_y_ft,
-                &f_low);
+                f_low);
             if (status != BCLIBC_StatusCode::SUCCESS)
             {
                 goto finally;
@@ -858,7 +810,7 @@ namespace bclibc
             high_angle,
             target_x_ft,
             target_y_ft,
-            &f_high);
+            f_high);
         if (status != BCLIBC_StatusCode::SUCCESS)
         {
             goto finally;
@@ -878,9 +830,9 @@ namespace bclibc
                 high_angle * 57.29577951308232,
                 f_low,
                 f_high);
-            zero_error->zero_finding_error = target_y_ft;
-            zero_error->iterations_count = 0;
-            zero_error->last_barrel_elevation_rad = this->shot.barrel_elevation;
+            zero_error.zero_finding_error = target_y_ft;
+            zero_error.iterations_count = 0;
+            zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, reason);
             status = BCLIBC_StatusCode::ERROR;
             goto finally;
@@ -895,7 +847,7 @@ namespace bclibc
                 mid_angle,
                 target_x_ft,
                 target_y_ft,
-                &f_mid);
+                f_mid);
             if (status != BCLIBC_StatusCode::SUCCESS)
             {
                 goto finally;
@@ -905,7 +857,7 @@ namespace bclibc
             if (std::fabs(f_mid) < this->config.cZeroFindingAccuracy)
             {
                 BCLIBC_DEBUG("Ridder: found exact solution at mid_angle=%.6f", mid_angle);
-                *result = mid_angle;
+                result = mid_angle;
                 converged = 1;
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
@@ -940,7 +892,7 @@ namespace bclibc
 
             if (std::fabs(next_angle - mid_angle) < this->config.cZeroFindingAccuracy)
             {
-                *result = next_angle;
+                result = next_angle;
                 converged = 1;
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
@@ -950,7 +902,7 @@ namespace bclibc
                 next_angle,
                 target_x_ft,
                 target_y_ft,
-                &f_next);
+                f_next);
             if (status != BCLIBC_StatusCode::SUCCESS)
             {
                 goto finally;
@@ -960,7 +912,7 @@ namespace bclibc
             if (std::fabs(f_next) < this->config.cZeroFindingAccuracy)
             {
                 BCLIBC_DEBUG("Ridder: found exact solution at next_angle=%.6f", next_angle);
-                *result = next_angle;
+                result = next_angle;
                 converged = 1;
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
@@ -993,7 +945,7 @@ namespace bclibc
 
             if (std::fabs(high_angle - low_angle) < this->config.cZeroFindingAccuracy)
             {
-                *result = (low_angle + high_angle) / 2.0;
+                result = (low_angle + high_angle) / 2.0;
                 converged = 1;
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
@@ -1008,8 +960,8 @@ namespace bclibc
             // If we have a very small bracket, consider it converged
             if (std::fabs(high_angle - low_angle) < 10.0 * this->config.cZeroFindingAccuracy)
             {
-                *result = (low_angle + high_angle) / 2.0;
-                BCLIBC_DEBUG("Ridder: accepting solution from small bracket: %.6f", *result);
+                result = (low_angle + high_angle) / 2.0;
+                BCLIBC_DEBUG("Ridder: accepting solution from small bracket: %.6f", result);
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
             }
@@ -1017,23 +969,23 @@ namespace bclibc
             // If we have very small errors, consider it converged
             if (std::fabs(f_low) < 10.0 * this->config.cZeroFindingAccuracy)
             {
-                *result = low_angle;
-                BCLIBC_DEBUG("Ridder: accepting low_angle due to small f_low: %.6f", *result);
+                result = low_angle;
+                BCLIBC_DEBUG("Ridder: accepting low_angle due to small f_low: %.6f", result);
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
             }
             if (std::fabs(f_high) < 10.0 * this->config.cZeroFindingAccuracy)
             {
-                *result = high_angle;
-                BCLIBC_DEBUG("Ridder: accepting high_angle due to small f_high: %.6f", *result);
+                result = high_angle;
+                BCLIBC_DEBUG("Ridder: accepting high_angle due to small f_high: %.6f", result);
                 status = BCLIBC_StatusCode::SUCCESS;
                 goto finally;
             }
 
             // All fallback strategies failed
-            zero_error->zero_finding_error = target_y_ft;
-            zero_error->iterations_count = this->config.cMaxIterations;
-            zero_error->last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
+            zero_error.zero_finding_error = target_y_ft;
+            zero_error.iterations_count = this->config.cMaxIterations;
+            zero_error.last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Ridder's method failed to converge.");
             status = BCLIBC_StatusCode::ERROR;
         }

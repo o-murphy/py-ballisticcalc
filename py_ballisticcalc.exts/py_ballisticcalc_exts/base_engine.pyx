@@ -209,9 +209,9 @@ cdef class CythonizedBaseIntegrationEngine:
             distance._feet,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
-            &result,
-            &range_error,
-            &zero_error,
+            result,
+            range_error,
+            zero_error,
         )
 
         if status == BCLIBC_StatusCode.SUCCESS:
@@ -319,16 +319,16 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
-        cdef double out_error_ft
+        cdef double error_ft
         cdef BCLIBC_StatusCode status = self._this.error_at_distance(
             angle_rad,
             target_x_ft,
             target_y_ft,
-            &out_error_ft
+            error_ft
         )
         
         if status == BCLIBC_StatusCode.SUCCESS:
-            return out_error_ft
+            return error_ft
         
         cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
         self._raise_solver_runtime_error(err)
@@ -361,7 +361,7 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef BCLIBC_StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
         double distance,
-        BCLIBC_ZeroInitialData *out,
+        BCLIBC_ZeroInitialData &out,
     ):
         """
         Initializes the zero calculation for the given shot and distance.
@@ -380,7 +380,7 @@ cdef class CythonizedBaseIntegrationEngine:
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
             out,
-            &err_data,
+            err_data,
         )
 
         if status == BCLIBC_StatusCode.SUCCESS:
@@ -416,9 +416,9 @@ cdef class CythonizedBaseIntegrationEngine:
             lofted,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
-            &result,
-            &range_error,
-            &zero_error,
+            result,
+            range_error,
+            zero_error,
         )
         if status == BCLIBC_StatusCode.SUCCESS:
             return result
@@ -454,7 +454,7 @@ cdef class CythonizedBaseIntegrationEngine:
             low_angle_deg,
             high_angle_deg,
             _APEX_IS_MAX_RANGE_RADIANS,
-            &result
+            result
         )
 
         if status == BCLIBC_StatusCode.SUCCESS:
@@ -475,7 +475,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
-        cdef BCLIBC_StatusCode status = self._this.find_apex(&apex)
+        cdef BCLIBC_StatusCode status = self._this.find_apex(apex)
 
         if status == BCLIBC_StatusCode.SUCCESS:
             return apex
@@ -508,9 +508,9 @@ cdef class CythonizedBaseIntegrationEngine:
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
-            &result,
-            &range_error,
-            &zero_error,
+            result,
+            range_error,
+            zero_error,
         )
 
         if status == BCLIBC_StatusCode.SUCCESS:

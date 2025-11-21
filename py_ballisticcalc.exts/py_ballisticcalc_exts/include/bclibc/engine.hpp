@@ -124,53 +124,53 @@ namespace bclibc
             BCLIBC_BaseTrajSeq *dense_trajectory);
 
         BCLIBC_StatusCode find_apex(
-            BCLIBC_BaseTrajData *out);
+            BCLIBC_BaseTrajData &apex_out);
 
         BCLIBC_StatusCode error_at_distance(
             double angle_rad,
             double target_x_ft,
             double target_y_ft,
-            double *out_error_ft);
+            double &error_ft_out);
 
         BCLIBC_StatusCode init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData *result,
-            BCLIBC_OutOfRangeError *error);
+            BCLIBC_ZeroInitialData &result,
+            BCLIBC_OutOfRangeError &error);
 
         BCLIBC_StatusCode zero_angle_with_fallback(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error);
 
         BCLIBC_StatusCode zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error);
 
-        BCLIBC_StatusCode range_for_angle(double angle_rad, double *result);
+        BCLIBC_StatusCode range_for_angle(double angle_rad, double &result);
 
         BCLIBC_StatusCode find_max_range(
             double low_angle_deg,
             double high_angle_deg,
             double APEX_IS_MAX_RANGE_RADIANS,
-            BCLIBC_MaxRangeResult *result);
+            BCLIBC_MaxRangeResult &result);
 
         BCLIBC_StatusCode find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error);
     };
 };
 

@@ -89,51 +89,51 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             BCLIBC_BaseTrajSeq *dense_trajectory) except +
 
         BCLIBC_StatusCode find_apex(
-            BCLIBC_BaseTrajData *out) noexcept nogil
+            BCLIBC_BaseTrajData &apex_out) noexcept nogil
 
         BCLIBC_StatusCode error_at_distance(
             double angle_rad,
             double target_x_ft,
             double target_y_ft,
-            double *out_error_ft) noexcept nogil
+            double &error_ft_out) noexcept nogil
 
         BCLIBC_StatusCode init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData *result,
-            BCLIBC_OutOfRangeError *error) noexcept nogil
+            BCLIBC_ZeroInitialData &result,
+            BCLIBC_OutOfRangeError &error) noexcept nogil
 
         BCLIBC_StatusCode zero_angle_with_fallback(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error) noexcept nogil
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error) noexcept nogil
 
         BCLIBC_StatusCode zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error) noexcept nogil
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error) noexcept nogil
 
         BCLIBC_StatusCode find_max_range(
             double low_angle_deg,
             double high_angle_deg,
             double APEX_IS_MAX_RANGE_RADIANS,
-            BCLIBC_MaxRangeResult *result) noexcept nogil
+            BCLIBC_MaxRangeResult &result) noexcept nogil
 
         BCLIBC_StatusCode find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error) noexcept nogil
+            double &result,
+            BCLIBC_OutOfRangeError &range_error,
+            BCLIBC_ZeroFindingError &zero_error) noexcept nogil
 
 cdef class CythonizedBaseIntegrationEngine:
 
@@ -151,7 +151,7 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef BCLIBC_StatusCode _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
         double distance,
-        BCLIBC_ZeroInitialData *out,
+        BCLIBC_ZeroInitialData &out,
     )
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
