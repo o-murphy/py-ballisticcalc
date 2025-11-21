@@ -30,6 +30,7 @@ def env_var_is_enabled(var: str):
 
 
 DISABLE_STRIP = env_var_is_enabled("DISABLE_SHARED_STRIP")
+
 ENABLE_CYTHON_COVERAGE = env_var_is_enabled("CYTHON_COVERAGE")
 ENABLE_CYTHON_SAFETY = env_var_is_enabled("CYTHON_SAFETY")
 
