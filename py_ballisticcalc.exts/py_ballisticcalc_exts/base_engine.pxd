@@ -110,11 +110,10 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             BCLIBC_OutOfRangeError &range_error,
             BCLIBC_ZeroFindingError &zero_error) except +
 
-        BCLIBC_StatusCode zero_angle(
+        double zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double &result,
             BCLIBC_OutOfRangeError &range_error,
             BCLIBC_ZeroFindingError &zero_error) except +
 

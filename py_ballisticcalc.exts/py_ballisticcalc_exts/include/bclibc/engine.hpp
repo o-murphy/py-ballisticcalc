@@ -145,11 +145,10 @@ namespace bclibc
             BCLIBC_OutOfRangeError &range_error,
             BCLIBC_ZeroFindingError &zero_error);
 
-        BCLIBC_StatusCode zero_angle(
+        double zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double &result,
             BCLIBC_OutOfRangeError &range_error,
             BCLIBC_ZeroFindingError &zero_error);
 

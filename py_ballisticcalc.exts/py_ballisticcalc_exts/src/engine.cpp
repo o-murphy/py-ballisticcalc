@@ -246,54 +246,47 @@ namespace bclibc
         BCLIBC_ZeroFindingError &zero_error)
     {
         BCLIBC_StatusCode status;
-        double result;
-        status = this->zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, result, range_error, zero_error);
-        if (status == BCLIBC_StatusCode::SUCCESS)
-        {
-            return result;
-        }
-        BCLIBC_WARN("Primary zero-finding failed, switching to fallback.");
-
-        // Clean error stack
-        BCLIBC_CLEAR_ERR(&this->err_stack);
-
-        // Fallback to guaranteed method
-        int lofted = 0; // default
-
         try
         {
-            return this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, range_error, zero_error);
+            return this->zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, range_error, zero_error);
         }
-        catch (const std::runtime_error &e)
+        catch (const std::runtime_error)
         {
-            // Return error if no found
-            throw std::runtime_error("Zero angle not found");
+            BCLIBC_WARN("Primary zero-finding failed, switching to fallback.");
+
+            // Clean error stack
+            BCLIBC_CLEAR_ERR(&this->err_stack);
+
+            // Fallback to guaranteed method
+            int lofted = 0; // default
+
+            try
+            {
+                return this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, range_error, zero_error);
+            }
+            catch (const std::runtime_error &e)
+            {
+                // Return error if no found
+                throw std::runtime_error("Zero angle not found");
+            }
         }
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::zero_angle(
+    double BCLIBC_Engine::zero_angle(
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        double &result,
         BCLIBC_OutOfRangeError &range_error,
         BCLIBC_ZeroFindingError &zero_error)
     {
         BCLIBC_ZeroInitialData init_data;
 
-        try
-        {
-            this->init_zero_calculation(
-                distance,
-                APEX_IS_MAX_RANGE_RADIANS,
-                ALLOWED_ZERO_ERROR_FEET,
-                init_data,
-                range_error); // pass pointer directly, not &range_error
-        }
-        catch (const std::runtime_error &e)
-        {
-            return BCLIBC_StatusCode::ERROR;
-        }
+        this->init_zero_calculation(
+            distance,
+            APEX_IS_MAX_RANGE_RADIANS,
+            ALLOWED_ZERO_ERROR_FEET,
+            init_data,
+            range_error); // pass pointer directly, not &range_error
 
         double look_angle_rad = init_data.look_angle_rad;
         double slant_range_ft = init_data.slant_range_ft;
@@ -302,8 +295,7 @@ namespace bclibc
 
         if (init_data.status == BCLIBC_ZeroInitialStatus::DONE)
         {
-            result = look_angle_rad;
-            return BCLIBC_StatusCode::SUCCESS; // immediately return when already done
+            return look_angle_rad; // immediately return when already done
         }
 
         BCLIBC_StatusCode status = BCLIBC_StatusCode::SUCCESS; // initialize
@@ -406,8 +398,7 @@ namespace bclibc
                         zero_error.iterations_count = iterations_count;
                         zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Distance non-convergent");
-                        status = BCLIBC_StatusCode::ERROR;
-                        break;
+                        throw std::runtime_error("Distance non-convergent");
                     }
                 }
                 else if (height_error_ft > std::fabs(prev_height_error_ft))
@@ -419,8 +410,7 @@ namespace bclibc
                         zero_error.iterations_count = iterations_count;
                         zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
                         BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Error non-convergent");
-                        status = BCLIBC_StatusCode::ERROR;
-                        break;
+                        throw std::runtime_error("Error non-convergent");
                     }
                     // Revert previous adjustment
                     this->shot.barrel_elevation -= last_correction;
@@ -452,8 +442,7 @@ namespace bclibc
                 zero_error.iterations_count = iterations_count;
                 zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
                 BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Correction denominator is zero");
-                status = BCLIBC_StatusCode::ERROR;
-                break;
+                throw std::runtime_error("Correction denominator is zero");
             }
 
             iterations_count++;
@@ -468,12 +457,11 @@ namespace bclibc
             zero_error.iterations_count = iterations_count;
             zero_error.last_barrel_elevation_rad = this->shot.barrel_elevation;
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Zero finding error");
-            return BCLIBC_StatusCode::ERROR;
+            throw std::runtime_error("Zero finding error");
         }
 
         // success
-        result = this->shot.barrel_elevation;
-        return BCLIBC_StatusCode::SUCCESS;
+        return this->shot.barrel_elevation;
     };
 
     double BCLIBC_Engine::range_for_angle(double angle_rad)
