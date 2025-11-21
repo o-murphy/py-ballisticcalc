@@ -53,12 +53,12 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
 
     # Declare the function signature type (not a pointer yet)
     ctypedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
-        BCLIBC_Engine *eng,
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *trajectory,
-        BCLIBC_TerminationReason *reason,
+        BCLIBC_BaseTrajDataHandlerInterface &trajectory,
+        BCLIBC_TerminationReason &reason,
     ) noexcept nogil
 
     # Declare pointer to function

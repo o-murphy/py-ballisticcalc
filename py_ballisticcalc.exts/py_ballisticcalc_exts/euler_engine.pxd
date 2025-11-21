@@ -16,12 +16,12 @@ from py_ballisticcalc_exts.base_engine cimport (
 cdef extern from "include/bclibc/euler.hpp" namespace "bclibc" nogil:
 
     BCLIBC_StatusCode BCLIBC_integrateEULER(
-        BCLIBC_Engine *eng,
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *handler,
-        BCLIBC_TerminationReason *reason,
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason,
     ) noexcept nogil
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):

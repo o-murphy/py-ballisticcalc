@@ -36,20 +36,13 @@ namespace bclibc
      * loop was terminated (e.g., NO_ERROR on success).
      */
     BCLIBC_StatusCode BCLIBC_integrateEULER(
-        BCLIBC_Engine *eng,
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *handler,
-        BCLIBC_TerminationReason *reason)
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason)
     {
-        if (!eng || !handler || !reason)
-        {
-            REQUIRE_NON_NULL(eng);
-            BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-
         double velocity, delta_time;
         double density_ratio = 0.0;
         double mach = 0.0;
@@ -62,42 +55,42 @@ namespace bclibc
         BCLIBC_V3dT gravity_vector;
         BCLIBC_V3dT wind_vector;
         BCLIBC_V3dT coriolis_accel;
-        double calc_step = eng->shot.calc_step;
+        double calc_step = eng.shot.calc_step;
 
         // Early binding of configuration constants
-        double _cMinimumVelocity = eng->config.cMinimumVelocity;
-        double _cMinimumAltitude = eng->config.cMinimumAltitude;
-        double _cMaximumDrop = -std::fabs(eng->config.cMaximumDrop);
+        double _cMinimumVelocity = eng.config.cMinimumVelocity;
+        double _cMinimumAltitude = eng.config.cMinimumAltitude;
+        double _cMaximumDrop = -std::fabs(eng.config.cMaximumDrop);
 
         // Working variables
-        *reason = BCLIBC_TerminationReason::NO_TERMINATE;
+        reason = BCLIBC_TerminationReason::NO_TERMINATE;
         double relative_speed;
         BCLIBC_V3dT _dir_vector;
         BCLIBC_V3dT _tv;
         BCLIBC_V3dT delta_range_vector;
-        eng->integration_step_count = 0;
+        eng.integration_step_count = 0;
 
         // Initialize gravity vector
         gravity_vector.x = 0.0;
-        gravity_vector.y = eng->config.cGravityConstant;
+        gravity_vector.y = eng.config.cGravityConstant;
         gravity_vector.z = 0.0;
 
         // Initialize wind vector
-        wind_vector = eng->shot.wind_sock.current_vector();
+        wind_vector = eng.shot.wind_sock.current_vector();
 
         // Initialize velocity and position vectors
-        velocity = eng->shot.muzzle_velocity;
+        velocity = eng.shot.muzzle_velocity;
 
         // Set range_vector components
         range_vector.x = 0.0;
-        range_vector.y = -eng->shot.cant_cosine * eng->shot.sight_height;
-        range_vector.z = -eng->shot.cant_sine * eng->shot.sight_height;
+        range_vector.y = -eng.shot.cant_cosine * eng.shot.sight_height;
+        range_vector.z = -eng.shot.cant_sine * eng.shot.sight_height;
         _cMaximumDrop += std::fmin(0.0, range_vector.y); // Adjust max drop downward (only) for muzzle height
 
         // Set direction vector components
-        _dir_vector.x = std::cos(eng->shot.barrel_elevation) * std::cos(eng->shot.barrel_azimuth);
-        _dir_vector.y = std::sin(eng->shot.barrel_elevation);
-        _dir_vector.z = std::cos(eng->shot.barrel_elevation) * std::sin(eng->shot.barrel_azimuth);
+        _dir_vector.x = std::cos(eng.shot.barrel_elevation) * std::cos(eng.shot.barrel_azimuth);
+        _dir_vector.y = std::sin(eng.shot.barrel_elevation);
+        _dir_vector.z = std::cos(eng.shot.barrel_elevation) * std::sin(eng.shot.barrel_azimuth);
 
         // Calculate velocity vector
         velocity_vector = _dir_vector * velocity;
@@ -105,34 +98,33 @@ namespace bclibc
         // Trajectory Loop
 
         // Update air density and mach at initial altitude
-        eng->shot.atmo.update_density_factor_and_mach_for_altitude(
-            eng->shot.alt0 + range_vector.y,
+        eng.shot.atmo.update_density_factor_and_mach_for_altitude(
+            eng.shot.alt0 + range_vector.y,
             density_ratio,
             mach);
 
         // Cubic interpolation requires 3 points, so we will need at least 3 steps
-        while (range_vector.x <= range_limit_ft || eng->integration_step_count < 3)
+        while (range_vector.x <= range_limit_ft || eng.integration_step_count < 3)
         {
-            eng->integration_step_count++;
+            eng.integration_step_count++;
 
             // Update wind reading at current point in trajectory
-            if (range_vector.x >= eng->shot.wind_sock.next_range)
+            if (range_vector.x >= eng.shot.wind_sock.next_range)
             {
-                wind_vector = eng->shot.wind_sock.vector_for_range(range_vector.x);
+                wind_vector = eng.shot.wind_sock.vector_for_range(range_vector.x);
             }
 
             // Update air density and mach at current altitude
-            eng->shot.atmo.update_density_factor_and_mach_for_altitude(
-                eng->shot.alt0 + range_vector.y,
+            eng.shot.atmo.update_density_factor_and_mach_for_altitude(
+                eng.shot.alt0 + range_vector.y,
                 density_ratio,
                 mach);
 
             // Store point in trajectory sequence
 
             // err =
-            handler->handle(
-                BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach)
-            );
+            handler.handle(
+                BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
             // if (err != NO_ERROR)
             // {
             //     return err;
@@ -148,7 +140,7 @@ namespace bclibc
             delta_time = BCLIBC_euler_time_step(calc_step, relative_speed);
 
             // 3. Calculate drag coefficient and drag force
-            km = density_ratio * eng->shot.drag_by_mach(relative_speed / mach);
+            km = density_ratio * eng.shot.drag_by_mach(relative_speed / mach);
             drag = km * relative_speed;
 
             // 4. Apply drag, gravity, and Coriolis to velocity
@@ -156,9 +148,9 @@ namespace bclibc
             _tv = gravity_vector - _tv;
 
             // Check the flat_fire_only flag within the Coriolis structure
-            if (!eng->shot.coriolis.flat_fire_only)
+            if (!eng.shot.coriolis.flat_fire_only)
             {
-                eng->shot.coriolis.coriolis_acceleration_local(
+                eng.shot.coriolis.coriolis_acceleration_local(
                     velocity_vector, coriolis_accel);
                 _tv = _tv + coriolis_accel;
             }
@@ -177,18 +169,18 @@ namespace bclibc
             // Check termination conditions
             if (velocity < _cMinimumVelocity)
             {
-                *reason = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
+                reason = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
             }
             else if (range_vector.y < _cMaximumDrop)
             {
-                *reason = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
+                reason = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
             }
-            else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
+            else if (velocity_vector.y <= 0 && (eng.shot.alt0 + range_vector.y < _cMinimumAltitude))
             {
-                *reason = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
+                reason = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
             }
 
-            if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
+            if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
             {
                 break;
             }
@@ -197,15 +189,14 @@ namespace bclibc
         // Add final data point
 
         // err =
-        handler->handle(
-            BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach)
-        );
+        handler.handle(
+            BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
         // if (err != NO_ERROR)
         // {
         //     return err;
         // }
 
-        BCLIBC_DEBUG("Function exit, reason=%d\n", *reason);
+        BCLIBC_DEBUG("Function exit, reason=%d\n", reason);
 
         return BCLIBC_StatusCode::SUCCESS;
     };

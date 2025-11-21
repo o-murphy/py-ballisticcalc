@@ -72,20 +72,13 @@ namespace bclibc
      * loop was terminated (e.g., NO_ERROR on successful completion).
      */
     BCLIBC_StatusCode BCLIBC_integrateRK4(
-        BCLIBC_Engine *eng,
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *handler,
-        BCLIBC_TerminationReason *reason)
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason)
     {
-        if (!eng || !handler || !reason)
-        {
-            REQUIRE_NON_NULL(eng);
-            BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_ErrorType::INPUT_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        };
-
         double velocity, delta_time;
         double density_ratio = 0.0;
         double mach = 0.0;
@@ -101,18 +94,18 @@ namespace bclibc
         BCLIBC_DEBUG("Variables declared\n");
 
         // Early binding of configuration constants
-        double _cMinimumVelocity = eng->config.cMinimumVelocity;
-        double _cMinimumAltitude = eng->config.cMinimumAltitude;
-        double _cMaximumDrop = -std::fabs(eng->config.cMaximumDrop);
+        double _cMinimumVelocity = eng.config.cMinimumVelocity;
+        double _cMinimumAltitude = eng.config.cMinimumAltitude;
+        double _cMaximumDrop = -std::fabs(eng.config.cMaximumDrop);
 
         BCLIBC_DEBUG("Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
                      _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
 
         // Working variables
-        *reason = BCLIBC_TerminationReason::NO_TERMINATE;
+        reason = BCLIBC_TerminationReason::NO_TERMINATE;
         double relative_speed;
         BCLIBC_V3dT _dir_vector;
-        eng->integration_step_count = 0;
+        eng.integration_step_count = 0;
 
         // RK4 specific variables
         BCLIBC_V3dT _temp_add_operand;
@@ -124,34 +117,34 @@ namespace bclibc
 
         // Initialize gravity vector
         gravity_vector.x = 0.0;
-        gravity_vector.y = eng->config.cGravityConstant;
+        gravity_vector.y = eng.config.cGravityConstant;
         gravity_vector.z = 0.0;
 
         BCLIBC_DEBUG("Gravity initialized: %f\n", gravity_vector.y);
 
         // Initialize wind vector
         BCLIBC_DEBUG("About to call BCLIBC_WindSock_currentVector\n");
-        wind_vector = eng->shot.wind_sock.current_vector();
+        wind_vector = eng.shot.wind_sock.current_vector();
         BCLIBC_DEBUG("Wind vector: %f, %f, %f\n", wind_vector.x, wind_vector.y, wind_vector.z);
 
         // Initialize velocity and position vectors
-        velocity = eng->shot.muzzle_velocity;
-        calc_step = eng->shot.calc_step;
+        velocity = eng.shot.muzzle_velocity;
+        calc_step = eng.shot.calc_step;
 
         BCLIBC_DEBUG("Velocity=%f, Calc Step=%f\n", velocity, calc_step);
 
         // Set range_vector components directly
         range_vector.x = 0.0;
-        range_vector.y = -eng->shot.cant_cosine * eng->shot.sight_height;
-        range_vector.z = -eng->shot.cant_sine * eng->shot.sight_height;
+        range_vector.y = -eng.shot.cant_cosine * eng.shot.sight_height;
+        range_vector.z = -eng.shot.cant_sine * eng.shot.sight_height;
         _cMaximumDrop += std::fmin(0.0, range_vector.y);
 
         BCLIBC_DEBUG("Range vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
 
         // Set direction vector components
-        _dir_vector.x = std::cos(eng->shot.barrel_elevation) * std::cos(eng->shot.barrel_azimuth);
-        _dir_vector.y = std::sin(eng->shot.barrel_elevation);
-        _dir_vector.z = std::cos(eng->shot.barrel_elevation) * std::sin(eng->shot.barrel_azimuth);
+        _dir_vector.x = std::cos(eng.shot.barrel_elevation) * std::cos(eng.shot.barrel_azimuth);
+        _dir_vector.y = std::sin(eng.shot.barrel_elevation);
+        _dir_vector.z = std::cos(eng.shot.barrel_elevation) * std::sin(eng.shot.barrel_azimuth);
 
         BCLIBC_DEBUG("Direction vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
 
@@ -161,8 +154,8 @@ namespace bclibc
 
         BCLIBC_DEBUG("Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
-        eng->shot.atmo.update_density_factor_and_mach_for_altitude(
-            eng->shot.alt0 + range_vector.y,
+        eng.shot.atmo.update_density_factor_and_mach_for_altitude(
+            eng.shot.alt0 + range_vector.y,
             density_ratio,
             mach);
         BCLIBC_DEBUG("Density ratio: %f, Mach: %f\n", density_ratio, mach);
@@ -170,22 +163,22 @@ namespace bclibc
         // Trajectory Loop
         BCLIBC_DEBUG("Entering main loop, range_limit_ft=%f\n", range_limit_ft);
 
-        while (range_vector.x <= range_limit_ft || eng->integration_step_count < 3)
+        while (range_vector.x <= range_limit_ft || eng.integration_step_count < 3)
         {
-            BCLIBC_DEBUG("Loop iteration %d, range_x=%f\n", eng->integration_step_count, range_vector.x);
+            BCLIBC_DEBUG("Loop iteration %d, range_x=%f\n", eng.integration_step_count, range_vector.x);
 
-            eng->integration_step_count++;
+            eng.integration_step_count++;
 
             // Update wind reading at current point in trajectory
-            if (range_vector.x >= eng->shot.wind_sock.next_range)
+            if (range_vector.x >= eng.shot.wind_sock.next_range)
             {
                 BCLIBC_DEBUG("Updating wind vector\n");
-                wind_vector = eng->shot.wind_sock.vector_for_range(range_vector.x);
+                wind_vector = eng.shot.wind_sock.vector_for_range(range_vector.x);
             }
 
             // Update air density and mach at current altitude
-            eng->shot.atmo.update_density_factor_and_mach_for_altitude(
-                eng->shot.alt0 + range_vector.y,
+            eng.shot.atmo.update_density_factor_and_mach_for_altitude(
+                eng.shot.alt0 + range_vector.y,
                 density_ratio,
                 mach);
 
@@ -193,9 +186,8 @@ namespace bclibc
             BCLIBC_DEBUG("About to append to trajectory sequence\n");
 
             // err =
-            handler->handle(
-                BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach)
-            );
+            handler.handle(
+                BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
             // if (err != NO_ERROR)
             // {
             //     return err;
@@ -215,33 +207,33 @@ namespace bclibc
             // Check for division by zero
             // if (mach == 0.0)
             // {
-            //     BCLIBC_PUSH_ERR(&eng->err_stack, BCLIBC_ErrorType::ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "Integration error: Mach number is zero cannot divide!");
+            //     BCLIBC_PUSH_ERR(&eng.err_stack, BCLIBC_ErrorType::ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "Integration error: Mach number is zero cannot divide!");
             //     return BCLIBC_StatusCode::ERROR;
             // }
 
-            km = density_ratio * eng->shot.drag_by_mach(relative_speed / mach);
+            km = density_ratio * eng.shot.drag_by_mach(relative_speed / mach);
             BCLIBC_DEBUG("Calculated drag coefficient km=%f\n", km);
 
             // region RK4 integration
             BCLIBC_DEBUG("Starting RK4 integration\n");
 
             // v1 = f(relative_velocity)
-            v1 = BCLIBC_calculate_dvdt(relative_velocity, gravity_vector, km, eng->shot, velocity_vector);
+            v1 = BCLIBC_calculate_dvdt(relative_velocity, gravity_vector, km, eng.shot, velocity_vector);
 
             // v2 = f(relative_velocity + 0.5 * delta_time * v1)
             _temp_add_operand = v1 * (0.5 * delta_time);
             _temp_v_result = relative_velocity + _temp_add_operand;
-            v2 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng->shot, velocity_vector);
+            v2 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng.shot, velocity_vector);
 
             // v3 = f(relative_velocity + 0.5 * delta_time * v2)
             _temp_add_operand = v2 * (0.5 * delta_time);
             _temp_v_result = relative_velocity + _temp_add_operand;
-            v3 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng->shot, velocity_vector);
+            v3 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng.shot, velocity_vector);
 
             // v4 = f(relative_velocity + delta_time * v3)
             _temp_add_operand = v3 * delta_time;
             _temp_v_result = relative_velocity + _temp_add_operand;
-            v4 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng->shot, velocity_vector);
+            v4 = BCLIBC_calculate_dvdt(_temp_v_result, gravity_vector, km, eng.shot, velocity_vector);
 
             // p1 = velocity_vector
             p1 = velocity_vector;
@@ -287,18 +279,18 @@ namespace bclibc
             // Check termination conditions
             if (velocity < _cMinimumVelocity)
             {
-                *reason = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
+                reason = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
             }
             else if (range_vector.y < _cMaximumDrop)
             {
-                *reason = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
+                reason = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
             }
-            else if (velocity_vector.y <= 0 && (eng->shot.alt0 + range_vector.y < _cMinimumAltitude))
+            else if (velocity_vector.y <= 0 && (eng.shot.alt0 + range_vector.y < _cMinimumAltitude))
             {
-                *reason = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
+                reason = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
             }
 
-            if (*reason != BCLIBC_TerminationReason::NO_TERMINATE)
+            if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
             {
                 break;
             }
@@ -309,17 +301,16 @@ namespace bclibc
         // Process final data point
 
         // err =
-        handler->handle(
-            BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach)
-        );
+        handler.handle(
+            BCLIBC_BaseTrajData(time, range_vector, velocity_vector, mach));
         // if (err != NO_ERROR)
         // {
         //     return err;
         // }
 
-        BCLIBC_DEBUG("Function exit, reason=%d\n", *reason);
+        BCLIBC_DEBUG("Function exit, reason=%d\n", reason);
 
-        // BCLIBC_PUSH_ERR(&eng->err_stack, ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "fake error");
+        // BCLIBC_PUSH_ERR(&eng.err_stack, ZERO_DIVISION_ERROR, BCLIBC_ErrorType::INTEGRATE, "fake error");
         // return BCLIBC_StatusCode::ERROR;
 
         return BCLIBC_StatusCode::SUCCESS;

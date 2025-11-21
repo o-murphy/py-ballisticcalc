@@ -85,15 +85,15 @@ namespace bclibc
 
     class BCLIBC_Engine;
 
-    typedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
-        BCLIBC_Engine *eng,
+    using BCLIBC_IntegrateFunc = BCLIBC_StatusCode(
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajDataHandlerInterface *handler,
-        BCLIBC_TerminationReason *reason);
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason);
 
-    typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;
+    using BCLIBC_IntegrateFuncPtr = BCLIBC_IntegrateFunc *;
 
     class BCLIBC_Engine
     {

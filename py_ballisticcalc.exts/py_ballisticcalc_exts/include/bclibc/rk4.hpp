@@ -15,12 +15,12 @@ extern "C"
     {
 
         BCLIBC_StatusCode BCLIBC_integrateRK4(
-            BCLIBC_Engine *eng,
+            BCLIBC_Engine &eng,
             double range_limit_ft,
             double range_step_ft,
             double time_step,
-            BCLIBC_BaseTrajDataHandlerInterface *handler,
-            BCLIBC_TerminationReason *reason);
+            BCLIBC_BaseTrajDataHandlerInterface &handler,
+            BCLIBC_TerminationReason &reason);
 
     };
 

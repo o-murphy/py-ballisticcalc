@@ -105,7 +105,7 @@ namespace bclibc
         }
         BCLIBC_DEBUG("Using integration function pointer %p.", (void *)this->integrate_func_ptr);
 
-        BCLIBC_StatusCode status = this->integrate_func_ptr(this, range_limit_ft, range_step_ft, time_step, &handler, &reason);
+        BCLIBC_StatusCode status = this->integrate_func_ptr(*this, range_limit_ft, range_step_ft, time_step, handler, reason);
 
         if (status != BCLIBC_StatusCode::ERROR)
         {
