@@ -31,8 +31,6 @@ namespace bclibc
     enum class BCLIBC_ErrorType
     {
         // General
-        VALUE_ERROR,
-        INDEX_ERROR,
         RUNTIME_ERROR,
         // Special
         ZERO_FINDING_ERROR,

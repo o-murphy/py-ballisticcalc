@@ -26,7 +26,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         MAXIMUM_DROP_REACHED
         MINIMUM_ALTITUDE_REACHED
 
-    ctypedef struct BCLIBC_ZeroInitialData:
+    cdef cppclass BCLIBC_ZeroInitialData:
         BCLIBC_ZeroInitialStatus status
         double look_angle_rad
         double slant_range_ft
@@ -34,16 +34,16 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         double target_y_ft
         double start_height_ft
 
-    ctypedef struct BCLIBC_MaxRangeResult:
+    cdef cppclass BCLIBC_MaxRangeResult:
         double max_range_ft
         double angle_at_max_rad
 
-    ctypedef struct BCLIBC_OutOfRangeError:
+    cdef cppclass BCLIBC_OutOfRangeError:
         double requested_distance_ft
         double max_range_ft
         double look_angle_rad
 
-    ctypedef struct BCLIBC_ZeroFindingError:
+    cdef cppclass BCLIBC_ZeroFindingError:
         double zero_finding_error
         int iterations_count
         double last_barrel_elevation_rad

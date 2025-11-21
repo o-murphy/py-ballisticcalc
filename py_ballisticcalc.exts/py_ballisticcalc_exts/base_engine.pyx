@@ -57,8 +57,6 @@ cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RA
 cdef dict ERROR_TYPE_TO_EXCEPTION = {
     BCLIBC_ErrorType.ZERO_FINDING_ERROR: ZeroFindingError,
     BCLIBC_ErrorType.OUT_OF_RANGE_ERROR: OutOfRangeError,
-    BCLIBC_ErrorType.VALUE_ERROR: ValueError,
-    BCLIBC_ErrorType.INDEX_ERROR: IndexError,
     BCLIBC_ErrorType.RUNTIME_ERROR: SolverRuntimeError,
 }
 
@@ -197,8 +195,8 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef:
             BCLIBC_StatusCode status
-            BCLIBC_OutOfRangeError range_error = {}
-            BCLIBC_ZeroFindingError zero_error = {}
+            BCLIBC_OutOfRangeError range_error
+            BCLIBC_ZeroFindingError zero_error
             const BCLIBC_ErrorFrame *err
             double result
         
@@ -366,7 +364,7 @@ cdef class CythonizedBaseIntegrationEngine:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
-        cdef BCLIBC_OutOfRangeError err_data = {}
+        cdef BCLIBC_OutOfRangeError err_data
         cdef const BCLIBC_ErrorFrame *err
         try:
             self._this.init_zero_calculation(
@@ -399,8 +397,8 @@ cdef class CythonizedBaseIntegrationEngine:
             double: The calculated zero angle in radians.
         """
         self._init_trajectory(shot_info)
-        cdef BCLIBC_OutOfRangeError range_error = {}
-        cdef BCLIBC_ZeroFindingError zero_error = {}
+        cdef BCLIBC_OutOfRangeError range_error
+        cdef BCLIBC_ZeroFindingError zero_error
         cdef const BCLIBC_ErrorFrame *err
         try:
             return self._this.find_zero_angle(
@@ -487,8 +485,8 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef:
-            BCLIBC_OutOfRangeError range_error = {}
-            BCLIBC_ZeroFindingError zero_error = {}
+            BCLIBC_OutOfRangeError range_error
+            BCLIBC_ZeroFindingError zero_error
             const BCLIBC_ErrorFrame *err
         try:
             return self._this.zero_angle(

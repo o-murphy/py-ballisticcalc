@@ -54,7 +54,7 @@ namespace bclibc
         MINIMUM_ALTITUDE_REACHED,
     };
 
-    typedef struct
+    struct BCLIBC_ZeroInitialData
     {
         BCLIBC_ZeroInitialStatus status;
         double look_angle_rad;
@@ -62,14 +62,14 @@ namespace bclibc
         double target_x_ft;
         double target_y_ft;
         double start_height_ft;
-    } BCLIBC_ZeroInitialData;
+    };
 
-    typedef struct
+    struct BCLIBC_OutOfRangeError
     {
         double requested_distance_ft;
         double max_range_ft;
         double look_angle_rad;
-    } BCLIBC_OutOfRangeError;
+    };
 
     struct BCLIBC_MaxRangeResult
     {
@@ -77,12 +77,12 @@ namespace bclibc
         double angle_at_max_rad;
     };
 
-    typedef struct
+    struct BCLIBC_ZeroFindingError
     {
         double zero_finding_error;
         int iterations_count;
         double last_barrel_elevation_rad;
-    } BCLIBC_ZeroFindingError;
+    };
 
     class BCLIBC_Engine;
 

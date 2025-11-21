@@ -81,10 +81,6 @@ namespace bclibc
     {
         switch (code)
         {
-        case BCLIBC_ErrorType::VALUE_ERROR:
-            return "BCLIBC_ErrorType::VALUE_ERROR";
-        case BCLIBC_ErrorType::INDEX_ERROR:
-            return "BCLIBC_ErrorType::INDEX_ERROR";
         case BCLIBC_ErrorType::RUNTIME_ERROR:
             return "BCLIBC_ErrorType::RUNTIME_ERROR";
         case BCLIBC_ErrorType::ZERO_FINDING_ERROR:

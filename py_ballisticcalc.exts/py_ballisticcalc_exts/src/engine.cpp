@@ -103,9 +103,6 @@ namespace bclibc
         {
             BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", reason);
         }
-
-        // BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Integration failed");
-        // throw std::runtime_error("Integration failed");
     };
 
     void BCLIBC_Engine::find_apex(
@@ -113,7 +110,6 @@ namespace bclibc
     {
         if (this->shot.barrel_elevation <= 0)
         {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Value error (Barrel elevation must be greater than 0 to find apex).");
             throw std::invalid_argument("Value error (Barrel elevation must be greater than 0 to find apex).");
         }
 
@@ -138,7 +134,6 @@ namespace bclibc
         }
         catch (const std::exception &e)
         {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
             throw std::runtime_error("Runtime error (No apex flagged in trajectory data)");
         }
     };
@@ -171,13 +166,11 @@ namespace bclibc
                 }
                 catch (const std::exception &e)
                 {
-                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Index out of bound.");
                     throw;
                 }
             }
             else
             {
-                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Trajectory sequence error");
                 throw std::out_of_range("Trajectory sequence error");
             }
         }
@@ -258,17 +251,7 @@ namespace bclibc
             BCLIBC_CLEAR_ERR(&this->err_stack);
 
             // Fallback to guaranteed method
-            int lofted = 0; // default
-
-            try
-            {
-                return this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, range_error, zero_error);
-            }
-            catch (const std::runtime_error &e)
-            {
-                // Return error if no found
-                throw std::runtime_error("Zero angle not found");
-            }
+            return this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, 0, range_error, zero_error);
         }
     };
 
@@ -499,15 +482,11 @@ namespace bclibc
                 prev_ptr = trajectory.get_raw_item(i - 1);
                 if (prev_ptr == nullptr)
                 {
-                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
-                                    "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                     throw std::out_of_range("Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                 }
                 cur_ptr = trajectory.get_raw_item(i);
                 if (cur_ptr == nullptr)
                 {
-                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
-                                    "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                     throw std::out_of_range("Index error in BCLIBC_BaseTrajSeq.get_raw_item");
                 }
                 h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
@@ -864,7 +843,6 @@ namespace bclibc
     {
         if (!this->integrate_func_ptr)
         {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
             throw std::logic_error("Invalid integrate_func_ptr (NULL pointer).");
         }
     };
