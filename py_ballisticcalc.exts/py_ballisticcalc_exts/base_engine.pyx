@@ -197,29 +197,28 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef:
             BCLIBC_StatusCode status
-            double result
             BCLIBC_OutOfRangeError range_error = {}
             BCLIBC_ZeroFindingError zero_error = {}
-
-        status = self._this.zero_angle_with_fallback(
-            distance._feet,
-            _APEX_IS_MAX_RANGE_RADIANS,
-            _ALLOWED_ZERO_ERROR_FEET,
-            result,
-            range_error,
-            zero_error,
-        )
-
-        if status == BCLIBC_StatusCode.SUCCESS:
+            const BCLIBC_ErrorFrame *err
+            double result
+        
+        try:
+            result = self._this.zero_angle_with_fallback(
+                distance._feet,
+                _APEX_IS_MAX_RANGE_RADIANS,
+                _ALLOWED_ZERO_ERROR_FEET,
+                range_error,
+                zero_error,
+            )
             return rad_from_c(result)
-
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-        if err.src == BCLIBC_ErrorSource.INIT_ZERO:
-            self._raise_on_init_zero_error(err, &range_error)
-        if err.src == BCLIBC_ErrorSource.FIND_ZERO_ANGLE:
-            self._raise_on_init_zero_error(err, &range_error)
-            self._raise_on_zero_finding_error(err, &zero_error)
-        self._raise_solver_runtime_error(err)
+        except RuntimeError as e:
+            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+            if err.src == BCLIBC_ErrorSource.INIT_ZERO:
+                self._raise_on_init_zero_error(err, &range_error)
+            if err.src == BCLIBC_ErrorSource.FIND_ZERO_ANGLE:
+                self._raise_on_init_zero_error(err, &range_error)
+                self._raise_on_zero_finding_error(err, &zero_error)
+            self._raise_solver_runtime_error(err)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,

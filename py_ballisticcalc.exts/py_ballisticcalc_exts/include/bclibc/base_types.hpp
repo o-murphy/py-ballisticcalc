@@ -21,7 +21,7 @@ namespace bclibc
     extern const double BCLIBC_cMaxWindDistanceFeet;
     extern const double BCLIBC_cEarthAngularVelocityRadS;
 
-    typedef enum
+    enum BCLIBC_TrajFlag
     {
         BCLIBC_TRAJ_FLAG_NONE = 0,
         BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
@@ -32,7 +32,7 @@ namespace bclibc
         BCLIBC_TRAJ_FLAG_APEX = 16,
         BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX,
         BCLIBC_TRAJ_FLAG_MRT = 32
-    } BCLIBC_TrajFlag;
+    };
 
     struct BCLIBC_Config
     {

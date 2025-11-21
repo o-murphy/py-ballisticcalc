@@ -172,7 +172,7 @@ namespace bclibc
                 catch (const std::exception &e)
                 {
                     BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Index out of bound.");
-                    throw std::out_of_range("Index out of bound.");
+                    throw;
                 }
             }
             else
@@ -238,20 +238,19 @@ namespace bclibc
         return;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::zero_angle_with_fallback(
+    double BCLIBC_Engine::zero_angle_with_fallback(
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
-        double &result,
         BCLIBC_OutOfRangeError &range_error,
         BCLIBC_ZeroFindingError &zero_error)
     {
         BCLIBC_StatusCode status;
-
+        double result;
         status = this->zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, result, range_error, zero_error);
         if (status == BCLIBC_StatusCode::SUCCESS)
         {
-            return BCLIBC_StatusCode::SUCCESS;
+            return result;
         }
         BCLIBC_WARN("Primary zero-finding failed, switching to fallback.");
 
@@ -264,11 +263,11 @@ namespace bclibc
         status = this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, lofted, result, range_error, zero_error);
         if (status == BCLIBC_StatusCode::SUCCESS)
         {
-            return BCLIBC_StatusCode::SUCCESS;
+            return result;
         }
 
         // Return error if no found
-        return BCLIBC_StatusCode::ERROR;
+        throw std::runtime_error("Zero angle not found");
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::zero_angle(

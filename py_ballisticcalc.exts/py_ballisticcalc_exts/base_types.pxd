@@ -3,7 +3,7 @@ from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 
 
 cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
-    ctypedef enum BCLIBC_LogLevel:
+    cdef enum class BCLIBC_LogLevel:
         CRITICAL,
         ERROR,
         WARNING,
@@ -153,7 +153,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT current_vector() const
         BCLIBC_V3dT vector_for_range(double next_range_param) except+
 
-    ctypedef enum BCLIBC_TrajFlag:
+    cdef enum BCLIBC_TrajFlag:
         BCLIBC_TRAJ_FLAG_NONE = 0,
         BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
         BCLIBC_TRAJ_FLAG_ZERO_DOWN = 2,
