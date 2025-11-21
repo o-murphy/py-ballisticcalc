@@ -704,13 +704,14 @@ namespace bclibc
         ssize_t start_idx) const
     {
         ssize_t n = (ssize_t)this->buffer.size();
-        const BCLIBC_BaseTrajData *buf = this->buffer.data();
 
         // Minimal requirement for 3-point interpolation is 3 points.
         if (n < 3)
         {
             return -1;
         }
+
+        const BCLIBC_BaseTrajData *buf = this->buffer.data();
 
         double v0 = buf[0].get_key_val(key_kind);
         double vN = buf[n - 1].get_key_val(key_kind);

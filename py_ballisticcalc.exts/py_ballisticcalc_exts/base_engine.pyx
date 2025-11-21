@@ -520,7 +520,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_zero_finding_error(err, &zero_error)
         self._raise_solver_runtime_error(err)
 
-    cdef BCLIBC_StatusCode _integrate(
+    cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
@@ -544,19 +544,18 @@ cdef class CythonizedBaseIntegrationEngine:
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
         self._init_trajectory(shot_info)
-        cdef BCLIBC_StatusCode status = self._this.integrate(
-            range_limit_ft,
-            range_step_ft,
-            time_step,
-            handler,
-            reason,
-        )
-
-        if status == BCLIBC_StatusCode.SUCCESS:
-            return status
-
-        cdef const BCLIBC_ErrorFrame *err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-        self._raise_solver_runtime_error(err)
+        cdef const BCLIBC_ErrorFrame *err 
+        try:
+            self._this.integrate(
+                range_limit_ft,
+                range_step_ft,
+                time_step,
+                handler,
+                reason,
+            )
+        except RuntimeError as e:
+            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
+            self._raise_solver_runtime_error(err)
 
     cdef void _raise_on_init_zero_error(
         CythonizedBaseIntegrationEngine self,

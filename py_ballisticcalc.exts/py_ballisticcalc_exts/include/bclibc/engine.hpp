@@ -108,7 +108,7 @@ namespace bclibc
         BCLIBC_ErrorStack err_stack;
 
     public:
-        BCLIBC_StatusCode integrate(
+        void integrate(
             double range_limit_ft,
             double range_step_ft,
             double time_step,

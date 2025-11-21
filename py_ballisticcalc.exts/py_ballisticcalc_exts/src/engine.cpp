@@ -71,7 +71,7 @@ namespace bclibc
         }
 
         // 5. Call integration ONCE, passing the composite
-        BCLIBC_StatusCode status = this->integrate(
+        this->integrate(
             range_limit_ft,
             range_step_ft,
             time_step,
@@ -87,7 +87,7 @@ namespace bclibc
         return BCLIBC_StatusCode::SUCCESS;
     };
 
-    BCLIBC_StatusCode BCLIBC_Engine::integrate(
+    void BCLIBC_Engine::integrate(
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -105,10 +105,9 @@ namespace bclibc
         {
             BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", reason);
         }
-        return BCLIBC_StatusCode::SUCCESS;
 
-        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Integration failed");
-        return BCLIBC_StatusCode::ERROR;
+        // BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Integration failed");
+        // throw std::runtime_error("Integration failed");
     };
 
     BCLIBC_StatusCode BCLIBC_Engine::find_apex(
@@ -133,26 +132,18 @@ namespace bclibc
 
         // try
         BCLIBC_TerminationReason reason;
-        status = this->integrate(9e9, 9e9, 0.0, result, reason);
+        this->integrate(9e9, 9e9, 0.0, result, reason);
 
-        if (status != BCLIBC_StatusCode::SUCCESS)
+        try
         {
+            result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, apex_out);
+            status = BCLIBC_StatusCode::SUCCESS;
+        }
+        catch (const std::exception &e)
+        {
+            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
             status = BCLIBC_StatusCode::ERROR;
         }
-        else
-        {
-            try
-            {
-                result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, apex_out);
-                status = BCLIBC_StatusCode::SUCCESS;
-            }
-            catch (const std::exception &e)
-            {
-                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Runtime error (No apex flagged in trajectory data)");
-                status = BCLIBC_StatusCode::ERROR;
-            }
-        }
-        // finally
 
         return status;
     };
@@ -174,37 +165,39 @@ namespace bclibc
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
-        BCLIBC_StatusCode status = this->integrate(9e9, 9e9, 0.0, trajectory, reason);
-
-        if (status != BCLIBC_StatusCode::SUCCESS)
+        BCLIBC_StatusCode status;
+        try
+        {
+            integrate(9e9, 9e9, 0.0, trajectory, reason);
+        }
+        catch (const std::runtime_error &e)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Find apex error");
+            status = BCLIBC_StatusCode::ERROR;
         }
-        else
+
+        // If trajectory is too short for cubic interpolation, treat as unreachable
+        if (trajectory.get_length() >= 3)
         {
-            // If trajectory is too short for cubic interpolation, treat as unreachable
-            if (trajectory.get_length() >= 3)
+            last_ptr = trajectory.get_raw_item(-1);
+            if (last_ptr != nullptr && last_ptr->time != 0.0)
             {
-                last_ptr = trajectory.get_raw_item(-1);
-                if (last_ptr != nullptr && last_ptr->time != 0.0)
+                try
                 {
-                    try
-                    {
-                        trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
-                        error_ft_out = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
-                        status = BCLIBC_StatusCode::SUCCESS;
-                    }
-                    catch (const std::exception &e)
-                    {
-                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
-                        status = BCLIBC_StatusCode::ERROR;
-                    }
+                    trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
+                    error_ft_out = (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
+                    status = BCLIBC_StatusCode::SUCCESS;
                 }
-                else
+                catch (const std::exception &e)
                 {
-                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Trajectory sequence error, error code: %d", status);
+                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Runtime error (No apex flagged in trajectory data)");
                     status = BCLIBC_StatusCode::ERROR;
                 }
+            }
+            else
+            {
+                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::RUNTIME_ERROR, BCLIBC_ErrorSource::ERROR_AT_DISTANCE, "Trajectory sequence error, error code: %d", status);
+                status = BCLIBC_StatusCode::ERROR;
             }
         }
 
@@ -374,13 +367,7 @@ namespace bclibc
             BCLIBC_TerminationReason reason;
             BCLIBC_BaseTrajSeq seq = BCLIBC_BaseTrajSeq();
 
-            status = this->integrate(target_x_ft, target_x_ft, 0.0, seq, reason);
-
-            if (status != BCLIBC_StatusCode::SUCCESS)
-            {
-                status = BCLIBC_StatusCode::ERROR;
-                break;
-            }
+            this->integrate(target_x_ft, target_x_ft, 0.0, seq, reason);
 
             // interpolate trajectory at target_x_ft using the sequence we just filled
             try
@@ -535,52 +522,52 @@ namespace bclibc
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         BCLIBC_TerminationReason reason;
-        status = this->integrate(9e9, 9e9, 0.0, trajectory, reason);
-        if (status != BCLIBC_StatusCode::SUCCESS)
+        try
         {
-            status = BCLIBC_StatusCode::ERROR;
+            this->integrate(9e9, 9e9, 0.0, trajectory, reason);
         }
-        else
+        catch (const std::runtime_error &e)
         {
-            ca = std::cos(this->shot.look_angle);
-            sa = std::sin(this->shot.look_angle);
-            n = trajectory.get_length();
-            if (n >= 2)
+            return BCLIBC_StatusCode::ERROR;
+        }
+        ca = std::cos(this->shot.look_angle);
+        sa = std::sin(this->shot.look_angle);
+        n = trajectory.get_length();
+        if (n >= 2)
+        {
+            // Linear search from end of trajectory for zero-down crossing
+            for (i = n - 1; i > 0; i--)
             {
-                // Linear search from end of trajectory for zero-down crossing
-                for (i = n - 1; i > 0; i--)
+                prev_ptr = trajectory.get_raw_item(i - 1);
+                if (prev_ptr == nullptr)
                 {
-                    prev_ptr = trajectory.get_raw_item(i - 1);
-                    if (prev_ptr == nullptr)
-                    {
-                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
-                                        "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
-                        status = BCLIBC_StatusCode::ERROR;
-                        break; // assume INDEX_ERROR
-                    }
-                    cur_ptr = trajectory.get_raw_item(i);
-                    if (cur_ptr == nullptr)
-                    {
-                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
-                                        "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
-                        status = BCLIBC_StatusCode::ERROR;
-                        break; // assume INDEX_ERROR
-                    }
-                    h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
-                    h_cur = cur_ptr->py * ca - cur_ptr->px * sa;
-                    if (h_prev > 0.0 && h_cur <= 0.0)
-                    {
-                        // Interpolate for slant_distance
-                        denom = h_prev - h_cur;
-                        t = denom == 0.0 ? 0.0 : h_prev / denom;
-                        t = std::fmax(0.0, std::fmin(1.0, t));
-                        ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
-                        iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
-                        sdist = ix * ca + iy * sa;
-                        result = sdist;
-                        status = BCLIBC_StatusCode::SUCCESS;
-                        break;
-                    }
+                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
+                                    "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
+                    status = BCLIBC_StatusCode::ERROR;
+                    break; // assume INDEX_ERROR
+                }
+                cur_ptr = trajectory.get_raw_item(i);
+                if (cur_ptr == nullptr)
+                {
+                    BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::INDEX_ERROR, BCLIBC_ErrorSource::RANGE_FOR_ANGLE,
+                                    "Index error in BCLIBC_BaseTrajSeq.get_raw_item");
+                    status = BCLIBC_StatusCode::ERROR;
+                    break; // assume INDEX_ERROR
+                }
+                h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
+                h_cur = cur_ptr->py * ca - cur_ptr->px * sa;
+                if (h_prev > 0.0 && h_cur <= 0.0)
+                {
+                    // Interpolate for slant_distance
+                    denom = h_prev - h_cur;
+                    t = denom == 0.0 ? 0.0 : h_prev / denom;
+                    t = std::fmax(0.0, std::fmin(1.0, t));
+                    ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
+                    iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
+                    sdist = ix * ca + iy * sa;
+                    result = sdist;
+                    status = BCLIBC_StatusCode::SUCCESS;
+                    break;
                 }
             }
         }

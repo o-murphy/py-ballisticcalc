@@ -72,7 +72,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
         BCLIBC_ErrorStack err_stack
 
-        BCLIBC_StatusCode integrate(
+        void integrate(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
@@ -181,7 +181,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double target_y_ft
     )
 
-    cdef BCLIBC_StatusCode _integrate(
+    cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
