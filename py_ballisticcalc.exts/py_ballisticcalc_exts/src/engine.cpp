@@ -46,11 +46,7 @@ namespace bclibc
         BCLIBC_TerminationReason &reason,
         BCLIBC_BaseTrajSeq *dense_trajectory)
     {
-        if (!this->integrate_func_ptr)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
+        this->integrate_func_ptr_not_null();
 
         // 1. Create a mandatory filter/writer ON THE HEAP using unique_ptr.
         // This ensures that a large object does not pollute the stack frame.
@@ -98,13 +94,7 @@ namespace bclibc
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
-        if (!this->integrate_func_ptr)
-        {
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
-            return BCLIBC_StatusCode::ERROR;
-        }
-        BCLIBC_DEBUG("Using integration function pointer %p.", (void *)this->integrate_func_ptr);
-
+        this->integrate_func_ptr_not_null();
         this->integrate_func_ptr(*this, range_limit_ft, range_step_ft, time_step, handler, reason);
 
         if (reason == BCLIBC_TerminationReason::NO_TERMINATE)
@@ -127,7 +117,7 @@ namespace bclibc
         if (this->shot.barrel_elevation <= 0)
         {
             BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::FIND_APEX, "Value error (Barrel elevation must be greater than 0 to find apex).");
-            return BCLIBC_StatusCode::ERROR;
+            throw std::invalid_argument("Value error (Barrel elevation must be greater than 0 to find apex).");
         }
 
         // Have to ensure cMinimumVelocity is 0 for this to work
@@ -994,4 +984,12 @@ namespace bclibc
         return status;
     };
 
+    void BCLIBC_Engine::integrate_func_ptr_not_null()
+    {
+        if (!this->integrate_func_ptr)
+        {
+            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::VALUE_ERROR, BCLIBC_ErrorSource::INTEGRATE, "Invalid input (NULL pointer).");
+            throw std::logic_error("Invalid integrate_func_ptr (NULL pointer).");
+        }
+    };
 };

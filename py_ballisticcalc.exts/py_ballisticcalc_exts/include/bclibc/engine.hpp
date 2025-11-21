@@ -172,6 +172,9 @@ namespace bclibc
             double &result,
             BCLIBC_OutOfRangeError &range_error,
             BCLIBC_ZeroFindingError &zero_error);
+
+    private:
+        inline void integrate_func_ptr_not_null();
     };
 };
 

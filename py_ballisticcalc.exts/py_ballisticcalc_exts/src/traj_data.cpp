@@ -68,7 +68,7 @@ namespace bclibc
         // Guard against degenerate segments
         if (x0 == x1 || x0 == x2 || x1 == x2)
         {
-            throw std::domain_error("Zero division error");
+            throw std::domain_error("Zero division error in interpolate");
         }
 
         // Cache position and velocity
@@ -354,7 +354,7 @@ namespace bclibc
             ssize_t center = this->bisect_center_idx_buf(key_kind, key_value);
             if (center < 0)
             {
-                throw std::domain_error("Bisecting failed; not enough data points.");
+                throw std::logic_error("Bisecting failed; not enough data points.");
             }
             target_idx = center < n - 1 ? center : n - 2;
         }
@@ -398,18 +398,18 @@ namespace bclibc
 
         if (n < 3)
         {
-            std::domain_error("Not enough data points for interpolation.");
+            throw std::domain_error("Not enough data points for interpolation.");
         }
 
         ssize_t center = this->bisect_center_idx_slant_buf(ca, sa, value);
         if (center < 0)
         {
-            std::domain_error("Failed to find center index for interpolation.");
+            throw std::runtime_error("Failed to find center index for interpolation.");
         }
 
         if (center < 1 || center >= n - 1)
         {
-            std::domain_error("Calculated center index out of safe interpolation range.");
+            throw std::out_of_range("Calculated center index out of safe interpolation range.");
         }
 
         const auto &data_vector = this->buffer;
@@ -531,7 +531,7 @@ namespace bclibc
             this->get_item(idx, out);
             BCLIBC_DEBUG("Exact match found at index %zd.", idx);
         }
-        throw std::domain_error("Not exact match.");
+        throw std::runtime_error("Not exact match.");
     };
 
     /**
@@ -876,7 +876,7 @@ namespace bclibc
 
         if ((int)key < 0 || (int)key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
-            throw std::runtime_error("Can't interpolate by unsupported key");
+            throw std::logic_error("Can't interpolate by unsupported key");
         }
 
         for (int k = 0; k < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; k++)
@@ -912,7 +912,7 @@ namespace bclibc
                     }
                     if (interp_status != BCLIBC_InterpStatus::SUCCESS)
                     {
-                        throw std::domain_error("Zero division error");
+                        throw std::domain_error("Zero division error in BCLIBC_interpolate2pt");
                     }
                 }
                 else
