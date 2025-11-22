@@ -95,8 +95,8 @@ namespace bclibc
             double mach);
         BCLIBC_BaseTrajData(
             double time,
-            BCLIBC_V3dT &position,
-            BCLIBC_V3dT &velocity,
+            const BCLIBC_V3dT &position,
+            const BCLIBC_V3dT &velocity,
             double mach);
 
         BCLIBC_V3dT position() const { return {px, py, pz}; };

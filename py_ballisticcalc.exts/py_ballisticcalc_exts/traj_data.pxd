@@ -46,8 +46,8 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
         BCLIBC_BaseTrajData(
             double time,
-            BCLIBC_V3dT &position,
-            BCLIBC_V3dT &velocity,
+            const BCLIBC_V3dT &position,
+            const BCLIBC_V3dT &velocity,
             double mach
         ) except+
 
