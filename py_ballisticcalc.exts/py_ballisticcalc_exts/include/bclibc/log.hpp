@@ -180,7 +180,7 @@ namespace bclibc
 
 };
 
-#ifdef BCLIBC_DISABLE_LOGGING
+#ifndef BCLIBC_ENABLE_DEBUG_LOGGING
 
 // Якщо логування вимкнено: Замінюємо всі макроси на пустий оператор
 #define BCLIBC_LOG(level, format, ...) \
@@ -195,22 +195,22 @@ namespace bclibc
     do                            \
     {                             \
     } while (0)
-#define BCLIBC_INFO(format, ...) \
-    do                           \
-    {                            \
-    } while (0)
-#define BCLIBC_WARN(format, ...) \
-    do                           \
-    {                            \
-    } while (0)
-#define BCLIBC_ERROR(format, ...) \
-    do                            \
-    {                             \
-    } while (0)
-#define BCLIBC_CRITICAL(format, ...) \
-    do                               \
-    {                                \
-    } while (0)
+// #define BCLIBC_INFO(format, ...) \
+//     do                           \
+//     {                            \
+//     } while (0)
+// #define BCLIBC_WARN(format, ...) \
+//     do                           \
+//     {                            \
+//     } while (0)
+// #define BCLIBC_ERROR(format, ...) \
+//     do                            \
+//     {                             \
+//     } while (0)
+// #define BCLIBC_CRITICAL(format, ...) \
+//     do                               \
+//     {                                \
+//     } while (0)
 
 #else
 
@@ -225,6 +225,8 @@ namespace bclibc
 #define BCLIBC_DEBUG(format, ...) \
     bclibc::log(bclibc::BCLIBC_LogLevel::DEBUG, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
+#endif // BCLIBC_ENABLE_DEBUG_LOGGING
+
 #define BCLIBC_INFO(format, ...) \
     bclibc::log(bclibc::BCLIBC_LogLevel::INFO, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
@@ -237,6 +239,5 @@ namespace bclibc
 #define BCLIBC_CRITICAL(format, ...) \
     bclibc::log(bclibc::BCLIBC_LogLevel::CRITICAL, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
-#endif // BCLIBC_DISABLE_LOGGING
 
 #endif // BCLIBC_LOG_HPP
