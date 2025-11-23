@@ -92,7 +92,6 @@ include_dirs = [
 SOURCE_PATHS = {
     # C++ Sources:
     "error_stack": SRC_DIR_PATH / "error_stack.cpp",
-    "v3d": SRC_DIR_PATH / "v3d.cpp",
     "interp": SRC_DIR_PATH / "interp.cpp",
     "types": SRC_DIR_PATH / "base_types.cpp",
     "bind": SRC_DIR_PATH / "py_bind.cpp",
@@ -108,7 +107,7 @@ SOURCE_PATHS = {
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
 _ERR_STACK_DEPS = set(["error_stack"])
-_BASE_TYPES_DEPS = set(["v3d", "types"])
+_BASE_TYPES_DEPS = set(["types"])
 _INTERP_DEPS = set(["interp"])
 _TRAJ_DATA_DEPS = set([*_BASE_TYPES_DEPS, *_INTERP_DEPS, "traj_data"])
 _BIND_DEPS = set([*_ERR_STACK_DEPS, *_BASE_TYPES_DEPS, "bind"])
