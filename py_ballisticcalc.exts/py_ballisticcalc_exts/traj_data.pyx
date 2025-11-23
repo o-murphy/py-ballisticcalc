@@ -56,7 +56,7 @@ cdef class BaseTrajSeqT:
         cdef Py_ssize_t _i = <Py_ssize_t>idx
         cdef BaseTrajDataT out = BaseTrajDataT()
         try:
-            self._this.get_item(_i, out._this)
+            out._this = self._this.get_item(_i)
             return out
         except Exception as e:
             raise IndexError(f"IndexError: {e.what()}")

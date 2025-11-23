@@ -144,7 +144,6 @@ namespace bclibc
         double target_y_ft)
     {
         BCLIBC_BaseTrajData hit;
-        BCLIBC_BaseTrajData *last_ptr;
         BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         this->shot.barrel_elevation = angle_rad;
@@ -156,23 +155,13 @@ namespace bclibc
         // If trajectory is too short for cubic interpolation, treat as unreachable
         if (trajectory.get_length() >= 3)
         {
-            last_ptr = trajectory.get_raw_item(-1);
-            if (last_ptr != nullptr && last_ptr->time != 0.0)
-            {
-                try
-                {
-                    trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
-                    return (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
-                }
-                catch (const std::exception &e)
-                {
-                    throw;
-                }
-            }
-            else
+            const BCLIBC_BaseTrajData &last_ptr = trajectory.get_item(-1);
+            if (last_ptr.time == 0.0)
             {
                 throw std::out_of_range("Trajectory sequence error");
             }
+            trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
+            return (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
         }
 
         return 9e9;
@@ -461,8 +450,6 @@ namespace bclibc
         BCLIBC_StatusCode status;
         ssize_t n;
         ssize_t i;
-        BCLIBC_BaseTrajData *prev_ptr;
-        BCLIBC_BaseTrajData *cur_ptr;
 
         // Update shot data
         this->shot.barrel_elevation = angle_rad;
@@ -479,26 +466,18 @@ namespace bclibc
             // Linear search from end of trajectory for zero-down crossing
             for (i = n - 1; i > 0; i--)
             {
-                prev_ptr = trajectory.get_raw_item(i - 1);
-                if (prev_ptr == nullptr)
-                {
-                    throw std::out_of_range("Index error in BCLIBC_BaseTrajSeq.get_raw_item");
-                }
-                cur_ptr = trajectory.get_raw_item(i);
-                if (cur_ptr == nullptr)
-                {
-                    throw std::out_of_range("Index error in BCLIBC_BaseTrajSeq.get_raw_item");
-                }
-                h_prev = prev_ptr->py * ca - prev_ptr->px * sa;
-                h_cur = cur_ptr->py * ca - cur_ptr->px * sa;
+                const BCLIBC_BaseTrajData &prev_ptr = trajectory.get_item(i - 1);
+                const BCLIBC_BaseTrajData &cur_ptr = trajectory.get_item(i);
+                h_prev = prev_ptr.py * ca - prev_ptr.px * sa;
+                h_cur = cur_ptr.py * ca - cur_ptr.px * sa;
                 if (h_prev > 0.0 && h_cur <= 0.0)
                 {
                     // Interpolate for slant_distance
                     denom = h_prev - h_cur;
                     t = denom == 0.0 ? 0.0 : h_prev / denom;
                     t = std::fmax(0.0, std::fmin(1.0, t));
-                    ix = prev_ptr->px + t * (cur_ptr->px - prev_ptr->px);
-                    iy = prev_ptr->py + t * (cur_ptr->py - prev_ptr->py);
+                    ix = prev_ptr.px + t * (cur_ptr.px - prev_ptr.px);
+                    iy = prev_ptr.py + t * (cur_ptr.py - prev_ptr.py);
                     sdist = ix * ca + iy * sa;
                     return sdist;
                 }

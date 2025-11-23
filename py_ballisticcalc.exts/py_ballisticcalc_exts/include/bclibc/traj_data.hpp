@@ -195,15 +195,6 @@ namespace bclibc
         ssize_t get_capacity() const;
 
         /**
-         * Retrieve a pointer to a trajectory element at the given index.
-         * Supports negative indices: -1 = last element, -2 = second-to-last, etc.
-         *
-         * @param idx Index of the element to retrieve. Can be negative.
-         * @return Pointer to the BCLIBC_BaseTrajData element, or NULL if index is out of bounds.
-         */
-        BCLIBC_BaseTrajData *get_raw_item(ssize_t idx) const;
-
-        /**
          * @brief Retrieves trajectory data at a given index.
          *
          * Copies the values of time, position, velocity, and Mach number
@@ -212,9 +203,7 @@ namespace bclibc
          * @param idx Index of the trajectory point to retrieve.
          * @param out Pointer to BCLIBC_BaseTrajData where results will be stored.
          */
-        void get_item(
-            ssize_t idx,
-            BCLIBC_BaseTrajData &out) const;
+        const BCLIBC_BaseTrajData &get_item(ssize_t idx) const;
 
         /**
          * @brief Get trajectory data at a given key value, with optional start time.

@@ -248,13 +248,9 @@ namespace bclibc
      * @param idx Index (-1 for last element, etc.).
      * @return Pointer to element, or nullptr if out of bounds.
      */
-    BCLIBC_BaseTrajData *BCLIBC_BaseTrajSeq::get_raw_item(ssize_t idx) const
+    const BCLIBC_BaseTrajData &BCLIBC_BaseTrajSeq::get_item(ssize_t idx) const
     {
         ssize_t len = (ssize_t)this->buffer.size();
-        if (len == 0)
-        {
-            return nullptr;
-        }
 
         // Handle negative indices
         if (idx < 0)
@@ -265,20 +261,9 @@ namespace bclibc
         // Bounds check
         if (idx < 0 || idx >= len)
         {
-            return nullptr;
-        }
-
-        return const_cast<BCLIBC_BaseTrajData *>(&this->buffer[idx]);
-    }
-
-    void BCLIBC_BaseTrajSeq::get_item(ssize_t idx, BCLIBC_BaseTrajData &out) const
-    {
-        const BCLIBC_BaseTrajData *entry_ptr = this->get_raw_item(idx);
-        if (!entry_ptr)
-        {
             throw std::out_of_range("Index out of bounds");
         }
-        out = *entry_ptr;
+        return this->buffer[idx];
     }
 
     /**
@@ -489,7 +474,7 @@ namespace bclibc
 
         if (this->is_close(this->buffer[idx].get_key_val(key_kind), key_value, epsilon))
         {
-            this->get_item(idx, out);
+            out = this->get_item(idx);
             BCLIBC_DEBUG("Exact match found at index %zd", idx);
             return;
         }

@@ -91,15 +91,13 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double key_value,
             BCLIBC_BaseTrajData &out
         ) except +
-        BCLIBC_BaseTrajData *get_raw_item(Py_ssize_t idx) const
         void get_at_slant_height(
             double look_angle_rad,
             double value,
             BCLIBC_BaseTrajData &out
         ) except+
-        void get_item(
-            Py_ssize_t idx,
-            BCLIBC_BaseTrajData &out
+        const BCLIBC_BaseTrajData &get_item(
+            Py_ssize_t idx
         ) except+
         void get_at(
             BCLIBC_BaseTrajData_InterpKey key_kind,
