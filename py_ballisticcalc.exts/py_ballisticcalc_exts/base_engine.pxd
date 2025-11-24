@@ -15,6 +15,10 @@ from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_BaseTrajDataHandlerInterface
 )
 
+
+cdef void solver_runtime_error()
+
+
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
@@ -89,7 +93,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double range_step_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
-            BCLIBC_TerminationReason &reason) except +
+            BCLIBC_TerminationReason &reason) except +solver_runtime_error
 
         void integrate_filtered(
             double range_limit_ft,
@@ -98,20 +102,19 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             BCLIBC_TrajFlag filter_flags,
             vector[BCLIBC_TrajectoryData] &records,
             BCLIBC_TerminationReason &reason,
-            BCLIBC_BaseTrajSeq *dense_trajectory) except +
+            BCLIBC_BaseTrajSeq *dense_trajectory) except +solver_runtime_error
 
-        void find_apex(
-            BCLIBC_BaseTrajData &apex_out) except +
+        void find_apex(BCLIBC_BaseTrajData &apex_out) except +solver_runtime_error
 
         double error_at_distance(
             double angle_rad,
             double target_x_ft,
-            double target_y_ft) except +
+            double target_y_ft) except +solver_runtime_error
 
         BCLIBC_MaxRangeResult find_max_range(
             double low_angle_deg,
             double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS) except +
+            double APEX_IS_MAX_RANGE_RADIANS) except +solver_runtime_error
 
         void init_zero_calculation(
             double distance,
