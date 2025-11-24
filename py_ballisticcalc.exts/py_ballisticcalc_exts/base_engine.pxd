@@ -9,7 +9,7 @@ from py_ballisticcalc_exts.base_types cimport (
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData, BCLIBC_TrajectoryData, BCLIBC_BaseTrajDataHandlerInterface
-from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorFrame
+from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorFrame, BCLIBC_ErrorType
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
@@ -38,15 +38,25 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         double max_range_ft
         double angle_at_max_rad
 
-    cdef cppclass BCLIBC_OutOfRangeError:
+    cdef enum class BCLIBC_ZeroFindingErrorType:
+        NO_ERROR
+        ZERO_FINDING_ERROR
+        OUT_OF_RANGE_ERROR
+
+    cdef cppclass BCLIBC_OutOfRangeErrorData:
         double requested_distance_ft
         double max_range_ft
         double look_angle_rad
 
-    cdef cppclass BCLIBC_ZeroFindingError:
+    cdef cppclass BCLIBC_ZeroFindingErrorData:
         double zero_finding_error
         int iterations_count
         double last_barrel_elevation_rad
+
+    cdef cppclass BCLIBC_ZeroFindingError:
+        BCLIBC_ZeroFindingErrorType type
+        BCLIBC_ZeroFindingErrorData zero_finding
+        BCLIBC_OutOfRangeErrorData out_of_range
 
     # Forward declaration
     cdef cppclass BCLIBC_Engine
@@ -96,39 +106,36 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double target_x_ft,
             double target_y_ft) except +
 
+        BCLIBC_MaxRangeResult find_max_range(
+            double low_angle_deg,
+            double high_angle_deg,
+            double APEX_IS_MAX_RANGE_RADIANS) except +
+
         void init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
             BCLIBC_ZeroInitialData &result,
-            BCLIBC_OutOfRangeError &error) except +
+            BCLIBC_ZeroFindingError &error) except +
 
         double zero_angle_with_fallback(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error) except +
+            BCLIBC_ZeroFindingError &error) except +
 
         double zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error) except +
-
-        BCLIBC_MaxRangeResult find_max_range(
-            double low_angle_deg,
-            double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS) except +
+            BCLIBC_ZeroFindingError &error) except +
 
         double find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error) except +
+            BCLIBC_ZeroFindingError &error) except +
 
 cdef class CythonizedBaseIntegrationEngine:
 
@@ -186,16 +193,11 @@ cdef class CythonizedBaseIntegrationEngine:
         BCLIBC_TerminationReason &reason,
     )
 
-    cdef void _raise_on_init_zero_error(
-        CythonizedBaseIntegrationEngine self,
-        const BCLIBC_ErrorFrame *err,
-        const BCLIBC_OutOfRangeError *err_data
-    )
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
-        const BCLIBC_ErrorFrame *err,
-        const BCLIBC_ZeroFindingError *zero_error
+        const BCLIBC_ZeroFindingError &zero_error
     )
+
     cdef void _raise_solver_runtime_error(
         CythonizedBaseIntegrationEngine self,
         const BCLIBC_ErrorFrame *err

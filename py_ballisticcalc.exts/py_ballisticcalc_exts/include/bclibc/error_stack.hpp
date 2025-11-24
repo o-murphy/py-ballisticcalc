@@ -30,8 +30,7 @@ namespace bclibc
 
     enum class BCLIBC_ErrorType
     {
-        // General
-        RUNTIME_ERROR,
+        NO_ERROR,
         // Special
         ZERO_FINDING_ERROR,
         OUT_OF_RANGE_ERROR,

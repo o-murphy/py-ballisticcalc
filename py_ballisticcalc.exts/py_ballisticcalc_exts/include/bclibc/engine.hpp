@@ -64,24 +64,42 @@ namespace bclibc
         double start_height_ft;
     };
 
-    struct BCLIBC_OutOfRangeError
-    {
-        double requested_distance_ft;
-        double max_range_ft;
-        double look_angle_rad;
-    };
-
     struct BCLIBC_MaxRangeResult
     {
         double max_range_ft;
         double angle_at_max_rad;
     };
 
-    struct BCLIBC_ZeroFindingError
+    enum class BCLIBC_ZeroFindingErrorType
+    {
+        NO_ERROR,
+        // Special
+        ZERO_FINDING_ERROR,
+        OUT_OF_RANGE_ERROR,
+    };
+
+    struct BCLIBC_ZeroFindingErrorData
     {
         double zero_finding_error;
         int iterations_count;
         double last_barrel_elevation_rad;
+    };
+
+    struct BCLIBC_OutOfRangeErrorData
+    {
+        double requested_distance_ft;
+        double max_range_ft;
+        double look_angle_rad;
+    };
+
+    struct BCLIBC_ZeroFindingError
+    {
+        BCLIBC_ZeroFindingErrorType type;
+        union
+        {
+            BCLIBC_ZeroFindingErrorData zero_finding;
+            BCLIBC_OutOfRangeErrorData out_of_range;
+        };
     };
 
     class BCLIBC_Engine;
@@ -136,36 +154,33 @@ namespace bclibc
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
             BCLIBC_ZeroInitialData &result,
-            BCLIBC_OutOfRangeError &error);
-
-        double zero_angle_with_fallback(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error);
-
-        double zero_angle(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error);
-
-        double range_for_angle(double angle_rad);
+            BCLIBC_ZeroFindingError &error);
 
         BCLIBC_MaxRangeResult find_max_range(
             double low_angle_deg,
             double high_angle_deg,
             double APEX_IS_MAX_RANGE_RADIANS);
 
+        double zero_angle_with_fallback(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET,
+            BCLIBC_ZeroFindingError &error);
+
+        double zero_angle(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET,
+            BCLIBC_ZeroFindingError &error);
+
+        double range_for_angle(double angle_rad);
+
         double find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_OutOfRangeError &range_error,
-            BCLIBC_ZeroFindingError &zero_error);
+            BCLIBC_ZeroFindingError &error);
 
     private:
         inline void integrate_func_ptr_not_null();
