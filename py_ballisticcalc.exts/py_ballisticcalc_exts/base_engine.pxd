@@ -8,8 +8,12 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_TrajFlag,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData, BCLIBC_TrajectoryData, BCLIBC_BaseTrajDataHandlerInterface
-
+from py_ballisticcalc_exts.traj_data cimport (
+    BCLIBC_BaseTrajSeq,
+    BCLIBC_BaseTrajData,
+    BCLIBC_TrajectoryData,
+    BCLIBC_BaseTrajDataHandlerInterface
+)
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
@@ -56,7 +60,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_ZeroFindingErrorType type
         BCLIBC_ZeroFindingErrorData zero_finding
         BCLIBC_OutOfRangeErrorData out_of_range
-        char msg[256]
 
     # Forward declaration
     cdef cppclass BCLIBC_Engine
@@ -194,6 +197,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
+        object exception,
         const BCLIBC_ZeroFindingError &zero_error
     )
 

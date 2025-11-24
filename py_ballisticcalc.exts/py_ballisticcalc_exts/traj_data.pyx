@@ -14,7 +14,7 @@ passing Python cdef-class instances into nogil code paths.
 """
 
 from cython cimport final
-from py_ballisticcalc_exts.bind cimport _attribute_to_key, _key_to_attribute, v3d_to_vector
+from py_ballisticcalc_exts.bind cimport _attribute_to_key, v3d_to_vector
 
 __all__ = ('BaseTrajSeqT')
 

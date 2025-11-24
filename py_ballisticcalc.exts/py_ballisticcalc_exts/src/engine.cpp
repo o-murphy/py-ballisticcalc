@@ -209,8 +209,7 @@ namespace bclibc
                 error.out_of_range.requested_distance_ft = result.slant_range_ft;
                 error.out_of_range.max_range_ft = apex_slant_ft;
                 error.out_of_range.look_angle_rad = result.look_angle_rad;
-                snprintf(error.msg, sizeof(error.msg), "Out of range");
-                return;
+                throw std::runtime_error("Out of range");
             }
             return;
         }
@@ -363,8 +362,7 @@ namespace bclibc
                         error.zero_finding.zero_finding_error = range_error_ft;
                         error.zero_finding.iterations_count = iterations_count;
                         error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                        snprintf(error.msg, sizeof(error.msg), "Distance non-convergent");
-                        return this->shot.barrel_elevation;
+                        throw std::runtime_error("Distance non-convergent");
                     }
                 }
                 else if (height_error_ft > std::fabs(prev_height_error_ft))
@@ -376,8 +374,7 @@ namespace bclibc
                         error.zero_finding.zero_finding_error = height_error_ft;
                         error.zero_finding.iterations_count = iterations_count;
                         error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                        snprintf(error.msg, sizeof(error.msg), "Error non-convergent");
-                        return this->shot.barrel_elevation;
+                        throw std::runtime_error("Error non-convergent");
                     }
                     // Revert previous adjustment
                     this->shot.barrel_elevation -= last_correction;
@@ -409,8 +406,7 @@ namespace bclibc
                 error.zero_finding.zero_finding_error = height_error_ft;
                 error.zero_finding.iterations_count = iterations_count;
                 error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                snprintf(error.msg, sizeof(error.msg), "Correction denominator is zero");
-                return this->shot.barrel_elevation;
+                throw std::runtime_error("Correction denominator is zero");
             }
 
             iterations_count++;
@@ -418,14 +414,13 @@ namespace bclibc
 
         // finally:
 
-        if (error.type != BCLIBC_ZeroFindingErrorType::NO_ERROR)
+        if (error.type == BCLIBC_ZeroFindingErrorType::ZERO_FINDING_ERROR)
         {
             // Fill zero_error if not already filled
             error.zero_finding.zero_finding_error = height_error_ft;
             error.zero_finding.iterations_count = iterations_count;
             error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-            snprintf(error.msg, sizeof(error.msg), "Zero finding error");
-            return this->shot.barrel_elevation;
+            throw std::runtime_error("Zero finding error");
         }
 
         // success
@@ -601,8 +596,7 @@ namespace bclibc
             error.out_of_range.requested_distance_ft = distance;
             error.out_of_range.max_range_ft = max_range_ft;
             error.out_of_range.look_angle_rad = look_angle_rad;
-            snprintf(error.msg, sizeof(error.msg), "Out of range");
-            return this->shot.barrel_elevation;
+            throw std::runtime_error("Out of range");
         }
         if (std::fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
@@ -678,8 +672,7 @@ namespace bclibc
             error.zero_finding.zero_finding_error = target_y_ft;
             error.zero_finding.iterations_count = 0;
             error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-            snprintf(error.msg, sizeof(error.msg), reason);
-            return this->shot.barrel_elevation;
+            throw std::runtime_error(reason);
         }
 
         // 4. Ridder's method implementation
@@ -810,8 +803,7 @@ namespace bclibc
             error.zero_finding.zero_finding_error = target_y_ft;
             error.zero_finding.iterations_count = this->config.cMaxIterations;
             error.zero_finding.last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
-            snprintf(error.msg, sizeof(error.msg), "Ridder's method failed to converge.");
-            return (low_angle + high_angle) / 2.0;
+            throw std::runtime_error("Ridder's method failed to converge.");
         }
     };
 

@@ -99,7 +99,6 @@ namespace bclibc
             BCLIBC_ZeroFindingErrorData zero_finding;
             BCLIBC_OutOfRangeErrorData out_of_range;
         };
-        char msg[256];
     };
 
     class BCLIBC_Engine;
