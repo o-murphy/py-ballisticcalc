@@ -9,7 +9,6 @@ from py_ballisticcalc_exts.base_types cimport (
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajSeq, BCLIBC_BaseTrajData, BCLIBC_TrajectoryData, BCLIBC_BaseTrajDataHandlerInterface
-from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorFrame, BCLIBC_ErrorType
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
@@ -57,6 +56,7 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_ZeroFindingErrorType type
         BCLIBC_ZeroFindingErrorData zero_finding
         BCLIBC_OutOfRangeErrorData out_of_range
+        char msg[256]
 
     # Forward declaration
     cdef cppclass BCLIBC_Engine
@@ -80,7 +80,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_Config config
         BCLIBC_ShotProps shot
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
-        BCLIBC_ErrorStack err_stack
 
         void integrate(
             double range_limit_ft,
@@ -196,11 +195,6 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
         const BCLIBC_ZeroFindingError &zero_error
-    )
-
-    cdef void _raise_solver_runtime_error(
-        CythonizedBaseIntegrationEngine self,
-        const BCLIBC_ErrorFrame *err
     )
 
 

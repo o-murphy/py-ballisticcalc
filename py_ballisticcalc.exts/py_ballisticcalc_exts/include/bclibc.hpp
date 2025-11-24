@@ -4,7 +4,6 @@
 #include "bclibc/v3d.hpp"
 #include "bclibc/log.hpp"
 #include "bclibc/scope_guard.hpp"
-#include "bclibc/error_stack.hpp"
 #include "bclibc/interp.hpp"
 #include "bclibc/base_types.hpp"
 #include "bclibc/traj_data.hpp"

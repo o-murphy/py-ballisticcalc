@@ -91,7 +91,6 @@ include_dirs = [
 # Define all C source files and their paths
 SOURCE_PATHS = {
     # C++ Sources:
-    "error_stack": SRC_DIR_PATH / "error_stack.cpp",
     "interp": SRC_DIR_PATH / "interp.cpp",
     "types": SRC_DIR_PATH / "base_types.cpp",
     "bind": SRC_DIR_PATH / "py_bind.cpp",
@@ -106,11 +105,10 @@ SOURCE_PATHS = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
-_ERR_STACK_DEPS = set(["error_stack"])
 _BASE_TYPES_DEPS = set(["types"])
 _INTERP_DEPS = set(["interp"])
 _TRAJ_DATA_DEPS = set([*_BASE_TYPES_DEPS, *_INTERP_DEPS, "traj_data"])
-_BIND_DEPS = set([*_ERR_STACK_DEPS, *_BASE_TYPES_DEPS, "bind"])
+_BIND_DEPS = set([*_BASE_TYPES_DEPS, "bind"])
 _ENGINE_DEPS = set([*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"])
 _RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
 _EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
@@ -129,7 +127,6 @@ CPP_EXTENSION_DEPS = {
     # Test modules (expose internal C++ functions for tests only)
     "_test_helpers": _TEST_DEPS,
     "_test_engine": _TEST_DEPS,
-    "_test_error_stack": _ERR_STACK_DEPS,
 }
 
 TEST_EXTENSIONS_DEPS = {}

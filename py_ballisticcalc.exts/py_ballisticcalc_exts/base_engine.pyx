@@ -29,15 +29,6 @@ from py_ballisticcalc_exts.bind cimport (
     rad_from_c,
     v3d_to_vector,
 )
-from py_ballisticcalc_exts.error_stack cimport (
-    BCLIBC_StatusCode,
-    BCLIBC_ErrorSource,
-    BCLIBC_ErrorFrame,
-    BCLIBC_ErrorType,
-    BCLIBC_ErrorStack,
-    BCLIBC_ErrorStack_lastErr,
-    BCLIBC_ErrorStack_toString,
-)
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
@@ -52,12 +43,6 @@ __all__ = (
 
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
-
-
-cdef dict ERROR_TYPE_TO_EXCEPTION = {
-    BCLIBC_ErrorType.ZERO_FINDING_ERROR: ZeroFindingError,
-    BCLIBC_ErrorType.OUT_OF_RANGE_ERROR: OutOfRangeError,
-}
 
 cdef dict TERMINATION_REASON_MAP = {
     BCLIBC_TerminationReason.MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
@@ -193,9 +178,7 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef:
-            BCLIBC_StatusCode status
             BCLIBC_ZeroFindingError error
-            const BCLIBC_ErrorFrame *err
             double result
         
         try:
@@ -208,8 +191,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_zero_finding_error(error)
             return rad_from_c(result)
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,
@@ -244,7 +226,6 @@ cdef class CythonizedBaseIntegrationEngine:
             object props
             object termination_reason = None
             BCLIBC_TerminationReason reason
-            BCLIBC_StatusCode status
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             vector[BCLIBC_TrajectoryData] records
@@ -254,7 +235,6 @@ cdef class CythonizedBaseIntegrationEngine:
             dense_trajectory = BaseTrajSeqT()
 
         self._init_trajectory(shot_info)
-        cdef const BCLIBC_ErrorFrame *err
 
         try:
             self._this.integrate_filtered(
@@ -267,8 +247,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 &dense_trajectory._this if dense_output else NULL,
             )
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
         # Extract termination_reason from the result
         termination_reason = TERMINATION_REASON_MAP.get(reason)
@@ -305,7 +284,6 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
-        cdef const BCLIBC_ErrorFrame *err
         try:
             return self._this.error_at_distance(
                 angle_rad,
@@ -313,8 +291,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 target_y_ft,
             )
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
@@ -358,7 +335,6 @@ cdef class CythonizedBaseIntegrationEngine:
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
         cdef BCLIBC_ZeroFindingError error
-        cdef const BCLIBC_ErrorFrame *err
         try:
             self._this.init_zero_calculation(
                 distance,
@@ -369,8 +345,7 @@ cdef class CythonizedBaseIntegrationEngine:
             )
             self._raise_on_zero_finding_error(error)
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -390,7 +365,6 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_ZeroFindingError error
-        cdef const BCLIBC_ErrorFrame *err
         cdef double result
         try:
             result = self._this.find_zero_angle(
@@ -403,8 +377,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_zero_finding_error(error)
             return result
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     cdef BCLIBC_MaxRangeResult _find_max_range(
         CythonizedBaseIntegrationEngine self,
@@ -424,7 +397,6 @@ cdef class CythonizedBaseIntegrationEngine:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         self._init_trajectory(shot_info)
-        cdef const BCLIBC_ErrorFrame *err
         try:
             return self._this.find_max_range(
                 low_angle_deg,
@@ -432,8 +404,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 _APEX_IS_MAX_RANGE_RADIANS,
             )
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     cdef BCLIBC_BaseTrajData _find_apex(
         CythonizedBaseIntegrationEngine self,
@@ -447,13 +418,11 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
-        cdef const BCLIBC_ErrorFrame *err
         try:
             self._this.find_apex(apex)
             return apex
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -474,7 +443,6 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef:
             BCLIBC_ZeroFindingError error
-            const BCLIBC_ErrorFrame *err
             double result
         try:
             result = self._this.zero_angle(
@@ -486,8 +454,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._raise_on_zero_finding_error(error)
             return result
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -513,7 +480,6 @@ cdef class CythonizedBaseIntegrationEngine:
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
         self._init_trajectory(shot_info)
-        cdef const BCLIBC_ErrorFrame *err 
         try:
             self._this.integrate(
                 range_limit_ft,
@@ -523,8 +489,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 reason,
             )
         except RuntimeError as e:
-            err = BCLIBC_ErrorStack_lastErr(&self._this.err_stack)
-            self._raise_solver_runtime_error(err)
+            raise SolverRuntimeError(e)
 
     cdef void _raise_on_zero_finding_error(
         CythonizedBaseIntegrationEngine self,
@@ -536,45 +501,24 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef const char* c_msg
         cdef object error_message
 
+        c_msg = <const char*>error.msg
+        error_message = c_msg.decode('utf-8', 'replace') if c_msg is not NULL else "C-level error message was NULL"
+
         if error.type == BCLIBC_ZeroFindingErrorType.OUT_OF_RANGE_ERROR:
             raise OutOfRangeError(
                 feet_from_c(error.out_of_range.requested_distance_ft),
                 feet_from_c(error.out_of_range.max_range_ft),
-                rad_from_c(error.out_of_range.look_angle_rad)
+                rad_from_c(error.out_of_range.look_angle_rad),
+                error_message
             )
 
         if error.type == BCLIBC_ZeroFindingErrorType.ZERO_FINDING_ERROR:
-            # c_msg = <const char*>err.msg
-            # error_message = c_msg.decode('utf-8', 'replace') if c_msg is not NULL else "C-level error message was NULL"
-            error_message = ""
             raise ZeroFindingError(
                 error.zero_finding.zero_finding_error,
                 error.zero_finding.iterations_count,
                 rad_from_c(error.zero_finding.last_barrel_elevation_rad),
                 error_message
             )
-
-    cdef void _raise_solver_runtime_error(
-        CythonizedBaseIntegrationEngine self,
-        const BCLIBC_ErrorFrame *f
-    ):
-        cdef const BCLIBC_ErrorStack *stack = &self._this.err_stack
-        if stack.top <= 0:
-            return
-
-        cdef char trace[4096]
-        BCLIBC_ErrorStack_toString(stack, trace, sizeof(trace))
-
-        cdef str trace_str = trace.decode('utf-8', 'ignore')
-        cdef list lines = [
-            ("=> " if i==len(trace_str.splitlines())-1 else "   ") + line
-            for i, line in enumerate(trace_str.splitlines()) if line
-        ]
-
-        trace_str = "Trace:\n" + "\n".join(lines)
-
-        cdef object exception_type = ERROR_TYPE_TO_EXCEPTION.get(f.code, SolverRuntimeError)
-        raise exception_type(trace_str)
 
 
 cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records):

@@ -1,7 +1,6 @@
 #ifndef BCLIBC_ENGINE_HPP
 #define BCLIBC_ENGINE_HPP
 
-#include "bclibc/error_stack.hpp"
 #include "bclibc/traj_filter.hpp"
 
 /*
@@ -100,6 +99,7 @@ namespace bclibc
             BCLIBC_ZeroFindingErrorData zero_finding;
             BCLIBC_OutOfRangeErrorData out_of_range;
         };
+        char msg[256];
     };
 
     class BCLIBC_Engine;
@@ -123,7 +123,6 @@ namespace bclibc
         BCLIBC_Config config;
         BCLIBC_ShotProps shot;
         BCLIBC_IntegrateFuncPtr integrate_func_ptr;
-        BCLIBC_ErrorStack err_stack;
 
     public:
         void integrate(

@@ -114,7 +114,6 @@ namespace bclibc
         }
 
         // Have to ensure cMinimumVelocity is 0 for this to work
-        BCLIBC_StatusCode status;
         BCLIBC_BaseTrajSeq result = BCLIBC_BaseTrajSeq();
 
         // Backup, adjust and restore constraints (emulate @with_no_minimum_velocity)
@@ -174,7 +173,6 @@ namespace bclibc
         BCLIBC_ZeroInitialData &result,
         BCLIBC_ZeroFindingError &error)
     {
-        BCLIBC_StatusCode status;
         BCLIBC_BaseTrajData apex;
         double apex_slant_ft;
 
@@ -211,7 +209,7 @@ namespace bclibc
                 error.out_of_range.requested_distance_ft = result.slant_range_ft;
                 error.out_of_range.max_range_ft = apex_slant_ft;
                 error.out_of_range.look_angle_rad = result.look_angle_rad;
-                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::OUT_OF_RANGE_ERROR, BCLIBC_ErrorSource::INIT_ZERO, "Out of range");
+                snprintf(error.msg, sizeof(error.msg), "Out of range");
                 return;
             }
             return;
@@ -227,7 +225,6 @@ namespace bclibc
         double ALLOWED_ZERO_ERROR_FEET,
         BCLIBC_ZeroFindingError &error)
     {
-        BCLIBC_StatusCode status;
         try
         {
             return this->zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, error);
@@ -236,8 +233,8 @@ namespace bclibc
         {
             BCLIBC_WARN("Primary zero-finding failed, switching to fallback.");
 
-            // Clean error stack
-            BCLIBC_CLEAR_ERR(&this->err_stack);
+            // Clean error
+            error.type = BCLIBC_ZeroFindingErrorType::NO_ERROR;
 
             // Fallback to guaranteed method
             return this->find_zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, 0, error);
@@ -269,7 +266,6 @@ namespace bclibc
             return look_angle_rad; // immediately return when already done
         }
 
-        BCLIBC_StatusCode status = BCLIBC_StatusCode::SUCCESS; // initialize
         BCLIBC_BaseTrajData hit;
 
         double _cZeroFindingAccuracy = this->config.cZeroFindingAccuracy;
@@ -367,7 +363,7 @@ namespace bclibc
                         error.zero_finding.zero_finding_error = range_error_ft;
                         error.zero_finding.iterations_count = iterations_count;
                         error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Distance non-convergent");
+                        snprintf(error.msg, sizeof(error.msg), "Distance non-convergent");
                         return this->shot.barrel_elevation;
                     }
                 }
@@ -380,7 +376,7 @@ namespace bclibc
                         error.zero_finding.zero_finding_error = height_error_ft;
                         error.zero_finding.iterations_count = iterations_count;
                         error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                        BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Error non-convergent");
+                        snprintf(error.msg, sizeof(error.msg), "Error non-convergent");
                         return this->shot.barrel_elevation;
                     }
                     // Revert previous adjustment
@@ -413,7 +409,7 @@ namespace bclibc
                 error.zero_finding.zero_finding_error = height_error_ft;
                 error.zero_finding.iterations_count = iterations_count;
                 error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Correction denominator is zero");
+                snprintf(error.msg, sizeof(error.msg), "Correction denominator is zero");
                 return this->shot.barrel_elevation;
             }
 
@@ -422,14 +418,13 @@ namespace bclibc
 
         // finally:
 
-        if (status != BCLIBC_StatusCode::SUCCESS)
+        if (error.type != BCLIBC_ZeroFindingErrorType::NO_ERROR)
         {
             // Fill zero_error if not already filled
-            error.type = BCLIBC_ZeroFindingErrorType::ZERO_FINDING_ERROR;
             error.zero_finding.zero_finding_error = height_error_ft;
             error.zero_finding.iterations_count = iterations_count;
             error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::ZERO_ANGLE, "Zero finding error");
+            snprintf(error.msg, sizeof(error.msg), "Zero finding error");
             return this->shot.barrel_elevation;
         }
 
@@ -448,7 +443,6 @@ namespace bclibc
         double ix;
         double iy;
         double sdist;
-        BCLIBC_StatusCode status;
         ssize_t n;
         ssize_t i;
 
@@ -607,7 +601,7 @@ namespace bclibc
             error.out_of_range.requested_distance_ft = distance;
             error.out_of_range.max_range_ft = max_range_ft;
             error.out_of_range.look_angle_rad = look_angle_rad;
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::OUT_OF_RANGE_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Out of range");
+            snprintf(error.msg, sizeof(error.msg), "Out of range");
             return this->shot.barrel_elevation;
         }
         if (std::fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
@@ -684,7 +678,7 @@ namespace bclibc
             error.zero_finding.zero_finding_error = target_y_ft;
             error.zero_finding.iterations_count = 0;
             error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, reason);
+            snprintf(error.msg, sizeof(error.msg), reason);
             return this->shot.barrel_elevation;
         }
 
@@ -816,7 +810,7 @@ namespace bclibc
             error.zero_finding.zero_finding_error = target_y_ft;
             error.zero_finding.iterations_count = this->config.cMaxIterations;
             error.zero_finding.last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
-            BCLIBC_PUSH_ERR(&this->err_stack, BCLIBC_ErrorType::ZERO_FINDING_ERROR, BCLIBC_ErrorSource::FIND_ZERO_ANGLE, "Ridder's method failed to converge.");
+            snprintf(error.msg, sizeof(error.msg), "Ridder's method failed to converge.");
             return (low_angle + high_angle) / 2.0;
         }
     };
