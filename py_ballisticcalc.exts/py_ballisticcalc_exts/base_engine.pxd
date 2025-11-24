@@ -17,6 +17,9 @@ from py_ballisticcalc_exts.traj_data cimport (
 
 
 cdef void solver_runtime_error()
+cdef void zero_finding_error(object exception, const BCLIBC_ZeroFindingError &zero_error)
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records)
+cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
@@ -197,13 +200,3 @@ cdef class CythonizedBaseIntegrationEngine:
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
     )
-
-    cdef void _raise_on_zero_finding_error(
-        CythonizedBaseIntegrationEngine self,
-        object exception,
-        const BCLIBC_ZeroFindingError &zero_error
-    )
-
-
-cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records)
-cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)

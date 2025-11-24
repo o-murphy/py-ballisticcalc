@@ -58,6 +58,34 @@ cdef void solver_runtime_error():
         raise SolverRuntimeError(e)
 
 
+cdef void zero_finding_error(
+    object exception,
+    const BCLIBC_ZeroFindingError &error
+):
+    if error.type == BCLIBC_ZeroFindingErrorType.NO_ERROR:
+        return
+
+    cdef str msg = str(exception)
+
+    if error.type == BCLIBC_ZeroFindingErrorType.OUT_OF_RANGE_ERROR:
+        raise OutOfRangeError(
+            feet_from_c(error.out_of_range.requested_distance_ft),
+            feet_from_c(error.out_of_range.max_range_ft),
+            rad_from_c(error.out_of_range.look_angle_rad),
+            msg
+        ) from exception
+
+    if error.type == BCLIBC_ZeroFindingErrorType.ZERO_FINDING_ERROR:
+        raise ZeroFindingError(
+            error.zero_finding.zero_finding_error,
+            error.zero_finding.iterations_count,
+            rad_from_c(error.zero_finding.last_barrel_elevation_rad),
+            msg
+        ) from exception
+
+    raise SolverRuntimeError(exception)
+
+
 cdef class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""
     # Expose Python-visible constants to match BaseIntegrationEngine API
@@ -197,7 +225,7 @@ cdef class CythonizedBaseIntegrationEngine:
             )
             return rad_from_c(result)
         except RuntimeError as e:
-            self._raise_on_zero_finding_error(e, error)
+            zero_finding_error(e, error)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,
@@ -344,7 +372,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 error,
             )
         except RuntimeError as e:
-            self._raise_on_zero_finding_error(e, error)
+            zero_finding_error(e, error)
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -373,7 +401,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 error,
             )
         except RuntimeError as e:
-            self._raise_on_zero_finding_error(e, error)
+            zero_finding_error(e, error)
 
     cdef BCLIBC_MaxRangeResult _find_max_range(
         CythonizedBaseIntegrationEngine self,
@@ -441,7 +469,7 @@ cdef class CythonizedBaseIntegrationEngine:
                 error,
             )
         except RuntimeError as e:
-            self._raise_on_zero_finding_error(e, error)
+            zero_finding_error(e, error)
 
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -474,34 +502,6 @@ cdef class CythonizedBaseIntegrationEngine:
             handler,
             reason,
         )
-
-    cdef void _raise_on_zero_finding_error(
-        CythonizedBaseIntegrationEngine self,
-        object exception,
-        const BCLIBC_ZeroFindingError &error
-    ):
-        if error.type == BCLIBC_ZeroFindingErrorType.NO_ERROR:
-            return
-
-        cdef str msg = str(exception)
-
-        if error.type == BCLIBC_ZeroFindingErrorType.OUT_OF_RANGE_ERROR:
-            raise OutOfRangeError(
-                feet_from_c(error.out_of_range.requested_distance_ft),
-                feet_from_c(error.out_of_range.max_range_ft),
-                rad_from_c(error.out_of_range.look_angle_rad),
-                msg
-            )
-
-        if error.type == BCLIBC_ZeroFindingErrorType.ZERO_FINDING_ERROR:
-            raise ZeroFindingError(
-                error.zero_finding.zero_finding_error,
-                error.zero_finding.iterations_count,
-                rad_from_c(error.zero_finding.last_barrel_elevation_rad),
-                msg
-            )
-
-        raise SolverRuntimeError(e)
 
 
 cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records):
