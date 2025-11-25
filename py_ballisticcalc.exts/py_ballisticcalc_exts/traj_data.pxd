@@ -32,7 +32,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         double vz
         double mach
 
-        BCLIBC_BaseTrajData() except+
+        BCLIBC_BaseTrajData() except +
         BCLIBC_BaseTrajData(
             double time,
             double px,
@@ -42,14 +42,14 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double vy,
             double vz,
             double mach
-        ) except+
+        ) except +
 
         BCLIBC_BaseTrajData(
             double time,
             const BCLIBC_V3dT &position,
             const BCLIBC_V3dT &velocity,
             double mach
-        ) except+
+        ) except +
 
         BCLIBC_V3dT position() const
         BCLIBC_V3dT velocity() const
@@ -68,7 +68,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         ) except +ZeroDivisionError
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerInterface:
-        void handle(const BCLIBC_BaseTrajData &data) except+
+        void handle(const BCLIBC_BaseTrajData &data) except +
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerCompositor(BCLIBC_BaseTrajDataHandlerInterface):
         BCLIBC_BaseTrajDataHandlerCompositor() except +
@@ -82,7 +82,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         void handle(const BCLIBC_BaseTrajData& data) except +
         void append(
             const BCLIBC_BaseTrajData &data
-        ) except+
+        ) except +
         Py_ssize_t get_length() const
         Py_ssize_t get_capacity() const
         void interpolate_at(
@@ -95,19 +95,23 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
             double look_angle_rad,
             double value,
             BCLIBC_BaseTrajData &out
-        ) except+
+        ) except +
         const BCLIBC_BaseTrajData &get_item(
             Py_ssize_t idx
-        ) except+
+        ) except +
         void get_at(
             BCLIBC_BaseTrajData_InterpKey key_kind,
             double key_value,
             double start_from_time,
             BCLIBC_BaseTrajData &out
-        ) except+
+        ) except +
 
     cdef enum class BCLIBC_TrajectoryData_InterpKey:
         pass
+
+    cdef cppclass BCLIBC_FlaggedData:
+        BCLIBC_BaseTrajData data
+        BCLIBC_TrajFlag flag
 
     # --- C++ Class BCLIBC_TrajectoryData ---
     cdef cppclass BCLIBC_TrajectoryData:
@@ -127,6 +131,28 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         double energy_ft_lb
         double ogw_lb
         BCLIBC_TrajFlag flag
+
+        BCLIBC_TrajectoryData() except +
+                
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps &props,
+            double time,
+            const BCLIBC_V3dT &range_vector,
+            const BCLIBC_V3dT &velocity_vector,
+            double mach,
+            BCLIBC_TrajFlag flag
+        ) except +
+
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps &props,
+            const BCLIBC_BaseTrajData &data,
+            BCLIBC_TrajFlag flag
+        ) except +
+
+        BCLIBC_TrajectoryData(
+            const BCLIBC_ShotProps &props,
+            const BCLIBC_FlaggedData &data
+        ) except +
 
         @staticmethod
         BCLIBC_TrajectoryData interpolate(

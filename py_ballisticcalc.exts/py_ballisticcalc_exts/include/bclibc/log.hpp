@@ -182,7 +182,6 @@ namespace bclibc
 
 #ifndef BCLIBC_ENABLE_DEBUG_LOGGING
 
-// Якщо логування вимкнено: Замінюємо всі макроси на пустий оператор
 #define BCLIBC_LOG(level, format, ...) \
     do                                 \
     {                                  \
@@ -195,22 +194,25 @@ namespace bclibc
     do                            \
     {                             \
     } while (0)
-// #define BCLIBC_INFO(format, ...) \
-//     do                           \
-//     {                            \
-//     } while (0)
-// #define BCLIBC_WARN(format, ...) \
-//     do                           \
-//     {                            \
-//     } while (0)
-// #define BCLIBC_ERROR(format, ...) \
-//     do                            \
-//     {                             \
-//     } while (0)
-// #define BCLIBC_CRITICAL(format, ...) \
-//     do                               \
-//     {                                \
-//     } while (0)
+
+/*
+#define BCLIBC_INFO(format, ...) \
+    do                           \
+    {                            \
+    } while (0)
+#define BCLIBC_WARN(format, ...) \
+    do                           \
+    {                            \
+    } while (0)
+#define BCLIBC_ERROR(format, ...) \
+    do                            \
+    {                             \
+    } while (0)
+#define BCLIBC_CRITICAL(format, ...) \
+    do                               \
+    {                                \
+    } while (0)
+*/
 
 #else
 
@@ -238,6 +240,5 @@ namespace bclibc
 
 #define BCLIBC_CRITICAL(format, ...) \
     bclibc::log(bclibc::BCLIBC_LogLevel::CRITICAL, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
-
 
 #endif // BCLIBC_LOG_HPP

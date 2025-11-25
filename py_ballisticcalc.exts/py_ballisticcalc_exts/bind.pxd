@@ -14,11 +14,11 @@ from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey
 
 
 cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:
-    BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) except+
-    BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) except+
-    BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) except+
-    BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w) except+
-    BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) except+
+    BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) except +
+    BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) except +
+    BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) except +
+    BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w) except +
+    BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) except +
 
 # python to C objects conversion
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config)

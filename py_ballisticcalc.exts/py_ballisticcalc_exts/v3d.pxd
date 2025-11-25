@@ -6,8 +6,8 @@ cdef extern from "include/bclibc/v3d.hpp" namespace "bclibc" nogil:
         double y
         double z
 
-        BCLIBC_V3dT() except+
-        BCLIBC_V3dT(double x, double y, double z) except+
+        BCLIBC_V3dT() except +
+        BCLIBC_V3dT(double x, double y, double z) except +
 
         # Arithmetic operators (create new vectors)
         BCLIBC_V3dT operator+(const BCLIBC_V3dT &other) const

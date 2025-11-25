@@ -179,7 +179,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double low_angle_deg,
         double high_angle_deg,
     )
-    cdef BCLIBC_BaseTrajData _find_apex(
+    cdef BCLIBC_TrajectoryData _find_apex(
         CythonizedBaseIntegrationEngine self,
         object shot_info
     )

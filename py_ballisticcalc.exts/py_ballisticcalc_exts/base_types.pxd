@@ -31,7 +31,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         double cGravityConstant
         double cMinimumAltitude
 
-        BCLIBC_Config() except+
+        BCLIBC_Config() except +
         BCLIBC_Config(
             double cStepMultiplier,
             double cZeroFindingAccuracy,
@@ -40,7 +40,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             int cMaxIterations,
             double cGravityConstant,
             double cMinimumAltitude
-        ) except+
+        ) except +
 
     cdef cppclass BCLIBC_CurvePoint:
         double a, b, c, d
@@ -64,7 +64,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         double density_ratio
         double cLowestTempC
 
-        BCLIBC_Atmosphere() except+
+        BCLIBC_Atmosphere() except +
         BCLIBC_Atmosphere(
             double _t0,
             double _a0,
@@ -72,7 +72,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double _mach,
             double density_ratio,
             double cLowestTempC
-        ) except+
+        ) except +
 
         void update_density_factor_and_mach_for_altitude(
             double altitude,
@@ -92,7 +92,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         int flat_fire_only
         double muzzle_velocity_fps
 
-        BCLIBC_Coriolis() except+
+        BCLIBC_Coriolis() except +
 
         BCLIBC_Coriolis(
             double sin_lat,
@@ -105,7 +105,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             double cross_north,
             int flat_fire_only,
             double muzzle_velocity_fps
-        ) except+
+        ) except +
 
         void flat_fire_offsets(
             double time,
@@ -130,14 +130,14 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         double until_distance
         double MAX_DISTANCE_FEET
 
-        BCLIBC_Wind() except+
+        BCLIBC_Wind() except +
 
         BCLIBC_Wind(
             double velocity,
             double direction_from,
             double until_distance,
             double MAX_DISTANCE_FEET
-        ) except+
+        ) except +
 
         BCLIBC_V3dT as_V3dT() const
 
@@ -147,11 +147,11 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         double next_range
         BCLIBC_V3dT last_vector_cache
 
-        BCLIBC_WindSock() except+
-        void push(const BCLIBC_Wind &wind) except+
-        void update_cache() except+
+        BCLIBC_WindSock() except +
+        void push(const BCLIBC_Wind &wind) except +
+        void update_cache() except +
         BCLIBC_V3dT current_vector() const
-        BCLIBC_V3dT vector_for_range(double next_range_param) except+
+        BCLIBC_V3dT vector_for_range(double next_range_param) except +
 
     cdef enum BCLIBC_TrajFlag:
         BCLIBC_TRAJ_FLAG_NONE = 0,
@@ -187,7 +187,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_WindSock wind_sock
         BCLIBC_TrajFlag filter_flags
 
-        BCLIBC_ShotProps() except+
+        BCLIBC_ShotProps() except +
 
         BCLIBC_ShotProps(
             double bc,
@@ -210,7 +210,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
             BCLIBC_Atmosphere atmo,
             BCLIBC_Coriolis coriolis,
             BCLIBC_WindSock wind_sock,
-            BCLIBC_TrajFlag filter_flags) except+
+            BCLIBC_TrajFlag filter_flags) except +
 
         void update_stability_coefficient() except +ZeroDivisionError
         double spin_drift(double time) const

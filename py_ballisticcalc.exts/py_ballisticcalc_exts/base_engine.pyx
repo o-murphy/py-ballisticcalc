@@ -176,16 +176,8 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             TrajectoryData: The trajectory data at the apex.
         """
-        cdef BCLIBC_BaseTrajData result = self._find_apex(shot_info)
-        cdef object props = ShotProps.from_shot(shot_info)
-        cdef BCLIBC_V3dT pos = result.position()
-        cdef BCLIBC_V3dT vel = result.velocity()
-        return TrajectoryData.from_props(
-            props,
-            result.time,
-            v3d_to_vector(&pos),
-            v3d_to_vector(&vel),
-            result.mach)
+        cdef BCLIBC_TrajectoryData apex = self._find_apex(shot_info)
+        return TrajectoryData_from_cpp(apex)
 
     def zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -427,7 +419,7 @@ cdef class CythonizedBaseIntegrationEngine:
         except RuntimeError as e:
             raise SolverRuntimeError(e)
 
-    cdef BCLIBC_BaseTrajData _find_apex(
+    cdef BCLIBC_TrajectoryData _find_apex(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
     ):
@@ -441,7 +433,11 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
         try:
             self._this.find_apex(apex)
-            return apex
+            return BCLIBC_TrajectoryData(
+                self._this.shot,
+                apex,
+                BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX
+            )
         except RuntimeError as e:
             raise SolverRuntimeError(e)
 
@@ -522,7 +518,7 @@ cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *reco
     return py_list
 
 
-cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):
+cdef object TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):
     cdef object pydata = TrajectoryData(
         time=cpp_data.time,
         distance=TrajectoryData._new_feet(cpp_data.distance_ft),
