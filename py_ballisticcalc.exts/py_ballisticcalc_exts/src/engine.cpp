@@ -429,18 +429,6 @@ namespace bclibc
 
     double BCLIBC_Engine::range_for_angle(double angle_rad)
     {
-        double ca;
-        double sa;
-        double h_prev;
-        double h_cur;
-        double denom;
-        double t;
-        double ix;
-        double iy;
-        double sdist;
-        ssize_t n;
-        ssize_t i;
-
         // Update shot data
         this->shot.barrel_elevation = angle_rad;
 
@@ -448,32 +436,64 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
         this->integrate(9e9, 9e9, 0.0, trajectory, reason);
-        ca = std::cos(this->shot.look_angle);
-        sa = std::sin(this->shot.look_angle);
-        n = trajectory.get_length();
+
+        // The ShotProps CONSTRUCTOR should already guarantee that look_angle is safe,
+        // but we use it anyway.
+        double ca = std::cos(this->shot.look_angle);
+        double sa = std::sin(this->shot.look_angle);
+        ssize_t n = trajectory.get_length();
+
         if (n >= 2)
         {
             // Linear search from end of trajectory for zero-down crossing
-            for (i = n - 1; i > 0; i--)
+            for (ssize_t i = n - 1; i > 0; i--) // Використовуємо ssize_t для змінної циклу
             {
                 const BCLIBC_BaseTrajData &prev_ptr = trajectory.get_item(i - 1);
                 const BCLIBC_BaseTrajData &cur_ptr = trajectory.get_item(i);
-                h_prev = prev_ptr.py * ca - prev_ptr.px * sa;
-                h_cur = cur_ptr.py * ca - cur_ptr.px * sa;
+
+                // Slant height (h = py*ca - px*sa)
+                double h_prev = prev_ptr.py * ca - prev_ptr.px * sa;
+                double h_cur = cur_ptr.py * ca - cur_ptr.px * sa;
+
                 if (h_prev > 0.0 && h_cur <= 0.0)
                 {
-                    // Interpolate for slant_distance
-                    denom = h_prev - h_cur;
-                    t = denom == 0.0 ? 0.0 : h_prev / denom;
+                    // Zero-down crossing FOUND. Perform linear interpolation.
+
+                    double denom = h_prev - h_cur;
+
+                    // ADDED: Protection against division by zero (Denominator == 0.0)
+                    double t;
+                    if (denom == 0.0)
+                    {
+                        // The points have the same height (parallel to the line of sight),
+                        // take the current point (cur_ptr)
+                        t = 1.0;
+                    }
+                    else
+                    {
+                        // Standard linear interpolation: t = h_prev / (h_prev - h_cur)
+                        t = h_prev / denom;
+                    }
+
+                    // Clamp t to [0, 1] for safety (хоча це вже робиться в початковому коді)
                     t = std::fmax(0.0, std::fmin(1.0, t));
-                    ix = prev_ptr.px + t * (cur_ptr.px - prev_ptr.px);
-                    iy = prev_ptr.py + t * (cur_ptr.py - prev_ptr.py);
-                    sdist = ix * ca + iy * sa;
+
+                    double ix = prev_ptr.px + t * (cur_ptr.px - prev_ptr.px);
+                    double iy = prev_ptr.py + t * (cur_ptr.py - prev_ptr.py);
+
+                    // Slant distance (sdist = px*ca + py*sa)
+                    double sdist = ix * ca + iy * sa;
+
                     return sdist;
                 }
             }
         }
-    };
+
+        // ADDED: Mandatory exit in case of no intersection or insufficient number of points.
+        // This solves the Undefined Behavior issue.
+        // Return 0.0 because target not found.
+        return 0.0;
+    }
 
     BCLIBC_MaxRangeResult BCLIBC_Engine::find_max_range(
         double low_angle_deg,
