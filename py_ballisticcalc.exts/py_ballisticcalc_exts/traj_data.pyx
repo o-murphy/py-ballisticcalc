@@ -97,7 +97,7 @@ cdef class BaseTrajSeqT:
 
 @final
 cdef class BaseTrajDataT:
-    __slots__ = ('time', '_position', '_velocity', 'mach')
+    __slots__ = ('time', 'position', 'velocity', 'mach') # for pure python mirror consistency
 
     @property
     def time(self):

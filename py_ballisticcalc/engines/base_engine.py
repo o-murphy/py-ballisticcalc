@@ -265,7 +265,7 @@ class TrajectoryDataFilter:
                 self.filter &= ~(TrajFlag.ZERO | TrajFlag.MRT)
 
     def finalize(self):
-        if self.prev_data is not None and self.prev_data.time > self.records[-1].time:
+        if self.prev_data is not None and (not self.records or self.prev_data.time > self.records[-1].time):
             self.records.append(
                 TrajectoryData.from_props(
                     self.props,

@@ -152,18 +152,17 @@ namespace bclibc
         integrate(9e9, 9e9, 0.0, trajectory, reason);
 
         // If trajectory is too short for cubic interpolation, treat as unreachable
-        if (trajectory.get_length() >= 3)
+        if (trajectory.get_length() < 3)
         {
-            const BCLIBC_BaseTrajData &last_ptr = trajectory.get_item(-1);
-            if (last_ptr.time == 0.0)
-            {
-                throw std::out_of_range("Trajectory sequence error");
-            }
-            trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
-            return (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
+            throw std::runtime_error("Trajectory too short to determine error at distance.");
         }
-
-        return 9e9;
+        const BCLIBC_BaseTrajData &last_ptr = trajectory.get_item(-1);
+        if (last_ptr.time == 0.0)
+        {
+            throw std::out_of_range("Trajectory sequence error");
+        }
+        trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
+        return (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
     };
 
     void BCLIBC_Engine::init_zero_calculation(

@@ -291,7 +291,7 @@ namespace bclibc
         if (n_size_t < 2 || n_size_t != nm1_size_t + 1)
         {
             // Insufficient data or size mismatch between breakpoints and segments
-            return 0.0;
+            throw std::invalid_argument("Invalid drag curve data: requires at least 2 points and consistent sizes.");
         }
 
         const int nm1 = (int)nm1_size_t; // Last valid segment index
