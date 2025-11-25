@@ -24,7 +24,7 @@ namespace bclibc
     double BCLIBC_interpolate3pt(double x, double x0, double x1, double x2, double y0, double y1, double y2);
 
     // Declaration for 2-point interpolation
-    BCLIBC_InterpStatus BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double *result);
+    BCLIBC_InterpStatus BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double &result);
 
 };
 

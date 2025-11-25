@@ -29,7 +29,8 @@ def env_var_is_enabled(var: str):
     return os.environ.get(var, "0").lower() in _ENV_VAR_IS_ON
 
 
-DISABLE_SHARED_STRIP = env_var_is_enabled("DISABLE_SHARED_STRIP")
+DISABLE_STRIP = env_var_is_enabled("DISABLE_SHARED_STRIP")
+
 ENABLE_CYTHON_COVERAGE = env_var_is_enabled("CYTHON_COVERAGE")
 ENABLE_CYTHON_SAFETY = env_var_is_enabled("CYTHON_SAFETY")
 
@@ -90,8 +91,6 @@ include_dirs = [
 # Define all C source files and their paths
 SOURCE_PATHS = {
     # C++ Sources:
-    "error_stack": SRC_DIR_PATH / "error_stack.cpp",
-    "v3d": SRC_DIR_PATH / "v3d.cpp",
     "interp": SRC_DIR_PATH / "interp.cpp",
     "types": SRC_DIR_PATH / "base_types.cpp",
     "bind": SRC_DIR_PATH / "py_bind.cpp",
@@ -106,11 +105,10 @@ SOURCE_PATHS = {
 # Keys are extension names (as in extension_names list)
 # Values are lists of C source file keys from SOURCE_PATHS that they depend on.
 
-_ERR_STACK_DEPS = set(["error_stack"])
-_BCLIBC_DEPS = set([*_ERR_STACK_DEPS, "v3d", "types"])
+_BASE_TYPES_DEPS = set(["types"])
 _INTERP_DEPS = set(["interp"])
-_TRAJ_DATA_DEPS = set([*_BCLIBC_DEPS, *_INTERP_DEPS, "traj_data"])
-_BIND_DEPS = set([*_BCLIBC_DEPS, "bind"])
+_TRAJ_DATA_DEPS = set([*_BASE_TYPES_DEPS, *_INTERP_DEPS, "traj_data"])
+_BIND_DEPS = set([*_BASE_TYPES_DEPS, "bind"])
 _ENGINE_DEPS = set([*_BIND_DEPS, *_TRAJ_DATA_DEPS, "traj_filter", "engine"])
 _RK4_DEPS = set([*_ENGINE_DEPS, "rk4"])
 _EULER_DEPS = set([*_ENGINE_DEPS, "euler"])
@@ -129,7 +127,6 @@ CPP_EXTENSION_DEPS = {
     # Test modules (expose internal C++ functions for tests only)
     "_test_helpers": _TEST_DEPS,
     "_test_engine": _TEST_DEPS,
-    "_test_error_stack": _ERR_STACK_DEPS,
 }
 
 TEST_EXTENSIONS_DEPS = {}
@@ -157,8 +154,8 @@ elif is_macos:
 else:
     # GCC/Clang flags
     c_compile_args = ["-g", "-O0", "-std=c99"]
-    cpp_compile_args = ["-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
-    if DISABLE_SHARED_STRIP:
+    cpp_compile_args = ["-fopenmp", "-x", "c++", "-std=c++11", "-O2", "-Wall", "-g"]
+    if DISABLE_STRIP:
         cpp_extra_link_args = []
     else:
         # c_compile_args = ["-O3", "-std=c99", "-DNDEBUG"]

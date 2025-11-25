@@ -13,7 +13,6 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Coriolis,
     BCLIBC_ShotProps,
     BCLIBC_TrajFlag,
-    BCLIBC_ErrorType,
 )
 from py_ballisticcalc.unit import (
     Angular,
@@ -21,7 +20,7 @@ from py_ballisticcalc.unit import (
     Unit,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTraj_InterpKey
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey
 
 from py_ballisticcalc.vector import Vector
 from py_ballisticcalc.conditions import Coriolis
@@ -133,11 +132,7 @@ cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_list):
         raise RuntimeError("Invalid wind entry in winds list during conversion")
 
     # 3. Update the cache for the first (zero) wind element after filling the vector
-    cdef BCLIBC_ErrorType error_code = ws.update_cache()
-    if error_code != BCLIBC_ErrorType.NO_ERROR:
-        # This is a BCLIBC error, not a C++ exception, so no except+ is needed here.
-        raise RuntimeError("BCLIBC_WindSock initialization error during final cache update.")
-
+    ws.update_cache()
     return ws
 
 
@@ -193,50 +188,50 @@ cdef object v3d_to_vector(const BCLIBC_V3dT *v):
     return Vector(v.x, v.y, v.z)
 
 
-cdef BCLIBC_BaseTraj_InterpKey _attribute_to_key(str key_attribute):
-    cdef BCLIBC_BaseTraj_InterpKey key_kind
+cdef BCLIBC_BaseTrajData_InterpKey _attribute_to_key(str key_attribute):
+    cdef BCLIBC_BaseTrajData_InterpKey key_kind
 
     if key_attribute == 'time':
-        key_kind = BCLIBC_BaseTraj_InterpKey.TIME
+        key_kind = BCLIBC_BaseTrajData_InterpKey.TIME
     elif key_attribute == 'mach':
-        key_kind = BCLIBC_BaseTraj_InterpKey.MACH
+        key_kind = BCLIBC_BaseTrajData_InterpKey.MACH
     elif key_attribute == 'position.x':
-        key_kind = BCLIBC_BaseTraj_InterpKey.POS_X
+        key_kind = BCLIBC_BaseTrajData_InterpKey.POS_X
     elif key_attribute == 'position.y':
-        key_kind = BCLIBC_BaseTraj_InterpKey.POS_Y
+        key_kind = BCLIBC_BaseTrajData_InterpKey.POS_Y
     elif key_attribute == 'position.z':
-        key_kind = BCLIBC_BaseTraj_InterpKey.POS_Z
+        key_kind = BCLIBC_BaseTrajData_InterpKey.POS_Z
     elif key_attribute == 'velocity.x':
-        key_kind = BCLIBC_BaseTraj_InterpKey.VEL_X
+        key_kind = BCLIBC_BaseTrajData_InterpKey.VEL_X
     elif key_attribute == 'velocity.y':
-        key_kind = BCLIBC_BaseTraj_InterpKey.VEL_Y
+        key_kind = BCLIBC_BaseTrajData_InterpKey.VEL_Y
     elif key_attribute == 'velocity.z':
-        key_kind = BCLIBC_BaseTraj_InterpKey.VEL_Z
+        key_kind = BCLIBC_BaseTrajData_InterpKey.VEL_Z
     else:
         raise AttributeError(f"Cannot interpolate on '{key_attribute}'")
 
     return key_kind
 
-cdef str _key_to_attribute(BCLIBC_BaseTraj_InterpKey key_kind):
+cdef str _key_to_attribute(BCLIBC_BaseTrajData_InterpKey key_kind):
     cdef str key_attribute
 
-    if key_kind == BCLIBC_BaseTraj_InterpKey.TIME:
+    if key_kind == BCLIBC_BaseTrajData_InterpKey.TIME:
         key_attribute = 'time'
-    elif key_kind == BCLIBC_BaseTraj_InterpKey.MACH:
+    elif key_kind == BCLIBC_BaseTrajData_InterpKey.MACH:
         key_attribute = 'mach'
-    elif key_kind == BCLIBC_BaseTraj_InterpKey.POS_X:
+    elif key_kind == BCLIBC_BaseTrajData_InterpKey.POS_X:
         key_attribute = 'position.x'
-    elif key_kind == BCLIBC_BaseTraj_InterpKey.POS_Y:
+    elif key_kind == BCLIBC_BaseTrajData_InterpKey.POS_Y:
         key_attribute = 'position.y'
-    elif key_kind == BCLIBC_BaseTraj_InterpKey.POS_Z:
+    elif key_kind == BCLIBC_BaseTrajData_InterpKey.POS_Z:
         key_attribute = 'position.z'
-    elif key_kind == BCLIBC_BaseTraj_InterpKey.VEL_X:
+    elif key_kind == BCLIBC_BaseTrajData_InterpKey.VEL_X:
         key_attribute = 'velocity.x'
-    elif key_kind == BCLIBC_BaseTraj_InterpKey.VEL_Y:
+    elif key_kind == BCLIBC_BaseTrajData_InterpKey.VEL_Y:
         key_attribute = 'velocity.y'
-    elif key_kind == BCLIBC_BaseTraj_InterpKey.VEL_Z:
+    elif key_kind == BCLIBC_BaseTrajData_InterpKey.VEL_Z:
         key_attribute = 'velocity.z'
     else:
-        raise ValueError(f"Unknown BCLIBC_BaseTraj_InterpKey value: {key_kind}")
+        raise ValueError(f"Unknown BCLIBC_BaseTrajData_InterpKey value: {key_kind}")
 
     return key_attribute

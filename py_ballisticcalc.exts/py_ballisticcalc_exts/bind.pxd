@@ -10,15 +10,15 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTraj_InterpKey
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData_InterpKey
 
 
 cdef extern from "include/bclibc/py_bind.hpp" namespace "bclibc" nogil:
-    BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) except+
-    BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) except+
-    BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) noexcept nogil
-    BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w) noexcept nogil
-    BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) noexcept nogil
+    BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist) except +
+    BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points) except +
+    BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject * config) except +
+    BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w) except +
+    BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo) except +
 
 # python to C objects conversion
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config)
@@ -37,5 +37,5 @@ cdef object rad_from_c(double val)
 
 cdef object v3d_to_vector(const BCLIBC_V3dT *v)
 
-cdef BCLIBC_BaseTraj_InterpKey _attribute_to_key(str key_attribute)
-cdef str _key_to_attribute(BCLIBC_BaseTraj_InterpKey key_kind)
+cdef BCLIBC_BaseTrajData_InterpKey _attribute_to_key(str key_attribute)
+cdef str _key_to_attribute(BCLIBC_BaseTrajData_InterpKey key_kind)
