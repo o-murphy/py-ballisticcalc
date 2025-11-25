@@ -180,6 +180,42 @@ namespace bclibc
 
 };
 
+#ifndef BCLIBC_ENABLE_DEBUG_LOGGING
+
+#define BCLIBC_LOG(level, format, ...) \
+    do                                 \
+    {                                  \
+    } while (0)
+#define BCLIBC_NOTSET(format, ...) \
+    do                             \
+    {                              \
+    } while (0)
+#define BCLIBC_DEBUG(format, ...) \
+    do                            \
+    {                             \
+    } while (0)
+
+/*
+#define BCLIBC_INFO(format, ...) \
+    do                           \
+    {                            \
+    } while (0)
+#define BCLIBC_WARN(format, ...) \
+    do                           \
+    {                            \
+    } while (0)
+#define BCLIBC_ERROR(format, ...) \
+    do                            \
+    {                             \
+    } while (0)
+#define BCLIBC_CRITICAL(format, ...) \
+    do                               \
+    {                                \
+    } while (0)
+*/
+
+#else
+
 // --- Convenience Macro for C-style API Compatibility ---
 // The original BCLIBC_LOG macro is retained to automatically pass metadata
 #define BCLIBC_LOG(level, format, ...) \
@@ -191,6 +227,8 @@ namespace bclibc
 #define BCLIBC_DEBUG(format, ...) \
     bclibc::log(bclibc::BCLIBC_LogLevel::DEBUG, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
+#endif // BCLIBC_ENABLE_DEBUG_LOGGING
+
 #define BCLIBC_INFO(format, ...) \
     bclibc::log(bclibc::BCLIBC_LogLevel::INFO, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
@@ -198,9 +236,9 @@ namespace bclibc
     bclibc::log(bclibc::BCLIBC_LogLevel::WARNING, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #define BCLIBC_ERROR(format, ...) \
-    bclibc::log(bclibc::BCLIBC_LogLevel::WARNING, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
+    bclibc::log(bclibc::BCLIBC_LogLevel::ERROR, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #define BCLIBC_CRITICAL(format, ...) \
-    bclibc::log(bclibc::BCLIBC_LogLevel::WARNING, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
+    bclibc::log(bclibc::BCLIBC_LogLevel::CRITICAL, __FILE__, __LINE__, __func__, format, ##__VA_ARGS__)
 
 #endif // BCLIBC_LOG_HPP

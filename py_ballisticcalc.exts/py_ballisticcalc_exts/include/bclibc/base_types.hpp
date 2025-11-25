@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <vector>
 #include "v3d.hpp"
-#include "bclibc/error_stack.hpp"
+#include "bclibc/log.hpp"
 
 namespace bclibc
 {
@@ -21,7 +21,7 @@ namespace bclibc
     extern const double BCLIBC_cMaxWindDistanceFeet;
     extern const double BCLIBC_cEarthAngularVelocityRadS;
 
-    typedef enum
+    enum BCLIBC_TrajFlag
     {
         BCLIBC_TRAJ_FLAG_NONE = 0,
         BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
@@ -32,7 +32,7 @@ namespace bclibc
         BCLIBC_TRAJ_FLAG_APEX = 16,
         BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX,
         BCLIBC_TRAJ_FLAG_MRT = 32
-    } BCLIBC_TrajFlag;
+    };
 
     struct BCLIBC_Config
     {
@@ -96,8 +96,8 @@ namespace bclibc
 
         void update_density_factor_and_mach_for_altitude(
             double altitude,
-            double *density_ratio_ptr,
-            double *mach_ptr) const;
+            double &density_ratio_out,
+            double &mach_out) const;
     };
 
     struct BCLIBC_Coriolis
@@ -131,15 +131,15 @@ namespace bclibc
             double time,
             double distance_ft,
             double drop_ft,
-            double *delta_y,
-            double *delta_z) const;
+            double &delta_y,
+            double &delta_z) const;
 
         BCLIBC_V3dT adjust_range(
-            double time, const BCLIBC_V3dT *range_vector) const;
+            double time, const BCLIBC_V3dT &range_vector) const;
 
         void coriolis_acceleration_local(
-            const BCLIBC_V3dT *velocity_ptr,
-            BCLIBC_V3dT *accel_ptr) const;
+            const BCLIBC_V3dT &velocity_vector,
+            BCLIBC_V3dT &accel_out) const;
     };
 
     struct BCLIBC_Wind
@@ -155,7 +155,7 @@ namespace bclibc
                     double direction_from,
                     double until_distance,
                     double MAX_DISTANCE_FEET);
-        BCLIBC_V3dT as_vector() const;
+        BCLIBC_V3dT as_V3dT() const;
     };
 
     struct BCLIBC_WindSock
@@ -167,8 +167,8 @@ namespace bclibc
         BCLIBC_V3dT last_vector_cache;
 
         BCLIBC_WindSock();
-        void push(BCLIBC_Wind wind);
-        BCLIBC_ErrorType update_cache();
+        void push(const BCLIBC_Wind &wind);
+        void update_cache();
         BCLIBC_V3dT current_vector() const;
         BCLIBC_V3dT vector_for_range(double next_range_param);
     };
@@ -224,9 +224,10 @@ namespace bclibc
 
         ~BCLIBC_ShotProps();
 
-        BCLIBC_ErrorType update_stability_coefficient();
+        void update_stability_coefficient();
         double spin_drift(double time) const;
         double drag_by_mach(double mach) const;
+        size_t size() const;
     };
 
     // helpers

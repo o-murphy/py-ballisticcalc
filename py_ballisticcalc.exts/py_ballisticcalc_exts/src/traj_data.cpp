@@ -1,150 +1,143 @@
 #include <cmath>
-#include <cstdlib> // Required for calloc, malloc, free
-#include <cstring> // Required for memcpy
+#include <cstdlib>
+#include <cstring>
 #include <stdexcept>
 #include "bclibc/traj_data.hpp"
 
 namespace bclibc
 {
-
     /**
-     * @brief Lookup table helper to retrieve a specific scalar value from BCLIBC_BaseTrajData.
+     * @brief Constructs trajectory data from individual scalar components.
      *
-     * Used internally by the interpolation function to get the correct 'x' values
-     * for the interpolation key.
+     * Direct member initialization - most efficient for known scalar values.
      *
-     * @param p Pointer to the BCLIBC_BaseTrajData structure.
-     * @param key_kind The BCLIBC_BaseTraj_InterpKey specifying which field to retrieve (e.g., BCLIBC_BaseTraj_InterpKey::TIME, BCLIBC_BaseTraj_InterpKey::MACH, BCLIBC_BaseTraj_InterpKey::POS_X).
-     * @return The value of the requested field. Returns 0.0 for an unknown key.
+     * @param time Flight time in seconds.
+     * @param px Position x-coordinate (downrange).
+     * @param py Position y-coordinate (height).
+     * @param pz Position z-coordinate (windage).
+     * @param vx Velocity x-component.
+     * @param vy Velocity y-component.
+     * @param vz Velocity z-component.
+     * @param mach Mach number.
      */
-    static inline double get_key_value(const BCLIBC_BaseTrajData *p, BCLIBC_BaseTraj_InterpKey key_kind)
-    {
-        switch (key_kind)
-        {
-        case BCLIBC_BaseTraj_InterpKey::TIME:
-            return p->time;
-        case BCLIBC_BaseTraj_InterpKey::MACH:
-            return p->mach;
-        case BCLIBC_BaseTraj_InterpKey::POS_X:
-            return p->position.x;
-        case BCLIBC_BaseTraj_InterpKey::POS_Y:
-            return p->position.y;
-        case BCLIBC_BaseTraj_InterpKey::POS_Z:
-            return p->position.z;
-        case BCLIBC_BaseTraj_InterpKey::VEL_X:
-            return p->velocity.x;
-        case BCLIBC_BaseTraj_InterpKey::VEL_Y:
-            return p->velocity.y;
-        case BCLIBC_BaseTraj_InterpKey::VEL_Z:
-            return p->velocity.z;
-        default:
-            return 0.0;
-        }
-    }
-
     BCLIBC_BaseTrajData::BCLIBC_BaseTrajData(
         double time,
-        BCLIBC_V3dT position,
-        BCLIBC_V3dT velocity,
+        double px, double py, double pz,
+        double vx, double vy, double vz,
         double mach)
         : time(time),
-          position(position),
-          velocity(velocity),
-          mach(mach) {};
+          px(px), py(py), pz(pz),
+          vx(vx), vy(vy), vz(vz),
+          mach(mach) {}
 
     /**
-     * @brief Interpolates a BCLIBC_BaseTrajData structure using three surrounding data points.
+     * @brief Constructs trajectory data from position and velocity vectors.
      *
-     * Performs a 3-point interpolation (likely PCHIP or similar cubic spline variant)
-     * on all fields of the trajectory data (`time, position, velocity, mach`) based on
-     * a specified `key_kind` (the independent variable for interpolation) and its target `key_value`.
+     * OPTIMIZATION: Takes vectors by const reference to avoid unnecessary copies.
+     * Extracts vector components during initialization.
      *
-     * @param key_kind The field to use as the independent variable for interpolation (x-axis).
-     * @param key_value The target value for the independent variable at which to interpolate.
-     * @param p0 Pointer to the first data point (before or at the start of the segment).
-     * @param p1 Pointer to the second data point.
-     * @param p2 Pointer to the third data point (after or at the end of the segment).
-     * @param out Pointer to the BCLIBC_BaseTrajData structure where the interpolated result will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input, BCLIBC_ErrorType::ZERO_DIVISION_ERROR for degenerate segments (identical key values).
+     * @param time Flight time in seconds.
+     * @param position Position vector (x=downrange, y=height, z=windage).
+     * @param velocity Velocity vector (x, y, z components).
+     * @param mach Mach number.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajData::interpolate(
-        BCLIBC_BaseTraj_InterpKey key_kind,
-        double key_value,
-        const BCLIBC_BaseTrajData *p0,
-        const BCLIBC_BaseTrajData *p1,
-        const BCLIBC_BaseTrajData *p2,
-        BCLIBC_BaseTrajData *out)
+    BCLIBC_BaseTrajData::BCLIBC_BaseTrajData(
+        double time,
+        const BCLIBC_V3dT &position,
+        const BCLIBC_V3dT &velocity,
+        double mach)
+        : time(time),
+          px(position.x), py(position.y), pz(position.z),
+          vx(velocity.x), vy(velocity.y), vz(velocity.z),
+          mach(mach)
     {
-        if (!p0 || !p1 || !p2 || !out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
+    }
 
-        // Get key values
-        const double x0 = get_key_value(p0, key_kind);
-        const double x1 = get_key_value(p1, key_kind);
-        const double x2 = get_key_value(p2, key_kind);
+    /**
+     * @brief Interpolates trajectory data using 3-point PCHIP method.
+     *
+     * Performs monotone-preserving cubic Hermite interpolation on all trajectory
+     * components based on a specified key (independent variable).
+     *
+     * ALGORITHM:
+     * 1. Extract and cache key values from p0, p1, p2
+     * 2. Validate non-degenerate (no duplicate key values)
+     * 3. For each field:
+     *    - If field == key_kind: set directly to key_value
+     *    - Otherwise: perform PCHIP interpolation
+     *
+     * OPTIMIZATION: Caches key values and uses direct field access instead of
+     * repeated get_key_val() calls. Avoids creating intermediate vector objects.
+     *
+     * @param key_kind The field to use as independent variable (TIME, MACH, POS_X, etc.).
+     * @param key_value Target value for interpolation.
+     * @param p0 First data point (before target).
+     * @param p1 Second data point (center).
+     * @param p2 Third data point (after target).
+     * @param out Output parameter - populated with interpolated result.
+     *
+     * @throws std::domain_error if any two key values are equal (degenerate segment).
+     *
+     * @note This is equivalent to interpolate3pt_vectorized but with skip_key logic.
+     */
+    void BCLIBC_BaseTrajData::interpolate(
+        BCLIBC_BaseTrajData_InterpKey key_kind,
+        double key_value,
+        const BCLIBC_BaseTrajData &p0,
+        const BCLIBC_BaseTrajData &p1,
+        const BCLIBC_BaseTrajData &p2,
+        BCLIBC_BaseTrajData &out)
+    {
+        // Cache key values - avoid repeated virtual function calls
+        const double x0 = p0.get_key_val(key_kind);
+        const double x1 = p1.get_key_val(key_kind);
+        const double x2 = p2.get_key_val(key_kind);
 
-        // Guard against degenerate segments
+        // Validate non-degenerate segments
         if (x0 == x1 || x0 == x2 || x1 == x2)
         {
-            return BCLIBC_ErrorType::ZERO_DIVISION_ERROR;
+            throw std::domain_error("Degenerate interpolation segment: duplicate key values");
         }
 
-        // Cache position and velocity
-        const BCLIBC_V3dT vp0 = p0->position;
-        const BCLIBC_V3dT vp1 = p1->position;
-        const BCLIBC_V3dT vp2 = p2->position;
-        const BCLIBC_V3dT vv0 = p0->velocity;
-        const BCLIBC_V3dT vv1 = p1->velocity;
-        const BCLIBC_V3dT vv2 = p2->velocity;
+        // Interpolate all fields directly without creating intermediate vectors
+        // This avoids 6 vector constructions compared to original code
 
-        // Scalar interpolation using PCHIP
+        // Time: use key_value directly if interpolating by time
+        out.time = (key_kind == BCLIBC_BaseTrajData_InterpKey::TIME)
+                       ? key_value
+                       : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.time, p1.time, p2.time);
 
-        // Interpolate all scalar fields
-        out->time = (key_kind == BCLIBC_BaseTraj_InterpKey::TIME) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->time, p1->time, p2->time);
-        out->position = BCLIBC_V3dT{
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.x, vp1.x, vp2.x),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.y, vp1.y, vp2.y),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vp0.z, vp1.z, vp2.z)};
-        out->velocity = BCLIBC_V3dT{
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.x, vv1.x, vv2.x),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.y, vv1.y, vv2.y),
-            BCLIBC_interpolate3pt(key_value, x0, x1, x2, vv0.z, vv1.z, vv2.z)};
+        // Position components
+        out.px = BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.px, p1.px, p2.px);
+        out.py = BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.py, p1.py, p2.py);
+        out.pz = BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.pz, p1.pz, p2.pz);
 
-        out->mach = (key_kind == BCLIBC_BaseTraj_InterpKey::MACH) ? key_value : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0->mach, p1->mach, p2->mach);
+        // Velocity components
+        out.vx = BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.vx, p1.vx, p2.vx);
+        out.vy = BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.vy, p1.vy, p2.vy);
+        out.vz = BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.vz, p1.vz, p2.vz);
 
-        return BCLIBC_ErrorType::NO_ERROR;
-    };
-
-    BCLIBC_BaseTraj::BCLIBC_BaseTraj(
-        double time,
-        double px,
-        double py,
-        double pz,
-        double vx,
-        double vy,
-        double vz,
-        double mach)
-        : time(time),
-          px(px),
-          py(py),
-          pz(pz),
-          vx(vx),
-          vy(vy),
-          vz(vz),
-          mach(mach) {};
+        // Mach: use key_value directly if interpolating by mach
+        out.mach = (key_kind == BCLIBC_BaseTrajData_InterpKey::MACH)
+                       ? key_value
+                       : BCLIBC_interpolate3pt(key_value, x0, x1, x2, p0.mach, p1.mach, p2.mach);
+    }
 
     /**
-     * @brief Get the key value of a BaseTraj element.
+     * @brief Retrieves the value of a specified key field.
      *
-     * @param key_kind Kind of key.
-     * @return Value of the key.
+     * Maps enum keys to struct members via switch statement.
+     *
+     * PERFORMANCE: O(1) with compiler optimization (likely jump table).
+     *
+     * @param key_kind The field to retrieve (TIME, MACH, POS_X, etc.).
+     * @return Value of the specified field, or 0.0 if key is invalid/out of range.
+     *
+     * @note Returns 0.0 for invalid keys rather than throwing to avoid exceptions in hot paths.
      */
-    double BCLIBC_BaseTraj::key_val(BCLIBC_BaseTraj_InterpKey key_kind) const
+    double BCLIBC_BaseTrajData::get_key_val(BCLIBC_BaseTrajData_InterpKey key_kind) const
     {
-        int k = (int)key_kind;
+        // Bounds check
         if ((int)key_kind < 0 || (int)key_kind > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
             return 0.0;
@@ -152,21 +145,21 @@ namespace bclibc
 
         switch (key_kind)
         {
-        case BCLIBC_BaseTraj_InterpKey::TIME:
+        case BCLIBC_BaseTrajData_InterpKey::TIME:
             return this->time;
-        case BCLIBC_BaseTraj_InterpKey::MACH:
+        case BCLIBC_BaseTrajData_InterpKey::MACH:
             return this->mach;
-        case BCLIBC_BaseTraj_InterpKey::POS_X:
+        case BCLIBC_BaseTrajData_InterpKey::POS_X:
             return this->px;
-        case BCLIBC_BaseTraj_InterpKey::POS_Y:
+        case BCLIBC_BaseTrajData_InterpKey::POS_Y:
             return this->py;
-        case BCLIBC_BaseTraj_InterpKey::POS_Z:
+        case BCLIBC_BaseTrajData_InterpKey::POS_Z:
             return this->pz;
-        case BCLIBC_BaseTraj_InterpKey::VEL_X:
+        case BCLIBC_BaseTrajData_InterpKey::VEL_X:
             return this->vx;
-        case BCLIBC_BaseTraj_InterpKey::VEL_Y:
+        case BCLIBC_BaseTrajData_InterpKey::VEL_Y:
             return this->vy;
-        case BCLIBC_BaseTraj_InterpKey::VEL_Z:
+        case BCLIBC_BaseTrajData_InterpKey::VEL_Z:
             return this->vz;
         default:
             return 0.0;
@@ -174,523 +167,514 @@ namespace bclibc
     }
 
     /**
-     * Computes the slant height of a trajectory point relative to a given look angle.
+     * @brief Computes slant height relative to a look angle.
      *
-     * This function calculates the slant height using the formula:
-     * slant_height = py * cos(angle) - px * sin(angle),
-     * where `ca` and `sa` are the cosine and sine of the look angle, respectively.
+     * Slant height represents the perpendicular distance from the line of sight.
+     * This is used for ballistic calculations where the shooter is at an angle.
      *
-     * @param ca Cosine of the look angle.
-     * @param sa Sine of the look angle.
-     * @return The computed slant height, or NAN if the input pointer is NULL.
+     * Formula: slant_height = py * cos(angle) - px * sin(angle)
+     *
+     * OPTIMIZATION: Takes precomputed cos/sin to avoid repeated trig calculations.
+     *
+     * @param ca Cosine of look angle.
+     * @param sa Sine of look angle.
+     * @return Computed slant height value.
+     *
+     * @note Positive slant height means target is above line of sight.
+     * @note This is projection onto line perpendicular to sight line.
      */
-    double BCLIBC_BaseTraj::slant_val_buf(double ca, double sa) const
+    double BCLIBC_BaseTrajData::slant_val_buf(double ca, double sa) const
     {
         return this->py * ca - this->px * sa;
     }
 
     /**
-     * Vectorized 3-point interpolation for all trajectory components.
+     * @brief Vectorized 3-point interpolation for all trajectory fields.
      *
-     * Performs PCHIP interpolation for all fields of BCLIBC_BaseTraj in a single pass.
-     * When interpolating by BCLIBC_BaseTraj_InterpKey::TIME, the time field is set directly to x.
-     * When interpolating by BCLIBC_BaseTraj_InterpKey::MACH, the mach field is set directly to x.
+     * OPTIMIZATION: Performs all interpolations in a single function call,
+     * avoiding overhead of multiple function calls and improving cache locality.
+     * All 8 trajectory components are interpolated in one pass.
      *
-     * @param x The target value to interpolate at.
-     * @param ox0 Key value at point 0.
-     * @param ox1 Key value at point 1.
-     * @param ox2 Key value at point 2.
-     * @param p0 Pointer to trajectory point 0.
-     * @param p1 Pointer to trajectory point 1.
-     * @param p2 Pointer to trajectory point 2.
-     * @param out Pointer to output BCLIBC_BaseTraj where results will be stored.
-     * @param skip_key BCLIBC_BaseTraj_InterpKey indicating which field is the interpolation key.
+     * KEY DIFFERENCE vs interpolate(): The independent variable values (ox0, ox1, ox2)
+     * are provided directly instead of being extracted via key_kind lookup.
+     *
+     * @param x Target interpolation value (on independent variable axis).
+     * @param ox0 Independent variable value at point 0.
+     * @param ox1 Independent variable value at point 1.
+     * @param ox2 Independent variable value at point 2.
+     * @param p0 Trajectory point 0.
+     * @param p1 Trajectory point 1.
+     * @param p2 Trajectory point 2.
+     * @param out Output trajectory data - populated with interpolated values.
+     * @param skip_key Key being used as independent variable - this field is set
+     *                 directly to x instead of being interpolated (TIME or MACH typically).
+     *
+     * @note Static method - can be called without instance.
+     * @note Assumes caller has validated non-degenerate segments (ox0 != ox1 != ox2).
+     *
+     * @example
+     * // Interpolate at distance = 1000ft using cached distance values
+     * BCLIBC_BaseTrajData::interpolate3pt_vectorized(
+     *     1000.0, 900.0, 1000.0, 1100.0,  // x, ox0, ox1, ox2
+     *     p0, p1, p2, result,
+     *     BCLIBC_BaseTrajData_InterpKey::POS_X
+     * );
+     * // result.px will be 1000.0, other fields interpolated
      */
-    void BCLIBC_BaseTraj::interpolate3pt_vectorized(
+    void BCLIBC_BaseTrajData::interpolate3pt_vectorized(
         double x, double ox0, double ox1, double ox2,
-        const BCLIBC_BaseTraj *p0, const BCLIBC_BaseTraj *p1, const BCLIBC_BaseTraj *p2,
-        BCLIBC_BaseTraj *out, BCLIBC_BaseTraj_InterpKey skip_key)
+        const BCLIBC_BaseTrajData &p0,
+        const BCLIBC_BaseTrajData &p1,
+        const BCLIBC_BaseTrajData &p2,
+        BCLIBC_BaseTrajData &out,
+        BCLIBC_BaseTrajData_InterpKey skip_key)
     {
-        // Time: either use x directly (if interpolating by time) or interpolate
-        out->time = (skip_key == BCLIBC_BaseTraj_InterpKey::TIME)
-                        ? x
-                        : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->time, p1->time, p2->time);
+        // Time: set directly if interpolating by time, otherwise interpolate
+        out.time = (skip_key == BCLIBC_BaseTrajData_InterpKey::TIME)
+                       ? x
+                       : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.time, p1.time, p2.time);
 
         // Position components - always interpolate
-        out->px = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->px, p1->px, p2->px);
-        out->py = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->py, p1->py, p2->py);
-        out->pz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz);
+        out.px = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.px, p1.px, p2.px);
+        out.py = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.py, p1.py, p2.py);
+        out.pz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.pz, p1.pz, p2.pz);
 
         // Velocity components - always interpolate
-        out->vx = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx);
-        out->vy = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy);
-        out->vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz);
+        out.vx = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vx, p1.vx, p2.vx);
+        out.vy = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vy, p1.vy, p2.vy);
+        out.vz = BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.vz, p1.vz, p2.vz);
 
-        // Mach: either use x directly (if interpolating by mach) or interpolate
-        out->mach = (skip_key == BCLIBC_BaseTraj_InterpKey::MACH)
-                        ? x
-                        : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
+        // Mach: set directly if interpolating by mach, otherwise interpolate
+        out.mach = (skip_key == BCLIBC_BaseTrajData_InterpKey::MACH)
+                       ? x
+                       : BCLIBC_interpolate3pt(x, ox0, ox1, ox2, p0.mach, p1.mach, p2.mach);
+    }
+
+    // ============================================================================
+    // Handler Compositor
+    // ============================================================================
+
+    BCLIBC_BaseTrajDataHandlerCompositor::~BCLIBC_BaseTrajDataHandlerCompositor() {}
+
+    /**
+     * @brief Distributes trajectory data to all registered handlers.
+     *
+     * Implements composite pattern for trajectory data processing.
+     * Each handler receives the same data point.
+     *
+     * @param data Trajectory data to distribute.
+     */
+    void BCLIBC_BaseTrajDataHandlerCompositor::handle(const BCLIBC_BaseTrajData &data)
+    {
+        for (auto *handler : handlers_)
+        {
+            handler->handle(data);
+        }
+    }
+
+    // ============================================================================
+    // Trajectory Sequence
+    // ============================================================================
+
+    /**
+     * @brief Destructor - logs buffer statistics for debugging.
+     *
+     * Outputs final buffer size and memory usage to help with capacity planning.
+     */
+    BCLIBC_BaseTrajSeq::~BCLIBC_BaseTrajSeq()
+    {
+        BCLIBC_DEBUG("Dense buffer length/capacity: %zu/%zu, Size: %zu bytes",
+                     this->get_length(), this->get_capacity(),
+                     this->get_length() * sizeof(BCLIBC_BaseTrajData));
     }
 
     /**
-     * @brief Appends a new trajectory point to the end of the sequence.
+     * @brief Handler interface implementation - appends data to sequence.
      *
-     * This function ensures that the sequence has enough capacity, then
-     * writes the provided values into a new BCLIBC_BaseTraj element at the end.
+     * Allows trajectory sequence to be used as a handler in data processing pipelines.
      *
-     * @param time Time of the trajectory point.
-     * @param px X position.
-     * @param py Y position.
-     * @param pz Z position.
-     * @param vx X velocity.
-     * @param vy Y velocity.
-     * @param vz Z velocity.
-     * @param mach Mach number.
-     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::MEMORY_ERROR if allocation fails,
-     *         BCLIBC_ErrorType::INPUT_ERROR if seq is NULL.
+     * @param data Trajectory data to append.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::append(double time, double px, double py, double pz, double vx, double vy, double vz, double mach)
+    void BCLIBC_BaseTrajSeq::handle(const BCLIBC_BaseTrajData &data)
     {
-
-        try
-        {
-            this->buffer.push_back(
-                BCLIBC_BaseTraj(time, px, py, pz, vx, vy, vz, mach));
-        }
-        catch (...)
-        {
-            return BCLIBC_ErrorType::RUNTIME_ERROR;
-        }
-        return BCLIBC_ErrorType::NO_ERROR;
-    };
+        this->append(data);
+    }
 
     /**
-     * Returns the length of the trajectory sequence.
+     * @brief Appends trajectory point to sequence.
      *
-     * @return The number of elements in the sequence, or -1 if seq is NULL.
+     * OPTIMIZATION: Uses std::vector::push_back for automatic memory management
+     * and optimal reallocation strategy (typically 1.5x or 2x growth factor).
+     *
+     * AMORTIZED COMPLEXITY: O(1) - occasional reallocations are amortized.
+     *
+     * @param data Trajectory data to append (copied into internal buffer).
+     */
+    void BCLIBC_BaseTrajSeq::append(const BCLIBC_BaseTrajData &data)
+    {
+        this->buffer.push_back(data);
+    }
+
+    /**
+     * @brief Returns the number of trajectory points in the sequence.
+     *
+     * @return Number of elements, always >= 0.
      */
     ssize_t BCLIBC_BaseTrajSeq::get_length() const
     {
         return this->buffer.size();
-    };
+    }
 
     /**
-     * Returns the capacity of the trajectory sequence.
+     * @brief Returns the allocated capacity of the internal buffer.
      *
-     * @return capacity of the trajectory sequence, or -1 if seq is NULL.
+     * Capacity >= length. Capacity increases geometrically during growth.
+     *
+     * @return Current capacity (number of elements that can be stored without reallocation).
      */
     ssize_t BCLIBC_BaseTrajSeq::get_capacity() const
     {
         return this->buffer.capacity();
-    };
+    }
 
     /**
-     * Interpolate at idx using points (idx-1, idx, idx+1) where key equals key_value.
+     * @brief Retrieves trajectory element at index (supports negative indexing).
      *
-     * Uses monotone-preserving PCHIP with Hermite evaluation; returns 1 on success, 0 on failure.
-     * @return 1 on success, 0 on failure.
-     */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_at(
-        ssize_t idx,
-        BCLIBC_BaseTraj_InterpKey key_kind,
-        double key_value,
-        BCLIBC_BaseTrajData *out) const
-    {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR; // Invalid input
-        }
-        BCLIBC_BaseTraj raw_output;
-        BCLIBC_ErrorType err = this->interpolate_raw(idx, key_kind, key_value, &raw_output);
-        if (err != BCLIBC_ErrorType::NO_ERROR)
-        {
-            return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
-        }
-        out->time = raw_output.time;
-        out->position = BCLIBC_V3dT{raw_output.px, raw_output.py, raw_output.pz};
-        out->velocity = BCLIBC_V3dT{raw_output.vx, raw_output.vy, raw_output.vz};
-        out->mach = raw_output.mach;
-        return BCLIBC_ErrorType::NO_ERROR;
-    };
-
-    /**
-     * Retrieve a pointer to a trajectory element at the given index.
-     * Supports negative indices: -1 = last element, -2 = second-to-last, etc.
+     * Python-style indexing: -1 returns last element, -2 returns second-to-last, etc.
      *
-     * @param idx Index of the element to retrieve. Can be negative.
-     * @return Pointer to the BCLIBC_BaseTraj element, or NULL if index is out of bounds.
+     * COMPLEXITY: O(1) - direct array access after index normalization.
+     *
+     * @param idx Index to retrieve (negative indices count from end).
+     * @return Const reference to trajectory data at index.
+     * @throws std::out_of_range if index is out of bounds after normalization.
      */
-    BCLIBC_BaseTraj *BCLIBC_BaseTrajSeq::get_raw_item(ssize_t idx) const
+    const BCLIBC_BaseTrajData &BCLIBC_BaseTrajSeq::get_item(ssize_t idx) const
     {
-        ssize_t len = (ssize_t)this->buffer.size();
-        if (len == 0)
-        {
-            return NULL;
-        }
+        const ssize_t len = static_cast<ssize_t>(this->buffer.size());
 
-        // Adjust negative indices
+        // Handle negative indices
         if (idx < 0)
         {
             idx += len;
         }
 
-        // Out-of-bounds check
+        // Bounds check
         if (idx < 0 || idx >= len)
         {
-            return NULL;
+            throw std::out_of_range("Index out of bounds");
         }
-        return const_cast<BCLIBC_BaseTraj *>(&this->buffer[idx]);
-    };
+        return this->buffer[idx];
+    }
 
     /**
-     * @brief Retrieves trajectory data at a given index.
+     * @brief Retrieves trajectory data at specified key value with optional time filtering.
      *
-     * Copies the values of time, position, velocity, and Mach number
-     * from the sequence at the specified index into the provided output struct.
+     * ALGORITHM:
+     * 1. If start_from_time > 0 && key != TIME:
+     *    a. Binary search for time >= start_from_time
+     *    b. Check for exact match at start index
+     *    c. Binary search from start_idx to find target
+     * 2. Otherwise: Binary search entire sequence
+     * 3. Check for exact match at target (within epsilon=1e-9)
+     * 4. If no exact match: Interpolate using 3-point PCHIP
      *
-     * @param idx Index of the trajectory point to retrieve.
-     * @param out Pointer to BCLIBC_BaseTrajData where results will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-     *         BCLIBC_ErrorType::INPUT_ERROR if seq or out is NULL,
-     *         BCLIBC_ErrorType::INDEX_ERROR if idx is out of bounds.
+     * OPTIMIZATION:
+     * - Binary search: O(log n) instead of linear scan
+     * - Exact match avoids expensive PCHIP computation
+     * - Time filtering reduces search space for time-series queries
+     *
+     * @param key_kind Type of key to search by (TIME, MACH, POS_X, etc.).
+     * @param key_value Target key value to retrieve/interpolate.
+     * @param start_from_time Time threshold - only search data with time >= this value.
+     *                        Use 0.0 or negative to disable time filtering.
+     * @param out Output parameter - populated with exact or interpolated trajectory data.
+     *
+     * @throws std::domain_error if sequence has fewer than 3 points.
+     * @throws std::logic_error if binary search fails.
+     * @throws std::invalid_argument if interpolation encounters duplicate key values.
+     *
+     * @note For TIME key, start_from_time is ignored (would be circular).
+     * @note Uses try_get_exact internally which throws on no-match (control flow exception pattern).
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_item(
-        ssize_t idx,
-        BCLIBC_BaseTrajData *out) const
-    {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
-        const BCLIBC_BaseTraj *entry_ptr = this->get_raw_item(idx);
-        if (!entry_ptr)
-        {
-            BCLIBC_ERROR("Index out of bounds.");
-            return BCLIBC_ErrorType::INDEX_ERROR;
-        }
-
-        out->time = entry_ptr->time;
-        out->position = BCLIBC_V3dT{entry_ptr->px, entry_ptr->py, entry_ptr->pz};
-        out->velocity = BCLIBC_V3dT{entry_ptr->vx, entry_ptr->vy, entry_ptr->vz};
-        out->mach = entry_ptr->mach;
-
-        return BCLIBC_ErrorType::NO_ERROR;
-    };
-
-    /**
-     * @brief Get trajectory data at a given key value, with optional start time.
-     *
-     * @param key_kind Kind of key to search/interpolate.
-     * @param key_value Key value to get.
-     * @param start_from_time Optional start time (use -1 if not used).
-     * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR if successful, otherwise error code.
-     */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at(
-        BCLIBC_BaseTraj_InterpKey key_kind,
+    void BCLIBC_BaseTrajSeq::get_at(
+        BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
         double start_from_time,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
-        ssize_t n = (ssize_t)this->buffer.size();
+        const ssize_t n = static_cast<ssize_t>(this->buffer.size());
 
         if (n < 3)
         {
-            BCLIBC_ERROR("Not enough data points for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::domain_error("Insufficient data points for interpolation (need >= 3)");
         }
 
         ssize_t target_idx = -1;
 
-        // Search from start_from_time if provided
-        if (start_from_time > 0.0 && key_kind != BCLIBC_BaseTraj_InterpKey::TIME)
+        // Apply time-based filtering if requested
+        if (start_from_time > 0.0 && key_kind != BCLIBC_BaseTrajData_InterpKey::TIME)
         {
-            ssize_t start_idx = this->find_start_index(start_from_time);
+            const ssize_t start_idx = this->find_start_index(start_from_time);
 
-            // Try exact match at start index
-            BCLIBC_ErrorType exact_err = this->try_get_exact(start_idx, key_kind, key_value, out);
-            if (exact_err == BCLIBC_ErrorType::NO_ERROR)
-                return BCLIBC_ErrorType::NO_ERROR;
+            // Try exact match at start
+            try
+            {
+                this->try_get_exact(start_idx, key_kind, key_value, out);
+                return;
+            }
+            catch (const std::exception &)
+            {
+                // Not an exact match, continue to interpolation
+            }
 
-            // Find target index for interpolation
-            ssize_t target_idx = this->find_target_index(key_kind, key_value, start_idx);
+            // Find interpolation target
+            target_idx = this->find_target_index(key_kind, key_value, start_idx);
         }
 
-        // If not found, bisect the whole range
+        // If no time filtering or target not found, search entire range
         if (target_idx < 0)
         {
-            ssize_t center = this->bisect_center_idx_buf(key_kind, key_value);
+            const ssize_t center = this->bisect_center_idx_buf(key_kind, key_value);
             if (center < 0)
             {
-                BCLIBC_ERROR("Bisecting failed; not enough data points.");
-                return BCLIBC_ErrorType::VALUE_ERROR;
+                throw std::logic_error("Binary search failed");
             }
-            target_idx = center < n - 1 ? center : n - 2;
+            target_idx = (center < n - 1) ? center : n - 2;
         }
 
-        // Try exact match at target index
-        BCLIBC_ErrorType exact_err = this->try_get_exact(target_idx, key_kind, key_value, out);
-        if (exact_err == BCLIBC_ErrorType::NO_ERROR)
-            return BCLIBC_ErrorType::NO_ERROR;
+        // Try exact match at target
+        try
+        {
+            this->try_get_exact(target_idx, key_kind, key_value, out);
+            return;
+        }
+        catch (const std::exception &)
+        {
+            // Not exact, proceed to interpolation
+        }
 
-        // Otherwise interpolate at center
-        ssize_t center_idx = target_idx < n - 1 ? target_idx : n - 2;
-        return this->interpolate_at_center(center_idx, key_kind, key_value, out);
-    };
+        // Interpolate at center point
+        const ssize_t center_idx = (target_idx < n - 1) ? target_idx : n - 2;
+        this->interpolate_at(center_idx, key_kind, key_value, out);
+    }
 
     /**
-     * @brief Interpolates trajectory data at a given slant height.
+     * @brief Interpolates trajectory at specified slant height.
      *
-     * Given a look angle (in radians) and a target slant height value,
-     * this function finds a center index and performs monotone-preserving
-     * 3-point Hermite (PCHIP) interpolation to compute time, position,
-     * velocity, and Mach number at that slant height.
+     * Slant height formula: h_slant = py * cos(angle) - px * sin(angle)
+     * Represents perpendicular distance from line of sight.
      *
-     * @param look_angle_rad Look angle in radians.
-     * @param value Target slant height for interpolation.
-     * @param out Pointer to BCLIBC_BaseTrajData where interpolated results will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, or an appropriate BCLIBC_ErrorType on failure:
-     *         BCLIBC_ErrorType::INPUT_ERROR if seq or out is NULL,
-     *         BCLIBC_ErrorType::VALUE_ERROR if not enough points or interpolation fails.
+     * ALGORITHM:
+     * 1. Binary search to find 3-point bracket (uses slant values)
+     * 2. Validate center is in safe range [1, n-2]
+     * 3. Compute slant values for p0, p1, p2 using precomputed cos/sin
+     * 4. Validate non-degenerate (no duplicate slant values)
+     * 5. Perform vectorized 3-point PCHIP interpolation
+     *
+     * @param look_angle_rad Look angle in radians (angle of line of sight from horizontal).
+     * @param value Target slant height value.
+     * @param out Output parameter - populated with interpolated trajectory data.
+     *
+     * @throws std::domain_error if sequence has < 3 points or slant values are degenerate.
+     * @throws std::runtime_error if binary search fails to find valid bracket.
+     * @throws std::out_of_range if center index outside safe range [1, n-2].
+     *
+     * @note Slant height may be non-monotonic, binary search assumes local monotonicity.
+     * @note Uses POS_Y as dummy skip_key (not actually relevant for slant interpolation).
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::get_at_slant_height(
+    void BCLIBC_BaseTrajSeq::get_at_slant_height(
         double look_angle_rad,
         double value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
-        double ca = std::cos(look_angle_rad);
-        double sa = std::sin(look_angle_rad);
-
-        ssize_t n = (ssize_t)this->buffer.size();
+        const double ca = std::cos(look_angle_rad);
+        const double sa = std::sin(look_angle_rad);
+        const ssize_t n = static_cast<ssize_t>(this->buffer.size());
 
         if (n < 3)
         {
-            BCLIBC_ERROR("Not enough data points for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::domain_error("Insufficient data points for interpolation");
         }
 
-        ssize_t center = this->bisect_center_idx_slant_buf(ca, sa, value);
+        const ssize_t center = this->bisect_center_idx_slant_buf(ca, sa, value);
         if (center < 0)
         {
-            BCLIBC_ERROR("Failed to find center index for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::runtime_error("Failed to locate interpolation center");
         }
 
         if (center < 1 || center >= n - 1)
         {
-            BCLIBC_ERROR("Calculated center index out of safe interpolation range.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::out_of_range("Center index outside safe interpolation range");
         }
 
-        const auto &data_vector = this->buffer;
-        const BCLIBC_BaseTraj *p0 = &data_vector[center - 1];
-        const BCLIBC_BaseTraj *p1 = &data_vector[center];
-        const BCLIBC_BaseTraj *p2 = &data_vector[center + 1];
+        // Cache data access
+        const BCLIBC_BaseTrajData &p0 = this->buffer[center - 1];
+        const BCLIBC_BaseTrajData &p1 = this->buffer[center];
+        const BCLIBC_BaseTrajData &p2 = this->buffer[center + 1];
 
-        double ox0 = p0->slant_val_buf(ca, sa);
-        double ox1 = p1->slant_val_buf(ca, sa);
-        double ox2 = p2->slant_val_buf(ca, sa);
+        // Compute slant key values
+        const double ox0 = p0.slant_val_buf(ca, sa);
+        const double ox1 = p1.slant_val_buf(ca, sa);
+        const double ox2 = p2.slant_val_buf(ca, sa);
 
         if (ox0 == ox1 || ox1 == ox2)
         {
-            BCLIBC_ERROR("Duplicate slant key values detected; cannot interpolate.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::domain_error("Degenerate slant values: cannot interpolate");
         }
 
-        out->time = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->time, p1->time, p2->time);
-        out->position = BCLIBC_V3dT{
-            BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->px, p1->px, p2->px),
-            BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->py, p1->py, p2->py),
-            BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->pz, p1->pz, p2->pz)};
-        out->velocity = BCLIBC_V3dT{
-            BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vx, p1->vx, p2->vx),
-            BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vy, p1->vy, p2->vy),
-            BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->vz, p1->vz, p2->vz)};
-        out->mach = BCLIBC_interpolate3pt(value, ox0, ox1, ox2, p0->mach, p1->mach, p2->mach);
-
-        return BCLIBC_ErrorType::NO_ERROR;
-    };
+        // Perform vectorized interpolation
+        BCLIBC_BaseTrajData::interpolate3pt_vectorized(
+            value, ox0, ox1, ox2, p0, p1, p2, out,
+            BCLIBC_BaseTrajData_InterpKey::POS_Y); // Dummy skip key
+    }
 
     /**
-     * @brief Interpolate at center index with logging.
+     * @brief Performs 3-point PCHIP interpolation at specified index.
      *
-     * @param idx Center index for interpolation.
-     * @param key_kind Kind of interpolation key.
-     * @param key_value Key value to interpolate at.
-     * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType BCLIBC_ErrorType::NO_ERROR if successful, otherwise error code.
+     * Uses trajectory points at [idx-1, idx, idx+1] as interpolation bracket.
+     * The "center" point is at idx, which should be close to the target value.
+     *
+     * VALID RANGE: idx must be in [1, n-2] to ensure all three points exist.
+     *
+     * @param idx Center index for interpolation (supports negative indexing).
+     * @param key_kind Independent variable for interpolation (TIME, MACH, etc.).
+     * @param key_value Target value of the independent variable.
+     * @param out Output parameter - populated with interpolated trajectory data.
+     *
+     * @throws std::out_of_range if idx outside valid range [1, n-2] after normalization.
+     * @throws std::invalid_argument if key values at three points are not distinct.
+     *
+     * @note All fields interpolated except key_kind, which is set directly to key_value.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_at_center(
+    void BCLIBC_BaseTrajSeq::interpolate_at(
         ssize_t idx,
-        BCLIBC_BaseTraj_InterpKey key_kind,
+        BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        BCLIBC_ErrorType err = this->interpolate_at(idx, key_kind, key_value, out);
-        if (err != BCLIBC_ErrorType::NO_ERROR)
-        {
-            BCLIBC_ERROR("Interpolation failed at center index %zd, error code: 0x%X", idx, err);
-            return err; // BCLIBC_ErrorType::INDEX_ERROR or BCLIBC_ErrorType::VALUE_ERROR or BCLIBC_ErrorType::BASE_TRAJ_INTERP_KEY_ERROR
-        }
-        BCLIBC_DEBUG("Interpolation successful at center index %zd.", idx);
-        return BCLIBC_ErrorType::NO_ERROR;
-    };
-
-    /**
-     * Interpolates a trajectory point at a specific index using its neighbors.
-     *
-     * This function performs 3-point monotone-preserving PCHIP interpolation
-     * (Hermite evaluation) for all components of a trajectory point.
-     *
-     * @param idx Index around which interpolation is performed (uses idx-1, idx, idx+1).
-     *            Negative indices are counted from the end of the buffer.
-     * @param key_kind The key to interpolate along (e.g., time, position, velocity, Mach).
-     * @param key_value The target value of the key to interpolate at.
-     * @param out Pointer to a BCLIBC_BaseTraj struct where the interpolated result will be stored.
-     * @return BCLIBC_ErrorType::NO_ERROR on success, or an BCLIBC_ErrorType on failure.
-     */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::interpolate_raw(
-        ssize_t idx,
-        BCLIBC_BaseTraj_InterpKey key_kind,
-        double key_value,
-        BCLIBC_BaseTraj *out) const
-    {
-        if (!out)
-        {
-            BCLIBC_ERROR("Invalid input (NULL pointer).");
-            return BCLIBC_ErrorType::INPUT_ERROR;
-        }
-
-        const auto &data_vector = this->buffer;
-        ssize_t length = (ssize_t)data_vector.size();
+        const ssize_t length = static_cast<ssize_t>(this->buffer.size());
 
         // Handle negative indices
         if (idx < 0)
             idx += length;
 
-        // Ensure we have valid points on both sides (idx-1, idx, idx+1)
+        // Validate interpolation range
         if (idx < 1 || idx >= length - 1)
         {
-            BCLIBC_ERROR("Index out of bounds for interpolation.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::out_of_range("Index outside valid interpolation range [1, n-2]");
         }
 
-        const BCLIBC_BaseTraj *p0 = &data_vector[idx - 1];
-        const BCLIBC_BaseTraj *p1 = &data_vector[idx];
-        const BCLIBC_BaseTraj *p2 = &data_vector[idx + 1];
+        // Cache point references
+        const BCLIBC_BaseTrajData &p0 = this->buffer[idx - 1];
+        const BCLIBC_BaseTrajData &p1 = this->buffer[idx];
+        const BCLIBC_BaseTrajData &p2 = this->buffer[idx + 1];
 
-        // Get key values from the three points using helper
-        double ox0 = p0->key_val(key_kind);
-        double ox1 = p1->key_val(key_kind);
-        double ox2 = p2->key_val(key_kind);
+        // Cache key values
+        const double ox0 = p0.get_key_val(key_kind);
+        const double ox1 = p1.get_key_val(key_kind);
+        const double ox2 = p2.get_key_val(key_kind);
 
-        // Check for duplicate key values (would cause division by zero)
+        // Validate non-degenerate
         if (ox0 == ox1 || ox0 == ox2 || ox1 == ox2)
         {
-            BCLIBC_ERROR("Duplicate key values detected; cannot interpolate.");
-            return BCLIBC_ErrorType::VALUE_ERROR;
+            throw std::invalid_argument("Duplicate key values: cannot interpolate");
         }
 
-        // Interpolate all trajectory components
-        // Vectorized interpolation
-        // Store results
-        BCLIBC_BaseTraj::interpolate3pt_vectorized(key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
-
-        return BCLIBC_ErrorType::NO_ERROR;
-    };
+        // Perform vectorized interpolation
+        BCLIBC_BaseTrajData::interpolate3pt_vectorized(
+            key_value, ox0, ox1, ox2, p0, p1, p2, out, key_kind);
+    }
 
     /**
-     * @brief Try to get exact value at index, return BCLIBC_ErrorType::NO_ERROR if successful.
+     * @brief Attempts to retrieve exact trajectory data at index if key matches.
      *
-     * @param idx Index to check.
-     * @param key_kind Kind of key.
-     * @param key_value Key value to match.
-     * @param out Output trajectory data.
-     * @return BCLIBC_ErrorType::NO_ERROR if exact match found, otherwise BCLIBC_ErrorType::VALUE_ERROR.
+     * Checks if trajectory data at idx has key value matching key_value within
+     * tolerance (epsilon = 1e-9). If match found, copies data to out.
+     *
+     * OPTIMIZATION: Avoids expensive PCHIP interpolation when exact data exists.
+     * This is common when querying at measured data points.
+     *
+     * @param idx Index to check for exact match.
+     * @param key_kind Type of key to compare.
+     * @param key_value Target key value to match.
+     * @param out Output parameter - populated only if exact match found.
+     *
+     * @throws std::out_of_range if idx is out of bounds.
+     * @throws std::runtime_error if key value does not match within tolerance.
+     *
+     * @note Uses exception for control flow (try_get pattern).
+     * @note Primarily used internally by get_at() to optimize exact lookups.
+     * @note Consider refactoring to return bool instead of throwing for cleaner API.
      */
-    BCLIBC_ErrorType BCLIBC_BaseTrajSeq::try_get_exact(
+    void BCLIBC_BaseTrajSeq::try_get_exact(
         ssize_t idx,
-        BCLIBC_BaseTraj_InterpKey key_kind,
+        BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
-        BCLIBC_BaseTrajData *out) const
+        BCLIBC_BaseTrajData &out) const
     {
-        if (idx < 0 || idx >= (ssize_t)this->buffer.size())
+        if (idx < 0 || idx >= static_cast<ssize_t>(this->buffer.size()))
         {
-            return BCLIBC_ErrorType::INDEX_ERROR;
+            throw std::out_of_range("Index out of bounds");
         }
 
-        double epsilon = 1e-9;
+        constexpr double epsilon = 1e-9;
 
-        if (this->is_close(this->buffer[idx].key_val(key_kind), key_value, epsilon))
+        if (this->is_close(this->buffer[idx].get_key_val(key_kind), key_value, epsilon))
         {
-            BCLIBC_ErrorType err = this->get_item(idx, out);
-            if (err != BCLIBC_ErrorType::NO_ERROR)
-            {
-                BCLIBC_ERROR("Failed to get item at index %zd.", idx);
-                return BCLIBC_ErrorType::INDEX_ERROR;
-            }
-            BCLIBC_DEBUG("Exact match found at index %zd.", idx);
-            return BCLIBC_ErrorType::NO_ERROR;
+            BCLIBC_DEBUG("Exact match found at index %zd", idx);
+            out = this->get_item(idx);
+            return;
         }
 
-        return BCLIBC_ErrorType::VALUE_ERROR; // not an exact match
-    };
+        throw std::runtime_error("Not an exact match");
+    }
 
     /**
-     * @brief Finds the center index for 3-point interpolation in a trajectory sequence.
+     * @brief Binary search for 3-point interpolation bracket.
      *
-     * Performs a binary search to locate the index "lo" such that:
-     * - buf[lo-1], buf[lo], buf[lo+1] can be safely used for interpolation,
-     * - the key value at buf[lo] is the first >= key_value (if increasing)
-     *   or first <= key_value (if decreasing).
+     * Locates index 'center' such that:
+     * - Points at [center-1, center, center+1] bracket the key_value
+     * - center ∈ [1, n-2] (valid range for 3-point interpolation)
+     * - Handles both monotonically increasing and decreasing sequences
      *
-     * @param key_kind The BCLIBC_BaseTraj_InterpKey specifying which component to search by.
-     * @param key_value The value to locate.
-     * @return The center index for interpolation, or -1 if sequence is too short or NULL.
+     * ALGORITHM:
+     * 1. Determine sequence monotonicity (compare endpoints)
+     * 2. Standard binary search: O(log n)
+     * 3. Clamp result to [1, n-2]
+     *
+     * OPTIMIZATION: Uses bit shift (>> 1) for midpoint calculation.
+     *
+     * @param key_kind Type of key to search by.
+     * @param key_value Target key value to bracket.
+     * @return Center index for 3-point interpolation [1, n-2], or -1 if n < 3.
+     *
+     * @note Returns -1 if sequence too short for interpolation.
+     * @note Assumes sequence is monotonic in key_kind (no validation).
+     * @note For non-monotonic sequences, result is undefined.
      */
     ssize_t BCLIBC_BaseTrajSeq::bisect_center_idx_buf(
-        BCLIBC_BaseTraj_InterpKey key_kind,
+        BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value) const
     {
-        ssize_t n = (ssize_t)this->buffer.size();
+        const ssize_t n = static_cast<ssize_t>(this->buffer.size());
         if (n < 3)
         {
             return -1;
         }
 
-        const auto &data_vector = this->buffer;
-
-        double v0 = data_vector[0].key_val(key_kind);
-        double vN = data_vector[n - 1].key_val(key_kind);
-
-        int increasing = (vN >= v0) ? 1 : 0;
+        // Determine monotonicity
+        const double v0 = this->buffer[0].get_key_val(key_kind);
+        const double vN = this->buffer[n - 1].get_key_val(key_kind);
+        const bool increasing = (vN >= v0);
 
         ssize_t lo = 0;
         ssize_t hi = n - 1;
 
-        double vm;
-
-        // Binary search loop
+        // Binary search
         while (lo < hi)
         {
-            ssize_t mid = lo + ((hi - lo) >> 1);
-
-            vm = data_vector[mid].key_val(key_kind);
+            const ssize_t mid = lo + ((hi - lo) >> 1); // Bit shift optimization
+            const double vm = this->buffer[mid].get_key_val(key_kind);
 
             if ((increasing && vm < key_value) || (!increasing && vm > key_value))
             {
@@ -702,55 +686,52 @@ namespace bclibc
             }
         }
 
-        // Clamp to valid center index for 3-point interpolation (idx-1, idx, idx+1)
+        // Clamp to valid interpolation range [1, n-2]
         if (lo < 1)
             lo = 1;
         if (lo > n - 2)
             lo = n - 2;
 
         return lo;
-    };
+    }
 
     /**
-     * @brief Finds the center index for 3-point interpolation along slant height.
+     * @brief Binary search for slant height interpolation bracket.
      *
-     * Performs a binary search to locate an index "lo" such that:
-     * - buf[lo-1], buf[lo], buf[lo+1] can be safely used for interpolation,
-     * - the slant value at buf[lo] is the first >= value (if increasing)
-     *   or first <= value (if decreasing).
+     * Similar to bisect_center_idx_buf but searches by computed slant height values.
+     * Slant height = py * cos(angle) - px * sin(angle)
      *
-     * @param ca Cosine of the look angle.
-     * @param sa Sine of the look angle.
-     * @param value Target slant value.
-     * @return Center index suitable for 3-point interpolation [1, n-2],
-     *         or -1 if sequence is NULL or too short.
+     * OPTIMIZATION: Takes precomputed cos/sin to avoid repeated trig calculations
+     * during binary search (would be O(n log n) otherwise).
+     *
+     * @param ca Cosine of look angle (precomputed).
+     * @param sa Sine of look angle (precomputed).
+     * @param value Target slant height value to bracket.
+     * @return Center index in [1, n-2], or -1 if n < 3.
+     *
+     * @note Slant height computed on-the-fly during search.
+     * @note Assumes slant values are locally monotonic.
      */
     ssize_t BCLIBC_BaseTrajSeq::bisect_center_idx_slant_buf(
-        double ca,
-        double sa,
-        double value) const
+        double ca, double sa, double value) const
     {
-        ssize_t n = (ssize_t)this->buffer.size();
-
+        const ssize_t n = static_cast<ssize_t>(this->buffer.size());
         if (n < 3)
             return -1;
 
-        const auto &data_vector = this->buffer;
-
-        double v0 = data_vector[0].slant_val_buf(ca, sa);
-        double vN = data_vector[n - 1].slant_val_buf(ca, sa);
-
-        int increasing = (vN >= v0) ? 1 : 0;
+        // Determine monotonicity
+        const double v0 = this->buffer[0].slant_val_buf(ca, sa);
+        const double vN = this->buffer[n - 1].slant_val_buf(ca, sa);
+        const bool increasing = (vN >= v0);
 
         ssize_t lo = 0;
         ssize_t hi = n - 1;
-        double vm;
 
+        // Binary search
         while (lo < hi)
         {
-            ssize_t mid = lo + ((hi - lo) >> 1);
-
-            vm = data_vector[mid].slant_val_buf(ca, sa);
+            const ssize_t mid = lo + ((hi - lo) >> 1);
+            const double vm = this->buffer[mid].slant_val_buf(ca, sa);
 
             if ((increasing && vm < value) || (!increasing && vm > value))
                 lo = mid + 1;
@@ -758,34 +739,44 @@ namespace bclibc
                 hi = mid;
         }
 
-        // Clamp to valid center index for 3-point interpolation (range [1, n-2])
+        // Clamp to [1, n-2]
         if (lo < 1)
             lo = 1;
         if (lo > n - 2)
             lo = n - 2;
 
         return lo;
-    };
+    }
 
     /**
-     * @brief Find the starting index for a given start time.
+     * @brief Finds first index where trajectory time >= start_time.
      *
-     * @param start_time Start time to search from.
-     * @return Index of the first element with time >= start_time.
+     * OPTIMIZATION STRATEGY:
+     * - Large arrays (n > 10) with monotonic time: Binary search O(log n)
+     * - Small arrays or non-monotonic time: Linear search O(n)
+     *
+     * Rationale: Binary search overhead not worth it for small arrays.
+     * Monotonicity check: buffer[0].time <= buffer[n-1].time
+     *
+     * @param start_time Time threshold to search for.
+     * @return Index of first point with time >= start_time, or n-1 if none found.
+     *
+     * @note Returns n-1 (last index) if all points have time < start_time.
+     * @note Linear search used for small/non-monotonic sequences for simplicity.
      */
     ssize_t BCLIBC_BaseTrajSeq::find_start_index(double start_time) const
     {
-        ssize_t n = (ssize_t)this->buffer.size();
-        const BCLIBC_BaseTraj *buf = this->buffer.data();
+        const ssize_t n = static_cast<ssize_t>(this->buffer.size());
+        const BCLIBC_BaseTrajData *buf = this->buffer.data();
 
-        // Binary search
+        // Binary search for large arrays with monotonic time
         if (n > 10 && buf[0].time <= buf[n - 1].time)
         {
             ssize_t lo = 0, hi = n - 1;
 
             while (lo < hi)
             {
-                ssize_t mid = lo + ((hi - lo) >> 1);
+                const ssize_t mid = lo + ((hi - lo) >> 1);
 
                 if (buf[mid].time < start_time)
                     lo = mid + 1;
@@ -796,7 +787,7 @@ namespace bclibc
             return lo;
         }
 
-        // Fallback for small arrays
+        // Linear search for small arrays
         for (ssize_t i = 0; i < n; i++)
         {
             if (buf[i].time >= start_time)
@@ -804,41 +795,50 @@ namespace bclibc
                 return i;
             }
         }
+
         return n - 1;
-    };
+    }
 
     /**
-     * @brief Find the target index covering key_value for interpolation.
+     * @brief Finds target index for interpolation within bounded search range.
      *
-     * @param key_kind Kind of key.
-     * @param key_value Key value to interpolate.
-     * @param start_idx Index to start searching from.
-     * @return Target index for interpolation, -1 if not found.
+     * Similar to bisect_center_idx_buf but with additional edge case handling:
+     * - If key_value outside sequence range, returns nearest valid interpolation index
+     * - Handles both increasing and decreasing monotonic sequences
+     *
+     * EDGE CASES:
+     * - key_value <= first value: returns 1 (minimum valid center)
+     * - key_value >= last value: returns n-2 (maximum valid center)
+     * - Otherwise: binary search for bracket
+     *
+     * @param key_kind Type of key to search by.
+     * @param key_value Target key value.
+     * @param start_idx Starting search index (currently unused - searches full range).
+     * @return Target index in [1, n-2], or -1 if n < 3.
+     *
+     * @note start_idx parameter currently ignored (TODO: optimize to use it).
+     * @note Extrapolation is clamped to valid interpolation range.
      */
     ssize_t BCLIBC_BaseTrajSeq::find_target_index(
-        BCLIBC_BaseTraj_InterpKey key_kind,
+        BCLIBC_BaseTrajData_InterpKey key_kind,
         double key_value,
         ssize_t start_idx) const
     {
-        ssize_t n = (ssize_t)this->buffer.size();
-        const BCLIBC_BaseTraj *buf = this->buffer.data();
+        const ssize_t n = static_cast<ssize_t>(this->buffer.size());
 
-        // Minimal requirement for 3-point interpolation is 3 points.
         if (n < 3)
         {
             return -1;
         }
 
-        double v0 = buf[0].key_val(key_kind);
-        double vN = buf[n - 1].key_val(key_kind);
-        // Determine the array's monotonicity (increasing or decreasing)
-        int increasing = (vN >= v0) ? 1 : 0;
+        const BCLIBC_BaseTrajData *buf = this->buffer.data();
 
-        ssize_t lo = 0;
-        ssize_t hi = n - 1;
+        // Determine monotonicity
+        const double v0 = buf[0].get_key_val(key_kind);
+        const double vN = buf[n - 1].get_key_val(key_kind);
+        const bool increasing = (vN >= v0);
 
-        // Handle extrapolation cases: if the value is outside the trajectory range,
-        // we clamp the index to the nearest valid interpolation center (1 or n-2).
+        // Handle extrapolation
         if (increasing)
         {
             if (key_value <= v0)
@@ -847,23 +847,22 @@ namespace bclibc
                 return n - 2;
         }
         else
-        { // Decreasing
+        {
             if (key_value >= v0)
                 return 1;
             if (key_value <= vN)
                 return n - 2;
         }
 
-        // ------------------------------------
-        // Binary Search (O(log N))
-        // ------------------------------------
+        // Binary search
+        ssize_t lo = 0;
+        ssize_t hi = n - 1;
+
         while (lo < hi)
         {
-            // Calculate the midpoint: lo + (hi - lo) / 2
-            ssize_t mid = lo + ((hi - lo) >> 1);
-            double vm = buf[mid].key_val(key_kind);
+            const ssize_t mid = lo + ((hi - lo) >> 1);
+            const double vm = buf[mid].get_key_val(key_kind);
 
-            // Adjust the search bounds based on monotonicity and target value
             if ((increasing && vm < key_value) || (!increasing && vm > key_value))
             {
                 lo = mid + 1;
@@ -874,183 +873,265 @@ namespace bclibc
             }
         }
 
-        // 'lo' is now the index of the first element satisfying the search condition.
-
-        // Clamp the index to the valid range [1, n-2] required for 3-point interpolation.
+        // Clamp to [1, n-2]
         if (lo < 1)
             return 1;
         if (lo > n - 2)
             return n - 2;
 
         return lo;
-    };
+    }
 
     /**
-     * @brief Check if two double values are approximately equal.
+     * @brief Checks if two doubles are approximately equal within tolerance.
+     *
+     * Uses absolute difference comparison: |a - b| < epsilon
+     *
+     * LIMITATION: Only checks absolute error, not relative error.
+     * This is appropriate for trajectory data where values have similar magnitudes.
      *
      * @param a First value.
      * @param b Second value.
-     * @param epsilon Tolerance.
-     * @return 1 if close, 0 otherwise.
+     * @param epsilon Tolerance threshold (typically 1e-9).
+     * @return 1 if |a - b| < epsilon, 0 otherwise.
+     *
+     * @note Static method - no instance required.
+     * @note Does not handle special float values (NaN, infinity).
      */
     int BCLIBC_BaseTrajSeq::is_close(double a, double b, double epsilon)
     {
         return std::fabs(a - b) < epsilon;
-    };
+    }
 
-    // BCLIBC_TrajectoryData::BCLIBC_TrajectoryData() {};
+    // ============================================================================
+    // BCLIBC_TrajectoryData
+    // ============================================================================
 
+    /**
+     * @brief Constructs full trajectory data from ballistic state and shot properties.
+     *
+     * Computes all derived trajectory fields from basic state (position, velocity, time).
+     * This includes:
+     * - Atmospheric corrections (density, Mach, drag)
+     * - Coriolis effect (range adjustment)
+     * - Spin drift (windage correction)
+     * - Angular measurements (drop angle, windage angle)
+     * - Energy and optimal game weight
+     *
+     * ALGORITHM:
+     * 1. Apply Coriolis correction to range vector
+     * 2. Compute spin drift and add to windage
+     * 3. Get atmospheric density and speed of sound at current altitude
+     * 4. Compute slant range and angles relative to sight line
+     * 5. Calculate energy and derived ballistic properties
+     *
+     * @param props Shot properties (atmosphere, Coriolis, drag model, etc.).
+     * @param time Flight time in seconds.
+     * @param range_vector Position vector (x=downrange, y=height, z=windage).
+     * @param velocity_vector Velocity vector (x, y, z components).
+     * @param mach_arg Mach number (or 0.0 to compute from altitude).
+     * @param flag Trajectory point classification flag.
+     */
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
-        const BCLIBC_ShotProps *props,
+        const BCLIBC_ShotProps &props,
         double time,
-        const BCLIBC_V3dT *range_vector,
-        const BCLIBC_V3dT *velocity_vector,
+        const BCLIBC_V3dT &range_vector,
+        const BCLIBC_V3dT &velocity_vector,
         double mach_arg,
         BCLIBC_TrajFlag flag)
         : time(time), flag(flag)
     {
-        // BCLIBC_Coriolis const *c = &props->coriolis;
-        // fprintf(stderr,
-        //     "%.10f %.10f %.10f %.10f %.10f %.10f %.10f %.10f %d %.10f\n",
-        //     c->sin_lat,
-        //     c->cos_lat,
-        //     c->sin_az,
-        //     c->cos_az,
-        //     c->range_east,
-        //     c->range_north,
-        //     c->cross_east,
-        //     c->cross_north,
-        //     c->flat_fire_only,
-        //     c->muzzle_velocity_fps
-        // );
-
-        BCLIBC_V3dT adjusted_range = props->coriolis.adjust_range(time, range_vector);
-        double spin_drift = props->spin_drift(time);
-        double velocity = velocity_vector->mag();
+        // Compute adjusted range with Coriolis correction
+        const BCLIBC_V3dT adjusted_range = props.coriolis.adjust_range(time, range_vector);
+        const double spin_drift = props.spin_drift(time);
+        const double velocity = velocity_vector.mag();
 
         this->windage_ft = adjusted_range.z + spin_drift;
 
-        // fprintf(stderr,
-        //         "DEBUG_WINDAGE: time=%.6f, InputZ=%.6f, AdjustedZ=%.6f, SpinDrift=%.6f\n",
-        //         time, range_vector->z, adjusted_range.z, spin_drift);
-
+        // Get atmospheric conditions at current altitude
         double density_ratio_out, mach_out;
-        props->atmo.update_density_factor_and_mach_for_altitude(
-            range_vector->y, &density_ratio_out, &mach_out);
+        props.atmo.update_density_factor_and_mach_for_altitude(
+            range_vector.y, density_ratio_out, mach_out);
 
-        double trajectory_angle = std::atan2(velocity_vector->y, velocity_vector->x);
-        double look_angle_cos = std::cos(props->look_angle);
-        double look_angle_sin = std::sin(props->look_angle);
+        // Precompute trigonometric values
+        const double trajectory_angle = std::atan2(velocity_vector.y, velocity_vector.x);
+        const double look_angle_cos = std::cos(props.look_angle);
+        const double look_angle_sin = std::sin(props.look_angle);
 
+        // Populate trajectory fields
         this->distance_ft = adjusted_range.x;
         this->velocity_fps = velocity;
-
         this->mach = velocity / (mach_arg != 0.0 ? mach_arg : mach_out);
-
         this->height_ft = adjusted_range.y;
         this->slant_height_ft = adjusted_range.y * look_angle_cos - adjusted_range.x * look_angle_sin;
+
+        // Compute angles
         this->drop_angle_rad = BCLIBC_getCorrection(adjusted_range.x, adjusted_range.y) -
-                               (adjusted_range.x ? props->look_angle : 0.0);
+                               (adjusted_range.x ? props.look_angle : 0.0);
         this->windage_angle_rad = BCLIBC_getCorrection(adjusted_range.x, this->windage_ft);
         this->slant_distance_ft = adjusted_range.x * look_angle_cos + adjusted_range.y * look_angle_sin;
         this->angle_rad = trajectory_angle;
+
+        // Physical properties
         this->density_ratio = density_ratio_out;
-        this->drag = props->drag_by_mach(this->mach);
-        this->energy_ft_lb = BCLIBC_calculateEnergy(props->weight, velocity);
-        this->ogw_lb = BCLIBC_calculateOgw(props->weight, velocity);
-    };
+        this->drag = props.drag_by_mach(this->mach);
+        this->energy_ft_lb = BCLIBC_calculateEnergy(props.weight, velocity);
+        this->ogw_lb = BCLIBC_calculateOgw(props.weight, velocity);
+    }
 
+    /**
+     * @brief Constructs trajectory data from base trajectory data and shot properties.
+     *
+     * Convenience constructor that delegates to main constructor.
+     *
+     * @param props Shot properties.
+     * @param data Base trajectory data (position, velocity, time, Mach).
+     * @param flag Trajectory point classification flag.
+     */
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
-        const BCLIBC_ShotProps *props,
-        const BCLIBC_BaseTrajData *data,
+        const BCLIBC_ShotProps &props,
+        const BCLIBC_BaseTrajData &data,
         BCLIBC_TrajFlag flag)
-        : BCLIBC_TrajectoryData(props, data->time, &data->position, &data->velocity, data->mach, flag) {};
+        : BCLIBC_TrajectoryData(props, data.time, data.position(), data.velocity(), data.mach, flag) {}
 
+    /**
+     * @brief Constructs trajectory data from flagged data structure.
+     *
+     * Convenience constructor that extracts flag from flagged data.
+     *
+     * @param props Shot properties.
+     * @param data Flagged trajectory data (includes flag field).
+     */
     BCLIBC_TrajectoryData::BCLIBC_TrajectoryData(
-        const BCLIBC_ShotProps *props,
-        const BCLIBC_FlaggedData *data)
-        : BCLIBC_TrajectoryData(props, &data->data, data->flag) {};
+        const BCLIBC_ShotProps &props,
+        const BCLIBC_FlaggedData &data)
+        : BCLIBC_TrajectoryData(props, data.data, data.flag) {}
 
+    /**
+     * @brief Interpolates full trajectory data using 3-point method.
+     *
+     * ALGORITHM:
+     * 1. Validate key is in valid range
+     * 2. Cache independent variable values (x0, x1, x2)
+     * 3. Initialize output with p0 as template
+     * 4. For each field:
+     *    - If field == key: set directly to value
+     *    - Otherwise: interpolate using PCHIP or LINEAR method
+     * 5. Set output flag
+     *
+     * OPTIMIZATION: Uses switch statement for field access instead of reflection.
+     * Caches key values to avoid repeated get_key_val() calls.
+     *
+     * METHOD COMPARISON:
+     * - PCHIP: Monotone-preserving cubic, smooth, better for most trajectories
+     * - LINEAR: Piecewise linear, faster but less accurate, segments chosen by x1
+     *
+     * @param key Independent variable for interpolation (TIME, DISTANCE, MACH, etc.).
+     * @param value Target interpolation value.
+     * @param p0 First trajectory point.
+     * @param p1 Second trajectory point (center).
+     * @param p2 Third trajectory point.
+     * @param flag Output trajectory flag.
+     * @param method Interpolation method (PCHIP or LINEAR).
+     * @return Interpolated trajectory data with all fields populated.
+     *
+     * @throws std::logic_error if key is invalid/unsupported.
+     * @throws std::domain_error if linear interpolation encounters zero division.
+     * @throws std::invalid_argument if method is unknown.
+     *
+     * @note All 15 trajectory fields are interpolated independently.
+     * @note For LINEAR method: uses [p0,p1] if value <= x1, else [p1,p2].
+     */
     BCLIBC_TrajectoryData BCLIBC_TrajectoryData::interpolate(
         BCLIBC_TrajectoryData_InterpKey key,
         double value,
-        const BCLIBC_TrajectoryData *p0,
-        const BCLIBC_TrajectoryData *p1,
-        const BCLIBC_TrajectoryData *p2,
+        const BCLIBC_TrajectoryData &p0,
+        const BCLIBC_TrajectoryData &p1,
+        const BCLIBC_TrajectoryData &p2,
         BCLIBC_TrajFlag flag,
         BCLIBC_InterpMethod method)
     {
-        if (p0 == nullptr || p1 == nullptr || p2 == nullptr)
-        {
-            throw std::invalid_argument("Interpolation points (p0, p1, p2) cannot be NULL.");
-        }
-
-        // The independent variable for interpolation (x-axis)
-        double x_val = value;
-        double x0 = p0->get_key_val(key);
-        double x1 = p1->get_key_val(key);
-        double x2 = p2->get_key_val(key);
-
-        // Use reflection to build the new TrajectoryData object
-
-        // // Better copy data from p0 to fill uninterpolated or derived fields
-        // BCLIBC_TrajectoryData interpolated_data;  // = {} possibly can not work on MSVC, use memset;
-        BCLIBC_TrajectoryData interpolated_data = *p0;
-
+        // Validate key
         if ((int)key < 0 || (int)key > BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT)
         {
-            throw std::runtime_error("Can't interpolate by unsupported key");
+            throw std::logic_error("Cannot interpolate by unsupported key");
         }
 
+        // Cache independent variable values
+        const double x_val = value;
+        const double x0 = p0.get_key_val(key);
+        const double x1 = p1.get_key_val(key);
+        const double x2 = p2.get_key_val(key);
+
+        // Initialize output with p0 as base (fills derived fields)
+        BCLIBC_TrajectoryData interpolated_data = p0;
+
+        // Interpolate all fields
         for (int k = 0; k < BCLIBC_TRAJECTORY_DATA_INTERP_KEY_ACTIVE_COUNT; k++)
         {
-            BCLIBC_TrajectoryData_InterpKey field_key = (BCLIBC_TrajectoryData_InterpKey)k;
-            double y0 = p0->get_key_val(field_key);
-            double y1 = p1->get_key_val(field_key);
-            double y2 = p2->get_key_val(field_key);
+            const BCLIBC_TrajectoryData_InterpKey field_key = (BCLIBC_TrajectoryData_InterpKey)k;
 
-            double interpolated_value = 0.0;
-            BCLIBC_ErrorType err = BCLIBC_ErrorType::NO_ERROR;
+            double interpolated_value;
 
+            // If this is the independent variable, use target value directly
             if (field_key == key)
             {
                 interpolated_value = x_val;
             }
             else
             {
+                // Cache dependent variable values
+                const double y0 = p0.get_key_val(field_key);
+                const double y1 = p1.get_key_val(field_key);
+                const double y2 = p2.get_key_val(field_key);
+
                 if (method == BCLIBC_InterpMethod::PCHIP)
                 {
-                    interpolated_value = BCLIBC_interpolate3pt(
-                        x_val, x0, x1, x2, y0, y1, y2);
+                    interpolated_value = BCLIBC_interpolate3pt(x_val, x0, x1, x2, y0, y1, y2);
                 }
                 else if (method == BCLIBC_InterpMethod::LINEAR)
                 {
                     BCLIBC_InterpStatus interp_status;
+
+                    // Choose segment based on which side of x1 the target falls
                     if (x_val <= x1)
                     {
-                        interp_status = BCLIBC_interpolate2pt(x_val, x0, y0, x1, y1, &interpolated_value);
+                        interp_status = BCLIBC_interpolate2pt(x_val, x0, y0, x1, y1, interpolated_value);
                     }
                     else
                     {
-                        interp_status = BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, &interpolated_value);
+                        interp_status = BCLIBC_interpolate2pt(x_val, x1, y1, x2, y2, interpolated_value);
                     }
+
                     if (interp_status != BCLIBC_InterpStatus::SUCCESS)
                     {
-                        throw std::domain_error("Zero division error");
+                        throw std::domain_error("Linear interpolation failed: zero division");
                     }
                 }
                 else
                 {
-                    throw std::invalid_argument("Invalid interpolation method provided.");
+                    throw std::invalid_argument("Invalid interpolation method");
                 }
             }
 
+            // Set interpolated value
             interpolated_data.set_key_val(field_key, interpolated_value);
         }
+
         interpolated_data.flag = flag;
         return interpolated_data;
-    };
+    }
 
+    /**
+     * @brief Retrieves field value by key.
+     *
+     * Maps enum keys to trajectory data members via switch statement.
+     *
+     * PERFORMANCE: O(1) with compiler optimization (likely jump table).
+     *
+     * @param key Field identifier (TIME, DISTANCE, VELOCITY, etc.).
+     * @return Value of specified field, or 0.0 if key invalid.
+     */
     double BCLIBC_TrajectoryData::get_key_val(BCLIBC_TrajectoryData_InterpKey key) const
     {
         switch (key)
@@ -1086,10 +1167,21 @@ namespace bclibc
         case BCLIBC_TrajectoryData_InterpKey::OGW:
             return this->ogw_lb;
         default:
-            return 0.0; // Error or unexpected key
+            return 0.0;
         }
-    };
+    }
 
+    /**
+     * @brief Sets field value by key.
+     *
+     * Maps enum keys to trajectory data members for modification.
+     * Used during interpolation to populate output structure.
+     *
+     * @param key Field identifier.
+     * @param value New value to set.
+     *
+     * @note No-op for invalid keys (silently ignored).
+     */
     void BCLIBC_TrajectoryData::set_key_val(BCLIBC_TrajectoryData_InterpKey key, double value)
     {
         switch (key)
@@ -1139,7 +1231,7 @@ namespace bclibc
         case BCLIBC_TrajectoryData_InterpKey::OGW:
             this->ogw_lb = value;
             break;
-            // No default needed
         }
-    };
-};
+    }
+
+} // namespace bclibc

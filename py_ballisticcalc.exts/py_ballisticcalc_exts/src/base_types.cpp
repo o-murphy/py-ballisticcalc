@@ -124,14 +124,13 @@ namespace bclibc
           wind_sock(wind_sock),
           filter_flags(filter_flags)
     {
-        // Assume can return only ZERO_DIVISION_ERROR or NO_ERROR
-        if (this->update_stability_coefficient() != BCLIBC_ErrorType::NO_ERROR)
-        {
-            throw std::runtime_error("Zero division detected in BCLIBC_ShotProps.update_stability_coefficient");
-        };
+        this->update_stability_coefficient();
     };
 
-    BCLIBC_ShotProps::~BCLIBC_ShotProps() {};
+    BCLIBC_ShotProps::~BCLIBC_ShotProps()
+    {
+        BCLIBC_DEBUG("Approx size of shotprops in memory: %zu bytes", this->size());
+    };
 
     /**
      * @brief Litz spin-drift approximation
@@ -189,9 +188,8 @@ namespace bclibc
      * - $\text{ftp}$ (Temperature/Pressure Factor)
      * - $S_g = \text{sd} \cdot \text{fv} \cdot \text{ftp}$
      *
-     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input, BCLIBC_ErrorType::ZERO_DIVISION_ERROR if a division by zero occurs during calculation.
      */
-    BCLIBC_ErrorType BCLIBC_ShotProps::update_stability_coefficient()
+    void BCLIBC_ShotProps::update_stability_coefficient()
     {
         /* Miller stability coefficient */
         double twist_rate, length, sd, fv, ft, pt, ftp;
@@ -219,8 +217,7 @@ namespace bclibc
             else
             {
                 this->stability_coefficient = 0.0;
-                BCLIBC_ERROR("Division by zero in stability coefficient calculation.");
-                return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if denominator is zero
+                throw std::domain_error("Division by zero in stability coefficient calculation.");
             }
 
             fv = std::pow(this->muzzle_velocity / 2800.0, 1.0 / 3.0);
@@ -235,8 +232,7 @@ namespace bclibc
             else
             {
                 this->stability_coefficient = 0.0;
-                BCLIBC_ERROR("Division by zero in ftp calculation.");
-                return BCLIBC_ErrorType::ZERO_DIVISION_ERROR; // Exit if pt is zero
+                throw std::domain_error("Division by zero in ftp calculation.");
             }
 
             this->stability_coefficient = sd * fv * ftp;
@@ -247,94 +243,145 @@ namespace bclibc
             this->stability_coefficient = 0.0;
         }
         BCLIBC_DEBUG("Updated stability coefficient: %.6f", this->stability_coefficient);
-        return BCLIBC_ErrorType::NO_ERROR;
     };
 
     /**
-     * @brief Interpolates a value from a Mach list and a curve using the PCHIP method.
+     * @brief Interpolates a value from a Mach list and curve using PCHIP cubic spline method.
      *
-     * This function performs an optimized binary search to find the correct segment
-     * in the `mach_list_ptr` and then uses the corresponding cubic polynomial segment
-     * from `curve_ptr` (Horner's method) to interpolate the value at the given Mach number.
+     * This function performs optimized interpolation of ballistic coefficients or drag values
+     * as a function of Mach number. It uses:
+     * - Hybrid search strategy (linear for small datasets, binary for large)
+     * - PCHIP (Piecewise Cubic Hermite Interpolating Polynomial) representation
+     * - Horner's method for efficient polynomial evaluation
      *
-     * The curve is assumed to represent the ballistic coefficient or a drag curve.
+     * The algorithm operates in several stages:
+     * 1. Validates data consistency and caches array sizes
+     * 2. Handles boundary conditions (clamps to valid range)
+     * 3. Performs segment search using optimal algorithm based on data size
+     * 4. Evaluates cubic polynomial for the located segment
      *
-     * @param mach_list_ptr Pointer to the BCLIBC_MachList containing the Mach segment endpoints (x values).
-     * @param curve_ptr Pointer to the BCLIBC_Curve containing the PCHIP cubic segment coefficients (a, b, c, d).
-     * @param mach The Mach number at which to interpolate.
-     * @return The interpolated value (e.g., drag coefficient or BC factor). Returns 0.0 if insufficient data or out of range.
+     * @param mach_list_ptr Reference to the Mach number breakpoints (x-coordinates of spline nodes).
+     *                      Must be monotonically increasing.
+     * @param curve_ptr Reference to the PCHIP cubic polynomial coefficients for each segment.
+     *                  Each segment is defined by coefficients (a, b, c, d) representing:
+     *                  y(x) = a*(x-x_i)³ + b*(x-x_i)² + c*(x-x_i) + d
+     * @param mach The Mach number at which to interpolate the value.
+     *
+     * @return The interpolated drag coefficient or ballistic coefficient value.
+     *         Returns 0.0 if data is insufficient or inconsistent.
+     *
+     * @note Performance characteristics:
+     *       - O(1) for boundary values
+     *       - O(n) for datasets with n ≤ 15 (linear search)
+     *       - O(log n) for datasets with n > 15 (binary search)
+     *       - The threshold of 15 is empirically determined for typical ballistic curves
      */
-    static inline double calculateByCurveAndMachList(
-        const BCLIBC_MachList *mach_list_ptr, // const std::vector<double>*
-        const BCLIBC_Curve *curve_ptr,        // const std::vector<BCLIBC_CurvePoint>*
+    static inline double calculate_by_curve_and_mach_list(
+        const BCLIBC_MachList &mach_list_ptr,
+        const BCLIBC_Curve &curve_ptr,
         double mach)
     {
-        // Curve has (n-1) segments. MachList has n nodes.
-        const size_t nm1_size_t = curve_ptr->size(); // number of segments (n-1)
-        if (nm1_size_t == 0)
+        // === Data Validation and Caching ===
+        // Cache sizes to avoid repeated method calls
+        const size_t nm1_size_t = curve_ptr.size();   // Number of cubic segments (n-1)
+        const size_t n_size_t = mach_list_ptr.size(); // Number of Mach breakpoints (n)
+
+        // Validate data consistency
+        // For a valid PCHIP spline: n_segments = n_points - 1
+        if (n_size_t < 2 || n_size_t != nm1_size_t + 1)
         {
-            // insufficient curve data
+            // Insufficient data or size mismatch between breakpoints and segments
             return 0.0;
         }
 
-        const size_t n_size_t = mach_list_ptr->size(); // number of Mach nodes (n)
-        if (n_size_t != nm1_size_t + 1)
-        {
-            // data mismatch; cannot interpolate safely
-            return 0.0;
-        }
+        const int nm1 = (int)nm1_size_t; // Last valid segment index
+        const int n = (int)n_size_t;     // Total number of breakpoints
 
-        const int nm1 = (int)nm1_size_t; // n-1
-        const int n = nm1 + 1;           // n
+        // Cache raw pointers for faster array access
+        // Direct pointer access avoids bounds checking and iterator overhead
+        const double *xs = mach_list_ptr.data();
+        const BCLIBC_CurvePoint *segments = curve_ptr.data();
 
-        const double *xs = mach_list_ptr->data();
+        int i; // Index of the segment containing the interpolation point
 
-        if (n < 2)
-        {
-            // insufficient Mach data
-            return 0.0;
-        }
-
-        // Determine segment index i such that xs[i] <= mach <= xs[i+1]
-        int i;
-
-        // Clamp to range endpoints
+        // === Boundary Handling ===
+        // Clamp to valid range and avoid extrapolation
         if (mach <= xs[0])
         {
-            i = 0; // use first segment
+            // Value at or below lower bound: use first segment
+            i = 0;
         }
         else if (mach >= xs[n - 1])
         {
-            i = nm1 - 1; // last valid segment index = (n-1)-1 = n-2
+            // Value at or above upper bound: use last segment
+            i = nm1 - 1;
         }
         else
         {
-            // Optimized binary search
-            int lo = 0, hi = n - 1;
-            while (lo < hi)
-            {
-                int mid = lo + ((hi - lo) >> 1);
-                if (xs[mid] < mach)
-                    lo = mid + 1;
-                else
-                    hi = mid;
-            }
-            i = lo - 1;
+            // === Interior Point Search ===
+            // Goal: find segment i such that xs[i] <= mach < xs[i+1]
 
-            // Ensure index in valid segment range
-            if (i < 0)
-                i = 0;
-            else if (i > nm1 - 1)
-                i = nm1 - 1;
+            // Hybrid search strategy based on data size:
+            // For small datasets (typical ballistic curves with < 20 points),
+            // linear search outperforms binary search due to:
+            // - Better cache locality (sequential access)
+            // - Lower loop control overhead
+            // - Branch predictor friendly (predictable loop pattern)
+
+            if (n <= 15)
+            {
+                // Linear search for small datasets: O(n)
+                int idx = 0;
+                // Find the first breakpoint greater than mach
+                while (idx < nm1 && xs[idx + 1] < mach)
+                {
+                    idx++;
+                }
+                i = idx;
+            }
+            else
+            {
+                // Binary search for large datasets: O(log n)
+                // Find the leftmost breakpoint >= mach
+                int lo = 0, hi = n - 1;
+
+                while (lo < hi)
+                {
+                    // Use bit shift for division by 2 (compiler optimization hint)
+                    int mid = lo + ((hi - lo) >> 1);
+
+                    if (xs[mid] < mach)
+                        lo = mid + 1;
+                    else
+                        hi = mid;
+                }
+
+                // Adjust to get the segment index (interval to the left)
+                i = lo - 1;
+
+                // Boundary protection for edge cases
+                if (i < 0)
+                    i = 0;
+                else if (i > nm1 - 1)
+                    i = nm1 - 1;
+            }
         }
 
-        // Access the corresponding segment safely
-        const BCLIBC_CurvePoint seg = (*curve_ptr)[i];
+        // === Polynomial Evaluation ===
+        // Extract the cubic polynomial coefficients for the located segment
+        const BCLIBC_CurvePoint seg = segments[i];
 
+        // Calculate displacement from segment start
         const double dx = mach - xs[i];
 
-        // Horner's method for PCHIP interpolation:
-        // y = d + dx * (c + dx * (b + dx * a))
+        // Evaluate cubic polynomial using Horner's method
+        // Standard form: y = a*dx³ + b*dx² + c*dx + d
+        // Horner's form: y = d + dx*(c + dx*(b + dx*a))
+        //
+        // Horner's method reduces:
+        // - Multiplications: from 6 to 3
+        // - Additions: from 3 to 3 (same)
+        // - Improves numerical stability by reducing intermediate value magnitudes
         return seg.d + dx * (seg.c + dx * (seg.b + dx * seg.a));
     }
 
@@ -342,7 +389,7 @@ namespace bclibc
      * @brief Computes the scaled drag force coefficient ($C_d$) for a projectile at a given Mach number.
      *
      * This function calculates the drag coefficient using a cubic spline interpolation
-     * (via `calculateByCurveAndMachList`) and scales it by a constant factor and the
+     * (via `calculate_by_curve_and_mach_list`) and scales it by a constant factor and the
      * bullet's ballistic coefficient (BC). The result is $\frac{C_d}{\text{BC} \cdot \text{scale\_factor}}$.
      *
      * The constant $2.08551\text{e-}04$ is a combination of standard air density,
@@ -356,11 +403,20 @@ namespace bclibc
      */
     double BCLIBC_ShotProps::drag_by_mach(double mach) const
     {
-        double cd = calculateByCurveAndMachList(
-            &this->mach_list,
-            &this->curve,
+        double cd = calculate_by_curve_and_mach_list(
+            this->mach_list,
+            this->curve,
             mach);
         return cd * 2.08551e-04 / this->bc;
+    }
+
+    size_t BCLIBC_ShotProps::size() const
+    {
+        size_t total_size = sizeof(*this);
+        total_size += curve.size() * sizeof(BCLIBC_CurvePoint);
+        total_size += mach_list.size() * sizeof(double);
+        total_size += wind_sock.winds.size() * sizeof(BCLIBC_Wind);
+        return total_size;
     }
 
     BCLIBC_Atmosphere::BCLIBC_Atmosphere(
@@ -392,8 +448,8 @@ namespace bclibc
      */
     void BCLIBC_Atmosphere::update_density_factor_and_mach_for_altitude(
         double altitude,
-        double *density_ratio_ptr,
-        double *mach_ptr) const
+        double &density_ratio_out,
+        double &mach_out) const
     {
         const double alt_diff = altitude - this->_a0;
 
@@ -401,8 +457,8 @@ namespace bclibc
         if (std::fabs(alt_diff) < 30.0)
         {
             // Close enough to base altitude, use stored values
-            *density_ratio_ptr = this->density_ratio;
-            *mach_ptr = this->_mach;
+            density_ratio_out = this->density_ratio;
+            mach_out = this->_mach;
             return;
         }
 
@@ -439,13 +495,13 @@ namespace bclibc
         // Density ratio calculation: $\frac{\rho}{\rho_{\text{std}}} = \frac{\rho_0}{\rho_{\text{std}}} \cdot \frac{P \cdot T_0}{P_0 \cdot T}$
         const double density_delta = (base_kelvin * pressure) / (this->_p0 * kelvin);
 
-        *density_ratio_ptr = this->density_ratio * density_delta;
+        density_ratio_out = this->density_ratio * density_delta;
 
         // Mach 1 speed at altitude (fps): $a = \sqrt{\gamma R T}$
-        *mach_ptr = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
+        mach_out = std::sqrt(kelvin) * BCLIBC_cSpeedOfSoundMetric * BCLIBC_mToFeet;
 
         BCLIBC_DEBUG("Altitude: %.2f, Base Temp: %.2f°C, Current Temp: %.2f°C, Base Pressure: %.2f hPa, Current Pressure: %.2f hPa, Density ratio: %.6f\n",
-                     altitude, this->_t0, celsius, this->_p0, pressure, *density_ratio_ptr);
+                     altitude, this->_t0, celsius, this->_p0, pressure, density_ratio_out);
     };
 
     BCLIBC_Wind::BCLIBC_Wind(double velocity,
@@ -466,7 +522,7 @@ namespace bclibc
      *
      * @return A BCLIBC_V3dT structure representing the wind velocity vector (x=downrange, y=vertical, z=crossrange).
      */
-    BCLIBC_V3dT BCLIBC_Wind::as_vector() const
+    BCLIBC_V3dT BCLIBC_Wind::as_V3dT() const
     {
         const double dir = this->direction_from;
         const double vel = this->velocity;
@@ -484,17 +540,14 @@ namespace bclibc
      * Initializes state variables to their defaults and calculates the initial cache.
      */
     BCLIBC_WindSock::BCLIBC_WindSock()
-        // Використовуємо список ініціалізації для гарантованого встановлення значень
         : current(0),
           next_range(BCLIBC_cMaxWindDistanceFeet),
           last_vector_cache({0.0, 0.0, 0.0})
     {
-        // C++ конструктори не можуть повертати значення.
-        // update_cache() викликається тут для початкового стану (який буде нульовим, оскільки winds порожній).
         update_cache();
     }
 
-    void BCLIBC_WindSock::push(BCLIBC_Wind wind)
+    void BCLIBC_WindSock::push(const BCLIBC_Wind &wind)
     {
         this->winds.push_back(wind);
     }
@@ -517,15 +570,13 @@ namespace bclibc
      * Fetches the data for the wind segment at `ws->current`, converts it to a vector,
      * and updates `ws->last_vector_cache` and `ws->next_range`.
      * If `ws->current` is out of bounds, the cache is set to a zero vector and the next range to `BCLIBC_cMaxWindDistanceFeet`.
-     *
-     * @return BCLIBC_ErrorType::NO_ERROR on success, BCLIBC_ErrorType::INPUT_ERROR for NULL input.
      */
-    BCLIBC_ErrorType BCLIBC_WindSock::update_cache()
+    void BCLIBC_WindSock::update_cache()
     {
         if (this->current < this->winds.size())
         {
             const BCLIBC_Wind &cur_wind = this->winds[this->current];
-            this->last_vector_cache = cur_wind.as_vector();
+            this->last_vector_cache = cur_wind.as_V3dT();
             this->next_range = cur_wind.until_distance;
         }
         else
@@ -535,7 +586,6 @@ namespace bclibc
             this->last_vector_cache.z = 0.0;
             this->next_range = BCLIBC_cMaxWindDistanceFeet;
         }
-        return BCLIBC_ErrorType::NO_ERROR;
     }
 
     /**
@@ -568,11 +618,7 @@ namespace bclibc
             {
                 // Move to the next wind segment
                 // If cache update fails, return zero vector
-                if (this->update_cache() != BCLIBC_ErrorType::NO_ERROR)
-                {
-                    BCLIBC_WARN("Failed. Returning zero vector.");
-                    return zero_vector;
-                }
+                this->update_cache();
             }
         }
 
@@ -655,13 +701,13 @@ namespace bclibc
         double time,
         double distance_ft,
         double drop_ft,
-        double *delta_y,
-        double *delta_z) const
+        double &delta_y,
+        double &delta_z) const
     {
         if (!this->flat_fire_only)
         {
-            *delta_y = 0.0;
-            *delta_z = 0.0;
+            delta_y = 0.0;
+            delta_z = 0.0;
             return;
         }
 
@@ -672,24 +718,24 @@ namespace bclibc
             double vertical_factor = -2.0 * BCLIBC_cEarthAngularVelocityRadS * this->muzzle_velocity_fps * this->cos_lat * this->sin_az;
             vertical = drop_ft * (vertical_factor / BCLIBC_cGravityImperial);
         }
-        *delta_y = vertical;
-        *delta_z = horizontal;
+        delta_y = vertical;
+        delta_z = horizontal;
     };
 
     BCLIBC_V3dT BCLIBC_Coriolis::adjust_range(
-        double time, const BCLIBC_V3dT *range_vector) const
+        double time, const BCLIBC_V3dT &range_vector) const
     {
         if (!this || !this->flat_fire_only)
         {
-            return *range_vector;
+            return range_vector;
         }
         double delta_y, delta_z;
-        this->flat_fire_offsets(time, range_vector->x, range_vector->y, &delta_y, &delta_z);
+        this->flat_fire_offsets(time, range_vector.x, range_vector.y, delta_y, delta_z);
         if (delta_y == 0.0 && delta_z == 0.0)
         {
-            return *range_vector;
+            return range_vector;
         }
-        return BCLIBC_V3dT{range_vector->x, range_vector->y + delta_y, range_vector->z + delta_z};
+        return BCLIBC_V3dT{range_vector.x, range_vector.y + delta_y, range_vector.z + delta_z};
     }
 
     /**
@@ -706,20 +752,20 @@ namespace bclibc
      * @param accel_ptr Pointer to store the calculated Coriolis acceleration vector (local coordinates).
      */
     void BCLIBC_Coriolis::coriolis_acceleration_local(
-        const BCLIBC_V3dT *velocity_ptr,
-        BCLIBC_V3dT *accel_ptr) const
+        const BCLIBC_V3dT &velocity_vector,
+        BCLIBC_V3dT &accel_out) const
     {
         // Early exit for most common case (flat fire: Coriolis effect is ignored/zeroed)
         if (this->flat_fire_only)
         {
-            *accel_ptr = BCLIBC_V3dT{0.0, 0.0, 0.0};
+            accel_out = BCLIBC_V3dT{0.0, 0.0, 0.0};
             return;
         }
 
         // Cache frequently used values
-        const double vx = velocity_ptr->x;
-        const double vy = velocity_ptr->y;
-        const double vz = velocity_ptr->z;
+        const double vx = velocity_vector.x;
+        const double vy = velocity_vector.y;
+        const double vz = velocity_vector.z;
 
         const double range_east = this->range_east;
         const double range_north = this->range_north;
@@ -743,9 +789,9 @@ namespace bclibc
         const double accel_up = factor * (-cos_lat * vel_east);
 
         // Transform back to local coordinates (x=range, y=up, z=crossrange)
-        accel_ptr->x = accel_east * range_east + accel_north * range_north;
-        accel_ptr->y = accel_up;
-        accel_ptr->z = accel_east * cross_east + accel_north * cross_north;
+        accel_out.x = accel_east * range_east + accel_north * range_north;
+        accel_out.y = accel_up;
+        accel_out.z = accel_east * cross_east + accel_north * cross_north;
     }
 
 }; // namespace bclibc

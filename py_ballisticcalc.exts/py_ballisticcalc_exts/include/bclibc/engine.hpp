@@ -53,7 +53,7 @@ namespace bclibc
         MINIMUM_ALTITUDE_REACHED,
     };
 
-    typedef struct
+    struct BCLIBC_ZeroInitialData
     {
         BCLIBC_ZeroInitialStatus status;
         double look_angle_rad;
@@ -61,39 +61,57 @@ namespace bclibc
         double target_x_ft;
         double target_y_ft;
         double start_height_ft;
-    } BCLIBC_ZeroInitialData;
+    };
 
-    typedef struct
-    {
-        double requested_distance_ft;
-        double max_range_ft;
-        double look_angle_rad;
-    } BCLIBC_OutOfRangeError;
-
-    typedef struct
+    struct BCLIBC_MaxRangeResult
     {
         double max_range_ft;
         double angle_at_max_rad;
-    } BCLIBC_MaxRangeResult;
+    };
 
-    typedef struct
+    enum class BCLIBC_ZeroFindingErrorType
+    {
+        NO_ERROR,
+        // Special
+        ZERO_FINDING_ERROR,
+        OUT_OF_RANGE_ERROR,
+    };
+
+    struct BCLIBC_ZeroFindingErrorData
     {
         double zero_finding_error;
         int iterations_count;
         double last_barrel_elevation_rad;
-    } BCLIBC_ZeroFindingError;
+    };
+
+    struct BCLIBC_OutOfRangeErrorData
+    {
+        double requested_distance_ft;
+        double max_range_ft;
+        double look_angle_rad;
+    };
+
+    struct BCLIBC_ZeroFindingError
+    {
+        BCLIBC_ZeroFindingErrorType type;
+        union
+        {
+            BCLIBC_ZeroFindingErrorData zero_finding;
+            BCLIBC_OutOfRangeErrorData out_of_range;
+        };
+    };
 
     class BCLIBC_Engine;
 
-    typedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
-        BCLIBC_Engine *eng,
+    using BCLIBC_IntegrateFunc = void(
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajSeq *trajectory,
-        BCLIBC_TerminationReason *reason);
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason);
 
-    typedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr;
+    using BCLIBC_IntegrateFuncPtr = BCLIBC_IntegrateFunc *;
 
     class BCLIBC_Engine
     {
@@ -104,83 +122,67 @@ namespace bclibc
         BCLIBC_Config config;
         BCLIBC_ShotProps shot;
         BCLIBC_IntegrateFuncPtr integrate_func_ptr;
-        BCLIBC_ErrorStack err_stack;
 
     public:
+        void integrate(
+            double range_limit_ft,
+            double range_step_ft,
+            double time_step,
+            BCLIBC_BaseTrajDataHandlerInterface &handler,
+            BCLIBC_TerminationReason &reason);
 
-        BCLIBC_StatusCode integrate_filtered(
+        void integrate_filtered(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            std::vector<BCLIBC_TrajectoryData> *records,
-            BCLIBC_BaseTrajSeq *trajectory,
-            BCLIBC_TerminationReason *reason);
+            std::vector<BCLIBC_TrajectoryData> &records,
+            BCLIBC_TerminationReason &reason,
+            BCLIBC_BaseTrajSeq *dense_trajectory);
 
-        BCLIBC_StatusCode integrate_dense(
-            double range_limit_ft,
-            double range_step_ft,
-            double time_step,
-            BCLIBC_BaseTrajSeq *trajectory,
-            BCLIBC_TerminationReason *reason);
+        void find_apex(BCLIBC_BaseTrajData &apex_out);
 
-        BCLIBC_StatusCode find_apex(
-            BCLIBC_BaseTrajData *out);
-
-        BCLIBC_StatusCode error_at_distance(
+        double error_at_distance(
             double angle_rad,
             double target_x_ft,
-            double target_y_ft,
-            double *out_error_ft);
+            double target_y_ft);
 
-        BCLIBC_StatusCode init_zero_calculation(
+        void init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData *result,
-            BCLIBC_OutOfRangeError *error);
+            BCLIBC_ZeroInitialData &result,
+            BCLIBC_ZeroFindingError &error);
 
-        BCLIBC_StatusCode zero_angle_with_fallback(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
-
-        BCLIBC_StatusCode zero_angle(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
-
-        BCLIBC_StatusCode range_for_angle(double angle_rad, double *result);
-
-        BCLIBC_StatusCode find_max_range(
+        BCLIBC_MaxRangeResult find_max_range(
             double low_angle_deg,
             double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            BCLIBC_MaxRangeResult *result);
+            double APEX_IS_MAX_RANGE_RADIANS);
 
-        BCLIBC_StatusCode find_zero_angle(
+        double zero_angle_with_fallback(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET,
+            BCLIBC_ZeroFindingError &error);
+
+        double zero_angle(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET,
+            BCLIBC_ZeroFindingError &error);
+
+        double range_for_angle(double angle_rad);
+
+        double find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error);
-    };
+            BCLIBC_ZeroFindingError &error);
 
-#define BCLIBC_Engine_TRY_RANGE_FOR_ANGLE_OR_RETURN(status, angle, y_out) \
-    do                                                                    \
-    {                                                                     \
-        (status) = this->range_for_angle((angle), (y_out));               \
-        if ((status) != BCLIBC_StatusCode::SUCCESS)                            \
-            return (status);                                              \
-    } while (0)
+    private:
+        inline void integrate_func_ptr_not_null();
+    };
 };
 
 #endif // BCLIBC_ENGINE_HPP

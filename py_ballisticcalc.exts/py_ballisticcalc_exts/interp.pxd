@@ -21,5 +21,5 @@ cdef extern from "include/bclibc/interp.hpp" namespace "bclibc" nogil:
     ) noexcept nogil
     BCLIBC_InterpStatus BCLIBC_interpolate2pt(
         double x, double x0, double y0,
-        double x1, double y1, double * result
+        double x1, double y1, double &result
     ) noexcept nogil

@@ -15,7 +15,6 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateOgw,
 )
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
-from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData, BaseTrajDataT
 
 __all__ = [
@@ -39,7 +38,7 @@ __all__ = [
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
     cdef BaseTrajDataT data = BaseTrajDataT()
-    data._this = BCLIBC_BaseTrajData(time, BCLIBC_V3dT(px, py, pz), BCLIBC_V3dT(vx, vy, vz), mach)
+    data._this = BCLIBC_BaseTrajData(time, px, py, pz, vx, vy, vz, mach)
     return data
 
 cpdef double drag_eval(size_t shot_props_addr, double mach):
@@ -119,9 +118,5 @@ cpdef tuple density_and_mach_eval(size_t shot_props_addr, double altitude_ft):
     cdef BCLIBC_ShotProps *sp_ptr = <BCLIBC_ShotProps *> shot_props_addr
     cdef double density_ratio = 0.0
     cdef double mach = 0.0
-    sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, &density_ratio, &mach)
+    sp_ptr.atmo.update_density_factor_and_mach_for_altitude(altitude_ft, density_ratio, mach)
     return density_ratio, mach
-
-cpdef int step_count(object engine):
-    cdef CythonizedBaseIntegrationEngine e = <CythonizedBaseIntegrationEngine>engine
-    return e.integration_step_count
