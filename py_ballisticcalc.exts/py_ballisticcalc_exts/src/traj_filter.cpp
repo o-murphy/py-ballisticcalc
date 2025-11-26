@@ -6,6 +6,15 @@
 
 namespace bclibc
 {
+    /**
+     * @brief Constructor for trajectory data filter.
+     * @param records Reference to a vector where filtered trajectory data will be stored.
+     * @param props Shot properties including initial conditions and atmosphere.
+     * @param filter_flags Flags specifying which trajectory features to filter (apex, Mach crossings, etc.).
+     * @param range_limit Maximum horizontal range to consider for filtering.
+     * @param range_step Interval in horizontal distance for recording filtered points.
+     * @param time_step Interval in simulation time for recording filtered points.
+     */
     BCLIBC_TrajectoryDataFilter::BCLIBC_TrajectoryDataFilter(
         std::vector<BCLIBC_TrajectoryData> &records,
         const BCLIBC_ShotProps &props,
@@ -25,6 +34,12 @@ namespace bclibc
           next_record_distance(0.0),
           look_angle_tangent(std::tan(props.look_angle)) {};
 
+    /**
+     * @brief Initializes the filter state based on the first trajectory point.
+     * @param data The initial trajectory data point.
+     *
+     * Adjusts filter flags depending on starting altitude, velocity, and barrel orientation.
+     */
     void BCLIBC_TrajectoryDataFilter::init(const BCLIBC_BaseTrajData &data)
     {
         if (filter & BCLIBC_TRAJ_FLAG_MACH)
@@ -58,6 +73,11 @@ namespace bclibc
         }
     };
 
+    /**
+     * @brief Finalizes trajectory filtering.
+     *
+     * Ensures that the last trajectory point is recorded if needed.
+     */
     void BCLIBC_TrajectoryDataFilter::finalize()
     {
         BCLIBC_DEBUG(
@@ -70,11 +90,22 @@ namespace bclibc
         }
     };
 
+    /**
+     * @brief Handles a new trajectory data point.
+     * @param data The latest raw trajectory data.
+     *
+     * Delegates to `record()` for interpolation and filtering.
+     */
     void BCLIBC_TrajectoryDataFilter::handle(const BCLIBC_BaseTrajData &data)
     {
         this->record(data);
     };
 
+    /**
+     * @brief Checks if interpolation between previous data points is possible.
+     * @param new_data The current trajectory data point.
+     * @return True if we have sufficient previous points to interpolate.
+     */
     bool BCLIBC_TrajectoryDataFilter::can_interpolate(const BCLIBC_BaseTrajData &new_data) const
     {
         return (this->prev_prev_data.time >= 0.0) &&
@@ -83,6 +114,11 @@ namespace bclibc
                (this->prev_data.time < new_data.time);
     };
 
+    /**
+     * @brief Records a new trajectory point, interpolates missing points based on time or range,
+     *        and applies feature-specific filters (apex, Mach, zero crossings).
+     * @param new_data The latest trajectory point from simulation.
+     */
     void BCLIBC_TrajectoryDataFilter::record(const BCLIBC_BaseTrajData &new_data)
     {
         std::vector<BCLIBC_FlaggedData> rows;
@@ -291,16 +327,30 @@ namespace bclibc
         this->prev_data = new_data;
     };
 
+    /**
+     * @brief Returns the vector of filtered and processed trajectory data.
+     * @return Const reference to stored trajectory records.
+     */
     std::vector<BCLIBC_TrajectoryData> const &BCLIBC_TrajectoryDataFilter::get_records() const
     {
         return this->records;
     };
 
+    /**
+     * @brief Appends a new trajectory data point to the stored records.
+     * @param new_data Trajectory data to append.
+     */
     void BCLIBC_TrajectoryDataFilter::append(const BCLIBC_TrajectoryData &new_data)
     {
         this->records.push_back(new_data);
     };
 
+    /**
+     * @brief Retrieves a specific trajectory record by index.
+     * @param index Positive or negative index (negative counts from end).
+     * @return Reference to the requested trajectory data.
+     * @throws std::out_of_range if index is invalid or records are empty.
+     */
     const BCLIBC_TrajectoryData &BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const
     {
         const size_t size_t_size = this->records.size();
@@ -325,6 +375,15 @@ namespace bclibc
         return this->records.at((size_t)signed_effective_index);
     };
 
+    /**
+     * @brief Inserts a new record into a sorted container, merging with existing entries
+     *        if the time difference is below `SEPARATE_ROW_TIME_DELTA`.
+     * @tparam T Type of record (TrajectoryData or FlaggedData)
+     * @tparam TimeAccessor Function to access time from record.
+     * @param container The vector to insert into.
+     * @param new_record The new record to insert.
+     * @param getTime Function to access the record's timestamp.
+     */
     template <typename T, typename TimeAccessor>
     void BCLIBC_TrajectoryDataFilter::merge_sorted_record(
         std::vector<T> &container,
@@ -362,6 +421,13 @@ namespace bclibc
         container.insert(it, new_record);
     };
 
+    /**
+     * @brief Adds a new row of trajectory data with a specific flag to a container,
+     *        maintaining sorted order by time.
+     * @param rows Vector to add the row to.
+     * @param data Trajectory data to add.
+     * @param flag Trajectory feature flag.
+     */
     void BCLIBC_TrajectoryDataFilter::add_row(std::vector<BCLIBC_FlaggedData> &rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag)
     {
         BCLIBC_FlaggedData new_row = {data, flag};
