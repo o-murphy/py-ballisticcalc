@@ -188,6 +188,26 @@ class Calculator(Generic[ConfigT]):
             f"'{engine_instance.__class__.__name__}' has no attribute '{item}'"
         )
 
+    def __getstate__(self):
+        """
+        Called by pickle for serialization.
+        We only serialize the public fields required for reconstruction.
+        We explicitly exclude the calculated fields like _engine_class
+        to ensure proper re-initialization in the new process.
+        """
+        return {"config": self.config, "engine": self.engine}
+
+    def __setstate__(self, state):
+        """
+        Called by pickle for deserialization.
+        We manually set the fields and call __post_init__ to reload the engine class.
+        """
+        # Set the serialized fields
+        self.config = state["config"]
+        self.engine = state["engine"]
+        # Manually run __post_init__ to load the _engine_class
+        self.__post_init__()
+
     def barrel_elevation_for_target(self, shot: Shot, target_distance: Union[float, Distance]) -> Angular:
         """Calculate barrel elevation to hit target at zero_distance.
 
