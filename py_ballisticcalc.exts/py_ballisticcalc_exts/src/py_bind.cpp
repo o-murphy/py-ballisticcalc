@@ -7,7 +7,11 @@
 
 namespace bclibc
 {
-
+    /**
+     * @brief Converts a Python configuration object to a native BCLIBC_Config.
+     * @param config Pointer to a Python object representing configuration.
+     * @return BCLIBC_Config populated from the Python object.
+     */
     BCLIBC_Config BCLIBC_Config_fromPyObject(PyObject *config)
     {
         return BCLIBC_Config{
@@ -20,6 +24,11 @@ namespace bclibc
             PyFloat_AsDouble(PyObject_GetAttrString(config, "cMinimumAltitude"))};
     };
 
+    /**
+     * @brief Converts a Python object representing atmospheric conditions to BCLIBC_Atmosphere.
+     * @param atmo Pointer to a Python object representing atmosphere.
+     * @return BCLIBC_Atmosphere populated from the Python object.
+     */
     BCLIBC_Atmosphere BCLIBC_Atmosphere_fromPyObject(PyObject *atmo)
     {
         return BCLIBC_Atmosphere(
@@ -32,11 +41,9 @@ namespace bclibc
     };
 
     /**
-     * @brief Creates BCLIBC_MachList (std::vector<double>) from a Python list
-     * of objects, extracting the `.Mach` attribute from each item.
-     * * @param pylist Python list object containing elements with a 'Mach' attribute.
-     * @return BCLIBC_MachList (std::vector<double>) containing Mach values.
-     * Returns an empty vector and sets a Python exception on error.
+     * @brief Converts a Python list of Mach numbers to a native BCLIBC_MachList.
+     * @param pylist Pointer to a Python list of floats (Mach numbers).
+     * @return BCLIBC_MachList populated from the Python list.
      */
     BCLIBC_MachList BCLIBC_MachList_fromPylist(PyObject *pylist)
     {
@@ -246,6 +253,11 @@ namespace bclibc
         return curve_points;
     }
 
+    /**
+     * @brief Converts a Python object representing wind to a native BCLIBC_Wind.
+     * @param w Pointer to a Python object representing wind conditions.
+     * @return BCLIBC_Wind populated from the Python object.
+     */
     BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w)
     {
         // Initialize the C structure to zero values in case of error.
