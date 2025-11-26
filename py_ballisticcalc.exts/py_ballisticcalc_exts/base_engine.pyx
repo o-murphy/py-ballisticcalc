@@ -427,7 +427,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Internal implementation to find the apex of the trajectory.
 
         Returns:
-            BCLIBC_BaseTrajData: The trajectory data at the apex.
+            BCLIBC_TrajectoryData: The trajectory data at the apex.
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()

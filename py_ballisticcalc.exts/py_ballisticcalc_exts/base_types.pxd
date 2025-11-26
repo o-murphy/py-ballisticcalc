@@ -214,7 +214,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
 
         void update_stability_coefficient() except +ZeroDivisionError
         double spin_drift(double time) const
-        double drag_by_mach(double mach) const
+        double drag_by_mach(double mach) except +ValueError
 
     # helpers
     double BCLIBC_getCorrection(double distance, double offset) noexcept nogil
