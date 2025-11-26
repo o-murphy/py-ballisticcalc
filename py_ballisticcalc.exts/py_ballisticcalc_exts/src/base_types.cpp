@@ -625,7 +625,6 @@ namespace bclibc
         return this->last_vector_cache;
     }
 
-    // helpers
     /**
      * @brief Calculates the angular correction needed to hit a target.
      *
@@ -748,8 +747,8 @@ namespace bclibc
      * Coriolis acceleration formula in ENU:
      * - $\mathbf{a}_{\text{coriolis}} = -2 \cdot \mathbf{\omega}_{\text{earth}} \times \mathbf{v}_{\text{ENU}}$
      *
-     * @param velocity_ptr Pointer to the projectile's ground velocity vector (local coordinates: x=range, y=up, z=crossrange).
-     * @param accel_ptr Pointer to store the calculated Coriolis acceleration vector (local coordinates).
+     * @param velocity_vector Pointer to the projectile's ground velocity vector (local coordinates: x=range, y=up, z=crossrange).
+     * @param accel_out Pointer to store the calculated Coriolis acceleration vector (local coordinates).
      */
     void BCLIBC_Coriolis::coriolis_acceleration_local(
         const BCLIBC_V3dT &velocity_vector,
