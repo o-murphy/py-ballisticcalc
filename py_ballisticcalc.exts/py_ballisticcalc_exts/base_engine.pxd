@@ -17,7 +17,7 @@ from py_ballisticcalc_exts.traj_data cimport (
 
 
 cdef void zero_finding_error(object exception, const BCLIBC_ZeroFindingError &zero_error)
-cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records)
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records)
 cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)
 
 

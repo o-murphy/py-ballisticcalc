@@ -270,14 +270,14 @@ cdef class CythonizedBaseIntegrationEngine:
         termination_reason = TERMINATION_REASON_MAP.get(reason)
 
         if termination_reason is not None:
-            termination_reason = RangeError(termination_reason, TrajectoryData_list_from_cpp(&records))
+            termination_reason = RangeError(termination_reason, TrajectoryData_list_from_cpp(records))
 
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
         return HitResult(
             props,
-            TrajectoryData_list_from_cpp(&records),
+            TrajectoryData_list_from_cpp(records),
             dense_trajectory if dense_output else None,
             filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
@@ -506,7 +506,7 @@ cdef class CythonizedBaseIntegrationEngine:
             raise SolverRuntimeError(e)
 
 
-cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] *records):
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records):
     cdef list py_list = []
     cdef vector[BCLIBC_TrajectoryData].const_iterator it = records.begin()
     cdef vector[BCLIBC_TrajectoryData].const_iterator end = records.end()
