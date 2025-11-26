@@ -93,7 +93,7 @@ pip install py-ballisticcalc[exts]
 pip install py-ballisticcalc[charts]
 
 # Get everything, including the SciPy engine
-pip install pyballistic[exts,charts,scipy]
+pip install py-ballisticcalc[exts,charts,scipy]
 ```
 
 ----
