@@ -78,7 +78,6 @@ cdef class BaseTrajSeqT:
         trajectory_data.HitResult.get_at().
         """
         cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
-
         cdef BaseTrajDataT out = BaseTrajDataT()
         cdef double _start_from_time = 0.0
         if start_from_time is not None:
@@ -97,7 +96,7 @@ cdef class BaseTrajSeqT:
 
 @final
 cdef class BaseTrajDataT:
-    __slots__ = ('time', 'position', 'velocity', 'mach') # for pure python mirror consistency
+    __slots__ = ('time', 'position', 'velocity', 'mach')  # for pure python mirror consistency
 
     @property
     def time(self):

@@ -1,6 +1,5 @@
 # cython: freethreading_compatible=True
 from libcpp.cmath cimport sin, cos
-from cpython.exc cimport PyErr_Occurred
 from cython cimport final
 from cpython.object cimport PyObject
 from py_ballisticcalc_exts.base_types cimport (
@@ -29,27 +28,18 @@ from py_ballisticcalc.conditions import Coriolis
 @final
 cdef BCLIBC_Config BCLIBC_Config_from_pyobject(object config):
     cdef BCLIBC_Config result = BCLIBC_Config_fromPyObject(<PyObject *>config)
-    if PyErr_Occurred():
-        raise
     return result
 
 
 @final
 cdef BCLIBC_Atmosphere BCLIBC_Atmosphere_from_pyobject(object atmo):
     cdef BCLIBC_Atmosphere result = BCLIBC_Atmosphere_fromPyObject(<PyObject *>atmo)
-    if PyErr_Occurred():
-        raise
     return result
 
 
 @final
 cdef BCLIBC_MachList BCLIBC_MachList_from_pylist(list[object] data):
     cdef BCLIBC_MachList ml = BCLIBC_MachList_fromPylist(<PyObject *>data)
-    if ml.empty():
-        if PyErr_Occurred():
-            raise
-        else:
-            pass
     return ml
 
 
@@ -58,18 +48,6 @@ cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
     # Call the C++ function. 'except *' handles Python exceptions
     # and 'except +' (assumed in .pxd) handles C++ exceptions (like std::bad_alloc).
     cdef BCLIBC_Curve result = BCLIBC_Curve_fromPylist(<PyObject *>data_points)
-
-    # Check if a Python exception was set during processing
-    if PyErr_Occurred():
-        # If an error was set (e.g., AttributeError, ValueError, IndexError), propagate it
-        raise
-
-    # Check for empty result after successful execution (e.g., input list size < 2)
-    # The C++ function now sets a ValueError if n < 2, so this check is mostly for
-    # completeness or if the user passed an empty list.
-    if result.empty():
-        pass  # If PyErr_Occurred() was false, and it's empty, it means the input was handled gracefully.
-
     return result
 
 
@@ -79,8 +57,6 @@ cdef BCLIBC_Curve BCLIBC_Curve_from_pylist(list[object] data_points):
 @final
 cdef BCLIBC_Wind BCLIBC_Wind_from_pyobject(object w):
     cdef BCLIBC_Wind wind = BCLIBC_Wind_fromPyObject(<PyObject *>w)
-    if PyErr_Occurred():
-        raise
     return wind
 
 

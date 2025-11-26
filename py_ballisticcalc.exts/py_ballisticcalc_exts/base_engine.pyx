@@ -27,7 +27,6 @@ from py_ballisticcalc_exts.bind cimport (
     BCLIBC_ShotProps_from_pyobject,
     feet_from_c,
     rad_from_c,
-    v3d_to_vector,
 )
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
@@ -427,7 +426,7 @@ cdef class CythonizedBaseIntegrationEngine:
         Internal implementation to find the apex of the trajectory.
 
         Returns:
-            BCLIBC_BaseTrajData: The trajectory data at the apex.
+            BCLIBC_TrajectoryData: The trajectory data at the apex.
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
