@@ -322,6 +322,6 @@ namespace bclibc
         return vec * scalar;
     }
 
-} // namespace bclibc
+}; // namespace bclibc
 
 #endif // BCLIBC_V3dT_HPP

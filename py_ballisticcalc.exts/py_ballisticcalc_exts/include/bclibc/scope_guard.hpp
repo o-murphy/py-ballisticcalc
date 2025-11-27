@@ -79,6 +79,6 @@ namespace bclibc
         T old_value; ///< Original value to be restored
         bool active; ///< Flag indicating whether the guard is active
     };
-};
+}; // namespace bclibc
 
 #endif // BCLIBC_SCOPE_GUARD_HPP

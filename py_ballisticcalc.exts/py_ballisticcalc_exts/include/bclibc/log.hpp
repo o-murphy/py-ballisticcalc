@@ -178,7 +178,7 @@ namespace bclibc
         va_end(args);
     }
 
-};
+}; // namespace bclibc
 
 #ifndef BCLIBC_ENABLE_DEBUG_LOGGING
 

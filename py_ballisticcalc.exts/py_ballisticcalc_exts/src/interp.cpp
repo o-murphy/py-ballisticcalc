@@ -209,4 +209,4 @@ namespace bclibc
         result = y0 + (y1 - y0) * (x - x0) / (x1 - x0);
         return BCLIBC_InterpStatus::SUCCESS;
     }
-};
+}; // namespace bclibc

@@ -944,4 +944,4 @@ namespace bclibc
             throw std::logic_error("Invalid integrate_func_ptr (NULL pointer).");
         }
     };
-};
+}; // namespace bclibc

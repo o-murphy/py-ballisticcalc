@@ -294,6 +294,6 @@ namespace bclibc
          */
         inline void integrate_func_ptr_not_null();
     };
-};
+}; // namespace bclibc
 
 #endif // BCLIBC_ENGINE_HPP
