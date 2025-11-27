@@ -153,16 +153,25 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT current_vector() const
         BCLIBC_V3dT vector_for_range(double next_range_param) except +
 
-    cdef enum BCLIBC_TrajFlag:
-        BCLIBC_TRAJ_FLAG_NONE = 0,
-        BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
-        BCLIBC_TRAJ_FLAG_ZERO_DOWN = 2,
-        BCLIBC_TRAJ_FLAG_ZERO = BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN,
-        BCLIBC_TRAJ_FLAG_MACH = 4,
-        BCLIBC_TRAJ_FLAG_RANGE = 8,
-        BCLIBC_TRAJ_FLAG_APEX = 16,
-        BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX
-        BCLIBC_TRAJ_FLAG_MRT = 32
+    cdef enum class BCLIBC_TrajFlag:
+        NONE
+        ZERO_UP
+        ZERO_DOWN
+        ZERO
+        MACH
+        RANGE
+        APEX
+        ALL
+        MRT
+
+    inline BCLIBC_TrajFlag operator|(BCLIBC_TrajFlag lhs, BCLIBC_TrajFlag rhs)
+    inline BCLIBC_TrajFlag operator&(BCLIBC_TrajFlag lhs, BCLIBC_TrajFlag rhs)
+    inline BCLIBC_TrajFlag operator^(BCLIBC_TrajFlag lhs, BCLIBC_TrajFlag rhs)
+    inline BCLIBC_TrajFlag operator~(BCLIBC_TrajFlag rhs)
+    inline BCLIBC_TrajFlag &or_eq "&operator|=" (BCLIBC_TrajFlag &lhs, BCLIBC_TrajFlag rhs)
+    inline BCLIBC_TrajFlag &end_eq "&operator&=" (BCLIBC_TrajFlag &lhs, BCLIBC_TrajFlag rhs)
+    inline BCLIBC_TrajFlag &xor_eq "operator^=" (BCLIBC_TrajFlag &lhs, BCLIBC_TrajFlag rhs)
+    inline bool hasFlag(BCLIBC_TrajFlag value, BCLIBC_TrajFlag flag)
 
     cdef cppclass BCLIBC_ShotProps:
         double bc

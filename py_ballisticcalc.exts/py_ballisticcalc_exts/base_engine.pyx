@@ -32,7 +32,7 @@ from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
 from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
-from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
+from py_ballisticcalc.trajectory_data import TrajFlag, HitResult, TrajectoryData
 from py_ballisticcalc.unit import Angular
 
 __all__ = (
@@ -278,7 +278,7 @@ cdef class CythonizedBaseIntegrationEngine:
             props,
             TrajectoryData_list_from_cpp(records),
             dense_trajectory if dense_output else None,
-            filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
+            filter_flags != <int>BCLIBC_TrajFlag.NONE,
             termination_reason
         )
 
@@ -435,7 +435,7 @@ cdef class CythonizedBaseIntegrationEngine:
             return BCLIBC_TrajectoryData(
                 self._this.shot,
                 apex,
-                BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX
+                BCLIBC_TrajFlag.APEX
             )
         except RuntimeError as e:
             raise SolverRuntimeError(e)
@@ -534,6 +534,6 @@ cdef object TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):
         drag=cpp_data.drag,
         energy=TrajectoryData._new_ft_lb(cpp_data.energy_ft_lb),
         ogw=TrajectoryData._new_lb(cpp_data.ogw_lb),
-        flag=cpp_data.flag
+        flag=TrajFlag(cpp_data.flag)
     )
     return pydata

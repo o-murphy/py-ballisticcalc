@@ -42,7 +42,7 @@ namespace bclibc
      */
     void BCLIBC_TrajectoryDataFilter::init(const BCLIBC_BaseTrajData &data)
     {
-        if (filter & BCLIBC_TRAJ_FLAG_MACH)
+        if (to_bool(filter & BCLIBC_TrajFlag::MACH))
         {
             double mach;
             double density_ratio;
@@ -54,21 +54,21 @@ namespace bclibc
             if (data.velocity().mag() < mach)
             {
                 // If we start below Mach 1, we won't look for Mach crossings
-                this->filter = (BCLIBC_TrajFlag)((int)this->filter & ~(int)BCLIBC_TRAJ_FLAG_MACH);
+                this->filter = (BCLIBC_TrajFlag)((int)this->filter & ~(int)BCLIBC_TrajFlag::MACH);
             }
         }
 
-        if (filter & BCLIBC_TRAJ_FLAG_ZERO)
+        if (to_bool(filter & BCLIBC_TrajFlag::ZERO))
         {
             if (data.py >= 0)
             {
                 // If shot starts above zero then we will only look for a ZERO_DOWN crossing through the line of sight.
-                this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_UP);
+                this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TrajFlag::ZERO_UP);
             }
             else if (data.py < 0 && this->props.barrel_elevation <= this->props.look_angle)
             {
                 // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
-                this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT));
+                this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TrajFlag::ZERO | BCLIBC_TrajFlag::MRT));
             }
         }
     };
@@ -129,7 +129,7 @@ namespace bclibc
             // Init on first point handle
             this->init(new_data);
             // Always record starting point
-            this->add_row(rows, new_data, (this->range_step > 0 || this->time_step) ? BCLIBC_TRAJ_FLAG_RANGE : BCLIBC_TRAJ_FLAG_NONE);
+            this->add_row(rows, new_data, (this->range_step > 0 || this->time_step) ? BCLIBC_TrajFlag::RANGE : BCLIBC_TrajFlag::NONE);
         }
         else
         {
@@ -172,7 +172,7 @@ namespace bclibc
                     if (found_data)
                     {
                         this->next_record_distance += this->range_step;
-                        this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_RANGE);
+                        this->add_row(rows, result_data, BCLIBC_TrajFlag::RANGE);
                         this->time_of_last_record = result_data.time;
                     }
                     else
@@ -202,7 +202,7 @@ namespace bclibc
                             this->prev_data,
                             new_data,
                             result_data);
-                        this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_RANGE);
+                        this->add_row(rows, result_data, BCLIBC_TrajFlag::RANGE);
                     }
                     catch (const std::domain_error &e)
                     {
@@ -214,7 +214,7 @@ namespace bclibc
             // endregion Time steps
             if (
                 is_can_interpolate &&
-                this->filter & BCLIBC_TRAJ_FLAG_APEX &&
+                to_bool(this->filter & BCLIBC_TrajFlag::APEX) &&
                 this->prev_data.vy > 0 &&
                 new_data.vy <= 0)
             {
@@ -231,8 +231,8 @@ namespace bclibc
                         new_data,
                         result_data);
                     // "Apex" is the point where the vertical component of velocity goes from positive to negative.
-                    this->add_row(rows, result_data, BCLIBC_TRAJ_FLAG_APEX);
-                    this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_APEX);
+                    this->add_row(rows, result_data, BCLIBC_TrajFlag::APEX);
+                    this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TrajFlag::APEX);
                 }
                 catch (const std::domain_error &e)
                 {
@@ -252,56 +252,56 @@ namespace bclibc
         // region Points that must be interpolated on TrajectoryData instances
         if (is_can_interpolate)
         {
-            BCLIBC_TrajFlag compute_flags = BCLIBC_TRAJ_FLAG_NONE;
+            BCLIBC_TrajFlag compute_flags = BCLIBC_TrajFlag::NONE;
             if (
-                this->filter & BCLIBC_TRAJ_FLAG_MACH &&
+                to_bool(this->filter & BCLIBC_TrajFlag::MACH) &&
                 new_data.velocity().mag() < new_data.mach)
             {
-                compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_MACH);
-                this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_MACH); // Don't look for more Mach crossings
+                compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TrajFlag::MACH);
+                this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TrajFlag::MACH); // Don't look for more Mach crossings
             }
             // region ZERO checks (done on TrajectoryData objects so we can interpolate for .slant_height)
-            if (this->filter & BCLIBC_TRAJ_FLAG_ZERO)
+            if (to_bool(this->filter & BCLIBC_TrajFlag::ZERO))
             {
                 // Zero reference line is the sight line defined by look_angle
                 double reference_height = new_data.px * this->look_angle_tangent;
                 // If we haven't seen ZERO_UP, we look for that first
-                if (this->filter & BCLIBC_TRAJ_FLAG_ZERO_UP)
+                if (to_bool(this->filter & BCLIBC_TrajFlag::ZERO_UP))
                 {
                     if (new_data.py >= reference_height)
                     {
-                        compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_ZERO_UP);
-                        this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_UP);
+                        compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TrajFlag::ZERO_UP);
+                        this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TrajFlag::ZERO_UP);
                     }
                 }
                 // We've crossed above sight line; now look for crossing back through it
-                else if (this->filter & BCLIBC_TRAJ_FLAG_ZERO_DOWN)
+                else if (to_bool(this->filter & BCLIBC_TrajFlag::ZERO_DOWN))
                 {
                     if (new_data.py < reference_height)
                     {
-                        compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TRAJ_FLAG_ZERO_DOWN);
-                        this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TRAJ_FLAG_ZERO_DOWN);
+                        compute_flags = (BCLIBC_TrajFlag)(compute_flags | BCLIBC_TrajFlag::ZERO_DOWN);
+                        this->filter = (BCLIBC_TrajFlag)(this->filter & ~BCLIBC_TrajFlag::ZERO_DOWN);
                     }
                 }
             }
             // endregion ZERO checks
-            if (compute_flags)
+            if (to_bool(compute_flags))
             {
                 // Instantiate TrajectoryData and interpolate
                 BCLIBC_TrajectoryData t0(this->props, new_data);
                 BCLIBC_TrajectoryData t1(this->props, this->prev_data);
                 BCLIBC_TrajectoryData t2(this->props, this->prev_prev_data);
                 std::vector<BCLIBC_TrajectoryData> add_td;
-                if (compute_flags & BCLIBC_TRAJ_FLAG_MACH)
+                if (to_bool(compute_flags & BCLIBC_TrajFlag::MACH))
                 {
                     add_td.push_back(
                         BCLIBC_TrajectoryData::interpolate(
                             BCLIBC_TrajectoryData_InterpKey::MACH,
                             1.0,
                             t0, t1, t2,
-                            BCLIBC_TRAJ_FLAG_MACH));
+                            BCLIBC_TrajFlag::MACH));
                 }
-                if (compute_flags & BCLIBC_TRAJ_FLAG_ZERO)
+                if (to_bool(compute_flags & BCLIBC_TrajFlag::ZERO))
                 {
                     add_td.push_back(
                         BCLIBC_TrajectoryData::interpolate(

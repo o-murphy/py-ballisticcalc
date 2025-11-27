@@ -663,7 +663,7 @@ namespace bclibc
         double drag = 0.0;                            ///< Drag coefficient
         double energy_ft_lb = 0.0;                    ///< Kinetic energy
         double ogw_lb = 0.0;                          ///< Optimal game weight
-        BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE; ///< Point classification
+        BCLIBC_TrajFlag flag = BCLIBC_TrajFlag::NONE; ///< Point classification
 
         // Constructors
         BCLIBC_TrajectoryData() = default;
@@ -704,7 +704,7 @@ namespace bclibc
             const BCLIBC_V3dT &range_vector,
             const BCLIBC_V3dT &velocity_vector,
             double mach,
-            BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
+            BCLIBC_TrajFlag flag = BCLIBC_TrajFlag::NONE);
 
         /**
          * @brief Constructs trajectory data from base trajectory data and shot properties.
@@ -718,7 +718,7 @@ namespace bclibc
         BCLIBC_TrajectoryData(
             const BCLIBC_ShotProps &props,
             const BCLIBC_BaseTrajData &data,
-            BCLIBC_TrajFlag flag = BCLIBC_TRAJ_FLAG_NONE);
+            BCLIBC_TrajFlag flag = BCLIBC_TrajFlag::NONE);
 
         /**
          * @brief Constructs trajectory data from flagged data structure.

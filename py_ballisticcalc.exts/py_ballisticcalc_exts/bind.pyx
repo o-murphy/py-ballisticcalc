@@ -148,7 +148,7 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
         BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
         BCLIBC_Coriolis_from_pyobject(coriolis_obj),
         BCLIBC_WindSock_from_pylist(shot_info.winds),
-        <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
+        BCLIBC_TrajFlag.NONE,
     )
 
 

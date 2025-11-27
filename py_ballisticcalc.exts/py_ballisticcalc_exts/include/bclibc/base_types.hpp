@@ -1,9 +1,10 @@
-#ifndef BCLIBC_BASE_TYPES_H
-#define BCLIBC_BASE_TYPES_H
+#ifndef BCLIBC_BASE_TYPES_HPP
+#define BCLIBC_BASE_TYPES_HPP
 
 #include <cstddef>
 #include <vector>
 #include "v3d.hpp"
+#include "bclibc/traj_flag.hpp"
 #include "bclibc/log.hpp"
 
 namespace bclibc
@@ -61,19 +62,6 @@ namespace bclibc
      * @brief Earth's angular velocity in radians per second.
      */
     extern const double BCLIBC_cEarthAngularVelocityRadS;
-
-    enum BCLIBC_TrajFlag
-    {
-        BCLIBC_TRAJ_FLAG_NONE = 0,
-        BCLIBC_TRAJ_FLAG_ZERO_UP = 1,
-        BCLIBC_TRAJ_FLAG_ZERO_DOWN = 2,
-        BCLIBC_TRAJ_FLAG_ZERO = BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN,
-        BCLIBC_TRAJ_FLAG_MACH = 4,
-        BCLIBC_TRAJ_FLAG_RANGE = 8,
-        BCLIBC_TRAJ_FLAG_APEX = 16,
-        BCLIBC_TRAJ_FLAG_ALL = BCLIBC_TRAJ_FLAG_RANGE | BCLIBC_TRAJ_FLAG_ZERO_UP | BCLIBC_TRAJ_FLAG_ZERO_DOWN | BCLIBC_TRAJ_FLAG_MACH | BCLIBC_TRAJ_FLAG_APEX,
-        BCLIBC_TRAJ_FLAG_MRT = 32
-    };
 
     struct BCLIBC_Config
     {
@@ -425,4 +413,4 @@ namespace bclibc
 
 }; // namespace bclibc
 
-#endif // BCLIBC_BASE_TYPES_H
+#endif // BCLIBC_BASE_TYPES_HPP
