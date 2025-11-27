@@ -133,7 +133,7 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         BCLIBC_TrajFlag flag
 
         BCLIBC_TrajectoryData() except +
-                
+
         BCLIBC_TrajectoryData(
             const BCLIBC_ShotProps &props,
             double time,

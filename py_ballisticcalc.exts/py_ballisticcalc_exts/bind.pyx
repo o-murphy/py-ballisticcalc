@@ -1,6 +1,5 @@
 # cython: freethreading_compatible=True
 from libcpp.cmath cimport sin, cos
-from cpython.exc cimport PyErr_Occurred
 from cython cimport final
 from cpython.object cimport PyObject
 from py_ballisticcalc_exts.base_types cimport (
