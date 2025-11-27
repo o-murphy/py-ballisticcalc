@@ -81,7 +81,7 @@ cd py-ballisticcalc
 === "uv"
     ```bash
     # Sync project
-    uv sync --dev
+    uv sync
     # Activate `venv`
     source .venv/bin/activate
     ```
@@ -95,7 +95,7 @@ If you want to contribute to cythonized extensions you can also install them in 
 
 === "uv"
     ```bash
-    uv sync --dev --extra exts
+    uv sync --extra exts
     ```
 
 ### Check out a new branch and make your changes
@@ -180,13 +180,13 @@ You can find directions on how to install the required dependencies [here](https
 === "pip"
     ```bash
     # Install dependencies for docs building
-    pip install -e .[docs]
+    pip install -e .[exts,docs]
     ```
 
 === "uv"
     ```bash
     # Install dependencies for docs building
-    uv sync --extra docs 
+    uv sync --extra docs --extra exts 
     ```
 
 * `mkdocs build` will populate a `./site` folder with HTML.

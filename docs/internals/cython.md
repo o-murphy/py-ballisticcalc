@@ -6,7 +6,7 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 **Goals**
 
 - Keep hot numerical work free of the Python GIL to maximize throughput.
-- Provide Python-friendly, well-tested public APIs while preserving C-level performance.
+- Provide Python-friendly, well-tested public APIs while preserving C/C++-level performance.
 
 ## GIL and `nogil`
 
@@ -18,7 +18,7 @@ It explains naming, error handling, Global Interpreter Lock (GIL) usage, and why
 
 - Nogil helpers: suffix with `_nogil` or `_c_nogil` (we use `_interpolate_nogil`, `_append_nogil`).
 - Try-style helpers: prefix with `_try_` for functions that return a status instead of raising (e.g. `_try_grow`).
-- C-level internal implementations: prefix with `_` and end with `_c` for functions that are "C-level but may be called with the GIL" (e.g. `_append_c`).
+- C/C++-level internal implementations: prefix with `_` and end with `_c` for functions that are "C/C++-level but may be called with the GIL" (e.g. `_append_c`).
 - Public Python-facing methods: plain names (e.g. `append`, `interpolate_at`). These are `def` wrappers that call into `cdef`/`nogil` helpers.
 
 ### Error handling conventions
@@ -86,20 +86,20 @@ def append(self, time, ...):
 
 - Minimizes GIL contention in tight numeric loops (integration engine and interpolation hot paths).
 - Provides explicit, auditable separation of concerns (numeric work vs Python object handling).
-- Gives tests and Python scripts simple interfaces while guaranteeing C-level callers can use the fastest path.
+- Gives tests and Python scripts simple interfaces while guaranteeing C/C++-level callers can use the fastest path.
 
 ## When to use `cpdef` vs `cdef` + `def` wrapper
 
 - Use `cpdef` when:
     - The function is small and its behavior is identical whether called from Python or Cython.
-    - You want a convenient, single definition that exposes both a fast C-level entrypoint (for cimports) and a Python-callable function without writing a separate wrapper.
+    - You want a convenient, single definition that exposes both a fast C/C++-level entrypoint (for cimports) and a Python-callable function without writing a separate wrapper.
     - The function does not need special GIL management (no `nogil` core) and does not require bespoke exception mapping or complex Python-object construction.
 
 - Prefer `cdef` + `def` wrapper when:
     - The hot-path work must run without the GIL (you need a `nogil` numeric core) or you need tight control over GIL acquire/release.
     - The function must return Python objects, raise Python exceptions, or perform Python-side housekeeping that should only live in the wrapper.
     - You need different behavior or different APIs for C callers vs Python callers (for example, C callers get raw pointers or status codes while Python callers get high-level objects and exceptions).
-    - You want to avoid exposing a C-level symbol to other modules inadvertently; `cdef` keeps the C API internal unless you explicitly declare it in a `.pxd`.
+    - You want to avoid exposing a C/C++-level symbol to other modules inadvertently; `cdef` keeps the C API internal unless you explicitly declare it in a `.pxd`.
 
 - Rationale
 
@@ -114,10 +114,10 @@ def append(self, time, ...):
 
 For any object in the hot path we create a C helper as follows:
 
-1. Define a C struct in `bclib.h`, and list helper functions.  Example: `typedef struct ... BCLIBC_ShotProps` and `void BCLIBC_ShotProps_release(BCLIBC_ShotProps*shot_props_ptr)`
-2. Implement any helper functions in `bclib.c`.  These are typically to allocate and free memory.  Example: `BCLIBC_ShotProps_release()`.
-3. Copy the `struct` as a `ctypedef` to `bclib.pxd`.  (This could be automated at compile time but is not at present.)
-4. Put any conversion logic in `bclib.pyx`.  E.g., `cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):`
+1. Define a C/C++ types in `<some>.h/.hpp`, and list helper functions.  Example: `typedef struct ... BCLIBC_ShotProps` and `void BCLIBC_ShotProps_release(BCLIBC_ShotProps*shot_props_ptr)`
+2. Implement any helper functions in `<some>.c/.cpp`.  These are typically to allocate and free memory.  Example: `BCLIBC_ShotProps_release()`.
+3. Copy the `struct` as a `ctypedef` to `<some>.pxd`.  (This could be automated at compile time but is not at present.)
+4. Put any conversion logic in `<some>.pyx`.  E.g., `cdef BCLIBC_Wind BCLIBC_Wind_from_py(object w):`
 
 ## Memory / leak detection strategy
 

@@ -59,7 +59,8 @@ nav:
     - Units:
       - Dimensions: api/units/dimensions.md
       - PreferredUnits: api/units/preferred_units.md
-      - Vector: api/vector.md
+    - Vector: api/vector.md
+    - Cythonized extensions: api/cythonized.md
 - Internals:
   - Architecture: internals/architecture.md
   - Developer Details: internals/details.md
@@ -207,8 +208,10 @@ plugins:
       enable_inventory: true
       handlers:
         python:
-          paths: [.] 
+          paths:
+            - .
           options:
+            respect_type_hints: true
             group_by_category: true
             show_category_heading: true
             show_symbol_type_toc: true
