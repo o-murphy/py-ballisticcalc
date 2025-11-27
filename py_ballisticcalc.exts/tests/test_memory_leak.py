@@ -149,7 +149,8 @@ def test_engine_alloc_free_churn_no_growth_and_struct_zeroing():
         # Touch a few drags and stability branch
         _ = eng.drag(1.1)
         _ = eng.update_stability()
-        # Free via helper to exercise zeroing implemented in _release_trajectory
+        
+        # DEPRECATED: Free via helper to exercise zeroing implemented in _release_trajectory
         free_shot(eng)
         post = introspect_shot(addr)
         assert post["curve_len"] == 0 and post["mach_len"] == 0, "Struct not zeroed after free"

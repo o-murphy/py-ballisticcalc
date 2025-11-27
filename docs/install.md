@@ -89,6 +89,6 @@ cd py-ballisticcalc
 === "uv"
     ```bash
     # from repo root
-    uv sync --dev                        # main package editable
-    uv sync --dev --extra exts           # build/install C extensions (optional)
+    uv sync                        # main package editable
+    uv sync --extra exts           # build/install C extensions (optional)
     ```

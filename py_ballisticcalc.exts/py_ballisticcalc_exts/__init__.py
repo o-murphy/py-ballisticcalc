@@ -7,6 +7,8 @@ __copyright__ = (
 __credits__ = ["o-murphy", "dbookstaber"]
 
 
+from .traj_data import BaseTrajDataT, BaseTrajSeqT
+from .base_engine import CythonizedBaseIntegrationEngine
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
 

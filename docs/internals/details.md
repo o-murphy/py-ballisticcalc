@@ -4,19 +4,25 @@ This page is for contributors who want to modify algorithms, add engines, or ext
 
 ## Recommended one-step dev setup (cross-platform)
 
-```bash
-# create/sync venv with dev + exts
-uv sync --python 3.13 --dev --extra exts
+=== "Linux / MacOS"
+    ```bash
+    # create/sync venv with dev + exts
+    uv sync --python 3.13 --extra exts
 
-# install editable local packages into the active venv
-uv pip install -e ./py_ballisticcalc.exts
-uv pip install -e .
+    # activate & test
+    source .venv/bin/activate
+    pytest --engine="rk4_engine"
+    ```
 
-# activate & test
-source .venv/bin/activate   # Linux/macOS
-# .\.venv\Scripts\activate  # Windows
-python -m pytest tests --engine="rk4_engine"
-```
+=== "Windows"
+    ```powershell
+    # create/sync venv with dev + exts
+    uv sync --python 3.13 --extra exts
+
+    # activate & test
+    .\.venv\Scripts\activate
+    pytest --engine="rk4_engine"
+    ```
 
 **Notes:**
 
@@ -27,7 +33,7 @@ python -m pytest tests --engine="rk4_engine"
 Development dependencies and reproducible developer/CI installs are pinned in `uv.lock`.
 
 * This lockfile is for maintainers and CI reproducibility; it is not used by library consumers who install via pip/pyproject.
-* If you use `uv` for environment management, run `uv sync --dev` (optionally with `--extra exts` to install the Cython subproject) to produce the locked environment used by CI.
+* If you use `uv` for environment management, run `uv sync` (optionally with `--extra exts` to install the Cython subproject) to produce the locked environment used by CI.
 
 ## Code locations & responsibilities
 - `py_ballisticcalc/` — core Python package.
@@ -36,9 +42,9 @@ Development dependencies and reproducible developer/CI installs are pinned in `u
     - `conditions.py`, `munition.py` — shot and environment objects.
     - `drag_model.py`, `drag_tables.py` — drag lookup and interpolation.
 - `py_ballisticcalc.exts/` — Cython subproject.
-    - `py_ballisticcalc_exts/base_engine.pyx` — Cython wrapper that orchestrates C-layer stepping and defers event logic to Python.
+    - `py_ballisticcalc_exts/base_engine.pyx` — Cython wrapper that orchestrates C/C++-layer stepping and defers event logic to Python.
     - `py_ballisticcalc_exts/` `rk4_engine.pyx`, `euler_engine.pyx` — Cython engine implementations.
-    - `py_ballisticcalc_exts/bclib.pyx/.pxd` — helper functions and bridging helpers for C structs.
+    - `py_ballisticcalc_exts/*.pyx/*.pxd` — helper functions and bridging helpers for C/C++ structs.
 
 ## How engines are wired
 Public call flow (simplified):
@@ -62,10 +68,10 @@ Public call flow (simplified):
 
 ```bash
 # Run benchmarks on all engines:
-uv run python scripts/benchmark.py --all
+uv run scripts/benchmark.py --all
 
 # Run benchmarks on specific engine:
-uv run python scripts/benchmark.py --engine="rk4_engine"
+uv run scripts/benchmark.py --engine="rk4_engine"
 ```
 
 ### Understanding benchmark results
@@ -95,21 +101,30 @@ The key statistic to look at is `mean_ms`.  The other three statistics are usefu
 - Common Cython pitfalls observed in this codebase:
     - Indentation and cdef scoping errors — ensure `cdef` declarations live at the top of a C function or appropriate scope.
     - Avoid using Python booleans when declaring typed C variables (use `bint` and 0/1 assignment in the C context).
-    - Keep initialisation of C structs and memory allocation clear; release resources in `_release_trajectory`.
+    <!-- - Keep initialisation of C structs and memory allocation clear; release resources in `_release_trajectory`. -->
 
 ## Build / test commands
 
-```bash
-# optional: install editable C extensions and main package
-py -m pip install -e ./py_ballisticcalc.exts
-py -m pip install -e .
+=== "pip"
+    ```bash
+    # optional: install editable C extensions and main package
+    py -m pip install -e ./py_ballisticcalc.exts
+    py -m pip install -e .
 
-# run a single test file
-py -m pytest tests/test_exts_basic.py
+    # run a single test file
+    py -m pytest tests/test_exts_basic.py
 
-# run full tests
-py -m pytest
-```
+    # run full tests
+    py -m pytest
+    ```
+
+=== "uv"
+    ```bash
+    # install editable C extensions and main package
+    uv sync --extra exts
+    pytest --engine <engine-entry-path>
+    ```
+
 
 ## Where to ask questions
 Open an issue on the repository with a minimal reproduction and a note about the engine(s) involved.

@@ -17,7 +17,7 @@ class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
     def __cinit__(self, _config: Any) -> None:
         """
-        C-level initializer for the RK4 engine.
+        C/C++-level initializer for the RK4 engine.
         Sets up the RK4 integration function pointer.
         """
         ...

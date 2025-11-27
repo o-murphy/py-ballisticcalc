@@ -17,7 +17,7 @@ class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
 
     def __cinit__(self, _config: Any) -> None:
         """
-        C-level initializer for the Euler engine.
+        C/C++-level initializer for the Euler engine.
         Sets up the Euler integration function pointer.
         """
         ...
