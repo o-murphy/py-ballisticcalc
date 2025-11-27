@@ -149,7 +149,7 @@ def test_engine_alloc_free_churn_no_growth_and_struct_zeroing():
         # Touch a few drags and stability branch
         _ = eng.drag(1.1)
         _ = eng.update_stability()
-        
+
         # DEPRECATED: Free via helper to exercise zeroing implemented in _release_trajectory
         free_shot(eng)
         post = introspect_shot(addr)

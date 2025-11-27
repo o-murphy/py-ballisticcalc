@@ -7,7 +7,7 @@ engine modules. Not part of the public API.
 from cython cimport final
 from libcpp.cmath cimport sin, cos
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
-from py_ballisticcalc_exts.traj_data cimport BaseTrajSeqT, BCLIBC_BaseTrajData
+from py_ballisticcalc_exts.traj_data cimport CythonizedBaseTrajSeq, BCLIBC_BaseTrajData
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
@@ -74,7 +74,7 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         """
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        cdef BaseTrajSeqT seq = BaseTrajSeqT()
+        cdef CythonizedBaseTrajSeq seq = CythonizedBaseTrajSeq()
         cdef double v = self._this.shot.muzzle_velocity
         cdef double be = self._this.shot.barrel_elevation
         cdef double az = self._this.shot.barrel_azimuth

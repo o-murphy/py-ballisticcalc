@@ -7,7 +7,7 @@ __copyright__ = (
 __credits__ = ["o-murphy", "dbookstaber"]
 
 
-from .traj_data import BaseTrajDataT, BaseTrajSeqT
+from .traj_data import CythonizedBaseTrajData, CythonizedBaseTrajSeq
 from .base_engine import CythonizedBaseIntegrationEngine
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
@@ -36,4 +36,8 @@ if __core_version != __exts_version:
 __all__ = (
     "CythonizedEulerIntegrationEngine",
     "CythonizedRK4IntegrationEngine",
+    # externs for docs generation
+    "CythonizedBaseIntegrationEngine",
+    "CythonizedBaseTrajData",
+    "CythonizedBaseTrajSeq",
 )

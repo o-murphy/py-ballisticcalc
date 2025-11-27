@@ -2,7 +2,7 @@
 """
 CythonizedBaseIntegrationEngine
 
-Presently ._integrate() returns dense data in a BaseTrajSeqT, then .integrate()
+Presently ._integrate() returns dense data in a CythonizedBaseTrajSeq, then .integrate()
     feeds it through the Python TrajectoryDataFilter to build List[TrajectoryData].
 """
 
@@ -10,7 +10,7 @@ from libcpp.vector cimport vector
 from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport (
-    BaseTrajSeqT,
+    CythonizedBaseTrajSeq,
     BCLIBC_BaseTrajData,
     BCLIBC_TrajectoryData,
     BCLIBC_BaseTrajDataHandlerInterface,
@@ -245,10 +245,10 @@ cdef class CythonizedBaseIntegrationEngine:
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
             vector[BCLIBC_TrajectoryData] records
-            BaseTrajSeqT dense_trajectory
+            CythonizedBaseTrajSeq dense_trajectory
 
         if dense_output:
-            dense_trajectory = BaseTrajSeqT()
+            dense_trajectory = CythonizedBaseTrajSeq()
 
         self._init_trajectory(shot_info)
 
@@ -289,7 +289,7 @@ cdef class CythonizedBaseIntegrationEngine:
         double target_y_ft
     ):
         """
-        Target miss (feet) for given launch angle using BaseTrajSeqT.
+        Target miss (feet) for given launch angle using CythonizedBaseTrajSeq.
         Attempts to avoid Python exceptions in the hot path by pre-checking reach.
 
         Args:
@@ -488,8 +488,8 @@ cdef class CythonizedBaseIntegrationEngine:
             filter_flags (BCLIBC_TrajFlag): Flags to filter trajectory data.
 
         Returns:
-            tuple: (BaseTrajSeqT, str or None)
-                BaseTrajSeqT: The trajectory sequence.
+            tuple: (CythonizedBaseTrajSeq, str or None)
+                CythonizedBaseTrajSeq: The trajectory sequence.
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
         try:

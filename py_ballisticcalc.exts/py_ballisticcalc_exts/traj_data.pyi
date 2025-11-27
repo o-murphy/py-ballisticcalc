@@ -7,12 +7,12 @@ from typing import Optional
 
 from py_ballisticcalc.unit import Vector
 
-__all__ = ["BaseTrajSeqT", "BaseTrajDataT"]
+__all__ = ["CythonizedBaseTrajSeq", "CythonizedBaseTrajData"]
 
-class BaseTrajSeqT:
+class CythonizedBaseTrajSeq:
     """Contiguous C buffer of BCLIBC_BaseTrajData points with fast append and interpolation.
 
-    Python-facing access lazily creates lightweight BaseTrajDataT objects; internal
+    Python-facing access lazily creates lightweight CythonizedBaseTrajData objects; internal
         nogil helpers work directly on the C buffer for speed.
     """
 
@@ -40,16 +40,18 @@ class BaseTrajSeqT:
         """Number of points in the sequence."""
         ...
 
-    def __getitem__(self, idx: int) -> BaseTrajDataT:
-        """Return BaseTrajDataT for the given index.  Supports negative indices."""
+    def __getitem__(self, idx: int) -> CythonizedBaseTrajData:
+        """Return CythonizedBaseTrajData for the given index.  Supports negative indices."""
         ...
 
-    def interpolate_at(self, idx: int, key_attribute: str, key_value: float) -> BaseTrajDataT:
+    def interpolate_at(self, idx: int, key_attribute: str, key_value: float) -> CythonizedBaseTrajData:
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         ...
 
-    def get_at(self, key_attribute: str, key_value: float, start_from_time: Optional[float] = None) -> BaseTrajDataT:
-        """Get BaseTrajDataT where key_attribute == key_value (via monotone PCHIP interpolation).
+    def get_at(
+        self, key_attribute: str, key_value: float, start_from_time: Optional[float] = None
+    ) -> CythonizedBaseTrajData:
+        """Get CythonizedBaseTrajData where key_attribute == key_value (via monotone PCHIP interpolation).
 
         If start_from_time > 0, search is centered from the first point where time >= start_from_time,
         and proceeds forward or backward depending on local direction, mirroring
@@ -57,11 +59,11 @@ class BaseTrajSeqT:
         """
         ...
 
-    def get_at_slant_height(self, look_angle_rad: float, value: float) -> BaseTrajDataT:
-        """Get BaseTrajDataT where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
+    def get_at_slant_height(self, look_angle_rad: float, value: float) -> CythonizedBaseTrajData:
+        """Get CythonizedBaseTrajData where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
         ...
 
-class BaseTrajDataT:
+class CythonizedBaseTrajData:
     """Lightweight wrapper for a single BCLIBC_BaseTrajData point."""
 
     __slots__ = ("time", "position", "velocity", "mach")
@@ -84,10 +86,10 @@ class BaseTrajDataT:
     def interpolate(
         key_attribute: str,
         key_value: float,
-        p0: BaseTrajDataT,
-        p1: BaseTrajDataT,
-        p2: BaseTrajDataT,
-    ) -> BaseTrajDataT:
+        p0: CythonizedBaseTrajData,
+        p1: CythonizedBaseTrajData,
+        p2: CythonizedBaseTrajData,
+    ) -> CythonizedBaseTrajData:
         """
         Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation
         of a BaseTrajData point.
@@ -96,7 +98,7 @@ class BaseTrajDataT:
             key_attribute (str): Can be 'time', 'mach',
                 or a vector component like 'position.x' or 'velocity.z'.
             key_value (float): The value to interpolate.
-            p0, p1, p2 (BaseTrajDataT):
+            p0, p1, p2 (CythonizedBaseTrajData):
                 Any three points surrounding the point where key_attribute==value.
 
         Returns:
