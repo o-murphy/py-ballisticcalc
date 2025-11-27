@@ -438,4 +438,4 @@ namespace bclibc
             [](const BCLIBC_FlaggedData &f)
             { return f.data.time; });
     };
-};
+}; // namespace bclibc

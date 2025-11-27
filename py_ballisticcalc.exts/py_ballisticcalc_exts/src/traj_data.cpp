@@ -1234,4 +1234,4 @@ namespace bclibc
         }
     }
 
-} // namespace bclibc
+}; // namespace bclibc

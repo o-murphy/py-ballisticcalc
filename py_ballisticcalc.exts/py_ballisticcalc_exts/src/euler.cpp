@@ -235,4 +235,4 @@ namespace bclibc
         BCLIBC_DEBUG("Function exit, reason=%d\n", reason);
     }
 
-} // namespace bclibc
+}; // namespace bclibc

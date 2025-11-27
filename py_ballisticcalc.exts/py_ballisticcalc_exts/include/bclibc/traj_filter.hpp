@@ -141,6 +141,6 @@ namespace bclibc
          */
         void add_row(std::vector<BCLIBC_FlaggedData> &rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
     };
-};
+}; // namespace bclibc
 
 #endif // BCLIBC_TRAJ_FILTER_HPP

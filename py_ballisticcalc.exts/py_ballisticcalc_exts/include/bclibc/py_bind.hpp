@@ -45,7 +45,7 @@ namespace bclibc
      */
     BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w);
 
-};
+}; // namespace bclibc
 
 #endif // __CYTHON__
 

@@ -351,6 +351,6 @@ namespace bclibc
 
         return wind_c;
     };
-};
+}; // namespace bclibc
 
 #endif // __CYTHON__

@@ -69,6 +69,6 @@ namespace bclibc
      */
     BCLIBC_InterpStatus BCLIBC_interpolate2pt(double x, double x0, double y0, double x1, double y1, double &result);
 
-};
+}; // namespace bclibc
 
 #endif // BCLIBC_INTERP_HPP

@@ -1,5 +1,5 @@
-#ifndef BCLIBC_H
-#define BCLIBC_H
+#ifndef BCLIBC_HPP
+#define BCLIBC_HPP
 
 #include "bclibc/v3d.hpp"
 #include "bclibc/log.hpp"
@@ -17,4 +17,4 @@
 #include "bclibc/py_bind.hpp"
 #endif
 
-#endif // BCLIBC_H
+#endif // BCLIBC_HPP

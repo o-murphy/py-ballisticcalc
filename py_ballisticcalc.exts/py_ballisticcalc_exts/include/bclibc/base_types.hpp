@@ -1,5 +1,5 @@
-#ifndef BCLIBC_BASE_TYPES_H
-#define BCLIBC_BASE_TYPES_H
+#ifndef BCLIBC_BASE_TYPES_HPP
+#define BCLIBC_BASE_TYPES_HPP
 
 #include <cstddef>
 #include <vector>
@@ -425,4 +425,4 @@ namespace bclibc
 
 }; // namespace bclibc
 
-#endif // BCLIBC_BASE_TYPES_H
+#endif // BCLIBC_BASE_TYPES_HPP

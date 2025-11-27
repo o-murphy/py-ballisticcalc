@@ -802,6 +802,6 @@ namespace bclibc
         void set_key_val(BCLIBC_TrajectoryData_InterpKey key, double value);
     };
 
-};
+}; // namespace bclibc
 
 #endif // BCLIBC_BASE_TRAJ_SEQ_HPP
