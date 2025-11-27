@@ -3,34 +3,144 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.base_engine`
 to improve IDE completion for the Cythonized API.
 """
 
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
 
 class CythonizedBaseIntegrationEngine:
-    def __cinit__(self, _config: Any) -> None: ...
-    def __dealloc__(self) -> None: ...
-    def get_calc_step(self) -> float: ...
+    """Implements EngineProtocol"""
+
+    # Class constants
+    APEX_IS_MAX_RANGE_RADIANS: float
+    ALLOWED_ZERO_ERROR_FEET: float
+
+    def __init__(self, _config: Any) -> None:
+        """
+        Initializes the engine with the given configuration.
+
+        Args:
+            _config (BaseEngineConfig): The engine configuration.
+
+        IMPORTANT:
+            Avoid calling Python functions inside __init__!
+            __init__ is called after __cinit__, so any memory allocated in __cinit__
+            that is not referenced in Python will be leaked if __init__ raises an exception.
+        """
+        ...
+
+    def __cinit__(self, _config: Any) -> None:
+        """
+        C-level initializer for the engine.
+        Override this method to setup integrate_func_ptr and other fields.
+
+        NOTE:
+            The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,
+            so we are need no set it's fields to null
+        """
+        ...
+
+    def __dealloc__(self) -> None:
+        """Frees any allocated resources."""
+        ...
+
+    @property
+    def integration_step_count(self) -> int:
+        """
+        Gets the number of integration steps performed in the last integration.
+
+        Returns:
+            int: The number of integration steps.
+        """
+        ...
+
     def find_max_range(
         self, shot_info: Shot, angle_bracket_deg: Tuple[float, float] = (0, 90)
-    ) -> Tuple[Distance, Angular]: ...
-    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular: ...
-    def find_apex(self, shot_info: Shot) -> TrajectoryData: ...
-    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular: ...
+    ) -> Tuple[Distance, Angular]:
+        """
+        Finds the maximum range along shot_info.look_angle,
+        and the launch angle to reach it.
+
+        Args:
+            shot_info (Shot): The shot information.
+            angle_bracket_deg (Tuple[float, float], optional):
+                The angle bracket in degrees to search for max range. Defaults to (0, 90).
+
+        Returns:
+            Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
+        """
+        ...
+
+    def find_zero_angle(self, shot_info: Shot, distance: Distance, lofted: bool = False) -> Angular:
+        """
+        Finds the barrel elevation needed to hit sight line at a specific distance,
+        using unimodal root-finding that is guaranteed to succeed if a solution exists.
+
+        Args:
+            shot_info (Shot): The shot information.
+            distance (Distance): The distance to the target.
+            lofted (bool): Whether the shot is lofted.
+
+        Returns:
+            Angular: The required barrel elevation angle.
+        """
+        ...
+
+    def find_apex(self, shot_info: Shot) -> TrajectoryData:
+        """
+        Finds the apex of the trajectory, where apex is defined as the point
+        where the vertical component of velocity goes from positive to negative.
+
+        Args:
+            shot_info (Shot): The shot information.
+
+        Returns:
+            TrajectoryData: The trajectory data at the apex.
+        """
+        ...
+
+    def zero_angle(self, shot_info: Shot, distance: Distance) -> Angular:
+        """
+        Finds the barrel elevation needed to hit sight line at a specific distance.
+        First tries iterative approach; if that fails falls back on _find_zero_angle.
+
+        Args:
+            shot_info (Shot): The shot information.
+            distance (Distance): The distance to the target.
+
+        Returns:
+            Angular: Barrel elevation to hit height zero at zero distance along sight line
+        """
+        ...
+
     def integrate(
         self,
         shot_info: Shot,
         max_range: Distance,
-        dist_step: Optional[Distance] = None,
+        dist_step: Distance | None = None,
         time_step: float = 0.0,
-        filter_flags: "TrajFlag | int" = TrajFlag.NONE,
+        filter_flags: TrajFlag | int = 0,
         dense_output: bool = False,
-        **kwargs,
-    ) -> HitResult: ...
+        **kwargs: Any,
+    ) -> HitResult:
+        """
+        Integrates the trajectory for the given shot.
 
-    # # Internal lifecycle / helpers exposed to Python callers (kept here for completeness)
-    # # Not exposed
-    # cdef _release_trajectory(self) -> None: ...
-    # cdef _init_trajectory(self, shot_info: ShotProps) -> None: ...
+        Args:
+            shot_info (Shot): The shot information.
+            max_range (Distance):
+                Maximum range of the trajectory (if float then treated as feet).
+            dist_step (Optional[Distance]):
+                Distance step for recording RANGE TrajectoryData rows.
+            time_step (float, optional):
+                Time step for recording trajectory data. Defaults to 0.0.
+            filter_flags (Union[TrajFlag, int], optional):
+                Flags to filter trajectory data. Defaults to TrajFlag.RANGE.
+            dense_output (bool, optional):
+                If True, HitResult will save BaseTrajData for interpolating TrajectoryData.
+
+        Returns:
+            HitResult: Object for describing the trajectory.
+        """
+        ...

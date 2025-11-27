@@ -1,20 +1,23 @@
-from py_ballisticcalc.conditions import Shot
-from py_ballisticcalc.unit import Angular, Distance
-from py_ballisticcalc.engines.base_engine import BaseEngineConfig
-from py_ballisticcalc.trajectory_data import TrajectoryData
+"""
+Type stubs for the compiled extension module `py_ballisticcalc_exts.rk4_engine`
+to improve IDE completion for the Cythonized RK4 integration API.
+"""
+
+from typing import Any
+
+from py_ballisticcalc_exts.base_engine import CythonizedBaseIntegrationEngine
 
 __all__ = ["CythonizedRK4IntegrationEngine"]
 
-class CythonizedRK4IntegrationEngine:
-    def __init__(self, _config: BaseEngineConfig) -> None: ...
-    @property
-    def get_calc_step(self, step: float = 0) -> float: ...
-    def trajectory(
-        self,
-        shot_info: Shot,
-        max_range: Distance,
-        dist_step: Distance,
-        extra_data: bool = False,
-        time_step: float = 0.0,
-    ) -> list[TrajectoryData]: ...
-    def zero_angle(self, shot_info: Shot, distance: Distance, time_step: float = 0.0) -> Angular: ...
+class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
+    """Cythonized RK4 (Runge-Kutta 4th order) integration engine for ballistic calculations."""
+
+    # Class constant specific to RK4 engine
+    DEFAULT_TIME_STEP: float
+
+    def __cinit__(self, _config: Any) -> None:
+        """
+        C-level initializer for the RK4 engine.
+        Sets up the RK4 integration function pointer.
+        """
+        ...
