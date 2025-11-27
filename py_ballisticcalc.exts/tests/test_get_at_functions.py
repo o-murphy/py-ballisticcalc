@@ -1,11 +1,11 @@
 import math
 import pytest
 
-from py_ballisticcalc_exts.traj_data import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajSeq
 
 
 def make_linear_seq(n=5):
-    seq = BaseTrajSeqT()
+    seq = CythonizedBaseTrajSeq()
     for i in range(n):
         # time=i, px=10*i (linear), py=0, pz=0, velocities not used in tests, mach grows
         seq.append(float(i), 10.0 * i, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6 + 0.01 * i)

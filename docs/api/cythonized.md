@@ -1,11 +1,11 @@
-::: py_ballisticcalc_exts.BaseTrajDataT
+::: py_ballisticcalc_exts.CythonizedBaseTrajData
     options:
         show_docstring_examples: false
         members: false
         show_docstring_attributes: false
         docstring_section_style: list
 
-::: py_ballisticcalc_exts.BaseTrajSeqT
+::: py_ballisticcalc_exts.CythonizedBaseTrajSeq
     options:
         show_docstring_examples: false
         members: false

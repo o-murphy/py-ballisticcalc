@@ -166,9 +166,9 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
         ) except +
 
 
-cdef class BaseTrajSeqT:
+cdef class CythonizedBaseTrajSeq:
     cdef BCLIBC_BaseTrajSeq _this
 
 
-cdef class BaseTrajDataT:
+cdef class CythonizedBaseTrajData:
     cdef BCLIBC_BaseTrajData _this

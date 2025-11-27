@@ -15,7 +15,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateOgw,
 )
 from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData, BaseTrajDataT
+from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData, CythonizedBaseTrajData
 
 __all__ = [
     'init_shot',
@@ -37,7 +37,7 @@ __all__ = [
 # Small Python factory for tests and convenience
 cpdef make_base_traj_data(double time, double px, double py, double pz,
                           double vx, double vy, double vz, double mach):
-    cdef BaseTrajDataT data = BaseTrajDataT()
+    cdef CythonizedBaseTrajData data = CythonizedBaseTrajData()
     data._this = BCLIBC_BaseTrajData(time, px, py, pz, vx, vy, vz, mach)
     return data
 
