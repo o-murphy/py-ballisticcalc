@@ -1,0 +1,28 @@
+[
+  {
+    "branch": "v3dv",
+    "case": "Trajectory",
+    "engine": "cythonized_rk4_engine",
+    "git_hash": "73285fa",
+    "max_ms": 12.049925999235711,
+    "mean_ms": 11.375075790092524,
+    "min_ms": 11.018236000381876,
+    "repeats": 100,
+    "stdev_ms": 0.15547505513475499,
+    "timestamp": "2025-10-15T09:24:39Z",
+    "version": "2.2.1"
+  },
+  {
+    "branch": "v3dv",
+    "case": "Zero",
+    "engine": "cythonized_rk4_engine",
+    "git_hash": "73285fa",
+    "max_ms": 5.080214999907184,
+    "mean_ms": 4.845291759975225,
+    "min_ms": 4.67579799988016,
+    "repeats": 100,
+    "stdev_ms": 0.09078398388636554,
+    "timestamp": "2025-10-15T09:24:39Z",
+    "version": "2.2.1"
+  }
+]

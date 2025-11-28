@@ -1,0 +1,28 @@
+[
+  {
+    "branch": "cpp-tdf",
+    "case": "Trajectory",
+    "engine": "cythonized_rk4_engine",
+    "git_hash": "73206ed",
+    "max_ms": 1.0077750002892572,
+    "mean_ms": 0.8845996009949886,
+    "min_ms": 0.8519459997842205,
+    "repeats": 1000,
+    "stdev_ms": 0.022027540432264098,
+    "timestamp": "2025-11-06T15:57:51Z",
+    "version": "2.2.3"
+  },
+  {
+    "branch": "cpp-tdf",
+    "case": "Zero",
+    "engine": "cythonized_rk4_engine",
+    "git_hash": "73206ed",
+    "max_ms": 3.0776690000493545,
+    "mean_ms": 2.876114849991154,
+    "min_ms": 2.783044999887352,
+    "repeats": 1000,
+    "stdev_ms": 0.04321775976977686,
+    "timestamp": "2025-11-06T15:57:54Z",
+    "version": "2.2.3"
+  }
+]

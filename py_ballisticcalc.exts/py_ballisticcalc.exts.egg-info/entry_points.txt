@@ -1,0 +1,3 @@
+[py_ballisticcalc]
+cythonized_euler_engine = py_ballisticcalc_exts:CythonizedEulerIntegrationEngine
+cythonized_rk4_engine = py_ballisticcalc_exts:CythonizedRK4IntegrationEngine

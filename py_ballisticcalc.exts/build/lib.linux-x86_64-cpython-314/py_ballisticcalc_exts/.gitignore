@@ -1,0 +1,46 @@
+# Ignore compiled Python extension modules in the current directory (non-recursive)
+/*.pyd
+
+# Ignore all HTML files in the current directory (non-recursive)
+/*.html
+
+# Ignore all .c files in the current directory (non-recursive)
+/*.c
+
+# Ignore all .h files in the current directory (non-recursive)
+/*.h
+
+
+# --- EXCEPTIONS: Un-ignore specific directories if their .c or .h files are source code ---
+# The following lines explicitly tell Git NOT to ignore files within these specific directories.
+# This assumes that 'py_ballisticcalc_exts/src/' contains your source .c files (like v3d.c)
+# and 'py_ballisticcalc_exts/include/' contains your source .h files (like v3d.h)
+# that you DO want to track in Git.
+
+# Un-ignore the 'src' directory within py_ballisticcalc_exts
+!py_ballisticcalc_exts/src/
+# Un-ignore the 'include' directory within py_ballisticcalc_exts
+!py_ballisticcalc_exts/include/
+
+# --- Common Python and Build Ignores ---
+# Python bytecode files
+*.pyc
+__pycache__/
+
+# Cython build artifacts and temporary files
+# The build directory created by setuptools/distutils
+build/
+# Distribution packages
+dist/
+# Python egg-info directories (from setuptools)
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE/Editor specific files (common examples)
+.idea/
+.vscode/
+.DS_Store # macOS specific

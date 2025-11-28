@@ -1,0 +1,149 @@
+# cython: freethreading_compatible=True
+"""
+Low-level, high-performance trajectory buffer and interpolation helpers (Cython).
+
+This module provides:
+- CythonizedBaseTrajSeq: a contiguous C buffer of BCLIBC_BaseTrajData items with append/reserve access.
+- Monotone-preserving PCHIP (cubic Hermite) interpolation on the raw buffer without
+    allocating Python objects.
+- Convenience methods to locate and interpolate a point by an independent variable
+    (time, mach, position.{x,y,z}, velocity.{x,y,z}) and slant_height.
+
+Design note: nogil helpers operate on a tiny C struct view of the sequence to avoid
+passing Python cdef-class instances into nogil code paths.
+"""
+
+from cython cimport final
+from py_ballisticcalc_exts.bind cimport _attribute_to_key, v3d_to_vector
+
+__all__ = ('CythonizedBaseTrajSeq')
+
+
+@final
+cdef class CythonizedBaseTrajSeq:
+    """Contiguous C buffer of BCLIBC_BaseTrajData points with fast append and interpolation.
+
+    Python-facing access lazily creates lightweight CythonizedBaseTrajData objects; internal
+        nogil helpers work directly on the C buffer for speed.
+    """
+    def __cinit__(self):
+        pass
+
+    def __dealloc__(self):
+        pass
+
+    def append(self, double time, double px, double py, double pz,
+               double vx, double vy, double vz, double mach):
+        """Append a new point to the sequence."""
+        self._this.append(
+            BCLIBC_BaseTrajData(time, px, py, pz, vx, vy, vz, mach)
+        )
+
+    def reserve(self, int min_capacity):
+        """Ensure capacity is at least min_capacity (no-op if already large enough)."""
+        import warnings
+        warnings.warn("reserve method deprecated due to auto resources manage")
+        if min_capacity < 0:
+            raise ValueError("min_capacity must be non-negative")
+
+    def __len__(self):
+        """Number of points in the sequence."""
+        cdef Py_ssize_t length = self._this.get_length()
+        return <int>length
+
+    def __getitem__(self, idx: int) -> CythonizedBaseTrajData:
+        """Return CythonizedBaseTrajData for the given index.  Supports negative indices."""
+        cdef Py_ssize_t _i = <Py_ssize_t>idx
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        try:
+            out._this = self._this.get_item(_i)
+            return out
+        except Exception as e:
+            raise IndexError(f"IndexError: {e.what()}")
+
+    def interpolate_at(self, Py_ssize_t idx, str key_attribute, double key_value):
+        """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
+        cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        self._this.interpolate_at(
+            idx, key_kind, key_value, out._this
+        )
+        return out
+
+    def get_at(self, str key_attribute, double key_value, object start_from_time=None) -> CythonizedBaseTrajData:
+        """Get CythonizedBaseTrajData where key_attribute == key_value (via monotone PCHIP interpolation).
+
+        If start_from_time > 0, search is centered from the first point where time >= start_from_time,
+        and proceeds forward or backward depending on local direction, mirroring
+        trajectory_data.HitResult.get_at().
+        """
+        cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        cdef double _start_from_time = 0.0
+        if start_from_time is not None:
+            _start_from_time = <double>start_from_time
+        self._this.get_at(
+            key_kind, key_value, _start_from_time, out._this
+        )
+        return out
+
+    def get_at_slant_height(self, double look_angle_rad, double value):
+        """Get CythonizedBaseTrajData where value == slant_height === position.y*cos(a) - position.x*sin(a)."""
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        self._this.get_at_slant_height(look_angle_rad, value, out._this)
+        return out
+
+
+@final
+cdef class CythonizedBaseTrajData:
+    __slots__ = ('time', 'position', 'velocity', 'mach')  # for pure python mirror consistency
+
+    @property
+    def time(self):
+        return self._this.time
+
+    @property
+    def mach(self):
+        return self._this.mach
+
+    # Python-facing properties return Vector, not dict
+    @property
+    def position(self):
+        cdef BCLIBC_V3dT pos = self._this.position()
+        return v3d_to_vector(&pos)
+
+    @property
+    def velocity(self):
+        cdef BCLIBC_V3dT vel = self._this.velocity()
+        return v3d_to_vector(&vel)
+
+    @staticmethod
+    def interpolate(str key_attribute, double key_value,
+                    CythonizedBaseTrajData p0, CythonizedBaseTrajData p1, CythonizedBaseTrajData p2):
+        """
+        Piecewise Cubic Hermite Interpolating Polynomial (PCHIP) interpolation
+        of a BaseTrajData point.
+
+        Args:
+            key_attribute (str): Can be 'time', 'mach',
+                or a vector component like 'position.x' or 'velocity.z'.
+            key_value (float): The value to interpolate.
+            p0, p1, p2 (CythonizedBaseTrajData):
+                Any three points surrounding the point where key_attribute==value.
+
+        Returns:
+            BaseTrajData: The interpolated data point.
+
+        Raises:
+            AttributeError: If the key_attribute is not a member of BaseTrajData.
+            ZeroDivisionError: If the interpolation fails due to zero division.
+                               (This will result if two of the points are identical).
+        """
+        cdef BCLIBC_BaseTrajData_InterpKey key_kind = _attribute_to_key(key_attribute)
+        cdef CythonizedBaseTrajData out = CythonizedBaseTrajData()
+        BCLIBC_BaseTrajData.interpolate(
+            key_kind, key_value,
+            p0._this, p1._this, p2._this,
+            out._this
+        )
+        return out

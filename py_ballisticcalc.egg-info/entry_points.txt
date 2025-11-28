@@ -1,0 +1,8 @@
+[console_scripts]
+uconv = py_ballisticcalc.tools.uconv:main
+
+[py_ballisticcalc]
+euler_engine = py_ballisticcalc:EulerIntegrationEngine
+rk4_engine = py_ballisticcalc:RK4IntegrationEngine
+scipy_engine = py_ballisticcalc:SciPyIntegrationEngine
+verlet_engine = py_ballisticcalc:VelocityVerletIntegrationEngine

@@ -1,0 +1,28 @@
+[
+  {
+    "branch": "refactor2C_3",
+    "case": "Trajectory",
+    "engine": "cythonized_rk4_engine",
+    "git_hash": "11ee35e",
+    "max_ms": 11.793199000749155,
+    "mean_ms": 11.47048863004784,
+    "min_ms": 11.14013000005798,
+    "repeats": 100,
+    "stdev_ms": 0.1379012828736383,
+    "timestamp": "2025-10-15T08:32:11Z",
+    "version": "2.2.1"
+  },
+  {
+    "branch": "refactor2C_3",
+    "case": "Zero",
+    "engine": "cythonized_rk4_engine",
+    "git_hash": "11ee35e",
+    "max_ms": 5.600615999355796,
+    "mean_ms": 5.157032929973866,
+    "min_ms": 4.987645999790402,
+    "repeats": 100,
+    "stdev_ms": 0.09375576817086796,
+    "timestamp": "2025-10-15T08:32:12Z",
+    "version": "2.2.1"
+  }
+]

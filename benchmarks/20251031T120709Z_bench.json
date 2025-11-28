@@ -1,0 +1,28 @@
+[
+  {
+    "branch": "dev",
+    "case": "Trajectory",
+    "engine": "rk4_engine",
+    "git_hash": "a931258",
+    "max_ms": 65.74989399996412,
+    "mean_ms": 65.74989399996412,
+    "min_ms": 65.74989399996412,
+    "repeats": 1,
+    "stdev_ms": 0.0,
+    "timestamp": "2025-10-31T12:07:09Z",
+    "version": "2.2.3"
+  },
+  {
+    "branch": "dev",
+    "case": "Zero",
+    "engine": "rk4_engine",
+    "git_hash": "a931258",
+    "max_ms": 310.06434400114813,
+    "mean_ms": 310.06434400114813,
+    "min_ms": 310.06434400114813,
+    "repeats": 1,
+    "stdev_ms": 0.0,
+    "timestamp": "2025-10-31T12:07:10Z",
+    "version": "2.2.3"
+  }
+]

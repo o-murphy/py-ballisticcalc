@@ -1,0 +1,28 @@
+[
+  {
+    "branch": "dev",
+    "case": "Trajectory",
+    "engine": "cythonized_euler_engine",
+    "git_hash": "54352de",
+    "max_ms": 12.40077299735276,
+    "mean_ms": 11.523525769953267,
+    "min_ms": 11.025826999684796,
+    "repeats": 100,
+    "stdev_ms": 0.17776805763715844,
+    "timestamp": "2025-11-11T13:01:19Z",
+    "version": "2.2.5b1"
+  },
+  {
+    "branch": "dev",
+    "case": "Zero",
+    "engine": "cythonized_euler_engine",
+    "git_hash": "54352de",
+    "max_ms": 39.9539600002754,
+    "mean_ms": 39.31750658997771,
+    "min_ms": 38.63891299988609,
+    "repeats": 100,
+    "stdev_ms": 0.2598027067280826,
+    "timestamp": "2025-11-11T13:01:24Z",
+    "version": "2.2.5b1"
+  }
+]
