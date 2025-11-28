@@ -2,12 +2,16 @@
 # Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
 
 [build-system]
-requires = ["setuptools", "wheel", "tomli; python_version<'3.11'"]
+requires = [
+    "setuptools",
+    "setuptools-scm[toml]>=9.2",
+    "setuptools_dynamic_dependencies",
+    "tomli; python_version<'3.11'"
+]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "py_ballisticcalc"
-version = "2.2.5b2"
 
 authors = [
     { name = "o-murphy", email = "thehelixpg@gmail.com" },
@@ -38,6 +42,11 @@ dependencies = [
     "tomli>=2.2.1; python_version<'3.11'",
     "Deprecated>=1.2.18",
 ]
+
+# NOTE:
+#   version: will be calculated with setuptools-scm
+#   optional-dependencies: will be calculated with before-build hook
+dynamic = ["version", "optional-dependencies"]
 
 [project.entry-points.py_ballisticcalc]
 euler_engine = "py_ballisticcalc:EulerIntegrationEngine"
@@ -90,8 +99,16 @@ line-length = 120
 [tool.uv.sources]
 "py_ballisticcalc.exts" = { path = "./py_ballisticcalc.exts" }  # required for `uv sync`
 
-[project.optional-dependencies]
-exts = ["py_ballisticcalc.exts==2.2.5b2"]
+[tool.setuptools_scm]
+root = "."  # required for valid .git repo root detect for main package in monorepo
+fallback_version = "0.0.0.dev0"
+
+# NOTE:
+#   do not use [project.optional-dependencies]
+#   we use setuptools_dynamic_dependencies as "before-build hook"
+#   to guarantee strict tie of the `main` and the `exts` packages versions
+[tool.setuptools_dynamic_dependencies.optional-dependencies]
+exts = ["py_ballisticcalc.exts=={version}"]
 charts = [
     "matplotlib>=3.10.7",
     "pillow>=11.3.0; python_version>='3.13' and sys_platform == 'win32'", # minimal wheel required for matplotlib with python 3.13+ in windows
@@ -143,7 +160,7 @@ docs = [
     "mkdocs-autorefs>=1.4.2",
     "mike>=2.1.3",
     "pydocstyle>=6.3.0",
-    "ruff>=0.14.0",
+    "setuptools-scm>=9.2"
 ]
 
 [dependency-groups]

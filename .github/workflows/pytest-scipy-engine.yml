@@ -6,25 +6,25 @@ run-name: >
 on:
   pull_request:
     branches:
-      - '*'
+      - "*"
     paths:
-      - 'pyproject.toml'
-      - 'setup.py'
-      - 'py_ballisticcalc/**'
-      - 'tests/**'
-      - 'py_ballisticcalc.exts/**'
-      - '.github/**'
+      - "pyproject.toml"
+      - "setup.py"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".github/**"
 
   push:
     branches:
-      - '*'
+      - "*"
     paths:
-      - 'pyproject.toml'
-      - 'setup.py'
-      - 'py_ballisticcalc/**'
-      - 'tests/**'
-      - 'py_ballisticcalc.exts/**'
-      - '.github/**'
+      - "pyproject.toml"
+      - "setup.py"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".github/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,15 +40,16 @@ jobs:
       max-parallel: 10
       fail-fast: false
       matrix:
-        os: 
+        os:
           - ubuntu-latest
           - ubuntu-24.04-arm
           - windows-latest
           - windows-11-arm
           - macos-15-intel
-          - macos-15 
-        python-version: [ "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
-        engine: [ "scipy_engine" ]
+          - macos-15
+        python-version:
+          ["3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
+        engine: ["scipy_engine"]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:
@@ -64,9 +65,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest ]
-        python-version: [ "3.10" ]
-        engine: [ "scipy_engine" ]
+        os: [ubuntu-latest]
+        python-version: ["3.10"]
+        engine: ["scipy_engine"]
 
     uses: ./.github/workflows/pytest-reusable.yml
     with:

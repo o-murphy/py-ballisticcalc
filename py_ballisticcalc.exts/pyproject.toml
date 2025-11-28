@@ -2,14 +2,15 @@
 # Copyright 2024 David Bookstaber (https://github.com/dbookstaber)
 
 [build-system]
-requires = ["setuptools", 'cython>=3.1.4']
+requires = [
+    "setuptools",
+    "setuptools-scm[toml]>=9.2",
+    "cython>=3.1.4"]
 build-backend = "setuptools.build_meta"
 
 
 [project]
 name = "py_ballisticcalc.exts"
-version = "2.2.5b2"
-
 authors = [
     { name="o-murphy", email="thehelixpg@gmail.com" },
     { name="dbookstaber", email="bookstaber@gmail.com"}
@@ -36,6 +37,10 @@ classifiers = [
 ]
 dependencies = []
 
+# NOTE:
+#   version: will be calculated with setuptools-scm
+dynamic = ["version"]
+
 [project.entry-points.py_ballisticcalc]
 cythonized_euler_engine = "py_ballisticcalc_exts:CythonizedEulerIntegrationEngine"
 cythonized_rk4_engine = "py_ballisticcalc_exts:CythonizedRK4IntegrationEngine"
@@ -59,7 +64,7 @@ include = ["py_ballisticcalc_exts*"]
 exclude = ["py_ballisticcalc_exts.include*"]
 
 [project.optional-dependencies]
-dev = ['cython>=3.1.4', 'cibuildwheel', 'setuptools']
+dev = ["cython>=3.1.4", "cibuildwheel", "setuptools"]
 
 [tool.cibuildwheel]
 # Use uv and build
@@ -67,8 +72,12 @@ build-frontend = "build[uv]"
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = '-m "not stress"'
+addopts = "-m 'not stress'"
 markers = ["stress: long-running or resource-intensive tests, opt-in only"]
+
+[tool.setuptools_scm]
+root = ".."  # required for valid .git repo root detect for subpackage in monorepo
+fallback_version = "0.0.0.dev0"
 
 [dependency-groups]
 dev = [

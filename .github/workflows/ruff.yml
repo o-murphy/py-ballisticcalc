@@ -3,14 +3,14 @@ name: Ruff
 on:
   pull_request:
     branches:
-      - '*'
+      - "*"
     paths:
-      - 'pyproject.toml'
-      - 'setup.py'
-      - 'py_ballisticcalc/**'
-      - 'tests/**'
-      - 'py_ballisticcalc.exts/**'
-      - '.github/**'
+      - "pyproject.toml"
+      - "setup.py"
+      - "py_ballisticcalc/**"
+      - "tests/**"
+      - "py_ballisticcalc.exts/**"
+      - ".github/**"
   workflow_dispatch:
 
 concurrency:
@@ -23,11 +23,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # required for setuptools-scm
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
-          python-version: '3.10'
+          python-version: "3.10"
           github-token: ${{ github.token }}
 
       - name: Install the project

@@ -1,6 +1,1 @@
-prune py_ballisticcalc.exts
-prune tests
-global-include py.typed
-include LICENSE
-include README.md
-recursive-include */assets *.toml
+# Includes all via setuptools-scm

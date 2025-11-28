@@ -30,6 +30,8 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         name: Checkout Repository Code # A clear name for this foundational step
+        with:
+          fetch-depth: 0 # required for setuptools-scm
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v7
@@ -37,12 +39,6 @@ jobs:
           python-version: ${{ inputs.python_version }} # Use the Python version passed via inputs
           activate-environment: "true"
           github-token: ${{ github.token }}
-
-      - name: Validate extensions version matching
-        # Install tomli (if not already present) to parse pyproject.toml
-        # Then run your custom version check hook
-        run: uv run hooks/version_check.py
-        shell: bash
 
       - name: Install dependencies for python 3.13.x 3.14.x (Linux)
         # Install deps to build matplotlib, numpy, pandas, scipy, jupyter
@@ -124,7 +120,7 @@ jobs:
         run: |
           # 1. Run tests and save the exit code, suppressing the default failure behavior
           pytest tests --no-header -v -n auto --engine=${{ inputs.engine_name }} || EXIT_CODE=$?
-          
+
           # 2. Check the saved exit code. 
           if [ $EXIT_CODE -ne 0 ]; then
             echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
@@ -148,14 +144,14 @@ jobs:
       - name: Run stress tests (Valgrind) and save log 💾
         id: valgrind_run
         if: ${{ inputs.stress_test == true && startsWith(inputs.engine_name, 'cythonized_') && failure() }}
-        
+
         run: |
           LOG_FILE="valgrind.log"
           echo "Normal stress test FAILED. Installing Valgrind and rerunning with memory check. Log will be visible in the console AND saved to ${LOG_FILE}"
-          
+
           sudo apt-get update
           sudo apt-get install -y valgrind
-          
+
           valgrind \
             --tool=memcheck \
             --leak-check=full \

@@ -2090,7 +2090,6 @@ wheels = [
 
 [[package]]
 name = "py-ballisticcalc"
-version = "2.2.5b2"
 source = { editable = "." }
 dependencies = [
     { name = "deprecated" },
@@ -2143,7 +2142,7 @@ docs = [
     { name = "mkdocstrings" },
     { name = "mkdocstrings-python" },
     { name = "pydocstyle" },
-    { name = "ruff" },
+    { name = "setuptools-scm" },
 ]
 exts = [
     { name = "py-ballisticcalc-exts" },
@@ -2224,11 +2223,11 @@ requires-dist = [
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.8.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.14.0" },
-    { name = "ruff", marker = "extra == 'docs'", specifier = ">=0.14.0" },
     { name = "scipy", marker = "extra == 'charts'", specifier = ">=1.15.3" },
     { name = "scipy", marker = "extra == 'dev'", specifier = ">=1.15.3" },
     { name = "scipy", marker = "extra == 'scipy'", specifier = ">=1.15.3" },
     { name = "scipy-stubs", marker = "python_full_version >= '3.11' and extra == 'dev'", specifier = ">=1.16.2.3" },
+    { name = "setuptools-scm", marker = "extra == 'docs'", specifier = ">=9.2" },
     { name = "tomli", marker = "python_full_version < '3.11'", specifier = ">=2.2.1" },
     { name = "types-deprecated", marker = "extra == 'dev'", specifier = ">=1.2.15.20250304" },
     { name = "typing-extensions", specifier = ">=4.12.2" },
@@ -2266,7 +2265,6 @@ test = [
 
 [[package]]
 name = "py-ballisticcalc-exts"
-version = "2.2.5b2"
 source = { directory = "py_ballisticcalc.exts" }
 
 [package.metadata]
@@ -2914,6 +2912,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/18/5d/3bf57dcd21979b887f014ea83c24ae194cfcd12b9e0fda66b957c69d1fca/setuptools-80.9.0.tar.gz", hash = "sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c", size = 1319958, upload-time = "2025-05-27T00:56:51.443Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a3/dc/17031897dae0efacfea57dfd3a82fdd2a2aeb58e0ff71b77b87e44edc772/setuptools-80.9.0-py3-none-any.whl", hash = "sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922", size = 1201486, upload-time = "2025-05-27T00:56:49.664Z" },
+]
+
+[[package]]
+name = "setuptools-scm"
+version = "9.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "setuptools" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7b/b1/19587742aad604f1988a8a362e660e8c3ac03adccdb71c96d86526e5eb62/setuptools_scm-9.2.2.tar.gz", hash = "sha256:1c674ab4665686a0887d7e24c03ab25f24201c213e82ea689d2f3e169ef7ef57", size = 203385, upload-time = "2025-10-19T22:08:05.608Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3d/ea/ac2bf868899d0d2e82ef72d350d97a846110c709bacf2d968431576ca915/setuptools_scm-9.2.2-py3-none-any.whl", hash = "sha256:30e8f84d2ab1ba7cb0e653429b179395d0c33775d54807fc5f1dd6671801aef7", size = 62975, upload-time = "2025-10-19T22:08:04.007Z" },
 ]
 
 [[package]]
