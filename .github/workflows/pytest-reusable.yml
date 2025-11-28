@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v5
         name: Checkout Repository Code # A clear name for this foundational step
         with:
-          fetch-depth: 0 # required for setuptools-scm
+          fetch-depth: 0 # Required for setuptools-scm
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v7
@@ -40,132 +40,42 @@ jobs:
           activate-environment: "true"
           github-token: ${{ github.token }}
 
-      - name: Install dependencies for python 3.13.x 3.14.x (Linux)
-        # Install deps to build matplotlib, numpy, pandas, scipy, jupyter
-        if: ${{ (startsWith(inputs.python_version, '3.13') || startsWith(inputs.python_version, '3.14')) && runner.os == 'Linux' }}
-        run: |
-          sudo apt update 
-          echo "Installing build-essential for C extensions (like cffi)..."
-          sudo apt install build-essential
-          echo "Installing libffi-dev for jupyter..."
-          sudo apt install libffi-dev
-          echo "Installing libjpeg-dev zlib1g-dev for matplotlib(pillow)..."
-          sudo apt install libjpeg-dev zlib1g-dev
-          echo "Installing gfortran libopenblas-dev for scipy..."
-          sudo apt install gfortran libopenblas-dev
+      - name: Ensure CI helper scripts executable
+        run: chmod +x .github/scripts/ci-helpers.sh
         shell: bash
 
-      - name: Install dependencies for python 3.14.x (macOS)
-        # Install deps to build scipy (gfortran, openblas)
-        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'macOS' }}
-        run: |
-          # Homebrew is already installed on GitHub Actions macOS runners
-          echo "Installing dependencies via Homebrew for macOS..."
-          # brew install gcc  # Provides gfortran # Already installed in gh CI
-          brew install openblas
+      - name: Install system dependencies
+        run: .github/scripts/ci-helpers.sh install-system-deps ${{ inputs.python_version }} ${{ runner.os }}
         shell: bash
 
-      - name: System dependencies on Windows (Python 3.14)
-        # Compilation of packages like scipy on Windows for new Python versions (like 3.14)
-        # usually fails in CI because it requires complex MSVC configuration.
-        # This step performs no action, as the setup is too complex for a simple 'run:' block.
-        if: ${{ startsWith(inputs.python_version, '3.14') && runner.os == 'Windows' }}
-        run: |
-          echo "Warning: No system dependency setup for Windows Python 3.14."
-          echo "If no wheels are available, the build is expected to fail (due to missing MSVC/Fortran compiler)."
+      - name: Install project dependencies
+        run: .github/scripts/ci-helpers.sh install-project ${{ inputs.python_version }} ${{ inputs.engine_name }}
         shell: bash
-
-      - name: Install the project in editable mode (Pure)
-        # Install your project and its development dependencies
-        run: uv sync -p ${{ inputs.python_version }} --no-dev --group test
-        shell: bash
-
-      - name: Install the project in editable mode (Scipy)
-        # Install your project and its development dependencies
-        if: startsWith(inputs.engine_name, 'scipy_')
-        run: uv sync -p ${{ inputs.python_version }} --no-dev --group test --extra scipy
-        shell: bash
-
-      - name: Build Cython extensions (if applicable)
-        # This step runs ONLY if the engine_name starts with 'cythonized_'.
-        # Replace 'python setup.py build_ext --inplace' with your actual build command
-        # for Cythonized modules if it's different.
-        if: startsWith(inputs.engine_name, 'cythonized_')
-        run: |
-          echo "Detected Cythonized engine. Building extensions..."
-          uv sync -p ${{ inputs.python_version }} --no-dev --group test --extra exts
-        shell: bash # Ensure this command runs in a bash shell environment
 
       - name: Test Cythonized code (if applicable)
         if: startsWith(inputs.engine_name, 'cythonized_')
         run: |
           echo "Detected Cythonized engine. Testing extensions..."
-          # 1. Run tests and save the exit code, suppressing the default failure behavior
-          pytest ./py_ballisticcalc.exts/tests --no-header -v -n auto --engine=${{ inputs.engine_name }} || EXIT_CODE=$?
-                    
-          # 2. Check the saved exit code.
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
-            # Run again without parallelization (-n auto)
-            pytest ./py_ballisticcalc.exts/tests -v -s -q --engine=${{ inputs.engine_name }}
-            # If the second attempt also fails, the script will exit with the non-zero code of this last command.
-          else
-            echo "Pytest succeeded on the first attempt."
-          fi
-        shell: bash # Ensure this command runs in a bash shell environment
+          .github/scripts/ci-helpers.sh test ./py_ballisticcalc.exts/tests ${{ inputs.engine_name }}
 
-      - name: Run tests with ${{ inputs.engine_name }}
-        # Execute pytest using the engine name provided as an input.
-        # --no-header for cleaner output, -v for verbose output, -n auto for parallel execution if applicable.
-        run: |
-          # 1. Run tests and save the exit code, suppressing the default failure behavior
-          pytest tests --no-header -v -n auto --engine=${{ inputs.engine_name }} || EXIT_CODE=$?
+        shell: bash
 
-          # 2. Check the saved exit code. 
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo "Pytest failed on the first attempt (Code: $EXIT_CODE). Running again without parallel execution for detailed output."
-            # Run again without parallelization (-n auto)
-            pytest tests -v -s -q --engine=${{ inputs.engine_name }}
-            # If the second attempt also fails, the script will exit with the non-zero code of this last command.
-          else
-            echo "Pytest succeeded on the first attempt."
-          fi
-        shell: bash # Ensure this command runs in a bash shell environment
+      - name: Run main tests with ${{ inputs.engine_name }}
+        run: .github/scripts/ci-helpers.sh test tests ${{ inputs.engine_name }}
+        shell: bash
 
-      - name: Run stress tests (Normal)
-        id: stress_test_normal
+      - name: Run stress tests
+        id: stress_test_run
         if: ${{ inputs.stress_test == true && startsWith(inputs.engine_name, 'cythonized_') }}
-        run: |
-          echo "Running stress tests normally..."
-          pytest ./py_ballisticcalc.exts/tests -m stress
+        run: .github/scripts/ci-helpers.sh stress
         shell: bash
         continue-on-error: true
 
-      - name: Run stress tests (Valgrind) and save log 💾
-        id: valgrind_run
-        if: ${{ inputs.stress_test == true && startsWith(inputs.engine_name, 'cythonized_') && failure() }}
-
-        run: |
-          LOG_FILE="valgrind.log"
-          echo "Normal stress test FAILED. Installing Valgrind and rerunning with memory check. Log will be visible in the console AND saved to ${LOG_FILE}"
-
-          sudo apt-get update
-          sudo apt-get install -y valgrind
-
-          valgrind \
-            --tool=memcheck \
-            --leak-check=full \
-            --show-leak-kinds=all \
-            --track-origins=yes \
-            -- \
-            pytest ./py_ballisticcalc.exts/tests -m stress \
-            2>&1 | tee ${LOG_FILE}
-        shell: bash
-
       - name: Upload Valgrind log artifact 📤
         uses: actions/upload-artifact@v4
-        if: ${{ always() && inputs.stress_test == true && startsWith(inputs.engine_name, 'cythonized_') && steps.valgrind_run.outcome != 'skipped' }}
+        if: ${{ always() && inputs.stress_test == true && startsWith(inputs.engine_name, 'cythonized_') }}
         with:
-          name: valgrind-stress-test-log
+          name: valgrind-stress-test-log-${{ inputs.os }}-py${{ inputs.python_version }}-${{ inputs.engine_name }}
           path: valgrind.log
           retention-days: 14
+          if-no-files-found: ignore
