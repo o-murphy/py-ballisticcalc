@@ -15,7 +15,7 @@ from typing import Tuple, Dict
 from bs4 import BeautifulSoup
 
 PROJECT_ROOT = Path(__file__).parent.parent
-PROJECT_SRC = PROJECT_ROOT / "py_ballisticcalc_exts" / "build" / "py_ballisticcalc_exts"
+BUILD_DIR = PROJECT_ROOT / "build" / "py_ballisticcalc_exts"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 HTML_REPORT_PATH = PROJECT_ROOT / "cythonization.html"
 MARKDOWN_REPORT_PATH = PROJECT_ROOT / "cythonization.md"
@@ -415,7 +415,7 @@ def main():
         "-i",
         "--input-dir",
         type=str,
-        default=PROJECT_SRC.as_posix(),
+        default=BUILD_DIR.as_posix(),
         help="Directory containing Cython HTML annotation files. Defaults to 'py_ballisticcalc.exts/py_ballisticcalc_exts' relative to script parent.",
     )
     parser.add_argument(

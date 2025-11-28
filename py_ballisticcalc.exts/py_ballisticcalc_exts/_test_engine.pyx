@@ -5,20 +5,12 @@ Provides direct C-layer accessors for parity tests without modifying production
 engine modules. Not part of the public API.
 """
 from cython cimport final
-# noinspection PyUnresolvedReferences
+from libcpp.cmath cimport sin, cos
 from py_ballisticcalc_exts.rk4_engine cimport CythonizedRK4IntegrationEngine
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BaseTrajSeqT
-from libc.math cimport sin, cos
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
-    BCLIBC_ShotProps_dragByMach,
-    BCLIBC_ShotProps_spinDrift,
-    BCLIBC_ShotProps_updateStabilityCoefficient,
-    BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude,
+from py_ballisticcalc_exts.traj_data cimport CythonizedBaseTrajSeq, BCLIBC_BaseTrajData
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_calculateEnergy,
     BCLIBC_calculateOgw,
-    BCLIBC_ErrorType,
 )
 
 __all__ = ["CythonEngineTestHarness"]
@@ -38,45 +30,40 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
     cpdef double drag(self, double mach):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_ShotProps_dragByMach(&self._engine.shot, mach)
+        return self._this.shot.drag_by_mach(mach)
 
     cpdef tuple density_and_mach(self, double altitude_ft):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
         cdef double density_ratio = 0.0
         cdef double mach = 0.0
-        BCLIBC_Atmosphere_updateDensityFactorAndMachForAltitude(
-            &self._engine.shot.atmo,
+        self._this.shot.atmo.update_density_factor_and_mach_for_altitude(
             altitude_ft,
-            &density_ratio,
-            &mach
+            density_ratio,
+            mach
         )
         return density_ratio, mach
 
     cpdef double spin_drift(self, double time_s):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_ShotProps_spinDrift(&self._engine.shot, time_s)
+        return self._this.shot.spin_drift(time_s)
 
     cpdef double update_stability(self):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        if BCLIBC_ShotProps_updateStabilityCoefficient(&self._engine.shot) != BCLIBC_ErrorType.BCLIBC_E_NO_ERROR:
-            raise ZeroDivisionError("Zero division detected in BCLIBC_ShotProps_updateStabilityCoefficient")
-        return self._engine.shot.stability_coefficient
+        self._this.shot.update_stability_coefficient()
+        return self._this.shot.stability_coefficient
 
     cpdef double energy(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_calculateEnergy(self._engine.shot.weight, velocity_fps)
+        return BCLIBC_calculateEnergy(self._this.shot.weight, velocity_fps)
 
     cpdef double ogw(self, double velocity_fps):
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        return BCLIBC_calculateOgw(self._engine.shot.weight, velocity_fps)
-
-    cpdef int step_count(self):
-        return self.integration_step_count
+        return BCLIBC_calculateOgw(self._this.shot.weight, velocity_fps)
 
     cpdef object integrate_minimal(self, double range_limit_ft, double range_step_ft, double time_step):
         """Very small dummy integration for test parity of step counting.
@@ -87,19 +74,21 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
         """
         if not self._prepared:
             raise RuntimeError("prepare() must be called first")
-        cdef BaseTrajSeqT seq = BaseTrajSeqT()
-        cdef double v = self._engine.shot.muzzle_velocity
-        cdef double be = self._engine.shot.barrel_elevation
-        cdef double az = self._engine.shot.barrel_azimuth
+        cdef CythonizedBaseTrajSeq seq = CythonizedBaseTrajSeq()
+        cdef double v = self._this.shot.muzzle_velocity
+        cdef double be = self._this.shot.barrel_elevation
+        cdef double az = self._this.shot.barrel_azimuth
         cdef double vx = v * cos(be) * cos(az)
         cdef double vy = v * sin(be)
         cdef double vz = v * cos(be) * sin(az)
         # initial point
-        seq.append(
-            0.0, 0.0,
-            -self._engine.shot.cant_cosine * self._engine.shot.sight_height,
-            -self._engine.shot.cant_sine * self._engine.shot.sight_height,
-            vx, vy, vz, 1.0
+        seq._this.append(
+            BCLIBC_BaseTrajData(
+                0.0, 0.0,
+                -self._this.shot.cant_cosine * self._this.shot.sight_height,
+                -self._this.shot.cant_sine * self._this.shot.sight_height,
+                vx, vy, vz, 1.0
+            )
         )
         # second point simple Euler step without drag / gravity for minimal path
         cdef double dt
@@ -107,11 +96,13 @@ cdef class CythonEngineTestHarness(CythonizedRK4IntegrationEngine):
             dt = time_step
         else:
             dt = 0.001
-        seq.append(
-            dt, vx * dt,
-            -self._engine.shot.cant_cosine * self._engine.shot.sight_height + vy * dt,
-            -self._engine.shot.cant_sine * self._engine.shot.sight_height + vz * dt,
-            vx, vy, vz, 1.0
+        seq._this.append(
+            BCLIBC_BaseTrajData(
+                dt, vx * dt,
+                -self._this.shot.cant_cosine * self._this.shot.sight_height + vy * dt,
+                -self._this.shot.cant_sine * self._this.shot.sight_height + vz * dt,
+                vx, vy, vz, 1.0
+            )
         )
         self.integration_step_count = <int>seq._length
         return (seq, None)

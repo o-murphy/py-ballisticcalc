@@ -1,10 +1,10 @@
 import time
 
-from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajSeq
 
 
 def smoke_run():
-    seq = BaseTrajSeqT()
+    seq = CythonizedBaseTrajSeq()
     n = 100000
     t0 = time.time()
     for i in range(n):

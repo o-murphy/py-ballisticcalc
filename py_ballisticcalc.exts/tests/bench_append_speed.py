@@ -1,10 +1,10 @@
 import time
 
-from py_ballisticcalc_exts.base_traj_seq import BaseTrajSeqT
+from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajSeq
 
 
 def bench(n=100000):
-    seq = BaseTrajSeqT()
+    seq = CythonizedBaseTrajSeq()
     t0 = time.time()
     for i in range(n):
         seq.append(float(i), float(i * 0.1), 0.0, 0.0, 0.0, 0.0, 0.0, 0.5)

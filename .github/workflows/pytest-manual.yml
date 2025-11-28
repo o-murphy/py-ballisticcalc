@@ -1,5 +1,5 @@
 name: Manual Test Runner
-run-name: 'Manual Pytest: ${{ inputs.engine_name }} on ${{ inputs.os }} @ Python ${{ inputs.python_version }}'
+run-name: "Manual Pytest: ${{ inputs.engine_name }} on ${{ inputs.os }} @ Python ${{ inputs.python_version }}"
 
 on:
   workflow_dispatch:
@@ -54,8 +54,7 @@ on:
 
 jobs:
   run_reusable_workflow:
-    name: 'Test ${{ inputs.engine_name }} on ${{ inputs.os }} with Python ${{ inputs.python_version }}'
-  
+    name: "Test ${{ inputs.engine_name }} on ${{ inputs.os }} with Python ${{ inputs.python_version }}"
     uses: ./.github/workflows/pytest-reusable.yml
     with:
       os: ${{ inputs.os }}

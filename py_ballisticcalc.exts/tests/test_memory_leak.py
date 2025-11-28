@@ -145,11 +145,12 @@ def test_engine_alloc_free_churn_no_growth_and_struct_zeroing():
         # Introspect live struct (non-zero lengths)
         addr = shot_props_addr(eng)
         mid = introspect_shot(addr)
-        assert mid["curve_len"] > 1 and mid["mach_len"] == mid["curve_len"], "Curve & Mach list length mismatch"
+        assert mid["curve_len"] > 0 and mid["mach_len"] == mid["curve_len"] + 1, "Curve & Mach list length mismatch"
         # Touch a few drags and stability branch
         _ = eng.drag(1.1)
         _ = eng.update_stability()
-        # Free via helper to exercise zeroing implemented in _release_trajectory
+
+        # DEPRECATED: Free via helper to exercise zeroing implemented in _release_trajectory
         free_shot(eng)
         post = introspect_shot(addr)
         assert post["curve_len"] == 0 and post["mach_len"] == 0, "Struct not zeroed after free"

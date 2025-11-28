@@ -3,34 +3,31 @@ name: Coverage
 on:
   pull_request:
     branches:
-      - '*'
+      - "*"
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v5
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # required for setuptools-scm
 
-    - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v7
-      with:
-        python-version: "3.11"
-        activate-environment: "true"
-        github-token: ${{ github.token }}
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.11"
+          activate-environment: "true"
+          github-token: ${{ github.token }}
 
-    - name: Validate exts version matching
-      run: uv run hooks/version_check.py
-      shell: bash
-    
-    - name: Install the project
-      run: uv sync --dev
-      shell: bash
-    
-    - name: Run coverage
-      run: uv run pytest tests --cov=py_ballisticcalc --cov-report=html
-      shell: bash
+      - name: Install the project
+        run: uv sync --dev
+        shell: bash
 
+      - name: Run coverage
+        run: uv run pytest tests --cov=py_ballisticcalc --cov-report=html
+        shell: bash
 #    - name: Install "coverage-badge"
 #      run: uv pip install coverage-badge
 #

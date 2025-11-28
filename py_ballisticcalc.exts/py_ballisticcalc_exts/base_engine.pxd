@@ -1,41 +1,41 @@
 # pxd for py_ballisticcalc_exts.base_engine
 
-# noinspection PyUnresolvedReferences
-from libc.string cimport strlen
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.bclib cimport (
+from libcpp.vector cimport vector
+from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_Config,
     BCLIBC_ShotProps,
     BCLIBC_WindSock,
     BCLIBC_TrajFlag,
-    BCLIBC_BaseTrajData,
 )
-# noinspection PyUnresolvedReferences
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.base_traj_seq cimport BCLIBC_BaseTrajSeq
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.error_stack cimport BCLIBC_ErrorStack, BCLIBC_StatusCode, BCLIBC_ErrorType, BCLIBC_ErrorFrame
-# noinspection PyUnresolvedReferences
-from py_ballisticcalc_exts.traj_filter cimport BCLIBC_TrajectoryDataFilter
-# __all__ definitions belong in .pyx/.py files, not .pxd headers.
+from py_ballisticcalc_exts.traj_data cimport (
+    BCLIBC_BaseTrajSeq,
+    BCLIBC_BaseTrajData,
+    BCLIBC_TrajectoryData,
+    BCLIBC_BaseTrajDataHandlerInterface
+)
 
 
-cdef extern from "include/bclibc_engine.h" nogil:
+cdef void zero_finding_error(object exception, const BCLIBC_ZeroFindingError &zero_error)
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records)
+cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)
+
+
+cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
-    ctypedef enum BCLIBC_ZeroInitialStatus:
-        BCLIBC_ZERO_INIT_CONTINUE
-        BCLIBC_ZERO_INIT_DONE
+    cdef enum class BCLIBC_ZeroInitialStatus:
+        CONTINUE
+        DONE
 
-    ctypedef enum BCLIBC_TerminationReason:
+    cdef enum class BCLIBC_TerminationReason:
         # Solver specific, not real errors, just termination reasons!
-        BCLIBC_TERM_REASON_NO_TERMINATE
-        BCLIBC_TERM_REASON_MINIMUM_VELOCITY_REACHED
-        BCLIBC_TERM_REASON_MAXIMUM_DROP_REACHED
-        BCLIBC_TERM_REASON_MINIMUM_ALTITUDE_REACHED
+        NO_TERMINATE
+        MINIMUM_VELOCITY_REACHED
+        MAXIMUM_DROP_REACHED
+        MINIMUM_ALTITUDE_REACHED
 
-    ctypedef struct BCLIBC_ZeroInitialData:
+    cdef cppclass BCLIBC_ZeroInitialData:
         BCLIBC_ZeroInitialStatus status
         double look_angle_rad
         double slant_range_ft
@@ -43,165 +43,145 @@ cdef extern from "include/bclibc_engine.h" nogil:
         double target_y_ft
         double start_height_ft
 
-    ctypedef struct BCLIBC_MaxRangeResult:
+    cdef cppclass BCLIBC_MaxRangeResult:
         double max_range_ft
         double angle_at_max_rad
 
-    ctypedef struct BCLIBC_OutOfRangeError:
+    cdef enum class BCLIBC_ZeroFindingErrorType:
+        NO_ERROR
+        ZERO_FINDING_ERROR
+        OUT_OF_RANGE_ERROR
+
+    cdef cppclass BCLIBC_OutOfRangeErrorData:
         double requested_distance_ft
         double max_range_ft
         double look_angle_rad
 
-    ctypedef struct BCLIBC_ZeroFindingError:
+    cdef cppclass BCLIBC_ZeroFindingErrorData:
         double zero_finding_error
         int iterations_count
         double last_barrel_elevation_rad
 
-    # Forward declaration
-    struct BCLIBC_EngineT
+    cdef cppclass BCLIBC_ZeroFindingError:
+        BCLIBC_ZeroFindingErrorType type
+        BCLIBC_ZeroFindingErrorData zero_finding
+        BCLIBC_OutOfRangeErrorData out_of_range
 
-    # Typedef alias
-    ctypedef BCLIBC_EngineS BCLIBC_EngineT
+    # Forward declaration
+    cdef cppclass BCLIBC_Engine
 
     # Declare the function signature type (not a pointer yet)
-    ctypedef BCLIBC_StatusCode BCLIBC_IntegrateFunc(
-        BCLIBC_EngineT *eng,
+    ctypedef void BCLIBC_IntegrateFunc(
+        BCLIBC_Engine &eng,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-        BCLIBC_BaseTrajSeq *trajectory,
-        BCLIBC_TerminationReason *reason,
-    ) noexcept nogil
+        BCLIBC_BaseTrajDataHandlerInterface &trajectory,
+        BCLIBC_TerminationReason &reason,
+    ) except +
 
     # Declare pointer to function
     ctypedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr
 
-    # Full struct definition
-    struct BCLIBC_EngineS:
-        int integration_step_count
-        BCLIBC_V3dT gravity_vector
-        BCLIBC_Config config
-        BCLIBC_ShotProps shot
-        BCLIBC_IntegrateFuncPtr integrate_func_ptr
-        BCLIBC_ErrorStack err_stack
-
-
-cdef extern from "include/bclibc_engine.hpp" namespace "bclibc":
     cdef cppclass BCLIBC_Engine:
         int integration_step_count
         BCLIBC_V3dT gravity_vector
         BCLIBC_Config config
         BCLIBC_ShotProps shot
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
-        BCLIBC_ErrorStack err_stack
-        
-        void release_trajectory() noexcept nogil
 
-        BCLIBC_StatusCode integrate_filtered(
+        void integrate(
+            double range_limit_ft,
+            double range_step_ft,
+            double time_step,
+            BCLIBC_BaseTrajDataHandlerInterface &handler,
+            BCLIBC_TerminationReason &reason) except +
+
+        void integrate_filtered(
             double range_limit_ft,
             double range_step_ft,
             double time_step,
             BCLIBC_TrajFlag filter_flags,
-            BCLIBC_TrajectoryDataFilter **data_filter,
-            BCLIBC_BaseTrajSeq *trajectory,
-            BCLIBC_TerminationReason *reason) except +
+            vector[BCLIBC_TrajectoryData] &records,
+            BCLIBC_TerminationReason &reason,
+            BCLIBC_BaseTrajSeq *dense_trajectory) except +
 
-        BCLIBC_StatusCode integrate(
-            double range_limit_ft,
-            double range_step_ft,
-            double time_step,
-            BCLIBC_BaseTrajSeq *trajectory,
-            BCLIBC_TerminationReason *reason) noexcept nogil
-        
-        BCLIBC_StatusCode find_apex(
-            BCLIBC_BaseTrajData *out) noexcept nogil
+        void find_apex(BCLIBC_BaseTrajData &apex_out) except +
 
-        BCLIBC_StatusCode error_at_distance(
+        double error_at_distance(
             double angle_rad,
             double target_x_ft,
-            double target_y_ft,
-            double *out_error_ft) noexcept nogil
+            double target_y_ft) except +
 
-        BCLIBC_StatusCode init_zero_calculation(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData *result,
-            BCLIBC_OutOfRangeError *error) noexcept nogil
-
-        BCLIBC_StatusCode zero_angle_with_fallback(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error) noexcept nogil
-
-        BCLIBC_StatusCode zero_angle(
-            double distance,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error) noexcept nogil
-        
-        BCLIBC_StatusCode find_max_range(
+        BCLIBC_MaxRangeResult find_max_range(
             double low_angle_deg,
             double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS,
-            BCLIBC_MaxRangeResult *result) noexcept nogil
+            double APEX_IS_MAX_RANGE_RADIANS) except +
 
-        BCLIBC_StatusCode find_zero_angle(
+        void init_zero_calculation(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET,
+            BCLIBC_ZeroInitialData &result,
+            BCLIBC_ZeroFindingError &error) except +
+
+        double zero_angle_with_fallback(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET,
+            BCLIBC_ZeroFindingError &error) except +
+
+        double zero_angle(
+            double distance,
+            double APEX_IS_MAX_RANGE_RADIANS,
+            double ALLOWED_ZERO_ERROR_FEET,
+            BCLIBC_ZeroFindingError &error) except +
+
+        double find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            double *result,
-            BCLIBC_OutOfRangeError *range_error,
-            BCLIBC_ZeroFindingError *zero_error) noexcept nogil
+            BCLIBC_ZeroFindingError &error) except +
 
 cdef class CythonizedBaseIntegrationEngine:
 
     cdef:
         public object _config
-        list _table_data  # list[object]
-        BCLIBC_Engine _engine
+        list[object] _table_data  # list[object]
+        BCLIBC_Engine _this
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
-
-    # Note: Properties are Python-level constructs and are not typically declared in .pxd files
-    # unless you are exposing the underlying cdef attribute directly.
-    # For _table_data, the declaration above (cdef list _table_data) makes it accessible.
-
-    # Python 'def' methods are not exposed in the C interface defined by a .pxd.
-    # Only 'cdef' or 'cpdef' methods are declared here.
-    cdef void _release_trajectory(CythonizedBaseIntegrationEngine self)
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
         object shot_info
     )
-    cdef BCLIBC_StatusCode _init_zero_calculation(
+    cdef void _init_zero_calculation(
         CythonizedBaseIntegrationEngine self,
         double distance,
-        BCLIBC_ZeroInitialData *out,
+        BCLIBC_ZeroInitialData &out,
     )
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double distance,
         bint lofted
     )
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double distance
     )
     cdef BCLIBC_MaxRangeResult _find_max_range(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double low_angle_deg,
         double high_angle_deg,
     )
-    cdef BCLIBC_BaseTrajData _find_apex(
+    cdef BCLIBC_TrajectoryData _find_apex(
         CythonizedBaseIntegrationEngine self,
+        object shot_info
     )
     cdef double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
@@ -209,25 +189,13 @@ cdef class CythonizedBaseIntegrationEngine:
         double target_x_ft,
         double target_y_ft
     )
-    # In contrast to Python engines, _integrate returns (BaseTrajSeqT, Optional[str]) as a Python tuple
-    cdef tuple _integrate(
+
+    cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
+        object shot_info,
         double range_limit_ft,
         double range_step_ft,
         double time_step,
-    )
-
-    cdef void _raise_on_init_zero_error(
-        CythonizedBaseIntegrationEngine self,
-        const BCLIBC_ErrorFrame *err,
-        const BCLIBC_OutOfRangeError *err_data
-    )
-    cdef void _raise_on_zero_finding_error(
-        CythonizedBaseIntegrationEngine self,
-        const BCLIBC_ErrorFrame *err,
-        const BCLIBC_ZeroFindingError *zero_error
-    )
-    cdef void _raise_solver_runtime_error(
-        CythonizedBaseIntegrationEngine self,
-        const BCLIBC_ErrorFrame *err
+        BCLIBC_BaseTrajDataHandlerInterface &handler,
+        BCLIBC_TerminationReason &reason,
     )
