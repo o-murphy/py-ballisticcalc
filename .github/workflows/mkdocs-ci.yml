@@ -33,16 +33,7 @@ jobs:
         run: uv sync --extra docs --extra exts
         shell: bash
 
-      - name: Deploy on release
-        if: ${{ github.event_name == 'release' }}
-        run: |
-          RELEASE_TAG=${{ github.event.release.tag_name }}
-          echo "Deploying docs for release: $RELEASE_TAG"
-          mike deploy --push --update-aliases $RELEASE_TAG latest
-        shell: bash
-
-      - name: Deploy on dispatch
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Deploy
         run: |
           VERSION=$(python -m setuptools_scm)
           echo "Deploying docs from branch: $VERSION"
