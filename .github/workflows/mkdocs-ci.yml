@@ -1,4 +1,4 @@
-name: Build and deploy docs (uv)
+name: Build and deploy docs
 on:
   release:
     types:
@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # required for setuptools-scm
 
       - name: Configure Git Credentials
         run: |
@@ -28,16 +30,21 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Install dependencies
-        run: uv sync --extra docs
+        run: uv sync --extra docs --extra exts
         shell: bash
 
-      - name: Deploy docs for release
+      - name: Deploy on release
+        if: ${{ github.event_name == 'release' }}
         run: |
           RELEASE_TAG=${{ github.event.release.tag_name }}
           echo "Deploying docs for release: $RELEASE_TAG"
           mike deploy --push --update-aliases $RELEASE_TAG latest
-          mike set-default --push latest
         shell: bash
 
-#      - name: Deploy docs
-#        run: mkdocs gh-deploy --force
+      - name: Deploy on dispatch
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          VERSION=$(python -m setuptools_scm)
+          echo "Deploying docs from branch: $VERSION"
+          mike deploy --push $VERSION
+        shell: bash

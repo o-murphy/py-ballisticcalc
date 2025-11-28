@@ -1,0 +1,24 @@
+**/__pycache__
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
+**/.idea
+**/*.pyd
+**/*.so
+**/*.dylib
+**/build
+**/dist
+**/*.egg-info
+**/.venv
+**/*.ps1
+**/debug
+.vscode
+.coverage
+htmlcov
+.env
+.testall
+compile_flags.txt
+# Mirror of Cython sources for coverage lookup:
+/py_ballisticcalc_exts/*
+**/site
+/benchmarks/*

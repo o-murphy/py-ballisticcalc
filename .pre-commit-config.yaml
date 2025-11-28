@@ -1,0 +1,95 @@
+default_install_hook_types: [pre-commit]
+default_language_version:
+  python: python3.10
+
+repos:
+  - repo: local
+    hooks:
+      - id: uv-sync
+        name: uv sync before hooks
+        entry: uv
+        args: ["sync", "--no-dev", "--extra", "exts", "--reinstall"]
+        language: system
+        pass_filenames: false
+
+      - id: uv-mypy
+        name: mypy
+        entry: uv
+        args: ["run", "mypy"]
+        language: system
+        pass_filenames: false
+
+      - id: uv-ruff-check
+        name: ruff lint & fix
+        entry: uv
+        args: ["run", "ruff", "check", "--fix"]
+        language: system
+        pass_filenames: false
+
+      - id: uv-ruff-format
+        name: ruff format
+        entry: uv
+        args: ["run", "ruff", "format"]
+        language: system
+        pass_filenames: false
+
+      - id: uv-cython-lint
+        name: cython lint
+        entry: uv
+        args: ["run", "cython-lint", ".", "--max-line-length", "120"]
+        language: system
+        pass_filenames: false
+
+      # - id: uv-pytest-exts
+      #   name: pytest exts
+      #   entry: uv
+      #   args: ["run", "pytest", "py_ballisticcalc.exts/"]
+      #   language: system
+      #   pass_filenames: false
+
+      # - id: uv-pytest-rk4
+      #   name: pytest rk4_engine
+      #   entry: uv
+      #   args: ["run", "pytest", "--engine", "rk4_engine"]
+      #   language: system
+      #   pass_filenames: false
+
+      # - id: uv-pytest-euler
+      #   name: pytest euler_engine
+      #   entry: uv
+      #   args: ["run", "pytest", "--engine", "euler_engine"]
+      #   language: system
+      #   pass_filenames: false
+
+      # - id: uv-pytest-scipy
+      #   name: pytest scipy_engine
+      #   entry: uv
+      #   args: ["run", "pytest", "--engine", "scipy_engine"]
+      #   language: system
+      #   pass_filenames: false
+
+      # - id: uv-pytest-cythonized_rk4
+      #   name: pytest cythonized_rk4_engine
+      #   entry: uv
+      #   args: ["run", "pytest", "--engine", "cythonized_rk4_engine"]
+      #   language: system
+      #   pass_filenames: false
+
+      # - id: uv-pytest-cythonized_euler
+      #   name: pytest cythonized_euler_engine
+      #   entry: uv
+      #   args: ["run", "pytest", "--engine", "cythonized_euler_engine"]
+      #   language: system
+      #   pass_filenames: false
+
+      # - id: uv-cythonization-report
+      #   name: cythonization report
+      #   entry: uv
+      #   args: ["run", "py_ballisticcalc.exts/scripts/cythonization-report.py"]
+      #   language: system
+      #   pass_filenames: false
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.13
+    hooks:
+      - id: uv-lock
