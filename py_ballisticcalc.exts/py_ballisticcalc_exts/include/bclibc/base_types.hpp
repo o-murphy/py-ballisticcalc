@@ -62,6 +62,17 @@ namespace bclibc
      */
     extern const double BCLIBC_cEarthAngularVelocityRadS;
 
+    enum class BCLIBC_TerminationReason
+    {
+        // Solver specific flags (always include RANGE_ERROR)
+        NO_TERMINATE,
+        MINIMUM_VELOCITY_REACHED,
+        MAXIMUM_DROP_REACHED,
+        MINIMUM_ALTITUDE_REACHED,
+        // Special flag to terminate integration via handler's request
+        HANDLER_REQUESTED_STOP,
+    };
+
     enum BCLIBC_TrajFlag
     {
         BCLIBC_TRAJ_FLAG_NONE = 0,

@@ -136,37 +136,39 @@ namespace bclibc
      *
      * @throws std::invalid_argument if barrel elevation is <= 0.
      * @throws std::runtime_error if apex cannot be determined.
+     *
+     * OPTIMIZATION: Uses ~192 bytes instead of ~N*64 bytes for full trajectory.
      */
-    void BCLIBC_Engine::find_apex(
-        BCLIBC_BaseTrajData &apex_out)
+    void BCLIBC_Engine::find_apex(BCLIBC_BaseTrajData &apex_out)
     {
         if (this->shot.barrel_elevation <= 0)
         {
-            throw std::invalid_argument("Value error (Barrel elevation must be greater than 0 to find apex).");
+            throw std::invalid_argument(
+                "Value error (Barrel elevation must be greater than 0 to find apex).");
         }
 
-        // Have to ensure cMinimumVelocity is 0 for this to work
-        BCLIBC_BaseTrajSeq result = BCLIBC_BaseTrajSeq();
+        BCLIBC_TerminationReason reason;
 
-        // Backup, adjust and restore constraints (emulate @with_no_minimum_velocity)
+        // Use SinglePointHandler to find where vertical velocity crosses zero
+        BCLIBC_SinglePointHandler apex_handler(
+            BCLIBC_BaseTrajData_InterpKey::VEL_Y, // Search by vertical velocity
+            0.0,                                  // Apex is where vy = 0
+            &reason);
+
+        // Backup and adjust constraints
         BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
             &this->config.cMinimumVelocity,
-            this->config.cMinimumVelocity > 0.0
-                ? 0.0
-                : this->config.cMinimumVelocity);
+            this->config.cMinimumVelocity > 0.0 ? 0.0 : this->config.cMinimumVelocity);
 
-        // try
-        BCLIBC_TerminationReason reason;
-        this->integrate(9e9, 9e9, 0.0, result, reason);
+        this->integrate(9e9, 9e9, 0.0, apex_handler, reason);
 
-        try
+        if (!apex_handler.found())
         {
-            result.get_at(BCLIBC_BaseTrajData_InterpKey::VEL_Y, 0.0, -1, apex_out);
+            throw std::runtime_error(
+                "Runtime error (No apex flagged in trajectory data)");
         }
-        catch (const std::exception &e)
-        {
-            throw std::runtime_error("Runtime error (No apex flagged in trajectory data)");
-        }
+
+        apex_out = apex_handler.get_result();
     };
 
     /**
@@ -180,32 +182,40 @@ namespace bclibc
      *
      * @throws std::runtime_error if trajectory is too short.
      * @throws std::out_of_range if trajectory data is invalid.
+     *
+     * OPTIMIZATION: Uses ~192 bytes instead of full trajectory buffer.
      */
     double BCLIBC_Engine::error_at_distance(
         double angle_rad,
         double target_x_ft,
         double target_y_ft)
     {
-        BCLIBC_BaseTrajData hit;
-        BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
 
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
 
-        integrate(9e9, 9e9, 0.0, trajectory, reason);
+        // Use specialized single-point handler
+        BCLIBC_SinglePointHandler handler(
+            BCLIBC_BaseTrajData_InterpKey::POS_X,
+            target_x_ft,
+            &reason);
 
-        // If trajectory is too short for cubic interpolation, treat as unreachable
-        if (trajectory.get_length() < 3)
+        integrate(9e9, 9e9, 0.0, handler, reason);
+
+        if (!handler.found())
         {
-            throw std::runtime_error("Trajectory too short to determine error at distance.");
+            throw std::runtime_error(
+                "Trajectory too short to determine error at distance.");
         }
-        const BCLIBC_BaseTrajData &last_ptr = trajectory.get_item(-1);
-        if (last_ptr.time == 0.0)
+
+        const BCLIBC_BaseTrajData &hit = handler.get_result();
+
+        if (hit.time == 0.0)
         {
             throw std::out_of_range("Trajectory sequence error");
         }
-        trajectory.get_at(BCLIBC_BaseTrajData_InterpKey::POS_X, target_x_ft, -1, hit);
+
         return (hit.py - target_y_ft) - std::fabs(hit.px - target_x_ft);
     };
 
@@ -509,74 +519,31 @@ namespace bclibc
      * @param angle_rad Barrel elevation angle in radians.
      *
      * @return Slant distance in feet where the projectile crosses the line-of-sight.
+     *
+     * OPTIMIZATION: Uses ~128 bytes instead of full trajectory buffer.
      */
     double BCLIBC_Engine::range_for_angle(double angle_rad)
     {
-        // Update shot data
         this->shot.barrel_elevation = angle_rad;
 
-        BCLIBC_BaseTrajSeq trajectory = BCLIBC_BaseTrajSeq();
-
         BCLIBC_TerminationReason reason;
-        this->integrate(9e9, 9e9, 0.0, trajectory, reason);
 
-        // The ShotProps CONSTRUCTOR should already guarantee that look_angle is safe,
-        // but we use it anyway.
-        double ca = std::cos(this->shot.look_angle);
-        double sa = std::sin(this->shot.look_angle);
-        ssize_t n = trajectory.get_length();
+        // Use specialized zero-crossing handler
+        BCLIBC_ZeroCrossingHandler handler(
+            this->shot.look_angle,
+            &reason
+        );
 
-        if (n >= 2)
+        this->integrate(9e9, 9e9, 0.0, handler, reason);
+
+        if (handler.found())
         {
-            // Linear search from end of trajectory for zero-down crossing
-            for (ssize_t i = n - 1; i > 0; i--) // Використовуємо ssize_t для змінної циклу
-            {
-                const BCLIBC_BaseTrajData &prev_ptr = trajectory.get_item(i - 1);
-                const BCLIBC_BaseTrajData &cur_ptr = trajectory.get_item(i);
-
-                // Slant height (h = py*ca - px*sa)
-                double h_prev = prev_ptr.py * ca - prev_ptr.px * sa;
-                double h_cur = cur_ptr.py * ca - cur_ptr.px * sa;
-
-                if (h_prev > 0.0 && h_cur <= 0.0)
-                {
-                    // Zero-down crossing FOUND. Perform linear interpolation.
-
-                    double denom = h_prev - h_cur;
-
-                    // ADDED: Protection against division by zero (Denominator == 0.0)
-                    double t;
-                    if (denom == 0.0)
-                    {
-                        // The points have the same height (parallel to the line of sight),
-                        // take the current point (cur_ptr)
-                        t = 1.0;
-                    }
-                    else
-                    {
-                        // Standard linear interpolation: t = h_prev / (h_prev - h_cur)
-                        t = h_prev / denom;
-                    }
-
-                    // Clamp t to [0, 1] for safety (хоча це вже робиться в початковому коді)
-                    t = std::fmax(0.0, std::fmin(1.0, t));
-
-                    double ix = prev_ptr.px + t * (cur_ptr.px - prev_ptr.px);
-                    double iy = prev_ptr.py + t * (cur_ptr.py - prev_ptr.py);
-
-                    // Slant distance (sdist = px*ca + py*sa)
-                    double sdist = ix * ca + iy * sa;
-
-                    return sdist;
-                }
-            }
+            return handler.get_slant_distance();
         }
 
-        // ADDED: Mandatory exit in case of no intersection or insufficient number of points.
-        // This solves the Undefined Behavior issue.
-        // Return 0.0 because target not found.
+        // No crossing found - return 0.0
         return 0.0;
-    }
+    };
 
     /**
      * @brief Finds the maximum range and corresponding angle for the current shot.

@@ -20,6 +20,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
     BCLIBC_TrajFlag,
     BCLIBC_V3dT,
+    BCLIBC_TerminationReason,
 )
 from py_ballisticcalc_exts.bind cimport (
     # factory funcs

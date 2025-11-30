@@ -141,6 +141,107 @@ namespace bclibc
          */
         void add_row(std::vector<BCLIBC_FlaggedData> &rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
     };
+
+    /**
+     * @brief Handler that stores only the minimal data needed for single-point interpolation.
+     *
+     * Instead of storing all trajectory points, this handler keeps only a sliding window
+     * of 3 points required for PCHIP interpolation. When the target is reached, it
+     * interpolates immediately and discards older data.
+     *
+     * MEMORY: 3 * BCLIBC_BaseTrajData (~192 bytes) vs full trajectory (~N * 64 bytes)
+     */
+    class BCLIBC_SinglePointHandler : public BCLIBC_BaseTrajDataHandlerInterface
+    {
+    private:
+        BCLIBC_BaseTrajData_InterpKey key_kind;
+        double target_value;
+        bool is_found;
+        BCLIBC_BaseTrajData result;
+
+        // Sliding window of last 3 points
+        BCLIBC_BaseTrajData points[3];
+        int count; // Number of points received (0-3)
+        bool target_passed;
+
+        // Early termination reason
+        BCLIBC_TerminationReason *termination_reason_ptr;
+
+    public:
+        /**
+         * @brief Constructs handler for single-point interpolation.
+         * @param key_kind Type of key to search by (POS_X, VEL_Y, etc.)
+         * @param target_value Target value to interpolate at
+         * @param termination_reason_ptr Optional pointer to reason for early termination
+         */
+        BCLIBC_SinglePointHandler(
+            BCLIBC_BaseTrajData_InterpKey key_kind,
+            double target_value,
+            BCLIBC_TerminationReason *termination_reason_ptr);
+
+        void handle(const BCLIBC_BaseTrajData &data) override;
+
+        /**
+         * @brief Returns whether target point was found and interpolated.
+         */
+        bool found() const;
+
+        /**
+         * @brief Returns interpolated result.
+         * @throws std::runtime_error if target not found yet.
+         */
+        const BCLIBC_BaseTrajData &get_result() const;
+
+        /**
+         * @brief Returns number of points processed.
+         */
+        int get_count() const;
+    };
+
+    /**
+     * @brief Handler that detects zero-crossing of slant height without storing full trajectory.
+     *
+     * Monitors trajectory points for sign change in slant height (py*cos - px*sin).
+     * When crossing detected, performs linear interpolation to find exact crossing point.
+     *
+     * MEMORY: 2 * BCLIBC_BaseTrajData (~128 bytes) vs full trajectory
+     */
+    class BCLIBC_ZeroCrossingHandler : public BCLIBC_BaseTrajDataHandlerInterface
+    {
+    private:
+        double look_angle_cos_;
+        double look_angle_sin_;
+        bool is_found;
+        double result_slant_distance;
+
+        BCLIBC_BaseTrajData prev_point;
+        bool has_prev_;
+
+        BCLIBC_TerminationReason *termination_reason_ptr;
+
+    public:
+        /**
+         * @brief Constructs handler for zero-crossing detection.
+         * @param look_angle_rad Look angle in radians (line of sight angle)
+         * @param termination_reason_ptr Optional pointer to reason for early termination
+         */
+        explicit BCLIBC_ZeroCrossingHandler(
+            double look_angle_rad, BCLIBC_TerminationReason *termination_reason_ptr);
+
+        void handle(const BCLIBC_BaseTrajData &data) override;
+
+        /**
+         * @brief Returns whether zero-crossing was found.
+         */
+        bool found() const;
+
+        /**
+         * @brief Returns slant distance at zero-crossing.
+         * @return Slant distance in feet, or 0.0 if not found.
+         */
+        double get_slant_distance() const;
+    };
+
 }; // namespace bclibc
 
 #endif // BCLIBC_TRAJ_FILTER_HPP
