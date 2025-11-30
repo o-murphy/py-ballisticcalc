@@ -445,6 +445,7 @@ namespace bclibc
      * @brief Constructs handler for single-point interpolation.
      * @param key_kind Type of key to search by (POS_X, VEL_Y, etc.)
      * @param target_value Target value to interpolate at
+     * @param termination_reason_ptr Optional pointer to reason for early termination
      */
     BCLIBC_SinglePointHandler::BCLIBC_SinglePointHandler(
         BCLIBC_BaseTrajData_InterpKey key_kind,
@@ -541,6 +542,7 @@ namespace bclibc
     /**
      * @brief Constructs handler for zero-crossing detection.
      * @param look_angle_rad Look angle in radians (line of sight angle)
+     * @param termination_reason_ptr Optional pointer to reason for early termination
      */
     BCLIBC_ZeroCrossingHandler::BCLIBC_ZeroCrossingHandler(
         double look_angle_rad, BCLIBC_TerminationReason *termination_reason_ptr)
