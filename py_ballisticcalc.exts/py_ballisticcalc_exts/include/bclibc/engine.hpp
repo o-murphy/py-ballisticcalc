@@ -104,7 +104,7 @@ namespace bclibc
 
     class BCLIBC_Engine
     {
-    static constexpr double MAX_INTEGRATION_RANGE = 9e9;
+        static constexpr double MAX_INTEGRATION_RANGE = 9e9;
 
     public:
         int integration_step_count;
@@ -124,6 +124,7 @@ namespace bclibc
          * @throws std::logic_error if integrate_func_ptr is null.
          */
         void integrate(
+            double range_limit_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason);

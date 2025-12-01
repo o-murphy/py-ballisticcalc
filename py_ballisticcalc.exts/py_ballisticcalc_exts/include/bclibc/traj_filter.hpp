@@ -40,9 +40,17 @@ namespace bclibc
             std::vector<BCLIBC_TrajectoryData> &records,
             const BCLIBC_ShotProps &props,
             BCLIBC_TrajFlag filter_flags,
+            BCLIBC_TerminationReason &termination_reason_ref,
             double range_limit = 0.0,
             double range_step = 0.0,
             double time_step = 0.0);
+
+        /**
+         * @brief Finalizes trajectory filtering.
+         *
+         * Ensures that the last trajectory point is recorded if needed.
+         */
+        ~BCLIBC_TrajectoryDataFilter();
 
     private:
         /**
@@ -89,13 +97,6 @@ namespace bclibc
          */
         const BCLIBC_TrajectoryData &get_record(std::ptrdiff_t index) const;
 
-        /**
-         * @brief Finalizes trajectory filtering.
-         *
-         * Ensures that the last trajectory point is recorded if needed.
-         */
-        void finalize();
-
     private:
         // constants
         static constexpr double EPSILON = 1e-6;
@@ -114,6 +115,8 @@ namespace bclibc
         double next_record_distance;
         double look_angle_rad;
         double look_angle_tangent;
+
+        BCLIBC_TerminationReason &termination_reason_ref;
 
         /**
          * @brief Inserts a new record into a sorted container, merging with existing entries
@@ -201,7 +204,7 @@ namespace bclibc
     {
     private:
         // constants
-        static constexpr int MIN_ITERATIONS_COUNT = 3;  // Always expects at least 3 iterations
+        static constexpr int MIN_ITERATIONS_COUNT = 3; // Always expects at least 3 iterations
 
         // Range Limit
         double range_limit_ft;

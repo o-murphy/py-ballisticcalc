@@ -23,6 +23,7 @@ namespace bclibc
         std::vector<BCLIBC_TrajectoryData> &records,
         const BCLIBC_ShotProps &props,
         BCLIBC_TrajFlag filter_flags,
+        BCLIBC_TerminationReason &termination_reason_ref,
         double range_limit,
         double range_step,
         double time_step)
@@ -36,7 +37,28 @@ namespace bclibc
           prev_data(prev_data),
           prev_prev_data(prev_prev_data),
           next_record_distance(0.0),
-          look_angle_tangent(std::tan(props.look_angle)) {};
+          look_angle_tangent(std::tan(props.look_angle)),
+          termination_reason_ref(termination_reason_ref) {};
+
+    /**
+     * @brief Finalizes trajectory filtering.
+     *
+     * Ensures that the last trajectory point is recorded if needed.
+     */
+    BCLIBC_TrajectoryDataFilter::~BCLIBC_TrajectoryDataFilter()
+    {
+        if (this->termination_reason_ref != BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
+        {
+            BCLIBC_DEBUG(
+                "Trajectory Filter Finalization check: prev_data.time=%.6f",
+                this->prev_data.time);
+            if (this->prev_data.time > this->get_record(-1).time)
+            {
+                BCLIBC_TrajectoryData fin(this->props, this->prev_data);
+                this->append(fin);
+            }
+        }
+    };
 
     /**
      * @brief Initializes the filter state based on the first trajectory point.
@@ -74,23 +96,6 @@ namespace bclibc
                 // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT));
             }
-        }
-    };
-
-    /**
-     * @brief Finalizes trajectory filtering.
-     *
-     * Ensures that the last trajectory point is recorded if needed.
-     */
-    void BCLIBC_TrajectoryDataFilter::finalize()
-    {
-        BCLIBC_DEBUG(
-            "Trajectory Filter Finalization check: prev_data.time=%.6f",
-            this->prev_data.time);
-        if (this->prev_data.time > this->get_record(-1).time)
-        {
-            BCLIBC_TrajectoryData fin(this->props, this->prev_data);
-            this->append(fin);
         }
     };
 

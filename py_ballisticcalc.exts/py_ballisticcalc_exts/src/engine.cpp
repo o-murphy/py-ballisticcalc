@@ -67,6 +67,7 @@ namespace bclibc
             records,
             this->shot,
             filter_flags,
+            reason,
             range_limit_ft,
             range_step_ft,
             time_step);
@@ -74,36 +75,19 @@ namespace bclibc
         BCLIBC_DEBUG("Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
                      this->config.cMinimumVelocity, this->config.cMinimumAltitude, this->config.cMaximumDrop);
 
-        // 2. Add terminal event handler
-        BCLIBC_EssentialTerminators terminators(
-            this->shot,
-            range_limit_ft,
-            this->config.cMinimumVelocity,
-            this->config.cMaximumDrop,
-            this->config.cMinimumAltitude,
-            reason);
-
-        // 3. Create the Composer (on the stack, it's small and now safer)
+        // 2. Create the Composer (on the stack, it's small and now safer)
         BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
-            // Terminal event handlers
-            &terminators,
             // A mandatory filter
             &data_filter);
 
-        // 4. Add the optional trajectory
+        // 3. Add the optional trajectory
         if (dense_trajectory != nullptr)
         {
             composite_handler.add_handler(dense_trajectory);
         }
 
-        // 5. Call integration ONCE, passing the composite
-        this->integrate(time_step, composite_handler, reason);
-
-        // 6. Finalization
-        if (reason != BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
-        {
-            data_filter.finalize();
-        }
+        // 4. Call integration ONCE, passing the composite
+        this->integrate(range_limit_ft, time_step, composite_handler, reason);
     };
 
     /**
@@ -116,13 +100,28 @@ namespace bclibc
      * @throws std::logic_error if integrate_func_ptr is null.
      */
     void BCLIBC_Engine::integrate(
+        double range_limit_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
         this->integrate_func_ptr_not_null();
 
-        this->integrate_func_ptr(*this, time_step, handler, reason);
+        // Essential termination reason control
+        BCLIBC_EssentialTerminators terminators(
+            this->shot,
+            range_limit_ft,
+            this->config.cMinimumVelocity,
+            this->config.cMaximumDrop,
+            this->config.cMinimumAltitude,
+            reason);
+
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+            &terminators, // Essential terminators
+            &handler      // Request handler
+        );
+
+        this->integrate_func_ptr(*this, time_step, composite_handler, reason);
 
         if (reason == BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
         {
@@ -154,14 +153,10 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
 
-        // Add terminal event handler
-        BCLIBC_EssentialTerminators terminators(
-            this->shot,
-            this->MAX_INTEGRATION_RANGE,
-            this->config.cMinimumVelocity > 0.0 ? 0.0 : this->config.cMinimumVelocity,
-            this->config.cMaximumDrop,
-            this->config.cMinimumAltitude,
-            reason);
+        // Backup and adjust constraints
+        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
+            &this->config.cMinimumVelocity,
+            this->config.cMinimumVelocity > 0.0 ? 0.0 : this->config.cMinimumVelocity);
 
         // Use SinglePointHandler to find where vertical velocity crosses zero
         BCLIBC_SinglePointHandler apex_handler(
@@ -169,12 +164,7 @@ namespace bclibc
             0.0,                                  // Apex is where vy = 0
             &reason);
 
-        // Create the Composer (on the stack, it's small and now safer)
-        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
-            &terminators,
-            &apex_handler);
-
-        this->integrate(0.0, composite_handler, reason);
+        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, apex_handler, reason);
 
         if (!apex_handler.found())
         {
@@ -209,26 +199,13 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
 
-        // Add terminal event handler
-        BCLIBC_EssentialTerminators terminators(
-            this->shot,
-            this->MAX_INTEGRATION_RANGE,
-            this->config.cMinimumVelocity,
-            this->config.cMaximumDrop,
-            this->config.cMinimumAltitude,
-            reason);
-
         // Use specialized single-point handler
         BCLIBC_SinglePointHandler handler(
             BCLIBC_BaseTrajData_InterpKey::POS_X,
             target_x_ft,
             &reason);
 
-        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
-            &terminators,
-            &handler);
-
-        integrate(0.0, composite_handler, reason);
+        integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
 
         if (!handler.found())
         {
@@ -400,24 +377,24 @@ namespace bclibc
         double current_distance = 0.0;
         double trajectory_angle = 0.0;
 
+        // Backup, adjust and restore constraints (emulate @with_max_drop_zero and @with_no_minimum_altitude)
+        BCLIBC_ValueGuard<double> cMaximumDrop_guard(
+            &this->config.cMaximumDrop,
+            (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
+                ? required_drop_ft
+                : this->config.cMaximumDrop);
+
+        BCLIBC_ValueGuard<double> cMinimumAltitude_guard(
+            &this->config.cMinimumAltitude,
+            (this->config.cMinimumAltitude - this->shot.alt0 > required_drop_ft)
+                ? this->shot.alt0 - required_drop_ft
+                : this->config.cMinimumAltitude);
+
         // Main iteration loop
         while (iterations_count < _cMaxIterations)
         {
             // reset handler for integration result
             BCLIBC_TerminationReason reason;
-
-            // Add terminal event handler
-            BCLIBC_EssentialTerminators terminators(
-                this->shot,
-                target_x_ft,
-                this->config.cMinimumVelocity,
-                (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
-                    ? required_drop_ft
-                    : this->config.cMaximumDrop,
-                (this->config.cMinimumAltitude - this->shot.alt0 > required_drop_ft)
-                    ? this->shot.alt0 - required_drop_ft
-                    : this->config.cMinimumAltitude,
-                reason);
 
             // Using SinglePointHandler з early termination
             BCLIBC_SinglePointHandler handler(
@@ -426,12 +403,7 @@ namespace bclibc
                 &reason // Enable early termination
             );
 
-            // Create the Composer (on the stack, it's small and now safer)
-            BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
-                &terminators,
-                &handler);
-
-            this->integrate(0.0, composite_handler, reason);
+            this->integrate(target_x_ft, 0.0, handler, reason);
 
             if (!handler.found())
             {
@@ -566,25 +538,12 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
 
-        // Add terminal event handler
-        BCLIBC_EssentialTerminators terminators(
-            this->shot,
-            this->MAX_INTEGRATION_RANGE,
-            this->config.cMinimumVelocity,
-            this->config.cMaximumDrop,
-            this->config.cMinimumAltitude,
-            reason);
-
         // Use specialized zero-crossing handler
         BCLIBC_ZeroCrossingHandler handler(
             this->shot.look_angle,
             &reason);
 
-        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
-            &terminators,
-            &handler);
-
-        this->integrate(0.0, composite_handler, reason);
+        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
 
         if (handler.found())
         {
