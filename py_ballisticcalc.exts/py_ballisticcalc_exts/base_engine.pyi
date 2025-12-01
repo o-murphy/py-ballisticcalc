@@ -148,4 +148,31 @@ class CythonizedBaseIntegrationEngine:
 
     def integrate_raw_at(
         self, shot_info: Shot, key_attribute: str, target_value: float
-    ) -> tuple[CythonizedBaseTrajData, TrajectoryData]: ...
+    ) -> tuple[CythonizedBaseTrajData, TrajectoryData]:
+        """
+        Integrates the trajectory until a specified attribute reaches a target value
+        and returns the interpolated data point.
+
+        This method initializes the trajectory using the provided shot information,
+        performs integration using the underlying C++ engine's 'integrate_at' function,
+        and handles the conversion of C++ results back to Python objects.
+
+        Args:
+            shot_info (object): Information required to initialize the trajectory
+                (e.g., muzzle velocity, drag model).
+            key_attribute (str): The name of the attribute to track, such as
+                'time', 'mach', or a vector component like 'position.z'.
+            target_value (float): The value the 'key_attribute' must reach for
+                the integration to stop and interpolation to occur.
+
+        Returns:
+            tuple[CythonizedBaseTrajData, TrajectoryData]:
+                A tuple containing:
+                - CythonizedBaseTrajData: The interpolated raw data point.
+                - TrajectoryData: The fully processed trajectory data point.
+
+        Raises:
+            SolverRuntimeError: If the underlying C++ integration fails to find
+                the target point (e.g., due to insufficient range or data issues).
+        """
+        ...

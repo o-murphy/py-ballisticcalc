@@ -139,6 +139,32 @@ namespace bclibc
         }
     };
 
+    /**
+     * @brief Performs trajectory integration and interpolates a single data point
+     * where a specific key attribute reaches a target value.
+     *
+     * This method runs a full trajectory integration internally, using
+     * BCLIBC_SinglePointHandler to find and interpolate the point where the
+     * specified key (e.g., 'time', 'mach', 'position.z') equals the target value.
+     * The integration runs up to MAX_INTEGRATION_RANGE using a default timestep (0.0).
+     *
+     * @param key The interpolation key (e.g., time, altitude, vector component)
+     * to use as the independent variable.
+     * @param target_value The value the key attribute must reach for the
+     * integration to terminate and interpolation to occur.
+     * @param raw_data Reference to a BCLIBC_BaseTrajData object that will store
+     * the interpolated raw data point upon success.
+     * @param full_data Reference to a BCLIBC_TrajectoryData object that will store
+     * the full (processed) interpolated data point upon success.
+     *
+     * @note Access to the engine is protected by engine_mutex.
+     * @warning The integration is performed with time_step = 0.0, implying that
+     * the actual step size is determined internally by the integrator.
+     *
+     * @throws std::logic_error if integrate_func_ptr is null.
+     * @throws std::runtime_error if the target point is not found within the
+     * integrated trajectory (e.g., "No apex flagged...").
+     */
     void BCLIBC_Engine::integrate_at(
         BCLIBC_BaseTrajData_InterpKey key,
         double target_value,
@@ -152,7 +178,7 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
         BCLIBC_SinglePointHandler handler(key, target_value, &reason);
-        
+
         this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
 
         if (!handler.found())

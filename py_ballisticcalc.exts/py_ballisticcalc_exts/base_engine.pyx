@@ -294,6 +294,32 @@ cdef class CythonizedBaseIntegrationEngine:
         str key_attribute,
         double target_value
     ) -> tuple[CythonizedBaseTrajData, TrajectoryData]:
+        """
+        Integrates the trajectory until a specified attribute reaches a target value
+        and returns the interpolated data point.
+
+        This method initializes the trajectory using the provided shot information,
+        performs integration using the underlying C++ engine's 'integrate_at' function,
+        and handles the conversion of C++ results back to Python objects.
+
+        Args:
+            shot_info (object): Information required to initialize the trajectory
+                (e.g., muzzle velocity, drag model).
+            key_attribute (str): The name of the attribute to track, such as
+                'time', 'mach', or a vector component like 'position.z'.
+            target_value (float): The value the 'key_attribute' must reach for
+                the integration to stop and interpolation to occur.
+
+        Returns:
+            tuple[CythonizedBaseTrajData, TrajectoryData]:
+                A tuple containing:
+                - CythonizedBaseTrajData: The interpolated raw data point.
+                - TrajectoryData: The fully processed trajectory data point.
+
+        Raises:
+            SolverRuntimeError: If the underlying C++ integration fails to find
+                the target point (e.g., due to insufficient range or data issues).
+        """
         cdef BCLIBC_BaseTrajData_InterpKey key = _attribute_to_key(key_attribute)
         cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
         cdef BCLIBC_TrajectoryData full_data
@@ -498,6 +524,26 @@ cdef class CythonizedBaseIntegrationEngine:
         BCLIBC_BaseTrajData &raw_data,
         BCLIBC_TrajectoryData &full_data
     ):
+        """
+        Internal C-level method to initialize the trajectory and call the
+        C++ engine's integrate_at function.
+
+        This method handles the low-level data passing and error wrapping.
+
+        Args:
+            shot_info (object): Trajectory initialization data.
+            key (BCLIBC_BaseTrajData_InterpKey): The C++ enumeration key defining
+                the attribute for interpolation.
+            target_value (double): The target value for the interpolation key.
+            raw_data (BCLIBC_BaseTrajData&): Reference to the C++ structure to
+                store the raw interpolated data.
+            full_data (BCLIBC_TrajectoryData&): Reference to the C++ structure
+                to store the full processed data.
+
+        Raises:
+            SolverRuntimeError: Wraps any std::runtime_error thrown by the
+                underlying C++ integrate_at call.
+        """
         self._init_trajectory(shot_info)
         try:
             self._this.integrate_at(
