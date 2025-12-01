@@ -337,7 +337,7 @@ class TrajectoryData(NamedTuple):
     Attributes:
         time: Flight time in seconds
         distance: Down-range (x-axis) coordinate of this point
-        velocity: Velocity vector at this point
+        velocity: Scalar velocity (magnitude) at this point
         mach: Velocity in Mach terms
         height: Vertical (y-axis) coordinate of this point
         slant_height: Distance orthogonal to sight-line

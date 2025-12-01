@@ -118,7 +118,7 @@ cdef class CythonizedBaseTrajData:
         return f"({content})"
 
     def __len__(self):
-        return 4
+        return len(self.__slots__)
 
     def __iter__(self):
         yield self.time

@@ -3,7 +3,8 @@ Type stubs for the compiled extension module `py_ballisticcalc_exts.traj_data`
 to improve IDE completion for low-level trajectory buffer and interpolation helpers.
 """
 
-from typing import Optional
+from typing import Optional, Union, Tuple, overload
+from typing_extensions import Iterator
 
 from py_ballisticcalc.unit import Vector
 
@@ -67,6 +68,30 @@ class CythonizedBaseTrajData:
     """Lightweight wrapper for a single BCLIBC_BaseTrajData point."""
 
     __slots__ = ("time", "position", "velocity", "mach")
+
+    def __repr__(self) -> str: ...
+    def __str__(self) -> str: ...
+    def __len__(self) -> int:
+        return ...
+
+    def __iter__(self) -> Iterator[Union[float, Vector]]:
+        """Yields time, position, velocity, mach."""
+        ...
+
+    @overload
+    def __getitem__(self, index: int) -> Union[float, Vector]: ...
+    @overload
+    def __getitem__(self, index: slice) -> Tuple[Union[float, Vector], ...]: ...
+    def __getitem__(self, index: Union[int, slice]) -> Union[float, Vector, Tuple[Union[float, Vector], ...]]:
+        """
+        Implements access to fields by index (0-3 or -4--1) or slice.
+        """
+        ...
+
+    def __eq__(self, other: object) -> bool:
+        """Реалізує самопорівняння (self == other)."""
+        # Порівняння з іншим CythonizedBaseTrajData або з ітерабельною послідовністю довжини 4
+        ...
 
     @property
     def time(self) -> float: ...
