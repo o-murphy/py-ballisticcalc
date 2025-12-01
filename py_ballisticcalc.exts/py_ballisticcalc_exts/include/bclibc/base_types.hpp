@@ -66,6 +66,7 @@ namespace bclibc
     {
         // Solver specific flags (always include RANGE_ERROR)
         NO_TERMINATE,
+        TARGET_RANGE_REACHED,
         MINIMUM_VELOCITY_REACHED,
         MAXIMUM_DROP_REACHED,
         MINIMUM_ALTITUDE_REACHED,

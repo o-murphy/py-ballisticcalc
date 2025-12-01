@@ -45,6 +45,8 @@ cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERR
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
 cdef dict TERMINATION_REASON_MAP = {
+    BCLIBC_TerminationReason.NO_TERMINATE: "Unknown",
+    BCLIBC_TerminationReason.TARGET_RANGE_REACHED: None,
     BCLIBC_TerminationReason.MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
     BCLIBC_TerminationReason.MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
     BCLIBC_TerminationReason.MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
@@ -474,7 +476,6 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
@@ -497,7 +498,6 @@ cdef class CythonizedBaseIntegrationEngine:
             self._init_trajectory(shot_info)
             self._this.integrate(
                 range_limit_ft,
-                range_step_ft,
                 time_step,
                 handler,
                 reason,

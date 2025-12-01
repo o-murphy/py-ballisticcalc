@@ -15,17 +15,13 @@ namespace bclibc
      * Coriolis effects. The drag force is proportional to the velocity magnitude and
      * direction.
      *
-     * @param v The relative velocity vector (projectile velocity minus wind velocity).
-     * @param gravity_vector The gravity acceleration vector.
-     * @param km_coeff The drag coefficient (dimensionless, includes density and ballistic factors).
-     * @param shot_props The shot properties containing Coriolis configuration data.
-     * @param ground_velocity The absolute ground velocity vector (used for Coriolis calculation).
-     * @param acceleration Output parameter for the computed acceleration vector.
+     * @param eng The ballistics engine containing shot properties, atmospheric conditions, and configuration.
+     * @param time_step Base time step for integration (will be adapted based on velocity).
+     * @param handler Interface for processing computed trajectory data points.
+     * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateRK4(
         BCLIBC_Engine &eng,
-        double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);

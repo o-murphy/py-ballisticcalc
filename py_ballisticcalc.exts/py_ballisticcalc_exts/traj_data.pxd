@@ -2,6 +2,7 @@
 Header file for traj_data.pyx - C Buffer Trajectory Sequence
 """
 
+from libcpp.vector cimport vector
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
@@ -69,6 +70,10 @@ cdef extern from "include/bclibc/traj_data.hpp" namespace "bclibc" nogil:
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerInterface:
         void handle(const BCLIBC_BaseTrajData &data) except +
+        void insert_handler(vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator position,
+                            BCLIBC_BaseTrajDataHandlerInterface *handler) except +
+        vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator begin()
+        vector[BCLIBC_BaseTrajDataHandlerInterface*].iterator end()
 
     cdef cppclass BCLIBC_BaseTrajDataHandlerCompositor(BCLIBC_BaseTrajDataHandlerInterface):
         BCLIBC_BaseTrajDataHandlerCompositor() except +

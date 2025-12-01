@@ -14,8 +14,6 @@ cdef extern from "include/bclibc/euler.hpp" namespace "bclibc" nogil:
 
     void BCLIBC_integrateEULER(
         BCLIBC_Engine &eng,
-        double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,

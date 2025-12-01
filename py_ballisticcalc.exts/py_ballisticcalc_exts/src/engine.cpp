@@ -1,6 +1,5 @@
 #include <cmath>
 #include "bclibc/engine.hpp"
-#include "bclibc/scope_guard.hpp"
 
 /*
 Possible call chains:
@@ -71,11 +70,26 @@ namespace bclibc
             range_step_ft,
             time_step);
 
-        // 2. Create the Composer (on the stack, it's small and now safer)
-        BCLIBC_BaseTrajDataHandlerCompositor composite_handler;
+        BCLIBC_DEBUG("Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
+                     this->config.cMinimumVelocity, this->config.cMinimumAltitude, this->config.cMaximumDrop);
 
-        // 3. Add a mandatory filter
-        composite_handler.add_handler(&data_filter);
+        // 2. Add terminal event handlers
+        BCLIBC_MinVelocityTerminator min_velocity_terminator(
+            this->config.cMinimumVelocity, reason);
+        BCLIBC_MaxDropTerminator max_drop_terminator(
+            this->config.cMaximumDrop + std::fmin(0.0, -this->shot.cant_cosine * this->shot.sight_height),
+            reason);
+        BCLIBC_MinAltitudeTerminator min_altitude_terminator(
+            this->config.cMinimumAltitude, this->shot.alt0, reason);
+
+        // 3. Create the Composer (on the stack, it's small and now safer)
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+            // Terminal event handlers
+            &min_velocity_terminator,
+            &max_drop_terminator,
+            &min_altitude_terminator,
+            // A mandatory filter
+            &data_filter);
 
         // 4. Add the optional trajectory
         if (dense_trajectory != nullptr)
@@ -86,13 +100,12 @@ namespace bclibc
         // 5. Call integration ONCE, passing the composite
         this->integrate(
             range_limit_ft,
-            range_step_ft,
             time_step,
             composite_handler,
             reason);
 
         // 6. Finalization
-        if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
+        if (reason != BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
         {
             data_filter.finalize();
         }
@@ -111,15 +124,25 @@ namespace bclibc
      */
     void BCLIBC_Engine::integrate(
         double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
         this->integrate_func_ptr_not_null();
-        this->integrate_func_ptr(*this, range_limit_ft, range_step_ft, time_step, handler, reason);
 
-        if (reason == BCLIBC_TerminationReason::NO_TERMINATE)
+        BCLIBC_RangeLimitTerminator range_limit_terminator(
+            range_limit_ft,
+            3, // expect at least 3 iterations
+            reason);
+
+        BCLIBC_BaseTrajDataHandlerCompositor compositor(
+            &range_limit_terminator, // range limiter
+            &handler                 // external request handler
+        );
+
+        this->integrate_func_ptr(*this, time_step, compositor, reason);
+
+        if (reason == BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
         {
             BCLIBC_INFO("Integration completed successfully: (%d).", reason);
         }
@@ -155,12 +178,7 @@ namespace bclibc
             0.0,                                  // Apex is where vy = 0
             &reason);
 
-        // Backup and adjust constraints
-        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
-            &this->config.cMinimumVelocity,
-            this->config.cMinimumVelocity > 0.0 ? 0.0 : this->config.cMinimumVelocity);
-
-        this->integrate(9e9, 9e9, 0.0, apex_handler, reason);
+        this->integrate(9e9, 0.0, apex_handler, reason);
 
         if (!apex_handler.found())
         {
@@ -201,7 +219,7 @@ namespace bclibc
             target_x_ft,
             &reason);
 
-        integrate(9e9, 9e9, 0.0, handler, reason);
+        integrate(9e9, 0.0, handler, reason);
 
         if (!handler.found())
         {
@@ -373,19 +391,6 @@ namespace bclibc
         double current_distance = 0.0;
         double trajectory_angle = 0.0;
 
-        // Backup, adjust and restore constraints (emulate @with_max_drop_zero and @with_no_minimum_altitude)
-        BCLIBC_ValueGuard<double> cMaximumDrop_guard(
-            &this->config.cMaximumDrop,
-            (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
-                ? required_drop_ft
-                : this->config.cMaximumDrop);
-
-        BCLIBC_ValueGuard<double> cMinimumAltitude_guard(
-            &this->config.cMinimumAltitude,
-            (this->config.cMinimumAltitude - this->shot.alt0 > required_drop_ft)
-                ? this->shot.alt0 - required_drop_ft
-                : this->config.cMinimumAltitude);
-
         // Main iteration loop
         while (iterations_count < _cMaxIterations)
         {
@@ -398,13 +403,13 @@ namespace bclibc
                 &reason // Enable early termination
             );
 
-            this->integrate(target_x_ft, target_x_ft, 0.0, handler, reason);
+            this->integrate(target_x_ft, 0.0, handler, reason);
 
             if (!handler.found())
             {
                 throw std::runtime_error("Failed to interpolate trajectory at target distance");
             }
-            
+
             hit = handler.get_result();
 
             if (hit.time == 0.0)
@@ -538,7 +543,7 @@ namespace bclibc
             this->shot.look_angle,
             &reason);
 
-        this->integrate(9e9, 9e9, 0.0, handler, reason);
+        this->integrate(9e9, 0.0, handler, reason);
 
         if (handler.found())
         {
@@ -577,19 +582,6 @@ namespace bclibc
             sdist = apex.px * std::cos(look_angle_rad) + apex.py * std::sin(look_angle_rad);
             return BCLIBC_MaxRangeResult{sdist, look_angle_rad};
         }
-
-        // Backup, adjust and restore constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
-        BCLIBC_ValueGuard<double> cMaximumDrop_guard(
-            &this->config.cMaximumDrop,
-            this->config.cMaximumDrop != 0.0
-                ? 0.0
-                : this->config.cMaximumDrop);
-
-        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
-            &this->config.cMinimumVelocity,
-            this->config.cMinimumVelocity != 0.0
-                ? 0.0
-                : this->config.cMinimumVelocity);
 
         double inv_phi = 0.6180339887498949;              // (std::sqrt(5) - 1) / 2
         double inv_phi_sq = 0.38196601125010515;          // inv_phi^2
@@ -698,13 +690,6 @@ namespace bclibc
         {
             return angle_at_max_rad;
         }
-
-        // Backup, adjust and restore constraints (emulate @with_no_minimum_velocity)
-        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
-            &this->config.cMinimumVelocity,
-            this->config.cMinimumVelocity != 0.0
-                ? 0.0
-                : this->config.cMinimumVelocity);
 
         // 3. Establish search bracket for the zero angle.
         double low_angle, high_angle;

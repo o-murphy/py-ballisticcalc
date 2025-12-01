@@ -96,8 +96,6 @@ namespace bclibc
 
     using BCLIBC_IntegrateFunc = void(
         BCLIBC_Engine &eng,
-        double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);
@@ -128,7 +126,6 @@ namespace bclibc
          */
         void integrate(
             double range_limit_ft,
-            double range_step_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason);

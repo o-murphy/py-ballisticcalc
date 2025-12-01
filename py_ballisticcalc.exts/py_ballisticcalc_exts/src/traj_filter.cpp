@@ -439,6 +439,89 @@ namespace bclibc
             { return f.data.time; });
     };
 
+    // BCLIBC_MinVelocityTerminator
+
+    BCLIBC_MinVelocityTerminator::BCLIBC_MinVelocityTerminator(
+        double min_velocity_fps,
+        BCLIBC_TerminationReason &termination_reason_ref)
+        : min_velocity_fps(min_velocity_fps),
+          termination_reason_ref(termination_reason_ref) {};
+
+    void BCLIBC_MinVelocityTerminator::handle(const BCLIBC_BaseTrajData &data)
+    {
+        double velocity = data.velocity().mag();
+        if (velocity < this->min_velocity_fps)
+        {
+            this->termination_reason_ref = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
+            BCLIBC_DEBUG("MinVelocity termination: v=%.2f < %.2f",
+                         velocity, this->min_velocity_fps);
+        }
+    };
+
+    // BCLIBC_MaxDropTerminator
+
+    BCLIBC_MaxDropTerminator::BCLIBC_MaxDropTerminator(
+        double max_drop_ft,
+        BCLIBC_TerminationReason &termination_reason_ref)
+        : max_drop_ft(-std::fabs(max_drop_ft)), // Negative value
+          termination_reason_ref(termination_reason_ref) {};
+
+    void BCLIBC_MaxDropTerminator::handle(const BCLIBC_BaseTrajData &data)
+    {
+        if (data.py < this->max_drop_ft)
+        {
+            this->termination_reason_ref = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
+            BCLIBC_DEBUG("MaxDrop termination: y=%.2f < %.2f",
+                         data.py, this->max_drop_ft);
+        }
+    };
+
+    // BCLIBC_MinAltitudeTerminator
+
+    BCLIBC_MinAltitudeTerminator::BCLIBC_MinAltitudeTerminator(
+        double min_altitude_ft,
+        double initial_altitude_ft,
+        BCLIBC_TerminationReason &termination_reason_ref)
+        : min_altitude_ft(min_altitude_ft),
+          initial_altitude_ft(initial_altitude_ft),
+          termination_reason_ref(termination_reason_ref) {};
+
+    void BCLIBC_MinAltitudeTerminator::handle(const BCLIBC_BaseTrajData &data)
+    {
+        // Only check when descending
+        if (data.vy <= 0.0)
+        {
+            double current_altitude = this->initial_altitude_ft + data.py;
+            if (current_altitude < this->min_altitude_ft)
+            {
+                this->termination_reason_ref = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
+                BCLIBC_DEBUG("MinAltitude termination: alt=%.2f < %.2f",
+                             current_altitude, this->min_altitude_ft);
+            }
+        }
+    }
+
+    // BCLIBC_RangeLimitTerminator
+
+    BCLIBC_RangeLimitTerminator::BCLIBC_RangeLimitTerminator(
+        double range_limit_ft,
+        int min_steps,
+        BCLIBC_TerminationReason &termination_reason_ref)
+        : range_limit_ft(range_limit_ft),
+          min_steps(min_steps),
+          step_count(0),
+          termination_reason_ref(termination_reason_ref) {};
+
+    void BCLIBC_RangeLimitTerminator::handle(const BCLIBC_BaseTrajData &data)
+    {
+        this->step_count++;
+        if (this->step_count >= this->min_steps && data.px > this->range_limit_ft)
+        {
+            this->termination_reason_ref = BCLIBC_TerminationReason::TARGET_RANGE_REACHED; // Normal completion
+            BCLIBC_DEBUG("Range limit reached: %.2f > %.2f", data.px, this->range_limit_ft);
+        }
+    };
+
     // BCLIBC_SinglePointHandler
 
     /**
