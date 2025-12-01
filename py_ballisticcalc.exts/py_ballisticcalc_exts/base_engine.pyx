@@ -475,7 +475,6 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
-        double range_limit_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
@@ -497,7 +496,6 @@ cdef class CythonizedBaseIntegrationEngine:
         try:
             self._init_trajectory(shot_info)
             self._this.integrate(
-                range_limit_ft,
                 time_step,
                 handler,
                 reason,

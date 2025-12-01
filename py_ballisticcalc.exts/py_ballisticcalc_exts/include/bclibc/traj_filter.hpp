@@ -189,123 +189,44 @@ namespace bclibc
         void handle(const BCLIBC_BaseTrajData &data) override;
     };
 
-    // /**
-    //  * @brief Factory: Minimum velocity terminator.
-    //  */
-    // BCLIBC_GenericTerminator create_min_velocity_terminator(
-    //     double min_velocity_fps,
-    //     BCLIBC_TerminationReason &reason);
-
-    // /**
-    //  * @brief Factory: Maximum drop terminator.
-    //  */
-    // BCLIBC_GenericTerminator create_max_drop_terminator(
-    //     double max_drop_ft,
-    //     BCLIBC_TerminationReason &reason);
-
-    // /**
-    //  * @brief Factory: Minimum altitude terminator.
-    //  */
-    // BCLIBC_GenericTerminator create_min_altitude_terminator(
-    //     double min_altitude_ft,
-    //     double initial_altitude_ft,
-    //     BCLIBC_TerminationReason &reason);
-
     // ============================================================================
-    // BCLIBC_MinVelocityTerminator
+    // BCLIBC_EssentialTerminators
     // ============================================================================
 
     /**
-     * @brief Handler that monitors minimum velocity constraint.
-     *
-     * Triggers termination when projectile velocity drops below threshold.
-     * Replaces hardcoded check in integrator.
+     * @brief A single handler that combines the main trajectory completion criteria:
+     * Min Velocity, Max Drop, Min Altitude, and Range Limit.
      */
-    class BCLIBC_MinVelocityTerminator : public BCLIBC_BaseTrajDataHandlerInterface
+    class BCLIBC_EssentialTerminators : public BCLIBC_BaseTrajDataHandlerInterface
     {
     private:
+        // constants
+        static constexpr int MIN_ITERATIONS_COUNT = 3;  // Always expects at least 3 iterations
+
+        // Range Limit
+        double range_limit_ft;
+        int step_count;
+
+        // Min Velocity
         double min_velocity_fps;
-        BCLIBC_TerminationReason &termination_reason_ref;
 
-    public:
-        BCLIBC_MinVelocityTerminator(
-            double min_velocity_fps,
-            BCLIBC_TerminationReason &reason);
-
-        void handle(const BCLIBC_BaseTrajData &data) override;
-    };
-
-    // ============================================================================
-    // BCLIBC_MaxDropTerminator
-    // ============================================================================
-
-    /**
-     * @brief Handler that monitors maximum drop constraint.
-     *
-     * Triggers termination when projectile drops below threshold.
-     */
-    class BCLIBC_MaxDropTerminator : public BCLIBC_BaseTrajDataHandlerInterface
-    {
-    private:
+        // Max Drop
         double max_drop_ft;
-        BCLIBC_TerminationReason &termination_reason_ref;
 
-    public:
-        BCLIBC_MaxDropTerminator(
-            double max_drop_ft,
-            BCLIBC_TerminationReason &reason);
-
-        void handle(const BCLIBC_BaseTrajData &data) override;
-    };
-
-    // ============================================================================
-    // BCLIBC_MinAltitudeTerminator
-    // ============================================================================
-
-    /**
-     * @brief Handler that monitors minimum altitude constraint.
-     *
-     * Triggers termination when descending projectile goes below altitude threshold.
-     */
-    class BCLIBC_MinAltitudeTerminator : public BCLIBC_BaseTrajDataHandlerInterface
-    {
-    private:
+        // Min Altitude
         double min_altitude_ft;
         double initial_altitude_ft;
+
         BCLIBC_TerminationReason &termination_reason_ref;
 
     public:
-        BCLIBC_MinAltitudeTerminator(
-            double min_altitude_ft,
-            double initial_altitude_ft,
-            BCLIBC_TerminationReason &reason);
-
-        void handle(const BCLIBC_BaseTrajData &data) override;
-    };
-
-    // ============================================================================
-    // BCLIBC_RangeLimitTerminator
-    // ============================================================================
-
-    /**
-     * @brief Handler that monitors range limit.
-     *
-     * Triggers termination when horizontal distance exceeds limit.
-     * This allows removing range check from integrator loop condition.
-     */
-    class BCLIBC_RangeLimitTerminator : public BCLIBC_BaseTrajDataHandlerInterface
-    {
-    private:
-        double range_limit_ft;
-        int min_steps; // Minimum steps before allowing termination
-        int step_count;
-        BCLIBC_TerminationReason &termination_reason_ref;
-
-    public:
-        BCLIBC_RangeLimitTerminator(
+        BCLIBC_EssentialTerminators(
+            const BCLIBC_ShotProps &shot,
             double range_limit_ft,
-            int min_steps,
-            BCLIBC_TerminationReason &reason);
+            double min_velocity_fps,
+            double max_drop_ft,
+            double min_altitude_ft,
+            BCLIBC_TerminationReason &termination_reason_ref);
 
         void handle(const BCLIBC_BaseTrajData &data) override;
     };
@@ -417,7 +338,6 @@ namespace bclibc
          */
         double get_slant_distance() const;
     };
-
 }; // namespace bclibc
 
 #endif // BCLIBC_TRAJ_FILTER_HPP

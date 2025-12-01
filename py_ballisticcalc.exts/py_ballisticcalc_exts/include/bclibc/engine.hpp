@@ -104,6 +104,7 @@ namespace bclibc
 
     class BCLIBC_Engine
     {
+    static constexpr double MAX_INTEGRATION_RANGE = 9e9;
 
     public:
         int integration_step_count;
@@ -116,8 +117,6 @@ namespace bclibc
         /**
          * @brief Calls the underlying integration function for the projectile trajectory.
          *
-         * @param range_limit_ft Maximum range for integration in feet.
-         * @param range_step_ft Step size along the range in feet.
          * @param time_step Integration timestep in seconds.
          * @param handler Reference to a data handler for trajectory recording.
          * @param reason Reference to store termination reason.
@@ -125,7 +124,6 @@ namespace bclibc
          * @throws std::logic_error if integrate_func_ptr is null.
          */
         void integrate(
-            double range_limit_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason);

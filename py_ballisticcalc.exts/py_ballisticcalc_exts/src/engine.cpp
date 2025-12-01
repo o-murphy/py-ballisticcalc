@@ -1,5 +1,6 @@
 #include <cmath>
 #include "bclibc/engine.hpp"
+#include "bclibc/scope_guard.hpp"
 
 /*
 Possible call chains:
@@ -73,21 +74,19 @@ namespace bclibc
         BCLIBC_DEBUG("Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
                      this->config.cMinimumVelocity, this->config.cMinimumAltitude, this->config.cMaximumDrop);
 
-        // 2. Add terminal event handlers
-        BCLIBC_MinVelocityTerminator min_velocity_terminator(
-            this->config.cMinimumVelocity, reason);
-        BCLIBC_MaxDropTerminator max_drop_terminator(
-            this->config.cMaximumDrop + std::fmin(0.0, -this->shot.cant_cosine * this->shot.sight_height),
+        // 2. Add terminal event handler
+        BCLIBC_EssentialTerminators terminators(
+            this->shot,
+            range_limit_ft,
+            this->config.cMinimumVelocity,
+            this->config.cMaximumDrop,
+            this->config.cMinimumAltitude,
             reason);
-        BCLIBC_MinAltitudeTerminator min_altitude_terminator(
-            this->config.cMinimumAltitude, this->shot.alt0, reason);
 
         // 3. Create the Composer (on the stack, it's small and now safer)
         BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
             // Terminal event handlers
-            &min_velocity_terminator,
-            &max_drop_terminator,
-            &min_altitude_terminator,
+            &terminators,
             // A mandatory filter
             &data_filter);
 
@@ -98,11 +97,7 @@ namespace bclibc
         }
 
         // 5. Call integration ONCE, passing the composite
-        this->integrate(
-            range_limit_ft,
-            time_step,
-            composite_handler,
-            reason);
+        this->integrate(time_step, composite_handler, reason);
 
         // 6. Finalization
         if (reason != BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
@@ -114,8 +109,6 @@ namespace bclibc
     /**
      * @brief Calls the underlying integration function for the projectile trajectory.
      *
-     * @param range_limit_ft Maximum range for integration in feet.
-     * @param range_step_ft Step size along the range in feet.
      * @param time_step Integration timestep in seconds.
      * @param handler Reference to a data handler for trajectory recording.
      * @param reason Reference to store termination reason.
@@ -123,24 +116,13 @@ namespace bclibc
      * @throws std::logic_error if integrate_func_ptr is null.
      */
     void BCLIBC_Engine::integrate(
-        double range_limit_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
         this->integrate_func_ptr_not_null();
 
-        BCLIBC_RangeLimitTerminator range_limit_terminator(
-            range_limit_ft,
-            3, // expect at least 3 iterations
-            reason);
-
-        BCLIBC_BaseTrajDataHandlerCompositor compositor(
-            &range_limit_terminator, // range limiter
-            &handler                 // external request handler
-        );
-
-        this->integrate_func_ptr(*this, time_step, compositor, reason);
+        this->integrate_func_ptr(*this, time_step, handler, reason);
 
         if (reason == BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
         {
@@ -172,13 +154,27 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
 
+        // Add terminal event handler
+        BCLIBC_EssentialTerminators terminators(
+            this->shot,
+            this->MAX_INTEGRATION_RANGE,
+            this->config.cMinimumVelocity > 0.0 ? 0.0 : this->config.cMinimumVelocity,
+            this->config.cMaximumDrop,
+            this->config.cMinimumAltitude,
+            reason);
+
         // Use SinglePointHandler to find where vertical velocity crosses zero
         BCLIBC_SinglePointHandler apex_handler(
             BCLIBC_BaseTrajData_InterpKey::VEL_Y, // Search by vertical velocity
             0.0,                                  // Apex is where vy = 0
             &reason);
 
-        this->integrate(9e9, 0.0, apex_handler, reason);
+        // Create the Composer (on the stack, it's small and now safer)
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+            &terminators,
+            &apex_handler);
+
+        this->integrate(0.0, composite_handler, reason);
 
         if (!apex_handler.found())
         {
@@ -213,13 +209,26 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
 
+        // Add terminal event handler
+        BCLIBC_EssentialTerminators terminators(
+            this->shot,
+            this->MAX_INTEGRATION_RANGE,
+            this->config.cMinimumVelocity,
+            this->config.cMaximumDrop,
+            this->config.cMinimumAltitude,
+            reason);
+
         // Use specialized single-point handler
         BCLIBC_SinglePointHandler handler(
             BCLIBC_BaseTrajData_InterpKey::POS_X,
             target_x_ft,
             &reason);
 
-        integrate(9e9, 0.0, handler, reason);
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+            &terminators,
+            &handler);
+
+        integrate(0.0, composite_handler, reason);
 
         if (!handler.found())
         {
@@ -396,6 +405,20 @@ namespace bclibc
         {
             // reset handler for integration result
             BCLIBC_TerminationReason reason;
+
+            // Add terminal event handler
+            BCLIBC_EssentialTerminators terminators(
+                this->shot,
+                target_x_ft,
+                this->config.cMinimumVelocity,
+                (std::fabs(this->config.cMaximumDrop) < required_drop_ft)
+                    ? required_drop_ft
+                    : this->config.cMaximumDrop,
+                (this->config.cMinimumAltitude - this->shot.alt0 > required_drop_ft)
+                    ? this->shot.alt0 - required_drop_ft
+                    : this->config.cMinimumAltitude,
+                reason);
+
             // Using SinglePointHandler з early termination
             BCLIBC_SinglePointHandler handler(
                 BCLIBC_BaseTrajData_InterpKey::POS_X,
@@ -403,7 +426,12 @@ namespace bclibc
                 &reason // Enable early termination
             );
 
-            this->integrate(target_x_ft, 0.0, handler, reason);
+            // Create the Composer (on the stack, it's small and now safer)
+            BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+                &terminators,
+                &handler);
+
+            this->integrate(0.0, composite_handler, reason);
 
             if (!handler.found())
             {
@@ -538,12 +566,25 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
 
+        // Add terminal event handler
+        BCLIBC_EssentialTerminators terminators(
+            this->shot,
+            this->MAX_INTEGRATION_RANGE,
+            this->config.cMinimumVelocity,
+            this->config.cMaximumDrop,
+            this->config.cMinimumAltitude,
+            reason);
+
         // Use specialized zero-crossing handler
         BCLIBC_ZeroCrossingHandler handler(
             this->shot.look_angle,
             &reason);
 
-        this->integrate(9e9, 0.0, handler, reason);
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+            &terminators,
+            &handler);
+
+        this->integrate(0.0, composite_handler, reason);
 
         if (handler.found())
         {
@@ -582,6 +623,19 @@ namespace bclibc
             sdist = apex.px * std::cos(look_angle_rad) + apex.py * std::sin(look_angle_rad);
             return BCLIBC_MaxRangeResult{sdist, look_angle_rad};
         }
+
+        // Backup, adjust and restore constraints (emulate @with_max_drop_zero and @with_no_minimum_velocity)
+        BCLIBC_ValueGuard<double> cMaximumDrop_guard(
+            &this->config.cMaximumDrop,
+            this->config.cMaximumDrop != 0.0
+                ? 0.0
+                : this->config.cMaximumDrop);
+
+        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
+            &this->config.cMinimumVelocity,
+            this->config.cMinimumVelocity != 0.0
+                ? 0.0
+                : this->config.cMinimumVelocity);
 
         double inv_phi = 0.6180339887498949;              // (std::sqrt(5) - 1) / 2
         double inv_phi_sq = 0.38196601125010515;          // inv_phi^2
@@ -690,6 +744,13 @@ namespace bclibc
         {
             return angle_at_max_rad;
         }
+
+        // Backup, adjust and restore constraints (emulate @with_no_minimum_velocity)
+        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
+            &this->config.cMinimumVelocity,
+            this->config.cMinimumVelocity != 0.0
+                ? 0.0
+                : this->config.cMinimumVelocity);
 
         // 3. Establish search bracket for the zero angle.
         double low_angle, high_angle;

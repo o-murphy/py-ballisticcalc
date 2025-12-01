@@ -83,7 +83,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
 
         void integrate(
-            double range_limit_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason) except +
@@ -184,7 +183,6 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
-        double range_limit_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,

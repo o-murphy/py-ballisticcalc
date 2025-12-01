@@ -474,121 +474,67 @@ namespace bclibc
         }
     };
 
-    // Factory methods
-
-    // /**
-    //  * @brief Factory: Minimum velocity terminator.
-    //  */
-    // BCLIBC_GenericTerminator create_min_velocity_terminator(
-    //     double min_velocity_fps,
-    //     BCLIBC_TerminationReason &reason)
-    // {
-    //     return BCLIBC_GenericTerminator(
-    //         reason,
-    //         BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED,
-    //         [min_velocity_fps](const BCLIBC_BaseTrajData &data)
-    //         {
-    //             return data.velocity().mag() < min_velocity_fps;
-    //         },
-    //         "MinVelocityTerminator");
-    // };
-
-    // /**
-    //  * @brief Factory: Maximum drop terminator.
-    //  */
-    // BCLIBC_GenericTerminator create_max_drop_terminator(
-    //     double max_drop_ft,
-    //     BCLIBC_TerminationReason &reason)
-    // {
-    //     double threshold = -std::fabs(max_drop_ft);
-    //     return BCLIBC_GenericTerminator(
-    //         reason,
-    //         BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED,
-    //         [threshold](const BCLIBC_BaseTrajData &data)
-    //         {
-    //             return data.py < threshold;
-    //         },
-    //         "MaxDropTerminator");
-    // };
-
-    // /**
-    //  * @brief Factory: Minimum altitude terminator.
-    //  */
-    // BCLIBC_GenericTerminator create_min_altitude_terminator(
-    //     double min_altitude_ft,
-    //     double initial_altitude_ft,
-    //     BCLIBC_TerminationReason &reason)
-    // {
-    //     return BCLIBC_GenericTerminator(
-    //         reason,
-    //         BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED,
-    //         [min_altitude_ft, initial_altitude_ft](const BCLIBC_BaseTrajData &data)
-    //         {
-    //             // Only when descending
-    //             if (data.vy > 0.0)
-    //                 return false;
-    //             double current_alt = initial_altitude_ft + data.py;
-    //             return current_alt < min_altitude_ft;
-    //         },
-    //         "MinAltitudeTerminator");
-    // };
-
     // ============================================================================
-    // BCLIBC_MinVelocityTerminator
+    // BCLIBC_EssentialTerminators
     // ============================================================================
 
-    BCLIBC_MinVelocityTerminator::BCLIBC_MinVelocityTerminator(
+    BCLIBC_EssentialTerminators::BCLIBC_EssentialTerminators(
+        const BCLIBC_ShotProps &shot,
+        double range_limit_ft,
         double min_velocity_fps,
+        double max_drop_ft,
+        double min_altitude_ft,
         BCLIBC_TerminationReason &termination_reason_ref)
-        : min_velocity_fps(min_velocity_fps),
-          termination_reason_ref(termination_reason_ref) {};
-
-    void BCLIBC_MinVelocityTerminator::handle(const BCLIBC_BaseTrajData &data)
+        : range_limit_ft(range_limit_ft),
+          step_count(0), // Always start from 0
+          min_velocity_fps(min_velocity_fps),
+          max_drop_ft(max_drop_ft),
+          min_altitude_ft(min_altitude_ft),
+          initial_altitude_ft(shot.alt0),
+          termination_reason_ref(termination_reason_ref)
     {
+        this->max_drop_ft = -std::fabs(this->max_drop_ft);
+        this->max_drop_ft += std::fmin(0.0, -shot.cant_cosine * shot.sight_height);
+    };
+
+    void BCLIBC_EssentialTerminators::handle(const BCLIBC_BaseTrajData &data)
+    {
+        // 1. Early return
+        if (this->termination_reason_ref != BCLIBC_TerminationReason::NO_TERMINATE)
+        {
+            return;
+        }
+
+        // 2. Range Limit
+        this->step_count++;
+        if (this->step_count >= this->MIN_ITERATIONS_COUNT && data.px > this->range_limit_ft)
+        {
+            this->termination_reason_ref = BCLIBC_TerminationReason::TARGET_RANGE_REACHED;
+            BCLIBC_DEBUG("MaxRange limit reached: %.2f > %.2f",
+                         data.px, this->range_limit_ft);
+            return;
+        }
+
+        // 3. Min Velocity
         double velocity = data.velocity().mag();
         if (velocity < this->min_velocity_fps)
         {
             this->termination_reason_ref = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
             BCLIBC_DEBUG("MinVelocity termination: v=%.2f < %.2f",
                          velocity, this->min_velocity_fps);
+            return;
         }
-    };
 
-    // ============================================================================
-    // BCLIBC_MaxDropTerminator
-    // ============================================================================
-
-    BCLIBC_MaxDropTerminator::BCLIBC_MaxDropTerminator(
-        double max_drop_ft,
-        BCLIBC_TerminationReason &termination_reason_ref)
-        : max_drop_ft(-std::fabs(max_drop_ft)), // Negative value
-          termination_reason_ref(termination_reason_ref) {};
-
-    void BCLIBC_MaxDropTerminator::handle(const BCLIBC_BaseTrajData &data)
-    {
+        // 4. Max Drop
         if (data.py < this->max_drop_ft)
         {
             this->termination_reason_ref = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
             BCLIBC_DEBUG("MaxDrop termination: y=%.2f < %.2f",
                          data.py, this->max_drop_ft);
+            return;
         }
-    };
 
-    // ============================================================================
-    // BCLIBC_MinAltitudeTerminator
-    // ============================================================================
-
-    BCLIBC_MinAltitudeTerminator::BCLIBC_MinAltitudeTerminator(
-        double min_altitude_ft,
-        double initial_altitude_ft,
-        BCLIBC_TerminationReason &termination_reason_ref)
-        : min_altitude_ft(min_altitude_ft),
-          initial_altitude_ft(initial_altitude_ft),
-          termination_reason_ref(termination_reason_ref) {};
-
-    void BCLIBC_MinAltitudeTerminator::handle(const BCLIBC_BaseTrajData &data)
-    {
-        // Only check when descending
+        // 5. Min Altitude
         if (data.vy <= 0.0)
         {
             double current_altitude = this->initial_altitude_ft + data.py;
@@ -597,30 +543,8 @@ namespace bclibc
                 this->termination_reason_ref = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
                 BCLIBC_DEBUG("MinAltitude termination: alt=%.2f < %.2f",
                              current_altitude, this->min_altitude_ft);
+                return;
             }
-        }
-    }
-
-    // ============================================================================
-    // BCLIBC_RangeLimitTerminator
-    // ============================================================================
-
-    BCLIBC_RangeLimitTerminator::BCLIBC_RangeLimitTerminator(
-        double range_limit_ft,
-        int min_steps,
-        BCLIBC_TerminationReason &termination_reason_ref)
-        : range_limit_ft(range_limit_ft),
-          min_steps(min_steps),
-          step_count(0),
-          termination_reason_ref(termination_reason_ref) {};
-
-    void BCLIBC_RangeLimitTerminator::handle(const BCLIBC_BaseTrajData &data)
-    {
-        this->step_count++;
-        if (this->step_count >= this->min_steps && data.px > this->range_limit_ft)
-        {
-            this->termination_reason_ref = BCLIBC_TerminationReason::TARGET_RANGE_REACHED; // Normal completion
-            BCLIBC_DEBUG("Range limit reached: %.2f > %.2f", data.px, this->range_limit_ft);
         }
     };
 

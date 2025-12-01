@@ -277,7 +277,7 @@ namespace bclibc
         virtual void handle(const BCLIBC_BaseTrajData &data) = 0;
     };
 
-    using BCLIBC_BaseTrajDataHandlerIterator = std::vector<BCLIBC_BaseTrajDataHandlerInterface *>::iterator;
+    using BCLIBC_BaseTrajDataHandlerCompositorIterator = std::vector<BCLIBC_BaseTrajDataHandlerInterface *>::iterator;
 
     /**
      * @brief Composite handler that distributes data to multiple handlers.
@@ -317,9 +317,9 @@ namespace bclibc
             }
         }
 
-        BCLIBC_BaseTrajDataHandlerIterator begin() { return handlers.begin(); }
+        BCLIBC_BaseTrajDataHandlerCompositorIterator begin() { return handlers.begin(); }
 
-        BCLIBC_BaseTrajDataHandlerIterator end() { return handlers.end(); }
+        BCLIBC_BaseTrajDataHandlerCompositorIterator end() { return handlers.end(); }
 
         /**
          * @brief Inserts a new trajectory data handler at a specified position.
@@ -333,7 +333,7 @@ namespace bclibc
          * @param handler A pointer to the trajectory data handler (BCLIBC_BaseTrajDataHandlerInterface*)
          * to be added.
          */
-        void insert_handler(BCLIBC_BaseTrajDataHandlerIterator position, BCLIBC_BaseTrajDataHandlerInterface *handler)
+        void insert_handler(BCLIBC_BaseTrajDataHandlerCompositorIterator position, BCLIBC_BaseTrajDataHandlerInterface *handler)
         {
             if (handler != nullptr)
             {
