@@ -8,6 +8,7 @@ from typing import Any, Tuple
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
+from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajData
 
 class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""
@@ -144,3 +145,7 @@ class CythonizedBaseIntegrationEngine:
             HitResult: Object for describing the trajectory.
         """
         ...
+
+    def integrate_raw_at(
+        self, shot_info: Shot, key_attribute: str, target_value: float
+    ) -> tuple[CythonizedBaseTrajData, TrajectoryData]: ...

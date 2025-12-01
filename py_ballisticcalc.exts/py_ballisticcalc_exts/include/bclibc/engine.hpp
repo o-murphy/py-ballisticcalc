@@ -1,6 +1,7 @@
 #ifndef BCLIBC_ENGINE_HPP
 #define BCLIBC_ENGINE_HPP
 
+#include <mutex>
 #include "bclibc/traj_filter.hpp"
 
 /*
@@ -106,6 +107,12 @@ namespace bclibc
     {
         static constexpr double MAX_INTEGRATION_RANGE = 9e9;
 
+    private:
+        // A recursive mutex that guarantees thread-safe access (read/write) to the entire Engine state,
+        // specifically `config` and `shot`. The recursive nature is necessary because public methods
+        // (like zero_angle) call other internal methods (like integrate), requiring nested locking.
+        std::recursive_mutex engine_mutex;
+
     public:
         int integration_step_count;
         BCLIBC_V3dT gravity_vector;
@@ -128,6 +135,12 @@ namespace bclibc
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason);
+
+        void integrate_at(
+            BCLIBC_BaseTrajData_InterpKey key,
+            double target_value,
+            BCLIBC_BaseTrajData &raw_data,
+            BCLIBC_TrajectoryData &full_data);
 
         /**
          * @brief Integrates the projectile trajectory using filters and optional dense trajectory storage.

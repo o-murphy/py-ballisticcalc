@@ -98,6 +98,77 @@ cdef class CythonizedBaseTrajSeq:
 cdef class CythonizedBaseTrajData:
     __slots__ = ('time', 'position', 'velocity', 'mach')  # for pure python mirror consistency
 
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+
+        field_names = self.__slots__
+        field_values = self.__iter__()
+
+        content = ", ".join(
+            f"{name}={repr(value)}"
+            for name, value in zip(field_names, field_values)
+        )
+        return f"{cls_name}({content})"
+
+    def __str__(self):
+        content = ", ".join(
+            f"{repr(value)}"
+            for name, value in self.__iter__()
+        )
+        return f"({content})"
+
+    def __len__(self):
+        return 4
+
+    def __iter__(self):
+        yield self.time
+        yield self.position
+        yield self.velocity
+        yield self.mach
+
+    def __getitem__(self, index):
+        """
+        Implements access to fields by index: self[0] -> time, self[1] -> position, etc.
+        Supports indexes and slices.
+        """
+        if index == 0:
+            return self.time
+        elif index == 1:
+            return self.position
+        elif index == 2:
+            return self.velocity
+        elif index == 3:
+            return self.mach
+
+        # Negative
+        elif index == -4:
+            return self.time
+        elif index == -3:
+            return self.position
+        elif index == -2:
+            return self.velocity
+        elif index == -1:
+            return self.mach
+
+        # Slices
+        elif isinstance(index, slice):
+            return (self.time, self.position, self.velocity, self.mach)[index]
+
+        raise IndexError("TrajData index out of range")
+
+    def __eq__(self, other):
+        """Реалізує самопорівняння (self == other)."""
+        if isinstance(other, CythonizedBaseTrajData):
+            return (self.time == other.time and
+                    self.position == other.position and
+                    self.velocity == other.velocity and
+                    self.mach == other.mach)
+
+        elif len(self) == len(other):
+            return all(a == b for a, b in zip(self, other))
+
+        return NotImplemented
+
     @property
     def time(self):
         return self._this.time

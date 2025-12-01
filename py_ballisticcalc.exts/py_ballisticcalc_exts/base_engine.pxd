@@ -13,6 +13,7 @@ from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_BaseTrajSeq,
     BCLIBC_BaseTrajData,
     BCLIBC_TrajectoryData,
+    BCLIBC_BaseTrajData_InterpKey,
     BCLIBC_BaseTrajDataHandlerInterface
 )
 
@@ -87,6 +88,12 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason) except +
+
+        void integrate_at(
+            BCLIBC_BaseTrajData_InterpKey key,
+            double target_value,
+            BCLIBC_BaseTrajData &raw_data,
+            BCLIBC_TrajectoryData &full_data) except+
 
         void integrate_filtered(
             double range_limit_ft,
@@ -179,6 +186,15 @@ cdef class CythonizedBaseIntegrationEngine:
         double angle_rad,
         double target_x_ft,
         double target_y_ft
+    )
+
+    cdef void _integrate_raw_at(
+        CythonizedBaseIntegrationEngine self,
+        object shot_info,
+        BCLIBC_BaseTrajData_InterpKey key,
+        double target_value,
+        BCLIBC_BaseTrajData &raw_data,
+        BCLIBC_TrajectoryData &full_data
     )
 
     cdef void _integrate(

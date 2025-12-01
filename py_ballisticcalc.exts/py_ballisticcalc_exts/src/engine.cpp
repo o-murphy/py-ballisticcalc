@@ -61,6 +61,9 @@ namespace bclibc
     {
         this->integrate_func_ptr_not_null();
 
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         // 1. Create a mandatory filter/writer ON THE HEAP using unique_ptr.
         // This ensures that a large object does not pollute the stack frame.
         BCLIBC_TrajectoryDataFilter data_filter(
@@ -107,6 +110,9 @@ namespace bclibc
     {
         this->integrate_func_ptr_not_null();
 
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         // Essential termination reason control
         BCLIBC_EssentialTerminators terminators(
             this->shot,
@@ -133,6 +139,32 @@ namespace bclibc
         }
     };
 
+    void BCLIBC_Engine::integrate_at(
+        BCLIBC_BaseTrajData_InterpKey key,
+        double target_value,
+        BCLIBC_BaseTrajData &raw_data,
+        BCLIBC_TrajectoryData &full_data)
+    {
+        integrate_func_ptr_not_null();
+
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
+        BCLIBC_TerminationReason reason;
+        BCLIBC_SinglePointHandler handler(key, target_value, &reason);
+        
+        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
+
+        if (!handler.found())
+        {
+            throw std::runtime_error(
+                "Runtime error (No apex flagged in trajectory data)");
+        }
+
+        raw_data = handler.get_result();
+        full_data = BCLIBC_TrajectoryData(this->shot, raw_data);
+    };
+
     /**
      * @brief Finds the apex (highest point) of the trajectory.
      *
@@ -145,6 +177,9 @@ namespace bclibc
      */
     void BCLIBC_Engine::find_apex(BCLIBC_BaseTrajData &apex_out)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         if (this->shot.barrel_elevation <= 0)
         {
             throw std::invalid_argument(
@@ -194,6 +229,8 @@ namespace bclibc
         double target_x_ft,
         double target_y_ft)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
 
         this->shot.barrel_elevation = angle_rad;
 
@@ -241,6 +278,9 @@ namespace bclibc
         BCLIBC_ZeroInitialData &result,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         BCLIBC_BaseTrajData apex;
         double apex_slant_ft;
 
@@ -302,6 +342,9 @@ namespace bclibc
         double ALLOWED_ZERO_ERROR_FEET,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         try
         {
             return this->zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, error);
@@ -339,6 +382,9 @@ namespace bclibc
         double ALLOWED_ZERO_ERROR_FEET,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         BCLIBC_ZeroInitialData init_data;
 
         this->init_zero_calculation(
@@ -534,6 +580,9 @@ namespace bclibc
      */
     double BCLIBC_Engine::range_for_angle(double angle_rad)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
@@ -568,6 +617,9 @@ namespace bclibc
         double high_angle_deg,
         double APEX_IS_MAX_RANGE_RADIANS)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         double look_angle_rad = this->shot.look_angle;
         double max_range_ft;
         double angle_at_max_rad;
@@ -661,6 +713,9 @@ namespace bclibc
         double ALLOWED_ZERO_ERROR_FEET,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(engine_mutex);
+
         BCLIBC_ZeroInitialData init_data;
 
         this->init_zero_calculation(

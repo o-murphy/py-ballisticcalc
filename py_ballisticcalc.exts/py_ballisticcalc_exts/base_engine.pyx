@@ -10,9 +10,11 @@ from libcpp.vector cimport vector
 from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport (
+    CythonizedBaseTrajData,
     CythonizedBaseTrajSeq,
     BCLIBC_BaseTrajData,
     BCLIBC_TrajectoryData,
+    BCLIBC_BaseTrajData_InterpKey,
     BCLIBC_BaseTrajDataHandlerInterface,
 )
 from py_ballisticcalc_exts.base_types cimport (
@@ -28,6 +30,7 @@ from py_ballisticcalc_exts.bind cimport (
     BCLIBC_ShotProps_from_pyobject,
     feet_from_c,
     rad_from_c,
+    _attribute_to_key,
 )
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
@@ -285,6 +288,21 @@ cdef class CythonizedBaseIntegrationEngine:
             termination_reason
         )
 
+    def integrate_raw_at(
+        CythonizedBaseIntegrationEngine self,
+        object shot_info,
+        str key_attribute,
+        double target_value
+    ) -> tuple[CythonizedBaseTrajData, TrajectoryData]:
+        cdef BCLIBC_BaseTrajData_InterpKey key = _attribute_to_key(key_attribute)
+        cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
+        cdef BCLIBC_TrajectoryData full_data
+
+        self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
+
+        cdef object py_full_data = TrajectoryData_from_cpp(full_data)
+        return raw_data, py_full_data
+
     cdef inline double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
         double angle_rad,
@@ -471,6 +489,25 @@ cdef class CythonizedBaseIntegrationEngine:
             )
         except RuntimeError as e:
             zero_finding_error(e, error)
+
+    cdef void _integrate_raw_at(
+        CythonizedBaseIntegrationEngine self,
+        object shot_info,
+        BCLIBC_BaseTrajData_InterpKey key,
+        double target_value,
+        BCLIBC_BaseTrajData &raw_data,
+        BCLIBC_TrajectoryData &full_data
+    ):
+        self._init_trajectory(shot_info)
+        try:
+            self._this.integrate_at(
+                key,
+                target_value,
+                raw_data,
+                full_data,
+            )
+        except RuntimeError as e:
+            raise SolverRuntimeError(e)
 
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
