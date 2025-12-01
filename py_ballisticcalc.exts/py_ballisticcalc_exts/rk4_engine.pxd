@@ -9,6 +9,7 @@ from py_ballisticcalc_exts.base_engine cimport (
     BCLIBC_BaseTrajDataHandlerInterface,
 )
 
+
 cdef extern from "include/bclibc/rk4.hpp" namespace "bclibc" nogil:
 
     void BCLIBC_integrateRK4(

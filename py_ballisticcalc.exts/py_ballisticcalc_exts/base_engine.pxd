@@ -6,6 +6,7 @@ from py_ballisticcalc_exts.base_types cimport (
     BCLIBC_ShotProps,
     BCLIBC_WindSock,
     BCLIBC_TrajFlag,
+    BCLIBC_TerminationReason,
 )
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport (
@@ -27,13 +28,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     cdef enum class BCLIBC_ZeroInitialStatus:
         CONTINUE
         DONE
-
-    cdef enum class BCLIBC_TerminationReason:
-        # Solver specific, not real errors, just termination reasons!
-        NO_TERMINATE
-        MINIMUM_VELOCITY_REACHED
-        MAXIMUM_DROP_REACHED
-        MINIMUM_ALTITUDE_REACHED
 
     cdef cppclass BCLIBC_ZeroInitialData:
         BCLIBC_ZeroInitialStatus status

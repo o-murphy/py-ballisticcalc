@@ -44,15 +44,6 @@ namespace bclibc
         DONE,
     };
 
-    enum class BCLIBC_TerminationReason
-    {
-        // Solver specific flags (always include RANGE_ERROR)
-        NO_TERMINATE,
-        MINIMUM_VELOCITY_REACHED,
-        MAXIMUM_DROP_REACHED,
-        MINIMUM_ALTITUDE_REACHED,
-    };
-
     struct BCLIBC_ZeroInitialData
     {
         BCLIBC_ZeroInitialStatus status;

@@ -438,4 +438,180 @@ namespace bclibc
             [](const BCLIBC_FlaggedData &f)
             { return f.data.time; });
     };
+
+    // BCLIBC_SinglePointHandler
+
+    /**
+     * @brief Constructs handler for single-point interpolation.
+     * @param key_kind Type of key to search by (POS_X, VEL_Y, etc.)
+     * @param target_value Target value to interpolate at
+     * @param termination_reason_ptr Optional pointer to reason for early termination
+     */
+    BCLIBC_SinglePointHandler::BCLIBC_SinglePointHandler(
+        BCLIBC_BaseTrajData_InterpKey key_kind,
+        double target_value,
+        BCLIBC_TerminationReason *termination_reason_ptr)
+        : key_kind(key_kind),
+          target_value(target_value),
+          is_found(false),
+          count(0),
+          target_passed(false),
+          termination_reason_ptr(termination_reason_ptr) {};
+
+    void BCLIBC_SinglePointHandler::handle(const BCLIBC_BaseTrajData &data)
+    {
+        if (this->is_found)
+            return; // Already found target
+
+        // Shift window: [0] <- [1] <- [2] <- new
+        if (this->count >= 3)
+        {
+            this->points[0] = this->points[1];
+            this->points[1] = this->points[2];
+            this->points[2] = data;
+        }
+        else
+        {
+            this->points[this->count] = data;
+            this->count++;
+        }
+
+        // Check if we have enough points and crossed target
+        if (this->count >= 3 && !this->target_passed)
+        {
+            double val_prev = this->points[1].get_key_val(this->key_kind);
+            double val_curr = this->points[2].get_key_val(this->key_kind);
+
+            // Check if target is between previous and current point
+            bool crossed = (val_prev <= this->target_value && this->target_value <= val_curr) ||
+                           (val_curr <= this->target_value && this->target_value <= val_prev);
+
+            if (crossed)
+            {
+                this->target_passed = true;
+                // Interpolate immediately
+                try
+                {
+                    BCLIBC_BaseTrajData::interpolate(
+                        this->key_kind,
+                        this->target_value,
+                        this->points[0],
+                        this->points[1],
+                        this->points[2],
+                        this->result);
+                    this->is_found = true;
+                    if (termination_reason_ptr != nullptr)
+                    {
+                        *this->termination_reason_ptr = BCLIBC_TerminationReason::HANDLER_REQUESTED_STOP;
+                        BCLIBC_INFO("BCLIBC_SinglePointHandler requested early termination");
+                    }
+                }
+                catch (const std::domain_error &)
+                {
+                    // Degenerate segment, continue
+                }
+            }
+        }
+    };
+
+    /**
+     * @brief Returns whether target point was found and interpolated.
+     */
+    bool BCLIBC_SinglePointHandler::found() const { return this->is_found; };
+
+    /**
+     * @brief Returns interpolated result.
+     * @throws std::runtime_error if target not found yet.
+     */
+    const BCLIBC_BaseTrajData &BCLIBC_SinglePointHandler::get_result() const
+    {
+        if (!this->is_found)
+        {
+            throw std::runtime_error("Target point not found during integration");
+        }
+        return this->result;
+    };
+
+    /**
+     * @brief Returns number of points processed.
+     */
+    int BCLIBC_SinglePointHandler::get_count() const { return this->count; };
+
+    // BCLIBC_ZeroCrossingHandler
+
+    /**
+     * @brief Constructs handler for zero-crossing detection.
+     * @param look_angle_rad Look angle in radians (line of sight angle)
+     * @param termination_reason_ptr Optional pointer to reason for early termination
+     */
+    BCLIBC_ZeroCrossingHandler::BCLIBC_ZeroCrossingHandler(
+        double look_angle_rad, BCLIBC_TerminationReason *termination_reason_ptr)
+        : look_angle_cos_(std::cos(look_angle_rad)),
+          look_angle_sin_(std::sin(look_angle_rad)),
+          is_found(false),
+          result_slant_distance(0.0),
+          has_prev_(false),
+          termination_reason_ptr(termination_reason_ptr) {};
+
+    void BCLIBC_ZeroCrossingHandler::handle(const BCLIBC_BaseTrajData &data)
+    {
+        if (this->is_found)
+            return; // Already found crossing
+
+        if (!this->has_prev_)
+        {
+            this->prev_point = data;
+            this->has_prev_ = true;
+            return;
+        }
+
+        // Compute slant heights
+        double h_prev = this->prev_point.py * this->look_angle_cos_ - this->prev_point.px * this->look_angle_sin_;
+        double h_curr = data.py * this->look_angle_cos_ - data.px * this->look_angle_sin_;
+
+        // Check for zero-down crossing (positive -> negative/zero)
+        if (h_prev > 0.0 && h_curr <= 0.0)
+        {
+            // Linear interpolation to find exact crossing point
+            double denom = h_prev - h_curr;
+            double t;
+
+            if (denom == 0.0)
+            {
+                t = 1.0; // Points have same height, use current
+            }
+            else
+            {
+                t = h_prev / denom;
+                t = std::fmax(0.0, std::fmin(1.0, t)); // Clamp [0,1]
+            }
+
+            // Interpolate position
+            double ix = this->prev_point.px + t * (data.px - this->prev_point.px);
+            double iy = this->prev_point.py + t * (data.py - this->prev_point.py);
+
+            // Compute slant distance
+            this->result_slant_distance = ix * this->look_angle_cos_ + iy * this->look_angle_sin_;
+            this->is_found = true;
+            if (this->termination_reason_ptr != nullptr)
+            {
+                *this->termination_reason_ptr = BCLIBC_TerminationReason::HANDLER_REQUESTED_STOP;
+                BCLIBC_INFO("BCLIBC_ZeroCrossingHandler requested early termination");
+            }
+        }
+
+        this->prev_point = data;
+    };
+
+    /**
+     * @brief Returns whether zero-crossing was found.
+     */
+    bool BCLIBC_ZeroCrossingHandler::found() const { return this->is_found; };
+
+    /**
+     * @brief Returns slant distance at zero-crossing.
+     * @return Slant distance in feet, or 0.0 if not found.
+     */
+    double BCLIBC_ZeroCrossingHandler::get_slant_distance() const { return this->result_slant_distance; };
+
 }; // namespace bclibc

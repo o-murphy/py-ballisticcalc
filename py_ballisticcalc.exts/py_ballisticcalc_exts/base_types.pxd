@@ -153,6 +153,15 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
         BCLIBC_V3dT current_vector() const
         BCLIBC_V3dT vector_for_range(double next_range_param) except +
 
+    cdef enum class BCLIBC_TerminationReason:
+        # Solver specific, not real errors, just termination reasons!
+        NO_TERMINATE
+        MINIMUM_VELOCITY_REACHED
+        MAXIMUM_DROP_REACHED
+        MINIMUM_ALTITUDE_REACHED
+        # Special flag to terminate integration via handler's request
+        HANDLER_REQUESTED_STOP
+
     cdef enum BCLIBC_TrajFlag:
         BCLIBC_TRAJ_FLAG_NONE
         BCLIBC_TRAJ_FLAG_ZERO_UP

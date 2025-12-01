@@ -98,6 +98,22 @@ If you want to contribute to cythonized extensions you can also install them in 
     uv sync --extra exts
     ```
 
+
+### Setup pre-commit hooks
+
+After syncing the project and activating environment, it is recommended to install `pre-commit` hooks, to automate the checks and ensure that all necessary preparations, such as formatting and static analysis, are done correctly before committing
+
+Install hooks
+```bash
+pre-commit install
+```
+
+Run the check manually if necessary
+```bash
+pre-commit run --all-files
+```
+
+
 ### Check out a new branch and make your changes
 
 Create a new branch for your changes.
