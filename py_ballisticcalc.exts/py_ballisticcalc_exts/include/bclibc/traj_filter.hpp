@@ -3,9 +3,14 @@
 
 #include <vector>
 #include "bclibc/traj_data.hpp"
+#include <functional>
 
 namespace bclibc
 {
+    // ============================================================================
+    // BCLIBC_TrajectoryDataFilter
+    // ============================================================================
+
     /**
      * @class BCLIBC_TrajectoryDataFilter
      * @brief Filters and interpolates trajectory data points from raw simulation output.
@@ -142,6 +147,74 @@ namespace bclibc
         void add_row(std::vector<BCLIBC_FlaggedData> &rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
     };
 
+    // ============================================================================
+    // BCLIBC_GenericTerminator
+    // ============================================================================
+
+    /**
+     * @brief Generic termination handler with lambda condition.
+     *
+     * Replaces all specific terminators (MinVelocity, MaxDrop, etc.) with
+     * a single configurable class.
+     *
+     * USAGE:
+     *   BCLIBC_GenericTerminator term(reason, VELOCITY_REACHED,
+     *       [min_v](const BCLIBC_BaseTrajData& d) {
+     *           return d.velocity().mag() < min_v;
+     *       });
+     */
+    class BCLIBC_GenericTerminator : public BCLIBC_BaseTrajDataHandlerInterface
+    {
+    private:
+        BCLIBC_TerminationReason &termination_reason_ref;
+        BCLIBC_TerminationReason reason_value;
+        std::function<bool(const BCLIBC_BaseTrajData &)> condition;
+        const char *debug_name;
+
+    public:
+        /**
+         * @brief Constructs generic terminator with lambda condition.
+         *
+         * @param reason_ref Reference to reason variable
+         * @param reason_value Value to set when condition triggers
+         * @param condition Lambda that returns true when termination should occur
+         * @param debug_name Optional name for debug logging
+         */
+        BCLIBC_GenericTerminator(
+            BCLIBC_TerminationReason &reason_ref,
+            BCLIBC_TerminationReason reason_value,
+            std::function<bool(const BCLIBC_BaseTrajData &)> condition,
+            const char *debug_name = "GenericTerminator");
+
+        void handle(const BCLIBC_BaseTrajData &data) override;
+    };
+
+    // /**
+    //  * @brief Factory: Minimum velocity terminator.
+    //  */
+    // BCLIBC_GenericTerminator create_min_velocity_terminator(
+    //     double min_velocity_fps,
+    //     BCLIBC_TerminationReason &reason);
+
+    // /**
+    //  * @brief Factory: Maximum drop terminator.
+    //  */
+    // BCLIBC_GenericTerminator create_max_drop_terminator(
+    //     double max_drop_ft,
+    //     BCLIBC_TerminationReason &reason);
+
+    // /**
+    //  * @brief Factory: Minimum altitude terminator.
+    //  */
+    // BCLIBC_GenericTerminator create_min_altitude_terminator(
+    //     double min_altitude_ft,
+    //     double initial_altitude_ft,
+    //     BCLIBC_TerminationReason &reason);
+
+    // ============================================================================
+    // BCLIBC_MinVelocityTerminator
+    // ============================================================================
+
     /**
      * @brief Handler that monitors minimum velocity constraint.
      *
@@ -162,6 +235,10 @@ namespace bclibc
         void handle(const BCLIBC_BaseTrajData &data) override;
     };
 
+    // ============================================================================
+    // BCLIBC_MaxDropTerminator
+    // ============================================================================
+
     /**
      * @brief Handler that monitors maximum drop constraint.
      *
@@ -180,6 +257,10 @@ namespace bclibc
 
         void handle(const BCLIBC_BaseTrajData &data) override;
     };
+
+    // ============================================================================
+    // BCLIBC_MinAltitudeTerminator
+    // ============================================================================
 
     /**
      * @brief Handler that monitors minimum altitude constraint.
@@ -201,6 +282,10 @@ namespace bclibc
 
         void handle(const BCLIBC_BaseTrajData &data) override;
     };
+
+    // ============================================================================
+    // BCLIBC_RangeLimitTerminator
+    // ============================================================================
 
     /**
      * @brief Handler that monitors range limit.
@@ -224,6 +309,10 @@ namespace bclibc
 
         void handle(const BCLIBC_BaseTrajData &data) override;
     };
+
+    // ============================================================================
+    // BCLIBC_SinglePointHandler
+    // ============================================================================
 
     /**
      * @brief Handler that stores only the minimal data needed for single-point interpolation.
@@ -280,6 +369,10 @@ namespace bclibc
          */
         int get_count() const;
     };
+
+    // ============================================================================
+    // BCLIBC_ZeroCrossingHandler
+    // ============================================================================
 
     /**
      * @brief Handler that detects zero-crossing of slant height without storing full trajectory.

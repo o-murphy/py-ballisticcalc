@@ -6,6 +6,10 @@
 
 namespace bclibc
 {
+    // ============================================================================
+    // BCLIBC_TrajectoryDataFilter
+    // ============================================================================
+
     /**
      * @brief Constructor for trajectory data filter.
      * @param records Reference to a vector where filtered trajectory data will be stored.
@@ -439,7 +443,99 @@ namespace bclibc
             { return f.data.time; });
     };
 
+    // ============================================================================
+    // BCLIBC_GenericTerminator
+    // ============================================================================
+
+    /**
+     * @brief Constructs generic terminator with lambda condition.
+     *
+     * @param reason_ref Reference to reason variable
+     * @param reason_value Value to set when condition triggers
+     * @param condition Lambda that returns true when termination should occur
+     * @param debug_name Optional name for debug logging
+     */
+    BCLIBC_GenericTerminator::BCLIBC_GenericTerminator(
+        BCLIBC_TerminationReason &termination_reason_ref,
+        BCLIBC_TerminationReason reason_value,
+        std::function<bool(const BCLIBC_BaseTrajData &)> condition,
+        const char *debug_name)
+        : termination_reason_ref(termination_reason_ref),
+          reason_value(reason_value),
+          condition(condition),
+          debug_name(debug_name) {};
+
+    void BCLIBC_GenericTerminator::handle(const BCLIBC_BaseTrajData &data)
+    {
+        if (condition(data))
+        {
+            termination_reason_ref = reason_value;
+            BCLIBC_DEBUG("%s triggered", debug_name);
+        }
+    };
+
+    // Factory methods
+
+    // /**
+    //  * @brief Factory: Minimum velocity terminator.
+    //  */
+    // BCLIBC_GenericTerminator create_min_velocity_terminator(
+    //     double min_velocity_fps,
+    //     BCLIBC_TerminationReason &reason)
+    // {
+    //     return BCLIBC_GenericTerminator(
+    //         reason,
+    //         BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED,
+    //         [min_velocity_fps](const BCLIBC_BaseTrajData &data)
+    //         {
+    //             return data.velocity().mag() < min_velocity_fps;
+    //         },
+    //         "MinVelocityTerminator");
+    // };
+
+    // /**
+    //  * @brief Factory: Maximum drop terminator.
+    //  */
+    // BCLIBC_GenericTerminator create_max_drop_terminator(
+    //     double max_drop_ft,
+    //     BCLIBC_TerminationReason &reason)
+    // {
+    //     double threshold = -std::fabs(max_drop_ft);
+    //     return BCLIBC_GenericTerminator(
+    //         reason,
+    //         BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED,
+    //         [threshold](const BCLIBC_BaseTrajData &data)
+    //         {
+    //             return data.py < threshold;
+    //         },
+    //         "MaxDropTerminator");
+    // };
+
+    // /**
+    //  * @brief Factory: Minimum altitude terminator.
+    //  */
+    // BCLIBC_GenericTerminator create_min_altitude_terminator(
+    //     double min_altitude_ft,
+    //     double initial_altitude_ft,
+    //     BCLIBC_TerminationReason &reason)
+    // {
+    //     return BCLIBC_GenericTerminator(
+    //         reason,
+    //         BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED,
+    //         [min_altitude_ft, initial_altitude_ft](const BCLIBC_BaseTrajData &data)
+    //         {
+    //             // Only when descending
+    //             if (data.vy > 0.0)
+    //                 return false;
+    //             double current_alt = initial_altitude_ft + data.py;
+    //             return current_alt < min_altitude_ft;
+    //         },
+    //         "MinAltitudeTerminator");
+    // };
+
+    // ============================================================================
     // BCLIBC_MinVelocityTerminator
+    // ============================================================================
 
     BCLIBC_MinVelocityTerminator::BCLIBC_MinVelocityTerminator(
         double min_velocity_fps,
@@ -458,7 +554,9 @@ namespace bclibc
         }
     };
 
+    // ============================================================================
     // BCLIBC_MaxDropTerminator
+    // ============================================================================
 
     BCLIBC_MaxDropTerminator::BCLIBC_MaxDropTerminator(
         double max_drop_ft,
@@ -476,7 +574,9 @@ namespace bclibc
         }
     };
 
+    // ============================================================================
     // BCLIBC_MinAltitudeTerminator
+    // ============================================================================
 
     BCLIBC_MinAltitudeTerminator::BCLIBC_MinAltitudeTerminator(
         double min_altitude_ft,
@@ -501,7 +601,9 @@ namespace bclibc
         }
     }
 
+    // ============================================================================
     // BCLIBC_RangeLimitTerminator
+    // ============================================================================
 
     BCLIBC_RangeLimitTerminator::BCLIBC_RangeLimitTerminator(
         double range_limit_ft,
@@ -522,7 +624,9 @@ namespace bclibc
         }
     };
 
+    // ============================================================================
     // BCLIBC_SinglePointHandler
+    // ============================================================================
 
     /**
      * @brief Constructs handler for single-point interpolation.
@@ -620,7 +724,9 @@ namespace bclibc
      */
     int BCLIBC_SinglePointHandler::get_count() const { return this->count; };
 
+    // ============================================================================
     // BCLIBC_ZeroCrossingHandler
+    // ============================================================================
 
     /**
      * @brief Constructs handler for zero-crossing detection.

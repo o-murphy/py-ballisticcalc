@@ -288,7 +288,7 @@ namespace bclibc
     class BCLIBC_BaseTrajDataHandlerCompositor : public BCLIBC_BaseTrajDataHandlerInterface
     {
     private:
-        std::vector<BCLIBC_BaseTrajDataHandlerInterface *> handlers_;
+        std::vector<BCLIBC_BaseTrajDataHandlerInterface *> handlers;
 
     public:
         /**
@@ -297,7 +297,7 @@ namespace bclibc
          */
         template <typename... Handlers>
         BCLIBC_BaseTrajDataHandlerCompositor(Handlers *...args)
-            : handlers_{args...} {}
+            : handlers{args...} {}
 
         /**
          * @brief Distributes data point to all registered handlers.
@@ -313,13 +313,13 @@ namespace bclibc
         {
             if (handler != nullptr)
             {
-                handlers_.push_back(handler);
+                handlers.push_back(handler);
             }
         }
 
-        BCLIBC_BaseTrajDataHandlerIterator begin() { return handlers_.begin(); }
+        BCLIBC_BaseTrajDataHandlerIterator begin() { return handlers.begin(); }
 
-        BCLIBC_BaseTrajDataHandlerIterator end() { return handlers_.end(); }
+        BCLIBC_BaseTrajDataHandlerIterator end() { return handlers.end(); }
 
         /**
          * @brief Inserts a new trajectory data handler at a specified position.
@@ -337,7 +337,7 @@ namespace bclibc
         {
             if (handler != nullptr)
             {
-                handlers_.insert(position, handler);
+                handlers.insert(position, handler);
             }
         }
 
