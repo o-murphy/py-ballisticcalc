@@ -7,12 +7,10 @@ preserve monotonicity and prevent overshoot using the Fritsch–Carlson slope li
 """
 
 from dataclasses import dataclass
-from enum import Enum
 from typing_extensions import List, Literal, Sequence
 
 __all__ = [
     "InterpolationMethod",
-    "InterpolationMethodEnum",
     "interpolate_3_pt",
     "interpolate_2_pt",
     # Optimized PCHIP (precompute-and-eval API)
@@ -22,20 +20,6 @@ __all__ = [
 ]
 
 InterpolationMethod = Literal["pchip", "linear"]
-
-
-class InterpolationMethodEnum(str, Enum):
-    """Interpolation method options.
-
-    Values map to accepted string identifiers so callers may pass either the
-    enum variant or the string directly.
-
-    - PCHIP: Monotone Piecewise Cubic Hermite interpolation (Fritsch–Carlson).
-    - LINEAR: Piecewise linear interpolation between adjacent points.
-    """
-
-    PCHIP = "pchip"
-    LINEAR = "linear"
 
 
 def _sign(a: float) -> int:

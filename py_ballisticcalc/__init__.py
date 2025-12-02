@@ -155,7 +155,7 @@ from .engines import (create_base_engine_config, BaseEngineConfig, BaseEngineCon
 from .exceptions import (UnitTypeError, UnitConversionError, UnitAliasError, 
                         SolverRuntimeError, OutOfRangeError, ZeroFindingError, RangeError)
 from .interface import Calculator, _EngineLoader
-from .interpolation import InterpolationMethod, InterpolationMethodEnum, interpolate_2_pt, interpolate_3_pt
+from .interpolation import InterpolationMethod, interpolate_2_pt, interpolate_3_pt
 from .logger import logger, enable_file_logging, disable_file_logging
 from .munition import Weapon, Ammo, Sight, SightFocalPlane, SightClicks, SightReticleStep
 from .shot import Shot, ShotProps

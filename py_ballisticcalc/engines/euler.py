@@ -69,7 +69,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         Args:
             config: Configuration dictionary containing engine parameters.
-                   See BaseEngineConfigDict for available options.
+                   See [`BaseEngineConfigDict`][py_ballisticcalc.base_engine.BaseEngineConfigDict] for available options.
         """
         super().__init__(config)
         self.integration_step_count: int = 0

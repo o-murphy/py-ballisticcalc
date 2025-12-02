@@ -32,3 +32,5 @@
 ```python
 --8<-- "py_ballisticcalc/unit.py:UnitAliases"
 ```
+
+::: py_ballisticcalc.unit.Number

@@ -30,6 +30,8 @@
         show_docstring_attributes: false
         docstring_section_style: list
 
+::: py_ballisticcalc.engines.scipy_engine.SciPyEngineConfigDict
+
 ::: py_ballisticcalc_exts.CythonizedBaseIntegrationEngine
 
 ::: py_ballisticcalc_exts.CythonizedRK4IntegrationEngine

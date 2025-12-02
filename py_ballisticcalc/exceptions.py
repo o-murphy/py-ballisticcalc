@@ -7,7 +7,7 @@ Exception Hierarchy
 -------------------
 
 The py_ballisticcalc library defines a structured exception hierarchy:
-
+```
 Exception (built-in Python)
 ├── TypeError
 │   └── UnitTypeError
@@ -19,46 +19,53 @@ Exception (built-in Python)
         ├── ZeroFindingError
         ├── RangeError
         └── OutOfRangeError
-
+```
 Exception Types
 ---------------
 
 Unit-Related Exceptions:
 
-- UnitTypeError: Base class for unit-related type errors. Raised when invalid unit types
-  are passed to unit conversion functions or there are type mismatches in unit operations.
+- [`UnitTypeError`](py_ballisticcalc.exceptions.UnitTypeError):
+    Base class for unit-related type errors. Raised when invalid unit types
+    are passed to unit conversion functions or there are type mismatches in unit operations.
 
-- UnitConversionError: Raised when unit conversion fails. Occurs when attempting to convert
-  between incompatible unit types or when a unit is not supported in the conversion factor table.
+- [`UnitConversionError`](py_ballisticcalc.exceptions.UnitConversionError):
+    Raised when unit conversion fails. Occurs when attempting to convert
+    between incompatible unit types or when a unit is not supported in the conversion factor table.
 
-- UnitAliasError: Raised when unit alias parsing fails. Occurs when invalid unit alias
-  strings are provided or when there are ambiguous unit abbreviations.
+- [`UnitAliasError`](py_ballisticcalc.exceptions.UnitAliasError):
+    Raised when unit alias parsing fails. Occurs when invalid unit alias
+    strings are provided or when there are ambiguous unit abbreviations.
 
 Solver-Related Exceptions:
 
-- SolverRuntimeError: Base class for all solver-related runtime errors. This is the base
-  class for all ballistic calculation errors and is typically not raised directly.
+- [`SolverRuntimeError`](py_ballisticcalc.exceptions.SolverRuntimeError):
+    Base class for all solver-related runtime errors. This is the base
+    class for all ballistic calculation errors and is typically not raised directly.
 
-- ZeroFindingError: Raised when zero-finding algorithms fail to converge. Contains:
-  - zero_finding_error: Error magnitude in feet
-  - iterations_count: Number of iterations performed
-  - last_barrel_elevation: Last computed barrel elevation (Angular instance)
-  - reason: Specific reason for failure.  Enumerated reasons:
-    - DISTANCE_NON_CONVERGENT: Distance calculation not converging
-    - ERROR_NON_CONVERGENT: Error not decreasing
+- [`ZeroFindingError`](py_ballisticcalc.exceptions.ZeroFindingError):
+    Raised when zero-finding algorithms fail to converge. Contains:
+    - zero_finding_error: Error magnitude in feet
+    - iterations_count: Number of iterations performed
+    - last_barrel_elevation: Last computed barrel elevation (Angular instance)
+    - reason: Specific reason for failure.  Enumerated reasons:
+        - DISTANCE_NON_CONVERGENT: Distance calculation not converging
+        - ERROR_NON_CONVERGENT: Error not decreasing
 
-- RangeError: Raised when trajectory doesn't reach the requested distance. Contains:
-  - reason: Specific reason for range limitation.  Enumerated reasons:
-    - MinimumVelocityReached: Projectile velocity dropped below threshold
-    - MaximumDropReached: Projectile dropped below maximum allowed drop
-    - MinimumAltitudeReached: Projectile altitude dropped below minimum
-  - incomplete_trajectory: Trajectory data computed before failure
-  - last_distance: Last distance reached before failure
+- [`RangeError`](py_ballisticcalc.exceptions.RangeError):
+    Raised when trajectory doesn't reach the requested distance. Contains:
+    - reason: Specific reason for range limitation.  Enumerated reasons:
+        - MinimumVelocityReached: Projectile velocity dropped below threshold
+        - MaximumDropReached: Projectile dropped below maximum allowed drop
+        - MinimumAltitudeReached: Projectile altitude dropped below minimum
+    - incomplete_trajectory: Trajectory data computed before failure
+    - last_distance: Last distance reached before failure
 
-- OutOfRangeError: Raised when requested distance exceeds maximum possible range. Contains:
-  - requested_distance: The distance that was requested
-  - max_range: Maximum achievable range (optional)
-  - look_angle: Look angle for the shot (optional)
+- [`OutOfRangeError`](py_ballisticcalc.exceptions.OutOfRangeError):
+    Raised when requested distance exceeds maximum possible range. Contains:
+    - requested_distance: The distance that was requested
+    - max_range: Maximum achievable range (optional)
+    - look_angle: Look angle for the shot (optional)
 """
 
 from __future__ import annotations

@@ -2,7 +2,7 @@
 
     [`py_ballisticcalc.munition.Weapon`][py_ballisticcalc.munition.Weapon]
 
-A `Weapon` instance is a mutable object that describes all details of a gun that can affect a trajectory.
+A [`Weapon`][py_ballisticcalc.munition.Weapon] instance is a mutable object that describes all details of a gun that can affect a trajectory.
 
 ## Weapon properties
 

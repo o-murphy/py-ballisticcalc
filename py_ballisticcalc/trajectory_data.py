@@ -184,6 +184,11 @@ class TrajFlag(int):
         return "|".join(parts) if parts else "UNKNOWN"
 
 
+BaseTrajDataAttribute = Literal[
+    "time", "position.x", "position.y", "position.z", "velocity.x", "velocity.y", "velocity.z", "mach"
+]
+
+
 class BaseTrajData(NamedTuple):
     """Minimal ballistic trajectory point data.
 
@@ -225,7 +230,7 @@ class BaseTrajData(NamedTuple):
 
     @staticmethod
     def interpolate(
-        key_attribute: str,
+        key_attribute: BaseTrajDataAttribute,
         key_value: float,
         p0: BaseTrajData,
         p1: BaseTrajData,
@@ -302,7 +307,7 @@ class BaseTrajData(NamedTuple):
         return BaseTrajData(time=time, position=position, velocity=velocity, mach=mach)
 
 
-TRAJECTORY_DATA_ATTRIBUTES = Literal[
+TrajectoryDataAttribute = Literal[
     "time",
     "distance",
     "velocity",
@@ -323,7 +328,7 @@ TRAJECTORY_DATA_ATTRIBUTES = Literal[
     "y",
     "z",
 ]
-TRAJECTORY_DATA_SYNONYMS: dict[TRAJECTORY_DATA_ATTRIBUTES, TRAJECTORY_DATA_ATTRIBUTES] = {
+TRAJECTORY_DATA_SYNONYMS: dict[TrajectoryDataAttribute, TrajectoryDataAttribute] = {
     "x": "distance",
     "y": "height",
     "z": "windage",
@@ -596,7 +601,7 @@ class TrajectoryData(NamedTuple):
 
     @staticmethod
     def interpolate(
-        key_attribute: TRAJECTORY_DATA_ATTRIBUTES,
+        key_attribute: TrajectoryDataAttribute,
         value: Union[float, GenericDimension],
         p0: TrajectoryData,
         p1: TrajectoryData,
@@ -807,7 +812,7 @@ class HitResult:
 
     def get_at(
         self,
-        key_attribute: TRAJECTORY_DATA_ATTRIBUTES,
+        key_attribute: TrajectoryDataAttribute,
         value: Union[float, GenericDimension],
         *,
         epsilon: float = 1e-9,

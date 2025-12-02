@@ -167,7 +167,7 @@ def make_data_points(drag_table: DragTableDataType) -> List[DragDataPoint]:
     Validates input format and provides clear error messages for invalid data.
 
     Args:
-        drag_table: Either list of DragDataPoint objects or list of dictionaries
+        drag_table: Either list of `DragDataPoint` objects or list of dictionaries
                     with 'Mach' and 'CD' keys
 
     Returns:

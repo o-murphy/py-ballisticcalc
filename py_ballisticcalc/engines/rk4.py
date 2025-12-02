@@ -75,7 +75,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         Args:
             config: Configuration dictionary containing engine parameters.
-                   See BaseEngineConfigDict for available options.
+                   See [`BaseEngineConfigDict`](py_ballisticcalc.base_engine.BaseEngineConfigDict) for available options.
                    Common settings include cStepMultiplier for accuracy control
                    and cMinimumVelocity for termination conditions.
 

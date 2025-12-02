@@ -7,6 +7,7 @@ from typing import Optional, Union, Tuple, overload
 from typing_extensions import Iterator
 
 from py_ballisticcalc.unit import Vector
+from py_ballisticcalc.trajectory_data import BaseTrajDataAttribute
 
 __all__ = ("CythonizedBaseTrajSeq", "CythonizedBaseTrajData")
 
@@ -45,12 +46,14 @@ class CythonizedBaseTrajSeq:
         """Return CythonizedBaseTrajData for the given index.  Supports negative indices."""
         ...
 
-    def interpolate_at(self, idx: int, key_attribute: str, key_value: float) -> CythonizedBaseTrajData:
+    def interpolate_at(
+        self, idx: int, key_attribute: BaseTrajDataAttribute, key_value: float
+    ) -> CythonizedBaseTrajData:
         """Interpolate using points (idx-1, idx, idx+1) keyed by key_attribute at key_value."""
         ...
 
     def get_at(
-        self, key_attribute: str, key_value: float, start_from_time: Optional[float] = None
+        self, key_attribute: BaseTrajDataAttribute, key_value: float, start_from_time: Optional[float] = None
     ) -> CythonizedBaseTrajData:
         """Get CythonizedBaseTrajData where key_attribute == key_value (via monotone PCHIP interpolation).
 

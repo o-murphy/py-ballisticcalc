@@ -60,6 +60,7 @@ nav:
           - Dimensions: api/units/dimensions.md
           - PreferredUnits: api/units/preferred_units.md
       - Vector: api/vector.md
+      - Exceptions: api/exceptions.md
   - Internals:
       - Architecture: internals/architecture.md
       - Developer Details: internals/details.md
