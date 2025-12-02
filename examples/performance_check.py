@@ -138,7 +138,7 @@ def run_check(calc_: Calculator, number: int):
         total_time = timeit(lambda: calc_.integrate_raw_at(shot, key_attribute, target_value), number=number)
         rate = number / total_time  # executions per second
 
-        print(f"Calculate integrate_raw_at({key_attribute=}, {target_value=}) {shot_distance} {number} times:".format(shot_distance, number))
+        print(f"Calculate integrate_raw_at({key_attribute=}, {target_value=}) {shot_distance} {number} times:")
         print(f"Total time: {total_time:.6f} seconds")
         print(f"Execution rate: {rate:.2f} calls per second")
 

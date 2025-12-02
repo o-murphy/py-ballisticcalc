@@ -157,7 +157,7 @@ cdef class CythonizedBaseTrajData:
         raise IndexError("TrajData index out of range")
 
     def __eq__(self, other):
-        """Реалізує самопорівняння (self == other)."""
+        """Implements self-comparison (self == other)."""
         if isinstance(other, CythonizedBaseTrajData):
             return (self.time == other.time and
                     self.position == other.position and
