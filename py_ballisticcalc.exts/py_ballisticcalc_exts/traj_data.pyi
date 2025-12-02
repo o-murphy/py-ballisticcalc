@@ -8,7 +8,7 @@ from typing_extensions import Iterator
 
 from py_ballisticcalc.unit import Vector
 
-__all__ = ["CythonizedBaseTrajSeq", "CythonizedBaseTrajData"]
+__all__ = ("CythonizedBaseTrajSeq", "CythonizedBaseTrajData")
 
 class CythonizedBaseTrajSeq:
     """Contiguous C buffer of BCLIBC_BaseTrajData points with fast append and interpolation.
