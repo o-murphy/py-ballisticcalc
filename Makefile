@@ -16,16 +16,16 @@ VENV_DIR = .venv
 # Target 1: Standard development sync
 # Action: Runs uv sync --dev to install base dependencies.
 sync-dev:
-	@echo "--- Running standard dev sync (uv sync --dev) ---"
-	uv sync --no-dev --reinstall --group test
+	@echo "--- Running standard dev sync ---"
+	uv sync
 	@echo "✅ Dev sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # Target 2: Full sync with cleanup and extras
 # Prerequisites: clean-exts must run first.
 # Action: Runs uv sync --dev --extra exts --no-cache to install extensions.
 sync-exts: clean-exts
-	@echo "--- Running full sync with extras and no-cache ---"
-	uv sync --no-dev --extra exts --reinstall --group test
+	@echo "--- Running full sync with exts ---"
+	uv sync --extra exts --reinstall-package py_ballisticcalc.exts
 	@echo "✅ Exts sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # -------------------------------------------------------------
@@ -104,11 +104,11 @@ test-leaks: sync-exts
 # Action: Runs the benchmark script, testing the pure Python engine.
 bench-dev: sync-dev
 	@echo "--- Benchmarking the Development/Base environment (pure Python engine) ---"
-	uv run python scripts/benchmark.py --engine="rk4_engine" 
+	uv run python scripts/benchmark.py --engine="rk4_engine" -w 100 -r 1000
 
 # Target: bench-exts
 # Prerequisites: sync-exts must be complete (ensures extensions are built and installed).
 # Action: Runs the benchmark script, testing the high-performance Cythonized engine.
 bench-exts: sync-exts
 	@echo "--- Benchmarking the Extensions environment (Cythonized engine) ---"
-	uv run python scripts/benchmark.py --engine="cythonized_rk4_engine"
+	uv run python scripts/benchmark.py --engine="cythonized_rk4_engine" -w 100 -r 1000

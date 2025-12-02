@@ -6,6 +6,10 @@
 
 namespace bclibc
 {
+    // ============================================================================
+    // BCLIBC_TrajectoryDataFilter
+    // ============================================================================
+
     /**
      * @brief Constructor for trajectory data filter.
      * @param records Reference to a vector where filtered trajectory data will be stored.
@@ -19,6 +23,7 @@ namespace bclibc
         std::vector<BCLIBC_TrajectoryData> &records,
         const BCLIBC_ShotProps &props,
         BCLIBC_TrajFlag filter_flags,
+        BCLIBC_TerminationReason &termination_reason_ref,
         double range_limit,
         double range_step,
         double time_step)
@@ -32,7 +37,28 @@ namespace bclibc
           prev_data(prev_data),
           prev_prev_data(prev_prev_data),
           next_record_distance(0.0),
-          look_angle_tangent(std::tan(props.look_angle)) {};
+          look_angle_tangent(std::tan(props.look_angle)),
+          termination_reason_ref(termination_reason_ref) {};
+
+    /**
+     * @brief Finalizes trajectory filtering.
+     *
+     * Ensures that the last trajectory point is recorded if needed.
+     */
+    BCLIBC_TrajectoryDataFilter::~BCLIBC_TrajectoryDataFilter()
+    {
+        if (this->termination_reason_ref != BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
+        {
+            BCLIBC_DEBUG(
+                "Trajectory Filter Finalization check: prev_data.time=%.6f",
+                this->prev_data.time);
+            if (this->prev_data.time > this->get_record(-1).time)
+            {
+                BCLIBC_TrajectoryData fin(this->props, this->prev_data);
+                this->append(fin);
+            }
+        }
+    };
 
     /**
      * @brief Initializes the filter state based on the first trajectory point.
@@ -70,23 +96,6 @@ namespace bclibc
                 // If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 this->filter = (BCLIBC_TrajFlag)(this->filter & ~(BCLIBC_TRAJ_FLAG_ZERO | BCLIBC_TRAJ_FLAG_MRT));
             }
-        }
-    };
-
-    /**
-     * @brief Finalizes trajectory filtering.
-     *
-     * Ensures that the last trajectory point is recorded if needed.
-     */
-    void BCLIBC_TrajectoryDataFilter::finalize()
-    {
-        BCLIBC_DEBUG(
-            "Trajectory Filter Finalization check: prev_data.time=%.6f",
-            this->prev_data.time);
-        if (this->prev_data.time > this->get_record(-1).time)
-        {
-            BCLIBC_TrajectoryData fin(this->props, this->prev_data);
-            this->append(fin);
         }
     };
 
@@ -439,7 +448,114 @@ namespace bclibc
             { return f.data.time; });
     };
 
+    // ============================================================================
+    // BCLIBC_GenericTerminator
+    // ============================================================================
+
+    /**
+     * @brief Constructs generic terminator with lambda condition.
+     *
+     * @param reason_ref Reference to reason variable
+     * @param reason_value Value to set when condition triggers
+     * @param condition Lambda that returns true when termination should occur
+     * @param debug_name Optional name for debug logging
+     */
+    BCLIBC_GenericTerminator::BCLIBC_GenericTerminator(
+        BCLIBC_TerminationReason &termination_reason_ref,
+        BCLIBC_TerminationReason reason_value,
+        std::function<bool(const BCLIBC_BaseTrajData &)> condition,
+        const char *debug_name)
+        : termination_reason_ref(termination_reason_ref),
+          reason_value(reason_value),
+          condition(condition),
+          debug_name(debug_name) {};
+
+    void BCLIBC_GenericTerminator::handle(const BCLIBC_BaseTrajData &data)
+    {
+        if (condition(data))
+        {
+            termination_reason_ref = reason_value;
+            BCLIBC_DEBUG("%s triggered", debug_name);
+        }
+    };
+
+    // ============================================================================
+    // BCLIBC_EssentialTerminators
+    // ============================================================================
+
+    BCLIBC_EssentialTerminators::BCLIBC_EssentialTerminators(
+        const BCLIBC_ShotProps &shot,
+        double range_limit_ft,
+        double min_velocity_fps,
+        double max_drop_ft,
+        double min_altitude_ft,
+        BCLIBC_TerminationReason &termination_reason_ref)
+        : range_limit_ft(range_limit_ft),
+          step_count(0), // Always start from 0
+          min_velocity_fps(min_velocity_fps),
+          max_drop_ft(max_drop_ft),
+          min_altitude_ft(min_altitude_ft),
+          initial_altitude_ft(shot.alt0),
+          termination_reason_ref(termination_reason_ref)
+    {
+        this->max_drop_ft = -std::fabs(this->max_drop_ft);
+        this->max_drop_ft += std::fmin(0.0, -shot.cant_cosine * shot.sight_height);
+    };
+
+    void BCLIBC_EssentialTerminators::handle(const BCLIBC_BaseTrajData &data)
+    {
+        // 1. Early return
+        if (this->termination_reason_ref != BCLIBC_TerminationReason::NO_TERMINATE)
+        {
+            return;
+        }
+
+        // 2. Range Limit
+        this->step_count++;
+        if (this->step_count >= this->MIN_ITERATIONS_COUNT && data.px > this->range_limit_ft)
+        {
+            this->termination_reason_ref = BCLIBC_TerminationReason::TARGET_RANGE_REACHED;
+            BCLIBC_DEBUG("MaxRange limit reached: %.2f > %.2f",
+                         data.px, this->range_limit_ft);
+            return;
+        }
+
+        // 3. Min Velocity
+        double velocity = data.velocity().mag();
+        if (velocity < this->min_velocity_fps)
+        {
+            this->termination_reason_ref = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
+            BCLIBC_DEBUG("MinVelocity termination: v=%.2f < %.2f",
+                         velocity, this->min_velocity_fps);
+            return;
+        }
+
+        // 4. Max Drop
+        if (data.py < this->max_drop_ft)
+        {
+            this->termination_reason_ref = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
+            BCLIBC_DEBUG("MaxDrop termination: y=%.2f < %.2f",
+                         data.py, this->max_drop_ft);
+            return;
+        }
+
+        // 5. Min Altitude
+        if (data.vy <= 0.0)
+        {
+            double current_altitude = this->initial_altitude_ft + data.py;
+            if (current_altitude < this->min_altitude_ft)
+            {
+                this->termination_reason_ref = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
+                BCLIBC_DEBUG("MinAltitude termination: alt=%.2f < %.2f",
+                             current_altitude, this->min_altitude_ft);
+                return;
+            }
+        }
+    };
+
+    // ============================================================================
     // BCLIBC_SinglePointHandler
+    // ============================================================================
 
     /**
      * @brief Constructs handler for single-point interpolation.
@@ -537,7 +653,9 @@ namespace bclibc
      */
     int BCLIBC_SinglePointHandler::get_count() const { return this->count; };
 
+    // ============================================================================
     // BCLIBC_ZeroCrossingHandler
+    // ============================================================================
 
     /**
      * @brief Constructs handler for zero-crossing detection.

@@ -54,16 +54,12 @@ namespace bclibc
      * - Requires smaller time steps than RK4 for comparable accuracy
      *
      * @param eng The ballistics engine containing shot properties, atmospheric conditions, and configuration.
-     * @param range_limit_ft Maximum horizontal range in feet before forced termination.
-     * @param range_step_ft Distance interval for recording filtered points (informational).
      * @param time_step Base time step for integration (will be adapted based on velocity).
      * @param handler Interface for processing computed trajectory data points.
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateEULER(
         BCLIBC_Engine &eng,
-        double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
@@ -85,11 +81,6 @@ namespace bclibc
         BCLIBC_V3dT coriolis_accel;
 
         const double calc_step = eng.shot.calc_step;
-
-        // Cache termination condition thresholds from configuration
-        const double _cMinimumVelocity = eng.config.cMinimumVelocity;
-        const double _cMinimumAltitude = eng.config.cMinimumAltitude;
-        double _cMaximumDrop = -std::fabs(eng.config.cMaximumDrop);
 
         // Initialize working variables
         reason = BCLIBC_TerminationReason::NO_TERMINATE;
@@ -117,9 +108,6 @@ namespace bclibc
         range_vector.y = -eng.shot.cant_cosine * eng.shot.sight_height;
         range_vector.z = -eng.shot.cant_sine * eng.shot.sight_height;
 
-        // Adjust maximum drop threshold based on initial height
-        _cMaximumDrop += std::fmin(0.0, range_vector.y);
-
         // Calculate initial direction vector from barrel elevation and azimuth
         const double cos_elev = std::cos(eng.shot.barrel_elevation);
         _dir_vector.x = cos_elev * std::cos(eng.shot.barrel_azimuth);
@@ -138,7 +126,7 @@ namespace bclibc
         // Main trajectory integration loop
         // Continue until range limit is reached or termination condition is met
         // Minimum of 3 steps ensures sufficient data for cubic interpolation
-        while (range_vector.x <= range_limit_ft || eng.integration_step_count < 3)
+        while (reason == BCLIBC_TerminationReason::NO_TERMINATE)
         {
             eng.integration_step_count++;
 
@@ -207,25 +195,6 @@ namespace bclibc
             // 7. Update scalar velocity magnitude and simulation time
             velocity = velocity_vector.mag();
             time += delta_time;
-
-            // Check termination conditions
-            if (velocity < _cMinimumVelocity)
-            {
-                reason = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
-            }
-            else if (range_vector.y < _cMaximumDrop)
-            {
-                reason = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
-            }
-            else if (velocity_vector.y <= 0 && (eng.shot.alt0 + range_vector.y < _cMinimumAltitude))
-            {
-                reason = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
-            }
-
-            if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
-            {
-                break;
-            }
         }
 
         // Record final trajectory point

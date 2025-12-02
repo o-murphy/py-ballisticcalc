@@ -266,7 +266,7 @@ namespace bclibc
      */
     void BCLIBC_BaseTrajDataHandlerCompositor::handle(const BCLIBC_BaseTrajData &data)
     {
-        for (auto *handler : handlers_)
+        for (auto *handler : handlers)
         {
             handler->handle(data);
         }

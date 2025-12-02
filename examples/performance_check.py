@@ -67,7 +67,7 @@ weight, diameter = 300, 0.338
 length = Distance.Inch(1.7)
 
 zero_distance = Distance.Meter(100)
-shot_distance = Unit.Meter(1000)
+shot_distance: Distance = Unit.Meter(1000)
 
 current_atmo = Atmo(
     altitude=Unit.Meter(150),
@@ -104,7 +104,7 @@ def use_zero_shot(calc_):
     return shot
 
 
-def run_check(calc_, number):
+def run_check(calc_: Calculator, number: int):
     total_time = timeit(lambda: calc_.barrel_elevation_for_target(init_zero_shot(), zero_distance), number=number)
     rate = number / total_time  # executions per second
 
@@ -130,8 +130,19 @@ def run_check(calc_, number):
     print("Calculate trajectory to distance + extra {} {} times:".format(shot_distance, number))
     print(f"Total time: {total_time:.6f} seconds")
     print(f"Execution rate: {rate:.2f} calls per second")
-    print()
 
+    if calc_._engine_class.__name__.lower().startswith("cythonized"):
+        key_attribute = 'position.x'
+        target_value = shot_distance._feet
+
+        total_time = timeit(lambda: calc_.integrate_raw_at(shot, key_attribute, target_value), number=number)
+        rate = number / total_time  # executions per second
+
+        print(f"Calculate integrate_raw_at({key_attribute=}, {target_value=}) {shot_distance} {number} times:")
+        print(f"Total time: {total_time:.6f} seconds")
+        print(f"Execution rate: {rate:.2f} calls per second")
+
+    print()
 
 
 def check_all(number = 120):

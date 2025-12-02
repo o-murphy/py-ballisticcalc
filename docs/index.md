@@ -91,7 +91,7 @@ range_card.dataframe(True)[['distance', 'velocity', 'mach', 'time', 'height', 'd
 
 
 ### More Examples
-See `examples\Examples.ipynb` and `examples\ExtremeExamples.ipynb` for more detailed examples.
+See `examples/Examples.ipynb` and `examples/ExtremeExamples.ipynb` for more detailed examples.
 
 
 ## Support / Issues

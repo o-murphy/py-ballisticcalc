@@ -68,17 +68,13 @@ namespace bclibc
      * which was identified as the primary bottleneck (32% of execution time).
      *
      * @param eng The ballistics engine containing shot properties, atmospheric conditions, and configuration.
-     * @param range_limit_ft Maximum horizontal range in feet before forced termination.
-     * @param range_step_ft Distance interval for recording filtered points (informational, not used for integration).
      * @param time_step The fixed time step (dt) used for RK4 integration.
      * @param handler Interface for processing computed trajectory data points.
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateRK4(
         BCLIBC_Engine &eng,
-        double range_limit_ft,
-        double range_step_ft,
-        double time_step,
+        double time_step, // in this engine only for IntegrateFuncPtr compat
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
@@ -99,14 +95,6 @@ namespace bclibc
         double calc_step;
 
         BCLIBC_DEBUG("Variables declared\n");
-
-        // Cache termination condition thresholds from configuration
-        const double _cMinimumVelocity = eng.config.cMinimumVelocity;
-        const double _cMinimumAltitude = eng.config.cMinimumAltitude;
-        double _cMaximumDrop = -std::fabs(eng.config.cMaximumDrop);
-
-        BCLIBC_DEBUG("Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
-                     _cMinimumVelocity, _cMinimumAltitude, _cMaximumDrop);
 
         // Initialize working variables
         reason = BCLIBC_TerminationReason::NO_TERMINATE;
@@ -146,9 +134,6 @@ namespace bclibc
         range_vector.y = -eng.shot.cant_cosine * eng.shot.sight_height;
         range_vector.z = -eng.shot.cant_sine * eng.shot.sight_height;
 
-        // Adjust maximum drop threshold based on initial height
-        _cMaximumDrop += std::fmin(0.0, range_vector.y);
-
         BCLIBC_DEBUG("Range vector: %f, %f, %f\n", range_vector.x, range_vector.y, range_vector.z);
 
         // Calculate initial direction vector from barrel elevation and azimuth
@@ -177,7 +162,7 @@ namespace bclibc
         // Minimum of 3 steps ensures proper initialization
         BCLIBC_DEBUG("Entering main loop, range_limit_ft=%f\n", range_limit_ft);
 
-        while (range_vector.x <= range_limit_ft || eng.integration_step_count < 3)
+        while (reason == BCLIBC_TerminationReason::NO_TERMINATE)
         {
             BCLIBC_DEBUG("Loop iteration %d, range_x=%f\n", eng.integration_step_count, range_vector.x);
 
@@ -284,25 +269,6 @@ namespace bclibc
             time += delta_time;
 
             BCLIBC_DEBUG("Velocity=%f, Time=%f\n", velocity, time);
-
-            // Check termination conditions
-            if (velocity < _cMinimumVelocity)
-            {
-                reason = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
-            }
-            else if (range_vector.y < _cMaximumDrop)
-            {
-                reason = BCLIBC_TerminationReason::MAXIMUM_DROP_REACHED;
-            }
-            else if (velocity_vector.y <= 0 && (eng.shot.alt0 + range_vector.y < _cMinimumAltitude))
-            {
-                reason = BCLIBC_TerminationReason::MINIMUM_ALTITUDE_REACHED;
-            }
-
-            if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
-            {
-                break;
-            }
         }
 
         BCLIBC_DEBUG("Loop exited, appending final point\n");

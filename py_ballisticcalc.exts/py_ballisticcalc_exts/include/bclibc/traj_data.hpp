@@ -277,6 +277,8 @@ namespace bclibc
         virtual void handle(const BCLIBC_BaseTrajData &data) = 0;
     };
 
+    using BCLIBC_BaseTrajDataHandlerCompositorIterator = std::vector<BCLIBC_BaseTrajDataHandlerInterface *>::iterator;
+
     /**
      * @brief Composite handler that distributes data to multiple handlers.
      *
@@ -286,7 +288,7 @@ namespace bclibc
     class BCLIBC_BaseTrajDataHandlerCompositor : public BCLIBC_BaseTrajDataHandlerInterface
     {
     private:
-        std::vector<BCLIBC_BaseTrajDataHandlerInterface *> handlers_;
+        std::vector<BCLIBC_BaseTrajDataHandlerInterface *> handlers;
 
     public:
         /**
@@ -295,7 +297,7 @@ namespace bclibc
          */
         template <typename... Handlers>
         BCLIBC_BaseTrajDataHandlerCompositor(Handlers *...args)
-            : handlers_{args...} {}
+            : handlers{args...} {}
 
         /**
          * @brief Distributes data point to all registered handlers.
@@ -311,7 +313,31 @@ namespace bclibc
         {
             if (handler != nullptr)
             {
-                handlers_.push_back(handler);
+                handlers.push_back(handler);
+            }
+        }
+
+        BCLIBC_BaseTrajDataHandlerCompositorIterator begin() { return handlers.begin(); }
+
+        BCLIBC_BaseTrajDataHandlerCompositorIterator end() { return handlers.end(); }
+
+        /**
+         * @brief Inserts a new trajectory data handler at a specified position.
+         *
+         * This function inserts the specified handler into the internal container
+         * 'handlers_' immediately BEFORE the element pointed to by the 'position' iterator.
+         * If the provided 'handler' is nullptr, the insertion operation is ignored.
+         *
+         * @param position An iterator specifying the position before which the handler will be inserted.
+         * Use handlers_.end() to insert the element at the end of the container.
+         * @param handler A pointer to the trajectory data handler (BCLIBC_BaseTrajDataHandlerInterface*)
+         * to be added.
+         */
+        void insert_handler(BCLIBC_BaseTrajDataHandlerCompositorIterator position, BCLIBC_BaseTrajDataHandlerInterface *handler)
+        {
+            if (handler != nullptr)
+            {
+                handlers.insert(position, handler);
             }
         }
 

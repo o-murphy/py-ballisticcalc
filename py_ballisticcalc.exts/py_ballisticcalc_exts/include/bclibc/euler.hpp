@@ -39,16 +39,12 @@ namespace bclibc
      * - Requires smaller time steps than RK4 for comparable accuracy
      *
      * @param eng The ballistics engine containing shot properties, atmospheric conditions, and configuration.
-     * @param range_limit_ft Maximum horizontal range in feet before forced termination.
-     * @param range_step_ft Distance interval for recording filtered points (informational).
      * @param time_step Base time step for integration (will be adapted based on velocity).
      * @param handler Interface for processing computed trajectory data points.
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateEULER(
         BCLIBC_Engine &eng,
-        double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);

@@ -3,9 +3,14 @@
 
 #include <vector>
 #include "bclibc/traj_data.hpp"
+#include <functional>
 
 namespace bclibc
 {
+    // ============================================================================
+    // BCLIBC_TrajectoryDataFilter
+    // ============================================================================
+
     /**
      * @class BCLIBC_TrajectoryDataFilter
      * @brief Filters and interpolates trajectory data points from raw simulation output.
@@ -35,9 +40,17 @@ namespace bclibc
             std::vector<BCLIBC_TrajectoryData> &records,
             const BCLIBC_ShotProps &props,
             BCLIBC_TrajFlag filter_flags,
+            BCLIBC_TerminationReason &termination_reason_ref,
             double range_limit = 0.0,
             double range_step = 0.0,
             double time_step = 0.0);
+
+        /**
+         * @brief Finalizes trajectory filtering.
+         *
+         * Ensures that the last trajectory point is recorded if needed.
+         */
+        ~BCLIBC_TrajectoryDataFilter();
 
     private:
         /**
@@ -84,13 +97,6 @@ namespace bclibc
          */
         const BCLIBC_TrajectoryData &get_record(std::ptrdiff_t index) const;
 
-        /**
-         * @brief Finalizes trajectory filtering.
-         *
-         * Ensures that the last trajectory point is recorded if needed.
-         */
-        void finalize();
-
     private:
         // constants
         static constexpr double EPSILON = 1e-6;
@@ -109,6 +115,8 @@ namespace bclibc
         double next_record_distance;
         double look_angle_rad;
         double look_angle_tangent;
+
+        BCLIBC_TerminationReason &termination_reason_ref;
 
         /**
          * @brief Inserts a new record into a sorted container, merging with existing entries
@@ -141,6 +149,94 @@ namespace bclibc
          */
         void add_row(std::vector<BCLIBC_FlaggedData> &rows, const BCLIBC_BaseTrajData &data, BCLIBC_TrajFlag flag);
     };
+
+    // ============================================================================
+    // BCLIBC_GenericTerminator
+    // ============================================================================
+
+    /**
+     * @brief Generic termination handler with lambda condition.
+     *
+     * Replaces all specific terminators (MinVelocity, MaxDrop, etc.) with
+     * a single configurable class.
+     *
+     * USAGE:
+     *   BCLIBC_GenericTerminator term(reason, VELOCITY_REACHED,
+     *       [min_v](const BCLIBC_BaseTrajData& d) {
+     *           return d.velocity().mag() < min_v;
+     *       });
+     */
+    class BCLIBC_GenericTerminator : public BCLIBC_BaseTrajDataHandlerInterface
+    {
+    private:
+        BCLIBC_TerminationReason &termination_reason_ref;
+        BCLIBC_TerminationReason reason_value;
+        std::function<bool(const BCLIBC_BaseTrajData &)> condition;
+        const char *debug_name;
+
+    public:
+        /**
+         * @brief Constructs generic terminator with lambda condition.
+         *
+         * @param reason_ref Reference to reason variable
+         * @param reason_value Value to set when condition triggers
+         * @param condition Lambda that returns true when termination should occur
+         * @param debug_name Optional name for debug logging
+         */
+        BCLIBC_GenericTerminator(
+            BCLIBC_TerminationReason &reason_ref,
+            BCLIBC_TerminationReason reason_value,
+            std::function<bool(const BCLIBC_BaseTrajData &)> condition,
+            const char *debug_name = "GenericTerminator");
+
+        void handle(const BCLIBC_BaseTrajData &data) override;
+    };
+
+    // ============================================================================
+    // BCLIBC_EssentialTerminators
+    // ============================================================================
+
+    /**
+     * @brief A single handler that combines the main trajectory completion criteria:
+     * Min Velocity, Max Drop, Min Altitude, and Range Limit.
+     */
+    class BCLIBC_EssentialTerminators : public BCLIBC_BaseTrajDataHandlerInterface
+    {
+    private:
+        // constants
+        static constexpr int MIN_ITERATIONS_COUNT = 3; // Always expects at least 3 iterations
+
+        // Range Limit
+        double range_limit_ft;
+        int step_count;
+
+        // Min Velocity
+        double min_velocity_fps;
+
+        // Max Drop
+        double max_drop_ft;
+
+        // Min Altitude
+        double min_altitude_ft;
+        double initial_altitude_ft;
+
+        BCLIBC_TerminationReason &termination_reason_ref;
+
+    public:
+        BCLIBC_EssentialTerminators(
+            const BCLIBC_ShotProps &shot,
+            double range_limit_ft,
+            double min_velocity_fps,
+            double max_drop_ft,
+            double min_altitude_ft,
+            BCLIBC_TerminationReason &termination_reason_ref);
+
+        void handle(const BCLIBC_BaseTrajData &data) override;
+    };
+
+    // ============================================================================
+    // BCLIBC_SinglePointHandler
+    // ============================================================================
 
     /**
      * @brief Handler that stores only the minimal data needed for single-point interpolation.
@@ -198,6 +294,10 @@ namespace bclibc
         int get_count() const;
     };
 
+    // ============================================================================
+    // BCLIBC_ZeroCrossingHandler
+    // ============================================================================
+
     /**
      * @brief Handler that detects zero-crossing of slant height without storing full trajectory.
      *
@@ -241,7 +341,6 @@ namespace bclibc
          */
         double get_slant_distance() const;
     };
-
 }; // namespace bclibc
 
 #endif // BCLIBC_TRAJ_FILTER_HPP

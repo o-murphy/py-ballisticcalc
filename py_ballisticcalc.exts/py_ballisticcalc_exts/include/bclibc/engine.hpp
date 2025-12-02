@@ -1,6 +1,7 @@
 #ifndef BCLIBC_ENGINE_HPP
 #define BCLIBC_ENGINE_HPP
 
+#include <mutex>
 #include "bclibc/traj_filter.hpp"
 
 /*
@@ -96,8 +97,6 @@ namespace bclibc
 
     using BCLIBC_IntegrateFunc = void(
         BCLIBC_Engine &eng,
-        double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);
@@ -106,6 +105,13 @@ namespace bclibc
 
     class BCLIBC_Engine
     {
+        static constexpr double MAX_INTEGRATION_RANGE = 9e9;
+
+    private:
+        // A recursive mutex that guarantees thread-safe access (read/write) to the entire Engine state,
+        // specifically `config` and `shot`. The recursive nature is necessary because public methods
+        // (like zero_angle) call other internal methods (like integrate), requiring nested locking.
+        std::recursive_mutex engine_mutex;
 
     public:
         int integration_step_count;
@@ -118,8 +124,6 @@ namespace bclibc
         /**
          * @brief Calls the underlying integration function for the projectile trajectory.
          *
-         * @param range_limit_ft Maximum range for integration in feet.
-         * @param range_step_ft Step size along the range in feet.
          * @param time_step Integration timestep in seconds.
          * @param handler Reference to a data handler for trajectory recording.
          * @param reason Reference to store termination reason.
@@ -128,10 +132,41 @@ namespace bclibc
          */
         void integrate(
             double range_limit_ft,
-            double range_step_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason);
+
+        /**
+         * @brief Performs trajectory integration and interpolates a single data point
+         * where a specific key attribute reaches a target value.
+         *
+         * This method runs a full trajectory integration internally, using
+         * BCLIBC_SinglePointHandler to find and interpolate the point where the
+         * specified key (e.g., 'time', 'mach', 'position.z') equals the target value.
+         * The integration runs up to MAX_INTEGRATION_RANGE using a default timestep (0.0).
+         *
+         * @param key The interpolation key (e.g., time, altitude, vector component)
+         * to use as the independent variable.
+         * @param target_value The value the key attribute must reach for the
+         * integration to terminate and interpolation to occur.
+         * @param raw_data Reference to a BCLIBC_BaseTrajData object that will store
+         * the interpolated raw data point upon success.
+         * @param full_data Reference to a BCLIBC_TrajectoryData object that will store
+         * the full (processed) interpolated data point upon success.
+         *
+         * @note Access to the engine is protected by engine_mutex.
+         * @warning The integration is performed with time_step = 0.0, implying that
+         * the actual step size is determined internally by the integrator.
+         *
+         * @throws std::logic_error if integrate_func_ptr is null.
+         * @throws std::runtime_error if the target point is not found within the
+         * integrated trajectory (e.g., "No apex flagged...").
+         */
+        void integrate_at(
+            BCLIBC_BaseTrajData_InterpKey key,
+            double target_value,
+            BCLIBC_BaseTrajData &raw_data,
+            BCLIBC_TrajectoryData &full_data);
 
         /**
          * @brief Integrates the projectile trajectory using filters and optional dense trajectory storage.

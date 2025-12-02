@@ -305,7 +305,7 @@ class ShotProps:
 
     @classmethod
     def from_shot(cls, shot: Shot) -> ShotProps:
-        """Initialize a ShotProps instance from a Shot instance."""
+        """Initialize a ShotProps instance from a [`Shot`](py_ballisticcalc.shot.Shot) instance."""
         muzzle_velocity_fps = shot.ammo.get_velocity_for_temp(shot.atmo.powder_temp) >> Velocity.FPS
         return cls(
             shot=shot,

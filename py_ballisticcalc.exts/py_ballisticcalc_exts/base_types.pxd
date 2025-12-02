@@ -156,6 +156,7 @@ cdef extern from "include/bclibc/base_types.hpp" namespace "bclibc" nogil:
     cdef enum class BCLIBC_TerminationReason:
         # Solver specific, not real errors, just termination reasons!
         NO_TERMINATE
+        TARGET_RANGE_REACHED
         MINIMUM_VELOCITY_REACHED
         MAXIMUM_DROP_REACHED
         MINIMUM_ALTITUDE_REACHED

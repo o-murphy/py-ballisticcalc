@@ -9,14 +9,14 @@ py-ballisticcalc provides various calculation engines with identical public sema
 | **[`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine]** | Baseline (1x)  | None; default            | Runge-Kutta 4th-order integration |
 | [`euler_engine`][py_ballisticcalc.engines.EulerIntegrationEngine] |  0.5x (slower) | None                     | Euler 1st-order integration |
 | [`verlet_engine`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine] |  0.7x (slower) | None                     | Verlet 2nd-order symplectic integration |
-| `cythonized_rk4_engine`   | 50x (faster)   | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order |
-| <span style="white-space:nowrap;">`cythonized_euler_engine`</span> | 40x (faster)   | [`[exts]`](#cython-engines) | Compiled Euler integration |
-| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine] | 10x (faster)   | `scipy`                  | Advanced numerical methods  |
+| [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]   | 50x (faster)   | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order |
+| [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine] | 40x (faster)   | [`[exts]`](#cython-engines) | Compiled Euler integration |
+| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine] | 10x (faster)   | `[scipy]`                  | Advanced numerical methods  |
 
 
 * This project will default to the [`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine].
 * For higher speed and precision use the [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine].
-* For maximum speed use the `cythonized_rk4_engine`.
+* For maximum speed use the [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine].
 
 To select a specific engine when creating a [`Calculator`][py_ballisticcalc.interface.Calculator], use the optional `engine` argument:
 

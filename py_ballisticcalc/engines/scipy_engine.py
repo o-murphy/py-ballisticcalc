@@ -441,7 +441,8 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         Args:
             _config: Configuration dictionary containing engine parameters.
                     Can include SciPy-specific options (integration_method,
-                    tolerances, max_time) as well as all standard BaseEngineConfigDict
+                    tolerances, max_time) as well as all standard [`BaseEngineConfigDict`](py_ballisticcalc.base_engine.BaseEngineConfigDict).
+
                     parameters (cMinimumVelocity, cStepMultiplier, etc.).
 
                     SciPy-specific parameters:

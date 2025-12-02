@@ -36,9 +36,10 @@ repos:
       - id: uv-cython-lint
         name: cython lint
         entry: uv
-        args: ["run", "cython-lint", ".", "--max-line-length", "120"]
+        args: ["run", "cython-lint", "--max-line-length", "120"]
         language: system
-        pass_filenames: false
+        pass_filenames: true
+        files: '\.(pyx|pxd)$'
 
       # - id: uv-pytest-exts
       #   name: pytest exts

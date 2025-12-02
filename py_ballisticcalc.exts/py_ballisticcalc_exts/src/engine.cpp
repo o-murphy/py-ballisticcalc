@@ -61,48 +61,41 @@ namespace bclibc
     {
         this->integrate_func_ptr_not_null();
 
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         // 1. Create a mandatory filter/writer ON THE HEAP using unique_ptr.
         // This ensures that a large object does not pollute the stack frame.
         BCLIBC_TrajectoryDataFilter data_filter(
             records,
             this->shot,
             filter_flags,
+            reason,
             range_limit_ft,
             range_step_ft,
             time_step);
 
+        BCLIBC_DEBUG("Config values read: minVel=%f, minAlt=%f, maxDrop=%f\n",
+                     this->config.cMinimumVelocity, this->config.cMinimumAltitude, this->config.cMaximumDrop);
+
         // 2. Create the Composer (on the stack, it's small and now safer)
-        BCLIBC_BaseTrajDataHandlerCompositor composite_handler;
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+            // A mandatory filter
+            &data_filter);
 
-        // 3. Add a mandatory filter
-        composite_handler.add_handler(&data_filter);
-
-        // 4. Add the optional trajectory
+        // 3. Add the optional trajectory
         if (dense_trajectory != nullptr)
         {
             composite_handler.add_handler(dense_trajectory);
         }
 
-        // 5. Call integration ONCE, passing the composite
-        this->integrate(
-            range_limit_ft,
-            range_step_ft,
-            time_step,
-            composite_handler,
-            reason);
-
-        // 6. Finalization
-        if (reason != BCLIBC_TerminationReason::NO_TERMINATE)
-        {
-            data_filter.finalize();
-        }
+        // 4. Call integration ONCE, passing the composite
+        this->integrate(range_limit_ft, time_step, composite_handler, reason);
     };
 
     /**
      * @brief Calls the underlying integration function for the projectile trajectory.
      *
-     * @param range_limit_ft Maximum range for integration in feet.
-     * @param range_step_ft Step size along the range in feet.
      * @param time_step Integration timestep in seconds.
      * @param handler Reference to a data handler for trajectory recording.
      * @param reason Reference to store termination reason.
@@ -111,15 +104,32 @@ namespace bclibc
      */
     void BCLIBC_Engine::integrate(
         double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
         this->integrate_func_ptr_not_null();
-        this->integrate_func_ptr(*this, range_limit_ft, range_step_ft, time_step, handler, reason);
 
-        if (reason == BCLIBC_TerminationReason::NO_TERMINATE)
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
+        // Essential termination reason control
+        BCLIBC_EssentialTerminators terminators(
+            this->shot,
+            range_limit_ft,
+            this->config.cMinimumVelocity,
+            this->config.cMaximumDrop,
+            this->config.cMinimumAltitude,
+            reason);
+
+        BCLIBC_BaseTrajDataHandlerCompositor composite_handler(
+            &terminators, // Essential terminators
+            &handler      // Request handler
+        );
+
+        this->integrate_func_ptr(*this, time_step, composite_handler, reason);
+
+        if (reason == BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
         {
             BCLIBC_INFO("Integration completed successfully: (%d).", reason);
         }
@@ -127,6 +137,58 @@ namespace bclibc
         {
             BCLIBC_INFO("Integration completed with acceptable termination reason: (%d).", reason);
         }
+    };
+
+    /**
+     * @brief Performs trajectory integration and interpolates a single data point
+     * where a specific key attribute reaches a target value.
+     *
+     * This method runs a full trajectory integration internally, using
+     * BCLIBC_SinglePointHandler to find and interpolate the point where the
+     * specified key (e.g., 'time', 'mach', 'position.z') equals the target value.
+     * The integration runs up to MAX_INTEGRATION_RANGE using a default timestep (0.0).
+     *
+     * @param key The interpolation key (e.g., time, altitude, vector component)
+     * to use as the independent variable.
+     * @param target_value The value the key attribute must reach for the
+     * integration to terminate and interpolation to occur.
+     * @param raw_data Reference to a BCLIBC_BaseTrajData object that will store
+     * the interpolated raw data point upon success.
+     * @param full_data Reference to a BCLIBC_TrajectoryData object that will store
+     * the full (processed) interpolated data point upon success.
+     *
+     * @note Access to the engine is protected by engine_mutex.
+     * @warning The integration is performed with time_step = 0.0, implying that
+     * the actual step size is determined internally by the integrator.
+     *
+     * @throws std::logic_error if integrate_func_ptr is null.
+     * @throws std::runtime_error if the target point is not found within the
+     * integrated trajectory (e.g., "No apex flagged...").
+     */
+    void BCLIBC_Engine::integrate_at(
+        BCLIBC_BaseTrajData_InterpKey key,
+        double target_value,
+        BCLIBC_BaseTrajData &raw_data,
+        BCLIBC_TrajectoryData &full_data)
+    {
+        integrate_func_ptr_not_null();
+
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
+        BCLIBC_TerminationReason reason;
+        BCLIBC_SinglePointHandler handler(key, target_value, &reason);
+
+        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
+
+        if (!handler.found())
+        {
+            throw std::runtime_error(
+                "Intercept point not found for target key and value");
+        }
+
+        raw_data = handler.get_result();
+        full_data = BCLIBC_TrajectoryData(this->shot, raw_data);
     };
 
     /**
@@ -141,6 +203,9 @@ namespace bclibc
      */
     void BCLIBC_Engine::find_apex(BCLIBC_BaseTrajData &apex_out)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         if (this->shot.barrel_elevation <= 0)
         {
             throw std::invalid_argument(
@@ -149,18 +214,20 @@ namespace bclibc
 
         BCLIBC_TerminationReason reason;
 
+        // Backup and adjust constraints
+        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
+            &this->config.cMinimumVelocity,
+            this->config.cMinimumVelocity != 0.0
+                ? 0.0
+                : this->config.cMinimumVelocity);
+
         // Use SinglePointHandler to find where vertical velocity crosses zero
         BCLIBC_SinglePointHandler apex_handler(
             BCLIBC_BaseTrajData_InterpKey::VEL_Y, // Search by vertical velocity
             0.0,                                  // Apex is where vy = 0
             &reason);
 
-        // Backup and adjust constraints
-        BCLIBC_ValueGuard<double> cMinimumVelocity_guard(
-            &this->config.cMinimumVelocity,
-            this->config.cMinimumVelocity > 0.0 ? 0.0 : this->config.cMinimumVelocity);
-
-        this->integrate(9e9, 9e9, 0.0, apex_handler, reason);
+        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, apex_handler, reason);
 
         if (!apex_handler.found())
         {
@@ -190,6 +257,8 @@ namespace bclibc
         double target_x_ft,
         double target_y_ft)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
 
         this->shot.barrel_elevation = angle_rad;
 
@@ -201,7 +270,7 @@ namespace bclibc
             target_x_ft,
             &reason);
 
-        integrate(9e9, 9e9, 0.0, handler, reason);
+        integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
 
         if (!handler.found())
         {
@@ -237,6 +306,9 @@ namespace bclibc
         BCLIBC_ZeroInitialData &result,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         BCLIBC_BaseTrajData apex;
         double apex_slant_ft;
 
@@ -298,6 +370,9 @@ namespace bclibc
         double ALLOWED_ZERO_ERROR_FEET,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         try
         {
             return this->zero_angle(distance, APEX_IS_MAX_RANGE_RADIANS, ALLOWED_ZERO_ERROR_FEET, error);
@@ -335,6 +410,9 @@ namespace bclibc
         double ALLOWED_ZERO_ERROR_FEET,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         BCLIBC_ZeroInitialData init_data;
 
         this->init_zero_calculation(
@@ -391,6 +469,7 @@ namespace bclibc
         {
             // reset handler for integration result
             BCLIBC_TerminationReason reason;
+
             // Using SinglePointHandler з early termination
             BCLIBC_SinglePointHandler handler(
                 BCLIBC_BaseTrajData_InterpKey::POS_X,
@@ -398,13 +477,13 @@ namespace bclibc
                 &reason // Enable early termination
             );
 
-            this->integrate(target_x_ft, target_x_ft, 0.0, handler, reason);
+            this->integrate(target_x_ft, 0.0, handler, reason);
 
             if (!handler.found())
             {
                 throw std::runtime_error("Failed to interpolate trajectory at target distance");
             }
-            
+
             hit = handler.get_result();
 
             if (hit.time == 0.0)
@@ -529,6 +608,9 @@ namespace bclibc
      */
     double BCLIBC_Engine::range_for_angle(double angle_rad)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         this->shot.barrel_elevation = angle_rad;
 
         BCLIBC_TerminationReason reason;
@@ -538,7 +620,7 @@ namespace bclibc
             this->shot.look_angle,
             &reason);
 
-        this->integrate(9e9, 9e9, 0.0, handler, reason);
+        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
 
         if (handler.found())
         {
@@ -563,6 +645,9 @@ namespace bclibc
         double high_angle_deg,
         double APEX_IS_MAX_RANGE_RADIANS)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         double look_angle_rad = this->shot.look_angle;
         double max_range_ft;
         double angle_at_max_rad;
@@ -656,6 +741,9 @@ namespace bclibc
         double ALLOWED_ZERO_ERROR_FEET,
         BCLIBC_ZeroFindingError &error)
     {
+        // Block access to engine if it is needed for integration
+        std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
+
         BCLIBC_ZeroInitialData init_data;
 
         this->init_zero_calculation(

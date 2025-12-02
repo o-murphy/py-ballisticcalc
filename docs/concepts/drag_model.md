@@ -10,7 +10,7 @@ The drag subsystem models aerodynamic resistance via Ballistic Coefficients that
 - [`BCPoint`][py_ballisticcalc.drag_model.BCPoint] + [`DragModelMultiBC(...)`][py_ballisticcalc.drag_model.DragModelMultiBC]: Interpolate BC across velocity/Mach to better match measured data.
 - Helpers: [`make_data_points`][py_ballisticcalc.drag_model.make_data_points], [`sectional_density`][py_ballisticcalc.drag_model.sectional_density], [`linear_interpolation`][py_ballisticcalc.drag_model.linear_interpolation].
 
-Use with `Ammo(dm=DragModel(...))` to parameterize the projectile.
+Use with [`Ammo(dm=DragModel(...))`](py_ballisticcalc.munition.Ammo) to parameterize the projectile.
 
 ## Standard Models
 

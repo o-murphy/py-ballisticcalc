@@ -10,9 +10,11 @@ from libcpp.vector cimport vector
 from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport (
+    CythonizedBaseTrajData,
     CythonizedBaseTrajSeq,
     BCLIBC_BaseTrajData,
     BCLIBC_TrajectoryData,
+    BCLIBC_BaseTrajData_InterpKey,
     BCLIBC_BaseTrajDataHandlerInterface,
 )
 from py_ballisticcalc_exts.base_types cimport (
@@ -28,6 +30,7 @@ from py_ballisticcalc_exts.bind cimport (
     BCLIBC_ShotProps_from_pyobject,
     feet_from_c,
     rad_from_c,
+    _attribute_to_key,
 )
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
@@ -45,6 +48,8 @@ cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERR
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
 cdef dict TERMINATION_REASON_MAP = {
+    BCLIBC_TerminationReason.NO_TERMINATE: "Unknown",
+    BCLIBC_TerminationReason.TARGET_RANGE_REACHED: None,
     BCLIBC_TerminationReason.MINIMUM_VELOCITY_REACHED: RangeError.MinimumVelocityReached,
     BCLIBC_TerminationReason.MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
     BCLIBC_TerminationReason.MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
@@ -283,6 +288,47 @@ cdef class CythonizedBaseIntegrationEngine:
             termination_reason
         )
 
+    def integrate_raw_at(
+        CythonizedBaseIntegrationEngine self,
+        object shot_info,
+        str key_attribute,
+        double target_value
+    ) -> tuple[CythonizedBaseTrajData, TrajectoryData]:
+        """
+        Integrates the trajectory until a specified attribute reaches a target value
+        and returns the interpolated data point.
+
+        This method initializes the trajectory using the provided shot information,
+        performs integration using the underlying C++ engine's 'integrate_at' function,
+        and handles the conversion of C++ results back to Python objects.
+
+        Args:
+            shot_info (object): Information required to initialize the trajectory
+                (e.g., muzzle velocity, drag model).
+            key_attribute (str): The name of the attribute to track, such as
+                'time', 'mach', or a vector component like 'position.z'.
+            target_value (float): The value the 'key_attribute' must reach for
+                the integration to stop and interpolation to occur.
+
+        Returns:
+            tuple[CythonizedBaseTrajData, TrajectoryData]:
+                A tuple containing:
+                - CythonizedBaseTrajData: The interpolated raw data point.
+                - TrajectoryData: The fully processed trajectory data point.
+
+        Raises:
+            SolverRuntimeError: If the underlying C++ integration fails to find
+                the target point (e.g., due to insufficient range or data issues).
+        """
+        cdef BCLIBC_BaseTrajData_InterpKey key = _attribute_to_key(key_attribute)
+        cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
+        cdef BCLIBC_TrajectoryData full_data
+
+        self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
+
+        cdef object py_full_data = TrajectoryData_from_cpp(full_data)
+        return raw_data, py_full_data
+
     cdef inline double _error_at_distance(
         CythonizedBaseIntegrationEngine self,
         double angle_rad,
@@ -470,11 +516,49 @@ cdef class CythonizedBaseIntegrationEngine:
         except RuntimeError as e:
             zero_finding_error(e, error)
 
+    cdef void _integrate_raw_at(
+        CythonizedBaseIntegrationEngine self,
+        object shot_info,
+        BCLIBC_BaseTrajData_InterpKey key,
+        double target_value,
+        BCLIBC_BaseTrajData &raw_data,
+        BCLIBC_TrajectoryData &full_data
+    ):
+        """
+        Internal C-level method to initialize the trajectory and call the
+        C++ engine's integrate_at function.
+
+        This method handles the low-level data passing and error wrapping.
+
+        Args:
+            shot_info (object): Trajectory initialization data.
+            key (BCLIBC_BaseTrajData_InterpKey): The C++ enumeration key defining
+                the attribute for interpolation.
+            target_value (double): The target value for the interpolation key.
+            raw_data (BCLIBC_BaseTrajData&): Reference to the C++ structure to
+                store the raw interpolated data.
+            full_data (BCLIBC_TrajectoryData&): Reference to the C++ structure
+                to store the full processed data.
+
+        Raises:
+            SolverRuntimeError: Wraps any std::runtime_error thrown by the
+                underlying C++ integrate_at call.
+        """
+        self._init_trajectory(shot_info)
+        try:
+            self._this.integrate_at(
+                key,
+                target_value,
+                raw_data,
+                full_data,
+            )
+        except RuntimeError as e:
+            raise SolverRuntimeError(e)
+
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
-        double range_step_ft,
         double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
@@ -497,7 +581,6 @@ cdef class CythonizedBaseIntegrationEngine:
             self._init_trajectory(shot_info)
             self._this.integrate(
                 range_limit_ft,
-                range_step_ft,
                 time_step,
                 handler,
                 reason,

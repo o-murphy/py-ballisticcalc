@@ -11,8 +11,9 @@ The engines covered here:
 1. **Euler** (`euler_engine`): The most elementary, first-order integration method.  
 2. **RK4** (`rk4_engine`): Runge-Kutta fourth-order integration.  
 3. **Verlet** (`verlet_engine`): Velocity-Verlet, which is a second-order symplectic method.
-4. **Cython RK4** (`cythonized_rk4_engine`): Same as the RK4 engine, but implemented in Cython which is a variant of Python that compiles (instead of interpreting) for maximum compute speed.
-5. **SciPy** (`scipy_engine`): The [SciPy](https://scipy.org) library contains the most sophisticated numerical methods with compiled backends.
+4. **Cython RK4** (`cythonized_rk4_engine`): Same as the RK4 engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
+5. **Cython Euler** (`cythonized_euler_engine`): Same as the Euler engine, but implemented in C++/Cython and compiled (instead of interpreting) for maximum compute speed.
+6. **SciPy** (`scipy_engine`): The [SciPy](https://scipy.org) library contains the most sophisticated numerical methods with compiled backends.
 
 ## Key Concepts
 
