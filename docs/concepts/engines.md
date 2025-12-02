@@ -4,14 +4,14 @@
 
 py-ballisticcalc provides various calculation engines with identical public semantics.  The relative merits of the engines are detailed in [benchmarks](benchmarks.md).
 
-| Engine Name               | Speed | Dependencies             | Description                                                   |
-|:--------------------------|:---------------:|:-------------------------:|:--------------------------------------------------------------|
-| **[`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine]** | Baseline (1x)  | None; default            | Runge-Kutta 4th-order integration |
-| [`euler_engine`][py_ballisticcalc.engines.EulerIntegrationEngine] |  0.5x (slower) | None                     | Euler 1st-order integration |
-| [`verlet_engine`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine] |  0.7x (slower) | None                     | Verlet 2nd-order symplectic integration |
-| [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]   | 50x (faster)   | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order |
-| [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine] | 40x (faster)   | [`[exts]`](#cython-engines) | Compiled Euler integration |
-| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine] | 10x (faster)   | `[scipy]`                  | Advanced numerical methods  |
+| Engine Name                                                                         | Speed (Find Zero / Trajectory)                |        Dependencies         | Description                             |
+| :---------------------------------------------------------------------------------- | :-------------------------------------------- | :-------------------------: | :-------------------------------------- |
+| **[`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine]**                   | Baseline (1x)                                 |        None; default        | Runge-Kutta 4th-order integration       |
+| [`euler_engine`][py_ballisticcalc.engines.EulerIntegrationEngine]                   | :material-arrow-down:    0.5x / 0.5x (slower) |            None             | Euler 1st-order integration             |
+| [`verlet_engine`][py_ballisticcalc.engines.VelocityVerletIntegrationEngine]         | :material-arrow-down:   0.8x / 0.8x (slower)  |            None             | Verlet 2nd-order symplectic integration |
+| [`cythonized_rk4_engine`][py_ballisticcalc_exts.CythonizedRK4IntegrationEngine]     | :material-arrow-up:   112x / 200x (faster)    | [`[exts]`](#cython-engines) | Compiled Runge-Kutta 4th-order          |
+| [`cythonized_euler_engine`][py_ballisticcalc_exts.CythonizedEulerIntegrationEngine] | :material-arrow-up:    47x / 65x (faster)     | [`[exts]`](#cython-engines) | Compiled Euler integration              |
+| [`scipy_engine`][py_ballisticcalc.engines.SciPyIntegrationEngine]                   | :material-arrow-up:   5.5x / 4.2x (faster)    |          `[scipy]`          | Advanced numerical methods              |
 
 
 * This project will default to the [`rk4_engine`][py_ballisticcalc.engines.RK4IntegrationEngine].
