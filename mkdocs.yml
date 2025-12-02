@@ -4,96 +4,95 @@ edit_uri: edit/main/docs/
 site_url: https://o-murphy.github.io/py-ballisticcalc/
 
 nav:
-- Get started:
-  - QuickStart: index.md
-  - Installation: install.md
-#  - Examples: examples/Examples
-  - Help: help.md
-  - Contributing: contributing.md
-#  - Version policy: version-policy.md
-#  - Changelog: changelog.md
-- Concepts:
-  - Basics: concepts/index.md
-  - "📏 Units": concepts/unit.md
-#        - Angular:
-#        - Distance:
-#        - Energy:
-#        - Pressure:
-#        - Temperature:
-#        - Velocity:
-#        - Weight:
-  - Calculation Engines:
-    - "⚙️ Engines": concepts/engines.md
-    - "📊 Benchmarks": concepts/benchmarks.md
-  - Conditions:
-    - "🌡️ Atmo": concepts/conditions/atmo.md
-    - "💨 Wind": concepts/conditions/wind.md
-    - "🎯 Shot": concepts/conditions/shot.md
-  - Munitions:
-    - "🔫 Weapon": concepts/munition/weapon.md
-    - "💣 Ammo": concepts/munition/ammo.md
-    - "🪂 DragModel": concepts/drag_model.md
-  - "📈 Trajectory Data": concepts/trajectory_data.md
-  - "📐 Vector": concepts/vector.md
-- API Documentation:
-    - Overview: api/index.md
-    - Calculator:
-      - Engines: api/calculator/engines.md
-      - Interface: api/calculator/interface.md
-      - Protocol: api/calculator/protocol.md
-    - Conditions:
-      - Atmo: api/conditions/atmo.md
-      - Wind: api/conditions/wind.md
-      - Shot: api/conditions/shot.md
-      - ShotProps: api/conditions/shotprops.md
-    - Constants: api/constants.md
-    - Munitions:
-      - Ammo: api/munition/ammo.md
-      - DragModel: api/drag_model.md
-      - DragTables: api/drag_tables.md
-      - Sight: api/munition/sight.md
-      - Weapon: api/munition/weapon.md
-    - Results:
-      - HitResult: api/hit_result.md
-      - TrajectoryData: api/trajectory_data.md
-    - Units:
-      - Dimensions: api/units/dimensions.md
-      - PreferredUnits: api/units/preferred_units.md
-    - Vector: api/vector.md
-    - Cythonized extensions: api/cythonized.md
-- Internals:
-  - Architecture: internals/architecture.md
-  - Developer Details: internals/details.md
-  - Cython Notes: internals/cython.md
-  - Logger: internals/logger.md
-- Contributors: contributors.md
-- About: about.md
+  - Get started:
+      - QuickStart: index.md
+      - Installation: install.md
+      #  - Examples: examples/Examples
+      - Help: help.md
+      - Contributing: contributing.md
+  #  - Version policy: version-policy.md
+  #  - Changelog: changelog.md
+  - Concepts:
+      - Basics: concepts/index.md
+      - "📏 Units": concepts/unit.md
+      #        - Angular:
+      #        - Distance:
+      #        - Energy:
+      #        - Pressure:
+      #        - Temperature:
+      #        - Velocity:
+      #        - Weight:
+      - Calculation Engines:
+          - "⚙️ Engines": concepts/engines.md
+          - "📊 Benchmarks": concepts/benchmarks.md
+      - Conditions:
+          - "🌡️ Atmo": concepts/conditions/atmo.md
+          - "💨 Wind": concepts/conditions/wind.md
+          - "🎯 Shot": concepts/conditions/shot.md
+      - Munitions:
+          - "🔫 Weapon": concepts/munition/weapon.md
+          - "💣 Ammo": concepts/munition/ammo.md
+          - "🪂 DragModel": concepts/drag_model.md
+      - "📈 Trajectory Data": concepts/trajectory_data.md
+      - "📐 Vector": concepts/vector.md
+  - API Documentation:
+      - Overview: api/index.md
+      - Calculator:
+          - Engines: api/calculator/engines.md
+          - Interface: api/calculator/interface.md
+          - Protocol: api/calculator/protocol.md
+      - Conditions:
+          - Atmo: api/conditions/atmo.md
+          - Wind: api/conditions/wind.md
+          - Shot: api/conditions/shot.md
+          - ShotProps: api/conditions/shotprops.md
+      - Constants: api/constants.md
+      - Munitions:
+          - Ammo: api/munition/ammo.md
+          - DragModel: api/drag_model.md
+          - DragTables: api/drag_tables.md
+          - Sight: api/munition/sight.md
+          - Weapon: api/munition/weapon.md
+      - Results:
+          - HitResult: api/hit_result.md
+          - TrajectoryData: api/trajectory_data.md
+      - Units:
+          - Dimensions: api/units/dimensions.md
+          - PreferredUnits: api/units/preferred_units.md
+      - Vector: api/vector.md
+  - Internals:
+      - Architecture: internals/architecture.md
+      - Developer Details: internals/details.md
+      - Cython Notes: internals/cython.md
+      - Logger: internals/logger.md
+  - Contributors: contributors.md
+  - About: about.md
 
 theme:
-  name: 'material'
-  custom_dir: 'docs/theme'
+  name: "material"
+  custom_dir: "docs/theme"
   palette:
-  - media: "(prefers-color-scheme)"
-    scheme: default
-    primary: teal
-    accent: teal
-    toggle:
-      icon: material/lightbulb
-      name: "Switch to light mode"
-  - media: "(prefers-color-scheme: light)"
-    scheme: default
-    primary: teal
-    accent: teal
-    toggle:
-      icon: material/lightbulb-outline
-      name: "Switch to dark mode"
-  - media: "(prefers-color-scheme: dark)"
-    scheme: slate
-    primary: teal
-    accent: teal
-    toggle:
-      icon: material/lightbulb-auto-outline
-      name: "Switch to system preference"
+    - media: "(prefers-color-scheme)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/lightbulb
+        name: "Switch to light mode"
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/lightbulb-outline
+        name: "Switch to dark mode"
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/lightbulb-auto-outline
+        name: "Switch to system preference"
   features:
     - content.tabs.link
     - content.code.annotate
@@ -106,21 +105,21 @@ theme:
     - navigation.instant.preview
     - navigation.instant.progress
     - navigation.path
-#    - navigation.sections
+    #    - navigation.sections
     - navigation.expand
     - navigation.top
     - navigation.tracking
     - search.suggest
     - toc.follow
-  logo: 'favicon.svg'
-  favicon: 'favicon.svg'
+  logo: "favicon.svg"
+  favicon: "favicon.svg"
 
 repo_name: o-murphy/py-ballisticcalc
 repo_url: https://github.com/o-murphy/py-ballisticcalc
+
 extra:
   version:
     provider: mike
-#    alias: true
   analytics:
     feedback:
       title: Was this page helpful?
@@ -128,13 +127,11 @@ extra:
         - icon: material/thumb-up-outline
           name: This page was helpful
           data: 1
-          note: >-
-            Thanks for your feedback!
+          note: Thanks for your feedback!
         - icon: material/thumb-down-outline
           name: This page could be improved
           data: 0
-          note: >-
-            Thanks for your feedback!
+          note: Thanks for your feedback!
 
 # https://www.mkdocs.org/user-guide/configuration/#validation
 validation:
@@ -143,48 +140,49 @@ validation:
   unrecognized_links: warn
 
 extra_css:
-  - 'extra/terminal.css'
-  - 'extra/tweaks.css'
-  - 'extra/katex/katex.min.css'
+  - extra/terminal.css
+  - extra/tweaks.css
+  - extra/katex/katex.min.css
 #  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css'
+
 extra_javascript:
-  - 'extra/feedback.js'
+  - "extra/feedback.js"
   # Load KaTeX and auto-render before our init to ensure functions are available
-#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'
-#  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js'
-  - 'extra/katex/katex.min.js'
-  - 'extra/katex/contrib/auto-render.min.js'
-  - 'extra/katex-init.js'
-  - 'extra/mkdocstrings-tweaks.js'
+  #  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js'
+  #  - 'https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js'
+  - "extra/katex/katex.min.js"
+  - "extra/katex/contrib/auto-render.min.js"
+  - "extra/katex-init.js"
+  - "extra/mkdocstrings-tweaks.js"
   #  - 'extra/fluff.js'
-  - 'https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js'
+  - "https://samuelcolvin.github.io/mkdocs-run-code/run_code_main.js"
 
 markdown_extensions:
-- admonition
-- tables
-- toc:
-    permalink: true
-    title: Page contents
-- pymdownx.details
-- pymdownx.arithmatex:
-    generic: true
-- pymdownx.emoji:
-    emoji_index: !!python/name:material.extensions.emoji.twemoji
-    emoji_generator: !!python/name:material.extensions.emoji.to_svg
-- pymdownx.highlight:
-    pygments_lang_class: true
-- pymdownx.snippets:
-    base_path:
-      - .
-      - docs
-    check_paths: true
-- pymdownx.superfences:
-    custom_fences:
-      - name: mermaid
-        class: mermaid
-        format: !!python/name:pymdownx.superfences.fence_code_format
-- pymdownx.tabbed:
-    alternate_style: true
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+      title: Page contents
+  - pymdownx.details
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      pygments_lang_class: true
+  - pymdownx.snippets:
+      base_path:
+        - .
+        - docs
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
 
 #hooks:
 #- 'docs/plugins/main.py'
@@ -204,14 +202,14 @@ plugins:
         - why.md
         - version-policy.md
         - changelog.md
-  - mkdocstrings:
+  - mkdocstrings:    
       enable_inventory: true
       handlers:
         python:
-          paths:
-            - .
+          load_external_modules: true
+          paths: ['py_ballisticcalc', 'py_ballisticcalc.exts']
           options:
-            respect_type_hints: true
+            docstring_style: google
             group_by_category: true
             show_category_heading: true
             show_symbol_type_toc: true
@@ -224,7 +222,9 @@ plugins:
             members_order: source
             separate_signature: true
             show_signature_annotations: true
+            show_signature_type_parameters: true
             signature_crossrefs: true
+            unwrap_annotated: true
             merge_init_into_class: true
             filters: ["!^_"]
             summary:
