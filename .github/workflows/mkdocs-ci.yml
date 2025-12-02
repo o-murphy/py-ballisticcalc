@@ -37,5 +37,5 @@ jobs:
         run: |
           VERSION=$(python -m setuptools_scm)
           echo "Deploying docs from branch: $VERSION"
-          mike deploy --push $VERSION
+          mike deploy --push --update-aliases $VERSION latest
         shell: bash
