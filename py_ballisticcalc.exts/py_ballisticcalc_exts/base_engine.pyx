@@ -44,7 +44,7 @@ __all__ = (
 )
 
 
-class InterpolateRawError(SolverRuntimeError):
+class InterceptionError(SolverRuntimeError):
     def __init__(
         self,
         *args,
@@ -343,7 +343,7 @@ cdef class CythonizedBaseIntegrationEngine:
             self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
         except SolverRuntimeError as e:
             py_full_data = TrajectoryData_from_cpp(full_data)
-            raise InterpolateRawError(str(e), last_data=(raw_data, py_full_data))
+            raise InterceptionError(str(e), last_data=(raw_data, py_full_data))
 
         py_full_data = TrajectoryData_from_cpp(full_data)
         return raw_data, py_full_data

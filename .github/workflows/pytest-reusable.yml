@@ -19,6 +19,11 @@ on:
         required: false # Stress tests are optional
         type: boolean
         default: false # Disabled by default
+      build_wheels:
+        required: false
+        type: boolean
+        default: false
+
 
 jobs:
   run_single_test_combination: # This is the job that will execute for each specific test combination
@@ -82,7 +87,7 @@ jobs:
 
       # New section to build artifact
       - name: Build artifacts with uv 📦
-        if: success()
+        if: success() && inputs.build_wheels == true
         run: |
           set -e
 
@@ -101,7 +106,7 @@ jobs:
         shell: bash
 
       - name: Upload build artifacts 📤
-        if: success()
+        if: success() && inputs.build_wheels == true
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ inputs.os }}-py${{ inputs.python_version }}
