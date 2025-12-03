@@ -25,7 +25,7 @@ sync-dev:
 # Action: Runs uv sync --dev --extra exts --no-cache to install extensions.
 sync-exts: clean-exts
 	@echo "--- Running full sync with exts ---"
-	uv sync --extra exts --reinstall-package py_ballisticcalc.exts
+	uv sync --extra exts --reinstall-package py_ballisticcalc --reinstall-package py_ballisticcalc.exts
 	@echo "✅ Exts sync complete. Activate with 'source $(VENV_DIR)/bin/activate'."
 
 # -------------------------------------------------------------
