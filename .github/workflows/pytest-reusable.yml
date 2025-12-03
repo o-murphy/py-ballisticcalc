@@ -79,3 +79,32 @@ jobs:
           path: valgrind.log
           retention-days: 14
           if-no-files-found: ignore
+
+      # New section to build artifact
+      - name: Build artifacts with uv 📦
+        if: success()
+        run: |
+          set -e
+
+          echo "Cleaning dist directory..."
+          rm -rf dist/
+          mkdir -p dist
+
+          echo "Building sdist + wheel (root package)..."
+          uv build --out-dir dist
+
+          echo "Building wheel (extensions package)..."
+          uv build ./py_ballisticcalc.exts --wheel --out-dir dist
+
+          echo "Resulting artifacts:"
+          ls -l dist
+        shell: bash
+
+      - name: Upload build artifacts 📤
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ inputs.os }}-py${{ inputs.python_version }}
+          path: dist/
+          retention-days: 7
+          if-no-files-found: error
