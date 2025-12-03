@@ -44,6 +44,20 @@ __all__ = (
 )
 
 
+class InterpolateRawError(SolverRuntimeError):
+    def __init__(
+        self,
+        *args,
+        last_data: tuple[CythonizedBaseTrajData, TrajectoryData]
+    ):
+        super().__init__(*args)
+        self._last_data = last_data
+
+    @property
+    def last_data(self) -> tuple[CythonizedBaseTrajData, TrajectoryData]:
+        return self._last_data
+
+
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
 cdef double _APEX_IS_MAX_RANGE_RADIANS = _PyBaseIntegrationEngine.APEX_IS_MAX_RANGE_RADIANS
 
@@ -323,10 +337,15 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BCLIBC_BaseTrajData_InterpKey key = _attribute_to_key(key_attribute)
         cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
         cdef BCLIBC_TrajectoryData full_data
+        cdef object py_full_data
 
-        self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
+        try:
+            self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
+        except SolverRuntimeError as e:
+            py_full_data = TrajectoryData_from_cpp(full_data)
+            raise InterpolateRawError(str(e), last_data=(raw_data, py_full_data))
 
-        cdef object py_full_data = TrajectoryData_from_cpp(full_data)
+        py_full_data = TrajectoryData_from_cpp(full_data)
         return raw_data, py_full_data
 
     cdef inline double _error_at_distance(
@@ -552,6 +571,8 @@ cdef class CythonizedBaseIntegrationEngine:
                 raw_data,
                 full_data,
             )
+        except IndexError as e:
+            raise IndexError("Index out of bounds")
         except RuntimeError as e:
             raise SolverRuntimeError(e)
 

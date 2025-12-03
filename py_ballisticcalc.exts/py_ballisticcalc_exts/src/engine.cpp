@@ -183,6 +183,9 @@ namespace bclibc
 
         if (!handler.found())
         {
+            // Record last valid point
+            raw_data = handler.get_last();
+            full_data = BCLIBC_TrajectoryData(this->shot, raw_data);
             throw std::runtime_error(
                 "Intercept point not found for target key and value");
         }
