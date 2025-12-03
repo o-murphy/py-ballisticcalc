@@ -12,6 +12,7 @@
 #include "bclibc/engine.hpp"
 #include "bclibc/rk4.hpp"
 #include "bclibc/euler.hpp"
+#include "bclibc/rk45.hpp"
 
 // Cython only bindings
 #ifdef __CYTHON__
