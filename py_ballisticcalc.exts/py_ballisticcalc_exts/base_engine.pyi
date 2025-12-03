@@ -13,7 +13,7 @@ from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajData
 from py_ballisticcalc.exceptions import SolverRuntimeError
 
-class InterpolateRawError(SolverRuntimeError):
+class InterceptionError(SolverRuntimeError):
     def __init__(self, *args, last_data: tuple[CythonizedBaseTrajData, TrajectoryData]): ...
     @property
     def last_data(self) -> tuple[CythonizedBaseTrajData, TrajectoryData]: ...
