@@ -180,7 +180,8 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
                 - TrajectoryData: The fully processed trajectory data point.
 
         Raises:
-            SolverRuntimeError: If the underlying C++ integration fails to find
+            InterceptionError: If the underlying C++ integration fails to find
                 the target point (e.g., due to insufficient range or data issues).
+            SolverRuntimeError: If some other internal error occured
         """
         ...
