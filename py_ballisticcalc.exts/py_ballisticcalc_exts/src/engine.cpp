@@ -1,6 +1,7 @@
 #include <cmath>
 #include "bclibc/engine.hpp"
 #include "bclibc/scope_guard.hpp"
+#include "bclibc/exceptions.hpp"
 
 /*
 Possible call chains:
@@ -186,7 +187,7 @@ namespace bclibc
             // Record last valid point
             raw_data = handler.get_last();
             full_data = BCLIBC_TrajectoryData(this->shot, raw_data);
-            throw std::runtime_error(
+            throw BCLIBC_InterceptionError(
                 "Intercept point not found for target key and value");
         }
 
@@ -234,7 +235,7 @@ namespace bclibc
 
         if (!apex_handler.found())
         {
-            throw std::runtime_error(
+            throw BCLIBC_SolverRuntimeError(
                 "Runtime error (No apex flagged in trajectory data)");
         }
 
@@ -277,7 +278,7 @@ namespace bclibc
 
         if (!handler.found())
         {
-            throw std::runtime_error(
+            BCLIBC_SolverRuntimeError(
                 "Trajectory too short to determine error at distance.");
         }
 
@@ -348,7 +349,11 @@ namespace bclibc
                 error.out_of_range.requested_distance_ft = result.slant_range_ft;
                 error.out_of_range.max_range_ft = apex_slant_ft;
                 error.out_of_range.look_angle_rad = result.look_angle_rad;
-                throw std::runtime_error("Out of range");
+                throw BCLIBC_OutOfRangeError(
+                    "Out of range",
+                    result.slant_range_ft,
+                    apex_slant_ft,
+                    result.look_angle_rad);
             }
             return;
         }
@@ -484,7 +489,7 @@ namespace bclibc
 
             if (!handler.found())
             {
-                throw std::runtime_error("Failed to interpolate trajectory at target distance");
+                throw BCLIBC_SolverRuntimeError("Failed to interpolate trajectory at target distance");
             }
 
             hit = handler.get_result();
@@ -535,7 +540,11 @@ namespace bclibc
                         error.zero_finding.zero_finding_error = range_error_ft;
                         error.zero_finding.iterations_count = iterations_count;
                         error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                        throw std::runtime_error("Distance non-convergent");
+                        throw BCLIBC_ZeroFindingError1(
+                            "Distance non-convergent",
+                            range_error_ft,
+                            iterations_count,
+                            this->shot.barrel_elevation);
                     }
                 }
                 else if (height_error_ft > std::fabs(prev_height_error_ft))
@@ -547,7 +556,11 @@ namespace bclibc
                         error.zero_finding.zero_finding_error = height_error_ft;
                         error.zero_finding.iterations_count = iterations_count;
                         error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                        throw std::runtime_error("Error non-convergent");
+                        throw BCLIBC_ZeroFindingError1(
+                            "Error non-convergent",
+                            height_error_ft,
+                            iterations_count,
+                            this->shot.barrel_elevation);
                     }
                     // Revert previous adjustment
                     this->shot.barrel_elevation -= last_correction;
@@ -579,7 +592,11 @@ namespace bclibc
                 error.zero_finding.zero_finding_error = height_error_ft;
                 error.zero_finding.iterations_count = iterations_count;
                 error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-                throw std::runtime_error("Correction denominator is zero");
+                throw BCLIBC_ZeroFindingError1(
+                    "Correction denominator is zero",
+                    height_error_ft,
+                    iterations_count,
+                    this->shot.barrel_elevation);
             }
 
             iterations_count++;
@@ -593,7 +610,11 @@ namespace bclibc
             error.zero_finding.zero_finding_error = height_error_ft;
             error.zero_finding.iterations_count = iterations_count;
             error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-            throw std::runtime_error("Zero finding error");
+            throw BCLIBC_ZeroFindingError1(
+                "Zero finding error",
+                height_error_ft,
+                iterations_count,
+                this->shot.barrel_elevation);
         }
 
         // success
@@ -783,7 +804,11 @@ namespace bclibc
             error.out_of_range.requested_distance_ft = distance;
             error.out_of_range.max_range_ft = max_range_ft;
             error.out_of_range.look_angle_rad = look_angle_rad;
-            throw std::runtime_error("Out of range");
+            throw BCLIBC_OutOfRangeError(
+                "Out of range",
+                distance,
+                max_range_ft,
+                look_angle_rad);
         }
         if (std::fabs(slant_range_ft - max_range_ft) < ALLOWED_ZERO_ERROR_FEET)
         {
@@ -859,7 +884,11 @@ namespace bclibc
             error.zero_finding.zero_finding_error = target_y_ft;
             error.zero_finding.iterations_count = 0;
             error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-            throw std::runtime_error(reason);
+            throw BCLIBC_ZeroFindingError1(
+                reason,
+                target_y_ft,
+                0,
+                this->shot.barrel_elevation);
         }
 
         // 4. Ridder's method implementation
@@ -990,7 +1019,11 @@ namespace bclibc
             error.zero_finding.zero_finding_error = target_y_ft;
             error.zero_finding.iterations_count = this->config.cMaxIterations;
             error.zero_finding.last_barrel_elevation_rad = (low_angle + high_angle) / 2.0;
-            throw std::runtime_error("Ridder's method failed to converge.");
+            throw BCLIBC_ZeroFindingError1(
+                "Ridder's method failed to converge.",
+                target_y_ft,
+                this->config.cMaxIterations,
+                (low_angle + high_angle) / 2.0);
         }
     };
 

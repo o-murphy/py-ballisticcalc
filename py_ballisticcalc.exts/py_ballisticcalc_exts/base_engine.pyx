@@ -32,30 +32,17 @@ from py_ballisticcalc_exts.bind cimport (
     rad_from_c,
     _attribute_to_key,
 )
+
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
-from py_ballisticcalc.exceptions import ZeroFindingError, RangeError, OutOfRangeError, SolverRuntimeError
+from py_ballisticcalc.exceptions import RangeError, InterceptionError
 from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
 from py_ballisticcalc.unit import Angular
 
 __all__ = (
     'CythonizedBaseIntegrationEngine',
 )
-
-
-class InterceptionError(SolverRuntimeError):
-    def __init__(
-        self,
-        *args,
-        last_data: tuple[CythonizedBaseTrajData, TrajectoryData]
-    ):
-        super().__init__(*args)
-        self._last_data = last_data
-
-    @property
-    def last_data(self) -> tuple[CythonizedBaseTrajData, TrajectoryData]:
-        return self._last_data
 
 
 cdef double _ALLOWED_ZERO_ERROR_FEET = _PyBaseIntegrationEngine.ALLOWED_ZERO_ERROR_FEET
@@ -68,32 +55,6 @@ cdef dict TERMINATION_REASON_MAP = {
     BCLIBC_TerminationReason.MAXIMUM_DROP_REACHED: RangeError.MaximumDropReached,
     BCLIBC_TerminationReason.MINIMUM_ALTITUDE_REACHED: RangeError.MinimumAltitudeReached,
 }
-
-
-cdef void zero_finding_error(
-    object exception,
-    const BCLIBC_ZeroFindingError &error
-) except *:
-
-    cdef str msg = str(exception)
-
-    if error.type == BCLIBC_ZeroFindingErrorType.OUT_OF_RANGE_ERROR:
-        raise OutOfRangeError(
-            feet_from_c(error.out_of_range.requested_distance_ft),
-            feet_from_c(error.out_of_range.max_range_ft),
-            rad_from_c(error.out_of_range.look_angle_rad),
-            msg
-        ) from exception
-
-    if error.type == BCLIBC_ZeroFindingErrorType.ZERO_FINDING_ERROR:
-        raise ZeroFindingError(
-            error.zero_finding.zero_finding_error,
-            error.zero_finding.iterations_count,
-            rad_from_c(error.zero_finding.last_barrel_elevation_rad),
-            msg
-        ) from exception
-
-    raise SolverRuntimeError(exception)
 
 
 cdef class CythonizedBaseIntegrationEngine:
@@ -218,16 +179,13 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             BCLIBC_ZeroFindingError error
             double result
-        try:
-            result = self._this.zero_angle_with_fallback(
-                distance._feet,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                error,
-            )
-            return rad_from_c(result)
-        except RuntimeError as e:
-            zero_finding_error(e, error)
+        result = self._this.zero_angle_with_fallback(
+            distance._feet,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            error,
+        )
+        return rad_from_c(result)
 
     def integrate(
         CythonizedBaseIntegrationEngine self,
@@ -272,18 +230,15 @@ cdef class CythonizedBaseIntegrationEngine:
 
         self._init_trajectory(shot_info)
 
-        try:
-            self._this.integrate_filtered(
-                range_limit_ft,
-                range_step_ft,
-                time_step,
-                <BCLIBC_TrajFlag>filter_flags,
-                records,
-                reason,
-                &dense_trajectory._this if dense_output else NULL,
-            )
-        except RuntimeError as e:
-            raise SolverRuntimeError(e)
+        self._this.integrate_filtered(
+            range_limit_ft,
+            range_step_ft,
+            time_step,
+            <BCLIBC_TrajFlag>filter_flags,
+            records,
+            reason,
+            &dense_trajectory._this if dense_output else NULL,
+        )
 
         # Extract termination_reason from the result
         termination_reason = TERMINATION_REASON_MAP.get(reason)
@@ -331,8 +286,9 @@ cdef class CythonizedBaseIntegrationEngine:
                 - TrajectoryData: The fully processed trajectory data point.
 
         Raises:
-            SolverRuntimeError: If the underlying C++ integration fails to find
+            InterceptionError: If the underlying C++ integration fails to find
                 the target point (e.g., due to insufficient range or data issues).
+            SolverRuntimeError: If some other internal error occured
         """
         cdef BCLIBC_BaseTrajData_InterpKey key = _attribute_to_key(key_attribute)
         cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
@@ -341,9 +297,10 @@ cdef class CythonizedBaseIntegrationEngine:
 
         try:
             self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
-        except SolverRuntimeError as e:
+        except InterceptionError as e:
             py_full_data = TrajectoryData_from_cpp(full_data)
-            raise InterceptionError(str(e), last_data=(raw_data, py_full_data))
+            e._last_data = (raw_data, py_full_data)
+            raise e
 
         py_full_data = TrajectoryData_from_cpp(full_data)
         return raw_data, py_full_data
@@ -366,14 +323,11 @@ cdef class CythonizedBaseIntegrationEngine:
         Returns:
             double: The miss distance in feet (positive if overshot, negative if undershot).
         """
-        try:
-            return self._this.error_at_distance(
-                angle_rad,
-                target_x_ft,
-                target_y_ft,
-            )
-        except RuntimeError as e:
-            raise SolverRuntimeError(e)
+        return self._this.error_at_distance(
+            angle_rad,
+            target_x_ft,
+            target_y_ft,
+        )
 
     cdef BCLIBC_ShotProps* _init_trajectory(
         CythonizedBaseIntegrationEngine self,
@@ -417,16 +371,13 @@ cdef class CythonizedBaseIntegrationEngine:
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
         cdef BCLIBC_ZeroFindingError error
-        try:
-            self._this.init_zero_calculation(
-                distance,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                out,
-                error,
-            )
-        except RuntimeError as e:
-            zero_finding_error(e, error)
+        self._this.init_zero_calculation(
+            distance,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            out,
+            error,
+        )
 
     cdef double _find_zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -446,16 +397,13 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_ZeroFindingError error
-        try:
-            return self._this.find_zero_angle(
-                distance,
-                lofted,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                error,
-            )
-        except RuntimeError as e:
-            zero_finding_error(e, error)
+        return self._this.find_zero_angle(
+            distance,
+            lofted,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            error,
+        )
 
     cdef BCLIBC_MaxRangeResult _find_max_range(
         CythonizedBaseIntegrationEngine self,
@@ -475,14 +423,11 @@ cdef class CythonizedBaseIntegrationEngine:
             Tuple[Distance, Angular]: The maximum slant range and the launch angle to reach it.
         """
         self._init_trajectory(shot_info)
-        try:
-            return self._this.find_max_range(
-                low_angle_deg,
-                high_angle_deg,
-                _APEX_IS_MAX_RANGE_RADIANS,
-            )
-        except RuntimeError as e:
-            raise SolverRuntimeError(e)
+        return self._this.find_max_range(
+            low_angle_deg,
+            high_angle_deg,
+            _APEX_IS_MAX_RANGE_RADIANS,
+        )
 
     cdef BCLIBC_TrajectoryData _find_apex(
         CythonizedBaseIntegrationEngine self,
@@ -496,15 +441,12 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef BCLIBC_BaseTrajData apex = BCLIBC_BaseTrajData()
-        try:
-            self._this.find_apex(apex)
-            return BCLIBC_TrajectoryData(
-                self._this.shot,
-                apex,
-                BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX
-            )
-        except RuntimeError as e:
-            raise SolverRuntimeError(e)
+        self._this.find_apex(apex)
+        return BCLIBC_TrajectoryData(
+            self._this.shot,
+            apex,
+            BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_APEX
+        )
 
     cdef double _zero_angle(
         CythonizedBaseIntegrationEngine self,
@@ -525,15 +467,12 @@ cdef class CythonizedBaseIntegrationEngine:
         self._init_trajectory(shot_info)
         cdef:
             BCLIBC_ZeroFindingError error
-        try:
-            return self._this.zero_angle(
-                distance,
-                _APEX_IS_MAX_RANGE_RADIANS,
-                _ALLOWED_ZERO_ERROR_FEET,
-                error,
-            )
-        except RuntimeError as e:
-            zero_finding_error(e, error)
+        return self._this.zero_angle(
+            distance,
+            _APEX_IS_MAX_RANGE_RADIANS,
+            _ALLOWED_ZERO_ERROR_FEET,
+            error,
+        )
 
     cdef void _integrate_raw_at(
         CythonizedBaseIntegrationEngine self,
@@ -560,21 +499,17 @@ cdef class CythonizedBaseIntegrationEngine:
                 to store the full processed data.
 
         Raises:
-            SolverRuntimeError: Wraps any std::runtime_error thrown by the
-                underlying C++ integrate_at call.
+            InterceptionError: If the underlying C++ integration fails to find
+                the target point (e.g., due to insufficient range or data issues).
+            SolverRuntimeError: If some other internal error occured
         """
         self._init_trajectory(shot_info)
-        try:
-            self._this.integrate_at(
-                key,
-                target_value,
-                raw_data,
-                full_data,
-            )
-        except IndexError as e:
-            raise IndexError("Index out of bounds")
-        except RuntimeError as e:
-            raise SolverRuntimeError(e)
+        self._this.integrate_at(
+            key,
+            target_value,
+            raw_data,
+            full_data,
+        )
 
     cdef void _integrate(
         CythonizedBaseIntegrationEngine self,
@@ -598,16 +533,13 @@ cdef class CythonizedBaseIntegrationEngine:
                 CythonizedBaseTrajSeq: The trajectory sequence.
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
-        try:
-            self._init_trajectory(shot_info)
-            self._this.integrate(
-                range_limit_ft,
-                time_step,
-                handler,
-                reason,
-            )
-        except RuntimeError as e:
-            raise SolverRuntimeError(e)
+        self._init_trajectory(shot_info)
+        self._this.integrate(
+            range_limit_ft,
+            time_step,
+            handler,
+            reason,
+        )
 
 
 cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records):

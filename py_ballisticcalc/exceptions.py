@@ -73,7 +73,7 @@ from __future__ import annotations
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from py_ballisticcalc.trajectory_data import TrajectoryData
+    from py_ballisticcalc.trajectory_data import TrajectoryData, BaseTrajData
     from py_ballisticcalc.unit import Angular, Distance
 
 __all__ = (
@@ -84,6 +84,7 @@ __all__ = (
     "OutOfRangeError",
     "ZeroFindingError",
     "RangeError",
+    "InterceptionError",
 )
 
 
@@ -203,3 +204,13 @@ class OutOfRangeError(SolverRuntimeError):
         if note:
             msg += f". {note}"
         super().__init__(msg)
+
+
+class InterceptionError(SolverRuntimeError):
+    def __init__(self, message, last_data: tuple[BaseTrajData, TrajectoryData]):
+        super().__init__(message)
+        self._last_data = last_data
+
+    @property
+    def last_data(self) -> tuple[BaseTrajData, TrajectoryData]:
+        return self._last_data
