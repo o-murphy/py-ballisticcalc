@@ -31,14 +31,14 @@ namespace bclibc
               look_angle_rad(look_angle_rad) {};
     };
 
-    class BCLIBC_ZeroFindingError1 : public BCLIBC_SolverRuntimeError
+    class BCLIBC_ZeroFindingError : public BCLIBC_SolverRuntimeError
     {
     public:
         double zero_finding_error;
         int iterations_count;
         double last_barrel_elevation_rad;
 
-        BCLIBC_ZeroFindingError1(
+        BCLIBC_ZeroFindingError(
             const std::string &message,
             double zero_finding_error,
             int iterations_count,
@@ -55,8 +55,12 @@ namespace bclibc
         BCLIBC_BaseTrajData raw_data;
         BCLIBC_TrajectoryData full_data;
         BCLIBC_InterceptionError(
-            const std::string &message)
-            : BCLIBC_SolverRuntimeError(message) {};
+            const std::string &message,
+            const BCLIBC_BaseTrajData &raw_data,
+            const BCLIBC_TrajectoryData &full_data)
+            : BCLIBC_SolverRuntimeError(message),
+              raw_data(raw_data),
+              full_data(full_data) {};
     };
 }; // bclibc
 

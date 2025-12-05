@@ -1,11 +1,9 @@
 # pxd for rk4_engine to expose CythonizedRK4IntegrationEngine
-from py_ballisticcalc_exts.base_engine cimport (
-    CythonizedBaseIntegrationEngine,
-)
 from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajDataHandlerInterface
+from py_ballisticcalc_exts.base_types cimport BCLIBC_TerminationReason
 from py_ballisticcalc_exts.base_engine cimport (
     BCLIBC_Engine,
-    BCLIBC_TerminationReason,
+    CythonizedBaseIntegrationEngine,
     BCLIBC_BaseTrajDataHandlerInterface,
 )
 

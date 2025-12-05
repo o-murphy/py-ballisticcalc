@@ -1,7 +1,12 @@
 from libcpp.string cimport string
 from libcpp.exception cimport exception_ptr
 
-from py_ballisticcalc_exts.traj_data cimport BCLIBC_BaseTrajData, BCLIBC_TrajectoryData
+from py_ballisticcalc_exts.traj_data cimport (
+    BCLIBC_BaseTrajData,
+    BCLIBC_TrajectoryData,
+    CythonizedBaseTrajData,
+    TrajectoryData_from_cpp,
+)
 from py_ballisticcalc_exts.bind cimport (
     feet_from_c,
     rad_from_c,
@@ -116,21 +121,25 @@ cdef extern from "bclibc/exceptions.hpp" namespace "bclibc" nogil:
             double max_range_ft,
             double look_angle_rad) except+
 
-    cdef cppclass BCLIBC_ZeroFindingError1(BCLIBC_SolverRuntimeError):
+    cdef cppclass BCLIBC_ZeroFindingError(BCLIBC_SolverRuntimeError):
         double zero_finding_error
         int iterations_count
         double last_barrel_elevation_rad
 
-        BCLIBC_ZeroFindingError1(
+        BCLIBC_ZeroFindingError(
             const string &message,
             double zero_finding_error,
             int iterations_count,
             double last_barrel_elevation_rad) except+
 
     cdef cppclass BCLIBC_InterceptionError(BCLIBC_SolverRuntimeError):
+        BCLIBC_BaseTrajData raw_data
+        BCLIBC_TrajectoryData full_data
 
         BCLIBC_InterceptionError(
             const string &message,
+            const BCLIBC_BaseTrajData &raw_data,
+            const BCLIBC_TrajectoryData &full_data,
         ) except+
 
 
@@ -144,7 +153,7 @@ cdef inline void handle_OutOfRangeError(const BCLIBC_OutOfRangeError &e):
     )
 
 
-cdef inline void handle_ZeroFindingError(const BCLIBC_ZeroFindingError1 &e):
+cdef inline void handle_ZeroFindingError(const BCLIBC_ZeroFindingError &e):
     from py_ballisticcalc.exceptions import ZeroFindingError
     raise ZeroFindingError(
         e.zero_finding_error,
@@ -156,7 +165,10 @@ cdef inline void handle_ZeroFindingError(const BCLIBC_ZeroFindingError1 &e):
 
 cdef inline void handle_InterceptError(const BCLIBC_InterceptionError &e):
     from py_ballisticcalc.exceptions import InterceptionError
-    raise InterceptionError(e.what().decode("utf-8"), None)
+    cdef CythonizedBaseTrajData raw_data = CythonizedBaseTrajData()
+    cdef object py_full_data = TrajectoryData_from_cpp(e.full_data)
+    raw_data._this = e.raw_data
+    raise InterceptionError(e.what().decode("utf-8"), (raw_data, py_full_data))
 
 
 cdef inline void handle_SolverRuntimeError(const BCLIBC_SolverRuntimeError &e):
@@ -164,7 +176,7 @@ cdef inline void handle_SolverRuntimeError(const BCLIBC_SolverRuntimeError &e):
     raise SolverRuntimeError(e.what().decode("utf-8"))
 
 
-cdef inline void raise_engine_exception():
+cdef inline void raise_solver_exception():
     many_exception_handler(
         handle_ZeroFindingError,
         handle_OutOfRangeError,

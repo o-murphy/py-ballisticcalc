@@ -7,7 +7,6 @@ Presently ._integrate() returns dense data in a CythonizedBaseTrajSeq, then .int
 """
 
 from libcpp.vector cimport vector
-from cython.operator cimport dereference as deref, preincrement as inc
 from py_ballisticcalc_exts.v3d cimport BCLIBC_V3dT
 from py_ballisticcalc_exts.traj_data cimport (
     CythonizedBaseTrajData,
@@ -16,6 +15,8 @@ from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_TrajectoryData,
     BCLIBC_BaseTrajData_InterpKey,
     BCLIBC_BaseTrajDataHandlerInterface,
+    TrajectoryData_from_cpp,
+    TrajectoryData_list_from_cpp,
 )
 from py_ballisticcalc_exts.base_types cimport (
     # types and methods
@@ -36,8 +37,8 @@ from py_ballisticcalc_exts.bind cimport (
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.engines.base_engine import create_base_engine_config
 from py_ballisticcalc.engines.base_engine import BaseIntegrationEngine as _PyBaseIntegrationEngine
-from py_ballisticcalc.exceptions import RangeError, InterceptionError
-from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData, TrajFlag
+from py_ballisticcalc.exceptions import RangeError
+from py_ballisticcalc.trajectory_data import HitResult, TrajectoryData
 from py_ballisticcalc.unit import Angular
 
 __all__ = (
@@ -177,13 +178,11 @@ cdef class CythonizedBaseIntegrationEngine:
         """
         self._init_trajectory(shot_info)
         cdef:
-            BCLIBC_ZeroFindingError error
             double result
         result = self._this.zero_angle_with_fallback(
             distance._feet,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
-            error,
         )
         return rad_from_c(result)
 
@@ -295,12 +294,7 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef BCLIBC_TrajectoryData full_data
         cdef object py_full_data
 
-        try:
-            self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
-        except InterceptionError as e:
-            py_full_data = TrajectoryData_from_cpp(full_data)
-            e._last_data = (raw_data, py_full_data)
-            raise e
+        self._integrate_raw_at(shot_info, key, target_value, raw_data._this, full_data)
 
         py_full_data = TrajectoryData_from_cpp(full_data)
         return raw_data, py_full_data
@@ -370,13 +364,11 @@ cdef class CythonizedBaseIntegrationEngine:
             tuple: (status, look_angle_rad, slant_range_ft, target_x_ft, target_y_ft, start_height_ft)
             where status is: 0 = CONTINUE, 1 = DONE (early return with look_angle_rad)
         """
-        cdef BCLIBC_ZeroFindingError error
         self._this.init_zero_calculation(
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
             out,
-            error,
         )
 
     cdef double _find_zero_angle(
@@ -396,13 +388,11 @@ cdef class CythonizedBaseIntegrationEngine:
             double: The calculated zero angle in radians.
         """
         self._init_trajectory(shot_info)
-        cdef BCLIBC_ZeroFindingError error
         return self._this.find_zero_angle(
             distance,
             lofted,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
-            error,
         )
 
     cdef BCLIBC_MaxRangeResult _find_max_range(
@@ -465,13 +455,10 @@ cdef class CythonizedBaseIntegrationEngine:
             Angular: Barrel elevation to hit height zero at zero distance along sight line
         """
         self._init_trajectory(shot_info)
-        cdef:
-            BCLIBC_ZeroFindingError error
         return self._this.zero_angle(
             distance,
             _APEX_IS_MAX_RANGE_RADIANS,
             _ALLOWED_ZERO_ERROR_FEET,
-            error,
         )
 
     cdef void _integrate_raw_at(
@@ -540,37 +527,3 @@ cdef class CythonizedBaseIntegrationEngine:
             handler,
             reason,
         )
-
-
-cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records):
-    cdef list py_list = []
-    cdef vector[BCLIBC_TrajectoryData].const_iterator it = records.begin()
-    cdef vector[BCLIBC_TrajectoryData].const_iterator end = records.end()
-
-    while it != end:
-        py_list.append(TrajectoryData_from_cpp(deref(it)))
-        inc(it)
-
-    return py_list
-
-
-cdef object TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data):
-    cdef object pydata = TrajectoryData(
-        time=cpp_data.time,
-        distance=TrajectoryData._new_feet(cpp_data.distance_ft),
-        velocity=TrajectoryData._new_fps(cpp_data.velocity_fps),
-        mach=cpp_data.mach,
-        height=TrajectoryData._new_feet(cpp_data.height_ft),
-        slant_height=TrajectoryData._new_feet(cpp_data.slant_height_ft),
-        drop_angle=TrajectoryData._new_rad(cpp_data.drop_angle_rad),
-        windage=TrajectoryData._new_feet(cpp_data.windage_ft),
-        windage_angle=TrajectoryData._new_rad(cpp_data.windage_angle_rad),
-        slant_distance=TrajectoryData._new_feet(cpp_data.slant_distance_ft),
-        angle=TrajectoryData._new_rad(cpp_data.angle_rad),
-        density_ratio=cpp_data.density_ratio,
-        drag=cpp_data.drag,
-        energy=TrajectoryData._new_ft_lb(cpp_data.energy_ft_lb),
-        ogw=TrajectoryData._new_lb(cpp_data.ogw_lb),
-        flag=TrajFlag(cpp_data.flag)
-    )
-    return pydata
