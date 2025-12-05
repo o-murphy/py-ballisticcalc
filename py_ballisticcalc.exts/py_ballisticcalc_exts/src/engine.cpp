@@ -279,7 +279,7 @@ namespace bclibc
 
         if (!handler.found())
         {
-            BCLIBC_SolverRuntimeError(
+            throw BCLIBC_SolverRuntimeError(
                 "Trajectory too short to determine error at distance.");
         }
 
@@ -580,20 +580,14 @@ namespace bclibc
             iterations_count++;
         }
 
-        // finally:
-
-        // if (error.type == BCLIBC_ZeroFindingErrorType::ZERO_FINDING_ERROR)
-        // {
-        //     // Fill zero_error if not already filled
-        //     error.zero_finding.zero_finding_error = height_error_ft;
-        //     error.zero_finding.iterations_count = iterations_count;
-        //     error.zero_finding.last_barrel_elevation_rad = this->shot.barrel_elevation;
-        //     throw BCLIBC_ZeroFindingError(
-        //         "Zero finding error",
-        //         height_error_ft,
-        //         iterations_count,
-        //         this->shot.barrel_elevation);
-        // }
+        if (height_error_ft > _cZeroFindingAccuracy || range_error_ft > ALLOWED_ZERO_ERROR_FEET)
+        {
+            throw BCLIBC_ZeroFindingError(
+                "Zero finding failed to converge after maximum iterations",
+                height_error_ft,
+                iterations_count,
+                this->shot.barrel_elevation);
+        }
 
         // success
         return this->shot.barrel_elevation;
