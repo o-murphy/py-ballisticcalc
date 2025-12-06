@@ -61,38 +61,6 @@ namespace bclibc
         double angle_at_max_rad;
     };
 
-    enum class BCLIBC_ZeroFindingErrorType
-    {
-        NO_ERROR,
-        // Special
-        ZERO_FINDING_ERROR,
-        OUT_OF_RANGE_ERROR,
-    };
-
-    struct BCLIBC_ZeroFindingErrorData
-    {
-        double zero_finding_error;
-        int iterations_count;
-        double last_barrel_elevation_rad;
-    };
-
-    struct BCLIBC_OutOfRangeErrorData
-    {
-        double requested_distance_ft;
-        double max_range_ft;
-        double look_angle_rad;
-    };
-
-    struct BCLIBC_ZeroFindingError
-    {
-        BCLIBC_ZeroFindingErrorType type;
-        union
-        {
-            BCLIBC_ZeroFindingErrorData zero_finding;
-            BCLIBC_OutOfRangeErrorData out_of_range;
-        };
-    };
-
     class BCLIBC_Engine;
 
     using BCLIBC_IntegrateFunc = void(
@@ -159,7 +127,7 @@ namespace bclibc
          * the actual step size is determined internally by the integrator.
          *
          * @throws std::logic_error if integrate_func_ptr is null.
-         * @throws std::runtime_error if the target point is not found within the
+         * @throws BCLIBC_InterceptionError if the target point is not found within the
          * integrated trajectory (e.g., "No apex flagged...").
          */
         void integrate_at(
@@ -196,7 +164,7 @@ namespace bclibc
          * @param apex_out Output variable to store apex trajectory data.
          *
          * @throws std::invalid_argument if barrel elevation is <= 0.
-         * @throws std::runtime_error if apex cannot be determined.
+         * @throws BCLIBC_ZeroFindingError if apex cannot be determined.
          */
         void find_apex(BCLIBC_BaseTrajData &apex_out);
 
@@ -209,8 +177,8 @@ namespace bclibc
          *
          * @return Vertical error in feet, corrected for horizontal offset.
          *
-         * @throws std::runtime_error if trajectory is too short.
          * @throws std::out_of_range if trajectory data is invalid.
+         * @throws BCLIBC_SolverRuntimeError if trajectory is too short.
          */
         double error_at_distance(
             double angle_rad,
@@ -224,7 +192,9 @@ namespace bclibc
          * @param APEX_IS_MAX_RANGE_RADIANS Threshold in radians to consider vertical shots.
          * @param ALLOWED_ZERO_ERROR_FEET Allowed range error in feet.
          * @param result Output structure with initial zero-finding data.
-         * @param error Reference to store zero-finding error information.
+         *
+         * @throws std::out_of_range if trajectory data is invalid.
+         * @throws BCLIBC_OutOfRangeError if apex_slant_ft < result.slant_range_ft.
          *
          * Handles edge cases like very close or vertical shots.
          */
@@ -232,8 +202,7 @@ namespace bclibc
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData &result,
-            BCLIBC_ZeroFindingError &error);
+            BCLIBC_ZeroInitialData &result);
 
         /**
          * @brief Finds the maximum range and corresponding angle for the current shot.
@@ -255,15 +224,13 @@ namespace bclibc
          * @param distance Target slant distance in feet.
          * @param APEX_IS_MAX_RANGE_RADIANS Threshold for vertical shots in radians.
          * @param ALLOWED_ZERO_ERROR_FEET Maximum allowable error in feet.
-         * @param error Reference to store zero-finding error information.
          *
          * @return Zero angle (barrel elevation) in radians.
          */
         double zero_angle_with_fallback(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroFindingError &error);
+            double ALLOWED_ZERO_ERROR_FEET);
 
         /**
          * @brief Computes the zero angle for a given target distance.
@@ -271,17 +238,15 @@ namespace bclibc
          * @param distance Target slant distance in feet.
          * @param APEX_IS_MAX_RANGE_RADIANS Threshold for vertical shots in radians.
          * @param ALLOWED_ZERO_ERROR_FEET Maximum allowable error in feet.
-         * @param error Reference to store zero-finding error information.
          *
          * @return Zero angle (barrel elevation) in radians.
          *
-         * @throws std::runtime_error if zero-finding fails to converge.
+         * @throws BCLIBC_ZeroFindingError if zero-finding fails to converge.
          */
         double zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroFindingError &error);
+            double ALLOWED_ZERO_ERROR_FEET);
 
         /**
          * @brief Computes the range corresponding to a given barrel elevation angle.
@@ -299,18 +264,17 @@ namespace bclibc
          * @param lofted Non-zero if a lofted trajectory is allowed.
          * @param APEX_IS_MAX_RANGE_RADIANS Threshold for vertical shots in radians.
          * @param ALLOWED_ZERO_ERROR_FEET Maximum allowable error in feet.
-         * @param error Reference to store zero-finding error information.
          *
          * @return Zero angle (barrel elevation) in radians.
          *
-         * @throws std::runtime_error if zero-finding fails.
+         * @throws BCLIBC_OutOfRangeError if slant_range_ft > max_range_ft.
+         * @throws BCLIBC_ZeroFindingError if zero-finding fails.
          */
         double find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroFindingError &error);
+            double ALLOWED_ZERO_ERROR_FEET);
 
     private:
         /**

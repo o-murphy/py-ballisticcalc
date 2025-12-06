@@ -16,11 +16,7 @@ from py_ballisticcalc_exts.traj_data cimport (
     BCLIBC_BaseTrajData_InterpKey,
     BCLIBC_BaseTrajDataHandlerInterface
 )
-
-
-cdef void zero_finding_error(object exception, const BCLIBC_ZeroFindingError &zero_error)
-cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records)
-cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)
+from py_ballisticcalc_exts.exceptions cimport raise_solver_exception
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
@@ -41,26 +37,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     cdef cppclass BCLIBC_MaxRangeResult:
         double max_range_ft
         double angle_at_max_rad
-
-    cdef enum class BCLIBC_ZeroFindingErrorType:
-        NO_ERROR
-        ZERO_FINDING_ERROR
-        OUT_OF_RANGE_ERROR
-
-    cdef cppclass BCLIBC_OutOfRangeErrorData:
-        double requested_distance_ft
-        double max_range_ft
-        double look_angle_rad
-
-    cdef cppclass BCLIBC_ZeroFindingErrorData:
-        double zero_finding_error
-        int iterations_count
-        double last_barrel_elevation_rad
-
-    cdef cppclass BCLIBC_ZeroFindingError:
-        BCLIBC_ZeroFindingErrorType type
-        BCLIBC_ZeroFindingErrorData zero_finding
-        BCLIBC_OutOfRangeErrorData out_of_range
 
     # Forward declaration
     cdef cppclass BCLIBC_Engine
@@ -87,13 +63,13 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             double range_limit_ft,
             double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
-            BCLIBC_TerminationReason &reason) except +
+            BCLIBC_TerminationReason &reason) except +raise_solver_exception
 
         void integrate_at(
             BCLIBC_BaseTrajData_InterpKey key,
             double target_value,
             BCLIBC_BaseTrajData &raw_data,
-            BCLIBC_TrajectoryData &full_data) except+
+            BCLIBC_TrajectoryData &full_data) except +raise_solver_exception
 
         void integrate_filtered(
             double range_limit_ft,
@@ -102,45 +78,41 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
             BCLIBC_TrajFlag filter_flags,
             vector[BCLIBC_TrajectoryData] &records,
             BCLIBC_TerminationReason &reason,
-            BCLIBC_BaseTrajSeq *dense_trajectory) except +
+            BCLIBC_BaseTrajSeq *dense_trajectory) except +raise_solver_exception
 
-        void find_apex(BCLIBC_BaseTrajData &apex_out) except +
+        void find_apex(BCLIBC_BaseTrajData &apex_out) except +raise_solver_exception
 
         double error_at_distance(
             double angle_rad,
             double target_x_ft,
-            double target_y_ft) except +
+            double target_y_ft) except +raise_solver_exception
 
         BCLIBC_MaxRangeResult find_max_range(
             double low_angle_deg,
             double high_angle_deg,
-            double APEX_IS_MAX_RANGE_RADIANS) except +
+            double APEX_IS_MAX_RANGE_RADIANS) except +raise_solver_exception
 
         void init_zero_calculation(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
             double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroInitialData &result,
-            BCLIBC_ZeroFindingError &error) except +
+            BCLIBC_ZeroInitialData &result) except +raise_solver_exception
 
         double zero_angle_with_fallback(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroFindingError &error) except +
+            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
 
         double zero_angle(
             double distance,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroFindingError &error) except +
+            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
 
         double find_zero_angle(
             double distance,
             int lofted,
             double APEX_IS_MAX_RANGE_RADIANS,
-            double ALLOWED_ZERO_ERROR_FEET,
-            BCLIBC_ZeroFindingError &error) except +
+            double ALLOWED_ZERO_ERROR_FEET) except +raise_solver_exception
 
 cdef class CythonizedBaseIntegrationEngine:
 

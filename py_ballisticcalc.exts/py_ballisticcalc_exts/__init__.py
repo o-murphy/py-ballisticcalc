@@ -8,7 +8,7 @@ __credits__ = ["o-murphy", "dbookstaber"]
 
 
 from .traj_data import CythonizedBaseTrajData, CythonizedBaseTrajSeq
-from .base_engine import CythonizedBaseIntegrationEngine, InterceptionError
+from .base_engine import CythonizedBaseIntegrationEngine
 from .euler_engine import CythonizedEulerIntegrationEngine
 from .rk4_engine import CythonizedRK4IntegrationEngine
 
@@ -38,7 +38,6 @@ __all__ = (
     "CythonizedRK4IntegrationEngine",
     # externs for docs generation
     "CythonizedBaseIntegrationEngine",
-    "InterceptionError",
     "CythonizedBaseTrajData",
     "CythonizedBaseTrajSeq",
 )
