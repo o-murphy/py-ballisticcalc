@@ -288,6 +288,8 @@ namespace bclibc
          */
         const BCLIBC_BaseTrajData &get_result() const;
 
+        const BCLIBC_BaseTrajData &get_last() const;
+
         /**
          * @brief Returns number of points processed.
          */

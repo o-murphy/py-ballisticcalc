@@ -52,6 +52,12 @@ on:
         type: boolean
         default: false
 
+      build_wheels:
+        description: "Build wheels on success testing"
+        required: false
+        type: boolean
+        default: false
+
 jobs:
   run_reusable_workflow:
     name: "Test ${{ inputs.engine_name }} on ${{ inputs.os }} with Python ${{ inputs.python_version }}"
@@ -61,3 +67,4 @@ jobs:
       python_version: ${{ inputs.python_version }}
       engine_name: ${{ inputs.engine_name }}
       stress_test: ${{ inputs.stress_test }}
+      build_wheels: ${{ inputs.build_wheels }}

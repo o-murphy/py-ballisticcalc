@@ -8,7 +8,7 @@ repos:
       - id: uv-sync
         name: uv sync before hooks
         entry: uv
-        args: ["sync", "--no-dev", "--extra", "exts", "--reinstall"]
+        args: ["sync", "--extra", "exts", "--reinstall"]
         language: system
         pass_filenames: false
 

@@ -153,7 +153,7 @@ from .engines import (create_base_engine_config, BaseEngineConfig, BaseEngineCon
                      BaseIntegrationEngine, EulerIntegrationEngine, RK4IntegrationEngine,
                      SciPyIntegrationEngine, VelocityVerletIntegrationEngine, SciPyEngineConfigDict)
 from .exceptions import (UnitTypeError, UnitConversionError, UnitAliasError, 
-                        SolverRuntimeError, OutOfRangeError, ZeroFindingError, RangeError)
+                        SolverRuntimeError, OutOfRangeError, ZeroFindingError, RangeError, InterceptionError)
 from .interface import Calculator, _EngineLoader
 from .interpolation import InterpolationMethod, interpolate_2_pt, interpolate_3_pt
 from .logger import logger, enable_file_logging, disable_file_logging

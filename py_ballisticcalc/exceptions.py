@@ -18,7 +18,8 @@ Exception (built-in Python)
     └── SolverRuntimeError
         ├── ZeroFindingError
         ├── RangeError
-        └── OutOfRangeError
+        ├── OutOfRangeError
+        └── InterceptionError
 ```
 Exception Types
 ---------------
@@ -66,6 +67,11 @@ Solver-Related Exceptions:
     - requested_distance: The distance that was requested
     - max_range: Maximum achievable range (optional)
     - look_angle: Look angle for the shot (optional)
+
+- [`InterceptionError`](py_ballisticcalc.exceptions.InterceptionError):
+    Raised when interpolation can't found interception point for target key and value during integration.
+    Contains:
+    - last_data: tuple[BaseTrajData, TrajectoryData]
 """
 
 from __future__ import annotations
@@ -73,7 +79,7 @@ from __future__ import annotations
 from typing import List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from py_ballisticcalc.trajectory_data import TrajectoryData
+    from py_ballisticcalc.trajectory_data import TrajectoryData, BaseTrajData
     from py_ballisticcalc.unit import Angular, Distance
 
 __all__ = (
@@ -84,6 +90,7 @@ __all__ = (
     "OutOfRangeError",
     "ZeroFindingError",
     "RangeError",
+    "InterceptionError",
 )
 
 
@@ -203,3 +210,16 @@ class OutOfRangeError(SolverRuntimeError):
         if note:
             msg += f". {note}"
         super().__init__(msg)
+
+
+class InterceptionError(SolverRuntimeError):
+    """
+    Exception when interpolation can't found interception point for target key and value during integration.
+
+    Contains:
+    - last_data: tuple[BaseTrajData, TrajectoryData]
+    """
+
+    def __init__(self, message, last_data: tuple[BaseTrajData, TrajectoryData]):
+        super().__init__(message)
+        self.last_data: tuple[BaseTrajData, TrajectoryData] = last_data

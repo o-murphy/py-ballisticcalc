@@ -648,6 +648,23 @@ namespace bclibc
         return this->result;
     };
 
+    const BCLIBC_BaseTrajData &BCLIBC_SinglePointHandler::get_last() const
+    {
+        if (this->count == 0)
+        {
+            throw std::out_of_range("Cannot get last point: the handler is empty (count = 0).");
+        }
+
+        if (this->count >= 3)
+        {
+            return this->points[2];
+        }
+        else
+        {
+            return this->points[this->count - 1];
+        }
+    }
+
     /**
      * @brief Returns number of points processed.
      */
