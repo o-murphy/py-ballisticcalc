@@ -218,10 +218,11 @@ cdef class CythonizedBaseIntegrationEngine:
         cdef:
             object props
             object termination_reason = None
+            list[object] trajectory = None
             BCLIBC_TerminationReason reason
             double range_limit_ft = max_range._feet
             double range_step_ft = dist_step._feet if dist_step is not None else range_limit_ft
-            vector[BCLIBC_TrajectoryData] records
+            vector[BCLIBC_TrajectoryData] filtered_records
             CythonizedBaseTrajSeq dense_trajectory
 
         if dense_output:
@@ -234,23 +235,25 @@ cdef class CythonizedBaseIntegrationEngine:
             range_step_ft,
             time_step,
             <BCLIBC_TrajFlag>filter_flags,
-            records,
+            filtered_records,
             reason,
             &dense_trajectory._this if dense_output else NULL,
         )
+
+        trajectory = TrajectoryData_list_from_cpp(filtered_records)
 
         # Extract termination_reason from the result
         termination_reason = TERMINATION_REASON_MAP.get(reason)
 
         if termination_reason is not None:
-            termination_reason = RangeError(termination_reason, TrajectoryData_list_from_cpp(records))
+            termination_reason = RangeError(termination_reason, trajectory)
 
         props = ShotProps.from_shot(shot_info)
         props.filter_flags = filter_flags
         props.calc_step = self.get_calc_step()  # Add missing calc_step attribute
         return HitResult(
             props,
-            TrajectoryData_list_from_cpp(records),
+            trajectory,
             dense_trajectory if dense_output else None,
             filter_flags != BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
             termination_reason
