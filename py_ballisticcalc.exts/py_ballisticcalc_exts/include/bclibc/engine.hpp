@@ -87,7 +87,8 @@ namespace bclibc
         BCLIBC_ShotProps shot;
         BCLIBC_IntegrateFuncPtr integrate_func_ptr;
 
-    public:
+        BCLIBC_Engine() = default;
+
         /**
          * @brief Calls the underlying integration function for the projectile trajectory.
          *

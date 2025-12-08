@@ -58,6 +58,8 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_ShotProps shot
         BCLIBC_IntegrateFuncPtr integrate_func_ptr
 
+        BCLIBC_Engine() except+
+
         void integrate(
             double range_limit_ft,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
