@@ -68,5 +68,5 @@ __all__ = (
     'SciPyEngineConfigDict',
     'DEFAULT_SCIPY_ENGINE_CONFIG',
     'create_scipy_engine_config',
-    'WindSock',
+    'ScipyWindSock',
 )

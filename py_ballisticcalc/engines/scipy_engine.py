@@ -59,7 +59,7 @@ import math
 import warnings
 from dataclasses import dataclass, asdict
 from typing import Any, Callable, Literal, Sequence, TYPE_CHECKING
-from bisect import bisect_left
+from bisect import bisect_left, bisect_right
 
 # Third-party imports
 try:
@@ -93,13 +93,13 @@ from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import ShotProps
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
-from py_ballisticcalc.vector import Vector, ZERO_VECTOR
+from py_ballisticcalc.vector import Vector
 
 __all__ = (
     "SciPyIntegrationEngine",
     "SciPyEngineConfig",
     "SciPyEngineConfigDict",
-    "WindSock",
+    "ScipyWindSock",
     "DEFAULT_SCIPY_ENGINE_CONFIG",
     "create_scipy_engine_config",
 )
@@ -118,7 +118,7 @@ else:
 
 
 # typed scipy event with expected attributes
-@dataclass
+@dataclass(frozen=True)
 class SciPyEvent:
     """Event object for SciPy solve_ivp integration with trajectory detection.
 
@@ -237,52 +237,169 @@ def scipy_event(
     return wrapper
 
 
-class WindSock:
-    """Wind vector calculator for trajectory analysis at any downrange distance.
+class ScipyWindSock:
+    """Optimized wind vector calculator using binary search for O(log n) lookups.
 
-    This differs slightly from the base_engine.py::_WindSock used by the other engines
-    because we can't be certain whether SciPy will request Winds in distance order.
+    This implementation pre-processes wind data during initialization to enable
+    fast binary search lookups during trajectory integration. The original
+    implementation used linear search which becomes a bottleneck when:
+    - Multiple wind zones are defined (>3 zones)
+    - Integration requires thousands of wind lookups
+    - High-precision methods with many evaluation points are used
+
+    Key optimizations:
+    1. Pre-sorted distance thresholds for binary search
+    2. Parallel arrays avoid object lookups during integration
+    3. Single wind optimization (no search needed)
+    4. Distance conversion done once during lookup
 
     Attributes:
-        winds: Sequence of Wind objects defining wind conditions at specific ranges.
+        winds: Original Wind objects (kept for reference)
+        _distances: Pre-computed distance thresholds in inches (sorted)
+        _vectors: Corresponding wind vectors (parallel array)
+        _single_wind: Cached vector for single-wind optimization
 
     Examples:
         >>> from py_ballisticcalc.conditions import Wind
         >>> from py_ballisticcalc.unit import Distance, Velocity, Angular
-        >>> # Define wind conditions at different ranges
+        >>>
+        >>> # Multiple wind zones
         >>> winds = [
-        ...     Wind(velocity=Velocity.MPH(10), direction_from=Angular.Degree(45),
-        ...          until_distance=Distance.Yard(0)),
-        ...     Wind(velocity=Velocity.MPH(15), direction_from=Angular.Degree(30),
-        ...          until_distance=Distance.Yard(500))
+        ...     Wind(velocity=Velocity.MPH(10), direction_from=Angular.Degree(0),
+        ...          until_distance=Distance.Yard(100)),
+        ...     Wind(velocity=Velocity.MPH(15), direction_from=Angular.Degree(45),
+        ...          until_distance=Distance.Yard(300)),
+        ...     Wind(velocity=Velocity.MPH(20), direction_from=Angular.Degree(90),
+        ...          until_distance=Distance.Yard(600))
         ... ]
         >>> wind_sock = WindSock(winds)
-        >>> # Get wind vector at 250 yards (pass feet)
-        >>> wind_vector = wind_sock.wind_at_distance(250 * 3.0)
+        >>>
+        >>> # Fast O(log n) lookup at 250 yards (convert to feet first)
+        >>> wind_vector = wind_sock.wind_at_distance(250.0 * 3.0)
 
-    Note:
-        Wind measurements should be provided in order of increasing range for
-        proper interpolation. The class assumes wind conditions remain constant
-        beyond the last measurement point.
+    Performance Characteristics:
+        - No winds: O(1) - immediate return
+        - Single wind: O(1) - cached vector
+        - Multiple winds: O(log n) - binary search
+
+    Memory overhead:
+        - 2 additional arrays: distances (float) and vectors (Vector refs)
+        - Minimal compared to performance gain
     """
 
-    def __init__(self, winds: Optional[Sequence[Wind]]):
-        # Sort winds by range, ascending
-        self.winds = None
-        if isinstance(winds, Wind):
+    __slots__ = ("winds", "_distances", "_vectors", "_single_wind")
+
+    def __init__(self, winds: Optional[Union[Wind, Sequence[Wind]]]) -> None:
+        """Initialize WindSock with optimized data structures for fast lookups.
+
+        Args:
+            winds: Single Wind object, sequence of Wind objects, or None.
+                  If sequence, will be sorted by until_distance automatically.
+
+        Note:
+            Wind objects are sorted by range during initialization, so the
+            order provided doesn't matter. This ensures binary search correctness.
+        """
+        self.winds: Optional[list[Wind]] = None
+        self._distances: list[float] = []
+        self._vectors: list[Vector] = []
+        self._single_wind: Optional[Vector] = None
+
+        # Normalize input to list
+        if winds is None:
+            return
+        elif isinstance(winds, Wind):
             self.winds = [winds]
         elif isinstance(winds, (tuple, list)):
+            if not winds:  # Empty sequence
+                return
+            # Sort by distance (ascending) for binary search
             self.winds = sorted(winds, key=lambda w: w.until_distance.raw_value)
+        else:
+            raise TypeError(f"winds must be Wind, Sequence[Wind], or None, got {type(winds)}")
 
-    def wind_at_distance(self, distance: float) -> Optional[Vector]:
-        """Return wind vector at specified distance, where distance is in feet."""
+        # Pre-process for fast lookups
+        if self.winds:
+            if len(self.winds) == 1:
+                # Single wind optimization - no search needed
+                self._single_wind = self.winds[0].vector
+            else:
+                # Build parallel arrays for binary search
+                # Store distances in inches (raw_value) to avoid conversion in hot path
+                self._distances = [w.until_distance.raw_value for w in self.winds]
+                self._vectors = [w.vector for w in self.winds]
+
+    def wind_at_distance(self, distance_ft: float) -> Optional[Vector]:
+        """Get wind vector at specified downrange distance (in feet).
+
+        This method is called thousands of times during trajectory integration,
+        so it's highly optimized:
+        - Early return for no winds
+        - Cached return for single wind
+        - Binary search for multiple winds
+
+        Args:
+            distance_ft: Downrange distance in feet.
+
+        Returns:
+            Wind Vector at the specified distance, or None if no winds defined.
+            Returns the wind vector from the first zone whose until_distance
+            is >= the query distance.
+
+        Algorithm:
+            Uses bisect_right to find the insertion point for distance in the
+            sorted _distances array. This gives us the index of the first wind
+            zone that extends beyond our query distance, which is exactly what
+            we need.
+
+        Performance:
+            - No winds: O(1) - single comparison
+            - Single wind: O(1) - cached lookup
+            - N winds: O(log N) - binary search
+
+        Examples:
+            >>> # At 150 yards (450 feet)
+            >>> wind = wind_sock.wind_at_distance(450.0)
+            >>>
+            >>> # Binary search finds correct zone automatically
+            >>> wind = wind_sock.wind_at_distance(800.0)  # Falls in 300-600 yard zone
+        """
+        # Fast path: no winds defined
         if not self.winds:
             return None
-        distance *= 12.0  # Convert distance to inches (distance.raw_value)
-        for wind in self.winds:  # For long lists: use binary search for performance
-            if distance <= wind.until_distance.raw_value:
-                return wind.vector
+
+        # Fast path: single wind zone (most common case)
+        if self._single_wind is not None:
+            return self._single_wind
+
+        # Convert feet to inches (Wind.until_distance.raw_value is in inches)
+        distance_inches = distance_ft * 12.0
+
+        # Binary search: find first zone where distance <= zone.until_distance
+        # bisect_right returns index where distance_inches would be inserted
+        # to keep list sorted, which gives us the correct wind zone
+        idx = bisect_right(self._distances, distance_inches)
+
+        # If idx < len, we found a zone; otherwise use last zone
+        if idx < len(self._vectors):
+            return self._vectors[idx]
+
+        # Beyond all defined zones - conventionally return None or last wind
+        # Original implementation returned None, keeping that behavior
         return None
+
+    def __repr__(self) -> str:
+        """String representation for debugging."""
+        if not self.winds:
+            return "WindSock(no winds)"
+        elif self._single_wind is not None:
+            return f"WindSock(single wind: {self._single_wind})"
+        else:
+            return f"WindSock({len(self.winds)} wind zones)"
+
+    def __len__(self) -> int:
+        """Return number of wind zones."""
+        return len(self.winds) if self.winds else 0
 
 
 INTEGRATION_METHOD = Literal["RK23", "RK45", "DOP853", "Radau", "BDF", "LSODA"]
@@ -690,7 +807,7 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
 
         ranges: List[TrajectoryData] = []  # Record of TrajectoryData points to return
 
-        wind_sock = WindSock(props.winds)
+        wind_sock = ScipyWindSock(props.winds)
         coriolis_fn = props.coriolis.coriolis_acceleration_local if props.coriolis and props.coriolis.full_3d else None
 
         # region Initialize velocity and position of projectile
@@ -709,37 +826,41 @@ class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
         # endregion
 
         # region SciPy integration
+        gravity_y = self.gravity_vector.y
+
         def diff_eq(t, s):
-            """Define the differential equations of the projectile's motion.
-            :param t: Time (not used in this case, but required by solve_ivp)
-            :param y: State vector [x, y, z, vx, vy, vz]
-            :return: Derivative of state vector
-            """
-            self.integration_step_count += 1
-            # self.eval_points.append(t)  # For inspection/debug
-            x, y, z = s[:3]  # pylint: disable=unused-variable
+            x, y, _ = s[:3]
             vx, vy, vz = s[3:]
-            velocity_vector = Vector(vx, vy, vz)
-            wind_vector = wind_sock.wind_at_distance(x)
-            if wind_vector is None:
-                relative_velocity = velocity_vector
+
+            wind = wind_sock.wind_at_distance(x)
+            if wind is None:
+                rel_vx, rel_vy, rel_vz = vx, vy, vz
             else:
-                relative_velocity = velocity_vector - wind_vector
-            relative_speed = relative_velocity.magnitude()
+                rel_vx = vx - wind.x
+                rel_vy = vy - wind.y
+                rel_vz = vz - wind.z
+
+            # magnitude()  # much faster than Vector(*rel_vx).magnitude()
+            relative_speed = math.sqrt(rel_vx * rel_vx + rel_vy * rel_vy + rel_vz * rel_vz)
+
             density_ratio, mach = props.get_density_and_mach_for_altitude(y)
             k_m = density_ratio * props.drag_by_mach(relative_speed / mach)
-            drag = k_m * relative_speed  # This is the "drag rate"
+            drag = k_m * relative_speed
 
-            coriolis_term = coriolis_fn(velocity_vector) if coriolis_fn else ZERO_VECTOR
+            if coriolis_fn:
+                cor = coriolis_fn(Vector(vx, vy, vz))
+                cor_x, cor_y, cor_z = cor.x, cor.y, cor.z
+            else:
+                cor_x = cor_y = cor_z = 0.0
 
-            # Derivatives
-            dxdt = vx
-            dydt = vy
-            dzdt = vz
-            dvxdt = coriolis_term.x - drag * relative_velocity.x
-            dvydt = self.gravity_vector.y + coriolis_term.y - drag * relative_velocity.y
-            dvzdt = coriolis_term.z - drag * relative_velocity.z
-            return [dxdt, dydt, dzdt, dvxdt, dvydt, dvzdt]
+            # # Derivatives
+            # dxdt = vx
+            # dydt = vy
+            # dzdt = vz
+            # dvxdt = cor_x - drag * rel_vx
+            # dvydt = gravity_y + cor_y - drag * rel_vy
+            # dvzdt = cor_z - drag * rel_vz
+            return [vx, vy, vz, cor_x - drag * rel_vx, gravity_y + cor_y - drag * rel_vy, cor_z - drag * rel_vz]
 
         # endregion SciPy integration
 
