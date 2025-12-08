@@ -65,7 +65,6 @@ namespace bclibc
 
     using BCLIBC_IntegrateFunc = void(
         BCLIBC_Engine &eng,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);
 
@@ -92,7 +91,6 @@ namespace bclibc
         /**
          * @brief Calls the underlying integration function for the projectile trajectory.
          *
-         * @param time_step Integration timestep in seconds.
          * @param handler Reference to a data handler for trajectory recording.
          * @param reason Reference to store termination reason.
          *
@@ -100,7 +98,6 @@ namespace bclibc
          */
         void integrate(
             double range_limit_ft,
-            double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason);
 
@@ -123,7 +120,6 @@ namespace bclibc
          * the full (processed) interpolated data point upon success.
          *
          * @note Access to the engine is protected by engine_mutex.
-         * @warning The integration is performed with time_step = 0.0, implying that
          * the actual step size is determined internally by the integrator.
          *
          * @throws std::logic_error if integrate_func_ptr is null.

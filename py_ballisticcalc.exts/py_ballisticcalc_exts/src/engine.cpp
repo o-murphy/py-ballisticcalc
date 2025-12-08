@@ -91,13 +91,12 @@ namespace bclibc
         }
 
         // 4. Call integration ONCE, passing the composite
-        this->integrate(range_limit_ft, time_step, composite_handler, reason);
+        this->integrate(range_limit_ft, composite_handler, reason);
     };
 
     /**
      * @brief Calls the underlying integration function for the projectile trajectory.
      *
-     * @param time_step Integration timestep in seconds.
      * @param handler Reference to a data handler for trajectory recording.
      * @param reason Reference to store termination reason.
      *
@@ -105,7 +104,6 @@ namespace bclibc
      */
     void BCLIBC_Engine::integrate(
         double range_limit_ft,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
@@ -128,7 +126,7 @@ namespace bclibc
             &handler      // Request handler
         );
 
-        this->integrate_func_ptr(*this, time_step, composite_handler, reason);
+        this->integrate_func_ptr(*this, composite_handler, reason);
 
         if (reason == BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
         {
@@ -159,7 +157,6 @@ namespace bclibc
      * the full (processed) interpolated data point upon success.
      *
      * @note Access to the engine is protected by engine_mutex.
-     * @warning The integration is performed with time_step = 0.0, implying that
      * the actual step size is determined internally by the integrator.
      *
      * @throws std::logic_error if integrate_func_ptr is null.
@@ -180,7 +177,7 @@ namespace bclibc
         BCLIBC_TerminationReason reason;
         BCLIBC_SinglePointHandler handler(key, target_value, &reason);
 
-        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
+        this->integrate(this->MAX_INTEGRATION_RANGE, handler, reason);
 
         if (!handler.found())
         {
@@ -232,7 +229,7 @@ namespace bclibc
             0.0,                                  // Apex is where vy = 0
             &reason);
 
-        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, apex_handler, reason);
+        this->integrate(this->MAX_INTEGRATION_RANGE, apex_handler, reason);
 
         if (!apex_handler.found())
         {
@@ -275,7 +272,7 @@ namespace bclibc
             target_x_ft,
             &reason);
 
-        integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
+        integrate(this->MAX_INTEGRATION_RANGE, handler, reason);
 
         if (!handler.found())
         {
@@ -475,7 +472,7 @@ namespace bclibc
                 &reason // Enable early termination
             );
 
-            this->integrate(target_x_ft, 0.0, handler, reason);
+            this->integrate(target_x_ft, handler, reason);
 
             if (!handler.found())
             {
@@ -616,7 +613,7 @@ namespace bclibc
             this->shot.look_angle,
             &reason);
 
-        this->integrate(this->MAX_INTEGRATION_RANGE, 0.0, handler, reason);
+        this->integrate(this->MAX_INTEGRATION_RANGE, handler, reason);
 
         if (handler.found())
         {

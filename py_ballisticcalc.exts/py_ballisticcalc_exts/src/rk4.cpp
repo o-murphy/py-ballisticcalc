@@ -68,13 +68,11 @@ namespace bclibc
      * which was identified as the primary bottleneck (32% of execution time).
      *
      * @param eng The ballistics engine containing shot properties, atmospheric conditions, and configuration.
-     * @param time_step The fixed time step (dt) used for RK4 integration.
      * @param handler Interface for processing computed trajectory data points.
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateRK4(
         BCLIBC_Engine &eng,
-        double time_step, // in this engine only for IntegrateFuncPtr compat
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {

@@ -505,7 +505,6 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
     ):
@@ -515,7 +514,6 @@ cdef class CythonizedBaseIntegrationEngine:
         Args:
             range_limit_ft (double): Maximum range limit in feet.
             range_step_ft (double): Range step in feet.
-            time_step (double): Time step in seconds.
             filter_flags (BCLIBC_TrajFlag): Flags to filter trajectory data.
 
         Returns:
@@ -524,9 +522,4 @@ cdef class CythonizedBaseIntegrationEngine:
                 BCLIBC_TerminationReason: Termination reason if applicable.
         """
         self._init_trajectory(shot_info)
-        self._this.integrate(
-            range_limit_ft,
-            time_step,
-            handler,
-            reason,
-        )
+        self._this.integrate(range_limit_ft, handler, reason)

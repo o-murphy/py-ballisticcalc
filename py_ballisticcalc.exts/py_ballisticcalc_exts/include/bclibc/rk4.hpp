@@ -16,13 +16,11 @@ namespace bclibc
      * direction.
      *
      * @param eng The ballistics engine containing shot properties, atmospheric conditions, and configuration.
-     * @param time_step Base time step for integration (will be adapted based on velocity).
      * @param handler Interface for processing computed trajectory data points.
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateRK4(
         BCLIBC_Engine &eng,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);
 

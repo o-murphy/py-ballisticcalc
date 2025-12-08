@@ -44,7 +44,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     # Declare the function signature type (not a pointer yet)
     ctypedef void BCLIBC_IntegrateFunc(
         BCLIBC_Engine &eng,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &trajectory,
         BCLIBC_TerminationReason &reason,
     ) except +
@@ -61,7 +60,6 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
 
         void integrate(
             double range_limit_ft,
-            double time_step,
             BCLIBC_BaseTrajDataHandlerInterface &handler,
             BCLIBC_TerminationReason &reason) except +raise_solver_exception
 
@@ -173,7 +171,6 @@ cdef class CythonizedBaseIntegrationEngine:
         CythonizedBaseIntegrationEngine self,
         object shot_info,
         double range_limit_ft,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
     )

@@ -11,7 +11,6 @@ cdef extern from "include/bclibc/euler.hpp" namespace "bclibc" nogil:
 
     void BCLIBC_integrateEULER(
         BCLIBC_Engine &eng,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason,
     ) except +
