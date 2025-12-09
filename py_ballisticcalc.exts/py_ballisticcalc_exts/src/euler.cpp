@@ -54,13 +54,11 @@ namespace bclibc
      * - Requires smaller time steps than RK4 for comparable accuracy
      *
      * @param eng The ballistics engine containing shot properties, atmospheric conditions, and configuration.
-     * @param time_step Base time step for integration (will be adapted based on velocity).
      * @param handler Interface for processing computed trajectory data points.
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateEULER(
         BCLIBC_Engine &eng,
-        double time_step,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {

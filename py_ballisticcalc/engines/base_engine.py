@@ -264,18 +264,19 @@ class TrajectoryDataFilter:
                 # If shot starts below zero and barrel points below line of sight we won't look for any crossings.
                 self.filter &= ~(TrajFlag.ZERO | TrajFlag.MRT)
 
-    def finalize(self):
-        if self.prev_data is not None and (not self.records or self.prev_data.time > self.records[-1].time):
-            self.records.append(
-                TrajectoryData.from_props(
-                    self.props,
-                    self.prev_data.time,
-                    self.prev_data.position,
-                    self.prev_data.velocity,
-                    self.prev_data.mach,
-                    TrajFlag.NONE,
+    def finalize(self, termination_reason: Optional[str] = None):
+        if termination_reason:
+            if self.prev_data is not None and (not self.records or self.prev_data.time > self.records[-1].time):
+                self.records.append(
+                    TrajectoryData.from_props(
+                        self.props,
+                        self.prev_data.time,
+                        self.prev_data.position,
+                        self.prev_data.velocity,
+                        self.prev_data.mach,
+                        TrajFlag.NONE,
+                    )
                 )
-            )
 
     def record(self, new_data: BaseTrajData):
         """For each integration step, creates TrajectoryData records based on filter/step criteria."""

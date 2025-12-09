@@ -177,3 +177,7 @@ cdef class CythonizedBaseTrajSeq:
 
 cdef class CythonizedBaseTrajData:
     cdef BCLIBC_BaseTrajData _this
+
+
+cdef TrajectoryData_from_cpp(const BCLIBC_TrajectoryData& cpp_data)
+cdef list TrajectoryData_list_from_cpp(const vector[BCLIBC_TrajectoryData] &records)

@@ -11,6 +11,12 @@ from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag, TrajectoryData
 from py_ballisticcalc.unit import Angular, Distance
 from py_ballisticcalc_exts.traj_data import CythonizedBaseTrajData
+from py_ballisticcalc.exceptions import SolverRuntimeError
+
+class InterceptionError(SolverRuntimeError):
+    def __init__(self, *args, last_data: tuple[CythonizedBaseTrajData, TrajectoryData]): ...
+    @property
+    def last_data(self) -> tuple[CythonizedBaseTrajData, TrajectoryData]: ...
 
 class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
     """Base Cython wrapper for C/С++ based binary engine. Implements EngineProtocol"""
@@ -174,7 +180,8 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
                 - TrajectoryData: The fully processed trajectory data point.
 
         Raises:
-            SolverRuntimeError: If the underlying C++ integration fails to find
+            InterceptionError: If the underlying C++ integration fails to find
                 the target point (e.g., due to insufficient range or data issues).
+            SolverRuntimeError: If some other internal error occured
         """
         ...

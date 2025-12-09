@@ -251,8 +251,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             step_data.append(data)
         # Ensure that we have at least two data points in trajectory,
         # ... as well as last point if we had an incomplete trajectory
-        if termination_reason:
-            data_filter.finalize()
+        data_filter.finalize(termination_reason)
 
         ranges = data_filter.records
         logger.debug(f"Euler ran {integration_step_count} iterations")
