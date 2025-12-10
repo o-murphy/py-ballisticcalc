@@ -6,8 +6,7 @@ Because storing each step in a BCLIBC_BaseTrajSeq is practically costless,
 we always run with "dense_output=True".
 """
 from cython cimport final
-from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine
-
+from py_ballisticcalc_exts.base_engine cimport CythonizedBaseIntegrationEngine, BCLIBC_IntegrateCallable
 
 __all__ = [
     'CythonizedRK4IntegrationEngine',
@@ -20,7 +19,7 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     DEFAULT_TIME_STEP = 0.0025
 
     def __cinit__(self, object _config):
-        self._this.integrate_func_ptr = BCLIBC_integrateRK4
+        self._this.integrate_func = BCLIBC_IntegrateCallable(BCLIBC_integrateRK4)
 
     cdef double get_calc_step(CythonizedRK4IntegrationEngine self):
         """Calculate the step size for integration."""

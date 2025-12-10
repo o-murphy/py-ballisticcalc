@@ -42,7 +42,7 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
     def __cinit__(self, _config: BaseEngineConfigDict) -> None:
         """
         C/C++-level initializer for the engine.
-        Override this method to setup integrate_func_ptr and other fields.
+        Override this method to setup integrate_func and other fields.
 
         NOTE:
             The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,

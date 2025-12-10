@@ -82,7 +82,7 @@ cdef class CythonizedBaseIntegrationEngine:
     def __cinit__(self, object _config):
         """
         C/C++-level initializer for the engine.
-        Override this method to setup integrate_func_ptr and other fields.
+        Override this method to setup integrate_func and other fields.
 
         NOTE:
             The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,
