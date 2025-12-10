@@ -44,7 +44,7 @@ namespace bclibc
     }
 
     void BCLIBC_integrateRK45(
-        BCLIBC_Engine &eng,
+        BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
