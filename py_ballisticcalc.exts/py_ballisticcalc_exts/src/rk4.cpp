@@ -72,7 +72,7 @@ namespace bclibc
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateRK4(
-        BCLIBC_Engine &eng,
+        BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {

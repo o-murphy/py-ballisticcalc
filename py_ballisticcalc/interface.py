@@ -18,7 +18,7 @@ import warnings
 from typing_extensions import Union, Optional, TypeVar, Generator
 
 from py_ballisticcalc import RK4IntegrationEngine
-from py_ballisticcalc.generics.engine import EngineProtocol, EngineProtocolFactory
+from py_ballisticcalc.generics.engine import EngineProtocol, EngineFactoryProtocol
 from py_ballisticcalc.logger import logger
 from py_ballisticcalc.shot import Shot
 from py_ballisticcalc.trajectory_data import HitResult, TrajFlag
@@ -26,12 +26,12 @@ from py_ballisticcalc.unit import Angular, Distance, PreferredUnits
 
 ConfigT = TypeVar("ConfigT", covariant=True)
 
-EngineProtocolFactoryType = EngineProtocolFactory[Any]
-EngineProtocolEntry = Union[str, EngineProtocolFactoryType, None]
+EngineFactoryProtocolType = EngineFactoryProtocol[Any]
+EngineFactoryProtocolEntry = Union[str, EngineFactoryProtocolType, None]
 
 DEFAULT_ENTRY_SUFFIX = "_engine"
 DEFAULT_ENTRY_GROUP = "py_ballisticcalc"
-DEFAULT_ENTRY: EngineProtocolFactoryType = RK4IntegrationEngine
+DEFAULT_ENTRY: EngineFactoryProtocolType = RK4IntegrationEngine
 
 
 @dataclass
@@ -59,10 +59,10 @@ class _EngineLoader:
                 yield ep
 
     @classmethod
-    def _load_from_entry(cls, ep: EntryPoint) -> Optional[EngineProtocolFactoryType]:
+    def _load_from_entry(cls, ep: EntryPoint) -> Optional[EngineFactoryProtocolType]:
         try:
-            factory: EngineProtocolFactoryType = ep.load()
-            if not isinstance(factory, EngineProtocolFactory):
+            factory: EngineFactoryProtocolType = ep.load()
+            if not isinstance(factory, EngineFactoryProtocol):
                 raise TypeError(f"Unsupported engine {ep.value} does not implement EngineProtocolFactory")
             logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
             return factory  # type: ignore
@@ -75,13 +75,13 @@ class _EngineLoader:
         return None
 
     @classmethod
-    def load(cls, entry_point: EngineProtocolEntry = DEFAULT_ENTRY) -> EngineProtocolFactoryType:
+    def load(cls, entry_point: EngineFactoryProtocolEntry = DEFAULT_ENTRY) -> EngineFactoryProtocolType:
         if entry_point is None:
             entry_point = DEFAULT_ENTRY
-        if isinstance(entry_point, EngineProtocolFactory):
+        if isinstance(entry_point, EngineFactoryProtocol):
             return entry_point  # type: ignore
         if isinstance(entry_point, str):
-            factory: Optional[EngineProtocolFactoryType] = None
+            factory: Optional[EngineFactoryProtocolType] = None
             for ep in cls.iter_engines():
                 if ep.name == entry_point:
                     if factory := cls._load_from_entry(ep):
@@ -105,8 +105,8 @@ class Calculator(Generic[ConfigT]):
     """
 
     config: Optional[ConfigT] = field(default=None)
-    engine: EngineProtocolEntry = field(default=DEFAULT_ENTRY)
-    _engine_class: EngineProtocolFactory[Optional[ConfigT]] = field(init=False, repr=False, compare=False)
+    engine: EngineFactoryProtocolEntry = field(default=DEFAULT_ENTRY)
+    _engine_class: EngineFactoryProtocol[Optional[ConfigT]] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         """

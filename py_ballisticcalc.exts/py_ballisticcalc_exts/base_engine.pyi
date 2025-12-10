@@ -45,7 +45,7 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         Override this method to setup integrate_func and other fields.
 
         NOTE:
-            The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,
+            The BCLIBC_BaseEngine is built-in to CythonizedBaseIntegrationEngine,
             so we are need no set it's fields to null
         """
         ...

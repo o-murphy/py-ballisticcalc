@@ -51,11 +51,11 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         double angle_at_max_rad
 
     # Forward declaration
-    cdef cppclass BCLIBC_Engine
+    cdef cppclass BCLIBC_BaseEngine
 
     # Declare the function signature type (not a pointer yet)
     ctypedef void BCLIBC_IntegrateFunc(
-        BCLIBC_Engine &eng,
+        BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &trajectory,
         BCLIBC_TerminationReason &reason,
     ) except +
@@ -63,14 +63,14 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     # Declare function
     ctypedef function[BCLIBC_IntegrateFunc] BCLIBC_IntegrateCallable
 
-    cdef cppclass BCLIBC_Engine:
+    cdef cppclass BCLIBC_BaseEngine:
         int integration_step_count
         BCLIBC_V3dT gravity_vector
         BCLIBC_Config config
         BCLIBC_ShotProps shot
         BCLIBC_IntegrateCallable integrate_func
 
-        BCLIBC_Engine() except+
+        BCLIBC_BaseEngine() except+
 
         void integrate(
             double range_limit_ft,
@@ -133,7 +133,7 @@ cdef class CythonizedBaseIntegrationEngine:
     cdef:
         public object _config
         list[object] _table_data  # list[object]
-        BCLIBC_Engine _this
+        BCLIBC_BaseEngine _this
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self)
 

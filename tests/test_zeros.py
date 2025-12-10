@@ -12,7 +12,7 @@ from py_ballisticcalc import (
     RK4IntegrationEngine,
     VelocityVerletIntegrationEngine
 )
-from py_ballisticcalc.generics import EngineProtocolFactory
+from py_ballisticcalc.generics import EngineFactoryProtocol
 from tests.fixtures_and_helpers import create_23_mm_shot, create_5_56_mm_shot
 
 pytestmark = pytest.mark.engine
@@ -51,7 +51,7 @@ def test_find_max_range(loaded_engine_instance):
     """Test .find_max_range() on horizontal."""
     distance = Distance.Meter(194.1)  # Max horizontal range
     shot = create_slow_shot()
-    if callable(loaded_engine_instance) and isinstance(loaded_engine_instance, EngineProtocolFactory):
+    if callable(loaded_engine_instance) and isinstance(loaded_engine_instance, EngineFactoryProtocol):
         config = BaseEngineConfigDict(cMinimumVelocity=0)
     elif issubclass(loaded_engine_instance, (RK4IntegrationEngine, VelocityVerletIntegrationEngine)):
         # These engines run slowly at their default step size, and don't need as much precision to pass here
@@ -67,7 +67,7 @@ def test_zero_at_max_range(loaded_engine_instance):
     distance = Distance.Meter(159.0)
     shot = create_slow_shot()
     shot.slant_angle = Angular.Degree(15)  # Max horizontal range 159.4
-    if callable(loaded_engine_instance) and isinstance(loaded_engine_instance, EngineProtocolFactory):
+    if callable(loaded_engine_instance) and isinstance(loaded_engine_instance, EngineFactoryProtocol):
         config = BaseEngineConfigDict(cMinimumVelocity=0)
     elif issubclass(loaded_engine_instance, (RK4IntegrationEngine, VelocityVerletIntegrationEngine)):
         # These engines run slowly at their default step size, and don't need as much precision to pass here
