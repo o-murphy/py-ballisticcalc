@@ -128,6 +128,8 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
 
 cdef class CythonizedBaseIntegrationEngine:
 
+    cdef double _DEFAULT_TIME_STEP
+
     cdef:
         public object _config
         list[object] _table_data  # list[object]

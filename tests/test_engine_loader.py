@@ -4,14 +4,14 @@ from types import SimpleNamespace
 
 import pytest
 
-from py_ballisticcalc.generics.engine import EngineProtocol
+from py_ballisticcalc.generics.engine import EngineProtocol, EngineProtocolFactory
 from py_ballisticcalc.interface import _EngineLoader
 from py_ballisticcalc import Calculator
 
 
 class TestEngineLoader:
     def test_entry_point_loaded(self, loaded_engine_instance):
-        assert isinstance(loaded_engine_instance, EngineProtocol), "Not implements EngineProtocol"
+        assert isinstance(loaded_engine_instance, EngineProtocolFactory), "Not implements EngineProtocol"
 
     def test_iter_engines_non_empty(self):
         engines = list(Calculator.iter_engines())

@@ -60,7 +60,6 @@ cdef dict TERMINATION_REASON_MAP = {
 
 cdef class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""
-    DEFAULT_TIME_STEP = 1.0
 
     # Expose Python-visible constants to match BaseIntegrationEngine API
     APEX_IS_MAX_RANGE_RADIANS = float(_APEX_IS_MAX_RANGE_RADIANS)
@@ -90,13 +89,19 @@ cdef class CythonizedBaseIntegrationEngine:
             The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,
             so we are need no set it's fields to null
         """
-        # self._this.gravity_vector = BCLIBC_V3dT(.0, .0, .0)
-        # self._this.integration_step_count = 0
-        pass
+        self._DEFAULT_TIME_STEP = 1.0
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         """Frees any allocated resources."""
         pass
+
+    @property
+    def DEFAULT_TIME_STEP(CythonizedBaseIntegrationEngine self):
+        return self._DEFAULT_TIME_STEP
+
+    @DEFAULT_TIME_STEP.setter
+    def DEFAULT_TIME_STEP(CythonizedBaseIntegrationEngine self, double value):
+        self._DEFAULT_TIME_STEP = value
 
     @property
     def integration_step_count(self) -> int:
