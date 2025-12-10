@@ -10,14 +10,14 @@ BCLIBC_Engine.find_zero_angle
  ├─> BCLIBC_Engine.init_zero_calculation
  │    └─> BCLIBC_Engine.find_apex
  │         └─> BCLIBC_Engine.integrate
- │              └─> BCLIBC_Engine->integrate_func_ptr
+ │              └─> BCLIBC_Engine->integrate_func
  ├─> BCLIBC_Engine.find_max_range
  │    ├─> BCLIBC_Engine.find_apex
  │    │    └─> BCLIBC_Engine.integrate
- │    │         └─> eng->integrate_func_ptr
+ │    │         └─> eng->integrate_func
  │    └─> BCLIBC_Engine.range_for_angle
  │         └─> BCLIBC_Engine.integrate
- │              └─> BCLIBC_Engine->integrate_func_ptr
+ │              └─> BCLIBC_Engine->integrate_func
  └─> BCLIBC_Engine.error_at_distance
       └─> BCLIBC_Engine.integrate
       └─> BCLIBC_BaseTrajSeq.get_at / get_raw_item
@@ -33,7 +33,7 @@ BCLIBC_Engine.zero_angle
  -> BCLIBC_Engine.init_zero_calculation
     -> BCLIBC_Engine.find_apex
        -> BCLIBC_Engine.integrate
-          -> eng->integrate_func_ptr
+          -> eng->integrate_func
 */
 
 namespace bclibc
@@ -49,7 +49,7 @@ namespace bclibc
      * @param reason Reference to store the termination reason.
      * @param dense_trajectory Optional pointer to store full dense trajectory data.
      *
-     * @throws std::logic_error if integrate_func_ptr is null.
+     * @throws std::logic_error if integrate_func is null.
      */
     void BCLIBC_Engine::integrate_filtered(
         double range_limit_ft,
@@ -60,7 +60,7 @@ namespace bclibc
         BCLIBC_TerminationReason &reason,
         BCLIBC_BaseTrajSeq *dense_trajectory)
     {
-        this->integrate_func_ptr_not_null();
+        this->integrate_func_not_empty();
 
         // Block access to engine if it is needed for integration
         std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
@@ -100,14 +100,14 @@ namespace bclibc
      * @param handler Reference to a data handler for trajectory recording.
      * @param reason Reference to store termination reason.
      *
-     * @throws std::logic_error if integrate_func_ptr is null.
+     * @throws std::logic_error if integrate_func is null.
      */
     void BCLIBC_Engine::integrate(
         double range_limit_ft,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
     {
-        this->integrate_func_ptr_not_null();
+        this->integrate_func_not_empty();
 
         // Block access to engine if it is needed for integration
         std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
@@ -126,7 +126,7 @@ namespace bclibc
             &handler      // Request handler
         );
 
-        this->integrate_func_ptr(*this, composite_handler, reason);
+        this->integrate_func(*this, composite_handler, reason);
 
         if (reason == BCLIBC_TerminationReason::TARGET_RANGE_REACHED)
         {
@@ -159,7 +159,7 @@ namespace bclibc
      * @note Access to the engine is protected by engine_mutex.
      * the actual step size is determined internally by the integrator.
      *
-     * @throws std::logic_error if integrate_func_ptr is null.
+     * @throws std::logic_error if integrate_func is null.
      * @throws BCLIBC_InterceptionError if the target point is not found within the
      * integrated trajectory (e.g., "No apex flagged...").
      */
@@ -169,7 +169,7 @@ namespace bclibc
         BCLIBC_BaseTrajData &raw_data,
         BCLIBC_TrajectoryData &full_data)
     {
-        integrate_func_ptr_not_null();
+        integrate_func_not_empty();
 
         // Block access to engine if it is needed for integration
         std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
@@ -983,15 +983,15 @@ namespace bclibc
     };
 
     /**
-     * @brief Ensures the integration function pointer is valid.
+     * @brief Ensures the integration function is valid.
      *
-     * @throws std::logic_error if integrate_func_ptr is null.
+     * @throws std::logic_error if integrate_func is empty.
      */
-    void BCLIBC_Engine::integrate_func_ptr_not_null()
+    void BCLIBC_Engine::integrate_func_not_empty()
     {
-        if (!this->integrate_func_ptr)
+        if (!this->integrate_func)
         {
-            throw std::logic_error("Invalid integrate_func_ptr (NULL pointer).");
+            throw std::logic_error("Invalid integrate_func: std::function is empty (no callable object assigned).");
         }
     };
 }; // namespace bclibc

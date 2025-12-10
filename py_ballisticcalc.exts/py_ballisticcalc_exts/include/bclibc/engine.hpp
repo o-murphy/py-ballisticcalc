@@ -2,6 +2,7 @@
 #define BCLIBC_ENGINE_HPP
 
 #include <mutex>
+#include <functional>
 #include "bclibc/traj_filter.hpp"
 
 /*
@@ -11,14 +12,14 @@ BCLIBC_Engine.find_zero_angle
  ├─> BCLIBC_Engine.init_zero_calculation
  │    └─> BCLIBC_Engine.find_apex
  │         └─> BCLIBC_Engine.integrate
- │              └─> eng->integrate_func_ptr
+ │              └─> eng->integrate_func
  ├─> BCLIBC_Engine.find_max_range
  │    ├─> BCLIBC_Engine.find_apex
  │    │    └─> BCLIBC_Engine.integrate
- │    │         └─> eng->integrate_func_ptr
+ │    │         └─> eng->integrate_func
  │    └─> BCLIBC_Engine.range_for_angle
  │         └─> BCLIBC_Engine.integrate
- │              └─> eng->integrate_func_ptr
+ │              └─> eng->integrate_func
  └─> BCLIBC_Engine.error_at_distance
       └─> BCLIBC_Engine.integrate
       └─> BCLIBC_BaseTrajSeq / get_at / get_raw_item
@@ -34,7 +35,7 @@ BCLIBC_Engine.zero_angle
  -> BCLIBC_Engine.init_zero_calculation
     -> BCLIBC_Engine.find_apex
        -> BCLIBC_Engine.integrate
-          -> eng->integrate_func_ptr
+          -> eng->integrate_func
 */
 
 namespace bclibc
@@ -68,7 +69,7 @@ namespace bclibc
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);
 
-    using BCLIBC_IntegrateFuncPtr = BCLIBC_IntegrateFunc *;
+    using BCLIBC_IntegrateCallable = std::function<BCLIBC_IntegrateFunc>;
 
     class BCLIBC_Engine
     {
@@ -85,7 +86,7 @@ namespace bclibc
         BCLIBC_V3dT gravity_vector;
         BCLIBC_Config config;
         BCLIBC_ShotProps shot;
-        BCLIBC_IntegrateFuncPtr integrate_func_ptr;
+        BCLIBC_IntegrateCallable integrate_func;
 
         BCLIBC_Engine() = default;
 
@@ -95,7 +96,7 @@ namespace bclibc
          * @param handler Reference to a data handler for trajectory recording.
          * @param reason Reference to store termination reason.
          *
-         * @throws std::logic_error if integrate_func_ptr is null.
+         * @throws std::logic_error if integrate_func is null.
          */
         void integrate(
             double range_limit_ft,
@@ -123,7 +124,7 @@ namespace bclibc
          * @note Access to the engine is protected by engine_mutex.
          * the actual step size is determined internally by the integrator.
          *
-         * @throws std::logic_error if integrate_func_ptr is null.
+         * @throws std::logic_error if integrate_func is null.
          * @throws BCLIBC_InterceptionError if the target point is not found within the
          * integrated trajectory (e.g., "No apex flagged...").
          */
@@ -144,7 +145,7 @@ namespace bclibc
          * @param reason Reference to store the termination reason.
          * @param dense_trajectory Optional pointer to store full dense trajectory data.
          *
-         * @throws std::logic_error if integrate_func_ptr is null.
+         * @throws std::logic_error if integrate_func is null.
          */
         void integrate_filtered(
             double range_limit_ft,
@@ -275,11 +276,11 @@ namespace bclibc
 
     private:
         /**
-         * @brief Ensures the integration function pointer is valid.
+         * @brief Ensures the integration function is valid.
          *
-         * @throws std::logic_error if integrate_func_ptr is null.
+         * @throws std::logic_error if integrate_func is empty.
          */
-        inline void integrate_func_ptr_not_null();
+        inline void integrate_func_not_empty();
     };
 }; // namespace bclibc
 

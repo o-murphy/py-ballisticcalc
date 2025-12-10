@@ -19,6 +19,15 @@ from py_ballisticcalc_exts.traj_data cimport (
 from py_ballisticcalc_exts.exceptions cimport raise_solver_exception
 
 
+cdef extern from "<functional>" namespace "std":
+    cdef cppclass function[F]:
+        function() except +
+        function(F *f_ptr) except +
+        function(const function[F]& other) except +
+        function[F]& operator=(F *f_ptr) except +
+        function[F]& operator=(const function[F]& other) except +
+
+
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
     DEF MAX_ERR_MSG_LEN = 256
 
@@ -48,15 +57,15 @@ cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
         BCLIBC_TerminationReason &reason,
     ) except +
 
-    # Declare pointer to function
-    ctypedef BCLIBC_IntegrateFunc *BCLIBC_IntegrateFuncPtr
+    # Declare function
+    ctypedef function[BCLIBC_IntegrateFunc] BCLIBC_IntegrateCallable
 
     cdef cppclass BCLIBC_Engine:
         int integration_step_count
         BCLIBC_V3dT gravity_vector
         BCLIBC_Config config
         BCLIBC_ShotProps shot
-        BCLIBC_IntegrateFuncPtr integrate_func_ptr
+        BCLIBC_IntegrateCallable integrate_func
 
         BCLIBC_Engine() except+
 
