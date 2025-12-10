@@ -63,7 +63,7 @@ class _EngineLoader:
         try:
             factory: EngineProtocolFactoryType = ep.load()
             if not isinstance(factory, EngineProtocolFactory):
-                raise TypeError(f"Unsupported engine {ep.value} does not implement EngineProtocol")
+                raise TypeError(f"Unsupported engine {ep.value} does not implement EngineProtocolFactory")
             logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
             return factory  # type: ignore
         except ImportError as e:
@@ -93,7 +93,7 @@ class _EngineLoader:
                     logger.info(f"Loaded calculator from: {ep.value} (Class: {factory})")
                     return factory
             raise ValueError(f"No 'engine' entry point found containing '{entry_point}'")
-        raise TypeError("Invalid entry_point type, expected 'str' or 'EngineProtocol'")
+        raise TypeError("Invalid entry_point type, expected 'str' or 'EngineProtocolFactory'")
 
 
 @dataclass
