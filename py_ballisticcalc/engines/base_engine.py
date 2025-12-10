@@ -531,7 +531,7 @@ _BaseEngineConfigDictT = TypeVar("_BaseEngineConfigDictT", bound="BaseEngineConf
 
 
 # pylint: disable=too-many-instance-attributes
-class BaseIntegrationEngine(ABC, EngineProtocol[_BaseEngineConfigDictT]):
+class BaseIntegrationEngine(ABC, EngineProtocol):
     """All calculations are done in imperial units (feet and fps)."""
 
     APEX_IS_MAX_RANGE_RADIANS: float = 0.0003  # Radians from vertical where the apex is max range

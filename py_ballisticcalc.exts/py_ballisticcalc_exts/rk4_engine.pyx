@@ -20,7 +20,3 @@ cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
 
     def __cinit__(self, object _config):
         self._this.integrate_func = BCLIBC_IntegrateCallable(BCLIBC_integrateRK4)
-
-    cdef double get_calc_step(CythonizedRK4IntegrationEngine self):
-        """Calculate the step size for integration."""
-        return self.DEFAULT_TIME_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)

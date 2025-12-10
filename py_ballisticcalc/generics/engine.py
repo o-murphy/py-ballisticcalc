@@ -36,12 +36,9 @@ from py_ballisticcalc.unit import Distance, Angular
 
 __all__ = ["EngineProtocol", "ConfigT"]
 
-# Type variable for engine configuration
-ConfigT = TypeVar("ConfigT", covariant=True)
-
 
 @runtime_checkable
-class EngineProtocol(Protocol[ConfigT]):
+class EngineProtocol(Protocol):
     """Protocol defining the interface for ballistic trajectory calculation engines.
 
     This protocol outlines the methods that any concrete ballistic engine
@@ -91,8 +88,6 @@ class EngineProtocol(Protocol[ConfigT]):
         it doesn't explicitly inherit from EngineProtocol. The @runtime_checkable
         decorator enables isinstance() checks at runtime.
     """
-
-    def __init__(self, config: Optional[ConfigT] = None) -> None: ...
 
     @abstractmethod
     def integrate(
@@ -209,3 +204,12 @@ class EngineProtocol(Protocol[ConfigT]):
             8. Return final angle estimate
         """
         ...
+
+
+# Type variable for engine configuration
+ConfigT = TypeVar("ConfigT", contravariant=True)
+
+
+@runtime_checkable
+class EngineProtocolFactory(Protocol[ConfigT]):
+    def __call__(self, config: ConfigT) -> EngineProtocol: ...

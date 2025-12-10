@@ -60,6 +60,8 @@ cdef dict TERMINATION_REASON_MAP = {
 
 cdef class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""
+    DEFAULT_TIME_STEP = 1.0
+
     # Expose Python-visible constants to match BaseIntegrationEngine API
     APEX_IS_MAX_RANGE_RADIANS = float(_APEX_IS_MAX_RANGE_RADIANS)
     ALLOWED_ZERO_ERROR_FEET = float(_ALLOWED_ZERO_ERROR_FEET)
@@ -108,7 +110,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
         """Gets the calculation step size in feet."""
-        return self._this.config.cStepMultiplier
+        return self.DEFAULT_TIME_STEP * self._this.config.cStepMultiplier
 
     def find_max_range(self, object shot_info, tuple angle_bracket_deg = (0, 90)):
         """

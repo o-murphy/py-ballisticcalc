@@ -16,11 +16,7 @@ __all__ = [
 @final
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
     """Cythonized Euler integration engine for ballistic calculations."""
-    DEFAULT_STEP = 0.5  # Match Python's EulerIntegrationEngine.DEFAULT_STEP
+    DEFAULT_TIME_STEP = 0.5  # Match Python's EulerIntegrationEngine.DEFAULT_TIME_STEP
 
     def __cinit__(self, object _config):
         self._this.integrate_func = BCLIBC_IntegrateCallable(BCLIBC_integrateEULER)
-
-    cdef double get_calc_step(CythonizedEulerIntegrationEngine self):
-        """Calculate the step size for integration."""
-        return self.DEFAULT_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)
