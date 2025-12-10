@@ -24,8 +24,11 @@ cdef extern from "<functional>" namespace "std":
         function() except +
         function(F *f_ptr) except +
         function(const function[F]& other) except +
+        function(function[F]&& other)
         function[F]& operator=(F *f_ptr) except +
         function[F]& operator=(const function[F]& other) except +
+        function[F]& operator=(function[F]&& other)
+        bint operator bool() const
 
 
 cdef extern from "include/bclibc/engine.hpp" namespace "bclibc" nogil:
