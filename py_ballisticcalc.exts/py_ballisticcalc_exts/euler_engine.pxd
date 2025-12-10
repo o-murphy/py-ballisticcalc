@@ -16,4 +16,4 @@ cdef extern from "include/bclibc/euler.hpp" namespace "bclibc" nogil:
     ) except +
 
 cdef class CythonizedEulerIntegrationEngine(CythonizedBaseIntegrationEngine):
-    cdef double get_calc_step(CythonizedEulerIntegrationEngine self)
+    pass

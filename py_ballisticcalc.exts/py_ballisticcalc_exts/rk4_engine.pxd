@@ -16,4 +16,4 @@ cdef extern from "include/bclibc/rk4.hpp" namespace "bclibc" nogil:
     ) except +
 
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
-    cdef double get_calc_step(CythonizedRK4IntegrationEngine self)
+    pass
