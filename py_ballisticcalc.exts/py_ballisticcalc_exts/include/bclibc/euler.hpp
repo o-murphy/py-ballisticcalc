@@ -43,7 +43,7 @@ namespace bclibc
      * @param reason Output parameter indicating why the simulation terminated.
      */
     void BCLIBC_integrateEULER(
-        BCLIBC_Engine &eng,
+        BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);
 

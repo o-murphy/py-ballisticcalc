@@ -43,8 +43,8 @@ import warnings
 from typing_extensions import Union, List, override
 
 from py_ballisticcalc.engines.base_engine import (
-    BaseIntegrationEngine,
     BaseEngineConfigDict,
+    BaseIntegrationEngine,
     TrajectoryDataFilter,
     _WindSock,
 )
@@ -57,7 +57,7 @@ from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 __all__ = ("RK4IntegrationEngine",)
 
 
-class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
+class RK4IntegrationEngine(BaseIntegrationEngine):
     """Runge-Kutta 4th order integration engine for ballistic trajectory calculations.
 
     Attributes:
@@ -152,6 +152,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
         step_data: List[BaseTrajData] = []  # Data for interpolation (if dense_output is enabled)
         time: float = 0.0
+
         mach: float = 0.0
         density_ratio: float = 0.0
 
@@ -202,6 +203,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 step_data.append(data)
             # endregion
 
+            # region Ballistic calculation step (point-mass)
             # Air resistance seen by bullet is ground velocity minus wind velocity relative to ground
             relative_velocity = velocity_vector - wind_vector
             relative_speed = relative_velocity.magnitude()  # Velocity relative to air
@@ -242,6 +244,7 @@ class RK4IntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
 
             velocity = velocity_vector.magnitude()  # Velocity relative to ground
             time += delta_time
+            # endregion
 
             if (
                 velocity < _cMinimumVelocity

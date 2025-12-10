@@ -521,7 +521,7 @@ def create_scipy_engine_config(interface_config: Optional[BaseEngineConfigDict] 
 
 
 # pylint: disable=import-outside-toplevel,unused-argument,too-many-statements
-class SciPyIntegrationEngine(BaseIntegrationEngine[SciPyEngineConfigDict]):
+class SciPyIntegrationEngine(BaseIntegrationEngine):
     """High-performance ballistic trajectory integration engine using SciPy's solve_ivp.
 
     Examples:

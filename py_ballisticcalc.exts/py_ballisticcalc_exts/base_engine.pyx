@@ -60,6 +60,7 @@ cdef dict TERMINATION_REASON_MAP = {
 
 cdef class CythonizedBaseIntegrationEngine:
     """Implements EngineProtocol"""
+
     # Expose Python-visible constants to match BaseIntegrationEngine API
     APEX_IS_MAX_RANGE_RADIANS = float(_APEX_IS_MAX_RANGE_RADIANS)
     ALLOWED_ZERO_ERROR_FEET = float(_ALLOWED_ZERO_ERROR_FEET)
@@ -85,16 +86,22 @@ cdef class CythonizedBaseIntegrationEngine:
         Override this method to setup integrate_func and other fields.
 
         NOTE:
-            The BCLIBC_Engine is built-in to CythonizedBaseIntegrationEngine,
+            The BCLIBC_BaseEngine is built-in to CythonizedBaseIntegrationEngine,
             so we are need no set it's fields to null
         """
-        # self._this.gravity_vector = BCLIBC_V3dT(.0, .0, .0)
-        # self._this.integration_step_count = 0
-        pass
+        self._DEFAULT_TIME_STEP = 1.0
 
     def __dealloc__(CythonizedBaseIntegrationEngine self):
         """Frees any allocated resources."""
         pass
+
+    @property
+    def DEFAULT_TIME_STEP(CythonizedBaseIntegrationEngine self):
+        return self._DEFAULT_TIME_STEP
+
+    @DEFAULT_TIME_STEP.setter
+    def DEFAULT_TIME_STEP(CythonizedBaseIntegrationEngine self, double value):
+        self._DEFAULT_TIME_STEP = value
 
     @property
     def integration_step_count(self) -> int:
@@ -108,7 +115,7 @@ cdef class CythonizedBaseIntegrationEngine:
 
     cdef double get_calc_step(CythonizedBaseIntegrationEngine self):
         """Gets the calculation step size in feet."""
-        return self._this.config.cStepMultiplier
+        return self.DEFAULT_TIME_STEP * self._this.config.cStepMultiplier
 
     def find_max_range(self, object shot_info, tuple angle_bracket_deg = (0, 90)):
         """

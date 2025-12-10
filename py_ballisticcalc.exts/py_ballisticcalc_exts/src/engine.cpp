@@ -6,33 +6,33 @@
 /*
 Possible call chains:
 
-BCLIBC_Engine.find_zero_angle
- ├─> BCLIBC_Engine.init_zero_calculation
- │    └─> BCLIBC_Engine.find_apex
- │         └─> BCLIBC_Engine.integrate
- │              └─> BCLIBC_Engine->integrate_func
- ├─> BCLIBC_Engine.find_max_range
- │    ├─> BCLIBC_Engine.find_apex
- │    │    └─> BCLIBC_Engine.integrate
+BCLIBC_BaseEngine.find_zero_angle
+ ├─> BCLIBC_BaseEngine.init_zero_calculation
+ │    └─> BCLIBC_BaseEngine.find_apex
+ │         └─> BCLIBC_BaseEngine.integrate
+ │              └─> BCLIBC_BaseEngine->integrate_func
+ ├─> BCLIBC_BaseEngine.find_max_range
+ │    ├─> BCLIBC_BaseEngine.find_apex
+ │    │    └─> BCLIBC_BaseEngine.integrate
  │    │         └─> eng->integrate_func
- │    └─> BCLIBC_Engine.range_for_angle
- │         └─> BCLIBC_Engine.integrate
- │              └─> BCLIBC_Engine->integrate_func
- └─> BCLIBC_Engine.error_at_distance
-      └─> BCLIBC_Engine.integrate
+ │    └─> BCLIBC_BaseEngine.range_for_angle
+ │         └─> BCLIBC_BaseEngine.integrate
+ │              └─> BCLIBC_BaseEngine->integrate_func
+ └─> BCLIBC_BaseEngine.error_at_distance
+      └─> BCLIBC_BaseEngine.integrate
       └─> BCLIBC_BaseTrajSeq.get_at / get_raw_item
 
-BCLIBC_Engine.zero_angle
- ├─> BCLIBC_Engine.init_zero_calculation
- ├─> BCLIBC_Engine.integrate
+BCLIBC_BaseEngine.zero_angle
+ ├─> BCLIBC_BaseEngine.init_zero_calculation
+ ├─> BCLIBC_BaseEngine.integrate
  └─> BCLIBC_BaseTrajSeq / get_at / release
 
  Longest callstack:
 
- BCLIBC_Engine.find_zero_angle
- -> BCLIBC_Engine.init_zero_calculation
-    -> BCLIBC_Engine.find_apex
-       -> BCLIBC_Engine.integrate
+ BCLIBC_BaseEngine.find_zero_angle
+ -> BCLIBC_BaseEngine.init_zero_calculation
+    -> BCLIBC_BaseEngine.find_apex
+       -> BCLIBC_BaseEngine.integrate
           -> eng->integrate_func
 */
 
@@ -51,7 +51,7 @@ namespace bclibc
      *
      * @throws std::logic_error if integrate_func is null.
      */
-    void BCLIBC_Engine::integrate_filtered(
+    void BCLIBC_BaseEngine::integrate_filtered(
         double range_limit_ft,
         double range_step_ft,
         double time_step,
@@ -102,7 +102,7 @@ namespace bclibc
      *
      * @throws std::logic_error if integrate_func is null.
      */
-    void BCLIBC_Engine::integrate(
+    void BCLIBC_BaseEngine::integrate(
         double range_limit_ft,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason)
@@ -163,7 +163,7 @@ namespace bclibc
      * @throws BCLIBC_InterceptionError if the target point is not found within the
      * integrated trajectory (e.g., "No apex flagged...").
      */
-    void BCLIBC_Engine::integrate_at(
+    void BCLIBC_BaseEngine::integrate_at(
         BCLIBC_BaseTrajData_InterpKey key,
         double target_value,
         BCLIBC_BaseTrajData &raw_data,
@@ -203,7 +203,7 @@ namespace bclibc
      *
      * OPTIMIZATION: Uses ~192 bytes instead of ~N*64 bytes for full trajectory.
      */
-    void BCLIBC_Engine::find_apex(BCLIBC_BaseTrajData &apex_out)
+    void BCLIBC_BaseEngine::find_apex(BCLIBC_BaseTrajData &apex_out)
     {
         // Block access to engine if it is needed for integration
         std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
@@ -254,7 +254,7 @@ namespace bclibc
      *
      * OPTIMIZATION: Uses ~192 bytes instead of full trajectory buffer.
      */
-    double BCLIBC_Engine::error_at_distance(
+    double BCLIBC_BaseEngine::error_at_distance(
         double angle_rad,
         double target_x_ft,
         double target_y_ft)
@@ -303,7 +303,7 @@ namespace bclibc
      *
      * Handles edge cases like very close or vertical shots.
      */
-    void BCLIBC_Engine::init_zero_calculation(
+    void BCLIBC_BaseEngine::init_zero_calculation(
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET,
@@ -366,7 +366,7 @@ namespace bclibc
      *
      * @return Zero angle (barrel elevation) in radians.
      */
-    double BCLIBC_Engine::zero_angle_with_fallback(
+    double BCLIBC_BaseEngine::zero_angle_with_fallback(
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET)
@@ -401,7 +401,7 @@ namespace bclibc
      * Memory: 192 bytes per iteration vs ~N*64 bytes
      * Speed: 50-90% faster with early termination
      */
-    double BCLIBC_Engine::zero_angle(
+    double BCLIBC_BaseEngine::zero_angle(
         double distance,
         double APEX_IS_MAX_RANGE_RADIANS,
         double ALLOWED_ZERO_ERROR_FEET)
@@ -599,7 +599,7 @@ namespace bclibc
      *
      * OPTIMIZATION: Uses ~128 bytes instead of full trajectory buffer.
      */
-    double BCLIBC_Engine::range_for_angle(double angle_rad)
+    double BCLIBC_BaseEngine::range_for_angle(double angle_rad)
     {
         // Block access to engine if it is needed for integration
         std::lock_guard<std::recursive_mutex> lock(this->engine_mutex);
@@ -633,7 +633,7 @@ namespace bclibc
      *
      * @return Structure containing maximum range (ft) and angle (rad).
      */
-    BCLIBC_MaxRangeResult BCLIBC_Engine::find_max_range(
+    BCLIBC_MaxRangeResult BCLIBC_BaseEngine::find_max_range(
         double low_angle_deg,
         double high_angle_deg,
         double APEX_IS_MAX_RANGE_RADIANS)
@@ -727,7 +727,7 @@ namespace bclibc
      * @throws BCLIBC_OutOfRangeError if slant_range_ft > max_range_ft.
      * @throws BCLIBC_ZeroFindingError if zero-finding fails.
      */
-    double BCLIBC_Engine::find_zero_angle(
+    double BCLIBC_BaseEngine::find_zero_angle(
         double distance,
         int lofted,
         double APEX_IS_MAX_RANGE_RADIANS,
@@ -987,7 +987,7 @@ namespace bclibc
      *
      * @throws std::logic_error if integrate_func is empty.
      */
-    void BCLIBC_Engine::integrate_func_not_empty()
+    void BCLIBC_BaseEngine::integrate_func_not_empty()
     {
         if (!this->integrate_func)
         {

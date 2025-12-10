@@ -50,7 +50,7 @@ from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 __all__ = ("EulerIntegrationEngine",)
 
 
-class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
+class EulerIntegrationEngine(BaseIntegrationEngine):
     """Euler integration engine for ballistic trajectory calculations.
 
     Attributes:
@@ -62,7 +62,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         >>> engine = EulerIntegrationEngine(config)
     """
 
-    DEFAULT_STEP = 0.5
+    DEFAULT_TIME_STEP = 0.5
 
     def __init__(self, config: BaseEngineConfigDict) -> None:
         """Initialize the Euler integration engine.
@@ -73,6 +73,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         """
         super().__init__(config)
         self.integration_step_count: int = 0
+        self.trajectory_count = 0  # Number of trajectories calculated
 
     @override
     def get_calc_step(self) -> float:
@@ -92,7 +93,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
             Smaller step sizes increase accuracy but require more computation.
             The DEFAULT_STEP is sufficient to pass all unit tests.
         """
-        return super().get_calc_step() * self.DEFAULT_STEP
+        return super().get_calc_step() * self.DEFAULT_TIME_STEP
 
     def time_step(self, base_step: float, velocity: float) -> float:
         """Calculate adaptive time step based on current projectile velocity.
@@ -153,6 +154,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
         Returns:
             HitResult: Object describing the trajectory.
         """
+        self.trajectory_count += 1
         props.filter_flags = filter_flags
         _cMinimumVelocity = self._config.cMinimumVelocity
         _cMaximumDrop = -abs(self._config.cMaximumDrop)  # Ensure it's negative
@@ -244,7 +246,7 @@ class EulerIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
                 else:
                     termination_reason = RangeError.MinimumAltitudeReached
                 break
-        # endregion
+        # endregion Trajectory Loop
         data = BaseTrajData(time=time, position=range_vector, velocity=velocity_vector, mach=mach)
         data_filter.record(data)
         if dense_output:

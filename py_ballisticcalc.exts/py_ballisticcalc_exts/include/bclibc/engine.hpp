@@ -1,5 +1,5 @@
-#ifndef BCLIBC_ENGINE_HPP
-#define BCLIBC_ENGINE_HPP
+#ifndef BCLIBC_BaseEngine_HPP
+#define BCLIBC_BaseEngine_HPP
 
 #include <mutex>
 #include <functional>
@@ -8,33 +8,33 @@
 /*
 Possible call chains:
 
-BCLIBC_Engine.find_zero_angle
- ├─> BCLIBC_Engine.init_zero_calculation
- │    └─> BCLIBC_Engine.find_apex
- │         └─> BCLIBC_Engine.integrate
+BCLIBC_BaseEngine.find_zero_angle
+ ├─> BCLIBC_BaseEngine.init_zero_calculation
+ │    └─> BCLIBC_BaseEngine.find_apex
+ │         └─> BCLIBC_BaseEngine.integrate
  │              └─> eng->integrate_func
- ├─> BCLIBC_Engine.find_max_range
- │    ├─> BCLIBC_Engine.find_apex
- │    │    └─> BCLIBC_Engine.integrate
+ ├─> BCLIBC_BaseEngine.find_max_range
+ │    ├─> BCLIBC_BaseEngine.find_apex
+ │    │    └─> BCLIBC_BaseEngine.integrate
  │    │         └─> eng->integrate_func
- │    └─> BCLIBC_Engine.range_for_angle
- │         └─> BCLIBC_Engine.integrate
+ │    └─> BCLIBC_BaseEngine.range_for_angle
+ │         └─> BCLIBC_BaseEngine.integrate
  │              └─> eng->integrate_func
- └─> BCLIBC_Engine.error_at_distance
-      └─> BCLIBC_Engine.integrate
+ └─> BCLIBC_BaseEngine.error_at_distance
+      └─> BCLIBC_BaseEngine.integrate
       └─> BCLIBC_BaseTrajSeq / get_at / get_raw_item
 
-BCLIBC_Engine.zero_angle
- ├─> BCLIBC_Engine.init_zero_calculation
- ├─> BCLIBC_Engine.integrate
+BCLIBC_BaseEngine.zero_angle
+ ├─> BCLIBC_BaseEngine.init_zero_calculation
+ ├─> BCLIBC_BaseEngine.integrate
  └─> BCLIBC_BaseTrajSeq / get_at / release
 
  Longest callstack:
 
- BCLIBC_Engine.find_zero_angle
- -> BCLIBC_Engine.init_zero_calculation
-    -> BCLIBC_Engine.find_apex
-       -> BCLIBC_Engine.integrate
+ BCLIBC_BaseEngine.find_zero_angle
+ -> BCLIBC_BaseEngine.init_zero_calculation
+    -> BCLIBC_BaseEngine.find_apex
+       -> BCLIBC_BaseEngine.integrate
           -> eng->integrate_func
 */
 
@@ -62,16 +62,16 @@ namespace bclibc
         double angle_at_max_rad;
     };
 
-    class BCLIBC_Engine;
+    class BCLIBC_BaseEngine;
 
     using BCLIBC_IntegrateFunc = void(
-        BCLIBC_Engine &eng,
+        BCLIBC_BaseEngine &eng,
         BCLIBC_BaseTrajDataHandlerInterface &handler,
         BCLIBC_TerminationReason &reason);
 
     using BCLIBC_IntegrateCallable = std::function<BCLIBC_IntegrateFunc>;
 
-    class BCLIBC_Engine
+    class BCLIBC_BaseEngine
     {
         static constexpr double MAX_INTEGRATION_RANGE = 9e9;
 
@@ -88,7 +88,7 @@ namespace bclibc
         BCLIBC_ShotProps shot;
         BCLIBC_IntegrateCallable integrate_func;
 
-        BCLIBC_Engine() = default;
+        BCLIBC_BaseEngine() = default;
 
         /**
          * @brief Calls the underlying integration function for the projectile trajectory.
@@ -284,4 +284,4 @@ namespace bclibc
     };
 }; // namespace bclibc
 
-#endif // BCLIBC_ENGINE_HPP
+#endif // BCLIBC_BaseEngine_HPP

@@ -16,11 +16,7 @@ __all__ = [
 @final
 cdef class CythonizedRK4IntegrationEngine(CythonizedBaseIntegrationEngine):
     """Cythonized RK4 (Runge-Kutta 4th order) integration engine for ballistic calculations."""
-    DEFAULT_TIME_STEP = 0.0025
 
     def __cinit__(self, object _config):
+        self._DEFAULT_TIME_STEP = 0.0025
         self._this.integrate_func = BCLIBC_IntegrateCallable(BCLIBC_integrateRK4)
-
-    cdef double get_calc_step(CythonizedRK4IntegrationEngine self):
-        """Calculate the step size for integration."""
-        return self.DEFAULT_TIME_STEP * CythonizedBaseIntegrationEngine.get_calc_step(self)

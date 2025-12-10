@@ -45,9 +45,10 @@ Note:
 """
 
 # Local imports
-from .engine import ConfigT, EngineProtocol
+from .engine import ConfigT, EngineProtocol, EngineFactoryProtocol
 
 __all__ = (
     'ConfigT',
     'EngineProtocol',
+    'EngineFactoryProtocol',
 )

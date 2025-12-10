@@ -45,7 +45,7 @@ from py_ballisticcalc.vector import Vector, ZERO_VECTOR
 __all__ = ("VelocityVerletIntegrationEngine",)
 
 
-class VelocityVerletIntegrationEngine(BaseIntegrationEngine[BaseEngineConfigDict]):
+class VelocityVerletIntegrationEngine(BaseIntegrationEngine):
     """Velocity Verlet integration engine for ballistic trajectory calculations.
 
     Algorithm Details:
