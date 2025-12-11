@@ -55,6 +55,10 @@ class CythonizedBaseIntegrationEngine(EngineProtocol[BaseEngineConfigDict]):
         ...
 
     @property
+    def DEFAULT_TIME_STEP(self) -> float: ...
+    @DEFAULT_TIME_STEP.setter
+    def DEFAULT_TIME_STEP(self, value: float) -> None: ...
+    @property
     def integration_step_count(self) -> int:
         """
         Gets the number of integration steps performed in the last integration.

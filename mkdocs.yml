@@ -11,7 +11,7 @@ nav:
       - Help: help.md
       - Contributing: contributing.md
   #  - Version policy: version-policy.md
-  #  - Changelog: changelog.md
+      - Changelog: changelog.md
   - Concepts:
       - Basics: concepts/index.md
       - "📏 Units": concepts/unit.md
@@ -192,6 +192,8 @@ plugins:
   - autorefs
   - mermaid2
   - search
+  - macros:
+      include_dir: .
   - mike:
       alias_type: symlink
       canonical_version: latest
@@ -202,7 +204,6 @@ plugins:
         - __pycache__/*
         - why.md
         - version-policy.md
-        - changelog.md
   - mkdocstrings:    
       enable_inventory: true
       handlers:

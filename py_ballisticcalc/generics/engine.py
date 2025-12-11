@@ -212,4 +212,6 @@ ConfigT = TypeVar("ConfigT", contravariant=True)
 
 @runtime_checkable
 class EngineFactoryProtocol(Protocol[ConfigT]):
-    def __call__(self, config: ConfigT) -> EngineProtocol: ...
+    def __call__(self, config: ConfigT) -> EngineProtocol:
+        """Make any Engine constructor or factory to match this signature"""
+        ...

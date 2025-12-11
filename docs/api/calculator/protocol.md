@@ -1,8 +1,9 @@
 ::: py_ballisticcalc.generics.engine.EngineProtocol
+    options:
+        group_by_category: false
+        members:
 
 ::: py_ballisticcalc.generics.engine.EngineFactoryProtocol
     options:
-        show_docstring_examples: false
+        group_by_category: false
         members: true
-        show_docstring_attributes: false
-        docstring_section_style: list

@@ -1,5 +1,5 @@
 <h1 style="display: flex; align-items: center; gap: 10px;">
-  <img src="./favicon.svg" alt="favicon" width="50" height="50"> 
+  <img src="./favicon.svg" alt="logo" width="50" height="50"> 
   py_ballisticcalc
 </h1>
 
