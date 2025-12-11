@@ -127,7 +127,7 @@ namespace bclibc
         velocity = eng.shot.muzzle_velocity;
         delta_time = eng.shot.calc_step;
 
-        BCLIBC_DEBUG("Velocity=%f, Calc Step=%f\n", velocity, calc_step);
+        BCLIBC_DEBUG("Velocity=%f, Calc Step=%f\n", velocity, delta_time);
 
         // Set initial position accounting for sight height and cant angle
         range_vector.x = 0.0;
@@ -143,7 +143,7 @@ namespace bclibc
         dir_vector.y = std::sin(eng.shot.barrel_elevation);
         dir_vector.z = cos_elev * std::sin(eng.shot.barrel_azimuth);
 
-        BCLIBC_DEBUG("Direction vector: %f, %f, %f\n", _dir_vector.x, _dir_vector.y, _dir_vector.z);
+        BCLIBC_DEBUG("Direction vector: %f, %f, %f\n", dir_vector.x, dir_vector.y, dir_vector.z);
 
         // Calculate initial velocity vector
         velocity_vector = dir_vector * velocity;
