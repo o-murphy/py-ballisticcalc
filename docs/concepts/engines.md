@@ -43,7 +43,9 @@ Cythonized engines are compiled for maximum performance.  Include the `[exts]` o
 
 ## Custom Engines
 
-**To define a custom engine:** Create a separate module with a class that implements the [`EngineProtocol`][py_ballisticcalc.generics.engine.EngineProtocol].  You can then load it like:
+**To define a custom engine:** Create a separate module with a class that implements the [`EngineProtocol`][py_ballisticcalc.generics.engine.EngineProtocol].
+The engine's constructor should implement [`EngineFactoryProtocol`][py_ballisticcalc.generics.engine.EngineFactoryProtocol]
+You can then load it like:
 ```python
 from py_ballisticcalc import Calculator
 
