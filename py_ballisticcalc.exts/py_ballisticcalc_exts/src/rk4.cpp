@@ -150,17 +150,10 @@ namespace bclibc
 
         BCLIBC_DEBUG("Velocity vector: %f, %f, %f\n", velocity_vector.x, velocity_vector.y, velocity_vector.z);
 
-        // Pre-initialize atmosphere at initial altitude
-        eng.shot.atmo.update_density_factor_and_mach_for_altitude(
-            eng.shot.alt0 + range_vector.y,
-            density_ratio,
-            mach);
-        BCLIBC_DEBUG("Density ratio: %f, Mach: %f\n", density_ratio, mach);
-
         // Main trajectory integration loop
         // Continue until range limit is reached or termination condition is met
         // Minimum of 3 steps ensures proper initialization
-        BCLIBC_DEBUG("Entering main loop, range_limit_ft=%f\n", range_limit_ft);
+        BCLIBC_DEBUG("Entering main loop");
 
         while (reason == BCLIBC_TerminationReason::NO_TERMINATE)
         {
