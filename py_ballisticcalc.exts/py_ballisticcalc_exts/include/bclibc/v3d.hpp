@@ -276,13 +276,13 @@ namespace bclibc
          */
         inline BCLIBC_V3dT norm() const
         {
-            double m = mag();
-            if (std::fabs(m) < 1e-10)
+            const double m_sq = x * x + y * y + z * z;
+            if (m_sq < 1e-20)
             {
                 return *this;
             }
-            // Use multiplication by reciprocal
-            return (*this) * (1.0 / m);
+            const double inv_mag = 1.0 / std::sqrt(m_sq);
+            return BCLIBC_V3dT(x * inv_mag, y * inv_mag, z * inv_mag);
         }
 
         /**
@@ -295,12 +295,16 @@ namespace bclibc
          */
         inline BCLIBC_V3dT &normalize()
         {
-            double m = mag();
-            if (std::fabs(m) < 1e-10)
+            const double m_sq = x * x + y * y + z * z;
+            if (m_sq < 1e-20)
             {
                 return *this;
             }
-            return (*this) *= (1.0 / m);
+            const double inv_mag = 1.0 / std::sqrt(m_sq);
+            x *= inv_mag;
+            y *= inv_mag;
+            z *= inv_mag;
+            return *this;
         }
     };
 

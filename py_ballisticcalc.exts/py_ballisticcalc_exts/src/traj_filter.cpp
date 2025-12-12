@@ -34,8 +34,8 @@ namespace bclibc
           time_step(time_step),
           range_step(range_step),
           range_limit(range_limit),
-          prev_data(prev_data),
-          prev_prev_data(prev_prev_data),
+          prev_data(),
+          prev_prev_data(),
           next_record_distance(0.0),
           look_angle_tangent(std::tan(props.look_angle)),
           termination_reason_ref(termination_reason_ref) {};
@@ -362,26 +362,18 @@ namespace bclibc
      */
     const BCLIBC_TrajectoryData &BCLIBC_TrajectoryDataFilter::get_record(std::ptrdiff_t index) const
     {
-        const size_t size_t_size = this->records.size();
-        const std::ptrdiff_t signed_size = (std::ptrdiff_t)size_t_size;
-        std::ptrdiff_t signed_effective_index;
-        if (signed_size == 0)
+        const size_t size = this->records.size();
+        if (size == 0)
         {
             throw std::out_of_range("Cannot get record from empty trajectory data.");
         }
-        if (index >= 0)
-        {
-            signed_effective_index = index;
-        }
-        else
-        {
-            signed_effective_index = signed_size + index;
-        }
-        if (signed_effective_index < 0 || signed_effective_index >= signed_size)
+        const std::ptrdiff_t signed_size = static_cast<std::ptrdiff_t>(size);
+        const std::ptrdiff_t effective_index = (index >= 0) ? index : signed_size + index;
+        if (effective_index < 0 || effective_index >= signed_size)
         {
             throw std::out_of_range("Index is out of bounds.");
         }
-        return this->records.at((size_t)signed_effective_index);
+        return this->records[static_cast<size_t>(effective_index)];
     };
 
     /**
@@ -493,14 +485,10 @@ namespace bclibc
         : range_limit_ft(range_limit_ft),
           step_count(0), // Always start from 0
           min_velocity_fps(min_velocity_fps),
-          max_drop_ft(max_drop_ft),
+          max_drop_ft(-std::fabs(max_drop_ft) + std::fmin(0.0, -shot.cant_cosine * shot.sight_height)),
           min_altitude_ft(min_altitude_ft),
           initial_altitude_ft(shot.alt0),
-          termination_reason_ref(termination_reason_ref)
-    {
-        this->max_drop_ft = -std::fabs(this->max_drop_ft);
-        this->max_drop_ft += std::fmin(0.0, -shot.cant_cosine * shot.sight_height);
-    };
+          termination_reason_ref(termination_reason_ref) {};
 
     void BCLIBC_EssentialTerminators::handle(const BCLIBC_BaseTrajData &data)
     {
@@ -521,7 +509,7 @@ namespace bclibc
         }
 
         // 3. Min Velocity
-        double velocity = data.velocity().mag();
+        const double velocity = data.velocity().mag();
         if (velocity < this->min_velocity_fps)
         {
             this->termination_reason_ref = BCLIBC_TerminationReason::MINIMUM_VELOCITY_REACHED;
