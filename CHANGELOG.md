@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.6] – 2025-12-13
+[:simple-github: GitHub release][2.2.6]
+
+### Changed 
+- Optimized C++ based RK4 integrator performance
+- V3dT uses square check instead of sqrt for magnitude calculation for performance 
+
+### Fixed
+- C++ based TrajectoryDataFilter initialization fix
+
+### Compatibility
+- Fully compatible with v2.2.3 (no breaking changes).
+- Rebuilding wheels is recommended for distributors.
+
 ## [2.2.5] – 2025-12-11
 [:simple-github: GitHub release][2.2.5]
 
@@ -462,35 +476,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.5...HEAD
-[2.2.5]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.5rc3...v2.2.5
-[2.2.5rc3]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.5rc2...v2.2.5rc3
-[2.2.5rc2]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.5rc1...v2.2.5rc2
-[2.2.5rc1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.5b2...v2.2.5rc1
-[2.2.5b2]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.5b1...v2.2.5b2
-[2.2.5b1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.4rc1...v2.2.5b1
-[2.2.4rc1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.3...v2.2.4rc1
-[2.2.3]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.2...v2.2.3
-[2.2.2]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.1...v2.2.2
-[2.2.1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0...v2.2.1
-[2.2.0]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0rc2...v2.2.0
-[2.2.0rc2]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0rc1...v2.2.0rc2
-[2.2.0rc1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b7...v2.2.0rc1
-[2.2.0b7]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b6...v2.2.0b7
-[2.2.0b6]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b5...v2.2.0b6
-[2.2.0b5]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b4...v2.2.0b5
-[2.2.0b4]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b3.post1...v2.2.0b4
-[2.2.0b3.post1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b3...v2.2.0b3.post1
-[2.2.0b3]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b2...v2.2.0b3
-[2.2.0b2]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.0b1...v2.2.0b2
-[2.2.0b1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.1b3...v2.2.0b1
-[2.1.1b3]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.1b2...v2.1.1b3
-[2.1.1b2]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.1b1...v2.1.1b2
-[2.1.1b1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.0...v2.1.1b1
-[2.1.0]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.0rc2...v2.1.0
-[2.1.0rc2]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.0rc1...v2.1.0rc2
-[2.1.0rc1]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.0b7...v2.1.0rc1
-[2.1.0b7]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.0b6...v2.1.0b7
-[2.1.0b6]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.0b5...v2.1.0b6
-[2.1.0b5]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.1.0b4...v2.1.0b5
-[2.1.0b4]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.0.7...v2.1.0b4
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.6...HEAD
+[2.2.6]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6
+[2.2.5]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5
+[2.2.5rc3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5rc3
+[2.2.5rc2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5rc2
+[2.2.5rc1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5rc1
+[2.2.5b2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5b2
+[2.2.5b1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5b1
+[2.2.4rc1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.4rc1
+[2.2.3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.3
+[2.2.2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.2
+[2.2.1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.1
+[2.2.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0
+[2.2.0rc2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0rc2
+[2.2.0rc1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0rc1
+[2.2.0b7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b7
+[2.2.0b6]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b6
+[2.2.0b5]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b5
+[2.2.0b4]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b4
+[2.2.0b3.post1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b3.post1
+[2.2.0b3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b3
+[2.2.0b2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b2
+[2.2.0b1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.0b1
+[2.1.1b3]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.1b3
+[2.1.1b2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.1b2
+[2.1.1b1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.1b1
+[2.1.0]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.0
+[2.1.0rc2]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.0rc2
+[2.1.0rc1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.0rc1
+[2.1.0b7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.0b7
+[2.1.0b6]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.0b6
+[2.1.0b5]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.0b5
+[2.1.0b4]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.1.0b4
