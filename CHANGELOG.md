@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [:simple-github: GitHub release][2.2.6.post1]
 
 ### Changed
-- Removed useless atmosphere precalculation in C++ rk4 integrator
+- Removed unnecessary atmosphere precalculation in C++ rk4 integrator
+- Removed gh actions 'updated' release type from pypi-publish.yml to avoid unnecessary triggering
 
 ## [2.2.6] – 2025-12-13
 [:simple-github: GitHub release][2.2.6]

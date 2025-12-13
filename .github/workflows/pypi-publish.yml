@@ -2,7 +2,7 @@ name: Build and Upload Python Package to PyPI
 
 on:
   release:
-    types: [published, edited]
+    types: [published]
   workflow_dispatch:
     inputs:
       testpypi:
