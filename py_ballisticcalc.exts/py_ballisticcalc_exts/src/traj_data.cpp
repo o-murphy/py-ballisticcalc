@@ -1232,8 +1232,6 @@ namespace bclibc
         case BCLIBC_TrajectoryData_InterpKey::OGW:
             this->ogw_lb = value;
             break;
-        case BCLIBC_TrajectoryData_InterpKey::FLAG:
-            throw std::logic_error("TrajectoryData.flag field is not a double and can't be returned");
         }
     }
 
