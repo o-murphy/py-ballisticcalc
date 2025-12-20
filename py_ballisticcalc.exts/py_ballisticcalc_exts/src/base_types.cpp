@@ -724,7 +724,7 @@ namespace bclibc
     BCLIBC_V3dT BCLIBC_Coriolis::adjust_range(
         double time, const BCLIBC_V3dT &range_vector) const
     {
-        if (!this || !this->flat_fire_only)
+        if (!this->flat_fire_only)
         {
             return range_vector;
         }
