@@ -1,5 +1,6 @@
 #include <cmath>
 #include "bclibc/euler.hpp"
+#include "bclibc/log.hpp"
 
 namespace bclibc
 {

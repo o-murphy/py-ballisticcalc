@@ -3,6 +3,7 @@
 #include <cmath>
 #include <stdexcept>
 #include "bclibc/base_types.hpp"
+#include "bclibc/log.hpp"
 
 namespace bclibc
 {

@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <vector>
 #include "v3d.hpp"
-#include "bclibc/log.hpp"
 
 namespace bclibc
 {

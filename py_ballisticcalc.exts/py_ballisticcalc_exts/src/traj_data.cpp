@@ -3,6 +3,7 @@
 #include <cstring>
 #include <stdexcept>
 #include "bclibc/traj_data.hpp"
+#include "bclibc/log.hpp"
 
 namespace bclibc
 {
