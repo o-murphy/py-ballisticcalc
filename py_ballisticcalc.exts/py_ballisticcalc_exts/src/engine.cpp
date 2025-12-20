@@ -980,6 +980,7 @@ namespace bclibc
                 this->config.cMaxIterations,
                 (low_angle + high_angle) / 2.0);
         }
+        return look_angle_rad;
     };
 
     /**
