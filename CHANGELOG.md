@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.7] - 2025-12-21
+[:simple-github: GitHub release][2.2.7]
+
+### Changed
+- Include Refactoring
+- Redundant Null Pointer Check Removal
+
 ## [2.2.6.post1] - 2025-12-14
 [:simple-github: GitHub release][2.2.6.post1]
 
@@ -483,7 +490,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Issue #141
 - Trajectories that bend backwards
 
-[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.6.post1...HEAD
+[Unreleased]: https://github.com/o-murphy/py-ballisticcalc/compare/v2.2.7...HEAD
+[2.2.7]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.7
 [2.2.6.post1]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6.post1
 [2.2.6]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.6
 [2.2.5]: https://github.com/o-murphy/py-ballisticcalc/releases/tag/v2.2.5
