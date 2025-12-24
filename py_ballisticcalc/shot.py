@@ -423,4 +423,3 @@ class ShotProps:
         xs = [dp.Mach for dp in data_points]
         ys = [dp.CD for dp in data_points]
         return pchip_prepare(xs, ys)
-
