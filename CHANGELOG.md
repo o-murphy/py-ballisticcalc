@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.2.7] - 2025-12-21
+## [2.2.7] - 2025-12-24
 [:simple-github: GitHub release][2.2.7]
 
 ### Changed
 - Include Refactoring
 - Redundant Null Pointer Check Removal
+- Better WindSock initialization in Cython/C++
 
 ## [2.2.6.post1] - 2025-12-14
 [:simple-github: GitHub release][2.2.6.post1]

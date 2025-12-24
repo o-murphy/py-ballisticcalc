@@ -261,6 +261,8 @@ namespace bclibc
          */
         BCLIBC_WindSock();
 
+        BCLIBC_WindSock(std::vector<BCLIBC_Wind> winds_vec);
+
         void push(const BCLIBC_Wind &wind);
 
         /**

@@ -38,13 +38,6 @@ namespace bclibc
      */
     BCLIBC_Curve BCLIBC_Curve_fromPylist(PyObject *data_points);
 
-    /**
-     * @brief Converts a Python object representing wind to a native BCLIBC_Wind.
-     * @param w Pointer to a Python object representing wind conditions.
-     * @return BCLIBC_Wind populated from the Python object.
-     */
-    BCLIBC_Wind BCLIBC_Wind_fromPyObject(PyObject *w);
-
 }; // namespace bclibc
 
 #endif // __CYTHON__
