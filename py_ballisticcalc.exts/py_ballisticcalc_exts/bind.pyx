@@ -73,7 +73,7 @@ cdef BCLIBC_Coriolis BCLIBC_Coriolis_from_pyobject(object coriolis_obj):
 # We still need a way to get data from Python objects into BCLIBC_Wind structs.
 # This internal helper function is used by WindSockT_create.
 # It assumes 'w' is a Python object that conforms to the interface needed.
-cdef BCLIBC_WindSock BCLIBC_WindSock_from_pylist(object winds_py_tuple):
+cdef BCLIBC_WindSock BCLIBC_WindSock_from_pytuple(tuple[object] winds_py_tuple):
     """
     Creates and initializes a BCLIBC_WindSock structure
     by iterating over the Python list and calling push() for each element.
@@ -134,7 +134,7 @@ cdef BCLIBC_ShotProps BCLIBC_ShotProps_from_pyobject(object shot_info, double ca
         BCLIBC_MachList_from_pylist(table_data),
         BCLIBC_Atmosphere_from_pyobject(shot_info.atmo),
         BCLIBC_Coriolis_from_pyobject(coriolis_obj),
-        BCLIBC_WindSock_from_pylist(shot_info.winds),
+        BCLIBC_WindSock_from_pytuple(shot_info.winds),
         <BCLIBC_TrajFlag>BCLIBC_TrajFlag.BCLIBC_TRAJ_FLAG_NONE,
     )
 

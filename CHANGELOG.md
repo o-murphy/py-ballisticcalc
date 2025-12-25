@@ -7,13 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.2.7] - 2025-12-24
+## [2.2.7] - 2025-12-25
 [:simple-github: GitHub release][2.2.7]
 
 ### Changed
-- Include Refactoring
+- Includes Refactoring
 - Redundant Null Pointer Check Removal
 - Better WindSock initialization in Cython/C++
+- BCLIBC_WindSock_from_pylist name changed to BCLIBC_WindSock_from_pytuple
+- C++ to Python Exception bridge improved, avoids multiple rethrows, uses dynamic_cast
+- C++ to Python Exception bridge many_exception_handler renamed to exception_dispatch
+
+### Fix
+- Docstrings fix according to [Issue #299](https://github.com/o-murphy/py-ballisticcalc/pull/299)
 
 ## [2.2.6.post1] - 2025-12-14
 [:simple-github: GitHub release][2.2.6.post1]
