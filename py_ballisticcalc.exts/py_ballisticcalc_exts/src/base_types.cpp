@@ -549,9 +549,9 @@ namespace bclibc
     }
 
     BCLIBC_WindSock::BCLIBC_WindSock(std::vector<BCLIBC_Wind> winds_vec)
-        : BCLIBC_WindSock()
+        : winds(std::move(winds_vec)),
+          current(0)
     {
-        this->winds = std::move(winds_vec);
         this->update_cache();
     }
 
